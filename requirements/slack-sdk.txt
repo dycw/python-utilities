@@ -16,7 +16,7 @@ frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
-hypothesis==6.115.2
+hypothesis==6.115.3
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via yarl
@@ -57,5 +57,5 @@ tomli==2.0.2
     # via coverage
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
-yarl==1.15.3
+yarl==1.15.4
     # via aiohttp

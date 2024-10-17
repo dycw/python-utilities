@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from time import sleep
-
 from loguru import logger
 from tenacity import retry, wait_fixed
 
@@ -23,19 +21,34 @@ def func_test_log_disable(x: int, /) -> int:
         return x + 1
 
 
-def func_test_log_entry(x: int, /) -> int:
+def func_test_log_main(x: int, /) -> int:
     with log():
         return x + 1
 
 
-def func_test_log_entry_disabled(x: int, /) -> int:
-    with log(entry_level=None):
+def func_test_log_non_default_level(x: int, /) -> int:
+    with log(level=LogLevel.DEBUG):
         return x + 1
 
 
-def func_test_log_entry_non_default_level(x: int, /) -> int:
-    with log(entry_level=LogLevel.DEBUG):
+def func_test_log_context_outer(x: int, /) -> int:
+    with log(context={"context_key": "context_value"}):
+        return func_test_log_context_inner(x + 1)
+
+
+def func_test_log_context_inner(x: int, /) -> int:
+    with log(key="value"):
         return x + 1
+
+
+def func_test_log_exit_variable(x: int, /) -> int:
+    with log() as log_cap:
+        return log_cap(x + 1)
+
+
+def func_test_log_exit_variable_disable(x: int, /) -> int:
+    with log(disable=True) as log_cap:
+        return log_cap(x + 1)
 
 
 def func_test_log_error(x: int, /) -> int | None:
@@ -52,32 +65,6 @@ def func_test_log_error_expected(x: int, /) -> int | None:
             return x + 1
         msg = f"Got an odd number: {x}"
         raise ValueError(msg)
-
-
-def func_test_log_exit_explicit(x: int, /) -> int:
-    with log(exit_level=LogLevel.DEBUG):
-        return x + 1
-
-
-def func_test_log_exit_duration(x: int, /) -> int:
-    with log(exit_duration=0.0):
-        sleep(0.01)
-        return x + 1
-
-
-def func_test_log_contextualize(x: int, /) -> int:
-    with log(key="value"):
-        return x + 1
-
-
-def func_test_log_exit_variable(x: int, /) -> int:
-    with log(exit_level=LogLevel.DEBUG) as log_cap:
-        return log_cap(x + 1)
-
-
-def func_test_log_exit_variable_disable(x: int, /) -> int:
-    with log(disable=True, exit_level=LogLevel.DEBUG) as log_cap:
-        return log_cap(x + 1)
 
 
 # tenacity

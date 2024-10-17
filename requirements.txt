@@ -126,7 +126,7 @@ httpx==0.27.2
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.115.2
+hypothesis==6.115.3
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -404,7 +404,7 @@ tqdm==4.66.5
     #   dycw-utilities (pyproject.toml)
     #   optuna
     #   pqdm
-trove-classifiers==2024.10.13
+trove-classifiers==2024.10.16
     # via hatchling
 typed-settings==24.5.0
     # via dycw-utilities (pyproject.toml)
@@ -447,7 +447,7 @@ win32-setctime==1.1.0
     # via dycw-utilities (pyproject.toml)
 wrapt==1.16.0
     # via deprecated
-yarl==1.15.3
+yarl==1.15.4
     # via aiohttp
 zipp==3.20.2
     # via importlib-metadata

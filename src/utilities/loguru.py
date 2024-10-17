@@ -27,7 +27,7 @@ from typing import (
 from loguru import logger
 from typing_extensions import override
 
-from utilities.datetime import SECOND, duration_to_timedelta
+from utilities.datetime import duration_to_timedelta
 from utilities.iterables import (
     OneEmptyError,
     OneNonUniqueError,
@@ -60,6 +60,8 @@ if TYPE_CHECKING:
     from utilities.types import Duration, PathLike, StrMapping
 
 
+_ENTRY_MESSAGE = "➢"
+_EXIT_MESSAGE = "✔"
 _RECORD_EXCEPTION_VALUE = "{record[exception].value!r}"
 LEVEL_CONFIGS: Sequence[LevelConfig] = [
     {"name": "TRACE", "color": "<blue><bold>"},
@@ -230,16 +232,13 @@ def log(
     context: StrMapping | None = None,
     disable: bool = False,
     depth: int = 2,
-    entry_level: LogLevel | None = LogLevel.TRACE,
-    entry_bind: StrMapping | None = None,
-    entry_message: str = "➢",
+    level: LogLevel = LogLevel.TRACE,
+    bind: StrMapping | None = None,
+    entry_message: str = _ENTRY_MESSAGE,
     error_expected: type[Exception] | tuple[type[Exception], ...] | None = None,
     error_bind: StrMapping | None = None,
     error_message: str = _RECORD_EXCEPTION_VALUE,
-    exit_level: LogLevel | None = None,
-    exit_duration: Duration = SECOND,
-    exit_bind: StrMapping | None = None,
-    exit_message: str = "✔",
+    exit_message: str = _EXIT_MESSAGE,
     **kwargs: Any,
 ) -> Iterator[_LogContainer[Any]]:
     """Log the function entry/error/exit/duration."""
@@ -252,15 +251,12 @@ def log(
                 logger.contextualize(**context),
                 _log_core(
                     core_depth,
-                    entry_level=entry_level,
-                    entry_bind=entry_bind,
+                    level=level,
+                    bind=bind,
                     entry_message=entry_message,
                     error_expected=error_expected,
                     error_bind=error_bind,
                     error_message=error_message,
-                    exit_level=exit_level,
-                    exit_duration=exit_duration,
-                    exit_bind=exit_bind,
                     exit_message=exit_message,
                     **kwargs,
                 ) as container,
@@ -269,15 +265,12 @@ def log(
         else:
             with _log_core(
                 core_depth,
-                entry_level=entry_level,
-                entry_bind=entry_bind,
+                level=level,
+                bind=bind,
                 entry_message=entry_message,
                 error_expected=error_expected,
                 error_bind=error_bind,
                 error_message=error_message,
-                exit_level=exit_level,
-                exit_duration=exit_duration,
-                exit_bind=exit_bind,
                 exit_message=exit_message,
                 **kwargs,
             ) as container:
@@ -289,22 +282,18 @@ def _log_core(
     depth: int,
     /,
     *,
-    entry_level: LogLevel | None = LogLevel.TRACE,
-    entry_bind: StrMapping | None = None,
-    entry_message: str = "➢",
+    level: LogLevel = LogLevel.TRACE,
+    bind: StrMapping | None = None,
+    entry_message: str = _ENTRY_MESSAGE,
     error_expected: type[Exception] | tuple[type[Exception], ...] | None = None,
     error_bind: StrMapping | None = None,
     error_message: str = _RECORD_EXCEPTION_VALUE,
-    exit_level: LogLevel | None = None,
-    exit_duration: Duration = SECOND,
-    exit_bind: StrMapping | None = None,
-    exit_message: str = "✔",
+    exit_message: str = _EXIT_MESSAGE,
     **kwargs: Any,
 ) -> Iterator[_LogContainer[Any]]:
     with Timer() as timer:
-        if entry_level is not None:
-            logger_entry = logger if entry_bind is None else logger.bind(**entry_bind)
-            logger_entry.opt(depth=depth).log(entry_level, entry_message, **kwargs)
+        logger_main = (logger if bind is None else logger.bind(**bind)).opt(depth=depth)
+        logger_main.log(level, entry_message, **kwargs)
         try:
             yield (container := _LogContainer())
         except Exception as error:
@@ -316,26 +305,10 @@ def _log_core(
                     error_message
                 )
             raise
-        if (
-            (exit_level is None)
-            and isinstance(container.obj, Sentinel)
-            and (timer <= exit_duration)
-        ):
-            return
-        match exit_level:
-            case LogLevel():
-                exit_level_use = exit_level
-            case None:
-                exit_level_use = LogLevel.TRACE if entry_level is None else entry_level
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-                assert_never(never)
-        logger_exit = logger if exit_bind is None else logger.bind(**exit_bind)
-        exit_kwargs = {}
+        exit_kwargs: StrMapping = {"⏲": timer}
         if not isinstance(container.obj, Sentinel):
             exit_kwargs["✔"] = container.obj
-        if timer >= exit_duration:
-            exit_kwargs["⏲"] = timer
-        logger_exit.opt(depth=depth).log(exit_level_use, exit_message, **exit_kwargs)
+        logger_main.log(level, exit_message, **exit_kwargs)
 
 
 def logged_sleep_sync(
