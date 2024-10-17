@@ -12,17 +12,14 @@ from loguru._recattrs import RecordFile, RecordLevel, RecordProcess, RecordThrea
 from pytest import CaptureFixture, fixture, mark, param, raises
 
 from tests.test_loguru_functions import (
-    func_test_log_contextualize,
+    func_test_log_context_outer,
     func_test_log_disable,
-    func_test_log_entry,
-    func_test_log_entry_disabled,
-    func_test_log_entry_non_default_level,
     func_test_log_error,
     func_test_log_error_expected,
-    func_test_log_exit_duration,
-    func_test_log_exit_explicit,
     func_test_log_exit_variable,
     func_test_log_exit_variable_disable,
+    func_test_log_main,
+    func_test_log_non_default_level,
 )
 from utilities.hypothesis import text_ascii
 from utilities.loguru import (
@@ -178,40 +175,51 @@ class TestLog:
     debug: ClassVar[str] = datetime + r"DEBUG    \| " + loguru
     error: ClassVar[str] = datetime + r"ERROR    \| " + loguru
 
-    def test_disable(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+    def test_main(self, *, capsys: CaptureFixture) -> None:
+        self._configure()
+        assert func_test_log_main(1) == 2
+        line1, line2 = capsys.readouterr().out.splitlines()
+        expected = self.trace + r"func_test_log_main:\d+ - "
+        assert search(expected + r"➢ \| \{\}$", line1), line1
+        assert search(expected + r"✔ \| \{'⏲': .*\}$", line2), line2
 
+    def test_non_default_level(self, *, capsys: CaptureFixture) -> None:
+        self._configure()
+        assert func_test_log_non_default_level(1) == 2
+        line1, line2 = capsys.readouterr().out.splitlines()
+        expected = self.debug + r"func_test_log_non_default_level:\d+ - "
+        assert search(expected + r"➢ \| \{\}$", line1), line1
+        assert search(expected + r"✔ \| \{'⏲': .*\}$", line2), line2
+
+    @mark.only
+    def test_context(self, *, capsys: CaptureFixture) -> None:
+        self._configure()
+        assert func_test_log_context_outer(1) == 3
+        line1, line2, line3, line4 = capsys.readouterr().out.splitlines()
+        expected_outer = self.trace + r"func_test_log_context_outer:\d+ - "
+        expected_inner = self.trace + r"func_test_log_context_inner:\d+ - "
+        assert search(
+            expected_outer + r"➢ \| \{'context_key': 'context_value'\}$", line1
+        ), line1
+        assert search(
+            expected_inner
+            + r"➢ \| \{'context_key': 'context_value', 'key': 'value'\}$",
+            line2,
+        ), line2
+        assert search(
+            expected_inner + r"✔ \| \{'context_key': 'context_value', '⏲': .*\}$",
+            line3,
+        ), line3
+        assert search(
+            expected_outer + r"✔ \| \{'context_key': 'context_value', '⏲': .*\}$",
+            line4,
+        ), line4
+
+    def test_disable(self, *, capsys: CaptureFixture) -> None:
+        self._configure()
         assert func_test_log_disable(1) == 2
         out = capsys.readouterr().out
         assert out == ""
-
-    def test_entry(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
-
-        assert func_test_log_entry(1) == 2
-        out = capsys.readouterr().out
-        (line,) = out.splitlines()
-        expected = self.trace + r"func_test_log_entry:\d+ - ➢$"
-        assert search(expected, line), line
-
-    def test_entry_disabled(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
-
-        assert func_test_log_entry_disabled(1) == 2
-        out = capsys.readouterr().out
-        assert out == ""
-
-    def test_entry_non_default_level(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
-
-        assert func_test_log_entry_non_default_level(1) == 2
-        out = capsys.readouterr().out
-        expected = self.debug + r"func_test_log_entry_non_default_level:\d+ - ➢$"
-        assert search(expected, out), out
 
     def test_error(self, *, capsys: CaptureFixture) -> None:
         handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
@@ -250,38 +258,6 @@ class TestLog:
         (line,) = out.splitlines()
         expected = self.trace + r"func_test_log_error_expected:\d+ - ➢$"
         assert search(expected, line), line
-
-    def test_exit_explicit(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
-
-        assert func_test_log_exit_explicit(1) == 2
-        out = capsys.readouterr().out
-        line1, line2 = out.splitlines()
-        expected1 = self.trace + r"func_test_log_exit_explicit:\d+ - ➢$"
-        assert search(expected1, line1), line1
-        expected2 = self.debug + r"func_test_log_exit_explicit:\d+ - ✔$"
-        assert search(expected2, line2), line2
-
-    def test_exit_duration(self, *, capsys: CaptureFixture) -> None:
-        default_format = ensure_str(LOGURU_FORMAT)
-        handler: HandlerConfiguration = {
-            "sink": sys.stdout,
-            "level": LogLevel.TRACE,
-            "format": f"{default_format} | {{extra}}",
-        }
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
-
-        assert func_test_log_exit_duration(1) == 2
-        out = capsys.readouterr().out
-        line1, line2 = out.splitlines()
-        expected1 = self.trace + r"func_test_log_exit_duration:\d+ - ➢ | {}$"
-        assert search(expected1, line1), line1
-        expected2 = (
-            self.trace
-            + r"func_test_log_exit_duration:\d+ - ✔ | {'⏲': \d:\d{2}:\d{2}\.\d{6}}$"
-        )
-        assert search(expected2, line2), line2
 
     def test_exit_variable(self, *, capsys: CaptureFixture) -> None:
         default_format = ensure_str(LOGURU_FORMAT)
@@ -324,7 +300,7 @@ class TestLog:
         ):
             _ = func(1)
 
-    def test_contextualize(self, *, capsys: CaptureFixture) -> None:
+    def _configure(self) -> None:
         default_format = ensure_str(LOGURU_FORMAT)
         handler: HandlerConfiguration = {
             "sink": sys.stdout,
@@ -332,14 +308,6 @@ class TestLog:
             "format": f"{default_format} | {{extra}}",
         }
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
-
-        assert func_test_log_contextualize(1) == 2
-        out = capsys.readouterr().out
-        (line,) = out.splitlines()
-        expected = (
-            self.trace + r"func_test_log_contextualize:\d+ - ➢ \| {'key': 'value'}$"
-        )
-        assert search(expected, line), line
 
 
 class TestLoggedSleep:
