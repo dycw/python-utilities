@@ -31,6 +31,21 @@ def func_test_log_non_default_level(x: int, /) -> int:
         return x + 1
 
 
+def func_test_log_context_outer(x: int, /) -> int:
+    with log(context={"context_key": "context_value"}):
+        return func_test_log_context_inner(x + 1)
+
+
+def func_test_log_context_inner(x: int, /) -> int:
+    with log(key="value"):
+        return x + 1
+
+
+def func_test_log_exit_variable(x: int, /) -> int:
+    with log() as log_cap:
+        return log_cap(x + 1)
+
+
 def func_test_log_error(x: int, /) -> int | None:
     with log():
         if x % 2 == 0:
@@ -45,26 +60,6 @@ def func_test_log_error_expected(x: int, /) -> int | None:
             return x + 1
         msg = f"Got an odd number: {x}"
         raise ValueError(msg)
-
-
-def func_test_log_context_outer(x: int, /) -> int:
-    with log(context={"context_key": "context_value"}):
-        return func_test_log_context_inner(x + 1)
-
-
-def func_test_log_context_inner(x: int, /) -> int:
-    with log(key="value"):
-        return x + 1
-
-
-def func_test_log_exit_variable(x: int, /) -> int:
-    with log(exit_level=LogLevel.DEBUG) as log_cap:
-        return log_cap(x + 1)
-
-
-def func_test_log_exit_variable_disable(x: int, /) -> int:
-    with log(disable=True, exit_level=LogLevel.DEBUG) as log_cap:
-        return log_cap(x + 1)
 
 
 # tenacity
