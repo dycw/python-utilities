@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import datetime as dt
 from enum import Enum, StrEnum, auto
-from typing import TYPE_CHECKING, Any
+from functools import cache, lru_cache, wraps
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from polars import int_range
 from pytest import mark, param
@@ -13,6 +14,9 @@ from utilities.zoneinfo import UTC, HongKong
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+
+
+_T = TypeVar("_T")
 
 
 class TestCustomPrint:
@@ -49,6 +53,15 @@ class TestCustomRepr:
         result = custom_repr(mapping)
         assert result == expected
 
+    def test_cache(self) -> None:
+        @cache
+        def cache_func(x: int, /) -> int:
+            return x
+
+        result = custom_repr(cache_func)
+        expected = "cache_func"
+        assert result == expected
+
     def test_class(self) -> None:
         class Truth(Enum): ...
 
@@ -82,6 +95,15 @@ class TestCustomRepr:
         expected = "2000-01-01T00:00:00+00:00[UTC]"
         assert result == expected
 
+    def test_decorated(self) -> None:
+        @wraps(identity)
+        def wrapped(x: _T, /) -> _T:
+            return identity(x)
+
+        result = custom_repr(wrapped)
+        expected = "identity"
+        assert result == expected
+
     def test_enum_generic(self) -> None:
         class Truth(Enum):
             true = auto()
@@ -103,6 +125,15 @@ class TestCustomRepr:
     def test_function(self) -> None:
         result = custom_repr(identity)
         expected = "identity"
+        assert result == expected
+
+    def test_lru_cache(self) -> None:
+        @lru_cache
+        def lru_cache_func(x: int, /) -> int:
+            return x
+
+        result = custom_repr(lru_cache_func)
+        expected = "lru_cache_func"
         assert result == expected
 
     def test_object(self) -> None:
