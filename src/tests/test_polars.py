@@ -43,7 +43,6 @@ from utilities.math import is_greater_than, is_less_than, is_positive
 from utilities.polars import (
     AppendDataClassError,
     CheckPolarsDataFrameError,
-    CheckZonedDTypeOrSeriesError,
     ColumnsToDictError,
     DatetimeHongKong,
     DatetimeTokyo,
@@ -62,6 +61,8 @@ from utilities.polars import (
     _check_polars_dataframe_schema_list,
     _check_polars_dataframe_schema_set,
     _check_polars_dataframe_schema_subset,
+    _GetZonedDTypeOrSeriesNotDatetimeError,
+    _GetZonedDTypeOrSeriesNotZonedError,
     _RollingParametersArgumentsError,
     _RollingParametersMinPeriodsError,
     _yield_struct_series_element_remove_nulls,
@@ -70,7 +71,6 @@ from utilities.polars import (
     append_dataclass,
     ceil_datetime,
     check_polars_dataframe,
-    check_zoned_dtype_or_series,
     collect_series,
     columns_to_dict,
     convert_time_zone,
@@ -78,6 +78,7 @@ from utilities.polars import (
     drop_null_struct_series,
     ensure_expr_or_series,
     floor_datetime,
+    get_zoned_dtype_or_series,
     is_not_null_struct_series,
     is_null_struct_series,
     join,
@@ -468,34 +469,6 @@ class TestCheckPolarsDataFrameSchemaSubset:
             _check_polars_dataframe_schema_subset(df, schema_inc)
 
 
-class TestCheckZonedDTypeOrSeries:
-    @given(time_zone=sampled_from([HongKong, UTC]))
-    @mark.parametrize("case", [param("dtype"), param("series")])
-    def test_main(
-        self, *, time_zone: ZoneInfo, case: Literal["dtype", "series"]
-    ) -> None:
-        dtype = zoned_datetime(time_zone=time_zone)
-        match case:
-            case "dtype":
-                dtype_or_series = dtype
-            case "series":
-                dtype_or_series = Series(dtype=dtype)
-        check_zoned_dtype_or_series(dtype_or_series)
-
-    def test_error_not_datetime(self) -> None:
-        with raises(
-            CheckZonedDTypeOrSeriesError,
-            match="Data type must be Datetime; got Boolean",
-        ):
-            check_zoned_dtype_or_series(Boolean())
-
-    def test_error_not_zoned(self) -> None:
-        with raises(
-            CheckZonedDTypeOrSeriesError, match="Data type must be zoned; got .*"
-        ):
-            check_zoned_dtype_or_series(Datetime())
-
-
 class TestCollectSeries:
     def test_main(self) -> None:
         expr = int_range(end=10)
@@ -768,6 +741,35 @@ class TestFloorDatetime:
         data = datetime_range(self.start, self.end, interval="10s", eager=True)
         result = floor_datetime(data, "1m")
         assert_series_equal(result, self.expected, check_names=False)
+
+
+class TestGetZonedDTypeOrSeries:
+    @given(time_zone=sampled_from([HongKong, UTC]))
+    @mark.parametrize("case", [param("dtype"), param("series")])
+    def test_main(
+        self, *, time_zone: ZoneInfo, case: Literal["dtype", "series"]
+    ) -> None:
+        dtype = zoned_datetime(time_zone=time_zone)
+        match case:
+            case "dtype":
+                dtype_or_series = dtype
+            case "series":
+                dtype_or_series = Series(dtype=dtype)
+        result = get_zoned_dtype_or_series(dtype_or_series)
+        assert result is time_zone
+
+    def test_error_not_datetime(self) -> None:
+        with raises(
+            _GetZonedDTypeOrSeriesNotDatetimeError,
+            match="Data type must be Datetime; got Boolean",
+        ):
+            _ = get_zoned_dtype_or_series(Boolean())
+
+    def test_error_not_zoned(self) -> None:
+        with raises(
+            _GetZonedDTypeOrSeriesNotZonedError, match="Data type must be zoned; got .*"
+        ):
+            _ = get_zoned_dtype_or_series(Datetime())
 
 
 class TestIsNullAndIsNotNullStructSeries:
