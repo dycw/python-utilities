@@ -552,33 +552,35 @@ def floor_datetime(column: IntoExprColumn, every: Expr | str, /) -> Expr | Serie
     return DataFrame().with_columns(floor.alias(column.name))[column.name]
 
 
-def get_zoned_dtype_or_series(dtype_or_series: DataType | Series, /) -> ZoneInfo:
+def get_data_type_or_series_time_zone(
+    dtype_or_series: DataType | Series, /
+) -> ZoneInfo:
     """Get the time zone of a dtype/series."""
     if isinstance(dtype_or_series, DataType):
         dtype = dtype_or_series
     else:
         dtype = dtype_or_series.dtype
     if not isinstance(dtype, Datetime):
-        raise _GetZonedDTypeOrSeriesNotDatetimeError(dtype=dtype)
+        raise _GetDataTypeOrSeriesTimeZoneNotDatetimeError(dtype=dtype)
     if dtype.time_zone is None:
-        raise _GetZonedDTypeOrSeriesNotZonedError(dtype=dtype)
+        raise _GetDataTypeOrSeriesTimeZoneNotZonedError(dtype=dtype)
     return ZoneInfo(dtype.time_zone)
 
 
 @dataclass(kw_only=True, slots=True)
-class GetZonedDTypeOrSeriesError(Exception):
+class GetDataTypeOrSeriesTimeZoneError(Exception):
     dtype: DataType
 
 
 @dataclass(kw_only=True, slots=True)
-class _GetZonedDTypeOrSeriesNotDatetimeError(GetZonedDTypeOrSeriesError):
+class _GetDataTypeOrSeriesTimeZoneNotDatetimeError(GetDataTypeOrSeriesTimeZoneError):
     @override
     def __str__(self) -> str:
         return f"Data type must be Datetime; got {self.dtype}"
 
 
 @dataclass(kw_only=True, slots=True)
-class _GetZonedDTypeOrSeriesNotZonedError(GetZonedDTypeOrSeriesError):
+class _GetDataTypeOrSeriesTimeZoneNotZonedError(GetDataTypeOrSeriesTimeZoneError):
     @override
     def __str__(self) -> str:
         return f"Data type must be zoned; got {self.dtype}"
@@ -1125,7 +1127,7 @@ __all__ = [
     "DatetimeUSEastern",
     "DatetimeUTC",
     "DropNullStructSeriesError",
-    "GetZonedDTypeOrSeriesError",
+    "GetDataTypeOrSeriesTimeZoneError",
     "IsNullStructSeriesError",
     "RollingParametersError",
     "RollingParametersExponential",
@@ -1143,7 +1145,7 @@ __all__ = [
     "drop_null_struct_series",
     "ensure_expr_or_series",
     "floor_datetime",
-    "get_zoned_dtype_or_series",
+    "get_data_type_or_series_time_zone",
     "is_not_null_struct_series",
     "is_null_struct_series",
     "join",

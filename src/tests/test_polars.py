@@ -61,8 +61,8 @@ from utilities.polars import (
     _check_polars_dataframe_schema_list,
     _check_polars_dataframe_schema_set,
     _check_polars_dataframe_schema_subset,
-    _GetZonedDTypeOrSeriesNotDatetimeError,
-    _GetZonedDTypeOrSeriesNotZonedError,
+    _GetDataTypeOrSeriesTimeZoneNotDatetimeError,
+    _GetDataTypeOrSeriesTimeZoneNotZonedError,
     _RollingParametersArgumentsError,
     _RollingParametersMinPeriodsError,
     _yield_struct_series_element_remove_nulls,
@@ -78,7 +78,7 @@ from utilities.polars import (
     drop_null_struct_series,
     ensure_expr_or_series,
     floor_datetime,
-    get_zoned_dtype_or_series,
+    get_data_type_or_series_time_zone,
     is_not_null_struct_series,
     is_null_struct_series,
     join,
@@ -743,7 +743,7 @@ class TestFloorDatetime:
         assert_series_equal(result, self.expected, check_names=False)
 
 
-class TestGetZonedDTypeOrSeries:
+class TestGetDataTypeOrSeriesTimeZone:
     @given(time_zone=sampled_from([HongKong, UTC]))
     @mark.parametrize("case", [param("dtype"), param("series")])
     def test_main(
@@ -755,21 +755,22 @@ class TestGetZonedDTypeOrSeries:
                 dtype_or_series = dtype
             case "series":
                 dtype_or_series = Series(dtype=dtype)
-        result = get_zoned_dtype_or_series(dtype_or_series)
+        result = get_data_type_or_series_time_zone(dtype_or_series)
         assert result is time_zone
 
     def test_error_not_datetime(self) -> None:
         with raises(
-            _GetZonedDTypeOrSeriesNotDatetimeError,
+            _GetDataTypeOrSeriesTimeZoneNotDatetimeError,
             match="Data type must be Datetime; got Boolean",
         ):
-            _ = get_zoned_dtype_or_series(Boolean())
+            _ = get_data_type_or_series_time_zone(Boolean())
 
     def test_error_not_zoned(self) -> None:
         with raises(
-            _GetZonedDTypeOrSeriesNotZonedError, match="Data type must be zoned; got .*"
+            _GetDataTypeOrSeriesTimeZoneNotZonedError,
+            match="Data type must be zoned; got .*",
         ):
-            _ = get_zoned_dtype_or_series(Datetime())
+            _ = get_data_type_or_series_time_zone(Datetime())
 
 
 class TestIsNullAndIsNotNullStructSeries:
