@@ -43,7 +43,7 @@ backports-tarfile==1.2.0
     # via jaraco-context
 blinker==1.8.2
     # via streamlit
-bottleneck==1.4.1
+bottleneck==1.4.2
     # via dycw-utilities (pyproject.toml)
 bounded-pool-executor==0.0.3
     # via pqdm
@@ -186,7 +186,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.9.3
+narwhals==1.9.4
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -272,7 +272,7 @@ protobuf==5.28.2
     # via
     #   streamlit
     #   vegafusion
-psutil==6.0.0
+psutil==6.1.0
     # via
     #   memory-profiler
     #   vegafusion
@@ -429,13 +429,13 @@ urllib3==2.2.3
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.4.22
+uv==0.4.24
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
 vegafusion-python-embed==1.6.9
     # via dycw-utilities (pyproject.toml)
-virtualenv==20.26.6
+virtualenv==20.27.0
     # via
     #   hatch
     #   nox

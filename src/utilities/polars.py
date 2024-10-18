@@ -23,6 +23,7 @@ from typing import (
     get_type_hints,
     overload,
 )
+from zoneinfo import ZoneInfo
 
 from polars import (
     Boolean,
@@ -94,7 +95,6 @@ from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
     from collections.abc import Set as AbstractSet
-    from zoneinfo import ZoneInfo
 
 
 _T = TypeVar("_T")
@@ -422,37 +422,6 @@ class _CheckPolarsDataFrameWidthError(CheckPolarsDataFrameError):
         )
 
 
-def check_zoned_dtype_or_series(dtype_or_series: DataType | Series, /) -> None:
-    """Check if a dtype/series is a zoned datetime."""
-    if isinstance(dtype_or_series, DataType):
-        dtype = dtype_or_series
-    else:
-        dtype = dtype_or_series.dtype
-    if not isinstance(dtype, Datetime):
-        raise _CheckZonedDTypeOrSeriesNotDatetimeError(dtype=dtype)
-    if dtype.time_zone is None:
-        raise _CheckZonedDTypeOrSeriesNotZonedError(dtype=dtype)
-
-
-@dataclass(kw_only=True, slots=True)
-class CheckZonedDTypeOrSeriesError(Exception):
-    dtype: DataType
-
-
-@dataclass(kw_only=True, slots=True)
-class _CheckZonedDTypeOrSeriesNotDatetimeError(CheckZonedDTypeOrSeriesError):
-    @override
-    def __str__(self) -> str:
-        return f"Data type must be Datetime; got {self.dtype}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _CheckZonedDTypeOrSeriesNotZonedError(CheckZonedDTypeOrSeriesError):
-    @override
-    def __str__(self) -> str:
-        return f"Data type must be zoned; got {self.dtype}"
-
-
 def collect_series(expr: Expr, /) -> Series:
     """Collect a column expression into a Series."""
     data = DataFrame().with_columns(expr)
@@ -581,6 +550,40 @@ def floor_datetime(column: IntoExprColumn, every: Expr | str, /) -> Expr | Serie
     if isinstance(column, Expr):
         return floor
     return DataFrame().with_columns(floor.alias(column.name))[column.name]
+
+
+def get_data_type_or_series_time_zone(
+    dtype_or_series: DataType | Series, /
+) -> ZoneInfo:
+    """Get the time zone of a dtype/series."""
+    if isinstance(dtype_or_series, DataType):
+        dtype = dtype_or_series
+    else:
+        dtype = dtype_or_series.dtype
+    if not isinstance(dtype, Datetime):
+        raise _GetDataTypeOrSeriesTimeZoneNotDatetimeError(dtype=dtype)
+    if dtype.time_zone is None:
+        raise _GetDataTypeOrSeriesTimeZoneNotZonedError(dtype=dtype)
+    return ZoneInfo(dtype.time_zone)
+
+
+@dataclass(kw_only=True, slots=True)
+class GetDataTypeOrSeriesTimeZoneError(Exception):
+    dtype: DataType
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetDataTypeOrSeriesTimeZoneNotDatetimeError(GetDataTypeOrSeriesTimeZoneError):
+    @override
+    def __str__(self) -> str:
+        return f"Data type must be Datetime; got {self.dtype}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetDataTypeOrSeriesTimeZoneNotZonedError(GetDataTypeOrSeriesTimeZoneError):
+    @override
+    def __str__(self) -> str:
+        return f"Data type must be zoned; got {self.dtype}"
 
 
 def is_not_null_struct_series(series: Series, /) -> Series:
@@ -1117,7 +1120,6 @@ def zoned_datetime(
 
 __all__ = [
     "CheckPolarsDataFrameError",
-    "CheckZonedDTypeOrSeriesError",
     "ColumnsToDictError",
     "DatetimeHongKong",
     "DatetimeTokyo",
@@ -1125,6 +1127,7 @@ __all__ = [
     "DatetimeUSEastern",
     "DatetimeUTC",
     "DropNullStructSeriesError",
+    "GetDataTypeOrSeriesTimeZoneError",
     "IsNullStructSeriesError",
     "RollingParametersError",
     "RollingParametersExponential",
@@ -1135,7 +1138,6 @@ __all__ = [
     "append_dataclass",
     "ceil_datetime",
     "check_polars_dataframe",
-    "check_zoned_dtype_or_series",
     "collect_series",
     "columns_to_dict",
     "convert_time_zone",
@@ -1143,6 +1145,7 @@ __all__ = [
     "drop_null_struct_series",
     "ensure_expr_or_series",
     "floor_datetime",
+    "get_data_type_or_series_time_zone",
     "is_not_null_struct_series",
     "is_null_struct_series",
     "join",
