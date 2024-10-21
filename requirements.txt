@@ -188,7 +188,7 @@ narwhals==1.10.0
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
-nox==2024.4.15
+nox==2024.10.9
     # via dycw-utilities (pyproject.toml)
 numba==0.60.0
     # via numbagg

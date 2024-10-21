@@ -39,7 +39,7 @@ dev = [
   "memory-profiler >= 0.61.0, < 0.62",
   "more-itertools >= 10.5.0, < 10.6",
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
-  "nox >= 2024.4.15, < 2024.5",
+  "nox >= 2024.10.9, < 2024.11",
   "numbagg >= 0.8.2, < 0.9",
   "numpy >= 2.0.2, < 2.1",  # if 2.1, llvmite: RuntimeError: Cannot install on Python version 3.11.9; only versions >=3.6,<3.10 are supported.
   "optuna >= 4.0.0, < 4.1",
