@@ -19,14 +19,14 @@ dev = [
   "aiohttp >= 3.10.10, < 3.11",  # for slack-sdk
   "aiosqlite >= 0.20.0, < 0.21",
   "altair >= 5.4.1, < 5.5",
-  "asyncpg >= 0.29.0, < 0.30",  # for sqlalchemy async
+  "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
   "astor >= 0.8.1, < 0.9",
   "atomicwrites >= 1.4.1, < 1.5",
   "atools >= 0.14.2, < 0.15",
   "bottleneck >= 1.4.2, < 1.5",
   "cachetools >= 5.5.0, < 5.6",
   "click >= 8.1.7, < 8.2",
-  "cryptography >= 43.0.1, < 43.1",
+  "cryptography >= 43.0.3, < 43.1",
   "cvxpy >= 1.5.3, < 1.6",
   "dacite >= 1.8.1, < 1.9",
   "eventkit >= 1.0.3, < 1.1",
@@ -44,7 +44,7 @@ dev = [
   "numpy >= 2.0.2, < 2.1",  # if 2.1, llvmite: RuntimeError: Cannot install on Python version 3.11.9; only versions >=3.6,<3.10 are supported.
   "optuna >= 4.0.0, < 4.1",
   "orjson >= 3.10.7, < 3.11",
-  "polars-lts-cpu >= 1.9.0, < 1.10",
+  "polars-lts-cpu >= 1.10.0, < 1.11",
   "pqdm >= 0.2.0, < 0.3",
   "psycopg2-binary >= 2.9.10, < 2.10",  # for sqlalchemy
   "pydantic >= 2.9.0, < 2.10",
@@ -98,7 +98,7 @@ zzz-test-altair = [
   "altair >= 5.4.1, < 5.5",
   "atomicwrites >= 1.4.1, < 1.5",
   "img2pdf >= 0.5.1, < 0.6",
-  "polars-lts-cpu >= 1.9.0, < 1.10",
+  "polars-lts-cpu >= 1.10.0, < 1.11",
   "vl-convert-python >= 1.6.1, < 1.7",
 ]
 zzz-test-astor = ["astor >= 0.8.1, < 0.9"]
@@ -114,7 +114,7 @@ zzz-test-click = [
   "sqlalchemy >= 2.0.36, < 2.1",
   "whenever >= 0.6.9, < 0.7",
 ]
-zzz-test-cryptography = ["cryptography >= 43.0.1, < 43.1"]
+zzz-test-cryptography = ["cryptography >= 43.0.3, < 43.1"]
 zzz-test-cvxpy = ["cvxpy >= 1.5.3, < 1.6"]
 zzz-test-dataclasses = []
 zzz-test-datetime = ["tzlocal >= 5.2, < 5.3"]
@@ -154,7 +154,7 @@ zzz-test-iterables = []
 zzz-test-jupyter = [
   "jupyterlab >= 4.2.0, < 4.3",
   "pandas >= 2.2.2, < 2.3",
-  "polars-lts-cpu >= 1.9.0, < 1.10",
+  "polars-lts-cpu >= 1.10.0, < 1.11",
 ]
 zzz-test-logging = []
 zzz-test-loguru = ["loguru >= 0.7.2, < 0.8"]
@@ -179,7 +179,7 @@ zzz-test-pickle = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-platform = []
 zzz-test-polars = [
   "dacite >= 1.8.1, < 1.9",
-  "polars-lts-cpu >= 1.9.0, < 1.10",
+  "polars-lts-cpu >= 1.10.0, < 1.11",
 ]
 zzz-test-pqdm = ["pqdm >= 0.2.0, < 0.3"]
 zzz-test-pydantic = [
@@ -198,10 +198,10 @@ zzz-test-python-dotenv = ["python-dotenv >= 1.0.1, < 1.1"]
 zzz-test-random = []
 zzz-test-re = []
 zzz-test-redis = [
-  "polars-lts-cpu >= 1.9.0, < 1.10",
+  "polars-lts-cpu >= 1.10.0, < 1.11",
   "redis >= 5.1.1, < 5.2",
 ]
-zzz-test-reprlib = ["polars-lts-cpu >= 1.9.0, < 1.10"]
+zzz-test-reprlib = ["polars-lts-cpu >= 1.10.0, < 1.11"]
 zzz-test-scipy = ["scipy >= 1.14.1, < 1.15"]
 zzz-test-scripts-pypi-server = [
   "click >= 8.1.7, < 8.2",
@@ -217,7 +217,7 @@ zzz-test-slack-sdk = [
 zzz-test-socket = []
 zzz-test-sqlalchemy = [
   "aiosqlite >= 0.20.0, < 0.21",
-  "asyncpg >= 0.29.0, < 0.30",  # for sqlalchemy async
+  "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "psycopg2-binary >= 2.9.10, < 2.10",
@@ -227,7 +227,7 @@ zzz-test-sqlalchemy = [
 zzz-test-sqlalchemy-polars = [
   "aiosqlite >= 0.20.0, < 0.21",
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
-  "polars-lts-cpu >= 1.9.0, < 1.10",
+  "polars-lts-cpu >= 1.10.0, < 1.11",
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.36, < 2.1",

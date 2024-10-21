@@ -17,7 +17,7 @@ charset-normalizer==3.4.0
     # via requests
 click==8.1.7
     # via streamlit
-coverage==7.6.3
+coverage==7.6.4
     # via pytest-cov
 gitdb==4.0.11
     # via gitpython
@@ -39,11 +39,11 @@ jsonschema-specifications==2024.10.1
     # via jsonschema
 markdown-it-py==3.0.0
     # via rich
-markupsafe==3.0.1
+markupsafe==3.0.2
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-narwhals==1.9.4
+narwhals==1.10.0
     # via altair
 numpy==2.1.2
     # via
