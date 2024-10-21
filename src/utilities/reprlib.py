@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import re
 from enum import Enum, StrEnum
 from functools import _lru_cache_wrapper, partial
+from inspect import signature
 from itertools import islice
 from re import sub
 from reprlib import (
@@ -25,7 +27,9 @@ from utilities.functions import get_class_name, get_func_name
 from utilities.zoneinfo import get_time_zone_name
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Callable, Mapping
+
+    from utilities.types import StrMapping
 
 
 _REPR = Repr()
@@ -241,4 +245,39 @@ def custom_print(
         rich.print(text)
 
 
-__all__ = ["custom_print", "custom_repr"]
+_FILTER_LOCALS_REGEX = re.compile(r"^_")
+
+
+def filter_locals(
+    mapping: StrMapping,
+    func: Callable[..., Any],
+    /,
+    *,
+    include_underscore: bool = False,
+    include_none: bool = False,
+) -> StrMapping:
+    """Filter the locals."""
+    params = set(signature(func).parameters)
+    mapping = {k: v for k, v in mapping.items() if k in params}
+    if include_underscore and include_none:
+        return mapping
+    if include_underscore and (not include_none):
+        return {
+            k: v
+            for k, v in mapping.items()
+            if _FILTER_LOCALS_REGEX.search(k) or (v is not None)
+        }
+    if (not include_underscore) and include_none:
+        return {
+            k: v
+            for k, v in mapping.items()
+            if (not _FILTER_LOCALS_REGEX.search(k)) or (v is None)
+        }
+    return {
+        k: v
+        for k, v in mapping.items()
+        if (not _FILTER_LOCALS_REGEX.search(k)) and (v is not None)
+    }
+
+
+__all__ = ["custom_print", "custom_repr", "filter_locals"]
