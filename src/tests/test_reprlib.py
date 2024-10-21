@@ -9,7 +9,7 @@ from polars import int_range
 from pytest import mark, param
 
 from utilities.functions import identity
-from utilities.reprlib import custom_print, custom_repr
+from utilities.reprlib import custom_print, custom_repr, filter_locals
 from utilities.zoneinfo import UTC, HongKong
 
 if TYPE_CHECKING:
@@ -166,4 +166,42 @@ class TestCustomRepr:
     def test_zone_info(self) -> None:
         result = custom_repr(HongKong)
         expected = "Asia/Hong_Kong"
+        assert result == expected
+
+
+class TestFilterLocals:
+    @mark.parametrize(
+        ("b", "include_underscore", "include_none", "expected"),
+        [
+            param(2, False, False, "a=1, b=2"),
+            param(2, False, True, "a=1, b=2, _d=None"),
+            param(2, True, False, "a=1, b=2, _c=3, _d=None"),
+            param(2, True, True, "a=1, b=2, _c=3, _d=None"),
+            param(None, False, False, "a=1"),
+            param(None, False, True, "a=1, b=None, _d=None"),
+            param(None, True, False, "a=1, _c=3, _d=None"),
+            param(None, True, True, "a=1, b=None, _c=3, _d=None"),
+        ],
+    )
+    def test_func(
+        self,
+        *,
+        b: int | None,
+        include_underscore: bool,
+        include_none: bool,
+        expected: str,
+    ) -> None:
+        def func(
+            *, a: int = 1, b: int | None = None, _c: int = 3, _d: int | None = None
+        ) -> str:
+            _ = (a, b, _c, _d)
+            mapping = filter_locals(
+                locals(),
+                func,
+                include_underscore=include_underscore,
+                include_none=include_none,
+            )
+            return ", ".join(f"{k}={v}" for k, v in mapping.items())
+
+        result = func(b=b)
         assert result == expected
