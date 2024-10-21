@@ -4,9 +4,9 @@ attrs==24.2.0
     # via hypothesis
 cffi==1.17.1
     # via cryptography
-coverage==7.6.3
+coverage==7.6.4
     # via pytest-cov
-cryptography==43.0.1
+cryptography==43.0.3
     # via dycw-utilities (pyproject.toml)
 hypothesis==6.115.3
     # via dycw-utilities (pyproject.toml)

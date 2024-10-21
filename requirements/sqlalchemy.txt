@@ -2,13 +2,11 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-sqlalchemy --prerelease=disallow --output-file=requirements/sqlalchemy.txt --python-version=3.11 pyproject.toml
 aiosqlite==0.20.0
     # via dycw-utilities (pyproject.toml)
-async-timeout==4.0.3
-    # via asyncpg
-asyncpg==0.29.0
+asyncpg==0.30.0
     # via dycw-utilities (pyproject.toml)
 attrs==24.2.0
     # via hypothesis
-coverage==7.6.3
+coverage==7.6.4
     # via pytest-cov
 greenlet==3.1.1
     # via dycw-utilities (pyproject.toml)
