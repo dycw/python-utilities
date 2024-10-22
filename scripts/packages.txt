@@ -42,6 +42,7 @@ polars
 pqdm
 pydantic
 pyinstrument
+pyrsistent
 pytest
 python-dotenv
 random
