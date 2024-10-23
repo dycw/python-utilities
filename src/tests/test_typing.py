@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, NotRequired, TypedDict
 
 from pytest import mark, param
 
 from utilities.typing import (
+    eval_typed_dict,
     get_args,
     is_dict_type,
     is_frozenset_type,
@@ -23,6 +24,36 @@ from utilities.typing import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+
+class TestEvalTypedDict:
+    def test_main(self) -> None:
+        class Example(TypedDict):
+            a: int
+            b: str
+            c: NotRequired[float]
+
+        result = eval_typed_dict(Example)
+        expected = {
+            "a": int,
+            "b": str,
+            "c": NotRequired[float],  # pyright: ignore[reportInvalidTypeForm]
+        }
+        assert result == expected
+
+    def test_nested(self) -> None:
+        class Outer(TypedDict):
+            a: int
+            b: str
+            inner: Inner
+
+        class Inner(TypedDict):
+            c: int
+            d: str
+
+        result = eval_typed_dict(Outer, globals_=globals(), locals_=locals())
+        expected = {"a": int, "b": str, "inner": {"c": int, "d": str}}
+        assert result == expected
 
 
 class TestGetArgs:
