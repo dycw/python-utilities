@@ -63,7 +63,7 @@ pillow==10.4.0
     # via streamlit
 pluggy==1.5.0
     # via pytest
-protobuf==5.28.2
+protobuf==5.28.3
     # via streamlit
 pyarrow==17.0.0
     # via streamlit
@@ -96,7 +96,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 requests==2.32.3
     # via streamlit
-rich==13.9.2
+rich==13.9.3
     # via streamlit
 rpds-py==0.20.0
     # via
@@ -127,3 +127,5 @@ tzdata==2024.2
     # via pandas
 urllib3==2.2.3
     # via requests
+watchdog==5.0.3
+    # via streamlit

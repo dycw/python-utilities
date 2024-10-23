@@ -77,7 +77,9 @@ coverage==7.6.4
 coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
 cryptography==43.0.3
-    # via dycw-utilities (pyproject.toml)
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   secretstorage
 cvxpy==1.5.3
     # via dycw-utilities (pyproject.toml)
 dacite==1.8.1
@@ -102,7 +104,7 @@ fpdf2==2.8.1
     # via dycw-utilities (pyproject.toml)
 frozendict==2.4.6
     # via atools
-frozenlist==1.4.1
+frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
@@ -111,7 +113,9 @@ gitdb==4.0.11
 gitpython==3.1.43
     # via streamlit
 greenlet==3.1.1
-    # via dycw-utilities (pyproject.toml)
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   sqlalchemy
 h11==0.14.0
     # via httpcore
 hatch==1.13.0
@@ -147,6 +151,10 @@ jaraco-context==6.0.1
     # via keyring
 jaraco-functools==4.1.0
     # via keyring
+jeepney==0.8.0
+    # via
+    #   keyring
+    #   secretstorage
 jinja2==3.1.4
     # via
     #   altair
@@ -215,7 +223,7 @@ numpy==2.0.2
     #   streamlit
 optuna==4.0.0
     # via dycw-utilities (pyproject.toml)
-orjson==3.10.9
+orjson==3.10.10
     # via dycw-utilities (pyproject.toml)
 osqp==0.6.7.post3
     # via cvxpy
@@ -266,7 +274,7 @@ pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
 propcache==0.2.0
     # via yarl
-protobuf==5.28.2
+protobuf==5.28.3
     # via
     #   streamlit
     #   vegafusion
@@ -362,6 +370,8 @@ scipy==1.14.1
     #   scs
 scs==3.2.7
     # via cvxpy
+secretstorage==3.3.3
+    # via keyring
 setuptools==75.2.0
     # via dycw-utilities (pyproject.toml)
 shellingham==1.5.4
@@ -441,6 +451,8 @@ virtualenv==20.27.0
     #   nox
 vl-convert-python==1.7.0
     # via dycw-utilities (pyproject.toml)
+watchdog==5.0.3
+    # via streamlit
 whenever==0.6.9
     # via dycw-utilities (pyproject.toml)
 win32-setctime==1.1.0
