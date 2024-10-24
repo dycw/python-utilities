@@ -2,8 +2,23 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from types import NoneType, UnionType
-from typing import Any, Literal, NamedTuple, Protocol, TypeGuard, TypeVar, get_origin
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    NamedTuple,
+    Protocol,
+    TypeGuard,
+    TypeVar,
+    _eval_type,  # pyright: ignore[reportAttributeAccessIssue]
+    _TypedDictMeta,  # pyright: ignore[reportAttributeAccessIssue]
+    get_origin,
+)
 from typing import get_args as _get_args
+
+if TYPE_CHECKING:
+    from utilities.types import StrMapping
+
 
 try:  # skipif-version-ge-312
     from typing import TypeAliasType  # pyright: ignore[reportAttributeAccessIssue]
@@ -23,6 +38,34 @@ class SupportsDunderGT(Protocol[_T_contra]):
 
 
 SupportsRichComparison = SupportsDunderLT[Any] | SupportsDunderGT[Any]
+
+
+def eval_typed_dict(
+    cls: Any,
+    /,
+    *,
+    globals_: StrMapping | None = None,
+    locals_: StrMapping | None = None,
+) -> Mapping[str, Any]:
+    """Evaluate a typed dict."""
+    return {
+        k: _eval_typed_dict_one(v, globals_=globals_, locals_=locals_)
+        for k, v in cls.__annotations__.items()
+    }
+
+
+def _eval_typed_dict_one(
+    cls: Any,
+    /,
+    *,
+    globals_: StrMapping | None = None,
+    locals_: StrMapping | None = None,
+) -> Any:
+    """Evaluate the field of a typed dict."""
+    globals_use = globals() if globals_ is None else globals_
+    locals_use = locals() if locals_ is None else locals_
+    result = _eval_type(cls, globals_use, locals_use)
+    return eval_typed_dict(result) if isinstance(result, _TypedDictMeta) else result
 
 
 def get_args(obj: Any, /) -> tuple[Any, ...]:
@@ -114,6 +157,7 @@ __all__ = [
     "SupportsDunderGT",
     "SupportsDunderLT",
     "SupportsRichComparison",
+    "eval_typed_dict",
     "is_dict_type",
     "is_frozenset_type",
     "is_list_type",
