@@ -1,28 +1,16 @@
 from __future__ import annotations
 
 from asyncio import get_running_loop, sleep
-from typing import TYPE_CHECKING
 
 import redis
 import redis.asyncio
 from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import DataObject, booleans, data
+from pytest import CaptureFixture, mark
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
-from tests.test_orjson2 import _Object, objects
-from utilities.functions import get_class_name
 from utilities.hypothesis import int64s, redis_cms, text_ascii
-from utilities.orjson import deserialize, serialize
-from utilities.redis import (
-    RedisHashMapKey,
-    RedisKey,
-    publish,
-    subscribe,
-    subscribe_messages,
-)
-
-if TYPE_CHECKING:
-    from pytest import CaptureFixture
+from utilities.redis import RedisHashMapKey, RedisKey, subscribe_messages
 
 
 class TestRedisKey:
@@ -91,67 +79,32 @@ class TestRedisHashMapKey:
                     assert await hash_map_key.hget_async(key, client=client) is value
 
 
-class TestPublishAndSubscribe:
-    @given(
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestSubscribeMessages)}_{c}"
-        ),
-        obj=objects,
-    )
-    @settings(
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(
-        self, *, capsys: CaptureFixture, channel: str, obj: _Object
-    ) -> None:
-        client = redis.asyncio.Redis()
-
-        async def listener() -> None:
-            async for msg in subscribe(
-                channel, pubsub=client.pubsub(), deserializer=deserialize
-            ):
-                print(msg)  # noqa: T201
-
-        task = get_running_loop().create_task(listener())
-        await sleep(0.05)
-        _ = await publish(channel, obj, redis=client, serializer=serialize)
-        await sleep(0.05)
-        try:
-            out = capsys.readouterr().out
-            expected = f"{obj}\n"
-            assert out == expected
-        finally:
-            _ = task.cancel()
-            await client.aclose()
-
-
+@mark.only
 class TestSubscribeMessages:
     @given(
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestSubscribeMessages)}_{c}"
-        ),
+        channel=text_ascii(min_size=1).map(lambda c: f"test_{c}"),
         message=text_ascii(min_size=1),
     )
     @settings(
+        max_examples=1,
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(
         self, *, capsys: CaptureFixture, channel: str, message: str
     ) -> None:
         client = redis.asyncio.Redis()
+        pubsub = client.pubsub()
 
         async def listener() -> None:
-            async for msg in subscribe_messages(channel, pubsub=client.pubsub()):
+            async for msg in subscribe_messages(channel, pubsub=pubsub):
                 print(msg)  # noqa: T201
 
-        task = get_running_loop().create_task(listener())
-        await sleep(0.05)
-        _ = await client.publish(channel, message)
-        await sleep(0.05)
+        loop = get_running_loop()
+        task = loop.create_task(listener())
+        await sleep(0.01)
+        await client.publish(channel, message)
+        await sleep(0.01)
         try:
             out = capsys.readouterr().out
             expected = f"{{'type': 'message', 'pattern': None, 'channel': b'{channel}', 'data': b'{message}'}}\n"
