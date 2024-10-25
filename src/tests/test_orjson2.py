@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import booleans, dates, dictionaries, floats, lists
