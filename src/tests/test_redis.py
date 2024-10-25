@@ -115,9 +115,9 @@ class TestPublishAndSubscribe:
                 print(msg)  # noqa: T201
 
         task = get_running_loop().create_task(listener())
-        await sleep(0.01)
+        await sleep(0.05)
         _ = await publish(channel, obj, redis=client, serializer=serialize)
-        await sleep(0.01)
+        await sleep(0.05)
         try:
             out = capsys.readouterr().out
             expected = f"{obj}\n"
@@ -149,9 +149,9 @@ class TestSubscribeMessages:
                 print(msg)  # noqa: T201
 
         task = get_running_loop().create_task(listener())
-        await sleep(0.01)
+        await sleep(0.05)
         _ = await client.publish(channel, message)
-        await sleep(0.01)
+        await sleep(0.05)
         try:
             out = capsys.readouterr().out
             expected = f"{{'type': 'message', 'pattern': None, 'channel': b'{channel}', 'data': b'{message}'}}\n"
