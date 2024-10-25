@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypedDict, TypeVar, cas
 import redis
 import redis.asyncio
 import redis.exceptions
-from more_itertools import always_iterable
 
 from utilities.datetime import MILLISECOND, SECOND, duration_to_float
+from utilities.iterables import always_iterable
 from utilities.orjson import deserialize
 from utilities.text import ensure_bytes
 from utilities.types import Duration, ensure_int
@@ -377,7 +377,7 @@ async def subscribe(
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[_T]:
     """Subscribe to the data of a given channel(s)."""
-    channels = list(always_iterable(channels, base_type=str))  # skipif-ci-and-not-linux
+    channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
     async for message in subscribe_messages(  # skipif-ci-and-not-linux
         channels, pubsub=pubsub, timeout=timeout, sleep=sleep
     ):
@@ -393,7 +393,7 @@ async def subscribe_messages(
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[RedisMessageSubscribe]:
     """Subscribe to the messages of a given channel(s)."""
-    channels = list(always_iterable(channels, base_type=str))  # skipif-ci-and-not-linux
+    channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
     for channel in channels:  # skipif-ci-and-not-linux
         await pubsub.subscribe(channel)
     channels_bytes = [c.encode() for c in channels]  # skipif-ci-and-not-linux
