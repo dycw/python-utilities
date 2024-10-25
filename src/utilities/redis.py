@@ -1,28 +1,54 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable
+import asyncio
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypedDict, TypeVar, cast
 
 import redis
 import redis.asyncio
+import redis.exceptions
 
+from utilities.datetime import MILLISECOND, SECOND, duration_to_float
+from utilities.iterables import always_iterable
+from utilities.orjson import deserialize
 from utilities.text import ensure_bytes
-from utilities.types import ensure_int
+from utilities.types import Duration, ensure_int
 
 if TYPE_CHECKING:
     import datetime as dt
     from uuid import UUID
 
+    from redis.asyncio.client import PubSub
+    from redis.typing import ResponseT
 
-_HOST = "localhost"
-_PORT = 6379
+    from utilities.iterables import MaybeIterable
 
 
 _K = TypeVar("_K")
 _T = TypeVar("_T")
 _V = TypeVar("_V")
 _TRedis = TypeVar("_TRedis", redis.Redis, redis.asyncio.Redis)
+
+
+class RedisMessageSubscribe(TypedDict):
+    type: Literal["subscribe", "psubscribe", "message", "pmessage"]
+    pattern: str | None
+    channel: bytes
+    data: bytes
+
+
+class RedisMessageUnsubscribe(TypedDict):
+    type: Literal["unsubscribe", "punsubscribe"]
+    pattern: str | None
+    channel: bytes
+    data: int
+
+
+_HOST = "localhost"
+_PORT = 6379
+_SUBSCRIBE_TIMEOUT = SECOND
+_SUBSCRIBE_SLEEP = 10 * MILLISECOND
 
 
 @dataclass(repr=False, kw_only=True, slots=True)
@@ -58,7 +84,7 @@ class RedisHashMapKey(Generic[_K, _V]):
         **kwargs: Any,
     ) -> _V | None:
         """Get a value from a hashmap in `redis`."""
-        from utilities.orjson import deserialize, serialize  # skipif-ci-and-not-linux
+        from utilities.orjson import serialize  # skipif-ci-and-not-linux
 
         if client is None:  # skipif-ci-and-not-linux
             client_use = redis.Redis(
@@ -132,7 +158,7 @@ class RedisHashMapKey(Generic[_K, _V]):
         **kwargs: Any,
     ) -> _V | None:
         """Get a value from a hashmap in `redis` asynchronously."""
-        from utilities.orjson import deserialize, serialize  # skipif-ci-and-not-linux
+        from utilities.orjson import serialize  # skipif-ci-and-not-linux
 
         if client is None:  # skipif-ci-and-not-linux
             client_use = redis.asyncio.Redis(
@@ -215,8 +241,6 @@ class RedisKey(Generic[_T]):
         **kwargs: Any,
     ) -> _T | None:
         """Get a value from `redis`."""
-        from utilities.orjson import deserialize  # skipif-ci-and-not-linux
-
         if client is None:  # skipif-ci-and-not-linux
             client_use = redis.Redis(
                 host=host,
@@ -280,8 +304,6 @@ class RedisKey(Generic[_T]):
         **kwargs: Any,
     ) -> _T | None:
         """Get a value from `redis` asynchronously."""
-        from utilities.orjson import deserialize  # skipif-ci-and-not-linux
-
         if client is None:  # skipif-ci-and-not-linux
             client_use = redis.asyncio.Redis(
                 host=host,
@@ -332,4 +354,74 @@ class RedisKey(Generic[_T]):
         return await client_use.set(self.name, ser)  # skipif-ci-and-not-linux
 
 
-__all__ = ["RedisContainer", "RedisHashMapKey", "RedisKey"]
+async def publish(
+    channel: str,
+    data: _T,
+    /,
+    *,
+    redis: redis.asyncio.Redis,
+    serializer: Callable[[_T], bytes],
+) -> ResponseT:
+    """Publish an object to a channel."""
+    ser = serializer(data)  # skipif-ci-and-not-linux
+    return await redis.publish(channel, ser)  # skipif-ci-and-not-linux
+
+
+async def subscribe(
+    channels: MaybeIterable[str],
+    /,
+    *,
+    pubsub: PubSub,
+    deserializer: Callable[[bytes], _T],
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,  # noqa: ASYNC109
+    sleep: Duration = _SUBSCRIBE_SLEEP,
+) -> AsyncIterator[_T]:
+    """Subscribe to the data of a given channel(s)."""
+    channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
+    async for message in subscribe_messages(  # skipif-ci-and-not-linux
+        channels, pubsub=pubsub, timeout=timeout, sleep=sleep
+    ):
+        yield deserializer(message["data"])
+
+
+async def subscribe_messages(
+    channels: MaybeIterable[str],
+    /,
+    *,
+    pubsub: PubSub,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,  # noqa: ASYNC109
+    sleep: Duration = _SUBSCRIBE_SLEEP,
+) -> AsyncIterator[RedisMessageSubscribe]:
+    """Subscribe to the messages of a given channel(s)."""
+    channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
+    for channel in channels:  # skipif-ci-and-not-linux
+        await pubsub.subscribe(channel)
+    channels_bytes = [c.encode() for c in channels]  # skipif-ci-and-not-linux
+    timeout_use = (  # skipif-ci-and-not-linux
+        None if timeout is None else duration_to_float(timeout)
+    )
+    sleep_use = duration_to_float(sleep)  # skipif-ci-and-not-linux
+    while True:  # skipif-ci-and-not-linux
+        message = cast(
+            RedisMessageSubscribe | RedisMessageUnsubscribe | None,
+            await pubsub.get_message(timeout=timeout_use),
+        )
+        if (
+            (message is not None)
+            and (message["type"] in {"subscribe", "psubscribe", "message", "pmessage"})
+            and (message["channel"] in channels_bytes)
+            and isinstance(message["data"], bytes)
+        ):
+            yield cast(RedisMessageSubscribe, message)
+        else:
+            await asyncio.sleep(sleep_use)
+
+
+__all__ = [
+    "RedisContainer",
+    "RedisHashMapKey",
+    "RedisKey",
+    "publish",
+    "subscribe",
+    "subscribe_messages",
+]
