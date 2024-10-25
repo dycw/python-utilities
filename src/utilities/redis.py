@@ -373,7 +373,7 @@ async def publish(
 
 
 class ChannelSubscription(TypedDict, Generic[_T]):
-    channel: bytes
+    channel: str
     deserializer: Callable[[bytes], _T]
 
 
@@ -386,19 +386,20 @@ async def subscribe(
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[_T]:
     """Subscribe to the data of a given channel(s)."""
-    channels_use: list[ChannelSubscription[_T]] = list(
+    channel_subscriptions: list[ChannelSubscription[_T]] = list(
         always_iterable(channels, base_type=dict)
     )
-    deserializers = {c["channel"]: c["deserializer"] for c in channels_use}
+    channels_use = [c["channel"] for c in channel_subscriptions]
+    mapping = {c["channel"].encode(): c["deserializer"] for c in channel_subscriptions}
     async for message in subscribe_messages(
-        deserializers, pubsub=pubsub, timeout=timeout, sleep=sleep
+        channels_use, pubsub=pubsub, timeout=timeout, sleep=sleep
     ):
-        deserializer_use = deserializers[message["channel"]]
+        deserializer_use = mapping[message["channel"]]
         yield deserializer_use(message["data"])
 
 
 async def subscribe_messages(
-    channels: MaybeIterable[bytes],
+    channels: MaybeIterable[str],
     /,
     *,
     pubsub: PubSub,
@@ -406,7 +407,10 @@ async def subscribe_messages(
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[RedisMessageSubscribe]:
     """Subscribe to the messages of a given channel(s)."""
-    channels = list(always_iterable(channels, base_type=bytes))
+    channels = list(always_iterable(channels, base_type=str))
+    for channel in channels:
+        await pubsub.subscribe(channel)
+    channels_bytes = [c.encode() for c in channels]
     timeout_use = None if timeout is None else duration_to_float(timeout)
     sleep_use = duration_to_float(sleep)
     while True:
@@ -417,7 +421,7 @@ async def subscribe_messages(
         if (
             (message is not None)
             and (message["type"] in {"subscribe", "psubscribe", "message", "pmessage"})
-            and (message["channel"] in channels)
+            and (message["channel"] in channels_bytes)
             and isinstance(message["data"], bytes)
         ):
             yield cast(RedisMessageSubscribe, message)
@@ -425,4 +429,11 @@ async def subscribe_messages(
             await asyncio.sleep(sleep_use)
 
 
-__all__ = ["RedisContainer", "RedisHashMapKey", "RedisKey", "publish"]
+__all__ = [
+    "RedisContainer",
+    "RedisHashMapKey",
+    "RedisKey",
+    "publish",
+    "subscribe",
+    "subscribe_messages",
+]
