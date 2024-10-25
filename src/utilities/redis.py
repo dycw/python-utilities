@@ -9,7 +9,6 @@ import redis
 import redis.asyncio
 import redis.exceptions
 from more_itertools import always_iterable
-from redis.exceptions import ConnectionError as _RedisConnectionError
 
 from utilities.datetime import MILLISECOND, SECOND, duration_to_float
 from utilities.orjson import deserialize
@@ -362,14 +361,10 @@ async def publish(
     *,
     redis: redis.asyncio.Redis,
     serializer: Callable[[_T], bytes],
-) -> ResponseT | _RedisConnectionError:
+) -> ResponseT:
     """Publish an object to a channel."""
     ser = serializer(data)
-    try:
-        response = await redis.publish(channel, ser)
-    except (_RedisConnectionError, RuntimeError) as error:
-        return error
-    return response
+    return await redis.publish(channel, ser)
 
 
 async def subscribe(
