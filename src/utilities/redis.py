@@ -363,8 +363,8 @@ async def publish(
     serializer: Callable[[_T], bytes],
 ) -> ResponseT:
     """Publish an object to a channel."""
-    ser = serializer(data)
-    return await redis.publish(channel, ser)
+    ser = serializer(data)  # skipif-ci-and-not-linux
+    return await redis.publish(channel, ser)  # skipif-ci-and-not-linux
 
 
 async def subscribe(
@@ -377,8 +377,8 @@ async def subscribe(
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[_T]:
     """Subscribe to the data of a given channel(s)."""
-    channels = list(always_iterable(channels, base_type=str))
-    async for message in subscribe_messages(
+    channels = list(always_iterable(channels, base_type=str))  # skipif-ci-and-not-linux
+    async for message in subscribe_messages(  # skipif-ci-and-not-linux
         channels, pubsub=pubsub, timeout=timeout, sleep=sleep
     ):
         yield deserializer(message["data"])
@@ -393,13 +393,15 @@ async def subscribe_messages(
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[RedisMessageSubscribe]:
     """Subscribe to the messages of a given channel(s)."""
-    channels = list(always_iterable(channels, base_type=str))
-    for channel in channels:
+    channels = list(always_iterable(channels, base_type=str))  # skipif-ci-and-not-linux
+    for channel in channels:  # skipif-ci-and-not-linux
         await pubsub.subscribe(channel)
-    channels_bytes = [c.encode() for c in channels]
-    timeout_use = None if timeout is None else duration_to_float(timeout)
-    sleep_use = duration_to_float(sleep)
-    while True:
+    channels_bytes = [c.encode() for c in channels]  # skipif-ci-and-not-linux
+    timeout_use = (  # skipif-ci-and-not-linux
+        None if timeout is None else duration_to_float(timeout)
+    )
+    sleep_use = duration_to_float(sleep)  # skipif-ci-and-not-linux
+    while True:  # skipif-ci-and-not-linux
         message = cast(
             RedisMessageSubscribe | RedisMessageUnsubscribe | None,
             await pubsub.get_message(timeout=timeout_use),
