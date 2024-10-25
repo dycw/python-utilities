@@ -15,14 +15,11 @@ from utilities.whenever import parse_zoned_datetime, serialize_zoned_datetime
 
 def serialize2(obj: Any, /, *, fallback: bool = False) -> bytes:
     """Serialize an object."""
-    try:
-        return dumps(
-            obj,
-            default=partial(_serialize_default, fallback=fallback),
-            option=OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
-        )
-    except TypeError:
-        raise Serialize2Error(obj=obj) from None
+    return dumps(
+        obj,
+        default=partial(_serialize_default, fallback=fallback),
+        option=OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
+    )
 
 
 @dataclass(kw_only=True, slots=True)
@@ -32,21 +29,16 @@ class Serialize2Error(Exception):
     @override
     def __str__(self) -> str:
         cls = get_class_name(self.obj)
-        return f"Unable to serialize object of type {cls!r}"
+        return f"Unable to serialize object {self.obj} of type {cls!r}"
 
 
-def _serialize_default(obj: Any, /, *, fallback: bool = False) -> bytes:
+def _serialize_default(obj: Any, /, *, fallback: bool = False) -> str:
     if isinstance(obj, dt.datetime):
         ser = serialize_zoned_datetime(obj)
-        return f"[dt]{ser}".encode()
+        return f"[dt]{ser}"
     if fallback:
-        return str(obj).encode()
+        return str(obj)
     raise Serialize2Error(obj=obj) from None
-
-
-def _serialize_zoned_datetime(datetime: dt.datetime, /) -> bytes:
-    ser = serialize_zoned_datetime(datetime)
-    return f"[dt]{ser}".encode()
 
 
 def deserialize2(data: bytes, /) -> Any:
@@ -54,15 +46,17 @@ def deserialize2(data: bytes, /) -> Any:
     return _object_hook(loads(data))
 
 
-_DATETIME_PATTERN = re.compile(rb"^\[dt\](.+)$")
+_DATETIME_PATTERN = re.compile(r"^\[dt\](.+)$")
 
 
 def _object_hook(obj: Any, /) -> Any:
+    if isinstance(obj, str) and (match := _DATETIME_PATTERN.search(obj)):
+        return parse_zoned_datetime(match.group(1))
+    if isinstance(obj, dict):
+        return {k: _object_hook(v) for k, v in obj.items()}
     if isinstance(obj, list):
         return list(map(_object_hook, obj))
-    if isinstance(obj, bytes) and (match := _DATETIME_PATTERN.search(obj)):
-        return parse_zoned_datetime(match.group(1).decode())
     return obj
 
 
-__all__ = ["serialize2"]
+__all__ = ["deserialize2", "serialize2"]
