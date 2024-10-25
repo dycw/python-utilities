@@ -12,7 +12,7 @@ greenlet==3.1.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   sqlalchemy
-hypothesis==6.115.3
+hypothesis==6.115.5
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
