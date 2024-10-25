@@ -268,7 +268,7 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==1.10.0
+polars-lts-cpu==1.11.0
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
@@ -342,7 +342,7 @@ pyyaml==6.0.2
     # via optuna
 qdldl==0.1.7.post4
     # via osqp
-redis==5.1.1
+redis==5.2.0
     # via dycw-utilities (pyproject.toml)
 referencing==0.35.1
     # via
