@@ -356,8 +356,8 @@ class RedisKey(Generic[_T]):
 
 
 async def publish(
+    channel: str,
     data: _T,
-    channel: bytes,
     /,
     *,
     redis: redis.asyncio.Redis,
@@ -372,30 +372,21 @@ async def publish(
     return response
 
 
-class ChannelSubscription(TypedDict, Generic[_T]):
-    channel: str
-    deserializer: Callable[[bytes], _T]
-
-
 async def subscribe(
-    channels: MaybeIterable[ChannelSubscription[_T]],
+    channels: MaybeIterable[str],
     /,
     *,
     pubsub: PubSub,
+    deserializer: Callable[[bytes], _T],
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,  # noqa: ASYNC109
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[_T]:
     """Subscribe to the data of a given channel(s)."""
-    channel_subscriptions: list[ChannelSubscription[_T]] = list(
-        always_iterable(channels, base_type=dict)
-    )
-    channels_use = [c["channel"] for c in channel_subscriptions]
-    mapping = {c["channel"].encode(): c["deserializer"] for c in channel_subscriptions}
+    channels = list(always_iterable(channels, base_type=str))
     async for message in subscribe_messages(
-        channels_use, pubsub=pubsub, timeout=timeout, sleep=sleep
+        channels, pubsub=pubsub, timeout=timeout, sleep=sleep
     ):
-        deserializer_use = mapping[message["channel"]]
-        yield deserializer_use(message["data"])
+        yield deserializer(message["data"])
 
 
 async def subscribe_messages(
