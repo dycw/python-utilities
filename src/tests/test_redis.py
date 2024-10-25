@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from asyncio import get_running_loop, sleep
+from typing import TYPE_CHECKING
 
 import redis
 import redis.asyncio
 from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import DataObject, booleans, data
-from pytest import CaptureFixture, mark
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_orjson2 import _Object, objects
@@ -20,6 +20,9 @@ from utilities.redis import (
     subscribe,
     subscribe_messages,
 )
+
+if TYPE_CHECKING:
+    from pytest import CaptureFixture
 
 
 class TestRedisKey:
@@ -88,7 +91,6 @@ class TestRedisHashMapKey:
                     assert await hash_map_key.hget_async(key, client=client) is value
 
 
-@mark.only
 class TestPublishAndSubscribe:
     @given(
         channel=text_ascii(min_size=1).map(
@@ -125,7 +127,6 @@ class TestPublishAndSubscribe:
             await client.aclose()
 
 
-@mark.only
 class TestSubscribeMessages:
     @given(
         channel=text_ascii(min_size=1).map(
