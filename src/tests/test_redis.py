@@ -99,7 +99,6 @@ class TestPublishAndSubscribe:
         obj=objects,
     )
     @settings(
-        max_examples=1,
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -136,7 +135,6 @@ class TestSubscribeMessages:
         message=text_ascii(min_size=1),
     )
     @settings(
-        max_examples=1,
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
