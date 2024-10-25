@@ -103,6 +103,7 @@ class TestPublishAndSubscribe:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(
         self, *, capsys: CaptureFixture, channel: str, obj: _Object
     ) -> None:
@@ -139,6 +140,7 @@ class TestSubscribeMessages:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(
         self, *, capsys: CaptureFixture, channel: str, message: str
     ) -> None:
