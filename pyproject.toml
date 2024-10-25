@@ -33,7 +33,7 @@ dev = [
   "fpdf2 >= 2.8.1, < 2.9",
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
   "hatch >= 1.13.0, < 1.14",
-  "hypothesis >= 6.115.2, < 6.116",
+  "hypothesis >= 6.115.5, < 6.116",
   "img2pdf >= 0.5.1, < 0.6",
   "loguru >= 0.7.2, < 0.8",
   "memory-profiler >= 0.61.0, < 0.62",
@@ -44,7 +44,7 @@ dev = [
   "numpy >= 2.0.2, < 2.1",  # if 2.1, llvmite: RuntimeError: Cannot install on Python version 3.11.9; only versions >=3.6,<3.10 are supported.
   "optuna >= 4.0.0, < 4.1",
   "orjson >= 3.10.10, < 3.11",
-  "polars-lts-cpu >= 1.10.0, < 1.11",
+  "polars-lts-cpu >= 1.11.0, < 1.12",
   "pqdm >= 0.2.0, < 0.3",
   "psycopg2-binary >= 2.9.10, < 2.10",  # for sqlalchemy
   "pyrsistent >= 0.20.0, < 0.21",
@@ -54,7 +54,7 @@ dev = [
   "pypiserver[passlib] >= 2.2.0, < 2.3",
   "pytest >= 8.3.3, < 8.4",
   "python-dotenv >= 1.0.1, < 1.1",
-  "redis >= 5.1.1, < 5.2",
+  "redis >= 5.2.0, < 5.3",
   "rich >= 13.8.1, < 13.9",  # if 13.9, twine upload fails https://github.com/dycw/python-utilities/actions/runs/11125686648/job/30913966455
   "scipy >= 1.14.1, < 1.15",
   "slack-sdk >= 3.33.0, < 3.34",
@@ -89,7 +89,7 @@ scripts-pypi-server = [
   "typed-settings >= 24.5.0, < 24.6",
 ]
 test = [
-  "hypothesis >= 6.115.2, < 6.116",
+  "hypothesis >= 6.115.5, < 6.116",
   "pytest >= 8.3.3, < 8.4",
   "pytest-randomly >= 3.15.0, < 3.16",
   "pytest-rerunfailures >= 14.0, < 15",
@@ -99,7 +99,7 @@ zzz-test-altair = [
   "altair >= 5.4.1, < 5.5",
   "atomicwrites >= 1.4.1, < 1.5",
   "img2pdf >= 0.5.1, < 0.6",
-  "polars-lts-cpu >= 1.10.0, < 1.11",
+  "polars-lts-cpu >= 1.11.0, < 1.12",
   "vl-convert-python >= 1.6.1, < 1.7",
 ]
 zzz-test-astor = ["astor >= 0.8.1, < 0.9"]
@@ -120,7 +120,7 @@ zzz-test-cvxpy = ["cvxpy >= 1.5.3, < 1.6"]
 zzz-test-dataclasses = []
 zzz-test-datetime = ["tzlocal >= 5.2, < 5.3"]
 zzz-test-defaults = [
-  "hypothesis >= 6.115.2, < 6.116",
+  "hypothesis >= 6.115.5, < 6.116",
   "pytest >= 8.3.3, < 8.4",
   "pytest-asyncio >= 0.23.8, < 0.24",
   "pytest-cov >= 5.0.0, < 5.1",
@@ -146,7 +146,7 @@ zzz-test-hypothesis = [
   "aiosqlite >= 0.20.0, < 0.21",
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
   "numpy >= 2.0.2, < 2.1",
-  "redis >= 5.1.1, < 5.2",
+  "redis >= 5.2.0, < 5.3",
   "sqlalchemy >= 2.0.36, < 2.1",
   "whenever >= 0.6.9, < 0.7",
 ]
@@ -155,7 +155,7 @@ zzz-test-iterables = []
 zzz-test-jupyter = [
   "jupyterlab >= 4.2.0, < 4.3",
   "pandas >= 2.2.2, < 2.3",
-  "polars-lts-cpu >= 1.10.0, < 1.11",
+  "polars-lts-cpu >= 1.11.0, < 1.12",
 ]
 zzz-test-logging = []
 zzz-test-loguru = ["loguru >= 0.7.2, < 0.8"]
@@ -180,7 +180,7 @@ zzz-test-pickle = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-platform = []
 zzz-test-polars = [
   "dacite >= 1.8.1, < 1.9",
-  "polars-lts-cpu >= 1.10.0, < 1.11",
+  "polars-lts-cpu >= 1.11.0, < 1.12",
 ]
 zzz-test-pqdm = ["pqdm >= 0.2.0, < 0.3"]
 zzz-test-pydantic = [
@@ -200,10 +200,10 @@ zzz-test-python-dotenv = ["python-dotenv >= 1.0.1, < 1.1"]
 zzz-test-random = []
 zzz-test-re = []
 zzz-test-redis = [
-  "polars-lts-cpu >= 1.10.0, < 1.11",
-  "redis >= 5.1.1, < 5.2",
+  "polars-lts-cpu >= 1.11.0, < 1.12",
+  "redis >= 5.2.0, < 5.3",
 ]
-zzz-test-reprlib = ["polars-lts-cpu >= 1.10.0, < 1.11"]
+zzz-test-reprlib = ["polars-lts-cpu >= 1.11.0, < 1.12"]
 zzz-test-scipy = ["scipy >= 1.14.1, < 1.15"]
 zzz-test-scripts-pypi-server = [
   "click >= 8.1.7, < 8.2",
@@ -229,7 +229,7 @@ zzz-test-sqlalchemy = [
 zzz-test-sqlalchemy-polars = [
   "aiosqlite >= 0.20.0, < 0.21",
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
-  "polars-lts-cpu >= 1.10.0, < 1.11",
+  "polars-lts-cpu >= 1.11.0, < 1.12",
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.36, < 2.1",

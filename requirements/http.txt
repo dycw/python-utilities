@@ -6,7 +6,7 @@ attrs==24.2.0
     # via hypothesis
 coverage==7.6.4
     # via pytest-cov
-hypothesis==6.115.3
+hypothesis==6.115.5
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest

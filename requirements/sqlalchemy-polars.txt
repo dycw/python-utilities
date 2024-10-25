@@ -10,7 +10,7 @@ greenlet==3.1.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   sqlalchemy
-hypothesis==6.115.3
+hypothesis==6.115.5
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -22,7 +22,7 @@ packaging==24.1
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-polars-lts-cpu==1.10.0
+polars-lts-cpu==1.11.0
     # via dycw-utilities (pyproject.toml)
 pyhumps==3.8.0
     # via dycw-utilities (pyproject.toml)

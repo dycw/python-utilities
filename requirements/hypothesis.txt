@@ -12,7 +12,7 @@ greenlet==3.1.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   sqlalchemy
-hypothesis==6.115.3
+hypothesis==6.115.5
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -39,7 +39,7 @@ pytest-randomly==3.15.0
     # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==14.0
     # via dycw-utilities (pyproject.toml)
-redis==5.1.1
+redis==5.2.0
     # via dycw-utilities (pyproject.toml)
 sortedcontainers==2.4.0
     # via hypothesis
