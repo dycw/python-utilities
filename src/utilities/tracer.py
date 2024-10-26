@@ -77,9 +77,9 @@ def tracer(*, depth: int = 2, **kwargs: Any) -> Iterator[None]:
         raise
     finally:
         node_data["end_time"] = perf_counter()
-        _TRACER_CONTEXT.reset(token)
         if tree is None:
             del tracer_data["tree"]
+        _TRACER_CONTEXT.reset(token)
 
 
 def get_tracer_trees() -> list[Tree]:
