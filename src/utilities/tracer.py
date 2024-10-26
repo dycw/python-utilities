@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from contextvars import ContextVar
+from contextvars import ContextVar, Token
 from functools import partial, wraps
 from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    NoReturn,
     NotRequired,
     TypedDict,
     TypeVar,
@@ -34,6 +35,7 @@ if TYPE_CHECKING:
 
 
 _F = TypeVar("_F", bound=Callable[..., Any])
+_T = TypeVar("_T")
 
 
 class _TracerData(TypedDict):
@@ -85,75 +87,38 @@ def tracer(
         duration=sentinel,
         outcome=sentinel,
     )
-    tag = ":".join([base_data["module"], base_data["qualname"]])
 
     if iscoroutinefunction(func):
 
         @wraps(func)
         async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
-            node_data = base_data.copy()
-            start_time = node_data["start_time"] = get_now(time_zone=time_zone)
-            node_data["kwargs"] = kwargs
-            tracer_data: _TracerData = _TRACER_CONTEXT.get()
-            if (tree := tracer_data.get("tree")) is None:
-                tree_use = tracer_data["tree"] = Tree()
-                tracer_data["trees"].append(tree_use)
-            else:
-                tree_use = tree
-            parent_node = tracer_data.get("node")
-            child = tree_use.create_node(tag=tag, parent=parent_node, data=node_data)
-            token = _TRACER_CONTEXT.set(
-                _TracerData(trees=tracer_data["trees"], tree=tree_use, node=child)
+            node_data, tree, tracer_data, token = _initialize(
+                base_data, time_zone=time_zone, **kwargs
             )
             try:
                 result = await func(*args, **kwargs)
-            except Exception as error:
-                node_data["outcome"] = "failure"
-                node_data["error"] = type(error)
-                raise
+            except Exception as error:  # noqa: BLE001
+                _handle_error(node_data, error)
             else:
-                node_data["outcome"] = "success"
-                return result
+                return _handle_success(node_data, result)
             finally:
-                end_time = node_data["end_time"] = get_now(time_zone=time_zone)
-                node_data["duration"] = end_time - start_time
-                if tree is None:
-                    del tracer_data["tree"]
-                _TRACER_CONTEXT.reset(token)
+                _cleanup(node_data, tracer_data, token, time_zone=time_zone, tree=tree)
 
         return cast(Any, wrapped_async)
 
     @wraps(func)
     def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
-        node_data = base_data.copy()
-        start_time = node_data["start_time"] = get_now(time_zone=time_zone)
-        node_data["kwargs"] = kwargs
-        tracer_data: _TracerData = _TRACER_CONTEXT.get()
-        if (tree := tracer_data.get("tree")) is None:
-            tree_use = tracer_data["tree"] = Tree()
-            tracer_data["trees"].append(tree_use)
-        else:
-            tree_use = tree
-        parent_node = tracer_data.get("node")
-        child = tree_use.create_node(tag=tag, parent=parent_node, data=node_data)
-        token = _TRACER_CONTEXT.set(
-            _TracerData(trees=tracer_data["trees"], tree=tree_use, node=child)
+        node_data, tree, tracer_data, token = _initialize(
+            base_data, time_zone=time_zone, **kwargs
         )
         try:
             result = func(*args, **kwargs)
-        except Exception as error:
-            node_data["outcome"] = "failure"
-            node_data["error"] = type(error)
-            raise
+        except Exception as error:  # noqa: BLE001
+            _handle_error(node_data, error)
         else:
-            node_data["outcome"] = "success"
-            return result
+            return _handle_success(node_data, result)
         finally:
-            end_time = node_data["end_time"] = get_now(time_zone=time_zone)
-            node_data["duration"] = end_time - start_time
-            if tree is None:
-                del tracer_data["tree"]
-            _TRACER_CONTEXT.reset(token)
+            _cleanup(node_data, tracer_data, token, time_zone=time_zone, tree=tree)
 
     return cast(Any, wrapped_sync)
 
@@ -166,6 +131,54 @@ def get_tracer_trees() -> list[Tree]:
 def set_tracer_trees(trees: Iterable[Tree], /) -> None:
     """Set the tracer tree."""
     _ = _TRACER_CONTEXT.set(_TracerData(trees=list(trees)))
+
+
+def _initialize(
+    node_data: _NodeData, /, *, time_zone: ZoneInfo | str = UTC, **kwargs: Any
+) -> tuple[_NodeData, Tree | None, _TracerData, Token[_TracerData]]:
+    new_node_data = node_data.copy()
+    new_node_data["start_time"] = get_now(time_zone=time_zone)
+    new_node_data["kwargs"] = kwargs
+    tracer_data: _TracerData = _TRACER_CONTEXT.get()
+    if (tree := tracer_data.get("tree")) is None:
+        tree_use = tracer_data["tree"] = Tree()
+        tracer_data["trees"].append(tree_use)
+    else:
+        tree_use = tree
+    tag = ":".join([node_data["module"], node_data["qualname"]])
+    parent_node = tracer_data.get("node")
+    child = tree_use.create_node(tag=tag, parent=parent_node, data=new_node_data)
+    token = _TRACER_CONTEXT.set(
+        _TracerData(trees=tracer_data["trees"], tree=tree_use, node=child)
+    )
+    return new_node_data, tree, tracer_data, token
+
+
+def _handle_error(node_data: _NodeData, error: Exception, /) -> NoReturn:
+    node_data["outcome"] = "failure"
+    node_data["error"] = type(error)
+    raise error
+
+
+def _handle_success(node_data: _NodeData, result: _T, /) -> _T:
+    node_data["outcome"] = "success"
+    return result
+
+
+def _cleanup(
+    node_data: _NodeData,
+    tracer_data: _TracerData,
+    token: Token[_TracerData],
+    /,
+    *,
+    time_zone: ZoneInfo | str = UTC,
+    tree: Tree | None = None,
+) -> None:
+    end_time = node_data["end_time"] = get_now(time_zone=time_zone)
+    node_data["duration"] = end_time - node_data["start_time"]
+    if tree is None:
+        del tracer_data["tree"]
+    _TRACER_CONTEXT.reset(token)
 
 
 __all__ = ["get_tracer_trees", "set_tracer_trees", "tracer"]
