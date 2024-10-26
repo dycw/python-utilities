@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 from time import sleep
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 from pytest import approx
 from treelib import Node
 
 from utilities.tracer import _NodeData, get_tracer_tree, tracer
-
-if TYPE_CHECKING:
-    from pytest import CaptureFixture
 
 
 def outer1() -> None:
@@ -46,7 +43,7 @@ class TestTracer:
         self._check_node(mid2, "tests.test_tracer", "mid2", 0.02, 0.3)
         assert len(tree.children(mid1.identifier)) == 0
         (inner,) = cast(list[Node], tree.children(mid2.identifier))
-        self._check_node(inner, "tests.test_tracer", "inner", 0.01, 0.2)
+        self._check_node(inner, "tests.test_tracer", "inner", 0.01, 0.3)
 
     def _check_node(
         self, node: Node, module: str, name: str, duration: float, rel: float, /

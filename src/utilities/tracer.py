@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
 from treelib import Tree
 
 from utilities.sys import get_caller
-from utilities.timer import Timer
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
