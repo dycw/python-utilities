@@ -1,6 +1,45 @@
 from __future__ import annotations
 
-from utilities.sys import VERSION_MAJOR_MINOR
+from pytest import mark, param
+
+from utilities.sys import VERSION_MAJOR_MINOR, _GetCallerNameOutput, get_caller_name
+
+
+class TestGetCallerName:
+    @mark.parametrize(
+        ("depth", "expected"),
+        [param(1, "inner"), param(2, "outer"), param(3, "test_main")],
+        ids=str,
+    )
+    def test_main(self, *, depth: int, expected: str) -> None:
+        def outer() -> _GetCallerNameOutput:
+            return inner()
+
+        def inner() -> _GetCallerNameOutput:
+            return get_caller_name(depth=depth)
+
+        result = outer()
+        assert result["module"] == "tests.test_sys"
+        assert result["name"] == expected
+
+    @mark.parametrize(
+        ("depth", "expected"),
+        [param(1, "inner"), param(2, "mid"), param(3, "outer"), param(4, "test_depth")],
+        ids=str,
+    )
+    def test_depth(self, *, depth: int, expected: str) -> None:
+        def outer() -> _GetCallerNameOutput:
+            return mid()
+
+        def mid() -> _GetCallerNameOutput:
+            return inner()
+
+        def inner() -> _GetCallerNameOutput:
+            return get_caller_name(depth=depth)
+
+        result = outer()
+        assert result["module"] == "tests.test_sys"
+        assert result["name"] == expected
 
 
 class TestVersionMajorMinor:
