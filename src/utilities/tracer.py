@@ -1,57 +1,85 @@
 from __future__ import annotations
 
-import contextvars
-import time
 from contextlib import contextmanager
+from contextvars import ContextVar
+from time import perf_counter
+from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
 
-from treelib import Node, Tree
+from treelib import Tree
 
-# Context variable to store the current node id for nested calls
-current_node_id = contextvars.ContextVar("current_node_id", default=None)
+from utilities.sys import get_caller
+from utilities.timer import Timer
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
-class TimingNode:
-    def __init__(self, name: str) -> None:
-        self.name = name
-        self.start_time = time.perf_counter()
-        self.end_time = None
+    from treelib import Node
 
-    def stop(self) -> None:
-        self.end_time = time.perf_counter()
+    from utilities.types import StrMapping
 
-    @property
-    def duration(self):
-        return self.end_time - self.start_time if self.end_time else None
-
-    def __lt__(self, other):
-        return self.start_time < other.start_time
-
-    def __repr__(self) -> str:
-        duration = self.duration if self.end_time else 0.0
-        return f"{self.name}: {duration:.4f}s"
+# types
 
 
-# Initialize the tree
-timing_tree = Tree()
+class _TreeAndNode(TypedDict):
+    tree: Tree
+    node: NotRequired[Node]
+
+
+# context vars
+
+
+_TRACER_CONTEXT: ContextVar[_TreeAndNode] = ContextVar("_CURRENT_TRACER_NODE")
+
+
+class _NodeData(TypedDict):
+    module: str
+    line_num: int
+    name: str
+    kwargs: StrMapping
+    start_time: float
+    end_time: NotRequired[float]
 
 
 @contextmanager
-def timed(name: str):
-    # Initialize a timing node for this call
-    node = TimingNode(name)
-
-    # Determine the parent node and establish the node in the tree
-    parent_id = current_node_id.get()
-    node_id = f"{id(node)}-{name}"  # Unique id for the node
-    timing_tree.create_node(tag=node, identifier=node_id, parent=parent_id)
-
-    # Set this node as the current context
-    token = current_node_id.set(node_id)
-
+def tracer(*, depth: int = 2, **kwargs: Any) -> Iterator[None]:
+    """Context manager for tracing function calls."""
+    caller = get_caller(depth=depth + 1)
+    data = _NodeData(
+        module=caller["module"],
+        line_num=caller["line_num"],
+        name=caller["name"],
+        kwargs=kwargs,
+        start_time=perf_counter(),
+    )
     try:
-        yield node
+        curr: _TreeAndNode = _TRACER_CONTEXT.get()
+    except LookupError:
+        curr = _TreeAndNode(tree=Tree())
+        _ = _TRACER_CONTEXT.set(curr)
+    tree, parent = curr["tree"], curr.get("node")
+    child = tree.create_node(
+        tag=f"{data['module']}:{data['name']}", parent=parent, data=data
+    )
+    prev = _TRACER_CONTEXT.set(_TreeAndNode(tree=tree, node=child))
+    data["start_time"] = perf_counter()
+    try:
+        yield None
     finally:
-        node.stop()
-        current_node_id.reset(token)
+        data["end_time"] = perf_counter()
+        _TRACER_CONTEXT.reset(prev)
 
 
+def get_tracer_tree() -> Tree:
+    """Get the tracer tree."""
+    try:
+        return _TRACER_CONTEXT.get()["tree"]
+    except LookupError:
+        return Tree()
+
+
+def set_tracer_tree(tree: Tree, /) -> None:
+    """Set the tracer tree."""
+    _ = _TRACER_CONTEXT.set(_TreeAndNode(tree=tree))
+
+
+__all__ = ["get_tracer_tree", "set_tracer_tree", "tracer"]

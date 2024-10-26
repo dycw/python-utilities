@@ -1,63 +1,60 @@
 from __future__ import annotations
 
-import contextvars
-import time
-from contextlib import contextmanager
+from time import sleep
+from typing import TYPE_CHECKING, cast
 
-from treelib import Node, Tree
+from pytest import approx
+from treelib import Node
 
-# Context variable to store the current node id for nested calls
-current_node_id = contextvars.ContextVar("current_node_id", default=None)
+from utilities.tracer import _NodeData, get_tracer_tree, tracer
 
-
-class TimingNode:
-    def __init__(self, name: str) -> None:
-        self.name = name
-        self.start_time = time.perf_counter()
-        self.end_time = None
-
-    def stop(self) -> None:
-        self.end_time = time.perf_counter()
-
-    @property
-    def duration(self):
-        return self.end_time - self.start_time if self.end_time else None
-
-    def __lt__(self, other):
-        return self.start_time < other.start_time
-
-    def __repr__(self) -> str:
-        duration = self.duration if self.end_time else 0.0
-        return f"{self.name}: {duration:.4f}s"
+if TYPE_CHECKING:
+    from pytest import CaptureFixture
 
 
-# Initialize the tree
-timing_tree = Tree()
+def outer1() -> None:
+    with tracer():
+        sleep(0.01)  # 0.01
+        mid1()  # 0.01
+        mid2()  # 0.02
 
 
-def example_function() -> None:
-    with timed("example_function"):
-        inner_function()
-        another_inner_function()
-    print("Timing breakdown:")
-    timing_tree.show()
+def mid1() -> None:
+    with tracer():
+        sleep(0.01)  # 0.01
 
 
-def inner_function() -> None:
-    with timed("inner_function"):
-        time.sleep(0.2)
+def mid2() -> None:
+    with tracer():
+        sleep(0.01)  # 0.01
+        inner()  # 0.01
 
 
-def another_inner_function() -> None:
-    with timed("another_inner_function"):
-        nested_function()
-
-
-def nested_function() -> None:
-    with timed("nested_function"):
-        time.sleep(0.1)
+def inner() -> None:
+    with tracer():
+        sleep(0.01)  # 0.01
 
 
 class TestTracer:
     def test_main(self) -> None:
-        example_function()
+        _ = outer1()
+        tree = get_tracer_tree()
+        root: Node = tree[tree.root]
+        self._check_node(root, "tests.test_tracer", "outer1", 0.04, 0.3)
+        mid1, mid2 = cast(list[Node], tree.children(root.identifier))
+        self._check_node(mid1, "tests.test_tracer", "mid1", 0.01, 0.3)
+        self._check_node(mid2, "tests.test_tracer", "mid2", 0.02, 0.3)
+        assert len(tree.children(mid1.identifier)) == 0
+        (inner,) = cast(list[Node], tree.children(mid2.identifier))
+        self._check_node(inner, "tests.test_tracer", "inner", 0.01, 0.2)
+
+    def _check_node(
+        self, node: Node, module: str, name: str, duration: float, rel: float, /
+    ) -> None:
+        assert node.tag == f"{module}:{name}"
+        data = cast(_NodeData, node.data)
+        assert data["module"] == module
+        assert data["name"] == name
+        end_time = data.get("end_time")
+        assert end_time is not None
+        assert end_time - data["start_time"] == approx(duration, rel=rel)
