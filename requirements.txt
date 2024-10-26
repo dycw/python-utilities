@@ -155,7 +155,7 @@ jsonschema==4.23.0
     # via altair
 jsonschema-specifications==2024.10.1
     # via jsonschema
-keyring==25.4.1
+keyring==25.5.0
     # via hatch
 llvmlite==0.43.0
     # via numba

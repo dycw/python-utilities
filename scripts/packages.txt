@@ -64,6 +64,7 @@ tenacity
 text
 timer
 tqdm
+tracer
 typed-settings
 types
 typing
