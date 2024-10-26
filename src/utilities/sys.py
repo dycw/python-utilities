@@ -9,14 +9,14 @@ if TYPE_CHECKING:
 VERSION_MAJOR_MINOR = (version_info.major, version_info.minor)
 
 
-class _GetCallerNameOutput(TypedDict):
+class _GetCallerOutput(TypedDict):
     module: str
     line_num: int
     name: str
 
 
-def get_caller_name(*, depth: int = 2) -> _GetCallerNameOutput:
-    """Get the name of the calling function."""
+def get_caller(*, depth: int = 2) -> _GetCallerOutput:
+    """Get the calling function."""
     i = 0
     frame: FrameType | None = _getframe()  # pragma: no cover
     while (i < depth) and (frame.f_back is not None):
@@ -28,4 +28,4 @@ def get_caller_name(*, depth: int = 2) -> _GetCallerNameOutput:
     }
 
 
-__all__ = ["VERSION_MAJOR_MINOR", "get_caller_name"]
+__all__ = ["VERSION_MAJOR_MINOR", "get_caller"]
