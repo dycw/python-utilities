@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from contextvars import ContextVar
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, NotRequired, TypedDict
 
 from treelib import Tree
 
@@ -41,6 +41,8 @@ class _NodeData(TypedDict):
     kwargs: StrMapping
     start_time: float
     end_time: NotRequired[float]
+    outcome: Literal["success", "failure"]
+    error: NotRequired[type[Exception]]
 
 
 @contextmanager
@@ -54,6 +56,7 @@ def tracer(*, depth: int = 2, **kwargs: Any) -> Iterator[None]:
         name=caller["name"],
         kwargs=kwargs,
         start_time=perf_counter(),
+        outcome="success",
     )
     tracer_data: _TracerData = _TRACER_CONTEXT.get()
     if (tree := tracer_data.get("tree")) is None:
@@ -68,6 +71,10 @@ def tracer(*, depth: int = 2, **kwargs: Any) -> Iterator[None]:
     )
     try:
         yield None
+    except Exception as error:
+        node_data["outcome"] = "failure"
+        node_data["error"] = type(error)
+        raise
     finally:
         node_data["end_time"] = perf_counter()
         _TRACER_CONTEXT.reset(token)
