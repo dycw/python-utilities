@@ -10,7 +10,7 @@ from treelib import Tree
 from utilities.sys import get_caller
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterable, Iterator
 
     from treelib import Node
 
@@ -19,15 +19,16 @@ if TYPE_CHECKING:
 # types
 
 
-class _TreeAndNode(TypedDict):
-    tree: Tree
+class _TracerData(TypedDict):
+    trees: list[Tree]
+    tree: NotRequired[Tree]
     node: NotRequired[Node]
 
 
 # context vars
 
 
-_TRACER_CONTEXT: ContextVar[_TreeAndNode] = ContextVar("_CURRENT_TRACER_NODE")
+_TRACER_CONTEXT: ContextVar[_TracerData] = ContextVar("_CURRENT_TRACER_NODE")
 
 
 class _NodeData(TypedDict):
@@ -43,7 +44,8 @@ class _NodeData(TypedDict):
 def tracer(*, depth: int = 2, **kwargs: Any) -> Iterator[None]:
     """Context manager for tracing function calls."""
     caller = get_caller(depth=depth + 1)
-    data = _NodeData(
+    tag = ":".join([caller["module"], caller["name"]])
+    node_data = _NodeData(
         module=caller["module"],
         line_num=caller["line_num"],
         name=caller["name"],
@@ -51,34 +53,40 @@ def tracer(*, depth: int = 2, **kwargs: Any) -> Iterator[None]:
         start_time=perf_counter(),
     )
     try:
-        curr: _TreeAndNode = _TRACER_CONTEXT.get()
+        tracer_data: _TracerData = _TRACER_CONTEXT.get()
     except LookupError:
-        curr = _TreeAndNode(tree=Tree())
-        _ = _TRACER_CONTEXT.set(curr)
-    tree, parent = curr["tree"], curr.get("node")
-    child = tree.create_node(
-        tag=f"{data['module']}:{data['name']}", parent=parent, data=data
+        tracer_data = _TracerData(trees=[])
+        _ = _TRACER_CONTEXT.set(tracer_data)
+    if (tree := tracer_data.get("tree")) is None:
+        tree_use = tracer_data["tree"] = Tree()
+        tracer_data["trees"].append(tree_use)
+    else:
+        tree_use = tree
+    parent_node = tracer_data.get("node")
+    child = tree_use.create_node(tag=tag, parent=parent_node, data=node_data)
+    token = _TRACER_CONTEXT.set(
+        _TracerData(trees=tracer_data["trees"], tree=tree_use, node=child)
     )
-    prev = _TRACER_CONTEXT.set(_TreeAndNode(tree=tree, node=child))
-    data["start_time"] = perf_counter()
     try:
         yield None
     finally:
-        data["end_time"] = perf_counter()
-        _TRACER_CONTEXT.reset(prev)
+        node_data["end_time"] = perf_counter()
+        _TRACER_CONTEXT.reset(token)
+        if tree is None:
+            del tracer_data["tree"]
 
 
-def get_tracer_tree() -> Tree:
-    """Get the tracer tree."""
+def get_tracer_trees() -> list[Tree]:
+    """Get the tracer trees."""
     try:
-        return _TRACER_CONTEXT.get()["tree"]
+        return _TRACER_CONTEXT.get()["trees"]
     except LookupError:
-        return Tree()
+        return []
 
 
-def set_tracer_tree(tree: Tree, /) -> None:
+def set_tracer_trees(trees: Iterable[Tree], /) -> None:
     """Set the tracer tree."""
-    _ = _TRACER_CONTEXT.set(_TreeAndNode(tree=tree))
+    _ = _TRACER_CONTEXT.set(_TracerData(trees=list(trees)))
 
 
-__all__ = ["get_tracer_tree", "set_tracer_tree", "tracer"]
+__all__ = ["get_tracer_trees", "set_tracer_trees", "tracer"]
