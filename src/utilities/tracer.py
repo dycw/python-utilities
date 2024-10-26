@@ -28,7 +28,10 @@ class _TracerData(TypedDict):
 # context vars
 
 
-_TRACER_CONTEXT: ContextVar[_TracerData] = ContextVar("_CURRENT_TRACER_NODE")
+_DEFAULT: _TracerData = {"trees": []}
+_TRACER_CONTEXT: ContextVar[_TracerData] = ContextVar(
+    "_CURRENT_TRACER_NODE", default=_DEFAULT
+)
 
 
 class _NodeData(TypedDict):
@@ -52,11 +55,7 @@ def tracer(*, depth: int = 2, **kwargs: Any) -> Iterator[None]:
         kwargs=kwargs,
         start_time=perf_counter(),
     )
-    try:
-        tracer_data: _TracerData = _TRACER_CONTEXT.get()
-    except LookupError:
-        tracer_data = _TracerData(trees=[])
-        _ = _TRACER_CONTEXT.set(tracer_data)
+    tracer_data: _TracerData = _TRACER_CONTEXT.get()
     if (tree := tracer_data.get("tree")) is None:
         tree_use = tracer_data["tree"] = Tree()
         tracer_data["trees"].append(tree_use)
@@ -78,10 +77,7 @@ def tracer(*, depth: int = 2, **kwargs: Any) -> Iterator[None]:
 
 def get_tracer_trees() -> list[Tree]:
     """Get the tracer trees."""
-    try:
-        return _TRACER_CONTEXT.get()["trees"]
-    except LookupError:
-        return []
+    return _TRACER_CONTEXT.get()["trees"]
 
 
 def set_tracer_trees(trees: Iterable[Tree], /) -> None:
