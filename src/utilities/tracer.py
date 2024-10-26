@@ -1,22 +1,39 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
+from collections.abc import Callable
 from contextvars import ContextVar
-from time import perf_counter
-from typing import TYPE_CHECKING, Any, Literal, NotRequired, TypedDict
+from functools import partial, wraps
+from inspect import iscoroutinefunction
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    NotRequired,
+    TypedDict,
+    TypeVar,
+    cast,
+    overload,
+)
 
 from treelib import Tree
 
-from utilities.sys import get_caller
+from utilities.datetime import get_now
+from utilities.sentinel import sentinel
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    import datetime as dt
+    from collections.abc import Iterable
+    from zoneinfo import ZoneInfo
 
     from treelib import Node
 
     from utilities.types import StrMapping
 
 # types
+
+
+_F = TypeVar("_F", bound=Callable[..., Any])
 
 
 class _TracerData(TypedDict):
@@ -36,50 +53,109 @@ _TRACER_CONTEXT: ContextVar[_TracerData] = ContextVar(
 
 class _NodeData(TypedDict):
     module: str
-    line_num: int
-    name: str
+    qualname: str
     kwargs: StrMapping
-    start_time: float
-    end_time: NotRequired[float]
+    start_time: dt.datetime
+    end_time: dt.datetime
+    duration: dt.timedelta
     outcome: Literal["success", "failure"]
     error: NotRequired[type[Exception]]
 
 
-@contextmanager
-def tracer(*, depth: int = 2, **kwargs: Any) -> Iterator[None]:
+@overload
+def tracer(func: _F, /, *, time_zone: ZoneInfo | str = ...) -> _F: ...
+@overload
+def tracer(
+    func: None = None, /, *, time_zone: ZoneInfo | str = ...
+) -> Callable[[_F], _F]: ...
+def tracer(
+    func: _F | None = None, *, time_zone: ZoneInfo | str = UTC
+) -> _F | Callable[[_F], _F]:
     """Context manager for tracing function calls."""
-    caller = get_caller(depth=depth + 1)
-    tag = ":".join([caller["module"], caller["name"]])
-    node_data = _NodeData(
-        module=caller["module"],
-        line_num=caller["line_num"],
-        name=caller["name"],
-        kwargs=kwargs,
-        start_time=perf_counter(),
-        outcome="success",
+    if func is None:
+        result = partial(tracer, time_zone=time_zone)
+        return cast(Callable[[_F], _F], result)
+
+    base_data = _NodeData(
+        module=func.__module__,
+        qualname=func.__qualname__,
+        kwargs=sentinel,
+        start_time=sentinel,
+        end_time=sentinel,
+        duration=sentinel,
+        outcome=sentinel,
     )
-    tracer_data: _TracerData = _TRACER_CONTEXT.get()
-    if (tree := tracer_data.get("tree")) is None:
-        tree_use = tracer_data["tree"] = Tree()
-        tracer_data["trees"].append(tree_use)
-    else:
-        tree_use = tree
-    parent_node = tracer_data.get("node")
-    child = tree_use.create_node(tag=tag, parent=parent_node, data=node_data)
-    token = _TRACER_CONTEXT.set(
-        _TracerData(trees=tracer_data["trees"], tree=tree_use, node=child)
-    )
-    try:
-        yield None
-    except Exception as error:
-        node_data["outcome"] = "failure"
-        node_data["error"] = type(error)
-        raise
-    finally:
-        node_data["end_time"] = perf_counter()
-        if tree is None:
-            del tracer_data["tree"]
-        _TRACER_CONTEXT.reset(token)
+    tag = ":".join([base_data["module"], base_data["qualname"]])
+
+    if iscoroutinefunction(func):
+
+        @wraps(func)
+        async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
+            node_data = base_data.copy()
+            start_time = node_data["start_time"] = get_now(time_zone=time_zone)
+            node_data["kwargs"] = kwargs
+            tracer_data: _TracerData = _TRACER_CONTEXT.get()
+            if (tree := tracer_data.get("tree")) is None:
+                tree_use = tracer_data["tree"] = Tree()
+                tracer_data["trees"].append(tree_use)
+            else:
+                tree_use = tree
+            parent_node = tracer_data.get("node")
+            child = tree_use.create_node(tag=tag, parent=parent_node, data=node_data)
+            token = _TRACER_CONTEXT.set(
+                _TracerData(trees=tracer_data["trees"], tree=tree_use, node=child)
+            )
+            try:
+                result = await func(*args, **kwargs)
+            except Exception as error:
+                node_data["outcome"] = "failure"
+                node_data["error"] = type(error)
+                raise
+            else:
+                node_data["outcome"] = "success"
+                return result
+            finally:
+                end_time = node_data["end_time"] = get_now(time_zone=time_zone)
+                node_data["duration"] = end_time - start_time
+                if tree is None:
+                    del tracer_data["tree"]
+                _TRACER_CONTEXT.reset(token)
+
+        return cast(Any, wrapped_async)
+
+    @wraps(func)
+    def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
+        node_data = base_data.copy()
+        start_time = node_data["start_time"] = get_now(time_zone=time_zone)
+        node_data["kwargs"] = kwargs
+        tracer_data: _TracerData = _TRACER_CONTEXT.get()
+        if (tree := tracer_data.get("tree")) is None:
+            tree_use = tracer_data["tree"] = Tree()
+            tracer_data["trees"].append(tree_use)
+        else:
+            tree_use = tree
+        parent_node = tracer_data.get("node")
+        child = tree_use.create_node(tag=tag, parent=parent_node, data=node_data)
+        token = _TRACER_CONTEXT.set(
+            _TracerData(trees=tracer_data["trees"], tree=tree_use, node=child)
+        )
+        try:
+            result = func(*args, **kwargs)
+        except Exception as error:
+            node_data["outcome"] = "failure"
+            node_data["error"] = type(error)
+            raise
+        else:
+            node_data["outcome"] = "success"
+            return result
+        finally:
+            end_time = node_data["end_time"] = get_now(time_zone=time_zone)
+            node_data["duration"] = end_time - start_time
+            if tree is None:
+                del tracer_data["tree"]
+            _TRACER_CONTEXT.reset(token)
+
+    return cast(Any, wrapped_sync)
 
 
 def get_tracer_trees() -> list[Tree]:
