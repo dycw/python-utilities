@@ -186,11 +186,9 @@ class TestTracer:
     def test_post_error_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_error(_: _NodeData[Any], error: Exception, /) -> None:
+        def post_error(data: _NodeData[Any], /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(
-                    f"Raised a {get_class_name(data.error)} with {data.args=}/{data.kwargs=}"
-                )
+                _ = fh.write(f"Raised a {get_class_name(data.error)}")
 
         @tracer(post_error=post_error)
         def func(n: int, /) -> int:
@@ -206,11 +204,9 @@ class TestTracer:
     async def test_post_error_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_error(_: _NodeData[Any], error: Exception, /) -> None:
+        def post_error(data: _NodeData[Any], /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(
-                    f"Raised a {get_class_name(data.error)} with {data.args=}/{data.kwargs=}"
-                )
+                _ = fh.write(f"Raised a {get_class_name(data.error)}")
 
         @tracer(post_error=post_error)
         async def func(n: int, /) -> int:
@@ -227,9 +223,9 @@ class TestTracer:
     def test_post_result_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_result(_: NodeData[Any], result: int, /) -> None:
+        def post_result(data: NodeData[Any], /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Result was {result}")  # pyright: ignore[reportAssignmentType]
+                _ = fh.write(f"Result was {data.result=}")
 
         @tracer(post_result=post_result)
         def func(n: int, /) -> int:
@@ -241,9 +237,9 @@ class TestTracer:
     async def test_post_result_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_result(_: NodeData[Any], result: int, /) -> None:
+        def post_result(data: NodeData[Any], /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Result was {result}")  # pyright: ignore[reportAssignmentType]
+                _ = fh.write(f"Result was {data.result=}")
 
         @tracer(post_result=post_result)
         async def func(n: int, /) -> int:
@@ -320,7 +316,7 @@ class TestTracer:
 
     def _check_post_result(self, path: Path, /) -> None:
         with path.open() as fh:
-            assert fh.readlines() == ["Result was 2"]
+            assert fh.readlines() == ["Result was data.result=2"]
 
     def _check_add_result(self) -> None:
         tree = one(get_tracer_trees())

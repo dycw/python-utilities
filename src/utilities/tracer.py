@@ -5,7 +5,16 @@ from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
 from functools import partial, wraps
 from inspect import iscoroutinefunction
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Literal,
+    NoReturn,
+    TypeVar,
+    cast,
+    overload,
+)
 
 import treelib
 from treelib.exceptions import NodeIDAbsentError
@@ -90,8 +99,8 @@ def tracer(
     time_zone: ZoneInfo | str = ...,
     pre_call: Callable[..., None] | None = ...,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = ...,
-    post_error: Callable[[_NodeData[Any], Exception], None] | None = ...,
-    post_result: Callable[[Any], None] | None = ...,
+    post_error: Callable[[NodeData[Any]], None] | None = ...,
+    post_result: Callable[[NodeData[Any]], None] | None = ...,
     add_result: bool = ...,
 ) -> _F: ...
 @overload
@@ -103,8 +112,8 @@ def tracer(
     time_zone: ZoneInfo | str = ...,
     pre_call: Callable[..., None] | None = ...,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = ...,
-    post_error: Callable[[_NodeData[Any], Exception], None] | None = ...,
-    post_result: Callable[[Any], None] | None = ...,
+    post_error: Callable[[NodeData[Any]], None] | None = ...,
+    post_result: Callable[[NodeData[Any]], None] | None = ...,
     add_result: bool = ...,
 ) -> Callable[[_F], _F]: ...
 def tracer(
@@ -115,7 +124,7 @@ def tracer(
     time_zone: ZoneInfo | str = UTC,
     pre_call: Callable[..., None] | None = None,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
-    post_error: Callable[[_NodeData[Any], Exception], None] | None = None,
+    post_error: Callable[[NodeData[Any]], None] | None = None,
     post_result: Callable[[Any], None] | None = None,
     add_result: bool = False,
 ) -> _F | Callable[[_F], _F]:
@@ -144,11 +153,10 @@ def tracer(
                 pre_call(node_data, *args, **kwargs)
             try:
                 result = await func(*args, **kwargs)
-            except Exception as error:
-                _handle_error(node_data, error, suppress=suppress)
-                if post_error is not None:
-                    post_error(node_data, error)
-                raise
+            except Exception as error:  # noqa: BLE001
+                _handle_error(
+                    node_data, error, suppress=suppress, post_error=post_error
+                )
             else:
                 return _handle_success(
                     node_data, result, add_result=add_result, post_result=post_result
@@ -167,11 +175,8 @@ def tracer(
             pre_call(node_data, *args, **kwargs)
         try:
             result = func(*args, **kwargs)
-        except Exception as error:
-            if post_error is not None:
-                post_error(node_data, error)
-            _handle_error(node_data, error, suppress=suppress)
-            raise
+        except Exception as error:  # noqa: BLE001
+            _handle_error(node_data, error, suppress=suppress, post_error=post_error)
         else:
             return _handle_success(
                 node_data, result, add_result=add_result, post_result=post_result
@@ -226,18 +231,20 @@ def _initialize(
 
 def _handle_error(
     node_data: NodeData[_T],
-    args: tuple[Any, ...],
-    kwargs: StrMapping,
     error: Exception,
     /,
     *,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
-) -> None:
+    post_error: Callable[[NodeData[_T]], None] | None = None,
+) -> NoReturn:
     if (suppress is not None) and isinstance(error, suppress):
         node_data.outcome = "suppressed"
     else:
         node_data.outcome = "failure"
     node_data.error = error
+    if post_error is not None:
+        post_error(node_data)
+    raise error
 
 
 def _handle_success(
@@ -246,13 +253,13 @@ def _handle_success(
     /,
     *,
     add_result: bool = False,
-    post_result: Callable[[NodeData[_T], _T], None] | None = None,
+    post_result: Callable[[NodeData[_T]], None] | None = None,
 ) -> _T:
     node_data.outcome = "success"
-    if add_result:
+    if add_result or (post_result is not None):
         node_data.result = result
     if post_result is not None:
-        post_result(node_data, result)
+        post_result(node_data)
     return result
 
 
