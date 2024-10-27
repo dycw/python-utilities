@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 import treelib
 from typing_extensions import override
 
+from utilities.functions import ensure_not_none
 from utilities.text import ensure_str
 
 if TYPE_CHECKING:
@@ -17,12 +18,28 @@ class Tree(treelib.Tree, Generic[_T]):
     """Typed version of `Tree`."""
 
     @override
+    def __getitem__(self, key: str) -> Node[_T]:
+        return super().__getitem__(key)
+
+    @override
     def get_node(self, nid: str) -> Node[_T] | None:
         return super().get_node(nid)
 
 
 class Node(treelib.Node, Generic[_T]):
     """Typed version of `Node`."""
+
+    data: _T
+
+    @property
+    @override
+    def identifier(self) -> str:
+        return ensure_not_none(super().identifier)
+
+    @identifier.setter
+    @override
+    def identifier(self, value: str) -> None:
+        super().__setattr__("identifier", value)
 
     @property
     @override
@@ -62,12 +79,12 @@ def _filter_tree_add(
     identifier: Callable[[str], bool] | None = None,
     data: Callable[[_T], bool] | None = None,
 ) -> None:
-    node = old.get_node(node_id)
+    node = old[node_id]
     predicates: set[bool] = set()
     if tag is not None:
         predicates.add(tag(ensure_str(node.tag)))
     if identifier is not None:
-        predicates.add(identifier(ensure_str(node.identifier)))
+        predicates.add(identifier(node.identifier))
     if data is not None:
         predicates.add(data(node.data))
     if all(predicates):
