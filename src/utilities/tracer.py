@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeVar, cast, overloa
 from treelib import Tree
 
 from utilities.datetime import get_now
+from utilities.functions import get_class_name
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -57,16 +58,14 @@ class _NodeData:
     def desc(self) -> str:
         terms: list[Any] = []
         if (self.outcome == "failure") and (self.error is not None):
-            terms.append(self.error)
+            terms.append(get_class_name(self.error))
         terms.append(self.duration)
         joined = ", ".join(map(str, terms))
         return f"{self.tag} ({joined})"
 
     @property
     def duration(self) -> dt.timedelta | None:
-        if self.end_time is None:
-            return None
-        return self.end_time - self.start_time
+        return None if self.end_time is None else (self.end_time - self.start_time)
 
     @property
     def tag(self) -> str:
