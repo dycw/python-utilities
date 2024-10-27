@@ -95,8 +95,8 @@ def tracer(
     func: _F,
     /,
     *,
-    add_args: bool = ...,
     time_zone: ZoneInfo | str = ...,
+    add_args: bool = ...,
     pre_call: Callable[..., None] | None = ...,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = ...,
     post_error: Callable[[NodeData[Any]], None] | None = ...,
@@ -108,8 +108,8 @@ def tracer(
     func: None = None,
     /,
     *,
-    add_args: bool = ...,
     time_zone: ZoneInfo | str = ...,
+    add_args: bool = ...,
     pre_call: Callable[..., None] | None = ...,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = ...,
     post_error: Callable[[NodeData[Any]], None] | None = ...,
@@ -120,8 +120,8 @@ def tracer(
     func: _F | None = None,
     /,
     *,
-    add_args: bool = False,
     time_zone: ZoneInfo | str = UTC,
+    add_args: bool = False,
     pre_call: Callable[..., None] | None = None,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
     post_error: Callable[[NodeData[Any]], None] | None = None,
@@ -147,7 +147,7 @@ def tracer(
         @wraps(func)
         async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
             node_data, tree, tracer_data, token = _initialize(
-                func, args, kwargs, add_args=add_args, time_zone=time_zone
+                func, args, kwargs, time_zone=time_zone, add_args=add_args
             )
             if pre_call is not None:
                 pre_call(node_data, *args, **kwargs)
@@ -179,7 +179,7 @@ def tracer(
     @wraps(func)
     def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
         node_data, tree, tracer_data, token = _initialize(
-            func, args, kwargs, add_args=add_args, time_zone=time_zone
+            func, args, kwargs, time_zone=time_zone, add_args=add_args
         )
         if pre_call is not None:
             pre_call(node_data, *args, **kwargs)
@@ -225,8 +225,8 @@ def _initialize(
     kwargs: StrMapping,
     /,
     *,
-    add_args: bool = False,
     time_zone: ZoneInfo | str = UTC,
+    add_args: bool = False,
 ) -> tuple[NodeData[_T], _TreeNodeData | None, _TracerData[_T], Token[_TracerData[_T]]]:
     node_data: NodeData[_T] = NodeData(
         module=func.__module__,
