@@ -5,7 +5,7 @@ import time
 from re import search
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-from pytest import approx, fixture, raises
+from pytest import approx, fixture, mark, raises
 from treelib import Node
 
 from tests.conftest import FLAKY
@@ -16,6 +16,7 @@ from utilities.zoneinfo import HongKong
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from pathlib import Path
 
 
 @fixture(autouse=True)
@@ -139,6 +140,37 @@ class TestTracer:
         assert data.end_time is not None
         assert data.end_time.tzinfo is HongKong
 
+    def test_pre_call_sync(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("log")
+
+        def pre_call(n: int, /) -> None:
+            with path.open(mode="w") as fh:
+                _ = fh.write(f"Calling with {n=}")
+
+        @tracer(pre_call=pre_call)
+        def func(n: int, /) -> int:
+            return n
+
+        assert func(1) == 1
+        with path.open() as fh:
+            assert fh.readlines() == ["Calling with n=1"]
+
+    async def test_pre_call_async(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("log")
+
+        def pre_call(n: int, /) -> None:
+            with path.open(mode="w") as fh:
+                _ = fh.write(f"Calling with {n=}")
+
+        @tracer(pre_call=pre_call)
+        async def func(n: int, /) -> int:
+            await asyncio.sleep(0.01)
+            return n
+
+        assert await func(1) == 1
+        with path.open() as fh:
+            assert fh.readlines() == ["Calling with n=1"]
+
     def test_suppress(self) -> None:
         @tracer(suppress=ValueError)
         def func() -> None:
@@ -148,6 +180,72 @@ class TestTracer:
         with raises(ValueError, match="Always fails"):
             _ = func()
         self._check_error_node(func, outcome="suppressed")
+
+    @mark.only
+    def test_post_error_sync(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("log")
+
+        def post_error(error: Exception, /) -> None:
+            with path.open(mode="w") as fh:
+                _ = fh.write(f"Raised a {get_class_name(error)}")
+
+        @tracer(post_error=post_error)
+        def func() -> int:
+            msg = "Always fails"
+            raise ValueError(msg)
+
+        with raises(ValueError, match="Always fails"):
+            assert func()
+        with path.open() as fh:
+            assert fh.readlines() == ["Raised a ValueError"]
+
+    async def test_post_error_async(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("log")
+
+        def post_error(error: Exception, /) -> None:
+            with path.open(mode="w") as fh:
+                _ = fh.write(f"Raised a {get_class_name(error)}")
+
+        @tracer(post_error=post_error)
+        async def func() -> int:
+            msg = "Always fails"
+            raise ValueError(msg)
+
+        with raises(ValueError, match="Always fails"):
+            _ = await func()
+        with path.open() as fh:
+            assert fh.readlines() == ["Raised a ValueError"]
+
+    def test_post_result_sync(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("log")
+
+        def post_result(n: int, /) -> None:
+            with path.open(mode="w") as fh:
+                _ = fh.write(f"Result was {n=}")
+
+        @tracer(post_result=post_result)
+        def func(n: int, /) -> int:
+            return n + 1
+
+        assert func(1) == 2
+        with path.open() as fh:
+            assert fh.readlines() == ["Result was n=2"]
+
+    async def test_post_result_async(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("log")
+
+        def post_result(n: int, /) -> None:
+            with path.open(mode="w") as fh:
+                _ = fh.write(f"Result was {n=}")
+
+        @tracer(post_result=post_result)
+        async def func(n: int, /) -> int:
+            await asyncio.sleep(0.01)
+            return n
+
+        assert await func(1) == 2
+        with path.open() as fh:
+            assert fh.readlines() == ["Result was n=2"]
 
     def test_error_sync(self) -> None:
         @tracer
