@@ -147,9 +147,9 @@ class TestTracer:
     def test_pre_call_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def pre_call(n: int, /) -> None:
+        def pre_call(_: NodeData[Any], n: int, /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Calling with {n=}")
+                _ = fh.write(f"Calling with {n=}")  # pyright: ignore[reportAssignmentType]
 
         @tracer(pre_call=pre_call)
         def func(n: int, /) -> int:
@@ -161,9 +161,9 @@ class TestTracer:
     async def test_pre_call_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def pre_call(n: int, /) -> None:
+        def pre_call(_: NodeData[Any], n: int, /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Calling with {n=}")
+                _ = fh.write(f"Calling with {n=}")  # pyright: ignore[reportAssignmentType]
 
         @tracer(pre_call=pre_call)
         async def func(n: int, /) -> int:

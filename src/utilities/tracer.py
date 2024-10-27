@@ -150,7 +150,7 @@ def tracer(
                 func, args, kwargs, add_args=add_args, time_zone=time_zone
             )
             if pre_call is not None:
-                pre_call(*args, **kwargs)
+                pre_call(node_data, *args, **kwargs)
             try:
                 result = await func(*args, **kwargs)
             except Exception as error:  # noqa: BLE001
