@@ -1,23 +1,48 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Generic, TypeVar
 
-from treelib import Node, Tree
+import treelib
+from typing_extensions import override
 
 from utilities.text import ensure_str
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+_T = TypeVar("_T")
+
+
+class Tree(treelib.Tree, Generic[_T]):
+    """Typed version of `Tree`."""
+
+    @override
+    def get_node(self, nid: str) -> Node[_T] | None:
+        return super().get_node(nid)
+
+
+class Node(treelib.Node, Generic[_T]):
+    """Typed version of `Node`."""
+
+    @property
+    @override
+    def tag(self) -> str | None:
+        return super().tag
+
+    @tag.setter
+    @override
+    def tag(self, value: str | None) -> None:
+        super().__setattr__("tag", value)
+
 
 def filter_tree(
-    tree: Tree,
+    tree: Tree[_T],
     /,
     *,
     tag: Callable[[str], bool] | None = None,
     identifier: Callable[[str], bool] | None = None,
-    data: Callable[[Any], bool] | None = None,
-) -> Tree:
+    data: Callable[[_T], bool] | None = None,
+) -> Tree[_T]:
     """Filter a tree."""
     subtree = Tree()
     _filter_tree_add(
@@ -27,17 +52,17 @@ def filter_tree(
 
 
 def _filter_tree_add(
-    old: Tree,
-    new: Tree,
+    old: Tree[_T],
+    new: Tree[_T],
     node_id: str,
     /,
     *,
     parent_id: str | None = None,
     tag: Callable[[str], bool] | None = None,
     identifier: Callable[[str], bool] | None = None,
-    data: Callable[[Any], bool] | None = None,
+    data: Callable[[_T], bool] | None = None,
 ) -> None:
-    node = cast(Node, old.get_node(node_id))
+    node = old.get_node(node_id)
     predicates: set[bool] = set()
     if tag is not None:
         predicates.add(tag(ensure_str(node.tag)))
