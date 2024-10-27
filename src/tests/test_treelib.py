@@ -120,9 +120,8 @@ class TestTree:
         result = tree.get_node("bad")
         assert result is None
 
-    def test_show(self, *, tree: Tree[_TreeData], capsys: CaptureFixture) -> None:
-        print(str(tree))  # noqa: T201
-        out = capsys.readouterr().out.strip("\n")
+    def test_show(self, *, tree: Tree[_TreeData]) -> None:
+        out = tree.show(stdout=False).strip("\n")
         expected = strip_and_dedent("""
             Root
             ├── Child1
