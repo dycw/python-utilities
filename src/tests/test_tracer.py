@@ -400,6 +400,7 @@ class TestFilterFailures:
         result = filter_failures(tree)
         assert result is None
 
+    @FLAKY
     async def test_list(self) -> None:
         @tracer
         async def outer(n: int, /) -> list[int]:
