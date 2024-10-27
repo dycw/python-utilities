@@ -2,21 +2,23 @@ from __future__ import annotations
 
 import asyncio
 import time
+from asyncio import Task, TaskGroup
 from re import search
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 from pytest import approx, fixture, raises
-from treelib import Node
 
 from tests.conftest import FLAKY
 from utilities.functions import get_class_name
 from utilities.iterables import one
-from utilities.tracer import _NodeData, get_tracer_trees, set_tracer_trees, tracer
+from utilities.tracer import filter_failures, get_tracer_trees, set_tracer_trees, tracer
 from utilities.zoneinfo import HongKong
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
+
+    from utilities.treelib import Node
 
 
 @fixture(autouse=True)
@@ -30,8 +32,8 @@ class TestTracer:
         @tracer
         def outer(n: int, /) -> int:
             time.sleep(0.01)  # 0.01
-            n = mid1(n)  # 0.01
-            return mid2(n)  # 0.02
+            n = mid1(n + 1)  # 0.01
+            return mid2(n + 1)  # 0.02
 
         @tracer
         def mid1(n: int, /) -> int:
@@ -41,22 +43,22 @@ class TestTracer:
         @tracer
         def mid2(n: int, /) -> int:
             time.sleep(0.01)  # 0.01
-            return inner(n)  # e.01
+            return inner(n + 1)  # e.01
 
         @tracer
         def inner(n: int, /) -> int:
             time.sleep(0.01)  # 0.01
             return n + 1
 
-        assert outer(1) == 3
+        assert outer(1) == 6
         tree = one(get_tracer_trees())
         root: Node = tree[tree.root]
         self._check_node(root, outer, 0.04)
-        node_mid1, node_mid2 = cast(list[Node], tree.children(root.identifier))
+        node_mid1, node_mid2 = tree.children(root.identifier)
         self._check_node(node_mid1, mid1, 0.01)
         self._check_node(node_mid2, mid2, 0.02)
         assert len(tree.children(node_mid1.identifier)) == 0
-        (node_inner,) = cast(list[Node], tree.children(node_mid2.identifier))
+        (node_inner,) = tree.children(node_mid2.identifier)
         self._check_node(node_inner, inner, 0.01)
 
     @FLAKY
@@ -64,8 +66,8 @@ class TestTracer:
         @tracer
         async def outer(n: int, /) -> int:
             await asyncio.sleep(0.01)  # 0.01
-            n = await mid1(n)  # 0.01
-            return await mid2(n)  # 0.02
+            n = await mid1(n + 1)  # 0.01
+            return await mid2(n + 1)  # 0.02
 
         @tracer
         async def mid1(n: int, /) -> int:
@@ -75,22 +77,22 @@ class TestTracer:
         @tracer
         async def mid2(n: int, /) -> int:
             await asyncio.sleep(0.01)  # 0.01
-            return await inner(n)  # 0.01
+            return await inner(n + 1)  # 0.01
 
         @tracer
         async def inner(n: int, /) -> int:
             await asyncio.sleep(0.01)  # 0.01
             return n + 1
 
-        assert await outer(1) == 3
+        assert await outer(1) == 6
         tree = one(get_tracer_trees())
         root: Node = tree[tree.root]
         self._check_node(root, outer, 0.04)
-        node_mid1, node_mid2 = cast(list[Node], tree.children(root.identifier))
+        node_mid1, node_mid2 = tree.children(root.identifier)
         self._check_node(node_mid1, mid1, 0.01)
         self._check_node(node_mid2, mid2, 0.02)
         assert len(tree.children(node_mid1.identifier)) == 0
-        (node_inner,) = cast(list[Node], tree.children(node_mid2.identifier))
+        (node_inner,) = tree.children(node_mid2.identifier)
         self._check_node(node_inner, inner, 0.01)
 
     @FLAKY
@@ -131,8 +133,7 @@ class TestTracer:
 
         assert func(1) == 2
         tree = one(get_tracer_trees())
-        root: Node = tree[tree.root]
-        data = cast(_NodeData, root.data)
+        data = tree[tree.root].data
         assert data.start_time.tzinfo is HongKong
         assert data.end_time is not None
         assert data.end_time.tzinfo is HongKong
@@ -279,7 +280,7 @@ class TestTracer:
     ) -> None:
         tag = f"{func.__module__}:{func.__qualname__}"
         assert node.tag == tag
-        data = cast(_NodeData, node.data)
+        data = node.data
         assert data.module == func.__module__
         assert data.qualname == func.__qualname__
         assert data.duration is not None
@@ -288,8 +289,7 @@ class TestTracer:
 
     def _check_add_args(self) -> None:
         tree = one(get_tracer_trees())
-        root: Node = tree[tree.root]
-        data = cast(_NodeData, root.data)
+        data = tree[tree.root].data
         assert data.args == (1,)
         assert data.kwargs == {}
 
@@ -307,23 +307,107 @@ class TestTracer:
 
     def _check_add_result(self) -> None:
         tree = one(get_tracer_trees())
-        root: Node = tree[tree.root]
-        data = cast(_NodeData, root.data)
+        data = tree[tree.root].data
         assert data.result == 2
 
     def _check_error(
         self, func: Callable[..., Any], /, *, outcome: Literal["failure", "suppressed"]
     ) -> None:
         tree = one(get_tracer_trees())
-        root: Node = tree[tree.root]
-        data = cast(_NodeData, root.data)
+        data = tree[tree.root].data
         assert data.outcome == outcome
         tag = f"{func.__module__}:{func.__qualname__}"
         timedelta = r"\d:\d{2}:\d{2}(?:\.\d{6})?"
         match outcome:
             case "failure":
-                pattern = rf"{tag} \(ValueError, {timedelta}\)"
+                pattern = rf"^{tag} \(ValueError, {timedelta}\)$"
             case "suppressed":
-                pattern = rf"{tag} \({timedelta}\)"
+                pattern = rf"^{tag} \({timedelta}\)$"
         assert search(pattern, data.desc)
         assert data.error is ValueError
+
+
+class TestFilterFailures:
+    def test_sync(self) -> None:
+        @tracer
+        def outer(n: int, /) -> list[int]:
+            return list(map(inner, range(n, -n - 1, -1)))
+
+        @tracer
+        def inner(n: int, /) -> int:
+            if n >= 1:
+                return n + 1
+            msg = f"{n=} must be positive"
+            raise ValueError(msg)
+
+        with raises(ValueError, match="n=0 must be positive"):
+            _ = outer(3)
+        tree = one(get_tracer_trees())
+        assert tree.size() == 5
+        subtree = filter_failures(tree)
+        assert subtree is not None
+        assert subtree.size() == 2
+
+    async def test_async(self) -> None:
+        @tracer
+        async def outer(n: int, /) -> list[int]:
+            tasks: set[Task[int]] = set()
+            async with TaskGroup() as tg:
+                for i in range(n, -n - 1, -1):
+                    tasks.add(tg.create_task(inner(i)))
+            return [t.result() for t in tasks]
+
+        @tracer
+        async def inner(n: int, /) -> int:
+            await asyncio.sleep(0.01)
+            if n >= 1:
+                return n + 1
+            msg = f"{n=} must be positive"
+            raise ValueError(msg)
+
+        with raises(ExceptionGroup):
+            _ = await outer(3)
+        tree = one(get_tracer_trees())
+        assert tree.size() == 8
+        subtree = filter_failures(tree)
+        assert subtree is not None
+        assert subtree.size() == 5
+
+    def test_no_failure(self) -> None:
+        @tracer
+        def func(n: int, /) -> int:
+            return n + 1
+
+        assert func(1) == 2
+        tree = one(get_tracer_trees())
+        result = filter_failures(tree)
+        assert result is None
+
+    async def test_list(self) -> None:
+        @tracer
+        async def outer(n: int, /) -> list[int]:
+            tasks: set[Task[int]] = set()
+            async with TaskGroup() as tg:
+                for i in range(n, -n - 1, -1):
+                    tasks.add(tg.create_task(inner(i)))
+            return [t.result() for t in tasks]
+
+        @tracer
+        async def inner(n: int, /) -> int:
+            await asyncio.sleep(0.01)
+            if n >= 1:
+                return n + 1
+            msg = f"{n=} must be positive"
+            raise ValueError(msg)
+
+        assert await outer(-1) == []
+        with raises(ExceptionGroup):
+            _ = await outer(3)
+        with raises(ExceptionGroup):
+            _ = await outer(4)
+        trees = get_tracer_trees()
+        assert len(trees) == 3
+        assert [t.size() for t in trees] == [1, 8, 10]
+        subtrees = filter_failures(trees)
+        assert len(subtrees) == 2
+        assert [t.size() for t in subtrees] == [5, 6]

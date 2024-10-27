@@ -48,7 +48,7 @@ class Tree(treelib.Tree, Generic[_T]):
         reverse: bool = ...,
         line_type: _LineType = ...,
         data_property: str | None = ...,
-        stdout: Literal[False] = ...,
+        stdout: Literal[False],
         sorting: bool = ...,
     ) -> str: ...
     @overload
@@ -62,10 +62,25 @@ class Tree(treelib.Tree, Generic[_T]):
         key: Callable[[Node[_T], bool], SupportsRichComparison] | None = ...,
         reverse: bool = ...,
         line_type: _LineType = ...,
-        data_property: str | None = None,
-        stdout: Literal[True] = True,
-        sorting: bool = True,
+        data_property: str | None = ...,
+        stdout: Literal[True] = ...,
+        sorting: bool = ...,
     ) -> None: ...
+    @overload
+    def show(
+        self,
+        *,
+        nid: str | None = ...,
+        level: int = ...,
+        idhidden: bool = ...,
+        filter: Callable[[Node[_T]], bool] | None = ...,
+        key: Callable[[Node[_T], bool], SupportsRichComparison] | None = ...,
+        reverse: bool = ...,
+        line_type: _LineType = ...,
+        data_property: str | None = None,
+        stdout: bool = ...,
+        sorting: bool = ...,
+    ) -> str | None: ...
     @override
     def show(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
@@ -130,7 +145,7 @@ def filter_tree(
     data: Callable[[_T], bool] | None = None,
 ) -> Tree[_T]:
     """Filter a tree."""
-    subtree = Tree()
+    subtree: Tree[_T] = Tree()
     _filter_tree_add(
         tree, subtree, ensure_str(tree.root), tag=tag, identifier=identifier, data=data
     )
