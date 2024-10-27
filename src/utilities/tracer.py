@@ -272,4 +272,4 @@ def filter_failures(tree: _TreeNodeData[_T], /) -> _TreeNodeData[_T]:
     return filter_tree(tree, data=lambda x: x.outcome == "failure")
 
 
-__all__ = ["get_tracer_trees", "set_tracer_trees", "tracer"]
+__all__ = ["filter_failures", "get_tracer_trees", "set_tracer_trees", "tracer"]
