@@ -51,7 +51,7 @@ class _NodeData:
     kwargs: StrMapping = field(default_factory=dict)
     start_time: dt.datetime
     end_time: dt.datetime | None = None
-    outcome: Literal["success", "failure"] | None = None
+    outcome: Literal["success", "failure", "suppressed"] | None = None
     error: type[Exception] | None = None
 
     @property
@@ -73,17 +73,31 @@ class _NodeData:
 
 
 @overload
-def tracer(func: _F, /, *, time_zone: ZoneInfo | str = ...) -> _F: ...
+def tracer(
+    func: _F,
+    /,
+    *,
+    time_zone: ZoneInfo | str = ...,
+    suppress: type[Exception] | tuple[type[Exception], ...] | None = ...,
+) -> _F: ...
 @overload
 def tracer(
-    func: None = None, /, *, time_zone: ZoneInfo | str = ...
+    func: None = None,
+    /,
+    *,
+    time_zone: ZoneInfo | str = ...,
+    suppress: type[Exception] | tuple[type[Exception], ...] | None = ...,
 ) -> Callable[[_F], _F]: ...
 def tracer(
-    func: _F | None = None, *, time_zone: ZoneInfo | str = UTC
+    func: _F | None = None,
+    /,
+    *,
+    time_zone: ZoneInfo | str = UTC,
+    suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
 ) -> _F | Callable[[_F], _F]:
     """Context manager for tracing function calls."""
     if func is None:
-        result = partial(tracer, time_zone=time_zone)
+        result = partial(tracer, time_zone=time_zone, suppress=suppress)
         return cast(Callable[[_F], _F], result)
 
     if iscoroutinefunction(func):
@@ -96,7 +110,7 @@ def tracer(
             try:
                 result = await func(*args, **kwargs)
             except Exception as error:  # noqa: BLE001
-                _handle_error(node_data, error)
+                _handle_error(node_data, error, suppress=suppress)
             else:
                 return _handle_success(node_data, result)
             finally:
@@ -112,7 +126,7 @@ def tracer(
         try:
             result = func(*args, **kwargs)
         except Exception as error:  # noqa: BLE001
-            _handle_error(node_data, error)
+            _handle_error(node_data, error, suppress=suppress)
         else:
             return _handle_success(node_data, result)
         finally:
@@ -154,8 +168,17 @@ def _initialize(
     return node_data, tree, tracer_data, token
 
 
-def _handle_error(node_data: _NodeData, error: Exception, /) -> NoReturn:
-    node_data.outcome = "failure"
+def _handle_error(
+    node_data: _NodeData,
+    error: Exception,
+    /,
+    *,
+    suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
+) -> NoReturn:
+    if (suppress is not None) and isinstance(error, suppress):
+        node_data.outcome = "suppressed"
+    else:
+        node_data.outcome = "failure"
     node_data.error = type(error)
     raise error
 
