@@ -11,7 +11,13 @@ from pytest import approx, fixture, raises
 from tests.conftest import FLAKY
 from utilities.functions import get_class_name
 from utilities.iterables import one
-from utilities.tracer import filter_failures, get_tracer_trees, set_tracer_trees, tracer
+from utilities.tracer import (
+    NodeData,
+    filter_failures,
+    get_tracer_trees,
+    set_tracer_trees,
+    tracer,
+)
 from utilities.zoneinfo import HongKong
 
 if TYPE_CHECKING:
@@ -180,9 +186,9 @@ class TestTracer:
     def test_post_error_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_error(_: _NodeData[Any], error: Exception, /) -> None:
+        def post_error(data: _NodeData[Any], /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Raised a {get_class_name(error)}")
+                _ = fh.write(f"Raised a {get_class_name(data.error)}")
 
         @tracer(post_error=post_error)
         def func() -> int:
@@ -196,9 +202,9 @@ class TestTracer:
     async def test_post_error_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_error(_: _NodeData[Any], error: Exception, /) -> None:
+        def post_error(data: _NodeData[Any], /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Raised a {get_class_name(error)}")
+                _ = fh.write(f"Raised a {get_class_name(data.error)}")
 
         @tracer(post_error=post_error)
         async def func() -> int:
@@ -212,9 +218,9 @@ class TestTracer:
     def test_post_result_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_result(n: int, /) -> None:
+        def post_result(data: NodeData[Any], /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Result was {n=}")
+                _ = fh.write(f"Result was {data.result=}")
 
         @tracer(post_result=post_result)
         def func(n: int, /) -> int:
@@ -226,9 +232,9 @@ class TestTracer:
     async def test_post_result_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_result(n: int, /) -> None:
+        def post_result(data: NodeData[Any], /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Result was {n=}")
+                _ = fh.write(f"Result was {data.result=}")
 
         @tracer(post_result=post_result)
         async def func(n: int, /) -> int:
@@ -303,7 +309,7 @@ class TestTracer:
 
     def _check_post_result(self, path: Path, /) -> None:
         with path.open() as fh:
-            assert fh.readlines() == ["Result was n=2"]
+            assert fh.readlines() == ["Result was data.result=2"]
 
     def _check_add_result(self) -> None:
         tree = one(get_tracer_trees())
