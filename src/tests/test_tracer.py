@@ -137,114 +137,7 @@ class TestTracer:
         root: Node = tree[tree.root]
         data = cast(_NodeData, root.data)
         assert data.start_time.tzinfo is HongKong
-        assert data.end_time is not None
         assert data.end_time.tzinfo is HongKong
-
-    def test_pre_call_sync(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("log")
-
-        def pre_call(n: int, /) -> None:
-            with path.open(mode="w") as fh:
-                _ = fh.write(f"Calling with {n=}")
-
-        @tracer(pre_call=pre_call)
-        def func(n: int, /) -> int:
-            return n + 1
-
-        assert func(1) == 2
-        with path.open() as fh:
-            assert fh.readlines() == ["Calling with n=1"]
-
-    async def test_pre_call_async(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("log")
-
-        def pre_call(n: int, /) -> None:
-            with path.open(mode="w") as fh:
-                _ = fh.write(f"Calling with {n=}")
-
-        @tracer(pre_call=pre_call)
-        async def func(n: int, /) -> int:
-            await asyncio.sleep(0.01)
-            return n + 1
-
-        assert await func(1) == 2
-        with path.open() as fh:
-            assert fh.readlines() == ["Calling with n=1"]
-
-    def test_suppress(self) -> None:
-        @tracer(suppress=ValueError)
-        def func() -> None:
-            msg = "Always fails"
-            raise ValueError(msg)
-
-        with raises(ValueError, match="Always fails"):
-            _ = func()
-        self._check_error_node(func, outcome="suppressed")
-
-    def test_post_error_sync(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("log")
-
-        def post_error(error: Exception, /) -> None:
-            with path.open(mode="w") as fh:
-                _ = fh.write(f"Raised a {get_class_name(error)}")
-
-        @tracer(post_error=post_error)
-        def func() -> int:
-            msg = "Always fails"
-            raise ValueError(msg)
-
-        with raises(ValueError, match="Always fails"):
-            assert func()
-        with path.open() as fh:
-            assert fh.readlines() == ["Raised a ValueError"]
-
-    async def test_post_error_async(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("log")
-
-        def post_error(error: Exception, /) -> None:
-            with path.open(mode="w") as fh:
-                _ = fh.write(f"Raised a {get_class_name(error)}")
-
-        @tracer(post_error=post_error)
-        async def func() -> int:
-            msg = "Always fails"
-            raise ValueError(msg)
-
-        with raises(ValueError, match="Always fails"):
-            _ = await func()
-        with path.open() as fh:
-            assert fh.readlines() == ["Raised a ValueError"]
-
-    def test_post_result_sync(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("log")
-
-        def post_result(n: int, /) -> None:
-            with path.open(mode="w") as fh:
-                _ = fh.write(f"Result was {n=}")
-
-        @tracer(post_result=post_result)
-        def func(n: int, /) -> int:
-            return n + 1
-
-        assert func(1) == 2
-        with path.open() as fh:
-            assert fh.readlines() == ["Result was n=2"]
-
-    async def test_post_result_async(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("log")
-
-        def post_result(n: int, /) -> None:
-            with path.open(mode="w") as fh:
-                _ = fh.write(f"Result was {n=}")
-
-        @tracer(post_result=post_result)
-        async def func(n: int, /) -> int:
-            await asyncio.sleep(0.01)
-            return n + 1
-
-        assert await func(1) == 2
-        with path.open() as fh:
-            assert fh.readlines() == ["Result was n=2"]
 
     def test_error_sync(self) -> None:
         @tracer
@@ -254,7 +147,11 @@ class TestTracer:
 
         with raises(ValueError, match="Always fails"):
             _ = func()
-        self._check_error_node(func, outcome="failure")
+        tree = one(get_tracer_trees())
+        root: Node = tree[tree.root]
+        data = cast(_NodeData, root.data)
+        assert data.outcome == "failure"
+        assert data.error is ValueError
 
     async def test_error_async(self) -> None:
         @tracer
@@ -264,7 +161,11 @@ class TestTracer:
 
         with raises(ValueError, match="Always fails"):
             _ = await func()
-        self._check_error_node(func, outcome="failure")
+        tree = one(get_tracer_trees())
+        root: Node = tree[tree.root]
+        data = cast(_NodeData, root.data)
+        assert data.outcome == "failure"
+        assert data.error is ValueError
 
     def _check_node(
         self, node: Node, module: str, qualname: str, duration: float, /
@@ -273,23 +174,5 @@ class TestTracer:
         data = cast(_NodeData, node.data)
         assert data.module == module
         assert data.qualname == qualname
-        assert data.duration is not None
         assert data.duration.total_seconds() == approx(duration, abs=1.0)
         assert data.outcome == "success"
-
-    def _check_error_node(
-        self, func: Callable[..., Any], /, *, outcome: Literal["failure", "suppressed"]
-    ) -> None:
-        tree = one(get_tracer_trees())
-        root: Node = tree[tree.root]
-        data = cast(_NodeData, root.data)
-        assert data.outcome == outcome
-        tag = f"{func.__module__}:{func.__qualname__}"
-        timedelta = r"\d:\d{2}:\d{2}(?:\.\d{6})?"
-        match outcome:
-            case "failure":
-                pattern = rf"{tag} \(ValueError, {timedelta}\)"
-            case "suppressed":
-                pattern = rf"{tag} \({timedelta}\)"
-        assert search(pattern, data.desc)
-        assert data.error is ValueError

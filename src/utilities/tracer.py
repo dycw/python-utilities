@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeVar, cast, overloa
 from treelib import Tree
 
 from utilities.datetime import get_now
-from utilities.functions import get_class_name
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -51,21 +50,14 @@ class _NodeData:
     kwargs: StrMapping = field(default_factory=dict)
     start_time: dt.datetime
     end_time: dt.datetime | None = None
-    outcome: Literal["success", "failure", "suppressed"] | None = None
+    outcome: Literal["success", "failure"] | None = None
     error: type[Exception] | None = None
 
     @property
-    def desc(self) -> str:
-        terms: list[Any] = []
-        if (self.outcome == "failure") and (self.error is not None):
-            terms.append(get_class_name(self.error))
-        terms.append(self.duration)
-        joined = ", ".join(map(str, terms))
-        return f"{self.tag} ({joined})"
-
-    @property
     def duration(self) -> dt.timedelta | None:
-        return None if self.end_time is None else (self.end_time - self.start_time)
+        if self.end_time is None:
+            return None
+        return self.end_time - self.start_time
 
     @property
     def tag(self) -> str:
@@ -196,17 +188,8 @@ def _initialize(
     return node_data, tree, tracer_data, token
 
 
-def _handle_error(
-    node_data: _NodeData,
-    error: Exception,
-    /,
-    *,
-    suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
-) -> NoReturn:
-    if (suppress is not None) and isinstance(error, suppress):
-        node_data.outcome = "suppressed"
-    else:
-        node_data.outcome = "failure"
+def _handle_error(node_data: _NodeData, error: Exception, /) -> NoReturn:
+    node_data.outcome = "failure"
     node_data.error = type(error)
     raise error
 
