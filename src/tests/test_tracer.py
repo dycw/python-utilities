@@ -51,33 +51,13 @@ class TestTracer:
         assert outer(1) == 3
         tree = one(get_tracer_trees())
         root: Node = tree[tree.root]
-        self._check_node(
-            root, "tests.test_tracer", "TestTracer.test_sync.<locals>.outer", 0.04, 3
-        )
+        self._check_node(root, outer, 0.04)
         node_mid1, node_mid2 = cast(list[Node], tree.children(root.identifier))
-        self._check_node(
-            node_mid1,
-            "tests.test_tracer",
-            "TestTracer.test_sync.<locals>.mid1",
-            0.01,
-            2,
-        )
-        self._check_node(
-            node_mid2,
-            "tests.test_tracer",
-            "TestTracer.test_sync.<locals>.mid2",
-            0.02,
-            3,
-        )
+        self._check_node(node_mid1, mid1, 0.01)
+        self._check_node(node_mid2, mid2, 0.02)
         assert len(tree.children(node_mid1.identifier)) == 0
         (node_inner,) = cast(list[Node], tree.children(node_mid2.identifier))
-        self._check_node(
-            node_inner,
-            "tests.test_tracer",
-            "TestTracer.test_sync.<locals>.inner",
-            0.01,
-            3,
-        )
+        self._check_node(node_inner, inner, 0.01)
 
     @FLAKY
     async def test_async(self) -> None:
@@ -105,39 +85,18 @@ class TestTracer:
         assert await outer(1) == 3
         tree = one(get_tracer_trees())
         root: Node = tree[tree.root]
-        self._check_node(
-            root, "tests.test_tracer", "TestTracer.test_async.<locals>.outer", 0.04, 3
-        )
+        self._check_node(root, outer, 0.04)
         node_mid1, node_mid2 = cast(list[Node], tree.children(root.identifier))
-        self._check_node(
-            node_mid1,
-            "tests.test_tracer",
-            "TestTracer.test_async.<locals>.mid1",
-            0.01,
-            2,
-        )
-        self._check_node(
-            node_mid2,
-            "tests.test_tracer",
-            "TestTracer.test_async.<locals>.mid2",
-            0.02,
-            3,
-        )
+        self._check_node(node_mid1, mid1, 0.01)
+        self._check_node(node_mid2, mid2, 0.02)
         assert len(tree.children(node_mid1.identifier)) == 0
         (node_inner,) = cast(list[Node], tree.children(node_mid2.identifier))
-        self._check_node(
-            node_inner,
-            "tests.test_tracer",
-            "TestTracer.test_async.<locals>.inner",
-            0.01,
-            3,
-        )
+        self._check_node(node_inner, inner, 0.01)
 
     @FLAKY
     def test_multiple_calls(self) -> None:
         @tracer
         def func(n: int, /) -> int:
-            time.sleep(0.01)
             return n + 1
 
         assert func(1) == 2
@@ -146,20 +105,31 @@ class TestTracer:
         assert len(trees) == 2
         for tree in trees:
             root: Node = tree[tree.root]
-            self._check_node(
-                root,
-                "tests.test_tracer",
-                "TestTracer.test_multiple_calls.<locals>.func",
-                0.02,
-                2,
-            )
+            self._check_node(root, func, 0.02)
+
+    def test_add_args_sync(self) -> None:
+        @tracer(add_args=True)
+        def func(n: int, /) -> int:
+            return n + 1
+
+        assert func(1) == 2
+        self._check_add_args()
+
+    async def test_add_args_async(self) -> None:
+        @tracer(add_args=True)
+        async def func(n: int, /) -> int:
+            await asyncio.sleep(0.01)
+            return n + 1
+
+        assert await func(1) == 2
+        self._check_add_args()
 
     def test_time_zone(self) -> None:
         @tracer(time_zone=HongKong)
-        def func() -> None:
-            return
+        def func(n: int, /) -> int:
+            return n + 1
 
-        _ = func()
+        assert func(1) == 2
         tree = one(get_tracer_trees())
         root: Node = tree[tree.root]
         data = cast(_NodeData, root.data)
@@ -179,8 +149,7 @@ class TestTracer:
             return n + 1
 
         assert func(1) == 2
-        with path.open() as fh:
-            assert fh.readlines() == ["Calling with n=1"]
+        self._check_pre_call(path)
 
     async def test_pre_call_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
@@ -195,8 +164,7 @@ class TestTracer:
             return n + 1
 
         assert await func(1) == 2
-        with path.open() as fh:
-            assert fh.readlines() == ["Calling with n=1"]
+        self._check_pre_call(path)
 
     def test_suppress(self) -> None:
         @tracer(suppress=ValueError)
@@ -206,7 +174,7 @@ class TestTracer:
 
         with raises(ValueError, match="Always fails"):
             _ = func()
-        self._check_error_node(func, outcome="suppressed")
+        self._check_error(func, outcome="suppressed")
 
     def test_post_error_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
@@ -222,8 +190,7 @@ class TestTracer:
 
         with raises(ValueError, match="Always fails"):
             assert func()
-        with path.open() as fh:
-            assert fh.readlines() == ["Raised a ValueError"]
+        self._check_post_error(path)
 
     async def test_post_error_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
@@ -239,8 +206,7 @@ class TestTracer:
 
         with raises(ValueError, match="Always fails"):
             _ = await func()
-        with path.open() as fh:
-            assert fh.readlines() == ["Raised a ValueError"]
+        self._check_post_error(path)
 
     def test_post_result_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
@@ -254,8 +220,7 @@ class TestTracer:
             return n + 1
 
         assert func(1) == 2
-        with path.open() as fh:
-            assert fh.readlines() == ["Result was n=2"]
+        self._check_post_result(path)
 
     async def test_post_result_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
@@ -270,8 +235,24 @@ class TestTracer:
             return n + 1
 
         assert await func(1) == 2
-        with path.open() as fh:
-            assert fh.readlines() == ["Result was n=2"]
+        self._check_post_result(path)
+
+    def test_add_result_sync(self) -> None:
+        @tracer(add_result=True)
+        def func(n: int, /) -> int:
+            return n + 1
+
+        assert func(1) == 2
+        self._check_add_result()
+
+    async def test_add_result_async(self) -> None:
+        @tracer(add_result=True)
+        async def func(n: int, /) -> int:
+            await asyncio.sleep(0.01)
+            return n + 1
+
+        assert await func(1) == 2
+        self._check_add_result()
 
     def test_error_sync(self) -> None:
         @tracer
@@ -281,7 +262,7 @@ class TestTracer:
 
         with raises(ValueError, match="Always fails"):
             _ = func()
-        self._check_error_node(func, outcome="failure")
+        self._check_error(func, outcome="failure")
 
     async def test_error_async(self) -> None:
         @tracer
@@ -291,21 +272,46 @@ class TestTracer:
 
         with raises(ValueError, match="Always fails"):
             _ = await func()
-        self._check_error_node(func, outcome="failure")
+        self._check_error(func, outcome="failure")
 
     def _check_node(
-        self, node: Node, module: str, qualname: str, duration: float, result: int, /
+        self, node: Node, func: Callable[..., Any], duration: float, /
     ) -> None:
-        assert node.tag == f"{module}:{qualname}"
+        tag = f"{func.__module__}:{func.__qualname__}"
+        assert node.tag == tag
         data = cast(_NodeData, node.data)
-        assert data.module == module
-        assert data.qualname == qualname
+        assert data.module == func.__module__
+        assert data.qualname == func.__qualname__
         assert data.duration is not None
         assert data.duration.total_seconds() == approx(duration, abs=1.0)
         assert data.outcome == "success"
-        assert data.result == result
 
-    def _check_error_node(
+    def _check_add_args(self) -> None:
+        tree = one(get_tracer_trees())
+        root: Node = tree[tree.root]
+        data = cast(_NodeData, root.data)
+        assert data.args == (1,)
+        assert data.kwargs == {}
+
+    def _check_pre_call(self, path: Path, /) -> None:
+        with path.open() as fh:
+            assert fh.readlines() == ["Calling with n=1"]
+
+    def _check_post_error(self, path: Path, /) -> None:
+        with path.open() as fh:
+            assert fh.readlines() == ["Raised a ValueError"]
+
+    def _check_post_result(self, path: Path, /) -> None:
+        with path.open() as fh:
+            assert fh.readlines() == ["Result was n=2"]
+
+    def _check_add_result(self) -> None:
+        tree = one(get_tracer_trees())
+        root: Node = tree[tree.root]
+        data = cast(_NodeData, root.data)
+        assert data.result == 2
+
+    def _check_error(
         self, func: Callable[..., Any], /, *, outcome: Literal["failure", "suppressed"]
     ) -> None:
         tree = one(get_tracer_trees())
