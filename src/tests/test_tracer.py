@@ -187,6 +187,8 @@ class TestTracer:
         path = tmp_path.joinpath("log")
 
         def post_error(data: NodeData[Any], /) -> None:
+            assert data.end_time is not None
+            assert data.outcome is not None
             with path.open(mode="w") as fh:
                 _ = fh.write(
                     f"Raised a {get_class_name(data.error)} with {data.args=}/{data.kwargs=}"
@@ -207,6 +209,8 @@ class TestTracer:
         path = tmp_path.joinpath("log")
 
         def post_error(data: NodeData[Any], /) -> None:
+            assert data.end_time is not None
+            assert data.outcome is not None
             with path.open(mode="w") as fh:
                 _ = fh.write(
                     f"Raised a {get_class_name(data.error)} with {data.args=}/{data.kwargs=}"
@@ -227,7 +231,9 @@ class TestTracer:
     def test_post_result_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_result(_: NodeData[Any], result: int, /) -> None:
+        def post_result(data: NodeData[Any], result: int, /) -> None:
+            assert data.end_time is not None
+            assert data.outcome is not None
             with path.open(mode="w") as fh:
                 _ = fh.write(f"Result was {result}")  # pyright: ignore[reportAssignmentType]
 
@@ -241,7 +247,9 @@ class TestTracer:
     async def test_post_result_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_result(_: NodeData[Any], result: int, /) -> None:
+        def post_result(data: NodeData[Any], result: int, /) -> None:
+            assert data.end_time is not None
+            assert data.outcome is not None
             with path.open(mode="w") as fh:
                 _ = fh.write(f"Result was {result}")  # pyright: ignore[reportAssignmentType]
 
@@ -341,6 +349,7 @@ class TestTracer:
             case "suppressed":
                 pattern = rf"^{tag} \({timedelta}\)$"
         assert search(pattern, data.desc)
+        assert data.end_time is not None
         assert isinstance(data.error, ValueError)
 
 

@@ -159,6 +159,7 @@ def tracer(
                     args,
                     kwargs,
                     error,
+                    time_zone=time_zone,
                     suppress=suppress,
                     post_error=post_error,
                 )
@@ -182,7 +183,13 @@ def tracer(
             result = func(*args, **kwargs)
         except Exception as error:  # noqa: BLE001
             _handle_error(
-                node_data, args, kwargs, error, suppress=suppress, post_error=post_error
+                node_data,
+                args,
+                kwargs,
+                error,
+                time_zone=time_zone,
+                suppress=suppress,
+                post_error=post_error,
             )
         else:
             return _handle_success(
@@ -243,11 +250,13 @@ def _handle_error(
     error: Exception,
     /,
     *,
+    time_zone: ZoneInfo | str = UTC,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
     post_error: Callable[[NodeData[_T]], None] | None = None,
 ) -> NoReturn:
     node_data.args = args
     node_data.kwargs = kwargs
+    node_data.end_time = get_now(time_zone=time_zone)
     if (suppress is not None) and isinstance(error, suppress):
         node_data.outcome = "suppressed"
     else:
