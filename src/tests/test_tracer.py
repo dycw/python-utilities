@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from re import search
-from typing import cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pytest import approx, fixture, raises
 from treelib import Node
@@ -16,7 +16,6 @@ from utilities.zoneinfo import HongKong
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from pathlib import Path
 
 
 @fixture(autouse=True)
@@ -140,6 +139,16 @@ class TestTracer:
         assert data.end_time is not None
         assert data.end_time.tzinfo is HongKong
 
+    def test_suppress(self) -> None:
+        @tracer(suppress=ValueError)
+        def func() -> None:
+            msg = "Always fails"
+            raise ValueError(msg)
+
+        with raises(ValueError, match="Always fails"):
+            _ = func()
+        self._check_error_node(func, outcome="suppressed")
+
     def test_error_sync(self) -> None:
         @tracer
         def func() -> None:
@@ -148,9 +157,7 @@ class TestTracer:
 
         with raises(ValueError, match="Always fails"):
             _ = func()
-        self._check_error_node(
-            r"tests.test_tracer:TestTracer.test_error_sync.<locals>.func \(ValueError, \d:\d{2}:\d{2}\.\d{6}\)"
-        )
+        self._check_error_node(func, outcome="failure")
 
     async def test_error_async(self) -> None:
         @tracer
@@ -160,9 +167,7 @@ class TestTracer:
 
         with raises(ValueError, match="Always fails"):
             _ = await func()
-        self._check_error_node(
-            r"tests.test_tracer:TestTracer.test_error_async.<locals>.func \(ValueError, \d:\d{2}:\d{2}\.\d{6}\)"
-        )
+        self._check_error_node(func, outcome="failure")
 
     def _check_node(
         self, node: Node, module: str, qualname: str, duration: float, /
@@ -175,10 +180,13 @@ class TestTracer:
         assert data.duration.total_seconds() == approx(duration, abs=1.0)
         assert data.outcome == "success"
 
-    def _check_error_node(self, pattern: str, /) -> None:
+    def _check_error_node(
+        self, func: Callable[..., Any], /, *, outcome: Literal["failure", "suppressed"]
+    ) -> None:
         tree = one(get_tracer_trees())
         root: Node = tree[tree.root]
         data = cast(_NodeData, root.data)
-        assert data.outcome == "failure"
+        assert data.outcome == outcome
         assert data.error is ValueError
+        pattern = rf"tests.test_tracer:{func.__qualname__} \(ValueError, \d:\d{{2}}:\d{{2}}\.\d{{6}}\)"
         assert search(pattern, data.desc)
