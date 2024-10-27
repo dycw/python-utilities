@@ -39,7 +39,7 @@ class Node(treelib.Node, Generic[_T]):
     @identifier.setter
     @override
     def identifier(self, value: str) -> None:
-        super().__setattr__("identifier", value)
+        self._identifier = value
 
     @property
     @override
@@ -49,7 +49,7 @@ class Node(treelib.Node, Generic[_T]):
     @tag.setter
     @override
     def tag(self, value: str | None) -> None:
-        super().__setattr__("tag", value)
+        self._tag = value
 
 
 def filter_tree(

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from pytest import CaptureFixture, fixture
-from treelib import Tree
 
 from utilities.text import strip_and_dedent
-from utilities.treelib import filter_tree
+from utilities.treelib import Node, Tree, filter_tree
 
 
 @fixture
@@ -72,3 +71,36 @@ class TestFilterTree:
             └── Child2
         """)
         assert out == expected
+
+
+class TestNode:
+    def test_identifier(self) -> None:
+        node = Node(identifier="r")
+        assert node.identifier == "r"
+        node.identifier = "r2"
+        assert node.identifier == "r2"
+
+    def test_tag(self) -> None:
+        node = Node(tag="Root")
+        assert node.tag == "Root"
+        node.tag = "Root2"
+        assert node.tag == "Root2"
+
+
+class TestTree:
+    def test_get_item(self) -> None:
+        tree = Tree()
+        root = tree.create_node("Root", "r")
+        result = tree["r"]
+        assert result is root
+
+    def test_get_node_success(self) -> None:
+        tree = Tree()
+        root = tree.create_node("Root", "r")
+        result = tree.get_node("r")
+        assert result is root
+
+    def test_get_node_failure(self) -> None:
+        tree = Tree()
+        result = tree.get_node("bad")
+        assert result is None
