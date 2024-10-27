@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from asyncio import Task, TaskGroup
+from asyncio import Task, TaskGroup, sleep
 from re import search
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
 
-    from utilities.treelib import Node, _NodeData
+    from utilities.treelib import Node
 
 
 @fixture(autouse=True)
@@ -186,33 +186,42 @@ class TestTracer:
     def test_post_error_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_error(data: _NodeData[Any], /) -> None:
+        def post_error(data: NodeData[Any], /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Raised a {get_class_name(data.error)}")
+                _ = fh.write(
+                    f"Raised a {get_class_name(data.error)} with {data.args=}/{data.kwargs=}"
+                )
 
         @tracer(post_error=post_error)
-        def func() -> int:
-            msg = "Always fails"
+        def func(n: int, /) -> int:
+            if n >= 1:
+                return n + 1
+            msg = f"{n=} must be positive"
             raise ValueError(msg)
 
-        with raises(ValueError, match="Always fails"):
-            assert func()
+        with raises(ValueError, match="n=0 must be positive"):
+            _ = func(0)
         self._check_post_error(path)
 
     async def test_post_error_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_error(data: _NodeData[Any], /) -> None:
+        def post_error(data: NodeData[Any], /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Raised a {get_class_name(data.error)}")
+                _ = fh.write(
+                    f"Raised a {get_class_name(data.error)} with {data.args=}/{data.kwargs=}"
+                )
 
         @tracer(post_error=post_error)
-        async def func() -> int:
-            msg = "Always fails"
+        async def func(n: int, /) -> int:
+            await sleep(0.01)
+            if n >= 1:
+                return n + 1
+            msg = f"{n=} must be positive"
             raise ValueError(msg)
 
-        with raises(ValueError, match="Always fails"):
-            _ = await func()
+        with raises(ValueError, match="n=0 must be positive"):
+            _ = await func(0)
         self._check_post_error(path)
 
     def test_post_result_sync(self, *, tmp_path: Path) -> None:
@@ -305,7 +314,9 @@ class TestTracer:
 
     def _check_post_error(self, path: Path, /) -> None:
         with path.open() as fh:
-            assert fh.readlines() == ["Raised a ValueError"]
+            assert fh.readlines() == [
+                "Raised a ValueError with data.args=(0,)/data.kwargs={}"
+            ]
 
     def _check_post_result(self, path: Path, /) -> None:
         with path.open() as fh:
