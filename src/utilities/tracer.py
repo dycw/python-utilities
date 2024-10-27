@@ -5,16 +5,7 @@ from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
 from functools import partial, wraps
 from inspect import iscoroutinefunction
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    Literal,
-    NoReturn,
-    TypeVar,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, cast, overload
 
 import treelib
 from treelib.exceptions import NodeIDAbsentError
@@ -99,8 +90,8 @@ def tracer(
     time_zone: ZoneInfo | str = ...,
     pre_call: Callable[..., None] | None = ...,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = ...,
-    post_error: Callable[[NodeData[Any]], None] | None = ...,
-    post_result: Callable[[NodeData[Any], Any], None] | None = ...,
+    post_error: Callable[[_NodeData[Any], Exception], None] | None = ...,
+    post_result: Callable[[Any], None] | None = ...,
     add_result: bool = ...,
 ) -> _F: ...
 @overload
@@ -112,8 +103,8 @@ def tracer(
     time_zone: ZoneInfo | str = ...,
     pre_call: Callable[..., None] | None = ...,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = ...,
-    post_error: Callable[[NodeData[Any]], None] | None = ...,
-    post_result: Callable[[NodeData[Any], Any], None] | None = ...,
+    post_error: Callable[[_NodeData[Any], Exception], None] | None = ...,
+    post_result: Callable[[Any], None] | None = ...,
     add_result: bool = ...,
 ) -> Callable[[_F], _F]: ...
 def tracer(
@@ -124,8 +115,8 @@ def tracer(
     time_zone: ZoneInfo | str = UTC,
     pre_call: Callable[..., None] | None = None,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
-    post_error: Callable[[NodeData[Any]], None] | None = None,
-    post_result: Callable[[NodeData[Any], Any], None] | None = None,
+    post_error: Callable[[_NodeData[Any], Exception], None] | None = None,
+    post_result: Callable[[Any], None] | None = None,
     add_result: bool = False,
 ) -> _F | Callable[[_F], _F]:
     """Context manager for tracing function calls."""
@@ -153,15 +144,11 @@ def tracer(
                 pre_call(node_data, *args, **kwargs)
             try:
                 result = await func(*args, **kwargs)
-            except Exception as error:  # noqa: BLE001
-                _handle_error(
-                    node_data,
-                    args,
-                    kwargs,
-                    error,
-                    suppress=suppress,
-                    post_error=post_error,
-                )
+            except Exception as error:
+                _handle_error(node_data, error, suppress=suppress)
+                if post_error is not None:
+                    post_error(node_data, error)
+                raise
             else:
                 return _handle_success(
                     node_data, result, add_result=add_result, post_result=post_result
@@ -180,10 +167,11 @@ def tracer(
             pre_call(node_data, *args, **kwargs)
         try:
             result = func(*args, **kwargs)
-        except Exception as error:  # noqa: BLE001
-            _handle_error(
-                node_data, args, kwargs, error, suppress=suppress, post_error=post_error
-            )
+        except Exception as error:
+            if post_error is not None:
+                post_error(node_data, error)
+            _handle_error(node_data, error, suppress=suppress)
+            raise
         else:
             return _handle_success(
                 node_data, result, add_result=add_result, post_result=post_result
@@ -244,18 +232,12 @@ def _handle_error(
     /,
     *,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
-    post_error: Callable[[NodeData[_T]], None] | None = None,
-) -> NoReturn:
-    node_data.args = args
-    node_data.kwargs = kwargs
+) -> None:
     if (suppress is not None) and isinstance(error, suppress):
         node_data.outcome = "suppressed"
     else:
         node_data.outcome = "failure"
     node_data.error = error
-    if post_error is not None:
-        post_error(node_data)
-    raise error
 
 
 def _handle_success(
