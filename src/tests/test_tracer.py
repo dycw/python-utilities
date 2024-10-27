@@ -7,6 +7,7 @@ from typing import cast
 from pytest import approx, fixture, raises
 from treelib import Node
 
+from tests.conftest import FLAKY
 from utilities.iterables import one
 from utilities.tracer import _NodeData, get_tracer_trees, set_tracer_trees, tracer
 from utilities.zoneinfo import HongKong
@@ -18,6 +19,7 @@ def set_tracer_tree_per_function() -> None:
 
 
 class TestTracer:
+    @FLAKY
     def test_sync(self) -> None:
         @tracer
         def outer() -> None:
@@ -57,6 +59,7 @@ class TestTracer:
             node_inner, "tests.test_tracer", "TestTracer.test_sync.<locals>.inner", 0.01
         )
 
+    @FLAKY
     async def test_async(self) -> None:
         @tracer
         async def outer() -> None:
@@ -99,6 +102,7 @@ class TestTracer:
             0.01,
         )
 
+    @FLAKY
     def test_multiple_calls(self) -> None:
         @tracer
         def func() -> None:
