@@ -100,8 +100,8 @@ def tracer(
     pre_call: Callable[..., None] | None = ...,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = ...,
     post_error: Callable[[NodeData[Any]], None] | None = ...,
-    post_result: Callable[[NodeData[Any], Any], None] | None = ...,
     add_result: bool = ...,
+    post_result: Callable[[NodeData[Any], Any], None] | None = ...,
 ) -> _F: ...
 @overload
 def tracer(
@@ -113,8 +113,8 @@ def tracer(
     pre_call: Callable[..., None] | None = ...,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = ...,
     post_error: Callable[[NodeData[Any]], None] | None = ...,
-    post_result: Callable[[NodeData[Any], Any], None] | None = ...,
     add_result: bool = ...,
+    post_result: Callable[[NodeData[Any], Any], None] | None = ...,
 ) -> Callable[[_F], _F]: ...
 def tracer(
     func: _F | None = None,
@@ -125,8 +125,8 @@ def tracer(
     pre_call: Callable[..., None] | None = None,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
     post_error: Callable[[NodeData[Any]], None] | None = None,
-    post_result: Callable[[NodeData[Any], Any], None] | None = None,
     add_result: bool = False,
+    post_result: Callable[[NodeData[Any], Any], None] | None = None,
 ) -> _F | Callable[[_F], _F]:
     """Context manager for tracing function calls."""
     if func is None:
@@ -137,8 +137,8 @@ def tracer(
             pre_call=pre_call,
             suppress=suppress,
             post_error=post_error,
-            post_result=post_result,
             add_result=add_result,
+            post_result=post_result,
         )
         return cast(Callable[[_F], _F], result)
 
