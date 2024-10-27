@@ -242,7 +242,7 @@ pathspec==0.12.1
     # via hatchling
 pexpect==4.9.0
     # via hatch
-pikepdf==9.3.0
+pikepdf==9.4.0
     # via img2pdf
 pillow==10.4.0
     # via
@@ -250,7 +250,7 @@ pillow==10.4.0
     #   img2pdf
     #   pikepdf
     #   streamlit
-pip==24.2
+pip==24.3
     # via pypiserver
 platformdirs==4.3.6
     # via

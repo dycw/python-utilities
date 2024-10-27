@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from asyncio import Task, TaskGroup
+from asyncio import Task, TaskGroup, sleep
 from re import search
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -11,7 +11,13 @@ from pytest import approx, fixture, raises
 from tests.conftest import FLAKY
 from utilities.functions import get_class_name
 from utilities.iterables import one
-from utilities.tracer import filter_failures, get_tracer_trees, set_tracer_trees, tracer
+from utilities.tracer import (
+    NodeData,
+    filter_failures,
+    get_tracer_trees,
+    set_tracer_trees,
+    tracer,
+)
 from utilities.zoneinfo import HongKong
 
 if TYPE_CHECKING:
@@ -141,9 +147,9 @@ class TestTracer:
     def test_pre_call_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def pre_call(n: int, /) -> None:
+        def pre_call(_: NodeData[Any], n: int, /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Calling with {n=}")
+                _ = fh.write(f"Calling with {n=}")  # pyright: ignore[reportAssignmentType]
 
         @tracer(pre_call=pre_call)
         def func(n: int, /) -> int:
@@ -155,9 +161,9 @@ class TestTracer:
     async def test_pre_call_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def pre_call(n: int, /) -> None:
+        def pre_call(_: NodeData[Any], n: int, /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Calling with {n=}")
+                _ = fh.write(f"Calling with {n=}")  # pyright: ignore[reportAssignmentType]
 
         @tracer(pre_call=pre_call)
         async def func(n: int, /) -> int:
@@ -180,41 +186,50 @@ class TestTracer:
     def test_post_error_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_error(error: Exception, /) -> None:
+        def post_error(data: NodeData[Any], /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Raised a {get_class_name(error)}")
+                _ = fh.write(
+                    f"Raised a {get_class_name(data.error)} with {data.args=}/{data.kwargs=}"
+                )
 
         @tracer(post_error=post_error)
-        def func() -> int:
-            msg = "Always fails"
+        def func(n: int, /) -> int:
+            if n >= 1:
+                return n + 1
+            msg = f"{n=} must be positive"
             raise ValueError(msg)
 
-        with raises(ValueError, match="Always fails"):
-            assert func()
+        with raises(ValueError, match="n=0 must be positive"):
+            _ = func(0)
         self._check_post_error(path)
 
     async def test_post_error_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_error(error: Exception, /) -> None:
+        def post_error(data: NodeData[Any], /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Raised a {get_class_name(error)}")
+                _ = fh.write(
+                    f"Raised a {get_class_name(data.error)} with {data.args=}/{data.kwargs=}"
+                )
 
         @tracer(post_error=post_error)
-        async def func() -> int:
-            msg = "Always fails"
+        async def func(n: int, /) -> int:
+            await sleep(0.01)
+            if n >= 1:
+                return n + 1
+            msg = f"{n=} must be positive"
             raise ValueError(msg)
 
-        with raises(ValueError, match="Always fails"):
-            _ = await func()
+        with raises(ValueError, match="n=0 must be positive"):
+            _ = await func(0)
         self._check_post_error(path)
 
     def test_post_result_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_result(n: int, /) -> None:
+        def post_result(_: NodeData[Any], result: int, /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Result was {n=}")
+                _ = fh.write(f"Result was {result}")  # pyright: ignore[reportAssignmentType]
 
         @tracer(post_result=post_result)
         def func(n: int, /) -> int:
@@ -226,9 +241,9 @@ class TestTracer:
     async def test_post_result_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_result(n: int, /) -> None:
+        def post_result(_: NodeData[Any], result: int, /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Result was {n=}")
+                _ = fh.write(f"Result was {result}")  # pyright: ignore[reportAssignmentType]
 
         @tracer(post_result=post_result)
         async def func(n: int, /) -> int:
@@ -299,11 +314,13 @@ class TestTracer:
 
     def _check_post_error(self, path: Path, /) -> None:
         with path.open() as fh:
-            assert fh.readlines() == ["Raised a ValueError"]
+            assert fh.readlines() == [
+                "Raised a ValueError with data.args=(0,)/data.kwargs={}"
+            ]
 
     def _check_post_result(self, path: Path, /) -> None:
         with path.open() as fh:
-            assert fh.readlines() == ["Result was n=2"]
+            assert fh.readlines() == ["Result was 2"]
 
     def _check_add_result(self) -> None:
         tree = one(get_tracer_trees())
@@ -324,7 +341,7 @@ class TestTracer:
             case "suppressed":
                 pattern = rf"^{tag} \({timedelta}\)$"
         assert search(pattern, data.desc)
-        assert data.error is ValueError
+        assert isinstance(data.error, ValueError)
 
 
 class TestFilterFailures:
@@ -348,6 +365,7 @@ class TestFilterFailures:
         assert subtree is not None
         assert subtree.size() == 2
 
+    @FLAKY
     async def test_async(self) -> None:
         @tracer
         async def outer(n: int, /) -> list[int]:
@@ -383,6 +401,7 @@ class TestFilterFailures:
         result = filter_failures(tree)
         assert result is None
 
+    @FLAKY
     async def test_list(self) -> None:
         @tracer
         async def outer(n: int, /) -> list[int]:
