@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from re import search
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import cast
 
 from pytest import approx, fixture, raises
 from treelib import Node
@@ -137,6 +137,7 @@ class TestTracer:
         root: Node = tree[tree.root]
         data = cast(_NodeData, root.data)
         assert data.start_time.tzinfo is HongKong
+        assert data.end_time is not None
         assert data.end_time.tzinfo is HongKong
 
     def test_error_sync(self) -> None:
@@ -147,11 +148,9 @@ class TestTracer:
 
         with raises(ValueError, match="Always fails"):
             _ = func()
-        tree = one(get_tracer_trees())
-        root: Node = tree[tree.root]
-        data = cast(_NodeData, root.data)
-        assert data.outcome == "failure"
-        assert data.error is ValueError
+        self._check_error_node(
+            r"tests.test_tracer:TestTracer.test_error_sync.<locals>.func \(ValueError, \d:\d{2}:\d{2}\.\d{6}\)"
+        )
 
     async def test_error_async(self) -> None:
         @tracer
@@ -161,11 +160,9 @@ class TestTracer:
 
         with raises(ValueError, match="Always fails"):
             _ = await func()
-        tree = one(get_tracer_trees())
-        root: Node = tree[tree.root]
-        data = cast(_NodeData, root.data)
-        assert data.outcome == "failure"
-        assert data.error is ValueError
+        self._check_error_node(
+            r"tests.test_tracer:TestTracer.test_error_async.<locals>.func \(ValueError, \d:\d{2}:\d{2}\.\d{6}\)"
+        )
 
     def _check_node(
         self, node: Node, module: str, qualname: str, duration: float, /
@@ -174,5 +171,14 @@ class TestTracer:
         data = cast(_NodeData, node.data)
         assert data.module == module
         assert data.qualname == qualname
+        assert data.duration is not None
         assert data.duration.total_seconds() == approx(duration, abs=1.0)
         assert data.outcome == "success"
+
+    def _check_error_node(self, pattern: str, /) -> None:
+        tree = one(get_tracer_trees())
+        root: Node = tree[tree.root]
+        data = cast(_NodeData, root.data)
+        assert data.outcome == "failure"
+        assert data.error is ValueError
+        assert search(pattern, data.desc)
