@@ -136,11 +136,12 @@ class TestTracer:
     @FLAKY
     def test_multiple_calls(self) -> None:
         @tracer
-        def func() -> None:
+        def func(n: int, /) -> int:
             time.sleep(0.01)
+            return n + 1
 
-        _ = func()
-        _ = func()
+        assert func(1) == 2
+        assert func(1) == 2
         trees = get_tracer_trees()
         assert len(trees) == 2
         for tree in trees:
@@ -150,6 +151,7 @@ class TestTracer:
                 "tests.test_tracer",
                 "TestTracer.test_multiple_calls.<locals>.func",
                 0.02,
+                2,
             )
 
     def test_time_zone(self) -> None:
