@@ -133,7 +133,7 @@ class TestTracer:
         assert data["start_time"].tzinfo is HongKong
         assert data["end_time"].tzinfo is HongKong
 
-    def test_error(self) -> None:
+    def test_error_sync(self) -> None:
         @tracer
         def func() -> None:
             msg = "Always fails"
@@ -141,6 +141,20 @@ class TestTracer:
 
         with raises(ValueError, match="Always fails"):
             _ = func()
+        tree = one(get_tracer_trees())
+        root: Node = tree[tree.root]
+        data = cast(_NodeData, root.data)
+        assert data["outcome"] == "failure"
+        assert data.get("error") is ValueError
+
+    async def test_error_async(self) -> None:
+        @tracer
+        async def func() -> None:
+            msg = "Always fails"
+            raise ValueError(msg)
+
+        with raises(ValueError, match="Always fails"):
+            _ = await func()
         tree = one(get_tracer_trees())
         root: Node = tree[tree.root]
         data = cast(_NodeData, root.data)
