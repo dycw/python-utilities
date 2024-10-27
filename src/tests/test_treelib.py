@@ -119,3 +119,16 @@ class TestTree:
         tree = Tree()
         result = tree.get_node("bad")
         assert result is None
+
+    def test_show(self, *, tree: Tree[_TreeData], capsys: CaptureFixture) -> None:
+        print(str(tree))  # noqa: T201
+        out = capsys.readouterr().out.strip("\n")
+        expected = strip_and_dedent("""
+            Root
+            ├── Child1
+            │   ├── Grandchild1
+            │   └── Grandchild2
+            └── Child2
+                └── Grandchild3
+        """)
+        assert out == expected
