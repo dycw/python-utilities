@@ -54,6 +54,14 @@ class _NodeData:
     error: type[Exception] | None = None
 
     @property
+    def desc(self) -> str:
+        terms: list[Any] = [self.duration]
+        if (self.outcome == "failure") and (self.error is not None):
+            terms.append(self.error)
+        joined = ", ".join(map(str, terms))
+        return f"{self.tag} ({joined})"
+
+    @property
     def duration(self) -> dt.timedelta | None:
         if self.end_time is None:
             return None
