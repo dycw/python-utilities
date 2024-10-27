@@ -335,7 +335,10 @@ class TestTracer:
             case "suppressed":
                 pattern = rf"^{tag} \({timedelta}\)$"
         assert search(pattern, data.desc)
+        assert data.args is not None
+        assert data.kwargs is not None
         assert data.end_time is not None
+        assert data.outcome in {"failure", "suppressed"}
         assert isinstance(data.error, ValueError)
 
 
