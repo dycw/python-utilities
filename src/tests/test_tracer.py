@@ -288,7 +288,7 @@ class TestTracer:
 
     def _check_add_args(self) -> None:
         tree = one(get_tracer_trees())
-        root: Node = tree[tree.root]
+        root = tree[tree.root]
         data = cast(_NodeData, root.data)
         assert data.args == (1,)
         assert data.kwargs == {}

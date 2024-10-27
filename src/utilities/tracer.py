@@ -36,13 +36,13 @@ if TYPE_CHECKING:
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 _T = TypeVar("_T")
-_TreeTracerData = Tree["_TracerData"]
+_TreeNodeData = Tree["_NodeData"]
 
 
 @dataclass(kw_only=True, slots=True)
 class _TracerData:
-    trees: list[_TreeTracerData] = field(default_factory=list)
-    tree: _TreeTracerData | None = None
+    trees: list[_TreeNodeData] = field(default_factory=list)
+    tree: _TreeNodeData | None = None
     node: Node | None = None
 
 
@@ -183,12 +183,12 @@ def tracer(
     return cast(Any, wrapped_sync)
 
 
-def get_tracer_trees() -> list[_TreeTracerData]:
+def get_tracer_trees() -> list[_TreeNodeData]:
     """Get the tracer trees."""
     return _TRACER_CONTEXT.get().trees
 
 
-def set_tracer_trees(trees: Iterable[_TreeTracerData], /) -> None:
+def set_tracer_trees(trees: Iterable[_TreeNodeData], /) -> None:
     """Set the tracer tree."""
     _ = _TRACER_CONTEXT.set(_TracerData(trees=list(trees)))
 
@@ -201,7 +201,7 @@ def _initialize(
     *,
     add_args: bool = False,
     time_zone: ZoneInfo | str = UTC,
-) -> tuple[_NodeData[Any], _TreeTracerData | None, _TracerData, Token[_TracerData]]:
+) -> tuple[_NodeData[Any], _TreeNodeData | None, _TracerData, Token[_TracerData]]:
     node_data = _NodeData(
         module=func.__module__,
         qualname=func.__qualname__,
@@ -255,7 +255,7 @@ def _cleanup(
     /,
     *,
     time_zone: ZoneInfo | str = UTC,
-    tree: _TreeTracerData | None = None,
+    tree: _TreeNodeData | None = None,
 ) -> None:
     node_data.end_time = get_now(time_zone=time_zone)
     if tree is None:
