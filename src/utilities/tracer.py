@@ -165,10 +165,14 @@ def tracer(
                 )
             else:
                 return _handle_success(
-                    node_data, result, add_result=add_result, post_result=post_result
+                    node_data,
+                    result,
+                    time_zone=time_zone,
+                    add_result=add_result,
+                    post_result=post_result,
                 )
             finally:
-                _cleanup(node_data, tracer_data, token, time_zone=time_zone, tree=tree)
+                _cleanup(tracer_data, token, tree=tree)
 
         return cast(Any, wrapped_async)
 
@@ -193,10 +197,14 @@ def tracer(
             )
         else:
             return _handle_success(
-                node_data, result, add_result=add_result, post_result=post_result
+                node_data,
+                result,
+                time_zone=time_zone,
+                add_result=add_result,
+                post_result=post_result,
             )
         finally:
-            _cleanup(node_data, tracer_data, token, time_zone=time_zone, tree=tree)
+            _cleanup(tracer_data, token, tree=tree)
 
     return cast(Any, wrapped_sync)
 
@@ -272,9 +280,11 @@ def _handle_success(
     result: _T,
     /,
     *,
+    time_zone: ZoneInfo | str = UTC,
     add_result: bool = False,
     post_result: Callable[[NodeData[_T], _T], None] | None = None,
 ) -> _T:
+    node_data.end_time = get_now(time_zone=time_zone)
     node_data.outcome = "success"
     if add_result:
         node_data.result = result
@@ -284,15 +294,12 @@ def _handle_success(
 
 
 def _cleanup(
-    node_data: NodeData[Any],
     tracer_data: _TracerData,
     token: Token[_TracerData],
     /,
     *,
-    time_zone: ZoneInfo | str = UTC,
     tree: _TreeNodeData | None = None,
 ) -> None:
-    node_data.end_time = get_now(time_zone=time_zone)
     if tree is None:
         tracer_data.tree = None
     _TRACER_CONTEXT.reset(token)

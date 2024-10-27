@@ -235,7 +235,7 @@ class TestTracer:
             assert data.end_time is not None
             assert data.outcome is not None
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Result was {result}")  # pyright: ignore[reportAssignmentType]
+                _ = fh.write(f"Result was {result}")
 
         @tracer(post_result=post_result)
         def func(n: int, /) -> int:
@@ -251,7 +251,7 @@ class TestTracer:
             assert data.end_time is not None
             assert data.outcome is not None
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Result was {result}")  # pyright: ignore[reportAssignmentType]
+                _ = fh.write(f"Result was {result}")
 
         @tracer(post_result=post_result)
         async def func(n: int, /) -> int:
