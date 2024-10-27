@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TypedDict
 
+import treelib
 from pytest import CaptureFixture, fixture
 
 from utilities.text import strip_and_dedent
@@ -102,6 +103,12 @@ class TestTree:
         result = tree.children("r")
         expected = [child1, child2]
         assert result == expected
+
+    def test_create_node(self) -> None:
+        tree = Tree()
+        _ = tree.create_node("Root", "r")
+        child = tree.create_node("Child", "c", parent="r")
+        assert isinstance(child, treelib.Node)
 
     def test_get_item(self) -> None:
         tree = Tree()

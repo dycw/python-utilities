@@ -30,8 +30,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
     from zoneinfo import ZoneInfo
 
-    from treelib import Node
-
+    from utilities.treelib import Node
     from utilities.types import StrMapping
 
 # types
@@ -45,7 +44,7 @@ _T = TypeVar("_T")
 class _TracerData(Generic[_T]):
     trees: list[_TreeNodeData[_T]] = field(default_factory=list)
     tree: _TreeNodeData[_T] | None = None
-    node: Node | None = None
+    node: Node[_NodeData[_T]] | None = None
 
 
 @dataclass(kw_only=True, slots=True)
@@ -84,7 +83,7 @@ _TreeNodeData = Tree[_NodeData[_T]]
 # context vars
 
 
-_TRACER_CONTEXT: ContextVar[_TracerData] = ContextVar(
+_TRACER_CONTEXT: ContextVar[_TracerData[Any]] = ContextVar(
     "_CURRENT_TRACER_NODE", default=_TracerData()
 )
 
@@ -223,8 +222,9 @@ def _initialize(
         tracer_data.trees.append(tree_use)
     else:
         tree_use = tree
-    parent_node = tracer_data.node
-    child = tree_use.create_node(tag=node_data.tag, parent=parent_node, data=node_data)
+    child = tree_use.create_node(
+        tag=node_data.tag, parent=tracer_data.node, data=node_data
+    )
     token = _TRACER_CONTEXT.set(
         _TracerData(trees=tracer_data.trees, tree=tree_use, node=child)
     )
