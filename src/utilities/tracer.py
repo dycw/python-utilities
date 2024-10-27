@@ -222,8 +222,9 @@ def _initialize(
         tracer_data.trees.append(tree_use)
     else:
         tree_use = tree
-    parent_node = tracer_data.node
-    child = tree_use.create_node(tag=node_data.tag, parent=parent_node, data=node_data)
+    child = tree_use.create_node(
+        tag=node_data.tag, parent=tracer_data.node, data=node_data
+    )
     token = _TRACER_CONTEXT.set(
         _TracerData(trees=tracer_data.trees, tree=tree_use, node=child)
     )
