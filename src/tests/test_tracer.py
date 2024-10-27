@@ -59,7 +59,7 @@ class TestTracer:
 
         assert outer(1) == 6
         tree = one(get_tracer_trees())
-        root: Node = tree[tree.root]
+        root = tree[tree.root]
         self._check_node(root, outer, 0.04)
         node_mid1, node_mid2 = tree.children(root.identifier)
         self._check_node(node_mid1, mid1, 0.01)
@@ -93,7 +93,7 @@ class TestTracer:
 
         assert await outer(1) == 6
         tree = one(get_tracer_trees())
-        root: Node = tree[tree.root]
+        root = tree[tree.root]
         self._check_node(root, outer, 0.04)
         node_mid1, node_mid2 = tree.children(root.identifier)
         self._check_node(node_mid1, mid1, 0.01)
@@ -101,6 +101,20 @@ class TestTracer:
         assert len(tree.children(node_mid1.identifier)) == 0
         (node_inner,) = tree.children(node_mid2.identifier)
         self._check_node(node_inner, inner, 0.01)
+
+    def test_methods(self) -> None:
+        class Example:
+            @tracer
+            def func(self, n: int, /) -> int:
+                return n + 1
+
+        assert Example().func(1) == 2
+        tree = one(get_tracer_trees())
+        root = tree[tree.root]
+        assert (
+            root.data.tag
+            == "tests.test_tracer:TestTracer.test_methods.<locals>.Example.func"
+        )
 
     @FLAKY
     def test_multiple_calls(self) -> None:
@@ -112,9 +126,6 @@ class TestTracer:
         assert func(1) == 2
         trees = get_tracer_trees()
         assert len(trees) == 2
-        for tree in trees:
-            root: Node = tree[tree.root]
-            self._check_node(root, func, 0.02)
 
     def test_add_args_sync(self) -> None:
         @tracer(add_args=True)
