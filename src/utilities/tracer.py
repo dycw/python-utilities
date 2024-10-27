@@ -55,9 +55,10 @@ class _NodeData:
 
     @property
     def desc(self) -> str:
-        terms: list[Any] = [self.duration]
+        terms: list[Any] = []
         if (self.outcome == "failure") and (self.error is not None):
             terms.append(self.error)
+        terms.append(self.duration)
         joined = ", ".join(map(str, terms))
         return f"{self.tag} ({joined})"
 
