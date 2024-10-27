@@ -290,8 +290,11 @@ class TestTracer:
             assert fh.readlines() == ["Calling with n=1"]
 
     def post_error(self, data: NodeData[Any], /, *, path: Path) -> None:
+        assert data.args is not None
+        assert data.kwargs is not None
         assert data.end_time is not None
-        assert data.outcome is not None
+        assert data.outcome in {"failure", "suppressed"}
+        assert data.error is not None
         with path.open(mode="w") as fh:
             _ = fh.write(
                 f"Raised a {get_class_name(data.error)} with {data.args=}/{data.kwargs=}"
@@ -305,7 +308,7 @@ class TestTracer:
 
     def post_result(self, data: NodeData[Any], result: int, /, *, path: Path) -> None:
         assert data.end_time is not None
-        assert data.outcome is not None
+        assert data.outcome == "success"
         with path.open(mode="w") as fh:
             _ = fh.write(f"Result was {result}")
 

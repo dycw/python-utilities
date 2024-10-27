@@ -164,7 +164,7 @@ def tracer(
                     post_error=post_error,
                 )
             else:
-                return _handle_success(
+                return _handle_result(
                     node_data,
                     result,
                     time_zone=time_zone,
@@ -196,7 +196,7 @@ def tracer(
                 post_error=post_error,
             )
         else:
-            return _handle_success(
+            return _handle_result(
                 node_data,
                 result,
                 time_zone=time_zone,
@@ -275,7 +275,7 @@ def _handle_error(
     raise error
 
 
-def _handle_success(
+def _handle_result(
     node_data: NodeData[_T],
     result: _T,
     /,
