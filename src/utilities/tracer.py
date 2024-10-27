@@ -183,12 +183,12 @@ def tracer(
     return cast(Any, wrapped_sync)
 
 
-def get_tracer_trees() -> list[Tree]:
+def get_tracer_trees() -> list[_TreeTracerData]:
     """Get the tracer trees."""
     return _TRACER_CONTEXT.get().trees
 
 
-def set_tracer_trees(trees: Iterable[Tree], /) -> None:
+def set_tracer_trees(trees: Iterable[_TreeTracerData], /) -> None:
     """Set the tracer tree."""
     _ = _TRACER_CONTEXT.set(_TracerData(trees=list(trees)))
 
@@ -201,7 +201,7 @@ def _initialize(
     *,
     add_args: bool = False,
     time_zone: ZoneInfo | str = UTC,
-) -> tuple[_NodeData[Any], Tree | None, _TracerData, Token[_TracerData]]:
+) -> tuple[_NodeData[Any], _TreeTracerData | None, _TracerData, Token[_TracerData]]:
     node_data = _NodeData(
         module=func.__module__,
         qualname=func.__qualname__,
@@ -255,7 +255,7 @@ def _cleanup(
     /,
     *,
     time_zone: ZoneInfo | str = UTC,
-    tree: Tree | None = None,
+    tree: _TreeTracerData | None = None,
 ) -> None:
     node_data.end_time = get_now(time_zone=time_zone)
     if tree is None:
