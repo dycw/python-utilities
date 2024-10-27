@@ -19,7 +19,7 @@ from typing import (
 from utilities.datetime import get_now
 from utilities.functions import get_class_name
 from utilities.sentinel import Sentinel, sentinel
-from utilities.treelib import Tree
+from utilities.treelib import Tree, filter_tree
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -36,22 +36,13 @@ if TYPE_CHECKING:
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 _T = TypeVar("_T")
-_TreeNodeData = Tree["_NodeData"]
 
 
 @dataclass(kw_only=True, slots=True)
-class _TracerData:
-    trees: list[_TreeNodeData] = field(default_factory=list)
-    tree: _TreeNodeData | None = None
+class _TracerData(Generic[_T]):
+    trees: list[_TreeNodeData[_T]] = field(default_factory=list)
+    tree: _TreeNodeData[_T] | None = None
     node: Node | None = None
-
-
-# context vars
-
-
-_TRACER_CONTEXT: ContextVar[_TracerData] = ContextVar(
-    "_CURRENT_TRACER_NODE", default=_TracerData()
-)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -82,6 +73,17 @@ class _NodeData(Generic[_T]):
     @property
     def tag(self) -> str:
         return f"{self.module}:{self.qualname}"
+
+
+_TreeNodeData = Tree[_NodeData[_T]]
+
+
+# context vars
+
+
+_TRACER_CONTEXT: ContextVar[_TracerData] = ContextVar(
+    "_CURRENT_TRACER_NODE", default=_TracerData()
+)
 
 
 @overload
@@ -183,12 +185,12 @@ def tracer(
     return cast(Any, wrapped_sync)
 
 
-def get_tracer_trees() -> list[_TreeNodeData]:
+def get_tracer_trees() -> list[_TreeNodeData[Any]]:
     """Get the tracer trees."""
     return _TRACER_CONTEXT.get().trees
 
 
-def set_tracer_trees(trees: Iterable[_TreeNodeData], /) -> None:
+def set_tracer_trees(trees: Iterable[_TreeNodeData[Any]], /) -> None:
     """Set the tracer tree."""
     _ = _TRACER_CONTEXT.set(_TracerData(trees=list(trees)))
 
@@ -201,8 +203,10 @@ def _initialize(
     *,
     add_args: bool = False,
     time_zone: ZoneInfo | str = UTC,
-) -> tuple[_NodeData[Any], _TreeNodeData | None, _TracerData, Token[_TracerData]]:
-    node_data = _NodeData(
+) -> tuple[
+    _NodeData[_T], _TreeNodeData | None, _TracerData[_T], Token[_TracerData[_T]]
+]:
+    node_data: _NodeData[_T] = _NodeData(
         module=func.__module__,
         qualname=func.__qualname__,
         start_time=get_now(time_zone=time_zone),
@@ -210,7 +214,7 @@ def _initialize(
     if add_args:
         node_data.args = args
         node_data.kwargs = kwargs
-    tracer_data: _TracerData = _TRACER_CONTEXT.get()
+    tracer_data: _TracerData[_T] = _TRACER_CONTEXT.get()
     if (tree := tracer_data.tree) is None:
         tree_use = tracer_data.tree = Tree()
         tracer_data.trees.append(tree_use)
@@ -225,7 +229,7 @@ def _initialize(
 
 
 def _handle_error(
-    node_data: _NodeData[Any],
+    node_data: _NodeData[_T],
     error: Exception,
     /,
     *,
@@ -261,6 +265,11 @@ def _cleanup(
     if tree is None:
         tracer_data.tree = None
     _TRACER_CONTEXT.reset(token)
+
+
+def filter_failures(tree: _TreeNodeData[_T], /) -> _TreeNodeData[_T]:
+    """Filter a tree down to the failures."""
+    return filter_tree(tree, data=lambda x: x.outcome == "failure")
 
 
 __all__ = ["get_tracer_trees", "set_tracer_trees", "tracer"]
