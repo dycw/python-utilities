@@ -16,6 +16,9 @@ from typing import (
     overload,
 )
 
+import treelib
+from treelib.exceptions import NodeIDAbsentError
+
 from utilities.datetime import get_now
 from utilities.functions import get_class_name
 from utilities.sentinel import Sentinel, sentinel
@@ -267,9 +270,25 @@ def _cleanup(
     _TRACER_CONTEXT.reset(token)
 
 
-def filter_failures(tree: _TreeNodeData[_T], /) -> _TreeNodeData[_T]:
+@overload
+def filter_failures(tree: _TreeNodeData[_T], /) -> _TreeNodeData[_T] | None: ...
+@overload
+def filter_failures(
+    tree: Iterable[_TreeNodeData[_T]], /
+) -> list[_TreeNodeData[_T]]: ...
+def filter_failures(
+    tree: _TreeNodeData[_T] | Iterable[_TreeNodeData[_T]], /
+) -> _TreeNodeData[_T] | list[_TreeNodeData[_T]] | None:
     """Filter a tree down to the failures."""
-    return filter_tree(tree, data=lambda x: x.outcome == "failure")
+    if isinstance(tree, treelib.Tree):
+        result = filter_tree(tree, data=lambda x: x.outcome == "failure")
+        try:
+            result[result.root]
+        except NodeIDAbsentError:
+            return None
+        return result
+    trees = list(map(filter_failures, tree))
+    return [t for t in trees if t is not None]
 
 
 __all__ = ["filter_failures", "get_tracer_trees", "set_tracer_trees", "tracer"]

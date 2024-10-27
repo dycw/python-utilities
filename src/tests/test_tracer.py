@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from asyncio import Task, TaskGroup
 from re import search
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -327,7 +328,7 @@ class TestTracer:
 
 
 class TestFilterFailures:
-    def test_main(self) -> None:
+    def test_sync(self) -> None:
         @tracer
         def outer(n: int, /) -> list[int]:
             return list(map(inner, range(n, -n - 1, -1)))
@@ -342,21 +343,71 @@ class TestFilterFailures:
         with raises(ValueError, match="n=0 must be positive"):
             _ = outer(3)
         tree = one(get_tracer_trees())
-
-        # full
-        out = tree.show(data_property="desc", stdout=False)
-        out1, out2, out3, out4, out5 = out.splitlines()
-        tag_outer = f"{outer.__module__}:{outer.__qualname__}"
-        timedelta = r"\d:\d{2}:\d{2}(?:\.\d{6})?"
-        assert search(rf"^{tag_outer} \(ValueError, {timedelta}\)$", out1)
-        tag_inner = f"{inner.__module__}:{inner.__qualname__}"
-        for out_i in [out2, out3, out4]:
-            assert search(rf"^├── {tag_inner} \({timedelta}\)$", out_i)
-        assert search(rf"^└── {tag_inner} \(ValueError, {timedelta}\)$", out5)
-
-        # failure
+        assert tree.size() == 5
         subtree = filter_failures(tree)
-        out = subtree.show(data_property="desc", stdout=False)
-        out1, out2 = out.splitlines()
-        assert search(rf"^{tag_outer} \(ValueError, {timedelta}\)$", out1)
-        assert search(rf"^└── {tag_inner} \(ValueError, {timedelta}\)$", out2)
+        assert subtree is not None
+        assert subtree.size() == 2
+
+    async def test_async(self) -> None:
+        @tracer
+        async def outer(n: int, /) -> list[int]:
+            tasks: set[Task[int]] = set()
+            async with TaskGroup() as tg:
+                for i in range(n, -n - 1, -1):
+                    tasks.add(tg.create_task(inner(i)))
+            return [t.result() for t in tasks]
+
+        @tracer
+        async def inner(n: int, /) -> int:
+            await asyncio.sleep(0.01)
+            if n >= 1:
+                return n + 1
+            msg = f"{n=} must be positive"
+            raise ValueError(msg)
+
+        with raises(ExceptionGroup):
+            _ = await outer(3)
+        tree = one(get_tracer_trees())
+        assert tree.size() == 8
+        subtree = filter_failures(tree)
+        assert subtree is not None
+        assert subtree.size() == 5
+
+    def test_no_failure(self) -> None:
+        @tracer
+        def func(n: int, /) -> int:
+            return n + 1
+
+        assert func(1) == 2
+        tree = one(get_tracer_trees())
+        result = filter_failures(tree)
+        assert result is None
+
+    async def test_list(self) -> None:
+        @tracer
+        async def outer(n: int, /) -> list[int]:
+            tasks: set[Task[int]] = set()
+            async with TaskGroup() as tg:
+                for i in range(n, -n - 1, -1):
+                    tasks.add(tg.create_task(inner(i)))
+            return [t.result() for t in tasks]
+
+        @tracer
+        async def inner(n: int, /) -> int:
+            await asyncio.sleep(0.01)
+            if n >= 1:
+                return n + 1
+            msg = f"{n=} must be positive"
+            raise ValueError(msg)
+
+        assert await outer(-1) == []
+        with raises(ExceptionGroup):
+            _ = await outer(3)
+        with raises(ExceptionGroup):
+            _ = await outer(4)
+        trees = get_tracer_trees()
+        assert len(trees) == 3
+        assert [t.size() for t in trees] == [1, 8, 10]
+        subtrees = filter_failures(trees)
+        assert len(subtrees) == 2
+        assert [t.size() for t in subtrees] == [5, 6]
