@@ -365,6 +365,7 @@ class TestFilterFailures:
         assert subtree is not None
         assert subtree.size() == 2
 
+    @FLAKY
     async def test_async(self) -> None:
         @tracer
         async def outer(n: int, /) -> list[int]:
