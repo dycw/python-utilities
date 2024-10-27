@@ -5,7 +5,7 @@ import time
 from re import search
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-from pytest import approx, fixture, mark, raises
+from pytest import approx, fixture, raises
 from treelib import Node
 
 from tests.conftest import FLAKY
@@ -149,9 +149,9 @@ class TestTracer:
 
         @tracer(pre_call=pre_call)
         def func(n: int, /) -> int:
-            return n
+            return n + 1
 
-        assert func(1) == 1
+        assert func(1) == 2
         with path.open() as fh:
             assert fh.readlines() == ["Calling with n=1"]
 
@@ -165,9 +165,9 @@ class TestTracer:
         @tracer(pre_call=pre_call)
         async def func(n: int, /) -> int:
             await asyncio.sleep(0.01)
-            return n
+            return n + 1
 
-        assert await func(1) == 1
+        assert await func(1) == 2
         with path.open() as fh:
             assert fh.readlines() == ["Calling with n=1"]
 
@@ -181,7 +181,6 @@ class TestTracer:
             _ = func()
         self._check_error_node(func, outcome="suppressed")
 
-    @mark.only
     def test_post_error_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
@@ -241,7 +240,7 @@ class TestTracer:
         @tracer(post_result=post_result)
         async def func(n: int, /) -> int:
             await asyncio.sleep(0.01)
-            return n
+            return n + 1
 
         assert await func(1) == 2
         with path.open() as fh:
