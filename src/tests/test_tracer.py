@@ -285,7 +285,7 @@ class TestTracer:
         data = cast(_NodeData, root.data)
         assert data.outcome == outcome
         tag = f"{func.__module__}:{func.__qualname__}"
-        timedelta = r"\d:\d{2}:\d{2}\.\d{6}"
+        timedelta = r"\d:\d{2}:\d{2}(?:\.\d{6})?"
         match outcome:
             case "failure":
                 pattern = rf"{tag} \(ValueError, {timedelta}\)"
