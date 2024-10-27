@@ -130,8 +130,8 @@ class TestTracer:
         tree = one(get_tracer_trees())
         root: Node = tree[tree.root]
         data = cast(_NodeData, root.data)
-        assert data["start_time"].tzinfo is HongKong
-        assert data["end_time"].tzinfo is HongKong
+        assert data.start_time.tzinfo is HongKong
+        assert data.end_time.tzinfo is HongKong
 
     def test_error_sync(self) -> None:
         @tracer
@@ -144,8 +144,8 @@ class TestTracer:
         tree = one(get_tracer_trees())
         root: Node = tree[tree.root]
         data = cast(_NodeData, root.data)
-        assert data["outcome"] == "failure"
-        assert data.get("error") is ValueError
+        assert data.outcome == "failure"
+        assert data.error is ValueError
 
     async def test_error_async(self) -> None:
         @tracer
@@ -158,15 +158,15 @@ class TestTracer:
         tree = one(get_tracer_trees())
         root: Node = tree[tree.root]
         data = cast(_NodeData, root.data)
-        assert data["outcome"] == "failure"
-        assert data.get("error") is ValueError
+        assert data.outcome == "failure"
+        assert data.error is ValueError
 
     def _check_node(
         self, node: Node, module: str, qualname: str, duration: float, /
     ) -> None:
         assert node.tag == f"{module}:{qualname}"
         data = cast(_NodeData, node.data)
-        assert data["module"] == module
-        assert data["qualname"] == qualname
-        assert data["duration"].total_seconds() == approx(duration, abs=1.0)
-        assert data["outcome"] == "success"
+        assert data.module == module
+        assert data.qualname == qualname
+        assert data.duration.total_seconds() == approx(duration, abs=1.0)
+        assert data.outcome == "success"
