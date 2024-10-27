@@ -187,6 +187,12 @@ class TestTracer:
         root: Node = tree[tree.root]
         data = cast(_NodeData, root.data)
         assert data.outcome == outcome
-        assert data.error is ValueError
-        pattern = rf"tests.test_tracer:{func.__qualname__} \(ValueError, \d:\d{{2}}:\d{{2}}\.\d{{6}}\)"
+        tag = f"{func.__module__}:{func.__qualname__}"
+        timedelta = r"\d:\d{2}:\d{2}\.\d{6}"
+        match outcome:
+            case "failure":
+                pattern = rf"{tag} \(ValueError, {timedelta}\)"
+            case "suppressed":
+                pattern = rf"{tag} \({timedelta}\)"
         assert search(pattern, data.desc)
+        assert data.error is ValueError
