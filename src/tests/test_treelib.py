@@ -94,6 +94,15 @@ class TestNode:
 
 
 class TestTree:
+    def test_children(self) -> None:
+        tree = Tree()
+        _ = tree.create_node("Root", "r")
+        child1 = tree.create_node("Child1", "c1", parent="r")
+        child2 = tree.create_node("Child2", "c2", parent="r")
+        result = tree.children("r")
+        expected = [child1, child2]
+        assert result == expected
+
     def test_get_item(self) -> None:
         tree = Tree()
         root = tree.create_node("Root", "r")

@@ -22,6 +22,10 @@ class Tree(treelib.Tree, Generic[_T]):
         return super().__getitem__(key)
 
     @override
+    def children(self, nid: str) -> list[Node[_T]]:
+        return super().children(nid)
+
+    @override
     def get_node(self, nid: str) -> Node[_T] | None:
         return super().get_node(nid)
 
