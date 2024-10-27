@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
 
-    from utilities.treelib import Node, _NodeData
+    from utilities.treelib import Node
 
 
 @fixture(autouse=True)
@@ -186,9 +186,11 @@ class TestTracer:
     def test_post_error_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_error(data: _NodeData[Any], /) -> None:
+        def post_error(data: NodeData[Any], /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Raised a {get_class_name(data.error)}")
+                _ = fh.write(
+                    f"Raised a {get_class_name(data.error)} with {data.args=}/{data.kwargs=}"
+                )
 
         @tracer(post_error=post_error)
         def func(n: int, /) -> int:
@@ -204,9 +206,11 @@ class TestTracer:
     async def test_post_error_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_error(data: _NodeData[Any], /) -> None:
+        def post_error(data: NodeData[Any], /) -> None:
             with path.open(mode="w") as fh:
-                _ = fh.write(f"Raised a {get_class_name(data.error)}")
+                _ = fh.write(
+                    f"Raised a {get_class_name(data.error)} with {data.args=}/{data.kwargs=}"
+                )
 
         @tracer(post_error=post_error)
         async def func(n: int, /) -> int:

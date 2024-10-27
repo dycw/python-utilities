@@ -155,7 +155,12 @@ def tracer(
                 result = await func(*args, **kwargs)
             except Exception as error:  # noqa: BLE001
                 _handle_error(
-                    node_data, error, suppress=suppress, post_error=post_error
+                    node_data,
+                    args,
+                    kwargs,
+                    error,
+                    suppress=suppress,
+                    post_error=post_error,
                 )
             else:
                 return _handle_success(
@@ -176,7 +181,9 @@ def tracer(
         try:
             result = func(*args, **kwargs)
         except Exception as error:  # noqa: BLE001
-            _handle_error(node_data, error, suppress=suppress, post_error=post_error)
+            _handle_error(
+                node_data, args, kwargs, error, suppress=suppress, post_error=post_error
+            )
         else:
             return _handle_success(
                 node_data, result, add_result=add_result, post_result=post_result
@@ -231,12 +238,16 @@ def _initialize(
 
 def _handle_error(
     node_data: NodeData[_T],
+    args: tuple[Any, ...],
+    kwargs: StrMapping,
     error: Exception,
     /,
     *,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
     post_error: Callable[[NodeData[_T]], None] | None = None,
 ) -> NoReturn:
+    node_data.args = args
+    node_data.kwargs = kwargs
     if (suppress is not None) and isinstance(error, suppress):
         node_data.outcome = "suppressed"
     else:
