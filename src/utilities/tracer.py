@@ -5,16 +5,7 @@ from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
 from functools import partial, wraps
 from inspect import iscoroutinefunction
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    Literal,
-    NoReturn,
-    TypeVar,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, cast, overload
 
 import treelib
 from treelib.exceptions import NodeIDAbsentError
@@ -57,7 +48,7 @@ class _NodeData(Generic[_T]):
     end_time: dt.datetime | None = None
     outcome: Literal["success", "failure", "suppressed"] | None = None
     result: _T | Sentinel = sentinel
-    error: type[Exception] | None = None
+    error: Exception | None = None
 
     @property
     def desc(self) -> str:
@@ -97,7 +88,7 @@ def tracer(
     time_zone: ZoneInfo | str = ...,
     pre_call: Callable[..., None] | None = ...,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = ...,
-    post_error: Callable[[Exception], None] | None = ...,
+    post_error: Callable[[_NodeData[Any], Exception], None] | None = ...,
     post_result: Callable[[Any], None] | None = ...,
     add_result: bool = ...,
 ) -> _F: ...
@@ -110,7 +101,7 @@ def tracer(
     time_zone: ZoneInfo | str = ...,
     pre_call: Callable[..., None] | None = ...,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = ...,
-    post_error: Callable[[Exception], None] | None = ...,
+    post_error: Callable[[_NodeData[Any], Exception], None] | None = ...,
     post_result: Callable[[Any], None] | None = ...,
     add_result: bool = ...,
 ) -> Callable[[_F], _F]: ...
@@ -122,7 +113,7 @@ def tracer(
     time_zone: ZoneInfo | str = UTC,
     pre_call: Callable[..., None] | None = None,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
-    post_error: Callable[[Exception], None] | None = None,
+    post_error: Callable[[_NodeData[Any], Exception], None] | None = None,
     post_result: Callable[[Any], None] | None = None,
     add_result: bool = False,
 ) -> _F | Callable[[_F], _F]:
@@ -151,10 +142,11 @@ def tracer(
                 pre_call(*args, **kwargs)
             try:
                 result = await func(*args, **kwargs)
-            except Exception as error:  # noqa: BLE001
-                if post_error is not None:
-                    post_error(error)
+            except Exception as error:
                 _handle_error(node_data, error, suppress=suppress)
+                if post_error is not None:
+                    post_error(node_data, error)
+                raise
             else:
                 if post_result is not None:
                     post_result(result)
@@ -173,10 +165,11 @@ def tracer(
             pre_call(*args, **kwargs)
         try:
             result = func(*args, **kwargs)
-        except Exception as error:  # noqa: BLE001
+        except Exception as error:
             if post_error is not None:
-                post_error(error)
+                post_error(node_data, error)
             _handle_error(node_data, error, suppress=suppress)
+            raise
         else:
             if post_result is not None:
                 post_result(result)
@@ -237,13 +230,12 @@ def _handle_error(
     /,
     *,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
-) -> NoReturn:
+) -> None:
     if (suppress is not None) and isinstance(error, suppress):
         node_data.outcome = "suppressed"
     else:
         node_data.outcome = "failure"
-    node_data.error = type(error)
-    raise error
+    node_data.error = error
 
 
 def _handle_success(

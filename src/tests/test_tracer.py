@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
 
-    from utilities.treelib import Node
+    from utilities.treelib import Node, _NodeData
 
 
 @fixture(autouse=True)
@@ -180,7 +180,7 @@ class TestTracer:
     def test_post_error_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_error(error: Exception, /) -> None:
+        def post_error(_: _NodeData[Any], error: Exception, /) -> None:
             with path.open(mode="w") as fh:
                 _ = fh.write(f"Raised a {get_class_name(error)}")
 
@@ -196,7 +196,7 @@ class TestTracer:
     async def test_post_error_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_error(error: Exception, /) -> None:
+        def post_error(_: _NodeData[Any], error: Exception, /) -> None:
             with path.open(mode="w") as fh:
                 _ = fh.write(f"Raised a {get_class_name(error)}")
 
@@ -324,7 +324,7 @@ class TestTracer:
             case "suppressed":
                 pattern = rf"^{tag} \({timedelta}\)$"
         assert search(pattern, data.desc)
-        assert data.error is ValueError
+        assert isinstance(data.error, ValueError)
 
 
 class TestFilterFailures:
