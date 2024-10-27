@@ -264,11 +264,11 @@ def _handle_error(
 ) -> NoReturn:
     node_data.args = args
     node_data.kwargs = kwargs
-    node_data.end_time = get_now(time_zone=time_zone)
     if (suppress is not None) and isinstance(error, suppress):
-        node_data.outcome = "suppressed"
+        outcome = "suppressed"
     else:
-        node_data.outcome = "failure"
+        outcome = "failure"
+    _set_end_time_and_outcome(node_data, outcome, time_zone=time_zone)
     node_data.error = error
     if post_error is not None:
         post_error(node_data)
@@ -284,13 +284,23 @@ def _handle_success(
     add_result: bool = False,
     post_result: Callable[[NodeData[_T], _T], None] | None = None,
 ) -> _T:
-    node_data.end_time = get_now(time_zone=time_zone)
-    node_data.outcome = "success"
+    _set_end_time_and_outcome(node_data, "success", time_zone=time_zone)
     if add_result:
         node_data.result = result
     if post_result is not None:
         post_result(node_data, result)
     return result
+
+
+def _set_end_time_and_outcome(
+    node_data: NodeData[Any],
+    outcome: Literal["success", "failure", "suppressed"],
+    /,
+    *,
+    time_zone: ZoneInfo | str = UTC,
+) -> None:
+    node_data.end_time = get_now(time_zone=time_zone)
+    node_data.outcome = outcome
 
 
 def _cleanup(
