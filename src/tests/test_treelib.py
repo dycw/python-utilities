@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+from typing import TypedDict
+
 from pytest import CaptureFixture, fixture
 
 from utilities.text import strip_and_dedent
 from utilities.treelib import Node, Tree, filter_tree
 
 
+class _TreeData(TypedDict):
+    num: int
+
+
 @fixture
-def tree() -> Tree:
+def tree() -> Tree[_TreeData]:
     tree = Tree()
     _ = tree.create_node("Root", "r", data={"num": 1})
     _ = tree.create_node("Child1", "c1", parent="r", data={"num": 2})
@@ -19,7 +25,7 @@ def tree() -> Tree:
 
 
 class TestFilterTree:
-    def test_no_filter(self, *, tree: Tree, capsys: CaptureFixture) -> None:
+    def test_no_filter(self, *, tree: Tree[_TreeData], capsys: CaptureFixture) -> None:
         subtree = filter_tree(tree)
         print(str(subtree))  # noqa: T201
         out = capsys.readouterr().out.strip("\n")
@@ -33,7 +39,7 @@ class TestFilterTree:
         """)
         assert out == expected
 
-    def test_tag(self, *, tree: Tree, capsys: CaptureFixture) -> None:
+    def test_tag(self, *, tree: Tree[_TreeData], capsys: CaptureFixture) -> None:
         subtree = filter_tree(tree, tag=lambda t: t != "Grandchild3")
         print(str(subtree))  # noqa: T201
         out = capsys.readouterr().out.strip("\n")
@@ -46,7 +52,7 @@ class TestFilterTree:
         """)
         assert out == expected
 
-    def test_identifier(self, *, tree: Tree, capsys: CaptureFixture) -> None:
+    def test_identifier(self, *, tree: Tree[_TreeData], capsys: CaptureFixture) -> None:
         subtree = filter_tree(tree, identifier=lambda id_: id_ != "gc3")
         print(str(subtree))  # noqa: T201
         out = capsys.readouterr().out.strip("\n")
@@ -59,7 +65,7 @@ class TestFilterTree:
         """)
         assert out == expected
 
-    def test_data(self, *, tree: Tree, capsys: CaptureFixture) -> None:
+    def test_data(self, *, tree: Tree[_TreeData], capsys: CaptureFixture) -> None:
         subtree = filter_tree(tree, data=lambda data: data["num"] <= 5)
         print(str(subtree))  # noqa: T201
         out = capsys.readouterr().out.strip("\n")
