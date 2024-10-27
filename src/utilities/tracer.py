@@ -100,8 +100,8 @@ def tracer(
     pre_call: Callable[..., None] | None = ...,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = ...,
     post_error: Callable[[NodeData[Any]], None] | None = ...,
-    post_result: Callable[[NodeData[Any], Any], None] | None = ...,
     add_result: bool = ...,
+    post_result: Callable[[NodeData[Any], Any], None] | None = ...,
 ) -> _F: ...
 @overload
 def tracer(
@@ -113,8 +113,8 @@ def tracer(
     pre_call: Callable[..., None] | None = ...,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = ...,
     post_error: Callable[[NodeData[Any]], None] | None = ...,
-    post_result: Callable[[NodeData[Any], Any], None] | None = ...,
     add_result: bool = ...,
+    post_result: Callable[[NodeData[Any], Any], None] | None = ...,
 ) -> Callable[[_F], _F]: ...
 def tracer(
     func: _F | None = None,
@@ -125,8 +125,8 @@ def tracer(
     pre_call: Callable[..., None] | None = None,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
     post_error: Callable[[NodeData[Any]], None] | None = None,
-    post_result: Callable[[NodeData[Any], Any], None] | None = None,
     add_result: bool = False,
+    post_result: Callable[[NodeData[Any], Any], None] | None = None,
 ) -> _F | Callable[[_F], _F]:
     """Context manager for tracing function calls."""
     if func is None:
@@ -137,8 +137,8 @@ def tracer(
             pre_call=pre_call,
             suppress=suppress,
             post_error=post_error,
-            post_result=post_result,
             add_result=add_result,
+            post_result=post_result,
         )
         return cast(Callable[[_F], _F], result)
 
@@ -159,15 +159,20 @@ def tracer(
                     args,
                     kwargs,
                     error,
+                    time_zone=time_zone,
                     suppress=suppress,
                     post_error=post_error,
                 )
             else:
-                return _handle_success(
-                    node_data, result, add_result=add_result, post_result=post_result
+                return _handle_result(
+                    node_data,
+                    result,
+                    time_zone=time_zone,
+                    add_result=add_result,
+                    post_result=post_result,
                 )
             finally:
-                _cleanup(node_data, tracer_data, token, time_zone=time_zone, tree=tree)
+                _cleanup(tracer_data, token, tree=tree)
 
         return cast(Any, wrapped_async)
 
@@ -182,14 +187,24 @@ def tracer(
             result = func(*args, **kwargs)
         except Exception as error:  # noqa: BLE001
             _handle_error(
-                node_data, args, kwargs, error, suppress=suppress, post_error=post_error
+                node_data,
+                args,
+                kwargs,
+                error,
+                time_zone=time_zone,
+                suppress=suppress,
+                post_error=post_error,
             )
         else:
-            return _handle_success(
-                node_data, result, add_result=add_result, post_result=post_result
+            return _handle_result(
+                node_data,
+                result,
+                time_zone=time_zone,
+                add_result=add_result,
+                post_result=post_result,
             )
         finally:
-            _cleanup(node_data, tracer_data, token, time_zone=time_zone, tree=tree)
+            _cleanup(tracer_data, token, tree=tree)
 
     return cast(Any, wrapped_sync)
 
@@ -243,30 +258,33 @@ def _handle_error(
     error: Exception,
     /,
     *,
+    time_zone: ZoneInfo | str = UTC,
     suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
     post_error: Callable[[NodeData[_T]], None] | None = None,
 ) -> NoReturn:
     node_data.args = args
     node_data.kwargs = kwargs
     if (suppress is not None) and isinstance(error, suppress):
-        node_data.outcome = "suppressed"
+        outcome = "suppressed"
     else:
-        node_data.outcome = "failure"
+        outcome = "failure"
+    _set_end_time_and_outcome(node_data, outcome, time_zone=time_zone)
     node_data.error = error
     if post_error is not None:
         post_error(node_data)
     raise error
 
 
-def _handle_success(
+def _handle_result(
     node_data: NodeData[_T],
     result: _T,
     /,
     *,
+    time_zone: ZoneInfo | str = UTC,
     add_result: bool = False,
     post_result: Callable[[NodeData[_T], _T], None] | None = None,
 ) -> _T:
-    node_data.outcome = "success"
+    _set_end_time_and_outcome(node_data, "success", time_zone=time_zone)
     if add_result:
         node_data.result = result
     if post_result is not None:
@@ -274,16 +292,24 @@ def _handle_success(
     return result
 
 
-def _cleanup(
+def _set_end_time_and_outcome(
     node_data: NodeData[Any],
+    outcome: Literal["success", "failure", "suppressed"],
+    /,
+    *,
+    time_zone: ZoneInfo | str = UTC,
+) -> None:
+    node_data.end_time = get_now(time_zone=time_zone)
+    node_data.outcome = outcome
+
+
+def _cleanup(
     tracer_data: _TracerData,
     token: Token[_TracerData],
     /,
     *,
-    time_zone: ZoneInfo | str = UTC,
     tree: _TreeNodeData | None = None,
 ) -> None:
-    node_data.end_time = get_now(time_zone=time_zone)
     if tree is None:
         tracer_data.tree = None
     _TRACER_CONTEXT.reset(token)

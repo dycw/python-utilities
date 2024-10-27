@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from asyncio import Task, TaskGroup, sleep
+from functools import partial
 from re import search
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -147,11 +148,7 @@ class TestTracer:
     def test_pre_call_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def pre_call(_: NodeData[Any], n: int, /) -> None:
-            with path.open(mode="w") as fh:
-                _ = fh.write(f"Calling with {n=}")  # pyright: ignore[reportAssignmentType]
-
-        @tracer(pre_call=pre_call)
+        @tracer(pre_call=partial(self.pre_call, path=path))
         def func(n: int, /) -> int:
             return n + 1
 
@@ -161,11 +158,7 @@ class TestTracer:
     async def test_pre_call_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def pre_call(_: NodeData[Any], n: int, /) -> None:
-            with path.open(mode="w") as fh:
-                _ = fh.write(f"Calling with {n=}")  # pyright: ignore[reportAssignmentType]
-
-        @tracer(pre_call=pre_call)
+        @tracer(pre_call=partial(self.pre_call, path=path))
         async def func(n: int, /) -> int:
             await asyncio.sleep(0.01)
             return n + 1
@@ -186,13 +179,7 @@ class TestTracer:
     def test_post_error_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_error(data: NodeData[Any], /) -> None:
-            with path.open(mode="w") as fh:
-                _ = fh.write(
-                    f"Raised a {get_class_name(data.error)} with {data.args=}/{data.kwargs=}"
-                )
-
-        @tracer(post_error=post_error)
+        @tracer(post_error=partial(self.post_error, path=path))
         def func(n: int, /) -> int:
             if n >= 1:
                 return n + 1
@@ -206,13 +193,7 @@ class TestTracer:
     async def test_post_error_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_error(data: NodeData[Any], /) -> None:
-            with path.open(mode="w") as fh:
-                _ = fh.write(
-                    f"Raised a {get_class_name(data.error)} with {data.args=}/{data.kwargs=}"
-                )
-
-        @tracer(post_error=post_error)
+        @tracer(post_error=partial(self.post_error, path=path))
         async def func(n: int, /) -> int:
             await sleep(0.01)
             if n >= 1:
@@ -227,11 +208,7 @@ class TestTracer:
     def test_post_result_sync(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_result(_: NodeData[Any], result: int, /) -> None:
-            with path.open(mode="w") as fh:
-                _ = fh.write(f"Result was {result}")  # pyright: ignore[reportAssignmentType]
-
-        @tracer(post_result=post_result)
+        @tracer(post_result=partial(self.post_result, path=path))
         def func(n: int, /) -> int:
             return n + 1
 
@@ -241,11 +218,7 @@ class TestTracer:
     async def test_post_result_async(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("log")
 
-        def post_result(_: NodeData[Any], result: int, /) -> None:
-            with path.open(mode="w") as fh:
-                _ = fh.write(f"Result was {result}")  # pyright: ignore[reportAssignmentType]
-
-        @tracer(post_result=post_result)
+        @tracer(post_result=partial(self.post_result, path=path))
         async def func(n: int, /) -> int:
             await asyncio.sleep(0.01)
             return n + 1
@@ -308,15 +281,36 @@ class TestTracer:
         assert data.args == (1,)
         assert data.kwargs == {}
 
+    def pre_call(self, _: NodeData[Any], n: int, /, *, path: Path) -> None:
+        with path.open(mode="w") as fh:
+            _ = fh.write(f"Calling with {n=}")  # pyright: ignore[reportAssignmentType]
+
     def _check_pre_call(self, path: Path, /) -> None:
         with path.open() as fh:
             assert fh.readlines() == ["Calling with n=1"]
+
+    def post_error(self, data: NodeData[Any], /, *, path: Path) -> None:
+        assert data.args is not None
+        assert data.kwargs is not None
+        assert data.end_time is not None
+        assert data.outcome in {"failure", "suppressed"}
+        assert data.error is not None
+        with path.open(mode="w") as fh:
+            _ = fh.write(
+                f"Raised a {get_class_name(data.error)} with {data.args=}/{data.kwargs=}"
+            )
 
     def _check_post_error(self, path: Path, /) -> None:
         with path.open() as fh:
             assert fh.readlines() == [
                 "Raised a ValueError with data.args=(0,)/data.kwargs={}"
             ]
+
+    def post_result(self, data: NodeData[Any], result: int, /, *, path: Path) -> None:
+        assert data.end_time is not None
+        assert data.outcome == "success"
+        with path.open(mode="w") as fh:
+            _ = fh.write(f"Result was {result}")
 
     def _check_post_result(self, path: Path, /) -> None:
         with path.open() as fh:
@@ -341,6 +335,10 @@ class TestTracer:
             case "suppressed":
                 pattern = rf"^{tag} \({timedelta}\)$"
         assert search(pattern, data.desc)
+        assert data.args is not None
+        assert data.kwargs is not None
+        assert data.end_time is not None
+        assert data.outcome in {"failure", "suppressed"}
         assert isinstance(data.error, ValueError)
 
 
