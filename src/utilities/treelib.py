@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generic, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Generic, Literal, TypeVar, cast, overload
 
 import treelib
 from typing_extensions import override
@@ -31,6 +31,16 @@ class Tree(treelib.Tree, Generic[_T]):
     @override
     def children(self, nid: str) -> list[Node[_T]]:
         return super().children(nid)
+
+    @override
+    def create_node(
+        self,
+        tag: str | None = None,
+        identifier: str | None = None,
+        parent: str | Node[_T] | None = None,
+        data: _T | None = None,
+    ) -> Node[_T]:
+        return cast(Node[_T], super().create_node(tag, identifier, parent, data))
 
     @override
     def get_node(self, nid: str) -> Node[_T] | None:
