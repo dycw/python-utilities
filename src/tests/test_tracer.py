@@ -28,76 +28,100 @@ class TestTracer:
     @FLAKY
     def test_sync(self) -> None:
         @tracer
-        def outer() -> None:
+        def outer(n: int, /) -> int:
             time.sleep(0.01)  # 0.01
-            mid1()  # 0.01
-            mid2()  # 0.02
+            n = mid1(n)  # 0.01
+            return mid2(n)  # 0.02
 
         @tracer
-        def mid1() -> None:
+        def mid1(n: int, /) -> int:
             time.sleep(0.01)  # 0.01
+            return n + 1
 
         @tracer
-        def mid2() -> None:
+        def mid2(n: int, /) -> int:
             time.sleep(0.01)  # 0.01
-            inner()  # 0.01
+            return inner(n)  # e.01
 
         @tracer
-        def inner() -> None:
+        def inner(n: int, /) -> int:
             time.sleep(0.01)  # 0.01
+            return n + 1
 
-        outer()
+        assert outer(1) == 3
         tree = one(get_tracer_trees())
         root: Node = tree[tree.root]
         self._check_node(
-            root, "tests.test_tracer", "TestTracer.test_sync.<locals>.outer", 0.04
+            root, "tests.test_tracer", "TestTracer.test_sync.<locals>.outer", 0.04, 3
         )
         node_mid1, node_mid2 = cast(list[Node], tree.children(root.identifier))
         self._check_node(
-            node_mid1, "tests.test_tracer", "TestTracer.test_sync.<locals>.mid1", 0.01
+            node_mid1,
+            "tests.test_tracer",
+            "TestTracer.test_sync.<locals>.mid1",
+            0.01,
+            2,
         )
         self._check_node(
-            node_mid2, "tests.test_tracer", "TestTracer.test_sync.<locals>.mid2", 0.02
+            node_mid2,
+            "tests.test_tracer",
+            "TestTracer.test_sync.<locals>.mid2",
+            0.02,
+            3,
         )
         assert len(tree.children(node_mid1.identifier)) == 0
         (node_inner,) = cast(list[Node], tree.children(node_mid2.identifier))
         self._check_node(
-            node_inner, "tests.test_tracer", "TestTracer.test_sync.<locals>.inner", 0.01
+            node_inner,
+            "tests.test_tracer",
+            "TestTracer.test_sync.<locals>.inner",
+            0.01,
+            3,
         )
 
     @FLAKY
     async def test_async(self) -> None:
         @tracer
-        async def outer() -> None:
+        async def outer(n: int, /) -> int:
             await asyncio.sleep(0.01)  # 0.01
-            await mid1()  # 0.01
-            await mid2()  # 0.02
+            n = await mid1(n)  # 0.01
+            return await mid2(n)  # 0.02
 
         @tracer
-        async def mid1() -> None:
+        async def mid1(n: int, /) -> int:
             await asyncio.sleep(0.01)  # 0.01
+            return n + 1
 
         @tracer
-        async def mid2() -> None:
+        async def mid2(n: int, /) -> int:
             await asyncio.sleep(0.01)  # 0.01
-            await inner()  # 0.01
+            return await inner(n)  # 0.01
 
         @tracer
-        async def inner() -> None:
+        async def inner(n: int, /) -> int:
             await asyncio.sleep(0.01)  # 0.01
+            return n + 1
 
-        await outer()
+        assert await outer(1) == 3
         tree = one(get_tracer_trees())
         root: Node = tree[tree.root]
         self._check_node(
-            root, "tests.test_tracer", "TestTracer.test_async.<locals>.outer", 0.04
+            root, "tests.test_tracer", "TestTracer.test_async.<locals>.outer", 0.04, 3
         )
         node_mid1, node_mid2 = cast(list[Node], tree.children(root.identifier))
         self._check_node(
-            node_mid1, "tests.test_tracer", "TestTracer.test_async.<locals>.mid1", 0.01
+            node_mid1,
+            "tests.test_tracer",
+            "TestTracer.test_async.<locals>.mid1",
+            0.01,
+            2,
         )
         self._check_node(
-            node_mid2, "tests.test_tracer", "TestTracer.test_async.<locals>.mid2", 0.02
+            node_mid2,
+            "tests.test_tracer",
+            "TestTracer.test_async.<locals>.mid2",
+            0.02,
+            3,
         )
         assert len(tree.children(node_mid1.identifier)) == 0
         (node_inner,) = cast(list[Node], tree.children(node_mid2.identifier))
@@ -106,16 +130,18 @@ class TestTracer:
             "tests.test_tracer",
             "TestTracer.test_async.<locals>.inner",
             0.01,
+            3,
         )
 
     @FLAKY
     def test_multiple_calls(self) -> None:
         @tracer
-        def func() -> None:
+        def func(n: int, /) -> int:
             time.sleep(0.01)
+            return n + 1
 
-        _ = func()
-        _ = func()
+        assert func(1) == 2
+        assert func(1) == 2
         trees = get_tracer_trees()
         assert len(trees) == 2
         for tree in trees:
@@ -125,6 +151,7 @@ class TestTracer:
                 "tests.test_tracer",
                 "TestTracer.test_multiple_calls.<locals>.func",
                 0.02,
+                2,
             )
 
     def test_time_zone(self) -> None:
@@ -267,7 +294,7 @@ class TestTracer:
         self._check_error_node(func, outcome="failure")
 
     def _check_node(
-        self, node: Node, module: str, qualname: str, duration: float, /
+        self, node: Node, module: str, qualname: str, duration: float, result: int, /
     ) -> None:
         assert node.tag == f"{module}:{qualname}"
         data = cast(_NodeData, node.data)
@@ -276,6 +303,7 @@ class TestTracer:
         assert data.duration is not None
         assert data.duration.total_seconds() == approx(duration, abs=1.0)
         assert data.outcome == "success"
+        assert data.result == result
 
     def _check_error_node(
         self, func: Callable[..., Any], /, *, outcome: Literal["failure", "suppressed"]

@@ -5,12 +5,22 @@ from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
 from functools import partial, wraps
 from inspect import iscoroutinefunction
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeVar, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Literal,
+    NoReturn,
+    TypeVar,
+    cast,
+    overload,
+)
 
 from treelib import Tree
 
 from utilities.datetime import get_now
 from utilities.functions import get_class_name
+from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -45,13 +55,14 @@ _TRACER_CONTEXT: ContextVar[_TracerData] = ContextVar(
 
 
 @dataclass(kw_only=True, slots=True)
-class _NodeData:
+class _NodeData(Generic[_T]):
     module: str
     qualname: str
     kwargs: StrMapping = field(default_factory=dict)
     start_time: dt.datetime
     end_time: dt.datetime | None = None
     outcome: Literal["success", "failure", "suppressed"] | None = None
+    result: _T | Sentinel = sentinel
     error: type[Exception] | None = None
 
     @property
@@ -175,7 +186,7 @@ def set_tracer_trees(trees: Iterable[Tree], /) -> None:
 
 def _initialize(
     func: Callable[..., Any], /, *, time_zone: ZoneInfo | str = UTC, **kwargs: Any
-) -> tuple[_NodeData, Tree | None, _TracerData, Token[_TracerData]]:
+) -> tuple[_NodeData[Any], Tree | None, _TracerData, Token[_TracerData]]:
     node_data = _NodeData(
         module=func.__module__,
         qualname=func.__qualname__,
@@ -197,7 +208,7 @@ def _initialize(
 
 
 def _handle_error(
-    node_data: _NodeData,
+    node_data: _NodeData[Any],
     error: Exception,
     /,
     *,
@@ -211,13 +222,14 @@ def _handle_error(
     raise error
 
 
-def _handle_success(node_data: _NodeData, result: _T, /) -> _T:
+def _handle_success(node_data: _NodeData[Any], result: _T, /) -> _T:
     node_data.outcome = "success"
+    node_data.result = result
     return result
 
 
 def _cleanup(
-    node_data: _NodeData,
+    node_data: _NodeData[Any],
     tracer_data: _TracerData,
     token: Token[_TracerData],
     /,
