@@ -16,10 +16,11 @@ from typing import (
     overload,
 )
 
+from treelib import Tree
+
 from utilities.datetime import get_now
 from utilities.functions import get_class_name
 from utilities.sentinel import Sentinel, sentinel
-from utilities.treelib import Tree
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -36,13 +37,12 @@ if TYPE_CHECKING:
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 _T = TypeVar("_T")
-_TreeTracerData = Tree["_TracerData"]
 
 
 @dataclass(kw_only=True, slots=True)
 class _TracerData:
-    trees: list[_TreeTracerData] = field(default_factory=list)
-    tree: _TreeTracerData | None = None
+    trees: list[Tree] = field(default_factory=list)
+    tree: Tree | None = None
     node: Node | None = None
 
 

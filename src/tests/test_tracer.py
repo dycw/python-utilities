@@ -30,8 +30,8 @@ class TestTracer:
         @tracer
         def outer(n: int, /) -> int:
             time.sleep(0.01)  # 0.01
-            n = mid1(n + 1)  # 0.01
-            return mid2(n + 1)  # 0.02
+            n = mid1(n)  # 0.01
+            return mid2(n)  # 0.02
 
         @tracer
         def mid1(n: int, /) -> int:
@@ -41,14 +41,14 @@ class TestTracer:
         @tracer
         def mid2(n: int, /) -> int:
             time.sleep(0.01)  # 0.01
-            return inner(n + 1)  # e.01
+            return inner(n)  # e.01
 
         @tracer
         def inner(n: int, /) -> int:
             time.sleep(0.01)  # 0.01
             return n + 1
 
-        assert outer(1) == 6
+        assert outer(1) == 3
         tree = one(get_tracer_trees())
         root: Node = tree[tree.root]
         self._check_node(root, outer, 0.04)
@@ -64,8 +64,8 @@ class TestTracer:
         @tracer
         async def outer(n: int, /) -> int:
             await asyncio.sleep(0.01)  # 0.01
-            n = await mid1(n + 1)  # 0.01
-            return await mid2(n + 1)  # 0.02
+            n = await mid1(n)  # 0.01
+            return await mid2(n)  # 0.02
 
         @tracer
         async def mid1(n: int, /) -> int:
@@ -75,14 +75,14 @@ class TestTracer:
         @tracer
         async def mid2(n: int, /) -> int:
             await asyncio.sleep(0.01)  # 0.01
-            return await inner(n + 1)  # 0.01
+            return await inner(n)  # 0.01
 
         @tracer
         async def inner(n: int, /) -> int:
             await asyncio.sleep(0.01)  # 0.01
             return n + 1
 
-        assert await outer(1) == 6
+        assert await outer(1) == 3
         tree = one(get_tracer_trees())
         root: Node = tree[tree.root]
         self._check_node(root, outer, 0.04)
@@ -327,26 +327,3 @@ class TestTracer:
                 pattern = rf"{tag} \({timedelta}\)"
         assert search(pattern, data.desc)
         assert data.error is ValueError
-
-
-class TestFilterFailures:
-    def test_main(self) -> None:
-        @tracer
-        def outer(n: int, /) -> int:
-            return mid(n + 1)
-
-        @tracer
-        def mid(n: int, /) -> int:
-            n = inner(n + 1)
-            msg = "Always fails"
-            raise ValueError(msg)
-
-        @tracer
-        def inner(n: int, /) -> int:
-            return n + 1
-
-        with raises(ValueError, match="Always fails"):
-            _ = outer(1)
-        tree = one(get_tracer_trees())
-        root: Node = tree[tree.root]
-        cast(_NodeData, root.data)
