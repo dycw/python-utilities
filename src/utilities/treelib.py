@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, Literal, TypeVar, overload
 
 import treelib
 from typing_extensions import override
@@ -11,7 +11,12 @@ from utilities.text import ensure_str
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from utilities.typing import SupportsRichComparison
+
 _T = TypeVar("_T")
+_LineType = Literal[
+    "ascii", "ascii-ex", "ascii-exr", "ascii-em", "ascii-emv", "ascii-emh"
+]
 
 
 class Tree(treelib.Tree, Generic[_T]):
@@ -22,8 +27,70 @@ class Tree(treelib.Tree, Generic[_T]):
         return super().__getitem__(key)
 
     @override
+    def children(self, nid: str) -> list[Node[_T]]:
+        return super().children(nid)
+
+    @override
     def get_node(self, nid: str) -> Node[_T] | None:
         return super().get_node(nid)
+
+    @overload
+    def show(
+        self,
+        *,
+        nid: str | None = ...,
+        level: int = ...,
+        idhidden: bool = ...,
+        filter: Callable[[Node[_T]], bool] | None = ...,
+        key: Callable[[Node[_T], bool], SupportsRichComparison] | None = ...,
+        reverse: bool = ...,
+        line_type: _LineType = ...,
+        data_property: str | None = ...,
+        stdout: Literal[False] = ...,
+        sorting: bool = ...,
+    ) -> str: ...
+    @overload
+    def show(
+        self,
+        *,
+        nid: str | None = ...,
+        level: int = ...,
+        idhidden: bool = ...,
+        filter: Callable[[Node[_T]], bool] | None = ...,
+        key: Callable[[Node[_T], bool], SupportsRichComparison] | None = ...,
+        reverse: bool = ...,
+        line_type: _LineType = ...,
+        data_property: str | None = None,
+        stdout: Literal[True] = True,
+        sorting: bool = True,
+    ) -> None: ...
+    @override
+    def show(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        *,
+        nid: str | None = None,
+        level: int = treelib.Tree.ROOT,
+        idhidden: bool = True,
+        filter: Callable[[Node[_T]], bool] | None = None,
+        key: Callable[[Node[_T], bool], SupportsRichComparison] | None = None,
+        reverse: bool = False,
+        line_type: _LineType = "ascii-ex",
+        data_property: str | None = None,
+        stdout: bool = True,
+        sorting: bool = True,
+    ) -> str | None:
+        return super().show(
+            nid,
+            level,
+            idhidden,
+            filter,
+            key,
+            reverse,
+            line_type,
+            data_property,
+            stdout,
+            sorting,
+        )
 
 
 class Node(treelib.Node, Generic[_T]):
