@@ -22,6 +22,8 @@ _LineType = Literal[
 class Tree(treelib.Tree, Generic[_T]):
     """Typed version of `Tree`."""
 
+    root: str
+
     @override
     def __getitem__(self, key: str) -> Node[_T]:
         return super().__getitem__(key)
