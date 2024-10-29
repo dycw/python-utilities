@@ -9,10 +9,10 @@ from nox import Session, session
 def ruff(session: Session) -> None:
     """Run `ruff`."""
     session.install("ruff")
-    _ = session.run("ruff", "--fix", ".")
+    _ = session.run("ruff", "check", "--fix", ".")
 
 
-@session(python=["3.11", "3.12"])
+@session(python=["3.11", "3.12", "3.13.0rc3"])
 def tests(session: Session, /) -> None:
     """Run the tests."""
     session.install("--upgrade", "pip-tools")
