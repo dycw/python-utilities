@@ -23,7 +23,7 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via streamlit
-hypothesis==6.115.6
+hypothesis==6.116.0
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via requests

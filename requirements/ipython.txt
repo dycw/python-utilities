@@ -10,7 +10,7 @@ decorator==5.1.1
     # via ipython
 executing==2.1.0
     # via stack-data
-hypothesis==6.115.6
+hypothesis==6.116.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest

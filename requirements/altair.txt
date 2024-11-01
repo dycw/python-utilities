@@ -13,7 +13,7 @@ coverage==7.6.4
     # via pytest-cov
 deprecated==1.2.14
     # via pikepdf
-hypothesis==6.115.6
+hypothesis==6.116.0
     # via dycw-utilities (pyproject.toml)
 img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
