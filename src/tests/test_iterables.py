@@ -548,6 +548,18 @@ class TestCollection:
         expected = Collection(map(_Item, range(4)))
         assert result == expected
 
+    def test_repr(self) -> None:
+        collection = Collection(map(_Item, range(3)))
+        result = repr(collection)
+        expected = "Collection({_Item(n=0), _Item(n=1), _Item(n=2)})"
+        assert result == expected
+
+    def test_str(self) -> None:
+        collection = Collection(map(_Item, range(3)))
+        result = str(collection)
+        expected = "Collection({_Item(n=0), _Item(n=1), _Item(n=2)})"
+        assert result == expected
+
     def test_sub_single_item(self) -> None:
         collection = Collection(map(_Item, range(3)))
         result = collection - _Item(1)
