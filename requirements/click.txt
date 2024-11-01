@@ -6,7 +6,7 @@ click==8.1.7
     # via dycw-utilities (pyproject.toml)
 coverage==7.6.4
     # via pytest-cov
-hypothesis==6.115.5
+hypothesis==6.116.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -25,7 +25,7 @@ pytest==8.3.3
     #   pytest-rerunfailures
 pytest-asyncio==0.23.8
     # via dycw-utilities (pyproject.toml)
-pytest-cov==5.0.0
+pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
 pytest-randomly==3.16.0
     # via dycw-utilities (pyproject.toml)
@@ -41,5 +41,5 @@ typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   sqlalchemy
-whenever==0.6.9
+whenever==0.6.10
     # via dycw-utilities (pyproject.toml)

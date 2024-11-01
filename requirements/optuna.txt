@@ -4,11 +4,11 @@ alembic==1.13.3
     # via optuna
 attrs==24.2.0
     # via hypothesis
-colorlog==6.8.2
+colorlog==6.9.0
     # via optuna
 coverage==7.6.4
     # via pytest-cov
-hypothesis==6.115.5
+hypothesis==6.116.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -36,7 +36,7 @@ pytest==8.3.3
     #   pytest-rerunfailures
 pytest-asyncio==0.23.8
     # via dycw-utilities (pyproject.toml)
-pytest-cov==5.0.0
+pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
 pytest-randomly==3.16.0
     # via dycw-utilities (pyproject.toml)
@@ -52,7 +52,7 @@ sqlalchemy==2.0.36
     #   optuna
 tomli==2.0.2
     # via coverage
-tqdm==4.66.5
+tqdm==4.66.6
     # via optuna
 typing-extensions==4.12.2
     # via
