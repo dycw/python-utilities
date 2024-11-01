@@ -4,11 +4,11 @@ alembic==1.13.3
     # via optuna
 attrs==24.2.0
     # via hypothesis
-colorlog==6.8.2
+colorlog==6.9.0
     # via optuna
 coverage==7.6.4
     # via pytest-cov
-hypothesis==6.115.5
+hypothesis==6.115.6
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -52,7 +52,7 @@ sqlalchemy==2.0.36
     #   optuna
 tomli==2.0.2
     # via coverage
-tqdm==4.66.5
+tqdm==4.66.6
     # via optuna
 typing-extensions==4.12.2
     # via
