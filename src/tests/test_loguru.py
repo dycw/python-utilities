@@ -3,24 +3,13 @@ from __future__ import annotations
 import datetime as dt
 import sys  # do use `from sys import ...`
 from re import search
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from hypothesis import given
 from loguru import logger
-from loguru._defaults import LOGURU_FORMAT
 from loguru._recattrs import RecordFile, RecordLevel, RecordProcess, RecordThread
 from pytest import CaptureFixture, fixture, mark, param, raises
 
-from tests.test_loguru_functions import (
-    func_test_log_context_outer,
-    func_test_log_disable,
-    func_test_log_error,
-    func_test_log_error_expected,
-    func_test_log_exit_variable,
-    func_test_log_exit_variable_disable,
-    func_test_log_main,
-    func_test_log_non_default_level,
-)
 from utilities.hypothesis import text_ascii
 from utilities.loguru import (
     LEVEL_CONFIGS,
@@ -30,10 +19,8 @@ from utilities.loguru import (
     LogLevel,
     _GetLoggingLevelNameEmptyError,
     _GetLoggingLevelNameNonUniqueError,
-    _LogContainerError,
     get_logging_level_name,
     get_logging_level_number,
-    log,
     logged_sleep_async,
     logged_sleep_sync,
     make_except_hook,
@@ -42,7 +29,6 @@ from utilities.loguru import (
     make_slack_sink,
     make_slack_sink_async,
 )
-from utilities.text import ensure_str, strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -166,127 +152,6 @@ class TestLevelConfiguration:
         out2 = capsys.readouterr().out
         expected2 = "\x1b[32m\x1b[1mmessage 2\x1b[0m\n"
         assert out2 == expected2
-
-
-class TestLog:
-    datetime: ClassVar[str] = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
-    loguru: ClassVar[str] = r"tests\.test_loguru_functions:"
-    trace: ClassVar[str] = datetime + r"TRACE    \| " + loguru
-    debug: ClassVar[str] = datetime + r"DEBUG    \| " + loguru
-    error: ClassVar[str] = datetime + r"ERROR    \| " + loguru
-
-    def test_main(self, *, capsys: CaptureFixture) -> None:
-        self._configure()
-        assert func_test_log_main(1) == 2
-        line1, line2 = capsys.readouterr().out.splitlines()
-        expected = self.trace + r"func_test_log_main:\d+ - "
-        assert search(expected + r"➢ \| \{\}$", line1), line1
-        assert search(expected + r"✔ \| \{'⏲': .*\}$", line2), line2
-
-    def test_non_default_level(self, *, capsys: CaptureFixture) -> None:
-        self._configure()
-        assert func_test_log_non_default_level(1) == 2
-        line1, line2 = capsys.readouterr().out.splitlines()
-        expected = self.debug + r"func_test_log_non_default_level:\d+ - "
-        assert search(expected + r"➢ \| \{\}$", line1), line1
-        assert search(expected + r"✔ \| \{'⏲': .*\}$", line2), line2
-
-    def test_context(self, *, capsys: CaptureFixture) -> None:
-        self._configure()
-        assert func_test_log_context_outer(1) == 3
-        line1, line2, line3, line4 = capsys.readouterr().out.splitlines()
-        expected_outer = self.trace + r"func_test_log_context_outer:\d+ - "
-        expected_inner = self.trace + r"func_test_log_context_inner:\d+ - "
-        assert search(
-            expected_outer + r"➢ \| \{'context_key': 'context_value'\}$", line1
-        ), line1
-        assert search(
-            expected_inner
-            + r"➢ \| \{'context_key': 'context_value', 'key': 'value'\}$",
-            line2,
-        ), line2
-        assert search(
-            expected_inner + r"✔ \| \{'context_key': 'context_value', '⏲': .*\}$", line3
-        ), line3
-        assert search(
-            expected_outer + r"✔ \| \{'context_key': 'context_value', '⏲': .*\}$", line4
-        ), line4
-
-    def test_disable(self, *, capsys: CaptureFixture) -> None:
-        self._configure()
-        assert func_test_log_disable(1) == 2
-        out = capsys.readouterr().out
-        assert out == ""
-
-    def test_error(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
-
-        with raises(ValueError, match="Got an odd number: 1"):
-            _ = func_test_log_error(1)
-        out = capsys.readouterr().out
-        line1, line2, line3, *_ = out.splitlines()
-        expected1 = self.trace + r"func_test_log_error:\d+ - ➢$"
-        assert search(expected1, line1), line1
-        expected2 = (
-            self.error
-            + r"func_test_log_error:\d+ - ValueError\('Got an odd number: 1'\)$"
-        )
-        assert search(expected2, line2), line2
-        assert line3 == "Traceback (most recent call last):"
-        exp_last = strip_and_dedent(
-            """
-                raise ValueError(msg)
-                                 └ 'Got an odd number: 1'
-
-            ValueError: Got an odd number: 1
-            """
-        )
-        lines_last = "\n".join(out.splitlines()[-4:])
-        assert lines_last == exp_last
-
-    def test_error_expected(self, *, capsys: CaptureFixture) -> None:
-        self._configure()
-        with raises(ValueError, match="Got an odd number: 1"):
-            _ = func_test_log_error_expected(1)
-        out = capsys.readouterr().out
-        (line,) = out.splitlines()
-        expected = self.trace + r"func_test_log_error_expected:\d+ - ➢ \| \{\}$"
-        assert search(expected, line), line
-
-    def test_exit_variable(self, *, capsys: CaptureFixture) -> None:
-        self._configure()
-        assert func_test_log_exit_variable(1) == 2
-        line1, line2 = capsys.readouterr().out.splitlines()
-        expected = self.trace + r"func_test_log_exit_variable:\d+ - "
-        assert search(expected + r"➢ \| \{\}$", line1), line1
-        assert search(expected + r"✔ \| ({'⏲': .*, '✔': 2})$", line2), line2
-
-    def test_exit_variable_disable(self, *, capsys: CaptureFixture) -> None:
-        self._configure()
-        assert func_test_log_exit_variable_disable(1) == 2
-        out = capsys.readouterr().out
-        assert out == ""
-
-    def test_exit_variable_error(self) -> None:
-        def func(x: int, /) -> int:
-            with log() as log_cap:
-                _ = log_cap(x)
-                return log_cap(x)
-
-        with raises(
-            _LogContainerError, match="Container already contains 1; cannot set 1"
-        ):
-            _ = func(1)
-
-    def _configure(self) -> None:
-        default_format = ensure_str(LOGURU_FORMAT)
-        handler: HandlerConfiguration = {
-            "sink": sys.stdout,
-            "level": LogLevel.TRACE,
-            "format": f"{default_format} | {{extra}}",
-        }
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
 
 class TestLoggedSleep:
