@@ -2,27 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import reprlib
 import sys
 import time
 from asyncio import AbstractEventLoop
-from collections.abc import Callable, Hashable, Iterator, Sequence
-from contextlib import contextmanager
+from collections.abc import Callable, Hashable, Sequence
 from dataclasses import dataclass
 from enum import StrEnum, unique
 from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe, stderr
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    Literal,
-    TextIO,
-    TypedDict,
-    TypeVar,
-    assert_never,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Literal, TextIO, TypedDict, assert_never, cast
 
 from loguru import logger
 from typing_extensions import override
@@ -34,8 +22,6 @@ from utilities.iterables import (
     one,
     resolve_include_and_exclude,
 )
-from utilities.sentinel import Sentinel, sentinel
-from utilities.timer import Timer
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -197,118 +183,6 @@ class GetLoggingLevelNumberError(Exception):
     @override
     def __str__(self) -> str:
         return f"Invalid logging level: {self.level!r}"
-
-
-_T = TypeVar("_T")
-
-
-@dataclass(kw_only=True, slots=True)
-class _LogContainer(Generic[_T]):
-    disable: bool = False
-    obj: _T | Sentinel = sentinel
-
-    def __call__(self, obj: _T) -> _T:
-        if self.disable:
-            return obj
-        if not isinstance(self.obj, Sentinel):
-            raise _LogContainerError(old=self.obj, new=obj)
-        self.obj = obj
-        return obj
-
-
-@dataclass(kw_only=True, slots=True)
-class _LogContainerError(Exception):
-    old: Any
-    new: Any
-
-    @override
-    def __str__(self) -> str:
-        return f"Container already contains {reprlib.repr(self.old)}; cannot set {reprlib.repr(self.new)}"
-
-
-@contextmanager
-def log(
-    *,
-    context: StrMapping | None = None,
-    disable: bool = False,
-    depth: int = 2,
-    level: LogLevel = LogLevel.TRACE,
-    bind: StrMapping | None = None,
-    entry_message: str = _ENTRY_MESSAGE,
-    error_expected: type[Exception] | tuple[type[Exception], ...] | None = None,
-    error_bind: StrMapping | None = None,
-    error_message: str = _RECORD_EXCEPTION_VALUE,
-    exit_message: str = _EXIT_MESSAGE,
-    **kwargs: Any,
-) -> Iterator[_LogContainer[Any]]:
-    """Log the function entry/error/exit/duration."""
-    if disable:
-        yield _LogContainer(disable=True)
-    else:
-        core_depth = depth + 2
-        if context is not None:
-            with (  # pragma: no cover
-                logger.contextualize(**context),
-                _log_core(
-                    core_depth,
-                    level=level,
-                    bind=bind,
-                    entry_message=entry_message,
-                    error_expected=error_expected,
-                    error_bind=error_bind,
-                    error_message=error_message,
-                    exit_message=exit_message,
-                    **kwargs,
-                ) as container,
-            ):
-                yield container
-        else:
-            with _log_core(
-                core_depth,
-                level=level,
-                bind=bind,
-                entry_message=entry_message,
-                error_expected=error_expected,
-                error_bind=error_bind,
-                error_message=error_message,
-                exit_message=exit_message,
-                **kwargs,
-            ) as container:
-                yield container
-
-
-@contextmanager
-def _log_core(
-    depth: int,
-    /,
-    *,
-    level: LogLevel = LogLevel.TRACE,
-    bind: StrMapping | None = None,
-    entry_message: str = _ENTRY_MESSAGE,
-    error_expected: type[Exception] | tuple[type[Exception], ...] | None = None,
-    error_bind: StrMapping | None = None,
-    error_message: str = _RECORD_EXCEPTION_VALUE,
-    exit_message: str = _EXIT_MESSAGE,
-    **kwargs: Any,
-) -> Iterator[_LogContainer[Any]]:
-    with Timer() as timer:
-        logger_main = (logger if bind is None else logger.bind(**bind)).opt(depth=depth)
-        logger_main.log(level, entry_message, **kwargs)
-        try:
-            yield (container := _LogContainer())
-        except Exception as error:
-            if (error_expected is None) or not isinstance(error, error_expected):
-                logger_error = (
-                    logger if error_bind is None else logger.bind(**error_bind)
-                )
-                logger_error.opt(exception=True, record=True, depth=depth).error(
-                    error_message
-                )
-            raise
-        exit_kwargs: StrMapping = {"⏲": timer}
-        if not isinstance(container.obj, Sentinel):
-            exit_kwargs["✔"] = container.obj
-        logger_main.log(level, exit_message, **exit_kwargs)
 
 
 def logged_sleep_sync(
@@ -499,7 +373,6 @@ __all__ = [
     "LogLevel",
     "get_logging_level_name",
     "get_logging_level_number",
-    "log",
     "logged_sleep_async",
     "logged_sleep_sync",
     "make_except_hook",
