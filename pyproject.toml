@@ -43,8 +43,8 @@ dev = [
   "numbagg >= 0.8.2, < 0.9",
   "numpy >= 2.0.2, < 2.1",  # if 2.1, llvmite: RuntimeError: Cannot install on Python version 3.11.9; only versions >=3.6,<3.10 are supported.
   "optuna >= 4.0.0, < 4.1",
-  "orjson >= 3.10.10, < 3.11",
-  "polars-lts-cpu >= 1.11.0, < 1.12",
+  "orjson >= 3.10.11, < 3.11",
+  "polars-lts-cpu >= 1.12.0, < 1.13",
   "pqdm >= 0.2.0, < 0.3",
   "psycopg2-binary >= 2.9.10, < 2.10",  # for sqlalchemy
   "pyrsistent >= 0.20.0, < 0.21",
@@ -100,7 +100,7 @@ zzz-test-altair = [
   "altair >= 5.4.1, < 5.5",
   "atomicwrites >= 1.4.1, < 1.5",
   "img2pdf >= 0.5.1, < 0.6",
-  "polars-lts-cpu >= 1.11.0, < 1.12",
+  "polars-lts-cpu >= 1.12.0, < 1.13",
   "vl-convert-python >= 1.6.1, < 1.7",
 ]
 zzz-test-astor = ["astor >= 0.8.1, < 0.9"]
@@ -140,7 +140,7 @@ zzz-test-functions = []
 zzz-test-functools = []
 zzz-test-getpass = []
 zzz-test-git = []
-zzz-test-hashlib = ["orjson >= 3.10.10, < 3.11"]
+zzz-test-hashlib = ["orjson >= 3.10.11, < 3.11"]
 zzz-test-http = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-humps = ["pyhumps >= 3.8.0, < 3.9"]
 zzz-test-hypothesis = [
@@ -156,7 +156,7 @@ zzz-test-iterables = []
 zzz-test-jupyter = [
   "jupyterlab >= 4.2.0, < 4.3",
   "pandas >= 2.2.2, < 2.3",
-  "polars-lts-cpu >= 1.11.0, < 1.12",
+  "polars-lts-cpu >= 1.12.0, < 1.13",
 ]
 zzz-test-logging = []
 zzz-test-loguru = ["loguru >= 0.7.2, < 0.8"]
@@ -171,7 +171,7 @@ zzz-test-numpy = [
 ]
 zzz-test-optuna = ["optuna >= 3.6.1, < 3.7"]
 zzz-test-orjson = [
-  "orjson >= 3.10.10, < 3.11",
+  "orjson >= 3.10.11, < 3.11",
   "sqlalchemy >= 2.0.36, < 2.1",
   "whenever >= 0.6.10, < 0.7",
 ]
@@ -181,7 +181,7 @@ zzz-test-pickle = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-platform = []
 zzz-test-polars = [
   "dacite >= 1.8.1, < 1.9",
-  "polars-lts-cpu >= 1.11.0, < 1.12",
+  "polars-lts-cpu >= 1.12.0, < 1.13",
 ]
 zzz-test-pqdm = ["pqdm >= 0.2.0, < 0.3"]
 zzz-test-pydantic = [
@@ -201,10 +201,10 @@ zzz-test-python-dotenv = ["python-dotenv >= 1.0.1, < 1.1"]
 zzz-test-random = []
 zzz-test-re = []
 zzz-test-redis = [
-  "polars-lts-cpu >= 1.11.0, < 1.12",
+  "polars-lts-cpu >= 1.12.0, < 1.13",
   "redis >= 5.2.0, < 5.3",
 ]
-zzz-test-reprlib = ["polars-lts-cpu >= 1.11.0, < 1.12"]
+zzz-test-reprlib = ["polars-lts-cpu >= 1.12.0, < 1.13"]
 zzz-test-scipy = ["scipy >= 1.14.1, < 1.15"]
 zzz-test-scripts-pypi-server = [
   "click >= 8.1.7, < 8.2",
@@ -230,7 +230,7 @@ zzz-test-sqlalchemy = [
 zzz-test-sqlalchemy-polars = [
   "aiosqlite >= 0.20.0, < 0.21",
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
-  "polars-lts-cpu >= 1.11.0, < 1.12",
+  "polars-lts-cpu >= 1.12.0, < 1.13",
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.36, < 2.1",
@@ -258,7 +258,7 @@ zzz-test-typing = []
 zzz-test-warnings = []
 zzz-test-whenever = ["whenever >= 0.6.10, < 0.7"]
 zzz-test-zipfile = []
-zzz-test-zlib = ["orjson >= 3.10.10, < 3.11"]
+zzz-test-zlib = ["orjson >= 3.10.11, < 3.11"]
 zzz-test-zoneinfo = ["tzdata >= 2024.2, < 2024.3"]
 
 [project.scripts]

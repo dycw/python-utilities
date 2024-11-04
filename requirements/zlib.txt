@@ -8,7 +8,7 @@ hypothesis==6.116.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
-orjson==3.10.10
+orjson==3.10.11
     # via dycw-utilities (pyproject.toml)
 packaging==24.1
     # via
