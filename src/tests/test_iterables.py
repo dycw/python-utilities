@@ -548,6 +548,16 @@ class TestCollection:
         expected = Collection(map(_Item, range(4)))
         assert result == expected
 
+    def test_partition(self) -> None:
+        collection = Collection(map(_Item, range(4)))
+        result_false, result_true = collection.partition(lambda item: item.n % 2 == 0)
+        assert isinstance(result_false, Collection)
+        expected_false = Collection(_Item(1), _Item(3))
+        assert result_false == expected_false
+        assert isinstance(result_true, Collection)
+        expected_true = Collection(_Item(0), _Item(2))
+        assert result_true == expected_true
+
     def test_repr(self) -> None:
         collection = Collection(map(_Item, range(3)))
         result = repr(collection)

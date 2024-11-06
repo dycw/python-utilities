@@ -9,9 +9,7 @@ attrs==24.2.0
 coverage==7.6.4
     # via pytest-cov
 greenlet==3.1.1
-    # via
-    #   dycw-utilities (pyproject.toml)
-    #   sqlalchemy
+    # via dycw-utilities (pyproject.toml)
 hypothesis==6.116.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0

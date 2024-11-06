@@ -529,6 +529,12 @@ class Collection(frozenset[_THashable]):
         values = cast(Any, map(func, self))
         return cast(Any, type(self)(values))
 
+    def partition(self, func: Callable[[_THashable], bool], /) -> tuple[Self, Self]:
+        from more_itertools import partition
+
+        is_false, is_true = partition(func, self)
+        return type(self)(is_false), type(self)(is_true)
+
 
 def ensure_hashables(
     *args: Any, **kwargs: Any

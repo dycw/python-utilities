@@ -126,5 +126,3 @@ tzdata==2024.2
     # via pandas
 urllib3==2.2.3
     # via requests
-watchdog==5.0.3
-    # via streamlit
