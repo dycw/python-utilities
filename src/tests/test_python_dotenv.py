@@ -10,6 +10,8 @@ from utilities.hypothesis import git_repos, settings_with_reduced_examples, text
 from utilities.python_dotenv import (
     _LoadSettingsEmptyError,
     _LoadSettingsFileNotFoundError,
+    _LoadSettingsInvalidEnumError,
+    _LoadSettingsInvalidIntError,
     _LoadSettingsNonUniqueError,
     _LoadSettingsTypeError,
     load_settings,
@@ -89,6 +91,22 @@ class TestLoadSettings:
         expected = Settings(key=value)
         assert settings == expected
 
+    @given(root=git_repos())
+    @settings_with_reduced_examples()
+    def test_int_error(self, *, root: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: int
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write("key = '...'\n")
+
+        with raises(
+            _LoadSettingsInvalidIntError,
+            match=r"Field 'key' must contain a valid integer; got '...'",
+        ):
+            _ = load_settings(Settings, cwd=root)
+
     @given(data=data(), root=git_repos())
     @settings_with_reduced_examples()
     def test_enum(self, *, data: DataObject, root: Path) -> None:
@@ -107,6 +125,26 @@ class TestLoadSettings:
         settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)
         assert settings == expected
+
+    @given(root=git_repos())
+    @settings_with_reduced_examples()
+    def test_enum_error(self, *, root: Path) -> None:
+        class Truth(Enum):
+            true = auto()
+            false = auto()
+
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: Truth
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write("key = ...\n")
+
+        with raises(
+            _LoadSettingsInvalidEnumError,
+            match=r"Field '.*' must contain a valid member of '.*'; got '...'",
+        ):
+            _ = load_settings(Settings, cwd=root)
 
     @given(root=git_repos())
     @settings_with_reduced_examples()
