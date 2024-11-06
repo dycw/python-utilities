@@ -8,7 +8,8 @@ from dotenv import dotenv_values
 from typing_extensions import override
 
 from utilities.dataclasses import Dataclass
-from utilities.enum import ensure_enum
+from utilities.enum import EnsureEnumError, ensure_enum
+from utilities.functions import get_class_name
 from utilities.git import get_repo_root
 from utilities.iterables import (
     _OneStrCaseInsensitiveBijectionError,
@@ -49,9 +50,19 @@ def load_settings(cls: type[_TDataclass], /, *, cwd: PathLike = PWD) -> _TDatacl
                 if fld.type is str:
                     value = raw_value
                 elif fld.type is int:
-                    value = int(raw_value)
+                    try:
+                        value = int(raw_value)
+                    except ValueError:
+                        raise _LoadSettingsInvalidIntError(
+                            path=path, field=fld.name, value=raw_value
+                        ) from None
                 elif isinstance(fld.type, type) and issubclass(fld.type, Enum):
-                    value = ensure_enum(raw_value, fld.type)
+                    try:
+                        value = ensure_enum(raw_value, fld.type)
+                    except EnsureEnumError:
+                        raise _LoadSettingsInvalidEnumError(
+                            path=path, field=fld.name, type_=fld.type, value=raw_value
+                        ) from None
                 else:
                     raise _LoadSettingsTypeError(
                         path=path, field=fld.name, type=fld.type
@@ -90,6 +101,28 @@ class _LoadSettingsNonUniqueError(LoadSettingsError):
     @override
     def __str__(self) -> str:
         return f"Field {self.field!r} must exist exactly once; got {self.counts}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _LoadSettingsInvalidIntError(LoadSettingsError):
+    field: str
+    value: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Field {self.field!r} must contain a valid integer; got {self.value!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _LoadSettingsInvalidEnumError(LoadSettingsError):
+    field: str
+    type_: type[Enum]
+    value: str
+
+    @override
+    def __str__(self) -> str:
+        type_ = get_class_name(self.type_)
+        return f"Field {self.field!r} must contain a valid member of {type_!r}; got {self.value!r}"
 
 
 @dataclass(kw_only=True, slots=True)
