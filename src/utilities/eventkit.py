@@ -30,8 +30,8 @@ def add_listener(
     else:
 
         def combined(event: Event, exception: Exception, /) -> None:
-            _add_listener_error(event, exception)
             error_default(event, exception)
+            error(event, exception)
 
         error_use = combined
     return event.connect(listener, error=error_use, done=done, keep_ref=keep_ref)
@@ -43,9 +43,9 @@ def _add_listener_error(
     """Run callback in the case of an error."""
     type_name = get_class_name(exception)
     event_name = event.name()
-    desc = f"{type_name} running {event_name}"
+    desc = f"Raised a {type_name} whilst running {event_name!r}"
     if stdout:
-        msg = f"{desc}:\t\n{event=}\n{exception=}"
+        msg = f"{desc}:\n{event=}\n{exception=}"
         _ = sys.stdout.write(f"{msg}\n")
     if loguru:
         try:
@@ -53,7 +53,7 @@ def _add_listener_error(
         except ModuleNotFoundError:  # pragma: no cover
             pass
         else:
-            logger.opt(exception=exception).error(f"{{desc}}:\t\n{event}", event=event)
+            logger.opt(exception=exception).error(f"{desc}:\n{{event}}", event=event)
 
 
 __all__ = ["add_listener"]
