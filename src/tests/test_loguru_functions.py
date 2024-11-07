@@ -1,16 +1,8 @@
 from __future__ import annotations
 
-from loguru import logger
 from tenacity import retry, wait_fixed
 
 from utilities.tenacity import before_sleep_log
-
-# eventkit
-
-
-def func_test_eventkit(n: int, /) -> None:
-    logger.trace("n={n}", n=n)
-
 
 # tenacity
 

@@ -10,8 +10,8 @@ from hypothesis.strategies import integers
 from loguru import logger
 from pytest import CaptureFixture
 
-from tests.test_loguru_functions import func_test_eventkit
 from utilities.eventkit import add_listener
+from utilities.functions import identity
 from utilities.loguru import HandlerConfiguration, LogLevel
 
 if TYPE_CHECKING:
@@ -23,36 +23,61 @@ class TestAddListener:
 
     @given(n=integers())
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    async def test_main(self, *, capsys: CaptureFixture, n: int) -> None:
-        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
-
+    async def test_main(self, *, n: int) -> None:
         event = Event()
-        _ = add_listener(event, func_test_eventkit)
+        _ = add_listener(event, identity)
         event.emit(n)
-        out = capsys.readouterr().out
-        (line,) = out.splitlines()
-        expected = (
-            self.datetime
-            + r"TRACE    \| tests\.test_loguru_functions:func_test_eventkit:\d+ - n=-?\d+$"
-        )
-        assert search(expected, line), line
 
     @given(n=integers())
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    async def test_error(self, *, capsys: CaptureFixture, n: int) -> None:
+    async def test_custom_error_handler(
+        self, *, capsys: CaptureFixture, n: int
+    ) -> None:
+        def error(event: Event, exception: Exception, /) -> None:
+            _ = (event, exception)
+            print("Custom handler")  # noqa: T201
+
+        event = Event()
+        _ = add_listener(event, identity, error=error, _stdout=False, _loguru=False)
+        event.emit(n, n)
+        out = capsys.readouterr().out
+        (line,) = out.splitlines()
+        assert line == "Custom handler"
+
+    @given(n=integers())
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_error_loguru(self, *, capsys: CaptureFixture, n: int) -> None:
         handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
         event = Event()
-        _ = add_listener(event, func_test_eventkit)
+        _ = add_listener(event, identity, _stdout=False, _loguru=True)
         event.emit(n, n)
         out = capsys.readouterr().out
-        (line1, line2, *_, last) = out.splitlines()
-        expected1 = r"ERROR    \| utilities\.eventkit:_add_listener_error:\d+ - Error running Event<.*>$"
+        (line1, line2, line3, *_, last) = out.splitlines()
+        expected1 = r"ERROR    \| utilities\.eventkit:_add_listener_error:\d+ - Raised a TypeError whilst running 'Event':$"
         assert search(expected1, line1), line1
-        assert line2 == "Traceback (most recent call last):"
+        pattern2 = r"^Event<Event, \[\[None, None, <function identity at .*>\]\]>$"
+        assert search(pattern2, line2)
+        assert line3 == "Traceback (most recent call last):"
         assert (
-            last
-            == "TypeError: func_test_eventkit() takes 1 positional argument but 2 were given"
+            last == "TypeError: identity() takes 1 positional argument but 2 were given"
+        )
+
+    @given(n=integers())
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_error_stdout(self, *, capsys: CaptureFixture, n: int) -> None:
+        event = Event()
+        _ = add_listener(event, identity, keep_ref=True, _stdout=True, _loguru=False)
+        event.emit(n, n)
+        out = capsys.readouterr().out
+        (line1, line2, line3) = out.splitlines()
+        assert line1 == "Raised a TypeError whilst running 'Event':"
+        pattern2 = (
+            r"^event=Event<Event, \[\[None, None, <function identity at .*>\]\]>$"
+        )
+        assert search(pattern2, line2)
+        assert (
+            line3
+            == "exception=TypeError('identity() takes 1 positional argument but 2 were given')"
         )

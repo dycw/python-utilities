@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-from sys import stderr
+import sys
+from functools import partial
 from typing import TYPE_CHECKING, Any
+
+from utilities.functions import get_class_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -14,23 +17,43 @@ def add_listener(
     listener: Callable[..., Any],
     /,
     *,
+    error: Callable[[Event, Exception], None] | None = None,
     done: Callable[..., Any] | None = None,
     keep_ref: bool = False,
+    _stdout: bool = True,
+    _loguru: bool = True,
 ) -> Event:
     """Connect a listener to an event."""
-    return event.connect(
-        listener, error=_add_listener_error, done=done, keep_ref=keep_ref
-    )
-
-
-def _add_listener_error(event: Event, exception: Exception, /) -> None:
-    """Run callback in the case of an error."""
-    try:
-        from loguru import logger
-    except Exception as error:  # noqa: BLE001  # pragma: no cover
-        _ = stderr.write(f"Error running {event}; got {error}")
+    error_default = partial(_add_listener_error, stdout=_stdout, loguru=_loguru)
+    if error is None:
+        error_use = error_default
     else:
-        logger.opt(exception=exception).error("Error running {event}", event=event)
+
+        def combined(event: Event, exception: Exception, /) -> None:
+            error_default(event, exception)
+            error(event, exception)
+
+        error_use = combined
+    return event.connect(listener, error=error_use, done=done, keep_ref=keep_ref)
+
+
+def _add_listener_error(
+    event: Event, exception: Exception, /, *, stdout: bool = True, loguru: bool = True
+) -> None:
+    """Run callback in the case of an error."""
+    type_name = get_class_name(exception)
+    event_name = event.name()
+    desc = f"Raised a {type_name} whilst running {event_name!r}"
+    if stdout:
+        msg = f"{desc}:\n{event=}\n{exception=}"
+        _ = sys.stdout.write(f"{msg}\n")
+    if loguru:
+        try:
+            from loguru import logger
+        except ModuleNotFoundError:  # pragma: no cover
+            pass
+        else:
+            logger.opt(exception=exception).error(f"{desc}:\n{{event}}", event=event)
 
 
 __all__ = ["add_listener"]

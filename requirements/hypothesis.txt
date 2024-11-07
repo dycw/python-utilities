@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-hypothesis --prerelease=disallow --output-file=requirements/hypothesis.txt --python-version=3.11 pyproject.toml
 aiosqlite==0.20.0
     # via dycw-utilities (pyproject.toml)
-async-timeout==5.0.0
+async-timeout==5.0.1
     # via redis
 attrs==24.2.0
     # via hypothesis

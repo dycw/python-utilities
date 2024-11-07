@@ -58,7 +58,7 @@ packaging==24.1
     #   streamlit
 pandas==2.2.3
     # via streamlit
-pillow==10.4.0
+pillow==11.0.0
     # via streamlit
 pluggy==1.5.0
     # via pytest
@@ -97,7 +97,7 @@ requests==2.32.3
     # via streamlit
 rich==13.9.4
     # via streamlit
-rpds-py==0.20.1
+rpds-py==0.21.0
     # via
     #   jsonschema
     #   referencing
@@ -107,7 +107,7 @@ smmap==5.0.1
     # via gitdb
 sortedcontainers==2.4.0
     # via hypothesis
-streamlit==1.39.0
+streamlit==1.40.0
     # via dycw-utilities (pyproject.toml)
 tenacity==9.0.0
     # via streamlit

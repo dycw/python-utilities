@@ -59,11 +59,11 @@ dev = [
   "scipy >= 1.14.1, < 1.15",
   "slack-sdk >= 3.33.3, < 3.34",
   "sqlalchemy >= 2.0.36, < 2.1",
-  "streamlit >= 1.39.0, < 1.40",
+  "streamlit >= 1.40.0, < 1.41",
   "tenacity >= 9.0.0, < 9.1",
-  "tqdm >= 4.66.5, < 4.67",
+  "tqdm >= 4.67.0, < 4.68",
   "treelib >= 1.7.0, < 1.8",
-  "typed-settings >= 24.5.0, < 24.6",
+  "typed-settings >= 24.6.0, < 24.7",
   "tzdata >= 2024.2, < 2024.3",
   "tzlocal >= 5.2, < 5.3",
   "vegafusion >= 1.6.9, < 1.7",
@@ -87,7 +87,7 @@ scripts-pypi-server = [
   "click >= 8.1.7, < 8.2",
   "loguru >= 0.7.2, < 0.8",
   "pypiserver[passlib] >= 2.2.0, < 2.3",
-  "typed-settings >= 24.5.0, < 24.6",
+  "typed-settings >= 24.6.0, < 24.7",
 ]
 test = [
   "hypothesis >= 6.116.0, < 6.117",
@@ -210,7 +210,7 @@ zzz-test-scripts-pypi-server = [
   "click >= 8.1.7, < 8.2",
   "loguru >= 0.7.2, < 0.8",
   "pypiserver[passlib] >= 2.2.0, < 2.3",
-  "typed-settings >= 24.5.0, < 24.6",
+  "typed-settings >= 24.6.0, < 24.7",
 ]
 zzz-test-sentinel = []
 zzz-test-slack-sdk = [
@@ -235,7 +235,7 @@ zzz-test-sqlalchemy-polars = [
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.36, < 2.1",
 ]
-zzz-test-streamlit = ["streamlit >= 1.39.0, < 1.40"]
+zzz-test-streamlit = ["streamlit >= 1.40.0, < 1.41"]
 zzz-test-subprocess = ["loguru >= 0.7.2, < 0.8"]
 zzz-test-sys = []
 zzz-test-tempfile = []
@@ -245,12 +245,12 @@ zzz-test-tenacity = [
 ]
 zzz-test-text = []
 zzz-test-timer = []
-zzz-test-tqdm = ["tqdm >= 4.66.5, < 4.67"]
+zzz-test-tqdm = ["tqdm >= 4.67.0, < 4.68"]
 zzz-test-tracer = ["treelib >= 1.7.0, < 1.8"]
 zzz-test-typed-settings = [
   "click >= 8.1.7, < 8.2",
   "sqlalchemy >= 2.0.36, < 2.1",
-  "typed-settings >= 24.5.0, < 24.6",
+  "typed-settings >= 24.6.0, < 24.7",
   "whenever >= 0.6.11, < 0.7",
 ]
 zzz-test-types = []
