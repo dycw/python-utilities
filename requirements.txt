@@ -23,7 +23,7 @@ argcomplete==3.5.1
     # via nox
 astor==0.8.1
     # via dycw-utilities (pyproject.toml)
-async-timeout==5.0.0
+async-timeout==5.0.1
     # via redis
 asyncpg==0.30.0
     # via dycw-utilities (pyproject.toml)
@@ -346,7 +346,7 @@ rich==13.8.1
     #   dycw-utilities (pyproject.toml)
     #   hatch
     #   streamlit
-rpds-py==0.20.1
+rpds-py==0.21.0
     # via
     #   jsonschema
     #   referencing

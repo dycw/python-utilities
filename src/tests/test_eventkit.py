@@ -40,12 +40,28 @@ class TestAddListener:
 
     @given(n=integers())
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    async def test_error(self, *, capsys: CaptureFixture, n: int) -> None:
+    async def test_error_loguru(self, *, capsys: CaptureFixture, n: int) -> None:
         handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
         event = Event()
-        _ = add_listener(event, func_test_eventkit)
+        _ = add_listener(event, func_test_eventkit, _stdout=False, _loguru=True)
+        event.emit(n, n)
+        out = capsys.readouterr().out
+        (line1, line2, *_, last) = out.splitlines()
+        expected1 = r"ERROR    \| utilities\.eventkit:_add_listener_error:\d+ - Error running Event<.*>$"
+        assert search(expected1, line1), line1
+        assert line2 == "Traceback (most recent call last):"
+        assert (
+            last
+            == "TypeError: func_test_eventkit() takes 1 positional argument but 2 were given"
+        )
+
+    @given(n=integers())
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_error_stdout(self, *, capsys: CaptureFixture, n: int) -> None:
+        event = Event()
+        _ = add_listener(event, func_test_eventkit, _stdout=True, _loguru=False)
         event.emit(n, n)
         out = capsys.readouterr().out
         (line1, line2, *_, last) = out.splitlines()
