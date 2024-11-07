@@ -33,7 +33,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 tomli==2.0.2
     # via coverage
-tqdm==4.66.6
+tqdm==4.67.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)

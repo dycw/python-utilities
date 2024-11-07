@@ -400,7 +400,7 @@ tomlkit==0.13.2
     # via hatch
 tornado==6.4.1
     # via streamlit
-tqdm==4.66.6
+tqdm==4.67.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   optuna
