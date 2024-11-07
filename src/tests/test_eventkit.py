@@ -30,6 +30,22 @@ class TestAddListener:
 
     @given(n=integers())
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_custom_error_handler(
+        self, *, capsys: CaptureFixture, n: int
+    ) -> None:
+        def error(event: Event, exception: Exception, /) -> None:
+            _ = (event, exception)
+            print("Custom handler")  # noqa: T201
+
+        event = Event()
+        _ = add_listener(event, identity, error=error, _stdout=False, _loguru=False)
+        event.emit(n, n)
+        out = capsys.readouterr().out
+        (line,) = out.splitlines()
+        assert line == "Custom handler"
+
+    @given(n=integers())
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_loguru(self, *, capsys: CaptureFixture, n: int) -> None:
         handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
