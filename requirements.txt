@@ -243,7 +243,7 @@ pexpect==4.9.0
     # via hatch
 pikepdf==9.4.0
     # via img2pdf
-pillow==10.4.0
+pillow==11.0.0
     # via
     #   fpdf2
     #   img2pdf
@@ -384,7 +384,7 @@ sqlalchemy==2.0.36
     #   dycw-utilities (pyproject.toml)
     #   alembic
     #   optuna
-streamlit==1.39.0
+streamlit==1.40.0
     # via dycw-utilities (pyproject.toml)
 tenacity==9.0.0
     # via
