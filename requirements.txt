@@ -409,7 +409,7 @@ treelib==1.7.0
     # via dycw-utilities (pyproject.toml)
 trove-classifiers==2024.10.21.16
     # via hatchling
-typed-settings==24.5.0
+typed-settings==24.6.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.12.2
     # via
