@@ -32,6 +32,7 @@ from typing_extensions import override
 from utilities.dataclasses import is_dataclass_instance
 from utilities.functions import get_class_name
 from utilities.iterables import OneError, one
+from utilities.math import MAX_INT64, MIN_INT64
 from utilities.timer import Timer
 from utilities.typing import get_args, is_namedtuple_class, is_namedtuple_instance
 
@@ -73,6 +74,14 @@ def serialize(obj: Any, /, *, fallback: bool = False) -> bytes:
         obj_use = asdict(obj)
     elif is_namedtuple_instance(obj):
         obj_use = tuple(obj)
+    elif isinstance(obj, bytes):
+        if not _is_serializable_binary(obj):
+            raise _SerializeInvalidBinaryError(obj=obj)
+        obj_use = obj
+    elif isinstance(obj, Fraction):
+        if not _is_serializable_fraction(obj):
+            raise _SerializeInvalidFractionError(obj=obj)
+        obj_use = obj
     else:
         obj_use = obj
     try:
@@ -82,17 +91,48 @@ def serialize(obj: Any, /, *, fallback: bool = False) -> bytes:
             option=OPT_NON_STR_KEYS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
         )
     except TypeError:
-        raise SerializeError(obj=obj) from None
+        raise _SerializeTypeError(obj=obj) from None
+
+
+def _is_serializable_binary(binary: bytes, /) -> bool:
+    try:
+        _ = binary.decode()
+    except UnicodeDecodeError:
+        return False
+    return True
+
+
+def _is_serializable_fraction(frac: Fraction, /) -> bool:
+    return (MIN_INT64 <= frac.numerator <= MAX_INT64) and (
+        MIN_INT64 <= frac.denominator <= MAX_INT64
+    )
 
 
 @dataclass(kw_only=True, slots=True)
 class SerializeError(Exception):
     obj: Any
 
+
+@dataclass(kw_only=True, slots=True)
+class _SerializeTypeError(SerializeError):
     @override
     def __str__(self) -> str:
         cls = get_class_name(self.obj)
         return f"Unable to serialize object of type {cls!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _SerializeInvalidBinaryError(SerializeError):
+    @override
+    def __str__(self) -> str:
+        return f"Unable to serialize binary data {self.obj!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _SerializeInvalidFractionError(SerializeError):
+    @override
+    def __str__(self) -> str:
+        return f"Unable to serialize fraction {self.obj!r}"
 
 
 class _SchemaDict(Generic[_T], TypedDict):
