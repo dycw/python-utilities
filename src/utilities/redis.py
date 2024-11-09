@@ -20,9 +20,8 @@ from redis.asyncio import Redis
 from redis.typing import EncodableT
 
 from utilities.datetime import MILLISECOND, SECOND, duration_to_float, get_now
+from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
-from utilities.orjson import deserialize
-from utilities.text import ensure_bytes
 from utilities.types import Duration, ensure_int
 
 if TYPE_CHECKING:
@@ -76,31 +75,51 @@ class RedisHashMapKey(Generic[_K, _V]):
 
     name: str
     key: type[_K]
+    key_serializer: Callable[[_K], bytes] | None = None
     value: type[_V]
+    value_serializer: Callable[[_V], bytes] | None = None
+    value_deserializer: Callable[[bytes], _V] | None = None
 
     async def hget(self, redis: Redis, key: _K, /) -> _V | None:
         """Get a value from a hashmap in `redis`."""
-        from utilities.orjson import serialize  # skipif-ci-and-not-linux
-
-        ser = serialize(key)  # skipif-ci-and-not-linux
-        maybe_ser = await cast(  # skipif-ci-and-not-linux
-            Awaitable[Any], redis.hget(self.name, cast(Any, ser))
+        ser_key = self._serialize_key(key)  # skipif-ci-and-not-linux
+        result = await cast(  # skipif-ci-and-not-linux
+            Awaitable[Any], redis.hget(self.name, cast(Any, ser_key))
         )
-        if maybe_ser is None:  # skipif-ci-and-not-linux
-            return None
-        return deserialize(ensure_bytes(maybe_ser))  # skipif-ci-and-not-linux
+        match result:  # skipif-ci-and-not-linux
+            case None:
+                return None
+            case bytes() as data:
+                if self.value_deserializer is None:
+                    from utilities.orjson import deserialize
+
+                    return deserialize(data)
+                return self.value_deserializer(data)
+            case _:  # pragma: no cover
+                raise ImpossibleCaseError(case=[f"{redis=}"])
 
     async def hset(self, redis: Redis, key: _K, value: _V, /) -> int:
         """Set a value in a hashmap in `redis`."""
-        from utilities.orjson import serialize  # skipif-ci-and-not-linux
+        ser_key = self._serialize_key(key)  # skipif-ci-and-not-linux
+        if self.value_serializer is None:  # skipif-ci-and-not-linux
+            from utilities.orjson import serialize
 
-        ser_key = serialize(key)  # skipif-ci-and-not-linux
-        ser_value = serialize(value)  # skipif-ci-and-not-linux
-        response = await cast(  # skipif-ci-and-not-linux
+            ser_value = serialize(value)
+        else:  # skipif-ci-and-not-linux
+            ser_value = self.value_serializer(value)
+        result = await cast(  # skipif-ci-and-not-linux
             Awaitable[int],
             redis.hset(self.name, key=cast(Any, ser_key), value=cast(Any, ser_value)),
         )
-        return ensure_int(response)  # skipif-ci-and-not-linux
+        return ensure_int(result)  # skipif-ci-and-not-linux
+
+    def _serialize_key(self, key: _K, /) -> bytes:
+        """Serialize the key."""
+        if self.key_serializer is None:  # skipif-ci-and-not-linux
+            from utilities.orjson import serialize
+
+            return serialize(key)
+        return self.key_serializer(key)  # skipif-ci-and-not-linux
 
 
 @dataclass(kw_only=True)
@@ -109,20 +128,32 @@ class RedisKey(Generic[_T]):
 
     name: str
     type: type[_T]
+    serializer: Callable[[_T], bytes] | None = None
+    deserializer: Callable[[bytes], _T] | None = None
 
     async def get(self, redis: Redis, /) -> _T | None:
         """Get a value from `redis`."""
-        maybe_ser = await redis.get(self.name)  # skipif-ci-and-not-linux
-        if maybe_ser is None:  # skipif-ci-and-not-linux
-            return None
-        return deserialize(ensure_bytes(maybe_ser))  # skipif-ci-and-not-linux
+        match await redis.get(self.name):  # skipif-ci-and-not-linux
+            case None:
+                return None
+            case bytes() as data:
+                if self.deserializer is None:
+                    from utilities.orjson import deserialize
+
+                    return deserialize(data)
+                return self.deserializer(data)
+            case _:  # pragma: no cover
+                raise ImpossibleCaseError(case=[f"{redis=}"])
 
     async def set(self, redis: Redis, value: _T, /) -> int:
         """Set a value in `redis`."""
-        from utilities.orjson import serialize  # skipif-ci-and-not-linux
+        if self.serializer is None:  # skipif-ci-and-not-linux
+            from utilities.orjson import serialize
 
-        ser = serialize(value)  # skipif-ci-and-not-linux
-        return await redis.set(self.name, ser)  # skipif-ci-and-not-linux
+            value_use = serialize(value)
+        else:  # skipif-ci-and-not-linux
+            value_use = self.serializer(value)
+        return await redis.set(self.name, value_use)  # skipif-ci-and-not-linux
 
 
 @overload
