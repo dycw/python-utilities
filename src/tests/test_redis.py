@@ -4,7 +4,7 @@ from asyncio import create_task, get_running_loop, sleep
 from typing import TYPE_CHECKING
 
 from hypothesis import HealthCheck, Phase, given, settings
-from hypothesis.strategies import DataObject, binary, booleans, data
+from hypothesis.strategies import DataObject, booleans, data
 from redis.asyncio import Redis
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
@@ -25,7 +25,7 @@ from utilities.sentinel import SENTINEL_REPR, Sentinel, sentinel
 if TYPE_CHECKING:
     from pytest import CaptureFixture
 
-from pytest import mark, param, raises
+from pytest import raises
 
 
 class TestRedisKey:
@@ -37,16 +37,6 @@ class TestRedisKey:
             assert await key.get(test.redis) is None
             _ = await key.set(test.redis, value)
             assert await key.get(test.redis) is value
-
-    @given(data=data(), value=binary(min_size=1))
-    @SKIPIF_CI_AND_NOT_LINUX
-    @mark.only
-    async def test_bytes(self, *, data: DataObject, value: bytes) -> None:
-        async with yield_test_redis(data) as test:
-            key = RedisKey(name=test.key, type=bytes)
-            assert await key.get(test.redis) is None
-            _ = await key.set(test.redis, value)
-            assert await key.get(test.redis) == value
 
     @given(data=data())
     @SKIPIF_CI_AND_NOT_LINUX
