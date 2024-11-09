@@ -54,15 +54,13 @@ from utilities.whenever import CheckValidZonedDateimeError, check_valid_zoned_da
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    import redis
-    import redis.asyncio
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
     from sqlalchemy import Engine, MetaData
     from sqlalchemy.ext.asyncio import AsyncEngine
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
-    from utilities.redis import RedisContainer
+    from utilities.redis import TestRedis
     from utilities.types import Duration, Number
 
 
@@ -411,60 +409,6 @@ def random_states(
     return RandomState(seed=seed_use)
 
 
-_ASYNCS = booleans()
-
-
-def redis_cms(
-    data: DataObject, /, *, async_: MaybeSearchStrategy[bool] = _ASYNCS
-) -> AbstractAsyncContextManager[
-    RedisContainer[redis.Redis] | RedisContainer[redis.asyncio.Redis]
-]:
-    """Strategy for generating redis clients (with cleanup)."""
-    import redis  # skipif-ci-and-not-linux
-    import redis.asyncio  # skipif-ci-and-not-linux
-    from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
-    from redis.typing import KeyT  # skipif-ci-and-not-linux
-
-    from utilities.redis import RedisContainer  #  skipif-ci-and-not-linux
-
-    draw = lift_data(data)  # skipif-ci-and-not-linux
-    now = get_now(time_zone="local")  # skipif-ci-and-not-linux
-    uuid = draw(uuids())  # skipif-ci-and-not-linux
-    key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
-
-    if draw(async_):  # skipif-ci-and-not-linux
-
-        @asynccontextmanager
-        async def yield_redis_async() -> (  # skipif-ci-and-not-linux
-            AsyncIterator[RedisContainer[redis.asyncio.Redis]]
-        ):
-            async with redis.asyncio.Redis(db=15) as client:  # skipif-ci-and-not-linux
-                keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
-                with suppress(ResponseError):
-                    _ = await client.delete(*keys)
-                yield RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
-                keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
-                with suppress(ResponseError):
-                    _ = await client.delete(*keys)
-
-        return yield_redis_async()  # skipif-ci-and-not-linux
-
-    @asynccontextmanager
-    async def yield_redis_sync() -> (  # skipif-ci-and-not-linux
-        AsyncIterator[RedisContainer[redis.Redis]]
-    ):
-        with redis.Redis(db=15) as client:  # skipif-ci-and-not-linux
-            keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
-            with suppress(ResponseError):
-                _ = client.delete(*keys)
-            yield RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
-            keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
-            with suppress(ResponseError):
-                _ = client.delete(*keys)
-
-    return yield_redis_sync()  # skipif-ci-and-not-linux
-
-
 @composite
 def sets_fixed_length(
     _draw: DrawFn, strategy: SearchStrategy[_T], size: MaybeSearchStrategy[int], /
@@ -715,6 +659,32 @@ def timedeltas_2w(
     return draw(timedeltas(min_value=min_value_, max_value=max_value_))
 
 
+def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[TestRedis]:
+    """Strategy for generating test redis clients."""
+    from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
+    from redis.typing import KeyT  # skipif-ci-and-not-linux
+
+    from utilities.redis import TestRedis, yield_redis  #  skipif-ci-and-not-linux
+
+    draw = lift_data(data)  # skipif-ci-and-not-linux
+    now = get_now(time_zone="local")  # skipif-ci-and-not-linux
+    uuid = draw(uuids())  # skipif-ci-and-not-linux
+    key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
+
+    @asynccontextmanager
+    async def func() -> AsyncIterator[TestRedis]:  # skipif-ci-and-not-linux
+        async with yield_redis(db=15) as redis:  # skipif-ci-and-not-linux
+            keys = cast(list[KeyT], await redis.keys(pattern=f"{key}_*"))
+            with suppress(ResponseError):
+                _ = await redis.delete(*keys)
+            yield TestRedis(redis=redis, timestamp=now, uuid=uuid, key=key)
+            keys = cast(list[KeyT], await redis.keys(pattern=f"{key}_*"))
+            with suppress(ResponseError):
+                _ = await redis.delete(*keys)
+
+    return func()  # skipif-ci-and-not-linux
+
+
 _ZONED_DATETIMES_LEFT_MOST = ZoneInfo("Asia/Manila")
 _ZONED_DATETIMES_RIGHT_MOST = ZoneInfo("Pacific/Kiritimati")
 
@@ -800,7 +770,6 @@ __all__ = [
     "lists_fixed_length",
     "months",
     "random_states",
-    "redis_cms",
     "sets_fixed_length",
     "setup_hypothesis_profiles",
     "slices",
@@ -812,5 +781,6 @@ __all__ = [
     "text_clean",
     "text_printable",
     "timedeltas_2w",
+    "yield_test_redis",
     "zoned_datetimes",
 ]

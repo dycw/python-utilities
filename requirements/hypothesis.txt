@@ -16,7 +16,7 @@ iniconfig==2.0.0
     # via pytest
 numpy==2.0.2
     # via dycw-utilities (pyproject.toml)
-packaging==24.1
+packaging==24.2
     # via
     #   pytest
     #   pytest-rerunfailures
@@ -50,5 +50,5 @@ typing-extensions==4.12.2
     #   dycw-utilities (pyproject.toml)
     #   aiosqlite
     #   sqlalchemy
-whenever==0.6.11
+whenever==0.6.12
     # via dycw-utilities (pyproject.toml)

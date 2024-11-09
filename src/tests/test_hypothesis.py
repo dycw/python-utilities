@@ -55,7 +55,6 @@ from utilities.hypothesis import (
     lists_fixed_length,
     months,
     random_states,
-    redis_cms,
     sets_fixed_length,
     settings_with_reduced_examples,
     setup_hypothesis_profiles,
@@ -68,6 +67,7 @@ from utilities.hypothesis import (
     text_clean,
     text_printable,
     timedeltas_2w,
+    yield_test_redis,
     zoned_datetimes,
 )
 from utilities.math import MAX_INT32, MAX_INT64, MIN_INT32, MIN_INT64
@@ -493,8 +493,8 @@ class TestRedisCMs:
         import redis
         import redis.asyncio
 
-        async with redis_cms(data) as container:
-            match container.client:
+        async with yield_test_redis(data) as container:
+            match container.redis:
                 case redis.Redis() as client:
                     assert not client.exists(container.key)
                     _ = client.set(container.key, value)

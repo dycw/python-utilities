@@ -39,7 +39,7 @@ attrs==24.2.0
     #   referencing
 backports-tarfile==1.2.0
     # via jaraco-context
-blinker==1.8.2
+blinker==1.9.0
     # via streamlit
 bottleneck==1.4.2
     # via dycw-utilities (pyproject.toml)
@@ -184,7 +184,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.13.2
+narwhals==1.13.3
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -218,7 +218,7 @@ orjson==3.10.11
     # via dycw-utilities (pyproject.toml)
 osqp==0.6.7.post3
     # via cvxpy
-packaging==24.1
+packaging==24.2
     # via
     #   altair
     #   coverage-conditional-plugin
@@ -432,7 +432,7 @@ urllib3==2.2.3
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.4.30
+uv==0.5.1
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
@@ -444,7 +444,7 @@ virtualenv==20.27.1
     #   nox
 vl-convert-python==1.7.0
     # via dycw-utilities (pyproject.toml)
-whenever==0.6.11
+whenever==0.6.12
     # via dycw-utilities (pyproject.toml)
 win32-setctime==1.1.0
     # via dycw-utilities (pyproject.toml)

@@ -29,9 +29,9 @@ lxml==5.3.0
     # via pikepdf
 markupsafe==3.0.2
     # via jinja2
-narwhals==1.13.2
+narwhals==1.13.3
     # via altair
-packaging==24.1
+packaging==24.2
     # via
     #   altair
     #   pikepdf

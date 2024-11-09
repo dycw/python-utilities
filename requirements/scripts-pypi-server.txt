@@ -14,7 +14,7 @@ iniconfig==2.0.0
     # via pytest
 loguru==0.7.2
     # via dycw-utilities (pyproject.toml)
-packaging==24.1
+packaging==24.2
     # via
     #   pypiserver
     #   pytest
