@@ -673,14 +673,14 @@ def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[TestRed
 
     @asynccontextmanager
     async def func() -> AsyncIterator[TestRedis]:  # skipif-ci-and-not-linux
-        async with yield_redis(db=15) as client:  # skipif-ci-and-not-linux
-            keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
+        async with yield_redis(db=15) as redis:  # skipif-ci-and-not-linux
+            keys = cast(list[KeyT], await redis.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
-                _ = await client.delete(*keys)
-            yield TestRedis(redis=client, timestamp=now, uuid=uuid, key=key)
-            keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
+                _ = await redis.delete(*keys)
+            yield TestRedis(redis=redis, timestamp=now, uuid=uuid, key=key)
+            keys = cast(list[KeyT], await redis.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
-                _ = await client.delete(*keys)
+                _ = await redis.delete(*keys)
 
     return func()  # skipif-ci-and-not-linux
 
