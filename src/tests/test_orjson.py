@@ -38,6 +38,7 @@ from pytest import mark, param, raises
 from sqlalchemy import Engine
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
+from utilities.functions import not_func
 from utilities.hypothesis import (
     int64s,
     slices,
@@ -47,14 +48,18 @@ from utilities.hypothesis import (
     timedeltas_2w,
     zoned_datetimes,
 )
-from utilities.math import MAX_INT64, MIN_INT64
 from utilities.orjson import (
     _SCHEMA_KEY,
     _SCHEMA_VALUE,
     DeserializeError,
     SerializeError,
+    _is_serializable_binary,
+    _is_serializable_fraction,
     _object_hook,
     _ObjectHookError,
+    _SerializeInvalidBinaryError,
+    _SerializeInvalidFractionError,
+    _SerializeTypeError,
     deserialize,
     serialize,
 )
@@ -64,20 +69,6 @@ from utilities.typing import get_args
 from utilities.zoneinfo import UTC, HongKong
 
 _TrueOrFalseLit = Literal["true", "false"]
-
-
-def _filter_binary(obj: bytes, /) -> bool:
-    try:
-        _ = obj.decode()
-    except UnicodeDecodeError:
-        return False
-    return True
-
-
-def _filter_fraction(obj: Fraction, /) -> bool:
-    return (MIN_INT64 <= obj.numerator <= MAX_INT64) and (
-        MIN_INT64 <= obj.denominator <= MAX_INT64
-    )
 
 
 def _map_abs(obj: Any, /) -> Any:
@@ -93,7 +84,7 @@ class TestSerializeAndDeserialize:
     @mark.parametrize(
         ("elements", "two_way", "eq_obj_implies_eq_ser"),
         [
-            param(binary().filter(_filter_binary), True, True),
+            param(binary().filter(_is_serializable_binary), True, True),
             param(booleans(), True, True),
             param(
                 complex_numbers(allow_infinity=False, allow_nan=False).map(
@@ -128,7 +119,7 @@ class TestSerializeAndDeserialize:
             param(
                 floats(allow_nan=False, allow_infinity=False).map(_map_abs), True, True
             ),
-            param(fractions().filter(_filter_fraction), True, True),
+            param(fractions().filter(_is_serializable_fraction), True, True),
             param(frozensets(int64s(), max_size=3), True, True),
             param(frozensets(text_ascii(), max_size=3), True, True),
             param(frozensets(int64s() | text_ascii(), max_size=3), True, False),
@@ -263,9 +254,23 @@ class TestSerializeAndDeserialize:
 
     def test_error_serialize(self) -> None:
         with raises(
-            SerializeError, match="Unable to serialize object of type 'Sentinel'"
+            _SerializeTypeError, match="Unable to serialize object of type 'Sentinel'"
         ):
             _ = serialize(sentinel)
+
+    @given(binary=binary().filter(not_func(_is_serializable_binary)))
+    def test_error_binary(self, *, binary: bytes) -> None:
+        with raises(
+            _SerializeInvalidBinaryError, match="Unable to serialize binary data .*"
+        ):
+            _ = serialize(binary)
+
+    @given(fraction=fractions().filter(not_func(_is_serializable_fraction)))
+    def test_error_fraction(self, *, fraction: Fraction) -> None:
+        with raises(
+            _SerializeInvalidFractionError, match="Unable to serialize fraction '.*'"
+        ):
+            _ = serialize(fraction)
 
     def test_error_deserialize(self) -> None:
         obj = {_SCHEMA_KEY: "invalid", _SCHEMA_VALUE: "invalid"}
