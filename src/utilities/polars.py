@@ -437,6 +437,16 @@ def columns_to_dict(df: DataFrame, key: str, value: str, /) -> dict[Any, Any]:
     return dict(zip(col_key, col_value, strict=True))
 
 
+@dataclass(kw_only=True, slots=True)
+class ColumnsToDictError(Exception):
+    df: DataFrame
+    key: str
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must be unique on {self.key!r}\n\n{self.df}"
+
+
 @overload
 def convert_time_zone(obj: Series, /, *, time_zone: ZoneInfo | str = ...) -> Series: ...
 @overload
@@ -473,16 +483,6 @@ def _convert_time_zone_series(
     if isinstance(sr.dtype, Datetime):
         return sr.dt.convert_time_zone(get_time_zone_name(time_zone))
     return sr
-
-
-@dataclass(kw_only=True, slots=True)
-class ColumnsToDictError(Exception):
-    df: DataFrame
-    key: str
-
-    @override
-    def __str__(self) -> str:
-        return f"DataFrame must be unique on {self.key!r}\n\n{self.df}"
 
 
 def dataclass_to_row(obj: Dataclass, /) -> DataFrame:
