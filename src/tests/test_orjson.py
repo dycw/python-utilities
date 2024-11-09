@@ -332,8 +332,7 @@ class TestSerializeAndDeserialize:
         expected = {"truth": True, "sentinel": str(sentinel)}
         assert result == expected
 
-    @mark.only
-    def test_foo(self) -> None:
+    def test_dataclass_needing_forward_reference(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             mapping: Mapping[str, int] = field(default_factory=dict)
