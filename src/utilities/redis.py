@@ -26,6 +26,7 @@ from utilities.types import Duration, ensure_int
 
 if TYPE_CHECKING:
     import datetime as dt
+    from collections.abc import Callable
 
     from redis.asyncio import ConnectionPool
     from redis.asyncio.client import PubSub
@@ -35,18 +36,29 @@ if TYPE_CHECKING:
 
 
 _K = TypeVar("_K")
+_K1 = TypeVar("_K1")
+_K2 = TypeVar("_K2")
+_K3 = TypeVar("_K3")
 _T = TypeVar("_T")
+_T1 = TypeVar("_T1")
+_T2 = TypeVar("_T2")
+_T3 = TypeVar("_T3")
+_T4 = TypeVar("_T4")
+_T5 = TypeVar("_T5")
 _V = TypeVar("_V")
+_V1 = TypeVar("_V1")
+_V2 = TypeVar("_V2")
+_V3 = TypeVar("_V3")
 
 
-class RedisMessageSubscribe(TypedDict):
+class _RedisMessageSubscribe(TypedDict):
     type: Literal["subscribe", "psubscribe", "message", "pmessage"]
     pattern: str | None
     channel: bytes
     data: bytes
 
 
-class RedisMessageUnsubscribe(TypedDict):
+class _RedisMessageUnsubscribe(TypedDict):
     type: Literal["unsubscribe", "punsubscribe"]
     pattern: str | None
     channel: bytes
@@ -59,18 +71,8 @@ _SUBSCRIBE_TIMEOUT = SECOND
 _SUBSCRIBE_SLEEP = 10 * MILLISECOND
 
 
-@dataclass(repr=False, kw_only=True, slots=True)
-class TestRedis:
-    """A container for a redis client; for testing purposes only."""
-
-    redis: Redis
-    timestamp: dt.datetime = field(default_factory=get_now)
-    uuid: UUID = field(default_factory=uuid4)
-    key: str
-
-
 @dataclass(kw_only=True)
-class RedisHashMapKey(Generic[_K, _V]):
+class _RedisHashMapKey(Generic[_K, _V]):
     """A hashmap key in a redis store."""
 
     name: str
@@ -122,8 +124,128 @@ class RedisHashMapKey(Generic[_K, _V]):
         return self.key_serializer(key)  # skipif-ci-and-not-linux
 
 
+@overload
+def redis_hash_map_key(
+    name: str,
+    key: type[_K],
+    value: type[_V],
+    /,
+    *,
+    key_serializer: Callable[[_K], bytes] | None = ...,
+    value_serializer: Callable[[_V], bytes] | None = ...,
+    value_deserializer: Callable[[bytes], _V] | None = ...,
+) -> _RedisHashMapKey[_K, _V]: ...
+@overload
+def redis_hash_map_key(
+    name: str,
+    key: type[_K],
+    value: tuple[type[_V1], type[_V2]],
+    /,
+    *,
+    key_serializer: Callable[[_K], bytes] | None = ...,
+    value_serializer: Callable[[_V1 | _V2], bytes] | None = ...,
+    value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
+) -> _RedisHashMapKey[_K, _V1 | _V2]: ...
+@overload
+def redis_hash_map_key(
+    name: str,
+    key: type[_K],
+    value: tuple[type[_V1], type[_V2], type[_V3]],
+    /,
+    *,
+    key_serializer: Callable[[_K], bytes] | None = ...,
+    value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = ...,
+    value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
+) -> _RedisHashMapKey[_K, _V1 | _V2 | _V3]: ...
+@overload
+def redis_hash_map_key(
+    name: str,
+    key: tuple[type[_K1], type[_K2]],
+    value: type[_V],
+    /,
+    *,
+    key_serializer: Callable[[_K1 | _K2], bytes] | None = ...,
+    value_serializer: Callable[[_V], bytes] | None = ...,
+    value_deserializer: Callable[[bytes], _V] | None = ...,
+) -> _RedisHashMapKey[_K1 | _K2, _V]: ...
+@overload
+def redis_hash_map_key(
+    name: str,
+    key: tuple[type[_K1], type[_K2]],
+    value: tuple[type[_V1], type[_V2]],
+    /,
+    *,
+    key_serializer: Callable[[_K1 | _K2], bytes] | None = ...,
+    value_serializer: Callable[[_V1 | _V2], bytes] | None = ...,
+    value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
+) -> _RedisHashMapKey[_K1 | _K2, _V1 | _V2]: ...
+@overload
+def redis_hash_map_key(
+    name: str,
+    key: tuple[type[_K1], type[_K2]],
+    value: tuple[type[_V1], type[_V2], type[_V3]],
+    /,
+    *,
+    key_serializer: Callable[[_K1 | _K2], bytes] | None = ...,
+    value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = ...,
+    value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
+) -> _RedisHashMapKey[_K1 | _K2, _V1 | _V2 | _V3]: ...
+@overload
+def redis_hash_map_key(
+    name: str,
+    key: tuple[type[_K1], type[_K2], type[_K3]],
+    value: type[_V],
+    /,
+    *,
+    key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = ...,
+    value_serializer: Callable[[_V], bytes] | None = ...,
+    value_deserializer: Callable[[bytes], _V] | None = ...,
+) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V]: ...
+@overload
+def redis_hash_map_key(
+    name: str,
+    key: tuple[type[_K1], type[_K2], type[_K3]],
+    value: tuple[type[_V1], type[_V2]],
+    /,
+    *,
+    key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = ...,
+    value_serializer: Callable[[_V1 | _V2], bytes] | None = ...,
+    value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
+) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2]: ...
+@overload
+def redis_hash_map_key(
+    name: str,
+    key: tuple[type[_K1], type[_K2], type[_K3]],
+    value: tuple[type[_V1], type[_V2], type[_V3]],
+    /,
+    *,
+    key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = ...,
+    value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = ...,
+    value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
+) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2 | _V3]: ...
+def redis_hash_map_key(
+    name: str,
+    key: Any,
+    value: Any,
+    /,
+    *,
+    key_serializer: Callable[[Any], bytes] | None = None,
+    value_serializer: Callable[[Any], bytes] | None = None,
+    value_deserializer: Callable[[bytes], Any] | None = None,
+) -> _RedisHashMapKey[Any, Any]:
+    """Create a redis key."""
+    return _RedisHashMapKey(
+        name=name,
+        key=key,
+        key_serializer=key_serializer,
+        value=value,
+        value_serializer=value_serializer,
+        value_deserializer=value_deserializer,
+    )
+
+
 @dataclass(kw_only=True)
-class RedisKey(Generic[_T]):
+class _RedisKey(Generic[_T]):
     """A key in a redis store."""
 
     name: str
@@ -154,6 +276,65 @@ class RedisKey(Generic[_T]):
         else:  # skipif-ci-and-not-linux
             value_use = self.serializer(value)
         return await redis.set(self.name, value_use)  # skipif-ci-and-not-linux
+
+
+@overload
+def redis_key(
+    name: str,
+    type_: type[_T],
+    /,
+    *,
+    serializer: Callable[[_T], bytes] | None = ...,
+    deserializer: Callable[[bytes], _T] | None = ...,
+) -> _RedisKey[_T]: ...
+@overload
+def redis_key(
+    name: str,
+    type_: tuple[type[_T1], type[_T2]],
+    /,
+    *,
+    serializer: Callable[[_T1 | _T2], bytes] | None = None,
+    deserializer: Callable[[bytes], _T1 | _T2] | None = None,
+) -> _RedisKey[_T1 | _T2]: ...
+@overload
+def redis_key(
+    name: str,
+    type_: tuple[type[_T1], type[_T2], type[_T3]],
+    /,
+    *,
+    serializer: Callable[[_T1 | _T2 | _T3], bytes] | None = None,
+    deserializer: Callable[[bytes], _T1 | _T2 | _T3] | None = None,
+) -> _RedisKey[_T1 | _T2 | _T3]: ...
+@overload
+def redis_key(
+    name: str,
+    type_: tuple[type[_T1], type[_T2], type[_T3], type[_T4]],
+    /,
+    *,
+    serializer: Callable[[_T1 | _T2 | _T3 | _T4], bytes] | None = None,
+    deserializer: Callable[[bytes], _T1 | _T2 | _T3 | _T4] | None = None,
+) -> _RedisKey[_T1 | _T2 | _T3 | _T4]: ...
+@overload
+def redis_key(
+    name: str,
+    type_: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]],
+    /,
+    *,
+    serializer: Callable[[_T1 | _T2 | _T3 | _T4 | _T5], bytes] | None = None,
+    deserializer: Callable[[bytes], _T1 | _T2 | _T3 | _T4 | _T5] | None = None,
+) -> _RedisKey[_T1 | _T2 | _T3 | _T4 | _T5]: ...
+def redis_key(
+    name: str,
+    type_: Any,
+    /,
+    *,
+    serializer: Callable[[Any], bytes] | None = None,
+    deserializer: Callable[[bytes], Any] | None = None,
+) -> _RedisKey[Any]:
+    """Create a redis key."""
+    return _RedisKey(
+        name=name, type=type_, serializer=serializer, deserializer=deserializer
+    )
 
 
 @overload
@@ -233,7 +414,7 @@ async def subscribe_messages(
     *,
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,  # noqa: ASYNC109
     sleep: Duration = _SUBSCRIBE_SLEEP,
-) -> AsyncIterator[RedisMessageSubscribe]:
+) -> AsyncIterator[_RedisMessageSubscribe]:
     """Subscribe to the messages of a given channel(s)."""
     channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
     for channel in channels:  # skipif-ci-and-not-linux
@@ -245,7 +426,7 @@ async def subscribe_messages(
     sleep_use = duration_to_float(sleep)  # skipif-ci-and-not-linux
     while True:  # skipif-ci-and-not-linux
         message = cast(
-            RedisMessageSubscribe | RedisMessageUnsubscribe | None,
+            _RedisMessageSubscribe | _RedisMessageUnsubscribe | None,
             await pubsub.get_message(timeout=timeout_use),
         )
         if (
@@ -254,7 +435,7 @@ async def subscribe_messages(
             and (message["channel"] in channels_bytes)
             and isinstance(message["data"], bytes)
         ):
-            yield cast(RedisMessageSubscribe, message)
+            yield cast(_RedisMessageSubscribe, message)
         else:
             await asyncio.sleep(sleep_use)
 
@@ -286,11 +467,23 @@ async def yield_redis(
         await redis.aclose()
 
 
+@dataclass(repr=False, kw_only=True, slots=True)
+class _TestRedis:
+    """A container for a redis client; for testing purposes only."""
+
+    redis: Redis
+    timestamp: dt.datetime = field(default_factory=get_now)
+    uuid: UUID = field(default_factory=uuid4)
+    key: str
+
+
+_ = _TestRedis
+
+
 __all__ = [
-    "RedisHashMapKey",
-    "RedisKey",
-    "TestRedis",
     "publish",
+    "redis_hash_map_key",
+    "redis_key",
     "subscribe",
     "subscribe_messages",
     "yield_redis",
