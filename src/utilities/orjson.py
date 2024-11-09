@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 from enum import Enum, StrEnum, unique
@@ -355,7 +356,13 @@ def deserialize(
         type_hooks = {}
     else:
         type_hooks = {es: _make_type_hook(es) for es in enum_subsets}
-    return from_dict(cls, obj, config=Config(type_hooks=type_hooks, cast=[Enum]))
+    return from_dict(
+        cls,
+        obj,
+        config=Config(
+            type_hooks=type_hooks, cast=[Enum], forward_references={"Mapping": Mapping}
+        ),
+    )
 
 
 def _object_hook(obj: Any, /) -> Any:
