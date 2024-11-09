@@ -18,10 +18,12 @@ from uuid import UUID, uuid4
 
 from redis.asyncio import Redis
 from redis.typing import EncodableT
+from typing_extensions import override
 
 from utilities.datetime import MILLISECOND, SECOND, duration_to_float, get_now
+from utilities.errors import ImpossibleCaseError
+from utilities.functions import get_class_name
 from utilities.iterables import always_iterable
-from utilities.orjson import deserialize
 from utilities.text import ensure_bytes
 from utilities.types import Duration, ensure_int
 
@@ -76,7 +78,11 @@ class RedisHashMapKey(Generic[_K, _V]):
 
     name: str
     key: type[_K]
+    key_serializer: Callable[[_K], str] | None = None
+    key_deserializer: Callable[[str], _K] | None = None
     value: type[_V]
+    value_serializer: Callable[[_T], EncodableT] | None = None
+    value_deserializer: Callable[[EncodableT], _T] | None = None
 
     async def hget(self, redis: Redis, key: _K, /) -> _V | None:
         """Get a value from a hashmap in `redis`."""
@@ -109,20 +115,32 @@ class RedisKey(Generic[_T]):
 
     name: str
     type: type[_T]
+    serializer: Callable[[_T], bytes] | None = None
+    deserializer: Callable[[bytes], _T] | None = None
 
     async def get(self, redis: Redis, /) -> _T | None:
         """Get a value from `redis`."""
-        maybe_ser = await redis.get(self.name)  # skipif-ci-and-not-linux
-        if maybe_ser is None:  # skipif-ci-and-not-linux
-            return None
-        return deserialize(ensure_bytes(maybe_ser))  # skipif-ci-and-not-linux
+        match await redis.get(self.name):  # skipif-ci-and-not-linux
+            case None:
+                return None
+            case bytes() as data:
+                if self.deserializer is None:
+                    from utilities.orjson import deserialize
+
+                    return deserialize(data)
+                return self.deserializer(data)
+            case _:  # pragma: no cover
+                raise ImpossibleCaseError(case=[f"{redis=}"])
 
     async def set(self, redis: Redis, value: _T, /) -> int:
         """Set a value in `redis`."""
-        from utilities.orjson import serialize  # skipif-ci-and-not-linux
+        if self.serializer is None:  # skipif-ci-and-not-linux
+            from utilities.orjson import serialize
 
-        ser = serialize(value)  # skipif-ci-and-not-linux
-        return await redis.set(self.name, ser)  # skipif-ci-and-not-linux
+            value_use = serialize(value)
+        else:
+            value_use = self.serializer(value)
+        return await redis.set(self.name, value_use)  # skipif-ci-and-not-linux
 
 
 @overload
