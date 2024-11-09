@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from asyncio import create_task, get_running_loop, sleep
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import DataObject, booleans, data
+from pytest import mark, param
 from redis.asyncio import Redis
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
@@ -22,6 +23,8 @@ from utilities.redis import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from pytest import CaptureFixture
 
 
@@ -71,9 +74,14 @@ class TestPublishAndSubscribe:
     @given(
         data=data(),
         channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestSubscribeMessages)}_{c}"
+            lambda c: f"{get_class_name(TestPublishAndSubscribe)}_{c}"
         ),
         obj=objects,
+    )
+    @mark.parametrize(
+        ("serializer", "deserializer"),
+        [param(serialize, deserialize), param(None, None)],
+        ids=str,
     )
     @settings(
         phases={Phase.generate},
@@ -81,20 +89,26 @@ class TestPublishAndSubscribe:
     )
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(
-        self, *, capsys: CaptureFixture, data: DataObject, channel: str, obj: _Object
+        self,
+        *,
+        capsys: CaptureFixture,
+        data: DataObject,
+        channel: str,
+        serializer: Callable[[Any], bytes] | None,
+        deserializer: Callable[[bytes], Any] | None,
+        obj: _Object,
     ) -> None:
         async with yield_test_redis(data) as test:
-            subscribe(test.redis.pubsub(), channel, deserializer=deserialize)
 
             async def listener() -> None:
                 async for msg in subscribe(
-                    test.redis.pubsub(), channel, deserializer=deserialize
+                    test.redis.pubsub(), channel, deserializer=deserializer
                 ):
                     print(msg)  # noqa: T201
 
             task = create_task(listener())
             await sleep(0.05)
-            _ = await publish(test.redis, channel, obj, serializer=serialize)
+            _ = await publish(test.redis, channel, obj, serializer=serializer)
             await sleep(0.05)
             try:
                 out = capsys.readouterr().out
