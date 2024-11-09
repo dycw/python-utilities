@@ -187,10 +187,10 @@ async def subscribe(
     messages = subscribe_messages(  # skipif-ci-and-not-linux
         pubsub, channels, timeout=timeout, sleep=sleep
     )
-    if deserializer is None:
+    if deserializer is None:  # skipif-ci-and-not-linux
         async for message in messages:
             yield message["data"]
-    else:
+    else:  # skipif-ci-and-not-linux
         async for message in messages:
             yield deserializer(message["data"])
 
