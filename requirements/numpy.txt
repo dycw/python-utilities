@@ -22,7 +22,7 @@ numpy==2.0.2
     #   bottleneck
     #   numba
     #   numbagg
-packaging==24.1
+packaging==24.2
     # via
     #   pytest
     #   pytest-rerunfailures

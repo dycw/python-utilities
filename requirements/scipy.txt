@@ -10,7 +10,7 @@ iniconfig==2.0.0
     # via pytest
 numpy==2.1.3
     # via scipy
-packaging==24.1
+packaging==24.2
     # via
     #   pytest
     #   pytest-rerunfailures
