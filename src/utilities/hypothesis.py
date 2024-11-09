@@ -409,32 +409,6 @@ def random_states(
     return RandomState(seed=seed_use)
 
 
-def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[TestRedis]:
-    """Strategy for generating test redis clients."""
-    from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
-    from redis.typing import KeyT  # skipif-ci-and-not-linux
-
-    from utilities.redis import TestRedis, yield_redis  #  skipif-ci-and-not-linux
-
-    draw = lift_data(data)  # skipif-ci-and-not-linux
-    now = get_now(time_zone="local")  # skipif-ci-and-not-linux
-    uuid = draw(uuids())  # skipif-ci-and-not-linux
-    key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
-
-    @asynccontextmanager
-    async def func() -> AsyncIterator[TestRedis]:  # skipif-ci-and-not-linux
-        async with yield_redis(db=15) as client:  # skipif-ci-and-not-linux
-            keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
-            with suppress(ResponseError):
-                _ = await client.delete(*keys)
-            yield TestRedis(redis=client, timestamp=now, uuid=uuid, key=key)
-            keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
-            with suppress(ResponseError):
-                _ = await client.delete(*keys)
-
-    return func()  # skipif-ci-and-not-linux
-
-
 @composite
 def sets_fixed_length(
     _draw: DrawFn, strategy: SearchStrategy[_T], size: MaybeSearchStrategy[int], /
@@ -683,6 +657,32 @@ def timedeltas_2w(
     min_value_ = max(draw(min_value), MIN_TWO_WAY_TIMEDELTA)
     max_value_ = min(draw(max_value), MAX_TWO_WAY_TIMEDELTA)
     return draw(timedeltas(min_value=min_value_, max_value=max_value_))
+
+
+def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[TestRedis]:
+    """Strategy for generating test redis clients."""
+    from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
+    from redis.typing import KeyT  # skipif-ci-and-not-linux
+
+    from utilities.redis import TestRedis, yield_redis  #  skipif-ci-and-not-linux
+
+    draw = lift_data(data)  # skipif-ci-and-not-linux
+    now = get_now(time_zone="local")  # skipif-ci-and-not-linux
+    uuid = draw(uuids())  # skipif-ci-and-not-linux
+    key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
+
+    @asynccontextmanager
+    async def func() -> AsyncIterator[TestRedis]:  # skipif-ci-and-not-linux
+        async with yield_redis(db=15) as client:  # skipif-ci-and-not-linux
+            keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
+            with suppress(ResponseError):
+                _ = await client.delete(*keys)
+            yield TestRedis(redis=client, timestamp=now, uuid=uuid, key=key)
+            keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
+            with suppress(ResponseError):
+                _ = await client.delete(*keys)
+
+    return func()  # skipif-ci-and-not-linux
 
 
 _ZONED_DATETIMES_LEFT_MOST = ZoneInfo("Asia/Manila")
