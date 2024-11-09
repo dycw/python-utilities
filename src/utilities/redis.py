@@ -18,10 +18,13 @@ from uuid import UUID, uuid4
 
 from redis.asyncio import Redis
 from redis.typing import EncodableT
+from typing_extensions import override
 
 from utilities.datetime import MILLISECOND, SECOND, duration_to_float, get_now
 from utilities.errors import ImpossibleCaseError
+from utilities.functions import get_class_name
 from utilities.iterables import always_iterable
+from utilities.text import ensure_bytes
 from utilities.types import Duration, ensure_int
 
 if TYPE_CHECKING:
@@ -75,10 +78,11 @@ class RedisHashMapKey(Generic[_K, _V]):
 
     name: str
     key: type[_K]
-    key_serializer: Callable[[_K], bytes] | None = None
+    key_serializer: Callable[[_K], str] | None = None
+    key_deserializer: Callable[[str], _K] | None = None
     value: type[_V]
-    value_serializer: Callable[[_V], bytes] | None = None
-    value_deserializer: Callable[[bytes], _V] | None = None
+    value_serializer: Callable[[_T], EncodableT] | None = None
+    value_deserializer: Callable[[EncodableT], _T] | None = None
 
     async def hget(self, redis: Redis, key: _K, /) -> _V | None:
         """Get a value from a hashmap in `redis`."""
@@ -151,7 +155,7 @@ class RedisKey(Generic[_T]):
             from utilities.orjson import serialize
 
             value_use = serialize(value)
-        else:  # skipif-ci-and-not-linux
+        else:
             value_use = self.serializer(value)
         return await redis.set(self.name, value_use)  # skipif-ci-and-not-linux
 
