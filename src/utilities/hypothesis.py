@@ -60,7 +60,7 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncEngine
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
-    from utilities.redis import TestRedis
+    from utilities.redis import _TestRedis
     from utilities.types import Duration, Number
 
 
@@ -659,12 +659,12 @@ def timedeltas_2w(
     return draw(timedeltas(min_value=min_value_, max_value=max_value_))
 
 
-def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[TestRedis]:
+def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[_TestRedis]:
     """Strategy for generating test redis clients."""
     from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
     from redis.typing import KeyT  # skipif-ci-and-not-linux
 
-    from utilities.redis import TestRedis, yield_redis  #  skipif-ci-and-not-linux
+    from utilities.redis import _TestRedis, yield_redis  #  skipif-ci-and-not-linux
 
     draw = lift_data(data)  # skipif-ci-and-not-linux
     now = get_now(time_zone="local")  # skipif-ci-and-not-linux
@@ -672,12 +672,12 @@ def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[TestRed
     key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
 
     @asynccontextmanager
-    async def func() -> AsyncIterator[TestRedis]:  # skipif-ci-and-not-linux
+    async def func() -> AsyncIterator[_TestRedis]:  # skipif-ci-and-not-linux
         async with yield_redis(db=15) as redis:  # skipif-ci-and-not-linux
             keys = cast(list[KeyT], await redis.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
                 _ = await redis.delete(*keys)
-            yield TestRedis(redis=redis, timestamp=now, uuid=uuid, key=key)
+            yield _TestRedis(redis=redis, timestamp=now, uuid=uuid, key=key)
             keys = cast(list[KeyT], await redis.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
                 _ = await redis.delete(*keys)
