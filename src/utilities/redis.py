@@ -234,7 +234,7 @@ def redis_hash_map_key(
     value_deserializer: Callable[[bytes], Any] | None = None,
 ) -> _RedisHashMapKey[Any, Any]:
     """Create a redis key."""
-    return _RedisHashMapKey(
+    return _RedisHashMapKey(  # skipif-ci-and-not-linux
         name=name,
         key=key,
         key_serializer=key_serializer,
@@ -332,7 +332,7 @@ def redis_key(
     deserializer: Callable[[bytes], Any] | None = None,
 ) -> _RedisKey[Any]:
     """Create a redis key."""
-    return _RedisKey(
+    return _RedisKey(  # skipif-ci-and-not-linux
         name=name, type=type_, serializer=serializer, deserializer=deserializer
     )
 
