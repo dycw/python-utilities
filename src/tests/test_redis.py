@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from asyncio import create_task, get_running_loop, sleep
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import DataObject, booleans, data
-from pytest import mark, param
 from redis.asyncio import Redis
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
@@ -23,8 +22,6 @@ from utilities.redis import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from pytest import CaptureFixture
 
 
@@ -74,45 +71,65 @@ class TestPublishAndSubscribe:
     @given(
         data=data(),
         channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublishAndSubscribe)}_{c}"
+            lambda c: f"{get_class_name(TestPublishAndSubscribe)}_obj_ser_{c}"
         ),
         obj=objects,
-    )
-    @mark.parametrize(
-        ("serializer", "deserializer"),
-        [param(serialize, deserialize), param(None, None)],
-        ids=str,
     )
     @settings(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(
-        self,
-        *,
-        capsys: CaptureFixture,
-        data: DataObject,
-        channel: str,
-        serializer: Callable[[Any], bytes] | None,
-        deserializer: Callable[[bytes], Any] | None,
-        obj: _Object,
+    async def test_all_objects_with_serialization(
+        self, *, capsys: CaptureFixture, data: DataObject, channel: str, obj: _Object
     ) -> None:
         async with yield_test_redis(data) as test:
 
             async def listener() -> None:
                 async for msg in subscribe(
-                    test.redis.pubsub(), channel, deserializer=deserializer
+                    test.redis.pubsub(), channel, deserializer=deserialize
                 ):
                     print(msg)  # noqa: T201
 
             task = create_task(listener())
             await sleep(0.05)
-            _ = await publish(test.redis, channel, obj, serializer=serializer)
+            _ = await publish(test.redis, channel, obj, serializer=serialize)
             await sleep(0.05)
             try:
                 out = capsys.readouterr().out
                 expected = f"{obj}\n"
+                assert out == expected
+            finally:
+                _ = task.cancel()
+
+    @given(
+        data=data(),
+        channel=text_ascii(min_size=1).map(
+            lambda c: f"{get_class_name(TestPublishAndSubscribe)}_text_no_ser_{c}"
+        ),
+        text=text_ascii(min_size=1),
+    )
+    @settings(
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_text_without_serialization(
+        self, *, capsys: CaptureFixture, data: DataObject, channel: str, text: str
+    ) -> None:
+        async with yield_test_redis(data) as test:
+
+            async def listener() -> None:
+                async for msg in subscribe(test.redis.pubsub(), channel):
+                    print(msg)  # noqa: T201
+
+            task = create_task(listener())
+            await sleep(0.05)
+            _ = await publish(test.redis, channel, text)
+            await sleep(0.05)
+            try:
+                out = capsys.readouterr().out
+                expected = f"{text.encode()}\n"
                 assert out == expected
             finally:
                 _ = task.cancel()
