@@ -83,7 +83,7 @@ class RedisHashMapKey(Generic[_K, _V]):
 
     async def hget(self, redis: Redis, key: _K, /) -> _V | None:
         """Get a value from a hashmap in `redis`."""
-        ser_key = self._serialize_key(key)
+        ser_key = self._serialize_key(key)  # skipif-ci-and-not-linux
         result = await cast(  # skipif-ci-and-not-linux
             Awaitable[Any], redis.hget(self.name, cast(Any, ser_key))
         )
@@ -101,7 +101,7 @@ class RedisHashMapKey(Generic[_K, _V]):
 
     async def hset(self, redis: Redis, key: _K, value: _V, /) -> int:
         """Set a value in a hashmap in `redis`."""
-        ser_key = self._serialize_key(key)
+        ser_key = self._serialize_key(key)  # skipif-ci-and-not-linux
         if self.value_serializer is None:  # skipif-ci-and-not-linux
             from utilities.orjson import serialize
 
@@ -152,7 +152,7 @@ class RedisKey(Generic[_T]):
             from utilities.orjson import serialize
 
             value_use = serialize(value)
-        else:
+        else:  # skipif-ci-and-not-linux
             value_use = self.serializer(value)
         return await redis.set(self.name, value_use)  # skipif-ci-and-not-linux
 
