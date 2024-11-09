@@ -82,18 +82,17 @@ class TestPublishAndSubscribe:
     async def test_main(
         self, *, capsys: CaptureFixture, channel: str, obj: _Object
     ) -> None:
-        client = Redis()
-        await subscribe(client.pubsub(), channel, deserializer=deserialize)
+        redis = Redis()
 
         async def listener() -> None:
-            async for msg in subscribe(
-                client.pubsub(), channel, deserializer=deserialize
+            async for msg in await subscribe(
+                redis.pubsub(), channel, deserializer=deserialize
             ):
                 print(msg)  # noqa: T201
 
         task = get_running_loop().create_task(listener())
         await sleep(0.05)
-        _ = await publish(channel, obj, redis=client, serializer=serialize)
+        _ = await publish(redis, channel, obj, serializer=serialize)
         await sleep(0.05)
         try:
             out = capsys.readouterr().out
@@ -101,7 +100,7 @@ class TestPublishAndSubscribe:
             assert out == expected
         finally:
             _ = task.cancel()
-            await client.aclose()
+            await redis.aclose()
 
 
 class TestSubscribeMessages:

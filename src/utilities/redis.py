@@ -127,23 +127,23 @@ class RedisKey(Generic[_T]):
 
 @overload
 async def publish(
-    channel: str, data: _T, /, *, redis: Redis, serializer: Callable[[_T], EncodableT]
+    redis: Redis, channel: str, data: _T, /, *, serializer: Callable[[_T], EncodableT]
 ) -> ResponseT: ...
 @overload
 async def publish(
+    redis: Redis,
     channel: str,
     data: EncodableT,
     /,
     *,
-    redis: Redis,
     serializer: Callable[[EncodableT], EncodableT] | None = None,
 ) -> ResponseT: ...
 async def publish(
+    redis: Redis,
     channel: str,
     data: Any,
     /,
     *,
-    redis: Redis,
     serializer: Callable[[Any], EncodableT] | None = None,
 ) -> ResponseT:
     """Publish an object to a channel."""
