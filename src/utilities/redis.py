@@ -76,7 +76,6 @@ class RedisHashMapKey(Generic[_K, _V]):
     name: str
     key: type[_K]
     key_serializer: Callable[[_K], bytes] | None = None
-    key_deserializer: Callable[[bytes], _K] | None = None
     value: type[_V]
     value_serializer: Callable[[_V], bytes] | None = None
     value_deserializer: Callable[[bytes], _V] | None = None
