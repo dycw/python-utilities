@@ -70,11 +70,21 @@ def join_strs(
     return empty
 
 
+def repr_encode(obj: Any, /) -> bytes:
+    """Return the representation of the object encoded as bytes."""
+    return repr(obj).encode()
+
+
 def split_str(
     text: str, /, *, separator: str = ",", empty: str = SENTINEL_REPR
 ) -> list[str]:
     """Split a string, with a special provision for the empty string."""
     return [] if text == empty else text.split(separator)
+
+
+def str_encode(obj: Any, /) -> bytes:
+    """Return the string representation of the object encoded as bytes."""
+    return str(obj).encode()
 
 
 def strip_and_dedent(text: str, /, *, trailing: bool = False) -> str:
@@ -89,6 +99,8 @@ __all__ = [
     "ensure_bytes",
     "ensure_str",
     "join_strs",
+    "repr_encode",
     "split_str",
+    "str_encode",
     "strip_and_dedent",
 ]
