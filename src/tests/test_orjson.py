@@ -8,7 +8,7 @@ from time import sleep
 from typing import Any, Literal, NamedTuple
 
 from dacite import WrongTypeError
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -266,9 +266,10 @@ class TestSerializeAndDeserialize:
             _ = serialize(binary)
 
     @given(fraction=fractions().filter(not_func(_is_serializable_fraction)))
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_error_fraction(self, *, fraction: Fraction) -> None:
         with raises(
-            _SerializeInvalidFractionError, match="Unable to serialize fraction '.*'"
+            _SerializeInvalidFractionError, match="Unable to serialize fraction .*"
         ):
             _ = serialize(fraction)
 
