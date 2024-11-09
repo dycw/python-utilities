@@ -1,6 +1,6 @@
 import datetime as dt
-from collections.abc import Callable
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field
 from enum import Enum, auto, unique
 from fractions import Fraction
 from operator import eq
@@ -331,6 +331,15 @@ class TestSerializeAndDeserialize:
         result = deserialize(serialize(obj, fallback=True))
         expected = {"truth": True, "sentinel": str(sentinel)}
         assert result == expected
+
+    def test_dataclass_needing_forward_reference(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            mapping: Mapping[str, int] = field(default_factory=dict)
+
+        obj = Example()
+        result = deserialize(serialize(obj), cls=Example)
+        assert result == obj
 
     def _run_tests(
         self,
