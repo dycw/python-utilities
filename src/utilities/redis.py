@@ -154,23 +154,23 @@ async def publish(
 
 
 @overload
-async def subscribe(
+def subscribe(
     pubsub: PubSub,
     channels: MaybeIterable[str],
     /,
     *,
     deserializer: Callable[[bytes], _T],
-    timeout: Duration | None = ...,  # noqa: ASYNC109
+    timeout: Duration | None = ...,
     sleep: Duration = ...,
 ) -> AsyncIterator[_T]: ...
 @overload
-async def subscribe(
+def subscribe(
     pubsub: PubSub,
     channels: MaybeIterable[str],
     /,
     *,
     deserializer: None = None,
-    timeout: Duration | None = ...,  # noqa: ASYNC109
+    timeout: Duration | None = ...,
     sleep: Duration = ...,
 ) -> AsyncIterator[bytes]: ...
 async def subscribe(
@@ -181,7 +181,7 @@ async def subscribe(
     deserializer: Callable[[bytes], _T] | None = None,
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,  # noqa: ASYNC109
     sleep: Duration = _SUBSCRIBE_SLEEP,
-) -> AsyncIterator[_T] | AsyncIterator[bytes]:
+) -> AsyncIterator[Any]:
     """Subscribe to the data of a given channel(s)."""
     channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
     messages = subscribe_messages(  # skipif-ci-and-not-linux

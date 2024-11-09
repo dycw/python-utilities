@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import get_running_loop, sleep
+from asyncio import create_task, get_running_loop, sleep
 from typing import TYPE_CHECKING
 
 from hypothesis import HealthCheck, Phase, given, settings
@@ -69,6 +69,7 @@ class TestRedisHashMapKey:
 
 class TestPublishAndSubscribe:
     @given(
+        data=data(),
         channel=text_ascii(min_size=1).map(
             lambda c: f"{get_class_name(TestSubscribeMessages)}_{c}"
         ),
@@ -80,27 +81,27 @@ class TestPublishAndSubscribe:
     )
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(
-        self, *, capsys: CaptureFixture, channel: str, obj: _Object
+        self, *, capsys: CaptureFixture, data: DataObject, channel: str, obj: _Object
     ) -> None:
-        redis = Redis()
+        async with yield_test_redis(data) as test:
+            subscribe(test.redis.pubsub(), channel, deserializer=deserialize)
 
-        async def listener() -> None:
-            async for msg in await subscribe(
-                redis.pubsub(), channel, deserializer=deserialize
-            ):
-                print(msg)  # noqa: T201
+            async def listener() -> None:
+                async for msg in subscribe(
+                    test.redis.pubsub(), channel, deserializer=deserialize
+                ):
+                    print(msg)  # noqa: T201
 
-        task = get_running_loop().create_task(listener())
-        await sleep(0.05)
-        _ = await publish(redis, channel, obj, serializer=serialize)
-        await sleep(0.05)
-        try:
-            out = capsys.readouterr().out
-            expected = f"{obj}\n"
-            assert out == expected
-        finally:
-            _ = task.cancel()
-            await redis.aclose()
+            task = create_task(listener())
+            await sleep(0.05)
+            _ = await publish(test.redis, channel, obj, serializer=serialize)
+            await sleep(0.05)
+            try:
+                out = capsys.readouterr().out
+                expected = f"{obj}\n"
+                assert out == expected
+            finally:
+                _ = task.cancel()
 
 
 class TestSubscribeMessages:
