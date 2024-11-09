@@ -28,59 +28,6 @@ if TYPE_CHECKING:
 from pytest import raises
 
 
-class TestRedisKey:
-    @given(data=data(), value=booleans())
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_bool(self, *, data: DataObject, value: bool) -> None:
-        async with yield_test_redis(data) as test:
-            key = RedisKey(name=test.key, type=bool)
-            assert await key.get(test.redis) is None
-            _ = await key.set(test.redis, value)
-            assert await key.get(test.redis) is value
-
-    @given(data=data())
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_sentinel_with_serialize(self, *, data: DataObject) -> None:
-        def serializer(sentinel: Sentinel, /) -> bytes:
-            return repr(sentinel).encode()
-
-        def deserializer(data: bytes, /) -> Sentinel:
-            assert data == SENTINEL_REPR.encode()
-            return sentinel
-
-        async with yield_test_redis(data) as test:
-            key = RedisKey(
-                name=test.key,
-                type=Sentinel,
-                serializer=serializer,
-                deserializer=deserializer,
-            )
-            assert await key.get(test.redis) is None
-            _ = await key.set(test.redis, sentinel)
-            assert await key.get(test.redis) is sentinel
-
-    @given(data=data())
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_sentinel_without_serialize(self, *, data: DataObject) -> None:
-        async with yield_test_redis(data) as test:
-            key = RedisKey(name=test.key, type=Sentinel)
-            with raises(
-                SerializeError, match="Unable to serialize object of type 'Sentinel'"
-            ):
-                _ = await key.set(test.redis, sentinel)
-
-
-class TestRedisHashMapKey:
-    @given(data=data(), key=int64s(), value=booleans())
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, data: DataObject, key: int, value: bool) -> None:
-        async with yield_test_redis(data) as test:
-            hm_key = RedisHashMapKey(name=test.key, key=int, value=bool)
-            assert await hm_key.hget(test.redis, key) is None
-            _ = await hm_key.hset(test.redis, key, value)
-            assert await hm_key.hget(test.redis, key) is value
-
-
 class TestPublishAndSubscribe:
     @given(
         data=data(),
@@ -182,6 +129,59 @@ class TestSubscribeMessages:
             assert out == expected
         finally:
             _ = task.cancel()
+
+
+class TestRedisHashMapKey:
+    @given(data=data(), key=int64s(), value=booleans())
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_main(self, *, data: DataObject, key: int, value: bool) -> None:
+        async with yield_test_redis(data) as test:
+            hm_key = RedisHashMapKey(name=test.key, key=int, value=bool)
+            assert await hm_key.hget(test.redis, key) is None
+            _ = await hm_key.hset(test.redis, key, value)
+            assert await hm_key.hget(test.redis, key) is value
+
+
+class TestRedisKey:
+    @given(data=data(), value=booleans())
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_bool(self, *, data: DataObject, value: bool) -> None:
+        async with yield_test_redis(data) as test:
+            key = RedisKey(name=test.key, type=bool)
+            assert await key.get(test.redis) is None
+            _ = await key.set(test.redis, value)
+            assert await key.get(test.redis) is value
+
+    @given(data=data())
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_sentinel_with_serialize(self, *, data: DataObject) -> None:
+        def serializer(sentinel: Sentinel, /) -> bytes:
+            return repr(sentinel).encode()
+
+        def deserializer(data: bytes, /) -> Sentinel:
+            assert data == SENTINEL_REPR.encode()
+            return sentinel
+
+        async with yield_test_redis(data) as test:
+            key = RedisKey(
+                name=test.key,
+                type=Sentinel,
+                serializer=serializer,
+                deserializer=deserializer,
+            )
+            assert await key.get(test.redis) is None
+            _ = await key.set(test.redis, sentinel)
+            assert await key.get(test.redis) is sentinel
+
+    @given(data=data())
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_sentinel_without_serialize(self, *, data: DataObject) -> None:
+        async with yield_test_redis(data) as test:
+            key = RedisKey(name=test.key, type=Sentinel)
+            with raises(
+                SerializeError, match="Unable to serialize object of type 'Sentinel'"
+            ):
+                _ = await key.set(test.redis, sentinel)
 
 
 class TestYieldClient:
