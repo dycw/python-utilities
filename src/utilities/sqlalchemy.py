@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import enum
+import reprlib
 from collections import defaultdict
-from collections.abc import AsyncIterator, Callable, Iterable, Iterator, Sequence
+from collections.abc import AsyncIterator, Callable, Iterable, Iterator, Sequence, Sized
 from collections.abc import Set as AbstractSet
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
@@ -67,7 +68,6 @@ from typing_extensions import override
 
 from utilities.asyncio import timeout_dur
 from utilities.datetime import get_now
-from utilities.errors import redirect_error
 from utilities.functions import get_class_name
 from utilities.iterables import (
     CheckLengthError,
@@ -354,13 +354,23 @@ def check_engine(
     with yield_connection(engine_or_conn) as conn:
         rows = conn.execute(statement).all()
     if num_tables is not None:
-        with redirect_error(
-            CheckLengthError, CheckEngineError(f"{engine_or_conn=}, {num_tables=}")
-        ):
+        try:
             check_length(rows, equal_or_approx=num_tables)
+        except CheckLengthError as error:
+            raise CheckEngineError(
+                engine_or_conn=engine_or_conn, rows=error.obj, expected=num_tables
+            ) from None
 
 
-class CheckEngineError(Exception): ...
+@dataclass(kw_only=True, slots=True)
+class CheckEngineError(Exception):
+    engine_or_conn: EngineOrConnection
+    rows: Sized
+    expected: int | tuple[int, float]
+
+    @override
+    def __str__(self) -> str:
+        return f"{reprlib.repr(self.engine_or_conn)} must have {self.expected} table(s); got {len(self.rows)}"
 
 
 def check_table_against_reflection(
@@ -1181,8 +1191,10 @@ class _NormalizeUpsertItemError(Exception):
 
 def parse_engine(engine: str, /) -> Engine:
     """Parse a string into an Engine."""
-    with redirect_error(ArgumentError, ParseEngineError(f"{engine=}")):
+    try:
         return _create_engine(engine, poolclass=NullPool)
+    except ArgumentError as error:
+        raise ParseEngineError(*error.args) from None
 
 
 class ParseEngineError(Exception): ...
