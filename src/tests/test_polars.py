@@ -1069,7 +1069,10 @@ class TestRollingParameters:
 class TestSetFirstRowAsColumns:
     def test_empty(self) -> None:
         df = DataFrame()
-        with raises(SetFirstRowAsColumnsError):
+        with raises(
+            SetFirstRowAsColumnsError,
+            match="DataFrame must have at least 1 row; got .*",
+        ):
             _ = set_first_row_as_columns(df)
 
     def test_one_row(self) -> None:

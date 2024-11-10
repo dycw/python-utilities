@@ -856,13 +856,21 @@ class RollingParametersExponential(_EWMParameters):
 
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
     """Set the first row of a DataFrame as its columns."""
-    with redirect_error(OutOfBoundsError, SetFirstRowAsColumnsError(f"{df=}")):
+    try:
         row = df.row(0)
+    except OutOfBoundsError:
+        raise SetFirstRowAsColumnsError(df=df) from None
     mapping = dict(zip(df.columns, row, strict=True))
     return df[1:].rename(mapping)
 
 
-class SetFirstRowAsColumnsError(Exception): ...
+@dataclass(kw_only=True, slots=True)
+class SetFirstRowAsColumnsError(Exception):
+    df: DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must have at least 1 row; got {self.df}"
 
 
 def struct_data_type(
