@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from typing import (
@@ -447,6 +447,10 @@ async def yield_redis(
     port: int = _PORT,
     db: str | int = 0,
     password: str | None = None,
+    socket_timeout: float | None = None,
+    socket_connect_timeout: float | None = None,
+    socket_keepalive: bool | None = None,
+    socket_keepalive_options: Mapping[int, int | bytes] | None = None,
     connection_pool: ConnectionPool | None = None,
     decode_responses: bool = False,
     **kwargs: Any,
@@ -457,6 +461,10 @@ async def yield_redis(
         port=port,
         db=db,
         password=password,
+        socket_timeout=socket_timeout,
+        socket_connect_timeout=socket_connect_timeout,
+        socket_keepalive=socket_keepalive,
+        socket_keepalive_options=socket_keepalive_options,
         connection_pool=connection_pool,
         decode_responses=decode_responses,
         **kwargs,
