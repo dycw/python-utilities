@@ -123,9 +123,7 @@ def setup_logging(
     logger_name: str | None = None,
     fmt: str = "{zoned_datetime_str} | {name}:{funcName} | {levelname:8} | {message}",
     console_level: LogLevel = LogLevel.INFO,
-    console_datefmt: str = "%Y-%m-%d %H:%M:%S.%f %S",
     files_dir: PathLike | Callable[[], Path] | None = _setup_logging_default_path,
-    files_datefmt: str = "%Y-%m-%d %H:%M:%S.%f (%a/%Z)",
     files_when: str = "D",
     files_interval: int = 1,
     files_backup_count: int = 10,
@@ -153,19 +151,17 @@ def setup_logging(
     except ModuleNotFoundError:  # pragma: no cover
         from logging import Formatter
 
-        console_formatter = Formatter(fmt_use, datefmt=console_datefmt, style="{")
-        file_formatter = Formatter(fmt_use, datefmt=files_datefmt, style="{")
+        console_formatter = Formatter(fmt_use, style="{")
+        file_formatter = Formatter(fmt_use, style="{")
     else:
         field_styles = DEFAULT_FIELD_STYLES | {
             "zoned_datetime": DEFAULT_FIELD_STYLES["asctime"],
             "zoned_datetime_str": DEFAULT_FIELD_STYLES["asctime"],
         }
         console_formatter = ColoredFormatter(
-            fmt_use, datefmt=console_datefmt, style="{", field_styles=field_styles
+            fmt_use, style="{", field_styles=field_styles
         )
-        file_formatter = ColoredFormatter(
-            fmt_use, datefmt=files_datefmt, style="{", field_styles=field_styles
-        )
+        file_formatter = ColoredFormatter(fmt_use, style="{", field_styles=field_styles)
 
     # console
     console_handler = StreamHandler(stream=stdout)
