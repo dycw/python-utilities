@@ -396,14 +396,20 @@ class TestInsertDataFrameMapDFColumnToTableColumnAndType:
     @mark.parametrize("snake", [param(True), param(False)])
     def test_error_empty(self, *, snake: bool) -> None:
         schema = {"a": int, "b": float, "c": str}
-        with raises(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):
+        with raises(
+            _InsertDataFrameMapDFColumnToTableColumnAndTypeError,
+            match=r"Unable to map DataFrame column 'value' into table schema \{.*\} with snake=[True|False]",
+        ):
             _ = _insert_dataframe_map_df_column_to_table_column_and_type(
                 "value", schema, snake=snake
             )
 
     def test_error_non_unique(self) -> None:
         schema = {"a": int, "b": float, "B": float, "c": str}
-        with raises(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):
+        with raises(
+            _InsertDataFrameMapDFColumnToTableColumnAndTypeError,
+            match=r"Unable to map DataFrame column 'b' into table schema \{.*\} with snake=True",
+        ):
             _ = _insert_dataframe_map_df_column_to_table_column_and_type(
                 "b", schema, snake=True
             )

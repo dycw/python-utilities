@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import decimal
+import reprlib
 from contextlib import suppress
 from dataclasses import dataclass
 from itertools import chain
@@ -197,7 +198,7 @@ def _insert_dataframe_map_df_schema_to_table(
 def _insert_dataframe_map_df_column_to_table_schema(
     df_col_name: str,
     df_col_type: PolarsDataType,
-    table_schema: Mapping[str, type],
+    table_schema: Mapping[str, type[Any]],
     /,
     *,
     snake: bool = False,
@@ -216,24 +217,31 @@ class _InsertDataFrameMapDFColumnToTableSchemaError(Exception): ...
 
 
 def _insert_dataframe_map_df_column_to_table_column_and_type(
-    df_col_name: str, table_schema: Mapping[str, type], /, *, snake: bool = False
-) -> tuple[str, type]:
+    df_col_name: str, table_schema: Mapping[str, type[Any]], /, *, snake: bool = False
+) -> tuple[str, type[Any]]:
     """Map a DataFrame column to a table column and type."""
     from utilities.humps import snake_case
 
     items = table_schema.items()
     func = snake_case if snake else identity
     target = func(df_col_name)
-    with redirect_error(
-        OneError,
-        _InsertDataFrameMapDFColumnToTableColumnAndTypeError(
-            f"{df_col_name=}, {table_schema=}, {snake=}"
-        ),
-    ):
+    try:
         return one((n, t) for n, t in items if func(n) == target)
+    except OneError:
+        raise _InsertDataFrameMapDFColumnToTableColumnAndTypeError(
+            df_col_name=df_col_name, table_schema=table_schema, snake=snake
+        ) from None
 
 
-class _InsertDataFrameMapDFColumnToTableColumnAndTypeError(Exception): ...
+@dataclass(kw_only=True, slots=True)
+class _InsertDataFrameMapDFColumnToTableColumnAndTypeError(Exception):
+    df_col_name: str
+    table_schema: Mapping[str, type[Any]]
+    snake: bool
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to map DataFrame column {self.df_col_name!r} into table schema {reprlib.repr(self.table_schema)} with snake={self.snake}"
 
 
 def _insert_dataframe_check_df_and_db_types(
