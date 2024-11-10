@@ -94,27 +94,29 @@ class LogRecordZonedDateTime(LogRecord):
         func: str | None = None,
         sinfo: str | None = None,
     ) -> None:
-        self.zoned_datetime = self.get_now()
-        self.zoned_datetime_str = self.zoned_datetime.format_common_iso()
-        super().__init__(
+        self.zoned_datetime = self.get_now()  # skipif-ci-and-windows
+        self.zoned_datetime_str = (  # skipif-ci-and-windows
+            self.zoned_datetime.format_common_iso()
+        )
+        super().__init__(  # skipif-ci-and-windows
             name, level, pathname, lineno, msg, args, exc_info, func, sinfo
         )
 
     @override
     def __init_subclass__(cls, *, time_zone: ZoneInfo, **kwargs: Any) -> None:
-        cls.time_zone = time_zone.key
-        super().__init_subclass__(**kwargs)
+        cls.time_zone = time_zone.key  # skipif-ci-and-windows
+        super().__init_subclass__(**kwargs)  # skipif-ci-and-windows
 
     @classmethod
     def get_now(cls) -> Any:
         """Get the current zoned datetime."""
-        return cast(Any, ZonedDateTime).now(cls.time_zone)
+        return cast(Any, ZonedDateTime).now(cls.time_zone)  # skipif-ci-and-windows
 
     @classmethod
     def get_zoned_datetime_fmt(cls) -> str:
         """Get the zoned datetime format string."""
-        length = len(cls.get_now().format_common_iso())
-        return f"{{zoned_datetime_str:{length}}}"
+        length = len(cls.get_now().format_common_iso())  # skipif-ci-and-windows
+        return f"{{zoned_datetime_str:{length}}}"  # skipif-ci-and-windows
 
 
 def _setup_logging_default_path() -> Path:
@@ -135,28 +137,30 @@ def setup_logging(
 ) -> None:
     """Set up logger."""
     # log record factory
-    from tzlocal import get_localzone
+    from tzlocal import get_localzone  # skipif-ci-and-windows
 
-    class LogRecordNanoLocal(LogRecordZonedDateTime, time_zone=get_localzone()): ...
+    class LogRecordNanoLocal(  # skipif-ci-and-windows
+        LogRecordZonedDateTime, time_zone=get_localzone()
+    ): ...
 
-    setLogRecordFactory(LogRecordNanoLocal)
+    setLogRecordFactory(LogRecordNanoLocal)  # skipif-ci-and-windows
 
-    console_fmt, files_fmt = [
+    console_fmt, files_fmt = [  # skipif-ci-and-windows
         f.replace("{zoned_datetime_str}", LogRecordNanoLocal.get_zoned_datetime_fmt())
         for f in [console_fmt, files_fmt]
     ]
 
     # logger
-    logger = getLogger(name=logger_name)
-    logger.setLevel(get_logging_level_number(LogLevel.DEBUG))
+    logger = getLogger(name=logger_name)  # skipif-ci-and-windows
+    logger.setLevel(get_logging_level_number(LogLevel.DEBUG))  # skipif-ci-and-windows
 
     # formatter
-    try:
+    try:  # skipif-ci-and-windows
         from coloredlogs import DEFAULT_FIELD_STYLES, ColoredFormatter
     except ModuleNotFoundError:  # pragma: no cover
         console_formatter = Formatter(fmt=console_fmt, style="{")
         files_formatter = Formatter(fmt=files_fmt, style="{")
-    else:
+    else:  # skipif-ci-and-windows
         field_styles = DEFAULT_FIELD_STYLES | {
             "zoned_datetime_str": DEFAULT_FIELD_STYLES["asctime"]
         }
@@ -166,16 +170,18 @@ def setup_logging(
         files_formatter = ColoredFormatter(
             fmt=files_fmt, style="{", field_styles=field_styles
         )
-    plain_formatter = Formatter(fmt=files_fmt, style="{")
+    plain_formatter = Formatter(fmt=files_fmt, style="{")  # skipif-ci-and-windows
 
     # console
-    console_handler = StreamHandler(stream=stdout)
-    console_handler.setFormatter(console_formatter)
-    console_handler.setLevel(get_logging_level_number(console_level))
-    logger.addHandler(console_handler)
+    console_handler = StreamHandler(stream=stdout)  # skipif-ci-and-windows
+    console_handler.setFormatter(console_formatter)  # skipif-ci-and-windows
+    console_handler.setLevel(
+        get_logging_level_number(console_level)
+    )  # skipif-ci-and-windows
+    logger.addHandler(console_handler)  # skipif-ci-and-windows
 
     # files
-    match files_dir:
+    match files_dir:  # skipif-ci-and-windows
         case None:
             directory = Path.cwd()
         case Path() | str():
@@ -184,7 +190,7 @@ def setup_logging(
             directory = files_dir()
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
-    for level, (subpath, formatter) in product(
+    for level, (subpath, formatter) in product(  # skipif-ci-and-windows
         [LogLevel.DEBUG, LogLevel.INFO, LogLevel.ERROR],
         [(Path(), files_formatter), (Path("plain"), plain_formatter)],
     ):
