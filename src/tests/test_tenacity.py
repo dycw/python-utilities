@@ -51,7 +51,7 @@ class TestLoguruAdapter:
         assert len(lines) == 2
         for i, line in enumerate(lines, start=1):
             expected = (
-                r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| INFO     \| utilities\.tenacity:log:\d+ - Retrying tests\.test_loguru_functions\.TestLoguruAdapter\.test_main\.<locals>\.func in 0\.01 seconds as it raised ValueError: "
+                r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| INFO     \| utilities\.tenacity:log:\d+ - Retrying tests\.test_tenacity\.TestLoguruAdapter\.test_main\.<locals>\.func in 0\.01 seconds as it raised ValueError: "
                 + str(i)
                 + r"\."
             )
