@@ -59,7 +59,6 @@ from polars.testing import assert_frame_equal
 from typing_extensions import override
 
 from utilities.dataclasses import Dataclass, is_dataclass_class
-from utilities.errors import redirect_error
 from utilities.iterables import (
     CheckIterablesEqualError,
     CheckMappingsEqualError,
