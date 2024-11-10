@@ -68,7 +68,6 @@ from typing_extensions import override
 
 from utilities.asyncio import timeout_dur
 from utilities.datetime import get_now
-from utilities.errors import redirect_error
 from utilities.functions import get_class_name
 from utilities.iterables import (
     CheckLengthError,
@@ -1192,8 +1191,10 @@ class _NormalizeUpsertItemError(Exception):
 
 def parse_engine(engine: str, /) -> Engine:
     """Parse a string into an Engine."""
-    with redirect_error(ArgumentError, ParseEngineError(f"{engine=}")):
+    try:
         return _create_engine(engine, poolclass=NullPool)
+    except ArgumentError as error:
+        raise ParseEngineError(*error.args) from None
 
 
 class ParseEngineError(Exception): ...

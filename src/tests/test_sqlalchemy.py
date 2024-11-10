@@ -1796,7 +1796,9 @@ class TestParseEngine:
         assert result.url == url
 
     def test_error(self) -> None:
-        with raises(ParseEngineError):
+        with raises(
+            ParseEngineError, match="Could not parse SQLAlchemy URL from string 'error'"
+        ):
             _ = parse_engine("error")
 
 
