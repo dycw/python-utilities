@@ -116,8 +116,10 @@ h11==0.14.0
     # via httpcore
 hatch==1.13.0
     # via dycw-utilities (pyproject.toml)
-hatchling==1.26.0
-    # via hatch
+hatchling==1.25.0
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   hatch
 httpcore==1.0.6
     # via httpx
 httpx==0.27.2
