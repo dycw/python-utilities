@@ -450,7 +450,6 @@ select = [
 "src/tests/**/*.py" = ["S101"]  # assert
 "src/tests/test_orjson.py" = ["I002"]  # missing-required-import
 "src/tests/test_polars.py" = ["I002"]  # missing-required-import
-"src/tests/test_python_dotenv.py" = ["I002"]  # missing-required-import
 "src/tests/test_typed_settings.py" = ["I002"]  # missing-required-import
 
 [tool.ruff.lint.flake8-bugbear]

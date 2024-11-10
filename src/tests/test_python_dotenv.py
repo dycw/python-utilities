@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum, auto
-from pathlib import Path
+from typing import TYPE_CHECKING, Literal
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, integers, sampled_from
@@ -17,6 +19,9 @@ from utilities.python_dotenv import (
     load_settings,
 )
 from utilities.sentinel import Sentinel
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestLoadSettings:
@@ -122,7 +127,7 @@ class TestLoadSettings:
         with root.joinpath(".env").open(mode="w") as fh:
             _ = fh.write(f"key = {value.name}\n")
 
-        settings = load_settings(Settings, cwd=root)
+        settings = load_settings(Settings, cwd=root, localns=locals())
         expected = Settings(key=value)
         assert settings == expected
 
@@ -144,7 +149,21 @@ class TestLoadSettings:
             _LoadSettingsInvalidEnumError,
             match=r"Field '.*' must contain a valid member of '.*'; got '...'",
         ):
-            _ = load_settings(Settings, cwd=root)
+            _ = load_settings(Settings, cwd=root, localns=locals())
+
+    @given(root=git_repos(), value=sampled_from(["true", "false"]))
+    @settings_with_reduced_examples()
+    def test_literal(self, *, root: Path, value: Literal["true", "false"]) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: Literal["true", "false"]
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"key = {value}\n")
+
+        settings = load_settings(Settings, cwd=root, localns={"Literal": Literal})
+        expected = Settings(key=value)
+        assert settings == expected
 
     @given(root=git_repos())
     @settings_with_reduced_examples()
@@ -198,4 +217,4 @@ class TestLoadSettings:
         with raises(
             _LoadSettingsTypeError, match=r"Field 'key' has unsupported type .*"
         ):
-            _ = load_settings(Settings, cwd=root)
+            _ = load_settings(Settings, cwd=root, localns={"Sentinel": Sentinel})
