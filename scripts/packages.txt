@@ -22,6 +22,7 @@ hashlib
 http
 humps
 hypothesis
+inspect
 ipython
 iterables
 jupyter
@@ -61,13 +62,14 @@ sys
 tempfile
 tenacity
 text
+threading
 timer
 tqdm
 tracer
+treelib
 types
 typing
 warnings
 whenever
 zipfile
-zlib
 zoneinfo
