@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from dataclasses import fields, is_dataclass, replace
 from itertools import chain
-from typing import TYPE_CHECKING, Any, ClassVar, TypeGuard, TypeVar, runtime_checkable
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    TypeGuard,
+    TypeVar,
+    get_type_hints,
+    runtime_checkable,
+)
 
 from typing_extensions import Protocol
 
@@ -11,6 +19,8 @@ from utilities.sentinel import Sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+
+    from utilities.types import StrMapping
 
 
 @runtime_checkable
@@ -45,6 +55,21 @@ def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
 class GetDataClassClassError(Exception): ...
 
 
+def get_dataclass_fields(
+    cls: type[Dataclass],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+) -> StrMapping:
+    """Get the fields of a dataclass."""
+    return get_type_hints(
+        cls,
+        globalns=globals() if globalns is None else dict(globalns),
+        localns=locals() if localns is None else dict(localns),
+    )
+
+
 def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:
     """Check if an object is a dataclass."""
     return isinstance(obj, type) and is_dataclass(obj)
@@ -76,6 +101,7 @@ __all__ = [
     "GetDataClassClassError",
     "extend_non_sentinel",
     "get_dataclass_class",
+    "get_dataclass_fields",
     "is_dataclass_class",
     "is_dataclass_instance",
     "replace_non_sentinel",
