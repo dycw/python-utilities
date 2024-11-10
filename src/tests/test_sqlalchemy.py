@@ -699,7 +699,9 @@ class TestCheckEngine:
 
     @given(engine=sqlite_engines())
     def test_num_tables_error(self, *, engine: Engine) -> None:
-        with raises(CheckEngineError):
+        with raises(
+            CheckEngineError, match=r"Engine\(.*\) must have 1 table\(s\); got .*"
+        ):
             check_engine(engine, num_tables=1)
 
 

@@ -370,7 +370,7 @@ class CheckEngineError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Engine {reprlib.repr(self.engine_or_conn)} must have length {self.expected}; got {len(self.rows)}"
+        return f"{reprlib.repr(self.engine_or_conn)} must have {self.expected} table(s); got {len(self.rows)}"
 
 
 def check_table_against_reflection(
