@@ -143,6 +143,7 @@ zzz-test-hypothesis = [
   "sqlalchemy >= 2.0.36, < 2.1",
   "whenever >= 0.6.12, < 0.7",
 ]
+zzz-test-inspect = []
 zzz-test-ipython = ["ipython >= 8.24.0, < 8.25"]
 zzz-test-iterables = []
 zzz-test-jupyter = [
@@ -230,15 +231,16 @@ zzz-test-tenacity = [
   "tenacity >= 9.0.0, < 9.1",
 ]
 zzz-test-text = []
+zzz-test-threading = []
 zzz-test-timer = []
 zzz-test-tqdm = ["tqdm >= 4.67.0, < 4.68"]
 zzz-test-tracer = ["treelib >= 1.7.0, < 1.8"]
+zzz-test-treelib = ["treelib >= 1.7.0, < 1.8"]
 zzz-test-types = []
 zzz-test-typing = []
 zzz-test-warnings = []
 zzz-test-whenever = ["whenever >= 0.6.12, < 0.7"]
 zzz-test-zipfile = []
-zzz-test-zlib = ["orjson >= 3.10.11, < 3.11"]
 zzz-test-zoneinfo = ["tzdata >= 2024.2, < 2024.3"]
 
 [project.scripts]
