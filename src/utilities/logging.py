@@ -127,13 +127,13 @@ def setup_logging(
     *,
     logger_name: str | None = None,
     console_level: LogLevel = LogLevel.INFO,
-    console_fmt: str = "{zoned_datetime_str} | {name}:{funcName} | {message}",
+    console_fmt: str = "{zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",
     files_dir: PathLike | Callable[[], Path] | None = _setup_logging_default_path,
     files_when: str = "D",
     files_interval: int = 1,
     files_backup_count: int = 10,
     files_max_bytes: int = 10 * 1024**2,
-    files_fmt: str = "{zoned_datetime_str} | {name}:{funcName} | {levelname:8} | {message}",
+    files_fmt: str = "{zoned_datetime_str} | {name}:{funcName}:{lineno} | {levelname:8} | {message}",
 ) -> None:
     """Set up logger."""
     # log record factory
