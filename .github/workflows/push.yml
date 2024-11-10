@@ -26,7 +26,7 @@ jobs:
       - run: |
           python -m venv venv
           source venv/bin/activate
-          python -m pip install --upgrade pip hatch
+          python -m pip install --upgrade pip hatch hatchling>=1.25,<1.26  # https://github.com/pypa/hatch/issues/1793
           hatch build
       - uses: actions/upload-artifact@v3
         with:
