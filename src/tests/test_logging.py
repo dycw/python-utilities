@@ -14,6 +14,7 @@ from utilities.logging import (
     setup_logging,
 )
 from utilities.pathlib import temp_cwd
+from utilities.pytest import skipif_windows
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -53,10 +54,12 @@ class TestLogLevel:
 
 
 class TestSetupLogging:
+    @skipif_windows
     def test_main(self, *, tmp_path: Path) -> None:
         setup_logging(files_dir=tmp_path)
         assert len(list(tmp_path.iterdir())) == 7
 
+    @skipif_windows
     def test_files_dir_cwd(self, *, tmp_path: Path) -> None:
         with temp_cwd(tmp_path):
             setup_logging(files_dir=None)
@@ -64,6 +67,7 @@ class TestSetupLogging:
             logger.info("message")
             assert len(list(tmp_path.iterdir())) == 7
 
+    @skipif_windows
     def test_files_dir_callable(self, *, tmp_path: Path) -> None:
         setup_logging(files_dir=lambda: tmp_path)
         assert len(list(tmp_path.iterdir())) == 7
