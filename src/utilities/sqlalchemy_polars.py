@@ -32,7 +32,6 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from typing_extensions import override
 
 from utilities.datetime import is_subclass_date_not_datetime
-from utilities.errors import redirect_error
 from utilities.functions import ensure_not_none, identity
 from utilities.iterables import (
     CheckDuplicatesError,
@@ -572,8 +571,11 @@ def _select_to_dataframe_check_duplicates(
 ) -> None:
     """Check a select for duplicate columns."""
     names = [col.name for col in columns]
-    with redirect_error(CheckDuplicatesError, DuplicateColumnError(f"{names=}")):
+    try:
         check_duplicates(names)
+    except CheckDuplicatesError as error:
+        msg = f"Columns must not contain duplicates; got {error.counts}"
+        raise DuplicateColumnError(msg) from None
 
 
 def _select_to_dataframe_yield_selects_with_in_clauses(

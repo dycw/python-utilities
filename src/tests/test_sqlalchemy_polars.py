@@ -794,7 +794,10 @@ class TestSelectToDataFrameCheckDuplicates:
     def test_error(self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         sel = select(table.c["id"], table.c["id"])
-        with raises(DuplicateColumnError):
+        with raises(
+            DuplicateColumnError,
+            match=r"Columns must not contain duplicates; got \{'id': 2\}",
+        ):
             _select_to_dataframe_check_duplicates(sel.selected_columns)
 
 
