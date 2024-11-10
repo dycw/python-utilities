@@ -125,9 +125,9 @@ def setup_logging(
     console_datefmt: str = "%Y-%m-%d %H:%M:%S.%f %S",
     files_dir: PathLike | Callable[[], Path] | None = _setup_logging_default_path,
     files_datefmt: str = "%Y-%m-%d %H:%M:%S.%f (%a/%Z)",
-    files_when: str = "H",
+    files_when: str = "D",
     files_interval: int = 1,
-    files_backup_count: int = 5,
+    files_backup_count: int = 10,
     files_max_bytes: int = 10 * 1024**2,
 ) -> None:
     """Set up logger."""
