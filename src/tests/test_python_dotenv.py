@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, integers, sampled_from
-from pytest import mark, raises
+from pytest import raises
 
 from utilities.hypothesis import git_repos, settings_with_reduced_examples, text_ascii
 from utilities.python_dotenv import (
@@ -151,7 +151,6 @@ class TestLoadSettings:
         ):
             _ = load_settings(Settings, cwd=root, localns=locals())
 
-    @mark.only
     @given(root=git_repos(), value=sampled_from(["true", "false"]))
     @settings_with_reduced_examples()
     def test_literal(self, *, root: Path, value: Literal["true", "false"]) -> None:
