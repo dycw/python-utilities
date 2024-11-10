@@ -120,10 +120,8 @@ h11==0.14.0
     # via httpcore
 hatch==1.13.0
     # via dycw-utilities (pyproject.toml)
-hatchling==1.25.0
-    # via
-    #   dycw-utilities (pyproject.toml)
-    #   hatch
+hatchling==1.26.1
+    # via hatch
 httpcore==1.0.6
     # via httpx
 httpx==0.27.2
@@ -451,7 +449,7 @@ wrapt==1.16.0
     # via deprecated
 yarl==1.17.1
     # via aiohttp
-zipp==3.20.2
+zipp==3.21.0
     # via importlib-metadata
 zstandard==0.23.0
     # via hatch
