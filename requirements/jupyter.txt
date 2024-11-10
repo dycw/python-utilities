@@ -4,6 +4,8 @@ anyio==4.6.2.post1
     # via
     #   httpx
     #   jupyter-server
+appnope==0.1.4
+    # via ipykernel
 argon2-cffi==23.1.0
     # via jupyter-server
 argon2-cffi-bindings==21.2.0
@@ -56,7 +58,7 @@ httpcore==1.0.6
     # via httpx
 httpx==0.27.2
     # via jupyterlab
-hypothesis==6.116.0
+hypothesis==6.118.6
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
