@@ -3,7 +3,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum, unique
+from itertools import product
 from logging import (
+    Formatter,
     LogRecord,
     StreamHandler,
     basicConfig,
@@ -11,6 +13,7 @@ from logging import (
     getLogger,
     setLogRecordFactory,
 )
+from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from sys import stdout
 from typing import TYPE_CHECKING, Any, ClassVar, assert_never, cast
@@ -121,13 +124,14 @@ def _setup_logging_default_path() -> Path:
 def setup_logging(
     *,
     logger_name: str | None = None,
-    fmt: str = "{zoned_datetime_str} | {name}:{funcName} | {levelname:8} | {message}",
     console_level: LogLevel = LogLevel.INFO,
+    console_fmt: str = "{zoned_datetime_str} | {name}:{funcName} | {message}",
     files_dir: PathLike | Callable[[], Path] | None = _setup_logging_default_path,
     files_when: str = "D",
     files_interval: int = 1,
     files_backup_count: int = 10,
     files_max_bytes: int = 10 * 1024**2,
+    files_fmt: str = "{zoned_datetime_str} | {name}:{funcName} | {levelname:8} | {message}",
 ) -> None:
     """Set up logger."""
     # log record factory
@@ -137,9 +141,10 @@ def setup_logging(
 
     setLogRecordFactory(LogRecordNanoLocal)
 
-    fmt_use = fmt.replace(
-        "{zoned_datetime_str}", LogRecordNanoLocal.get_zoned_datetime_fmt()
-    )
+    console_fmt, files_fmt = [
+        f.replace("{zoned_datetime_str}", LogRecordNanoLocal.get_zoned_datetime_fmt())
+        for f in [console_fmt, files_fmt]
+    ]
 
     # logger
     logger = getLogger(name=logger_name)
@@ -149,19 +154,19 @@ def setup_logging(
     try:
         from coloredlogs import DEFAULT_FIELD_STYLES, ColoredFormatter
     except ModuleNotFoundError:  # pragma: no cover
-        from logging import Formatter
-
-        console_formatter = Formatter(fmt_use, style="{")
-        file_formatter = Formatter(fmt_use, style="{")
+        console_formatter = Formatter(fmt=console_fmt, style="{")
+        files_formatter = Formatter(fmt=files_fmt, style="{")
     else:
         field_styles = DEFAULT_FIELD_STYLES | {
-            "zoned_datetime": DEFAULT_FIELD_STYLES["asctime"],
-            "zoned_datetime_str": DEFAULT_FIELD_STYLES["asctime"],
+            "zoned_datetime_str": DEFAULT_FIELD_STYLES["asctime"]
         }
         console_formatter = ColoredFormatter(
-            fmt_use, style="{", field_styles=field_styles
+            fmt=console_fmt, style="{", field_styles=field_styles
         )
-        file_formatter = ColoredFormatter(fmt_use, style="{", field_styles=field_styles)
+        files_formatter = ColoredFormatter(
+            fmt=files_fmt, style="{", field_styles=field_styles
+        )
+    plain_formatter = Formatter(fmt=files_fmt, style="{")
 
     # console
     console_handler = StreamHandler(stream=stdout)
@@ -179,29 +184,30 @@ def setup_logging(
             directory = files_dir()
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
-    directory.mkdir(parents=True, exist_ok=True)
-    for level in [LogLevel.DEBUG, LogLevel.INFO, LogLevel.ERROR]:
-        filename = str(directory.joinpath(level.name.lower()))
+    for level, (subpath, formatter) in product(
+        [LogLevel.DEBUG, LogLevel.INFO, LogLevel.ERROR],
+        [(Path(), files_formatter), (Path("plain"), plain_formatter)],
+    ):
+        path = directory.joinpath(subpath, level.name.lower())
+        path.parent.mkdir(parents=True, exist_ok=True)
         try:
             from concurrent_log_handler import ConcurrentTimedRotatingFileHandler
         except ModuleNotFoundError:  # pragma: no cover
-            from logging.handlers import TimedRotatingFileHandler
-
             file_handler = TimedRotatingFileHandler(
-                filename=filename,
+                filename=str(path),
                 when=files_when,
                 interval=files_interval,
                 backupCount=files_backup_count,
             )
         else:
             file_handler = ConcurrentTimedRotatingFileHandler(
-                filename=filename,
+                filename=str(path),
                 when=files_when,
                 interval=files_interval,
                 backupCount=files_backup_count,
                 maxBytes=files_max_bytes,
             )
-        file_handler.setFormatter(file_formatter)
+        file_handler.setFormatter(formatter)
         file_handler.setLevel(level)
         logger.addHandler(file_handler)
 

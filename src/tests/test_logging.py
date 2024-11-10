@@ -55,18 +55,18 @@ class TestLogLevel:
 class TestSetupLogging:
     def test_main(self, *, tmp_path: Path) -> None:
         setup_logging(files_dir=tmp_path)
-        assert len(list(tmp_path.iterdir())) == 6
+        assert len(list(tmp_path.iterdir())) == 7
 
     def test_files_dir_cwd(self, *, tmp_path: Path) -> None:
         with temp_cwd(tmp_path):
             setup_logging(files_dir=None)
             logger = getLogger(__name__)
             logger.info("message")
-            assert len(list(tmp_path.iterdir())) == 6
+            assert len(list(tmp_path.iterdir())) == 7
 
     def test_files_dir_callable(self, *, tmp_path: Path) -> None:
         setup_logging(files_dir=lambda: tmp_path)
-        assert len(list(tmp_path.iterdir())) == 6
+        assert len(list(tmp_path.iterdir())) == 7
 
     def test_default_path(self) -> None:
         _ = _setup_logging_default_path()
