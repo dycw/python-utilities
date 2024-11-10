@@ -120,6 +120,7 @@ def _setup_logging_default_path() -> Path:
 
 def setup_logging(
     *,
+    logger_name: str | None = None,
     fmt: str = "{zoned_datetime_str} | {name}:{funcName} | {levelname:8} | {message}",
     console_level: LogLevel = LogLevel.INFO,
     console_datefmt: str = "%Y-%m-%d %H:%M:%S.%f %S",
@@ -143,7 +144,7 @@ def setup_logging(
     )
 
     # logger
-    logger = getLogger()
+    logger = getLogger(name=logger_name)
     logger.setLevel(get_logging_level_number(LogLevel.DEBUG))
 
     # formatter
