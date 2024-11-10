@@ -46,8 +46,6 @@ if TYPE_CHECKING:
     from utilities.types import Duration, PathLike, StrMapping
 
 
-_ENTRY_MESSAGE = "➢"
-_EXIT_MESSAGE = "✔"
 _RECORD_EXCEPTION_VALUE = "{record[exception].value!r}"
 LEVEL_CONFIGS: Sequence[LevelConfig] = [
     {"name": "TRACE", "color": "<blue><bold>"},
