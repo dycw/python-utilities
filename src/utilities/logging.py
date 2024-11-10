@@ -215,4 +215,5 @@ __all__ = [
     "LogRecordZonedDateTime",
     "basic_config",
     "get_logging_level_number",
+    "setup_logging",
 ]

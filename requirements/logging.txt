@@ -2,8 +2,14 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-logging --prerelease=disallow --output-file=requirements/logging.txt --python-version=3.11 pyproject.toml
 attrs==24.2.0
     # via hypothesis
+coloredlogs==15.0.1
+    # via dycw-utilities (pyproject.toml)
+concurrent-log-handler==0.9.25
+    # via dycw-utilities (pyproject.toml)
 coverage==7.6.4
     # via pytest-cov
+humanfriendly==10.0
+    # via coloredlogs
 hypothesis==6.118.7
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
@@ -14,6 +20,8 @@ packaging==24.2
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
+portalocker==2.10.1
+    # via concurrent-log-handler
 pytest==8.3.3
     # via
     #   dycw-utilities (pyproject.toml)
@@ -34,4 +42,8 @@ sortedcontainers==2.4.0
 tomli==2.0.2
     # via coverage
 typing-extensions==4.12.2
+    # via dycw-utilities (pyproject.toml)
+tzlocal==5.2
+    # via dycw-utilities (pyproject.toml)
+whenever==0.6.12
     # via dycw-utilities (pyproject.toml)

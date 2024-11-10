@@ -154,7 +154,12 @@ zzz-test-jupyter = [
   "pandas >= 2.2.2, < 2.3",
   "polars-lts-cpu >= 1.12.0, < 1.13",
 ]
-zzz-test-logging = []
+zzz-test-logging = [
+  "coloredlogs >= 15.0.1, < 15.1",
+  "concurrent-log-handler >= 0.9.25, < 0.10",
+  "tzlocal >= 5.2, < 5.3",
+  "whenever >= 0.6.12, < 0.7",
+]
 zzz-test-loguru = ["loguru >= 0.7.2, < 0.8"]
 zzz-test-math = ["numpy >= 2.0.2, < 2.1"]
 zzz-test-memory-profiler = ["memory-profiler >= 0.61.0, < 0.62"]
