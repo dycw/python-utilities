@@ -1,4 +1,0 @@
-outer1
-├── mid1
-└── mid2
-    └── inner
