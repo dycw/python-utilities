@@ -50,7 +50,6 @@ re
 redis
 reprlib
 scipy
-scripts-pypi-server
 sentinel
 slack-sdk
 socket
@@ -65,7 +64,6 @@ text
 timer
 tqdm
 tracer
-typed-settings
 types
 typing
 warnings
