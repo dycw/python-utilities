@@ -12,19 +12,11 @@ from pytest import CaptureFixture, raises
 from utilities.loguru import HandlerConfiguration, LogLevel
 from utilities.pytest import skipif_windows
 from utilities.subprocess import (
-    _address_already_in_use_pattern,
     _GetShellOutputEmptyError,
     _GetShellOutputNonUniqueError,
     get_shell_output,
     stream_command,
 )
-
-
-class TestAddressAlreadyInUsePattern:
-    def test_pattern(self) -> None:
-        pattern = _address_already_in_use_pattern()
-        text = "OSError: [Errno 98] Address already in use"
-        assert search(pattern, text) is not None
 
 
 class TestGetShellOutput:

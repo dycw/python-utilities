@@ -66,10 +66,14 @@ click==8.1.7
     #   hatch
     #   streamlit
     #   userpath
+coloredlogs==15.0.1
+    # via dycw-utilities (pyproject.toml)
 colorlog==6.9.0
     # via
     #   nox
     #   optuna
+concurrent-log-handler==0.9.25
+    # via dycw-utilities (pyproject.toml)
 coverage==7.6.4
     # via
     #   coverage-conditional-plugin
@@ -124,9 +128,11 @@ httpcore==1.0.6
     # via httpx
 httpx==0.27.2
     # via hatch
+humanfriendly==10.0
+    # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.118.6
+hypothesis==6.118.7
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -256,6 +262,8 @@ pluggy==1.5.0
     #   pytest
 polars-lts-cpu==1.12.0
     # via dycw-utilities (pyproject.toml)
+portalocker==2.10.1
+    # via concurrent-log-handler
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
 propcache==0.2.0

@@ -9,7 +9,7 @@ from nox import Session, session
 def ruff(session: Session) -> None:
     """Run `ruff`."""
     session.install("ruff")
-    _ = session.run("ruff", "--fix", ".")
+    _ = session.run("ruff", "check", "--fix", ".")
 
 
 @session(python=["3.11", "3.12"])

@@ -4,7 +4,6 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
-from re import MULTILINE, escape, search
 from subprocess import PIPE, CalledProcessError, CompletedProcess, Popen, check_output
 from typing import IO, TYPE_CHECKING, TextIO
 
@@ -16,7 +15,7 @@ from utilities.os import temp_environ
 from utilities.pathlib import PWD
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping, Sequence
+    from collections.abc import Callable, Mapping
 
     from utilities.types import PathLike
 
@@ -69,33 +68,6 @@ class _GetShellOutputNonUniqueError(GetShellOutputError):
     @override
     def __str__(self) -> str:
         return f"Path {str(self.cwd)!r} must contain exactly one 'activate' file; got {str(self.first)!r}, {str(self.second)!r} and perhaps more"
-
-
-def run_accept_address_in_use(args: Sequence[str], /, *, exist_ok: bool) -> None:
-    """Run a command, accepting the 'address already in use' error."""
-    try:  # skipif-not-windows
-        _ = check_output(list(args), stderr=PIPE, text=True)
-    except CalledProcessError as error:  # skipif-not-windows
-        pattern = _address_already_in_use_pattern()
-        try:
-            from loguru import logger
-        except ModuleNotFoundError:
-            info = exception = print
-        else:
-            info = logger.info
-            exception = logger.exception
-        if exist_ok and search(pattern, error.stderr, flags=MULTILINE):
-            info("Address already in use")
-        else:
-            exception("Address already in use")
-            raise
-
-
-def _address_already_in_use_pattern() -> str:
-    """Get the 'address_already_in_use' pattern."""
-    text = "OSError: [Errno 98] Address already in use"
-    escaped = escape(text)
-    return f"^{escaped}$"
 
 
 def stream_command(
@@ -168,9 +140,4 @@ def _stream_command_write(
         _ = buffer.write(f"{stripped}\n")
 
 
-__all__ = [
-    "GetShellOutputError",
-    "get_shell_output",
-    "run_accept_address_in_use",
-    "stream_command",
-]
+__all__ = ["GetShellOutputError", "get_shell_output", "stream_command"]
