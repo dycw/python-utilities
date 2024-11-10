@@ -6,9 +6,7 @@ click==8.1.7
     # via dycw-utilities (pyproject.toml)
 coverage==7.6.4
     # via pytest-cov
-greenlet==3.1.1
-    # via sqlalchemy
-hypothesis==6.116.0
+hypothesis==6.118.6
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
