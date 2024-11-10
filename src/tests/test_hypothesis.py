@@ -486,26 +486,6 @@ class TestRandomStates:
         _ = data.draw(random_states())
 
 
-@SKIPIF_CI_AND_NOT_LINUX
-class TestRedisCMs:
-    @given(data=data(), value=int32s())
-    async def test_core(self, *, data: DataObject, value: int) -> None:
-        import redis
-        import redis.asyncio
-
-        async with yield_test_redis(data) as container:
-            match container.redis:
-                case redis.Redis() as client:
-                    assert not client.exists(container.key)
-                    _ = client.set(container.key, value)
-                    result = int(cast(str, client.get(container.key)))
-                case redis.asyncio.Redis() as client:
-                    assert not await client.exists(container.key)
-                    _ = await client.set(container.key, value)
-                    result = int(cast(str, await client.get(container.key)))
-            assert result == value
-
-
 class TestReducedExamples:
     @given(frac=floats(0.0, 10.0))
     def test_main(self, *, frac: float) -> None:
@@ -840,6 +820,17 @@ class TestTimeDeltas2W:
         ser = serialize_timedelta(timedelta)
         _ = parse_timedelta(ser)
         assert min_value <= timedelta <= max_value
+
+
+@SKIPIF_CI_AND_NOT_LINUX
+class TestYieldTestRedis:
+    @given(data=data(), value=int32s())
+    async def test_core(self, *, data: DataObject, value: int) -> None:
+        async with yield_test_redis(data) as test:
+            assert not await test.redis.exists(test.key)
+            _ = await test.redis.set(test.key, value)
+            result = int(cast(str, await test.redis.get(test.key)))
+            assert result == value
 
 
 class TestZonedDatetimes:
