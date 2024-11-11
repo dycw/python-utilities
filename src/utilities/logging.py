@@ -127,7 +127,7 @@ def setup_logging(
     *,
     logger_name: str | None = None,
     console_level: LogLevel = LogLevel.INFO,
-    console_fmt: str = "{zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",
+    console_fmt: str = "❯ {zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
     files_dir: PathLike | Callable[[], Path] | None = _setup_logging_default_path,
     files_when: str = "D",
     files_interval: int = 1,
