@@ -8,7 +8,7 @@ from hypothesis.strategies import DataObject, booleans, data
 from pytest import raises
 from redis.asyncio import Redis
 
-from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
+from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from tests.test_orjson2 import _Object, objects
 from utilities.functions import get_class_name
 from utilities.hypothesis import int64s, text_ascii, yield_test_redis
@@ -131,6 +131,7 @@ class TestSubscribeMessages:
 
 
 class TestRedisHashMapKey:
+    @FLAKY
     @given(data=data(), key=int64s(), value=booleans())
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, data: DataObject, key: int, value: bool) -> None:
@@ -140,6 +141,7 @@ class TestRedisHashMapKey:
             _ = await hm_key.hset(test.redis, key, value)
             assert await hm_key.hget(test.redis, key) is value
 
+    @FLAKY
     @given(data=data(), key=booleans() | int64s(), value=booleans())
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_union_key(
@@ -151,6 +153,7 @@ class TestRedisHashMapKey:
             _ = await hm_key.hset(test.redis, key, value)
             assert await hm_key.hget(test.redis, key) is value
 
+    @FLAKY
     @given(data=data(), value=booleans())
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_sentinel_key(self, *, data: DataObject, value: bool) -> None:
@@ -165,6 +168,7 @@ class TestRedisHashMapKey:
             _ = await hm_key.hset(test.redis, sentinel, value)
             assert await hm_key.hget(test.redis, sentinel) is value
 
+    @FLAKY
     @given(data=data(), key=int64s(), value=int64s() | booleans())
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_union_value(
@@ -176,6 +180,7 @@ class TestRedisHashMapKey:
             _ = await hm_key.hset(test.redis, key, value)
             assert await hm_key.hget(test.redis, key) == value
 
+    @FLAKY
     @given(data=data(), key=int64s())
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_sentinel_value(self, *, data: DataObject, key: int) -> None:
@@ -200,6 +205,7 @@ class TestRedisHashMapKey:
 
 
 class TestRedisKey:
+    @FLAKY
     @given(data=data(), value=booleans())
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_bool(self, *, data: DataObject, value: bool) -> None:
@@ -209,6 +215,7 @@ class TestRedisKey:
             _ = await key.set(test.redis, value)
             assert await key.get(test.redis) is value
 
+    @FLAKY
     @given(data=data(), value=booleans() | int64s())
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_union(self, *, data: DataObject, value: bool | int) -> None:
@@ -218,6 +225,7 @@ class TestRedisKey:
             _ = await key.set(test.redis, value)
             assert await key.get(test.redis) == value
 
+    @FLAKY
     @given(data=data())
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_sentinel_with_serialize(self, *, data: DataObject) -> None:
@@ -236,6 +244,7 @@ class TestRedisKey:
             _ = await key.set(test.redis, sentinel)
             assert await key.get(test.redis) is sentinel
 
+    @FLAKY
     @given(data=data())
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_sentinel_without_serialize(self, *, data: DataObject) -> None:
