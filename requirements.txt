@@ -82,7 +82,7 @@ coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
 cryptography==43.0.3
     # via dycw-utilities (pyproject.toml)
-cvxpy==1.5.3
+cvxpy==1.6.0
     # via dycw-utilities (pyproject.toml)
 dacite==1.8.1
     # via dycw-utilities (pyproject.toml)
@@ -92,8 +92,6 @@ deprecated==1.2.14
     # via pikepdf
 distlib==0.3.9
     # via virtualenv
-ecos==2.0.14
-    # via cvxpy
 eventkit==1.0.3
     # via dycw-utilities (pyproject.toml)
 execnet==2.1.1
@@ -120,7 +118,7 @@ h11==0.14.0
     # via httpcore
 hatch==1.13.0
     # via dycw-utilities (pyproject.toml)
-hatchling==1.26.1
+hatchling==1.26.3
     # via hatch
 httpcore==1.0.6
     # via httpx
@@ -130,7 +128,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.118.7
+hypothesis==6.118.8
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -188,7 +186,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.13.3
+narwhals==1.13.4
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -204,7 +202,6 @@ numpy==2.0.2
     #   bottleneck
     #   clarabel
     #   cvxpy
-    #   ecos
     #   eventkit
     #   numba
     #   numbagg
@@ -216,7 +213,7 @@ numpy==2.0.2
     #   scipy
     #   scs
     #   streamlit
-optuna==4.0.0
+optuna==4.1.0
     # via dycw-utilities (pyproject.toml)
 orjson==3.10.11
     # via dycw-utilities (pyproject.toml)
@@ -242,7 +239,7 @@ pathspec==0.12.1
     # via hatchling
 pexpect==4.9.0
     # via hatch
-pikepdf==9.4.0
+pikepdf==9.4.1
     # via img2pdf
 pillow==11.0.0
     # via
@@ -258,7 +255,7 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==1.12.0
+polars-lts-cpu==1.13.0
     # via dycw-utilities (pyproject.toml)
 portalocker==2.10.1
     # via concurrent-log-handler
@@ -354,13 +351,12 @@ scipy==1.14.1
     #   dycw-utilities (pyproject.toml)
     #   clarabel
     #   cvxpy
-    #   ecos
     #   osqp
     #   qdldl
     #   scs
 scs==3.2.7
     # via cvxpy
-setuptools==75.3.0
+setuptools==75.4.0
     # via dycw-utilities (pyproject.toml)
 shellingham==1.5.4
     # via hatch
@@ -383,7 +379,7 @@ sqlalchemy==2.0.36
     #   dycw-utilities (pyproject.toml)
     #   alembic
     #   optuna
-streamlit==1.40.0
+streamlit==1.40.1
     # via dycw-utilities (pyproject.toml)
 tenacity==9.0.0
     # via
@@ -391,7 +387,7 @@ tenacity==9.0.0
     #   streamlit
 toml==0.10.2
     # via streamlit
-tomli==2.0.2
+tomli==2.1.0
     # via coverage
 tomli-w==1.1.0
     # via hatch

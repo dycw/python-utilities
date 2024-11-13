@@ -6,7 +6,7 @@ bottleneck==1.4.2
     # via dycw-utilities (pyproject.toml)
 coverage==7.6.4
     # via pytest-cov
-hypothesis==6.118.7
+hypothesis==6.118.8
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -45,7 +45,7 @@ pytest-rerunfailures==14.0
     # via dycw-utilities (pyproject.toml)
 sortedcontainers==2.4.0
     # via hypothesis
-tomli==2.0.2
+tomli==2.1.0
     # via coverage
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)

@@ -13,7 +13,7 @@ coverage==7.6.4
     # via pytest-cov
 deprecated==1.2.14
     # via pikepdf
-hypothesis==6.118.7
+hypothesis==6.118.8
     # via dycw-utilities (pyproject.toml)
 img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
@@ -29,7 +29,7 @@ lxml==5.3.0
     # via pikepdf
 markupsafe==3.0.2
     # via jinja2
-narwhals==1.13.3
+narwhals==1.13.4
     # via altair
 packaging==24.2
     # via
@@ -37,7 +37,7 @@ packaging==24.2
     #   pikepdf
     #   pytest
     #   pytest-rerunfailures
-pikepdf==9.4.0
+pikepdf==9.4.1
     # via img2pdf
 pillow==11.0.0
     # via
@@ -45,7 +45,7 @@ pillow==11.0.0
     #   pikepdf
 pluggy==1.5.0
     # via pytest
-polars-lts-cpu==1.12.0
+polars-lts-cpu==1.13.0
     # via dycw-utilities (pyproject.toml)
 pytest==8.3.3
     # via
@@ -72,7 +72,7 @@ rpds-py==0.21.0
     #   referencing
 sortedcontainers==2.4.0
     # via hypothesis
-tomli==2.0.2
+tomli==2.1.0
     # via coverage
 typing-extensions==4.12.2
     # via

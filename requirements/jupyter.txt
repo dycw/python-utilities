@@ -58,7 +58,7 @@ httpcore==1.0.6
     # via httpx
 httpx==0.27.2
     # via jupyterlab
-hypothesis==6.118.7
+hypothesis==6.118.8
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -74,7 +74,7 @@ ipython==8.29.0
     # via ipykernel
 isoduration==20.11.0
     # via jsonschema
-jedi==0.19.1
+jedi==0.19.2
     # via ipython
 jinja2==3.1.4
     # via
@@ -82,7 +82,7 @@ jinja2==3.1.4
     #   jupyterlab
     #   jupyterlab-server
     #   nbconvert
-json5==0.9.25
+json5==0.9.28
     # via jupyterlab-server
 jsonpointer==3.0.0
     # via jsonschema
@@ -173,7 +173,7 @@ platformdirs==4.3.6
     # via jupyter-core
 pluggy==1.5.0
     # via pytest
-polars-lts-cpu==1.12.0
+polars-lts-cpu==1.13.0
     # via dycw-utilities (pyproject.toml)
 prometheus-client==0.21.0
     # via jupyter-server
@@ -245,7 +245,7 @@ rpds-py==0.21.0
     #   referencing
 send2trash==1.8.3
     # via jupyter-server
-setuptools==75.3.0
+setuptools==75.4.0
     # via jupyterlab
 six==1.16.0
     # via
@@ -268,7 +268,7 @@ terminado==0.18.1
     #   jupyter-server-terminals
 tinycss2==1.4.0
     # via nbconvert
-tomli==2.0.2
+tomli==2.1.0
     # via coverage
 tornado==6.4.1
     # via
@@ -305,7 +305,7 @@ urllib3==2.2.3
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
-webcolors==24.8.0
+webcolors==24.11.1
     # via jsonschema
 webencodings==0.5.1
     # via
