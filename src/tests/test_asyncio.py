@@ -1,19 +1,23 @@
 from __future__ import annotations
 
+import datetime as dt
 from asyncio import sleep
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import given
+from hypothesis import Phase, given
 from pytest import mark, param, raises
 
 from utilities.asyncio import (
     _MaybeAwaitableMaybeAsyncIterable,
     is_awaitable,
+    sleep_dur,
     timeout_dur,
     to_list,
     try_await,
 )
-from utilities.hypothesis import durations
+from utilities.datetime import MILLISECOND, duration_to_timedelta
+from utilities.hypothesis import durations, settings_with_reduced_examples
+from utilities.timer import Timer
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterable, Iterator
@@ -50,11 +54,41 @@ class TestIsAwaitable:
         assert result is expected
 
 
-class TestTimeoutDur:
-    @given(duration=durations())
+class TestSleepDur:
+    @given(
+        duration=durations(
+            min_number=0.0,
+            max_number=0.01,
+            min_timedelta=dt.timedelta(0),
+            max_timedelta=10 * MILLISECOND,
+        )
+    )
+    @settings_with_reduced_examples(phases={Phase.generate})
     async def test_main(self, *, duration: Duration) -> None:
-        async with timeout_dur(duration=duration):
-            pass
+        with Timer() as timer:
+            await sleep_dur(duration=duration)
+        assert timer >= duration_to_timedelta(duration)
+
+    async def test_none(self) -> None:
+        with Timer() as timer:
+            await sleep_dur()
+        assert timer <= 0.01
+
+
+class TestTimeoutDur:
+    @given(
+        duration=durations(
+            min_number=0.0,
+            max_number=0.01,
+            min_timedelta=dt.timedelta(0),
+            max_timedelta=10 * MILLISECOND,
+        )
+    )
+    @settings_with_reduced_examples(phases={Phase.generate})
+    async def test_main(self, *, duration: Duration) -> None:
+        with raises(TimeoutError):
+            async with timeout_dur(duration=duration):
+                await sleep_dur(duration=2 * duration)
 
 
 class TestToList:
