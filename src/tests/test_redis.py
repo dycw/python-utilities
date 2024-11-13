@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import DataObject, booleans, data
+from pytest import raises
 from redis.asyncio import Redis
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
@@ -24,8 +25,6 @@ from utilities.sentinel import SENTINEL_REPR, Sentinel, sentinel
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
-
-from pytest import raises
 
 
 class TestPublishAndSubscribe:
