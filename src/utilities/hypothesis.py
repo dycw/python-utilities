@@ -148,23 +148,25 @@ def durations(
     draw = lift_draw(_draw)
     min_number_, max_number_ = draw(min_number), draw(max_number)
     min_timedelta_, max_timedelta_ = draw(min_timedelta), draw(max_timedelta)
-    st_integers = integers(
-        min_value=min_number_ if isinstance(min_number_, int) else None,
-        max_value=max_number_ if isinstance(max_number_, int) else None,
-    )
-    st_floats = floats(
-        min_value=min_number_,
-        max_value=max_number_,
-        allow_nan=False,
-        allow_infinity=False,
-    )
+    if isinstance(min_number_, float) or isinstance(max_number_, float):
+        st_numbers = floats(
+            min_value=min_number_,
+            max_value=max_number_,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    else:
+        st_numbers = integers(
+            min_value=min_number_ if isinstance(min_number_, int) else None,
+            max_value=max_number_ if isinstance(max_number_, int) else None,
+        )
     if two_way:
         from utilities.whenever import MAX_TWO_WAY_TIMEDELTA, MIN_TWO_WAY_TIMEDELTA
 
         min_timedelta_ = max(min_timedelta_, MIN_TWO_WAY_TIMEDELTA)
         max_timedelta_ = min(max_timedelta_, MAX_TWO_WAY_TIMEDELTA)
     st_timedeltas = timedeltas(min_value=min_timedelta_, max_value=max_timedelta_)
-    return _draw(st_integers | st_floats | st_timedeltas)
+    return _draw(st_numbers | st_timedeltas)
 
 
 @composite

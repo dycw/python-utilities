@@ -33,7 +33,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX, SKIPIF_CI_AND_WINDOWS
-from utilities.datetime import is_local_datetime, is_zoned_datetime
+from utilities.datetime import duration_to_float, is_local_datetime, is_zoned_datetime
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
     _ZONED_DATETIMES_LEFT_MOST,
@@ -182,6 +182,16 @@ class TestDurations:
                 assert x <= max_number
         else:
             assert min_timedelta <= x <= max_timedelta
+
+    @given(data=data())
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_int_and_float_bounds(self, *, data: DataObject) -> None:
+        min_number = data.draw(integers(-10, 0))
+        max_number = data.draw(floats(0.0, 10.0))
+        duration = data.draw(durations(min_number=min_number, max_number=max_number))
+        _ = assume(isinstance(duration, int | float))
+        as_float = duration_to_float(duration)
+        assert min_number <= as_float <= max_number
 
     @given(
         data=data(),

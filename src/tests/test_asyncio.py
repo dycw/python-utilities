@@ -4,7 +4,7 @@ import datetime as dt
 from asyncio import sleep
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import given
+from hypothesis import Phase, given
 from pytest import mark, param, raises
 
 from utilities.asyncio import (
@@ -16,7 +16,7 @@ from utilities.asyncio import (
     try_await,
 )
 from utilities.datetime import MILLISECOND, duration_to_timedelta
-from utilities.hypothesis import durations
+from utilities.hypothesis import durations, settings_with_reduced_examples
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
@@ -63,6 +63,7 @@ class TestSleepDur:
             max_timedelta=10 * MILLISECOND,
         )
     )
+    @settings_with_reduced_examples(phases={Phase.generate})
     async def test_main(self, *, duration: Duration) -> None:
         with Timer() as timer:
             await sleep_dur(duration=duration)
@@ -83,9 +84,11 @@ class TestTimeoutDur:
             max_timedelta=10 * MILLISECOND,
         )
     )
+    @settings_with_reduced_examples(phases={Phase.generate})
     async def test_main(self, *, duration: Duration) -> None:
-        async with timeout_dur(duration=duration):
-            pass
+        with raises(TimeoutError):
+            async with timeout_dur(duration=duration):
+                await sleep_dur(duration=2 * duration)
 
 
 class TestToList:
