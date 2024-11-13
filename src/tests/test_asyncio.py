@@ -9,11 +9,14 @@ from pytest import mark, param, raises
 from utilities.asyncio import (
     _MaybeAwaitableMaybeAsyncIterable,
     is_awaitable,
+    sleep_dur,
     timeout_dur,
     to_list,
     try_await,
 )
+from utilities.datetime import MILLISECOND, duration_to_timedelta
 from utilities.hypothesis import durations
+from utilities.timer import Timer
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterable, Iterator
@@ -50,8 +53,21 @@ class TestIsAwaitable:
         assert result is expected
 
 
+class TestSleepDur:
+    @given(duration=durations(max_number=0.01, max_timedelta=10 * MILLISECOND))
+    async def test_main(self, *, duration: Duration) -> None:
+        with Timer() as timer:
+            await sleep_dur(duration=duration)
+        assert timer >= duration_to_timedelta(duration)
+
+    async def test_none(self) -> None:
+        with Timer() as timer:
+            await sleep_dur()
+        assert timer <= 0.01
+
+
 class TestTimeoutDur:
-    @given(duration=durations())
+    @given(duration=durations(max_number=0.01, max_timedelta=10 * MILLISECOND))
     async def test_main(self, *, duration: Duration) -> None:
         async with timeout_dur(duration=duration):
             pass

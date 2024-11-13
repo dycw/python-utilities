@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from asyncio import sleep
 from re import search
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
@@ -37,6 +38,13 @@ async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
     return True
 
 
+async def sleep_dur(*, duration: Duration | None = None) -> None:
+    """Sleep which accepts durations."""
+    if duration is None:
+        return
+    await sleep(duration_to_float(duration))
+
+
 def timeout_dur(*, duration: Duration | None = None) -> Timeout:
     """Timeout context manager which accepts durations."""
     delay = None if duration is None else duration_to_float(duration)
@@ -71,6 +79,7 @@ __all__ = [
     "MaybeAwaitable",
     "MaybeCoroutine1",
     "is_awaitable",
+    "sleep_dur",
     "timeout_dur",
     "to_list",
 ]
