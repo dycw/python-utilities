@@ -15,6 +15,7 @@ from logging import (
 )
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
+from re import search
 from sys import stdout
 from typing import TYPE_CHECKING, Any, ClassVar, assert_never, cast
 
@@ -210,7 +211,24 @@ class _AdvancedLogRecord(LogRecord):
     def getMessage(self) -> str:
         """Return the message for this LogRecord."""
         msg = str(self.msg)
-        return msg.format(*self.args) if self.args else msg
+        if self.args:
+            try:
+                return msg % self.args  # compability for 3rd party code
+            except ValueError as error:
+                if len(error.args) == 0:
+                    raise
+                first = error.args[0]
+                if search("unsupported format character", first):
+                    return msg.format(*self.args)
+                raise
+            except TypeError as error:
+                if len(error.args) == 0:
+                    raise
+                first = error.args[0]
+                if search("not all arguments converted", first):
+                    return msg.format(*self.args)
+                raise
+        return msg
 
     @classmethod
     def get_now(cls) -> Any:

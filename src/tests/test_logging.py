@@ -78,7 +78,18 @@ class TestSetupLogging:
     def test_default_path(self) -> None:
         _ = _setup_logging_default_path()
 
-    def test_brace_formatting(
+    def test_regular_percent_formatting(
+        self, *, caplog: LogCaptureFixture, tmp_path: Path
+    ) -> None:
+        setup_logging(logger_name=__name__, files_dir=tmp_path)
+        logger = getLogger(__name__)
+        logger.info("int: %d, float: %.2f", 1, 12.3456)
+        record = one(caplog.records)
+        assert isinstance(record, _AdvancedLogRecord)
+        expected = "int: 1, float: 12.35"
+        assert record.message == expected
+
+    def test_new_brace_formatting(
         self, *, caplog: LogCaptureFixture, tmp_path: Path
     ) -> None:
         setup_logging(logger_name=__name__, files_dir=tmp_path)
