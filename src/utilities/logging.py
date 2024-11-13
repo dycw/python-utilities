@@ -215,13 +215,13 @@ class _AdvancedLogRecord(LogRecord):
             try:
                 return msg % self.args  # compability for 3rd party code
             except ValueError as error:
-                if len(error.args) == 0:
+                if len(error.args) == 0:  # pragma: no cover
                     raise
                 first = error.args[0]
                 if search("unsupported format character", first):
                     return msg.format(*self.args)
-                raise
-            except TypeError as error:
+                raise  # pragma: no cover
+            except TypeError as error:  # pragma: no cover
                 if len(error.args) == 0:
                     raise
                 first = error.args[0]
