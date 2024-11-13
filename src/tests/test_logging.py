@@ -3,11 +3,14 @@ from __future__ import annotations
 from logging import getLogger
 from typing import TYPE_CHECKING
 
-from pytest import mark, param, raises
+from pytest import LogCaptureFixture, mark, param, raises
+from whenever import ZonedDateTime
 
+from utilities.iterables import one
 from utilities.logging import (
     GetLoggingLevelNumberError,
     LogLevel,
+    _AdvancedLogRecord,
     _setup_logging_default_path,
     basic_config,
     get_logging_level_number,
@@ -74,3 +77,23 @@ class TestSetupLogging:
 
     def test_default_path(self) -> None:
         _ = _setup_logging_default_path()
+
+    def test_brace_formatting(
+        self, *, caplog: LogCaptureFixture, tmp_path: Path
+    ) -> None:
+        setup_logging(logger_name=__name__, files_dir=tmp_path)
+        logger = getLogger(__name__)
+        logger.info("int: {:d}, float: {:.2f}, percent: {:.2%}", 1, 12.3456, 0.123456)
+        record = one(caplog.records)
+        assert isinstance(record, _AdvancedLogRecord)
+        expected = "int: 1, float: 12.35, percent: 12.35%"
+        assert record.message == expected
+
+    def test_zoned_datetime(self, *, caplog: LogCaptureFixture, tmp_path: Path) -> None:
+        setup_logging(logger_name=__name__, files_dir=tmp_path)
+        logger = getLogger(__name__)
+        logger.info("")
+        record = one(caplog.records)
+        assert isinstance(record, _AdvancedLogRecord)
+        assert isinstance(record.zoned_datetime, ZonedDateTime)
+        assert isinstance(record.zoned_datetime_str, str)

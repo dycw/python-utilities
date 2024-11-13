@@ -76,49 +76,6 @@ class LogLevel(StrEnum):
     CRITICAL = "CRITICAL"
 
 
-class LogRecordZonedDateTime(LogRecord):
-    """Subclass of LogRecord that supports zoned datetimes."""
-
-    time_zone: ClassVar[str] = NotImplemented
-
-    @override
-    def __init__(
-        self,
-        name: str,
-        level: int,
-        pathname: str,
-        lineno: int,
-        msg: object,
-        args: Any,
-        exc_info: Any,
-        func: str | None = None,
-        sinfo: str | None = None,
-    ) -> None:
-        self.zoned_datetime = self.get_now()  # skipif-ci-and-windows
-        self.zoned_datetime_str = (  # skipif-ci-and-windows
-            self.zoned_datetime.format_common_iso()
-        )
-        super().__init__(  # skipif-ci-and-windows
-            name, level, pathname, lineno, msg, args, exc_info, func, sinfo
-        )
-
-    @override
-    def __init_subclass__(cls, *, time_zone: ZoneInfo, **kwargs: Any) -> None:
-        cls.time_zone = time_zone.key  # skipif-ci-and-windows
-        super().__init_subclass__(**kwargs)  # skipif-ci-and-windows
-
-    @classmethod
-    def get_now(cls) -> Any:
-        """Get the current zoned datetime."""
-        return cast(Any, ZonedDateTime).now(cls.time_zone)  # skipif-ci-and-windows
-
-    @classmethod
-    def get_zoned_datetime_fmt(cls) -> str:
-        """Get the zoned datetime format string."""
-        length = len(cls.get_now().format_common_iso())  # skipif-ci-and-windows
-        return f"{{zoned_datetime_str:{length}}}"  # skipif-ci-and-windows
-
-
 def _setup_logging_default_path() -> Path:
     return get_repo_root().joinpath(".logs")
 
@@ -140,7 +97,7 @@ def setup_logging(
     from tzlocal import get_localzone  # skipif-ci-and-windows
 
     class LogRecordNanoLocal(  # skipif-ci-and-windows
-        LogRecordZonedDateTime, time_zone=get_localzone()
+        _AdvancedLogRecord, time_zone=get_localzone()
     ): ...
 
     setLogRecordFactory(LogRecordNanoLocal)  # skipif-ci-and-windows
@@ -218,10 +175,58 @@ def setup_logging(
         logger.addHandler(file_handler)
 
 
+class _AdvancedLogRecord(LogRecord):
+    """Advanced log record."""
+
+    time_zone: ClassVar[str] = NotImplemented
+
+    @override
+    def __init__(
+        self,
+        name: str,
+        level: int,
+        pathname: str,
+        lineno: int,
+        msg: object,
+        args: Any,
+        exc_info: Any,
+        func: str | None = None,
+        sinfo: str | None = None,
+    ) -> None:
+        self.zoned_datetime = self.get_now()  # skipif-ci-and-windows
+        self.zoned_datetime_str = (  # skipif-ci-and-windows
+            self.zoned_datetime.format_common_iso()
+        )
+        super().__init__(  # skipif-ci-and-windows
+            name, level, pathname, lineno, msg, args, exc_info, func, sinfo
+        )
+
+    @override
+    def __init_subclass__(cls, *, time_zone: ZoneInfo, **kwargs: Any) -> None:
+        cls.time_zone = time_zone.key  # skipif-ci-and-windows
+        super().__init_subclass__(**kwargs)  # skipif-ci-and-windows
+
+    @override
+    def getMessage(self) -> str:
+        """Return the message for this LogRecord."""
+        msg = str(self.msg)
+        return msg.format(*self.args) if self.args else msg
+
+    @classmethod
+    def get_now(cls) -> Any:
+        """Get the current zoned datetime."""
+        return cast(Any, ZonedDateTime).now(cls.time_zone)  # skipif-ci-and-windows
+
+    @classmethod
+    def get_zoned_datetime_fmt(cls) -> str:
+        """Get the zoned datetime format string."""
+        length = len(cls.get_now().format_common_iso())  # skipif-ci-and-windows
+        return f"{{zoned_datetime_str:{length}}}"  # skipif-ci-and-windows
+
+
 __all__ = [
     "GetLoggingLevelNumberError",
     "LogLevel",
-    "LogRecordZonedDateTime",
     "basic_config",
     "get_logging_level_number",
     "setup_logging",
