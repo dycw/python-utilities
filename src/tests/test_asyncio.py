@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from asyncio import sleep
 from typing import TYPE_CHECKING, Any
 
@@ -54,7 +55,14 @@ class TestIsAwaitable:
 
 
 class TestSleepDur:
-    @given(duration=durations(max_number=0.01, max_timedelta=10 * MILLISECOND))
+    @given(
+        duration=durations(
+            min_number=0.0,
+            max_number=0.01,
+            min_timedelta=dt.timedelta(0),
+            max_timedelta=10 * MILLISECOND,
+        )
+    )
     async def test_main(self, *, duration: Duration) -> None:
         with Timer() as timer:
             await sleep_dur(duration=duration)
@@ -67,7 +75,14 @@ class TestSleepDur:
 
 
 class TestTimeoutDur:
-    @given(duration=durations(max_number=0.01, max_timedelta=10 * MILLISECOND))
+    @given(
+        duration=durations(
+            min_number=0.0,
+            max_number=0.01,
+            min_timedelta=dt.timedelta(0),
+            max_timedelta=10 * MILLISECOND,
+        )
+    )
     async def test_main(self, *, duration: Duration) -> None:
         async with timeout_dur(duration=duration):
             pass
