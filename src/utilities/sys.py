@@ -66,7 +66,9 @@ class _GetExcTraceInfoOutput:
             yield indent(
                 f"{frame.depth}. {self._pretty_func(frame, location=location)}", pre1
             )
-        if (self.exc_type is not None) and (self.exc_value is not None):
+        if (self.exc_type is not None) and (  # pragma: no cover
+            self.exc_value is not None
+        ):
             yield indent(f">> {self.exc_type.__name__}: {self.exc_value}", pre1)
         yield ""
         yield "Traced frames:"
