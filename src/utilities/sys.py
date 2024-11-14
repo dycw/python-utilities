@@ -148,6 +148,8 @@ def _get_exc_trace_info_yield_merged(
         next_: _GetExcTraceInfoRaw | None = None
         if len(raw_rev) == 0:
             return
+        breakpoint()
+
         while (len(raw_rev) >= 1) and ((next_ is None) or (next_.trace is None)):
             try:
                 next_ = raw_rev.pop(0)
