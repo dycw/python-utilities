@@ -52,6 +52,22 @@ class _GetExceptionOutput:
 class _FrameInfo:
     """A collection of frame data."""
 
+    depth: int
+    max_depth: int
+    filename: Path
+    first_line_num: int
+    line_num: int
+    func: Callable[..., Any]
+    args: tuple[Any, ...] = field(default_factory=tuple)
+    kwargs: dict[str, Any] = field(default_factory=dict)
+    result: Any | Sentinel = sentinel
+    error: Exception | None = None
+
+
+@dataclass(kw_only=True)
+class _UnnumberedFrameInfo:
+    """A collection of unnumbered frame data."""
+
     filename: Path
     first_line_num: int
     line_num: int
@@ -64,7 +80,7 @@ class _FrameInfo:
 
 @dataclass(kw_only=True)
 class _RawFrameInfo:
-    """A collection of frame data."""
+    """A collection of raw frame data."""
 
     filename: Path
     first_line_num: int
@@ -90,10 +106,10 @@ def get_exc_trace_info() -> _GetExceptionOutput:
         )
         raw_frame_infos.append(raw_frame_info)
         traceback = traceback.tb_next
-    frame_infos: list[_FrameInfo] = []
+    unnumbered_frame_infos: list[_UnnumberedFrameInfo] = []
     for curr, next_ in pairwise(reversed(raw_frame_infos)):
         if next_.trace is not None:
-            frame_info = _FrameInfo(
+            unnumbered_frame_info = _UnnumberedFrameInfo(
                 filename=curr.filename,
                 first_line_num=curr.first_line_num,
                 line_num=curr.line_num,
@@ -103,9 +119,24 @@ def get_exc_trace_info() -> _GetExceptionOutput:
                 result=next_.trace.result,
                 error=next_.trace.error,
             )
-            frame_infos.append(frame_info)
+            unnumbered_frame_infos.append(unnumbered_frame_info)
+    frame_infos = [
+        _FrameInfo(
+            depth=i,
+            max_depth=len(unnumbered_frame_infos),
+            filename=f.filename,
+            first_line_num=f.first_line_num,
+            line_num=f.line_num,
+            func=f.func,
+            args=f.args,
+            kwargs=f.kwargs,
+            result=f.result,
+            error=f.error,
+        )
+        for i, f in enumerate(unnumbered_frame_infos[::-1], start=1)
+    ]
     return _GetExceptionOutput(
-        exc_type=exc_type, exc_value=exc_value, frames=frame_infos[::-1]
+        exc_type=exc_type, exc_value=exc_value, frames=frame_infos
     )
 
 

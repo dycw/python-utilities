@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-from string import ascii_lowercase
-
 from pytest import mark, param
 
 from tests.test_sys_funcs.one import func_one
@@ -13,7 +10,6 @@ from utilities.sys import (
     _GetCallerOutput,
     get_caller,
     get_exc_trace_info,
-    trace,
 )
 
 
@@ -67,6 +63,8 @@ class TestGetExcTraceInfo:
             frames = exc_info.frames
             assert len(frames) == 1
             frame = frames[0]
+            assert frame.depth == 1
+            assert frame.max_depth == 1
             assert frame.filename.parts[-2:] == ("test_sys_funcs", "one.py")
             assert frame.first_line_num == 8
             assert frame.line_num == 11
@@ -91,15 +89,18 @@ class TestGetExcTraceInfo:
             frames = exc_info.frames
             assert len(frames) == 2
             for frame in frames:
+                assert frame.max_depth == 2
                 assert frame.filename.parts[-2:] == ("test_sys_funcs", "two.py")
                 assert frame.result is sentinel
                 assert isinstance(frame.error, AssertionError)
             first, second = frames
+            assert first.depth == 1
             assert first.first_line_num == 8
             assert first.line_num == 10
             assert first.func.__name__ == func_two_first.__name__
             assert first.args == (1, 2, 3, 4)
             assert first.kwargs == {"c": 5, "d": 6, "e": 7, "f": -result}
+            assert second.depth == 2
             assert second.first_line_num == 13
             assert second.line_num == 16
             assert second.func.__name__ == func_two_second.__name__
