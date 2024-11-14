@@ -6,9 +6,10 @@ from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
 from pathlib import Path
 from sys import _getframe, exc_info, version_info
+from textwrap import indent
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar, cast, overload
 
-from utilities.functions import ensure_not_none
+from utilities.functions import ensure_not_none, get_func_name
 from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
@@ -48,6 +49,44 @@ class _GetExcTraceInfoOutput:
     exc_type: type[BaseException] | None = None
     exc_value: BaseException | None = None
     frames: list[_FrameInfo] = field(default_factory=list)
+
+    def pretty(self, *, location: bool = True) -> str:
+        """Pretty print the exception data."""
+        return "\n".join(self._pretty_yield(location=location))
+
+    def _pretty_yield(self, /, *, location: bool = True) -> Iterable[str]:
+        """Yield the rows for pretty printing the exception."""
+        from rich.pretty import pretty_repr
+
+        pre1 = 2 * " "
+        pre2 = 2 * pre1
+        yield "Error running:"
+        yield ""
+        for frame in self.frames:
+            yield indent(
+                f"{frame.depth}. {self._pretty_func(frame, location=location)}", pre1
+            )
+        if (self.exc_type is not None) and (self.exc_value is not None):
+            yield indent(f">> {self.exc_type.__name__}: {self.exc_value}", pre1)
+        yield ""
+        yield "Traced frames:"
+        for frame in self.frames:
+            yield ""
+            yield indent(
+                f"{frame.depth}/{frame.max_depth}. {self._pretty_func(frame, location=location)}",
+                pre1,
+            )
+            for i, arg in enumerate(frame.args):
+                yield indent(f"args[{i}] = {pretty_repr(arg)}", pre2)
+            for k, v in frame.kwargs.items():
+                yield indent(f"kwargs[{k!r}] = {pretty_repr(v)}", pre2)
+
+    def _pretty_func(self, frame: _FrameInfo, /, *, location: bool = True) -> str:
+        """Pretty print a function name along with its location."""
+        name = get_func_name(frame.func)
+        if not location:
+            return name
+        return f"{name} ({frame.filename}:{frame.first_line_num}->{frame.line_num})"  # pragma: no cover
 
 
 @dataclass(kw_only=True)
