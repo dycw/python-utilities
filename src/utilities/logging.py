@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from enum import StrEnum, unique
 from itertools import product
 from logging import (
     Formatter,
@@ -17,7 +16,7 @@ from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from re import search
 from sys import stdout
-from typing import TYPE_CHECKING, Any, ClassVar, assert_never, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never, cast
 
 from typing_extensions import override
 
@@ -35,6 +34,9 @@ except ModuleNotFoundError:  # pragma: no cover
     ZonedDateTime = None
 
 
+LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
+
 def basic_config(
     *,
     format: str = "{asctime} | {name} | {levelname:8} | {message}",  # noqa: A002
@@ -44,11 +46,11 @@ def basic_config(
         format=format,
         datefmt=maybe_sub_pct_y("%Y-%m-%d %H:%M:%S"),
         style="{",
-        level=LogLevel.DEBUG.name,
+        level="DEBUG",
     )
 
 
-def get_logging_level_number(level: str, /) -> int:
+def get_logging_level_number(level: LogLevel, /) -> int:
     """Get the logging level number."""
     mapping = getLevelNamesMapping()
     try:
@@ -59,22 +61,11 @@ def get_logging_level_number(level: str, /) -> int:
 
 @dataclass(kw_only=True, slots=True)
 class GetLoggingLevelNumberError(Exception):
-    level: str
+    level: LogLevel
 
     @override
     def __str__(self) -> str:
         return f"Invalid logging level: {self.level!r}"
-
-
-@unique
-class LogLevel(StrEnum):
-    """An enumeration of the logging levels."""
-
-    DEBUG = "DEBUG"
-    INFO = "INFO"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
-    CRITICAL = "CRITICAL"
 
 
 def _setup_logging_default_path() -> Path:
@@ -84,7 +75,7 @@ def _setup_logging_default_path() -> Path:
 def setup_logging(
     *,
     logger_name: str | None = None,
-    console_level: LogLevel = LogLevel.INFO,
+    console_level: LogLevel = "INFO",
     console_fmt: str = "❯ {zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
     files_dir: PathLike | Callable[[], Path] | None = _setup_logging_default_path,
     files_when: str = "D",
@@ -110,7 +101,7 @@ def setup_logging(
 
     # logger
     logger = getLogger(name=logger_name)  # skipif-ci-and-windows
-    logger.setLevel(get_logging_level_number(LogLevel.DEBUG))  # skipif-ci-and-windows
+    logger.setLevel(get_logging_level_number("DEBUG"))  # skipif-ci-and-windows
 
     # formatter
     try:  # skipif-ci-and-windows
@@ -148,11 +139,11 @@ def setup_logging(
             directory = files_dir()
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
+    levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]  # skipif-ci-and-windows
     for level, (subpath, formatter) in product(  # skipif-ci-and-windows
-        [LogLevel.DEBUG, LogLevel.INFO, LogLevel.ERROR],
-        [(Path(), files_formatter), (Path("plain"), plain_formatter)],
+        levels, [(Path(), files_formatter), (Path("plain"), plain_formatter)]
     ):
-        path = directory.joinpath(subpath, level.name.lower())
+        path = directory.joinpath(subpath, level.lower())
         path.parent.mkdir(parents=True, exist_ok=True)
         try:
             from concurrent_log_handler import ConcurrentTimedRotatingFileHandler
