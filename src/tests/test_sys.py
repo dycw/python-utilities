@@ -3,7 +3,13 @@ from __future__ import annotations
 from pytest import mark, param
 
 from tests.test_sys_funcs.one import func_one
+from tests.test_sys_funcs.one_deco import func_one_deco_after, func_one_deco_before
 from tests.test_sys_funcs.two import func_two_first, func_two_second
+from tests.test_sys_funcs.two_deco import (
+    func_two_deco_after_first,
+    func_two_deco_before_first,
+)
+from utilities.iterables import one
 from utilities.sentinel import sentinel
 from utilities.sys import (
     VERSION_MAJOR_MINOR,
@@ -60,9 +66,7 @@ class TestGetExcTraceInfo:
             exc_info = get_exc_trace_info()
             assert exc_info.exc_type is AssertionError
             assert isinstance(exc_info.exc_value, AssertionError)
-            frames = exc_info.frames
-            assert len(frames) == 1
-            frame = frames[0]
+            frame = one(exc_info.frames)
             assert frame.depth == 1
             assert frame.max_depth == 1
             assert frame.filename.parts[-2:] == ("test_sys_funcs", "one.py")
@@ -106,6 +110,106 @@ class TestGetExcTraceInfo:
             assert second.func.__name__ == func_two_second.__name__
             assert second.args == (2, 4, 3, 4)
             assert second.kwargs == {"c": 10, "d": 6, "e": 7, "f": -result}
+        else:  # pragma: no cover
+            msg = "Expected an assertion"
+            raise AssertionError(msg)
+
+    # @mark.only
+    def test_func_one_deco_before(self) -> None:
+        result = func_one_deco_before(1, 2, 3, 4, c=5, d=6, e=7)
+        assert result == 28
+        try:
+            _ = func_one_deco_before(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
+        except AssertionError:
+            exc_info = get_exc_trace_info()
+            assert exc_info.exc_type is AssertionError
+            assert isinstance(exc_info.exc_value, AssertionError)
+            frame = one(exc_info.frames)
+            assert frame.depth == 1
+            assert frame.max_depth == 1
+            assert frame.filename.parts[-2:] == ("test_sys_funcs", "one_deco.py")
+            assert frame.first_line_num == 21
+            assert frame.line_num == 27
+            assert frame.func.__name__ == func_one_deco_before.__name__
+            assert frame.args == (1, 2, 3, 4)
+            assert frame.kwargs == {"c": 5, "d": 6, "e": 7, "f": -result}
+            assert frame.result is sentinel
+            assert isinstance(frame.error, AssertionError)
+        else:  # pragma: no cover
+            msg = "Expected an assertion"
+            raise AssertionError(msg)
+
+    # @mark.only
+    def test_func_one_deco_after(self) -> None:
+        result = func_one_deco_after(1, 2, 3, 4, c=5, d=6, e=7)
+        assert result == 28
+        try:
+            _ = func_one_deco_after(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
+        except AssertionError:
+            exc_info = get_exc_trace_info()
+            assert exc_info.exc_type is AssertionError
+            assert isinstance(exc_info.exc_value, AssertionError)
+            frame = one(exc_info.frames)
+            assert frame.depth == 1
+            assert frame.max_depth == 1
+            assert frame.filename.parts[-2:] == ("test_sys_funcs", "one_deco.py")
+            assert frame.first_line_num == 31
+            assert frame.line_num == 37
+            assert frame.func.__name__ == func_one_deco_after.__name__
+            assert frame.args == (1, 2, 3, 4)
+            assert frame.kwargs == {"c": 5, "d": 6, "e": 7, "f": -result}
+            assert frame.result is sentinel
+            assert isinstance(frame.error, AssertionError)
+        else:  # pragma: no cover
+            msg = "Expected an assertion"
+            raise AssertionError(msg)
+
+    # @mark.only
+    def test_func_two_deco_before(self) -> None:
+        result = func_two_deco_before_first(1, 2, 3, 4, c=5, d=6, e=7)
+        assert result == 36
+        try:
+            _ = func_two_deco_before_first(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
+        except AssertionError:
+            exc_info = get_exc_trace_info()
+            assert exc_info.exc_type is AssertionError
+            assert isinstance(exc_info.exc_value, AssertionError)
+            frame = one(exc_info.frames)
+            assert frame.depth == 1
+            assert frame.max_depth == 1
+            assert frame.filename.parts[-2:] == ("test_sys_funcs", "one_deco.py")
+            assert frame.first_line_num == 21
+            assert frame.line_num == 27
+            assert frame.func.__name__ == func_one_deco_before.__name__
+            assert frame.args == (1, 2, 3, 4)
+            assert frame.kwargs == {"c": 5, "d": 6, "e": 7, "f": -result}
+            assert frame.result is sentinel
+            assert isinstance(frame.error, AssertionError)
+        else:  # pragma: no cover
+            msg = "Expected an assertion"
+            raise AssertionError(msg)
+
+    @mark.only
+    def test_func_two_deco_after(self) -> None:
+        result = func_two_deco_after_first(1, 2, 3, 4, c=5, d=6, e=7)
+        assert result == 36
+        try:
+            _ = func_two_deco_after_first(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
+        except AssertionError:
+            exc_info = get_exc_trace_info()
+            assert exc_info.exc_type is AssertionError
+            assert isinstance(exc_info.exc_value, AssertionError)
+            frame = one(exc_info.frames)
+            assert frame.depth == 1
+            assert frame.max_depth == 1
+            assert frame.filename.parts[-2:] == ("test_sys_funcs", "one_deco.py")
+            assert frame.first_line_num == 21
+            assert frame.line_num == 27
+            assert frame.func.__name__ == func_one_deco_before.__name__
+            assert frame.args == (1, 2, 3, 4)
+            assert frame.kwargs == {"c": 5, "d": 6, "e": 7, "f": -result}
+            assert frame.result is sentinel
+            assert isinstance(frame.error, AssertionError)
         else:  # pragma: no cover
             msg = "Expected an assertion"
             raise AssertionError(msg)

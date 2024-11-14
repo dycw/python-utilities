@@ -4,7 +4,6 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
-from itertools import pairwise
 from pathlib import Path
 from sys import _getframe, exc_info, version_info
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar, cast, overload
@@ -12,6 +11,7 @@ from typing import TYPE_CHECKING, Any, TypedDict, TypeVar, cast, overload
 from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
+    from itertools import pairwise
     from types import FrameType, TracebackType
 
     from utilities.sentinel import Sentinel
@@ -107,19 +107,26 @@ def get_exc_trace_info() -> _GetExceptionOutput:
         raw_frame_infos.append(raw_frame_info)
         traceback = traceback.tb_next
     unnumbered_frame_infos: list[_UnnumberedFrameInfo] = []
-    for curr, next_ in pairwise(reversed(raw_frame_infos)):
-        if next_.trace is not None:
-            unnumbered_frame_info = _UnnumberedFrameInfo(
-                filename=curr.filename,
-                first_line_num=curr.first_line_num,
-                line_num=curr.line_num,
-                func=next_.trace.func,
-                args=next_.trace.args,
-                kwargs=next_.trace.kwargs,
-                result=next_.trace.result,
-                error=next_.trace.error,
-            )
-            unnumbered_frame_infos.append(unnumbered_frame_info)
+    if 0:
+        for curr, next_ in pairwise(reversed(raw_frame_infos)):
+            if next_.trace is not None:
+                unnumbered_frame_info = _UnnumberedFrameInfo(
+                    filename=curr.filename,
+                    first_line_num=curr.first_line_num,
+                    line_num=curr.line_num,
+                    func=next_.trace.func,
+                    args=next_.trace.args,
+                    kwargs=next_.trace.kwargs,
+                    result=next_.trace.result,
+                    error=next_.trace.error,
+                )
+                unnumbered_frame_infos.append(unnumbered_frame_info)
+    else:
+        it = reversed(raw_frame_infos)
+        raw_frame_info = next(it)
+        assert 0, raw_frame_info
+    breakpoint()
+
     frame_infos = [
         _FrameInfo(
             depth=i,
