@@ -73,7 +73,7 @@ class _RawFrameInfo:
     trace: _TraceData | None = None
 
 
-def get_exception_info() -> _GetExceptionOutput:
+def get_exc_trace_info() -> _GetExceptionOutput:
     """Get the exception information, extracting trace data if it exists."""
     exc_type, exc_value, exc_traceback = exc_info()
     raw_frame_infos: list[_RawFrameInfo] = []
@@ -170,4 +170,4 @@ def _trace_make_data(func: Callable[..., Any], *args: Any, **kwargs: Any) -> _Tr
     return _TraceData(func=func, args=bound_args.args, kwargs=bound_args.kwargs)
 
 
-__all__ = ["VERSION_MAJOR_MINOR", "get_caller", "get_exception_info", "trace"]
+__all__ = ["VERSION_MAJOR_MINOR", "get_caller", "get_exc_trace_info", "trace"]

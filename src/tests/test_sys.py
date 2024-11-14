@@ -7,12 +7,12 @@ from pytest import mark, param
 
 from tests.test_sys_funcs.one import func_one
 from tests.test_sys_funcs.two import func_two_first, func_two_second
-from utilities.sentinel import Sentinel, sentinel
+from utilities.sentinel import sentinel
 from utilities.sys import (
     VERSION_MAJOR_MINOR,
     _GetCallerOutput,
     get_caller,
-    get_exception_info,
+    get_exc_trace_info,
     trace,
 )
 
@@ -54,58 +54,14 @@ class TestGetCaller:
         assert result["name"] == expected
 
 
-@trace
-def _get_exception_info_first(
-    a: float, b: float, /, *args: float, c: float = 0, **kwargs: float
-) -> float:
-    sum_ = a + b + c + sum(args) + sum(kwargs.values())
-    diff = a - b
-    return _get_exception_info_second(
-        sum_,
-        diff,
-        *args[::2],
-        z=c,
-        **{k: v for k, v in kwargs.items() if k[0] in ascii_lowercase[::2]},
-    )
-
-
-@trace
-def _get_exception_info_second(
-    x: float, y: float, /, *args: float, z: float = 0, **kwargs: float
-) -> float:
-    sum_ = x + y + z + sum(args) + sum(kwargs.values())
-    diff = x - y
-    return sum_ / diff
-
-
-class TestGetExceptionInfo:
-    @mark.skip
-    def test_main(self) -> None:
-        a = 134217729.0
-        b = 1e-8
-        try:
-            _ = _get_exception_info_first(a, b, c=0)
-        except ZeroDivisionError:
-            exc_info = get_exception_info()
-            assert exc_info.exc_type is ZeroDivisionError
-            assert isinstance(exc_info.exc_value, ZeroDivisionError)
-            frames = exc_info.frames
-            assert len(frames) == 3
-            for frame in frames:
-                assert frame.filename == Path(__file__)
-            first, second, third = frames
-            assert first.func_name == TestGetCaller.test_main.__name__
-            assert second.func_name == _get_exception_info_first.__name__
-            assert third.func_name == _get_exception_info_second.__name__
-            assert 0, exc_info
-
+class TestGetExcTraceInfo:
     def test_func_one(self) -> None:
         result = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         assert result == 28
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
         except AssertionError:
-            exc_info = get_exception_info()
+            exc_info = get_exc_trace_info()
             assert exc_info.exc_type is AssertionError
             assert isinstance(exc_info.exc_value, AssertionError)
             frames = exc_info.frames
@@ -129,7 +85,7 @@ class TestGetExceptionInfo:
         try:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
         except AssertionError:
-            exc_info = get_exception_info()
+            exc_info = get_exc_trace_info()
             assert exc_info.exc_type is AssertionError
             assert isinstance(exc_info.exc_value, AssertionError)
             frames = exc_info.frames
