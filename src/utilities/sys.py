@@ -4,6 +4,7 @@ from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
+from linecache import getline
 from pathlib import Path
 from sys import _getframe, exc_info, version_info
 from textwrap import indent
@@ -59,28 +60,31 @@ class _GetExcTraceInfoOutput:
         """Yield the rows for pretty printing the exception."""
         from rich.pretty import pretty_repr
 
+        if (self.exc_type is None) or (self.exc_value is None):  # pragma: no cover
+            raise ImpossibleCaseError(case=[f"{self.exc_type=}", f"{self.exc_value=}"])
+        error = f">> {self.exc_type.__name__}: {self.exc_value}"
+
         yield "Error running:"
         yield ""
         for frame in self.frames:
-            yield indent(
-                f"{frame.depth}. {self._pretty_func(frame, location=location)}",
-                self._prefix1,
-            )
-        yield indent(f">> {self._pretty_error()}", self._prefix1)
+            yield indent(f"{frame.depth}. {get_func_name(frame.func)}", self._prefix1)
+        yield indent(error, self._prefix1)
         yield ""
         yield "Traced frames:"
         for frame in self.frames:
+            name, filename = get_func_name(frame.func), frame.filename
             yield ""
-            yield indent(
-                f"{frame.depth}/{frame.max_depth}. {self._pretty_func(frame, location=location)}",
-                self._prefix1,
-            )
+            desc = f"{name} ({filename}:{frame.first_line_num})" if location else name
+            yield indent(f"{frame.depth}/{frame.max_depth}. {desc}", self._prefix1)
             for i, arg in enumerate(frame.args):
                 yield indent(f"args[{i}] = {pretty_repr(arg)}", self._prefix2)
             for k, v in frame.kwargs.items():
                 yield indent(f"kwargs[{k!r}] = {pretty_repr(v)}", self._prefix2)
-        yield ""
-        yield indent(self._pretty_error(), self._prefix1)
+            yield indent(f">> {frame.code_line}", self._prefix2)
+            if location:  # pragma: no cover
+                yield indent(f"   ({filename}:{frame.line_num})", self._prefix2)
+            if frame.depth == frame.max_depth:
+                yield indent(error, self._prefix2)
 
     @property
     def _prefix1(self) -> str:
@@ -90,19 +94,6 @@ class _GetExcTraceInfoOutput:
     def _prefix2(self) -> str:
         return 2 * self._prefix1
 
-    def _pretty_func(self, frame: _FrameInfo, /, *, location: bool = True) -> str:
-        """Pretty print a function name along with its location."""
-        name = get_func_name(frame.func)
-        if not location:
-            return name
-        return f"{name} ({frame.filename}:{frame.first_line_num}->{frame.line_num})"  # pragma: no cover
-
-    def _pretty_error(self) -> str:
-        """Pretty print the error."""
-        if (self.exc_type is None) or (self.exc_value is None):  # pragma: no cover
-            raise ImpossibleCaseError(case=[f"{self.exc_type=}", f"{self.exc_value=}"])
-        return f"{self.exc_type.__name__}: {self.exc_value}"
-
 
 @dataclass(kw_only=True)
 class _FrameInfo:
@@ -110,10 +101,11 @@ class _FrameInfo:
 
     depth: int
     max_depth: int
+    func: Callable[..., Any]
     filename: Path
     first_line_num: int
     line_num: int
-    func: Callable[..., Any]
+    code_line: str
     args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
     result: Any | Sentinel = sentinel
@@ -129,10 +121,11 @@ def get_exc_trace_info() -> _GetExcTraceInfoOutput:
         _FrameInfo(
             depth=i,
             max_depth=len(merged),
+            func=f.func,
             filename=f.filename,
             first_line_num=f.first_line_num,
             line_num=f.line_num,
-            func=f.func,
+            code_line=f.code_line,
             args=f.args,
             kwargs=f.kwargs,
             result=f.result,
@@ -147,10 +140,11 @@ def get_exc_trace_info() -> _GetExcTraceInfoOutput:
 class _GetExcTraceInfoRaw:
     """A collection of raw frame data."""
 
+    func_name: str
     filename: Path
     first_line_num: int
     line_num: int
-    func_name: str
+    code_line: str
     trace: _TraceData | None = None
 
 
@@ -162,10 +156,11 @@ def _get_exc_trace_info_yield_raw(
         frame = traceback.tb_frame
         code = frame.f_code
         yield _GetExcTraceInfoRaw(
+            func_name=code.co_name,
             filename=Path(code.co_filename),
             first_line_num=code.co_firstlineno,
             line_num=traceback.tb_lineno,
-            func_name=code.co_name,
+            code_line=getline(code.co_filename, traceback.tb_lineno).strip(),
             trace=frame.f_locals.get(_TRACE_DATA),
         )
         traceback = traceback.tb_next
@@ -175,10 +170,11 @@ def _get_exc_trace_info_yield_raw(
 class _GetExcTraceInfoMerged:
     """A collection of unnumbered frame data."""
 
+    func: Callable[..., Any]
     filename: Path
     first_line_num: int
     line_num: int
-    func: Callable[..., Any]
+    code_line: str
     args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
     result: Any | Sentinel = sentinel
@@ -204,10 +200,11 @@ def _get_exc_trace_info_yield_merged(
         if next_.trace is None:
             return
         yield _GetExcTraceInfoMerged(
+            func=next_.trace.func,
             filename=curr.filename,
             first_line_num=curr.first_line_num,
             line_num=curr.line_num,
-            func=next_.trace.func,
+            code_line=curr.code_line,
             args=next_.trace.args,
             kwargs=next_.trace.kwargs,
             result=next_.trace.result,

@@ -92,7 +92,9 @@ class TestGetExcTraceInfo:
             assert exc_info.exc_type is AssertionError
             assert isinstance(exc_info.exc_value, AssertionError)
             frame = one(exc_info.frames)
-            self._assert(frame, 1, 1, "one.py", 8, 11, func_one, result)
+            self._assert(
+                frame, 1, 1, func_one, "one.py", 8, 11, self._assert_code_line, result
+            )
         else:  # pragma: no cover
             msg = "Expected an assertion"
             raise AssertionError(msg)
@@ -106,11 +108,21 @@ class TestGetExcTraceInfo:
             exc_info = get_exc_trace_info()
             assert exc_info.exc_type is AssertionError
             assert isinstance(exc_info.exc_value, AssertionError)
-            expected = [(8, 10, func_two_first), (13, 16, func_two_second)]
-            for depth, (frame, (first_ln, ln, func)) in enumerate(
+            expected = [
+                (
+                    8,
+                    10,
+                    func_two_first,
+                    "return func_two_second(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
+                ),
+                (13, 16, func_two_second, self._assert_code_line),
+            ]
+            for depth, (frame, (first_ln, ln, func, code_ln)) in enumerate(
                 zip(exc_info.frames, expected, strict=True), start=1
             ):
-                self._assert(frame, depth, 2, "two.py", first_ln, ln, func, result)
+                self._assert(
+                    frame, depth, 2, func, "two.py", first_ln, ln, code_ln, result
+                )
         else:  # pragma: no cover
             msg = "Expected an assertion"
             raise AssertionError(msg)
@@ -125,17 +137,37 @@ class TestGetExcTraceInfo:
             assert exc_info.exc_type is AssertionError
             assert isinstance(exc_info.exc_value, AssertionError)
             expected = [
-                (21, 25, func_decorated_first),
-                (28, 33, func_decorated_second),
-                (36, 41, func_decorated_third),
-                (44, 50, func_decorated_fourth),
-                (53, 63, func_decorated_fifth),
+                (
+                    21,
+                    25,
+                    func_decorated_first,
+                    "return func_decorated_second(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
+                ),
+                (
+                    28,
+                    33,
+                    func_decorated_second,
+                    "return func_decorated_third(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
+                ),
+                (
+                    36,
+                    41,
+                    func_decorated_third,
+                    "return func_decorated_fourth(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
+                ),
+                (
+                    44,
+                    50,
+                    func_decorated_fourth,
+                    "return func_decorated_fifth(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
+                ),
+                (53, 63, func_decorated_fifth, self._assert_code_line),
             ]
-            for depth, (frame, (first_ln, ln, func)) in enumerate(
+            for depth, (frame, (first_ln, ln, func, code_ln)) in enumerate(
                 zip(exc_info.frames, expected, strict=True), start=1
             ):
                 self._assert(
-                    frame, depth, 5, "decorated.py", first_ln, ln, func, result
+                    frame, depth, 5, func, "decorated.py", first_ln, ln, code_ln, result
                 )
         else:  # pragma: no cover
             msg = "Expected an assertion"
@@ -151,7 +183,17 @@ class TestGetExcTraceInfo:
             assert exc_info.exc_type is AssertionError
             assert isinstance(exc_info.exc_value, AssertionError)
             frame = one(exc_info.frames)
-            self._assert(frame, 1, 1, "async_.py", 9, 13, func_async, result)
+            self._assert(
+                frame,
+                1,
+                1,
+                func_async,
+                "async_.py",
+                9,
+                13,
+                self._assert_code_line,
+                result,
+            )
         else:  # pragma: no cover
             msg = "Expected an assertion"
             raise AssertionError(msg)
@@ -182,6 +224,7 @@ class TestGetExcTraceInfo:
                     kwargs['d'] = 6
                     kwargs['e'] = 7
                     kwargs['f'] = -36
+                    >> return func_two_second(2 * a, 2 * b, *args, c=2 * c, **kwargs)
 
                   2/2. func_two_second
                     args[0] = 2
@@ -192,8 +235,8 @@ class TestGetExcTraceInfo:
                     kwargs['d'] = 6
                     kwargs['e'] = 7
                     kwargs['f'] = -36
-
-                  AssertionError: Result (0) must be positive
+                    >> assert result > 0, f"Result ({result}) must be positive"
+                    >> AssertionError: Result (0) must be positive
             """)
             assert result == expected
         else:  # pragma: no cover
@@ -205,23 +248,29 @@ class TestGetExcTraceInfo:
         frame: _FrameInfo,
         depth: int,
         max_depth: int,
+        func: Callable[..., Any],
         filename: str,
         first_line_num: int,
         line_num: int,
-        func: Callable[..., Any],
+        code_line: str,
         result: int,
         /,
     ) -> None:
         assert frame.depth == depth
         assert frame.max_depth == max_depth
+        assert frame.func.__name__ == func.__name__
         assert frame.filename.parts[-2:] == ("test_sys_funcs", filename)
         assert frame.first_line_num == first_line_num
         assert frame.line_num == line_num
-        assert frame.func.__name__ == func.__name__
+        assert frame.code_line == code_line
         assert frame.args == (2 ** (depth - 1), 2**depth, 3, 4)
         assert frame.kwargs == {"c": 5 * 2 ** (depth - 1), "d": 6, "e": 7, "f": -result}
         assert frame.result is sentinel
         assert isinstance(frame.error, AssertionError)
+
+    @property
+    def _assert_code_line(self) -> str:
+        return 'assert result > 0, f"Result ({result}) must be positive"'
 
 
 class TestVersionMajorMinor:
