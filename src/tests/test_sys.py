@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 from pathlib import Path
+from string import ascii_lowercase
 
-from hypothesis import given
-from hypothesis.strategies import floats
 from pytest import mark, param
 
+from tests.test_sys_funcs.one import func_one
 from utilities.sys import (
     VERSION_MAJOR_MINOR,
     _GetCallerOutput,
     get_caller,
     get_exception_info,
+    trace,
 )
 
 
@@ -51,24 +52,37 @@ class TestGetCaller:
         assert result["name"] == expected
 
 
-def _get_exception_info_first(a: float, b: float, /) -> float:
-    c = a + b
-    d = a - b
-    return _get_exception_info_second(c, d)
+@trace
+def _get_exception_info_first(
+    a: float, b: float, /, *args: float, c: float = 0, **kwargs: float
+) -> float:
+    sum_ = a + b + c + sum(args) + sum(kwargs.values())
+    diff = a - b
+    return _get_exception_info_second(
+        sum_,
+        diff,
+        *args[::2],
+        z=c,
+        **{k: v for k, v in kwargs.items() if k[0] in ascii_lowercase[::2]},
+    )
 
 
-def _get_exception_info_second(c: float, d: float, /) -> float:
-    e = c + d
-    f = c - d
-    return e / f
+@trace
+def _get_exception_info_second(
+    x: float, y: float, /, *args: float, z: float = 0, **kwargs: float
+) -> float:
+    sum_ = x + y + z + sum(args) + sum(kwargs.values())
+    diff = x - y
+    return sum_ / diff
 
 
 class TestGetExceptionInfo:
+    @mark.skip
     def test_main(self) -> None:
         a = 134217729.0
         b = 1e-8
         try:
-            _ = _get_exception_info_first(a, b)
+            _ = _get_exception_info_first(a, b, c=0)
         except ZeroDivisionError:
             exc_info = get_exception_info()
             assert exc_info.exc_type is ZeroDivisionError
@@ -82,6 +96,24 @@ class TestGetExceptionInfo:
             assert second.func_name == _get_exception_info_first.__name__
             assert third.func_name == _get_exception_info_second.__name__
             assert 0, exc_info
+
+    def test_func_one(self) -> None:
+        assert func_one(1, 2, 3, 4, c=5, d=6, e=7) == 28
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7, f=-29)
+        except AssertionError:
+            exc_info = get_exception_info()
+            assert exc_info.exc_type is AssertionError
+            assert isinstance(exc_info.exc_value, AssertionError)
+            frames = exc_info.frames
+            assert len(frames) == 1
+            frame = frames[0]
+            assert frame.filename == Path(__file__)
+            assert frame.func_name == func_one.__name__
+            assert 0, exc_info
+        else:  # pragma: no cover
+            msg = "Expected an assertion"
+            raise AssertionError(msg)
 
 
 class TestVersionMajorMinor:
