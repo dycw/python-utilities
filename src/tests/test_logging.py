@@ -18,6 +18,7 @@ from utilities.logging import (
 )
 from utilities.pathlib import temp_cwd
 from utilities.pytest import skipif_windows
+from utilities.typing import get_args
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -34,14 +35,14 @@ class TestGetLoggingLevelNumber:
     @mark.parametrize(
         ("level", "expected"),
         [
-            param(LogLevel.DEBUG, 10),
-            param(LogLevel.INFO, 20),
-            param(LogLevel.WARNING, 30),
-            param(LogLevel.ERROR, 40),
-            param(LogLevel.CRITICAL, 50),
+            param("DEBUG", 10),
+            param("INFO", 20),
+            param("WARNING", 30),
+            param("ERROR", 40),
+            param("CRITICAL", 50),
         ],
     )
-    def test_main(self, *, level: str, expected: int) -> None:
+    def test_main(self, *, level: LogLevel, expected: int) -> None:
         assert get_logging_level_number(level) == expected
 
     def test_error(self) -> None:
@@ -53,7 +54,7 @@ class TestGetLoggingLevelNumber:
 
 class TestLogLevel:
     def test_main(self) -> None:
-        assert len(LogLevel) == 5
+        assert len(get_args(LogLevel)) == 5
 
 
 class TestSetupLogging:
