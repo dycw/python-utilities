@@ -81,7 +81,7 @@ class _GetExcTraceInfoOutput:
             for k, v in frame.kwargs.items():
                 yield indent(f"kwargs[{k!r}] = {pretty_repr(v)}", self._prefix2)
             yield indent(f">> {frame.code_line}", self._prefix2)
-            if location:
+            if location:  # pragma: no cover
                 yield indent(f"   ({filename}:{frame.line_num})", self._prefix2)
             if frame.depth == frame.max_depth:
                 yield indent(error, self._prefix2)
