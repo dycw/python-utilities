@@ -4,6 +4,7 @@ from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
+from linecache import getline
 from pathlib import Path
 from sys import _getframe, exc_info, version_info
 from textwrap import indent
@@ -110,10 +111,11 @@ class _FrameInfo:
 
     depth: int
     max_depth: int
+    func: Callable[..., Any]
     filename: Path
     first_line_num: int
     line_num: int
-    func: Callable[..., Any]
+    code_line: str
     args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
     result: Any | Sentinel = sentinel
@@ -129,10 +131,11 @@ def get_exc_trace_info() -> _GetExcTraceInfoOutput:
         _FrameInfo(
             depth=i,
             max_depth=len(merged),
+            func=f.func,
             filename=f.filename,
             first_line_num=f.first_line_num,
             line_num=f.line_num,
-            func=f.func,
+            code_line=f.code_line,
             args=f.args,
             kwargs=f.kwargs,
             result=f.result,
@@ -147,10 +150,11 @@ def get_exc_trace_info() -> _GetExcTraceInfoOutput:
 class _GetExcTraceInfoRaw:
     """A collection of raw frame data."""
 
+    func_name: str
     filename: Path
     first_line_num: int
     line_num: int
-    func_name: str
+    code_line: str
     trace: _TraceData | None = None
 
 
@@ -162,10 +166,11 @@ def _get_exc_trace_info_yield_raw(
         frame = traceback.tb_frame
         code = frame.f_code
         yield _GetExcTraceInfoRaw(
+            func_name=code.co_name,
             filename=Path(code.co_filename),
             first_line_num=code.co_firstlineno,
             line_num=traceback.tb_lineno,
-            func_name=code.co_name,
+            code_line=getline(code.co_filename, traceback.tb_lineno).strip(),
             trace=frame.f_locals.get(_TRACE_DATA),
         )
         traceback = traceback.tb_next
@@ -175,10 +180,11 @@ def _get_exc_trace_info_yield_raw(
 class _GetExcTraceInfoMerged:
     """A collection of unnumbered frame data."""
 
+    func: Callable[..., Any]
     filename: Path
     first_line_num: int
     line_num: int
-    func: Callable[..., Any]
+    code_line: str
     args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
     result: Any | Sentinel = sentinel
@@ -204,10 +210,11 @@ def _get_exc_trace_info_yield_merged(
         if next_.trace is None:
             return
         yield _GetExcTraceInfoMerged(
+            func=next_.trace.func,
             filename=curr.filename,
             first_line_num=curr.first_line_num,
             line_num=curr.line_num,
-            func=next_.trace.func,
+            code_line=curr.code_line,
             args=next_.trace.args,
             kwargs=next_.trace.kwargs,
             result=next_.trace.result,
