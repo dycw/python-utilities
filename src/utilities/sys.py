@@ -66,7 +66,7 @@ class _GetExcTraceInfoOutput:
                 f"{frame.depth}. {self._pretty_func(frame, location=location)}",
                 self._prefix1,
             )
-        yield from self._pretty_yield_error()
+        yield indent(f">> {self._pretty_error()}", self._prefix1)
         yield ""
         yield "Traced frames:"
         for frame in self.frames:
@@ -80,7 +80,7 @@ class _GetExcTraceInfoOutput:
             for k, v in frame.kwargs.items():
                 yield indent(f"kwargs[{k!r}] = {pretty_repr(v)}", self._prefix2)
         yield ""
-        yield from self._pretty_yield_error()
+        yield indent(self._pretty_error(), self._prefix1)
 
     @property
     def _prefix1(self) -> str:
@@ -97,11 +97,11 @@ class _GetExcTraceInfoOutput:
             return name
         return f"{name} ({frame.filename}:{frame.first_line_num}->{frame.line_num})"  # pragma: no cover
 
-    def _pretty_yield_error(self) -> str:
+    def _pretty_error(self) -> str:
         """Pretty print the error."""
         if (self.exc_type is None) or (self.exc_value is None):  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{self.exc_type=}", f"{self.exc_value=}"])
-        return indent(f"{self.exc_type.__name__}: {self.exc_value}", self._prefix1)
+        return f"{self.exc_type.__name__}: {self.exc_value}"
 
 
 @dataclass(kw_only=True)

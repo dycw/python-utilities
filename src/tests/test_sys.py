@@ -193,7 +193,7 @@ class TestGetExcTraceInfo:
                     kwargs['e'] = 7
                     kwargs['f'] = -36
 
-                AssertionError: Result (0) must be positive
+                  AssertionError: Result (0) must be positive
             """)
             assert result == expected
         else:  # pragma: no cover
