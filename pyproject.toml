@@ -145,7 +145,6 @@ zzz-test-hypothesis = [
   "sqlalchemy >= 2.0.36, < 2.1",
   "whenever >= 0.6.12, < 0.7",
 ]
-zzz-test-inspect = []
 zzz-test-ipython = ["ipython >= 8.24.0, < 8.25"]
 zzz-test-iterables = []
 zzz-test-jupyter = [

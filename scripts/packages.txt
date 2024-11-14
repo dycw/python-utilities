@@ -22,7 +22,6 @@ hashlib
 http
 humps
 hypothesis
-inspect
 ipython
 iterables
 jupyter
