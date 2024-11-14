@@ -136,31 +136,30 @@ def _get_exc_trace_info_yield_merged(
 ) -> Iterator[_GetExcTraceInfoMerged]:
     """Yield the merged frame info."""
     raw_rev = list(reversed(list(raw)))
-    while len(raw_rev) >= 1:
+    while True:
         try:
             curr = raw_rev.pop(0)
-        except IndexError:
+        except IndexError:  # pragma: no cover
             return
-        next_: _GetExcTraceInfoRaw | None = None
         if len(raw_rev) == 0:
             return
+        next_: _GetExcTraceInfoRaw | None = None
         while (len(raw_rev) >= 1) and ((next_ is None) or (next_.trace is None)):
-            try:
-                next_ = raw_rev.pop(0)
-            except IndexError:
-                return
-        next_trace = ensure_not_none(ensure_not_none(next_).trace)
+            next_ = raw_rev.pop(0)
+        next_ = ensure_not_none(next_)
+        if next_.trace is None:
+            return
         yield _GetExcTraceInfoMerged(
             filename=curr.filename,
             first_line_num=curr.first_line_num,
             line_num=curr.line_num,
-            func=next_trace.func,
-            args=next_trace.args,
-            kwargs=next_trace.kwargs,
-            result=next_trace.result,
-            error=next_trace.error,
+            func=next_.trace.func,
+            args=next_.trace.args,
+            kwargs=next_.trace.kwargs,
+            result=next_.trace.result,
+            error=next_.trace.error,
         )
-        raw_rev = raw_rev[next_trace.above :]
+        raw_rev = raw_rev[next_.trace.above :]
 
 
 @dataclass(kw_only=True, slots=True)

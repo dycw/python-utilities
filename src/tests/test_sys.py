@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from pytest import mark, param
 
+from tests.test_sys_funcs.async_ import func_async
 from tests.test_sys_funcs.decorated import (
     func_decorated_fifth,
     func_decorated_first,
@@ -13,6 +14,7 @@ from tests.test_sys_funcs.decorated import (
 )
 from tests.test_sys_funcs.one import func_one
 from tests.test_sys_funcs.two import func_two_first, func_two_second
+from tests.test_sys_funcs.zero import func_zero
 from utilities.iterables import one
 from utilities.sentinel import sentinel
 from utilities.sys import (
@@ -65,6 +67,20 @@ class TestGetCaller:
 
 
 class TestGetExcTraceInfo:
+    def test_func_zero(self) -> None:
+        result = func_zero(1, 2, 3, 4, c=5, d=6, e=7)
+        assert result == 28
+        try:
+            _ = func_zero(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
+        except AssertionError:
+            exc_info = get_exc_trace_info()
+            assert exc_info.exc_type is AssertionError
+            assert isinstance(exc_info.exc_value, AssertionError)
+            assert exc_info.frames == []
+        else:  # pragma: no cover
+            msg = "Expected an assertion"
+            raise AssertionError(msg)
+
     def test_func_one(self) -> None:
         result = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         assert result == 28
@@ -75,16 +91,7 @@ class TestGetExcTraceInfo:
             assert exc_info.exc_type is AssertionError
             assert isinstance(exc_info.exc_value, AssertionError)
             frame = one(exc_info.frames)
-            assert frame.depth == 1
-            assert frame.max_depth == 1
-            assert frame.filename.parts[-2:] == ("test_sys_funcs", "one.py")
-            assert frame.first_line_num == 8
-            assert frame.line_num == 11
-            assert frame.func.__name__ == func_one.__name__
-            assert frame.args == (1, 2, 3, 4)
-            assert frame.kwargs == {"c": 5, "d": 6, "e": 7, "f": -result}
-            assert frame.result is sentinel
-            assert isinstance(frame.error, AssertionError)
+            self._assert(frame, 1, 1, "one.py", 8, 11, func_one, result)
         else:  # pragma: no cover
             msg = "Expected an assertion"
             raise AssertionError(msg)
@@ -129,6 +136,21 @@ class TestGetExcTraceInfo:
                 self._assert(
                     frame, depth, 5, "decorated.py", first_ln, ln, func, result
                 )
+        else:  # pragma: no cover
+            msg = "Expected an assertion"
+            raise AssertionError(msg)
+
+    async def test_func_async(self) -> None:
+        result = await func_async(1, 2, 3, 4, c=5, d=6, e=7)
+        assert result == 28
+        try:
+            _ = await func_async(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
+        except AssertionError:
+            exc_info = get_exc_trace_info()
+            assert exc_info.exc_type is AssertionError
+            assert isinstance(exc_info.exc_value, AssertionError)
+            frame = one(exc_info.frames)
+            self._assert(frame, 1, 1, "async_.py", 9, 13, func_async, result)
         else:  # pragma: no cover
             msg = "Expected an assertion"
             raise AssertionError(msg)
