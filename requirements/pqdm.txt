@@ -4,7 +4,7 @@ attrs==24.2.0
     # via hypothesis
 bounded-pool-executor==0.0.3
     # via pqdm
-coverage==7.6.4
+coverage==7.6.5
     # via pytest-cov
 hypothesis==6.118.8
     # via dycw-utilities (pyproject.toml)
