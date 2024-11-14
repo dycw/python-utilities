@@ -239,7 +239,10 @@ def trace(func: _F | None = None, /, *, above: int = 0) -> _F | Callable[[_F], _
 
         @wraps(func)
         def trace_sync(*args: Any, **kwargs: Any) -> Any:
-            trace_data = _trace_make_data(func, above, *args, **kwargs)
+            try:
+                trace_data = _trace_make_data(func, above, *args, **kwargs)
+            except TypeError:
+                return func(*args, **kwargs)
             try:
                 result = trace_data.result = func(*args, **kwargs)
             except Exception as error:
@@ -253,7 +256,10 @@ def trace(func: _F | None = None, /, *, above: int = 0) -> _F | Callable[[_F], _
 
     @wraps(func)
     async def log_call_async(*args: Any, **kwargs: Any) -> Any:
-        trace_data = _trace_make_data(func, above, *args, **kwargs)
+        try:
+            trace_data = _trace_make_data(func, above, *args, **kwargs)
+        except TypeError:
+            return await func(*args, **kwargs)
         try:
             result = trace_data.result = await func(*args, **kwargs)
         except Exception as error:

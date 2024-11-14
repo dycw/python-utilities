@@ -4,7 +4,14 @@ from utilities.sys import trace
 
 
 @trace
-def func_error(a: int, b: int, /, c: int = 0) -> int:
-    result = sum([a, b, c])
+def func_error_sync(a: int, b: int, /) -> int:
+    result = sum([a, b])
+    assert result > 0, f"Result ({result}) must be positive"
+    return result
+
+
+@trace
+async def func_error_async(a: int, b: int, /) -> int:
+    result = sum([a, b])
     assert result > 0, f"Result ({result}) must be positive"
     return result

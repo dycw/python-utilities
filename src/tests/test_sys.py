@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from re import escape
 from typing import TYPE_CHECKING, Any
 
-from pytest import mark, param
+from pytest import mark, param, raises
 
 from tests.test_sys_funcs.async_ import func_async
 from tests.test_sys_funcs.decorated import (
@@ -12,6 +13,7 @@ from tests.test_sys_funcs.decorated import (
     func_decorated_second,
     func_decorated_third,
 )
+from tests.test_sys_funcs.error import func_error_async, func_error_sync
 from tests.test_sys_funcs.one import func_one
 from tests.test_sys_funcs.two import func_two_first, func_two_second
 from tests.test_sys_funcs.zero import func_zero
@@ -242,6 +244,24 @@ class TestGetExcTraceInfo:
         else:  # pragma: no cover
             msg = "Expected an assertion"
             raise AssertionError(msg)
+
+    def test_error_sync(self) -> None:
+        with raises(
+            TypeError,
+            match=escape(
+                "func_error_sync() missing 1 required positional argument: 'b'"
+            ),
+        ):
+            _ = func_error_sync(1)  # pyright: ignore[reportCallIssue]
+
+    async def test_error_async(self) -> None:
+        with raises(
+            TypeError,
+            match=escape(
+                "func_error_async() takes 2 positional arguments but 3 were given"
+            ),
+        ):
+            _ = await func_error_async(1, 2, 3)  # pyright: ignore[reportCallIssue]
 
     def _assert(
         self,
