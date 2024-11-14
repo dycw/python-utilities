@@ -137,9 +137,9 @@ class TestRedisHashMapKey:
     async def test_main(self, *, data: DataObject, key: int, value: bool) -> None:
         async with yield_test_redis(data) as test:
             hm_key = redis_hash_map_key(test.key, int, bool)
-            assert await hm_key.hget(test.redis, key) is None
-            _ = await hm_key.hset(test.redis, key, value)
-            assert await hm_key.hget(test.redis, key) is value
+            assert await hm_key.get(test.redis, key) is None
+            _ = await hm_key.set(test.redis, key, value)
+            assert await hm_key.get(test.redis, key) is value
 
     @FLAKY
     @given(data=data(), key=booleans() | int64s(), value=booleans())
@@ -149,9 +149,9 @@ class TestRedisHashMapKey:
     ) -> None:
         async with yield_test_redis(data) as test:
             hm_key = redis_hash_map_key(test.key, (bool, int), bool)
-            assert await hm_key.hget(test.redis, key) is None
-            _ = await hm_key.hset(test.redis, key, value)
-            assert await hm_key.hget(test.redis, key) is value
+            assert await hm_key.get(test.redis, key) is None
+            _ = await hm_key.set(test.redis, key, value)
+            assert await hm_key.get(test.redis, key) is value
 
     @FLAKY
     @given(data=data(), value=booleans())
@@ -164,9 +164,9 @@ class TestRedisHashMapKey:
             hm_key = redis_hash_map_key(
                 test.key, Sentinel, bool, key_serializer=serializer
             )
-            assert await hm_key.hget(test.redis, sentinel) is None
-            _ = await hm_key.hset(test.redis, sentinel, value)
-            assert await hm_key.hget(test.redis, sentinel) is value
+            assert await hm_key.get(test.redis, sentinel) is None
+            _ = await hm_key.set(test.redis, sentinel, value)
+            assert await hm_key.get(test.redis, sentinel) is value
 
     @FLAKY
     @given(data=data(), key=int64s(), value=int64s() | booleans())
@@ -176,9 +176,9 @@ class TestRedisHashMapKey:
     ) -> None:
         async with yield_test_redis(data) as test:
             hm_key = redis_hash_map_key(test.key, int, (bool, int))
-            assert await hm_key.hget(test.redis, key) is None
-            _ = await hm_key.hset(test.redis, key, value)
-            assert await hm_key.hget(test.redis, key) == value
+            assert await hm_key.get(test.redis, key) is None
+            _ = await hm_key.set(test.redis, key, value)
+            assert await hm_key.get(test.redis, key) == value
 
     @FLAKY
     @given(data=data(), key=int64s())
@@ -199,9 +199,30 @@ class TestRedisHashMapKey:
                 value_serializer=serializer,
                 value_deserializer=deserializer,
             )
-            assert await hm_key.hget(test.redis, key) is None
-            _ = await hm_key.hset(test.redis, key, sentinel)
-            assert await hm_key.hget(test.redis, key) is sentinel
+            assert await hm_key.get(test.redis, key) is None
+            _ = await hm_key.set(test.redis, key, sentinel)
+            assert await hm_key.get(test.redis, key) is sentinel
+
+    @FLAKY
+    @given(data=data(), key=int64s(), value=booleans())
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_delete(self, *, data: DataObject, key: int, value: bool) -> None:
+        async with yield_test_redis(data) as test:
+            hm_key = redis_hash_map_key(test.key, int, bool)
+            _ = await hm_key.set(test.redis, key, value)
+            assert await hm_key.get(test.redis, key) is value
+            _ = await hm_key.delete(test.redis, key)
+            assert await hm_key.get(test.redis, key) is None
+
+    @FLAKY
+    @given(data=data(), key=int64s(), value=booleans())
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_exists(self, *, data: DataObject, key: int, value: bool) -> None:
+        async with yield_test_redis(data) as test:
+            hm_key = redis_hash_map_key(test.key, int, bool)
+            assert not (await hm_key.exists(test.redis, key))
+            _ = await hm_key.set(test.redis, key, value)
+            assert await hm_key.exists(test.redis, key)
 
 
 class TestRedisKey:
@@ -254,6 +275,27 @@ class TestRedisKey:
                 SerializeError, match="Unable to serialize object of type 'Sentinel'"
             ):
                 _ = await key.set(test.redis, sentinel)
+
+    @FLAKY
+    @given(data=data(), value=booleans())
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_delete(self, *, data: DataObject, value: bool) -> None:
+        async with yield_test_redis(data) as test:
+            key = redis_key(test.key, bool)
+            _ = await key.set(test.redis, value)
+            assert await key.get(test.redis) is value
+            _ = await key.delete(test.redis)
+            assert await key.get(test.redis) is None
+
+    @FLAKY
+    @given(data=data(), value=booleans())
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_exists(self, *, data: DataObject, value: bool) -> None:
+        async with yield_test_redis(data) as test:
+            key = redis_key(test.key, bool)
+            assert not (await key.exists(test.redis))
+            _ = await key.set(test.redis, value)
+            assert await key.exists(test.redis)
 
 
 class TestYieldClient:
