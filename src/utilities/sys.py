@@ -171,30 +171,25 @@ class _TraceData:
     args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
     above: int = 0
-    below: int = 0
     result: Any | Sentinel = sentinel
     error: Exception | None = None
 
 
 @overload
-def trace(func: _F, /, *, above: int = ..., below: int = ...) -> _F: ...
+def trace(func: _F, /, *, above: int = ...) -> _F: ...
 @overload
-def trace(
-    func: None = None, /, *, above: int = ..., below: int = ...
-) -> Callable[[_F], _F]: ...
-def trace(
-    func: _F | None = None, /, *, above: int = 0, below: int = 0
-) -> _F | Callable[[_F], _F]:
+def trace(func: None = None, /, *, above: int = ...) -> Callable[[_F], _F]: ...
+def trace(func: _F | None = None, /, *, above: int = 0) -> _F | Callable[[_F], _F]:
     """Trace a function call."""
     if func is None:
-        result = partial(trace, above=above, below=below)
+        result = partial(trace, above=above)
         return cast(Callable[[_F], _F], result)
 
     if not iscoroutinefunction(func):
 
         @wraps(func)
         def trace_sync(*args: Any, **kwargs: Any) -> Any:
-            trace_data = _trace_make_data(func, above, below, *args, **kwargs)
+            trace_data = _trace_make_data(func, above, *args, **kwargs)
             try:
                 result = trace_data.result = func(*args, **kwargs)
             except Exception as error:
@@ -208,7 +203,7 @@ def trace(
 
     @wraps(func)
     async def log_call_async(*args: Any, **kwargs: Any) -> Any:
-        trace_data = _trace_make_data(func, above, below, *args, **kwargs)
+        trace_data = _trace_make_data(func, above, *args, **kwargs)
         try:
             result = trace_data.result = await func(*args, **kwargs)
         except Exception as error:
@@ -222,16 +217,12 @@ def trace(
 
 
 def _trace_make_data(
-    func: Callable[..., Any], above: int = 0, below: int = 0, *args: Any, **kwargs: Any
+    func: Callable[..., Any], above: int = 0, *args: Any, **kwargs: Any
 ) -> _TraceData:
     """Make the initial trace data."""
     bound_args = signature(func).bind(*args, **kwargs)
     return _TraceData(
-        func=func,
-        args=bound_args.args,
-        kwargs=bound_args.kwargs,
-        above=above,
-        below=below,
+        func=func, args=bound_args.args, kwargs=bound_args.kwargs, above=above
     )
 
 
