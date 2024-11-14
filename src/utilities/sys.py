@@ -60,6 +60,10 @@ class _GetExcTraceInfoOutput:
         """Yield the rows for pretty printing the exception."""
         from rich.pretty import pretty_repr
 
+        if (self.exc_type is None) or (self.exc_value is None):  # pragma: no cover
+            raise ImpossibleCaseError(case=[f"{self.exc_type=}", f"{self.exc_value=}"])
+        error = f">> {self.exc_type.__name__}: {self.exc_value}"
+
         yield "Error running:"
         yield ""
         for frame in self.frames:
@@ -67,7 +71,7 @@ class _GetExcTraceInfoOutput:
                 f"{frame.depth}. {self._pretty_func(frame, location=location)}",
                 self._prefix1,
             )
-        yield indent(f">> {self._pretty_error()}", self._prefix1)
+        yield indent(error, self._prefix1)
         yield ""
         yield "Traced frames:"
         for frame in self.frames:
@@ -80,8 +84,9 @@ class _GetExcTraceInfoOutput:
                 yield indent(f"args[{i}] = {pretty_repr(arg)}", self._prefix2)
             for k, v in frame.kwargs.items():
                 yield indent(f"kwargs[{k!r}] = {pretty_repr(v)}", self._prefix2)
-        yield ""
-        yield indent(self._pretty_error(), self._prefix1)
+            yield indent(f">> {frame.code_line}", self._prefix2)
+            if frame.depth == frame.max_depth:
+                yield indent(error, self._prefix2)
 
     @property
     def _prefix1(self) -> str:
@@ -97,12 +102,6 @@ class _GetExcTraceInfoOutput:
         if not location:
             return name
         return f"{name} ({frame.filename}:{frame.first_line_num}->{frame.line_num})"  # pragma: no cover
-
-    def _pretty_error(self) -> str:
-        """Pretty print the error."""
-        if (self.exc_type is None) or (self.exc_value is None):  # pragma: no cover
-            raise ImpossibleCaseError(case=[f"{self.exc_type=}", f"{self.exc_value=}"])
-        return f"{self.exc_type.__name__}: {self.exc_value}"
 
 
 @dataclass(kw_only=True)

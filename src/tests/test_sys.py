@@ -224,6 +224,7 @@ class TestGetExcTraceInfo:
                     kwargs['d'] = 6
                     kwargs['e'] = 7
                     kwargs['f'] = -36
+                    >> return func_two_second(2 * a, 2 * b, *args, c=2 * c, **kwargs)
 
                   2/2. func_two_second
                     args[0] = 2
@@ -234,8 +235,8 @@ class TestGetExcTraceInfo:
                     kwargs['d'] = 6
                     kwargs['e'] = 7
                     kwargs['f'] = -36
-
-                  AssertionError: Result (0) must be positive
+                    >> assert result > 0, f"Result ({result}) must be positive"
+                    >> AssertionError: Result (0) must be positive
             """)
             assert result == expected
         else:  # pragma: no cover
