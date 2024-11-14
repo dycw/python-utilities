@@ -61,7 +61,7 @@ def get_logging_level_number(level: LogLevel, /) -> int:
 
 @dataclass(kw_only=True, slots=True)
 class GetLoggingLevelNumberError(Exception):
-    level: str
+    level: LogLevel
 
     @override
     def __str__(self) -> str:
