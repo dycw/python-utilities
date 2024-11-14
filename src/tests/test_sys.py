@@ -24,6 +24,7 @@ from utilities.sys import (
     get_caller,
     get_exc_trace_info,
 )
+from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -151,6 +152,50 @@ class TestGetExcTraceInfo:
             assert isinstance(exc_info.exc_value, AssertionError)
             frame = one(exc_info.frames)
             self._assert(frame, 1, 1, "async_.py", 9, 13, func_async, result)
+        else:  # pragma: no cover
+            msg = "Expected an assertion"
+            raise AssertionError(msg)
+
+    def test_pretty(self) -> None:
+        result = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
+        assert result == 36
+        try:
+            _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
+        except AssertionError:
+            exc_info = get_exc_trace_info()
+            result = exc_info.pretty(location=False)
+            expected = strip_and_dedent("""
+                Error running:
+
+                  1. func_two_first
+                  2. func_two_second
+                  >> AssertionError: Result (0) must be positive
+
+                Traced frames:
+
+                  1/2. func_two_first
+                    args[0] = 1
+                    args[1] = 2
+                    args[2] = 3
+                    args[3] = 4
+                    kwargs['c'] = 5
+                    kwargs['d'] = 6
+                    kwargs['e'] = 7
+                    kwargs['f'] = -36
+
+                  2/2. func_two_second
+                    args[0] = 2
+                    args[1] = 4
+                    args[2] = 3
+                    args[3] = 4
+                    kwargs['c'] = 10
+                    kwargs['d'] = 6
+                    kwargs['e'] = 7
+                    kwargs['f'] = -36
+
+                  AssertionError: Result (0) must be positive
+            """)
+            assert result == expected
         else:  # pragma: no cover
             msg = "Expected an assertion"
             raise AssertionError(msg)

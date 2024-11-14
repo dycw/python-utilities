@@ -6,9 +6,11 @@ from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
 from pathlib import Path
 from sys import _getframe, exc_info, version_info
+from textwrap import indent
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar, cast, overload
 
-from utilities.functions import ensure_not_none
+from utilities.errors import ImpossibleCaseError
+from utilities.functions import ensure_not_none, get_func_name
 from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
@@ -48,6 +50,58 @@ class _GetExcTraceInfoOutput:
     exc_type: type[BaseException] | None = None
     exc_value: BaseException | None = None
     frames: list[_FrameInfo] = field(default_factory=list)
+
+    def pretty(self, *, location: bool = True) -> str:
+        """Pretty print the exception data."""
+        return "\n".join(self._pretty_yield(location=location))
+
+    def _pretty_yield(self, /, *, location: bool = True) -> Iterable[str]:
+        """Yield the rows for pretty printing the exception."""
+        from rich.pretty import pretty_repr
+
+        yield "Error running:"
+        yield ""
+        for frame in self.frames:
+            yield indent(
+                f"{frame.depth}. {self._pretty_func(frame, location=location)}",
+                self._prefix1,
+            )
+        yield indent(f">> {self._pretty_error()}", self._prefix1)
+        yield ""
+        yield "Traced frames:"
+        for frame in self.frames:
+            yield ""
+            yield indent(
+                f"{frame.depth}/{frame.max_depth}. {self._pretty_func(frame, location=location)}",
+                self._prefix1,
+            )
+            for i, arg in enumerate(frame.args):
+                yield indent(f"args[{i}] = {pretty_repr(arg)}", self._prefix2)
+            for k, v in frame.kwargs.items():
+                yield indent(f"kwargs[{k!r}] = {pretty_repr(v)}", self._prefix2)
+        yield ""
+        yield indent(self._pretty_error(), self._prefix1)
+
+    @property
+    def _prefix1(self) -> str:
+        return 2 * " "
+
+    @property
+    def _prefix2(self) -> str:
+        return 2 * self._prefix1
+
+    def _pretty_func(self, frame: _FrameInfo, /, *, location: bool = True) -> str:
+        """Pretty print a function name along with its location."""
+        name = get_func_name(frame.func)
+        if not location:
+            return name
+        return f"{name} ({frame.filename}:{frame.first_line_num}->{frame.line_num})"  # pragma: no cover
+
+    def _pretty_error(self) -> str:
+        """Pretty print the error."""
+        if (self.exc_type is None) or (self.exc_value is None):  # pragma: no cover
+            raise ImpossibleCaseError(case=[f"{self.exc_type=}", f"{self.exc_value=}"])
+        return f"{self.exc_type.__name__}: {self.exc_value}"
 
 
 @dataclass(kw_only=True)
