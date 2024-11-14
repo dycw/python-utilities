@@ -1,73 +1,14 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
 from io import StringIO
-from pathlib import Path
-from subprocess import PIPE, CalledProcessError, CompletedProcess, Popen, check_output
+from subprocess import PIPE, CalledProcessError, CompletedProcess, Popen
 from typing import IO, TYPE_CHECKING, TextIO
 
-from typing_extensions import override
-
 from utilities.functions import ensure_not_none
-from utilities.iterables import OneEmptyError, OneNonUniqueError, one
-from utilities.os import temp_environ
-from utilities.pathlib import PWD
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
-
-    from utilities.types import PathLike
-
-
-def get_shell_output(
-    cmd: str,
-    /,
-    *,
-    cwd: PathLike = PWD,
-    activate: PathLike | None = None,
-    env: Mapping[str, str | None] | None = None,
-) -> str:
-    """Get the output of a shell call.
-
-    Optionally, activate a virtual environment if necessary.
-    """
-    cwd = Path(cwd)
-    if activate is not None:
-        try:
-            activate = one(cwd.rglob("activate"))
-        except OneEmptyError:
-            raise _GetShellOutputEmptyError(cwd=cwd) from None
-        except OneNonUniqueError as error:
-            raise _GetShellOutputNonUniqueError(
-                cwd=cwd, first=error.first, second=error.second
-            ) from None
-        cmd = f"source {activate}; {cmd}"  # skipif-not-windows
-
-    with temp_environ(env):  # skipif-not-windows
-        return check_output(cmd, stderr=PIPE, shell=True, cwd=cwd, text=True)  # noqa: S602
-
-
-@dataclass(kw_only=True, slots=True)
-class GetShellOutputError(Exception):
-    cwd: Path
-
-
-@dataclass(kw_only=True, slots=True)
-class _GetShellOutputEmptyError(GetShellOutputError):
-    @override
-    def __str__(self) -> str:
-        return f"Path {str(self.cwd)!r} contains no 'activate' file"
-
-
-@dataclass(kw_only=True, slots=True)
-class _GetShellOutputNonUniqueError(GetShellOutputError):
-    first: Path
-    second: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Path {str(self.cwd)!r} must contain exactly one 'activate' file; got {str(self.first)!r}, {str(self.second)!r} and perhaps more"
 
 
 def stream_command(
@@ -140,4 +81,4 @@ def _stream_command_write(
         _ = buffer.write(f"{stripped}\n")
 
 
-__all__ = ["GetShellOutputError", "get_shell_output", "stream_command"]
+__all__ = ["stream_command"]
