@@ -42,7 +42,7 @@ def get_caller(*, depth: int = 2) -> _GetCallerOutput:
 
 
 @dataclass(kw_only=True)
-class _GetExceptionOutput:
+class _GetExcTraceInfoOutput:
     """A collection of exception data."""
 
     exc_type: type[BaseException] | None = None
@@ -66,8 +66,8 @@ class _FrameInfo:
     error: Exception | None = None
 
 
-def get_exc_trace_info() -> _GetExceptionOutput:
-    """Get the exception information, extracting trace data if it exists."""
+def get_exc_trace_info() -> _GetExcTraceInfoOutput:
+    """Get the exception information, extracting & merging trace data if it exists."""
     type_, value, traceback = exc_info()
     raw = list(_get_exc_trace_info_yield_raw(traceback=traceback))
     merged = list(_get_exc_trace_info_yield_merged(raw))
@@ -86,7 +86,7 @@ def get_exc_trace_info() -> _GetExceptionOutput:
         )
         for i, f in enumerate(merged[::-1], start=1)
     ]
-    return _GetExceptionOutput(exc_type=type_, exc_value=value, frames=frames)
+    return _GetExcTraceInfoOutput(exc_type=type_, exc_value=value, frames=frames)
 
 
 @dataclass(kw_only=True)
