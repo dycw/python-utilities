@@ -9,6 +9,7 @@ from sys import _getframe, exc_info, version_info
 from textwrap import indent
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar, cast, overload
 
+from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_not_none, get_func_name
 from utilities.sentinel import Sentinel, sentinel
 
@@ -58,30 +59,36 @@ class _GetExcTraceInfoOutput:
         """Yield the rows for pretty printing the exception."""
         from rich.pretty import pretty_repr
 
-        pre1 = 2 * " "
-        pre2 = 2 * pre1
         yield "Error running:"
         yield ""
         for frame in self.frames:
             yield indent(
-                f"{frame.depth}. {self._pretty_func(frame, location=location)}", pre1
+                f"{frame.depth}. {self._pretty_func(frame, location=location)}",
+                self._prefix1,
             )
-        if (self.exc_type is not None) and (  # pragma: no cover
-            self.exc_value is not None
-        ):
-            yield indent(f">> {self.exc_type.__name__}: {self.exc_value}", pre1)
+        yield from self._pretty_yield_error()
         yield ""
         yield "Traced frames:"
         for frame in self.frames:
             yield ""
             yield indent(
                 f"{frame.depth}/{frame.max_depth}. {self._pretty_func(frame, location=location)}",
-                pre1,
+                self._prefix1,
             )
             for i, arg in enumerate(frame.args):
-                yield indent(f"args[{i}] = {pretty_repr(arg)}", pre2)
+                yield indent(f"args[{i}] = {pretty_repr(arg)}", self._prefix2)
             for k, v in frame.kwargs.items():
-                yield indent(f"kwargs[{k!r}] = {pretty_repr(v)}", pre2)
+                yield indent(f"kwargs[{k!r}] = {pretty_repr(v)}", self._prefix2)
+        yield ""
+        yield from self._pretty_yield_error()
+
+    @property
+    def _prefix1(self) -> str:
+        return 2 * " "
+
+    @property
+    def _prefix2(self) -> str:
+        return 2 * self._prefix1
 
     def _pretty_func(self, frame: _FrameInfo, /, *, location: bool = True) -> str:
         """Pretty print a function name along with its location."""
@@ -89,6 +96,12 @@ class _GetExcTraceInfoOutput:
         if not location:
             return name
         return f"{name} ({frame.filename}:{frame.first_line_num}->{frame.line_num})"  # pragma: no cover
+
+    def _pretty_yield_error(self) -> str:
+        """Pretty print the error."""
+        if (self.exc_type is None) or (self.exc_value is None):  # pragma: no cover
+            raise ImpossibleCaseError(case=[f"{self.exc_type=}", f"{self.exc_value=}"])
+        return indent(f"{self.exc_type.__name__}: {self.exc_value}", self._prefix1)
 
 
 @dataclass(kw_only=True)
