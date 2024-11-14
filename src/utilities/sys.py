@@ -67,24 +67,22 @@ class _GetExcTraceInfoOutput:
         yield "Error running:"
         yield ""
         for frame in self.frames:
-            yield indent(
-                f"{frame.depth}. {self._pretty_func(frame, location=location)}",
-                self._prefix1,
-            )
+            yield indent(f"{frame.depth}. {get_func_name(frame.func)}", self._prefix1)
         yield indent(error, self._prefix1)
         yield ""
         yield "Traced frames:"
         for frame in self.frames:
+            name, filename = get_func_name(frame.func), frame.filename
             yield ""
-            yield indent(
-                f"{frame.depth}/{frame.max_depth}. {self._pretty_func(frame, location=location)}",
-                self._prefix1,
-            )
+            desc = f"{name} ({filename}:{frame.first_line_num})" if location else name
+            yield indent(f"{frame.depth}/{frame.max_depth}. {desc}", self._prefix1)
             for i, arg in enumerate(frame.args):
                 yield indent(f"args[{i}] = {pretty_repr(arg)}", self._prefix2)
             for k, v in frame.kwargs.items():
                 yield indent(f"kwargs[{k!r}] = {pretty_repr(v)}", self._prefix2)
             yield indent(f">> {frame.code_line}", self._prefix2)
+            if location:
+                yield indent(f"   ({filename}:{frame.line_num})", self._prefix2)
             if frame.depth == frame.max_depth:
                 yield indent(error, self._prefix2)
 
@@ -95,13 +93,6 @@ class _GetExcTraceInfoOutput:
     @property
     def _prefix2(self) -> str:
         return 2 * self._prefix1
-
-    def _pretty_func(self, frame: _FrameInfo, /, *, location: bool = True) -> str:
-        """Pretty print a function name along with its location."""
-        name = get_func_name(frame.func)
-        if not location:
-            return name
-        return f"{name} ({frame.filename}:{frame.first_line_num}->{frame.line_num})"  # pragma: no cover
 
 
 @dataclass(kw_only=True)
