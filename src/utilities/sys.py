@@ -4,15 +4,11 @@ from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
-from itertools import pairwise
 from pathlib import Path
 from sys import _getframe, exc_info, version_info
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar, cast, overload
 
-from rich.pretty import pretty_repr
-
 from utilities.functions import ensure_not_none
-from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
@@ -148,8 +144,6 @@ def _get_exc_trace_info_yield_merged(
         next_: _GetExcTraceInfoRaw | None = None
         if len(raw_rev) == 0:
             return
-        breakpoint()
-
         while (len(raw_rev) >= 1) and ((next_ is None) or (next_.trace is None)):
             try:
                 next_ = raw_rev.pop(0)
