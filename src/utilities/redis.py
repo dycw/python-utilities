@@ -82,7 +82,19 @@ class _RedisHashMapKey(Generic[_K, _V]):
     value_serializer: Callable[[_V], bytes] | None = None
     value_deserializer: Callable[[bytes], _V] | None = None
 
-    async def hget(self, redis: Redis, key: _K, /) -> _V | None:
+    async def delete(self, redis: Redis, key: _K, /) -> int:
+        """Delete a key from a hashmap in `redis`."""
+        return await cast(  # skipif-ci-and-not-linux
+            Awaitable[int], redis.hdel(self.name, cast(str, key))
+        )
+
+    async def exists(self, redis: Redis, key: _K, /) -> bool:
+        """Check if the key exists in a hashmap in `redis`."""
+        return await cast(  # skipif-ci-and-not-linux
+            Awaitable[bool], redis.hexists(self.name, cast(str, key))
+        )
+
+    async def get(self, redis: Redis, key: _K, /) -> _V | None:
         """Get a value from a hashmap in `redis`."""
         ser_key = self._serialize_key(key)  # skipif-ci-and-not-linux
         result = await cast(  # skipif-ci-and-not-linux
@@ -100,7 +112,7 @@ class _RedisHashMapKey(Generic[_K, _V]):
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{redis=}"])
 
-    async def hset(self, redis: Redis, key: _K, value: _V, /) -> int:
+    async def set(self, redis: Redis, key: _K, value: _V, /) -> int:
         """Set a value in a hashmap in `redis`."""
         ser_key = self._serialize_key(key)  # skipif-ci-and-not-linux
         if self.value_serializer is None:  # skipif-ci-and-not-linux
@@ -253,6 +265,18 @@ class _RedisKey(Generic[_T]):
     serializer: Callable[[_T], bytes] | None = None
     deserializer: Callable[[bytes], _T] | None = None
 
+    async def delete(self, redis: Redis, /) -> int:
+        """Delete the key from `redis`."""
+        return ensure_int(await redis.delete(self.name))  # skipif-ci-and-not-linux
+
+    async def exists(self, redis: Redis, /) -> bool:
+        """Check if the key exists in `redis`."""
+        match ensure_int(await redis.exists(self.name)):  # skipif-ci-and-not-linux
+            case 0 | 1 as value:
+                return bool(value)
+            case _:  # pragma: no cover
+                raise ImpossibleCaseError(case=[f"{redis=}"])
+
     async def get(self, redis: Redis, /) -> _T | None:
         """Get a value from `redis`."""
         match await redis.get(self.name):  # skipif-ci-and-not-linux
@@ -275,7 +299,9 @@ class _RedisKey(Generic[_T]):
             value_use = serialize(value)
         else:  # skipif-ci-and-not-linux
             value_use = self.serializer(value)
-        return await redis.set(self.name, value_use)  # skipif-ci-and-not-linux
+        return ensure_int(  # skipif-ci-and-not-linux
+            await redis.set(self.name, value_use)
+        )
 
 
 @overload
