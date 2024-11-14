@@ -50,7 +50,7 @@ def basic_config(
     )
 
 
-def get_logging_level_number(level: str, /) -> int:
+def get_logging_level_number(level: LogLevel, /) -> int:
     """Get the logging level number."""
     mapping = getLevelNamesMapping()
     try:
