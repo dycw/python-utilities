@@ -140,25 +140,40 @@ uncs/two_deco.py'),
 
 
 #### deco before
+
 @other_deco
 @trace
+
+#outer=1, #inner=0
+# end_to_trace = 1
+# trace2trace = 3
+# trace2trace-1 = 2
+# outer = trace2trace-1-end2trace = 3-1-1=1
+# inner = trace2trace-2-outer = 3-2-1=0
 
 1 test_func_two_deco_before
 2 wrapped 14/16
 3 trace_sync 176/180 [trace]
-4 func_two_deco_before_first 21/26
+4 func_two_deco_before_first 21/26 <---- want
 5 wrapped 14/16
 6 trace_sync 176/180 [trace]
-7 func_two_deco_before_second 29/35
+7 func_two_deco_before_second 29/35 <---- want
 
 #### deco after
 @trace
 @other_deco
 
+#outer=0, #inner=1
+# end2trace = 2
+# trace2trace = 3
+# trace2trace-1 = 2
+# outer = trace2trace-1-end2trace = 3-1-2=0
+# inner = trace2trace-2-outer = 3-2-0=1
+
 1 test_func_two_deco_after
 2 trace_sync 176/180 [trace]
 3 wrapped 14/16
-4 func_two_deco_after_first 39/44
+4 func_two_deco_after_first 39/44 <---- want
 5 trace_sync 176/180 [trace]
 6 wrapped 14/16
-7 func_two_deco_after_second 47/53
+7 func_two_deco_after_second 47/53 <---- want
