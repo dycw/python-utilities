@@ -4,6 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
+from itertools import pairwise
 from pathlib import Path
 from sys import _getframe, exc_info, version_info
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar, cast, overload
@@ -66,7 +67,7 @@ class _RawFrameInfo:
     """A collection of frame data."""
 
     filename: Path
-    func_def_line: int
+    first_line_num: int
     line_num: int
     func_name: str
     trace: _TraceData | None = None
@@ -80,19 +81,31 @@ def get_exception_info() -> _GetExceptionOutput:
     while traceback is not None:
         frame = traceback.tb_frame
         code = frame.f_code
-        raw_frame_infos.append(
-            _RawFrameInfo(
-                filename=Path(code.co_filename),
-                func_def_line=code.co_firstlineno,
-                line_num=traceback.tb_lineno,
-                func_name=code.co_name,
-                trace=frame.f_locals.get(_TRACE_DATA),
-            )
+        raw_frame_info = _RawFrameInfo(
+            filename=Path(code.co_filename),
+            first_line_num=code.co_firstlineno,
+            line_num=traceback.tb_lineno,
+            func_name=code.co_name,
+            trace=frame.f_locals.get(_TRACE_DATA),
         )
+        raw_frame_infos.append(raw_frame_info)
         traceback = traceback.tb_next
-    assert 0, raw_frame_infos
+    frame_infos: list[_FrameInfo] = []
+    for curr, next_ in pairwise(reversed(raw_frame_infos)):
+        if next_.trace is not None:
+            frame_info = _FrameInfo(
+                filename=curr.filename,
+                first_line_num=curr.first_line_num,
+                line_num=curr.line_num,
+                func=next_.trace.func,
+                args=next_.trace.args,
+                kwargs=next_.trace.kwargs,
+                result=next_.trace.result,
+                error=next_.trace.error,
+            )
+            frame_infos.append(frame_info)
     return _GetExceptionOutput(
-        exc_type=exc_type, exc_value=exc_value, frames=raw_frame_infos
+        exc_type=exc_type, exc_value=exc_value, frames=frame_infos[::-1]
     )
 
 
