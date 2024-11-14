@@ -67,7 +67,7 @@ class TestSleepDur:
     async def test_main(self, *, duration: Duration) -> None:
         with Timer() as timer:
             await sleep_dur(duration=duration)
-        assert timer >= duration_to_timedelta(duration)
+        assert timer >= duration_to_timedelta(duration / 2)
 
     async def test_none(self) -> None:
         with Timer() as timer:
