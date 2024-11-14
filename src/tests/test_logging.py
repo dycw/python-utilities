@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from logging import getLogger
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from pytest import LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
@@ -49,7 +49,7 @@ class TestGetLoggingLevelNumber:
         with raises(
             GetLoggingLevelNumberError, match="Invalid logging level: 'invalid'"
         ):
-            _ = get_logging_level_number("invalid")
+            _ = get_logging_level_number(cast(Any, "invalid"))
 
 
 class TestLogLevel:
