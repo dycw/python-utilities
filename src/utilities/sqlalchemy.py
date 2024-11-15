@@ -600,7 +600,7 @@ async def ensure_tables_created_async(
     engine_or_conn: AsyncEngineOrConnection,
     /,
     *tables_or_mapped_classes: TableOrMappedClass,
-    timeout: Duration | None = None,  # noqa: ASYNC109
+    timeout: Duration | None = None,
 ) -> None:
     """Ensure a table/set of tables is/are created."""
     prepared = _ensure_tables_created_prepare(engine_or_conn, *tables_or_mapped_classes)
@@ -671,7 +671,7 @@ def ensure_tables_dropped(
 async def ensure_tables_dropped_async(
     engine_or_conn: AsyncEngineOrConnection,
     *tables_or_mapped_classes: TableOrMappedClass,
-    timeout: Duration | None = None,  # noqa: ASYNC109
+    timeout: Duration | None = None,
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
     prepared = _ensure_tables_dropped_prepare(engine_or_conn, *tables_or_mapped_classes)
@@ -895,7 +895,7 @@ async def insert_items_async(
     *items: _InsertItem,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
-    timeout: Duration | None = None,  # noqa: ASYNC109
+    timeout: Duration | None = None,
 ) -> None:
     """Insert a set of items into a database.
 
@@ -1404,7 +1404,7 @@ async def upsert_items_async(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     selected_or_all: Literal["selected", "all"] = "selected",
     assume_tables_exist: bool = False,
-    timeout: Duration | None = None,  # noqa: ASYNC109
+    timeout: Duration | None = None,
 ) -> None:
     """Upsert a set of items into a database.
 
@@ -1460,10 +1460,7 @@ def yield_connection(engine_or_conn: EngineOrConnection, /) -> Iterator[Connecti
 
 @asynccontextmanager
 async def yield_connection_async(
-    engine_or_conn: AsyncEngineOrConnection,
-    /,
-    *,
-    timeout: Duration | None = None,  # noqa: ASYNC109
+    engine_or_conn: AsyncEngineOrConnection, /, *, timeout: Duration | None = None
 ) -> AsyncIterator[AsyncConnection]:
     """Yield an asynchronous connection."""
     if isinstance(engine_or_conn, AsyncEngine):

@@ -19,6 +19,7 @@ from uuid import UUID, uuid4
 from redis.asyncio import Redis
 from redis.typing import EncodableT
 
+from utilities.asyncio import timeout_dur
 from utilities.datetime import MILLISECOND, SECOND, duration_to_float, get_now
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
@@ -82,24 +83,29 @@ class _RedisHashMapKey(Generic[_K, _V]):
     value_serializer: Callable[[_V], bytes] | None = None
     value_deserializer: Callable[[bytes], _V] | None = None
 
-    async def delete(self, redis: Redis, key: _K, /) -> int:
+    async def delete(
+        self, redis: Redis, key: _K, /, *, timeout: Duration | None = None
+    ) -> int:
         """Delete a key from a hashmap in `redis`."""
-        return await cast(  # skipif-ci-and-not-linux
-            Awaitable[int], redis.hdel(self.name, cast(str, key))
-        )
+        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
+            return await cast(Awaitable[int], redis.hdel(self.name, cast(str, key)))
 
-    async def exists(self, redis: Redis, key: _K, /) -> bool:
+    async def exists(
+        self, redis: Redis, key: _K, /, *, timeout: Duration | None = None
+    ) -> bool:
         """Check if the key exists in a hashmap in `redis`."""
-        return await cast(  # skipif-ci-and-not-linux
-            Awaitable[bool], redis.hexists(self.name, cast(str, key))
-        )
+        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
+            return await cast(Awaitable[bool], redis.hexists(self.name, cast(str, key)))
 
-    async def get(self, redis: Redis, key: _K, /) -> _V | None:
+    async def get(
+        self, redis: Redis, key: _K, /, *, timeout: Duration | None = None
+    ) -> _V | None:
         """Get a value from a hashmap in `redis`."""
         ser_key = self._serialize_key(key)  # skipif-ci-and-not-linux
-        result = await cast(  # skipif-ci-and-not-linux
-            Awaitable[Any], redis.hget(self.name, cast(Any, ser_key))
-        )
+        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
+            result = await cast(
+                Awaitable[Any], redis.hget(self.name, cast(Any, ser_key))
+            )
         match result:  # skipif-ci-and-not-linux
             case None:
                 return None
@@ -112,7 +118,9 @@ class _RedisHashMapKey(Generic[_K, _V]):
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{redis=}"])
 
-    async def set(self, redis: Redis, key: _K, value: _V, /) -> int:
+    async def set(
+        self, redis: Redis, key: _K, value: _V, /, *, timeout: Duration | None = None
+    ) -> int:
         """Set a value in a hashmap in `redis`."""
         ser_key = self._serialize_key(key)  # skipif-ci-and-not-linux
         if self.value_serializer is None:  # skipif-ci-and-not-linux
@@ -121,11 +129,13 @@ class _RedisHashMapKey(Generic[_K, _V]):
             ser_value = serialize(value)
         else:  # skipif-ci-and-not-linux
             ser_value = self.value_serializer(value)
-        result = await cast(  # skipif-ci-and-not-linux
-            Awaitable[int],
-            redis.hset(self.name, key=cast(Any, ser_key), value=cast(Any, ser_value)),
-        )
-        return ensure_int(result)  # skipif-ci-and-not-linux
+        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
+            return await cast(
+                Awaitable[int],
+                redis.hset(
+                    self.name, key=cast(Any, ser_key), value=cast(Any, ser_value)
+                ),
+            )
 
     def _serialize_key(self, key: _K, /) -> bytes:
         """Serialize the key."""
@@ -265,21 +275,28 @@ class _RedisKey(Generic[_T]):
     serializer: Callable[[_T], bytes] | None = None
     deserializer: Callable[[bytes], _T] | None = None
 
-    async def delete(self, redis: Redis, /) -> int:
+    async def delete(self, redis: Redis, /, *, timeout: Duration | None = None) -> int:
         """Delete the key from `redis`."""
-        return ensure_int(await redis.delete(self.name))  # skipif-ci-and-not-linux
+        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
+            return ensure_int(await redis.delete(self.name))
 
-    async def exists(self, redis: Redis, /) -> bool:
+    async def exists(self, redis: Redis, /, *, timeout: Duration | None = None) -> bool:
         """Check if the key exists in `redis`."""
-        match ensure_int(await redis.exists(self.name)):  # skipif-ci-and-not-linux
+        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
+            result = await redis.exists(self.name)
+        match ensure_int(result):  # skipif-ci-and-not-linux
             case 0 | 1 as value:
                 return bool(value)
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{redis=}"])
 
-    async def get(self, redis: Redis, /) -> _T | None:
+    async def get(
+        self, redis: Redis, /, *, timeout: Duration | None = None
+    ) -> _T | None:
         """Get a value from `redis`."""
-        match await redis.get(self.name):  # skipif-ci-and-not-linux
+        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
+            result = await redis.get(self.name)
+        match result:  # skipif-ci-and-not-linux
             case None:
                 return None
             case bytes() as data:
@@ -291,7 +308,9 @@ class _RedisKey(Generic[_T]):
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{redis=}"])
 
-    async def set(self, redis: Redis, value: _T, /) -> int:
+    async def set(
+        self, redis: Redis, value: _T, /, *, timeout: Duration | None = None
+    ) -> int:
         """Set a value in `redis`."""
         if self.serializer is None:  # skipif-ci-and-not-linux
             from utilities.orjson import serialize
@@ -299,9 +318,9 @@ class _RedisKey(Generic[_T]):
             value_use = serialize(value)
         else:  # skipif-ci-and-not-linux
             value_use = self.serializer(value)
-        return ensure_int(  # skipif-ci-and-not-linux
-            await redis.set(self.name, value_use)
-        )
+        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
+            result = await redis.set(self.name, value_use)
+        return ensure_int(result)
 
 
 @overload
@@ -417,7 +436,7 @@ async def subscribe(
     /,
     *,
     deserializer: Callable[[bytes], _T] | None = None,
-    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,  # noqa: ASYNC109
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[Any]:
     """Subscribe to the data of a given channel(s)."""
@@ -438,7 +457,7 @@ async def subscribe_messages(
     channels: MaybeIterable[str],
     /,
     *,
-    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,  # noqa: ASYNC109
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[_RedisMessageSubscribe]:
     """Subscribe to the messages of a given channel(s)."""
