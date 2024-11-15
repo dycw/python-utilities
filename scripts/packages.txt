@@ -9,7 +9,6 @@ cryptography
 cvxpy
 dataclasses
 datetime
-email
 enum
 errors
 eventkit
