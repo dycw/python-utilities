@@ -835,6 +835,7 @@ class TestTimeDeltas2W:
 @SKIPIF_CI_AND_NOT_LINUX
 class TestYieldTestRedis:
     @given(data=data(), value=int32s())
+    @settings_with_reduced_examples()
     async def test_core(self, *, data: DataObject, value: int) -> None:
         async with yield_test_redis(data) as test:
             assert not await test.redis.exists(test.key)

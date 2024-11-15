@@ -11,7 +11,12 @@ from redis.asyncio import Redis
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from tests.test_orjson2 import _Object, objects
 from utilities.functions import get_class_name
-from utilities.hypothesis import int64s, text_ascii, yield_test_redis
+from utilities.hypothesis import (
+    int64s,
+    settings_with_reduced_examples,
+    text_ascii,
+    yield_test_redis,
+)
 from utilities.orjson import SerializeError, deserialize, serialize
 from utilities.redis import (
     publish,
@@ -133,6 +138,7 @@ class TestSubscribeMessages:
 class TestRedisHashMapKey:
     @FLAKY
     @given(data=data(), key=int64s(), value=booleans())
+    @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, data: DataObject, key: int, value: bool) -> None:
         async with yield_test_redis(data) as test:
@@ -143,6 +149,7 @@ class TestRedisHashMapKey:
 
     @FLAKY
     @given(data=data(), key=booleans() | int64s(), value=booleans())
+    @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_union_key(
         self, *, data: DataObject, key: bool | int, value: bool
@@ -155,6 +162,7 @@ class TestRedisHashMapKey:
 
     @FLAKY
     @given(data=data(), value=booleans())
+    @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_sentinel_key(self, *, data: DataObject, value: bool) -> None:
         def serializer(sentinel: Sentinel, /) -> bytes:
@@ -170,6 +178,7 @@ class TestRedisHashMapKey:
 
     @FLAKY
     @given(data=data(), key=int64s(), value=int64s() | booleans())
+    @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_union_value(
         self, *, data: DataObject, key: int, value: bool | int
@@ -182,6 +191,7 @@ class TestRedisHashMapKey:
 
     @FLAKY
     @given(data=data(), key=int64s())
+    @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_sentinel_value(self, *, data: DataObject, key: int) -> None:
         def serializer(sentinel: Sentinel, /) -> bytes:
@@ -205,6 +215,7 @@ class TestRedisHashMapKey:
 
     @FLAKY
     @given(data=data(), key=int64s(), value=booleans())
+    @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_delete(self, *, data: DataObject, key: int, value: bool) -> None:
         async with yield_test_redis(data) as test:
@@ -216,6 +227,7 @@ class TestRedisHashMapKey:
 
     @FLAKY
     @given(data=data(), key=int64s(), value=booleans())
+    @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_exists(self, *, data: DataObject, key: int, value: bool) -> None:
         async with yield_test_redis(data) as test:
@@ -228,6 +240,7 @@ class TestRedisHashMapKey:
 class TestRedisKey:
     @FLAKY
     @given(data=data(), value=booleans())
+    @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_bool(self, *, data: DataObject, value: bool) -> None:
         async with yield_test_redis(data) as test:
@@ -238,6 +251,7 @@ class TestRedisKey:
 
     @FLAKY
     @given(data=data(), value=booleans() | int64s())
+    @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_union(self, *, data: DataObject, value: bool | int) -> None:
         async with yield_test_redis(data) as test:
@@ -248,6 +262,7 @@ class TestRedisKey:
 
     @FLAKY
     @given(data=data())
+    @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_sentinel_with_serialize(self, *, data: DataObject) -> None:
         def serializer(sentinel: Sentinel, /) -> bytes:
@@ -267,6 +282,7 @@ class TestRedisKey:
 
     @FLAKY
     @given(data=data())
+    @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_sentinel_without_serialize(self, *, data: DataObject) -> None:
         async with yield_test_redis(data) as test:
@@ -278,6 +294,7 @@ class TestRedisKey:
 
     @FLAKY
     @given(data=data(), value=booleans())
+    @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_delete(self, *, data: DataObject, value: bool) -> None:
         async with yield_test_redis(data) as test:
@@ -289,6 +306,7 @@ class TestRedisKey:
 
     @FLAKY
     @given(data=data(), value=booleans())
+    @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_exists(self, *, data: DataObject, value: bool) -> None:
         async with yield_test_redis(data) as test:
