@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-scipy --prerelease=disallow --output-file=requirements/scipy.txt --python-version=3.11 pyproject.toml
 attrs==24.2.0
     # via hypothesis
-coverage==7.6.4
+coverage==7.6.5
     # via pytest-cov
 hypothesis==6.118.8
     # via dycw-utilities (pyproject.toml)

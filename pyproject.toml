@@ -62,7 +62,6 @@ dev = [
   "sqlalchemy >= 2.0.36, < 2.1",
   "streamlit >= 1.40.1, < 1.41",
   "tenacity >= 9.0.0, < 9.1",
-  "tqdm >= 4.67.0, < 4.68",
   "treelib >= 1.7.0, < 1.8",
   "tzdata >= 2024.2, < 2024.3",
   "tzlocal >= 5.2, < 5.3",
@@ -239,7 +238,6 @@ zzz-test-tenacity = [
 zzz-test-text = []
 zzz-test-threading = []
 zzz-test-timer = []
-zzz-test-tqdm = ["tqdm >= 4.67.0, < 4.68"]
 zzz-test-tracer = ["treelib >= 1.7.0, < 1.8"]
 zzz-test-treelib = ["treelib >= 1.7.0, < 1.8"]
 zzz-test-types = []

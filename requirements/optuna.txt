@@ -6,7 +6,7 @@ attrs==24.2.0
     # via hypothesis
 colorlog==6.9.0
     # via optuna
-coverage==7.6.4
+coverage==7.6.5
     # via pytest-cov
 hypothesis==6.118.8
     # via dycw-utilities (pyproject.toml)
