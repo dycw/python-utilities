@@ -22,6 +22,8 @@ if TYPE_CHECKING:
 
 VERSION_MAJOR_MINOR = (version_info.major, version_info.minor)
 _F = TypeVar("_F", bound=Callable[..., Any])
+_MAX_WIDTH = 80
+_INDENT_SIZE = 4
 _TRACE_DATA = "_TRACE_DATA"
 
 
@@ -52,13 +54,54 @@ class _GetExcTraceInfoOutput:
     exc_value: BaseException | None = None
     frames: list[_FrameInfo] = field(default_factory=list)
 
-    def pretty(self, *, location: bool = True) -> str:
+    def pretty(
+        self,
+        *,
+        location: bool = True,
+        max_width: int = _MAX_WIDTH,
+        indent_size: int = _INDENT_SIZE,
+        max_length: int | None = None,
+        max_string: int | None = None,
+        max_depth: int | None = None,
+        expand_all: bool = False,
+    ) -> str:
         """Pretty print the exception data."""
-        return "\n".join(self._pretty_yield(location=location))
+        return "\n".join(
+            self._pretty_yield(
+                location=location,
+                max_width=max_width,
+                indent_size=indent_size,
+                max_length=max_length,
+                max_string=max_string,
+                max_depth=max_depth,
+                expand_all=expand_all,
+            )
+        )
 
-    def _pretty_yield(self, /, *, location: bool = True) -> Iterable[str]:
+    def _pretty_yield(
+        self,
+        /,
+        *,
+        location: bool = True,
+        max_width: int = _MAX_WIDTH,
+        indent_size: int = _INDENT_SIZE,
+        max_length: int | None = None,
+        max_string: int | None = None,
+        max_depth: int | None = None,
+        expand_all: bool = False,
+    ) -> Iterable[str]:
         """Yield the rows for pretty printing the exception."""
         from rich.pretty import pretty_repr
+
+        pretty = partial(
+            pretty_repr,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
+        )
 
         if (self.exc_type is None) or (self.exc_value is None):  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{self.exc_type=}", f"{self.exc_value=}"])
@@ -77,9 +120,9 @@ class _GetExcTraceInfoOutput:
             desc = f"{name} ({filename}:{frame.first_line_num})" if location else name
             yield indent(f"{frame.depth}/{frame.max_depth}. {desc}", self._prefix1)
             for i, arg in enumerate(frame.args):
-                yield indent(f"args[{i}] = {pretty_repr(arg)}", self._prefix2)
+                yield indent(f"args[{i}] = {pretty(arg)}", self._prefix2)
             for k, v in frame.kwargs.items():
-                yield indent(f"kwargs[{k!r}] = {pretty_repr(v)}", self._prefix2)
+                yield indent(f"kwargs[{k!r}] = {pretty(v)}", self._prefix2)
             yield indent(f">> {frame.code_line}", self._prefix2)
             if location:  # pragma: no cover
                 yield indent(f"   ({filename}:{frame.line_num})", self._prefix2)
