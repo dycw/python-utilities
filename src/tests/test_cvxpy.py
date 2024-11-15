@@ -79,6 +79,7 @@ class TestAbs:
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective)
+        assert var.value is not None
         assert_equal(abs_(var).value, abs_(var.value))
 
 
@@ -116,6 +117,8 @@ class TestAdd:
     ) -> None:
         var1 = _get_variable(objective1)
         var2 = _get_variable(objective2)
+        assert var1.value is not None
+        assert var2.value is not None
         assert_equal(add(var1, var2).value, add(var1.value, var2.value))
 
 
@@ -140,6 +143,7 @@ class TestDivide:
         self, *, x: float | NDArrayF | Expression, objective: type[Maximize | Minimize]
     ) -> None:
         var = _get_variable(objective)
+        assert var.value is not None
         assert_equal(divide(x, var).value, divide(x, var.value))
         assert_equal(divide(var, x).value, divide(var.value, x))
 
@@ -485,6 +489,7 @@ class TestSqrt:
 
     def test_expression(self) -> None:
         var = _get_variable(Maximize)
+        assert var.value is not None
         assert isclose(sqrt(var).value, sqrt(var.value))
 
 
@@ -509,6 +514,7 @@ class TestSubtract:
         self, *, x: float | NDArrayF | Expression, objective: type[Maximize | Minimize]
     ) -> None:
         var = _get_variable(objective)
+        assert var.value is not None
         assert_equal(subtract(x, var).value, subtract(x, var.value))
         assert_equal(subtract(var, x).value, subtract(var.value, x))
 
@@ -522,6 +528,8 @@ class TestSubtract:
     ) -> None:
         var1 = _get_variable(objective1)
         var2 = _get_variable(objective2)
+        assert var1.value is not None
+        assert var2.value is not None
         assert_equal(subtract(var1, var2).value, subtract(var1.value, var2.value))
 
 
@@ -556,5 +564,6 @@ class TestSum0And1:
 
     def test_expression(self) -> None:
         var = _get_variable(Maximize, shape=(2, 2))
+        assert var.value is not None
         assert_equal(sum_axis0(var).value, sum_axis0(var.value))
         assert_equal(sum_axis1(var).value, sum_axis1(var.value))
