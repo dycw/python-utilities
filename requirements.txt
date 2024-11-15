@@ -128,7 +128,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.118.8
+hypothesis==6.118.9
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
