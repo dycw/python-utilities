@@ -120,7 +120,7 @@ async def insert_dataframe_async(
     snake: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
-    timeout: utilities.types.Duration | None = None,  # noqa: ASYNC109
+    timeout: utilities.types.Duration | None = None,
 ) -> None:
     """Insert a DataFrame into a database."""
     prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
@@ -645,7 +645,7 @@ async def upsert_dataframe_async(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     selected_or_all: Literal["selected", "all"] = "selected",
-    timeout: Duration | None = None,  # noqa: ASYNC109
+    timeout: Duration | None = None,
 ) -> None:
     """Upsert a DataFrame into a database."""
     prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)

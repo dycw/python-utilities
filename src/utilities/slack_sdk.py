@@ -26,11 +26,7 @@ def send_slack_sync(text: str, /, *, url: str, timeout: Duration = _TIMEOUT) -> 
 
 
 async def send_slack_async(
-    text: str,
-    /,
-    *,
-    url: str,
-    timeout: Duration = _TIMEOUT,  # noqa: ASYNC109
+    text: str, /, *, url: str, timeout: Duration = _TIMEOUT
 ) -> None:
     """Send a message via Slack."""
     client = _get_client_async(url, timeout=timeout)  # pragma: no cover
