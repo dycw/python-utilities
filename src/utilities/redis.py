@@ -320,7 +320,7 @@ class _RedisKey(Generic[_T]):
             value_use = self.serializer(value)
         async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
             result = await redis.set(self.name, value_use)
-        return ensure_int(result)
+        return ensure_int(result)  # skipif-ci-and-not-linux
 
 
 @overload
