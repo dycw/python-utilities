@@ -157,6 +157,8 @@ class TestDivide:
     ) -> None:
         var1 = _get_variable(objective1)
         var2 = _get_variable(objective2)
+        assert var1.value is not None
+        assert var2.value is not None
         assert_equal(divide(var1, var2).value, divide(var1.value, var2.value))
 
 
@@ -175,6 +177,7 @@ class TestMax:
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective)
+        assert var.value is not None
         assert isclose(max_(var).value, max_(var.value))
 
 
@@ -240,6 +243,7 @@ class TestMin:
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective, shape=(2,))
+        assert var.value is not None
         assert isclose(min_(var).value, min_(var.value))
 
 
@@ -260,6 +264,8 @@ class TestMultiply:
     ) -> None:
         var1 = _get_variable(objective1)
         var2 = _get_variable(objective2)
+        assert var1.value is not None
+        assert var2.value is not None
         assert isclose(multiply(var1, var2).value, multiply(var1.value, var2.value))
 
     def test_float_and_array(self) -> None:
@@ -273,12 +279,14 @@ class TestMultiply:
         self, *, objective: type[Maximize | Minimize], shape: tuple[int, ...] | None
     ) -> None:
         x, y = 2.0, _get_variable(objective, shape=shape)
+        assert y.value is not None
         assert_equal(multiply(x, y).value, multiply(x, y.value))
         assert_equal(multiply(y, x).value, multiply(y.value, x))
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_array_and_expr(self, *, objective: type[Maximize | Minimize]) -> None:
         x, y = array([2.0]), _get_variable(objective)
+        assert y.value is not None
         assert isclose(multiply(x, y).value, multiply(x, y.value))
         assert isclose(multiply(y, x).value, multiply(y.value, x))
 
@@ -303,6 +311,7 @@ class TestNegate:
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective)
+        assert var.value is not None
         assert_equal(negate(var).value, negate(var.value))
 
 
@@ -326,6 +335,7 @@ class TestNegative:
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective)
+        assert var.value is not None
         assert isclose(negative(var).value, negative(var.value))
 
 
@@ -339,6 +349,7 @@ class TestNorm:
         self, *, objective: type[Maximize | Minimize], shape: tuple[int, ...]
     ) -> None:
         var = _get_variable(objective, shape=shape)
+        assert var.value is not None
         assert isclose(norm(var).value, norm(var.value))
 
 
@@ -362,6 +373,7 @@ class TestPositive:
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective)
+        assert var.value is not None
         assert_equal(positive(var).value, positive(var.value))
 
 
@@ -384,6 +396,7 @@ class TestPower:
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_one_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective)
+        assert var.value is not None
         assert_equal(power(var, 2.0).value, power(var.value, 2.0))
 
 
@@ -397,6 +410,7 @@ class TestQuadForm:
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective, shape=(2,))
         P = array([[2.0, 3.0], [3.0, 2.0]])  # noqa: N806
+        assert var.value is not None
         assert_equal(quad_form(var, P).value, quad_form(var.value, P))
 
 
@@ -431,6 +445,7 @@ class TestScalarProduct:
         shape: tuple[int, ...] | None,
     ) -> None:
         y = _get_variable(objective, shape=shape)
+        assert y.value is not None
         assert isclose(scalar_product(x, y).value, scalar_product(x, y.value))
         assert isclose(scalar_product(y, x).value, scalar_product(y.value, x))
 
@@ -444,6 +459,8 @@ class TestScalarProduct:
     ) -> None:
         var1 = _get_variable(objective1)
         var2 = _get_variable(objective2)
+        assert var1.value is not None
+        assert var2.value is not None
         assert isclose(
             scalar_product(var1, var2).value, scalar_product(var1.value, var2.value)
         )
@@ -553,6 +570,7 @@ class TestSum:
 
     def test_expression(self) -> None:
         var = _get_variable(Maximize)
+        assert var.value is not None
         assert_equal(sum_(var).value, sum_(var.value))
 
 
