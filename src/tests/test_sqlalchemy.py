@@ -871,85 +871,58 @@ class TestUpsertItems:
             engine, table, post_item, expected={(id_, init if post is None else post)}
         )
 
-    @given(data=data(), name=uuids(), triples=_upsert_lists(nullable=True, min_size=1))
-    @mark.only
+    @given(
+        data=data(),
+        name=uuids(),
+        triples=_upsert_lists(nullable=True, min_size=1),
+        case=sampled_from(["pair-list-of-dicts", "list-of-pair-of-dicts"]),
+    )
     async def test_pair_of_list_of_dicts_and_table(
         self,
         *,
         data: DataObject,
         name: UUID,
         triples: list[tuple[int, bool, bool | None]],
+        case: Literal["pair-list-of-dicts", "list-of-pair-of-dicts"],
     ) -> None:
         table = self._make_table(name)
         engine = await sqlalchemy_engines(data, table)
-        init_item = ([{"id_": id_, "value": init} for id_, init, _ in triples], table)
-        _ = await self._run_test(
-            engine, table, init_item, expected={(id_, init) for id_, init, _ in triples}
-        )
-        post_items = (
-            [
-                {"id_": id_, "value": post}
-                for id_, _, post in triples
-                if post is not None
-            ],
-            table,
-        )
-        expected = {
+        match case:
+            case "pair-list-of-dicts":
+                init = (
+                    [{"id_": id_, "value": init} for id_, init, _ in triples],
+                    table,
+                )
+                post = (
+                    [
+                        {"id_": id_, "value": post}
+                        for id_, _, post in triples
+                        if post is not None
+                    ],
+                    table,
+                )
+            case "list-of-pair-of-dicts":
+                init = [
+                    ({"id_": id_, "value": init}, table) for id_, init, _ in triples
+                ]
+                post = [
+                    ({"id_": id_, "value": post}, table)
+                    for id_, _, post in triples
+                    if post is not None
+                ]
+        init_expected = {(id_, init) for id_, init, _ in triples}
+        _ = await self._run_test(engine, table, init, expected=init_expected)
+        post_expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        _ = await self._run_test(engine, table, post_items, expected=expected)
+        _ = await self._run_test(engine, table, post, expected=post_expected)
 
-    @given(data=data(), triples=_upsert_lists(nullable=True, min_size=1))
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    async def test_async_list_of_pairs_of_dicts_and_table(
-        self,
-        *,
-        data: DataObject,
-        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
-        dialect: Literal["sqlite", "postgres"],
-        triples: list[tuple[int, bool, bool | None]],
+    @given(data=data(), name=uuids(), triple=_upsert_triples())
+    async def test_mapped_class(
+        self, *, data: DataObject, name: UUID, triple: tuple[int, bool, bool]
     ) -> None:
-        key = (
-            TestUpsertItems.test_async_list_of_pairs_of_dicts_and_table.__qualname__,
-            dialect,
-        )
-        name = f"test_{md5_hash(key)}"
-        table = self._make_table(name)
-        engine = await self._get_engine_async(
-            data, create_postgres_engine_async, table, dialect=dialect
-        )
-        _ = await self._run_test(
-            engine,
-            table,
-            ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
-            expected={(id_, init) for id_, init, _ in triples},
-        )
-        items = [
-            ({"id_": id_, "value": post}, table)
-            for id_, _, post in triples
-            if post is not None
-        ]
-        expected = {
-            (id_, init if post is None else post) for id_, init, post in triples
-        }
-        _ = await self._run_test(engine, table, items, expected=expected)
-
-    @given(data=data(), triple=_upsert_triples())
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    async def test_async_mapped_class(
-        self,
-        *,
-        data: DataObject,
-        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
-        dialect: Literal["sqlite", "postgres"],
-        triple: tuple[int, bool, bool],
-    ) -> None:
-        key = TestUpsertItems.test_async_mapped_class.__qualname__, dialect
-        name = f"test_{md5_hash(key)}"
         cls = self._make_mapped_class(name)
-        engine = await self._get_engine_async(
-            data, create_postgres_engine_async, cls, dialect=dialect
-        )
+        engine = await sqlalchemy_engines(data, cls)
         id_, init, post = triple
         _ = await self._run_test(
             engine, cls, cls(id_=id_, value=init), expected={(id_, init)}
@@ -958,35 +931,27 @@ class TestUpsertItems:
             engine, cls, cls(id_=id_, value=post), expected={(id_, post)}
         )
 
-    @given(data=data(), triples=_upsert_lists(nullable=True, min_size=1))
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    async def test_async_mapped_classes(
+    @given(data=data(), name=uuids(), triples=_upsert_lists(nullable=True, min_size=1))
+    @mark.only
+    async def test_mapped_classes(
         self,
         *,
         data: DataObject,
-        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
-        dialect: Literal["sqlite", "postgres"],
+        name: UUID,
         triples: list[tuple[int, bool, bool | None]],
     ) -> None:
-        key = TestUpsertItems.test_async_mapped_classes.__qualname__, dialect
-        name = f"test_{md5_hash(key)}"
         cls = self._make_mapped_class(name)
-        engine = await self._get_engine_async(
-            data, create_postgres_engine_async, cls, dialect=dialect
-        )
-        _ = await self._run_test(
-            engine,
-            cls,
-            [cls(id_=id_, value=init) for id_, init, _ in triples],
-            expected={(id_, init) for id_, init, _ in triples},
-        )
-        items = [
+        engine = await sqlalchemy_engines(data, cls)
+        init = [cls(id_=id_, value=init) for id_, init, _ in triples]
+        init_expected = {(id_, init) for id_, init, _ in triples}
+        _ = await self._run_test(engine, cls, init, expected=init_expected)
+        post = [
             cls(id_=id_, value=post) for id_, _, post in triples if post is not None
         ]
-        expected = {
+        post_expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        _ = await self._run_test(engine, cls, items, expected=expected)
+        _ = await self._run_test(engine, cls, post, expected=post_expected)
 
     @given(
         data=data(),
