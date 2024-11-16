@@ -5,7 +5,6 @@ import decimal
 import reprlib
 from contextlib import suppress
 from dataclasses import dataclass
-from itertools import chain
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 from uuid import UUID
 
@@ -25,14 +24,13 @@ from polars import (
     concat,
     read_database,
 )
-from polars._typing import ConnectionOrCursor, PolarsDataType, SchemaDict
-from sqlalchemy import Column, Select, Table, select
+from sqlalchemy import Column, Select, select
 from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from typing_extensions import override
 
 from utilities.datetime import is_subclass_date_not_datetime
-from utilities.functions import ensure_not_none, identity
+from utilities.functions import identity
 from utilities.iterables import (
     CheckDuplicatesError,
     OneError,
@@ -44,14 +42,12 @@ from utilities.polars import zoned_datetime
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
     AsyncEngineOrConnection,
-    EngineOrConnection,
     TableOrMappedClass,
     ensure_tables_created,
     get_chunk_size,
     get_columns,
     insert_items,
     upsert_items,
-    yield_connection,
 )
 from utilities.zoneinfo import UTC
 
@@ -62,111 +58,57 @@ if TYPE_CHECKING:
         Iterable,
         Iterator,
         Mapping,
-        Sequence,
     )
     from zoneinfo import ZoneInfo
 
+    from polars._typing import PolarsDataType, SchemaDict
     from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
     import utilities.types
-    from utilities.types import Duration, StrMapping
 
 
-def insert_dataframe(
+async def insert_dataframe(
     df: DataFrame,
     table_or_mapped_class: TableOrMappedClass,
-    engine_or_conn: EngineOrConnection,
-    /,
-    *,
-    snake: bool = False,
-    chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    assume_tables_exist: bool = False,
-) -> None:
-    """Insert a DataFrame into a database."""
-    prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
-    if prepared.no_items_empty_df:
-        if not assume_tables_exist:
-            ensure_tables_created(engine_or_conn, table_or_mapped_class)
-        return
-    if prepared.no_items_non_empty_df:
-        raise InsertDataFrameError(df=df)
-    insert_items(
-        engine_or_conn,
-        prepared.items,
-        chunk_size_frac=chunk_size_frac,
-        assume_tables_exist=assume_tables_exist,
-    )
-
-
-@dataclass(kw_only=True, slots=True)
-class InsertDataFrameError(Exception):
-    df: DataFrame
-
-    @override
-    def __str__(self) -> str:
-        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
-
-
-async def insert_dataframe_async(
-    df: DataFrame,
-    table_or_mapped_class: TableOrMappedClass,
-    engine: AsyncEngine,  # does not support connection
+    engine: AsyncEngine,
     /,
     *,
     snake: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     timeout: utilities.types.Duration | None = None,
+    upsert: Literal["selected", "all"] | None = None,
 ) -> None:
-    """Insert a DataFrame into a database."""
-    prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
-    if prepared.no_items_empty_df:
-        if not assume_tables_exist:
-            await ensure_tables_created(engine, table_or_mapped_class, timeout=timeout)
-        return
-    if prepared.no_items_non_empty_df:
-        raise InsertDataFrameAsyncError(df=df)
-    await insert_items(
-        engine,
-        prepared.items,
-        chunk_size_frac=chunk_size_frac,
-        assume_tables_exist=assume_tables_exist,
-        timeout=timeout,
-    )
-
-
-@dataclass(kw_only=True, slots=True)
-class InsertDataFrameAsyncError(Exception):
-    df: DataFrame
-
-    @override
-    def __str__(self) -> str:
-        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _InsertDataFramePrepare:
-    items: tuple[Sequence[StrMapping], TableOrMappedClass]
-    no_items_empty_df: bool
-    no_items_non_empty_df: bool
-
-
-def _insert_dataframe_prepare(
-    df: DataFrame, table_or_mapped_class: Table | type[Any], /, *, snake: bool = False
-) -> _InsertDataFramePrepare:
-    """Prepare the arguments for `insert_dataframe`."""
+    """Insert/upsert a DataFrame into a database."""
     mapping = _insert_dataframe_map_df_schema_to_table(
         df.schema, table_or_mapped_class, snake=snake
     )
     items = df.select(mapping).rename(mapping).to_dicts()
-    no_items = len(items) == 0
-    df_is_empty = df.is_empty()
-    return _InsertDataFramePrepare(
-        items=(items, table_or_mapped_class),
-        no_items_empty_df=no_items and df_is_empty,
-        no_items_non_empty_df=no_items and not df_is_empty,
-    )
+    if len(items) == 0:
+        if not df.is_empty():
+            raise InsertDataFrameError(df=df)
+        if not assume_tables_exist:
+            await ensure_tables_created(engine, table_or_mapped_class, timeout=timeout)
+        return
+    match upsert:
+        case None:
+            await insert_items(
+                engine,
+                (items, table_or_mapped_class),
+                chunk_size_frac=chunk_size_frac,
+                assume_tables_exist=assume_tables_exist,
+                timeout=timeout,
+            )
+        case "selected" | "all" as selected_or_all:
+            await upsert_items(
+                engine,
+                (items, table_or_mapped_class),
+                chunk_size_frac=chunk_size_frac,
+                selected_or_all=selected_or_all,
+                assume_tables_exist=assume_tables_exist,
+                timeout=timeout,
+            )
 
 
 def _insert_dataframe_map_df_schema_to_table(
@@ -251,103 +193,17 @@ def _insert_dataframe_check_df_and_db_types(
     )
 
 
-@overload
-def select_to_dataframe(
-    sel: Select[Any],
-    engine_or_conn: EngineOrConnection,
-    /,
-    *,
-    snake: bool = ...,
-    time_zone: ZoneInfo | str = ...,
-    batch_size: None = ...,
-    in_clauses: tuple[Column[Any], Iterable[Any]] | None = ...,
-    in_clauses_chunk_size: int | None = ...,
-    chunk_size_frac: float = ...,
-    **kwargs: Any,
-) -> DataFrame: ...
-@overload
-def select_to_dataframe(
-    sel: Select[Any],
-    engine_or_conn: EngineOrConnection,
-    /,
-    *,
-    snake: bool = ...,
-    time_zone: ZoneInfo | str = ...,
-    batch_size: int = ...,
-    in_clauses: tuple[Column[Any], Iterable[Any]] | None = ...,
-    in_clauses_chunk_size: int | None = ...,
-    chunk_size_frac: float = ...,
-    **kwargs: Any,
-) -> Iterable[DataFrame]: ...
-def select_to_dataframe(
-    sel: Select[Any],
-    engine_or_conn: EngineOrConnection,
-    /,
-    *,
-    snake: bool = False,
-    time_zone: ZoneInfo | str = UTC,
-    batch_size: int | None = None,
-    in_clauses: tuple[Column[Any], Iterable[Any]] | None = None,
-    in_clauses_chunk_size: int | None = None,
-    chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    **kwargs: Any,
-) -> DataFrame | Iterable[DataFrame]:
-    """Read a table from a database into a DataFrame."""
-    prepared = _select_to_dataframe_prepare(
-        sel,
-        engine_or_conn,
-        snake=snake,
-        time_zone=time_zone,
-        in_clauses=in_clauses,
-        in_clauses_chunk_size=in_clauses_chunk_size,
-        chunk_size_frac=chunk_size_frac,
-    )
-    if in_clauses is None:
-        return read_database(
-            prepared.sel,
-            cast(ConnectionOrCursor, engine_or_conn),
-            iter_batches=batch_size is not None,
-            batch_size=batch_size,
-            schema_overrides=prepared.schema,
-            **kwargs,
-        )
-    sels = ensure_not_none(prepared.sels)
-    if batch_size is None:
-        with yield_connection(engine_or_conn) as conn:
-            dfs = (
-                select_to_dataframe(
-                    sel,
-                    conn,
-                    snake=snake,
-                    time_zone=time_zone,
-                    batch_size=None,
-                    in_clauses=None,
-                    **kwargs,
-                )
-                for sel in sels
-            )
-            try:
-                return concat(dfs)
-            except ValueError:
-                return DataFrame(schema=prepared.schema)
-    dfs = (
-        select_to_dataframe(
-            sel,
-            engine_or_conn,
-            snake=snake,
-            time_zone=time_zone,
-            batch_size=batch_size,
-            in_clauses=None,
-            chunk_size_frac=chunk_size_frac,
-            **kwargs,
-        )
-        for sel in sels
-    )
-    return chain(*dfs)
+@dataclass(kw_only=True, slots=True)
+class InsertDataFrameError(Exception):
+    df: DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
 
 
 @overload
-async def select_to_dataframe_async(
+async def select_to_dataframe(
     sel: Select[Any],
     engine: AsyncEngine,
     /,
@@ -361,7 +217,7 @@ async def select_to_dataframe_async(
     **kwargs: Any,
 ) -> DataFrame: ...
 @overload
-async def select_to_dataframe_async(
+async def select_to_dataframe(
     sel: Select[Any],
     engine: AsyncEngine,
     /,
@@ -375,7 +231,7 @@ async def select_to_dataframe_async(
     **kwargs: Any,
 ) -> Iterable[DataFrame]: ...
 @overload
-async def select_to_dataframe_async(
+async def select_to_dataframe(
     sel: Select[Any],
     engine: AsyncEngine,
     /,
@@ -388,7 +244,7 @@ async def select_to_dataframe_async(
     chunk_size_frac: float = ...,
     **kwargs: Any,
 ) -> AsyncIterable[DataFrame]: ...
-async def select_to_dataframe_async(
+async def select_to_dataframe(
     sel: Select[Any],
     engine: AsyncEngine,
     /,
@@ -405,7 +261,7 @@ async def select_to_dataframe_async(
     if not issubclass(AsyncEngine, type(engine)):
         # for handling testing
         engine = create_async_engine(engine.url)
-        return await select_to_dataframe_async(
+        return await select_to_dataframe(
             sel,
             engine,
             snake=snake,
@@ -416,28 +272,28 @@ async def select_to_dataframe_async(
             chunk_size_frac=chunk_size_frac,
             **kwargs,
         )
-    prepared = _select_to_dataframe_prepare(
-        sel,
-        engine,
-        snake=snake,
-        time_zone=time_zone,
-        in_clauses=in_clauses,
-        in_clauses_chunk_size=in_clauses_chunk_size,
-        chunk_size_frac=chunk_size_frac,
-    )
+    if snake:
+        sel = _select_to_dataframe_apply_snake(sel)
+    schema = _select_to_dataframe_map_select_to_df_schema(sel, time_zone=time_zone)
     if in_clauses is None:
         return read_database(
-            prepared.sel,
+            sel,
             cast(Any, engine),
             iter_batches=batch_size is not None,
             batch_size=batch_size,
-            schema_overrides=prepared.schema,
+            schema_overrides=schema,
             **kwargs,
         )
-    sels = ensure_not_none(prepared.sels)
+    sels = _select_to_dataframe_yield_selects_with_in_clauses(
+        sel,
+        engine,
+        in_clauses,
+        in_clauses_chunk_size=in_clauses_chunk_size,
+        chunk_size_frac=chunk_size_frac,
+    )
     if batch_size is None:
         dfs = [
-            await select_to_dataframe_async(
+            await select_to_dataframe(
                 sel,
                 engine,
                 snake=snake,
@@ -451,11 +307,11 @@ async def select_to_dataframe_async(
         try:
             return concat(dfs)
         except ValueError:
-            return DataFrame(schema=prepared.schema)
+            return DataFrame(schema=schema)
 
     async def yield_dfs() -> AsyncIterator[DataFrame]:
         for sel_i in sels:
-            for df in await select_to_dataframe_async(
+            for df in await select_to_dataframe(
                 sel_i,
                 engine,
                 snake=snake,
@@ -468,40 +324,6 @@ async def select_to_dataframe_async(
                 yield df
 
     return yield_dfs()
-
-
-@dataclass(kw_only=True, slots=True)
-class _SelectToDataFramePrepare:
-    sel: Select[Any]
-    schema: SchemaDict
-    sels: Iterable[Select[Any]] | None = None
-
-
-def _select_to_dataframe_prepare(
-    sel: Select[Any],
-    engine_or_conn: EngineOrConnection | AsyncEngine,
-    /,
-    *,
-    snake: bool = False,
-    time_zone: ZoneInfo | str = UTC,
-    in_clauses: tuple[Column[Any], Iterable[Any]] | None = None,
-    in_clauses_chunk_size: int | None = None,
-    chunk_size_frac: float = CHUNK_SIZE_FRAC,
-) -> _SelectToDataFramePrepare:
-    if snake:
-        sel = _select_to_dataframe_apply_snake(sel)
-    schema = _select_to_dataframe_map_select_to_df_schema(sel, time_zone=time_zone)
-    if in_clauses is None:
-        sels = None
-    else:
-        sels = _select_to_dataframe_yield_selects_with_in_clauses(
-            sel,
-            engine_or_conn,
-            in_clauses,
-            in_clauses_chunk_size=in_clauses_chunk_size,
-            chunk_size_frac=chunk_size_frac,
-        )
-    return _SelectToDataFramePrepare(sel=sel, schema=schema, sels=sels)
 
 
 def _select_to_dataframe_apply_snake(sel: Select[Any], /) -> Select[Any]:
@@ -593,91 +415,8 @@ def _select_to_dataframe_yield_selects_with_in_clauses(
     return (sel.where(in_col.in_(values)) for values in chunked(in_values, chunk_size))
 
 
-def upsert_dataframe(
-    df: DataFrame,
-    table_or_mapped_class: TableOrMappedClass,
-    engine_or_conn: EngineOrConnection,
-    /,
-    *,
-    snake: bool = False,
-    chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    assume_tables_exist: bool = False,
-    selected_or_all: Literal["selected", "all"] = "selected",
-) -> None:
-    """Upsert a DataFrame into a database."""
-    prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
-    if prepared.no_items_empty_df:
-        if not assume_tables_exist:
-            ensure_tables_created(engine_or_conn, table_or_mapped_class)
-        return
-    if prepared.no_items_non_empty_df:
-        raise UpsertDataFrameError(df=df)
-    upsert_items(
-        engine_or_conn,
-        prepared.items,
-        chunk_size_frac=chunk_size_frac,
-        assume_tables_exist=assume_tables_exist,
-        selected_or_all=selected_or_all,
-    )
-
-
-@dataclass(kw_only=True, slots=True)
-class UpsertDataFrameError(Exception):
-    df: DataFrame
-
-    @override
-    def __str__(self) -> str:
-        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
-
-
-async def upsert_dataframe_async(
-    df: DataFrame,
-    table_or_mapped_class: TableOrMappedClass,
-    engine: AsyncEngine,  # does not support connection
-    /,
-    *,
-    snake: bool = False,
-    chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    assume_tables_exist: bool = False,
-    selected_or_all: Literal["selected", "all"] = "selected",
-    timeout: Duration | None = None,
-) -> None:
-    """Upsert a DataFrame into a database."""
-    prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
-    if prepared.no_items_empty_df:
-        if not assume_tables_exist:
-            await ensure_tables_created(engine, table_or_mapped_class, timeout=timeout)
-        return
-    if prepared.no_items_non_empty_df:
-        raise UpsertDataFrameAsyncError(df=df)
-    await upsert_items(
-        engine,
-        prepared.items,
-        chunk_size_frac=chunk_size_frac,
-        selected_or_all=selected_or_all,
-        assume_tables_exist=assume_tables_exist,
-        timeout=timeout,
-    )
-
-
-@dataclass(kw_only=True, slots=True)
-class UpsertDataFrameAsyncError(Exception):
-    df: DataFrame
-
-    @override
-    def __str__(self) -> str:
-        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
-
-
 __all__ = [
-    "InsertDataFrameAsyncError",
     "InsertDataFrameError",
-    "UpsertDataFrameAsyncError",
-    "UpsertDataFrameError",
     "insert_dataframe",
-    "insert_dataframe_async",
     "select_to_dataframe",
-    "select_to_dataframe_async",
-    "upsert_dataframe",
-    "upsert_dataframe_async",
 ]
