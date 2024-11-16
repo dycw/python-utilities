@@ -30,6 +30,7 @@ from utilities.iterables import one
 from utilities.modules import is_installed
 from utilities.sqlalchemy import (
     AsyncEngineOrConnection,
+    CheckEngineError,
     Dialect,
     GetTableError,
     InsertItemsError,
@@ -50,6 +51,7 @@ from utilities.sqlalchemy import (
     _prepare_insert_or_upsert_items,
     _PrepareInsertOrUpsertItemsError,
     _UpsertItem,
+    check_engine,
     columnwise_max,
     columnwise_min,
     create_async_engine,
@@ -108,6 +110,34 @@ def _upsert_lists(
         max_size=max_size,
         unique_by=lambda x: x[0],
     )
+
+
+class TestCheckEngine:
+    @FLAKY
+    @given(data=data())
+    @settings(phases={Phase.generate})
+    async def test_main(self, *, data: DataObject) -> None:
+        engine = await sqlalchemy_engines(data)
+        await check_engine(engine)
+
+    @FLAKY
+    @given(data=data(), name=_table_names())
+    @settings(phases={Phase.generate})
+    async def test_num_tables_pass(self, *, data: DataObject, name: str) -> None:
+        table = Table(name, MetaData(), Column("id", Integer, primary_key=True))
+        engine = await sqlalchemy_engines(data, table)
+        await ensure_tables_created(engine, table)
+        await check_engine(engine, num_tables=1)
+
+    @FLAKY
+    @given(data=data())
+    @settings(phases={Phase.generate})
+    async def test_num_tables_error(self, *, data: DataObject) -> None:
+        engine = await sqlalchemy_engines(data)
+        with raises(
+            CheckEngineError, match=r"Engine\(.*\) must have 1 table\(s\); got .*"
+        ):
+            await check_engine(engine, num_tables=1)
 
 
 class TestColumnwiseMinMax:
