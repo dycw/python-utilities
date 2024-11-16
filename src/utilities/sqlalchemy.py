@@ -9,16 +9,7 @@ from functools import partial, reduce
 from math import floor
 from operator import ge, le, or_
 from re import search
-from typing import (
-    Any,
-    Generic,
-    Literal,
-    TypeGuard,
-    TypeVar,
-    assert_never,
-    cast,
-    overload,
-)
+from typing import Any, Literal, TypeGuard, assert_never, cast, overload
 
 from sqlalchemy import (
     URL,
@@ -77,7 +68,6 @@ from utilities.types import (
     is_tuple_or_string_mapping,
 )
 
-_T = TypeVar("_T")
 AsyncEngineOrConnection = AsyncEngine | AsyncConnection
 EngineOrConnectionOrAsync = Engine | Connection | AsyncEngineOrConnection
 Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
@@ -398,11 +388,25 @@ async def insert_items(
                                                Obj(k1=v21, k2=v22, ...),
                                                ...]
     """
+
+    def build_insert(
+        table: Table, values: Iterable[TupleOrStrMapping], /
+    ) -> tuple[Insert, Any]:
+        match _get_dialect(engine_or_conn):
+            case "oracle":  # pragma: no cover
+                return insert(table), values
+            case _:
+                return insert(table).values(list(values)), None
+
     try:
-        prepared = _insert_items_prepare(
-            engine_or_conn, *items, chunk_size_frac=chunk_size_frac
+        prepared = _prepare_insert_or_upsert_items(
+            engine_or_conn,
+            build_insert,
+            *items,
+            normalize_item=_normalize_insert_item,
+            chunk_size_frac=chunk_size_frac,
         )
-    except _InsertItemsPrepareError as error:
+    except _PrepareInsertOrUpsertItemsError as error:
         raise InsertItemsError(item=error.item) from None
     if not assume_tables_exist:
         await ensure_tables_created(engine_or_conn, *prepared.tables, timeout=timeout)
@@ -413,56 +417,6 @@ async def insert_items(
 
 @dataclass(kw_only=True, slots=True)
 class InsertItemsError(Exception):
-    item: _InsertItem
-
-    @override
-    def __str__(self) -> str:
-        return f"Item must be valid; got {self.item}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _PreInsertUpsertItems:
-    tables: Sequence[Table]
-    yield_pairs: Callable[[], Iterator[tuple[Insert, Any]]]
-
-
-def _insert_items_prepare(
-    engine_or_conn: AsyncEngineOrConnection,
-    /,
-    *items: _InsertItem,
-    chunk_size_frac: float = CHUNK_SIZE_FRAC,
-) -> _PreInsertUpsertItems:
-    """Prepare the arguments for `insert_items`."""
-    mapping: dict[Table, list[TupleOrStrMapping]] = defaultdict(list)
-    lengths: set[int] = set()
-    try:
-        for item in items:
-            for normed in _normalize_insert_item(item):
-                values = normed.values
-                mapping[normed.table].append(values)
-                lengths.add(len(values))
-    except _NormalizeInsertItemError as error:
-        raise _InsertItemsPrepareError(item=error.item) from None
-    tables = list(mapping)
-    max_length = max(lengths, default=1)
-    chunk_size = get_chunk_size(
-        engine_or_conn, chunk_size_frac=chunk_size_frac, scaling=max_length
-    )
-
-    def yield_pairs() -> Iterator[tuple[Insert, Any]]:
-        for table, values in mapping.items():
-            for chunk in chunked(values, chunk_size):
-                match _get_dialect(engine_or_conn):
-                    case "oracle":  # pragma: no cover
-                        yield insert(table), chunk
-                    case _:
-                        yield insert(table).values(list(chunk)), None
-
-    return _PreInsertUpsertItems(tables=tables, yield_pairs=yield_pairs)
-
-
-@dataclass(kw_only=True, slots=True)
-class _InsertItemsPrepareError(Exception):
     item: _InsertItem
 
     @override
@@ -734,34 +688,32 @@ async def upsert_items(
                                                Obj(k1=v21, k2=v22, ...),
                                                ...]
     """
-        engine_or_conn,
-        *items,
-        normalizer=partial(_normalize_upsert_item, selected_or_all=selected_or_all),
-        chunk_size_frac=chunk_size_frac,
-    )
-    # mapping: dict[Table, list[StrMapping]] = defaultdict(list)
-    # lengths: set[int] = set()
-    # try:
-    #     for item in items:
-    #         for normed in _normalize_upsert_item(item, selected_or_all=selected_or_all):
-    #             values = normed.values
-    #             mapping[normed.table].append(values)
-    #             lengths.add(len(values))
-    # except _NormalizeUpsertItemError as error:
-    #     raise UpsertItemsError(item=error.item) from None
+
+    def build_insert(
+        table: Table, values: Iterable[StrMapping], /
+    ) -> tuple[Insert, None]:
+        ups = _upsert_items_build(
+            engine_or_conn, table, values, selected_or_all=selected_or_all
+        )
+        return ups, None
+
+    try:
+        prepared = _prepare_insert_or_upsert_items(
+            engine_or_conn,
+            build_insert,
+            *items,
+            normalize_item=partial(
+                _normalize_upsert_item, selected_or_all=selected_or_all
+            ),
+            chunk_size_frac=chunk_size_frac,
+        )
+    except _PrepareInsertOrUpsertItemsError as error:
+        raise UpsertItemsError(item=error.item) from None
     if not assume_tables_exist:
-        await ensure_tables_created(engine_or_conn, *mapping, timeout=timeout)
-    # max_length = max(lengths, default=1)
-    # chunk_size = get_chunk_size(
-    #     engine_or_conn, chunk_size_frac=chunk_size_frac, scaling=max_length
-    # )
-    for table, values in mapping.items():
-        for chunk in chunked(values, chunk_size):
-            ups = _upsert_items_build(
-                engine_or_conn, table, chunk, selected_or_all=selected_or_all
-            )
-            async with yield_connection(engine_or_conn, timeout=timeout) as conn:
-                _ = await conn.execute(ups)
+        await ensure_tables_created(engine_or_conn, *prepared.tables, timeout=timeout)
+    for ups, _ in prepared.yield_pairs():
+        async with yield_connection(engine_or_conn, timeout=timeout) as conn:
+            _ = await conn.execute(ups)
 
 
 def _upsert_items_build(
@@ -897,53 +849,69 @@ def _get_dialect_max_params(
 
 
 @dataclass(kw_only=True, slots=True)
-class _PrepareInsertOrUpsertItems(Generic[_T]):
-    mapping: dict[Table, list[_T]] = field(default_actory=list)
-    chunk_size: int = 1
+class _PrepareInsertOrUpsertItems:
+    tables: Sequence[Table] = field(default_factory=list)
+    yield_pairs: Callable[[], Iterator[tuple[Insert, Any]]]
 
 
 @overload
 def _prepare_insert_or_upsert_items(
     engine_or_conn: AsyncEngineOrConnection,
+    build_insert: Callable[[Table, Iterable[TupleOrStrMapping]], tuple[Insert, Any]],
     /,
     *items: _InsertItem,
-    normalizer: Callable[[_InsertItem], Iterator[_NormalizedInsertItem]],
+    normalize_item: Callable[[_InsertItem], Iterator[_NormalizedInsertItem]],
     chunk_size_frac: float = ...,
-) -> _PrepareInsertOrUpsertItems[TupleOrStrMapping]: ...
+) -> _PrepareInsertOrUpsertItems: ...
 @overload
 def _prepare_insert_or_upsert_items(
     engine_or_conn: AsyncEngineOrConnection,
+    build_insert: Callable[[Table, Iterable[StrMapping]], tuple[Insert, Any]],
     /,
     *items: _UpsertItem,
-    normalizer: Callable[[_UpsertItem], Iterator[_NormalizedUpsertItem]],
+    normalize_item: Callable[[_UpsertItem], Iterator[_NormalizedUpsertItem]],
     chunk_size_frac: float = ...,
-) -> _PrepareInsertOrUpsertItems[StrMapping]: ...
+) -> _PrepareInsertOrUpsertItems: ...
 def _prepare_insert_or_upsert_items(
     engine_or_conn: AsyncEngineOrConnection,
+    build_insert: Callable[[Table, Iterable[Any]], tuple[Insert, Any]],
     /,
     *items: Any,
-    normalizer: Callable[[Any], Iterator[Any]],
+    normalize_item: Callable[[Any], Iterator[Any]],
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-) -> (
-    _PrepareInsertOrUpsertItems[TupleOrStrMapping]
-    | _PrepareInsertOrUpsertItems[StrMapping]
-):
+) -> _PrepareInsertOrUpsertItems:
     """Prepare a set of insert/upsert items."""
     mapping: dict[Table, list[Any]] = defaultdict(list)
     lengths: set[int] = set()
     try:
         for item in items:
-            for normed in normalizer(item):
+            for normed in normalize_item(item):
                 values = normed.values
                 mapping[normed.table].append(values)
                 lengths.add(len(values))
     except _NormalizeUpsertItemError as error:
-        raise UpsertItemsError(item=error.item) from None
+        raise _PrepareInsertOrUpsertItemsError(item=error.item) from None
+    tables = list(mapping)
     max_length = max(lengths, default=1)
     chunk_size = get_chunk_size(
         engine_or_conn, chunk_size_frac=chunk_size_frac, scaling=max_length
     )
-    return _PrepareInsertOrUpsertItems(mapping=mapping, chunk_size=chunk_size)
+
+    def yield_pairs() -> Iterator[tuple[Insert, None]]:
+        for table, values in mapping.items():
+            for chunk in chunked(values, chunk_size):
+                yield build_insert(table, chunk)
+
+    return _PrepareInsertOrUpsertItems(tables=tables, yield_pairs=yield_pairs)
+
+
+@dataclass(kw_only=True, slots=True)
+class _PrepareInsertOrUpsertItemsError(Exception):
+    item: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Item must be valid; got {self.item}"
 
 
 __all__ = [
