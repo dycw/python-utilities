@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from hypothesis import given, settings
@@ -24,13 +23,7 @@ from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
-from tests.conftest import SKIPIF_CI
-from utilities.hypothesis import (
-    int32s,
-    sets_fixed_length,
-    sqlalchemy_engines,
-    temp_paths,
-)
+from utilities.hypothesis import int32s, sqlalchemy_engines, temp_paths
 from utilities.iterables import one
 from utilities.modules import is_installed
 from utilities.sqlalchemy import (
@@ -40,6 +33,7 @@ from utilities.sqlalchemy import (
     InsertItemsError,
     TablenameMixin,
     TableOrMappedClass,
+    UpsertItemsError,
     _get_dialect,
     _get_dialect_max_params,
     _InsertItem,
@@ -80,8 +74,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from pathlib import Path
     from uuid import UUID
-
-    from utilities.asyncio import Coroutine1
 
 
 @overload
@@ -487,13 +479,12 @@ class TestInsertItems:
     async def test_assume_table_exists(
         self, *, data: DataObject, name: UUID, id_: int
     ) -> None:
-        cls = self._make_mapped_class(name)
-        engine = await sqlalchemy_engines(data, cls)
-        item = cls(id_=id_)
+        table = self._make_table(name)
+        engine = await sqlalchemy_engines(data, table)
         with raises(
             (OperationalError, ProgrammingError), match="(no such table|does not exist)"
         ):
-            await insert_items(engine, item, assume_tables_exist=True)
+            await insert_items(engine, {"id_": id_}, assume_tables_exist=True)
 
     @given(data=data(), name=uuids())
     async def test_error(self, *, data: DataObject, name: UUID) -> None:
@@ -932,7 +923,6 @@ class TestUpsertItems:
         )
 
     @given(data=data(), name=uuids(), triples=_upsert_lists(nullable=True, min_size=1))
-    @mark.only
     async def test_mapped_classes(
         self,
         *,
@@ -955,35 +945,32 @@ class TestUpsertItems:
 
     @given(
         data=data(),
+        name=uuids(),
         id_=integers(0, 10),
         x_init=booleans(),
         x_post=booleans(),
         y=booleans(),
+        selected_or_all=sampled_from(["selected", "all"]),
     )
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    @mark.parametrize("selected_or_all", [param("selected"), param("all")])
     async def test_async_sel_or_all(
         self,
         *,
         data: DataObject,
-        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
-        dialect: Literal["sqlite", "postgres"],
+        name: UUID,
         selected_or_all: Literal["selected", "all"],
         id_: int,
         x_init: bool,
         x_post: bool,
         y: bool,
     ) -> None:
-        key = (
-            TestUpsertItems.test_async_sel_or_all.__qualname__,
-            dialect,
-            selected_or_all,
+        table = Table(
+            f"test_{name}",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("x", Boolean, nullable=False),
+            Column("y", Boolean, nullable=True),
         )
-        name = f"test_{md5_hash(key)}"
-        table = self._get_table_sel_or_all(name)
-        engine = await self._get_engine_async(
-            data, create_postgres_engine_async, table, dialect=dialect
-        )
+        engine = await sqlalchemy_engines(data, table)
         _ = await self._run_test(
             engine,
             table,
@@ -1004,105 +991,47 @@ class TestUpsertItems:
             expected={expected},
         )
 
-    @given(data=data(), triple=_upsert_triples())
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    @mark.parametrize("single_or_list", [param("single"), param("list")])
-    async def test_async_updated(
-        self,
-        *,
-        data: DataObject,
-        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
-        dialect: Literal["sqlite", "postgres"],
-        single_or_list: Literal["single", "list"],
-        triple: tuple[int, bool, bool | None],
+    @given(data=data(), name=uuids(), id_=integers(0, 10))
+    async def test_assume_table_exists(
+        self, *, data: DataObject, name: UUID, id_: int
     ) -> None:
-        key = TestUpsertItems.test_async_updated.__qualname__, dialect, single_or_list
-        name = f"test_{md5_hash(key)}"
-        table = self._get_table_updated(name)
-        engine = await self._get_engine_async(
-            data, create_postgres_engine_async, table, dialect=dialect
-        )
-        id_, init, post = triple
-        match single_or_list:
-            case "single":
-                item1 = ({"id_": id_, "value": init}, table)
-            case "list":
-                item1 = [({"id_": id_, "value": init}, table)]
-        ((_, _, updated1),) = await self._run_test(engine, table, item1)
-        await asyncio.sleep(0.01)
-        match single_or_list:
-            case "single":
-                item2 = ({"id_": id_, "value": post}, table)
-            case "list":
-                item2 = [({"id_": id_, "value": post}, table)]
-        ((_, _, updated2),) = await self._run_test(engine, table, item2)
-        assert updated1 < updated2
-
-    @given(data=data(), id_=integers(0, 10))
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    async def test_async_assume_table_exists(
-        self,
-        *,
-        data: DataObject,
-        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
-        dialect: Literal["sqlite", "postgres"],
-        id_: int,
-    ) -> None:
-        key = TestUpsertItems.test_async_assume_table_exists.__qualname__, dialect
-        name = f"test_{md5_hash(key)}"
         table = self._make_table(name)
-        engine = await self._get_engine_async(
-            data, create_postgres_engine_async, table, dialect=dialect
-        )
-        _ = await self._run_test(
-            engine, table, ({"id_": id_}, table), assume_tables_exist=True
-        )
+        engine = await sqlalchemy_engines(data, table)
+        with raises((OperationalError, ProgrammingError)):
+            await upsert_items(
+                engine, ({"id_": id_, "value": True}, table), assume_tables_exist=True
+            )
 
     @given(
         data=data(),
-        ids=sets_fixed_length(int32s(), 2).map(tuple),
+        name=uuids(),
+        id1=int32s(),
+        id2=int32s(),
         value1=booleans() | none(),
         value2=booleans() | none(),
     )
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    async def test_async_both_nulls_and_non_nulls(
+    async def test_both_nulls_and_non_nulls(
         self,
         *,
         data: DataObject,
-        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
-        dialect: Literal["sqlite", "postgres"],
-        ids: tuple[int, int],
+        name: UUID,
+        id1: int,
+        id2: int,
         value1: bool | None,
         value2: bool | None,
     ) -> None:
-        key = TestUpsertItems.test_async_both_nulls_and_non_nulls.__qualname__, dialect
-        name = f"test_{md5_hash(key)}"
         table = self._make_table(name)
-        engine = await self._get_engine_async(
-            data, create_postgres_engine_async, table, dialect=dialect
-        )
-        id1, id2 = ids
+        engine = await sqlalchemy_engines(data, table)
         await upsert_items(
             engine,
             ([{"id_": id1, "value": value1}, {"id_": id2, "value": value2}], table),
         )
 
-    @given(data=data())
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    async def test_async_error(
-        self,
-        *,
-        data: DataObject,
-        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
-        dialect: Literal["sqlite", "postgres"],
-    ) -> None:
-        key = TestUpsertItems.test_async_error.__qualname__, dialect
-        name = f"test_{md5_hash(key)}"
+    @given(data=data(), name=uuids())
+    async def test_error(self, *, data: DataObject, name: UUID) -> None:
         table = self._make_table(name)
-        engine = await self._get_engine_async(
-            data, create_postgres_engine_async, table, dialect=dialect
-        )
-        with raises(UpsertItemsAsyncError, match="Item must be valid; got None"):
+        engine = await sqlalchemy_engines(data, table)
+        with raises(UpsertItemsError, match="Item must be valid; got None"):
             _ = await self._run_test(engine, table, cast(Any, None))
 
     def _make_table(self, name: UUID, /) -> Table:
@@ -1111,15 +1040,6 @@ class TestUpsertItems:
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),
-        )
-
-    def _get_table_sel_or_all(self, name: str, /) -> Table:
-        return Table(
-            name,
-            MetaData(),
-            Column("id_", Integer, primary_key=True),
-            Column("x", Boolean, nullable=False),
-            Column("y", Boolean, nullable=True),
         )
 
     def _make_mapped_class(self, name: UUID, /) -> type[DeclarativeBase]:
@@ -1142,15 +1062,6 @@ class TestUpsertItems:
         selected_or_all: Literal["selected", "all"] = "selected",
         expected: set[tuple[Any, ...]] | None = None,
     ) -> None:
-        # if assume_tables_exist:
-        #     with raises((OperationalError, ProgrammingError)):
-        #         await upsert_items(
-        #             engine,
-        #             *items,
-        #             selected_or_all=selected_or_all,
-        #             assume_tables_exist=assume_tables_exist,
-        #         )
-        #     return []
         await upsert_items(engine, *items, selected_or_all=selected_or_all)
         sel = select(get_table(table_or_mapped_class))
         async with yield_connection(engine) as conn:
@@ -1162,13 +1073,13 @@ class TestUpsertItems:
 class TestYieldConnection:
     @given(data=data())
     async def test_engine(self, *, data: DataObject) -> None:
-        engine = await aiosqlite_engines(data)
+        engine = await sqlalchemy_engines(data)
         async with yield_connection(engine) as conn:
             assert isinstance(conn, AsyncConnection)
 
     @given(data=data())
     async def test_conn(self, *, data: DataObject) -> None:
-        engine = await aiosqlite_engines(data)
+        engine = await sqlalchemy_engines(data)
         async with engine.begin() as conn1, yield_connection(conn1) as conn2:
             assert isinstance(conn2, AsyncConnection)
 
