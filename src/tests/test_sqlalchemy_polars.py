@@ -104,7 +104,6 @@ from utilities.polars import DatetimeUTC, check_polars_dataframe
 from utilities.sqlalchemy import (
     EngineOrConnection,
     ensure_tables_created,
-    ensure_tables_created_async,
     yield_connection,
 )
 from utilities.sqlalchemy_polars import (
@@ -250,7 +249,7 @@ class TestInsertDataFrame:
     async def test_async_assume_exists(self, *, data: DataObject) -> None:
         df, table = self._prepare_empty_df_test()
         engine = await aiosqlite_engines(data)
-        await ensure_tables_created_async(engine, table)
+        await ensure_tables_created(engine, table)
         await insert_dataframe_async(df, table, engine, assume_tables_exist=True)
 
     def _prepare_main_test(
@@ -672,7 +671,7 @@ class TestSelectToDataFrame:
     async def test_async_in_clauses_empty(self, *, data: DataObject) -> None:
         table, sel = self._prepare_empty_test()
         engine = await aiosqlite_engines(data)
-        await ensure_tables_created_async(engine, table)
+        await ensure_tables_created(engine, table)
         df = await select_to_dataframe_async(
             sel, engine, in_clauses=(table.c["value"], [])
         )
@@ -999,7 +998,7 @@ class TestUpsertDataFrame:
         df = DataFrame(schema={"value": pl.Boolean})
         table = self._get_table(name)
         engine = await aiosqlite_engines(data)
-        await ensure_tables_created_async(engine, table)
+        await ensure_tables_created(engine, table)
         await upsert_dataframe_async(df, table, engine, assume_tables_exist=True)
 
     @given(

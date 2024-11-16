@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from pytest import fixture, mark
 
 from utilities.platform import IS_NOT_LINUX, IS_WINDOWS
-from utilities.sqlalchemy import ensure_tables_dropped_async
+from utilities.sqlalchemy import ensure_tables_dropped
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -76,7 +76,7 @@ else:
                 database="testing",
                 async_=True,
             )
-            await ensure_tables_dropped_async(engine, *tables_or_mapped_classes)
+            await ensure_tables_dropped(engine, *tables_or_mapped_classes)
             return engine
 
         return inner

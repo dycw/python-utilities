@@ -28,7 +28,7 @@ from hypothesis.strategies import (
 )
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pytest import mark, param, raises
-from sqlalchemy import Column, Engine, Integer, MetaData, Select, Table, select
+from sqlalchemy import Column, Integer, MetaData, Select, Table, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 
@@ -59,7 +59,6 @@ from utilities.hypothesis import (
     settings_with_reduced_examples,
     setup_hypothesis_profiles,
     slices,
-    sqlite_engines,
     str_arrays,
     temp_dirs,
     temp_paths,
@@ -73,12 +72,7 @@ from utilities.hypothesis import (
 from utilities.math import MAX_INT32, MAX_INT64, MIN_INT32, MIN_INT64
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
-from utilities.sqlalchemy import (
-    TableOrMappedClass,
-    get_table,
-    insert_items,
-    insert_items_async,
-)
+from utilities.sqlalchemy import TableOrMappedClass, get_table, insert_items
 from utilities.types import Duration, Number, make_isinstance
 from utilities.whenever import (
     MAX_TWO_WAY_TIMEDELTA,
@@ -554,25 +548,6 @@ class TestSlices:
 
 
 class TestSQLiteEngines:
-    @given(engine=sqlite_engines())
-    def test_sync(self, *, engine: Engine) -> None:
-        assert isinstance(engine, Engine)
-        database = engine.url.database
-        assert database is not None
-        assert not Path(database).exists()
-
-    @given(data=data(), ids=sets(integers(0, 10)))
-    def test_sync_table(self, *, data: DataObject, ids: set[int]) -> None:
-        metadata, table = self._metadata_and_table()
-        engine = data.draw(sqlite_engines(metadata=metadata))
-        self._run_test_sync(engine, table, ids)
-
-    @given(data=data(), ids=sets(integers(0, 10)))
-    def test_sync_mapped_class(self, *, data: DataObject, ids: set[int]) -> None:
-        base, mapped_class = self._base_and_mapped_class()
-        engine = data.draw(sqlite_engines(base=base))
-        self._run_test_sync(engine, mapped_class, ids)
-
     @given(data=data())
     async def test_async(self, *, data: DataObject) -> None:
         engine = await aiosqlite_engines(data)
@@ -585,13 +560,13 @@ class TestSQLiteEngines:
     async def test_async_table(self, *, data: DataObject, ids: set[int]) -> None:
         metadata, table = self._metadata_and_table()
         engine = await aiosqlite_engines(data, metadata=metadata)
-        await self._run_test_async(engine, table, ids)
+        await self._run_test(engine, table, ids)
 
     @given(data=data(), ids=sets(integers(0, 10)))
     async def test_async_mapped_class(self, *, data: DataObject, ids: set[int]) -> None:
         base, mapped_class = self._base_and_mapped_class()
         engine = await aiosqlite_engines(data, base=base)
-        await self._run_test_async(engine, mapped_class, ids)
+        await self._run_test(engine, mapped_class, ids)
 
     def _metadata_and_table(self) -> tuple[MetaData, Table]:
         metadata = MetaData()
@@ -610,29 +585,14 @@ class TestSQLiteEngines:
 
         return Base, Example
 
-    def _run_test_sync(
-        self,
-        engine: Engine,
-        table_or_mapped_class: TableOrMappedClass,
-        ids: set[int],
-        /,
-    ) -> None:
-        insert_items(engine, ([(id_,) for id_ in ids], table_or_mapped_class))
-        sel = self._get_select(table_or_mapped_class)
-        with engine.begin() as conn:
-            res = conn.execute(sel).scalars().all()
-        self._assert_results(res, ids)
-
-    async def _run_test_async(
+    async def _run_test(
         self,
         engine: AsyncEngine,
         table_or_mapped_class: TableOrMappedClass,
         ids: set[int],
         /,
     ) -> None:
-        await insert_items_async(
-            engine, ([(id_,) for id_ in ids], table_or_mapped_class)
-        )
+        await insert_items(engine, ([(id_,) for id_ in ids], table_or_mapped_class))
         sel = self._get_select(table_or_mapped_class)
         async with engine.begin() as conn:
             res = (await conn.execute(sel)).scalars().all()

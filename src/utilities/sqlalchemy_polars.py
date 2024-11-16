@@ -47,11 +47,9 @@ from utilities.sqlalchemy import (
     MaybeAsyncEngineOrConnection,
     TableOrMappedClass,
     ensure_tables_created,
-    ensure_tables_created_async,
     get_chunk_size,
     get_columns,
     insert_items,
-    insert_items_async,
     upsert_items,
     upsert_items_async,
     yield_connection,
@@ -126,13 +124,11 @@ async def insert_dataframe_async(
     prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
     if prepared.no_items_empty_df:
         if not assume_tables_exist:
-            await ensure_tables_created_async(
-                engine, table_or_mapped_class, timeout=timeout
-            )
+            await ensure_tables_created(engine, table_or_mapped_class, timeout=timeout)
         return
     if prepared.no_items_non_empty_df:
         raise InsertDataFrameAsyncError(df=df)
-    await insert_items_async(
+    await insert_items(
         engine,
         prepared.items,
         chunk_size_frac=chunk_size_frac,
@@ -651,9 +647,7 @@ async def upsert_dataframe_async(
     prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
     if prepared.no_items_empty_df:
         if not assume_tables_exist:
-            await ensure_tables_created_async(
-                engine, table_or_mapped_class, timeout=timeout
-            )
+            await ensure_tables_created(engine, table_or_mapped_class, timeout=timeout)
         return
     if prepared.no_items_non_empty_df:
         raise UpsertDataFrameAsyncError(df=df)

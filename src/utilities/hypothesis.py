@@ -56,7 +56,7 @@ from utilities.zoneinfo import UTC
 if TYPE_CHECKING:
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
-    from sqlalchemy import Engine, MetaData
+    from sqlalchemy import MetaData
     from sqlalchemy.ext.asyncio import AsyncEngine
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
@@ -530,24 +530,6 @@ def slices(
 
 
 @composite
-def sqlite_engines(
-    _draw: DrawFn, /, *, metadata: MetaData | None = None, base: Any = None
-) -> Engine:
-    """Strategy for generating SQLite engines."""
-    from utilities.sqlalchemy import create_engine
-
-    temp_path = _draw(temp_paths())
-    path = Path(temp_path, "db.sqlite")
-    engine = create_engine("sqlite", database=str(path))
-    cast(Any, engine).temp_path = temp_path  # keep `temp_path` alive
-    if metadata is not None:
-        metadata.create_all(engine)
-    if base is not None:
-        base.metadata.create_all(engine)
-    return engine
-
-
-@composite
 def str_arrays(
     _draw: DrawFn,
     /,
@@ -775,7 +757,6 @@ __all__ = [
     "sets_fixed_length",
     "setup_hypothesis_profiles",
     "slices",
-    "sqlite_engines",
     "str_arrays",
     "temp_dirs",
     "temp_paths",
