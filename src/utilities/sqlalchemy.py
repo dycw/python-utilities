@@ -103,19 +103,19 @@ async def check_engine(
             check_length(rows, equal_or_approx=num_tables)
         except CheckLengthError as error:
             raise CheckEngineError(
-                engine_or_conn=engine, rows=error.obj, expected=num_tables
+                engine=engine, rows=error.obj, expected=num_tables
             ) from None
 
 
 @dataclass(kw_only=True, slots=True)
 class CheckEngineError(Exception):
-    engine_or_conn: AsyncEngineOrConnection
+    engine: AsyncEngine
     rows: Sized
     expected: int | tuple[int, float]
 
     @override
     def __str__(self) -> str:
-        return f"{reprlib.repr(self.engine_or_conn)} must have {self.expected} table(s); got {len(self.rows)}"
+        return f"{reprlib.repr(self.engine)} must have {self.expected} table(s); got {len(self.rows)}"
 
 
 def columnwise_max(*columns: Any) -> Any:
@@ -625,7 +625,7 @@ async def upsert_items(
 
 
 def _upsert_items_build(
-    engine_or_conn: AsyncEngineOrConnection,
+    engine: AsyncEngine,
     table: Table,
     values: Iterable[StrMapping],
     /,
@@ -636,7 +636,7 @@ def _upsert_items_build(
     keys = set(reduce(or_, values))
     dict_nones = {k: None for k in keys}
     values = [{**dict_nones, **v} for v in values]
-    match _get_dialect(engine_or_conn):
+    match _get_dialect(engine):
         case "postgresql":  # skipif-ci-and-not-linux
             insert = postgresql_insert
         case "sqlite":
@@ -783,7 +783,7 @@ class _PrepareInsertOrUpsertItems:
 @overload
 def _prepare_insert_or_upsert_items(
     normalize_item: Callable[[_InsertItem], Iterator[_NormalizedInsertItem]],
-    engine_or_conn: AsyncEngineOrConnection,
+    engine: AsyncEngine,
     build_insert: Callable[[Table, Iterable[TupleOrStrMapping]], tuple[Insert, Any]],
     /,
     *items: _InsertItem,
@@ -792,7 +792,7 @@ def _prepare_insert_or_upsert_items(
 @overload
 def _prepare_insert_or_upsert_items(
     normalize_item: Callable[[_UpsertItem], Iterator[_NormalizedUpsertItem]],
-    engine_or_conn: AsyncEngineOrConnection,
+    engine: AsyncEngine,
     build_insert: Callable[[Table, Iterable[StrMapping]], tuple[Insert, Any]],
     /,
     *items: _UpsertItem,
@@ -800,7 +800,7 @@ def _prepare_insert_or_upsert_items(
 ) -> _PrepareInsertOrUpsertItems: ...
 def _prepare_insert_or_upsert_items(
     normalize_item: Callable[[Any], Iterator[Any]],
-    engine_or_conn: AsyncEngineOrConnection,
+    engine: AsyncEngine,
     build_insert: Callable[[Table, Iterable[Any]], tuple[Insert, Any]],
     /,
     *items: Any,
@@ -819,7 +819,7 @@ def _prepare_insert_or_upsert_items(
         raise _PrepareInsertOrUpsertItemsError(item=error.item) from None
     max_length = max(lengths, default=1)
     chunk_size = get_chunk_size(
-        engine_or_conn, chunk_size_frac=chunk_size_frac, scaling=max_length
+        engine, chunk_size_frac=chunk_size_frac, scaling=max_length
     )
 
     def yield_pairs() -> Iterator[tuple[Insert, None]]:

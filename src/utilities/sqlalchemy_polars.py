@@ -42,7 +42,6 @@ from utilities.iterables import (
 from utilities.polars import zoned_datetime
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
-    AsyncEngineOrConnection,
     TableOrMappedClass,
     ensure_tables_created,
     get_chunk_size,
@@ -413,7 +412,7 @@ def _select_to_dataframe_check_duplicates(
 
 def _select_to_dataframe_yield_selects_with_in_clauses(
     sel: Select[Any],
-    engine_or_conn: AsyncEngineOrConnection,
+    engine: AsyncEngine,
     in_clauses: tuple[Column[Any], Iterable[Any]],
     /,
     *,
@@ -424,7 +423,7 @@ def _select_to_dataframe_yield_selects_with_in_clauses(
     in_col, in_values = in_clauses
     if in_clauses_chunk_size is None:
         chunk_size = get_chunk_size(
-            engine_or_conn, chunk_size_frac=chunk_size_frac, scaling=max_length
+            engine, chunk_size_frac=chunk_size_frac, scaling=max_length
         )
     else:
         chunk_size = in_clauses_chunk_size

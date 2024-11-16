@@ -681,14 +681,12 @@ class TestSelectToDataFrameYieldSelectsWithInClauses:
         table = Table(name, MetaData(), Column("id", Integer, primary_key=True))
         engine = await sqlalchemy_engines(data, table)
         sel = select(table.c["id"])
-        async with engine.begin() as conn:
-            iterator = _select_to_dataframe_yield_selects_with_in_clauses(
-                sel,
-                conn,
-                (table.c["id"], values),
-                in_clauses_chunk_size=in_clauses_chunk_size,
-                chunk_size_frac=chunk_size_frac,
-            )
-            sels = list(iterator)
+        sels = _select_to_dataframe_yield_selects_with_in_clauses(
+            sel,
+            engine,
+            (table.c["id"], values),
+            in_clauses_chunk_size=in_clauses_chunk_size,
+            chunk_size_frac=chunk_size_frac,
+        )
         for sel in sels:
             assert isinstance(sel, Select)
