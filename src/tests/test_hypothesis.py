@@ -7,7 +7,7 @@ from re import search
 from subprocess import PIPE, check_output
 from typing import TYPE_CHECKING, Any, cast
 
-from hypothesis import HealthCheck, Phase, assume, given, reproduce_failure, settings
+from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.strategies import (
