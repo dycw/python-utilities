@@ -67,8 +67,7 @@ from utilities.types import (
     is_tuple_or_string_mapping,
 )
 
-AsyncEngineOrConnection = AsyncEngine | AsyncConnection
-EngineOrConnectionOrAsync = Engine | Connection | AsyncEngineOrConnection
+_EngineOrConnectionOrAsync = Engine | Connection | AsyncEngine | AsyncConnection
 Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
 TableOrMappedClass = Table | type[DeclarativeBase]
 CHUNK_SIZE_FRAC = 0.95
@@ -246,7 +245,7 @@ async def ensure_tables_dropped(
 
 
 def get_chunk_size(
-    engine_or_conn: EngineOrConnectionOrAsync,
+    engine_or_conn: _EngineOrConnectionOrAsync,
     /,
     *,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
@@ -545,7 +544,7 @@ class _NormalizeUpsertItemError(Exception):
 
 
 def selectable_to_string(
-    selectable: Selectable[Any], engine_or_conn: EngineOrConnectionOrAsync, /
+    selectable: Selectable[Any], engine_or_conn: _EngineOrConnectionOrAsync, /
 ) -> str:
     """Convert a selectable into a string."""
     com = selectable.compile(
@@ -698,7 +697,7 @@ def _ensure_tables_maybe_reraise(error: DatabaseError, match: str, /) -> None:
         raise error  # pragma: no cover
 
 
-def _get_dialect(engine_or_conn: EngineOrConnectionOrAsync, /) -> Dialect:
+def _get_dialect(engine_or_conn: _EngineOrConnectionOrAsync, /) -> Dialect:
     """Get the dialect of a database."""
     dialect = engine_or_conn.dialect
     if isinstance(dialect, mssql_dialect):  # pragma: no cover
@@ -718,7 +717,7 @@ def _get_dialect(engine_or_conn: EngineOrConnectionOrAsync, /) -> Dialect:
 
 
 def _get_dialect_max_params(
-    dialect_or_engine_or_conn: Dialect | EngineOrConnectionOrAsync, /
+    dialect_or_engine_or_conn: Dialect | _EngineOrConnectionOrAsync, /
 ) -> int:
     """Get the max number of parameters of a dialect."""
     match dialect_or_engine_or_conn:

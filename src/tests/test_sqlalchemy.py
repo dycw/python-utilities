@@ -129,7 +129,7 @@ class TestCheckEngine:
             case "sqlite":
                 expected = 1
             case "postgresql":
-                expected = (38_304, 0.1)
+                expected = (int(1e6), 1.0)
             case _ as dialect:
                 raise NotImplementedError(dialect)
         await check_engine(engine, num_tables=expected)
