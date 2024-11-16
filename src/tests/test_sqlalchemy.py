@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
-from hypothesis import Phase, assume, given, reproduce_failure, settings
+from hypothesis import given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -188,17 +188,10 @@ class TestColumnwiseMinMax:
             _ = (await conn.execute(sel)).all()
 
 
-class TestCreateEngine:
-    @given(temp_path=temp_paths())
-    def test_sync(self, *, temp_path: Path) -> None:
-        engine = create_async_engine("sqlite", database=temp_path.name)
-        assert isinstance(engine, Engine)
-
+class TestCreateAsyncEngine:
     @given(temp_path=temp_paths())
     def test_async(self, *, temp_path: Path) -> None:
-        engine = create_async_engine(
-            "sqlite+aiosqlite", database=temp_path.name, async_=True
-        )
+        engine = create_async_engine("sqlite+aiosqlite", database=temp_path.name)
         assert isinstance(engine, AsyncEngine)
 
     @given(temp_path=temp_paths())
@@ -212,39 +205,32 @@ class TestCreateEngine:
 
 
 class TestEnsureTablesCreated:
-    @given(data=data())
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_table(self, *, data: DataObject, use_conn: bool) -> None:
-        engine = await aiosqlite_engines(data)
-        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
-        await self._run_test(engine, table, use_conn=use_conn)
+    @given(data=data(), name=uuids())
+    async def test_table(self, *, data: DataObject, name: UUID) -> None:
+        table = Table(
+            f"test_{name}", MetaData(), Column("id_", Integer, primary_key=True)
+        )
+        engine = await sqlalchemy_engines(data, table)
+        await self._run_test(engine, table)
 
-    @given(data=data())
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_mapped_class(self, *, data: DataObject, use_conn: bool) -> None:
-        engine = await aiosqlite_engines(data)
-
+    @given(data=data(), name=uuids())
+    async def test_mapped_class(self, *, data: DataObject, name: UUID) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = f"test_{name}"
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        await self._run_test(engine, Example, use_conn=use_conn)
+        engine = await sqlalchemy_engines(data, Example)
+        await self._run_test(engine, Example)
 
     async def _run_test(
         self,
         engine_or_conn: AsyncEngineOrConnection,
         table_or_mapped_class: TableOrMappedClass,
         /,
-        *,
-        use_conn: bool = False,
     ) -> None:
-        if use_conn:
-            async with yield_connection(engine_or_conn) as conn:
-                await self._run_test(conn, table_or_mapped_class)
-            return
         for _ in range(2):
             await ensure_tables_created(engine_or_conn, table_or_mapped_class)
         sel = select(get_table(table_or_mapped_class))
@@ -253,19 +239,16 @@ class TestEnsureTablesCreated:
 
 
 class TestEnsureTablesDropped:
-    @given(data=data())
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_table(self, *, data: DataObject, use_conn: bool) -> None:
-        engine = await aiosqlite_engines(data)
-        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+    @given(data=data(), name=uuids())
+    async def test_table(self, *, data: DataObject, name: UUID) -> None:
+        table = Table(
+            f"test_{name}", MetaData(), Column("id_", Integer, primary_key=True)
+        )
+        engine = await sqlalchemy_engines(data, table)
+        await self._run_test(engine, table)
 
-        await self._run_test(engine, table, use_conn=use_conn)
-
-    @given(data=data())
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_mapped_class(self, *, data: DataObject, use_conn: bool) -> None:
-        engine = await aiosqlite_engines(data)
-
+    @given(data=data(), name=uuids())
+    async def test_mapped_class(self, *, data: DataObject, name: UUID) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
@@ -273,20 +256,15 @@ class TestEnsureTablesDropped:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        await self._run_test(engine, Example, use_conn=use_conn)
+        engine = await sqlalchemy_engines(data, Example)
+        await self._run_test(engine, Example)
 
     async def _run_test(
         self,
         engine_or_conn: AsyncEngineOrConnection,
         table_or_mapped_class: TableOrMappedClass,
         /,
-        *,
-        use_conn: bool = False,
     ) -> None:
-        if use_conn:
-            async with yield_connection(engine_or_conn) as conn:
-                await self._run_test(conn, table_or_mapped_class)
-            return
         for _ in range(2):
             await ensure_tables_dropped(engine_or_conn, table_or_mapped_class)
         sel = select(get_table(table_or_mapped_class))
