@@ -542,7 +542,7 @@ async def sqlalchemy_engines(
             )
             await ensure_tables_dropped(engine, *tables_or_mapped_classes)
             return engine
-        case _:
+        case _:  # pragma: no cover
             raise NotImplementedError(dialect)
 
 
