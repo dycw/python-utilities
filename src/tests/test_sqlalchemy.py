@@ -141,10 +141,8 @@ class TestCheckEngine:
     @settings(phases={Phase.generate})
     async def test_num_tables_error(self, *, data: DataObject) -> None:
         engine = await sqlalchemy_engines(data)
-        with raises(
-            CheckEngineError, match=r"Engine\(.*\) must have 1 table\(s\); got .*"
-        ):
-            await check_engine(engine, num_tables=1)
+        with raises(CheckEngineError, match=r".* must have 100000 table\(s\); got .*"):
+            await check_engine(engine, num_tables=100000)
 
 
 class TestColumnwiseMinMax:
