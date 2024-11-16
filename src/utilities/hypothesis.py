@@ -534,7 +534,7 @@ async def sqlalchemy_engines(
             engine_with_path = EngineWithPath(engine.sync_engine)
             cast(Any, engine_with_path).temp_path = temp_path  # keep `temp_path` alive
             return engine_with_path
-        case "postgresql":
+        case "postgresql":  # skipif-ci-and-not-linux
             from utilities.sqlalchemy import ensure_tables_dropped
 
             engine = create_async_engine(

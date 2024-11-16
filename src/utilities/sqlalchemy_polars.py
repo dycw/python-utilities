@@ -100,8 +100,8 @@ async def insert_dataframe(
                 assume_tables_exist=assume_tables_exist,
                 timeout=timeout,
             )
-        case "selected" | "all" as selected_or_all:
-            await upsert_items(
+        case "selected" | "all" as selected_or_all:  # skipif-ci-and-not-linux
+            await upsert_items(  # skipif-ci-and-not-linux
                 engine,
                 (items, table_or_mapped_class),
                 chunk_size_frac=chunk_size_frac,
@@ -313,7 +313,7 @@ async def select_to_dataframe(
 
     async def yield_dfs() -> AsyncIterator[DataFrame]:
         for sel_i in sels:
-            for df in await select_to_dataframe(
+            for df in await select_to_dataframe(  # skipif-ci-and-not-linux
                 sel_i,
                 engine,
                 snake=snake,
