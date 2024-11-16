@@ -868,23 +868,6 @@ class TestNormalizeUpsertItem:
         return Example
 
 
-@SKIPIF_CI
-class TestPostgresEngine:
-    @given(ids=sets(integers(0, 10), min_size=1))
-    def test_main(
-        self, *, create_postgres_engine: Callable[..., Engine], ids: set[int]
-    ) -> None:
-        key = TestPostgresEngine.test_main.__qualname__
-        name = f"test_{md5_hash(key)}"
-        table = Table(name, MetaData(), Column("id_", Integer, primary_key=True))
-        engine = create_postgres_engine(table)
-        insert_items(engine, ([(id_,) for id_ in ids], table))
-        sel = select(table.c["id_"])
-        with engine.begin() as conn:
-            res = conn.execute(sel).scalars().all()
-        assert set(res) == ids
-
-
 class TestPrepareInsertOrUpsertItems:
     @given(data=data())
     @mark.only

@@ -29,7 +29,7 @@ from hypothesis.strategies import (
 )
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pytest import mark, param, raises
-from sqlalchemy import Column, Integer, MetaData, Select, Table, insert, select
+from sqlalchemy import Column, Integer, MetaData, Table, insert, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX, SKIPIF_CI_AND_WINDOWS
@@ -73,7 +73,7 @@ from utilities.hypothesis import (
 from utilities.math import MAX_INT32, MAX_INT64, MIN_INT32, MIN_INT64
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
-from utilities.sqlalchemy import Dialect, TableOrMappedClass, _get_dialect, get_table
+from utilities.sqlalchemy import Dialect, _get_dialect
 from utilities.types import Duration, Number, make_isinstance
 from utilities.whenever import (
     MAX_TWO_WAY_TIMEDELTA,
@@ -551,16 +551,15 @@ class TestSlices:
 class TestSQLAlchemyEngines:
     @given(
         data=data(),
-        table_name=uuids(),
+        name=uuids(),
         dialect=_SQLALCHEMY_ENGINE_DIALECTS,
         ids=sets(integers(0, 10), min_size=1),
     )
-    @settings(phases={Phase.generate})
     async def test_main(
-        self, *, data: DataObject, table_name: UUID, dialect: Dialect, ids: set[int]
+        self, *, data: DataObject, name: UUID, dialect: Dialect, ids: set[int]
     ) -> None:
         table = Table(
-            f"test_{table_name}", MetaData(), Column("id_", Integer, primary_key=True)
+            f"test_{name}", MetaData(), Column("id_", Integer, primary_key=True)
         )
         engine = await sqlalchemy_engines(data, table, dialect=dialect)
         assert isinstance(engine, AsyncEngine)
@@ -578,9 +577,6 @@ class TestSQLAlchemyEngines:
         async with engine.begin() as conn:
             results = (await conn.execute(sel)).scalars().all()
         assert set(results) == ids
-
-    def _get_select(self, table_or_mapped_class: TableOrMappedClass, /) -> Select[Any]:
-        return select(get_table(table_or_mapped_class).c["id_"])
 
 
 class TestStrArrays:
