@@ -521,7 +521,7 @@ async def sqlalchemy_engines(
 
     draw = lift_data(_data)
     dialect_: Dialect = draw(dialect)
-    if "ci" in environ:
+    if "ci" in environ:  # pragma: no cover
         dialect_ = "sqlite"
     match dialect_:
         case "sqlite":
