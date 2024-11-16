@@ -40,8 +40,6 @@ from utilities.typing import get_args, is_namedtuple_class, is_namedtuple_instan
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
-    from sqlalchemy.engine import Engine
-
 
 _T = TypeVar("_T")
 _SCHEMA_KEY = "_k"
@@ -63,7 +61,6 @@ class _Key(StrEnum):
     path = "pth"
     set = "set"
     slice = "slc"
-    sqlalchemy_engine = "sql.eng"
     time = "tim"
     timedelta = "td"
     zoned_datetime = "zdt"
@@ -188,9 +185,6 @@ def _get_schema(obj: _T, /, *, fallback: bool = False) -> _Schema[_T]:
     # first party
     if isinstance(obj, Timer):
         return cast(_Schema[_T], _get_schema_timer())
-    # third party
-    if (schema := _get_schema_engine(obj)) is not None:
-        return cast(_Schema[_T], schema)
     # fallback
     if fallback:
         return cast(_Schema[_T], _get_schema_fallback())
@@ -213,20 +207,6 @@ def _get_schema_date() -> _Schema[dt.date]:
 
 def _get_schema_decimal() -> _Schema[Decimal]:
     return _Schema(key=_Key.decimal, serializer=str)
-
-
-def _get_schema_engine(obj: Any, /) -> _Schema[Engine] | None:
-    try:
-        from sqlalchemy import Engine
-    except ModuleNotFoundError:  # pragma: no cover
-        pass
-    else:
-        if isinstance(obj, Engine):
-            return _Schema(
-                key=_Key.sqlalchemy_engine,
-                serializer=lambda e: e.url.render_as_string(hide_password=False),
-            )
-    return None
 
 
 def _get_schema_fallback() -> _Schema[Any]:
@@ -406,9 +386,6 @@ def _object_hook(obj: Any, /) -> Any:
             return _object_hook_frozenset(value)
         case _Key.set:
             return _object_hook_set(value)
-        # third party
-        case _Key.sqlalchemy_engine:
-            return _object_hook_sqlalchemy_engine(value)
         # fallback
         case _Key.any:
             return _object_hook_fallback(value)
@@ -484,12 +461,6 @@ def _object_hook_set(value: list[_T], /) -> set[_T]:
 def _object_hook_slice(value: tuple[int | None, int | None, int | None], /) -> slice:
     start, stop, step = value
     return slice(start, stop, step)
-
-
-def _object_hook_sqlalchemy_engine(value: str, /) -> Any:
-    from sqlalchemy import create_engine
-
-    return create_engine(value)
 
 
 def _object_hook_time(value: str, /) -> dt.time:

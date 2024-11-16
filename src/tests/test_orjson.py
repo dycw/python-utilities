@@ -35,14 +35,12 @@ from hypothesis.strategies import (
     uuids,
 )
 from pytest import mark, param, raises
-from sqlalchemy import Engine
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.functions import not_func
 from utilities.hypothesis import (
     int64s,
     slices,
-    sqlite_engines,
     temp_paths,
     text_ascii,
     timedeltas_2w,
@@ -242,15 +240,6 @@ class TestSerializeAndDeserialize:
         obj = Example(color=Truth.true)
         result = deserialize(serialize(obj), cls=Example, enum_subsets=[TrueOnly])
         assert result == obj
-
-    @given(data=data())
-    def test_engines(self, *, data: DataObject) -> None:
-        def eq(x: Engine, y: Engine, /) -> bool:
-            return x.url == y.url
-
-        self._run_tests(
-            data, sqlite_engines(), two_way=True, eq=eq, eq_obj_implies_eq_ser=True
-        )
 
     def test_error_serialize(self) -> None:
         with raises(

@@ -56,40 +56,17 @@ from utilities.zoneinfo import UTC
 if TYPE_CHECKING:
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
-    from sqlalchemy import Engine, MetaData
     from sqlalchemy.ext.asyncio import AsyncEngine
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.redis import _TestRedis
+    from utilities.sqlalchemy import Dialect, TableOrMappedClass
     from utilities.types import Duration, Number
 
 
 _T = TypeVar("_T")
 MaybeSearchStrategy = _T | SearchStrategy[_T]
 Shape = int | tuple[int, ...]
-
-
-async def aiosqlite_engines(
-    _data: DataObject, /, *, metadata: MetaData | None = None, base: Any = None
-) -> AsyncEngine:
-    from utilities.sqlalchemy import create_engine
-
-    draw = lift_data(_data)
-    temp_path = draw(temp_paths())
-    path = Path(temp_path, "db.sqlite")
-    engine = create_engine("sqlite+aiosqlite", database=str(path), async_=True)
-    if metadata is not None:
-        async with engine.begin() as conn:  # pragma: no cover
-            await conn.run_sync(metadata.create_all)
-    if base is not None:
-        async with engine.begin() as conn:  # pragma: no cover
-            await conn.run_sync(base.metadata.create_all)
-
-    class EngineWithPath(type(engine)): ...
-
-    engine_with_path = EngineWithPath(engine.sync_engine)
-    cast(Any, engine_with_path).temp_path = temp_path  # keep `temp_path` alive
-    return engine_with_path
 
 
 @contextmanager
@@ -529,22 +506,44 @@ def slices(
     return slice(start, stop)
 
 
-@composite
-def sqlite_engines(
-    _draw: DrawFn, /, *, metadata: MetaData | None = None, base: Any = None
-) -> Engine:
-    """Strategy for generating SQLite engines."""
-    from utilities.sqlalchemy import create_engine
+_STRATEGY_DIALECTS: list[Dialect] = ["sqlite", "postgresql"]
+_SQLALCHEMY_ENGINE_DIALECTS = sampled_from(_STRATEGY_DIALECTS)
 
-    temp_path = _draw(temp_paths())
-    path = Path(temp_path, "db.sqlite")
-    engine = create_engine("sqlite", database=str(path))
-    cast(Any, engine).temp_path = temp_path  # keep `temp_path` alive
-    if metadata is not None:
-        metadata.create_all(engine)
-    if base is not None:
-        base.metadata.create_all(engine)
-    return engine
+
+async def sqlalchemy_engines(
+    _data: DataObject,
+    /,
+    *tables_or_mapped_classes: TableOrMappedClass,
+    dialect: MaybeSearchStrategy[Dialect] = _SQLALCHEMY_ENGINE_DIALECTS,
+) -> AsyncEngine:
+    """Strategy for generating sqlalchemy engines."""
+    from utilities.sqlalchemy import create_async_engine
+
+    draw = lift_data(_data)
+    dialect_: Dialect = draw(dialect)
+    if "CI" in environ:  # pragma: no cover
+        _ = assume(dialect_ == "sqlite")
+    match dialect_:
+        case "sqlite":
+            temp_path = draw(temp_paths())
+            path = Path(temp_path, "db.sqlite")
+            engine = create_async_engine("sqlite+aiosqlite", database=str(path))
+
+            class EngineWithPath(type(engine)): ...
+
+            engine_with_path = EngineWithPath(engine.sync_engine)
+            cast(Any, engine_with_path).temp_path = temp_path  # keep `temp_path` alive
+            return engine_with_path
+        case "postgresql":  # skipif-ci-and-not-linux
+            from utilities.sqlalchemy import ensure_tables_dropped
+
+            engine = create_async_engine(
+                "postgresql+asyncpg", host="localhost", port=5432, database="testing"
+            )
+            await ensure_tables_dropped(engine, *tables_or_mapped_classes)
+            return engine
+        case _:  # pragma: no cover
+            raise NotImplementedError(dialect)
 
 
 @composite
@@ -756,7 +755,6 @@ def _draw_text(
 __all__ = [
     "MaybeSearchStrategy",
     "Shape",
-    "aiosqlite_engines",
     "assume_does_not_raise",
     "bool_arrays",
     "durations",
@@ -775,7 +773,7 @@ __all__ = [
     "sets_fixed_length",
     "setup_hypothesis_profiles",
     "slices",
-    "sqlite_engines",
+    "sqlalchemy_engines",
     "str_arrays",
     "temp_dirs",
     "temp_paths",

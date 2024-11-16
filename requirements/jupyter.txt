@@ -38,7 +38,7 @@ charset-normalizer==3.4.0
     # via requests
 comm==0.2.2
     # via ipykernel
-coverage==7.6.5
+coverage==7.6.7
     # via pytest-cov
 debugpy==1.8.8
     # via ipykernel
@@ -54,7 +54,7 @@ fqdn==1.5.1
     # via jsonschema
 h11==0.14.0
     # via httpcore
-httpcore==1.0.6
+httpcore==1.0.7
     # via httpx
 httpx==0.27.2
     # via jupyterlab
@@ -119,7 +119,7 @@ jupyter-server==2.14.2
     #   notebook-shim
 jupyter-server-terminals==0.5.3
     # via jupyter-server
-jupyterlab==4.2.5
+jupyterlab==4.2.6
     # via dycw-utilities (pyproject.toml)
 jupyterlab-pygments==0.3.0
     # via nbconvert
