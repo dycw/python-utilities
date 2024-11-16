@@ -21,7 +21,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from sqlalchemy import Boolean, Column, Integer, MetaData, Table, select
 from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
-from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 from tests.conftest import FLAKY
@@ -29,7 +29,6 @@ from utilities.hypothesis import int32s, sqlalchemy_engines, temp_paths
 from utilities.iterables import one
 from utilities.modules import is_installed
 from utilities.sqlalchemy import (
-    AsyncEngineOrConnection,
     CheckEngineError,
     Dialect,
     GetTableError,
@@ -68,7 +67,6 @@ from utilities.sqlalchemy import (
     mapped_class_to_dict,
     selectable_to_string,
     upsert_items,
-    yield_connection,
     yield_primary_key_columns,
 )
 from utilities.text import strip_and_dedent
@@ -131,7 +129,7 @@ class TestCheckEngine:
             case "sqlite":
                 expected = 1
             case "postgresql":
-                expected = (38_304, 0.1)
+                expected = (int(1e6), 1.0)
             case _ as dialect:
                 raise NotImplementedError(dialect)
         await check_engine(engine, num_tables=expected)
@@ -251,15 +249,12 @@ class TestEnsureTablesCreated:
         await self._run_test(engine, Example)
 
     async def _run_test(
-        self,
-        engine_or_conn: AsyncEngineOrConnection,
-        table_or_mapped_class: TableOrMappedClass,
-        /,
+        self, engine: AsyncEngine, table_or_mapped_class: TableOrMappedClass, /
     ) -> None:
         for _ in range(2):
-            await ensure_tables_created(engine_or_conn, table_or_mapped_class)
+            await ensure_tables_created(engine, table_or_mapped_class)
         sel = select(get_table(table_or_mapped_class))
-        async with yield_connection(engine_or_conn) as conn:
+        async with engine.begin() as conn:
             _ = (await conn.execute(sel)).all()
 
 
@@ -287,16 +282,13 @@ class TestEnsureTablesDropped:
         await self._run_test(engine, Example)
 
     async def _run_test(
-        self,
-        engine_or_conn: AsyncEngineOrConnection,
-        table_or_mapped_class: TableOrMappedClass,
-        /,
+        self, engine: AsyncEngine, table_or_mapped_class: TableOrMappedClass, /
     ) -> None:
         for _ in range(2):
-            await ensure_tables_dropped(engine_or_conn, table_or_mapped_class)
+            await ensure_tables_dropped(engine, table_or_mapped_class)
         sel = select(get_table(table_or_mapped_class))
         with raises(DatabaseError):
-            async with yield_connection(engine_or_conn) as conn:
+            async with engine.begin() as conn:
                 _ = await conn.execute(sel)
 
 
@@ -579,7 +571,7 @@ class TestInsertItems:
     ) -> None:
         await insert_items(engine, *items)
         sel = select(get_table(table_or_mapped_class).c["id_"])
-        async with yield_connection(engine) as conn:
+        async with engine.begin() as conn:
             results = (await conn.execute(sel)).scalars().all()
         assert set(results) == ids
 
@@ -1146,28 +1138,10 @@ class TestUpsertItems:
     ) -> None:
         await upsert_items(engine, *items, selected_or_all=selected_or_all)
         sel = select(get_table(table_or_mapped_class))
-        async with yield_connection(engine) as conn:
+        async with engine.begin() as conn:
             results = (await conn.execute(sel)).all()
         if expected is not None:
             assert set(results) == expected
-
-
-class TestYieldConnection:
-    @FLAKY
-    @given(data=data())
-    @settings(phases={Phase.generate})
-    async def test_engine(self, *, data: DataObject) -> None:
-        engine = await sqlalchemy_engines(data)
-        async with yield_connection(engine) as conn:
-            assert isinstance(conn, AsyncConnection)
-
-    @FLAKY
-    @given(data=data())
-    @settings(phases={Phase.generate})
-    async def test_conn(self, *, data: DataObject) -> None:
-        engine = await sqlalchemy_engines(data)
-        async with engine.begin() as conn1, yield_connection(conn1) as conn2:
-            assert isinstance(conn2, AsyncConnection)
 
 
 class TestYieldPrimaryKeyColumns:
