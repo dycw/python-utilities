@@ -424,32 +424,6 @@ class InsertItemsError(Exception):
         return f"Item must be valid; got {self.item}"
 
 
-def is_insert_item_pair(
-    obj: Any, /
-) -> TypeGuard[tuple[TupleOrStrMapping, TableOrMappedClass]]:
-    """Check if an object is an insert-ready pair."""
-    return _is_insert_or_upsert_pair(obj, is_tuple_or_string_mapping)
-
-
-def is_upsert_item_pair(
-    obj: Any, /
-) -> TypeGuard[tuple[StrMapping, TableOrMappedClass]]:
-    """Check if an object is an upsert-ready pair."""
-    return _is_insert_or_upsert_pair(obj, is_string_mapping)
-
-
-def _is_insert_or_upsert_pair(
-    obj: Any, predicate: Callable[[TupleOrStrMapping], bool], /
-) -> bool:
-    """Check if an object is an insert/upsert-ready pair."""
-    return (
-        isinstance(obj, tuple)
-        and (len(obj) == 2)
-        and predicate(obj[0])
-        and is_table_or_mapped_class(obj[1])
-    )
-
-
 def is_mapped_class(obj: Any, /) -> bool:
     """Check if an object is a mapped class."""
     if isinstance(obj, type):
@@ -501,7 +475,7 @@ def _normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertIt
     else:
         return
 
-    if is_insert_item_pair(item):
+    if _is_insert_item_pair(item):
         yield _NormalizedInsertItem(values=item[0], table=get_table(item[1]))
         return
 
@@ -521,7 +495,7 @@ def _normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertIt
 
     item = cast(_ListOfPairOfDictAndTable, item)
 
-    if is_iterable_not_str(item) and all(is_insert_item_pair(i) for i in item):
+    if is_iterable_not_str(item) and all(_is_insert_item_pair(i) for i in item):
         item = cast(_ListOfPairOfTupleAndTable | _ListOfPairOfDictAndTable, item)
         for i in item:
             yield _NormalizedInsertItem(values=i[0], table=get_table(i[1]))
@@ -564,7 +538,7 @@ def _normalize_upsert_item(
 def _normalize_upsert_item_inner(
     item: _UpsertItem, /
 ) -> Iterator[_NormalizedUpsertItem]:
-    if is_upsert_item_pair(item):
+    if _is_upsert_item_pair(item):
         yield _NormalizedUpsertItem(values=item[0], table=get_table(item[1]))
         return
 
@@ -592,7 +566,7 @@ def _normalize_upsert_item_inner(
         _ListOfPairOfDictAndTable | DeclarativeBase | Sequence[DeclarativeBase], item
     )
 
-    if is_iterable_not_str(item) and all(is_upsert_item_pair(i) for i in item):
+    if is_iterable_not_str(item) and all(_is_upsert_item_pair(i) for i in item):
         item = cast(_ListOfPairOfDictAndTable, item)
         for i in item:
             yield _NormalizedUpsertItem(values=i[0], table=get_table(i[1]))
@@ -848,6 +822,32 @@ def _get_dialect_max_params(
             assert_never(never)
 
 
+def _is_insert_item_pair(
+    obj: Any, /
+) -> TypeGuard[tuple[TupleOrStrMapping, TableOrMappedClass]]:
+    """Check if an object is an insert-ready pair."""
+    return _is_insert_or_upsert_pair(obj, is_tuple_or_string_mapping)
+
+
+def _is_upsert_item_pair(
+    obj: Any, /
+) -> TypeGuard[tuple[StrMapping, TableOrMappedClass]]:
+    """Check if an object is an upsert-ready pair."""
+    return _is_insert_or_upsert_pair(obj, is_string_mapping)
+
+
+def _is_insert_or_upsert_pair(
+    obj: Any, predicate: Callable[[TupleOrStrMapping], bool], /
+) -> bool:
+    """Check if an object is an insert/upsert-ready pair."""
+    return (
+        isinstance(obj, tuple)
+        and (len(obj) == 2)
+        and predicate(obj[0])
+        and is_table_or_mapped_class(obj[1])
+    )
+
+
 @dataclass(kw_only=True, slots=True)
 class _PrepareInsertOrUpsertItems:
     tables: Sequence[Table] = field(default_factory=list)
@@ -936,10 +936,8 @@ __all__ = [
     "get_table",
     "get_table_name",
     "insert_items",
-    "is_insert_item_pair",
     "is_mapped_class",
     "is_table_or_mapped_class",
-    "is_upsert_item_pair",
     "mapped_class_to_dict",
     "parse_engine",
     "selectable_to_string",
