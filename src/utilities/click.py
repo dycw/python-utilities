@@ -449,31 +449,6 @@ class ListUUIDs(ListParameter[UUIDParameterType, UUID]):
         super().__init__(UUIDParameterType(), separator=separator, empty=empty)
 
 
-# sqlalchemy
-
-
-class Engine(ParamType):
-    """An engine-valued parameter."""
-
-    name = "engine"
-
-    @override
-    def __repr__(self) -> str:
-        return self.name.upper()
-
-    @override
-    def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
-    ) -> _Engine:
-        """Convert a value into the `Engine` type."""
-        from utilities.sqlalchemy import ParseEngineError, ensure_engine
-
-        try:
-            return ensure_engine(value)
-        except ParseEngineError:
-            self.fail(f"Unable to parse {value}", param, ctx)
-
-
 # private
 
 
@@ -486,7 +461,6 @@ __all__ = [
     "Date",
     "DirPath",
     "Duration",
-    "Engine",
     "Enum",
     "ExistingDirPath",
     "ExistingFilePath",

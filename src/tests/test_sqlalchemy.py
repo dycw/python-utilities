@@ -51,7 +51,6 @@ from utilities.sqlalchemy import (
     Dialect,
     GetTableError,
     InsertItemsError,
-    ParseEngineError,
     TablenameMixin,
     TableOrMappedClass,
     _get_dialect,
@@ -70,7 +69,7 @@ from utilities.sqlalchemy import (
     _UpsertItem,
     columnwise_max,
     columnwise_min,
-    create_engine,
+    create_async_engine,
     ensure_engine,
     ensure_tables_created,
     ensure_tables_dropped,
@@ -188,33 +187,24 @@ class TestColumnwiseMinMax:
 class TestCreateEngine:
     @given(temp_path=temp_paths())
     def test_sync(self, *, temp_path: Path) -> None:
-        engine = create_engine("sqlite", database=temp_path.name)
+        engine = create_async_engine("sqlite", database=temp_path.name)
         assert isinstance(engine, Engine)
 
     @given(temp_path=temp_paths())
     def test_async(self, *, temp_path: Path) -> None:
-        engine = create_engine("sqlite+aiosqlite", database=temp_path.name, async_=True)
+        engine = create_async_engine(
+            "sqlite+aiosqlite", database=temp_path.name, async_=True
+        )
         assert isinstance(engine, AsyncEngine)
 
     @given(temp_path=temp_paths())
     def test_query(self, *, temp_path: Path) -> None:
-        engine = create_engine(
+        engine = create_async_engine(
             "sqlite",
             database=temp_path.name,
             query={"arg1": "value1", "arg2": ["value2"]},
         )
         assert isinstance(engine, Engine)
-
-
-class TestEnsureEngine:
-    @given(data=data())
-    async def test_main(self, *, data: DataObject) -> None:
-        engine = await sqlalchemy_engines(data)
-        maybe_engine = data.draw(
-            sampled_from([engine, engine.url.render_as_string(hide_password=False)])
-        )
-        result = ensure_engine(maybe_engine)
-        assert result.url == engine.url
 
 
 class TestEnsureTablesCreated:
@@ -357,36 +347,36 @@ class TestGetColumns:
 class TestGetDialect:
     @mark.skipif(condition=not is_installed("pyodbc"), reason="'pyodbc' not installed")
     def test_mssql(self) -> None:
-        engine = create_engine("mssql")
+        engine = create_async_engine("mssql")
         assert _get_dialect(engine) == "mssql"
 
     @mark.skipif(
         condition=not is_installed("mysqldb"), reason="'mysqldb' not installed"
     )
     def test_mysql(self) -> None:
-        engine = create_engine("mysql")
+        engine = create_async_engine("mysql")
         assert _get_dialect(engine) == "mysql"
 
     @mark.skipif(
         condition=not is_installed("oracledb"), reason="'oracledb' not installed"
     )
     def test_oracle(self) -> None:
-        engine = create_engine("oracle+oracledb")
+        engine = create_async_engine("oracle+oracledb")
         assert _get_dialect(engine) == "oracle"
 
     def test_postgres(self) -> None:
-        engine = create_engine("postgresql")
+        engine = create_async_engine("postgresql")
         assert _get_dialect(engine) == "postgresql"
 
     @mark.skipif(
         condition=not is_installed("asyncpg"), reason="'asyncpg' not installed"
     )
     def test_postgres_async(self) -> None:
-        engine = create_engine("postgresql+asyncpg")
+        engine = create_async_engine("postgresql+asyncpg")
         assert _get_dialect(engine) == "postgresql"
 
     def test_sqlite(self) -> None:
-        engine = create_engine("sqlite")
+        engine = create_async_engine("sqlite")
         assert _get_dialect(engine) == "sqlite"
 
     @given(data=data())

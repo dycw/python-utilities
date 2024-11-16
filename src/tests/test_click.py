@@ -209,14 +209,6 @@ class TestParameters:
             True,
         ),
         param(
-            utilities.click.Engine(),
-            "ENGINE",
-            sqlalchemy.Engine,
-            sqlite_engines(),
-            serialize_engine,
-            True,
-        ),
-        param(
             FrozenSetBools(),
             "FROZENSET[BOOL]",
             frozenset[bool],

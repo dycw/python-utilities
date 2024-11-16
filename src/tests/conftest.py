@@ -51,9 +51,9 @@ else:
         """Create a Postgres engine."""
 
         async def inner(*tables_or_mapped_classes: TableOrMappedClass) -> AsyncEngine:
-            from utilities.sqlalchemy import create_engine
+            from utilities.sqlalchemy import create_async_engine
 
-            engine = create_engine(
+            engine = create_async_engine(
                 "postgresql+asyncpg",
                 host="localhost",
                 port=5432,

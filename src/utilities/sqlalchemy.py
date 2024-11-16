@@ -25,6 +25,7 @@ from sqlalchemy import (
     insert,
     text,
 )
+from sqlalchemy import create_async_engine as _create_async_engine
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
 from sqlalchemy.dialects.mysql import dialect as mysql_dialect
@@ -37,7 +38,7 @@ from sqlalchemy.dialects.sqlite import Insert as sqlite_Insert
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import ArgumentError, DatabaseError
-from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.orm import (
     DeclarativeBase,
     InstrumentedAttribute,
@@ -155,49 +156,7 @@ def _columnwise_minmax(*columns: Any, op: Callable[[Any, Any], Any]) -> Any:
     return reduce(func, columns)
 
 
-@overload
-def create_engine(
-    drivername: str,
-    /,
-    *,
-    username: str | None = ...,
-    password: str | None = ...,
-    host: str | None = ...,
-    port: int | None = ...,
-    database: str | None = ...,
-    query: StrMapping | None = ...,
-    poolclass: type[Pool] | None = ...,
-    async_: Literal[True],
-) -> AsyncEngine: ...
-@overload
-def create_engine(
-    drivername: str,
-    /,
-    *,
-    username: str | None = ...,
-    password: str | None = ...,
-    host: str | None = ...,
-    port: int | None = ...,
-    database: str | None = ...,
-    query: StrMapping | None = ...,
-    poolclass: type[Pool] | None = ...,
-    async_: Literal[False] = False,
-) -> Engine: ...
-@overload
-def create_engine(
-    drivername: str,
-    /,
-    *,
-    username: str | None = ...,
-    password: str | None = ...,
-    host: str | None = ...,
-    port: int | None = ...,
-    database: str | None = ...,
-    query: StrMapping | None = ...,
-    poolclass: type[Pool] | None = ...,
-    async_: bool = False,
-) -> Engine | AsyncEngine: ...
-def create_engine(
+def create_async_engine(
     drivername: str,
     /,
     *,
@@ -208,8 +167,7 @@ def create_engine(
     database: str | None = None,
     query: StrMapping | None = None,
     poolclass: type[Pool] | None = NullPool,
-    async_: bool = False,
-) -> Engine | AsyncEngine:
+) -> AsyncEngine:
     """Create a SQLAlchemy engine."""
     if query is None:
         kwargs = {}
@@ -228,16 +186,7 @@ def create_engine(
         database=database,
         **kwargs,
     )
-    if async_:
-        return create_async_engine(url, poolclass=poolclass)
-    return _create_engine(url, poolclass=poolclass)
-
-
-def ensure_engine(engine: AsyncEngine | str, /) -> AsyncEngine:
-    """Ensure the object is an AsyncEngine."""
-    if isinstance(engine, AsyncEngine):
-        return engine
-    return parse_engine(engine)
+    return _create_async_engine(url, poolclass=poolclass)
 
 
 async def ensure_tables_created(
@@ -594,17 +543,6 @@ class _NormalizeUpsertItemError(Exception):
         return f"Item must be valid; got {self.item}"
 
 
-def parse_engine(engine: str, /) -> AsyncEngine:
-    """Parse a string into an Engine."""
-    try:
-        return create_async_engine(engine, poolclass=NullPool)
-    except ArgumentError as error:
-        raise ParseEngineError(*error.args) from None
-
-
-class ParseEngineError(Exception): ...
-
-
 def selectable_to_string(
     selectable: Selectable[Any], engine_or_conn: AsyncEngineOrConnection, /
 ) -> str:
@@ -917,15 +855,12 @@ __all__ = [
     "CheckEngineError",
     "GetTableError",
     "InsertItemsError",
-    "ParseEngineError",
     "TablenameMixin",
     "UpsertItemsError",
-    "_get_dialect",
     "check_engine",
     "columnwise_max",
     "columnwise_min",
-    "create_engine",
-    "ensure_engine",
+    "create_async_engine",
     "ensure_tables_created",
     "ensure_tables_dropped",
     "get_chunk_size",
@@ -937,7 +872,6 @@ __all__ = [
     "is_mapped_class",
     "is_table_or_mapped_class",
     "mapped_class_to_dict",
-    "parse_engine",
     "selectable_to_string",
     "serialize_engine",
     "upsert_items",

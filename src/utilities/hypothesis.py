@@ -71,6 +71,7 @@ if TYPE_CHECKING:
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.redis import _TestRedis
+    from utilities.sqlalchemy import Dialect
     from utilities.types import Duration, Number
 
 
@@ -82,12 +83,12 @@ Shape = int | tuple[int, ...]
 async def aiosqlite_engines(
     _data: DataObject, /, *, metadata: MetaData | None = None, base: Any = None
 ) -> AsyncEngine:
-    from utilities.sqlalchemy import create_engine
+    from utilities.sqlalchemy import create_async_engine
 
     draw = lift_data(_data)
     temp_path = draw(temp_paths())
     path = Path(temp_path, "db.sqlite")
-    engine = create_engine("sqlite+aiosqlite", database=str(path), async_=True)
+    engine = create_async_engine("sqlite+aiosqlite", database=str(path), async_=True)
     if metadata is not None:
         async with engine.begin() as conn:  # pragma: no cover
             await conn.run_sync(metadata.create_all)
@@ -539,35 +540,33 @@ def slices(
     return slice(start, stop)
 
 
-_SQLALCHEMY_ENGINE_DIALECTS: frozenset[Literal["sqlite", "postgres"]] = frozenset({
-    "sqlite",
-    "postgres",
-})
+_SQLALCHEMY_ENGINE_DIALECTS: frozenset[Dialect] = frozenset({"sqlite", "postgresql"})
 
 
 async def sqlalchemy_engines(
     _data: DataObject,
     /,
     *,
-    dialects: MaybeSearchStrategy[AbstractSet[Literal["sqlite", "postgres"]]]
-    | None = _SQLALCHEMY_ENGINE_DIALECTS,
+    dialects: MaybeSearchStrategy[AbstractSet[Dialect]] = _SQLALCHEMY_ENGINE_DIALECTS,
     metadata: MetaData | None = None,
     base: type[Any] | None = None,
 ) -> AsyncEngine:
     """Strategy for generating sqlalchemy engines."""
-    from utilities.sqlalchemy import create_engine
+    from utilities.sqlalchemy import create_async_engine
 
     draw = lift_data(_data)
-    draw(_SQLALCHEMY_ENGINE_DIALECTS)
-
-    if dialects is None:
-        dialects = {"sqlit"}
-    if dialects is None:
-        dialects = {"sqlite"}
-    draw = lift_data(_data)
+    dialects_ = draw(dialects)
+    dialect = draw(sampled_from(sorted(dialects_)))
+    match dialect:
+        case "sqlite":
+            pass
+        case "postgresql":
+            pass
+        case _:
+            raise NotImplementedError(dialect)
     temp_path = draw(temp_paths())
     path = Path(temp_path, "db.sqlite")
-    engine = create_engine("sqlite", database=str(path))
+    engine = create_async_engine("sqlite", database=str(path))
     if metadata is not None:
         async with engine.begin() as conn:
             await conn.run_sync(metadata.create_all)
@@ -802,6 +801,7 @@ __all__ = [
     "sets_fixed_length",
     "setup_hypothesis_profiles",
     "slices",
+    "sqlalchemy_engines",
     "str_arrays",
     "temp_dirs",
     "temp_paths",
