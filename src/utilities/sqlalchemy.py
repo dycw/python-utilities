@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import reprlib
-from asyncio import sleep
 from collections import defaultdict
 from collections.abc import AsyncIterator, Callable, Iterable, Iterator, Sequence, Sized
 from contextlib import asynccontextmanager
@@ -309,7 +308,7 @@ _InsertItem = (
 
 
 async def insert_items(
-    engine_or_conn: AsyncEngineOrConnection,
+    engine: AsyncEngine,
     *items: _InsertItem,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
@@ -341,7 +340,7 @@ async def insert_items(
     def build_insert(
         table: Table, values: Iterable[TupleOrStrMapping], /
     ) -> tuple[Insert, Any]:
-        match _get_dialect(engine_or_conn):
+        match _get_dialect(engine):
             case "oracle":  # pragma: no cover
                 return insert(table), values
             case _:
@@ -350,7 +349,7 @@ async def insert_items(
     try:
         prepared = _prepare_insert_or_upsert_items(
             _normalize_insert_item,
-            engine_or_conn,
+            engine,
             build_insert,
             *items,
             chunk_size_frac=chunk_size_frac,
@@ -358,9 +357,9 @@ async def insert_items(
     except _PrepareInsertOrUpsertItemsError as error:
         raise InsertItemsError(item=error.item) from None
     if not assume_tables_exist:
-        await ensure_tables_created(engine_or_conn, *prepared.tables, timeout=timeout)
+        await ensure_tables_created(engine, *prepared.tables, timeout=timeout)
     for ins, parameters in prepared.yield_pairs():
-        async with yield_connection(engine_or_conn, timeout=timeout) as conn:
+        async with yield_connection(engine, timeout=timeout) as conn:
             _ = await conn.execute(ins, parameters=parameters)
 
 
