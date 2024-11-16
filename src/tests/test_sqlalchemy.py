@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-import time
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
-import sqlalchemy
 from hypothesis import given, settings
 from hypothesis.strategies import (
     DataObject,
@@ -21,28 +19,19 @@ from hypothesis.strategies import (
 )
 from pytest import mark, param, raises
 from sqlalchemy import (
-    INTEGER,
-    NVARCHAR,
     Boolean,
     Column,
-    Connection,
     DateTime,
     Engine,
     Integer,
     MetaData,
     Row,
     Select,
-    String,
     Table,
     func,
     select,
 )
-from sqlalchemy.exc import (
-    DatabaseError,
-    NoSuchTableError,
-    OperationalError,
-    ProgrammingError,
-)
+from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
@@ -52,6 +41,7 @@ from utilities.hypothesis import (
     aiosqlite_engines,
     int32s,
     sets_fixed_length,
+    sqlalchemy_engines,
     temp_paths,
 )
 from utilities.iterables import one
@@ -64,22 +54,20 @@ from utilities.sqlalchemy import (
     ParseEngineError,
     TablenameMixin,
     TableOrMappedClass,
-    UpsertItemsAsyncError,
-    UpsertItemsError,
     _get_dialect,
     _get_dialect_max_params,
-    _insert_items_prepare,
     _InsertItem,
-    _InsertItemsPrepareError,
+    _is_insert_item_pair,
+    _is_upsert_item_pair,
     _normalize_insert_item,
     _normalize_upsert_item,
     _NormalizedInsertItem,
     _NormalizedUpsertItem,
     _NormalizeInsertItemError,
     _NormalizeUpsertItemError,
-    _upsert_items_prepare,
+    _prepare_insert_or_upsert_items,
+    _PrepareInsertOrUpsertItemsError,
     _UpsertItem,
-    _UpsertItemsPrepareError,
     columnwise_max,
     columnwise_min,
     create_engine,
@@ -92,7 +80,6 @@ from utilities.sqlalchemy import (
     get_table,
     get_table_name,
     insert_items,
-    is_insert_item_pair,
     is_mapped_class,
     is_table_or_mapped_class,
     mapped_class_to_dict,
@@ -143,14 +130,15 @@ def _upsert_lists(
 
 class TestColumnwiseMinMax:
     @given(
-        engine=sqlite_engines(),
+        data=data(),
         values=sets(
             tuples(integers(0, 10) | none(), integers(0, 10) | none()), min_size=1
         ),
     )
-    def test_main(
-        self, *, engine: Engine, values: set[tuple[int | None, int | None]]
+    async def test_main(
+        self, *, data: DataObject, values: set[tuple[int | None, int | None]]
     ) -> None:
+        engine = await sqlalchemy_engines(data)
         table = Table(
             "example",
             MetaData(),
@@ -182,8 +170,9 @@ class TestColumnwiseMinMax:
                 assert min_xy == min(x, y)
                 assert max_xy == max(x, y)
 
-    @given(engine=sqlite_engines())
-    def test_label(self, *, engine: Engine) -> None:
+    @given(data=data())
+    async def test_label(self, *, data: DataObject) -> None:
+        engine = await sqlalchemy_engines(data)
         table = Table(
             "example",
             MetaData(),
@@ -218,8 +207,9 @@ class TestCreateEngine:
 
 
 class TestEnsureEngine:
-    @given(data=data(), engine=sqlite_engines())
-    def test_main(self, *, data: DataObject, engine: Engine) -> None:
+    @given(data=data())
+    async def test_main(self, *, data: DataObject) -> None:
+        engine = await sqlalchemy_engines(data)
         maybe_engine = data.draw(
             sampled_from([engine, engine.url.render_as_string(hide_password=False)])
         )
@@ -228,36 +218,18 @@ class TestEnsureEngine:
 
 
 class TestEnsureTablesCreated:
-    @given(engine=sqlite_engines())
+    @given(data=data())
     @mark.parametrize("use_conn", [param(True), param(False)])
-    def test_sync_table(self, *, engine: Engine, use_conn: bool) -> None:
-        self._run_test_sync(engine, self._table, use_conn=use_conn)
-
-    @given(engine=sqlite_engines())
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    def test_sync_mapped_class(self, *, engine: Engine, use_conn: bool) -> None:
-        self._run_test_sync(engine, self._mapped_class, use_conn=use_conn)
+    async def test_table(self, *, data: DataObject, use_conn: bool) -> None:
+        engine = await aiosqlite_engines(data)
+        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+        await self._run_test(engine, table, use_conn=use_conn)
 
     @given(data=data())
     @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_async_table(self, *, data: DataObject, use_conn: bool) -> None:
+    async def test_mapped_class(self, *, data: DataObject, use_conn: bool) -> None:
         engine = await aiosqlite_engines(data)
-        await self._run_test_async(engine, self._table, use_conn=use_conn)
 
-    @given(data=data())
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_async_mapped_class(
-        self, *, data: DataObject, use_conn: bool
-    ) -> None:
-        engine = await aiosqlite_engines(data)
-        await self._run_test_async(engine, self._mapped_class, use_conn=use_conn)
-
-    @property
-    def _table(self) -> Table:
-        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
-
-    @property
-    def _mapped_class(self) -> type[DeclarativeBase]:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
@@ -265,27 +237,9 @@ class TestEnsureTablesCreated:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        return Example
+        await self._run_test(engine, Example, use_conn=use_conn)
 
-    def _run_test_sync(
-        self,
-        engine_or_conn: EngineOrConnection,
-        table_or_mapped_class: TableOrMappedClass,
-        /,
-        *,
-        use_conn: bool = False,
-    ) -> None:
-        if use_conn:
-            with yield_connection(engine_or_conn) as conn:
-                self._run_test_sync(conn, table_or_mapped_class)
-            return
-        for _ in range(2):
-            ensure_tables_created(engine_or_conn, table_or_mapped_class)
-        sel = self._get_select(table_or_mapped_class)
-        with yield_connection(engine_or_conn) as conn:
-            _ = conn.execute(sel).all()
-
-    async def _run_test_async(
+    async def _run_test(
         self,
         engine_or_conn: AsyncEngineOrConnection,
         table_or_mapped_class: TableOrMappedClass,
@@ -295,49 +249,29 @@ class TestEnsureTablesCreated:
     ) -> None:
         if use_conn:
             async with yield_connection(engine_or_conn) as conn:
-                await self._run_test_async(conn, table_or_mapped_class)
+                await self._run_test(conn, table_or_mapped_class)
             return
         for _ in range(2):
             await ensure_tables_created(engine_or_conn, table_or_mapped_class)
-        sel = self._get_select(table_or_mapped_class)
+        sel = select(get_table(table_or_mapped_class))
         async with yield_connection(engine_or_conn) as conn:
             _ = (await conn.execute(sel)).all()
 
-    def _get_select(self, table_or_mapped_class: TableOrMappedClass, /) -> Select[Any]:
-        return select(get_table(table_or_mapped_class))
-
 
 class TestEnsureTablesDropped:
-    @given(engine=sqlite_engines())
+    @given(data=data())
     @mark.parametrize("use_conn", [param(True), param(False)])
-    def test_sync_table(self, *, engine: Engine, use_conn: bool) -> None:
-        self._run_test_sync(engine, self._table, use_conn=use_conn)
+    async def test_table(self, *, data: DataObject, use_conn: bool) -> None:
+        engine = await aiosqlite_engines(data)
+        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
 
-    @given(engine=sqlite_engines())
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    def test_mapped_class(self, *, engine: Engine, use_conn: bool) -> None:
-        self._run_test_sync(engine, self._mapped_class, use_conn=use_conn)
+        await self._run_test(engine, table, use_conn=use_conn)
 
     @given(data=data())
     @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_async_table(self, *, data: DataObject, use_conn: bool) -> None:
+    async def test_mapped_class(self, *, data: DataObject, use_conn: bool) -> None:
         engine = await aiosqlite_engines(data)
-        await self._run_test_async(engine, self._table, use_conn=use_conn)
 
-    @given(data=data())
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_async_mapped_class(
-        self, *, data: DataObject, use_conn: bool
-    ) -> None:
-        engine = await aiosqlite_engines(data)
-        await self._run_test_async(engine, self._mapped_class, use_conn=use_conn)
-
-    @property
-    def _table(self) -> Table:
-        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
-
-    @property
-    def _mapped_class(self) -> type[DeclarativeBase]:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
@@ -345,27 +279,9 @@ class TestEnsureTablesDropped:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        return Example
+        await self._run_test(engine, Example, use_conn=use_conn)
 
-    def _run_test_sync(
-        self,
-        engine_or_conn: EngineOrConnection,
-        table_or_mapped_class: TableOrMappedClass,
-        /,
-        *,
-        use_conn: bool = False,
-    ) -> None:
-        if use_conn:
-            with yield_connection(engine_or_conn) as conn:
-                self._run_test_sync(conn, table_or_mapped_class)
-            return
-        for _ in range(2):
-            ensure_tables_dropped(engine_or_conn, table_or_mapped_class)
-        sel = self._get_select(table_or_mapped_class)
-        with raises(DatabaseError), yield_connection(engine_or_conn) as conn:
-            _ = conn.execute(sel).all()
-
-    async def _run_test_async(
+    async def _run_test(
         self,
         engine_or_conn: AsyncEngineOrConnection,
         table_or_mapped_class: TableOrMappedClass,
@@ -375,35 +291,19 @@ class TestEnsureTablesDropped:
     ) -> None:
         if use_conn:
             async with yield_connection(engine_or_conn) as conn:
-                await self._run_test_async(conn, table_or_mapped_class)
+                await self._run_test(conn, table_or_mapped_class)
             return
         for _ in range(2):
             await ensure_tables_dropped(engine_or_conn, table_or_mapped_class)
-        sel = self._get_select(table_or_mapped_class)
+        sel = select(get_table(table_or_mapped_class))
         with raises(DatabaseError):
             async with yield_connection(engine_or_conn) as conn:
                 _ = await conn.execute(sel)
 
-    def _get_select(self, table_or_mapped_class: TableOrMappedClass, /) -> Select[Any]:
-        return select(get_table(table_or_mapped_class))
-
 
 class TestGetChunkSize:
-    @given(
-        engine=sqlite_engines(),
-        chunk_size_frac=floats(0.0, 1.0),
-        scaling=floats(0.1, 10.0),
-    )
-    def test_sync(
-        self, *, engine: Engine, chunk_size_frac: float, scaling: float
-    ) -> None:
-        result = get_chunk_size(
-            engine, chunk_size_frac=chunk_size_frac, scaling=scaling
-        )
-        assert result >= 1
-
     @given(data=data(), chunk_size_frac=floats(0.0, 1.0), scaling=floats(0.1, 10.0))
-    async def test_async(
+    async def test_main(
         self, *, data: DataObject, chunk_size_frac: float, scaling: float
     ) -> None:
         engine = await aiosqlite_engines(data)
@@ -548,112 +448,10 @@ class TestGetTableName:
 
 
 class TestInsertItems:
-    @given(engine=sqlite_engines(), id_=integers(0, 10))
-    @mark.parametrize("case", [param("tuple"), param("dict")])
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    def test_sync_pair_of_obj_and_table(
-        self,
-        *,
-        case: Literal["tuple", "dict"],
-        engine: Engine,
-        id_: int,
-        use_conn: bool,
-    ) -> None:
-        match case:
-            case "tuple":
-                item = (id_,), self._table
-            case "dict":
-                item = {"id_": id_}, self._table
-        self._run_test_sync(engine, {id_}, item, use_conn=use_conn)
-
-    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
-    @mark.parametrize("case", [param("tuple"), param("dict")])
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    def test_sync_pair_of_list_of_objs_and_table(
-        self,
-        *,
-        case: Literal["tuple", "dict"],
-        engine: Engine,
-        ids: set[int],
-        use_conn: bool,
-    ) -> None:
-        match case:
-            case "tuple":
-                item = [((id_,)) for id_ in ids], self._table
-            case "dict":
-                item = [({"id_": id_}) for id_ in ids], self._table
-        self._run_test_sync(engine, ids, item, use_conn=use_conn)
-
-    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
-    @mark.parametrize("case", [param("tuple"), param("dict")])
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    def test_sync_list_of_pairs_of_objs_and_table(
-        self,
-        *,
-        case: Literal["tuple", "dict"],
-        engine: Engine,
-        ids: set[int],
-        use_conn: bool,
-    ) -> None:
-        match case:
-            case "tuple":
-                item = [((id_,), self._table) for id_ in ids]
-            case "dict":
-                item = [({"id_": id_}, self._table) for id_ in ids]
-        self._run_test_sync(engine, ids, item, use_conn=use_conn)
-
-    @given(
-        engine=sqlite_engines(), ids=sets(integers(0, 1000), min_size=10, max_size=100)
-    )
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    def test_sync_many_items(
-        self, *, engine: Engine, ids: set[int], use_conn: bool
-    ) -> None:
-        self._run_test_sync(
-            engine, ids, [({"id_": id_}, self._table) for id_ in ids], use_conn=use_conn
-        )
-
-    @given(engine=sqlite_engines(), id_=integers(0, 10))
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    def test_sync_mapped_class(
-        self, *, engine: Engine, id_: int, use_conn: bool
-    ) -> None:
-        self._run_test_sync(
-            engine, {id_}, self._mapped_class(id_=id_), use_conn=use_conn
-        )
-
-    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    def test_sync_mapped_classes(
-        self, *, engine: Engine, ids: set[int], use_conn: bool
-    ) -> None:
-        self._run_test_sync(
-            engine, ids, [self._mapped_class(id_=id_) for id_ in ids], use_conn=use_conn
-        )
-
-    @given(engine=sqlite_engines(), id_=integers(0, 10))
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    def test_sync_assume_table_exists(
-        self, *, engine: Engine, id_: int, use_conn: bool
-    ) -> None:
-        self._run_test_sync(
-            engine,
-            {id_},
-            self._mapped_class(id_=id_),
-            assume_tables_exist=True,
-            use_conn=use_conn,
-        )
-
-    @given(engine=sqlite_engines())
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    def test_sync_error(self, *, engine: Engine, use_conn: bool) -> None:
-        with raises(InsertItemsError, match="Item must be valid; got None"):
-            self._run_test_sync(engine, set(), cast(Any, None), use_conn=use_conn)
-
     @given(data=data(), id_=integers(0, 10))
     @mark.parametrize("case", [param("tuple"), param("dict")])
     @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_async_pair_of_obj_and_table(
+    async def test_pair_of_obj_and_table(
         self,
         *,
         case: Literal["tuple", "dict"],
@@ -667,12 +465,12 @@ class TestInsertItems:
                 item = (id_,), self._table
             case "dict":
                 item = {"id_": id_}, self._table
-        await self._run_test_async(engine, {id_}, item, use_conn=use_conn)
+        await self._run_test(engine, {id_}, item, use_conn=use_conn)
 
     @given(data=data(), ids=sets(integers(0, 10), min_size=1))
     @mark.parametrize("case", [param("tuple"), param("dict")])
     @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_async_pair_of_objs_and_table(
+    async def test_pair_of_objs_and_table(
         self,
         *,
         case: Literal["tuple", "dict"],
@@ -686,12 +484,12 @@ class TestInsertItems:
                 item = [((id_,)) for id_ in ids], self._table
             case "dict":
                 item = [({"id_": id_}) for id_ in ids], self._table
-        await self._run_test_async(engine, ids, item, use_conn=use_conn)
+        await self._run_test(engine, ids, item, use_conn=use_conn)
 
     @given(data=data(), ids=sets(integers(0, 10), min_size=1))
     @mark.parametrize("case", [param("tuple"), param("dict")])
     @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_async_list_of_pairs_of_objs_and_table(
+    async def test_list_of_pairs_of_objs_and_table(
         self,
         *,
         case: Literal["tuple", "dict"],
@@ -705,45 +503,45 @@ class TestInsertItems:
                 item = [((id_,), self._table) for id_ in ids]
             case "dict":
                 item = [({"id_": id_}, self._table) for id_ in ids]
-        await self._run_test_async(engine, ids, item, use_conn=use_conn)
+        await self._run_test(engine, ids, item, use_conn=use_conn)
 
     @given(data=data(), ids=sets(integers(0, 1000), min_size=10, max_size=100))
     @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_async_many_items(
+    async def test_many_items(
         self, *, data: DataObject, ids: set[int], use_conn: bool
     ) -> None:
         engine = await aiosqlite_engines(data)
-        await self._run_test_async(
+        await self._run_test(
             engine, ids, [({"id_": id_}, self._table) for id_ in ids], use_conn=use_conn
         )
 
     @given(data=data(), id_=integers(0, 10))
     @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_async_mapped_class(
+    async def test_mapped_class(
         self, *, data: DataObject, id_: int, use_conn: bool
     ) -> None:
         engine = await aiosqlite_engines(data)
-        await self._run_test_async(
+        await self._run_test(
             engine, {id_}, self._mapped_class(id_=id_), use_conn=use_conn
         )
 
     @given(data=data(), ids=sets(integers(0, 10), min_size=1))
     @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_async_mapped_classes(
+    async def test_mapped_classes(
         self, *, data: DataObject, ids: set[int], use_conn: bool
     ) -> None:
         engine = await aiosqlite_engines(data)
-        await self._run_test_async(
+        await self._run_test(
             engine, ids, [self._mapped_class(id_=id_) for id_ in ids], use_conn=use_conn
         )
 
     @given(data=data(), id_=integers(0, 10))
     @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_async_assume_table_exists(
+    async def test_assume_table_exists(
         self, *, data: DataObject, id_: int, use_conn: bool
     ) -> None:
         engine = await aiosqlite_engines(data)
-        await self._run_test_async(
+        await self._run_test(
             engine,
             {id_},
             self._mapped_class(id_=id_),
@@ -753,12 +551,10 @@ class TestInsertItems:
 
     @given(data=data())
     @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_async_error(self, *, data: DataObject, use_conn: bool) -> None:
+    async def test_error(self, *, data: DataObject, use_conn: bool) -> None:
         engine = await aiosqlite_engines(data)
         with raises(InsertItemsError, match="Item must be valid; got None"):
-            await self._run_test_async(
-                engine, set(), cast(Any, None), use_conn=use_conn
-            )
+            await self._run_test(engine, set(), cast(Any, None), use_conn=use_conn)
 
     @property
     def _table(self) -> Table:
@@ -775,34 +571,7 @@ class TestInsertItems:
 
         return Example
 
-    def _run_test_sync(
-        self,
-        engine_or_conn: EngineOrConnection,
-        ids: set[int],
-        /,
-        *items: _InsertItem,
-        assume_tables_exist: bool = False,
-        use_conn: bool = False,
-    ) -> None:
-        if use_conn:
-            with yield_connection(engine_or_conn) as conn:
-                self._run_test_sync(
-                    conn, ids, *items, assume_tables_exist=assume_tables_exist
-                )
-            return
-        if assume_tables_exist:
-            with raises(OperationalError, match="no such table"):
-                insert_items(
-                    engine_or_conn, *items, assume_tables_exist=assume_tables_exist
-                )
-            return
-        insert_items(engine_or_conn, *items, assume_tables_exist=assume_tables_exist)
-        sel = self._get_select(self._table)
-        with yield_connection(engine_or_conn) as conn:
-            results = conn.execute(sel).scalars().all()
-        self._assert_results(results, ids)
-
-    async def _run_test_async(
+    async def _run_test(
         self,
         engine_or_conn: AsyncEngineOrConnection,
         ids: set[int],
@@ -813,7 +582,7 @@ class TestInsertItems:
     ) -> None:
         if use_conn:
             async with yield_connection(engine_or_conn) as conn:
-                await self._run_test_async(
+                await self._run_test(
                     conn, ids, *items, assume_tables_exist=assume_tables_exist
                 )
             return
@@ -838,13 +607,6 @@ class TestInsertItems:
         assert set(results) == ids
 
 
-class TestInsertItemPrepare:
-    @given(engine=sqlite_engines())
-    def test_error(self, *, engine: Engine) -> None:
-        with raises(_InsertItemsPrepareError, match="Item must be valid; got None"):
-            _ = _insert_items_prepare(engine, cast(Any, None))
-
-
 class TestIsInsertItemPair:
     @mark.parametrize(
         ("obj", "expected"),
@@ -860,7 +622,7 @@ class TestIsInsertItemPair:
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = is_insert_item_pair(obj)
+        result = _is_insert_item_pair(obj)
         assert result is expected
 
 
@@ -879,7 +641,7 @@ class TestIsUpsertItemPair:
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = is_insert_item_pair(obj)
+        result = _is_upsert_item_pair(obj)
         assert result is expected
 
 
@@ -1120,8 +882,9 @@ class TestNormalizeUpsertItem:
 
 
 class TestParseEngine:
-    @given(engine=sqlite_engines())
-    def test_str(self, *, engine: Engine) -> None:
+    @given(data=data())
+    async def test_str(self, *, data: DataObject) -> None:
+        engine = await sqlalchemy_engines(data)
         url = engine.url
         result = parse_engine(url.render_as_string(hide_password=False))
         assert result.url == url
@@ -1150,47 +913,24 @@ class TestPostgresEngine:
         assert set(res) == ids
 
 
-class TestRedirectToNoSuchSequenceError:
-    @given(engine=sqlite_engines())
-    def test_main(self, *, engine: Engine) -> None:
-        seq = sqlalchemy.Sequence("example")
-        with raises(NotImplementedError), engine.begin() as conn:
-            _ = conn.scalar(seq)
-
-
-class TestReflectTable:
-    @given(
-        engine=sqlite_engines(),
-        col_type=sampled_from([
-            INTEGER,
-            INTEGER(),
-            NVARCHAR,
-            NVARCHAR(),
-            NVARCHAR(1),
-            Integer,
-            Integer(),
-            String,
-            String(),
-            String(1),
-        ]),
-    )
-    def test_main(self, *, engine: Engine, col_type: Any) -> None:
-        table = Table("example", MetaData(), Column("Id", col_type, primary_key=True))
-        ensure_tables_created(engine, table)
-        reflected = reflect_table(table, engine)
-        _check_tables_equal(reflected, table)
-
-    @given(engine=sqlite_engines())
-    def test_error(self, *, engine: Engine) -> None:
-        table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
-        with raises(NoSuchTableError):
-            _ = reflect_table(table, engine)
+class TestPrepareInsertOrUpsertItems:
+    @given(data=data())
+    @mark.only
+    async def test_error(self, *, data: DataObject) -> None:
+        engine = await sqlalchemy_engines(data)
+        with raises(
+            _PrepareInsertOrUpsertItemsError, match="Item must be valid; got None"
+        ):
+            _ = _prepare_insert_or_upsert_items(
+                cast(Any, None), engine, cast(Any, None)
+            )
 
 
 class TestSelectableToString:
-    @given(engine=sqlite_engines())
+    @given(data=data())
     @settings(max_examples=1)
-    def test_main(self, *, engine: Engine) -> None:
+    async def test_main(self, *, data: DataObject) -> None:
+        engine = await sqlalchemy_engines(data)
         table = Table(
             "example",
             MetaData(),
@@ -1228,318 +968,6 @@ class TestTablenameMixin:
 
 
 class TestUpsertItems:
-    @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples(nullable=True))
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    def test_sync_pair_of_dict_and_table(
-        self,
-        *,
-        sqlite_engine: Engine,
-        create_postgres_engine: Callable[..., Engine],
-        dialect: Literal["sqlite", "postgres"],
-        triple: tuple[int, bool, bool | None],
-    ) -> None:
-        key = TestUpsertItems.test_sync_pair_of_dict_and_table.__qualname__, dialect
-        name = f"test_{md5_hash(key)}"
-        table = self._get_table(name)
-        engine = self._get_engine_sync(
-            sqlite_engine, create_postgres_engine, table, dialect=dialect
-        )
-        id_, init, post = triple
-        _ = self._run_test_sync(
-            engine, table, ({"id_": id_, "value": init}, table), expected={(id_, init)}
-        )
-        _ = self._run_test_sync(
-            engine,
-            table,
-            ({"id_": id_, "value": post}, table),
-            expected={(id_, init if post is None else post)},
-        )
-
-    @given(
-        sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True, min_size=1)
-    )
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    def test_sync_pair_of_list_of_dicts_and_table(
-        self,
-        *,
-        sqlite_engine: Engine,
-        create_postgres_engine: Callable[..., Engine],
-        dialect: Literal["sqlite", "postgres"],
-        triples: list[tuple[int, bool, bool | None]],
-    ) -> None:
-        key = (
-            TestUpsertItems.test_sync_pair_of_list_of_dicts_and_table.__qualname__,
-            dialect,
-        )
-        name = f"test_{md5_hash(key)}"
-        table = self._get_table(name)
-        engine = self._get_engine_sync(
-            sqlite_engine, create_postgres_engine, table, dialect=dialect
-        )
-        _ = self._run_test_sync(
-            engine,
-            table,
-            ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
-            expected={(id_, init) for id_, init, _ in triples},
-        )
-        items = (
-            [
-                {"id_": id_, "value": post}
-                for id_, _, post in triples
-                if post is not None
-            ],
-            table,
-        )
-        expected = {
-            (id_, init if post is None else post) for id_, init, post in triples
-        }
-        _ = self._run_test_sync(engine, table, items, expected=expected)
-
-    @given(
-        sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True, min_size=1)
-    )
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    def test_sync_list_of_pairs_of_dicts_and_table(
-        self,
-        *,
-        sqlite_engine: Engine,
-        create_postgres_engine: Callable[..., Engine],
-        dialect: Literal["sqlite", "postgres"],
-        triples: list[tuple[int, bool, bool | None]],
-    ) -> None:
-        key = (
-            TestUpsertItems.test_sync_list_of_pairs_of_dicts_and_table.__qualname__,
-            dialect,
-        )
-        name = f"test_{md5_hash(key)}"
-        table = self._get_table(name)
-        engine = self._get_engine_sync(
-            sqlite_engine, create_postgres_engine, table, dialect=dialect
-        )
-        _ = self._run_test_sync(
-            engine,
-            table,
-            ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
-            expected={(id_, init) for id_, init, _ in triples},
-        )
-        items = [
-            ({"id_": id_, "value": post}, table)
-            for id_, _, post in triples
-            if post is not None
-        ]
-        expected = {
-            (id_, init if post is None else post) for id_, init, post in triples
-        }
-        _ = self._run_test_sync(engine, table, items, expected=expected)
-
-    @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    def test_sync_mapped_class(
-        self,
-        *,
-        sqlite_engine: Engine,
-        create_postgres_engine: Callable[..., Engine],
-        dialect: Literal["sqlite", "postgres"],
-        triple: tuple[int, bool, bool],
-    ) -> None:
-        key = TestUpsertItems.test_sync_mapped_class.__qualname__, dialect
-        name = f"test_{md5_hash(key)}"
-        cls = self._get_mapped_class(name)
-        engine = self._get_engine_sync(
-            sqlite_engine, create_postgres_engine, cls, dialect=dialect
-        )
-        id_, init, post = triple
-        _ = self._run_test_sync(
-            engine, cls, cls(id_=id_, value=init), expected={(id_, init)}
-        )
-        _ = self._run_test_sync(
-            engine, cls, cls(id_=id_, value=post), expected={(id_, post)}
-        )
-
-    @given(
-        sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True, min_size=1)
-    )
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    def test_sync_mapped_classes(
-        self,
-        *,
-        sqlite_engine: Engine,
-        create_postgres_engine: Callable[..., Engine],
-        dialect: Literal["sqlite", "postgres"],
-        triples: list[tuple[int, bool, bool | None]],
-    ) -> None:
-        key = TestUpsertItems.test_sync_mapped_classes.__qualname__, dialect
-        name = f"test_{md5_hash(key)}"
-        cls = self._get_mapped_class(name)
-        engine = self._get_engine_sync(
-            sqlite_engine, create_postgres_engine, cls, dialect=dialect
-        )
-        _ = self._run_test_sync(
-            engine,
-            cls,
-            [cls(id_=id_, value=init) for id_, init, _ in triples],
-            expected={(id_, init) for id_, init, _ in triples},
-        )
-        items = [
-            cls(id_=id_, value=post) for id_, _, post in triples if post is not None
-        ]
-        expected = {
-            (id_, init if post is None else post) for id_, init, post in triples
-        }
-        _ = self._run_test_sync(engine, cls, items, expected=expected)
-
-    @given(
-        sqlite_engine=sqlite_engines(),
-        id_=integers(0, 10),
-        x_init=booleans(),
-        x_post=booleans(),
-        y=booleans(),
-    )
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    @mark.parametrize("selected_or_all", [param("selected"), param("all")])
-    def test_sync_sel_or_all(
-        self,
-        *,
-        sqlite_engine: Engine,
-        create_postgres_engine: Callable[..., Engine],
-        dialect: Literal["sqlite", "postgres"],
-        selected_or_all: Literal["selected", "all"],
-        id_: int,
-        x_init: bool,
-        x_post: bool,
-        y: bool,
-    ) -> None:
-        key = (
-            TestUpsertItems.test_sync_sel_or_all.__qualname__,
-            dialect,
-            selected_or_all,
-        )
-        name = f"test_{md5_hash(key)}"
-        table = self._get_table_sel_or_all(name)
-        engine = self._get_engine_sync(
-            sqlite_engine, create_postgres_engine, table, dialect=dialect
-        )
-        _ = self._run_test_sync(
-            engine,
-            table,
-            ({"id_": id_, "x": x_init, "y": y}, table),
-            selected_or_all=selected_or_all,
-            expected={(id_, x_init, y)},
-        )
-        match selected_or_all:
-            case "selected":
-                expected = (id_, x_post, y)
-            case "all":
-                expected = (id_, x_post, None)
-        _ = self._run_test_sync(
-            engine,
-            table,
-            ({"id_": id_, "x": x_post}, table),
-            selected_or_all=selected_or_all,
-            expected={expected},
-        )
-
-    @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    @mark.parametrize("single_or_list", [param("single"), param("list")])
-    def test_sync_updated(
-        self,
-        *,
-        sqlite_engine: Engine,
-        create_postgres_engine: Callable[..., Engine],
-        dialect: Literal["sqlite", "postgres"],
-        single_or_list: Literal["single", "list"],
-        triple: tuple[int, bool, bool | None],
-    ) -> None:
-        key = TestUpsertItems.test_sync_updated.__qualname__, dialect, single_or_list
-        name = f"test_{md5_hash(key)}"
-        table = self._get_table_updated(name)
-        engine = self._get_engine_sync(
-            sqlite_engine, create_postgres_engine, table, dialect=dialect
-        )
-        id_, init, post = triple
-        match single_or_list:
-            case "single":
-                item1 = ({"id_": id_, "value": init}, table)
-            case "list":
-                item1 = [({"id_": id_, "value": init}, table)]
-        ((_, _, updated1),) = self._run_test_sync(engine, table, item1)
-        time.sleep(0.01)
-        match single_or_list:
-            case "single":
-                item2 = ({"id_": id_, "value": post}, table)
-            case "list":
-                item2 = [({"id_": id_, "value": post}, table)]
-        ((_, _, updated2),) = self._run_test_sync(engine, table, item2)
-        assert updated1 < updated2
-
-    @given(sqlite_engine=sqlite_engines(), id_=integers(0, 10))
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    def test_sync_assume_table_exists(
-        self,
-        *,
-        sqlite_engine: Engine,
-        create_postgres_engine: Callable[..., Engine],
-        dialect: Literal["sqlite", "postgres"],
-        id_: int,
-    ) -> None:
-        key = TestUpsertItems.test_sync_assume_table_exists.__qualname__, dialect
-        name = f"test_{md5_hash(key)}"
-        table = self._get_table(name)
-        engine = self._get_engine_sync(
-            sqlite_engine, create_postgres_engine, table, dialect=dialect
-        )
-        _ = self._run_test_sync(
-            engine, table, ({"id_": id_}, table), assume_tables_exist=True
-        )
-
-    @given(
-        sqlite_engine=sqlite_engines(),
-        ids=sets_fixed_length(int32s(), 2).map(tuple),
-        value1=booleans() | none(),
-        value2=booleans() | none(),
-    )
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    def test_sync_both_nulls_and_non_nulls(
-        self,
-        *,
-        sqlite_engine: Engine,
-        create_postgres_engine: Callable[..., Engine],
-        dialect: Literal["sqlite", "postgres"],
-        ids: tuple[int, int],
-        value1: bool | None,
-        value2: bool | None,
-    ) -> None:
-        key = TestUpsertItems.test_sync_both_nulls_and_non_nulls.__qualname__, dialect
-        name = f"test_{md5_hash(key)}"
-        table = self._get_table(name)
-        engine = self._get_engine_sync(
-            sqlite_engine, create_postgres_engine, table, dialect=dialect
-        )
-        id1, id2 = ids
-        upsert_items(
-            engine,
-            ([{"id_": id1, "value": value1}, {"id_": id2, "value": value2}], table),
-        )
-
-    @given(sqlite_engine=sqlite_engines())
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    def test_sync_error(
-        self,
-        *,
-        sqlite_engine: Engine,
-        create_postgres_engine: Callable[..., Engine],
-        dialect: Literal["sqlite", "postgres"],
-    ) -> None:
-        key = TestUpsertItems.test_sync_error.__qualname__, dialect
-        name = f"test_{md5_hash(key)}"
-        table = self._get_table(name)
-        engine = self._get_engine_sync(
-            sqlite_engine, create_postgres_engine, table, dialect=dialect
-        )
-        with raises(UpsertItemsError, match="Item must be valid; got None"):
-            _ = self._run_test_sync(engine, table, cast(Any, None))
-
     @given(data=data(), triple=_upsert_triples(nullable=True))
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     async def test_async_pair_of_dict_and_table(
@@ -1989,32 +1417,15 @@ class TestUpsertItems:
         assert set(results) == ids
 
 
-class TestUpsertItemPrepare:
-    @given(engine=sqlite_engines())
-    def test_error(self, *, engine: Engine) -> None:
-        with raises(_UpsertItemsPrepareError, match="Item must be valid; got None"):
-            _ = _upsert_items_prepare(engine, cast(Any, None))
-
-
 class TestYieldConnection:
-    @given(engine=sqlite_engines())
-    def test_sync_engine(self, *, engine: Engine) -> None:
-        with yield_connection(engine) as conn:
-            assert isinstance(conn, Connection)
-
-    @given(engine=sqlite_engines())
-    def test_sync_connection(self, *, engine: Engine) -> None:
-        with engine.begin() as conn1, yield_connection(conn1) as conn2:
-            assert isinstance(conn2, Connection)
-
     @given(data=data())
-    async def test_async_engine(self, *, data: DataObject) -> None:
+    async def test_engine(self, *, data: DataObject) -> None:
         engine = await aiosqlite_engines(data)
         async with yield_connection(engine) as conn:
             assert isinstance(conn, AsyncConnection)
 
     @given(data=data())
-    async def test_async_conn(self, *, data: DataObject) -> None:
+    async def test_conn(self, *, data: DataObject) -> None:
         engine = await aiosqlite_engines(data)
         async with engine.begin() as conn1, yield_connection(conn1) as conn2:
             assert isinstance(conn2, AsyncConnection)

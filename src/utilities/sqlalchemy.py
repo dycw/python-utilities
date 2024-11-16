@@ -233,9 +233,9 @@ def create_engine(
     return _create_engine(url, poolclass=poolclass)
 
 
-def ensure_engine(engine: Engine | str, /) -> Engine:
-    """Ensure the object is an Engine."""
-    if isinstance(engine, Engine):
+def ensure_engine(engine: AsyncEngine | str, /) -> AsyncEngine:
+    """Ensure the object is an AsyncEngine."""
+    if isinstance(engine, AsyncEngine):
         return engine
     return parse_engine(engine)
 
@@ -400,10 +400,10 @@ async def insert_items(
 
     try:
         prepared = _prepare_insert_or_upsert_items(
+            _normalize_insert_item,
             engine_or_conn,
             build_insert,
             *items,
-            normalize_item=_normalize_insert_item,
             chunk_size_frac=chunk_size_frac,
         )
     except _PrepareInsertOrUpsertItemsError as error:
@@ -594,10 +594,10 @@ class _NormalizeUpsertItemError(Exception):
         return f"Item must be valid; got {self.item}"
 
 
-def parse_engine(engine: str, /) -> Engine:
+def parse_engine(engine: str, /) -> AsyncEngine:
     """Parse a string into an Engine."""
     try:
-        return _create_engine(engine, poolclass=NullPool)
+        return create_async_engine(engine, poolclass=NullPool)
     except ArgumentError as error:
         raise ParseEngineError(*error.args) from None
 
@@ -673,12 +673,10 @@ async def upsert_items(
 
     try:
         prepared = _prepare_insert_or_upsert_items(
+            partial(_normalize_upsert_item, selected_or_all=selected_or_all),
             engine_or_conn,
             build_insert,
             *items,
-            normalize_item=partial(
-                _normalize_upsert_item, selected_or_all=selected_or_all
-            ),
             chunk_size_frac=chunk_size_frac,
         )
     except _PrepareInsertOrUpsertItemsError as error:
@@ -856,28 +854,28 @@ class _PrepareInsertOrUpsertItems:
 
 @overload
 def _prepare_insert_or_upsert_items(
+    normalize_item: Callable[[_InsertItem], Iterator[_NormalizedInsertItem]],
     engine_or_conn: AsyncEngineOrConnection,
     build_insert: Callable[[Table, Iterable[TupleOrStrMapping]], tuple[Insert, Any]],
     /,
     *items: _InsertItem,
-    normalize_item: Callable[[_InsertItem], Iterator[_NormalizedInsertItem]],
     chunk_size_frac: float = ...,
 ) -> _PrepareInsertOrUpsertItems: ...
 @overload
 def _prepare_insert_or_upsert_items(
+    normalize_item: Callable[[_UpsertItem], Iterator[_NormalizedUpsertItem]],
     engine_or_conn: AsyncEngineOrConnection,
     build_insert: Callable[[Table, Iterable[StrMapping]], tuple[Insert, Any]],
     /,
     *items: _UpsertItem,
-    normalize_item: Callable[[_UpsertItem], Iterator[_NormalizedUpsertItem]],
     chunk_size_frac: float = ...,
 ) -> _PrepareInsertOrUpsertItems: ...
 def _prepare_insert_or_upsert_items(
+    normalize_item: Callable[[Any], Iterator[Any]],
     engine_or_conn: AsyncEngineOrConnection,
     build_insert: Callable[[Table, Iterable[Any]], tuple[Insert, Any]],
     /,
     *items: Any,
-    normalize_item: Callable[[Any], Iterator[Any]],
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
 ) -> _PrepareInsertOrUpsertItems:
     """Prepare a set of insert/upsert items."""
