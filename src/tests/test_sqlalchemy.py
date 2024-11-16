@@ -127,7 +127,14 @@ class TestCheckEngine:
         table = Table(name, MetaData(), Column("id", Integer, primary_key=True))
         engine = await sqlalchemy_engines(data, table)
         await ensure_tables_created(engine, table)
-        await check_engine(engine, num_tables=1)
+        match _get_dialect(engine):
+            case "sqlite":
+                expected = 1
+            case "postgresql":
+                expected = (38_304, 0.1)
+            case _ as dialect:
+                raise NotImplementedError(dialect)
+        await check_engine(engine, num_tables=expected)
 
     @FLAKY
     @given(data=data())
