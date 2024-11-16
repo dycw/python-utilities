@@ -13,6 +13,7 @@ from hypothesis.strategies import (
     integers,
     lists,
     none,
+    sampled_from,
     sets,
     tuples,
 )
@@ -37,7 +38,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_co
 from tests.conftest import SKIPIF_CI
 from utilities.hashlib import md5_hash
 from utilities.hypothesis import (
-    aiosqlite_engines,
     int32s,
     sets_fixed_length,
     sqlalchemy_engines,
@@ -90,7 +90,7 @@ from utilities.text import strip_and_dedent
 from utilities.typing import get_args
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Iterator, Sequence
     from pathlib import Path
 
     from utilities.asyncio import Coroutine1
@@ -869,15 +869,20 @@ class TestNormalizeUpsertItem:
 
 
 class TestPrepareInsertOrUpsertItems:
-    @given(data=data())
-    @mark.only
-    async def test_error(self, *, data: DataObject) -> None:
+    @given(
+        data=data(),
+        normalize_item=sampled_from([_normalize_insert_item, _normalize_upsert_item]),
+    )
+    async def test_error(
+        self, *, data: DataObject, normalize_item: Callable[[Any], Iterator[Any]]
+    ) -> None:
+        build_insert = None
         engine = await sqlalchemy_engines(data)
         with raises(
             _PrepareInsertOrUpsertItemsError, match="Item must be valid; got None"
         ):
             _ = _prepare_insert_or_upsert_items(
-                cast(Any, None), engine, cast(Any, None)
+                normalize_item, engine, cast(Any, build_insert), cast(Any, None)
             )
 
 

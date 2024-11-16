@@ -824,7 +824,7 @@ def _prepare_insert_or_upsert_items(
                 values = normed.values
                 mapping[normed.table].append(values)
                 lengths.add(len(values))
-    except _NormalizeUpsertItemError as error:
+    except (_NormalizeInsertItemError, _NormalizeUpsertItemError) as error:
         raise _PrepareInsertOrUpsertItemsError(item=error.item) from None
     tables = list(mapping)
     max_length = max(lengths, default=1)
