@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import reprlib
+from asyncio import sleep
 from collections import defaultdict
 from collections.abc import AsyncIterator, Callable, Iterable, Iterator, Sequence, Sized
 from contextlib import asynccontextmanager
@@ -785,8 +786,12 @@ def _is_insert_or_upsert_pair(
 
 @dataclass(kw_only=True, slots=True)
 class _PrepareInsertOrUpsertItems:
-    tables: Sequence[Table] = field(default_factory=list)
+    mapping: dict[Table, list[Any]] = field(default_factory=dict)
     yield_pairs: Callable[[], Iterator[tuple[Insert, Any]]]
+
+    @property
+    def tables(self) -> Sequence[Table]:
+        return list(self.mapping)
 
 
 @overload
@@ -826,7 +831,6 @@ def _prepare_insert_or_upsert_items(
                 lengths.add(len(values))
     except (_NormalizeInsertItemError, _NormalizeUpsertItemError) as error:
         raise _PrepareInsertOrUpsertItemsError(item=error.item) from None
-    tables = list(mapping)
     max_length = max(lengths, default=1)
     chunk_size = get_chunk_size(
         engine_or_conn, chunk_size_frac=chunk_size_frac, scaling=max_length
@@ -837,7 +841,7 @@ def _prepare_insert_or_upsert_items(
             for chunk in chunked(values, chunk_size):
                 yield build_insert(table, chunk)
 
-    return _PrepareInsertOrUpsertItems(tables=tables, yield_pairs=yield_pairs)
+    return _PrepareInsertOrUpsertItems(mapping=mapping, yield_pairs=yield_pairs)
 
 
 @dataclass(kw_only=True, slots=True)

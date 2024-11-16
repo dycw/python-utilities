@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
-from hypothesis import given, settings
+from hypothesis import Phase, assume, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -16,6 +16,7 @@ from hypothesis.strategies import (
     sampled_from,
     sets,
     tuples,
+    uuids,
 )
 from pytest import mark, param, raises
 from sqlalchemy import (
@@ -92,6 +93,7 @@ from utilities.typing import get_args
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
     from pathlib import Path
+    from uuid import UUID
 
     from utilities.asyncio import Coroutine1
 
@@ -127,30 +129,35 @@ def _upsert_lists(
 class TestColumnwiseMinMax:
     @given(
         data=data(),
+        name=uuids(),
         values=sets(
             tuples(integers(0, 10) | none(), integers(0, 10) | none()), min_size=1
         ),
     )
     async def test_main(
-        self, *, data: DataObject, values: set[tuple[int | None, int | None]]
+        self,
+        *,
+        data: DataObject,
+        name: UUID,
+        values: set[tuple[int | None, int | None]],
     ) -> None:
-        engine = await sqlalchemy_engines(data)
         table = Table(
-            "example",
+            f"test_{name}",
             MetaData(),
-            Column("id", Integer, primary_key=True, autoincrement=True),
+            Column("id_", Integer, primary_key=True, autoincrement=True),
             Column("x", Integer),
             Column("y", Integer),
         )
-        insert_items(engine, ([{"x": x, "y": y} for x, y in values], table))
+        engine = await sqlalchemy_engines(data, table)
+        await insert_items(engine, ([{"x": x, "y": y} for x, y in values], table))
         sel = select(
             table.c["x"],
             table.c["y"],
             columnwise_min(table.c["x"], table.c["y"]).label("min_xy"),
             columnwise_max(table.c["x"], table.c["y"]).label("max_xy"),
         )
-        with engine.begin() as conn:
-            res = conn.execute(sel).all()
+        async with engine.begin() as conn:
+            res = (await conn.execute(sel)).all()
         assert len(res) == len(values)
         for x, y, min_xy, max_xy in res:
             if (x is None) and (y is None):
@@ -166,19 +173,19 @@ class TestColumnwiseMinMax:
                 assert min_xy == min(x, y)
                 assert max_xy == max(x, y)
 
-    @given(data=data())
-    async def test_label(self, *, data: DataObject) -> None:
-        engine = await sqlalchemy_engines(data)
+    @given(data=data(), name=uuids())
+    async def test_label(self, *, data: DataObject, name: UUID) -> None:
         table = Table(
-            "example",
+            f"test_{name}",
             MetaData(),
             Column("id_", Integer, primary_key=True, autoincrement=True),
             Column("x", Integer),
         )
-        ensure_tables_created(engine, table)
+        engine = await sqlalchemy_engines(data, table)
+        await ensure_tables_created(engine, table)
         sel = select(columnwise_min(table.c.x, table.c.x))
-        with engine.begin() as conn:
-            _ = conn.execute(sel).all()
+        async with engine.begin() as conn:
+            _ = (await conn.execute(sel)).all()
 
 
 class TestCreateEngine:
@@ -876,13 +883,12 @@ class TestPrepareInsertOrUpsertItems:
     async def test_error(
         self, *, data: DataObject, normalize_item: Callable[[Any], Iterator[Any]]
     ) -> None:
-        build_insert = None
         engine = await sqlalchemy_engines(data)
         with raises(
             _PrepareInsertOrUpsertItemsError, match="Item must be valid; got None"
         ):
             _ = _prepare_insert_or_upsert_items(
-                normalize_item, engine, cast(Any, build_insert), cast(Any, None)
+                normalize_item, engine, cast(Any, None), cast(Any, None)
             )
 
 
