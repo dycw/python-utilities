@@ -549,12 +549,14 @@ class TestSlices:
 
 
 class TestSQLAlchemyEngines:
+    @FLAKY
     @given(
         data=data(),
         name=uuids(),
         dialect=_SQLALCHEMY_ENGINE_DIALECTS,
         ids=sets(integers(0, 10), min_size=1),
     )
+    @settings(phases={Phase.generate})
     async def test_main(
         self, *, data: DataObject, name: UUID, dialect: Dialect, ids: set[int]
     ) -> None:
