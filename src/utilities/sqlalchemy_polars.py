@@ -5,7 +5,7 @@ import decimal
 import reprlib
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload
 from uuid import UUID
 
 import polars as pl
@@ -109,6 +109,8 @@ async def insert_dataframe(
                 assume_tables_exist=assume_tables_exist,
                 timeout=timeout,
             )
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
 
 
 def _insert_dataframe_map_df_schema_to_table(
