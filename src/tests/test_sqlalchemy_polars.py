@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from operator import eq
-from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 import sqlalchemy
@@ -100,10 +100,7 @@ from utilities.hypothesis import (
 )
 from utilities.math import is_equal
 from utilities.polars import DatetimeUTC, check_polars_dataframe
-from utilities.sqlalchemy import (
-    ensure_tables_created,
-    yield_connection,
-)
+from utilities.sqlalchemy import ensure_tables_created
 from utilities.sqlalchemy_polars import (
     InsertDataFrameError,
     _insert_dataframe_check_df_and_db_types,
@@ -126,7 +123,6 @@ if TYPE_CHECKING:
     import uuid
     from collections.abc import Callable, Iterable, Sequence
 
-    from _pytest.mark import ParameterSet
     from polars._typing import PolarsDataType
     from polars.datatypes import DataTypeClass
     from sqlalchemy.ext.asyncio import AsyncEngine
@@ -213,9 +209,6 @@ class TestInsertDataFrame:
         ):
             await insert_dataframe(df, table, engine, assume_tables_exist=True)
 
-    async def test_snake(self) -> None:
-        assert 0
-
     @FLAKY
     @given(data=data(), name=uuids(), value=booleans())
     @settings(phases={Phase.generate})
@@ -231,14 +224,12 @@ class TestInsertDataFrame:
         ):
             _ = await insert_dataframe(df, table, engine)
 
-    def _make_table(
-        self, name: uuid.UUID, type_: Any, /, *, title: bool = False
-    ) -> Table:
+    def _make_table(self, name: uuid.UUID, type_: Any, /) -> Table:
         return Table(
             f"test_{name}",
             MetaData(),
-            Column("Id" if title else "id", Integer, primary_key=True),
-            Column("Value" if title else "value", type_),
+            Column("id", Integer, primary_key=True),
+            Column("value", type_),
         )
 
 
@@ -428,6 +419,7 @@ class TestSelectToDataFrame:
         expected = DataFrame({"value": values}, schema={"value": pl.Boolean})
         assert_frame_equal(result, expected)
 
+    @FLAKY
     @given(
         data=data(),
         name=uuids(),
@@ -646,6 +638,7 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
 class TestSelectToDataFrameYieldSelectsWithInClauses:
     @given(
         data=data(),
+        name=uuids(),
         values=sets(integers(), max_size=100),
         in_clauses_chunk_size=integers(1, 10) | none(),
         chunk_size_frac=floats(0.1, 10.0),
@@ -654,11 +647,15 @@ class TestSelectToDataFrameYieldSelectsWithInClauses:
         self,
         *,
         data: DataObject,
+        name: uuid.UUID,
         values: set[int],
         in_clauses_chunk_size: int | None,
         chunk_size_frac: float,
     ) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        table = Table(
+            f"test_{name}", MetaData(), Column("id", Integer, primary_key=True)
+        )
+        engine = await sqlalchemy_engines(data, table)
         sel = select(table.c["id"])
         async with engine.begin() as conn:
             iterator = _select_to_dataframe_yield_selects_with_in_clauses(

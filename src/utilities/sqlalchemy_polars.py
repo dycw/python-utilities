@@ -415,8 +415,4 @@ def _select_to_dataframe_yield_selects_with_in_clauses(
     return (sel.where(in_col.in_(values)) for values in chunked(in_values, chunk_size))
 
 
-__all__ = [
-    "InsertDataFrameError",
-    "insert_dataframe",
-    "select_to_dataframe",
-]
+__all__ = ["InsertDataFrameError", "insert_dataframe", "select_to_dataframe"]
