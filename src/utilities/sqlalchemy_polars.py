@@ -101,7 +101,7 @@ async def insert_dataframe(
                 timeout=timeout,
             )
         case "selected" | "all" as selected_or_all:  # skipif-ci-and-not-linux
-            await upsert_items(  # skipif-ci-and-not-linux
+            await upsert_items(
                 engine,
                 (items, table_or_mapped_class),
                 chunk_size_frac=chunk_size_frac,
