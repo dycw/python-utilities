@@ -312,7 +312,7 @@ async def insert_items(
     *items: _InsertItem,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
-    timeout_create_tables: Duration | None = None,
+    timeout_create: Duration | None = None,
     timeout_insert: Duration | None = None,
 ) -> None:
     """Insert a set of items into a database.
@@ -358,13 +358,11 @@ async def insert_items(
     except _PrepareInsertOrUpsertItemsError as error:
         raise InsertItemsError(item=error.item) from None
     if not assume_tables_exist:
-        async with timeout_dur(duration=timeout_create_tables):
-            await ensure_tables_created(
-                engine, *prepared.tables, timeout=timeout_insert
-            )
-    for ins, parameters in prepared.yield_pairs():
-        async with timeout_dur(duration=timeout_insert), engine.begin() as conn:
-            _ = await conn.execute(ins, parameters=parameters)
+        await ensure_tables_created(engine, *prepared.tables, timeout=timeout_create)
+    async with timeout_dur(duration=timeout_insert):
+        for ins, parameters in prepared.yield_pairs():
+            async with engine.begin() as conn:
+                _ = await conn.execute(ins, parameters=parameters)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -579,9 +577,10 @@ async def upsert_items(
     /,
     *items: _UpsertItem,
     selected_or_all: Literal["selected", "all"] = "selected",
-    assume_tables_exist: bool = False,
-    timeout: Duration | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    assume_tables_exist: bool = False,
+    timeout_create: Duration | None = None,
+    timeout_insert: Duration | None = None,
 ) -> None:
     """Upsert a set of items into a database.
 
@@ -618,10 +617,11 @@ async def upsert_items(
     except _PrepareInsertOrUpsertItemsError as error:
         raise UpsertItemsError(item=error.item) from None
     if not assume_tables_exist:
-        await ensure_tables_created(engine, *prepared.tables, timeout=timeout)
-    for ups, _ in prepared.yield_pairs():
-        async with timeout_dur(duration=timeout), engine.begin() as conn:
-            _ = await conn.execute(ups)
+        await ensure_tables_created(engine, *prepared.tables, timeout=timeout_create)
+    async with timeout_dur(duration=timeout_insert):
+        for ups, _ in prepared.yield_pairs():
+            async with engine.begin() as conn:
+                _ = await conn.execute(ups)
 
 
 def _upsert_items_build(
