@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from time import time_ns
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from hypothesis import Phase, assume, given, settings
@@ -74,7 +75,11 @@ from utilities.typing import get_args
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from pathlib import Path
-    from uuid import UUID
+
+
+def _table_names() -> SearchStrategy[str]:
+    now = time_ns()
+    return uuids().map(lambda x: f"test_{now}_{str(x).replace('-', '')}")
 
 
 @overload
@@ -109,21 +114,17 @@ class TestColumnwiseMinMax:
     @FLAKY
     @given(
         data=data(),
-        name=uuids(),
+        name=_table_names(),
         values=sets(
             tuples(integers(0, 10) | none(), integers(0, 10) | none()), min_size=1
         ),
     )
     @settings(phases={Phase.generate})
     async def test_main(
-        self,
-        *,
-        data: DataObject,
-        name: UUID,
-        values: set[tuple[int | None, int | None]],
+        self, *, data: DataObject, name: str, values: set[tuple[int | None, int | None]]
     ) -> None:
         table = Table(
-            f"test_{name}",
+            name,
             MetaData(),
             Column("id_", Integer, primary_key=True, autoincrement=True),
             Column("x", Integer),
@@ -155,11 +156,11 @@ class TestColumnwiseMinMax:
                 assert max_xy == max(x, y)
 
     @FLAKY
-    @given(data=data(), name=uuids())
+    @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
-    async def test_label(self, *, data: DataObject, name: UUID) -> None:
+    async def test_label(self, *, data: DataObject, name: str) -> None:
         table = Table(
-            f"test_{name}",
+            name,
             MetaData(),
             Column("id_", Integer, primary_key=True, autoincrement=True),
             Column("x", Integer),
@@ -193,23 +194,21 @@ class TestCreateAsyncEngine:
 
 class TestEnsureTablesCreated:
     @FLAKY
-    @given(data=data(), name=uuids())
+    @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
-    async def test_table(self, *, data: DataObject, name: UUID) -> None:
-        table = Table(
-            f"test_{name}", MetaData(), Column("id_", Integer, primary_key=True)
-        )
+    async def test_table(self, *, data: DataObject, name: str) -> None:
+        table = Table(name, MetaData(), Column("id_", Integer, primary_key=True))
         engine = await sqlalchemy_engines(data, table)
         await self._run_test(engine, table)
 
     @FLAKY
-    @given(data=data(), name=uuids())
+    @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
-    async def test_mapped_class(self, *, data: DataObject, name: UUID) -> None:
+    async def test_mapped_class(self, *, data: DataObject, name: str) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = f"test_{name}"
+            __tablename__ = name
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
@@ -231,23 +230,21 @@ class TestEnsureTablesCreated:
 
 class TestEnsureTablesDropped:
     @FLAKY
-    @given(data=data(), name=uuids())
+    @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
-    async def test_table(self, *, data: DataObject, name: UUID) -> None:
-        table = Table(
-            f"test_{name}", MetaData(), Column("id_", Integer, primary_key=True)
-        )
+    async def test_table(self, *, data: DataObject, name: str) -> None:
+        table = Table(name, MetaData(), Column("id_", Integer, primary_key=True))
         engine = await sqlalchemy_engines(data, table)
         await self._run_test(engine, table)
 
     @FLAKY
-    @given(data=data(), name=uuids())
+    @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
-    async def test_mapped_class(self, *, data: DataObject, name: UUID) -> None:
+    async def test_mapped_class(self, *, data: DataObject, name: str) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = f"test_{name}"
+            __tablename__ = name
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
@@ -414,13 +411,13 @@ class TestInsertItems:
     @FLAKY
     @given(
         data=data(),
-        name=uuids(),
+        name=_table_names(),
         case=sampled_from(["tuple", "dict"]),
         id_=integers(0, 10),
     )
     @settings(phases={Phase.generate})
     async def test_pair_of_obj_and_table(
-        self, *, data: DataObject, name: UUID, case: Literal["tuple", "dict"], id_: int
+        self, *, data: DataObject, name: str, case: Literal["tuple", "dict"], id_: int
     ) -> None:
         table = self._make_table(name)
         engine = await sqlalchemy_engines(data, table)
@@ -434,7 +431,7 @@ class TestInsertItems:
     @FLAKY
     @given(
         data=data(),
-        name=uuids(),
+        name=_table_names(),
         case=sampled_from([
             "pair-list-of-tuples",
             "pair-list-of-dicts",
@@ -448,7 +445,7 @@ class TestInsertItems:
         self,
         *,
         data: DataObject,
-        name: UUID,
+        name: str,
         case: Literal[
             "pair-list-of-tuples",
             "pair-list-of-dicts",
@@ -473,42 +470,40 @@ class TestInsertItems:
     @FLAKY
     @given(
         data=data(),
-        name=uuids(),
+        name=_table_names(),
         ids=sets(integers(0, 1000), min_size=10, max_size=100),
     )
     @settings(phases={Phase.generate})
     async def test_many_items(
-        self, *, data: DataObject, name: UUID, ids: set[int]
+        self, *, data: DataObject, name: str, ids: set[int]
     ) -> None:
         table = self._make_table(name)
         engine = await sqlalchemy_engines(data, table)
         await self._run_test(engine, table, ids, [({"id_": id_}, table) for id_ in ids])
 
     @FLAKY
-    @given(data=data(), name=uuids(), id_=integers(0, 10))
+    @given(data=data(), name=_table_names(), id_=integers(0, 10))
     @settings(phases={Phase.generate})
-    async def test_mapped_class(
-        self, *, data: DataObject, name: UUID, id_: int
-    ) -> None:
+    async def test_mapped_class(self, *, data: DataObject, name: str, id_: int) -> None:
         cls = self._make_mapped_class(name)
         engine = await sqlalchemy_engines(data, cls)
         await self._run_test(engine, cls, {id_}, cls(id_=id_))
 
     @FLAKY
-    @given(data=data(), name=uuids(), ids=sets(integers(0, 10), min_size=1))
+    @given(data=data(), name=_table_names(), ids=sets(integers(0, 10), min_size=1))
     @settings(phases={Phase.generate})
     async def test_mapped_classes(
-        self, *, data: DataObject, name: UUID, ids: set[int]
+        self, *, data: DataObject, name: str, ids: set[int]
     ) -> None:
         cls = self._make_mapped_class(name)
         engine = await sqlalchemy_engines(data, cls)
         await self._run_test(engine, cls, ids, [cls(id_=id_) for id_ in ids])
 
     @FLAKY
-    @given(data=data(), name=uuids(), id_=integers(0, 10))
+    @given(data=data(), name=_table_names(), id_=integers(0, 10))
     @settings(phases={Phase.generate})
     async def test_assume_table_exists(
-        self, *, data: DataObject, name: UUID, id_: int
+        self, *, data: DataObject, name: str, id_: int
     ) -> None:
         table = self._make_table(name)
         engine = await sqlalchemy_engines(data, table)
@@ -518,24 +513,22 @@ class TestInsertItems:
             await insert_items(engine, ({"id_": id_}, table), assume_tables_exist=True)
 
     @FLAKY
-    @given(data=data(), name=uuids())
+    @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
-    async def test_error(self, *, data: DataObject, name: UUID) -> None:
+    async def test_error(self, *, data: DataObject, name: str) -> None:
         cls = self._make_mapped_class(name)
         engine = await sqlalchemy_engines(data, cls)
         with raises(InsertItemsError, match="Item must be valid; got None"):
             await self._run_test(engine, cls, set(), cast(Any, None))
 
-    def _make_table(self, uuid: UUID, /) -> Table:
-        return Table(
-            f"test_{uuid}", MetaData(), Column("id_", Integer, primary_key=True)
-        )
+    def _make_table(self, name: str, /) -> Table:
+        return Table(name, MetaData(), Column("id_", Integer, primary_key=True))
 
-    def _make_mapped_class(self, uuid: UUID, /) -> type[DeclarativeBase]:
+    def _make_mapped_class(self, name: str, /) -> type[DeclarativeBase]:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = f"test_{uuid}"
+            __tablename__ = name
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
@@ -882,10 +875,10 @@ class TestTablenameMixin:
 
 class TestUpsertItems:
     @FLAKY
-    @given(data=data(), name=uuids(), triple=_upsert_triples(nullable=True))
+    @given(data=data(), name=_table_names(), triple=_upsert_triples(nullable=True))
     @settings(phases={Phase.generate})
     async def test_pair_of_dict_and_table(
-        self, *, data: DataObject, name: UUID, triple: tuple[int, bool, bool | None]
+        self, *, data: DataObject, name: str, triple: tuple[int, bool, bool | None]
     ) -> None:
         table = self._make_table(name)
         engine = await sqlalchemy_engines(data, table)
@@ -900,7 +893,7 @@ class TestUpsertItems:
     @FLAKY
     @given(
         data=data(),
-        name=uuids(),
+        name=_table_names(),
         triples=_upsert_lists(nullable=True, min_size=1),
         case=sampled_from(["pair-list-of-dicts", "list-of-pair-of-dicts"]),
     )
@@ -909,7 +902,7 @@ class TestUpsertItems:
         self,
         *,
         data: DataObject,
-        name: UUID,
+        name: str,
         triples: list[tuple[int, bool, bool | None]],
         case: Literal["pair-list-of-dicts", "list-of-pair-of-dicts"],
     ) -> None:
@@ -946,10 +939,10 @@ class TestUpsertItems:
         _ = await self._run_test(engine, table, post, expected=post_expected)
 
     @FLAKY
-    @given(data=data(), name=uuids(), triple=_upsert_triples())
+    @given(data=data(), name=_table_names(), triple=_upsert_triples())
     @settings(phases={Phase.generate})
     async def test_mapped_class(
-        self, *, data: DataObject, name: UUID, triple: tuple[int, bool, bool]
+        self, *, data: DataObject, name: str, triple: tuple[int, bool, bool]
     ) -> None:
         cls = self._make_mapped_class(name)
         engine = await sqlalchemy_engines(data, cls)
@@ -962,13 +955,17 @@ class TestUpsertItems:
         )
 
     @FLAKY
-    @given(data=data(), name=uuids(), triples=_upsert_lists(nullable=True, min_size=1))
+    @given(
+        data=data(),
+        name=_table_names(),
+        triples=_upsert_lists(nullable=True, min_size=1),
+    )
     @settings(phases={Phase.generate})
     async def test_mapped_classes(
         self,
         *,
         data: DataObject,
-        name: UUID,
+        name: str,
         triples: list[tuple[int, bool, bool | None]],
     ) -> None:
         cls = self._make_mapped_class(name)
@@ -987,7 +984,7 @@ class TestUpsertItems:
     @FLAKY
     @given(
         data=data(),
-        name=uuids(),
+        name=_table_names(),
         id_=integers(0, 10),
         x_init=booleans(),
         x_post=booleans(),
@@ -999,7 +996,7 @@ class TestUpsertItems:
         self,
         *,
         data: DataObject,
-        name: UUID,
+        name: str,
         selected_or_all: Literal["selected", "all"],
         id_: int,
         x_init: bool,
@@ -1007,7 +1004,7 @@ class TestUpsertItems:
         y: bool,
     ) -> None:
         table = Table(
-            f"test_{name}",
+            name,
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("x", Boolean, nullable=False),
@@ -1035,10 +1032,10 @@ class TestUpsertItems:
         )
 
     @FLAKY
-    @given(data=data(), name=uuids(), id_=integers(0, 10))
+    @given(data=data(), name=_table_names(), id_=integers(0, 10))
     @settings(phases={Phase.generate})
     async def test_assume_table_exists(
-        self, *, data: DataObject, name: UUID, id_: int
+        self, *, data: DataObject, name: str, id_: int
     ) -> None:
         table = self._make_table(name)
         engine = await sqlalchemy_engines(data, table)
@@ -1050,7 +1047,7 @@ class TestUpsertItems:
     @FLAKY
     @given(
         data=data(),
-        name=uuids(),
+        name=_table_names(),
         id1=int32s(),
         id2=int32s(),
         value1=booleans() | none(),
@@ -1061,7 +1058,7 @@ class TestUpsertItems:
         self,
         *,
         data: DataObject,
-        name: UUID,
+        name: str,
         id1: int,
         id2: int,
         value1: bool | None,
@@ -1076,27 +1073,27 @@ class TestUpsertItems:
         )
 
     @FLAKY
-    @given(data=data(), name=uuids())
+    @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
-    async def test_error(self, *, data: DataObject, name: UUID) -> None:
+    async def test_error(self, *, data: DataObject, name: str) -> None:
         table = self._make_table(name)
         engine = await sqlalchemy_engines(data, table)
         with raises(UpsertItemsError, match="Item must be valid; got None"):
             _ = await self._run_test(engine, table, cast(Any, None))
 
-    def _make_table(self, name: UUID, /) -> Table:
+    def _make_table(self, name: str, /) -> Table:
         return Table(
-            f"test_{name}",
+            name,
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),
         )
 
-    def _make_mapped_class(self, name: UUID, /) -> type[DeclarativeBase]:
+    def _make_mapped_class(self, name: str, /) -> type[DeclarativeBase]:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = f"test_{name}"
+            __tablename__ = name
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
             value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)

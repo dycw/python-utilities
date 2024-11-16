@@ -21,7 +21,6 @@ from hypothesis.strategies import (
     none,
     sampled_from,
     sets,
-    uuids,
 )
 from polars import (
     Binary,
@@ -62,6 +61,7 @@ from sqlalchemy import (
     TEXT,
     TIME,
     TIMESTAMP,
+    UUID,
     VARBINARY,
     VARCHAR,
     BigInteger,
@@ -87,7 +87,7 @@ from sqlalchemy import (
 from sqlalchemy.exc import DuplicateColumnError, OperationalError, ProgrammingError
 
 from tests.conftest import FLAKY
-from tests.test_sqlalchemy import _upsert_lists
+from tests.test_sqlalchemy import _table_names, _upsert_lists
 from utilities.datetime import is_equal_mod_tz
 from utilities.hypothesis import sqlalchemy_engines, text_ascii
 from utilities.math import is_equal
@@ -112,7 +112,6 @@ from utilities.sqlalchemy_polars import (
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    import uuid
     from collections.abc import Callable, Iterable, Sequence
 
     from polars._typing import PolarsDataType
@@ -143,13 +142,13 @@ _CASES_INSERT: list[
 
 class TestInsertDataFrame:
     @FLAKY
-    @given(data=data(), name=uuids(), case=sampled_from(_CASES_INSERT))
+    @given(data=data(), name=_table_names(), case=sampled_from(_CASES_INSERT))
     @settings(phases={Phase.generate})
     async def test_main(
         self,
         *,
         data: DataObject,
-        name: uuid.UUID,
+        name: str,
         case: tuple[
             SearchStrategy[Any], PolarsDataType, Any, Callable[[Any, Any], bool]
         ],
@@ -167,10 +166,10 @@ class TestInsertDataFrame:
             assert ((r is None) == (v is None)) or check(r, v)
 
     @FLAKY
-    @given(data=data(), name=uuids())
+    @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
     async def test_assume_exists_with_empty(
-        self, *, data: DataObject, name: uuid.UUID
+        self, *, data: DataObject, name: str
     ) -> None:
         df = DataFrame(schema={"value": pl.Boolean})
         table = self._make_table(name, sqlalchemy.Boolean)
@@ -179,10 +178,10 @@ class TestInsertDataFrame:
         await insert_dataframe(df, table, engine, assume_tables_exist=True)
 
     @FLAKY
-    @given(data=data(), name=uuids(), value=booleans())
+    @given(data=data(), name=_table_names(), value=booleans())
     @settings(phases={Phase.generate})
     async def test_assume_exists_with_non_empty(
-        self, *, data: DataObject, name: uuid.UUID, value: bool
+        self, *, data: DataObject, name: str, value: bool
     ) -> None:
         df = DataFrame([(value,)], schema={"value": pl.Boolean})
         table = self._make_table(name, sqlalchemy.Boolean)
@@ -193,9 +192,9 @@ class TestInsertDataFrame:
             await insert_dataframe(df, table, engine, assume_tables_exist=True)
 
     @FLAKY
-    @given(data=data(), name=uuids())
+    @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
-    async def test_empty(self, *, data: DataObject, name: uuid.UUID) -> None:
+    async def test_empty(self, *, data: DataObject, name: str) -> None:
         df = DataFrame(schema={"value": pl.Boolean})
         table = self._make_table(name, sqlalchemy.Boolean)
         engine = await sqlalchemy_engines(data, table)
@@ -206,9 +205,9 @@ class TestInsertDataFrame:
         assert results == []
 
     @FLAKY
-    @given(data=data(), name=uuids())
+    @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
-    async def test_upsert(self, *, data: DataObject, name: uuid.UUID) -> None:
+    async def test_upsert(self, *, data: DataObject, name: str) -> None:
         values = data.draw(_upsert_lists())
         df = DataFrame(
             values,
@@ -241,11 +240,9 @@ class TestInsertDataFrame:
         assert set(results) == set(expected.rows())
 
     @FLAKY
-    @given(data=data(), name=uuids(), value=booleans())
+    @given(data=data(), name=_table_names(), value=booleans())
     @settings(phases={Phase.generate})
-    async def test_error(
-        self, *, data: DataObject, name: uuid.UUID, value: bool
-    ) -> None:
+    async def test_error(self, *, data: DataObject, name: str, value: bool) -> None:
         df = DataFrame([(value,)], schema={"other": pl.Boolean})
         table = self._make_table(name, sqlalchemy.Boolean)
         engine = await sqlalchemy_engines(data, table)
@@ -255,9 +252,9 @@ class TestInsertDataFrame:
         ):
             _ = await insert_dataframe(df, table, engine)
 
-    def _make_table(self, name: uuid.UUID, type_: Any, /) -> Table:
+    def _make_table(self, name: str, type_: Any, /) -> Table:
         return Table(
-            f"test_{name}",
+            name,
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", type_),
@@ -406,7 +403,7 @@ class TestSelectToDataFrame:
     @FLAKY
     @given(
         data=data(),
-        name=uuids(),
+        name=_table_names(),
         case=sampled_from([
             (strategy, pl_dtype, col_type)
             for (strategy, pl_dtype, col_type, _) in _CASES_SELECT
@@ -417,7 +414,7 @@ class TestSelectToDataFrame:
         self,
         *,
         data: DataObject,
-        name: uuid.UUID,
+        name: str,
         case: tuple[SearchStrategy[Any], PolarsDataType, Any],
     ) -> None:
         strategy, pl_dtype, col_type = case
@@ -433,13 +430,13 @@ class TestSelectToDataFrame:
     @FLAKY
     @given(
         data=data(),
-        name=uuids(),
+        name=_table_names(),
         values=lists(booleans() | none(), min_size=1, max_size=100),
         sr_name=sampled_from(["Value", "value"]),
     )
     @settings(phases={Phase.generate})
     async def test_snake(
-        self, *, data: DataObject, name: uuid.UUID, values: list[bool], sr_name: str
+        self, *, data: DataObject, name: str, values: list[bool], sr_name: str
     ) -> None:
         df = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
         table = self._make_table(name, sqlalchemy.Boolean, title=True)
@@ -453,13 +450,13 @@ class TestSelectToDataFrame:
     @FLAKY
     @given(
         data=data(),
-        name=uuids(),
+        name=_table_names(),
         values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
         batch_size=integers(1, 10),
     )
     @settings(phases={Phase.generate})
     async def test_batch(
-        self, *, data: DataObject, name: uuid.UUID, values: list[int], batch_size: int
+        self, *, data: DataObject, name: str, values: list[int], batch_size: int
     ) -> None:
         df, table, engine, sel = await self._prepare_feature_test(data, name, values)
         await insert_dataframe(df, table, engine)
@@ -469,7 +466,7 @@ class TestSelectToDataFrame:
     @FLAKY
     @given(
         data=data(),
-        name=uuids(),
+        name=_table_names(),
         values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
         in_clauses_chunk_size=integers(1, 10),
     )
@@ -478,7 +475,7 @@ class TestSelectToDataFrame:
         self,
         *,
         data: DataObject,
-        name: uuid.UUID,
+        name: str,
         values: list[int],
         in_clauses_chunk_size: int,
     ) -> None:
@@ -495,9 +492,9 @@ class TestSelectToDataFrame:
         assert set(df["value"].to_list()) == in_values
 
     @FLAKY
-    @given(data=data(), name=uuids())
+    @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
-    async def test_in_clauses_empty(self, *, data: DataObject, name: uuid.UUID) -> None:
+    async def test_in_clauses_empty(self, *, data: DataObject, name: str) -> None:
         table = self._make_table(name, Integer)
         engine = await sqlalchemy_engines(data, table)
         await ensure_tables_created(engine, table)
@@ -508,7 +505,7 @@ class TestSelectToDataFrame:
     @FLAKY
     @given(
         data=data(),
-        name=uuids(),
+        name=_table_names(),
         values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
         batch_size=integers(1, 10),
         in_clauses_chunk_size=integers(1, 10),
@@ -518,7 +515,7 @@ class TestSelectToDataFrame:
         self,
         *,
         data: DataObject,
-        name: uuid.UUID,
+        name: str,
         values: list[int],
         batch_size: int,
         in_clauses_chunk_size: int,
@@ -550,18 +547,16 @@ class TestSelectToDataFrame:
             seen.update(df_i["value"].to_list())
         assert seen == values
 
-    def _make_table(
-        self, name: uuid.UUID, type_: Any, /, *, title: bool = False
-    ) -> Table:
+    def _make_table(self, name: str, type_: Any, /, *, title: bool = False) -> Table:
         return Table(
-            f"test_{name}",
+            name,
             MetaData(),
             Column("Id" if title else "id", Integer, primary_key=True),
             Column("Value" if title else "value", type_),
         )
 
     async def _prepare_feature_test(
-        self, data: DataObject, name: uuid.UUID, values: Sequence[int], /
+        self, data: DataObject, name: str, values: Sequence[int], /
     ) -> tuple[DataFrame, Table, AsyncEngine, Select[Any]]:
         df = DataFrame({"value": values}, schema={"value": Int64})
         table = self._make_table(name, Integer)
@@ -644,7 +639,7 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
             param(Unicode, Utf8),
             param(UnicodeText, Utf8),
             param(Uuid, pl.Utf8),
-            param(sqlalchemy.UUID, pl.Utf8),
+            param(UUID, pl.Utf8),
             param(VARBINARY, Binary),
             param(VARCHAR, Utf8),
         ],
@@ -669,7 +664,7 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
 class TestSelectToDataFrameYieldSelectsWithInClauses:
     @given(
         data=data(),
-        name=uuids(),
+        name=_table_names(),
         values=sets(integers(), max_size=100),
         in_clauses_chunk_size=integers(1, 10) | none(),
         chunk_size_frac=floats(0.1, 10.0),
@@ -678,14 +673,12 @@ class TestSelectToDataFrameYieldSelectsWithInClauses:
         self,
         *,
         data: DataObject,
-        name: uuid.UUID,
+        name: str,
         values: set[int],
         in_clauses_chunk_size: int | None,
         chunk_size_frac: float,
     ) -> None:
-        table = Table(
-            f"test_{name}", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        table = Table(name, MetaData(), Column("id", Integer, primary_key=True))
         engine = await sqlalchemy_engines(data, table)
         sel = select(table.c["id"])
         async with engine.begin() as conn:
