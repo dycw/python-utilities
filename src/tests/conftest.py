@@ -1,20 +1,10 @@
 from __future__ import annotations
 
 from os import environ
-from typing import TYPE_CHECKING
 
-from pytest import fixture, mark
+from pytest import mark
 
 from utilities.platform import IS_NOT_LINUX, IS_WINDOWS
-from utilities.sqlalchemy import ensure_tables_dropped
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from sqlalchemy.ext.asyncio import AsyncEngine
-
-    from utilities.asyncio import Coroutine1
-    from utilities.sqlalchemy import TableOrMappedClass
 
 FLAKY = mark.flaky(reruns=5, reruns_delay=1)
 SKIPIF_CI = mark.skipif("CI" in environ, reason="Skipped for CI")
@@ -35,32 +25,3 @@ except ModuleNotFoundError:
     pass
 else:
     setup_hypothesis_profiles()
-
-
-# sqlalchemy
-
-
-try:
-    pass
-except ModuleNotFoundError:
-    pass
-else:
-
-    @fixture(scope="session")
-    def create_postgres_engine_async() -> Callable[..., Coroutine1[AsyncEngine]]:
-        """Create a Postgres engine."""
-
-        async def inner(*tables_or_mapped_classes: TableOrMappedClass) -> AsyncEngine:
-            from utilities.sqlalchemy import create_async_engine
-
-            engine = create_async_engine(
-                "postgresql+asyncpg",
-                host="localhost",
-                port=5432,
-                database="testing",
-                async_=True,
-            )
-            await ensure_tables_dropped(engine, *tables_or_mapped_classes)
-            return engine
-
-        return inner

@@ -17,17 +17,7 @@ from pathlib import Path
 from re import search
 from string import ascii_letters, printable
 from subprocess import run
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Literal,
-    Protocol,
-    TypeVar,
-    assert_never,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
 from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
@@ -66,41 +56,17 @@ from utilities.zoneinfo import UTC
 if TYPE_CHECKING:
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
-    from sqlalchemy import MetaData
     from sqlalchemy.ext.asyncio import AsyncEngine
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.redis import _TestRedis
-    from utilities.sqlalchemy import Dialect
+    from utilities.sqlalchemy import Dialect, TableOrMappedClass
     from utilities.types import Duration, Number
 
 
 _T = TypeVar("_T")
 MaybeSearchStrategy = _T | SearchStrategy[_T]
 Shape = int | tuple[int, ...]
-
-
-async def aiosqlite_engines(
-    _data: DataObject, /, *, metadata: MetaData | None = None, base: Any = None
-) -> AsyncEngine:
-    from utilities.sqlalchemy import create_async_engine
-
-    draw = lift_data(_data)
-    temp_path = draw(temp_paths())
-    path = Path(temp_path, "db.sqlite")
-    engine = create_async_engine("sqlite+aiosqlite", database=str(path), async_=True)
-    if metadata is not None:
-        async with engine.begin() as conn:  # pragma: no cover
-            await conn.run_sync(metadata.create_all)
-    if base is not None:
-        async with engine.begin() as conn:  # pragma: no cover
-            await conn.run_sync(base.metadata.create_all)
-
-    class EngineWithPath(type(engine)): ...
-
-    engine_with_path = EngineWithPath(engine.sync_engine)
-    cast(Any, engine_with_path).temp_path = temp_path  # keep `temp_path` alive
-    return engine_with_path
 
 
 @contextmanager
@@ -540,37 +506,42 @@ def slices(
     return slice(start, stop)
 
 
-_SQLALCHEMY_ENGINE_DIALECTS: frozenset[Dialect] = frozenset({"sqlite", "postgresql"})
+_STRATEGY_DIALECTS: list[Dialect] = ["sqlite", "postgresql"]
+_SQLALCHEMY_ENGINE_DIALECTS = sampled_from(_STRATEGY_DIALECTS)
 
 
 async def sqlalchemy_engines(
     _data: DataObject,
     /,
-    *,
-    dialects: MaybeSearchStrategy[AbstractSet[Dialect]] = _SQLALCHEMY_ENGINE_DIALECTS,
-    metadata: MetaData | None = None,
-    base: type[Any] | None = None,
+    *tables_or_mapped_classes: TableOrMappedClass,
+    dialect: MaybeSearchStrategy[Dialect] = _SQLALCHEMY_ENGINE_DIALECTS,
 ) -> AsyncEngine:
     """Strategy for generating sqlalchemy engines."""
     from utilities.sqlalchemy import create_async_engine
 
     draw = lift_data(_data)
-    dialects_ = draw(dialects)
-    dialect = draw(sampled_from(sorted(dialects_)))
-    match dialect:
+    dialect_: Dialect = draw(dialect)
+    match dialect_:
         case "sqlite":
-            pass
+            temp_path = draw(temp_paths())
+            path = Path(temp_path, "db.sqlite")
+            engine = create_async_engine("sqlite+aiosqlite", database=str(path))
+
+            class EngineWithPath(type(engine)): ...
+
+            engine_with_path = EngineWithPath(engine.sync_engine)
+            cast(Any, engine_with_path).temp_path = temp_path  # keep `temp_path` alive
+            return engine_with_path
         case "postgresql":
-            pass
+            from utilities.sqlalchemy import ensure_tables_dropped
+
+            engine = create_async_engine(
+                "postgresql+asyncpg", host="localhost", port=5432, database="testing"
+            )
+            await ensure_tables_dropped(engine, *tables_or_mapped_classes)
+            return engine
         case _:
             raise NotImplementedError(dialect)
-    temp_path = draw(temp_paths())
-    path = Path(temp_path, "db.sqlite")
-    engine = create_async_engine("sqlite", database=str(path))
-    if metadata is not None:
-        async with engine.begin() as conn:
-            await conn.run_sync(metadata.create_all)
-    return engine
 
 
 @composite
@@ -782,7 +753,6 @@ def _draw_text(
 __all__ = [
     "MaybeSearchStrategy",
     "Shape",
-    "aiosqlite_engines",
     "assume_does_not_raise",
     "bool_arrays",
     "durations",

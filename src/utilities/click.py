@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import enum
 import pathlib
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import Any, Generic, TypeVar
 from uuid import UUID
 
 import click
@@ -25,10 +25,6 @@ from utilities.functions import get_class_name
 from utilities.iterables import is_iterable_not_str
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
-
-if TYPE_CHECKING:
-    from sqlalchemy import Engine as _Engine
-
 
 _T = TypeVar("_T")
 _TParam = TypeVar("_TParam", bound=ParamType)

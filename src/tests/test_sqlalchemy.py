@@ -13,7 +13,6 @@ from hypothesis.strategies import (
     integers,
     lists,
     none,
-    sampled_from,
     sets,
     tuples,
 )
@@ -70,7 +69,6 @@ from utilities.sqlalchemy import (
     columnwise_max,
     columnwise_min,
     create_async_engine,
-    ensure_engine,
     ensure_tables_created,
     ensure_tables_dropped,
     get_chunk_size,
@@ -82,7 +80,6 @@ from utilities.sqlalchemy import (
     is_mapped_class,
     is_table_or_mapped_class,
     mapped_class_to_dict,
-    parse_engine,
     selectable_to_string,
     serialize_engine,
     upsert_items,
@@ -871,21 +868,6 @@ class TestNormalizeUpsertItem:
         return Example
 
 
-class TestParseEngine:
-    @given(data=data())
-    async def test_str(self, *, data: DataObject) -> None:
-        engine = await sqlalchemy_engines(data)
-        url = engine.url
-        result = parse_engine(url.render_as_string(hide_password=False))
-        assert result.url == url
-
-    def test_error(self) -> None:
-        with raises(
-            ParseEngineError, match="Could not parse SQLAlchemy URL from string 'error'"
-        ):
-            _ = parse_engine("error")
-
-
 @SKIPIF_CI
 class TestPostgresEngine:
     @given(ids=sets(integers(0, 10), min_size=1))
@@ -1428,6 +1410,7 @@ class TestYieldPrimaryKeyColumns:
             MetaData(),
             Column("id1", Integer, primary_key=True),
             Column("id2", Integer, primary_key=True),
+            Column("id3", Integer),
         )
         columns = list(yield_primary_key_columns(table))
         expected = [
@@ -1435,4 +1418,5 @@ class TestYieldPrimaryKeyColumns:
             Column("id2", Integer, primary_key=True),
         ]
         for c, e in zip(columns, expected, strict=True):
-            _check_columns_equal(c, e)
+            assert c.name == e.name
+            assert c.primary_key == e.primary_key

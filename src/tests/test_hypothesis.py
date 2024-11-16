@@ -25,21 +25,21 @@ from hypothesis.strategies import (
     sets,
     timedeltas,
     timezones,
+    uuids,
 )
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pytest import mark, param, raises
-from sqlalchemy import Column, Integer, MetaData, Select, Table, select
+from sqlalchemy import Column, Integer, MetaData, Select, Table, insert, select
 from sqlalchemy.ext.asyncio import AsyncEngine
-from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX, SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import duration_to_float, is_local_datetime, is_zoned_datetime
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
+    _SQLALCHEMY_ENGINE_DIALECTS,
     _ZONED_DATETIMES_LEFT_MOST,
     _ZONED_DATETIMES_RIGHT_MOST,
     Shape,
-    aiosqlite_engines,
     assume_does_not_raise,
     bool_arrays,
     durations,
@@ -59,6 +59,7 @@ from utilities.hypothesis import (
     settings_with_reduced_examples,
     setup_hypothesis_profiles,
     slices,
+    sqlalchemy_engines,
     str_arrays,
     temp_dirs,
     temp_paths,
@@ -72,7 +73,7 @@ from utilities.hypothesis import (
 from utilities.math import MAX_INT32, MAX_INT64, MIN_INT32, MIN_INT64
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
-from utilities.sqlalchemy import TableOrMappedClass, get_table, insert_items
+from utilities.sqlalchemy import Dialect, TableOrMappedClass, _get_dialect, get_table
 from utilities.types import Duration, Number, make_isinstance
 from utilities.whenever import (
     MAX_TWO_WAY_TIMEDELTA,
@@ -85,8 +86,8 @@ from utilities.whenever import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
     from collections.abc import Set as AbstractSet
+    from uuid import UUID
     from zoneinfo import ZoneInfo
 
     from utilities.datetime import Month
@@ -547,62 +548,39 @@ class TestSlices:
             _ = data.draw(slices(iter_len, slice_len=iter_len + 1))
 
 
-class TestSQLiteEngines:
-    @given(data=data())
-    async def test_async(self, *, data: DataObject) -> None:
-        engine = await aiosqlite_engines(data)
-        assert isinstance(engine, AsyncEngine)
-        database = engine.url.database
-        assert database is not None
-        assert not Path(database).exists()
-
-    @given(data=data(), ids=sets(integers(0, 10)))
-    async def test_async_table(self, *, data: DataObject, ids: set[int]) -> None:
-        metadata, table = self._metadata_and_table()
-        engine = await aiosqlite_engines(data, metadata=metadata)
-        await self._run_test(engine, table, ids)
-
-    @given(data=data(), ids=sets(integers(0, 10)))
-    async def test_async_mapped_class(self, *, data: DataObject, ids: set[int]) -> None:
-        base, mapped_class = self._base_and_mapped_class()
-        engine = await aiosqlite_engines(data, base=base)
-        await self._run_test(engine, mapped_class, ids)
-
-    def _metadata_and_table(self) -> tuple[MetaData, Table]:
-        metadata = MetaData()
-        table = Table("example", metadata, Column("id_", Integer, primary_key=True))
-        return metadata, table
-
-    def _base_and_mapped_class(
-        self,
-    ) -> tuple[type[DeclarativeBase], type[DeclarativeBase]]:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
-
-        class Example(Base):
-            __tablename__ = "example"
-
-            id_ = Column(Integer, primary_key=True)
-
-        return Base, Example
-
-    async def _run_test(
-        self,
-        engine: AsyncEngine,
-        table_or_mapped_class: TableOrMappedClass,
-        ids: set[int],
-        /,
+class TestSQLAlchemyEngines:
+    @given(
+        data=data(),
+        table_name=uuids(),
+        dialect=_SQLALCHEMY_ENGINE_DIALECTS,
+        ids=sets(integers(0, 10), min_size=1),
+    )
+    @settings(phases={Phase.generate})
+    async def test_main(
+        self, *, data: DataObject, table_name: UUID, dialect: Dialect, ids: set[int]
     ) -> None:
-        await insert_items(engine, ([(id_,) for id_ in ids], table_or_mapped_class))
-        sel = self._get_select(table_or_mapped_class)
+        table = Table(
+            f"test_{table_name}", MetaData(), Column("id_", Integer, primary_key=True)
+        )
+        engine = await sqlalchemy_engines(data, table, dialect=dialect)
+        assert isinstance(engine, AsyncEngine)
+        assert _get_dialect(engine) == dialect
+        if dialect == "sqlite":
+            database = engine.url.database
+            assert database is not None
+            assert not Path(database).exists()
         async with engine.begin() as conn:
-            res = (await conn.execute(sel)).scalars().all()
-        self._assert_results(res, ids)
+            await conn.run_sync(table.metadata.create_all)
+        ins = insert(table).values([(id_,) for id_ in ids])
+        async with engine.begin() as conn:
+            _ = await conn.execute(ins)
+        sel = select(table.c["id_"])
+        async with engine.begin() as conn:
+            results = (await conn.execute(sel)).scalars().all()
+        assert set(results) == ids
 
     def _get_select(self, table_or_mapped_class: TableOrMappedClass, /) -> Select[Any]:
         return select(get_table(table_or_mapped_class).c["id_"])
-
-    def _assert_results(self, results: Sequence[Any], ids: set[int], /) -> None:
-        assert set(results) == ids
 
 
 class TestStrArrays:
