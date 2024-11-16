@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 import polars as pl
 import sqlalchemy
-from hypothesis import Phase, given, settings
+from hypothesis import Phase, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     DrawFn,
@@ -198,7 +198,7 @@ class TestInsertDataFrame:
     @FLAKY
     @given(data=data(), name=uuids(), value=booleans())
     @settings(phases={Phase.generate})
-    async def test_assume_exists(
+    async def test_assume_exists_with_non_empty(
         self, *, data: DataObject, name: uuid.UUID, value: bool
     ) -> None:
         df = DataFrame([(value,)], schema={"value": pl.Boolean})
@@ -208,6 +208,19 @@ class TestInsertDataFrame:
             (OperationalError, ProgrammingError), match="(no such table|does not exist)"
         ):
             await insert_dataframe(df, table, engine, assume_tables_exist=True)
+
+    @FLAKY
+    @given(data=data(), name=uuids())
+    @settings(phases={Phase.generate})
+    async def test_empty(self, *, data: DataObject, name: uuid.UUID) -> None:
+        df = DataFrame([], schema={"value": pl.Boolean})
+        table = self._make_table(name, sqlalchemy.Boolean)
+        engine = await sqlalchemy_engines(data, table)
+        await insert_dataframe(df, table, engine, assume_tables_exist=False)
+        sel = select(table.c["value"])
+        async with engine.begin() as conn:
+            results = (await conn.execute(sel)).scalars().all()
+        assert results == []
 
     @FLAKY
     @given(data=data(), name=uuids(), value=booleans())
