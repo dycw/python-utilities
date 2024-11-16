@@ -32,7 +32,6 @@ from sqlalchemy import (
     func,
     select,
 )
-from sqlalchemy.engine import create
 from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
@@ -82,7 +81,6 @@ from utilities.sqlalchemy import (
     is_table_or_mapped_class,
     mapped_class_to_dict,
     selectable_to_string,
-    serialize_engine,
     upsert_items,
     yield_connection,
     yield_primary_key_columns,
@@ -197,11 +195,11 @@ class TestCreateAsyncEngine:
     @given(temp_path=temp_paths())
     def test_query(self, *, temp_path: Path) -> None:
         engine = create_async_engine(
-            "sqlite",
+            "sqlite+aiosqlite",
             database=temp_path.name,
             query={"arg1": "value1", "arg2": ["value2"]},
         )
-        assert isinstance(engine, Engine)
+        assert isinstance(engine, AsyncEngine)
 
 
 class TestEnsureTablesCreated:
@@ -421,12 +419,7 @@ class TestInsertItems:
         id_=integers(0, 10),
     )
     async def test_pair_of_obj_and_table(
-        self,
-        *,
-        data: DataObject,
-        name: UUID,
-        case: Literal["tuple", "dict"],
-        id_: int,
+        self, *, data: DataObject, name: UUID, case: Literal["tuple", "dict"], id_: int
     ) -> None:
         table = self._make_table(name)
         engine = await sqlalchemy_engines(data, table)
@@ -448,7 +441,6 @@ class TestInsertItems:
         ]),
         ids=sets(integers(0, 10), min_size=1),
     )
-    @mark.only
     async def test_pair_of_objs_and_table_or_list_of_pairs_of_objs_and_table(
         self,
         *,
@@ -478,84 +470,60 @@ class TestInsertItems:
     @given(
         data=data(),
         name=uuids(),
-        case=sampled_from(["tuple", "dict"]),
-        ids=sets(integers(0, 10), min_size=1),
+        ids=sets(integers(0, 1000), min_size=10, max_size=100),
     )
-    async def test_list_of_pairs_of_objs_and_table(
-        self,
-        *,
-        data: DataObject,
-        name: UUID,
-        case: Literal["tuple", "dict"],
-        ids: set[int],
+    async def test_many_items(
+        self, *, data: DataObject, name: UUID, ids: set[int]
     ) -> None:
-        return
         table = self._make_table(name)
         engine = await sqlalchemy_engines(data, table)
-        await self._run_test(engine, table, ids, item)
+        await self._run_test(engine, table, ids, [({"id_": id_}, table) for id_ in ids])
 
-    @given(data=data(), ids=sets(integers(0, 1000), min_size=10, max_size=100))
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_many_items(
-        self, *, data: DataObject, ids: set[int], use_conn: bool
-    ) -> None:
-        engine = await aiosqlite_engines(data)
-        await self._run_test(
-            engine, ids, [({"id_": id_}, table) for id_ in ids], use_conn=use_conn
-        )
-
-    @given(data=data(), id_=integers(0, 10))
-    @mark.parametrize("use_conn", [param(True), param(False)])
+    @given(data=data(), name=uuids(), id_=integers(0, 10))
     async def test_mapped_class(
-        self, *, data: DataObject, id_: int, use_conn: bool
+        self, *, data: DataObject, name: UUID, id_: int
     ) -> None:
-        engine = await aiosqlite_engines(data)
-        await self._run_test(
-            engine, {id_}, self._mapped_class(id_=id_), use_conn=use_conn
-        )
+        cls = self._make_mapped_class(name)
+        engine = await sqlalchemy_engines(data, cls)
+        await self._run_test(engine, cls, {id_}, cls(id_=id_))
 
-    @given(data=data(), ids=sets(integers(0, 10), min_size=1))
-    @mark.parametrize("use_conn", [param(True), param(False)])
+    @given(data=data(), name=uuids(), ids=sets(integers(0, 10), min_size=1))
     async def test_mapped_classes(
-        self, *, data: DataObject, ids: set[int], use_conn: bool
+        self, *, data: DataObject, name: UUID, ids: set[int]
     ) -> None:
-        engine = await aiosqlite_engines(data)
-        await self._run_test(
-            engine, ids, [self._mapped_class(id_=id_) for id_ in ids], use_conn=use_conn
-        )
+        cls = self._make_mapped_class(name)
+        engine = await sqlalchemy_engines(data, cls)
+        await self._run_test(engine, cls, ids, [cls(id_=id_) for id_ in ids])
 
-    @given(data=data(), id_=integers(0, 10))
-    @mark.parametrize("use_conn", [param(True), param(False)])
+    @given(data=data(), name=uuids(), id_=integers(0, 10))
     async def test_assume_table_exists(
-        self, *, data: DataObject, id_: int, use_conn: bool
+        self, *, data: DataObject, name: UUID, id_: int
     ) -> None:
-        engine = await aiosqlite_engines(data)
-        await self._run_test(
-            engine,
-            {id_},
-            self._mapped_class(id_=id_),
-            assume_tables_exist=True,
-            use_conn=use_conn,
-        )
+        cls = self._make_mapped_class(name)
+        engine = await sqlalchemy_engines(data, cls)
+        item = cls(id_=id_)
+        with raises(
+            (OperationalError, ProgrammingError), match="(no such table|does not exist)"
+        ):
+            await insert_items(engine, item, assume_tables_exist=True)
 
-    @given(data=data())
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_error(self, *, data: DataObject, use_conn: bool) -> None:
-        engine = await aiosqlite_engines(data)
+    @given(data=data(), name=uuids())
+    async def test_error(self, *, data: DataObject, name: UUID) -> None:
+        cls = self._make_mapped_class(name)
+        engine = await sqlalchemy_engines(data, cls)
         with raises(InsertItemsError, match="Item must be valid; got None"):
-            await self._run_test(engine, set(), cast(Any, None), use_conn=use_conn)
+            await self._run_test(engine, cls, set(), cast(Any, None))
 
     def _make_table(self, uuid: UUID, /) -> Table:
         return Table(
-            "test_{uuid}", MetaData(), Column("id_", Integer, primary_key=True)
+            f"test_{uuid}", MetaData(), Column("id_", Integer, primary_key=True)
         )
 
-    @property
-    def _mapped_class(self) -> type[DeclarativeBase]:
+    def _make_mapped_class(self, uuid: UUID, /) -> type[DeclarativeBase]:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = f"test_{uuid}"
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
@@ -564,24 +532,16 @@ class TestInsertItems:
     async def _run_test(
         self,
         engine: AsyncEngine,
-        table: Table,
+        table_or_mapped_class: TableOrMappedClass,
         ids: set[int],
         /,
         *items: _InsertItem,
-        assume_tables_exist: bool = False,
     ) -> None:
-        if assume_tables_exist:
-            with raises(OperationalError, match="no such table"):
-                await insert_items(
-                    engine, *items, assume_tables_exist=assume_tables_exist
-                )
-            return
-        await insert_items(engine, *items, assume_tables_exist=assume_tables_exist)
-        sel = select(get_table(table).c["id_"])
+        await insert_items(engine, *items)
+        sel = select(get_table(table_or_mapped_class).c["id_"])
         async with yield_connection(engine) as conn:
             results = (await conn.execute(sel)).scalars().all()
         assert set(results) == ids
-        return
 
 
 class TestIsInsertItemPair:
@@ -612,7 +572,7 @@ class TestIsUpsertItemPair:
             param((1,), False),
             param((1, 2), False),
             param(((1, 2, 3), None), False),
-            param(((1, 2, 3), Table("example", MetaData())), True),
+            param(((1, 2, 3), Table("example", MetaData())), False),
             param(({"a": 1, "b": 2, "c": 3}, None), False),
             param(({"a": 1, "b": 2, "c": 3}, Table("example", MetaData())), True),
         ],
@@ -896,14 +856,6 @@ class TestSelectableToString:
             """.replace("--\n", "\n")
         )
         assert result == expected
-
-
-class TestSerializeEngine:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        engine = data.draw(sqlite_engines())
-        result = parse_engine(serialize_engine(engine))
-        assert result.url == engine.url
 
 
 class TestTablenameMixin:

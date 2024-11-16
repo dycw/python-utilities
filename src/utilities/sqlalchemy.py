@@ -552,11 +552,6 @@ def selectable_to_string(
     return str(com)
 
 
-def serialize_engine(engine: Engine, /) -> str:
-    """Serialize an Engine."""
-    return engine.url.render_as_string(hide_password=False)
-
-
 class TablenameMixin:
     """Mix-in for an auto-generated tablename."""
 
@@ -875,7 +870,6 @@ __all__ = [
     "is_table_or_mapped_class",
     "mapped_class_to_dict",
     "selectable_to_string",
-    "serialize_engine",
     "upsert_items",
     "yield_connection",
     "yield_primary_key_columns",
