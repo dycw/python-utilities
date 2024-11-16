@@ -59,14 +59,15 @@ from utilities.modules import is_installed
 from utilities.sqlalchemy import (
     AsyncEngineOrConnection,
     Dialect,
-    EngineOrConnection,
     GetTableError,
-    InsertItemsAsyncError,
+    InsertItemsError,
     ParseEngineError,
     TablenameMixin,
     TableOrMappedClass,
     UpsertItemsAsyncError,
     UpsertItemsError,
+    _get_dialect,
+    _get_dialect_max_params,
     _insert_items_prepare,
     _InsertItem,
     _InsertItemsPrepareError,
@@ -88,7 +89,6 @@ from utilities.sqlalchemy import (
     get_chunk_size,
     get_column_names,
     get_columns,
-    get_dialect,
     get_table,
     get_table_name,
     insert_items,
@@ -99,11 +99,12 @@ from utilities.sqlalchemy import (
     parse_engine,
     selectable_to_string,
     serialize_engine,
-    upsert_items_async,
+    upsert_items,
     yield_connection,
     yield_primary_key_columns,
 )
 from utilities.text import strip_and_dedent
+from utilities.typing import get_args
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -214,12 +215,6 @@ class TestCreateEngine:
             query={"arg1": "value1", "arg2": ["value2"]},
         )
         assert isinstance(engine, Engine)
-
-
-class TestDialect:
-    @mark.parametrize("dialect", Dialect)
-    def test_max_params(self, *, dialect: Dialect) -> None:
-        assert isinstance(dialect.max_params, int)
 
 
 class TestEnsureEngine:
@@ -463,41 +458,48 @@ class TestGetDialect:
     @mark.skipif(condition=not is_installed("pyodbc"), reason="'pyodbc' not installed")
     def test_mssql(self) -> None:
         engine = create_engine("mssql")
-        assert get_dialect(engine) is Dialect.mssql
+        assert _get_dialect(engine) == "mssql"
 
     @mark.skipif(
         condition=not is_installed("mysqldb"), reason="'mysqldb' not installed"
     )
     def test_mysql(self) -> None:
         engine = create_engine("mysql")
-        assert get_dialect(engine) is Dialect.mysql
+        assert _get_dialect(engine) == "mysql"
 
     @mark.skipif(
         condition=not is_installed("oracledb"), reason="'oracledb' not installed"
     )
     def test_oracle(self) -> None:
         engine = create_engine("oracle+oracledb")
-        assert get_dialect(engine) is Dialect.oracle
+        assert _get_dialect(engine) == "oracle"
 
     def test_postgres(self) -> None:
         engine = create_engine("postgresql")
-        assert get_dialect(engine) is Dialect.postgresql
+        assert _get_dialect(engine) == "postgresql"
 
     @mark.skipif(
         condition=not is_installed("asyncpg"), reason="'asyncpg' not installed"
     )
     def test_postgres_async(self) -> None:
         engine = create_engine("postgresql+asyncpg")
-        assert get_dialect(engine) is Dialect.postgresql
+        assert _get_dialect(engine) == "postgresql"
 
-    @given(engine=sqlite_engines())
-    def test_sqlite(self, *, engine: Engine) -> None:
-        assert get_dialect(engine) is Dialect.sqlite
+    def test_sqlite(self) -> None:
+        engine = create_engine("sqlite")
+        assert _get_dialect(engine) == "sqlite"
 
     @given(data=data())
     async def test_sqlite_async(self, *, data: DataObject) -> None:
         engine = await aiosqlite_engines(data)
-        assert get_dialect(engine) is Dialect.sqlite
+        assert _get_dialect(engine) == "sqlite"
+
+
+class TestGetDialectMaxParams:
+    @mark.parametrize("dialect", get_args(Dialect))
+    def test_max_params(self, *, dialect: Dialect) -> None:
+        max_params = _get_dialect_max_params(dialect)
+        assert isinstance(max_params, int)
 
 
 class TestGetTable:
@@ -753,7 +755,7 @@ class TestInsertItems:
     @mark.parametrize("use_conn", [param(True), param(False)])
     async def test_async_error(self, *, data: DataObject, use_conn: bool) -> None:
         engine = await aiosqlite_engines(data)
-        with raises(InsertItemsAsyncError, match="Item must be valid; got None"):
+        with raises(InsertItemsError, match="Item must be valid; got None"):
             await self._run_test_async(
                 engine, set(), cast(Any, None), use_conn=use_conn
             )
@@ -1821,7 +1823,7 @@ class TestUpsertItems:
             data, create_postgres_engine_async, table, dialect=dialect
         )
         id1, id2 = ids
-        await upsert_items_async(
+        await upsert_items(
             engine,
             ([{"id_": id1, "value": value1}, {"id_": id2, "value": value2}], table),
         )
@@ -1960,14 +1962,14 @@ class TestUpsertItems:
     ) -> Sequence[Row[Any]]:
         if assume_tables_exist:
             with raises((OperationalError, ProgrammingError)):
-                await upsert_items_async(
+                await upsert_items(
                     engine_or_conn,
                     *items,
                     selected_or_all=selected_or_all,
                     assume_tables_exist=assume_tables_exist,
                 )
             return []
-        await upsert_items_async(
+        await upsert_items(
             engine_or_conn,
             *items,
             selected_or_all=selected_or_all,

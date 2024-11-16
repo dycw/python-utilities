@@ -43,15 +43,14 @@ from utilities.iterables import (
 from utilities.polars import zoned_datetime
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
+    AsyncEngineOrConnection,
     EngineOrConnection,
-    MaybeAsyncEngineOrConnection,
     TableOrMappedClass,
     ensure_tables_created,
     get_chunk_size,
     get_columns,
     insert_items,
     upsert_items,
-    upsert_items_async,
     yield_connection,
 )
 from utilities.zoneinfo import UTC
@@ -576,7 +575,7 @@ def _select_to_dataframe_check_duplicates(
 
 def _select_to_dataframe_yield_selects_with_in_clauses(
     sel: Select[Any],
-    engine_or_conn: MaybeAsyncEngineOrConnection,
+    engine_or_conn: AsyncEngineOrConnection,
     in_clauses: tuple[Column[Any], Iterable[Any]],
     /,
     *,
@@ -651,7 +650,7 @@ async def upsert_dataframe_async(
         return
     if prepared.no_items_non_empty_df:
         raise UpsertDataFrameAsyncError(df=df)
-    await upsert_items_async(
+    await upsert_items(
         engine,
         prepared.items,
         chunk_size_frac=chunk_size_frac,

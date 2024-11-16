@@ -9,9 +9,9 @@ attrs==24.2.0
     #   hypothesis
     #   jsonschema
     #   referencing
-coverage==7.6.5
+coverage==7.6.7
     # via pytest-cov
-deprecated==1.2.14
+deprecated==1.2.15
     # via pikepdf
 hypothesis==6.118.9
     # via dycw-utilities (pyproject.toml)

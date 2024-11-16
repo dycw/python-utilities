@@ -17,7 +17,17 @@ from pathlib import Path
 from re import search
 from string import ascii_letters, printable
 from subprocess import run
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Literal,
+    Protocol,
+    TypeVar,
+    assert_never,
+    cast,
+    overload,
+)
 from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
@@ -527,6 +537,41 @@ def slices(
     start = draw(integers(0, iter_len_ - slice_len_))
     stop = start + slice_len_
     return slice(start, stop)
+
+
+_SQLALCHEMY_ENGINE_DIALECTS: frozenset[Literal["sqlite", "postgres"]] = frozenset({
+    "sqlite",
+    "postgres",
+})
+
+
+async def sqlalchemy_engines(
+    _data: DataObject,
+    /,
+    *,
+    dialects: MaybeSearchStrategy[AbstractSet[Literal["sqlite", "postgres"]]]
+    | None = _SQLALCHEMY_ENGINE_DIALECTS,
+    metadata: MetaData | None = None,
+    base: type[Any] | None = None,
+) -> AsyncEngine:
+    """Strategy for generating sqlalchemy engines."""
+    from utilities.sqlalchemy import create_engine
+
+    draw = lift_data(_data)
+    draw(_SQLALCHEMY_ENGINE_DIALECTS)
+
+    if dialects is None:
+        dialects = {"sqlit"}
+    if dialects is None:
+        dialects = {"sqlite"}
+    draw = lift_data(_data)
+    temp_path = draw(temp_paths())
+    path = Path(temp_path, "db.sqlite")
+    engine = create_engine("sqlite", database=str(path))
+    if metadata is not None:
+        async with engine.begin() as conn:
+            await conn.run_sync(metadata.create_all)
+    return engine
 
 
 @composite

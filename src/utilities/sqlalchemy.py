@@ -1,19 +1,25 @@
 from __future__ import annotations
 
-import enum
 import reprlib
 from collections import defaultdict
 from collections.abc import AsyncIterator, Callable, Iterable, Iterator, Sequence, Sized
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
-from enum import auto
-from functools import reduce
+from dataclasses import dataclass, field
+from functools import partial, reduce
 from math import floor
 from operator import ge, le, or_
 from re import search
-from typing import Any, Literal, TypeGuard, assert_never, cast, overload
+from typing import (
+    Any,
+    Generic,
+    Literal,
+    TypeGuard,
+    TypeVar,
+    assert_never,
+    cast,
+    overload,
+)
 
-import sqlalchemy
 from sqlalchemy import (
     URL,
     Column,
@@ -71,9 +77,10 @@ from utilities.types import (
     is_tuple_or_string_mapping,
 )
 
-EngineOrConnection = Engine | Connection
+_T = TypeVar("_T")
 AsyncEngineOrConnection = AsyncEngine | AsyncConnection
-MaybeAsyncEngineOrConnection = EngineOrConnection | AsyncEngineOrConnection
+EngineOrConnectionOrAsync = Engine | Connection | AsyncEngineOrConnection
+Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
 TableOrMappedClass = Table | type[DeclarativeBase]
 CHUNK_SIZE_FRAC = 0.95
 
@@ -89,14 +96,12 @@ async def check_engine(
     Optionally query for the number of tables, or the number of columns in
     such a table.
     """
-    match get_dialect(engine_or_conn):
-        case (  # skipif-ci-and-not-linux
-            Dialect.mssql | Dialect.mysql | Dialect.postgresql
-        ):
+    match _get_dialect(engine_or_conn):
+        case "mssql" | "mysql" | "postgresql":  # skipif-ci-and-not-linux
             query = "select * from information_schema.tables"
-        case Dialect.oracle:  # pragma: no cover
+        case "oracle":  # pragma: no cover
             query = "select * from all_objects"
-        case Dialect.sqlite:
+        case "sqlite":
             query = "select * from sqlite_master where type='table'"
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
@@ -238,32 +243,6 @@ def create_engine(
     return _create_engine(url, poolclass=poolclass)
 
 
-class Dialect(enum.Enum):
-    """An enumeration of the SQL dialects."""
-
-    mssql = auto()
-    mysql = auto()
-    oracle = auto()
-    postgresql = auto()
-    sqlite = auto()
-
-    @property
-    def max_params(self, /) -> int:
-        match self:
-            case Dialect.mssql:  # pragma: no cover
-                return 2100
-            case Dialect.mysql:  # pragma: no cover
-                return 65535
-            case Dialect.oracle:  # pragma: no cover
-                return 1000
-            case Dialect.postgresql:  # skipif-ci-and-not-linux
-                return 32767
-            case Dialect.sqlite:
-                return 100
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-                assert_never(never)
-
-
 def ensure_engine(engine: Engine | str, /) -> Engine:
     """Ensure the object is an Engine."""
     if isinstance(engine, Engine):
@@ -279,16 +258,16 @@ async def ensure_tables_created(
 ) -> None:
     """Ensure a table/set of tables is/are created."""
     tables = set(map(get_table, tables_or_mapped_classes))
-    match dialect := get_dialect(engine_or_conn):
-        case Dialect.mysql:  # pragma: no cover
+    match dialect := _get_dialect(engine_or_conn):
+        case "mysql":  # pragma: no cover
             raise NotImplementedError(dialect)
-        case Dialect.postgresql:  # skipif-ci-and-not-linux
+        case "postgresql":  # skipif-ci-and-not-linux
             match = "relation .* already exists"
-        case Dialect.mssql:  # pragma: no cover
+        case "mssql":  # pragma: no cover
             match = "There is already an object named .* in the database"
-        case Dialect.oracle:  # pragma: no cover
+        case "oracle":  # pragma: no cover
             match = "ORA-00955: name is already used by an existing object"
-        case Dialect.sqlite:
+        case "sqlite":
             match = "table .* already exists"
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
@@ -307,16 +286,16 @@ async def ensure_tables_dropped(
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
     tables = set(map(get_table, tables_or_mapped_classes))
-    match dialect := get_dialect(engine_or_conn):
-        case Dialect.mysql:  # pragma: no cover
+    match dialect := _get_dialect(engine_or_conn):
+        case "mysql":  # pragma: no cover
             raise NotImplementedError(dialect)
-        case Dialect.postgresql:  # skipif-ci-and-not-linux
+        case "postgresql":  # skipif-ci-and-not-linux
             match = "table .* does not exist"
-        case Dialect.mssql:  # pragma: no cover
+        case "mssql":  # pragma: no cover
             match = "Cannot drop the table .*, because it does not exist or you do not have permission"
-        case Dialect.oracle:  # pragma: no cover
+        case "oracle":  # pragma: no cover
             match = "ORA-00942: table or view does not exist"
-        case Dialect.sqlite:
+        case "sqlite":
             match = "no such table"
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
@@ -329,15 +308,14 @@ async def ensure_tables_dropped(
 
 
 def get_chunk_size(
-    engine_or_conn: MaybeAsyncEngineOrConnection,
+    engine_or_conn: EngineOrConnectionOrAsync,
     /,
     *,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     scaling: float = 1.0,
 ) -> int:
     """Get the maximum chunk size for an engine."""
-    dialect = get_dialect(engine_or_conn)
-    max_params = dialect.max_params
+    max_params = _get_dialect_max_params(engine_or_conn)
     return max(floor(chunk_size_frac * max_params / scaling), 1)
 
 
@@ -349,35 +327,6 @@ def get_column_names(table_or_mapped_class: TableOrMappedClass, /) -> list[str]:
 def get_columns(table_or_mapped_class: TableOrMappedClass, /) -> list[Column[Any]]:
     """Get the columns from a table or model."""
     return list(get_table(table_or_mapped_class).columns)
-
-
-def get_dialect(engine_or_conn: MaybeAsyncEngineOrConnection, /) -> Dialect:
-    """Get the dialect of a database."""
-    dialect = engine_or_conn.dialect
-    if isinstance(dialect, mssql_dialect):  # pragma: no cover
-        return Dialect.mssql
-    if isinstance(dialect, mysql_dialect):  # pragma: no cover
-        return Dialect.mysql
-    if isinstance(dialect, oracle_dialect):  # pragma: no cover
-        return Dialect.oracle
-    if isinstance(  # skipif-ci-and-not-linux
-        dialect, postgresql_dialect | PGDialect_asyncpg
-    ):
-        return Dialect.postgresql
-    if isinstance(dialect, sqlite_dialect):
-        return Dialect.sqlite
-    raise GetDialectError(dialect=dialect)  # pragma: no cover
-
-
-@dataclass(kw_only=True, slots=True)
-class GetDialectError(Exception):
-    dialect: sqlalchemy.Dialect
-
-    @override
-    def __str__(self) -> str:
-        return (  # pragma: no cover
-            f"Dialect must be one of MS SQL, MySQL, Oracle, PostgreSQL or SQLite; got {self.dialect} instead"
-        )
 
 
 def get_table(obj: TableOrMappedClass, /) -> Table:
@@ -454,7 +403,7 @@ async def insert_items(
             engine_or_conn, *items, chunk_size_frac=chunk_size_frac
         )
     except _InsertItemsPrepareError as error:
-        raise InsertItemsAsyncError(item=error.item) from None
+        raise InsertItemsError(item=error.item) from None
     if not assume_tables_exist:
         await ensure_tables_created(engine_or_conn, *prepared.tables, timeout=timeout)
     for ins, parameters in prepared.yield_pairs():
@@ -463,7 +412,7 @@ async def insert_items(
 
 
 @dataclass(kw_only=True, slots=True)
-class InsertItemsAsyncError(Exception):
+class InsertItemsError(Exception):
     item: _InsertItem
 
     @override
@@ -478,7 +427,7 @@ class _PreInsertUpsertItems:
 
 
 def _insert_items_prepare(
-    engine_or_conn: MaybeAsyncEngineOrConnection,
+    engine_or_conn: AsyncEngineOrConnection,
     /,
     *items: _InsertItem,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
@@ -503,8 +452,8 @@ def _insert_items_prepare(
     def yield_pairs() -> Iterator[tuple[Insert, Any]]:
         for table, values in mapping.items():
             for chunk in chunked(values, chunk_size):
-                match get_dialect(engine_or_conn):
-                    case Dialect.oracle:  # pragma: no cover
+                match _get_dialect(engine_or_conn):
+                    case "oracle":  # pragma: no cover
                         yield insert(table), chunk
                     case _:
                         yield insert(table).values(list(chunk)), None
@@ -729,7 +678,7 @@ class ParseEngineError(Exception): ...
 
 
 def selectable_to_string(
-    selectable: Selectable[Any], engine_or_conn: MaybeAsyncEngineOrConnection, /
+    selectable: Selectable[Any], engine_or_conn: AsyncEngineOrConnection, /
 ) -> str:
     """Convert a selectable into a string."""
     com = selectable.compile(
@@ -761,52 +710,62 @@ _UpsertItem = (
 )
 
 
-@dataclass(kw_only=True, slots=True)
-class UpsertItemsError(Exception):
-    item: _InsertItem
-
-    @override
-    def __str__(self) -> str:
-        return f"Item must be valid; got {self.item}"
-
-
-def _upsert_items_prepare(
-    engine_or_conn: MaybeAsyncEngineOrConnection,
+async def upsert_items(
+    engine_or_conn: AsyncEngineOrConnection,
     /,
     *items: _UpsertItem,
-    chunk_size_frac: float = CHUNK_SIZE_FRAC,
     selected_or_all: Literal["selected", "all"] = "selected",
-) -> _PreInsertUpsertItems:
-    """Prepare the arguments for `insert_items`."""
-    mapping: dict[Table, list[StrMapping]] = defaultdict(list)
-    lengths: set[int] = set()
-    try:
-        for item in items:
-            for normed in _normalize_upsert_item(item, selected_or_all=selected_or_all):
-                values = normed.values
-                mapping[normed.table].append(values)
-                lengths.add(len(values))
-    except _NormalizeUpsertItemError as error:
-        raise _UpsertItemsPrepareError(item=error.item) from None
-    tables = list(mapping)
-    max_length = max(lengths, default=1)
-    chunk_size = get_chunk_size(
-        engine_or_conn, chunk_size_frac=chunk_size_frac, scaling=max_length
+    assume_tables_exist: bool = False,
+    timeout: Duration | None = None,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+) -> None:
+    """Upsert a set of items into a database.
+
+    These can be one of the following:
+     - pair of dict & table/class:            {k1=v1, k2=v2, ...), table_cls
+     - pair of list of dicts & table/class:   [{k1=v11, k2=v12, ...},
+                                               {k1=v21, k2=v22, ...},
+                                               ...], table/class
+     - list of pairs of dict & table/class:   [({k1=v11, k2=v12, ...}, table_cls1),
+                                               ({k1=v21, k2=v22, ...}, table_cls2),
+                                               ...]
+     - mapped class:                          Obj(k1=v1, k2=v2, ...)
+     - list of mapped classes:                [Obj(k1=v11, k2=v12, ...),
+                                               Obj(k1=v21, k2=v22, ...),
+                                               ...]
+    """
+        engine_or_conn,
+        *items,
+        normalizer=partial(_normalize_upsert_item, selected_or_all=selected_or_all),
+        chunk_size_frac=chunk_size_frac,
     )
-
-    def yield_pairs() -> Iterator[tuple[Insert, Any]]:
-        for table, values in mapping.items():
-            for chunk in chunked(values, chunk_size):
-                ups = _upsert_items_build(
-                    engine_or_conn, table, chunk, selected_or_all=selected_or_all
-                )
-                yield ups, None
-
-    return _PreInsertUpsertItems(tables=tables, yield_pairs=yield_pairs)
+    # mapping: dict[Table, list[StrMapping]] = defaultdict(list)
+    # lengths: set[int] = set()
+    # try:
+    #     for item in items:
+    #         for normed in _normalize_upsert_item(item, selected_or_all=selected_or_all):
+    #             values = normed.values
+    #             mapping[normed.table].append(values)
+    #             lengths.add(len(values))
+    # except _NormalizeUpsertItemError as error:
+    #     raise UpsertItemsError(item=error.item) from None
+    if not assume_tables_exist:
+        await ensure_tables_created(engine_or_conn, *mapping, timeout=timeout)
+    # max_length = max(lengths, default=1)
+    # chunk_size = get_chunk_size(
+    #     engine_or_conn, chunk_size_frac=chunk_size_frac, scaling=max_length
+    # )
+    for table, values in mapping.items():
+        for chunk in chunked(values, chunk_size):
+            ups = _upsert_items_build(
+                engine_or_conn, table, chunk, selected_or_all=selected_or_all
+            )
+            async with yield_connection(engine_or_conn, timeout=timeout) as conn:
+                _ = await conn.execute(ups)
 
 
 def _upsert_items_build(
-    engine_or_conn: MaybeAsyncEngineOrConnection,
+    engine_or_conn: AsyncEngineOrConnection,
     table: Table,
     values: Iterable[StrMapping],
     /,
@@ -817,14 +776,12 @@ def _upsert_items_build(
     keys = set(reduce(or_, values))
     dict_nones = {k: None for k in keys}
     values = [{**dict_nones, **v} for v in values]
-    match get_dialect(engine_or_conn):
-        case Dialect.postgresql:  # skipif-ci-and-not-linux
+    match _get_dialect(engine_or_conn):
+        case "postgresql":  # skipif-ci-and-not-linux
             insert = postgresql_insert
-        case Dialect.sqlite:
+        case "sqlite":
             insert = sqlite_insert
-        case (  # pragma: no cover
-            (Dialect.mssql | Dialect.mysql | Dialect.oracle) as dialect
-        ):
+        case "mssql" | "mysql" | "oracle" as dialect:  # pragma: no cover
             raise NotImplementedError(dialect)
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
@@ -861,56 +818,7 @@ def _upsert_items_apply_on_conflict_do_update(
 
 
 @dataclass(kw_only=True, slots=True)
-class _UpsertItemsPrepareError(Exception):
-    item: _InsertItem
-
-    @override
-    def __str__(self) -> str:
-        return f"Item must be valid; got {self.item}"
-
-
-async def upsert_items_async(
-    engine_or_conn: AsyncEngineOrConnection,
-    /,
-    *items: _UpsertItem,
-    chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    selected_or_all: Literal["selected", "all"] = "selected",
-    assume_tables_exist: bool = False,
-    timeout: Duration | None = None,
-) -> None:
-    """Upsert a set of items into a database.
-
-    These can be one of the following:
-     - pair of dict & table/class:            {k1=v1, k2=v2, ...), table_cls
-     - pair of list of dicts & table/class:   [{k1=v11, k2=v12, ...},
-                                               {k1=v21, k2=v22, ...},
-                                               ...], table/class
-     - list of pairs of dict & table/class:   [({k1=v11, k2=v12, ...}, table_cls1),
-                                               ({k1=v21, k2=v22, ...}, table_cls2),
-                                               ...]
-     - mapped class:                          Obj(k1=v1, k2=v2, ...)
-     - list of mapped classes:                [Obj(k1=v11, k2=v12, ...),
-                                               Obj(k1=v21, k2=v22, ...),
-                                               ...]
-    """
-    try:
-        prepared = _upsert_items_prepare(
-            engine_or_conn,
-            *items,
-            chunk_size_frac=chunk_size_frac,
-            selected_or_all=selected_or_all,
-        )
-    except _UpsertItemsPrepareError as error:
-        raise UpsertItemsAsyncError(item=error.item) from None
-    if not assume_tables_exist:
-        await ensure_tables_created(engine_or_conn, *prepared.tables, timeout=timeout)
-    for ins, parameters in prepared.yield_pairs():
-        async with yield_connection(engine_or_conn, timeout=timeout) as conn:
-            _ = await conn.execute(ins, parameters=parameters)
-
-
-@dataclass(kw_only=True, slots=True)
-class UpsertItemsAsyncError(Exception):
+class UpsertItemsError(Exception):
     item: _InsertItem
 
     @override
@@ -942,17 +850,111 @@ def _ensure_tables_maybe_reraise(error: DatabaseError, match: str, /) -> None:
         raise error  # pragma: no cover
 
 
+def _get_dialect(engine_or_conn: EngineOrConnectionOrAsync, /) -> Dialect:
+    """Get the dialect of a database."""
+    dialect = engine_or_conn.dialect
+    if isinstance(dialect, mssql_dialect):  # pragma: no cover
+        return "mssql"
+    if isinstance(dialect, mysql_dialect):  # pragma: no cover
+        return "mysql"
+    if isinstance(dialect, oracle_dialect):  # pragma: no cover
+        return "oracle"
+    if isinstance(  # skipif-ci-and-not-linux
+        dialect, postgresql_dialect | PGDialect_asyncpg
+    ):
+        return "postgresql"
+    if isinstance(dialect, sqlite_dialect):
+        return "sqlite"
+    msg = f"Unknown dialect: {dialect}"  # pragma: no cover
+    raise NotImplementedError(msg)  # pragma: no cover
+
+
+def _get_dialect_max_params(
+    dialect_or_engine_or_conn: Dialect | EngineOrConnectionOrAsync, /
+) -> int:
+    """Get the max number of parameters of a dialect."""
+    match dialect_or_engine_or_conn:
+        case "mssql":  # pragma: no cover
+            return 2100
+        case "mysql":  # pragma: no cover
+            return 65535
+        case "oracle":  # pragma: no cover
+            return 1000
+        case "postgresql":  # skipif-ci-and-not-linux
+            return 32767
+        case "sqlite":
+            return 100
+        case (
+            Engine()
+            | Connection()
+            | AsyncEngine()
+            | AsyncConnection() as engine_or_conn
+        ):
+            dialect = _get_dialect(engine_or_conn)
+            return _get_dialect_max_params(dialect)
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class _PrepareInsertOrUpsertItems(Generic[_T]):
+    mapping: dict[Table, list[_T]] = field(default_actory=list)
+    chunk_size: int = 1
+
+
+@overload
+def _prepare_insert_or_upsert_items(
+    engine_or_conn: AsyncEngineOrConnection,
+    /,
+    *items: _InsertItem,
+    normalizer: Callable[[_InsertItem], Iterator[_NormalizedInsertItem]],
+    chunk_size_frac: float = ...,
+) -> _PrepareInsertOrUpsertItems[TupleOrStrMapping]: ...
+@overload
+def _prepare_insert_or_upsert_items(
+    engine_or_conn: AsyncEngineOrConnection,
+    /,
+    *items: _UpsertItem,
+    normalizer: Callable[[_UpsertItem], Iterator[_NormalizedUpsertItem]],
+    chunk_size_frac: float = ...,
+) -> _PrepareInsertOrUpsertItems[StrMapping]: ...
+def _prepare_insert_or_upsert_items(
+    engine_or_conn: AsyncEngineOrConnection,
+    /,
+    *items: Any,
+    normalizer: Callable[[Any], Iterator[Any]],
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+) -> (
+    _PrepareInsertOrUpsertItems[TupleOrStrMapping]
+    | _PrepareInsertOrUpsertItems[StrMapping]
+):
+    """Prepare a set of insert/upsert items."""
+    mapping: dict[Table, list[Any]] = defaultdict(list)
+    lengths: set[int] = set()
+    try:
+        for item in items:
+            for normed in normalizer(item):
+                values = normed.values
+                mapping[normed.table].append(values)
+                lengths.add(len(values))
+    except _NormalizeUpsertItemError as error:
+        raise UpsertItemsError(item=error.item) from None
+    max_length = max(lengths, default=1)
+    chunk_size = get_chunk_size(
+        engine_or_conn, chunk_size_frac=chunk_size_frac, scaling=max_length
+    )
+    return _PrepareInsertOrUpsertItems(mapping=mapping, chunk_size=chunk_size)
+
+
 __all__ = [
     "CHUNK_SIZE_FRAC",
     "CheckEngineError",
-    "Dialect",
-    "GetDialectError",
     "GetTableError",
-    "InsertItemsAsyncError",
+    "InsertItemsError",
     "ParseEngineError",
     "TablenameMixin",
-    "UpsertItemsAsyncError",
     "UpsertItemsError",
+    "_get_dialect",
     "check_engine",
     "columnwise_max",
     "columnwise_min",
@@ -963,7 +965,6 @@ __all__ = [
     "get_chunk_size",
     "get_column_names",
     "get_columns",
-    "get_dialect",
     "get_table",
     "get_table_name",
     "insert_items",
@@ -975,7 +976,7 @@ __all__ = [
     "parse_engine",
     "selectable_to_string",
     "serialize_engine",
-    "upsert_items_async",
+    "upsert_items",
     "yield_connection",
     "yield_primary_key_columns",
 ]

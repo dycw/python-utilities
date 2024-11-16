@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-fpdf2 --prerelease=disallow --output-file=requirements/fpdf2.txt --python-version=3.11 pyproject.toml
 attrs==24.2.0
     # via hypothesis
-coverage==7.6.5
+coverage==7.6.7
     # via pytest-cov
 defusedxml==0.7.1
     # via fpdf2

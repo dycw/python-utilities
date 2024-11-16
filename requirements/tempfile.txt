@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-tempfile --prerelease=disallow --output-file=requirements/tempfile.txt --python-version=3.11 pyproject.toml
 attrs==24.2.0
     # via hypothesis
-coverage==7.6.5
+coverage==7.6.7
     # via pytest-cov
 hypothesis==6.118.9
     # via dycw-utilities (pyproject.toml)

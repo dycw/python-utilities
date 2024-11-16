@@ -11,7 +11,6 @@ from utilities.sqlalchemy import ensure_tables_dropped
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from sqlalchemy import Engine
     from sqlalchemy.ext.asyncio import AsyncEngine
 
     from utilities.asyncio import Coroutine1
@@ -46,21 +45,6 @@ try:
 except ModuleNotFoundError:
     pass
 else:
-
-    @fixture(scope="session")
-    def create_postgres_engine() -> Callable[..., Engine]:
-        """Create a Postgres engine."""
-
-        def inner(*tables_or_mapped_classes: TableOrMappedClass) -> Engine:
-            from utilities.sqlalchemy import create_engine, ensure_tables_dropped
-
-            engine = create_engine(
-                "postgresql", host="localhost", port=5432, database="testing"
-            )
-            ensure_tables_dropped(engine, *tables_or_mapped_classes)
-            return engine
-
-        return inner
 
     @fixture(scope="session")
     def create_postgres_engine_async() -> Callable[..., Coroutine1[AsyncEngine]]:
