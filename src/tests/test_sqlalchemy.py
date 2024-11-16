@@ -21,7 +21,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from sqlalchemy import Boolean, Column, Integer, MetaData, Table, select
 from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
-from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 from tests.conftest import FLAKY
@@ -1150,24 +1150,6 @@ class TestUpsertItems:
             results = (await conn.execute(sel)).all()
         if expected is not None:
             assert set(results) == expected
-
-
-class TestYieldConnection:
-    @FLAKY
-    @given(data=data())
-    @settings(phases={Phase.generate})
-    async def test_engine(self, *, data: DataObject) -> None:
-        engine = await sqlalchemy_engines(data)
-        async with yield_connection(engine) as conn:
-            assert isinstance(conn, AsyncConnection)
-
-    @FLAKY
-    @given(data=data())
-    @settings(phases={Phase.generate})
-    async def test_conn(self, *, data: DataObject) -> None:
-        engine = await sqlalchemy_engines(data)
-        async with engine.begin() as conn1, yield_connection(conn1) as conn2:
-            assert isinstance(conn2, AsyncConnection)
 
 
 class TestYieldPrimaryKeyColumns:

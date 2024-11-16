@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import reprlib
 from collections import defaultdict
-from collections.abc import AsyncIterator, Callable, Iterable, Iterator, Sequence, Sized
-from contextlib import asynccontextmanager
+from collections.abc import Callable, Iterable, Iterator, Sequence, Sized
 from dataclasses import dataclass, field
 from functools import partial, reduce
 from math import floor
@@ -76,9 +75,10 @@ CHUNK_SIZE_FRAC = 0.95
 
 
 async def check_engine(
-    engine_or_conn: AsyncEngineOrConnection,
+    engine: AsyncEngine,
     /,
     *,
+    timeout: Duration | None = None,
     num_tables: int | tuple[int, float] | None = None,
 ) -> None:
     """Check that an engine can connect.
@@ -86,7 +86,7 @@ async def check_engine(
     Optionally query for the number of tables, or the number of columns in
     such a table.
     """
-    match _get_dialect(engine_or_conn):
+    match _get_dialect(engine):
         case "mssql" | "mysql" | "postgresql":  # skipif-ci-and-not-linux
             query = "select * from information_schema.tables"
         case "oracle":  # pragma: no cover
@@ -96,14 +96,14 @@ async def check_engine(
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
     statement = text(query)
-    async with yield_connection(engine_or_conn) as conn:
+    async with timeout_dur(duration=timeout), engine.begin() as conn:
         rows = (await conn.execute(statement)).all()
     if num_tables is not None:
         try:
             check_length(rows, equal_or_approx=num_tables)
         except CheckLengthError as error:
             raise CheckEngineError(
-                engine_or_conn=engine_or_conn, rows=error.obj, expected=num_tables
+                engine_or_conn=engine, rows=error.obj, expected=num_tables
             ) from None
 
 
@@ -189,14 +189,14 @@ def create_async_engine(
 
 
 async def ensure_tables_created(
-    engine_or_conn: AsyncEngineOrConnection,
+    engine: AsyncEngine,
     /,
     *tables_or_mapped_classes: TableOrMappedClass,
     timeout: Duration | None = None,
 ) -> None:
     """Ensure a table/set of tables is/are created."""
     tables = set(map(get_table, tables_or_mapped_classes))
-    match dialect := _get_dialect(engine_or_conn):
+    match dialect := _get_dialect(engine):
         case "mysql":  # pragma: no cover
             raise NotImplementedError(dialect)
         case "postgresql":  # skipif-ci-and-not-linux
@@ -210,7 +210,7 @@ async def ensure_tables_created(
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
     for table in tables:
-        async with yield_connection(engine_or_conn, timeout=timeout) as conn:
+        async with timeout_dur(duration=timeout), engine.begin() as conn:
             try:
                 await conn.run_sync(table.create)
             except DatabaseError as error:
@@ -218,13 +218,13 @@ async def ensure_tables_created(
 
 
 async def ensure_tables_dropped(
-    engine_or_conn: AsyncEngineOrConnection,
+    engine: AsyncEngine,
     *tables_or_mapped_classes: TableOrMappedClass,
     timeout: Duration | None = None,
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
     tables = set(map(get_table, tables_or_mapped_classes))
-    match dialect := _get_dialect(engine_or_conn):
+    match dialect := _get_dialect(engine):
         case "mysql":  # pragma: no cover
             raise NotImplementedError(dialect)
         case "postgresql":  # skipif-ci-and-not-linux
@@ -238,7 +238,7 @@ async def ensure_tables_dropped(
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
     for table in tables:
-        async with yield_connection(engine_or_conn, timeout=timeout) as conn:
+        async with timeout_dur(duration=timeout), engine.begin() as conn:
             try:
                 await conn.run_sync(table.drop)
             except DatabaseError as error:
@@ -312,7 +312,8 @@ async def insert_items(
     *items: _InsertItem,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
-    timeout: Duration | None = None,
+    timeout_create_tables: Duration | None = None,
+    timeout_insert: Duration | None = None,
 ) -> None:
     """Insert a set of items into a database.
 
@@ -357,9 +358,12 @@ async def insert_items(
     except _PrepareInsertOrUpsertItemsError as error:
         raise InsertItemsError(item=error.item) from None
     if not assume_tables_exist:
-        await ensure_tables_created(engine, *prepared.tables, timeout=timeout)
+        async with timeout_dur(duration=timeout_create_tables):
+            await ensure_tables_created(
+                engine, *prepared.tables, timeout=timeout_insert
+            )
     for ins, parameters in prepared.yield_pairs():
-        async with yield_connection(engine, timeout=timeout) as conn:
+        async with timeout_dur(duration=timeout_insert), engine.begin() as conn:
             _ = await conn.execute(ins, parameters=parameters)
 
 
@@ -543,7 +547,7 @@ class _NormalizeUpsertItemError(Exception):
 
 
 def selectable_to_string(
-    selectable: Selectable[Any], engine_or_conn: AsyncEngineOrConnection, /
+    selectable: Selectable[Any], engine_or_conn: EngineOrConnectionOrAsync, /
 ) -> str:
     """Convert a selectable into a string."""
     com = selectable.compile(
@@ -571,7 +575,7 @@ _UpsertItem = (
 
 
 async def upsert_items(
-    engine_or_conn: AsyncEngineOrConnection,
+    engine: AsyncEngine,
     /,
     *items: _UpsertItem,
     selected_or_all: Literal["selected", "all"] = "selected",
@@ -599,14 +603,14 @@ async def upsert_items(
         table: Table, values: Iterable[StrMapping], /
     ) -> tuple[Insert, None]:
         ups = _upsert_items_build(
-            engine_or_conn, table, values, selected_or_all=selected_or_all
+            engine, table, values, selected_or_all=selected_or_all
         )
         return ups, None
 
     try:
         prepared = _prepare_insert_or_upsert_items(
             partial(_normalize_upsert_item, selected_or_all=selected_or_all),
-            engine_or_conn,
+            engine,
             build_insert,
             *items,
             chunk_size_frac=chunk_size_frac,
@@ -614,9 +618,9 @@ async def upsert_items(
     except _PrepareInsertOrUpsertItemsError as error:
         raise UpsertItemsError(item=error.item) from None
     if not assume_tables_exist:
-        await ensure_tables_created(engine_or_conn, *prepared.tables, timeout=timeout)
+        await ensure_tables_created(engine, *prepared.tables, timeout=timeout)
     for ups, _ in prepared.yield_pairs():
-        async with yield_connection(engine_or_conn, timeout=timeout) as conn:
+        async with timeout_dur(duration=timeout), engine.begin() as conn:
             _ = await conn.execute(ups)
 
 
@@ -680,18 +684,6 @@ class UpsertItemsError(Exception):
     @override
     def __str__(self) -> str:
         return f"Item must be valid; got {self.item}"
-
-
-@asynccontextmanager
-async def yield_connection(
-    engine_or_conn: AsyncEngineOrConnection, /, *, timeout: Duration | None = None
-) -> AsyncIterator[AsyncConnection]:
-    """Yield an asynchronous connection."""
-    if isinstance(engine_or_conn, AsyncEngine):
-        async with timeout_dur(duration=timeout), engine_or_conn.begin() as conn:
-            yield conn
-    else:
-        yield engine_or_conn
 
 
 def yield_primary_key_columns(obj: TableOrMappedClass, /) -> Iterator[Column]:
@@ -871,6 +863,5 @@ __all__ = [
     "mapped_class_to_dict",
     "selectable_to_string",
     "upsert_items",
-    "yield_connection",
     "yield_primary_key_columns",
 ]
