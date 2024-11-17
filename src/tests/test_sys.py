@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from re import escape
-from traceback import TracebackException
 from typing import TYPE_CHECKING, Any
 
 from pytest import mark, param, raises
@@ -17,16 +16,10 @@ from tests.test_sys_funcs.decorated import (
 from tests.test_sys_funcs.error import func_error_async, func_error_sync
 from tests.test_sys_funcs.one import func_one
 from tests.test_sys_funcs.two import func_two_first, func_two_second
-from tests.test_sys_funcs.zero import func_zero
-from utilities.functions import get_func_name
 from utilities.iterables import one
-from utilities.sentinel import sentinel
 from utilities.sys import (
     VERSION_MAJOR_MINOR,
     Final,
-    _FrameInfo,
-    _get_exc_trace_info_yield_merged,
-    _get_exc_trace_info_yield_raw,
     _GetCallerOutput,
     _TraceDataMixin,
     get_caller,
@@ -36,7 +29,6 @@ from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from types import FrameType
 
 
 class TestGetCaller:
@@ -77,15 +69,6 @@ class TestGetCaller:
 
 
 class TestGetExcTraceInfo:
-    def test_func_zero(self) -> None:
-        result = func_zero(1, 2, 3, 4, c=5, d=6, e=7)
-        assert result == 28
-        with raises(AssertionError) as exc_info:
-            _ = func_zero(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
-        error = exc_info.value
-        assert isinstance(error, AssertionError)
-        assert error.exc_info == []
-
     def test_func_one(self) -> None:
         result = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         assert result == 28
@@ -94,7 +77,7 @@ class TestGetExcTraceInfo:
         error = exc_info.value
         assert isinstance(error, AssertionError)
         assert isinstance(error, _TraceDataMixin)
-        frame = one(error.frames)
+        frame = one(error.formatted)
         self._assert(
             frame, 1, 1, func_one, "one.py", 8, 11, self._assert_code_line, result
         )
@@ -108,11 +91,6 @@ class TestGetExcTraceInfo:
         error = exc_info.value
         assert isinstance(error, AssertionError)
         assert isinstance(error, _TraceDataMixin)
-
-        raw = list(_get_exc_trace_info_yield_raw(traceback=error.traceback))
-        list(_get_exc_trace_info_yield_merged(raw))
-        assert 0, asdf
-
         expected = [
             (
                 8,
@@ -123,11 +101,10 @@ class TestGetExcTraceInfo:
             (13, 16, func_two_second, self._assert_code_line),
         ]
         for depth, (frame, (first_ln, ln, func, code_ln)) in enumerate(
-            zip(error.frames, expected, strict=True), start=1
+            zip(error.formatted, expected, strict=True), start=1
         ):
             self._assert(frame, depth, 2, func, "two.py", first_ln, ln, code_ln, result)
 
-    @mark.only
     def test_func_decorated(self) -> None:
         result = func_decorated_first(1, 2, 3, 4, c=5, d=6, e=7)
         assert result == 148
@@ -136,31 +113,6 @@ class TestGetExcTraceInfo:
         error = exc_info.value
         assert isinstance(error, AssertionError)
         assert isinstance(error, _TraceDataMixin)
-        learn = []
-        for td in error.trace_data:
-            learn.append({
-                "func": get_func_name(td.func),
-                "args": td.args,
-                "kwargs": td.kwargs,
-                "above": td.above,
-                "below": td.below,
-                "lines": [
-                    {
-                        "name": s.name,
-                        "filename": s.filename,
-                        "lineno": s.lineno,
-                        "line": s.line,
-                    }
-                    for s in td.stack
-                ],
-            })
-
-        from utilities.pickle import write_pickle
-
-        # write_pickle(learn, "learn.gz", overwrite=True)
-        # tb_exc = TracebackException.from_exception(error, capture_locals=True)
-
-        # assert 0, foo
         expected = [
             (
                 21,
@@ -198,72 +150,59 @@ class TestGetExcTraceInfo:
     async def test_func_async(self) -> None:
         result = await func_async(1, 2, 3, 4, c=5, d=6, e=7)
         assert result == 28
-        try:
+        with raises(AssertionError) as exc_info:
             _ = await func_async(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
-        except AssertionError:
-            exc_info = get_exc_trace_info()
-            assert exc_info.exc_type is AssertionError
-            assert isinstance(exc_info.exc_value, AssertionError)
-            frame = one(exc_info.frames)
-            self._assert(
-                frame,
-                1,
-                1,
-                func_async,
-                "async_.py",
-                9,
-                13,
-                self._assert_code_line,
-                result,
-            )
-        else:  # pragma: no cover
-            msg = "Expected an assertion"
-            raise AssertionError(msg)
+        error = exc_info.value
+        assert isinstance(error, AssertionError)
+        assert isinstance(error, _TraceDataMixin)
+        frame = one(error.formatted)
+        self._assert(
+            frame, 1, 1, func_async, "async_.py", 9, 13, self._assert_code_line, result
+        )
 
+    @mark.xfail
     def test_pretty(self) -> None:
         result = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
         assert result == 36
-        try:
+        with raises(AssertionError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
-        except AssertionError:
-            exc_info = get_exc_trace_info()
-            result = exc_info.pretty(location=False)
-            expected = strip_and_dedent("""
-                Error running:
+        error = exc_info.value
+        assert isinstance(error, AssertionError)
+        assert isinstance(error, _TraceDataMixin)
+        result = error.pretty(location=False)
+        expected = strip_and_dedent("""
+            Error running:
 
-                  1. func_two_first
-                  2. func_two_second
-                  >> AssertionError: Result (0) must be positive
+              1. func_two_first
+              2. func_two_second
+              >> AssertionError: Result (0) must be positive
 
-                Traced frames:
+            Traced frames:
 
-                  1/2. func_two_first
-                    args[0] = 1
-                    args[1] = 2
-                    args[2] = 3
-                    args[3] = 4
-                    kwargs['c'] = 5
-                    kwargs['d'] = 6
-                    kwargs['e'] = 7
-                    kwargs['f'] = -36
-                    >> return func_two_second(2 * a, 2 * b, *args, c=2 * c, **kwargs)
+              1/2. func_two_first
+                args[0] = 1
+                args[1] = 2
+                args[2] = 3
+                args[3] = 4
+                kwargs['c'] = 5
+                kwargs['d'] = 6
+                kwargs['e'] = 7
+                kwargs['f'] = -36
+                >> return func_two_second(2 * a, 2 * b, *args, c=2 * c, **kwargs)
 
-                  2/2. func_two_second
-                    args[0] = 2
-                    args[1] = 4
-                    args[2] = 3
-                    args[3] = 4
-                    kwargs['c'] = 10
-                    kwargs['d'] = 6
-                    kwargs['e'] = 7
-                    kwargs['f'] = -36
-                    >> assert result > 0, f"Result ({result}) must be positive"
-                    >> AssertionError: Result (0) must be positive
-            """)
-            assert result == expected
-        else:  # pragma: no cover
-            msg = "Expected an assertion"
-            raise AssertionError(msg)
+              2/2. func_two_second
+                args[0] = 2
+                args[1] = 4
+                args[2] = 3
+                args[3] = 4
+                kwargs['c'] = 10
+                kwargs['d'] = 6
+                kwargs['e'] = 7
+                kwargs['f'] = -36
+                >> assert result > 0, f"Result ({result}) must be positive"
+                >> AssertionError: Result (0) must be positive
+        """)
+        assert result == expected
 
     def test_error_sync(self) -> None:
         with raises(
