@@ -8,16 +8,14 @@ from linecache import getline
 from pathlib import Path
 from sys import _getframe, exc_info, version_info
 from textwrap import indent
+from traceback import StackSummary, TracebackException
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar, cast, overload
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_not_none, get_func_name
-from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
     from types import FrameType, TracebackType
-
-    from utilities.sentinel import Sentinel
 
 
 VERSION_MAJOR_MINOR = (version_info.major, version_info.minor)
@@ -151,7 +149,6 @@ class _FrameInfo:
     code_line: str
     args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
-    result: Any | Sentinel = sentinel
     error: Exception | None = None
 
 
@@ -171,8 +168,6 @@ def get_exc_trace_info() -> _GetExcTraceInfoOutput:
             code_line=f.code_line,
             args=f.args,
             kwargs=f.kwargs,
-            result=f.result,
-            error=f.error,
         )
         for i, f in enumerate(merged[::-1], start=1)
     ]
@@ -220,8 +215,6 @@ class _GetExcTraceInfoMerged:
     code_line: str
     args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
-    result: Any | Sentinel = sentinel
-    error: Exception | None = None
 
 
 def _get_exc_trace_info_yield_merged(
@@ -250,8 +243,6 @@ def _get_exc_trace_info_yield_merged(
             code_line=curr.code_line,
             args=next_.trace.args,
             kwargs=next_.trace.kwargs,
-            result=next_.trace.result,
-            error=next_.trace.error,
         )
         raw_rev = raw_rev[next_.trace.above :]
 
@@ -264,48 +255,79 @@ class _TraceData:
     args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
     above: int = 0
-    result: Any | Sentinel = sentinel
-    error: Exception | None = None
+    below: int = 0
+
+
+@dataclass(kw_only=True, slots=True)
+class _TraceDataWithStack(_TraceData):
+    """A collection of tracing data."""
+
+    stack: StackSummary
 
 
 @dataclass(kw_only=True, slots=False)  # no slots
 class _TraceDataMixin:
     """A collection of tracing data."""
 
-    exc_type: type[BaseException] | None = None
-    exc_value: BaseException | None = None
-    traceback: TracebackType | None = None
+    trace_data: list[_TraceDataWithStack] = field(default_factory=list)
 
     @property
-    def frames(self) -> list[_FrameInfo]:
-        raw = list(_get_exc_trace_info_yield_raw(traceback=self.traceback))
-        merged = list(_get_exc_trace_info_yield_merged(raw))
+    def formatted(self) -> list[Final]:
         return [
-            _FrameInfo(
-                depth=i,
-                max_depth=len(merged),
-                func=f.func,
-                filename=f.filename,
-                first_line_num=f.first_line_num,
-                line_num=f.line_num,
-                code_line=f.code_line,
-                args=f.args,
-                kwargs=f.kwargs,
-                result=f.result,
-                error=f.error,
-            )
-            for i, f in enumerate(merged[::-1], start=1)
+            _convert_trace_data_with_stack_into_final(i, len(self.trace_data), data)
+            for i, data in enumerate(self.trace_data, start=1)
         ]
 
 
+def _convert_trace_data_with_stack_into_final(
+    i: int, n: int, data: _TraceDataWithStack, /
+) -> Final:
+    last = data.stack[data.above]
+
+    return Final(
+        depth=i,
+        max_depth=n,
+        filename=Path(last.filename),
+        line_num=last.lineno,
+        end_line_num=last.end_lineno,
+        col_num=last.colno,
+        end_col_num=last.end_colno,
+        name=last.name,
+        line=last.line,
+        func=data.func,
+        args=data.args,
+        kwargs=data.kwargs,
+    )
+
+
+@dataclass(kw_only=True, slots=True)
+class Final:
+    depth: int
+    max_depth: int
+    filename: Path
+    line_num: int | None = None
+    end_line_num: int | None = None
+    col_num: int | None = None
+    end_col_num: int | None = None
+    name: str
+    line: str | None = None
+    func: Callable[..., Any]
+    args: tuple[Any, ...] = field(default_factory=tuple)
+    kwargs: dict[str, Any] = field(default_factory=dict)
+
+
 @overload
-def trace(func: _F, /, *, above: int = ...) -> _F: ...
+def trace(func: _F, /, *, above: int = ..., below: int = ...) -> _F: ...
 @overload
-def trace(func: None = None, /, *, above: int = ...) -> Callable[[_F], _F]: ...
-def trace(func: _F | None = None, /, *, above: int = 0) -> _F | Callable[[_F], _F]:
+def trace(
+    func: None = None, /, *, above: int = ..., below: int = ...
+) -> Callable[[_F], _F]: ...
+def trace(
+    func: _F | None = None, /, *, above: int = 0, below: int = 0
+) -> _F | Callable[[_F], _F]:
     """Trace a function call."""
     if func is None:
-        result = partial(trace, above=above)
+        result = partial(trace, above=above, below=below)
         return cast(Callable[[_F], _F], result)
 
     if not iscoroutinefunction(func):
@@ -313,33 +335,42 @@ def trace(func: _F | None = None, /, *, above: int = 0) -> _F | Callable[[_F], _
         @wraps(func)
         def trace_sync(*args: Any, **kwargs: Any) -> Any:
             try:
-                trace_data = _trace_make_data(func, above, *args, **kwargs)
+                trace_data = locals()[_TRACE_DATA] = _trace_make_data(
+                    func, above, below, *args, **kwargs
+                )
             except TypeError:
                 return func(*args, **kwargs)
             try:
-                result = trace_data.result = func(*args, **kwargs)
+                return func(*args, **kwargs)
             except Exception as error:  # noqa: BLE001
-                trace_data.error = error
-                locals()[_TRACE_DATA] = trace_data
-                exc_type, exc_value, traceback = exc_info()
-                raise type(
-                    type(error).__name__,
-                    (type(error), _TraceDataMixin),
-                    {
-                        "exc_type": exc_type,
-                        "exc_value": exc_value,
-                        "traceback": traceback,
-                    },
-                )(*error.args) from None
-            locals()[_TRACE_DATA] = trace_data
-            return result
+                traceback_exception = TracebackException.from_exception(
+                    error, capture_locals=True
+                )
+                trace_data_with_stack = _TraceDataWithStack(
+                    func=trace_data.func,
+                    args=trace_data.args,
+                    kwargs=trace_data.kwargs,
+                    above=trace_data.above,
+                    below=trace_data.below,
+                    stack=traceback_exception.stack,
+                )
+                cls = type(error)
+                if isinstance(error, _TraceDataMixin):
+                    bases = (cls,)
+                    merged = [*error.trace_data, trace_data_with_stack]
+                else:
+                    bases = (cls, _TraceDataMixin)
+                    merged = [trace_data_with_stack]
+                raise type(cls.__name__, bases, {"trace_data": merged})(
+                    *error.args
+                ) from None
 
         return trace_sync
 
     @wraps(func)
     async def log_call_async(*args: Any, **kwargs: Any) -> Any:
         try:
-            trace_data = _trace_make_data(func, above, *args, **kwargs)
+            trace_data = _trace_make_data(func, above, below, *args, **kwargs)
         except TypeError:
             return await func(*args, **kwargs)
         try:
@@ -355,12 +386,16 @@ def trace(func: _F | None = None, /, *, above: int = 0) -> _F | Callable[[_F], _
 
 
 def _trace_make_data(
-    func: Callable[..., Any], above: int = 0, *args: Any, **kwargs: Any
+    func: Callable[..., Any], above: int = 0, below: int = 0, *args: Any, **kwargs: Any
 ) -> _TraceData:
     """Make the initial trace data."""
     bound_args = signature(func).bind(*args, **kwargs)
     return _TraceData(
-        func=func, args=bound_args.args, kwargs=bound_args.kwargs, above=above
+        func=func,
+        args=bound_args.args,
+        kwargs=bound_args.kwargs,
+        above=above,
+        below=below,
     )
 
 

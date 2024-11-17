@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from re import escape
-from typing import TYPE_CHECKING, Any, cast
+from traceback import TracebackException
+from typing import TYPE_CHECKING, Any
 
 from pytest import mark, param, raises
 
@@ -17,6 +18,7 @@ from tests.test_sys_funcs.error import func_error_async, func_error_sync
 from tests.test_sys_funcs.one import func_one
 from tests.test_sys_funcs.two import func_two_first, func_two_second
 from tests.test_sys_funcs.zero import func_zero
+from utilities.functions import get_func_name
 from utilities.iterables import one
 from utilities.sentinel import sentinel
 from utilities.sys import (
@@ -25,7 +27,6 @@ from utilities.sys import (
     _get_exc_trace_info_yield_merged,
     _get_exc_trace_info_yield_raw,
     _GetCallerOutput,
-    _GetExcTraceInfoOutput,
     _TraceDataMixin,
     get_caller,
     get_exc_trace_info,
@@ -34,6 +35,7 @@ from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from types import FrameType
 
 
 class TestGetCaller:
@@ -107,7 +109,7 @@ class TestGetExcTraceInfo:
         assert isinstance(error, _TraceDataMixin)
 
         raw = list(_get_exc_trace_info_yield_raw(traceback=error.traceback))
-        merged = list(_get_exc_trace_info_yield_merged(raw))
+        list(_get_exc_trace_info_yield_merged(raw))
         assert 0, asdf
 
         expected = [
@@ -133,6 +135,31 @@ class TestGetExcTraceInfo:
         error = exc_info.value
         assert isinstance(error, AssertionError)
         assert isinstance(error, _TraceDataMixin)
+        learn = []
+        for td in error.trace_data:
+            learn.append({
+                "func": get_func_name(td.func),
+                "args": td.args,
+                "kwargs": td.kwargs,
+                "above": td.above,
+                "below": td.below,
+                "lines": [
+                    {
+                        "name": s.name,
+                        "filename": s.filename,
+                        "lineno": s.lineno,
+                        "line": s.line,
+                    }
+                    for s in td.stack
+                ],
+            })
+
+        from utilities.pickle import write_pickle
+
+        write_pickle(learn, "learn.gz", overwrite=True)
+        tb_exc = TracebackException.from_exception(error, capture_locals=True)
+
+        assert 0, foo
         expected = [
             (
                 21,

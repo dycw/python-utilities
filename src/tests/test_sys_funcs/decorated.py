@@ -33,7 +33,7 @@ def func_decorated_second(
     return func_decorated_third(2 * a, 2 * b, *args, c=2 * c, **kwargs)
 
 
-@trace()
+@trace(below=1)
 @other_decorator
 def func_decorated_third(
     a: int, b: int, /, *args: int, c: int = 0, **kwargs: int
@@ -42,7 +42,7 @@ def func_decorated_third(
 
 
 @other_decorator
-@trace(above=1)
+@trace(above=1, below=1)
 @other_decorator
 def func_decorated_fourth(
     a: int, b: int, /, *args: int, c: int = 0, **kwargs: int
@@ -52,7 +52,7 @@ def func_decorated_fourth(
 
 @other_decorator
 @other_decorator
-@trace(above=2)
+@trace(above=2, below=3)
 @other_decorator
 @other_decorator
 @other_decorator
@@ -62,3 +62,42 @@ def func_decorated_fifth(
     result = sum(chain([a, b], args, [c], kwargs.values()))
     assert result > 0, f"Result ({result}) must be positive"
     return result
+
+
+"""
+
+_TraceDataWithStack(
+    func=<function func_decorated_fourth at 0x103d1e660>,
+    args=(8, 16, 3, 4),
+    kwargs={'c': 40, 'd': 6, 'e': 7, 'f': -148},
+    above=1,
+    result=<sentinel>,
+    error=AssertionError('Result (0) must be positive'),
+    stack=[
+        <FrameSummary file /Users/derekwan/work/python-utilities/src/utilities/sys.py, line 350 in trace_sync>,
+        <FrameSummary file /Users/derekwan/work/python-utilities/src/tests/test_sys_funcs/decorated.py, line 16 in wrapped>,
+        <FrameSummary file /Users/derekwan/work/python-utilities/src/tests/test_sys_funcs/decorated.py, line 50 in
+func_decorated_fourth>,
+        <FrameSummary file /Users/derekwan/work/python-utilities/src/tests/test_sys_funcs/decorated.py, line 16 in wrapped>,
+        <FrameSummary file /Users/derekwan/work/python-utilities/src/tests/test_sys_funcs/decorated.py, line 16 in wrapped>,
+        <FrameSummary file /Users/derekwan/work/python-utilities/src/utilities/sys.py, line 371 in trace_sync>
+    ]
+)
+
+_TraceDataWithStack(
+    func=<function func_decorated_fourth at 0x103d1e660>,
+    args=(8, 16, 3, 4),
+    kwargs={'c': 40, 'd': 6, 'e': 7, 'f': -148},
+    above=1,
+    result=<sentinel>,
+    error=AssertionError('Result (0) must be positive'),
+    stack=[
+        <FrameSummary file src/utilities/sys.py, line 350 in trace_sync>,
+        <FrameSummary file src/tests/test_sys_funcs/decorated.py, line 16 in wrapped>,
+        <FrameSummary file src/tests/test_sys_funcs/decorated.py, line 50 in func_decorated_fourth>,
+        <FrameSummary file src/tests/test_sys_funcs/decorated.py, line 16 in wrapped>,
+        <FrameSummary file src/tests/test_sys_funcs/decorated.py, line 16 in wrapped>,
+        <FrameSummary file /Users/derekwan/work/python-utilities/src/utilities/sys.py, line 371 in trace_sync>
+    ]
+)
+"""
