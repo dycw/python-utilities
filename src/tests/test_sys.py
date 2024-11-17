@@ -23,6 +23,7 @@ from utilities.iterables import one
 from utilities.sentinel import sentinel
 from utilities.sys import (
     VERSION_MAJOR_MINOR,
+    Final,
     _FrameInfo,
     _get_exc_trace_info_yield_merged,
     _get_exc_trace_info_yield_raw,
@@ -156,10 +157,10 @@ class TestGetExcTraceInfo:
 
         from utilities.pickle import write_pickle
 
-        write_pickle(learn, "learn.gz", overwrite=True)
-        tb_exc = TracebackException.from_exception(error, capture_locals=True)
+        # write_pickle(learn, "learn.gz", overwrite=True)
+        # tb_exc = TracebackException.from_exception(error, capture_locals=True)
 
-        assert 0, foo
+        # assert 0, foo
         expected = [
             (
                 21,
@@ -188,7 +189,7 @@ class TestGetExcTraceInfo:
             (53, 63, func_decorated_fifth, self._assert_code_line),
         ]
         for depth, (frame, (first_ln, ln, func, code_ln)) in enumerate(
-            zip(error.frames, expected, strict=True), start=1
+            zip(error.formatted, expected, strict=True), start=1
         ):
             self._assert(
                 frame, depth, 5, func, "decorated.py", first_ln, ln, code_ln, result
@@ -284,7 +285,7 @@ class TestGetExcTraceInfo:
 
     def _assert(
         self,
-        frame: _FrameInfo,
+        frame: Final,
         depth: int,
         max_depth: int,
         func: Callable[..., Any],
@@ -299,13 +300,11 @@ class TestGetExcTraceInfo:
         assert frame.max_depth == max_depth
         assert frame.func.__name__ == func.__name__
         assert frame.filename.parts[-2:] == ("test_sys_funcs", filename)
-        assert frame.first_line_num == first_line_num
+        # assert frame.first_line_num == first_line_num
         assert frame.line_num == line_num
-        assert frame.code_line == code_line
+        assert frame.line == code_line
         assert frame.args == (2 ** (depth - 1), 2**depth, 3, 4)
         assert frame.kwargs == {"c": 5 * 2 ** (depth - 1), "d": 6, "e": 7, "f": -result}
-        assert frame.result is sentinel
-        assert isinstance(frame.error, AssertionError)
 
     @property
     def _assert_code_line(self) -> str:

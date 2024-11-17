@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, TypedDict, TypeVar, cast, overload
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_not_none, get_func_name
+from utilities.iterables import one
 
 if TYPE_CHECKING:
     from types import FrameType, TracebackType
@@ -275,25 +276,29 @@ class _TraceDataMixin:
     def formatted(self) -> list[Final]:
         return [
             _convert_trace_data_with_stack_into_final(i, len(self.trace_data), data)
-            for i, data in enumerate(self.trace_data, start=1)
+            for i, data in enumerate(self.trace_data[::-1], start=1)
         ]
 
 
 def _convert_trace_data_with_stack_into_final(
     i: int, n: int, data: _TraceDataWithStack, /
 ) -> Final:
-    last = data.stack[data.above]
+    summary = one(s for s in data.stack if s.name == get_func_name(data.func))
+    # if data.func.__name__ == "func_decorated_fourth":
+    #     print(f"last: {last}")
+    #
+    #     breakpoint()
 
     return Final(
         depth=i,
         max_depth=n,
-        filename=Path(last.filename),
-        line_num=last.lineno,
-        end_line_num=last.end_lineno,
-        col_num=last.colno,
-        end_col_num=last.end_colno,
-        name=last.name,
-        line=last.line,
+        filename=Path(summary.filename),
+        line_num=summary.lineno,
+        end_line_num=summary.end_lineno,
+        col_num=summary.colno,
+        end_col_num=summary.end_colno,
+        name=summary.name,
+        line=summary.line,
         func=data.func,
         args=data.args,
         kwargs=data.kwargs,
