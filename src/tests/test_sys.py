@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from re import escape
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from pytest import mark, param, raises
 
@@ -22,7 +22,11 @@ from utilities.sentinel import sentinel
 from utilities.sys import (
     VERSION_MAJOR_MINOR,
     _FrameInfo,
+    _get_exc_trace_info_yield_merged,
+    _get_exc_trace_info_yield_raw,
     _GetCallerOutput,
+    _GetExcTraceInfoOutput,
+    _TraceDataMixin,
     get_caller,
     get_exc_trace_info,
 )
@@ -73,107 +77,95 @@ class TestGetExcTraceInfo:
     def test_func_zero(self) -> None:
         result = func_zero(1, 2, 3, 4, c=5, d=6, e=7)
         assert result == 28
-        try:
+        with raises(AssertionError) as exc_info:
             _ = func_zero(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
-        except AssertionError:
-            exc_info = get_exc_trace_info()
-            assert exc_info.exc_type is AssertionError
-            assert isinstance(exc_info.exc_value, AssertionError)
-            assert exc_info.frames == []
-        else:  # pragma: no cover
-            msg = "Expected an assertion"
-            raise AssertionError(msg)
+        error = exc_info.value
+        assert isinstance(error, AssertionError)
+        assert error.exc_info == []
 
     def test_func_one(self) -> None:
         result = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         assert result == 28
-        try:
+        with raises(AssertionError) as exc_info:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
-        except AssertionError:
-            exc_info = get_exc_trace_info()
-            assert exc_info.exc_type is AssertionError
-            assert isinstance(exc_info.exc_value, AssertionError)
-            frame = one(exc_info.frames)
-            self._assert(
-                frame, 1, 1, func_one, "one.py", 8, 11, self._assert_code_line, result
-            )
-        else:  # pragma: no cover
-            msg = "Expected an assertion"
-            raise AssertionError(msg)
+        error = exc_info.value
+        assert isinstance(error, AssertionError)
+        assert isinstance(error, _TraceDataMixin)
+        frame = one(error.frames)
+        self._assert(
+            frame, 1, 1, func_one, "one.py", 8, 11, self._assert_code_line, result
+        )
 
+    # @mark.only
     def test_func_two(self) -> None:
         result = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
         assert result == 36
-        try:
+        with raises(AssertionError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
-        except AssertionError:
-            exc_info = get_exc_trace_info()
-            assert exc_info.exc_type is AssertionError
-            assert isinstance(exc_info.exc_value, AssertionError)
-            expected = [
-                (
-                    8,
-                    10,
-                    func_two_first,
-                    "return func_two_second(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
-                ),
-                (13, 16, func_two_second, self._assert_code_line),
-            ]
-            for depth, (frame, (first_ln, ln, func, code_ln)) in enumerate(
-                zip(exc_info.frames, expected, strict=True), start=1
-            ):
-                self._assert(
-                    frame, depth, 2, func, "two.py", first_ln, ln, code_ln, result
-                )
-        else:  # pragma: no cover
-            msg = "Expected an assertion"
-            raise AssertionError(msg)
+        error = exc_info.value
+        assert isinstance(error, AssertionError)
+        assert isinstance(error, _TraceDataMixin)
 
+        raw = list(_get_exc_trace_info_yield_raw(traceback=error.traceback))
+        merged = list(_get_exc_trace_info_yield_merged(raw))
+        assert 0, asdf
+
+        expected = [
+            (
+                8,
+                10,
+                func_two_first,
+                "return func_two_second(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
+            ),
+            (13, 16, func_two_second, self._assert_code_line),
+        ]
+        for depth, (frame, (first_ln, ln, func, code_ln)) in enumerate(
+            zip(error.frames, expected, strict=True), start=1
+        ):
+            self._assert(frame, depth, 2, func, "two.py", first_ln, ln, code_ln, result)
+
+    @mark.only
     def test_func_decorated(self) -> None:
         result = func_decorated_first(1, 2, 3, 4, c=5, d=6, e=7)
         assert result == 148
-        try:
+        with raises(AssertionError) as exc_info:
             _ = func_decorated_first(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
-        except AssertionError:
-            exc_info = get_exc_trace_info()
-            assert exc_info.exc_type is AssertionError
-            assert isinstance(exc_info.exc_value, AssertionError)
-            expected = [
-                (
-                    21,
-                    25,
-                    func_decorated_first,
-                    "return func_decorated_second(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
-                ),
-                (
-                    28,
-                    33,
-                    func_decorated_second,
-                    "return func_decorated_third(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
-                ),
-                (
-                    36,
-                    41,
-                    func_decorated_third,
-                    "return func_decorated_fourth(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
-                ),
-                (
-                    44,
-                    50,
-                    func_decorated_fourth,
-                    "return func_decorated_fifth(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
-                ),
-                (53, 63, func_decorated_fifth, self._assert_code_line),
-            ]
-            for depth, (frame, (first_ln, ln, func, code_ln)) in enumerate(
-                zip(exc_info.frames, expected, strict=True), start=1
-            ):
-                self._assert(
-                    frame, depth, 5, func, "decorated.py", first_ln, ln, code_ln, result
-                )
-        else:  # pragma: no cover
-            msg = "Expected an assertion"
-            raise AssertionError(msg)
+        error = exc_info.value
+        assert isinstance(error, AssertionError)
+        assert isinstance(error, _TraceDataMixin)
+        expected = [
+            (
+                21,
+                25,
+                func_decorated_first,
+                "return func_decorated_second(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
+            ),
+            (
+                28,
+                33,
+                func_decorated_second,
+                "return func_decorated_third(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
+            ),
+            (
+                36,
+                41,
+                func_decorated_third,
+                "return func_decorated_fourth(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
+            ),
+            (
+                44,
+                50,
+                func_decorated_fourth,
+                "return func_decorated_fifth(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
+            ),
+            (53, 63, func_decorated_fifth, self._assert_code_line),
+        ]
+        for depth, (frame, (first_ln, ln, func, code_ln)) in enumerate(
+            zip(error.frames, expected, strict=True), start=1
+        ):
+            self._assert(
+                frame, depth, 5, func, "decorated.py", first_ln, ln, code_ln, result
+            )
 
     async def test_func_async(self) -> None:
         result = await func_async(1, 2, 3, 4, c=5, d=6, e=7)

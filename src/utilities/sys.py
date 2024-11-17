@@ -268,6 +268,36 @@ class _TraceData:
     error: Exception | None = None
 
 
+@dataclass(kw_only=True, slots=False)  # no slots
+class _TraceDataMixin:
+    """A collection of tracing data."""
+
+    exc_type: type[BaseException] | None = None
+    exc_value: BaseException | None = None
+    traceback: TracebackType | None = None
+
+    @property
+    def frames(self) -> list[_FrameInfo]:
+        raw = list(_get_exc_trace_info_yield_raw(traceback=self.traceback))
+        merged = list(_get_exc_trace_info_yield_merged(raw))
+        return [
+            _FrameInfo(
+                depth=i,
+                max_depth=len(merged),
+                func=f.func,
+                filename=f.filename,
+                first_line_num=f.first_line_num,
+                line_num=f.line_num,
+                code_line=f.code_line,
+                args=f.args,
+                kwargs=f.kwargs,
+                result=f.result,
+                error=f.error,
+            )
+            for i, f in enumerate(merged[::-1], start=1)
+        ]
+
+
 @overload
 def trace(func: _F, /, *, above: int = ...) -> _F: ...
 @overload
@@ -288,10 +318,19 @@ def trace(func: _F | None = None, /, *, above: int = 0) -> _F | Callable[[_F], _
                 return func(*args, **kwargs)
             try:
                 result = trace_data.result = func(*args, **kwargs)
-            except Exception as error:
+            except Exception as error:  # noqa: BLE001
                 trace_data.error = error
                 locals()[_TRACE_DATA] = trace_data
-                raise
+                exc_type, exc_value, traceback = exc_info()
+                raise type(
+                    type(error).__name__,
+                    (type(error), _TraceDataMixin),
+                    {
+                        "exc_type": exc_type,
+                        "exc_value": exc_value,
+                        "traceback": traceback,
+                    },
+                )(*error.args) from None
             locals()[_TRACE_DATA] = trace_data
             return result
 
