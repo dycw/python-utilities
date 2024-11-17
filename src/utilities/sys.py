@@ -284,11 +284,6 @@ def _convert_trace_data_with_stack_into_final(
     i: int, n: int, data: _TraceDataWithStack, /
 ) -> Final:
     summary = one(s for s in data.stack if s.name == get_func_name(data.func))
-    # if data.func.__name__ == "func_decorated_fourth":
-    #     print(f"last: {last}")
-    #
-    #     breakpoint()
-
     return Final(
         depth=i,
         max_depth=n,
