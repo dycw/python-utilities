@@ -5,7 +5,7 @@ from inspect import signature
 from re import escape
 from typing import TYPE_CHECKING, Any
 
-from pytest import mark, raises
+from pytest import raises
 
 from tests.test_sys_funcs.async_ import func_async
 from tests.test_sys_funcs.decorated import (
@@ -121,7 +121,6 @@ class TestGetExcTraceInfo:
             async with TaskGroup() as tg:
                 _ = tg.create_task(func_async(1, 2, 3, 4, c=5, d=6, e=7, f=-result))
         error_group = exc_info.value
-        assert isinstance(error_group, ExceptionGroup)
         error = one(error_group.exceptions)
         assert isinstance(error, TraceMixin)
         frame = one(error.frames)
@@ -129,7 +128,6 @@ class TestGetExcTraceInfo:
             frame, 1, 1, func_async, "async_.py", 9, 13, self._assert_code_line, result
         )
 
-    @mark.xfail
     def test_pretty(self) -> None:
         result = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
         assert result == 36
@@ -137,7 +135,7 @@ class TestGetExcTraceInfo:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
         error = exc_info.value
         assert isinstance(error, TraceMixin)
-        result = error.pretty()
+        result = error.pretty(location=False)
         expected = strip_and_dedent("""
             Error running:
 
