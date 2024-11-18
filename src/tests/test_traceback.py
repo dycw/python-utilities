@@ -116,15 +116,16 @@ class TestTrace:
         assert len(error.frames) == 2
         expected = [
             (
+                13,
                 23,
                 15,
                 72,
                 "return func_recursive(a, b, *args, c=c, _is_last=True, **kwargs)",
                 {"result": 56},
             ),
-            (24, 11, 27, self._code_line_assert, {}),
+            (10, 21, 11, 27, self._code_line_assert, {}),
         ]
-        for depth, (frame, (ln, col, col1st, code_ln, extra)) in enumerate(
+        for depth, (frame, (ln1st, ln, col, col1st, code_ln, extra)) in enumerate(
             zip(error.frames, expected, strict=True), start=1
         ):
             if depth != 2:
@@ -135,7 +136,7 @@ class TestTrace:
                 2,
                 func_recursive,
                 "recursive.py",
-                13,
+                ln1st,
                 ln,
                 col,
                 col1st,
