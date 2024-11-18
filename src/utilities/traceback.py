@@ -10,8 +10,6 @@ from textwrap import indent
 from traceback import TracebackException
 from typing import TYPE_CHECKING, Any, NoReturn, Self, TypeVar, cast
 
-from rich.pretty import pretty_repr
-
 from utilities.dataclasses import yield_field_names
 from utilities.functions import ensure_not_none, get_class_name, get_func_name
 from utilities.iterables import one
@@ -156,6 +154,8 @@ class TraceMixin:
         expand_all: bool = False,
     ) -> Iterable[str]:
         """Yield the rows for pretty printing the exception."""
+        from rich.pretty import pretty_repr
+
         indent = self._indent
         pretty = partial(
             pretty_repr,
