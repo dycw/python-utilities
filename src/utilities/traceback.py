@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from sys import exc_info
 from traceback import TracebackException
 from typing import TYPE_CHECKING
@@ -13,11 +14,11 @@ if TYPE_CHECKING:
 
 
 @dataclass(kw_only=True, slots=True)
-class ExtFrameSummary:
+class _ExtFrameSummary:
     """An extended frame summary."""
 
-    filename: str
-    lineno: int | None = None
+    filename: Path
+    line_num: int | None = None
     first_line_num: int
     end_line_num: int | None = None
     col_num: int | None = None
@@ -30,7 +31,7 @@ class ExtFrameSummary:
 
 def yield_extended_frame_summaries(
     error: Exception, /, *, traceback: TracebackType | None = None
-) -> Iterator[ExtFrameSummary]:
+) -> Iterator[_ExtFrameSummary]:
     """Yield the extended frame summaries."""
     tb_exc = TracebackException.from_exception(error, capture_locals=True)
     if traceback is None:
@@ -39,9 +40,9 @@ def yield_extended_frame_summaries(
         traceback_use = traceback
     frames = yield_frames(traceback=traceback_use)
     for summary, frame in zip(tb_exc.stack, frames, strict=True):
-        yield ExtFrameSummary(
-            filename=summary.filename,
-            lineno=summary.lineno,
+        yield _ExtFrameSummary(
+            filename=Path(summary.filename),
+            line_num=summary.lineno,
             first_line_num=frame.f_code.co_firstlineno,
             end_line_num=summary.end_lineno,
             col_num=summary.colno,

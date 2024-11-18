@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup
+from inspect import signature
 from re import escape
 from typing import TYPE_CHECKING, Any
 
-from pytest import mark, param, raises
+from pytest import mark, raises
 
 from tests.test_sys_funcs.async_ import func_async
 from tests.test_sys_funcs.decorated import (
@@ -17,12 +18,9 @@ from tests.test_sys_funcs.decorated import (
 from tests.test_sys_funcs.error import func_error_async, func_error_sync
 from tests.test_sys_funcs.one import func_one
 from tests.test_sys_funcs.two import func_two_first, func_two_second
+from utilities.functions import get_func_name
 from utilities.iterables import one
-from utilities.sys import (
-    VERSION_MAJOR_MINOR,
-    Final,
-    _TraceDataMixin,
-)
+from utilities.sys import VERSION_MAJOR_MINOR, TraceMixin, _TraceMixinFrame
 from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
@@ -36,22 +34,19 @@ class TestGetExcTraceInfo:
         with raises(AssertionError) as exc_info:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
         error = exc_info.value
-        assert isinstance(error, AssertionError)
-        assert isinstance(error, _TraceDataMixin)
-        frame = one(error.formatted)
+        assert isinstance(error, TraceMixin)
+        frame = one(error.frames)
         self._assert(
             frame, 1, 1, func_one, "one.py", 8, 11, self._assert_code_line, result
         )
 
-    # @mark.only
     def test_func_two(self) -> None:
         result = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
         assert result == 36
         with raises(AssertionError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
         error = exc_info.value
-        assert isinstance(error, AssertionError)
-        assert isinstance(error, _TraceDataMixin)
+        assert isinstance(error, TraceMixin)
         expected = [
             (
                 8,
@@ -62,7 +57,7 @@ class TestGetExcTraceInfo:
             (13, 16, func_two_second, self._assert_code_line),
         ]
         for depth, (frame, (first_ln, ln, func, code_ln)) in enumerate(
-            zip(error.formatted, expected, strict=True), start=1
+            zip(error.frames, expected, strict=True), start=1
         ):
             self._assert(frame, depth, 2, func, "two.py", first_ln, ln, code_ln, result)
 
@@ -72,8 +67,7 @@ class TestGetExcTraceInfo:
         with raises(AssertionError) as exc_info:
             _ = func_decorated_first(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
         error = exc_info.value
-        assert isinstance(error, AssertionError)
-        assert isinstance(error, _TraceDataMixin)
+        assert isinstance(error, TraceMixin)
         expected = [
             (
                 21,
@@ -102,7 +96,7 @@ class TestGetExcTraceInfo:
             (53, 63, func_decorated_fifth, self._assert_code_line),
         ]
         for depth, (frame, (first_ln, ln, func, code_ln)) in enumerate(
-            zip(error.formatted, expected, strict=True), start=1
+            zip(error.frames, expected, strict=True), start=1
         ):
             self._assert(
                 frame, depth, 5, func, "decorated.py", first_ln, ln, code_ln, result
@@ -114,9 +108,8 @@ class TestGetExcTraceInfo:
         with raises(AssertionError) as exc_info:
             _ = await func_async(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
         error = exc_info.value
-        assert isinstance(error, AssertionError)
-        assert isinstance(error, _TraceDataMixin)
-        frame = one(error.formatted)
+        assert isinstance(error, TraceMixin)
+        frame = one(error.frames)
         self._assert(
             frame, 1, 1, func_async, "async_.py", 9, 13, self._assert_code_line, result
         )
@@ -130,9 +123,8 @@ class TestGetExcTraceInfo:
         error_group = exc_info.value
         assert isinstance(error_group, ExceptionGroup)
         error = one(error_group.exceptions)
-        assert isinstance(error, AssertionError)
-        assert isinstance(error, _TraceDataMixin)
-        frame = one(error.formatted)
+        assert isinstance(error, TraceMixin)
+        frame = one(error.frames)
         self._assert(
             frame, 1, 1, func_async, "async_.py", 9, 13, self._assert_code_line, result
         )
@@ -144,8 +136,7 @@ class TestGetExcTraceInfo:
         with raises(AssertionError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
         error = exc_info.value
-        assert isinstance(error, AssertionError)
-        assert isinstance(error, _TraceDataMixin)
+        assert isinstance(error, TraceMixin)
         result = error.pretty()
         expected = strip_and_dedent("""
             Error running:
@@ -201,7 +192,7 @@ class TestGetExcTraceInfo:
 
     def _assert(
         self,
-        frame: Final,
+        frame: _TraceMixinFrame,
         depth: int,
         max_depth: int,
         func: Callable[..., Any],
@@ -214,9 +205,10 @@ class TestGetExcTraceInfo:
     ) -> None:
         assert frame.depth == depth
         assert frame.max_depth == max_depth
-        assert frame.func.__name__ == func.__name__
+        assert get_func_name(frame.func) == get_func_name(func)
+        assert signature(frame.func) == signature(func)
         assert frame.filename.parts[-2:] == ("test_sys_funcs", filename)
-        # assert frame.first_line_num == first_line_num
+        assert frame.first_line_num == first_line_num
         assert frame.line_num == line_num
         assert frame.line == code_line
         assert frame.args == (2 ** (depth - 1), 2**depth, 3, 4)
