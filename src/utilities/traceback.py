@@ -38,7 +38,7 @@ def trace(func: _F, /) -> _F:
             try:
                 return func(*args, **kwargs)
             except Exception as error:  # noqa: BLE001
-                _trace_build_and_raise_trace_mixin(error, func, call_args)
+                _raise_trace_error(error, func, call_args)
 
         return cast(_F, trace_sync)
 
@@ -51,7 +51,7 @@ def trace(func: _F, /) -> _F:
         try:
             return await func(*args, **kwargs)
         except Exception as error:  # noqa: BLE001
-            _trace_build_and_raise_trace_mixin(error, func, call_args)
+            _raise_trace_error(error, func, call_args)
 
     return cast(_F, log_call_async)
 
@@ -71,10 +71,10 @@ class _CallArgs:
         return cls(func=func, args=bound_args.args, kwargs=bound_args.kwargs)
 
 
-def _trace_build_and_raise_trace_mixin(
+def _raise_trace_error(
     error: Exception, func: Callable[..., Any], call_args: _CallArgs, /
 ) -> NoReturn:
-    """Build and raise a TraceMixin exception."""
+    """Raise the TraceError."""
     frames = list(yield_extended_frame_summaries(error))
     frame = one(f for f in frames if f.name == get_func_name(func))
     trace_frame = _RawTraceMixinFrame(call_args=call_args, ext_frame_summary=frame)
