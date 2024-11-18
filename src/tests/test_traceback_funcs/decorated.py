@@ -5,7 +5,7 @@ from functools import wraps
 from itertools import chain
 from typing import Any, TypeVar, cast
 
-from utilities.sys import trace
+from utilities.traceback import trace
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 

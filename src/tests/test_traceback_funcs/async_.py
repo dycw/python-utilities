@@ -3,7 +3,7 @@ from __future__ import annotations
 from asyncio import sleep
 from itertools import chain
 
-from utilities.sys import trace
+from utilities.traceback import trace
 
 
 @trace
