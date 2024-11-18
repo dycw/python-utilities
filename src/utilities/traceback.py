@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from contextlib import suppress
 from dataclasses import dataclass, field, is_dataclass
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
@@ -10,6 +9,8 @@ from sys import exc_info
 from textwrap import indent
 from traceback import TracebackException
 from typing import TYPE_CHECKING, Any, NoReturn, Self, TypeVar, cast
+
+from rich.pretty import pretty_repr
 
 from utilities.dataclasses import yield_field_names
 from utilities.functions import ensure_not_none, get_class_name, get_func_name
@@ -70,10 +71,8 @@ def _trace_build_and_raise_trace_mixin(
         from utilities.pickle import write_pickle
 
         for frame in frames:
-            with suppress(Exception):
-                frame.locals["func"] = str(frame.locals["func"])
-            with suppress(Exception):
-                frame.locals["call_args"] = str(frame.locals["call_args"])
+            for key, value in frame.locals.items():
+                frame.locals[key] = pretty_repr(value)
 
         write_pickle(
             frames, (get_repo_root() / "pickles" / str(get_now())).with_suffix(".gz")
