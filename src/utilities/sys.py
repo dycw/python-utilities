@@ -4,7 +4,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
-from sys import exc_info, version_info
+from sys import version_info
 from textwrap import indent
 from typing import TYPE_CHECKING, Any, NoReturn, Self, TypeVar, cast
 
@@ -58,8 +58,7 @@ def _trace_build_and_raise_trace_mixin(
     error: Exception, func: Callable[..., Any], call_args: _CallArgs, /
 ) -> NoReturn:
     """Build and raise a TraceMixin exception."""
-    _, _, traceback = exc_info()
-    frames = list(yield_extended_frame_summaries(error, traceback=traceback))
+    frames = list(yield_extended_frame_summaries(error))
     frame = one(f for f in frames if f.name == get_func_name(func))
     trace_frame = _RawTraceMixinFrame(call_args=call_args, ext_frame_summary=frame)
     cls = type(error)
