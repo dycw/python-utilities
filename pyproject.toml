@@ -238,7 +238,6 @@ zzz-test-tenacity = [
 zzz-test-text = []
 zzz-test-threading = []
 zzz-test-timer = []
-zzz-test-tracer = ["treelib >= 1.7.0, < 1.8"]
 zzz-test-treelib = ["treelib >= 1.7.0, < 1.8"]
 zzz-test-types = []
 zzz-test-typing = []
