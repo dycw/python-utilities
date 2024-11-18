@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from asyncio import TaskGroup
 from inspect import signature
-from re import escape
 from typing import TYPE_CHECKING, Any
 
-from pytest import raises
+from pytest import mark, raises
 
 from tests.test_traceback_funcs.async_ import func_async
 from tests.test_traceback_funcs.decorated import (
@@ -21,9 +20,10 @@ from tests.test_traceback_funcs.recursive import func_recursive
 from tests.test_traceback_funcs.two import func_two_first, func_two_second
 from utilities.functions import get_func_name
 from utilities.iterables import OneNonUniqueError, one
-from utilities.text import strip_and_dedent
+from utilities.text import ensure_str, strip_and_dedent
 from utilities.traceback import (
     TraceMixin,
+    _CallArgsError,
     _TraceMixinFrame,
     trace,
     yield_extended_frame_summaries,
@@ -241,22 +241,31 @@ class TestTrace:
         assert result == expected
 
     def test_error_bind_sync(self) -> None:
-        with raises(
-            TypeError,
-            match=escape(
-                "func_error_sync() missing 1 required positional argument: 'b'"
-            ),
-        ):
+        with raises(_CallArgsError) as exc_info:
             _ = func_error_sync(1)  # pyright: ignore[reportCallIssue]
+        msg = ensure_str(one(exc_info.value.args))
+        expected = strip_and_dedent(
+            """
+            Unable to bind arguments for 'func_error_sync'; missing a required argument: 'b'
+            args[0] = 1
+            """
+        )
+        assert msg == expected
 
+    @mark.only
     async def test_error_bind_async(self) -> None:
-        with raises(
-            TypeError,
-            match=escape(
-                "func_error_async() takes 2 positional arguments but 3 were given"
-            ),
-        ):
+        with raises(_CallArgsError) as exc_info:
             _ = await func_error_async(1, 2, 3)  # pyright: ignore[reportCallIssue]
+        msg = ensure_str(one(exc_info.value.args))
+        expected = strip_and_dedent(
+            """
+            Unable to bind arguments for 'func_error_async'; too many positional arguments
+            args[0] = 1
+            args[1] = 2
+            args[2] = 3
+            """
+        )
+        assert msg == expected
 
     def _assert(
         self,
