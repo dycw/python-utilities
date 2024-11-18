@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from asyncio import TaskGroup
 from re import escape
 from typing import TYPE_CHECKING, Any
 
@@ -23,7 +24,6 @@ from utilities.sys import (
     _GetCallerOutput,
     _TraceDataMixin,
     get_caller,
-    get_exc_trace_info,
 )
 from utilities.text import strip_and_dedent
 
@@ -160,7 +160,22 @@ class TestGetExcTraceInfo:
             frame, 1, 1, func_async, "async_.py", 9, 13, self._assert_code_line, result
         )
 
-    @mark.xfail
+    async def test_task_group(self) -> None:
+        result = await func_async(1, 2, 3, 4, c=5, d=6, e=7)
+        assert result == 28
+        with raises(ExceptionGroup) as exc_info:
+            async with TaskGroup() as tg:
+                _ = tg.create_task(func_async(1, 2, 3, 4, c=5, d=6, e=7, f=-result))
+        error_group = exc_info.value
+        assert isinstance(error_group, ExceptionGroup)
+        error = one(error_group.exceptions)
+        assert isinstance(error, AssertionError)
+        assert isinstance(error, _TraceDataMixin)
+        frame = one(error.formatted)
+        self._assert(
+            frame, 1, 1, func_async, "async_.py", 9, 13, self._assert_code_line, result
+        )
+
     def test_pretty(self) -> None:
         result = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
         assert result == 36

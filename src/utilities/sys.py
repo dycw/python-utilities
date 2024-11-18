@@ -11,8 +11,10 @@ from textwrap import indent
 from traceback import StackSummary, TracebackException
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar, cast, overload
 
+from typing_extensions import override
+
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import ensure_not_none, get_func_name
+from utilities.functions import ensure_not_none, get_class_name, get_func_name
 from utilities.iterables import one
 
 if TYPE_CHECKING:
@@ -270,7 +272,15 @@ class _TraceDataWithStack(_TraceData):
 class _TraceDataMixin:
     """A collection of tracing data."""
 
+    error: Exception
     trace_data: list[_TraceDataWithStack] = field(default_factory=list)
+    location: bool = True
+    max_width: int = _MAX_WIDTH
+    indent_size: int = _INDENT_SIZE
+    max_length: int | None = None
+    max_string: int | None = None
+    max_depth: int | None = None
+    expand_all: bool = False
 
     @property
     def formatted(self) -> list[Final]:
@@ -279,31 +289,12 @@ class _TraceDataMixin:
             for i, data in enumerate(self.trace_data[::-1], start=1)
         ]
 
-    def pretty(
-        self,
-        *,
-        location: bool = True,
-        max_width: int = _MAX_WIDTH,
-        indent_size: int = _INDENT_SIZE,
-        max_length: int | None = None,
-        max_string: int | None = None,
-        max_depth: int | None = None,
-        expand_all: bool = False,
-    ) -> str:
+    @override
+    def __repr__(self) -> str:
         """Pretty print the exception data."""
-        return "\n".join(
-            self._pretty_yield(
-                location=location,
-                max_width=max_width,
-                indent_size=indent_size,
-                max_length=max_length,
-                max_string=max_string,
-                max_depth=max_depth,
-                expand_all=expand_all,
-            )
-        )
+        return "\n".join(self._yield_repr_lines())
 
-    def _pretty_yield(
+    def _yield_repr_lines(
         self,
         /,
         *,
@@ -328,7 +319,7 @@ class _TraceDataMixin:
             expand_all=expand_all,
         )
 
-        # error = f">> {self.exc_type.__name__}: {self.exc_value}"
+        error = f">> {get_class_name(self.error)}: {self.error}"
 
         yield "Error running:"
         yield ""
@@ -340,8 +331,8 @@ class _TraceDataMixin:
         for frame in self.formatted:
             name, filename = get_func_name(frame.func), frame.filename
             yield ""
-            # desc = f"{name} ({filename}:{frame.first_line_num})" if location else name
-            # yield indent(f"{frame.depth}/{frame.max_depth}. {desc}", self._prefix1)
+            desc = f"{name} ({filename}:{frame.first_line_num})" if location else name
+            yield indent(f"{frame.depth}/{frame.max_depth}. {desc}", self._prefix1)
             for i, arg in enumerate(frame.args):
                 yield indent(f"args[{i}] = {pretty(arg)}", self._prefix2)
             for k, v in frame.kwargs.items():
