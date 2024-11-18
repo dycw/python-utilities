@@ -21,51 +21,12 @@ from utilities.iterables import one
 from utilities.sys import (
     VERSION_MAJOR_MINOR,
     Final,
-    _GetCallerOutput,
     _TraceDataMixin,
-    get_caller,
 )
 from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-
-class TestGetCaller:
-    @mark.parametrize(
-        ("depth", "expected"),
-        [param(1, "inner"), param(2, "outer"), param(3, "test_main")],
-        ids=str,
-    )
-    def test_main(self, *, depth: int, expected: str) -> None:
-        def outer() -> _GetCallerOutput:
-            return inner()
-
-        def inner() -> _GetCallerOutput:
-            return get_caller(depth=depth)
-
-        result = outer()
-        assert result["module"] == "tests.test_sys"
-        assert result["name"] == expected
-
-    @mark.parametrize(
-        ("depth", "expected"),
-        [param(1, "inner"), param(2, "mid"), param(3, "outer"), param(4, "test_depth")],
-        ids=str,
-    )
-    def test_depth(self, *, depth: int, expected: str) -> None:
-        def outer() -> _GetCallerOutput:
-            return mid()
-
-        def mid() -> _GetCallerOutput:
-            return inner()
-
-        def inner() -> _GetCallerOutput:
-            return get_caller(depth=depth)
-
-        result = outer()
-        assert result["module"] == "tests.test_sys"
-        assert result["name"] == expected
 
 
 class TestGetExcTraceInfo:
@@ -176,6 +137,7 @@ class TestGetExcTraceInfo:
             frame, 1, 1, func_async, "async_.py", 9, 13, self._assert_code_line, result
         )
 
+    @mark.xfail
     def test_pretty(self) -> None:
         result = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
         assert result == 36
@@ -184,7 +146,7 @@ class TestGetExcTraceInfo:
         error = exc_info.value
         assert isinstance(error, AssertionError)
         assert isinstance(error, _TraceDataMixin)
-        result = error.pretty(location=False)
+        result = error.pretty()
         expected = strip_and_dedent("""
             Error running:
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from sys import exc_info
 from traceback import TracebackException
 from typing import TYPE_CHECKING
@@ -9,6 +9,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from types import FrameType, TracebackType
 
+    from utilities.typing import StrMapping
+
 
 @dataclass(kw_only=True, slots=True)
 class ExtFrameSummary:
@@ -16,13 +18,14 @@ class ExtFrameSummary:
 
     filename: str
     lineno: int | None = None
-    end_lineno: int | None = None
-    colno: int | None = None
-    end_colno: int | None = None
+    first_line_num: int
+    end_line_num: int | None = None
+    col_num: int | None = None
+    end_col_num: int | None = None
     name: str
     qualname: str
     line: str | None = None
-    locals: dict[str, str] | None = None
+    locals: StrMapping = field(default_factory=dict)
 
 
 def yield_extended_frame_summaries(
@@ -39,13 +42,14 @@ def yield_extended_frame_summaries(
         yield ExtFrameSummary(
             filename=summary.filename,
             lineno=summary.lineno,
-            end_lineno=summary.end_lineno,
-            colno=summary.colno,
-            end_colno=summary.end_colno,
+            first_line_num=frame.f_code.co_firstlineno,
+            end_line_num=summary.end_lineno,
+            col_num=summary.colno,
+            end_col_num=summary.end_colno,
             name=summary.name,
             qualname=frame.f_code.co_qualname,
             line=summary.line,
-            locals=summary.locals,
+            locals=frame.f_locals,
         )
 
 

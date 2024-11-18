@@ -26,14 +26,14 @@ def func_decorated_first(
 
 
 @other_decorator
-@trace(above=1)
+@trace
 def func_decorated_second(
     a: int, b: int, /, *args: int, c: int = 0, **kwargs: int
 ) -> int:
     return func_decorated_third(2 * a, 2 * b, *args, c=2 * c, **kwargs)
 
 
-@trace(below=1)
+@trace
 @other_decorator
 def func_decorated_third(
     a: int, b: int, /, *args: int, c: int = 0, **kwargs: int
@@ -42,7 +42,7 @@ def func_decorated_third(
 
 
 @other_decorator
-@trace(above=1, below=1)
+@trace
 @other_decorator
 def func_decorated_fourth(
     a: int, b: int, /, *args: int, c: int = 0, **kwargs: int
@@ -52,7 +52,7 @@ def func_decorated_fourth(
 
 @other_decorator
 @other_decorator
-@trace(above=2, below=3)
+@trace
 @other_decorator
 @other_decorator
 @other_decorator
