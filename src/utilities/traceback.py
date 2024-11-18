@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, NoReturn, Self, TypeVar, cast
 from utilities.dataclasses import yield_field_names
 from utilities.functions import ensure_not_none, get_class_name, get_func_name
 from utilities.iterables import one
+from utilities.rich import yield_pretty_repr_args_and_kwargs
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -98,8 +99,18 @@ class _CallArgs:
     @classmethod
     def create(cls, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Self:
         """Make the initial trace data."""
-        bound_args = signature(func).bind(*args, **kwargs)
+        sig = signature(func)
+        try:
+            bound_args = sig.bind(*args, **kwargs)
+        except TypeError:
+            raise _CallArgsError from None
+
+            return cls(func=func)
         return cls(func=func, args=bound_args.args, kwargs=bound_args.kwargs)
+
+
+class _CallArgsError(TypeError):
+    """Raised when a set of call arguments cannot be created."""
 
 
 @dataclass(kw_only=True, slots=False)  # no slots
@@ -183,10 +194,8 @@ class TraceMixin:
             yield ""
             yield indent("Inputs:", 2)
             yield ""
-            for i, arg in enumerate(frame.args):
-                yield indent(f"args[{i}] = {pretty(arg)}", 3)
-            for k, v in frame.kwargs.items():
-                yield indent(f"kwargs[{k}] = {pretty(v)}", 3)
+            for line in yield_pretty_repr_args_and_kwargs(*frame.args, **frame.kwargs):
+                yield indent(line, 3)
             yield ""
             yield indent("Locals:", 2)
             yield ""
