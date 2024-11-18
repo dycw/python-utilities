@@ -4,7 +4,7 @@ from asyncio import TaskGroup
 from inspect import signature
 from typing import TYPE_CHECKING, Any
 
-from pytest import mark, raises
+from pytest import raises
 
 from tests.test_traceback_funcs.async_ import func_async
 from tests.test_traceback_funcs.decorated import (
@@ -252,7 +252,6 @@ class TestTrace:
         )
         assert msg == expected
 
-    @mark.only
     async def test_error_bind_async(self) -> None:
         with raises(_CallArgsError) as exc_info:
             _ = await func_error_async(1, 2, 3)  # pyright: ignore[reportCallIssue]
