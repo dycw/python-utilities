@@ -64,12 +64,15 @@ def _trace_build_and_raise_trace_mixin(
     try:
         frame = one(f for f in frames if f.name == get_func_name(func))
     except OneError:
+        from rich.pretty import pretty_repr
+
         from utilities.datetime import get_now
         from utilities.git import get_repo_root
         from utilities.pickle import write_pickle
 
         write_pickle(
-            frames, (get_repo_root() / "pickles" / str(get_now())).with_suffix(".gz")
+            pretty_repr(frames, expand_all=True),
+            (get_repo_root() / "pickles" / str(get_now())).with_suffix(".gz"),
         )
         raise
     trace_frame = _RawTraceMixinFrame(call_args=call_args, ext_frame_summary=frame)
