@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, is_dataclass
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
 from pathlib import Path
@@ -10,6 +10,7 @@ from textwrap import indent
 from traceback import TracebackException
 from typing import TYPE_CHECKING, Any, NoReturn, Self, TypeVar, cast
 
+from utilities.dataclasses import yield_field_names
 from utilities.functions import ensure_not_none, get_class_name, get_func_name
 from utilities.iterables import one
 
@@ -62,16 +63,25 @@ def _trace_build_and_raise_trace_mixin(
     frames = list(yield_extended_frame_summaries(error))
     frame = one(f for f in frames if f.name == get_func_name(func))
     trace_frame = _RawTraceMixinFrame(call_args=call_args, ext_frame_summary=frame)
-    cls = type(error)
     if isinstance(error, TraceMixin):
-        bases = (cls,)
         raw_frames = [*error.raw_frames, trace_frame]
     else:
-        bases = (cls, TraceMixin)
         raw_frames = [trace_frame]
-    raise type(cls.__name__, bases, {"error": error, "raw_frames": raw_frames})(
-        *error.args
-    ) from None
+    base = error
+    while isinstance(base, TraceMixin):
+        base = base.error
+    native = type(base)
+    new_cls = type(
+        native.__name__,
+        (native, TraceMixin),
+        {"error": error, "raw_frames": raw_frames},
+    )
+    if is_dataclass(base):
+        kwargs = {f: getattr(error, f) for f in yield_field_names(base)}
+    else:
+        kwargs = {}
+    new_error = new_cls(*error.args, **kwargs)
+    raise new_error from None
 
 
 @dataclass(kw_only=True, slots=True)
@@ -308,4 +318,4 @@ def yield_frames(*, traceback: TracebackType | None = None) -> Iterator[FrameTyp
         traceback = traceback.tb_next
 
 
-__all__ = ["yield_extended_frame_summaries", "yield_frames"]
+__all__ = ["TraceMixin", "trace", "yield_extended_frame_summaries", "yield_frames"]

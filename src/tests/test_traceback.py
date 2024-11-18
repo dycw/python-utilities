@@ -19,11 +19,12 @@ from tests.test_traceback_funcs.error import func_error_async, func_error_sync
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.two import func_two_first, func_two_second
 from utilities.functions import get_func_name
-from utilities.iterables import one
+from utilities.iterables import OneNonUniqueError, one
 from utilities.text import strip_and_dedent
 from utilities.traceback import (
     TraceMixin,
     _TraceMixinFrame,
+    trace,
     yield_extended_frame_summaries,
     yield_frames,
 )
@@ -126,6 +127,18 @@ class TestTrace:
         self._assert(
             frame, 1, 1, func_async, "async_.py", 9, 18, 11, 27, self._code_line_assert
         )
+
+    def test_custom_error(self) -> None:
+        @trace
+        def raises_custom_error() -> bool:
+            return one([True, False])
+
+        with raises(OneNonUniqueError) as exc_info:
+            _ = raises_custom_error()
+        one_error = exc_info.value
+        assert isinstance(one_error, TraceMixin)
+        assert one_error.first is True
+        assert one_error.second is False
 
     def test_pretty(self) -> None:
         with raises(AssertionError) as exc_info:
