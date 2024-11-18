@@ -5,7 +5,7 @@ from functools import wraps
 from itertools import chain
 from typing import Any, TypeVar, cast
 
-from utilities.sys import trace
+from utilities.traceback import trace
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 
@@ -22,43 +22,68 @@ def other_decorator(func: _F, /) -> _F:
 def func_decorated_first(
     a: int, b: int, /, *args: int, c: int = 0, **kwargs: int
 ) -> int:
-    return func_decorated_second(2 * a, 2 * b, *args, c=2 * c, **kwargs)
+    a *= 2
+    b *= 2
+    args = tuple(2 * arg for arg in args)
+    c *= 2
+    kwargs = {k: 2 * v for k, v in kwargs.items()}
+    return func_decorated_second(a, b, *args, c=c, **kwargs)
 
 
 @other_decorator
-@trace(above=1)
+@trace
 def func_decorated_second(
     a: int, b: int, /, *args: int, c: int = 0, **kwargs: int
 ) -> int:
-    return func_decorated_third(2 * a, 2 * b, *args, c=2 * c, **kwargs)
+    a *= 2
+    b *= 2
+    args = tuple(2 * arg for arg in args)
+    c *= 2
+    kwargs = {k: 2 * v for k, v in kwargs.items()}
+    return func_decorated_third(a, b, *args, c=c, **kwargs)
 
 
-@trace()
+@trace
 @other_decorator
 def func_decorated_third(
     a: int, b: int, /, *args: int, c: int = 0, **kwargs: int
 ) -> int:
-    return func_decorated_fourth(2 * a, 2 * b, *args, c=2 * c, **kwargs)
+    a *= 2
+    b *= 2
+    args = tuple(2 * arg for arg in args)
+    c *= 2
+    kwargs = {k: 2 * v for k, v in kwargs.items()}
+    return func_decorated_fourth(a, b, *args, c=c, **kwargs)
 
 
 @other_decorator
-@trace(above=1)
+@trace
 @other_decorator
 def func_decorated_fourth(
     a: int, b: int, /, *args: int, c: int = 0, **kwargs: int
 ) -> int:
-    return func_decorated_fifth(2 * a, 2 * b, *args, c=2 * c, **kwargs)
+    a *= 2
+    b *= 2
+    args = tuple(2 * arg for arg in args)
+    c *= 2
+    kwargs = {k: 2 * v for k, v in kwargs.items()}
+    return func_decorated_fifth(a, b, *args, c=c, **kwargs)
 
 
 @other_decorator
 @other_decorator
-@trace(above=2)
+@trace
 @other_decorator
 @other_decorator
 @other_decorator
 def func_decorated_fifth(
     a: int, b: int, /, *args: int, c: int = 0, **kwargs: int
 ) -> int:
+    a *= 2
+    b *= 2
+    args = tuple(2 * arg for arg in args)
+    c *= 2
+    kwargs = {k: 2 * v for k, v in kwargs.items()}
     result = sum(chain([a, b], args, [c], kwargs.values()))
-    assert result > 0, f"Result ({result}) must be positive"
+    assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
     return result

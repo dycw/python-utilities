@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from utilities.sys import trace
+from utilities.traceback import trace
 
 
 @trace

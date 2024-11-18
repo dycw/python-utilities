@@ -239,7 +239,7 @@ pathspec==0.12.1
     # via hatchling
 pexpect==4.9.0
     # via hatch
-pikepdf==9.4.1
+pikepdf==9.4.2
     # via img2pdf
 pillow==11.0.0
     # via
@@ -436,13 +436,13 @@ virtualenv==20.27.1
     #   nox
 vl-convert-python==1.7.0
     # via dycw-utilities (pyproject.toml)
-whenever==0.6.12
+whenever==0.6.13
     # via dycw-utilities (pyproject.toml)
 win32-setctime==1.1.0
     # via dycw-utilities (pyproject.toml)
 wrapt==1.16.0
     # via deprecated
-yarl==1.17.1
+yarl==1.17.2
     # via aiohttp
 zipp==3.21.0
     # via importlib-metadata

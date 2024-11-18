@@ -57,5 +57,5 @@ tomli==2.1.0
     # via coverage
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
-yarl==1.17.1
+yarl==1.17.2
     # via aiohttp
