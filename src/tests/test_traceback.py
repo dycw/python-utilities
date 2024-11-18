@@ -5,8 +5,6 @@ from inspect import signature
 from re import escape
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import given
-from hypothesis.strategies import integers
 from pytest import raises
 
 from tests.test_traceback_funcs.async_ import func_async
@@ -20,7 +18,6 @@ from tests.test_traceback_funcs.decorated import (
 from tests.test_traceback_funcs.error import func_error_async, func_error_sync
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.recursive import func_recursive
-from tests.test_traceback_funcs.recursive2 import Bar, check_bar_duration
 from tests.test_traceback_funcs.two import func_two_first, func_two_second
 from utilities.functions import get_func_name
 from utilities.iterables import OneNonUniqueError, one
@@ -111,20 +108,40 @@ class TestTrace:
                 frame, depth, 5, func, "decorated.py", ln1st, ln, col, col1st, code_ln
             )
 
-    @given(a=integers(-100, 100), b=integers(-100, 100))
-    def test_func_recursive(self, *, a: int, b: int) -> None:
-        from utilities.hypothesis import assume_does_not_raise
-
-        with assume_does_not_raise(AssertionError):
-            _ = func_recursive(a, b, 3, 4, c=5, d=6, e=7)
-
-    def test_func_recursive2(self) -> None:
-        import datetime as dt
-
-        check_bar_duration(
-            Bar(start=dt.datetime(2021, 1, 1), end=dt.datetime(2021, 1, 2)),
-            dt.timedelta(days=1),
-        )
+    def test_func_recursive(self) -> None:
+        with raises(AssertionError) as exc_info:
+            _ = func_recursive(1, 2, 3, 4, c=5, d=6, e=7)
+        error = exc_info.value
+        assert isinstance(error, TraceMixin)
+        assert len(error.frames) == 2
+        expected = [
+            (
+                23,
+                15,
+                72,
+                "return func_recursive(a, b, *args, c=c, _is_last=True, **kwargs)",
+                {"result": 56},
+            ),
+            (24, 11, 27, self._code_line_assert, {}),
+        ]
+        for depth, (frame, (ln, col, col1st, code_ln, extra)) in enumerate(
+            zip(error.frames, expected, strict=True), start=1
+        ):
+            if depth != 2:
+                continue
+            self._assert(
+                frame,
+                depth,
+                2,
+                func_recursive,
+                "recursive.py",
+                13,
+                ln,
+                col,
+                col1st,
+                code_ln,
+                extra_locals=extra,
+            )
 
     async def test_func_async(self) -> None:
         with raises(AssertionError) as exc_info:
@@ -253,6 +270,8 @@ class TestTrace:
         end_col_num: int,
         code_line: str,
         /,
+        *,
+        extra_locals: dict[str, Any] | None = None,
     ) -> None:
         assert frame.depth == depth
         assert frame.max_depth == max_depth
@@ -271,13 +290,17 @@ class TestTrace:
         assert frame.col_num == col_num
         assert frame.end_col_num == end_col_num
         scale_plus = 2 * scale
-        locals_ = {
-            "a": scale_plus,
-            "b": 2 * scale_plus,
-            "c": 5 * scale_plus,
-            "args": (3 * scale_plus, 4 * scale_plus),
-            "kwargs": {"d": 6 * scale_plus, "e": 7 * scale_plus},
-        } | ({"result": frame.locals["result"]} if depth == max_depth else {})
+        locals_ = (
+            {
+                "a": scale_plus,
+                "b": 2 * scale_plus,
+                "c": 5 * scale_plus,
+                "args": (3 * scale_plus, 4 * scale_plus),
+                "kwargs": {"d": 6 * scale_plus, "e": 7 * scale_plus},
+            }
+            | ({"result": frame.locals["result"]} if depth == max_depth else {})
+            | ({} if extra_locals is None else extra_locals)
+        )
         assert frame.locals == locals_
 
     @property

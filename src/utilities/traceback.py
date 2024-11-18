@@ -14,7 +14,7 @@ from rich.pretty import pretty_repr
 
 from utilities.dataclasses import yield_field_names
 from utilities.functions import ensure_not_none, get_class_name, get_func_name
-from utilities.iterables import OneError, one
+from utilities.iterables import one
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -63,21 +63,10 @@ def _trace_build_and_raise_trace_mixin(
 ) -> NoReturn:
     """Build and raise a TraceMixin exception."""
     frames = list(yield_extended_frame_summaries(error))
-    try:
-        frame = one(f for f in frames if f.name == get_func_name(func))
-    except OneError:
-        from utilities.datetime import get_now
-        from utilities.git import get_repo_root
-        from utilities.pickle import write_pickle
-
-        for frame in frames:
-            for key, value in frame.locals.items():
-                frame.locals[key] = pretty_repr(value)
-
-        write_pickle(
-            frames, (get_repo_root() / "pickles" / str(get_now())).with_suffix(".gz")
-        )
-        raise
+    matches = (
+        f for f in frames if (f.name == get_func_name(func)) and (f.code_line != "")
+    )
+    frame = one(matches)
     trace_frame = _RawTraceMixinFrame(call_args=call_args, ext_frame_summary=frame)
     if isinstance(error, TraceMixin):
         raw_frames = [*error.raw_frames, trace_frame]
@@ -167,8 +156,6 @@ class TraceMixin:
         expand_all: bool = False,
     ) -> Iterable[str]:
         """Yield the rows for pretty printing the exception."""
-        from rich.pretty import pretty_repr
-
         indent = self._indent
         pretty = partial(
             pretty_repr,
