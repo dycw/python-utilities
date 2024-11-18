@@ -128,7 +128,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.118.9
+hypothesis==6.119.3
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -186,7 +186,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.13.5
+narwhals==1.14.0
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -255,9 +255,9 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==1.13.1
+polars-lts-cpu==1.14.0
     # via dycw-utilities (pyproject.toml)
-portalocker==2.10.1
+portalocker==3.0.0
     # via concurrent-log-handler
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)

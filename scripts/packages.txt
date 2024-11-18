@@ -62,7 +62,7 @@ tenacity
 text
 threading
 timer
-tracer
+traceback
 treelib
 types
 typing
