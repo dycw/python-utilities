@@ -61,7 +61,10 @@ def _trace_build_and_raise_trace_mixin(
 ) -> NoReturn:
     """Build and raise a TraceMixin exception."""
     frames = list(yield_extended_frame_summaries(error))
-    frame = one(f for f in frames if f.name == get_func_name(func))
+    matches = (
+        f for f in frames if (f.name == get_func_name(func)) and (f.code_line != "")
+    )
+    frame = one(matches)
     trace_frame = _RawTraceMixinFrame(call_args=call_args, ext_frame_summary=frame)
     if isinstance(error, TraceMixin):
         raw_frames = [*error.raw_frames, trace_frame]
@@ -283,7 +286,7 @@ class _ExtFrameSummary:
     end_line_num: int
     col_num: int
     end_col_num: int
-    locals: StrMapping = field(default_factory=dict)
+    locals: dict[str, Any] = field(default_factory=dict)
 
 
 def yield_extended_frame_summaries(
