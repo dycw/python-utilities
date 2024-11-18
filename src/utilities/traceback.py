@@ -11,15 +11,42 @@ if TYPE_CHECKING:
 
 
 @dataclass(kw_only=True, slots=True)
-class ExtStackSummary(list):
-    pass
+class ExtFrameSummary:
+    """An extended frame summary."""
+
+    filename: str
+    lineno: int | None = None
+    end_lineno: int | None = None
+    colno: int | None = None
+    end_colno: int | None = None
+    name: str
+    qualname: str
+    line: str | None = None
+    locals: dict[str, str] | None = None
 
 
-def get_extended_stack_summary(error: Exception, /) -> None:
-    """Get the extended stack summary."""
+def yield_extended_frame_summaries(
+    error: Exception, /, *, traceback: TracebackType | None = None
+) -> Iterator[ExtFrameSummary]:
+    """Yield the extended frame summaries."""
     tb_exc = TracebackException.from_exception(error, capture_locals=True)
-    tb_exc.stack[0]
-    _, _, _tb = exc_info()
+    if traceback is None:
+        _, _, traceback_use = exc_info()
+    else:
+        traceback_use = traceback
+    frames = yield_frames(traceback=traceback_use)
+    for summary, frame in zip(tb_exc.stack, frames, strict=True):
+        yield ExtFrameSummary(
+            filename=summary.filename,
+            lineno=summary.lineno,
+            end_lineno=summary.end_lineno,
+            colno=summary.colno,
+            end_colno=summary.end_colno,
+            name=summary.name,
+            qualname=frame.f_code.co_qualname,
+            line=summary.line,
+            locals=summary.locals,
+        )
 
 
 def yield_frames(*, traceback: TracebackType | None = None) -> Iterator[FrameType]:
@@ -29,4 +56,4 @@ def yield_frames(*, traceback: TracebackType | None = None) -> Iterator[FrameTyp
         traceback = traceback.tb_next
 
 
-__all__ = ["yield_frames"]
+__all__ = ["yield_extended_frame_summaries", "yield_frames"]
