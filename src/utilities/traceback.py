@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
+from contextlib import suppress
 from dataclasses import dataclass, field, is_dataclass
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
@@ -69,6 +70,12 @@ def _trace_build_and_raise_trace_mixin(
         from utilities.datetime import get_now
         from utilities.git import get_repo_root
         from utilities.pickle import write_pickle
+
+        for frame in frames:
+            with suppress(Exception):
+                frame.locals["func"] = str(frame.locals["func"])
+            with suppress(Exception):
+                frame.locals["call_args"] = str(frame.locals["call_args"])
 
         write_pickle(
             pretty_repr(frames, expand_all=True),
@@ -296,7 +303,7 @@ class _ExtFrameSummary:
     end_line_num: int
     col_num: int
     end_col_num: int
-    locals: StrMapping = field(default_factory=dict)
+    locals: dict[str, Any] = field(default_factory=dict)
 
 
 def yield_extended_frame_summaries(
