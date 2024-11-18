@@ -5,6 +5,8 @@ from inspect import signature
 from re import escape
 from typing import TYPE_CHECKING, Any
 
+from hypothesis import given
+from hypothesis.strategies import integers
 from pytest import raises
 
 from tests.test_traceback_funcs.async_ import func_async
@@ -17,6 +19,8 @@ from tests.test_traceback_funcs.decorated import (
 )
 from tests.test_traceback_funcs.error import func_error_async, func_error_sync
 from tests.test_traceback_funcs.one import func_one
+from tests.test_traceback_funcs.recursive import func_recursive
+from tests.test_traceback_funcs.recursive2 import Bar, check_bar_duration
 from tests.test_traceback_funcs.two import func_two_first, func_two_second
 from utilities.functions import get_func_name
 from utilities.iterables import OneNonUniqueError, one
@@ -106,6 +110,21 @@ class TestTrace:
             self._assert(
                 frame, depth, 5, func, "decorated.py", ln1st, ln, col, col1st, code_ln
             )
+
+    @given(a=integers(-100, 100), b=integers(-100, 100))
+    def test_func_recursive(self, *, a: int, b: int) -> None:
+        from utilities.hypothesis import assume_does_not_raise
+
+        with assume_does_not_raise(AssertionError):
+            _ = func_recursive(a, b, 3, 4, c=5, d=6, e=7)
+
+    def test_func_recursive2(self) -> None:
+        import datetime as dt
+
+        check_bar_duration(
+            Bar(start=dt.datetime(2021, 1, 1), end=dt.datetime(2021, 1, 2)),
+            dt.timedelta(days=1),
+        )
 
     async def test_func_async(self) -> None:
         with raises(AssertionError) as exc_info:

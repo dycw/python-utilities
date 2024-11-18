@@ -61,7 +61,17 @@ def _trace_build_and_raise_trace_mixin(
 ) -> NoReturn:
     """Build and raise a TraceMixin exception."""
     frames = list(yield_extended_frame_summaries(error))
-    frame = one(f for f in frames if f.name == get_func_name(func))
+    try:
+        frame = one(f for f in frames if f.name == get_func_name(func))
+    except OneError:
+        from utilities.datetime import get_now
+        from utilities.git import get_repo_root
+        from utilities.pickle import write_pickle
+
+        write_pickle(
+            frames, (get_repo_root() / "pickles" / str(get_now())).with_suffix(".gz")
+        )
+        raise
     trace_frame = _RawTraceMixinFrame(call_args=call_args, ext_frame_summary=frame)
     if isinstance(error, TraceMixin):
         raw_frames = [*error.raw_frames, trace_frame]
