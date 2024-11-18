@@ -11,7 +11,7 @@ from traceback import TracebackException
 from typing import TYPE_CHECKING, Any, Generic, NoReturn, Self, TypeVar, cast
 
 from utilities.functions import ensure_not_none, get_class_name, get_func_name
-from utilities.iterables import one
+from utilities.iterables import OneNonUniqueError, one
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -76,7 +76,16 @@ def _raise_trace_error(
 ) -> NoReturn:
     """Raise the TraceError."""
     frames = list(yield_extended_frame_summaries(error))
-    frame = one(f for f in frames if f.name == get_func_name(func))
+    try:
+        frame = one(f for f in frames if f.name == get_func_name(func))
+    except OneNonUniqueError:
+        print("Failed to find unique frame")  #  noqa: T201
+        from rich.pretty import pretty_repr
+
+        print(pretty_repr(locals()))  #  noqa: T201
+        for i, frame in enumerate(frames):
+            print(f"{i}: {frame}")  #  noqa: T201
+        raise
     trace_frame = _RawTraceMixinFrame(call_args=call_args, ext_frame_summary=frame)
     if isinstance(error, TraceError):
         error_use = error.error
