@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, NoReturn, Self, TypeVar, cast
 
 from utilities.dataclasses import yield_field_names
 from utilities.functions import ensure_not_none, get_class_name, get_func_name
-from utilities.iterables import one
+from utilities.iterables import OneError, one
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
