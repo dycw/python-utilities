@@ -10,7 +10,7 @@ from textwrap import indent
 from traceback import TracebackException
 from typing import TYPE_CHECKING, Any, NoReturn, Self, TypeVar, cast
 
-from utilities.functions import get_class_name, get_func_name
+from utilities.functions import ensure_not_none, get_class_name, get_func_name
 from utilities.iterables import one
 
 if TYPE_CHECKING:
@@ -171,7 +171,7 @@ class TraceMixin:
                 yield indent(f"args[{i}] = {pretty(arg)}", self._prefix2)
             for k, v in frame.kwargs.items():
                 yield indent(f"kwargs[{k!r}] = {pretty(v)}", self._prefix2)
-            yield indent(f">> {frame.line}", self._prefix2)
+            yield indent(f">> {frame.code_line}", self._prefix2)
             if location:  # pragma: no cover
                 yield indent(f"   ({filename}:{frame.line_num})", self._prefix2)
             if frame.depth == frame.max_depth:
@@ -227,8 +227,8 @@ class _TraceMixinFrame:
         return self.raw_frame.ext_frame_summary.qualname
 
     @property
-    def line(self) -> str | None:
-        return self.raw_frame.ext_frame_summary.line
+    def code_line(self) -> str | None:
+        return self.raw_frame.ext_frame_summary.code_line
 
     @property
     def first_line_num(self) -> int:
@@ -262,12 +262,12 @@ class _ExtFrameSummary:
     filename: Path
     name: str
     qualname: str
-    line: str | None = None
+    code_line: str
     first_line_num: int
-    line_num: int | None = None
-    end_line_num: int | None = None
-    col_num: int | None = None
-    end_col_num: int | None = None
+    line_num: int
+    end_line_num: int
+    col_num: int
+    end_col_num: int
     locals: StrMapping = field(default_factory=dict)
 
 
@@ -286,12 +286,12 @@ def yield_extended_frame_summaries(
             filename=Path(summary.filename),
             name=summary.name,
             qualname=frame.f_code.co_qualname,
-            line=summary.line,
+            code_line=ensure_not_none(summary.line),
             first_line_num=frame.f_code.co_firstlineno,
-            line_num=summary.lineno,
-            end_line_num=summary.end_lineno,
-            col_num=summary.colno,
-            end_col_num=summary.end_colno,
+            line_num=ensure_not_none(summary.lineno),
+            end_line_num=ensure_not_none(summary.end_lineno),
+            col_num=ensure_not_none(summary.colno),
+            end_col_num=ensure_not_none(summary.end_colno),
             locals=frame.f_locals,
         )
 

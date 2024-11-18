@@ -30,6 +30,7 @@ from utilities.traceback import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+from pytest import mark, param
 
 
 class TestTrace:
@@ -39,54 +40,27 @@ class TestTrace:
         error = exc_info.value
         assert isinstance(error, TraceMixin)
         frame = one(error.frames)
-        assert frame.depth == 1
-        assert frame.max_depth == 1
-        assert get_func_name(frame.func) == get_func_name(func_one)
-        assert signature(frame.func) == signature(func_one)
-        assert frame.args == (1, 2, 3, 4)
-        assert frame.kwargs == {"c": 5, "d": 6, "e": 7}
-        assert frame.filename.parts[-2:] == ("test_traceback_funcs", "one.py")
-        assert frame.name == "func_one"
-        assert frame.qualname == "func_one"
-        assert (
-            frame.line
-            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        self._assert(
+            frame, 1, 1, func_one, "one.py", 8, 16, 11, 27, self._code_line_assert
         )
-        assert frame.first_line_num == 8
-        assert frame.line_num == 16
-        assert frame.end_line_num == 16
-        assert frame.col_num == 11
-        assert frame.end_col_num == 27
-        assert frame.locals == {
-            "a": 2,
-            "b": 4,
-            "c": 10,
-            "args": (6, 8),
-            "kwargs": {"d": 12, "e": 14},
-            "result": 56,
-        }
 
     def test_func_two(self) -> None:
-        result = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
-        assert result == 36
         with raises(AssertionError) as exc_info:
-            _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
+            _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
         error = exc_info.value
         assert isinstance(error, TraceMixin)
         expected = [
-            (
-                8,
-                10,
-                func_two_first,
-                "return func_two_second(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
-            ),
-            (13, 16, func_two_second, self._assert_code_line),
+            (func_two_first, 8, 15, 11, 54, self._code_line_call("func_two_second")),
+            (func_two_second, 18, 26, 11, 27, self._code_line_assert),
         ]
-        for depth, (frame, (first_ln, ln, func, code_ln)) in enumerate(
+        for depth, (frame, (func, ln1st, ln, col, col1st, code_ln)) in enumerate(
             zip(error.frames, expected, strict=True), start=1
         ):
-            self._assert(frame, depth, 2, func, "two.py", first_ln, ln, code_ln, result)
+            self._assert(
+                frame, depth, 2, func, "two.py", ln1st, ln, col, col1st, code_ln
+            )
 
+    @mark.only
     def test_func_decorated(self) -> None:
         result = func_decorated_first(1, 2, 3, 4, c=5, d=6, e=7)
         assert result == 148
@@ -119,7 +93,7 @@ class TestTrace:
                 func_decorated_fourth,
                 "return func_decorated_fifth(2 * a, 2 * b, *args, c=2 * c, **kwargs)",
             ),
-            (53, 63, func_decorated_fifth, self._assert_code_line),
+            (53, 63, func_decorated_fifth, self._code_line_assert),
         ]
         for depth, (frame, (first_ln, ln, func, code_ln)) in enumerate(
             zip(error.frames, expected, strict=True), start=1
@@ -137,7 +111,7 @@ class TestTrace:
         assert isinstance(error, TraceMixin)
         frame = one(error.frames)
         self._assert(
-            frame, 1, 1, func_async, "async_.py", 9, 13, self._assert_code_line, result
+            frame, 1, 1, func_async, "async_.py", 9, 13, self._code_line_assert, result
         )
 
     async def test_task_group(self) -> None:
@@ -151,7 +125,7 @@ class TestTrace:
         assert isinstance(error, TraceMixin)
         frame = one(error.frames)
         self._assert(
-            frame, 1, 1, func_async, "async_.py", 9, 13, self._assert_code_line, result
+            frame, 1, 1, func_async, "async_.py", 9, 13, self._code_line_assert, result
         )
 
     def test_pretty(self) -> None:
@@ -223,24 +197,43 @@ class TestTrace:
         filename: str,
         first_line_num: int,
         line_num: int,
+        col_num: int,
+        end_col_num: int,
         code_line: str,
-        result: int,
         /,
     ) -> None:
         assert frame.depth == depth
         assert frame.max_depth == max_depth
         assert get_func_name(frame.func) == get_func_name(func)
         assert signature(frame.func) == signature(func)
+        scale = 2 ** (depth - 1)
+        assert frame.args == (scale, 2 * scale, 3 * scale, 4 * scale)
+        assert frame.kwargs == {"c": 5 * scale, "d": 6 * scale, "e": 7 * scale}
         assert frame.filename.parts[-2:] == ("test_traceback_funcs", filename)
+        assert frame.name == get_func_name(func)
+        assert frame.qualname == get_func_name(func)
+        assert frame.code_line == code_line
         assert frame.first_line_num == first_line_num
         assert frame.line_num == line_num
-        assert frame.line == code_line
-        assert frame.args == (2 ** (depth - 1), 2**depth, 3, 4)
-        assert frame.kwargs == {"c": 5 * 2 ** (depth - 1), "d": 6, "e": 7, "f": -result}
+        assert frame.end_line_num == line_num
+        assert frame.col_num == col_num
+        assert frame.end_col_num == end_col_num
+        scale_plus = 2 * scale
+        locals_ = {
+            "a": scale_plus,
+            "b": 2 * scale_plus,
+            "c": 5 * scale_plus,
+            "args": (3 * scale_plus, 4 * scale_plus),
+            "kwargs": {"d": 6 * scale_plus, "e": 7 * scale_plus},
+        } | ({"result": frame.locals["result"]} if depth == max_depth else {})
+        assert frame.locals == locals_
 
     @property
-    def _assert_code_line(self) -> str:
-        return 'assert result > 0, f"Result ({result}) must be positive"'
+    def _code_line_assert(self) -> str:
+        return 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+
+    def _code_line_call(self, func: str, /) -> str:
+        return f"return {func}(a, b, *args, c=c, **kwargs)"
 
 
 class TestYieldExtendedFrameSummaries:
