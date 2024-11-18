@@ -358,6 +358,7 @@ filterwarnings = [
   "error",
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
   "ignore:There is no current event loop:DeprecationWarning",  # eventkit
+  "ignore:Using fork() can cause Polars to deadlock in the child process:RuntimeWarning",  # polars/pqdm
   "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",  # astor
   "ignore:unclosed <StreamWriter .*>:ResourceWarning",  # redis
   "ignore:unclosed <socket.*socket .*>:ResourceWarning",  # redis
