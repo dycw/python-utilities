@@ -306,4 +306,4 @@ def yield_frames(*, traceback: TracebackType | None = None) -> Iterator[FrameTyp
         traceback = traceback.tb_next
 
 
-__all__ = ["yield_extended_frame_summaries", "yield_frames"]
+__all__ = ["TraceError", "trace", "yield_extended_frame_summaries", "yield_frames"]
