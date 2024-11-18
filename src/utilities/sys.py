@@ -6,7 +6,7 @@ from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
 from sys import exc_info, version_info
 from textwrap import indent
-from typing import TYPE_CHECKING, Any, NoReturn, Self, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, NoReturn, Self, TypeVar, cast
 
 from utilities.functions import get_class_name, get_func_name
 from utilities.iterables import one
@@ -23,16 +23,8 @@ _MAX_WIDTH = 80
 _INDENT_SIZE = 4
 
 
-@overload
-def trace(func: _F, /) -> _F: ...
-@overload
-def trace(func: None = None, /) -> Callable[[_F], _F]: ...
-def trace(func: _F | None = None, /) -> _F | Callable[[_F], _F]:
+def trace(func: _F, /) -> _F:
     """Trace a function call."""
-    if func is None:
-        result = partial(trace)
-        return cast(Callable[[_F], _F], result)
-
     if not iscoroutinefunction(func):
 
         @wraps(func)
@@ -46,7 +38,7 @@ def trace(func: _F | None = None, /) -> _F | Callable[[_F], _F]:
             except Exception as error:  # noqa: BLE001
                 _trace_build_and_raise_trace_mixin(error, func, call_args)
 
-        return trace_sync
+        return cast(_F, trace_sync)
 
     @wraps(func)
     async def log_call_async(*args: Any, **kwargs: Any) -> Any:
@@ -227,12 +219,24 @@ class _TraceMixinFrame:
         return self.raw_frame.ext_frame_summary.filename
 
     @property
-    def line_num(self) -> int | None:
-        return self.raw_frame.ext_frame_summary.line_num
+    def name(self) -> str:
+        return self.raw_frame.ext_frame_summary.name
+
+    @property
+    def qualname(self) -> str:
+        return self.raw_frame.ext_frame_summary.qualname
+
+    @property
+    def line(self) -> str | None:
+        return self.raw_frame.ext_frame_summary.line
 
     @property
     def first_line_num(self) -> int:
         return self.raw_frame.ext_frame_summary.first_line_num
+
+    @property
+    def line_num(self) -> int | None:
+        return self.raw_frame.ext_frame_summary.line_num
 
     @property
     def end_line_num(self) -> int | None:
@@ -245,18 +249,6 @@ class _TraceMixinFrame:
     @property
     def end_col_num(self) -> int | None:
         return self.raw_frame.ext_frame_summary.end_col_num
-
-    @property
-    def name(self) -> str:
-        return self.raw_frame.ext_frame_summary.name
-
-    @property
-    def qualname(self) -> str:
-        return self.raw_frame.ext_frame_summary.qualname
-
-    @property
-    def line(self) -> str | None:
-        return self.raw_frame.ext_frame_summary.line
 
     @property
     def locals(self) -> StrMapping:

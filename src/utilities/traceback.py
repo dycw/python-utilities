@@ -18,14 +18,14 @@ class _ExtFrameSummary:
     """An extended frame summary."""
 
     filename: Path
-    line_num: int | None = None
-    first_line_num: int
-    end_line_num: int | None = None
-    col_num: int | None = None
-    end_col_num: int | None = None
     name: str
     qualname: str
     line: str | None = None
+    first_line_num: int
+    line_num: int | None = None
+    end_line_num: int | None = None
+    col_num: int | None = None
+    end_col_num: int | None = None
     locals: StrMapping = field(default_factory=dict)
 
 
@@ -42,14 +42,14 @@ def yield_extended_frame_summaries(
     for summary, frame in zip(tb_exc.stack, frames, strict=True):
         yield _ExtFrameSummary(
             filename=Path(summary.filename),
-            line_num=summary.lineno,
-            first_line_num=frame.f_code.co_firstlineno,
-            end_line_num=summary.end_lineno,
-            col_num=summary.colno,
-            end_col_num=summary.end_colno,
             name=summary.name,
             qualname=frame.f_code.co_qualname,
             line=summary.line,
+            first_line_num=frame.f_code.co_firstlineno,
+            line_num=summary.lineno,
+            end_line_num=summary.end_lineno,
+            col_num=summary.colno,
+            end_col_num=summary.end_colno,
             locals=frame.f_locals,
         )
 

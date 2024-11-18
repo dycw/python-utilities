@@ -29,16 +29,37 @@ if TYPE_CHECKING:
 
 class TestGetExcTraceInfo:
     def test_func_one(self) -> None:
-        result = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        assert result == 28
         with raises(AssertionError) as exc_info:
-            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7, f=-result)
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         error = exc_info.value
         assert isinstance(error, TraceMixin)
         frame = one(error.frames)
-        self._assert(
-            frame, 1, 1, func_one, "one.py", 8, 11, self._assert_code_line, result
+        assert frame.depth == 1
+        assert frame.max_depth == 1
+        assert get_func_name(frame.func) == get_func_name(func_one)
+        assert signature(frame.func) == signature(func_one)
+        assert frame.args == (1, 2, 3, 4)
+        assert frame.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert frame.filename.parts[-2:] == ("test_sys_funcs", "one.py")
+        assert frame.name == "func_one"
+        assert frame.qualname == "func_one"
+        assert (
+            frame.line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
         )
+        assert frame.first_line_num == 8
+        assert frame.line_num == 16
+        assert frame.end_line_num == 16
+        assert frame.col_num == 11
+        assert frame.end_col_num == 27
+        assert frame.locals == {
+            "a": 2,
+            "b": 4,
+            "c": 10,
+            "args": (6, 8),
+            "kwargs": {"d": 12, "e": 14},
+            "result": 56,
+        }
 
     def test_func_two(self) -> None:
         result = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
