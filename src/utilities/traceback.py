@@ -143,6 +143,7 @@ class TraceMixin:
         """Yield the rows for pretty printing the exception."""
         from rich.pretty import pretty_repr
 
+        indent = self._indent
         pretty = partial(
             pretty_repr,
             max_width=max_width,
@@ -153,37 +154,41 @@ class TraceMixin:
             expand_all=expand_all,
         )
 
-        error = f">> {get_class_name(self.error)}: {self.error}"
-
         yield "Error running:"
         yield ""
         for frame in self.frames:
-            yield indent(f"{frame.depth}. {get_func_name(frame.func)}", self._prefix1)
-        yield indent(error, self._prefix1)
+            yield indent(f"{frame.depth}. {get_func_name(frame.func)}", 1)
+        error = f">> {get_class_name(self.error)}: {self.error}"
+        yield indent(error, 1)
         yield ""
-        yield "Traced frames:"
+        yield "Frames:"
         for frame in self.frames:
-            name, filename = get_func_name(frame.func), frame.filename
             yield ""
+            name, filename = get_func_name(frame.func), frame.filename
             desc = f"{name} ({filename}:{frame.first_line_num})" if location else name
-            yield indent(f"{frame.depth}/{frame.max_depth}. {desc}", self._prefix1)
+            yield indent(f"{frame.depth}/{frame.max_depth}. {desc}", 1)
+            yield ""
+            yield indent("Inputs:", 2)
+            yield ""
             for i, arg in enumerate(frame.args):
-                yield indent(f"args[{i}] = {pretty(arg)}", self._prefix2)
+                yield indent(f"args[{i}] = {pretty(arg)}", 3)
             for k, v in frame.kwargs.items():
-                yield indent(f"kwargs[{k!r}] = {pretty(v)}", self._prefix2)
-            yield indent(f">> {frame.code_line}", self._prefix2)
+                yield indent(f"kwargs[{k}] = {pretty(v)}", 3)
+            yield ""
+            yield indent("Locals:", 2)
+            yield ""
+            for k, v in frame.locals.items():
+                yield indent(f"{k} = {pretty(v)}", 3)
+            yield ""
+            yield indent(f">> {frame.code_line}", 2)
             if location:  # pragma: no cover
-                yield indent(f"   ({filename}:{frame.line_num})", self._prefix2)
+                yield indent(f"   ({filename}:{frame.line_num})", 2)
             if frame.depth == frame.max_depth:
-                yield indent(error, self._prefix2)
+                yield indent(error, 2)
 
-    @property
-    def _prefix1(self) -> str:
-        return 2 * " "
-
-    @property
-    def _prefix2(self) -> str:
-        return 2 * self._prefix1
+    def _indent(self, text: str, depth: int, /) -> str:
+        """Indent the text."""
+        return indent(text, 2 * depth * " ")
 
 
 @dataclass(kw_only=True, slots=True)
