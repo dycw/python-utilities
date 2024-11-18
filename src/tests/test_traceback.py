@@ -19,11 +19,12 @@ from tests.test_traceback_funcs.error import func_error_async, func_error_sync
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.two import func_two_first, func_two_second
 from utilities.functions import get_func_name
-from utilities.iterables import one
+from utilities.iterables import OneNonUniqueError, one
 from utilities.text import strip_and_dedent
 from utilities.traceback import (
-    TraceMixin,
+    TraceError,
     _TraceMixinFrame,
+    trace,
     yield_extended_frame_summaries,
     yield_frames,
 )
@@ -34,36 +35,39 @@ if TYPE_CHECKING:
 
 class TestTrace:
     def test_func_one(self) -> None:
-        with raises(AssertionError) as exc_info:
+        with raises(TraceError) as exc_info:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        error = exc_info.value
-        assert isinstance(error, TraceMixin)
-        frame = one(error.frames)
+        trace_error = exc_info.value
+        assert isinstance(trace_error.error, AssertionError)
+        assert one(trace_error.error.args) == "Result (56) must be divisible by 10"
+        frame = one(trace_error.frames)
         self._assert(
             frame, 1, 1, func_one, "one.py", 8, 16, 11, 27, self._code_line_assert
         )
 
     def test_func_two(self) -> None:
-        with raises(AssertionError) as exc_info:
+        with raises(TraceError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
-        error = exc_info.value
-        assert isinstance(error, TraceMixin)
+        trace_error = exc_info.value
+        assert isinstance(trace_error.error, AssertionError)
+        assert one(trace_error.error.args) == "Result (112) must be divisible by 10"
         expected = [
             (func_two_first, 8, 15, 11, 54, self._code_line_call("func_two_second")),
             (func_two_second, 18, 26, 11, 27, self._code_line_assert),
         ]
         for depth, (frame, (func, ln1st, ln, col, col1st, code_ln)) in enumerate(
-            zip(error.frames, expected, strict=True), start=1
+            zip(trace_error.frames, expected, strict=True), start=1
         ):
             self._assert(
                 frame, depth, 2, func, "two.py", ln1st, ln, col, col1st, code_ln
             )
 
     def test_func_decorated(self) -> None:
-        with raises(AssertionError) as exc_info:
+        with raises(TraceError) as exc_info:
             _ = func_decorated_first(1, 2, 3, 4, c=5, d=6, e=7)
-        error = exc_info.value
-        assert isinstance(error, TraceMixin)
+        trace_error = exc_info.value
+        assert isinstance(trace_error.error, AssertionError)
+        assert one(trace_error.error.args) == "Result (896) must be divisible by 10"
         expected = [
             (
                 func_decorated_first,
@@ -100,18 +104,19 @@ class TestTrace:
             (func_decorated_fifth, 73, 88, 11, 27, self._code_line_assert),
         ]
         for depth, (frame, (func, ln1st, ln, col, col1st, code_ln)) in enumerate(
-            zip(error.frames, expected, strict=True), start=1
+            zip(trace_error.frames, expected, strict=True), start=1
         ):
             self._assert(
                 frame, depth, 5, func, "decorated.py", ln1st, ln, col, col1st, code_ln
             )
 
     async def test_func_async(self) -> None:
-        with raises(AssertionError) as exc_info:
+        with raises(TraceError) as exc_info:
             _ = await func_async(1, 2, 3, 4, c=5, d=6, e=7)
-        error = exc_info.value
-        assert isinstance(error, TraceMixin)
-        frame = one(error.frames)
+        trace_error = exc_info.value
+        assert isinstance(trace_error.error, AssertionError)
+        assert one(trace_error.error.args) == "Result (56) must be divisible by 10"
+        frame = one(trace_error.frames)
         self._assert(
             frame, 1, 1, func_async, "async_.py", 9, 18, 11, 27, self._code_line_assert
         )
@@ -120,19 +125,22 @@ class TestTrace:
         with raises(ExceptionGroup) as exc_info:
             async with TaskGroup() as tg:
                 _ = tg.create_task(func_async(1, 2, 3, 4, c=5, d=6, e=7))
-        error = one(exc_info.value.exceptions)
-        assert isinstance(error, TraceMixin)
-        frame = one(error.frames)
+        trace_error = one(exc_info.value.exceptions)
+        assert isinstance(trace_error, TraceError)
+        assert isinstance(trace_error.error, AssertionError)
+        assert one(trace_error.error.args) == "Result (56) must be divisible by 10"
+        frame = one(trace_error.frames)
         self._assert(
             frame, 1, 1, func_async, "async_.py", 9, 18, 11, 27, self._code_line_assert
         )
 
     def test_pretty(self) -> None:
-        with raises(AssertionError) as exc_info:
+        with raises(TraceError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
-        error = exc_info.value
-        assert isinstance(error, TraceMixin)
-        result = error.pretty(location=False)
+        trace_error = exc_info.value
+        assert isinstance(trace_error.error, AssertionError)
+        assert one(trace_error.error.args) == "Result (112) must be divisible by 10"
+        result = trace_error.pretty(location=False)
         expected = strip_and_dedent("""
             Error running:
 
@@ -189,6 +197,18 @@ class TestTrace:
                 >> AssertionError: Result (112) must be divisible by 10
         """)
         assert result == expected
+
+    def test_non_standard_error(self) -> None:
+        @trace
+        def raises_custom_error() -> bool:
+            return one([True, False])
+
+        with raises(TraceError) as exc_info:
+            _ = raises_custom_error()
+        one_error = exc_info.value.error
+        assert isinstance(one_error, OneNonUniqueError)
+        assert one_error.first is True
+        assert one_error.second is False
 
     def test_error_bind_sync(self) -> None:
         with raises(

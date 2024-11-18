@@ -8,7 +8,7 @@ from pathlib import Path
 from sys import exc_info
 from textwrap import indent
 from traceback import TracebackException
-from typing import TYPE_CHECKING, Any, NoReturn, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, NoReturn, Self, TypeVar, cast
 
 from utilities.functions import ensure_not_none, get_class_name, get_func_name
 from utilities.iterables import one
@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from utilities.typing import StrMapping
 
 _F = TypeVar("_F", bound=Callable[..., Any])
+_TException = TypeVar("_TException", bound=Exception)
 _MAX_WIDTH = 80
 _INDENT_SIZE = 4
 
@@ -55,25 +56,6 @@ def trace(func: _F, /) -> _F:
     return cast(_F, log_call_async)
 
 
-def _trace_build_and_raise_trace_mixin(
-    error: Exception, func: Callable[..., Any], call_args: _CallArgs, /
-) -> NoReturn:
-    """Build and raise a TraceMixin exception."""
-    frames = list(yield_extended_frame_summaries(error))
-    frame = one(f for f in frames if f.name == get_func_name(func))
-    trace_frame = _RawTraceMixinFrame(call_args=call_args, ext_frame_summary=frame)
-    cls = type(error)
-    if isinstance(error, TraceMixin):
-        bases = (cls,)
-        raw_frames = [*error.raw_frames, trace_frame]
-    else:
-        bases = (cls, TraceMixin)
-        raw_frames = [trace_frame]
-    raise type(cls.__name__, bases, {"error": error, "raw_frames": raw_frames})(
-        *error.args
-    ) from None
-
-
 @dataclass(kw_only=True, slots=True)
 class _CallArgs:
     """A collection of call arguments."""
@@ -89,11 +71,27 @@ class _CallArgs:
         return cls(func=func, args=bound_args.args, kwargs=bound_args.kwargs)
 
 
-@dataclass(kw_only=True, slots=False)  # no slots
-class TraceMixin:
-    """Mix-in for tracking an exception and its call stack."""
+def _trace_build_and_raise_trace_mixin(
+    error: Exception, func: Callable[..., Any], call_args: _CallArgs, /
+) -> NoReturn:
+    """Build and raise a TraceMixin exception."""
+    frames = list(yield_extended_frame_summaries(error))
+    frame = one(f for f in frames if f.name == get_func_name(func))
+    trace_frame = _RawTraceMixinFrame(call_args=call_args, ext_frame_summary=frame)
+    if isinstance(error, TraceError):
+        error_use = error.error
+        raw_frames = [*error.raw_frames, trace_frame]
+    else:
+        error_use = error
+        raw_frames = [trace_frame]
+    raise TraceError(error=error_use, raw_frames=raw_frames) from None
 
-    error: Exception
+
+@dataclass(kw_only=True, slots=False)  # no slots
+class TraceError(Exception, Generic[_TException]):
+    """Error with a stack trace."""
+
+    error: _TException
     raw_frames: list[_RawTraceMixinFrame] = field(default_factory=list)
 
     @property
