@@ -7,6 +7,7 @@ from typing import Any, Literal, TypeVar, cast
 
 from hypothesis import given
 from hypothesis.strategies import integers, lists
+from ib_async import Future
 from pytest import mark, param, raises
 
 from utilities.dataclasses import (
@@ -98,6 +99,41 @@ class TestAsDictWithoutDefaults:
         obj = Outer(no_default=Inner(no_default=y))
         result = asdict_without_defaults(obj)
         expected = {"no_default": {"no_default": y}}
+        assert result == expected
+
+    def test_ib_async(self) -> None:
+        fut = Future(
+            conId=495512557,
+            symbol="ES",
+            lastTradeDateOrContractMonth="20241220",
+            strike=0.0,
+            right="",
+            multiplier="50",
+            exchange="",
+            primaryExchange="",
+            currency="USD",
+            localSymbol="ESZ4",
+            tradingClass="ES",
+            includeExpired=False,
+            secIdType="",
+            secId="",
+            description="",
+            issuerId="",
+            comboLegsDescrip="",
+            comboLegs=[],
+            deltaNeutralContract=None,
+        )
+        result = asdict_without_defaults(fut)
+        expected = {
+            "secType": "FUT",
+            "conId": 495512557,
+            "symbol": "ES",
+            "lastTradeDateOrContractMonth": "20241220",
+            "multiplier": "50",
+            "currency": "USD",
+            "localSymbol": "ESZ4",
+            "tradingClass": "ES",
+        }
         assert result == expected
 
 

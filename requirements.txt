@@ -95,7 +95,9 @@ deprecated==1.2.15
 distlib==0.3.9
     # via virtualenv
 eventkit==1.0.3
-    # via dycw-utilities (pyproject.toml)
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   ib-async
 execnet==2.1.1
     # via pytest-xdist
 filelock==3.16.1
@@ -131,6 +133,8 @@ humanfriendly==10.0
 hyperlink==21.0.0
     # via hatch
 hypothesis==6.119.3
+    # via dycw-utilities (pyproject.toml)
+ib-async==1.0.3
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -191,7 +195,9 @@ multidict==6.1.0
 narwhals==1.14.0
     # via altair
 nest-asyncio==1.6.0
-    # via dycw-utilities (pyproject.toml)
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   ib-async
 nox==2024.10.9
     # via dycw-utilities (pyproject.toml)
 numba==0.60.0
