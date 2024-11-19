@@ -21,7 +21,7 @@ from orjson import loads
 from pytest import mark, param, raises
 
 from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
-from utilities.orjson2 import deserialize2, serialize2
+from utilities.orjson2 import _Deserialize2NoObjectsError, deserialize2, serialize2
 from utilities.sentinel import sentinel
 
 _Object = bool | float | str | dt.date | dt.datetime
@@ -58,7 +58,6 @@ class TestSerializeAndDeserialize2:
         result = deserialize2(serialize2(objects))
         assert result == objects
 
-    # @mark.only
     @given(x=int64s() | none())
     def test_dataclass(self, *, x: int | None) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -88,10 +87,22 @@ class TestSerializeAndDeserialize2:
             z: list[Inner] = field(default_factory=list)
 
         obj = data.draw(builds(Outer, x=inner_st, y=inner_st, z=lists(inner_st)))
-        ser = serialize2(obj)
-        # assert 0, ser
-        result = deserialize2(ser, objects={Outer, Inner})
+        result = deserialize2(serialize2(obj), objects={Outer, Inner})
         assert result == obj
+
+    @given(x=int64s() | none())
+    def test_dataclass_without_objects(self, *, x: int | None) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int | None = None
+
+        obj = Example(x=x)
+        ser = serialize2(obj)
+        with raises(
+            _Deserialize2NoObjectsError,
+            match="Objects required to deserialize .* from .*",
+        ):
+            _ = deserialize2(ser)
 
     def test_arbitrary_objects(self) -> None:
         with raises(TypeError, match="Type is not JSON serializable: Sentinel"):

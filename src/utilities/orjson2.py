@@ -2,13 +2,11 @@ from __future__ import annotations
 
 import datetime as dt
 import re
-from dataclasses import MISSING, fields, is_dataclass
-from enum import Enum, StrEnum, unique
+from dataclasses import dataclass
+from enum import Enum, unique
 from functools import partial
-from re import escape, search
-from typing import TYPE_CHECKING, AbstractSet, Any
+from typing import TYPE_CHECKING, AbstractSet, Any, Never, assert_never, cast
 
-from dacite import from_dict
 from orjson import (
     OPT_PASSTHROUGH_DATACLASS,
     OPT_PASSTHROUGH_DATETIME,
@@ -17,6 +15,7 @@ from orjson import (
     dumps,
     loads,
 )
+from typing_extensions import override
 
 from utilities.dataclasses import (
     Dataclass,
@@ -33,9 +32,7 @@ from utilities.whenever import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-
-    from utilities.types import StrMapping, ensure_class
+    from utilities.types import StrMapping
 
 
 @unique
@@ -79,13 +76,10 @@ def _serialize2_dataclass_final(
 
 
 def deserialize2(
-    data: bytes,
-    /,
-    *,
-    objects: AbstractSet[type[Dataclass]] | None = None,
+    data: bytes, /, *, objects: AbstractSet[type[Dataclass]] | None = None
 ) -> Any:
     """Deserialize an object."""
-    return _object_hook(loads(data), objects=objects)
+    return _object_hook(loads(data), data=data, objects=objects)
 
 
 _DATACLASS_PATTERN = re.compile(r"^\[" + _Prefixes.dataclass.value + r"\|(.+?)\]$")
@@ -97,6 +91,7 @@ def _object_hook(
     obj: bool | float | str | dict[str, Any] | list[Any] | Dataclass,  # noqa: FBT001
     /,
     *,
+    data: bytes,
     objects: AbstractSet[type[Dataclass]] | None = None,
 ) -> Any:
     match obj:
@@ -118,7 +113,7 @@ def _object_hook(
                     value, dict
                 ):
                     if objects is None:
-                        raise _Deserialize2NoObjectMappingsError(obj=obj)
+                        raise _Deserialize2NoObjectsError(data=data, obj=obj)
                     qualname = match.group(1)
                     try:
                         cls = one(o for o in objects if o.__qualname__ == qualname)
@@ -129,16 +124,31 @@ def _object_hook(
                             obj=obj, qualname=qualname
                         ) from error
                     return cls(**{
-                        k: _object_hook(v, objects=objects) for k, v in value.items()
+                        k: _object_hook(v, data=data, objects=objects)
+                        for k, v in value.items()
                     })
-                return {k: _object_hook(v, objects=objects) for k, v in obj.items()}
-            return {k: _object_hook(v) for k, v in obj.items()}
+                return {
+                    k: _object_hook(v, data=data, objects=objects)
+                    for k, v in obj.items()
+                }
+            return {k: _object_hook(v, data=data) for k, v in obj.items()}
         case list():
-            return [_object_hook(o, objects=objects) for o in obj]
-        case _:
-            msg = f"Object {obj} of type {get_class_name(obj)}"
-            raise TypeError(msg)
-    return None
+            return [_object_hook(o, data=data, objects=objects) for o in obj]
+        case _ as never:  # pragma: no cover
+            assert_never(cast(Never, never))
 
 
-__all__ = ["deserialize2", "serialize2"]
+@dataclass(kw_only=True, slots=True)
+class Deserialize2Error(Exception):
+    data: bytes
+    obj: Any
+
+
+@dataclass(kw_only=True, slots=True)
+class _Deserialize2NoObjectsError(Deserialize2Error):
+    @override
+    def __str__(self) -> str:
+        return f"Objects required to deserialize {self.obj!r} from {self.data!r}"
+
+
+__all__ = ["Deserialize2Error", "deserialize2", "serialize2"]
