@@ -54,20 +54,37 @@ def serialize2(
     fallback: bool = False,
 ) -> bytes:
     """Serialize an object."""
+    asdict_final = partial(_dataclass_hook_final, hook=dataclass_hook)
+    if is_dataclass_instance(obj):
+        obj_use = asdict_without_defaults(obj, final=asdict_final)
+    else:
+        obj_use = obj
     return dumps(
-        obj,
+        obj_use,
         default=partial(
-            _serialize2_default, dataclass_hook=dataclass_hook, fallback=fallback
+            _serialize2_default, dataclass_asdict_final=asdict_final, fallback=fallback
         ),
         option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
     )
+
+
+def _dataclass_hook_final(
+    cls: type[Dataclass],
+    mapping: StrMapping,
+    /,
+    *,
+    hook: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
+) -> StrMapping:
+    if hook is not None:
+        mapping = hook(cls, mapping)
+    return {f"[{_Prefixes.dataclass.value}|{cls.__qualname__}]": mapping}
 
 
 def _serialize2_default(
     obj: Any,
     /,
     *,
-    dataclass_hook: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
+    dataclass_asdict_final: Callable[[type[Dataclass], StrMapping], StrMapping],
     fallback: bool = False,
 ) -> str:
     if isinstance(obj, dt.datetime):
@@ -80,25 +97,11 @@ def _serialize2_default(
         ser = serialize_timedelta(obj)
         return f"[{_Prefixes.timedelta.value}]{ser}"
     if is_dataclass_instance(obj):
-        mapping = asdict_without_defaults(
-            obj, final=partial(_serialize2_dataclass_final, hook=dataclass_hook)
-        )
+        mapping = asdict_without_defaults(obj, final=dataclass_asdict_final)
         return serialize2(mapping).decode()
     if fallback:
         return str(obj)
     raise TypeError
-
-
-def _serialize2_dataclass_final(
-    cls: type[Dataclass],
-    mapping: StrMapping,
-    /,
-    *,
-    hook: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
-) -> StrMapping:
-    if hook is not None:
-        mapping = hook(cls, mapping)
-    return {f"[{_Prefixes.dataclass.value}|{cls.__qualname__}]": mapping}
 
 
 def deserialize2(
