@@ -54,21 +54,21 @@ def serialize2(
     fallback: bool = False,
 ) -> bytes:
     """Serialize an object."""
-    dataclass_hook_use = partial(_serialize2_dataclass_final, hook=dataclass_hook)
+    asdict_final = partial(_dataclass_hook_final, hook=dataclass_hook)
     if is_dataclass_instance(obj):
-        obj_use = asdict_without_defaults(obj, final=dataclass_hook_use)
+        obj_use = asdict_without_defaults(obj, final=asdict_final)
     else:
         obj_use = obj
     return dumps(
         obj_use,
         default=partial(
-            _serialize2_default, dataclass_hook=dataclass_hook_use, fallback=fallback
+            _serialize2_default, dataclass_hook=asdict_final, fallback=fallback
         ),
         option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
     )
 
 
-def _serialize2_dataclass_final(
+def _dataclass_hook_final(
     cls: type[Dataclass],
     mapping: StrMapping,
     /,
@@ -84,7 +84,7 @@ def _serialize2_default(
     obj: Any,
     /,
     *,
-    dataclass_hook: Callable[[type[Dataclass], StrMapping], StrMapping],
+    dataclass_asdict_final: Callable[[type[Dataclass], StrMapping], StrMapping],
     fallback: bool = False,
 ) -> str:
     if isinstance(obj, dt.datetime):
@@ -97,7 +97,7 @@ def _serialize2_default(
         ser = serialize_timedelta(obj)
         return f"[{_Prefixes.timedelta.value}]{ser}"
     if is_dataclass_instance(obj):
-        mapping = asdict_without_defaults(obj, final=dataclass_hook)
+        mapping = asdict_without_defaults(obj, final=dataclass_asdict_final)
         return serialize2(mapping).decode()
     if fallback:
         return str(obj)
