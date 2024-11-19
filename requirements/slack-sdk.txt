@@ -49,7 +49,7 @@ pytest-randomly==3.16.0
     # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==14.0
     # via dycw-utilities (pyproject.toml)
-slack-sdk==3.33.3
+slack-sdk==3.33.4
     # via dycw-utilities (pyproject.toml)
 sortedcontainers==2.4.0
     # via hypothesis

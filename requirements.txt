@@ -372,7 +372,7 @@ six==1.16.0
     # via
     #   python-dateutil
     #   treelib
-slack-sdk==3.33.3
+slack-sdk==3.33.4
     # via dycw-utilities (pyproject.toml)
 smmap==5.0.1
     # via gitdb
