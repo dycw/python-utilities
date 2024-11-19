@@ -1,10 +1,23 @@
 from __future__ import annotations
 
 import datetime as dt
-from dataclasses import dataclass
+from dataclasses import dataclass, field, fields
 
 from hypothesis import given, reproduce_failure
-from hypothesis.strategies import booleans, dates, dictionaries, floats, lists
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    builds,
+    data,
+    dates,
+    dictionaries,
+    floats,
+    integers,
+    lists,
+    none,
+    sampled_from,
+)
+from orjson import loads
 from pytest import mark, param, raises
 
 from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
@@ -24,10 +37,7 @@ objects = (
 
 class TestSerializeAndDeserialize2:
     @given(obj=objects)
-    @reproduce_failure("6.119.3", b"AAQAAAAAAA==")
-    @mark.only
     def test_main(self, *, obj: _Object) -> None:
-        s = serialize2(obj)
         result = deserialize2(serialize2(obj))
         assert result == obj
 
@@ -48,16 +58,40 @@ class TestSerializeAndDeserialize2:
         result = deserialize2(serialize2(objects))
         assert result == objects
 
-    @mark.skip
-    def test_dataclass(self) -> None:
+    # @mark.only
+    @given(x=int64s() | none())
+    def test_dataclass(self, *, x: int | None) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: int | None = None
 
-        obj = Example()
+        obj = Example(x=x)
         ser = serialize2(obj)
-        expected = serialize2({Example.__qualname__: {}})
-        assert ser == expected
+        result = deserialize2(ser, objects={Example})
+        assert result == obj
+
+    @given(data=data())
+    def test_dataclass_nested(self, *, data: DataObject) -> None:
+        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        class Inner:
+            a: int
+            b: int = 0
+            c: list[int] = field(default_factory=list)
+
+        inner_st = builds(Inner, a=int64s(), b=int64s(), c=lists(int64s()))
+        inner_default = data.draw(inner_st)
+
+        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        class Outer:
+            x: Inner
+            y: Inner = inner_default
+            z: list[Inner] = field(default_factory=list)
+
+        obj = data.draw(builds(Outer, x=inner_st, y=inner_st, z=lists(inner_st)))
+        ser = serialize2(obj)
+        # assert 0, ser
+        result = deserialize2(ser, objects={Outer, Inner})
+        assert result == obj
 
     def test_arbitrary_objects(self) -> None:
         with raises(TypeError, match="Type is not JSON serializable: Sentinel"):
