@@ -2,12 +2,27 @@ from __future__ import annotations
 
 import datetime as dt
 import re
+from dataclasses import dataclass
+from enum import Enum, unique
 from functools import partial
-from re import escape
-from typing import Any
+from typing import TYPE_CHECKING, Any, Never, assert_never, cast
 
-from orjson import OPT_PASSTHROUGH_DATETIME, OPT_SORT_KEYS, dumps, loads
+from orjson import (
+    OPT_PASSTHROUGH_DATACLASS,
+    OPT_PASSTHROUGH_DATETIME,
+    OPT_SORT_KEYS,
+    JSONDecodeError,
+    dumps,
+    loads,
+)
+from typing_extensions import override
 
+from utilities.dataclasses import (
+    Dataclass,
+    asdict_without_defaults,
+    is_dataclass_instance,
+)
+from utilities.iterables import OneEmptyError, one
 from utilities.whenever import (
     parse_date,
     parse_zoned_datetime,
@@ -15,8 +30,18 @@ from utilities.whenever import (
     serialize_zoned_datetime,
 )
 
-_DATE_PREFIX = "[d]"
-_DATETIME_PREFIX = "[t]"
+if TYPE_CHECKING:
+    from collections.abc import Set as AbstractSet
+
+    from utilities.types import StrMapping
+
+
+@unique
+class _Prefixes(Enum):
+    # keep in order of deserialization
+    datetime = "dt"
+    date = "d"
+    dataclass = "dc"
 
 
 def serialize2(obj: Any, /, *, fallback: bool = False) -> bytes:
@@ -24,42 +49,112 @@ def serialize2(obj: Any, /, *, fallback: bool = False) -> bytes:
     return dumps(
         obj,
         default=partial(_serialize2_default, fallback=fallback),
-        option=OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
+        option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
     )
 
 
 def _serialize2_default(obj: Any, /, *, fallback: bool = False) -> str:
     if isinstance(obj, dt.datetime):
         ser = serialize_zoned_datetime(obj)
-        return f"{_DATETIME_PREFIX}{ser}"
-    if isinstance(obj, dt.date):
+        return f"[{_Prefixes.datetime.value}]{ser}"
+    if isinstance(obj, dt.date):  # after datetime
         ser = serialize_date(obj)
-        return f"{_DATE_PREFIX}{ser}"
+        return f"[{_Prefixes.date.value}]{ser}"
+    if is_dataclass_instance(obj):
+        mapping = asdict_without_defaults(obj, final=_serialize2_dataclass_final)
+        return serialize2(mapping).decode()
     if fallback:
         return str(obj)
     raise TypeError
 
 
-def deserialize2(data: bytes, /) -> Any:
+def _serialize2_dataclass_final(
+    obj: type[Dataclass], mapping: StrMapping, /
+) -> dict[str, Any]:
+    return {f"[{_Prefixes.dataclass.value}|{obj.__qualname__}]": mapping}
+
+
+def deserialize2(
+    data: bytes, /, *, objects: AbstractSet[type[Dataclass]] | None = None
+) -> Any:
     """Deserialize an object."""
-    return _object_hook(loads(data))
+    return _object_hook(loads(data), data=data, objects=objects)
 
 
-_DATE_PATTERN = re.compile(rf"^{escape(_DATE_PREFIX)}(.+)$")
-_DATETIME_PATTERN = re.compile(rf"^{escape(_DATETIME_PREFIX)}(.+)$")
+_DATACLASS_PATTERN = re.compile(r"^\[" + _Prefixes.dataclass.value + r"\|(.+?)\]$")
+_DATE_PATTERN = re.compile(r"^\[" + _Prefixes.date.value + r"\](.+)$")
+_DATETIME_PATTERN = re.compile(r"^\[" + _Prefixes.datetime.value + r"\](.+)$")
 
 
-def _object_hook(obj: Any, /) -> Any:
-    if isinstance(obj, str):
-        if match := _DATE_PATTERN.search(obj):
-            return parse_date(match.group(1))
-        if match := _DATETIME_PATTERN.search(obj):
-            return parse_zoned_datetime(match.group(1))
-    if isinstance(obj, dict):
-        return {k: _object_hook(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return list(map(_object_hook, obj))
-    return obj
+def _object_hook(
+    obj: bool | float | str | dict[str, Any] | list[Any] | Dataclass,  # noqa: FBT001
+    /,
+    *,
+    data: bytes,
+    objects: AbstractSet[type[Dataclass]] | None = None,
+) -> Any:
+    match obj:
+        case bool() | int() | float() | Dataclass():
+            return obj
+        case str():
+            if match := _DATETIME_PATTERN.search(obj):
+                return parse_zoned_datetime(match.group(1))
+            if match := _DATE_PATTERN.search(obj):
+                return parse_date(match.group(1))
+            try:
+                return deserialize2(obj.encode(), objects=objects)
+            except JSONDecodeError:
+                return obj
+        case dict():
+            if len(obj) == 1:
+                key, value = one(obj.items())
+                if (match := _DATACLASS_PATTERN.search(key)) and isinstance(
+                    value, dict
+                ):
+                    if objects is None:
+                        raise _Deserialize2NoObjectsError(data=data, obj=obj)
+                    qualname = match.group(1)
+                    try:
+                        cls = one(o for o in objects if o.__qualname__ == qualname)
+                    except OneEmptyError:
+                        raise _Deserialize2ObjectEmptyError(
+                            data=data, obj=obj, qualname=qualname
+                        ) from None
+                    return cls(**{
+                        k: _object_hook(v, data=data, objects=objects)
+                        for k, v in value.items()
+                    })
+                return {
+                    k: _object_hook(v, data=data, objects=objects)
+                    for k, v in obj.items()
+                }
+            return {k: _object_hook(v, data=data) for k, v in obj.items()}
+        case list():
+            return [_object_hook(o, data=data, objects=objects) for o in obj]
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(cast(Never, never))
 
 
-__all__ = ["deserialize2", "serialize2"]
+@dataclass(kw_only=True, slots=True)
+class Deserialize2Error(Exception):
+    data: bytes
+    obj: Any
+
+
+@dataclass(kw_only=True, slots=True)
+class _Deserialize2NoObjectsError(Deserialize2Error):
+    @override
+    def __str__(self) -> str:
+        return f"Objects required to deserialize {self.obj!r} from {self.data!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _Deserialize2ObjectEmptyError(Deserialize2Error):
+    qualname: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to find object {self.qualname!r} to deserialize {self.obj!r} (from {self.data!r})"
+
+
+__all__ = ["Deserialize2Error", "deserialize2", "serialize2"]
