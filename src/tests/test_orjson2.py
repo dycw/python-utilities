@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -25,6 +26,10 @@ from utilities.orjson2 import (
     serialize2,
 )
 from utilities.sentinel import sentinel
+
+if TYPE_CHECKING:
+    from utilities.dataclasses import Dataclass
+    from utilities.types import StrMapping
 
 _Object = bool | float | str | dt.date | dt.datetime
 objects = (
@@ -120,7 +125,24 @@ class TestSerializeAndDeserialize2:
         ):
             _ = deserialize2(ser, objects=set())
 
-    def test_arbitrary_objects(self) -> None:
+
+class TestSerialize2:
+    @given(x=int64s())
+    def test_dataclass_hook(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int | None = None
+
+        obj = Example(x=x)
+
+        def hook(_: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
+            return {k: v for k, v in mapping.items() if v >= 0}
+
+        result = deserialize2(serialize2(obj, dataclass_hook=hook), objects={Example})
+        expected = Example(x=x) if x >= 0 else Example()
+        assert result == expected
+
+    def test_fallback(self) -> None:
         with raises(TypeError, match="Type is not JSON serializable: Sentinel"):
             _ = serialize2(sentinel)
         result = serialize2(sentinel, fallback=True)

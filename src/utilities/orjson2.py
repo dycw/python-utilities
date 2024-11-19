@@ -31,6 +31,7 @@ from utilities.whenever import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from collections.abc import Set as AbstractSet
 
     from utilities.types import StrMapping
@@ -44,16 +45,30 @@ class _Prefixes(Enum):
     dataclass = "dc"
 
 
-def serialize2(obj: Any, /, *, fallback: bool = False) -> bytes:
+def serialize2(
+    obj: Any,
+    /,
+    *,
+    dataclass_hook: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
+    fallback: bool = False,
+) -> bytes:
     """Serialize an object."""
     return dumps(
         obj,
-        default=partial(_serialize2_default, fallback=fallback),
+        default=partial(
+            _serialize2_default, dataclass_hook=dataclass_hook, fallback=fallback
+        ),
         option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
     )
 
 
-def _serialize2_default(obj: Any, /, *, fallback: bool = False) -> str:
+def _serialize2_default(
+    obj: Any,
+    /,
+    *,
+    dataclass_hook: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
+    fallback: bool = False,
+) -> str:
     if isinstance(obj, dt.datetime):
         ser = serialize_zoned_datetime(obj)
         return f"[{_Prefixes.datetime.value}]{ser}"
@@ -61,7 +76,9 @@ def _serialize2_default(obj: Any, /, *, fallback: bool = False) -> str:
         ser = serialize_date(obj)
         return f"[{_Prefixes.date.value}]{ser}"
     if is_dataclass_instance(obj):
-        mapping = asdict_without_defaults(obj, final=_serialize2_dataclass_final)
+        mapping = asdict_without_defaults(
+            obj, final=partial(_serialize2_dataclass_final, hook=dataclass_hook)
+        )
         return serialize2(mapping).decode()
     if fallback:
         return str(obj)
@@ -69,9 +86,15 @@ def _serialize2_default(obj: Any, /, *, fallback: bool = False) -> str:
 
 
 def _serialize2_dataclass_final(
-    obj: type[Dataclass], mapping: StrMapping, /
-) -> dict[str, Any]:
-    return {f"[{_Prefixes.dataclass.value}|{obj.__qualname__}]": mapping}
+    cls: type[Dataclass],
+    mapping: StrMapping,
+    /,
+    *,
+    hook: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
+) -> StrMapping:
+    if hook is not None:
+        mapping = hook(cls, mapping)
+    return {f"[{_Prefixes.dataclass.value}|{cls.__qualname__}]": mapping}
 
 
 def deserialize2(
