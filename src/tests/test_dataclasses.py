@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from types import NoneType
-from typing import Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
 from hypothesis import given
 from hypothesis.strategies import integers, lists
@@ -21,7 +21,11 @@ from utilities.dataclasses import (
     replace_non_sentinel,
     yield_field_names,
 )
+from utilities.functions import get_class_name
 from utilities.sentinel import sentinel
+
+if TYPE_CHECKING:
+    from utilities.types import StrMapping
 
 
 class TestAsDictWithoutDefaults:
@@ -99,6 +103,30 @@ class TestAsDictWithoutDefaults:
         obj = Outer(no_default=Inner(no_default=y))
         result = asdict_without_defaults(obj)
         expected = {"no_default": {"no_default": y}}
+        assert result == expected
+
+    @given(x=integers(), y=integers())
+    def test_nested_with_final(self, *, x: int, y: int) -> None:
+        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        class Inner:
+            no_default: int
+            default: int = 0
+            default_factory: list[int] = field(default_factory=list)
+
+        inner_default = Inner(no_default=x)
+
+        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        class Outer:
+            no_default: Inner
+            default: Inner = inner_default
+            default_factory: list[Inner] = field(default_factory=list)
+
+        def final(obj: type[Dataclass], mapping: StrMapping) -> StrMapping:
+            return {f"[{get_class_name(obj)}]": mapping}
+
+        obj = Outer(no_default=Inner(no_default=y))
+        result = asdict_without_defaults(obj, final=final)
+        expected = {"[Outer]": {"no_default": {"[Inner]": {"no_default": y}}}}
         assert result == expected
 
     def test_ib_async(self) -> None:

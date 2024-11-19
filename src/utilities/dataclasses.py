@@ -16,7 +16,7 @@ from typing_extensions import Protocol, override
 from utilities.sentinel import Sentinel
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
 
     from utilities.types import StrMapping
 
@@ -28,7 +28,12 @@ class Dataclass(Protocol):
     __dataclass_fields__: ClassVar[dict[str, Any]]
 
 
-def asdict_without_defaults(obj: Dataclass, /) -> StrMapping:
+def asdict_without_defaults(
+    obj: Dataclass,
+    /,
+    *,
+    final: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
+) -> StrMapping:
     """Cast a dataclass as a dictionary, without its defaults."""
     out: dict[str, Any] = {}
     for field in fields(obj):
@@ -48,11 +53,11 @@ def asdict_without_defaults(obj: Dataclass, /) -> StrMapping:
             )
         ):
             if is_dataclass_instance(value):
-                value_as_dict = asdict_without_defaults(value)
+                value_as_dict = asdict_without_defaults(value, final=final)
             else:
                 value_as_dict = value
             out[name] = value_as_dict
-    return out
+    return out if final is None else final(type(obj), out)
 
 
 def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
