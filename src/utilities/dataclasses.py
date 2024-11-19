@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import MISSING, fields, is_dataclass, replace
-from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -48,7 +47,11 @@ def asdict_without_defaults(obj: Dataclass, /) -> StrMapping:
                 and (value != field.default_factory())
             )
         ):
-            out[name] = value
+            if is_dataclass_instance(value):
+                value_as_dict = asdict_without_defaults(value)
+            else:
+                value_as_dict = value
+            out[name] = value_as_dict
     return out
 
 

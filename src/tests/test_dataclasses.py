@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from types import NoneType
 from typing import Any, Literal, TypeVar, cast
@@ -39,7 +39,6 @@ class TestAsDictWithoutDefaults:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: int = 0
-            # x: Sequence[int] = field(default_factory=list)
 
         obj = Example()
         result = asdict_without_defaults(obj)
@@ -78,6 +77,27 @@ class TestAsDictWithoutDefaults:
         obj = Example(x=x)
         result = asdict_without_defaults(obj)
         expected = {"x": x}
+        assert result == expected
+
+    @given(x=integers(), y=integers())
+    def test_nested(self, *, x: int, y: int) -> None:
+        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        class Inner:
+            no_default: int
+            default: int = 0
+            default_factory: list[int] = field(default_factory=list)
+
+        inner_default = Inner(no_default=x)
+
+        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        class Outer:
+            no_default: Inner
+            default: Inner = inner_default
+            default_factory: list[Inner] = field(default_factory=list)
+
+        obj = Outer(no_default=Inner(no_default=y))
+        result = asdict_without_defaults(obj)
+        expected = {"no_default": {"no_default": y}}
         assert result == expected
 
 
