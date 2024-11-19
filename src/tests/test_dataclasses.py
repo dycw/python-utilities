@@ -5,11 +5,14 @@ from enum import Enum, auto
 from types import NoneType
 from typing import Any, Literal, TypeVar, cast
 
+from hypothesis import given
+from hypothesis.strategies import integers, lists
 from pytest import mark, param, raises
 
 from utilities.dataclasses import (
     Dataclass,
     GetDataClassClassError,
+    asdict_without_defaults,
     get_dataclass_class,
     get_dataclass_fields,
     is_dataclass_class,
@@ -18,6 +21,64 @@ from utilities.dataclasses import (
     yield_field_names,
 )
 from utilities.sentinel import sentinel
+
+
+class TestAsDictWithoutDefaults:
+    @given(x=integers())
+    def test_field_without_defaults(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        obj = Example(x=x)
+        result = asdict_without_defaults(obj)
+        expected = {"x": x}
+        assert result == expected
+
+    def test_field_with_default_and_value_equal(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+            # x: Sequence[int] = field(default_factory=list)
+
+        obj = Example()
+        result = asdict_without_defaults(obj)
+        expected = {}
+        assert result == expected
+
+    @given(x=integers().filter(lambda x: x != 0))
+    def test_field_with_default_and_value_not_equal(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+        obj = Example(x=x)
+        result = asdict_without_defaults(obj)
+        expected = {"x": x}
+        assert result == expected
+
+    def test_field_with_default_factory_and_value_equal(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: list[int] = field(default_factory=list)
+
+        obj = Example()
+        result = asdict_without_defaults(obj)
+        expected = {}
+        assert result == expected
+
+    @given(x=lists(integers(), min_size=1))
+    def test_field_with_default_factory_and_value_not_equal(
+        self, *, x: list[int]
+    ) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: list[int] = field(default_factory=list)
+
+        obj = Example(x=x)
+        result = asdict_without_defaults(obj)
+        expected = {"x": x}
+        assert result == expected
 
 
 class TestDataClassProtocol:

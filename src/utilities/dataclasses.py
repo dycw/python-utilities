@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import fields, is_dataclass, replace
+from dataclasses import MISSING, fields, is_dataclass, replace
+from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -26,6 +27,37 @@ class Dataclass(Protocol):
     """Protocol for `dataclass` classes."""
 
     __dataclass_fields__: ClassVar[dict[str, Any]]
+
+
+def asdict_without_defaults(obj: Dataclass, /) -> StrMapping:
+    """Cast a dataclass as a dictionary, without its defaults."""
+    out: dict[str, Any] = {}
+    for field in fields(obj):
+        name = field.name
+        value = getattr(obj, name)
+        if (
+            ((field.default is MISSING) and (field.default_factory is MISSING))
+            or (
+                (field.default is not MISSING)
+                and (field.default_factory is MISSING)
+                and (value != field.default)
+            )
+            or (
+                (field.default is MISSING)
+                and (field.default_factory is not MISSING)
+                and (value != field.default_factory())
+            )
+        ):
+            out[name] = value
+    return out
+    return replace_non_sentinel(
+        obj,
+        **{
+            k: list(chain(getattr(obj, k), always_iterable(v)))
+            for k, v in kwargs.items()
+            if not isinstance(v, Sentinel)
+        },
+    )
 
 
 def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
