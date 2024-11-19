@@ -48,6 +48,7 @@ random
 re
 redis
 reprlib
+rich
 scipy
 sentinel
 slack-sdk

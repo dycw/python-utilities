@@ -13,6 +13,8 @@ from typing import TYPE_CHECKING, Any, NoReturn, Self, TypeVar, cast
 from utilities.dataclasses import yield_field_names
 from utilities.functions import ensure_not_none, get_class_name, get_func_name
 from utilities.iterables import one
+from utilities.rich import yield_pretty_repr_args_and_kwargs
+from utilities.text import ensure_str
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -31,10 +33,7 @@ def trace(func: _F, /) -> _F:
 
         @wraps(func)
         def trace_sync(*args: Any, **kwargs: Any) -> Any:
-            try:
-                call_args = _CallArgs.create(func, *args, **kwargs)
-            except TypeError:
-                return func(*args, **kwargs)
+            call_args = _CallArgs.create(func, *args, **kwargs)
             try:
                 return func(*args, **kwargs)
             except Exception as error:  # noqa: BLE001
@@ -44,10 +43,7 @@ def trace(func: _F, /) -> _F:
 
     @wraps(func)
     async def log_call_async(*args: Any, **kwargs: Any) -> Any:
-        try:
-            call_args = _CallArgs.create(func, *args, **kwargs)
-        except TypeError:
-            return await func(*args, **kwargs)
+        call_args = _CallArgs.create(func, *args, **kwargs)
         try:
             return await func(*args, **kwargs)
         except Exception as error:  # noqa: BLE001
@@ -98,8 +94,22 @@ class _CallArgs:
     @classmethod
     def create(cls, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Self:
         """Make the initial trace data."""
-        bound_args = signature(func).bind(*args, **kwargs)
+        sig = signature(func)
+        try:
+            bound_args = sig.bind(*args, **kwargs)
+        except TypeError as error:
+            orig = ensure_str(one(error.args))
+            lines: list[str] = [
+                f"Unable to bind arguments for {get_func_name(func)!r}; {orig}"
+            ]
+            lines.extend(yield_pretty_repr_args_and_kwargs(*args, **kwargs))
+            new = "\n".join(lines)
+            raise _CallArgsError(new) from None
         return cls(func=func, args=bound_args.args, kwargs=bound_args.kwargs)
+
+
+class _CallArgsError(TypeError):
+    """Raised when a set of call arguments cannot be created."""
 
 
 @dataclass(kw_only=True, slots=False)  # no slots
@@ -183,10 +193,8 @@ class TraceMixin:
             yield ""
             yield indent("Inputs:", 2)
             yield ""
-            for i, arg in enumerate(frame.args):
-                yield indent(f"args[{i}] = {pretty(arg)}", 3)
-            for k, v in frame.kwargs.items():
-                yield indent(f"kwargs[{k}] = {pretty(v)}", 3)
+            for line in yield_pretty_repr_args_and_kwargs(*frame.args, **frame.kwargs):
+                yield indent(line, 3)
             yield ""
             yield indent("Locals:", 2)
             yield ""
