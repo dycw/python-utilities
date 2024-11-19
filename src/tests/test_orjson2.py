@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import datetime as dt
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 
-from hypothesis import given, reproduce_failure
+from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     booleans,
@@ -12,16 +12,18 @@ from hypothesis.strategies import (
     dates,
     dictionaries,
     floats,
-    integers,
     lists,
     none,
-    sampled_from,
 )
-from orjson import loads
-from pytest import mark, param, raises
+from pytest import raises
 
 from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
-from utilities.orjson2 import _Deserialize2NoObjectsError, deserialize2, serialize2
+from utilities.orjson2 import (
+    _Deserialize2NoObjectsError,
+    _Deserialize2ObjectEmptyError,
+    deserialize2,
+    serialize2,
+)
 from utilities.sentinel import sentinel
 
 _Object = bool | float | str | dt.date | dt.datetime
@@ -91,7 +93,7 @@ class TestSerializeAndDeserialize2:
         assert result == obj
 
     @given(x=int64s() | none())
-    def test_dataclass_without_objects(self, *, x: int | None) -> None:
+    def test_dataclass_no_objects_error(self, *, x: int | None) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: int | None = None
@@ -103,6 +105,20 @@ class TestSerializeAndDeserialize2:
             match="Objects required to deserialize .* from .*",
         ):
             _ = deserialize2(ser)
+
+    @given(x=int64s() | none())
+    def test_dataclass_empty_error(self, *, x: int | None) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int | None = None
+
+        obj = Example(x=x)
+        ser = serialize2(obj)
+        with raises(
+            _Deserialize2ObjectEmptyError,
+            match=r"Unable to find object '.*' to deserialize .* \(from .*\)",
+        ):
+            _ = deserialize2(ser, objects=set())
 
     def test_arbitrary_objects(self) -> None:
         with raises(TypeError, match="Type is not JSON serializable: Sentinel"):

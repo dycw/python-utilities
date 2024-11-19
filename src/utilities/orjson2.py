@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass
 from enum import Enum, unique
 from functools import partial
-from typing import TYPE_CHECKING, AbstractSet, Any, Never, assert_never, cast
+from typing import TYPE_CHECKING, Any, Never, assert_never, cast
 
 from orjson import (
     OPT_PASSTHROUGH_DATACLASS,
@@ -22,8 +22,7 @@ from utilities.dataclasses import (
     asdict_without_defaults,
     is_dataclass_instance,
 )
-from utilities.functions import get_class_name
-from utilities.iterables import OneEmptyError, OneNonUniqueError, one
+from utilities.iterables import OneEmptyError, one
 from utilities.whenever import (
     parse_date,
     parse_zoned_datetime,
@@ -32,6 +31,8 @@ from utilities.whenever import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Set as AbstractSet
+
     from utilities.types import StrMapping
 
 
@@ -61,8 +62,6 @@ def _serialize2_default(obj: Any, /, *, fallback: bool = False) -> str:
         return f"[{_Prefixes.date.value}]{ser}"
     if is_dataclass_instance(obj):
         mapping = asdict_without_defaults(obj, final=_serialize2_dataclass_final)
-        # breakpoint()
-
         return serialize2(mapping).decode()
     if fallback:
         return str(obj)
@@ -118,11 +117,9 @@ def _object_hook(
                     try:
                         cls = one(o for o in objects if o.__qualname__ == qualname)
                     except OneEmptyError:
-                        raise _Deserialize2ObjectEmptyError(obj=obj, qualname=qualname)
-                    except OneNonUniqueError as error:
-                        raise _Deserialize2ObjectNonUniquerror(
-                            obj=obj, qualname=qualname
-                        ) from error
+                        raise _Deserialize2ObjectEmptyError(
+                            data=data, obj=obj, qualname=qualname
+                        ) from None
                     return cls(**{
                         k: _object_hook(v, data=data, objects=objects)
                         for k, v in value.items()
@@ -134,7 +131,7 @@ def _object_hook(
             return {k: _object_hook(v, data=data) for k, v in obj.items()}
         case list():
             return [_object_hook(o, data=data, objects=objects) for o in obj]
-        case _ as never:  # pragma: no cover
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(cast(Never, never))
 
 
@@ -149,6 +146,15 @@ class _Deserialize2NoObjectsError(Deserialize2Error):
     @override
     def __str__(self) -> str:
         return f"Objects required to deserialize {self.obj!r} from {self.data!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _Deserialize2ObjectEmptyError(Deserialize2Error):
+    qualname: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to find object {self.qualname!r} to deserialize {self.obj!r} (from {self.data!r})"
 
 
 __all__ = ["Deserialize2Error", "deserialize2", "serialize2"]
