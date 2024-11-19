@@ -125,7 +125,10 @@ class TestGetDataClassClass:
             assert get_dataclass_class(obj) is Example
 
     def test_error(self) -> None:
-        with raises(GetDataClassClassError):
+        with raises(
+            GetDataClassClassError,
+            match="Object must be a dataclass instance or class; got None",
+        ):
             _ = get_dataclass_class(cast(Any, None))
 
 

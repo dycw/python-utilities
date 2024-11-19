@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import MISSING, fields, is_dataclass, replace
+from dataclasses import MISSING, dataclass, fields, is_dataclass, replace
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -11,7 +11,7 @@ from typing import (
     runtime_checkable,
 )
 
-from typing_extensions import Protocol
+from typing_extensions import Protocol, override
 
 from utilities.sentinel import Sentinel
 
@@ -61,11 +61,16 @@ def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
         return obj
     if is_dataclass_instance(obj):
         return type(obj)
-    msg = f"{obj=}"
-    raise GetDataClassClassError(msg)
+    raise GetDataClassClassError(obj=obj)
 
 
-class GetDataClassClassError(Exception): ...
+@dataclass(kw_only=True, slots=True)
+class GetDataClassClassError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Object must be a dataclass instance or class; got {self.obj}"
 
 
 def get_dataclass_fields(
@@ -112,6 +117,7 @@ def yield_field_names(obj: Dataclass | type[Dataclass], /) -> Iterator[str]:
 __all__ = [
     "Dataclass",
     "GetDataClassClassError",
+    "asdict_without_defaults",
     "get_dataclass_class",
     "get_dataclass_fields",
     "is_dataclass_class",
