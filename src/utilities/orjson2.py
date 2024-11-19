@@ -24,8 +24,10 @@ from utilities.dataclasses import (
 from utilities.iterables import OneEmptyError, one
 from utilities.whenever import (
     parse_date,
+    parse_timedelta,
     parse_zoned_datetime,
     serialize_date,
+    serialize_timedelta,
     serialize_zoned_datetime,
 )
 
@@ -38,10 +40,10 @@ if TYPE_CHECKING:
 
 @unique
 class _Prefixes(Enum):
-    # keep in order of deserialization
-    datetime = "dt"
-    date = "d"
     dataclass = "dc"
+    date = "d"
+    datetime = "dt"
+    timedelta = "td"
 
 
 def serialize2(
@@ -74,6 +76,9 @@ def _serialize2_default(
     if isinstance(obj, dt.date):  # after datetime
         ser = serialize_date(obj)
         return f"[{_Prefixes.date.value}]{ser}"
+    if isinstance(obj, dt.timedelta):
+        ser = serialize_timedelta(obj)
+        return f"[{_Prefixes.timedelta.value}]{ser}"
     if is_dataclass_instance(obj):
         mapping = asdict_without_defaults(
             obj, final=partial(_serialize2_dataclass_final, hook=dataclass_hook)
@@ -109,6 +114,7 @@ _DATACLASS_DICT_PATTERN = re.compile(
 )
 _DATE_PATTERN = re.compile(r"^\[" + _Prefixes.date.value + r"\](.+)$")
 _DATETIME_PATTERN = re.compile(r"^\[" + _Prefixes.datetime.value + r"\](.+)$")
+_TIMEDELTA_PATTERN = re.compile(r"^\[" + _Prefixes.timedelta.value + r"\](.+)$")
 
 
 def _object_hook(
@@ -126,6 +132,8 @@ def _object_hook(
                 return parse_zoned_datetime(match.group(1))
             if match := _DATE_PATTERN.search(obj):
                 return parse_date(match.group(1))
+            if match := _TIMEDELTA_PATTERN.search(obj):
+                return parse_timedelta(match.group(1))
             if _DATACLASS_DICT_PATTERN.search(obj):
                 return deserialize2(obj.encode(), objects=objects)
             return obj
