@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import datetime as dt
 import re
+from dataclasses import is_dataclass
 from functools import partial
 from re import escape
 from typing import Any
 
 from orjson import OPT_PASSTHROUGH_DATETIME, OPT_SORT_KEYS, dumps, loads
 
+from utilities.dataclasses import is_dataclass_instance
 from utilities.whenever import (
     parse_date,
     parse_zoned_datetime,
@@ -35,6 +37,8 @@ def _serialize2_default(obj: Any, /, *, fallback: bool = False) -> str:
     if isinstance(obj, dt.date):
         ser = serialize_date(obj)
         return f"{_DATE_PREFIX}{ser}"
+    if is_dataclass_instance(obj):
+        assert 0
     if fallback:
         return str(obj)
     raise TypeError

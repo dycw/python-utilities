@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from dataclasses import dataclass
 
 from hypothesis import given
 from hypothesis.strategies import booleans, dates, dictionaries, floats, lists
@@ -43,6 +44,16 @@ class TestSerializeAndDeserialize2:
     ) -> None:
         result = deserialize2(serialize2(objects))
         assert result == objects
+
+    def test_dataclass(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int | None = None
+
+        obj = Example()
+        ser = serialize2(obj)
+        expected = serialize2({Example.__qualname__: {}})
+        assert ser == expected
 
     def test_arbitrary_objects(self) -> None:
         with raises(TypeError, match="Type is not JSON serializable: Sentinel"):
