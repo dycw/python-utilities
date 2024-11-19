@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from dataclasses import dataclass
 
-from hypothesis import given
+from hypothesis import given, reproduce_failure
 from hypothesis.strategies import booleans, dates, dictionaries, floats, lists
 from pytest import mark, param, raises
 
@@ -24,7 +24,10 @@ objects = (
 
 class TestSerializeAndDeserialize2:
     @given(obj=objects)
+    @reproduce_failure("6.119.3", b"AAQAAAAAAA==")
+    @mark.only
     def test_main(self, *, obj: _Object) -> None:
+        s = serialize2(obj)
         result = deserialize2(serialize2(obj))
         assert result == obj
 

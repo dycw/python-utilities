@@ -39,7 +39,7 @@ def _serialize2_default(obj: Any, /, *, fallback: bool = False) -> str:
     if isinstance(obj, dt.datetime):
         ser = serialize_zoned_datetime(obj)
         return f"[{_Prefixes.datetime.value}]{ser}"
-    if isinstance(obj, dt.date):
+    if isinstance(obj, dt.date):  # after datetime
         ser = serialize_date(obj)
         return f"[{_Prefixes.date.value}]{ser}"
     if is_dataclass_instance(obj):
