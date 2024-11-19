@@ -49,7 +49,7 @@ def serialize2(
     obj: Any,
     /,
     *,
-    dataclass_hook: Callable[[StrMapping], StrMapping] | None = None,
+    dataclass_hook: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
     fallback: bool = False,
 ) -> bytes:
     """Serialize an object."""
@@ -66,7 +66,7 @@ def _serialize2_default(
     obj: Any,
     /,
     *,
-    dataclass_hook: Callable[[StrMapping], StrMapping] | None = None,
+    dataclass_hook: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
     fallback: bool = False,
 ) -> str:
     if isinstance(obj, dt.datetime):
@@ -77,7 +77,7 @@ def _serialize2_default(
         return f"[{_Prefixes.date.value}]{ser}"
     if is_dataclass_instance(obj):
         mapping = asdict_without_defaults(
-            obj, final=partial(_serialize2_dataclass_final, pre_hook=dataclass_hook)
+            obj, final=partial(_serialize2_dataclass_final, hook=dataclass_hook)
         )
         return serialize2(mapping).decode()
     if fallback:
@@ -90,10 +90,10 @@ def _serialize2_dataclass_final(
     mapping: StrMapping,
     /,
     *,
-    pre_hook: Callable[[StrMapping], StrMapping] | None = None,
+    hook: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
 ) -> StrMapping:
-    if pre_hook is not None:
-        mapping = pre_hook(mapping)
+    if hook is not None:
+        mapping = hook(cls, mapping)
     return {f"[{_Prefixes.dataclass.value}|{cls.__qualname__}]": mapping}
 
 

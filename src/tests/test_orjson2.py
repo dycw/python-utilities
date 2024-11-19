@@ -28,6 +28,7 @@ from utilities.orjson2 import (
 from utilities.sentinel import sentinel
 
 if TYPE_CHECKING:
+    from utilities.dataclasses import Dataclass
     from utilities.types import StrMapping
 
 _Object = bool | float | str | dt.date | dt.datetime
@@ -134,7 +135,7 @@ class TestSerialize2:
 
         obj = Example(x=x)
 
-        def hook(mapping: StrMapping, /) -> StrMapping:
+        def hook(_: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
             return {k: v for k, v in mapping.items() if v >= 0}
 
         result = deserialize2(serialize2(obj, dataclass_hook=hook), objects={Example})
