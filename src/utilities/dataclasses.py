@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import fields, is_dataclass, replace
+from dataclasses import MISSING, dataclass, fields, is_dataclass, replace
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -11,7 +11,7 @@ from typing import (
     runtime_checkable,
 )
 
-from typing_extensions import Protocol
+from typing_extensions import Protocol, override
 
 from utilities.sentinel import Sentinel
 
@@ -28,17 +28,49 @@ class Dataclass(Protocol):
     __dataclass_fields__: ClassVar[dict[str, Any]]
 
 
+def asdict_without_defaults(obj: Dataclass, /) -> StrMapping:
+    """Cast a dataclass as a dictionary, without its defaults."""
+    out: dict[str, Any] = {}
+    for field in fields(obj):
+        name = field.name
+        value = getattr(obj, name)
+        if (
+            ((field.default is MISSING) and (field.default_factory is MISSING))
+            or (
+                (field.default is not MISSING)
+                and (field.default_factory is MISSING)
+                and (value != field.default)
+            )
+            or (
+                (field.default is MISSING)
+                and (field.default_factory is not MISSING)
+                and (value != field.default_factory())
+            )
+        ):
+            if is_dataclass_instance(value):
+                value_as_dict = asdict_without_defaults(value)
+            else:
+                value_as_dict = value
+            out[name] = value_as_dict
+    return out
+
+
 def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
     """Get the underlying dataclass, if possible."""
     if is_dataclass_class(obj):
         return obj
     if is_dataclass_instance(obj):
         return type(obj)
-    msg = f"{obj=}"
-    raise GetDataClassClassError(msg)
+    raise GetDataClassClassError(obj=obj)
 
 
-class GetDataClassClassError(Exception): ...
+@dataclass(kw_only=True, slots=True)
+class GetDataClassClassError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Object must be a dataclass instance or class; got {self.obj}"
 
 
 def get_dataclass_fields(
@@ -85,6 +117,7 @@ def yield_field_names(obj: Dataclass | type[Dataclass], /) -> Iterator[str]:
 __all__ = [
     "Dataclass",
     "GetDataClassClassError",
+    "asdict_without_defaults",
     "get_dataclass_class",
     "get_dataclass_fields",
     "is_dataclass_class",

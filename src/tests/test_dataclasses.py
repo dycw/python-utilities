@@ -1,15 +1,19 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from types import NoneType
 from typing import Any, Literal, TypeVar, cast
 
+from hypothesis import given
+from hypothesis.strategies import integers, lists
+from ib_async import Future
 from pytest import mark, param, raises
 
 from utilities.dataclasses import (
     Dataclass,
     GetDataClassClassError,
+    asdict_without_defaults,
     get_dataclass_class,
     get_dataclass_fields,
     is_dataclass_class,
@@ -18,6 +22,119 @@ from utilities.dataclasses import (
     yield_field_names,
 )
 from utilities.sentinel import sentinel
+
+
+class TestAsDictWithoutDefaults:
+    @given(x=integers())
+    def test_field_without_defaults(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        obj = Example(x=x)
+        result = asdict_without_defaults(obj)
+        expected = {"x": x}
+        assert result == expected
+
+    def test_field_with_default_and_value_equal(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+        obj = Example()
+        result = asdict_without_defaults(obj)
+        expected = {}
+        assert result == expected
+
+    @given(x=integers().filter(lambda x: x != 0))
+    def test_field_with_default_and_value_not_equal(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+        obj = Example(x=x)
+        result = asdict_without_defaults(obj)
+        expected = {"x": x}
+        assert result == expected
+
+    def test_field_with_default_factory_and_value_equal(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: list[int] = field(default_factory=list)
+
+        obj = Example()
+        result = asdict_without_defaults(obj)
+        expected = {}
+        assert result == expected
+
+    @given(x=lists(integers(), min_size=1))
+    def test_field_with_default_factory_and_value_not_equal(
+        self, *, x: list[int]
+    ) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: list[int] = field(default_factory=list)
+
+        obj = Example(x=x)
+        result = asdict_without_defaults(obj)
+        expected = {"x": x}
+        assert result == expected
+
+    @given(x=integers(), y=integers())
+    def test_nested(self, *, x: int, y: int) -> None:
+        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        class Inner:
+            no_default: int
+            default: int = 0
+            default_factory: list[int] = field(default_factory=list)
+
+        inner_default = Inner(no_default=x)
+
+        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        class Outer:
+            no_default: Inner
+            default: Inner = inner_default
+            default_factory: list[Inner] = field(default_factory=list)
+
+        obj = Outer(no_default=Inner(no_default=y))
+        result = asdict_without_defaults(obj)
+        expected = {"no_default": {"no_default": y}}
+        assert result == expected
+
+    def test_ib_async(self) -> None:
+        fut = Future(
+            conId=495512557,
+            symbol="ES",
+            lastTradeDateOrContractMonth="20241220",
+            strike=0.0,
+            right="",
+            multiplier="50",
+            exchange="",
+            primaryExchange="",
+            currency="USD",
+            localSymbol="ESZ4",
+            tradingClass="ES",
+            includeExpired=False,
+            secIdType="",
+            secId="",
+            description="",
+            issuerId="",
+            comboLegsDescrip="",
+            comboLegs=[],
+            deltaNeutralContract=None,
+        )
+        result = asdict_without_defaults(fut)
+        expected = {
+            "secType": "FUT",
+            "conId": 495512557,
+            "symbol": "ES",
+            "lastTradeDateOrContractMonth": "20241220",
+            "multiplier": "50",
+            "currency": "USD",
+            "localSymbol": "ESZ4",
+            "tradingClass": "ES",
+        }
+        assert result == expected
 
 
 class TestDataClassProtocol:
@@ -44,7 +161,10 @@ class TestGetDataClassClass:
             assert get_dataclass_class(obj) is Example
 
     def test_error(self) -> None:
-        with raises(GetDataClassClassError):
+        with raises(
+            GetDataClassClassError,
+            match="Object must be a dataclass instance or class; got None",
+        ):
             _ = get_dataclass_class(cast(Any, None))
 
 
