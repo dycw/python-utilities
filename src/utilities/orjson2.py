@@ -11,7 +11,6 @@ from orjson import (
     OPT_PASSTHROUGH_DATACLASS,
     OPT_PASSTHROUGH_DATETIME,
     OPT_SORT_KEYS,
-    JSONDecodeError,
     dumps,
     loads,
 )
@@ -104,7 +103,10 @@ def deserialize2(
     return _object_hook(loads(data), data=data, objects=objects)
 
 
-_DATACLASS_PATTERN = re.compile(r"^\[" + _Prefixes.dataclass.value + r"\|(.+?)\]$")
+_DATACLASS_ONE_PATTERN = re.compile(r"^\[" + _Prefixes.dataclass.value + r"\|(.+?)\]$")
+_DATACLASS_DICT_PATTERN = re.compile(
+    r'^{"\[' + _Prefixes.dataclass.value + r'\|.+?\]":{.*?}}$'
+)
 _DATE_PATTERN = re.compile(r"^\[" + _Prefixes.date.value + r"\](.+)$")
 _DATETIME_PATTERN = re.compile(r"^\[" + _Prefixes.datetime.value + r"\](.+)$")
 
@@ -124,14 +126,13 @@ def _object_hook(
                 return parse_zoned_datetime(match.group(1))
             if match := _DATE_PATTERN.search(obj):
                 return parse_date(match.group(1))
-            try:
+            if _DATACLASS_DICT_PATTERN.search(obj):
                 return deserialize2(obj.encode(), objects=objects)
-            except JSONDecodeError:
-                return obj
+            return obj
         case dict():
             if len(obj) == 1:
                 key, value = one(obj.items())
-                if (match := _DATACLASS_PATTERN.search(key)) and isinstance(
+                if (match := _DATACLASS_ONE_PATTERN.search(key)) and isinstance(
                     value, dict
                 ):
                     if objects is None:
