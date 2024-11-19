@@ -50,14 +50,6 @@ def asdict_without_defaults(obj: Dataclass, /) -> StrMapping:
         ):
             out[name] = value
     return out
-    return replace_non_sentinel(
-        obj,
-        **{
-            k: list(chain(getattr(obj, k), always_iterable(v)))
-            for k, v in kwargs.items()
-            if not isinstance(v, Sentinel)
-        },
-    )
 
 
 def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
