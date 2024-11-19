@@ -18,7 +18,7 @@ from hypothesis.strategies import (
 )
 from pytest import raises
 
-from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
+from utilities.hypothesis import int64s, text_digits, text_printable, zoned_datetimes
 from utilities.orjson2 import (
     _Deserialize2NoObjectsError,
     _Deserialize2ObjectEmptyError,
@@ -36,7 +36,7 @@ objects = (
     booleans()
     | floats(allow_nan=False, allow_infinity=False)
     | int64s()
-    | text_ascii()
+    | text_printable()
     | dates()
     | zoned_datetimes()
 )
@@ -50,9 +50,9 @@ class TestSerializeAndDeserialize2:
 
     @given(
         objects=lists(objects)
-        | dictionaries(text_ascii(), objects)
-        | lists(dictionaries(text_ascii(), objects))
-        | dictionaries(text_ascii(), lists(objects))
+        | dictionaries(text_printable(), objects)
+        | lists(dictionaries(text_printable(), objects))
+        | dictionaries(text_printable(), lists(objects))
     )
     def test_nested(
         self,
@@ -64,6 +64,11 @@ class TestSerializeAndDeserialize2:
     ) -> None:
         result = deserialize2(serialize2(objects))
         assert result == objects
+
+    @given(x=text_digits())
+    def test_str_of_digits(self, *, x: str) -> None:
+        result = deserialize2(serialize2(x))
+        assert result == x
 
     @given(x=int64s() | none())
     def test_dataclass(self, *, x: int | None) -> None:

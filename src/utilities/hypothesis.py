@@ -15,7 +15,7 @@ from math import ceil, floor, inf, isfinite, nan
 from os import environ
 from pathlib import Path
 from re import search
-from string import ascii_letters, printable
+from string import ascii_letters, digits, printable
 from subprocess import run
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
 from zoneinfo import ZoneInfo
@@ -628,6 +628,21 @@ def text_clean(
     )
 
 
+def text_digits(
+    *,
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[int | None] = None,
+    disallow_na: MaybeSearchStrategy[bool] = False,
+) -> SearchStrategy[str]:
+    """Strategy for generating ASCII text."""
+    return _draw_text(
+        characters(whitelist_categories=[], whitelist_characters=digits),
+        min_size=min_size,
+        max_size=max_size,
+        disallow_na=disallow_na,
+    )
+
+
 def text_printable(
     *,
     min_size: MaybeSearchStrategy[int] = 0,
@@ -779,6 +794,7 @@ __all__ = [
     "temp_paths",
     "text_ascii",
     "text_clean",
+    "text_digits",
     "text_printable",
     "timedeltas_2w",
     "yield_test_redis",

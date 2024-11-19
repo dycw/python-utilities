@@ -65,6 +65,7 @@ from utilities.hypothesis import (
     temp_paths,
     text_ascii,
     text_clean,
+    text_digits,
     text_printable,
     timedeltas_2w,
     yield_test_redis,
@@ -711,6 +712,35 @@ class TestTextClean:
                 )
             )
         assert search("^\\S[^\\r\\n]*$|^$", text)
+        assert len(text) >= min_size
+        if max_size is not None:
+            assert len(text) <= max_size
+        if disallow_na:
+            assert text != "NA"
+
+
+class TestTextDigits:
+    @given(
+        data=data(),
+        min_size=integers(0, 100),
+        max_size=integers(0, 100) | none(),
+        disallow_na=booleans(),
+    )
+    def test_main(
+        self,
+        *,
+        data: DataObject,
+        min_size: int,
+        max_size: int | None,
+        disallow_na: bool,
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument, AssertionError):
+            text = data.draw(
+                text_digits(
+                    min_size=min_size, max_size=max_size, disallow_na=disallow_na
+                )
+            )
+        assert search("^[0-9]*$", text)
         assert len(text) >= min_size
         if max_size is not None:
             assert len(text) <= max_size
