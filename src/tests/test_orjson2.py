@@ -128,6 +128,30 @@ class TestSerializeAndDeserialize2:
 
 
 class TestSerialize2:
+    def test_dataclass(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        obj = Example(x=0)
+        result = serialize2(obj)
+        expected = b'{"[dc|TestSerialize2.test_dataclass.<locals>.Example]":{"x":0}}'
+        assert result == expected
+
+    def test_dataclass_nested(self) -> None:
+        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        class Inner:
+            a: int
+
+        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        class Outer:
+            x: Inner
+
+        obj = Outer(x=Inner(a=0))
+        result = serialize2(obj)
+        expected = b'{"[dc|TestSerialize2.test_dataclass_nested.<locals>.Outer]":{"x":{"[dc|TestSerialize2.test_dataclass_nested.<locals>.Inner]":{"a":0}}}}'
+        assert result == expected
+
     @given(x=int64s())
     def test_dataclass_hook(self, *, x: int) -> None:
         @dataclass(kw_only=True, slots=True)

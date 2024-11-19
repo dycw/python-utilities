@@ -54,39 +54,18 @@ def serialize2(
     fallback: bool = False,
 ) -> bytes:
     """Serialize an object."""
+    dataclass_hook_use = partial(_serialize2_dataclass_final, hook=dataclass_hook)
+    if is_dataclass_instance(obj):
+        obj_use = asdict_without_defaults(obj, final=dataclass_hook_use)
+    else:
+        obj_use = obj
     return dumps(
-        obj,
+        obj_use,
         default=partial(
-            _serialize2_default, dataclass_hook=dataclass_hook, fallback=fallback
+            _serialize2_default, dataclass_hook=dataclass_hook_use, fallback=fallback
         ),
         option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
     )
-
-
-def _serialize2_default(
-    obj: Any,
-    /,
-    *,
-    dataclass_hook: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
-    fallback: bool = False,
-) -> str:
-    if isinstance(obj, dt.datetime):
-        ser = serialize_zoned_datetime(obj)
-        return f"[{_Prefixes.datetime.value}]{ser}"
-    if isinstance(obj, dt.date):  # after datetime
-        ser = serialize_date(obj)
-        return f"[{_Prefixes.date.value}]{ser}"
-    if isinstance(obj, dt.timedelta):
-        ser = serialize_timedelta(obj)
-        return f"[{_Prefixes.timedelta.value}]{ser}"
-    if is_dataclass_instance(obj):
-        mapping = asdict_without_defaults(
-            obj, final=partial(_serialize2_dataclass_final, hook=dataclass_hook)
-        )
-        return serialize2(mapping).decode()
-    if fallback:
-        return str(obj)
-    raise TypeError
 
 
 def _serialize2_dataclass_final(
@@ -99,6 +78,30 @@ def _serialize2_dataclass_final(
     if hook is not None:
         mapping = hook(cls, mapping)
     return {f"[{_Prefixes.dataclass.value}|{cls.__qualname__}]": mapping}
+
+
+def _serialize2_default(
+    obj: Any,
+    /,
+    *,
+    dataclass_hook: Callable[[type[Dataclass], StrMapping], StrMapping],
+    fallback: bool = False,
+) -> str:
+    if isinstance(obj, dt.datetime):
+        ser = serialize_zoned_datetime(obj)
+        return f"[{_Prefixes.datetime.value}]{ser}"
+    if isinstance(obj, dt.date):  # after datetime
+        ser = serialize_date(obj)
+        return f"[{_Prefixes.date.value}]{ser}"
+    if isinstance(obj, dt.timedelta):
+        ser = serialize_timedelta(obj)
+        return f"[{_Prefixes.timedelta.value}]{ser}"
+    if is_dataclass_instance(obj):
+        mapping = asdict_without_defaults(obj, final=dataclass_hook)
+        return serialize2(mapping).decode()
+    if fallback:
+        return str(obj)
+    raise TypeError
 
 
 def deserialize2(
