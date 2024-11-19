@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum, auto
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, cast
 
 from pytest import mark, param, raises
 
 from utilities.dataclasses import (
     Dataclass,
     GetDataClassClassError,
-    extend_non_sentinel,
     get_dataclass_class,
     get_dataclass_fields,
     is_dataclass_class,
@@ -19,9 +18,6 @@ from utilities.dataclasses import (
     yield_field_names,
 )
 from utilities.sentinel import sentinel
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 
 class TestDataClassProtocol:
@@ -36,23 +32,6 @@ class TestDataClassProtocol:
             x: None = None
 
         _ = identity(Example())
-
-
-class TestExtendNonSentinel:
-    def test_main(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: Sequence[int] = field(default_factory=list)
-
-        obj = Example()
-        obj1 = extend_non_sentinel(obj, x=1)
-        assert obj1.x == [1]
-        obj2 = extend_non_sentinel(obj1, x=sentinel)
-        assert obj2.x == [1]
-
-    @mark.parametrize("obj", [param(None), param(NoneType)])
-    def test_others(self, *, obj: Any) -> None:
-        assert not is_dataclass_instance(obj)
 
 
 class TestGetDataClassClass:
