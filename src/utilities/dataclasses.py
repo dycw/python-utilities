@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import fields, is_dataclass, replace
-from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -14,7 +13,6 @@ from typing import (
 
 from typing_extensions import Protocol
 
-from utilities.iterables import always_iterable
 from utilities.sentinel import Sentinel
 
 if TYPE_CHECKING:
@@ -28,18 +26,6 @@ class Dataclass(Protocol):
     """Protocol for `dataclass` classes."""
 
     __dataclass_fields__: ClassVar[dict[str, Any]]
-
-
-def extend_non_sentinel(obj: _T, **kwargs: Any) -> _T:
-    """Extend attributes on a dataclass, filtering out sentinel values."""
-    return replace_non_sentinel(
-        obj,
-        **{
-            k: list(chain(getattr(obj, k), always_iterable(v)))
-            for k, v in kwargs.items()
-            if not isinstance(v, Sentinel)
-        },
-    )
 
 
 def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
@@ -99,7 +85,6 @@ def yield_field_names(obj: Dataclass | type[Dataclass], /) -> Iterator[str]:
 __all__ = [
     "Dataclass",
     "GetDataClassClassError",
-    "extend_non_sentinel",
     "get_dataclass_class",
     "get_dataclass_fields",
     "is_dataclass_class",
