@@ -60,7 +60,7 @@ def _trace_build_and_raise_trace_mixin(
     matches = (
         f for f in frames if (f.name == get_func_name(func)) and (f.code_line != "")
     )
-    frame = one(matches)
+    frame = next(matches)
     trace_frame = _RawTraceMixinFrame(call_args=call_args, ext_frame_summary=frame)
     if isinstance(error, TraceMixin):
         raw_frames = [*error.raw_frames, trace_frame]
