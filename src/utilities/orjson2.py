@@ -3,13 +3,14 @@ from __future__ import annotations
 import datetime as dt
 import re
 from dataclasses import is_dataclass
+from enum import Enum, StrEnum, unique
 from functools import partial
 from re import escape
 from typing import Any
 
 from orjson import OPT_PASSTHROUGH_DATETIME, OPT_SORT_KEYS, dumps, loads
 
-from utilities.dataclasses import is_dataclass_instance
+from utilities.dataclasses import asdict_without_defaults, is_dataclass_instance
 from utilities.whenever import (
     parse_date,
     parse_zoned_datetime,
@@ -17,8 +18,12 @@ from utilities.whenever import (
     serialize_zoned_datetime,
 )
 
-_DATE_PREFIX = "[d]"
-_DATETIME_PREFIX = "[t]"
+
+@unique
+class _Prefixes(Enum):
+    dataclass = "c"
+    date = "d"
+    datetime = "t"
 
 
 def serialize2(obj: Any, /, *, fallback: bool = False) -> bytes:
@@ -33,12 +38,13 @@ def serialize2(obj: Any, /, *, fallback: bool = False) -> bytes:
 def _serialize2_default(obj: Any, /, *, fallback: bool = False) -> str:
     if isinstance(obj, dt.datetime):
         ser = serialize_zoned_datetime(obj)
-        return f"{_DATETIME_PREFIX}{ser}"
+        return f"[{_Prefixes.datetime.value}]{ser}"
     if isinstance(obj, dt.date):
         ser = serialize_date(obj)
-        return f"{_DATE_PREFIX}{ser}"
+        return f"[{_Prefixes.date.value}]{ser}"
     if is_dataclass_instance(obj):
-        assert 0
+        ser = serialize2(asdict_without_defaults(obj))
+        return f"[{_Prefixes.dataclass.value}]{ser}"
     if fallback:
         return str(obj)
     raise TypeError
@@ -49,8 +55,8 @@ def deserialize2(data: bytes, /) -> Any:
     return _object_hook(loads(data))
 
 
-_DATE_PATTERN = re.compile(rf"^{escape(_DATE_PREFIX)}(.+)$")
-_DATETIME_PATTERN = re.compile(rf"^{escape(_DATETIME_PREFIX)}(.+)$")
+_DATE_PATTERN = re.compile(rf"^{escape(_Prefixes.date.value)}(.+)$")
+_DATETIME_PATTERN = re.compile(rf"^{escape(_Prefixes.datetime.value)}(.+)$")
 
 
 def _object_hook(obj: Any, /) -> Any:

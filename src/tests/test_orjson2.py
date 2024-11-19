@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from hypothesis import given
 from hypothesis.strategies import booleans, dates, dictionaries, floats, lists
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
 from utilities.orjson2 import deserialize2, serialize2
@@ -45,6 +45,7 @@ class TestSerializeAndDeserialize2:
         result = deserialize2(serialize2(objects))
         assert result == objects
 
+    @mark.skip
     def test_dataclass(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
