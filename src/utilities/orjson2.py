@@ -62,7 +62,7 @@ def serialize2(
     return dumps(
         obj_use,
         default=partial(
-            _serialize2_default, dataclass_hook=asdict_final, fallback=fallback
+            _serialize2_default, dataclass_asdict_final=asdict_final, fallback=fallback
         ),
         option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
     )
