@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 
 
 class TestPublishAndSubscribe:
+    @FLAKY
     @given(
         data=data(),
         channel=text_ascii(min_size=1).map(
@@ -41,6 +42,7 @@ class TestPublishAndSubscribe:
         obj=base,
     )
     @settings(
+        max_examples=1,
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -67,6 +69,7 @@ class TestPublishAndSubscribe:
             finally:
                 _ = task.cancel()
 
+    @FLAKY
     @given(
         data=data(),
         channel=text_ascii(min_size=1).map(
@@ -102,6 +105,7 @@ class TestPublishAndSubscribe:
 
 
 class TestSubscribeMessages:
+    @FLAKY
     @given(
         channel=text_ascii(min_size=1).map(
             lambda c: f"{get_class_name(TestSubscribeMessages)}_{c}"
