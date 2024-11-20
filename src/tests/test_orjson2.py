@@ -150,7 +150,7 @@ class TestSerialize2:
     @given(text=text_printable())
     def test_before(self, *, text: str) -> None:
         result = serialize2(text, before=str.upper)
-        expected = text.upper()
+        expected = serialize2(text.upper())
         assert result == expected
 
     def test_dataclass(self) -> None:
