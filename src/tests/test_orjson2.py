@@ -147,6 +147,12 @@ class TestSerializeAndDeserialize2:
 
 
 class TestSerialize2:
+    @given(text=text_printable())
+    def test_before(self, *, text: str) -> None:
+        result = serialize2(text, before=str.upper)
+        expected = text.upper()
+        assert result == expected
+
     def test_dataclass(self) -> None:
         obj = DataClass1()
         result = serialize2(obj)
@@ -170,7 +176,7 @@ class TestSerialize2:
         def hook(_: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
             return {k: v for k, v in mapping.items() if v >= 0}
 
-        ser = serialize2(obj, pre_process_dataclass_final_hook=hook)
+        ser = serialize2(obj, dataclass_final_hook=hook)
         assert not search(b"-", ser)
 
     @given(x=sampled_from([MIN_INT64 - 1, MAX_INT64 + 1]))
@@ -186,7 +192,7 @@ class TestSerialize2:
             return mapping
 
         with assume_does_not_raise(_Serialize2IntegerError):
-            ser = serialize2(obj, pre_process_dataclass_final_hook=hook)
+            ser = serialize2(obj, dataclass_final_hook=hook)
         result = deserialize2(
             ser,
             objects={

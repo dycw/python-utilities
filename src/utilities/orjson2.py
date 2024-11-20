@@ -51,20 +51,15 @@ def serialize2(
     obj: Any,
     /,
     *,
-    pre_process_before: Callable[[Any], Any] | None = None,
-    pre_process_after: Callable[[Any], Any] | None = None,
-    pre_process_dataclass_final_hook: Callable[
-        [type[Dataclass], StrMapping], StrMapping
-    ]
+    before: Callable[[Any], Any] | None = None,
+    after: Callable[[Any], Any] | None = None,
+    dataclass_final_hook: Callable[[type[Dataclass], StrMapping], StrMapping]
     | None = None,
     fallback: bool = False,
 ) -> bytes:
     """Serialize an object."""
     obj_use = _pre_process(
-        obj,
-        before=pre_process_before,
-        after=pre_process_after,
-        dataclass_final_hook=pre_process_dataclass_final_hook,
+        obj, before=before, after=after, dataclass_final_hook=dataclass_final_hook
     )
     return dumps(
         obj_use,
