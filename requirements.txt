@@ -97,7 +97,7 @@ distlib==0.3.9
 eventkit==1.0.3
     # via
     #   dycw-utilities (pyproject.toml)
-    #   ib-async
+    #   ib-async-dataclass
 execnet==2.1.1
     # via pytest-xdist
 filelock==3.16.1
@@ -134,7 +134,7 @@ hyperlink==21.0.0
     # via hatch
 hypothesis==6.119.3
     # via dycw-utilities (pyproject.toml)
-ib-async==1.0.3
+ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -192,12 +192,12 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.14.0
+narwhals==1.14.1
     # via altair
 nest-asyncio==1.6.0
     # via
     #   dycw-utilities (pyproject.toml)
-    #   ib-async
+    #   ib-async-dataclass
 nox==2024.10.9
     # via dycw-utilities (pyproject.toml)
 numba==0.60.0
@@ -432,7 +432,7 @@ urllib3==2.2.3
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.5.2
+uv==0.5.3
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
