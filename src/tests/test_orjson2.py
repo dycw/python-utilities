@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-import datetime as dt
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import given, reproduce_failure, settings
+from hypothesis import given
 from hypothesis.strategies import (
-    DataObject,
     SearchStrategy,
     booleans,
     builds,
-    data,
     dates,
     dictionaries,
     floats,
@@ -18,16 +15,9 @@ from hypothesis.strategies import (
     none,
     recursive,
 )
-from hypothesis.strategies._internal.strategies import Ex
-from pytest import mark, param, raises
+from pytest import mark, raises
 
-from utilities.hypothesis import (
-    int64s,
-    text_ascii,
-    text_printable,
-    timedeltas_2w,
-    zoned_datetimes,
-)
+from utilities.hypothesis import int64s, text_printable, timedeltas_2w, zoned_datetimes
 from utilities.orjson2 import (
     _Deserialize2NoObjectsError,
     _Deserialize2ObjectEmptyError,
@@ -41,19 +31,7 @@ if TYPE_CHECKING:
     from utilities.types import StrMapping
 
 
-@dataclass(unsafe_hash=True, kw_only=True, slots=True)
-class DataClass1:
-    x: int | None = None
-
-
-@dataclass(unsafe_hash=True, kw_only=True, slots=True)
-class DataClass2Inner:
-    a: int | None = None
-
-
-@dataclass(unsafe_hash=True, kw_only=True, slots=True)
-class DataClass2Outer:
-    inner: DataClass2Inner
+# strategies
 
 
 base = (
@@ -76,38 +54,49 @@ objects = recursive(
 )
 
 
+@dataclass(unsafe_hash=True, kw_only=True, slots=True)
+class DataClass1:
+    x: int | None = None
+
+
+dataclass1s = builds(DataClass1, x=int64s() | none())
+
+
+@dataclass(unsafe_hash=True, kw_only=True, slots=True)
+class DataClass2Inner:
+    a: int | None = None
+
+
+@dataclass(unsafe_hash=True, kw_only=True, slots=True)
+class DataClass2Outer:
+    inner: DataClass2Inner
+
+
+dataclass2s = builds(
+    DataClass2Outer, inner=builds(DataClass2Inner, a=int64s() | none())
+)
+
+
 class TestSerializeAndDeserialize2:
     @given(obj=extend(base))
     def test_main(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj))
         assert result == obj
 
-    @given(obj=extend(base | builds(DataClass1, x=int64s() | none())))
+    @given(obj=extend(base | dataclass1s))
     def test_dataclass(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj), objects={DataClass1})
         assert result == obj
 
-    @given(
-        obj=extend(
-            base
-            | builds(
-                DataClass2Outer, inner=builds(DataClass2Inner, a=int64s() | none())
-            )
-        )
-    )
+    @given(obj=extend(base | dataclass2s))
     def test_dataclass_nested(self, *, obj: Any) -> None:
         result = deserialize2(
             serialize2(obj), objects={DataClass2Inner, DataClass2Outer}
         )
         assert result == obj
 
-    @given(x=int64s() | none())
-    def test_dataclass_no_objects_error(self, *, x: int | None) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int | None = None
-
-        obj = Example(x=x)
+    @given(obj=dataclass1s)
+    def test_dataclass_no_objects_error(self, *, obj: DataClass1) -> None:
         ser = serialize2(obj)
         with raises(
             _Deserialize2NoObjectsError,
@@ -115,13 +104,8 @@ class TestSerializeAndDeserialize2:
         ):
             _ = deserialize2(ser)
 
-    @given(x=int64s() | none())
-    def test_dataclass_empty_error(self, *, x: int | None) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int | None = None
-
-        obj = Example(x=x)
+    @given(obj=dataclass1s)
+    def test_dataclass_empty_error(self, *, obj: DataClass1) -> None:
         ser = serialize2(obj)
         with raises(
             _Deserialize2ObjectEmptyError,
@@ -132,27 +116,17 @@ class TestSerializeAndDeserialize2:
 
 class TestSerialize2:
     def test_dataclass(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
-
-        obj = Example(x=0)
+        obj = DataClass1(x=0)
         result = serialize2(obj)
-        expected = b'{"[dc|TestSerialize2.test_dataclass.<locals>.Example]":{"x":0}}'
+        expected = b'{"[dc|DataClass1]":{"x":0}}'
         assert result == expected
 
     def test_dataclass_nested(self) -> None:
-        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
-        class Inner:
-            a: int
-
-        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
-        class Outer:
-            x: Inner
-
-        obj = Outer(x=Inner(a=0))
+        obj = DataClass2Outer(inner=DataClass2Inner(a=0))
         result = serialize2(obj)
-        expected = b'{"[dc|TestSerialize2.test_dataclass_nested.<locals>.Outer]":{"x":{"[dc|TestSerialize2.test_dataclass_nested.<locals>.Inner]":{"a":0}}}}'
+        expected = (
+            b'{"[dc|DataClass2Outer]":{"inner":{"[dc|DataClass2Inner]":{"a":0}}}}'
+        )
         assert result == expected
 
     @given(x=int64s())
