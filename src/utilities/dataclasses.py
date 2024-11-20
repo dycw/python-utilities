@@ -33,6 +33,7 @@ def asdict_without_defaults(
     /,
     *,
     final: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
+    recursive: bool = False,
 ) -> StrMapping:
     """Cast a dataclass as a dictionary, without its defaults."""
     out: dict[str, Any] = {}
@@ -52,8 +53,10 @@ def asdict_without_defaults(
                 and (value != field.default_factory())
             )
         ):
-            if is_dataclass_instance(value):
-                value_as_dict = asdict_without_defaults(value, final=final)
+            if recursive and is_dataclass_instance(value):
+                value_as_dict = asdict_without_defaults(
+                    value, final=final, recursive=recursive
+                )
             else:
                 value_as_dict = value
             out[name] = value_as_dict

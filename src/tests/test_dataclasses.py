@@ -6,7 +6,7 @@ from types import NoneType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
 from hypothesis import given
-from hypothesis.strategies import integers, lists
+from hypothesis.strategies import integers, lists, recursive
 from ib_async import Future
 from pytest import mark, param, raises
 
@@ -84,49 +84,48 @@ class TestAsDictWithoutDefaults:
         expected = {"x": x}
         assert result == expected
 
-    @given(x=integers(), y=integers())
-    def test_nested(self, *, x: int, y: int) -> None:
+    @given(x=integers())
+    def test_final(self, *, x: int) -> None:
         @dataclass(unsafe_hash=True, kw_only=True, slots=True)
-        class Inner:
-            no_default: int
-            default: int = 0
-            default_factory: list[int] = field(default_factory=list)
-
-        inner_default = Inner(no_default=x)
-
-        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
-        class Outer:
-            no_default: Inner
-            default: Inner = inner_default
-            default_factory: list[Inner] = field(default_factory=list)
-
-        obj = Outer(no_default=Inner(no_default=y))
-        result = asdict_without_defaults(obj)
-        expected = {"no_default": {"no_default": y}}
-        assert result == expected
-
-    @given(x=integers(), y=integers())
-    def test_nested_with_final(self, *, x: int, y: int) -> None:
-        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
-        class Inner:
-            no_default: int
-            default: int = 0
-            default_factory: list[int] = field(default_factory=list)
-
-        inner_default = Inner(no_default=x)
-
-        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
-        class Outer:
-            no_default: Inner
-            default: Inner = inner_default
-            default_factory: list[Inner] = field(default_factory=list)
+        class Example:
+            x: int
 
         def final(obj: type[Dataclass], mapping: StrMapping) -> StrMapping:
             return {f"[{get_class_name(obj)}]": mapping}
 
-        obj = Outer(no_default=Inner(no_default=y))
+        obj = Example(x=x)
         result = asdict_without_defaults(obj, final=final)
-        expected = {"[Outer]": {"no_default": {"[Inner]": {"no_default": y}}}}
+        expected = {"[Example]": {"x": x}}
+        assert result == expected
+
+    @given(x=integers())
+    def test_nested_with_recursive(self, *, x: int) -> None:
+        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        class Inner:
+            x: int
+
+        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        class Outer:
+            inner: Inner
+
+        obj = Outer(inner=Inner(x=x))
+        result = asdict_without_defaults(obj, recursive=True)
+        expected = {"inner": {"x": x}}
+        assert result == expected
+
+    @given(x=integers())
+    def test_nested_without_recursive(self, *, x: int) -> None:
+        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        class Inner:
+            x: int
+
+        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        class Outer:
+            inner: Inner
+
+        obj = Outer(inner=Inner(x=x))
+        result = asdict_without_defaults(obj)
+        expected = {"inner": Inner(x=x)}
         assert result == expected
 
     def test_ib_async(self) -> None:

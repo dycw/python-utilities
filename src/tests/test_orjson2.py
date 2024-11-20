@@ -108,6 +108,11 @@ class DataClass2Outer:
 dataclass2s = builds(DataClass2Outer)
 
 
+forexes = builds(Forex)
+fills = builds(Fill, contract=forexes)
+trades = builds(Trade, fills=lists(fills))
+
+
 class TestSerializeAndDeserialize2:
     @given(obj=extend(base))
     def test_main(self, *, obj: Any) -> None:
@@ -201,18 +206,17 @@ class TestSerialize2:
 
     @given(data=data())
     def test_ib(self, *, data: DataObject) -> None:
-        def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
+        def dataclass_final_hook(cls: type[Any], mapping: StrMapping, /) -> Any:
             if issubclass(cls, Contract) and not issubclass(Contract, cls):
                 mapping = {k: v for k, v in mapping.items() if k != "secType"}
             return mapping
 
         forexes = builds(Forex)
-        orders = builds(Order)
-        trades = builds(Trade, contract=forexes, order=orders)
-        fills = builds(Fill)
-        obj = data.draw(extend(forexes | orders | trades | fills))
+        fills = builds(Fill, contract=forexes)
+        trades = builds(Trade, fills=lists(fills))
+        obj = data.draw(extend(trades))
         with assume_does_not_raise(_Serialize2IntegerError):
-            ser = serialize2(obj, dataclass_hook=hook)
+            ser = serialize2(obj, pre_process_dataclass_final_hook=dataclass_final_hook)
         result = deserialize2(
             ser,
             objects={

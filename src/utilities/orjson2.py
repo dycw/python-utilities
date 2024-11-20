@@ -8,6 +8,7 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Never, assert_never, cast
 
+from ib_async import Forex
 from orjson import (
     OPT_PASSTHROUGH_DATACLASS,
     OPT_PASSTHROUGH_DATETIME,
@@ -55,41 +56,91 @@ def serialize2(
     obj: Any,
     /,
     *,
-    dataclass_hook: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
+    pre_process_before: Callable[[Any], Any] | None = None,
+    pre_process_after: Callable[[Any], Any] | None = None,
+    pre_process_dataclass_final_hook: Callable[
+        [type[Dataclass], StrMapping], StrMapping
+    ]
+    | None = None,
     fallback: bool = False,
 ) -> bytes:
     """Serialize an object."""
-    _pre_process_check(obj)
-    asdict_final = partial(_dataclass_hook_final, hook=dataclass_hook)
-    if is_dataclass_instance(obj):
-        obj_use = asdict_without_defaults(obj, final=asdict_final)
-    else:
-        obj_use = obj
+    obj_use = _pre_process(
+        obj,
+        before=pre_process_before,
+        after=pre_process_after,
+        dataclass_final_hook=pre_process_dataclass_final_hook,
+    )
     return dumps(
         obj_use,
-        default=partial(
-            _serialize2_default, dataclass_asdict_final=asdict_final, fallback=fallback
-        ),
+        default=partial(_serialize2_default, fallback=fallback),
+        # default=partial(
+        #     _serialize2_default, dataclass_asdict_final=asdict_final, fallback=fallback
+        # ),
         option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
     )
 
 
-def _pre_process_check(obj: Any) -> None:
-    if isinstance(obj, int) and not (MIN_INT64 <= obj <= MAX_INT64):
-        msg = f"Integer value {obj} is out of range"
-        raise _Serialize2IntegerError(obj=obj)
-    if isinstance(obj, list):
-        for o in obj:
-            _pre_process_check(o)
-        return
-    if isinstance(obj, dict):
-        for v in obj.values():
-            _pre_process_check(v)
-        return
-    if is_dataclass_instance(obj):
-        for v in asdict(obj).values():
-            _pre_process_check(v)
-        return
+def _pre_process(
+    obj: Any,
+    /,
+    *,
+    before: Callable[[Any], Any] | None = None,
+    after: Callable[[Any], Any] | None = None,
+    dataclass_final_hook: Callable[[type[Dataclass], StrMapping], StrMapping]
+    | None = None,
+) -> Any:
+    if before is not None:
+        obj = before(obj)
+    match obj:
+        case int():
+            if not (MIN_INT64 <= obj <= MAX_INT64):
+                raise _Serialize2IntegerError(obj=obj)
+        case list():
+            return [
+                _pre_process(
+                    o,
+                    before=before,
+                    after=after,
+                    dataclass_final_hook=dataclass_final_hook,
+                )
+                for o in obj
+            ]
+        case dict():
+            return {
+                k: _pre_process(
+                    v,
+                    before=before,
+                    after=after,
+                    dataclass_final_hook=dataclass_final_hook,
+                )
+                for k, v in obj.items()
+            }
+        case Dataclass():
+            if isinstance(obj, Forex):
+                # breakpoint()
+                new = asdict_without_defaults(
+                    obj, final=partial(_dataclass_hook_final, hook=dataclass_final_hook)
+                )
+                a = 1
+            new = asdict_without_defaults(
+                obj, final=partial(_dataclass_hook_final, hook=dataclass_final_hook)
+            )
+            # breakpoint()
+            obj = new
+
+            return {
+                k: _pre_process(
+                    v,
+                    before=before,
+                    after=after,
+                    dataclass_final_hook=dataclass_final_hook,
+                )
+                for k, v in obj.items()
+            }
+        case _:
+            pass
+    return obj if after is None else after(obj)
 
 
 def _dataclass_hook_final(
@@ -108,7 +159,8 @@ def _serialize2_default(
     obj: Any,
     /,
     *,
-    dataclass_asdict_final: Callable[[type[Dataclass], StrMapping], StrMapping],
+    dataclass_asdict_final: Callable[[type[Dataclass], StrMapping], StrMapping]
+    | None = None,
     fallback: bool = False,
 ) -> str:
     if isinstance(obj, dt.datetime):
@@ -126,9 +178,9 @@ def _serialize2_default(
     if isinstance(obj, Path):
         ser = str(obj)
         return f"[{_Prefixes.path.value}]{ser}"
-    if is_dataclass_instance(obj):
-        mapping = asdict_without_defaults(obj, final=dataclass_asdict_final)
-        return serialize2(mapping).decode()
+    # if is_dataclass_instance(obj):
+    #     mapping = asdict_without_defaults(obj, final=dataclass_asdict_final)
+    #     return serialize2(mapping).decode()
     if fallback:
         return str(obj)
     raise TypeError
