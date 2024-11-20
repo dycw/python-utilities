@@ -163,7 +163,9 @@ def _object_hook(
                     k: _object_hook(v, data=data, objects=objects)
                     for k, v in obj.items()
                 }
-            return {k: _object_hook(v, data=data) for k, v in obj.items()}
+            return {
+                k: _object_hook(v, data=data, objects=objects) for k, v in obj.items()
+            }
         case list():
             return [_object_hook(o, data=data, objects=objects) for o in obj]
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
