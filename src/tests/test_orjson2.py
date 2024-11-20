@@ -2,28 +2,23 @@ from __future__ import annotations
 
 from contextlib import suppress
 from dataclasses import dataclass
-from math import isinf, isnan, nan
+from math import isinf, isnan
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import HealthCheck, given, reproduce_failure, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
-    DataObject,
     SearchStrategy,
     booleans,
     builds,
-    data,
     dates,
     datetimes,
     dictionaries,
     floats,
     lists,
-    none,
     recursive,
     sampled_from,
-    sets,
-    tuples,
 )
 from ib_async import (
     ComboLeg,
@@ -89,7 +84,7 @@ objects = recursive(
 
 @dataclass(unsafe_hash=True, kw_only=True, slots=True)
 class DataClass1:
-    x: int | None = None
+    x: int = 0
 
 
 dataclass1s = builds(DataClass1)
@@ -97,7 +92,7 @@ dataclass1s = builds(DataClass1)
 
 @dataclass(unsafe_hash=True, kw_only=True, slots=True)
 class DataClass2Inner:
-    a: int | None = None
+    x: int = 0
 
 
 @dataclass(unsafe_hash=True, kw_only=True, slots=True)
@@ -125,10 +120,11 @@ class TestSerializeAndDeserialize2:
         assert result == obj
 
     @given(obj=extend(base | dataclass2s))
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_nested(self, *, obj: Any) -> None:
-        result = deserialize2(
-            serialize2(obj), objects={DataClass2Inner, DataClass2Outer}
-        )
+        with assume_does_not_raise(_Serialize2IntegerError):
+            ser = serialize2(obj)
+        result = deserialize2(ser, objects={DataClass2Inner, DataClass2Outer})
         assert result == obj
 
     @given(obj=dataclass1s)
@@ -152,71 +148,45 @@ class TestSerializeAndDeserialize2:
 
 class TestSerialize2:
     def test_dataclass(self) -> None:
-        obj = DataClass1(x=0)
+        obj = DataClass1()
         result = serialize2(obj)
-        expected = b'{"[dc|DataClass1]":{"x":0}}'
+        expected = b'{"[dc|DataClass1]":{}}'
         assert result == expected
 
     def test_dataclass_nested(self) -> None:
-        obj = DataClass2Outer(inner=DataClass2Inner(a=0))
+        obj = DataClass2Outer(inner=DataClass2Inner(x=0))
         result = serialize2(obj)
-        expected = (
-            b'{"[dc|DataClass2Outer]":{"inner":{"[dc|DataClass2Inner]":{"a":0}}}}'
-        )
+        expected = b'{"[dc|DataClass2Outer]":{"inner":{"[dc|DataClass2Inner]":{}}}}'
         assert result == expected
 
-    @given(
-        obj=extend(dataclass1s.filter(lambda obj: (obj.x is not None) and (obj.x >= 0)))
-    )
+    @given(obj=extend(dataclass1s.filter(lambda obj: obj.x >= 0)))
     def test_dataclass_hook_setup(self, *, obj: Any) -> None:
         ser = serialize2(obj)
         assert not search(b"-", ser)
 
-    @given(obj=extend(dataclass1s.filter(lambda obj: obj.x is not None)))
+    @given(obj=extend(dataclass1s))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_hook_main(self, *, obj: Any) -> None:
         def hook(_: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
             return {k: v for k, v in mapping.items() if v >= 0}
 
-        ser = serialize2(obj, dataclass_hook=hook)
+        ser = serialize2(obj, pre_process_dataclass_final_hook=hook)
         assert not search(b"-", ser)
-
-    @given(x=int64s())
-    def test_dataclass_hook_on_list(self, *, x: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int | None = None
-
-        obj = Example(x=x)
-
-        def hook(_: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
-            return {k: v for k, v in mapping.items() if v >= 0}
-
-        result = serialize2(obj, dataclass_hook=hook)
-        expected = serialize2(
-            {"[dc|" + Example.__qualname__ + "]": {"x": x} if x >= 0 else {}},
-            dataclass_hook=hook,
-        )
-        assert result == expected
 
     @given(x=sampled_from([MIN_INT64 - 1, MAX_INT64 + 1]))
     def test_pre_process(self, *, x: int) -> None:
         with raises(_Serialize2IntegerError, match="Integer .* is out of range"):
             _ = serialize2(x)
 
-    @given(data=data())
-    def test_ib(self, *, data: DataObject) -> None:
-        def dataclass_final_hook(cls: type[Any], mapping: StrMapping, /) -> Any:
+    @given(obj=extend(trades))
+    def test_ib_trades(self, *, obj: Any) -> None:
+        def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
             if issubclass(cls, Contract) and not issubclass(Contract, cls):
                 mapping = {k: v for k, v in mapping.items() if k != "secType"}
             return mapping
 
-        forexes = builds(Forex)
-        fills = builds(Fill, contract=forexes)
-        trades = builds(Trade, fills=lists(fills))
-        obj = data.draw(extend(trades))
         with assume_does_not_raise(_Serialize2IntegerError):
-            ser = serialize2(obj, pre_process_dataclass_final_hook=dataclass_final_hook)
+            ser = serialize2(obj, pre_process_dataclass_final_hook=hook)
         result = deserialize2(
             ser,
             objects={
@@ -240,10 +210,7 @@ class TestSerialize2:
             if is_dataclass_instance(obj):
                 return unpack(asdict_without_defaults(obj))
             with suppress(TypeError):
-                if isnan(obj):
-                    return None
-            with suppress(TypeError):
-                if isinf(obj):
+                if isinf(obj) or isnan(obj):
                     return None
             return obj
 

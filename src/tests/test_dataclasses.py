@@ -6,7 +6,7 @@ from types import NoneType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
 from hypothesis import given
-from hypothesis.strategies import integers, lists, recursive
+from hypothesis.strategies import integers, lists
 from ib_async import Future
 from pytest import mark, param, raises
 
