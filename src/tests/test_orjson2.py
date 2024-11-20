@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from dataclasses import dataclass
+from math import isinf, isnan, nan
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import given, reproduce_failure
+from hypothesis import HealthCheck, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -19,23 +21,27 @@ from hypothesis.strategies import (
     lists,
     none,
     recursive,
+    sampled_from,
     sets,
     tuples,
 )
-from ib_async import Contract, Fill, Forex, Order, Trade
+from ib_async import CommissionReport, Contract, Execution, Fill, Forex, Order, Trade
 from pytest import raises
 
 from utilities.dataclasses import asdict_without_defaults, is_dataclass_instance
 from utilities.hypothesis import (
+    assume_does_not_raise,
     int64s,
     text_ascii,
     text_printable,
     timedeltas_2w,
     zoned_datetimes,
 )
+from utilities.math import MAX_INT64, MIN_INT64
 from utilities.orjson2 import (
     _Deserialize2NoObjectsError,
     _Deserialize2ObjectEmptyError,
+    _Serialize2IntegerError,
     deserialize2,
     serialize2,
 )
@@ -76,7 +82,7 @@ class DataClass1:
     x: int | None = None
 
 
-dataclass1s = builds(DataClass1, x=int64s() | none())
+dataclass1s = builds(DataClass1)
 
 
 @dataclass(unsafe_hash=True, kw_only=True, slots=True)
@@ -89,9 +95,7 @@ class DataClass2Outer:
     inner: DataClass2Inner
 
 
-dataclass2s = builds(
-    DataClass2Outer, inner=builds(DataClass2Inner, a=int64s() | none())
-)
+dataclass2s = builds(DataClass2Outer)
 
 
 class TestSerializeAndDeserialize2:
@@ -154,6 +158,7 @@ class TestSerialize2:
         assert not search(b"-", ser)
 
     @given(obj=extend(dataclass1s.filter(lambda obj: obj.x is not None)))
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_hook_main(self, *, obj: Any) -> None:
         def hook(_: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
             return {k: v for k, v in mapping.items() if v >= 0}
@@ -179,8 +184,12 @@ class TestSerialize2:
         )
         assert result == expected
 
+    @given(x=sampled_from([MIN_INT64 - 1, MAX_INT64 + 1]))
+    def test_pre_process(self, *, x: int) -> None:
+        with raises(_Serialize2IntegerError, match="Integer .* is out of range"):
+            _ = serialize2(x)
+
     @given(data=data())
-    @reproduce_failure("6.119.3", b"AXicY2BkZiAbAAABKgAF")
     def test_ib(self, *, data: DataObject) -> None:
         def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
             if issubclass(cls, Contract) and not issubclass(Contract, cls):
@@ -192,8 +201,19 @@ class TestSerialize2:
         trades = builds(Trade, contract=forexes, order=orders)
         fills = builds(Fill)
         obj = data.draw(extend(forexes | orders | trades | fills))
+        with assume_does_not_raise(_Serialize2IntegerError):
+            ser = serialize2(obj, dataclass_hook=hook)
         result = deserialize2(
-            serialize2(obj, dataclass_hook=hook), objects={Trade, Order, Forex}
+            ser,
+            objects={
+                CommissionReport,
+                Contract,
+                Execution,
+                Fill,
+                Forex,
+                Order,
+                Trade,
+            },
         )
 
         def unpack(obj: Any, /) -> Any:
@@ -202,10 +222,26 @@ class TestSerialize2:
             if isinstance(obj, dict):
                 return {k: unpack(v) for k, v in obj.items()}
             if is_dataclass_instance(obj):
-                return asdict_without_defaults(obj)
+                return unpack(asdict_without_defaults(obj))
+            with suppress(TypeError):
+                if isnan(obj):
+                    return None
+            with suppress(TypeError):
+                if isinf(obj):
+                    return None
             return obj
 
-        assert unpack(result) == unpack(obj)
+        def eq(x: Any, y: Any) -> Any:
+            if isinstance(x, list) and isinstance(y, list):
+                return all(eq(x_i, y_i) for x_i, y_i in zip(x, y, strict=True))
+            if isinstance(x, dict) and isinstance(y, dict):
+                return (set(x) == set(y)) and all(eq(x[i], y[i]) for i in x)
+            if is_dataclass_instance(x) and is_dataclass_instance(y):
+                return eq(unpack(x), unpack(y))
+            return x == y
+
+        ur, uo = unpack(result), unpack(obj)
+        assert eq(ur, uo)
 
     def test_fallback(self) -> None:
         with raises(TypeError, match="Type is not JSON serializable: Sentinel"):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from enum import Enum, unique
 from functools import partial
 from pathlib import Path
@@ -23,6 +23,7 @@ from utilities.dataclasses import (
     is_dataclass_instance,
 )
 from utilities.iterables import OneEmptyError, one
+from utilities.math import MAX_INT64, MIN_INT64
 from utilities.whenever import (
     parse_date,
     parse_local_datetime,
@@ -58,6 +59,7 @@ def serialize2(
     fallback: bool = False,
 ) -> bytes:
     """Serialize an object."""
+    _pre_process_check(obj)
     asdict_final = partial(_dataclass_hook_final, hook=dataclass_hook)
     if is_dataclass_instance(obj):
         obj_use = asdict_without_defaults(obj, final=asdict_final)
@@ -70,6 +72,24 @@ def serialize2(
         ),
         option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
     )
+
+
+def _pre_process_check(obj: Any) -> None:
+    if isinstance(obj, int) and not (MIN_INT64 <= obj <= MAX_INT64):
+        msg = f"Integer value {obj} is out of range"
+        raise _Serialize2IntegerError(obj=obj)
+    if isinstance(obj, list):
+        for o in obj:
+            _pre_process_check(o)
+        return
+    if isinstance(obj, dict):
+        for v in obj.values():
+            _pre_process_check(v)
+        return
+    if is_dataclass_instance(obj):
+        for v in asdict(obj).values():
+            _pre_process_check(v)
+        return
 
 
 def _dataclass_hook_final(
@@ -114,6 +134,18 @@ def _serialize2_default(
     raise TypeError
 
 
+@dataclass(kw_only=True, slots=True)
+class Serialize2Error(Exception):
+    obj: Any
+
+
+@dataclass(kw_only=True, slots=True)
+class _Serialize2IntegerError(Serialize2Error):
+    @override
+    def __str__(self) -> str:
+        return f"Integer {self.obj} is out of range"
+
+
 def deserialize2(
     data: bytes, /, *, objects: AbstractSet[type[Dataclass]] | None = None
 ) -> Any:
@@ -135,14 +167,14 @@ _TIMEDELTA_PATTERN = re.compile(r"^\[" + _Prefixes.timedelta.value + r"\](.+)$")
 
 
 def _object_hook(
-    obj: bool | float | str | dict[str, Any] | list[Any] | Dataclass,  # noqa: FBT001
+    obj: bool | float | str | dict[str, Any] | list[Any] | Dataclass | None,  # noqa: FBT001
     /,
     *,
     data: bytes,
     objects: AbstractSet[type[Dataclass]] | None = None,
 ) -> Any:
     match obj:
-        case bool() | int() | float() | Dataclass():
+        case bool() | int() | float() | Dataclass() | None:
             return obj
         case str():
             # ordered
@@ -160,6 +192,8 @@ def _object_hook(
             if _DATACLASS_DICT_PATTERN.search(obj):
                 return deserialize2(obj.encode(), objects=objects)
             return obj
+        case list():
+            return [_object_hook(o, data=data, objects=objects) for o in obj]
         case dict():
             if len(obj) == 1:
                 key, value = one(obj.items())
@@ -186,8 +220,6 @@ def _object_hook(
             return {
                 k: _object_hook(v, data=data, objects=objects) for k, v in obj.items()
             }
-        case list():
-            return [_object_hook(o, data=data, objects=objects) for o in obj]
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(cast(Never, never))
 
@@ -214,4 +246,4 @@ class _Deserialize2ObjectEmptyError(Deserialize2Error):
         return f"Unable to find object {self.qualname!r} to deserialize {self.obj!r} (from {self.data!r})"
 
 
-__all__ = ["Deserialize2Error", "deserialize2", "serialize2"]
+__all__ = ["Deserialize2Error", "Serialize2Error", "deserialize2", "serialize2"]
