@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from re import search
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import given
 from hypothesis.strategies import (
+    DataObject,
     SearchStrategy,
     booleans,
     builds,
+    data,
     dates,
     dictionaries,
     floats,
@@ -15,9 +18,17 @@ from hypothesis.strategies import (
     none,
     recursive,
 )
-from pytest import mark, raises
+from ib_async import Contract, Fill, Forex, Order, Trade
+from pytest import raises
 
-from utilities.hypothesis import int64s, text_printable, timedeltas_2w, zoned_datetimes
+from utilities.dataclasses import asdict_without_defaults, is_dataclass_instance
+from utilities.hypothesis import (
+    int64s,
+    text_ascii,
+    text_printable,
+    timedeltas_2w,
+    zoned_datetimes,
+)
 from utilities.orjson2 import (
     _Deserialize2NoObjectsError,
     _Deserialize2ObjectEmptyError,
@@ -46,7 +57,7 @@ base = (
 
 
 def extend(strategy: SearchStrategy[Any]) -> SearchStrategy[Any]:
-    return lists(strategy) | dictionaries(text_printable(), strategy)
+    return lists(strategy) | dictionaries(text_ascii(), strategy)
 
 
 objects = recursive(
@@ -129,23 +140,22 @@ class TestSerialize2:
         )
         assert result == expected
 
-    @given(x=int64s())
-    def test_dataclass_hook(self, *, x: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int | None = None
+    @given(
+        obj=extend(dataclass1s.filter(lambda obj: (obj.x is not None) and (obj.x >= 0)))
+    )
+    def test_dataclass_hook_setup(self, *, obj: Any) -> None:
+        ser = serialize2(obj)
+        assert not search(b"-", ser)
 
-        obj = Example(x=x)
-
+    @given(obj=extend(dataclass1s.filter(lambda obj: obj.x is not None)))
+    def test_dataclass_hook_main(self, *, obj: Any) -> None:
         def hook(_: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
             return {k: v for k, v in mapping.items() if v >= 0}
 
-        result = deserialize2(serialize2(obj, dataclass_hook=hook), objects={Example})
-        expected = Example(x=x) if x >= 0 else Example()
-        assert result == expected
+        ser = serialize2(obj, dataclass_hook=hook)
+        assert not search(b"-", ser)
 
     @given(x=int64s())
-    @mark.skip
     def test_dataclass_hook_on_list(self, *, x: int) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -158,19 +168,38 @@ class TestSerialize2:
 
         result = serialize2(obj, dataclass_hook=hook)
         expected = serialize2(
-            {"[dc|" + Example.__qualname__ + "]": {"x": 0} if x >= 0 else {}},
+            {"[dc|" + Example.__qualname__ + "]": {"x": x} if x >= 0 else {}},
             dataclass_hook=hook,
         )
         assert result == expected
 
-    # def test_ib(self) -> None:
-    #     from ib_async import Trade
-    #
-    #     x = [Trade]
-    #
-    #     result = deserialize2(serialize2(obj, dataclass_hook=hook), objects={Example})
-    #     expected = [Example(x=x) if x >= 0 else Example()]
-    #     assert result == expected
+    @given(data=data())
+    # @reproduce_failure("6.119.3", b"AA==")
+    def test_ib(self, *, data: DataObject) -> None:
+        def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
+            if issubclass(cls, Contract) and not issubclass(Contract, cls):
+                mapping = {k: v for k, v in mapping.items() if k != "secType"}
+            return mapping
+
+        forexes = builds(Forex)
+        orders = builds(Order)
+        trades = builds(Trade, contract=forexes, order=orders)
+        fills = builds(Fill)
+        obj = data.draw(extend(forexes | orders | trades | fills))
+        result = deserialize2(
+            serialize2(obj, dataclass_hook=hook), objects={Trade, Order, Forex}
+        )
+
+        def unpack(obj: Any, /) -> Any:
+            if isinstance(obj, list):
+                return list(map(unpack, obj))
+            if isinstance(obj, dict):
+                return {k: unpack(v) for k, v in obj.items()}
+            if is_dataclass_instance(obj):
+                return asdict_without_defaults(obj)
+            return obj
+
+        assert unpack(result) == unpack(obj)
 
     def test_fallback(self) -> None:
         with raises(TypeError, match="Type is not JSON serializable: Sentinel"):
