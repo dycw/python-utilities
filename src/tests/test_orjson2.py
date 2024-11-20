@@ -19,6 +19,8 @@ from hypothesis.strategies import (
     lists,
     none,
     recursive,
+    sets,
+    tuples,
 )
 from ib_async import Contract, Fill, Forex, Order, Trade
 from pytest import raises

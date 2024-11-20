@@ -145,10 +145,12 @@ def _object_hook(
         case bool() | int() | float() | Dataclass():
             return obj
         case str():
+            # ordered
             if match := _ZONED_DATETIME_PATTERN.search(obj):
                 return parse_zoned_datetime(match.group(1))
             if match := _LOCAL_DATETIME_PATTERN.search(obj):
                 return parse_local_datetime(match.group(1))
+            # unordered
             if match := _DATE_PATTERN.search(obj):
                 return parse_date(match.group(1))
             if match := _PATH_PATTERN.search(obj):
