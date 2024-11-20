@@ -18,6 +18,7 @@ from orjson import (
 from typing_extensions import override
 
 from utilities.dataclasses import Dataclass, asdict_without_defaults
+from utilities.functions import get_class_name
 from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.whenever import (
@@ -61,11 +62,14 @@ def serialize2(
     obj_use = _pre_process(
         obj, before=before, after=after, dataclass_final_hook=dataclass_final_hook
     )
-    return dumps(
-        obj_use,
-        default=partial(_serialize2_default, fallback=fallback),
-        option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
-    )
+    try:
+        return dumps(
+            obj_use,
+            default=partial(_serialize2_default, fallback=fallback),
+            option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
+        )
+    except TypeError:
+        raise _Serialize2TypeError(obj=obj) from None
 
 
 def _pre_process(
@@ -157,6 +161,14 @@ def _serialize2_default(obj: Any, /, *, fallback: bool = False) -> str:
 @dataclass(kw_only=True, slots=True)
 class Serialize2Error(Exception):
     obj: Any
+
+
+@dataclass(kw_only=True, slots=True)
+class _Serialize2TypeError(Serialize2Error):
+    @override
+    def __str__(self) -> str:
+        cls = get_class_name(self.obj)
+        return f"Unable to serialize object of type {cls!r}"
 
 
 @dataclass(kw_only=True, slots=True)

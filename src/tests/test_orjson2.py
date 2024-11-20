@@ -17,7 +17,6 @@ from hypothesis.strategies import (
     dictionaries,
     floats,
     lists,
-    recursive,
     sampled_from,
 )
 from ib_async import (
@@ -47,6 +46,7 @@ from utilities.orjson2 import (
     _Deserialize2NoObjectsError,
     _Deserialize2ObjectEmptyError,
     _Serialize2IntegerError,
+    _Serialize2TypeError,
     deserialize2,
     serialize2,
 )
@@ -75,11 +75,6 @@ base = (
 
 def extend(strategy: SearchStrategy[Any]) -> SearchStrategy[Any]:
     return lists(strategy) | dictionaries(text_ascii(), strategy)
-
-
-objects = recursive(
-    base, lambda children: lists(children) | dictionaries(text_printable(), children)
-)
 
 
 @dataclass(unsafe_hash=True, kw_only=True, slots=True)
@@ -233,12 +228,16 @@ class TestSerialize2:
         assert eq(ur, uo)
 
     def test_fallback(self) -> None:
-        with raises(TypeError, match="Type is not JSON serializable: Sentinel"):
+        with raises(
+            _Serialize2TypeError, match="Unable to serialize object of type 'Sentinel'"
+        ):
             _ = serialize2(sentinel)
         result = serialize2(sentinel, fallback=True)
         expected = b'"<sentinel>"'
         assert result == expected
 
     def test_error_serialize(self) -> None:
-        with raises(TypeError, match="Type is not JSON serializable: Sentinel"):
+        with raises(
+            _Serialize2TypeError, match="Unable to serialize object of type 'Sentinel'"
+        ):
             _ = serialize2(sentinel)

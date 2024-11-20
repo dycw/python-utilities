@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from asyncio import create_task, get_running_loop, sleep
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import DataObject, booleans, data
@@ -9,7 +9,7 @@ from pytest import raises
 from redis.asyncio import Redis
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
-from tests.test_orjson2 import _Object, objects
+from tests.test_orjson2 import base
 from utilities.functions import get_class_name
 from utilities.hypothesis import (
     int64s,
@@ -17,7 +17,7 @@ from utilities.hypothesis import (
     text_ascii,
     yield_test_redis,
 )
-from utilities.orjson import SerializeError, deserialize, serialize
+from utilities.orjson2 import Serialize2Error, deserialize2, serialize2
 from utilities.redis import (
     publish,
     redis_hash_map_key,
@@ -38,7 +38,7 @@ class TestPublishAndSubscribe:
         channel=text_ascii(min_size=1).map(
             lambda c: f"{get_class_name(TestPublishAndSubscribe)}_obj_ser_{c}"
         ),
-        obj=objects,
+        obj=base,
     )
     @settings(
         phases={Phase.generate},
@@ -46,19 +46,19 @@ class TestPublishAndSubscribe:
     )
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_all_objects_with_serialize(
-        self, *, capsys: CaptureFixture, data: DataObject, channel: str, obj: _Object
+        self, *, capsys: CaptureFixture, data: DataObject, channel: str, obj: Any
     ) -> None:
         async with yield_test_redis(data) as test:
 
             async def listener() -> None:
                 async for msg in subscribe(
-                    test.redis.pubsub(), channel, deserializer=deserialize
+                    test.redis.pubsub(), channel, deserializer=deserialize2
                 ):
                     print(msg)  # noqa: T201
 
             task = create_task(listener())
             await sleep(0.05)
-            _ = await publish(test.redis, channel, obj, serializer=serialize)
+            _ = await publish(test.redis, channel, obj, serializer=serialize2)
             await sleep(0.05)
             try:
                 out = capsys.readouterr().out
@@ -288,7 +288,7 @@ class TestRedisKey:
         async with yield_test_redis(data) as test:
             key = redis_key(test.key, Sentinel)
             with raises(
-                SerializeError, match="Unable to serialize object of type 'Sentinel'"
+                Serialize2Error, match="Unable to serialize object of type 'Sentinel'"
             ):
                 _ = await key.set(test.redis, sentinel)
 
