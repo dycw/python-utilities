@@ -24,9 +24,11 @@ from utilities.dataclasses import (
 from utilities.iterables import OneEmptyError, one
 from utilities.whenever import (
     parse_date,
+    parse_local_datetime,
     parse_timedelta,
     parse_zoned_datetime,
     serialize_date,
+    serialize_local_datetime,
     serialize_timedelta,
     serialize_zoned_datetime,
 )
@@ -88,7 +90,10 @@ def _serialize2_default(
     fallback: bool = False,
 ) -> str:
     if isinstance(obj, dt.datetime):
-        ser = serialize_zoned_datetime(obj)
+        if obj.tzinfo is None:
+            ser = serialize_local_datetime(obj)
+        else:
+            ser = serialize_zoned_datetime(obj)
         return f"[{_Prefixes.datetime.value}]{ser}"
     if isinstance(obj, dt.date):  # after datetime
         ser = serialize_date(obj)
@@ -116,7 +121,10 @@ _DATACLASS_DICT_PATTERN = re.compile(
     r'^{"\[' + _Prefixes.dataclass.value + r'\|.+?\]":{.*?}}$'
 )
 _DATE_PATTERN = re.compile(r"^\[" + _Prefixes.date.value + r"\](.+)$")
-_DATETIME_PATTERN = re.compile(r"^\[" + _Prefixes.datetime.value + r"\](.+)$")
+_LOCAL_DATETIME_PATTERN = re.compile(r"^\[" + _Prefixes.datetime.value + r"\](.+)$")
+_ZONED_DATETIME_PATTERN = re.compile(
+    r"^\[" + _Prefixes.datetime.value + r"\](.+\+\d{2}:\d{2}\[.+?\])$"
+)
 _TIMEDELTA_PATTERN = re.compile(r"^\[" + _Prefixes.timedelta.value + r"\](.+)$")
 
 
@@ -131,8 +139,10 @@ def _object_hook(
         case bool() | int() | float() | Dataclass():
             return obj
         case str():
-            if match := _DATETIME_PATTERN.search(obj):
+            if match := _ZONED_DATETIME_PATTERN.search(obj):
                 return parse_zoned_datetime(match.group(1))
+            if match := _LOCAL_DATETIME_PATTERN.search(obj):
+                return parse_local_datetime(match.group(1))
             if match := _DATE_PATTERN.search(obj):
                 return parse_date(match.group(1))
             if match := _TIMEDELTA_PATTERN.search(obj):

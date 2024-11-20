@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from re import search
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import given
+from hypothesis import given, reproduce_failure
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -12,6 +12,7 @@ from hypothesis.strategies import (
     builds,
     data,
     dates,
+    datetimes,
     dictionaries,
     floats,
     lists,
@@ -52,6 +53,7 @@ base = (
     | text_printable()
     | timedeltas_2w()
     | dates()
+    | datetimes()
     | zoned_datetimes()
 )
 
@@ -174,7 +176,7 @@ class TestSerialize2:
         assert result == expected
 
     @given(data=data())
-    # @reproduce_failure("6.119.3", b"AA==")
+    @reproduce_failure("6.119.3", b"AXicY2BkZiAbAAABKgAF")
     def test_ib(self, *, data: DataObject) -> None:
         def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
             if issubclass(cls, Contract) and not issubclass(Contract, cls):
