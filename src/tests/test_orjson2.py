@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any
 
@@ -50,6 +51,7 @@ base = (
     booleans()
     | floats(allow_nan=False, allow_infinity=False)
     | int64s()
+    | text_ascii().map(Path)
     | text_printable()
     | timedeltas_2w()
     | dates()

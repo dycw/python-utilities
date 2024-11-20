@@ -5,6 +5,7 @@ import re
 from dataclasses import dataclass
 from enum import Enum, unique
 from functools import partial
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Never, assert_never, cast
 
 from orjson import (
@@ -45,6 +46,7 @@ class _Prefixes(Enum):
     dataclass = "dc"
     date = "d"
     datetime = "dt"
+    path = "p"
     timedelta = "td"
 
 
@@ -101,6 +103,9 @@ def _serialize2_default(
     if isinstance(obj, dt.timedelta):
         ser = serialize_timedelta(obj)
         return f"[{_Prefixes.timedelta.value}]{ser}"
+    if isinstance(obj, Path):
+        ser = str(obj)
+        return f"[{_Prefixes.path.value}]{ser}"
     if is_dataclass_instance(obj):
         mapping = asdict_without_defaults(obj, final=dataclass_asdict_final)
         return serialize2(mapping).decode()
@@ -121,6 +126,7 @@ _DATACLASS_DICT_PATTERN = re.compile(
     r'^{"\[' + _Prefixes.dataclass.value + r'\|.+?\]":{.*?}}$'
 )
 _DATE_PATTERN = re.compile(r"^\[" + _Prefixes.date.value + r"\](.+)$")
+_PATH_PATTERN = re.compile(r"^\[" + _Prefixes.path.value + r"\](.+)$")
 _LOCAL_DATETIME_PATTERN = re.compile(r"^\[" + _Prefixes.datetime.value + r"\](.+)$")
 _ZONED_DATETIME_PATTERN = re.compile(
     r"^\[" + _Prefixes.datetime.value + r"\](.+\+\d{2}:\d{2}\[.+?\])$"
@@ -145,6 +151,8 @@ def _object_hook(
                 return parse_local_datetime(match.group(1))
             if match := _DATE_PATTERN.search(obj):
                 return parse_date(match.group(1))
+            if match := _PATH_PATTERN.search(obj):
+                return Path(match.group(1))
             if match := _TIMEDELTA_PATTERN.search(obj):
                 return parse_timedelta(match.group(1))
             if _DATACLASS_DICT_PATTERN.search(obj):
