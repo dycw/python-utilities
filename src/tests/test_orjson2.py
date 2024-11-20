@@ -25,7 +25,17 @@ from hypothesis.strategies import (
     sets,
     tuples,
 )
-from ib_async import CommissionReport, Contract, Execution, Fill, Forex, Order, Trade
+from ib_async import (
+    ComboLeg,
+    CommissionReport,
+    Contract,
+    DeltaNeutralContract,
+    Execution,
+    Fill,
+    Forex,
+    Order,
+    Trade,
+)
 from pytest import raises
 
 from utilities.dataclasses import asdict_without_defaults, is_dataclass_instance
@@ -207,7 +217,9 @@ class TestSerialize2:
             ser,
             objects={
                 CommissionReport,
+                ComboLeg,
                 Contract,
+                DeltaNeutralContract,
                 Execution,
                 Fill,
                 Forex,
