@@ -323,7 +323,7 @@ pytest-only==2.1.2
     # via dycw-utilities (pyproject.toml)
 pytest-randomly==3.16.0
     # via dycw-utilities (pyproject.toml)
-pytest-rerunfailures==14.0
+pytest-rerunfailures==15.0
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)
