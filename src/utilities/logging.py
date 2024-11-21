@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from itertools import product
 from logging import (
     Formatter,
+    Logger,
     LogRecord,
     StreamHandler,
     basicConfig,
@@ -83,6 +84,7 @@ def setup_logging(
     files_backup_count: int = 10,
     files_max_bytes: int = 10 * 1024**2,
     files_fmt: str = "{zoned_datetime_str} | {name}:{funcName}:{lineno} | {levelname:8} | {message}",
+    extra: Callable[[Logger], None] | None = None,
 ) -> None:
     """Set up logger."""
     # log record factory
@@ -165,6 +167,10 @@ def setup_logging(
         file_handler.setFormatter(formatter)
         file_handler.setLevel(level)
         logger.addHandler(file_handler)
+
+    # extra
+    if extra is not None:
+        extra(logger)
 
 
 class _AdvancedLogRecord(LogRecord):
