@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from logging import getLogger
+from logging import DEBUG, FileHandler, Logger, getLogger
 from typing import TYPE_CHECKING, Any, cast
 
 from pytest import LogCaptureFixture, mark, param, raises
@@ -109,3 +109,15 @@ class TestSetupLogging:
         assert isinstance(record, _AdvancedLogRecord)
         assert isinstance(record.zoned_datetime, ZonedDateTime)
         assert isinstance(record.zoned_datetime_str, str)
+
+    @skipif_windows
+    def test_extra(self, *, tmp_path: Path) -> None:
+        def extra(logger: Logger, /) -> None:
+            handler = FileHandler(tmp_path.joinpath("extra.log"))
+            handler.setLevel(DEBUG)
+            logger.addHandler(handler)
+
+        setup_logging(logger_name=__name__, files_dir=tmp_path, extra=extra)
+        logger = getLogger(__name__)
+        logger.info("Test")
+        assert len(list(tmp_path.iterdir())) == 8

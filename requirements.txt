@@ -323,7 +323,7 @@ pytest-only==2.1.2
     # via dycw-utilities (pyproject.toml)
 pytest-randomly==3.16.0
     # via dycw-utilities (pyproject.toml)
-pytest-rerunfailures==14.0
+pytest-rerunfailures==15.0
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)
@@ -364,7 +364,7 @@ scipy==1.14.1
     #   scs
 scs==3.2.7
     # via cvxpy
-setuptools==75.5.0
+setuptools==75.6.0
     # via dycw-utilities (pyproject.toml)
 shellingham==1.5.4
     # via hatch
@@ -432,7 +432,7 @@ urllib3==2.2.3
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.5.3
+uv==0.5.4
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
