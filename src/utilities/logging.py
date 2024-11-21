@@ -170,7 +170,7 @@ def setup_logging(
 
     # extra
     if extra is not None:
-        extra(logger)
+        extra(logger)  # skipif-ci-and-windows
 
 
 class _AdvancedLogRecord(LogRecord):
