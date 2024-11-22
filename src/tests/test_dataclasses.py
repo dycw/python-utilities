@@ -263,6 +263,7 @@ class TestReplaceNonSentinel:
             x: int = 0
 
         obj = Example()
+        assert obj.x == 0
         obj1 = replace_non_sentinel(obj, x=1)
         assert obj1.x == 1
         obj2 = replace_non_sentinel(obj1, x=sentinel)
@@ -274,11 +275,11 @@ class TestReplaceNonSentinel:
             x: int = 0
 
         obj = Example()
+        assert obj.x == 0
         replace_non_sentinel(obj, x=1, in_place=True)
         assert obj.x == 1
-        obj2 = replace_non_sentinel(obj, x=2)
+        replace_non_sentinel(obj, x=sentinel, in_place=True)
         assert obj.x == 1
-        assert obj2.x == 2
 
 
 class TestYieldDataClassFieldNames:
