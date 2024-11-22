@@ -6,7 +6,7 @@ coverage==7.6.7
     # via pytest-cov
 eventkit==1.0.3
     # via ib-async
-hypothesis==6.119.3
+hypothesis==6.119.4
     # via dycw-utilities (pyproject.toml)
 ib-async==1.0.3
     # via dycw-utilities (pyproject.toml)

@@ -23,7 +23,7 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via streamlit
-hypothesis==6.119.3
+hypothesis==6.119.4
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via requests
@@ -115,7 +115,7 @@ toml==0.10.2
     # via streamlit
 tomli==2.1.0
     # via coverage
-tornado==6.4.1
+tornado==6.4.2
     # via streamlit
 typing-extensions==4.12.2
     # via

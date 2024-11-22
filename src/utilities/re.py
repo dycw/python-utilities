@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
-from re import compile
 
 from typing_extensions import override
 
@@ -13,7 +13,7 @@ def extract_group(pattern: str, text: str, /, *, flags: int = 0) -> str:
 
     The regex must have 1 capture group, and this must match exactly once.
     """
-    compiled = compile(pattern, flags=flags)
+    compiled = re.compile(pattern, flags=flags)
     match compiled.groups:
         case 0:
             raise _ExtractGroupNoCaptureGroupsError(pattern=pattern, text=text)
@@ -75,7 +75,7 @@ def extract_groups(pattern: str, text: str, /, *, flags: int = 0) -> list[str]:
     The regex may have any number of capture groups, and they must collectively
     match exactly once.
     """
-    compiled = compile(pattern, flags=flags)
+    compiled = re.compile(pattern, flags=flags)
     if (n_groups := compiled.groups) == 0:
         raise _ExtractGroupsNoCaptureGroupsError(pattern=pattern, text=text)
     matches: list[str] = compiled.findall(text)

@@ -20,11 +20,9 @@ def add_listener(
     error: Callable[[Event, Exception], None] | None = None,
     done: Callable[..., Any] | None = None,
     keep_ref: bool = False,
-    _stdout: bool = True,
-    _loguru: bool = True,
 ) -> Event:
     """Connect a listener to an event."""
-    error_default = partial(_add_listener_error, stdout=_stdout, loguru=_loguru)
+    error_default = partial(_add_listener_error)
     if error is None:
         error_use = error_default
     else:
@@ -37,23 +35,13 @@ def add_listener(
     return event.connect(listener, error=error_use, done=done, keep_ref=keep_ref)
 
 
-def _add_listener_error(
-    event: Event, exception: Exception, /, *, stdout: bool = True, loguru: bool = True
-) -> None:
+def _add_listener_error(event: Event, exception: Exception, /) -> None:
     """Run callback in the case of an error."""
     type_name = get_class_name(exception)
     event_name = event.name()
     desc = f"Raised a {type_name} whilst running {event_name!r}"
-    if stdout:
-        msg = f"{desc}:\n{event=}\n{exception=}"
-        _ = sys.stdout.write(f"{msg}\n")
-    if loguru:
-        try:
-            from loguru import logger
-        except ModuleNotFoundError:  # pragma: no cover
-            pass
-        else:
-            logger.opt(exception=exception).error(f"{desc}:\n{{event}}", event=event)
+    msg = f"{desc}:\n{event=}\n{exception=}"
+    _ = sys.stdout.write(f"{msg}\n")
 
 
 __all__ = ["add_listener"]

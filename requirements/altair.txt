@@ -13,7 +13,7 @@ coverage==7.6.7
     # via pytest-cov
 deprecated==1.2.15
     # via pikepdf
-hypothesis==6.119.3
+hypothesis==6.119.4
     # via dycw-utilities (pyproject.toml)
 img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
@@ -80,5 +80,5 @@ typing-extensions==4.12.2
     #   altair
 vl-convert-python==1.6.1
     # via dycw-utilities (pyproject.toml)
-wrapt==1.16.0
+wrapt==1.17.0
     # via deprecated

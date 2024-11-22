@@ -40,7 +40,7 @@ comm==0.2.2
     # via ipykernel
 coverage==7.6.7
     # via pytest-cov
-debugpy==1.8.8
+debugpy==1.8.9
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -58,7 +58,7 @@ httpcore==1.0.7
     # via httpx
 httpx==0.27.2
     # via jupyterlab
-hypothesis==6.119.3
+hypothesis==6.119.4
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -270,7 +270,7 @@ tinycss2==1.4.0
     # via nbconvert
 tomli==2.1.0
     # via coverage
-tornado==6.4.1
+tornado==6.4.2
     # via
     #   ipykernel
     #   jupyter-client
