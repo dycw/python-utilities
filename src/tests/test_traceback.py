@@ -15,6 +15,7 @@ from tests.test_traceback_funcs.decorated import (
     func_decorated_third,
 )
 from tests.test_traceback_funcs.error import func_error_async, func_error_sync
+from tests.test_traceback_funcs.ignore import func_ignore
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.recursive import func_recursive
 from tests.test_traceback_funcs.two import func_two_first, func_two_second
@@ -143,6 +144,10 @@ class TestTrace:
                 code_ln,
                 extra_locals=extra,
             )
+
+    def test_func_ignore(self) -> None:
+        with raises(AssertionError):
+            _ = func_ignore(1, 2, 3, 4, c=5, d=6, e=7)
 
     async def test_func_async(self) -> None:
         with raises(AssertionError) as exc_info:

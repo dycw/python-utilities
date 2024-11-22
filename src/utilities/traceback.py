@@ -8,7 +8,7 @@ from pathlib import Path
 from sys import exc_info
 from textwrap import indent
 from traceback import TracebackException
-from typing import TYPE_CHECKING, Any, NoReturn, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Any, NoReturn, Self, TypeVar, cast, overload
 
 from utilities.dataclasses import yield_field_names
 from utilities.functions import ensure_not_none, get_class_name, get_func_name
@@ -23,12 +23,24 @@ if TYPE_CHECKING:
     from utilities.typing import StrMapping
 
 _F = TypeVar("_F", bound=Callable[..., Any])
+_Ignore = type[Exception] | tuple[type[Exception], ...]
 _MAX_WIDTH = 80
 _INDENT_SIZE = 4
 
 
-def trace(func: _F, /) -> _F:
+@overload
+def trace(func: _F, /, *, ignore: _Ignore | None = ...) -> _F: ...
+@overload
+def trace(
+    func: None = None, /, *, ignore: _Ignore | None = ...
+) -> Callable[[_F], _F]: ...
+def trace(
+    func: _F | None = None, /, *, ignore: _Ignore | None = None
+) -> _F | Callable[[_F], _F]:
     """Trace a function call."""
+    if func is None:
+        result = partial(trace, ignore=ignore)
+        return cast(Callable[[_F], _F], result)
     if not iscoroutinefunction(func):
 
         @wraps(func)
@@ -37,7 +49,9 @@ def trace(func: _F, /) -> _F:
             try:
                 return func(*args, **kwargs)
             except Exception as error:  # noqa: BLE001
-                _trace_build_and_raise_trace_mixin(error, func, call_args)
+                _trace_build_and_raise_trace_mixin(
+                    error, func, call_args, ignore=ignore
+                )
 
         return cast(_F, trace_sync)
 
@@ -47,15 +61,22 @@ def trace(func: _F, /) -> _F:
         try:
             return await func(*args, **kwargs)
         except Exception as error:  # noqa: BLE001
-            _trace_build_and_raise_trace_mixin(error, func, call_args)
+            _trace_build_and_raise_trace_mixin(error, func, call_args, ignore=ignore)
 
     return cast(_F, log_call_async)
 
 
 def _trace_build_and_raise_trace_mixin(
-    error: Exception, func: Callable[..., Any], call_args: _CallArgs, /
+    error: Exception,
+    func: Callable[..., Any],
+    call_args: _CallArgs,
+    /,
+    *,
+    ignore: _Ignore | None = None,
 ) -> NoReturn:
     """Build and raise a TraceMixin exception."""
+    if (ignore is not None) and isinstance(error, ignore):
+        raise error
     frames = list(yield_extended_frame_summaries(error))
     matches = (
         f for f in frames if (f.name == get_func_name(func)) and (f.code_line != "")
