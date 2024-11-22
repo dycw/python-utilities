@@ -45,6 +45,7 @@ class _Prefixes(Enum):
     date = "d"
     datetime = "dt"
     path = "p"
+    set_ = "s"
     timedelta = "td"
 
 
