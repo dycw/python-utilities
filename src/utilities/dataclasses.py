@@ -119,6 +119,10 @@ def replace_non_sentinel(
 def replace_non_sentinel(
     obj: _T, /, *, in_place: Literal[False] = False, **kwargs: Any
 ) -> _T: ...
+@overload
+def replace_non_sentinel(
+    obj: _T, /, *, in_place: bool = False, **kwargs: Any
+) -> _T | None: ...
 def replace_non_sentinel(
     obj: _T, /, *, in_place: bool = False, **kwargs: Any
 ) -> _T | None:
