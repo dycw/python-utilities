@@ -268,9 +268,17 @@ class TestReplaceNonSentinel:
         obj2 = replace_non_sentinel(obj1, x=sentinel)
         assert obj2.x == 1
 
-    @mark.parametrize("obj", [param(None), param(NoneType)])
-    def test_others(self, *, obj: Any) -> None:
-        assert not is_dataclass_instance(obj)
+    def test_in_place(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+        obj = Example()
+        replace_non_sentinel(obj, x=1, in_place=True)
+        assert obj.x == 1
+        obj2 = replace_non_sentinel(obj, x=2)
+        assert obj.x == 1
+        assert obj2.x == 2
 
 
 class TestYieldDataClassFieldNames:
