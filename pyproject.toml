@@ -385,8 +385,6 @@ preview = true
 explicit-preview-rules = true
 fixable = ["ALL"]
 ignore = [
-  "ANN101",  # missing-type-self
-  "ANN102",  # missing-type-cls
   "ANN401",  # any-type
   "ASYNC109",  # async-function-with-timeout
   "C901",  # complex-structure

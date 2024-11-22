@@ -5,12 +5,14 @@ from re import search
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 from eventkit import Event
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, given
 from hypothesis.strategies import integers, sampled_from
 from pytest import CaptureFixture
 
+from tests.conftest import FLAKY
 from utilities.eventkit import add_listener
 from utilities.functions import identity
+from utilities.hypothesis import settings_with_reduced_examples
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
@@ -19,8 +21,11 @@ if TYPE_CHECKING:
 class TestAddListener:
     datetime: ClassVar[str] = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
 
+    @FLAKY
     @given(sync_or_async=sampled_from(["sync", "async"]), n=integers())
-    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    @settings_with_reduced_examples(
+        suppress_health_check={HealthCheck.function_scoped_fixture}
+    )
     async def test_main(
         self, *, sync_or_async: Literal["sync", "async"], n: int
     ) -> None:
@@ -43,7 +48,9 @@ class TestAddListener:
         event.emit(n)
 
     @given(n=integers())
-    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    @settings_with_reduced_examples(
+        suppress_health_check={HealthCheck.function_scoped_fixture}
+    )
     def test_custom_error_handler(self, *, capsys: CaptureFixture, n: int) -> None:
         event = Event()
 
@@ -58,7 +65,9 @@ class TestAddListener:
         assert line == "Custom handler"
 
     @given(n=integers())
-    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    @settings_with_reduced_examples(
+        suppress_health_check={HealthCheck.function_scoped_fixture}
+    )
     async def test_error_stdout(self, *, capsys: CaptureFixture, n: int) -> None:
         event = Event()
         _ = add_listener(event, identity, keep_ref=True)

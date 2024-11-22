@@ -5,9 +5,11 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    Literal,
     TypeGuard,
     TypeVar,
     get_type_hints,
+    overload,
     runtime_checkable,
 )
 
@@ -109,8 +111,27 @@ def is_dataclass_instance(obj: Any, /) -> TypeGuard[Dataclass]:
 _T = TypeVar("_T", bound=Dataclass)
 
 
-def replace_non_sentinel(obj: _T, **kwargs: Any) -> _T:
+@overload
+def replace_non_sentinel(
+    obj: Any, /, *, in_place: Literal[True], **kwargs: Any
+) -> None: ...
+@overload
+def replace_non_sentinel(
+    obj: _T, /, *, in_place: Literal[False] = False, **kwargs: Any
+) -> _T: ...
+@overload
+def replace_non_sentinel(
+    obj: _T, /, *, in_place: bool = False, **kwargs: Any
+) -> _T | None: ...
+def replace_non_sentinel(
+    obj: _T, /, *, in_place: bool = False, **kwargs: Any
+) -> _T | None:
     """Replace attributes on a dataclass, filtering out sentinel values."""
+    if in_place:
+        for k, v in kwargs.items():
+            if not isinstance(v, Sentinel):
+                setattr(obj, k, v)
+        return None
     return replace(
         obj, **{k: v for k, v in kwargs.items() if not isinstance(v, Sentinel)}
     )
