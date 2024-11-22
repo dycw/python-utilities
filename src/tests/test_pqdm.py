@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from operator import neg, pow
+from operator import neg
 from typing import TYPE_CHECKING, Any, Literal
 
 from pytest import mark, param
