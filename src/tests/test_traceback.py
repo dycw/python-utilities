@@ -146,8 +146,10 @@ class TestTrace:
             )
 
     def test_func_ignore(self) -> None:
-        with raises(AssertionError):
+        with raises(AssertionError) as exc_info:
             _ = func_ignore(1, 2, 3, 4, c=5, d=6, e=7)
+        error = exc_info.value
+        assert not isinstance(error, TraceMixin)
 
     async def test_func_async(self) -> None:
         with raises(AssertionError) as exc_info:
