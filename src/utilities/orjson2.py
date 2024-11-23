@@ -24,10 +24,12 @@ from utilities.math import MAX_INT64, MIN_INT64
 from utilities.whenever import (
     parse_date,
     parse_local_datetime,
+    parse_time,
     parse_timedelta,
     parse_zoned_datetime,
     serialize_date,
     serialize_local_datetime,
+    serialize_time,
     serialize_timedelta,
     serialize_zoned_datetime,
 )
@@ -38,6 +40,7 @@ if TYPE_CHECKING:
 
     from utilities.types import StrMapping
 
+
 _T = TypeVar("_T")
 
 
@@ -46,9 +49,12 @@ class _Prefixes(Enum):
     dataclass = "dc"
     date = "d"
     datetime = "dt"
+    frozenset_ = "f"
     path = "p"
     set_ = "s"
     timedelta = "td"
+    time = "tm"
+    tuple_ = "tu"
 
 
 def serialize2(
@@ -116,8 +122,32 @@ def _pre_process(
                 )
                 for k, v in obj.items()
             }
+        case frozenset():
+            return _FrozenSetContainer(
+                as_list=[
+                    _pre_process(
+                        o,
+                        before=before,
+                        after=after,
+                        dataclass_final_hook=dataclass_final_hook,
+                    )
+                    for o in list(obj)
+                ]
+            )
         case set():
             return _SetContainer(
+                as_list=[
+                    _pre_process(
+                        o,
+                        before=before,
+                        after=after,
+                        dataclass_final_hook=dataclass_final_hook,
+                    )
+                    for o in list(obj)
+                ]
+            )
+        case tuple():
+            return _TupleContainer(
                 as_list=[
                     _pre_process(
                         o,
@@ -147,7 +177,17 @@ def _pre_process(
 
 
 @dataclass(kw_only=True, slots=True)
+class _FrozenSetContainer(Generic[_T]):
+    as_list: list[_T]
+
+
+@dataclass(kw_only=True, slots=True)
 class _SetContainer(Generic[_T]):
+    as_list: list[_T]
+
+
+@dataclass(kw_only=True, slots=True)
+class _TupleContainer(Generic[_T]):
     as_list: list[_T]
 
 
@@ -182,12 +222,23 @@ def _serialize2_default(
     if isinstance(obj, dt.date):  # after datetime
         ser = serialize_date(obj)
         return f"[{_Prefixes.date.value}]{ser}"
+    if isinstance(obj, dt.time):
+        ser = serialize_time(obj)
+        return f"[{_Prefixes.time.value}]{ser}"
     if isinstance(obj, dt.timedelta):
         ser = serialize_timedelta(obj)
         return f"[{_Prefixes.timedelta.value}]{ser}"
     if isinstance(obj, Path):
         ser = str(obj)
         return f"[{_Prefixes.path.value}]{ser}"
+    if isinstance(obj, _FrozenSetContainer):
+        ser = serialize2(
+            obj.as_list,
+            before=before,
+            after=after,
+            dataclass_final_hook=dataclass_final_hook,
+        ).decode()
+        return f"[{_Prefixes.frozenset_.value}]{ser}"
     if isinstance(obj, _SetContainer):
         ser = serialize2(
             obj.as_list,
@@ -196,6 +247,14 @@ def _serialize2_default(
             dataclass_final_hook=dataclass_final_hook,
         ).decode()
         return f"[{_Prefixes.set_.value}]{ser}"
+    if isinstance(obj, _TupleContainer):
+        ser = serialize2(
+            obj.as_list,
+            before=before,
+            after=after,
+            dataclass_final_hook=dataclass_final_hook,
+        ).decode()
+        return f"[{_Prefixes.tuple_.value}]{ser}"
     if fallback:
         return str(obj)
     raise TypeError
@@ -210,8 +269,10 @@ class Serialize2Error(Exception):
 class _Serialize2TypeError(Serialize2Error):
     @override
     def __str__(self) -> str:
+        from rich.pretty import pretty_repr
+
         cls = get_class_name(self.obj)
-        return f"Unable to serialize object of type {cls!r}"
+        return f"Unable to serialize object of type {cls!r}:\n{pretty_repr(self.obj)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -230,10 +291,13 @@ def deserialize2(
 
 _DATACLASS_PATTERN = re.compile(r"^\[" + _Prefixes.dataclass.value + r"\|(.+?)\]$")
 _DATE_PATTERN = re.compile(r"^\[" + _Prefixes.date.value + r"\](.+)$")
+_FROZENSET_PATTERN = re.compile(r"^\[" + _Prefixes.frozenset_.value + r"\](.+)$")
 _PATH_PATTERN = re.compile(r"^\[" + _Prefixes.path.value + r"\](.+)$")
 _LOCAL_DATETIME_PATTERN = re.compile(r"^\[" + _Prefixes.datetime.value + r"\](.+)$")
 _SET_PATTERN = re.compile(r"^\[" + _Prefixes.set_.value + r"\](.+)$")
+_TIME_PATTERN = re.compile(r"^\[" + _Prefixes.time.value + r"\](.+)$")
 _TIMEDELTA_PATTERN = re.compile(r"^\[" + _Prefixes.timedelta.value + r"\](.+)$")
+_TUPLE_PATTERN = re.compile(r"^\[" + _Prefixes.tuple_.value + r"\](.+)$")
 _ZONED_DATETIME_PATTERN = re.compile(
     r"^\[" + _Prefixes.datetime.value + r"\](.+\+\d{2}:\d{2}\[.+?\])$"
 )
@@ -260,11 +324,17 @@ def _object_hook(
                 return parse_date(match.group(1))
             if match := _PATH_PATTERN.search(obj):
                 return Path(match.group(1))
+            if match := _TIME_PATTERN.search(obj):
+                return parse_time(match.group(1))
             if match := _TIMEDELTA_PATTERN.search(obj):
                 return parse_timedelta(match.group(1))
             # containers
+            if match := _FROZENSET_PATTERN.search(obj):
+                return frozenset(deserialize2(match.group(1).encode(), objects=objects))
             if match := _SET_PATTERN.search(obj):
                 return set(deserialize2(match.group(1).encode(), objects=objects))
+            if match := _TUPLE_PATTERN.search(obj):
+                return tuple(deserialize2(match.group(1).encode(), objects=objects))
             return obj
         case list():
             return [_object_hook(o, data=data, objects=objects) for o in obj]

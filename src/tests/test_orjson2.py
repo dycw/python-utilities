@@ -18,9 +18,12 @@ from hypothesis.strategies import (
     datetimes,
     dictionaries,
     floats,
+    frozensets,
     lists,
     sampled_from,
     sets,
+    times,
+    tuples,
 )
 from ib_async import (
     ComboLeg,
@@ -67,18 +70,25 @@ if TYPE_CHECKING:
 base = (
     booleans()
     | floats(allow_nan=False, allow_infinity=False)
+    | dates()
+    | datetimes()
     | int64s()
     | text_ascii().map(Path)
     | text_printable()
+    | times()
     | timedeltas_2w()
-    | dates()
-    | datetimes()
     | zoned_datetimes()
 )
 
 
 def extend(strategy: SearchStrategy[Any]) -> SearchStrategy[Any]:
-    return lists(strategy) | sets(strategy) | dictionaries(text_ascii(), strategy)
+    return (
+        dictionaries(text_ascii(), strategy)
+        | frozensets(strategy)
+        | lists(strategy)
+        | sets(strategy)
+        | tuples(strategy)
+    )
 
 
 @dataclass(unsafe_hash=True, kw_only=True, slots=True)
@@ -212,7 +222,7 @@ class TestSerialize2:
         )
 
         def unpack(obj: Any, /) -> Any:
-            if isinstance(obj, list):
+            if isinstance(obj, list | tuple):
                 return list(map(unpack, obj))
             if isinstance(obj, dict):
                 return {k: unpack(v) for k, v in obj.items()}
