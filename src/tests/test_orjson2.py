@@ -22,6 +22,7 @@ from hypothesis.strategies import (
     lists,
     sampled_from,
     sets,
+    tuples,
 )
 from ib_async import (
     ComboLeg,
@@ -68,22 +69,23 @@ if TYPE_CHECKING:
 base = (
     booleans()
     | floats(allow_nan=False, allow_infinity=False)
+    | dates()
+    | datetimes()
     | int64s()
     | text_ascii().map(Path)
     | text_printable()
     | timedeltas_2w()
-    | dates()
-    | datetimes()
     | zoned_datetimes()
 )
 
 
 def extend(strategy: SearchStrategy[Any]) -> SearchStrategy[Any]:
     return (
-        frozensets(strategy)
+        dictionaries(text_ascii(), strategy)
+        | frozensets(strategy)
         | lists(strategy)
         | sets(strategy)
-        | dictionaries(text_ascii(), strategy)
+        | tuples(strategy)
     )
 
 
@@ -218,7 +220,7 @@ class TestSerialize2:
         )
 
         def unpack(obj: Any, /) -> Any:
-            if isinstance(obj, list):
+            if isinstance(obj, list | tuple):
                 return list(map(unpack, obj))
             if isinstance(obj, dict):
                 return {k: unpack(v) for k, v in obj.items()}

@@ -50,6 +50,8 @@ class _Prefixes(Enum):
     path = "p"
     set_ = "s"
     timedelta = "td"
+    time = "tm"
+    tuple_ = "tu"
 
 
 def serialize2(
@@ -141,6 +143,18 @@ def _pre_process(
                     for o in list(obj)
                 ]
             )
+        case tuple():
+            return _TupleContainer(
+                as_list=[
+                    _pre_process(
+                        o,
+                        before=before,
+                        after=after,
+                        dataclass_final_hook=dataclass_final_hook,
+                    )
+                    for o in list(obj)
+                ]
+            )
         case Dataclass():
             obj = asdict_without_defaults(
                 obj, final=partial(_dataclass_final, hook=dataclass_final_hook)
@@ -166,6 +180,11 @@ class _FrozenSetContainer(Generic[_T]):
 
 @dataclass(kw_only=True, slots=True)
 class _SetContainer(Generic[_T]):
+    as_list: list[_T]
+
+
+@dataclass(kw_only=True, slots=True)
+class _TupleContainer(Generic[_T]):
     as_list: list[_T]
 
 
@@ -222,6 +241,14 @@ def _serialize2_default(
             dataclass_final_hook=dataclass_final_hook,
         ).decode()
         return f"[{_Prefixes.set_.value}]{ser}"
+    if isinstance(obj, _TupleContainer):
+        ser = serialize2(
+            obj.as_list,
+            before=before,
+            after=after,
+            dataclass_final_hook=dataclass_final_hook,
+        ).decode()
+        return f"[{_Prefixes.tuple_.value}]{ser}"
     if fallback:
         return str(obj)
     raise TypeError
@@ -261,6 +288,7 @@ _PATH_PATTERN = re.compile(r"^\[" + _Prefixes.path.value + r"\](.+)$")
 _LOCAL_DATETIME_PATTERN = re.compile(r"^\[" + _Prefixes.datetime.value + r"\](.+)$")
 _SET_PATTERN = re.compile(r"^\[" + _Prefixes.set_.value + r"\](.+)$")
 _TIMEDELTA_PATTERN = re.compile(r"^\[" + _Prefixes.timedelta.value + r"\](.+)$")
+_TUPLE_PATTERN = re.compile(r"^\[" + _Prefixes.tuple_.value + r"\](.+)$")
 _ZONED_DATETIME_PATTERN = re.compile(
     r"^\[" + _Prefixes.datetime.value + r"\](.+\+\d{2}:\d{2}\[.+?\])$"
 )
@@ -294,6 +322,8 @@ def _object_hook(
                 return frozenset(deserialize2(match.group(1).encode(), objects=objects))
             if match := _SET_PATTERN.search(obj):
                 return set(deserialize2(match.group(1).encode(), objects=objects))
+            if match := _TUPLE_PATTERN.search(obj):
+                return tuple(deserialize2(match.group(1).encode(), objects=objects))
             return obj
         case list():
             return [_object_hook(o, data=data, objects=objects) for o in obj]
