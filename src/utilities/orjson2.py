@@ -24,10 +24,12 @@ from utilities.math import MAX_INT64, MIN_INT64
 from utilities.whenever import (
     parse_date,
     parse_local_datetime,
+    parse_time,
     parse_timedelta,
     parse_zoned_datetime,
     serialize_date,
     serialize_local_datetime,
+    serialize_time,
     serialize_timedelta,
     serialize_zoned_datetime,
 )
@@ -37,6 +39,7 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
 
     from utilities.types import StrMapping
+
 
 _T = TypeVar("_T")
 
@@ -219,6 +222,9 @@ def _serialize2_default(
     if isinstance(obj, dt.date):  # after datetime
         ser = serialize_date(obj)
         return f"[{_Prefixes.date.value}]{ser}"
+    if isinstance(obj, dt.time):
+        ser = serialize_time(obj)
+        return f"[{_Prefixes.time.value}]{ser}"
     if isinstance(obj, dt.timedelta):
         ser = serialize_timedelta(obj)
         return f"[{_Prefixes.timedelta.value}]{ser}"
@@ -287,6 +293,7 @@ _FROZENSET_PATTERN = re.compile(r"^\[" + _Prefixes.frozenset_.value + r"\](.+)$"
 _PATH_PATTERN = re.compile(r"^\[" + _Prefixes.path.value + r"\](.+)$")
 _LOCAL_DATETIME_PATTERN = re.compile(r"^\[" + _Prefixes.datetime.value + r"\](.+)$")
 _SET_PATTERN = re.compile(r"^\[" + _Prefixes.set_.value + r"\](.+)$")
+_TIME_PATTERN = re.compile(r"^\[" + _Prefixes.time.value + r"\](.+)$")
 _TIMEDELTA_PATTERN = re.compile(r"^\[" + _Prefixes.timedelta.value + r"\](.+)$")
 _TUPLE_PATTERN = re.compile(r"^\[" + _Prefixes.tuple_.value + r"\](.+)$")
 _ZONED_DATETIME_PATTERN = re.compile(
@@ -315,6 +322,8 @@ def _object_hook(
                 return parse_date(match.group(1))
             if match := _PATH_PATTERN.search(obj):
                 return Path(match.group(1))
+            if match := _TIME_PATTERN.search(obj):
+                return parse_time(match.group(1))
             if match := _TIMEDELTA_PATTERN.search(obj):
                 return parse_timedelta(match.group(1))
             # containers

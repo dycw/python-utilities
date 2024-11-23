@@ -22,6 +22,7 @@ from hypothesis.strategies import (
     lists,
     sampled_from,
     sets,
+    times,
     tuples,
 )
 from ib_async import (
@@ -74,6 +75,7 @@ base = (
     | int64s()
     | text_ascii().map(Path)
     | text_printable()
+    | times()
     | timedeltas_2w()
     | zoned_datetimes()
 )
