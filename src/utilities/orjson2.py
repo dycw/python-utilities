@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum, unique
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Never, assert_never, cast
+from typing import TYPE_CHECKING, Any, Generic, Never, TypeVar, assert_never, cast
 
 from orjson import (
     OPT_PASSTHROUGH_DATACLASS,
@@ -38,6 +38,8 @@ if TYPE_CHECKING:
 
     from utilities.types import StrMapping
 
+_T = TypeVar("_T")
+
 
 @unique
 class _Prefixes(Enum):
@@ -66,7 +68,13 @@ def serialize2(
     try:
         return dumps(
             obj_use,
-            default=partial(_serialize2_default, fallback=fallback),
+            default=partial(
+                _serialize2_default,
+                before=before,
+                after=after,
+                dataclass_final_hook=dataclass_final_hook,
+                fallback=fallback,
+            ),
             option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
         )
     except TypeError:
@@ -108,6 +116,18 @@ def _pre_process(
                 )
                 for k, v in obj.items()
             }
+        case set():
+            return _SetContainer(
+                as_list=[
+                    _pre_process(
+                        o,
+                        before=before,
+                        after=after,
+                        dataclass_final_hook=dataclass_final_hook,
+                    )
+                    for o in list(obj)
+                ]
+            )
         case Dataclass():
             obj = asdict_without_defaults(
                 obj, final=partial(_dataclass_final, hook=dataclass_final_hook)
@@ -126,6 +146,11 @@ def _pre_process(
     return obj if after is None else after(obj)
 
 
+@dataclass(kw_only=True, slots=True)
+class _SetContainer(Generic[_T]):
+    as_list: list[_T]
+
+
 def _dataclass_final(
     cls: type[Dataclass],
     mapping: StrMapping,
@@ -138,7 +163,16 @@ def _dataclass_final(
     return {f"[{_Prefixes.dataclass.value}|{cls.__qualname__}]": mapping}
 
 
-def _serialize2_default(obj: Any, /, *, fallback: bool = False) -> str:
+def _serialize2_default(
+    obj: Any,
+    /,
+    *,
+    before: Callable[[Any], Any] | None = None,
+    after: Callable[[Any], Any] | None = None,
+    dataclass_final_hook: Callable[[type[Dataclass], StrMapping], StrMapping]
+    | None = None,
+    fallback: bool = False,
+) -> str:
     if isinstance(obj, dt.datetime):
         if obj.tzinfo is None:
             ser = serialize_local_datetime(obj)
@@ -154,6 +188,14 @@ def _serialize2_default(obj: Any, /, *, fallback: bool = False) -> str:
     if isinstance(obj, Path):
         ser = str(obj)
         return f"[{_Prefixes.path.value}]{ser}"
+    if isinstance(obj, _SetContainer):
+        ser = serialize2(
+            obj.as_list,
+            before=before,
+            after=after,
+            dataclass_final_hook=dataclass_final_hook,
+        ).decode()
+        return f"[{_Prefixes.set_.value}]{ser}"
     if fallback:
         return str(obj)
     raise TypeError
@@ -190,10 +232,11 @@ _DATACLASS_PATTERN = re.compile(r"^\[" + _Prefixes.dataclass.value + r"\|(.+?)\]
 _DATE_PATTERN = re.compile(r"^\[" + _Prefixes.date.value + r"\](.+)$")
 _PATH_PATTERN = re.compile(r"^\[" + _Prefixes.path.value + r"\](.+)$")
 _LOCAL_DATETIME_PATTERN = re.compile(r"^\[" + _Prefixes.datetime.value + r"\](.+)$")
+_SET_PATTERN = re.compile(r"^\[" + _Prefixes.set_.value + r"\](.+)$")
+_TIMEDELTA_PATTERN = re.compile(r"^\[" + _Prefixes.timedelta.value + r"\](.+)$")
 _ZONED_DATETIME_PATTERN = re.compile(
     r"^\[" + _Prefixes.datetime.value + r"\](.+\+\d{2}:\d{2}\[.+?\])$"
 )
-_TIMEDELTA_PATTERN = re.compile(r"^\[" + _Prefixes.timedelta.value + r"\](.+)$")
 
 
 def _object_hook(
@@ -219,6 +262,9 @@ def _object_hook(
                 return Path(match.group(1))
             if match := _TIMEDELTA_PATTERN.search(obj):
                 return parse_timedelta(match.group(1))
+            # containers
+            if match := _SET_PATTERN.search(obj):
+                return set(deserialize2(match.group(1), objects=objects))
             return obj
         case list():
             return [_object_hook(o, data=data, objects=objects) for o in obj]

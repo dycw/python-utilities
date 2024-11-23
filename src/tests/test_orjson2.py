@@ -9,15 +9,18 @@ from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
+    DataObject,
     SearchStrategy,
     booleans,
     builds,
+    data,
     dates,
     datetimes,
     dictionaries,
     floats,
     lists,
     sampled_from,
+    sets,
 )
 from ib_async import (
     ComboLeg,
@@ -74,7 +77,7 @@ base = (
 
 
 def extend(strategy: SearchStrategy[Any]) -> SearchStrategy[Any]:
-    return lists(strategy) | dictionaries(text_ascii(), strategy)
+    return lists(strategy) | sets(strategy) | dictionaries(text_ascii(), strategy)
 
 
 @dataclass(unsafe_hash=True, kw_only=True, slots=True)
@@ -179,8 +182,12 @@ class TestSerialize2:
         with raises(_Serialize2IntegerError, match="Integer .* is out of range"):
             _ = serialize2(x)
 
-    @given(obj=extend(trades))
-    def test_ib_trades(self, *, obj: Any) -> None:
+    @given(data=data())
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_ib_trades(self, *, data: DataObject) -> None:
+        with assume_does_not_raise(TypeError, match="unhashable type"):
+            obj = data.draw(extend(trades))
+
         def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
             if issubclass(cls, Contract) and not issubclass(Contract, cls):
                 mapping = {k: v for k, v in mapping.items() if k != "secType"}
