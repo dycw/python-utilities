@@ -184,7 +184,7 @@ class TestSerialize2:
             _ = serialize2(x)
 
     @given(data=data())
-    @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_ib_trades(self, *, data: DataObject) -> None:
         with assume_does_not_raise(TypeError, match="unhashable type"):
             obj = data.draw(extend(trades))

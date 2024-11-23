@@ -264,7 +264,7 @@ def _object_hook(
                 return parse_timedelta(match.group(1))
             # containers
             if match := _SET_PATTERN.search(obj):
-                return set(deserialize2(match.group(1).encode(), objects=objects))
+                return set(deserialize2(match.group(1), objects=objects))
             return obj
         case list():
             return [_object_hook(o, data=data, objects=objects) for o in obj]
