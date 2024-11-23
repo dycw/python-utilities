@@ -128,6 +128,7 @@ trades = builds(Trade, fills=lists(fills))
 
 class TestSerializeAndDeserialize2:
     @given(obj=extend(base))
+    @mark.only
     def test_main(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj))
         assert result == obj

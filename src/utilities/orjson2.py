@@ -112,13 +112,18 @@ def _pre_process(
         case dict():
             return {k: pre(v) for k, v in obj.items()}
         case frozenset():
-            return _FrozenSetContainer(as_list=list(map(pre, obj)))
+            values = list(map(pre, obj))
+            if issubclass(frozenset, type(obj)):
+                key = f"[{_Prefixes.frozenset_.value}]"
+            else:
+                key = f"[{_Prefixes.frozenset_.value}|{type(obj).__qualname__}]"
+            return {key: values}
         case list():
-            as_list = list(map(pre, obj))
+            values = list(map(pre, obj))
             if issubclass(list, type(obj)):
-                return as_list
+                return values
             key = f"[{_Prefixes.list_subclass.value}|{type(obj).__qualname__}]"
-            return {key: as_list}
+            return {key: values}
         case set():
             return _SetContainer(as_list=list(map(pre, obj)))
         case tuple():
@@ -131,11 +136,6 @@ def _pre_process(
         case _:
             pass
     return obj if after is None else after(obj)
-
-
-@dataclass(kw_only=True, slots=True)
-class _FrozenSetContainer(Generic[_T]):
-    as_list: list[_T]
 
 
 @dataclass(kw_only=True, slots=True)
@@ -188,14 +188,6 @@ def _serialize2_default(
     if isinstance(obj, Path):
         ser = str(obj)
         return f"[{_Prefixes.path.value}]{ser}"
-    if isinstance(obj, _FrozenSetContainer):
-        ser = serialize2(
-            obj.as_list,
-            before=before,
-            after=after,
-            dataclass_final_hook=dataclass_final_hook,
-        ).decode()
-        return f"[{_Prefixes.frozenset_.value}]{ser}"
     if isinstance(obj, _SetContainer):
         ser = serialize2(
             obj.as_list,
@@ -248,7 +240,7 @@ def deserialize2(
 
 _DATACLASS_PATTERN = re.compile(r"^\[" + _Prefixes.dataclass.value + r"\|(.+)\]$")
 _DATE_PATTERN = re.compile(r"^\[" + _Prefixes.date.value + r"\](.+)$")
-_FROZENSET_PATTERN = re.compile(r"^\[" + _Prefixes.frozenset_.value + r"\](.+)$")
+_FROZENSET_PATTERN = re.compile(r"^\[" + _Prefixes.frozenset_.value + r"(?:\|(.+))?\]$")
 _LIST_SUBCLASS_PATTERN = re.compile(
     r"^\[" + _Prefixes.list_subclass.value + r"\|(.+)\]$"
 )
@@ -289,8 +281,6 @@ def _object_hook(
             if match := _TIMEDELTA_PATTERN.search(obj):
                 return parse_timedelta(match.group(1))
             # containers
-            if match := _FROZENSET_PATTERN.search(obj):
-                return frozenset(deserialize2(match.group(1).encode(), objects=objects))
             if match := _SET_PATTERN.search(obj):
                 return set(deserialize2(match.group(1).encode(), objects=objects))
             if match := _TUPLE_PATTERN.search(obj):
@@ -317,6 +307,25 @@ def _object_hook(
                         k: _object_hook(v, data=data, objects=objects)
                         for k, v in value.items()
                     })
+                if (match := _FROZENSET_PATTERN.search(key)) and isinstance(
+                    value, list
+                ):
+                    if match.group(1) is None:
+                        cls = frozenset
+                    else:
+                        if objects is None:
+                            raise _Deserialize2NoObjectsError(data=data, obj=obj)
+                        qualname = match.group(1)
+                        try:
+                            cls = one(o for o in objects if o.__qualname__ == qualname)
+                        except OneEmptyError:
+                            raise _Deserialize2ObjectEmptyError(
+                                data=data, obj=obj, qualname=qualname
+                            ) from None
+                    values = (
+                        _object_hook(v, data=data, objects=objects) for v in value
+                    )
+                    return cls(values)
                 if (match := _LIST_SUBCLASS_PATTERN.search(key)) and isinstance(
                     value, list
                 ):
@@ -329,12 +338,10 @@ def _object_hook(
                         raise _Deserialize2ObjectEmptyError(
                             data=data, obj=obj, qualname=qualname
                         ) from None
-                    foo = [_object_hook(v, data=data, objects=objects) for v in value]
-                    final = cls(foo)
-                    return final
-                    return cls([
+                    values = (
                         _object_hook(v, data=data, objects=objects) for v in value
-                    ])
+                    )
+                    return cls(values)
                 return {
                     k: _object_hook(v, data=data, objects=objects)
                     for k, v in obj.items()
