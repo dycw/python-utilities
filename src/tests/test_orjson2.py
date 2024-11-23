@@ -39,6 +39,7 @@ from utilities.dataclasses import asdict_without_defaults, is_dataclass_instance
 from utilities.hypothesis import (
     assume_does_not_raise,
     int64s,
+    settings_with_reduced_examples,
     text_ascii,
     text_printable,
     timedeltas_2w,
@@ -183,7 +184,7 @@ class TestSerialize2:
             _ = serialize2(x)
 
     @given(data=data())
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
     def test_ib_trades(self, *, data: DataObject) -> None:
         with assume_does_not_raise(TypeError, match="unhashable type"):
             obj = data.draw(extend(trades))
