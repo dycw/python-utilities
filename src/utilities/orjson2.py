@@ -46,6 +46,7 @@ class _Prefixes(Enum):
     dataclass = "dc"
     date = "d"
     datetime = "dt"
+    frozenset_ = "f"
     path = "p"
     set_ = "s"
     timedelta = "td"
@@ -116,6 +117,18 @@ def _pre_process(
                 )
                 for k, v in obj.items()
             }
+        case frozenset():
+            return _FrozenSetContainer(
+                as_list=[
+                    _pre_process(
+                        o,
+                        before=before,
+                        after=after,
+                        dataclass_final_hook=dataclass_final_hook,
+                    )
+                    for o in list(obj)
+                ]
+            )
         case set():
             return _SetContainer(
                 as_list=[
@@ -144,6 +157,11 @@ def _pre_process(
         case _:
             pass
     return obj if after is None else after(obj)
+
+
+@dataclass(kw_only=True, slots=True)
+class _FrozenSetContainer(Generic[_T]):
+    as_list: list[_T]
 
 
 @dataclass(kw_only=True, slots=True)
@@ -188,6 +206,14 @@ def _serialize2_default(
     if isinstance(obj, Path):
         ser = str(obj)
         return f"[{_Prefixes.path.value}]{ser}"
+    if isinstance(obj, _FrozenSetContainer):
+        ser = serialize2(
+            obj.as_list,
+            before=before,
+            after=after,
+            dataclass_final_hook=dataclass_final_hook,
+        ).decode()
+        return f"[{_Prefixes.set_.value}]{ser}"
     if isinstance(obj, _SetContainer):
         ser = serialize2(
             obj.as_list,
@@ -230,6 +256,7 @@ def deserialize2(
 
 _DATACLASS_PATTERN = re.compile(r"^\[" + _Prefixes.dataclass.value + r"\|(.+?)\]$")
 _DATE_PATTERN = re.compile(r"^\[" + _Prefixes.date.value + r"\](.+)$")
+_FROZENSET_PATTERN = re.compile(r"^\[" + _Prefixes.frozenset_.value + r"\](.+)$")
 _PATH_PATTERN = re.compile(r"^\[" + _Prefixes.path.value + r"\](.+)$")
 _LOCAL_DATETIME_PATTERN = re.compile(r"^\[" + _Prefixes.datetime.value + r"\](.+)$")
 _SET_PATTERN = re.compile(r"^\[" + _Prefixes.set_.value + r"\](.+)$")
@@ -263,6 +290,8 @@ def _object_hook(
             if match := _TIMEDELTA_PATTERN.search(obj):
                 return parse_timedelta(match.group(1))
             # containers
+            if match := _FROZENSET_PATTERN.search(obj):
+                return frozenset(deserialize2(match.group(1).encode(), objects=objects))
             if match := _SET_PATTERN.search(obj):
                 return set(deserialize2(match.group(1).encode(), objects=objects))
             return obj

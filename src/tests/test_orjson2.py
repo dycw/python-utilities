@@ -18,6 +18,7 @@ from hypothesis.strategies import (
     datetimes,
     dictionaries,
     floats,
+    frozensets,
     lists,
     sampled_from,
     sets,
@@ -78,7 +79,12 @@ base = (
 
 
 def extend(strategy: SearchStrategy[Any]) -> SearchStrategy[Any]:
-    return lists(strategy) | sets(strategy) | dictionaries(text_ascii(), strategy)
+    return (
+        frozensets(strategy)
+        | lists(strategy)
+        | sets(strategy)
+        | dictionaries(text_ascii(), strategy)
+    )
 
 
 @dataclass(unsafe_hash=True, kw_only=True, slots=True)
