@@ -269,8 +269,10 @@ class Serialize2Error(Exception):
 class _Serialize2TypeError(Serialize2Error):
     @override
     def __str__(self) -> str:
+        from rich.pretty import pretty_repr
+
         cls = get_class_name(self.obj)
-        return f"Unable to serialize object of type {cls!r}"
+        return f"Unable to serialize object of type {cls!r}:\n{pretty_repr(self.obj)}"
 
 
 @dataclass(kw_only=True, slots=True)
