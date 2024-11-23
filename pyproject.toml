@@ -51,7 +51,7 @@ dev = [
   "polars-lts-cpu >= 1.14.0, < 1.15",
   "pqdm >= 0.2.0, < 0.3",
   "psycopg2-binary >= 2.9.10, < 2.10",  # for sqlalchemy
-  "pydantic >= 2.9.0, < 2.10",
+  "pydantic >= 2.10.1, < 2.11",
   "pyhumps >= 3.8.0, < 3.9",
   "pyinstrument >= 5.0.0, < 5.1",
   "pyrsistent >= 0.20.0, < 0.21",
@@ -186,7 +186,7 @@ zzz-test-polars = [
 zzz-test-pqdm = ["pqdm >= 0.2.0, < 0.3"]
 zzz-test-pydantic = [
   "atomicwrites >= 1.4.1, < 1.5",
-  "pydantic >= 2.9.0, < 2.10",
+  "pydantic >= 2.10.1, < 2.11",
 ]
 zzz-test-pyinstrument = [
   "atomicwrites >= 1.4.1, < 1.5",
