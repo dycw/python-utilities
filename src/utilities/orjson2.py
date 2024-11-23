@@ -50,6 +50,7 @@ class _Prefixes(Enum):
     date = "d"
     datetime = "dt"
     frozenset_ = "f"
+    list_subclass = "l"
     path = "p"
     set_ = "s"
     timedelta = "td"
@@ -98,79 +99,35 @@ def _pre_process(
 ) -> Any:
     if before is not None:
         obj = before(obj)
+    pre = partial(
+        _pre_process,
+        before=before,
+        after=after,
+        dataclass_final_hook=dataclass_final_hook,
+    )
     match obj:
         case int():
             if not (MIN_INT64 <= obj <= MAX_INT64):
                 raise _Serialize2IntegerError(obj=obj)
-        case list():
-            return [
-                _pre_process(
-                    o,
-                    before=before,
-                    after=after,
-                    dataclass_final_hook=dataclass_final_hook,
-                )
-                for o in obj
-            ]
         case dict():
-            return {
-                k: _pre_process(
-                    v,
-                    before=before,
-                    after=after,
-                    dataclass_final_hook=dataclass_final_hook,
-                )
-                for k, v in obj.items()
-            }
+            return {k: pre(v) for k, v in obj.items()}
         case frozenset():
-            return _FrozenSetContainer(
-                as_list=[
-                    _pre_process(
-                        o,
-                        before=before,
-                        after=after,
-                        dataclass_final_hook=dataclass_final_hook,
-                    )
-                    for o in list(obj)
-                ]
-            )
+            return _FrozenSetContainer(as_list=list(map(pre, obj)))
+        case list():
+            as_list = list(map(pre, obj))
+            if issubclass(list, type(obj)):
+                return as_list
+            key = f"[{_Prefixes.list_subclass.value}|{type(obj).__qualname__}]"
+            return {key: as_list}
         case set():
-            return _SetContainer(
-                as_list=[
-                    _pre_process(
-                        o,
-                        before=before,
-                        after=after,
-                        dataclass_final_hook=dataclass_final_hook,
-                    )
-                    for o in list(obj)
-                ]
-            )
+            return _SetContainer(as_list=list(map(pre, obj)))
         case tuple():
-            return _TupleContainer(
-                as_list=[
-                    _pre_process(
-                        o,
-                        before=before,
-                        after=after,
-                        dataclass_final_hook=dataclass_final_hook,
-                    )
-                    for o in list(obj)
-                ]
-            )
+            return _TupleContainer(as_list=list(map(pre, obj)))
         case Dataclass():
             obj = asdict_without_defaults(
                 obj, final=partial(_dataclass_final, hook=dataclass_final_hook)
             )
-            return {
-                k: _pre_process(
-                    v,
-                    before=before,
-                    after=after,
-                    dataclass_final_hook=dataclass_final_hook,
-                )
-                for k, v in obj.items()
-            }
+            return {k: pre(v) for k, v in obj.items()}
         case _:
             pass
     return obj if after is None else after(obj)
@@ -289,11 +246,14 @@ def deserialize2(
     return _object_hook(loads(data), data=data, objects=objects)
 
 
-_DATACLASS_PATTERN = re.compile(r"^\[" + _Prefixes.dataclass.value + r"\|(.+?)\]$")
+_DATACLASS_PATTERN = re.compile(r"^\[" + _Prefixes.dataclass.value + r"\|(.+)\]$")
 _DATE_PATTERN = re.compile(r"^\[" + _Prefixes.date.value + r"\](.+)$")
 _FROZENSET_PATTERN = re.compile(r"^\[" + _Prefixes.frozenset_.value + r"\](.+)$")
-_PATH_PATTERN = re.compile(r"^\[" + _Prefixes.path.value + r"\](.+)$")
+_LIST_SUBCLASS_PATTERN = re.compile(
+    r"^\[" + _Prefixes.list_subclass.value + r"\|(.+)\]$"
+)
 _LOCAL_DATETIME_PATTERN = re.compile(r"^\[" + _Prefixes.datetime.value + r"\](.+)$")
+_PATH_PATTERN = re.compile(r"^\[" + _Prefixes.path.value + r"\](.+)$")
 _SET_PATTERN = re.compile(r"^\[" + _Prefixes.set_.value + r"\](.+)$")
 _TIME_PATTERN = re.compile(r"^\[" + _Prefixes.time.value + r"\](.+)$")
 _TIMEDELTA_PATTERN = re.compile(r"^\[" + _Prefixes.timedelta.value + r"\](.+)$")
@@ -357,6 +317,24 @@ def _object_hook(
                         k: _object_hook(v, data=data, objects=objects)
                         for k, v in value.items()
                     })
+                if (match := _LIST_SUBCLASS_PATTERN.search(key)) and isinstance(
+                    value, list
+                ):
+                    if objects is None:
+                        raise _Deserialize2NoObjectsError(data=data, obj=obj)
+                    qualname = match.group(1)
+                    try:
+                        cls = one(o for o in objects if o.__qualname__ == qualname)
+                    except OneEmptyError:
+                        raise _Deserialize2ObjectEmptyError(
+                            data=data, obj=obj, qualname=qualname
+                        ) from None
+                    foo = [_object_hook(v, data=data, objects=objects) for v in value]
+                    final = cls(foo)
+                    return final
+                    return cls([
+                        _object_hook(v, data=data, objects=objects) for v in value
+                    ])
                 return {
                     k: _object_hook(v, data=data, objects=objects)
                     for k, v in obj.items()

@@ -7,7 +7,7 @@ from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -36,7 +36,7 @@ from ib_async import (
     Order,
     Trade,
 )
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.dataclasses import asdict_without_defaults, is_dataclass_instance
 from utilities.hypothesis import (
@@ -81,14 +81,23 @@ base = (
 )
 
 
-def extend(strategy: SearchStrategy[Any]) -> SearchStrategy[Any]:
-    return (
+def extend(
+    strategy: SearchStrategy[Any], /, *, sublist: bool = False
+) -> SearchStrategy[Any]:
+    extension = (
         dictionaries(text_ascii(), strategy)
         | frozensets(strategy)
         | lists(strategy)
         | sets(strategy)
         | tuples(strategy)
     )
+    if sublist:
+        extension |= lists(strategy).map(SubList)
+    return extension
+
+
+class SubList(list):
+    pass
 
 
 @dataclass(unsafe_hash=True, kw_only=True, slots=True)
@@ -153,6 +162,11 @@ class TestSerializeAndDeserialize2:
             match=r"Unable to find object '.*' to deserialize .* \(from .*\)",
         ):
             _ = deserialize2(ser, objects=set())
+
+    @given(obj=extend(base, sublist=False))
+    def test_sub_list(self, *, obj: Any) -> None:
+        result = deserialize2(serialize2(obj), objects={SubList})
+        assert result == obj
 
 
 class TestSerialize2:
