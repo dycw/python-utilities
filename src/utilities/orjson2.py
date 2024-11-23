@@ -238,7 +238,7 @@ def _serialize2_default(
             after=after,
             dataclass_final_hook=dataclass_final_hook,
         ).decode()
-        return f"[{_Prefixes.set_.value}]{ser}"
+        return f"[{_Prefixes.frozenset_.value}]{ser}"
     if isinstance(obj, _SetContainer):
         ser = serialize2(
             obj.as_list,
