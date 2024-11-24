@@ -243,10 +243,14 @@ def deserialize2(
 
 
 _LOCAL_DATETIME_PATTERN = re.compile(
-    r"^\[" + _Prefixes.datetime.value + r"\](?!(?:.+\+\d{2}:\d{2}\[.+?\]))(.+)$"
+    r"^\["
+    + _Prefixes.datetime.value
+    + r"\](?!(?:.+[\+\-]\d{2}:\d{2}(?::\d{2})?\[.+?\]))(.+)$"
 )
 _ZONED_DATETIME_PATTERN = re.compile(
-    r"^\[" + _Prefixes.datetime.value + r"\](.+\+\d{2}:\d{2}\[(?!(?:dt\.)).+?\])$"
+    r"^\["
+    + _Prefixes.datetime.value
+    + r"\](.+[\+\-]\d{2}:\d{2}(?::\d{2})?\[(?!(?:dt\.)).+?\])$"
 )
 _ZONED_DATETIME_ALTERNATIVE_PATTERN = re.compile(
     r"^\[" + _Prefixes.datetime.value + r"\](.+\+\d{2}:\d{2}\[dt\.UTC\])$"

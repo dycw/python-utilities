@@ -24,6 +24,7 @@ from hypothesis.strategies import (
     sampled_from,
     sets,
     times,
+    timezones,
     tuples,
 )
 from ib_async import (
@@ -79,7 +80,7 @@ base = (
     | text_printable()
     | times()
     | timedeltas_2w()
-    | zoned_datetimes()
+    | zoned_datetimes(time_zone=timezones())
 )
 
 
