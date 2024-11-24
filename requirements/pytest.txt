@@ -16,6 +16,8 @@ hypothesis==6.119.4
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
+orjson==3.10.12
+    # via dycw-utilities (pyproject.toml)
 packaging==24.2
     # via
     #   coverage-conditional-plugin
@@ -52,4 +54,6 @@ sortedcontainers==2.4.0
 tomli==2.1.0
     # via coverage
 typing-extensions==4.12.2
+    # via dycw-utilities (pyproject.toml)
+whenever==0.6.13
     # via dycw-utilities (pyproject.toml)

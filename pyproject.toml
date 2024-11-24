@@ -203,6 +203,8 @@ zzz-test-pyinstrument = [
 zzz-test-pyrsistent = ["pyrsistent >= 0.20.0, < 0.21"]
 zzz-test-pytest = [
   "atomicwrites >= 1.4.1, < 1.5",
+  "orjson >= 3.10.12, < 3.11",
+  "whenever >= 0.6.13, < 0.7",
 ]
 zzz-test-python-dotenv = ["python-dotenv >= 1.0.1, < 1.1"]
 zzz-test-random = []
