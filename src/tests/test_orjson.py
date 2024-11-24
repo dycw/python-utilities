@@ -52,12 +52,12 @@ from utilities.hypothesis import (
 )
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.orjson import (
-    _DeserializeNoObjectsError,
-    _DeserializeObjectNotFoundError,
-    _SerializeIntegerError,
-    _SerializeTypeError,
-    deserialize,
-    serialize,
+    _Deserialize2NoObjectsError,
+    _Deserialize2ObjectEmptyError,
+    _Serialize2IntegerError,
+    _Serialize2TypeError,
+    deserialize2,
+    serialize2,
 )
 from utilities.sentinel import sentinel
 from utilities.zoneinfo import UTC
@@ -188,66 +188,66 @@ class Truth(Enum):
     false = auto()
 
 
-class TestSerializeAndDeserialize:
+class TestSerializeAndDeserialize2:
     @given(obj=objects())
     def test_main(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj))
+        result = deserialize2(serialize2(obj))
         assert result == obj
 
     @given(obj=objects(dataclass1=True))
     def test_dataclass(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={DataClass1})
+        result = deserialize2(serialize2(obj), objects={DataClass1})
         assert result == obj
 
     @given(obj=objects(dataclass2=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_nested(self, *, obj: Any) -> None:
-        with assume_does_not_raise(_SerializeIntegerError):
-            ser = serialize(obj)
-        result = deserialize(ser, objects={DataClass2Inner, DataClass2Outer})
+        with assume_does_not_raise(_Serialize2IntegerError):
+            ser = serialize2(obj)
+        result = deserialize2(ser, objects={DataClass2Inner, DataClass2Outer})
         assert result == obj
 
     @given(obj=builds(DataClass1))
     def test_dataclass_no_objects_error(self, *, obj: DataClass1) -> None:
-        ser = serialize(obj)
+        ser = serialize2(obj)
         with raises(
-            _DeserializeNoObjectsError,
+            _Deserialize2NoObjectsError,
             match="Objects required to deserialize '.*' from .*",
         ):
-            _ = deserialize(ser)
+            _ = deserialize2(ser)
 
     @given(obj=builds(DataClass1))
     def test_dataclass_empty_error(self, *, obj: DataClass1) -> None:
-        ser = serialize(obj)
+        ser = serialize2(obj)
         with raises(
-            _DeserializeObjectNotFoundError,
+            _Deserialize2ObjectEmptyError,
             match=r"Unable to find object to deserialize '.*' from .*",
         ):
-            _ = deserialize(ser, objects=set())
+            _ = deserialize2(ser, objects=set())
 
     @given(obj=objects(enum=True))
     def test_enum(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={Truth})
+        result = deserialize2(serialize2(obj), objects={Truth})
         assert result == obj
 
     @given(obj=objects(sub_frozenset=True))
     def test_sub_frozenset(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={SubFrozenSet})
+        result = deserialize2(serialize2(obj), objects={SubFrozenSet})
         assert result == obj
 
     @given(obj=objects(sub_list=True))
     def test_sub_list(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={SubList})
+        result = deserialize2(serialize2(obj), objects={SubList})
         assert result == obj
 
     @given(obj=objects(sub_set=True))
     def test_sub_set(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={SubSet})
+        result = deserialize2(serialize2(obj), objects={SubSet})
         assert result == obj
 
     @given(obj=objects(sub_tuple=True))
     def test_sub_tuple(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={SubTuple})
+        result = deserialize2(serialize2(obj), objects={SubTuple})
         assert result == obj
 
     @mark.parametrize(
@@ -260,29 +260,29 @@ class TestSerializeAndDeserialize:
     )
     def test_utc(self, *, utc: dt.tzinfo, expected: bytes) -> None:
         datetime = dt.datetime(2000, 1, 1, tzinfo=utc)
-        ser = serialize(datetime)
+        ser = serialize2(datetime)
         assert ser == expected
-        result = deserialize(ser)
+        result = deserialize2(ser)
         assert result == datetime
         assert result.tzinfo is utc
 
 
-class Testserialize:
+class TestSerialize2:
     @given(text=text_printable())
     def test_before(self, *, text: str) -> None:
-        result = serialize(text, before=str.upper)
-        expected = serialize(text.upper())
+        result = serialize2(text, before=str.upper)
+        expected = serialize2(text.upper())
         assert result == expected
 
     def test_dataclass(self) -> None:
         obj = DataClass1()
-        result = serialize(obj)
+        result = serialize2(obj)
         expected = b'{"[dc|DataClass1]":{}}'
         assert result == expected
 
     def test_dataclass_nested(self) -> None:
         obj = DataClass2Outer(inner=DataClass2Inner(x=0))
-        result = serialize(obj)
+        result = serialize2(obj)
         expected = b'{"[dc|DataClass2Outer]":{"inner":{"[dc|DataClass2Inner]":{}}}}'
         assert result == expected
 
@@ -292,14 +292,14 @@ class Testserialize:
         def hook(_: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
             return {k: v for k, v in mapping.items() if v >= 0}
 
-        result = serialize(obj, dataclass_final_hook=hook)
+        result = serialize2(obj, dataclass_final_hook=hook)
         expected = b'{"[dc|DataClass1]":{}}'
         assert result == expected
 
     @given(x=sampled_from([MIN_INT64 - 1, MAX_INT64 + 1]))
     def test_pre_process(self, *, x: int) -> None:
-        with raises(_SerializeIntegerError, match="Integer .* is out of range"):
-            _ = serialize(x)
+        with raises(_Serialize2IntegerError, match="Integer .* is out of range"):
+            _ = serialize2(x)
 
     @given(obj=objects(ib_trades=True))
     @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
@@ -309,9 +309,9 @@ class Testserialize:
                 mapping = {k: v for k, v in mapping.items() if k != "secType"}
             return mapping
 
-        with assume_does_not_raise(_SerializeIntegerError):
-            ser = serialize(obj, dataclass_final_hook=hook)
-        result = deserialize(
+        with assume_does_not_raise(_Serialize2IntegerError):
+            ser = serialize2(obj, dataclass_final_hook=hook)
+        result = deserialize2(
             ser,
             objects={
                 CommissionReport,
@@ -352,15 +352,15 @@ class Testserialize:
 
     def test_fallback(self) -> None:
         with raises(
-            _SerializeTypeError, match="Unable to serialize object of type 'Sentinel'"
+            _Serialize2TypeError, match="Unable to serialize object of type 'Sentinel'"
         ):
-            _ = serialize(sentinel)
-        result = serialize(sentinel, fallback=True)
+            _ = serialize2(sentinel)
+        result = serialize2(sentinel, fallback=True)
         expected = b'"<sentinel>"'
         assert result == expected
 
     def test_error_serialize(self) -> None:
         with raises(
-            _SerializeTypeError, match="Unable to serialize object of type 'Sentinel'"
+            _Serialize2TypeError, match="Unable to serialize object of type 'Sentinel'"
         ):
-            _ = serialize(sentinel)
+            _ = serialize2(sentinel)

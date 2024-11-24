@@ -17,7 +17,7 @@ from utilities.hypothesis import (
     text_ascii,
     yield_test_redis,
 )
-from utilities.orjson import SerializeError, deserialize, serialize
+from utilities.orjson import Serialize2Error, deserialize2, serialize2
 from utilities.redis import (
     publish,
     redis_hash_map_key,
