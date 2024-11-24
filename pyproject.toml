@@ -204,7 +204,6 @@ zzz-test-redis = [
   "polars-lts-cpu >= 1.14.0, < 1.15",
   "redis >= 5.2.0, < 5.3",
 ]
-zzz-test-reprlib = ["polars-lts-cpu >= 1.14.0, < 1.15"]
 zzz-test-rich = ["rich >= 13.8.1, < 13.9"]
 zzz-test-scipy = ["scipy >= 1.14.1, < 1.15"]
 zzz-test-sentinel = []
