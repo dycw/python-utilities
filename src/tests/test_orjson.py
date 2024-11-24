@@ -54,8 +54,8 @@ from utilities.math import MAX_INT64, MIN_INT64
 from utilities.orjson import (
     _DeserializeNoObjectsError,
     _DeserializeObjectNotFoundError,
-    _serializeIntegerError,
-    _serializeTypeError,
+    _SerializeIntegerError,
+    _SerializeTypeError,
     deserialize,
     serialize,
 )
@@ -202,7 +202,7 @@ class TestSerializeAndDeserialize:
     @given(obj=objects(dataclass2=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_nested(self, *, obj: Any) -> None:
-        with assume_does_not_raise(_serializeIntegerError):
+        with assume_does_not_raise(_SerializeIntegerError):
             ser = serialize(obj)
         result = deserialize(ser, objects={DataClass2Inner, DataClass2Outer})
         assert result == obj
@@ -298,7 +298,7 @@ class Testserialize:
 
     @given(x=sampled_from([MIN_INT64 - 1, MAX_INT64 + 1]))
     def test_pre_process(self, *, x: int) -> None:
-        with raises(_serializeIntegerError, match="Integer .* is out of range"):
+        with raises(_SerializeIntegerError, match="Integer .* is out of range"):
             _ = serialize(x)
 
     @given(obj=objects(ib_trades=True))
@@ -309,7 +309,7 @@ class Testserialize:
                 mapping = {k: v for k, v in mapping.items() if k != "secType"}
             return mapping
 
-        with assume_does_not_raise(_serializeIntegerError):
+        with assume_does_not_raise(_SerializeIntegerError):
             ser = serialize(obj, dataclass_final_hook=hook)
         result = deserialize(
             ser,
@@ -352,7 +352,7 @@ class Testserialize:
 
     def test_fallback(self) -> None:
         with raises(
-            _serializeTypeError, match="Unable to serialize object of type 'Sentinel'"
+            _SerializeTypeError, match="Unable to serialize object of type 'Sentinel'"
         ):
             _ = serialize(sentinel)
         result = serialize(sentinel, fallback=True)
@@ -361,6 +361,6 @@ class Testserialize:
 
     def test_error_serialize(self) -> None:
         with raises(
-            _serializeTypeError, match="Unable to serialize object of type 'Sentinel'"
+            _SerializeTypeError, match="Unable to serialize object of type 'Sentinel'"
         ):
             _ = serialize(sentinel)
