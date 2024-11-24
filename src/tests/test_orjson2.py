@@ -130,7 +130,7 @@ class TestSerializeAndDeserialize2:
     @given(obj=extend(base))
     @mark.only
     def test_main(self, *, obj: Any) -> None:
-        result = deserialize2(serialize2(obj))
+        result = deserialize2(s := serialize2(obj))
         assert result == obj
 
     @given(obj=extend(base | dataclass1s))

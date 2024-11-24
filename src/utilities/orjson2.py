@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum, unique
 from functools import partial
 from pathlib import Path
-from re import Pattern
+from re import Match, Pattern
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -113,6 +113,7 @@ def _pre_process(
         case frozenset():
             return _pre_process_container(
                 obj,
+                frozenset,
                 _Prefixes.frozenset_,
                 before=before,
                 after=after,
@@ -127,6 +128,7 @@ def _pre_process(
         case set():
             return _pre_process_container(
                 obj,
+                set,
                 _Prefixes.set_,
                 before=before,
                 after=after,
@@ -135,6 +137,7 @@ def _pre_process(
         case tuple():
             return _pre_process_container(
                 obj,
+                tuple,
                 _Prefixes.tuple_,
                 before=before,
                 after=after,
@@ -248,19 +251,21 @@ _DATACLASS_PATTERN = re.compile(r"^\[" + _Prefixes.dataclass.value + r"\|(.+)\]$
 _LIST_SUBCLASS_PATTERN = re.compile(
     r"^\[" + _Prefixes.list_subclass.value + r"\|(.+)\]$"
 )
-_LOCAL_DATETIME_PATTERN = re.compile(r"^\[" + _Prefixes.datetime.value + r"\](.+)$")
+_LOCAL_DATETIME_PATTERN = re.compile(
+    r"^\[" + _Prefixes.datetime.value + r"\](?!.*\+)(.+)$"
+)
 _ZONED_DATETIME_PATTERN = re.compile(
     r"^\[" + _Prefixes.datetime.value + r"\](.+\+\d{2}:\d{2}\[.+?\])$"
 )
 
 
 def _make_unit_pattern(prefix: _Prefixes, /) -> Pattern[str]:
-    return re.compile(r"^\[" + prefix.value + r"\|(.+)\]$")
+    return re.compile(r"^\[" + prefix.value + r"\](.+)$")
 
 
 _DATE_PATTERN, _PATH_PATTERN, _TIME_PATTERN, _TIMEDELTA_PATTERN = map(
     _make_unit_pattern,
-    [_Prefixes.date, _Prefixes.datetime, _Prefixes.path, _Prefixes.time],
+    [_Prefixes.date, _Prefixes.path, _Prefixes.time, _Prefixes.timedelta],
 )
 
 
@@ -298,11 +303,6 @@ def _object_hook(
                 return parse_time(match.group(1))
             if match := _TIMEDELTA_PATTERN.search(obj):
                 return parse_timedelta(match.group(1))
-            # containers
-            if match := _SET_PATTERN.search(obj):
-                return set(deserialize2(match.group(1).encode(), objects=objects))
-            if match := _TUPLE_PATTERN.search(obj):
-                return tuple(deserialize2(match.group(1).encode(), objects=objects))
             return obj
         case list():
             return [_object_hook(o, data=data, objects=objects) for o in obj]
@@ -325,26 +325,16 @@ def _object_hook(
                         k: _object_hook(v, data=data, objects=objects)
                         for k, v in value.items()
                     })
-                # if (result:=_object_hook_container(key, value, _FROZENSET_PATTERN))
-                if (match := _FROZENSET_PATTERN.search(key)) and isinstance(
-                    value, list
-                ):
-                    if match.group(1) is None:
-                        cls = frozenset
-                    else:
-                        if objects is None:
-                            raise _Deserialize2NoObjectsError(data=data, obj=obj)
-                        qualname = match.group(1)
-                        try:
-                            cls = one(o for o in objects if o.__qualname__ == qualname)
-                        except OneEmptyError:
-                            raise _Deserialize2ObjectEmptyError(
-                                data=data, obj=obj, qualname=qualname
-                            ) from None
-                    values = (
-                        _object_hook(v, data=data, objects=objects) for v in value
+                for cls, pattern in [
+                    (frozenset, _FROZENSET_PATTERN),
+                    (set, _SET_PATTERN),
+                    (tuple, _TUPLE_PATTERN),
+                ]:
+                    result = _object_hook_container(
+                        key, value, cls, pattern, data=data, objects=objects
                     )
-                    return cls(values)
+                    if result is not None:
+                        return result
                 if (match := _LIST_SUBCLASS_PATTERN.search(key)) and isinstance(
                     value, list
                 ):
@@ -373,9 +363,9 @@ def _object_hook(
 
 
 def _object_hook_container(
-    obj: Any,
     key: str,
     value: Any,
+    cls: type[Any],
     pattern: Pattern[str],
     /,
     *,
@@ -385,42 +375,57 @@ def _object_hook_container(
     if not (match := pattern.search(key)):
         return None
     match value:
-        if isinstance(value, dict):
-            if objects is None:
-                raise _Deserialize2NoObjectsError(data=data, obj=obj)
-            qualname = match.group(1)
-            try:
-                cls = one(o for o in objects if o.__qualname__ == qualname)
-            except OneEmptyError:
-                raise _Deserialize2ObjectEmptyError(
-                    data=data, obj=obj, qualname=qualname
-                ) from None
-            return cls(**{
+        case dict():
+            cls = _object_hook_get_object(match, cls, data=data, objects=objects)
+            items = {
                 k: _object_hook(v, data=data, objects=objects) for k, v in value.items()
-            })
-    return None
+            }
+            return cls(**items)
+        case list():
+            cls = _object_hook_get_object(match, cls, data=data, objects=objects)
+            return cls(_object_hook(v, data=data, objects=objects) for v in value)
+        case _:
+            return None
+
+
+def _object_hook_get_object(
+    match: Match[str],
+    cls: type[Any],
+    /,
+    *,
+    data: bytes,
+    objects: AbstractSet[type[Any]] | None = None,
+) -> type[Any]:
+    if (qualname := match.group(1)) is None:
+        return cls
+    if objects is None:
+        raise _Deserialize2NoObjectsError(data=data, qualname=qualname)
+    try:
+        return one(o for o in objects if o.__qualname__ == qualname)
+    except OneEmptyError:
+        raise _Deserialize2ObjectEmptyError(data=data, qualname=qualname) from None
 
 
 @dataclass(kw_only=True, slots=True)
 class Deserialize2Error(Exception):
     data: bytes
-    obj: Any
+    qualname: str
 
 
 @dataclass(kw_only=True, slots=True)
 class _Deserialize2NoObjectsError(Deserialize2Error):
     @override
     def __str__(self) -> str:
-        return f"Objects required to deserialize {self.obj!r} from {self.data!r}"
+        return f"Objects required to deserialize {self.qualname!r} from {self.data!r}"
 
 
 @dataclass(kw_only=True, slots=True)
 class _Deserialize2ObjectEmptyError(Deserialize2Error):
-    qualname: str
-
     @override
     def __str__(self) -> str:
-        return f"Unable to find object {self.qualname!r} to deserialize {self.obj!r} (from {self.data!r})"
+        return (
+            f"Unable to find object to deserialize {self.qualname!r} from {self.data!r}"
+        )
 
 
 __all__ = ["Deserialize2Error", "Serialize2Error", "deserialize2", "serialize2"]
