@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import datetime as dt
-from asyncio import sleep
+from asyncio import run, sleep
+from re import search
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import Phase, given, settings
@@ -12,12 +13,14 @@ from utilities.asyncio import (
     _MaybeAwaitableMaybeAsyncIterable,
     is_awaitable,
     sleep_dur,
+    stream_command,
     timeout_dur,
     to_list,
     try_await,
 )
 from utilities.datetime import MILLISECOND, duration_to_timedelta
 from utilities.hypothesis import durations
+from utilities.pytest import skipif_windows
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
@@ -75,6 +78,28 @@ class TestSleepDur:
         with Timer() as timer:
             await sleep_dur()
         assert timer <= 0.01
+
+
+class TestStreamCommand:
+    @skipif_windows
+    async def test_main(self) -> None:
+        output = await stream_command(
+            'echo "stdout message" && sleep 0.1 && echo "stderr message" >&2'
+        )
+        await sleep(0.01)
+        assert output.return_code == 0
+        assert output.stdout == "stdout message\n"
+        assert output.stderr == "stderr message\n"
+
+    @skipif_windows
+    async def test_error(self) -> None:
+        output = await stream_command("this-is-an-error")
+        await sleep(0.01)
+        assert output.return_code == 127
+        assert output.stdout == ""
+        assert search(
+            r"^/bin/sh: (1: )?this-is-an-error: (command )?not found$", output.stderr
+        )
 
 
 class TestTimeoutDur:
@@ -170,3 +195,9 @@ class TestTryAwait:
 
         with raises(cls, match="False"):
             _ = await try_await(func(value=False))
+
+
+if __name__ == "__main__":
+    _ = run(
+        stream_command('echo "stdout message" && sleep 2 && echo "stderr message" >&2')
+    )

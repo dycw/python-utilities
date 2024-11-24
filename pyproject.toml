@@ -244,7 +244,6 @@ zzz-test-sqlalchemy-polars = [
   "sqlalchemy >= 2.0.36, < 2.1",
 ]
 zzz-test-streamlit = ["streamlit >= 1.40.1, < 1.41"]
-zzz-test-subprocess = ["loguru >= 0.7.2, < 0.8"]
 zzz-test-sys = []
 zzz-test-tempfile = []
 zzz-test-tenacity = ["tenacity >= 9.0.0, < 9.1"]
