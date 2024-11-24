@@ -195,6 +195,9 @@ def _serialize2_default(obj: Any, /, *, fallback: bool = False) -> str:
             ser = serialize_zoned_datetime(obj).replace("UTC", "dt.UTC")
         else:
             ser = serialize_zoned_datetime(obj)
+            # breakpoint()
+
+            ser = serialize_zoned_datetime(obj)
         return f"[{_Prefixes.datetime.value}]{ser}"
     if isinstance(obj, dt.date):  # after datetime
         ser = serialize_date(obj)
@@ -250,7 +253,8 @@ _LOCAL_DATETIME_PATTERN = re.compile(
 _ZONED_DATETIME_PATTERN = re.compile(
     r"^\["
     + _Prefixes.datetime.value
-    + r"\](.+[\+\-]\d{2}:\d{2}(?::\d{2})?\[(?!(?:dt\.)).+?\])$"
+    + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?[\+\-]\d{2}:\d{2}(?::\d{2})?\[(?!(?:dt\.)).+?\])$"
+    # + r"\](.+[\+\-]\d{2}:\d{2}(?::\d{2})?\[(?!(?:dt\.)).+?\])$"
 )
 _ZONED_DATETIME_ALTERNATIVE_PATTERN = re.compile(
     r"^\[" + _Prefixes.datetime.value + r"\](.+\+\d{2}:\d{2}\[dt\.UTC\])$"
@@ -307,6 +311,9 @@ def _object_hook(
             if match := _TIMEDELTA_PATTERN.search(obj):
                 return parse_timedelta(match.group(1))
             if match := _ZONED_DATETIME_PATTERN.search(obj):
+                res = parse_zoned_datetime(match.group(1))
+                # breakpoint()
+
                 return parse_zoned_datetime(match.group(1))
             if match := _ZONED_DATETIME_ALTERNATIVE_PATTERN.search(obj):
                 return parse_zoned_datetime(
