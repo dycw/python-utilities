@@ -14,8 +14,6 @@ hypothesis==6.119.4
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
-loguru==0.7.2
-    # via dycw-utilities (pyproject.toml)
 packaging==24.2
     # via
     #   coverage-conditional-plugin
