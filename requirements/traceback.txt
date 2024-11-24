@@ -16,6 +16,10 @@ hypothesis==6.119.4
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
+markdown-it-py==3.0.0
+    # via rich
+mdurl==0.1.2
+    # via markdown-it-py
 packaging==24.2
     # via
     #   coverage-conditional-plugin
@@ -23,6 +27,8 @@ packaging==24.2
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
+pygments==2.18.0
+    # via rich
 pytest==8.3.3
     # via
     #   dycw-utilities (pyproject.toml)
@@ -46,6 +52,8 @@ pytest-randomly==3.16.0
 pytest-rerunfailures==15.0
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.6.1
+    # via dycw-utilities (pyproject.toml)
+rich==13.8.1
     # via dycw-utilities (pyproject.toml)
 sortedcontainers==2.4.0
     # via hypothesis
