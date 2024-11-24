@@ -47,6 +47,7 @@ class _Prefixes(Enum):
     dataclass = "dc"
     date = "d"
     datetime = "dt"
+    enum = "e"
     frozenset_ = "f"
     list_ = "l"
     path = "p"
@@ -103,6 +104,10 @@ def _pre_process(
                 raise _Serialize2IntegerError(obj=obj)
         case dict():
             return {k: pre(v) for k, v in obj.items()}
+        case Enum():
+            return {
+                f"[{_Prefixes.enum.value}|{type(obj).__qualname__}]": pre(obj.value)
+            }
         case frozenset():
             return _pre_process_container(
                 obj,
@@ -273,17 +278,23 @@ def _make_container_pattern(prefix: _Prefixes, /) -> Pattern[str]:
     return re.compile(r"^\[" + prefix.value + r"(?:\|(.+))?\]$")
 
 
-_DATACLASS_PATTERN, _FROZENSET_PATTERN, _LIST_PATTERN, _SET_PATTERN, _TUPLE_PATTERN = (
-    map(
-        _make_container_pattern,
-        [
-            _Prefixes.dataclass,
-            _Prefixes.frozenset_,
-            _Prefixes.list_,
-            _Prefixes.set_,
-            _Prefixes.tuple_,
-        ],
-    )
+(
+    _DATACLASS_PATTERN,
+    _ENUM_PATTERN,
+    _FROZENSET_PATTERN,
+    _LIST_PATTERN,
+    _SET_PATTERN,
+    _TUPLE_PATTERN,
+) = map(
+    _make_container_pattern,
+    [
+        _Prefixes.dataclass,
+        _Prefixes.enum,
+        _Prefixes.frozenset_,
+        _Prefixes.list_,
+        _Prefixes.set_,
+        _Prefixes.tuple_,
+    ],
 )
 
 
@@ -332,6 +343,9 @@ def _object_hook(
                     if result is not None:
                         return result
                 result = _object_hook_dataclass(key, value, data=data, objects=objects)
+                if result is not None:
+                    return result
+                result = _object_hook_enum(key, value, data=data, objects=objects)
                 if result is not None:
                     return result
                 return {
@@ -389,6 +403,21 @@ def _object_hook_dataclass(
     cls = _object_hook_get_object(match, data=data, objects=objects)
     items = {k: _object_hook(v, data=data, objects=objects) for k, v in value.items()}
     return cls(**items)
+
+
+def _object_hook_enum(
+    key: str,
+    value: Any,
+    /,
+    *,
+    data: bytes,
+    objects: AbstractSet[type[Any]] | None = None,
+) -> Any:
+    if not (match := _ENUM_PATTERN.search(key)):
+        return None
+    cls: type[Enum] = _object_hook_get_object(match, data=data, objects=objects)
+    value_use = _object_hook(value, data=data, objects=objects)
+    return one(i for i in cls if i.value == value_use)
 
 
 @dataclass(kw_only=True, slots=True)

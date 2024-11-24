@@ -9,7 +9,7 @@ from pytest import raises
 from redis.asyncio import Redis
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
-from tests.test_orjson2 import base
+from tests.test_orjson2 import objects
 from utilities.functions import get_class_name
 from utilities.hypothesis import (
     int64s,
@@ -39,7 +39,7 @@ class TestPublishAndSubscribe:
         channel=text_ascii(min_size=1).map(
             lambda c: f"{get_class_name(TestPublishAndSubscribe)}_obj_ser_{c}"
         ),
-        obj=base,
+        obj=objects(),
     )
     @settings(
         max_examples=1,
