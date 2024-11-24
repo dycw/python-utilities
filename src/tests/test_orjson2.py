@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from contextlib import suppress
 from dataclasses import dataclass
 from math import isinf, isnan
@@ -36,7 +37,7 @@ from ib_async import (
     Order,
     Trade,
 )
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.dataclasses import asdict_without_defaults, is_dataclass_instance
 from utilities.hypothesis import (
@@ -58,6 +59,7 @@ from utilities.orjson2 import (
     serialize2,
 )
 from utilities.sentinel import sentinel
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from utilities.dataclasses import Dataclass
@@ -206,6 +208,22 @@ class TestSerializeAndDeserialize2:
     def test_sub_tuple(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj), objects={SubTuple})
         assert result == obj
+
+    @mark.parametrize(
+        ("utc", "expected"),
+        [
+            param(UTC, b'"[dt]2000-01-01T00:00:00+00:00[UTC]"'),
+            param(dt.UTC, b'"[dt]2000-01-01T00:00:00+00:00[dt.UTC]"'),
+        ],
+        ids=str,
+    )
+    def test_utc(self, *, utc: dt.tzinfo, expected: bytes) -> None:
+        datetime = dt.datetime(2000, 1, 1, tzinfo=utc)
+        ser = serialize2(datetime)
+        assert ser == expected
+        result = deserialize2(ser)
+        assert result == datetime
+        assert result.tzinfo is utc
 
 
 class TestSerialize2:
