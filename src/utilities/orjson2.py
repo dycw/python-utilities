@@ -292,20 +292,18 @@ def _object_hook(
         case bool() | int() | float() | Dataclass() | None:
             return obj
         case str():
-            # ordered
-            if match := _ZONED_DATETIME_PATTERN.search(obj):
-                return parse_zoned_datetime(match.group(1))
-            if match := _LOCAL_DATETIME_PATTERN.search(obj):
-                return parse_local_datetime(match.group(1))
-            # unordered
             if match := _DATE_PATTERN.search(obj):
                 return parse_date(match.group(1))
+            if match := _LOCAL_DATETIME_PATTERN.search(obj):
+                return parse_local_datetime(match.group(1))
             if match := _PATH_PATTERN.search(obj):
                 return Path(match.group(1))
             if match := _TIME_PATTERN.search(obj):
                 return parse_time(match.group(1))
             if match := _TIMEDELTA_PATTERN.search(obj):
                 return parse_timedelta(match.group(1))
+            if match := _ZONED_DATETIME_PATTERN.search(obj):
+                return parse_zoned_datetime(match.group(1))
             return obj
         case list():
             return [_object_hook(o, data=data, objects=objects) for o in obj]
