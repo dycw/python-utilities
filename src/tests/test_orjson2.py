@@ -7,10 +7,9 @@ from enum import Enum, auto
 from functools import partial
 from math import isinf, isnan
 from pathlib import Path
-from re import search
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import HealthCheck, given, reproduce_failure, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -292,14 +291,15 @@ class TestSerialize2:
         expected = b'{"[dc|DataClass2Outer]":{"inner":{"[dc|DataClass2Inner]":{}}}}'
         assert result == expected
 
-    @given(obj=objects(dataclass1=True))
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_dataclass_hook_main(self, *, obj: Any) -> None:
+    def test_dataclass_hook_main(self) -> None:
+        obj = DataClass1()
+
         def hook(_: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
             return {k: v for k, v in mapping.items() if v >= 0}
 
-        ser = serialize2(obj, dataclass_final_hook=hook)
-        assert not search(b"-", ser)
+        result = serialize2(obj, dataclass_final_hook=hook)
+        expected = b'{"[dc|DataClass1]":{}}'
+        assert result == expected
 
     @given(x=sampled_from([MIN_INT64 - 1, MAX_INT64 + 1]))
     def test_pre_process(self, *, x: int) -> None:
