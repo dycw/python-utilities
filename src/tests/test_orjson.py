@@ -11,9 +11,11 @@ from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
+    DataObject,
     SearchStrategy,
     booleans,
     builds,
+    data,
     dates,
     datetimes,
     dictionaries,
@@ -292,9 +294,9 @@ class TestSerialize:
         with raises(_SerializeIntegerError, match="Integer .* is out of range"):
             _ = serialize(x)
 
-    @given(obj=objects(ib_trades=True))
+    @given(data=data())
     @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
-    def test_ib_trades(self, *, obj: Any) -> None:
+    def test_ib_trades(self, *, data: DataObject) -> None:
         from ib_async import (
             ComboLeg,
             CommissionReport,
@@ -306,6 +308,8 @@ class TestSerialize:
             Order,
             Trade,
         )
+
+        obj = data.draw(objects(ib_trades=True))  # put inside test, due to imports
 
         def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
             if issubclass(cls, Contract) and not issubclass(Contract, cls):
