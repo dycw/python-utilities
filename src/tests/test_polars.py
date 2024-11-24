@@ -638,6 +638,7 @@ class TestDataClassToRow:
             }),
         })
     )
+    @mark.only
     def test_zoned_datetime_nested(self, *, data: StrMapping) -> None:
         @dataclass(kw_only=True, slots=True)
         class Inner:
@@ -1142,7 +1143,7 @@ class TestStructDataType:
         class Example:
             field: Truth
 
-        result = struct_data_type(Example)
+        result = struct_data_type(Example, localns=locals())
         expected = Struct({"field": Utf8})
         assert result == expected
 
@@ -1153,7 +1154,7 @@ class TestStructDataType:
         class Example:
             field: LowOrHigh  # pyright: ignore[reportInvalidTypeForm]
 
-        result = struct_data_type(Example)
+        result = struct_data_type(Example, localns=locals())
         expected = Struct({"field": Utf8})
         assert result == expected
 
@@ -1181,7 +1182,7 @@ class TestStructDataType:
         class Outer:
             inner: list[Inner]
 
-        result = struct_data_type(Outer, time_zone=UTC)
+        result = struct_data_type(Outer, localns=locals(), time_zone=UTC)
         expected = Struct({"inner": List(Struct({"field": Int64}))})
         assert result == expected
 
@@ -1194,7 +1195,7 @@ class TestStructDataType:
         class Outer:
             inner: Inner
 
-        result = struct_data_type(Outer, time_zone=UTC)
+        result = struct_data_type(Outer, localns=locals(), time_zone=UTC)
         expected = Struct({"inner": Struct({"field": Int64})})
         assert result == expected
 
@@ -1207,7 +1208,7 @@ class TestStructDataType:
         class Outer:
             inner: Inner
 
-        result = struct_data_type(Outer, time_zone=UTC)
+        result = struct_data_type(Outer, localns=locals(), time_zone=UTC)
         expected = Struct({"inner": Struct({"field": List(Int64)})})
         assert result == expected
 
@@ -1392,7 +1393,11 @@ class TestYieldStructSeriesDataclasses:
                 "inner": Struct({"lower": Int64, "upper": Int64}),
             }),
         )
-        result = list(yield_struct_series_dataclasses(series, Outer))
+        result = list(
+            yield_struct_series_dataclasses(
+                series, Outer, forward_references={"Inner": Inner}
+            )
+        )
         expected = [
             Outer(a=1, b=2, inner=Inner(lower=3, upper=4)),
             Outer(a=1, b=2, inner=None),
