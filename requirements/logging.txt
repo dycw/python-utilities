@@ -6,7 +6,7 @@ coloredlogs==15.0.1
     # via dycw-utilities (pyproject.toml)
 concurrent-log-handler==0.9.25
     # via dycw-utilities (pyproject.toml)
-coverage==7.6.7
+coverage==7.6.8
     # via pytest-cov
 humanfriendly==10.0
     # via coloredlogs
@@ -35,7 +35,7 @@ pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
 pytest-randomly==3.16.0
     # via dycw-utilities (pyproject.toml)
-pytest-rerunfailures==14.0
+pytest-rerunfailures==15.0
     # via dycw-utilities (pyproject.toml)
 sortedcontainers==2.4.0
     # via hypothesis
