@@ -1,361 +1,366 @@
-import datetime as dt
-from collections.abc import Callable, Mapping
-from dataclasses import dataclass, field
-from enum import Enum, auto, unique
-from fractions import Fraction
-from operator import eq
-from time import sleep
-from typing import Any, Literal, NamedTuple
+from __future__ import annotations
 
-from dacite import WrongTypeError
+import datetime as dt
+from contextlib import suppress
+from dataclasses import dataclass
+from enum import Enum, auto
+from functools import partial
+from math import isinf, isnan
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
-    DataObject,
     SearchStrategy,
-    binary,
     booleans,
-    complex_numbers,
-    data,
+    builds,
     dates,
     datetimes,
-    decimals,
     dictionaries,
     floats,
-    fractions,
-    frozensets,
-    integers,
-    ip_addresses,
+    just,
     lists,
-    none,
+    recursive,
     sampled_from,
-    sets,
-    text,
     times,
+    timezones,
     tuples,
-    uuids,
+)
+from ib_async import (
+    ComboLeg,
+    CommissionReport,
+    Contract,
+    DeltaNeutralContract,
+    Execution,
+    Fill,
+    Forex,
+    Order,
+    Trade,
 )
 from pytest import mark, param, raises
 
-from tests.conftest import SKIPIF_CI_AND_WINDOWS
-from utilities.functions import not_func
+from tests.conftest import IS_CI_AND_WINDOWS
+from utilities.dataclasses import asdict_without_defaults, is_dataclass_instance
 from utilities.hypothesis import (
+    assume_does_not_raise,
     int64s,
-    slices,
-    temp_paths,
+    settings_with_reduced_examples,
     text_ascii,
+    text_printable,
     timedeltas_2w,
     zoned_datetimes,
 )
+from utilities.math import MAX_INT64, MIN_INT64
 from utilities.orjson import (
-    _SCHEMA_KEY,
-    _SCHEMA_VALUE,
-    DeserializeError,
-    SerializeError,
-    _is_serializable_binary,
-    _is_serializable_fraction,
-    _object_hook,
-    _ObjectHookError,
-    _SerializeInvalidBinaryError,
-    _SerializeInvalidFractionError,
-    _SerializeTypeError,
-    deserialize,
-    serialize,
+    _Deserialize2NoObjectsError,
+    _Deserialize2ObjectEmptyError,
+    _Serialize2IntegerError,
+    _Serialize2TypeError,
+    deserialize2,
+    serialize2,
 )
 from utilities.sentinel import sentinel
-from utilities.timer import Timer
-from utilities.typing import get_args
-from utilities.zoneinfo import UTC, HongKong
+from utilities.zoneinfo import UTC
 
-_TrueOrFalseLit = Literal["true", "false"]
-
-
-def _map_abs(obj: Any, /) -> Any:
-    return abs(obj) if obj == 0.0 else obj
+if TYPE_CHECKING:
+    from utilities.dataclasses import Dataclass
+    from utilities.types import StrMapping
 
 
-def _map_complex(obj: complex, /) -> complex:
-    return complex(_map_abs(obj.real), _map_abs(obj.imag))
+# strategies
 
 
-class TestSerializeAndDeserialize:
-    @given(data=data())
+def objects(
+    *,
+    dataclass1: bool = False,
+    dataclass2: bool = False,
+    enum: bool = False,
+    ib_trades: bool = False,
+    sub_frozenset: bool = False,
+    sub_list: bool = False,
+    sub_set: bool = False,
+    sub_tuple: bool = False,
+) -> SearchStrategy[Any]:
+    base = (
+        booleans()
+        | floats(allow_nan=False, allow_infinity=False)
+        | dates()
+        | datetimes()
+        | int64s()
+        | text_ascii().map(Path)
+        | text_printable()
+        | times()
+        | timedeltas_2w()
+    )
+    if IS_CI_AND_WINDOWS:
+        base |= zoned_datetimes()
+    else:
+        base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
+    if dataclass1:
+        base |= builds(DataClass1)
+    if dataclass2:
+        base |= builds(DataClass2Outer)
+    if enum:
+        base |= sampled_from(Truth)
+    if ib_trades:
+        forexes = builds(Forex)
+        fills = builds(Fill, contract=forexes)
+        base |= builds(Trade, fills=lists(fills))
+    return recursive(
+        base,
+        partial(
+            _extend,
+            sub_frozenset=sub_frozenset,
+            sub_list=sub_list,
+            sub_set=sub_set,
+            sub_tuple=sub_tuple,
+        ),
+    )
+
+
+def _extend(
+    strategy: SearchStrategy[Any],
+    /,
+    *,
+    sub_frozenset: bool = False,
+    sub_list: bool = False,
+    sub_set: bool = False,
+    sub_tuple: bool = False,
+) -> SearchStrategy[Any]:
+    sets = lists(strategy).map(_into_set)
+    frozensets = lists(strategy).map(_into_set).map(frozenset)
+    extension = (
+        dictionaries(text_ascii(), strategy)
+        | frozensets
+        | lists(strategy)
+        | sets
+        | tuples(strategy)
+    )
+    if sub_frozenset:
+        extension |= frozensets.map(SubFrozenSet)
+    if sub_list:
+        extension |= lists(strategy).map(SubList)
+    if sub_set:
+        extension |= sets.map(SubSet)
+    if sub_tuple:
+        extension |= tuples(strategy).map(SubTuple)
+    return extension
+
+
+def _into_set(elements: list[Any], /) -> set[Any]:
+    with assume_does_not_raise(TypeError, match="unhashable type"):
+        return set(elements)
+
+
+class SubFrozenSet(frozenset):
+    pass
+
+
+class SubList(list):
+    pass
+
+
+class SubSet(set):
+    pass
+
+
+class SubTuple(tuple):  # noqa: SLOT001
+    pass
+
+
+@dataclass(unsafe_hash=True, kw_only=True, slots=True)
+class DataClass1:
+    x: int = 0
+
+
+@dataclass(unsafe_hash=True, kw_only=True, slots=True)
+class DataClass2Inner:
+    x: int = 0
+
+
+@dataclass(unsafe_hash=True, kw_only=True, slots=True)
+class DataClass2Outer:
+    inner: DataClass2Inner
+
+
+class Truth(Enum):
+    true = auto()
+    false = auto()
+
+
+class TestSerializeAndDeserialize2:
+    @given(obj=objects())
+    def test_main(self, *, obj: Any) -> None:
+        result = deserialize2(serialize2(obj))
+        assert result == obj
+
+    @given(obj=objects(dataclass1=True))
+    def test_dataclass(self, *, obj: Any) -> None:
+        result = deserialize2(serialize2(obj), objects={DataClass1})
+        assert result == obj
+
+    @given(obj=objects(dataclass2=True))
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_dataclass_nested(self, *, obj: Any) -> None:
+        with assume_does_not_raise(_Serialize2IntegerError):
+            ser = serialize2(obj)
+        result = deserialize2(ser, objects={DataClass2Inner, DataClass2Outer})
+        assert result == obj
+
+    @given(obj=builds(DataClass1))
+    def test_dataclass_no_objects_error(self, *, obj: DataClass1) -> None:
+        ser = serialize2(obj)
+        with raises(
+            _Deserialize2NoObjectsError,
+            match="Objects required to deserialize '.*' from .*",
+        ):
+            _ = deserialize2(ser)
+
+    @given(obj=builds(DataClass1))
+    def test_dataclass_empty_error(self, *, obj: DataClass1) -> None:
+        ser = serialize2(obj)
+        with raises(
+            _Deserialize2ObjectEmptyError,
+            match=r"Unable to find object to deserialize '.*' from .*",
+        ):
+            _ = deserialize2(ser, objects=set())
+
+    @given(obj=objects(enum=True))
+    def test_enum(self, *, obj: Any) -> None:
+        result = deserialize2(serialize2(obj), objects={Truth})
+        assert result == obj
+
+    @given(obj=objects(sub_frozenset=True))
+    def test_sub_frozenset(self, *, obj: Any) -> None:
+        result = deserialize2(serialize2(obj), objects={SubFrozenSet})
+        assert result == obj
+
+    @given(obj=objects(sub_list=True))
+    def test_sub_list(self, *, obj: Any) -> None:
+        result = deserialize2(serialize2(obj), objects={SubList})
+        assert result == obj
+
+    @given(obj=objects(sub_set=True))
+    def test_sub_set(self, *, obj: Any) -> None:
+        result = deserialize2(serialize2(obj), objects={SubSet})
+        assert result == obj
+
+    @given(obj=objects(sub_tuple=True))
+    def test_sub_tuple(self, *, obj: Any) -> None:
+        result = deserialize2(serialize2(obj), objects={SubTuple})
+        assert result == obj
+
     @mark.parametrize(
-        ("elements", "two_way", "eq_obj_implies_eq_ser"),
+        ("utc", "expected"),
         [
-            param(binary().filter(_is_serializable_binary), True, True),
-            param(booleans(), True, True),
-            param(
-                complex_numbers(allow_infinity=False, allow_nan=False).map(
-                    _map_complex
-                ),
-                True,
-                True,
-            ),
-            param(dates(), True, True),
-            param(datetimes(), True, True),
-            param(
-                zoned_datetimes(
-                    time_zone=sampled_from([HongKong, UTC, dt.UTC]), valid=True
-                ),
-                True,
-                True,
-                marks=SKIPIF_CI_AND_WINDOWS,
-            ),
-            param(
-                decimals(allow_nan=False, allow_infinity=False).map(_map_abs),
-                True,
-                True,
-            ),
-            param(
-                dictionaries(text_ascii(), int64s() | text_ascii(), max_size=3),
-                True,
-                True,
-            ),
-            param(
-                dictionaries(int64s(), int64s() | text_ascii(), max_size=3), False, True
-            ),
-            param(
-                floats(allow_nan=False, allow_infinity=False).map(_map_abs), True, True
-            ),
-            param(fractions().filter(_is_serializable_fraction), True, True),
-            param(frozensets(int64s(), max_size=3), True, True),
-            param(frozensets(text_ascii(), max_size=3), True, True),
-            param(frozensets(int64s() | text_ascii(), max_size=3), True, False),
-            param(ip_addresses(v=4), True, True),
-            param(ip_addresses(v=6), True, True),
-            param(lists(int64s(), max_size=3), True, True),
-            param(lists(lists(int64s(), max_size=3), max_size=3), True, True),
-            param(none(), True, True),
-            param(sets(int64s(), max_size=3), True, True),
-            param(sets(text_ascii(), max_size=3), True, True),
-            param(sets(int64s() | text_ascii(), max_size=3), True, False),
-            param(slices(integers(0, 10)), True, True),
-            param(temp_paths(), True, True),
-            param(text(), True, True),
-            param(timedeltas_2w(), True, True),
-            param(times(), True, True),
-            param(tuples(int64s(), int64s()), False, True),
-            param(uuids(), False, True),
+            param(UTC, b'"[dt]2000-01-01T00:00:00+00:00[UTC]"'),
+            param(dt.UTC, b'"[dt]2000-01-01T00:00:00+00:00[dt.UTC]"'),
         ],
+        ids=str,
     )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        elements: SearchStrategy[Any],
-        two_way: bool,
-        eq_obj_implies_eq_ser: bool,
-    ) -> None:
-        self._run_tests(
-            data, elements, two_way=two_way, eq_obj_implies_eq_ser=eq_obj_implies_eq_ser
+    def test_utc(self, *, utc: dt.tzinfo, expected: bytes) -> None:
+        datetime = dt.datetime(2000, 1, 1, tzinfo=utc)
+        ser = serialize2(datetime)
+        assert ser == expected
+        result = deserialize2(ser)
+        assert result == datetime
+        assert result.tzinfo is utc
+
+
+class TestSerialize2:
+    @given(text=text_printable())
+    def test_before(self, *, text: str) -> None:
+        result = serialize2(text, before=str.upper)
+        expected = serialize2(text.upper())
+        assert result == expected
+
+    def test_dataclass(self) -> None:
+        obj = DataClass1()
+        result = serialize2(obj)
+        expected = b'{"[dc|DataClass1]":{}}'
+        assert result == expected
+
+    def test_dataclass_nested(self) -> None:
+        obj = DataClass2Outer(inner=DataClass2Inner(x=0))
+        result = serialize2(obj)
+        expected = b'{"[dc|DataClass2Outer]":{"inner":{"[dc|DataClass2Inner]":{}}}}'
+        assert result == expected
+
+    def test_dataclass_hook_main(self) -> None:
+        obj = DataClass1()
+
+        def hook(_: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
+            return {k: v for k, v in mapping.items() if v >= 0}
+
+        result = serialize2(obj, dataclass_final_hook=hook)
+        expected = b'{"[dc|DataClass1]":{}}'
+        assert result == expected
+
+    @given(x=sampled_from([MIN_INT64 - 1, MAX_INT64 + 1]))
+    def test_pre_process(self, *, x: int) -> None:
+        with raises(_Serialize2IntegerError, match="Integer .* is out of range"):
+            _ = serialize2(x)
+
+    @given(obj=objects(ib_trades=True))
+    @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
+    def test_ib_trades(self, *, obj: Any) -> None:
+        def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
+            if issubclass(cls, Contract) and not issubclass(Contract, cls):
+                mapping = {k: v for k, v in mapping.items() if k != "secType"}
+            return mapping
+
+        with assume_does_not_raise(_Serialize2IntegerError):
+            ser = serialize2(obj, dataclass_final_hook=hook)
+        result = deserialize2(
+            ser,
+            objects={
+                CommissionReport,
+                ComboLeg,
+                Contract,
+                DeltaNeutralContract,
+                Execution,
+                Fill,
+                Forex,
+                Order,
+                Trade,
+            },
         )
 
-    @given(
-        data=data(),
-        date=dates(),
-        int_=int64s(),
-        local_datetime=datetimes(),
-        text=text_ascii(),
-    )
-    def test_dataclasses(
-        self,
-        *,
-        data: DataObject,
-        date: dt.date,
-        int_: int,
-        local_datetime: dt.datetime,
-        text: str,
-    ) -> None:
-        true_or_falses: tuple[_TrueOrFalseLit, ...] = get_args(_TrueOrFalseLit)
-        true_or_false = data.draw(sampled_from(true_or_falses))
+        def unpack(obj: Any, /) -> Any:
+            if isinstance(obj, list | tuple):
+                return list(map(unpack, obj))
+            if isinstance(obj, dict):
+                return {k: unpack(v) for k, v in obj.items()}
+            if is_dataclass_instance(obj):
+                return unpack(asdict_without_defaults(obj))
+            with suppress(TypeError):
+                if isinf(obj) or isnan(obj):
+                    return None
+            return obj
 
-        @unique
-        class Truth(Enum):
-            true = auto()
-            false = auto()
+        def eq(x: Any, y: Any) -> Any:
+            if isinstance(x, list) and isinstance(y, list):
+                return all(eq(x_i, y_i) for x_i, y_i in zip(x, y, strict=True))
+            if isinstance(x, dict) and isinstance(y, dict):
+                return (set(x) == set(y)) and all(eq(x[i], y[i]) for i in x)
+            if is_dataclass_instance(x) and is_dataclass_instance(y):
+                return eq(unpack(x), unpack(y))
+            return x == y
 
-        truth = data.draw(sampled_from(Truth))
+        ur, uo = unpack(result), unpack(obj)
+        assert eq(ur, uo)
 
-        @dataclass(kw_only=True, slots=True)
-        class Inner:
-            date: dt.date
-            enum: Truth
-            int_: int
-            literal: _TrueOrFalseLit
-            local_datetime: dt.datetime
-            text: str
-
-        @dataclass(kw_only=True, slots=True)
-        class Outer:
-            inner: Inner
-            date: dt.date
-            enum: Truth
-            int_: int
-            literal: _TrueOrFalseLit
-            local_datetime: dt.datetime
-            text: str
-
-        obj = Outer(
-            inner=Inner(
-                date=date,
-                enum=truth,
-                int_=int_,
-                literal=true_or_false,
-                local_datetime=local_datetime,
-                text=text,
-            ),
-            date=date,
-            enum=truth,
-            int_=int_,
-            literal=true_or_false,
-            local_datetime=local_datetime,
-            text=text,
-        )
-        result = deserialize(serialize(obj), cls=Outer)
-        assert result == obj
-
-    @given(x=int64s())
-    def test_dataclass_non_decorated_subclass(self, *, x: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Parent:
-            x: int
-
-        class Child(Parent): ...
-
-        obj = Child(x=x)
-        result = deserialize(serialize(obj), cls=Child)
-        assert result == obj
-
-    def test_dataclass_enum_subsets(self) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        TrueOnly = Literal[Truth.true]  # noqa: N806
-
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            color: TrueOnly  # pyright: ignore[reportInvalidTypeForm]
-
-        obj = Example(color=Truth.true)
-        result = deserialize(serialize(obj), cls=Example, enum_subsets=[TrueOnly])
-        assert result == obj
+    def test_fallback(self) -> None:
+        with raises(
+            _Serialize2TypeError, match="Unable to serialize object of type 'Sentinel'"
+        ):
+            _ = serialize2(sentinel)
+        result = serialize2(sentinel, fallback=True)
+        expected = b'"<sentinel>"'
+        assert result == expected
 
     def test_error_serialize(self) -> None:
         with raises(
-            _SerializeTypeError, match="Unable to serialize object of type 'Sentinel'"
+            _Serialize2TypeError, match="Unable to serialize object of type 'Sentinel'"
         ):
-            _ = serialize(sentinel)
-
-    @given(binary=binary().filter(not_func(_is_serializable_binary)))
-    def test_error_binary(self, *, binary: bytes) -> None:
-        with raises(
-            _SerializeInvalidBinaryError, match="Unable to serialize binary data .*"
-        ):
-            _ = serialize(binary)
-
-    @given(fraction=fractions().filter(not_func(_is_serializable_fraction)))
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_error_fraction(self, *, fraction: Fraction) -> None:
-        with raises(
-            _SerializeInvalidFractionError, match="Unable to serialize fraction .*"
-        ):
-            _ = serialize(fraction)
-
-    def test_error_deserialize(self) -> None:
-        obj = {_SCHEMA_KEY: "invalid", _SCHEMA_VALUE: "invalid"}
-        ser = serialize(obj)
-        with raises(
-            DeserializeError,
-            match=r"Unable to deserialize data 'invalid'; object hook failed on \{.*\}",
-        ):
-            _ = deserialize(ser)
-
-    def test_error_dataclass_enum_subsets(self) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        TrueOnly = Literal[Truth.true]  # noqa: N806
-
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            color: TrueOnly  # pyright: ignore[reportInvalidTypeForm]
-
-        obj = Example(color=Truth.false)
-        ser = serialize(obj)
-        with raises(
-            WrongTypeError,
-            match='wrong value type for field "color" - should be "2" instead of value .* of type ".*"',
-        ):
-            _ = deserialize(ser, cls=Example, enum_subsets=[TrueOnly])
-
-    @given(x=int64s())
-    def test_named_tuple(self, *, x: int) -> None:
-        class Example(NamedTuple):
-            x: int
-
-        obj = Example(x=x)
-        result = deserialize(serialize(obj), cls=Example)
-        assert result == obj
-
-    def test_timer(self) -> None:
-        with Timer() as timer:
-            sleep(0.01)
-
-        result = deserialize(serialize(timer))
-        assert result == timer
-
-    def test_arbitrary_objects(self) -> None:
-        with raises(
-            SerializeError, match="Unable to serialize object of type 'Sentinel'"
-        ):
-            _ = serialize(sentinel)
-        result = serialize(sentinel, fallback=True)
-        expected = b'{"_k":"any","_v":"<sentinel>"}'
-        assert result == expected
-
-    def test_arbitrary_objects_alongside_regular_objects(self) -> None:
-        obj = {"truth": True, "sentinel": sentinel}
-        result = deserialize(serialize(obj, fallback=True))
-        expected = {"truth": True, "sentinel": str(sentinel)}
-        assert result == expected
-
-    def test_dataclass_needing_forward_reference(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            mapping: Mapping[str, int] = field(default_factory=dict)
-
-        obj = Example()
-        result = deserialize(serialize(obj), cls=Example)
-        assert result == obj
-
-    def _run_tests(
-        self,
-        data: DataObject,
-        elements: SearchStrategy[Any],
-        /,
-        *,
-        two_way: bool = False,
-        eq: Callable[[Any, Any], bool] = eq,
-        eq_obj_implies_eq_ser: bool = False,
-    ) -> None:
-        x = data.draw(elements)
-        ser_x = serialize(x)
-        if two_way:
-            deser_x = deserialize(ser_x)
-            assert eq(deser_x, x)
-        y = data.draw(elements)
-        ser_y = serialize(y)
-        if eq(x, y):
-            if eq_obj_implies_eq_ser:
-                assert ser_x == ser_y
-        else:
-            assert ser_x != ser_y
-
-
-class TestObjectHook:
-    def test_error(self) -> None:
-        obj = {_SCHEMA_KEY: "invalid", _SCHEMA_VALUE: "invalid"}
-        with raises(_ObjectHookError, match=r"Unable to cast to object: 'invalid'"):
-            _ = _object_hook(obj)
+            _ = serialize2(sentinel)

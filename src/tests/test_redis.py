@@ -9,7 +9,7 @@ from pytest import raises
 from redis.asyncio import Redis
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
-from tests.test_orjson2 import objects
+from tests.test_orjson import objects
 from utilities.functions import get_class_name
 from utilities.hypothesis import (
     int64s,
@@ -17,7 +17,7 @@ from utilities.hypothesis import (
     text_ascii,
     yield_test_redis,
 )
-from utilities.orjson2 import Serialize2Error, deserialize2, serialize2
+from utilities.orjson import Serialize2Error, deserialize2, serialize2
 from utilities.redis import (
     publish,
     redis_hash_map_key,
