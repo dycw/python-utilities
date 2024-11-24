@@ -258,7 +258,7 @@ class TestSerializeAndDeserialize:
         assert result.tzinfo is utc
 
 
-class Testserialize:
+class TestSerialize:
     @given(text=text_printable())
     def test_before(self, *, text: str) -> None:
         result = serialize(text, before=str.upper)
