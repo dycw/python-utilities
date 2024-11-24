@@ -58,16 +58,18 @@ class StreamCommandOutput:
 
 async def stream_command(cmd: str, /) -> StreamCommandOutput:
     """Run a shell command asynchronously and stream its output in real time."""
-    process = await create_subprocess_shell(cmd, stdout=PIPE, stderr=PIPE)
-    proc_stdout = ensure_not_none(process.stdout)
-    proc_stderr = ensure_not_none(process.stderr)
-    ret_stdout = StringIO()
-    ret_stderr = StringIO()
-    async with TaskGroup() as tg:
+    process = await create_subprocess_shell(  # skipif-not-windows
+        cmd, stdout=PIPE, stderr=PIPE
+    )
+    proc_stdout = ensure_not_none(process.stdout)  # skipif-not-windows
+    proc_stderr = ensure_not_none(process.stderr)  # skipif-not-windows
+    ret_stdout = StringIO()  # skipif-not-windows
+    ret_stderr = StringIO()  # skipif-not-windows
+    async with TaskGroup() as tg:  # skipif-not-windows
         _ = tg.create_task(_stream_one(proc_stdout, stdout, ret_stdout))
         _ = tg.create_task(_stream_one(proc_stderr, stderr, ret_stderr))
-    _ = await process.wait()
-    return StreamCommandOutput(
+    _ = await process.wait()  # skipif-not-windows
+    return StreamCommandOutput(  # skipif-not-windows
         process=process, stdout=ret_stdout.getvalue(), stderr=ret_stderr.getvalue()
     )
 
