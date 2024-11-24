@@ -252,8 +252,6 @@ def deserialize2(
     return _object_hook(loads(data), data=data, objects=objects)
 
 
-_DATACLASS_PATTERN = re.compile(r"^\[" + _Prefixes.dataclass.value + r"\|(.+)\]$")
-_LIST_SUBCLASS_PATTERN = re.compile(r"^\[" + _Prefixes.list_.value + r"\|(.+)\]$")
 _LOCAL_DATETIME_PATTERN = re.compile(
     r"^\[" + _Prefixes.datetime.value + r"\](?!(?:.+\+\d{2}:\d{2}\[.+?\]))(.+)$"
 )
@@ -276,8 +274,17 @@ def _make_container_pattern(prefix: _Prefixes, /) -> Pattern[str]:
     return re.compile(r"^\[" + prefix.value + r"(?:\|(.+))?\]$")
 
 
-_FROZENSET_PATTERN, _SET_PATTERN, _TUPLE_PATTERN = map(
-    _make_container_pattern, [_Prefixes.frozenset_, _Prefixes.set_, _Prefixes.tuple_]
+_DATACLASS_PATTERN, _FROZENSET_PATTERN, _LIST_PATTERN, _SET_PATTERN, _TUPLE_PATTERN = (
+    map(
+        _make_container_pattern,
+        [
+            _Prefixes.dataclass,
+            _Prefixes.frozenset_,
+            _Prefixes.list_,
+            _Prefixes.set_,
+            _Prefixes.tuple_,
+        ],
+    )
 )
 
 
@@ -312,6 +319,7 @@ def _object_hook(
                 key, value = one(obj.items())
                 for cls, pattern in [
                     (frozenset, _FROZENSET_PATTERN),
+                    (list, _LIST_PATTERN),
                     (set, _SET_PATTERN),
                     (tuple, _TUPLE_PATTERN),
                 ]:
@@ -320,22 +328,6 @@ def _object_hook(
                     )
                     if result is not None:
                         return result
-                if (match := _LIST_SUBCLASS_PATTERN.search(key)) and isinstance(
-                    value, list
-                ):
-                    if objects is None:
-                        raise _Deserialize2NoObjectsError(data=data, obj=obj)
-                    qualname = match.group(1)
-                    try:
-                        cls = one(o for o in objects if o.__qualname__ == qualname)
-                    except OneEmptyError:
-                        raise _Deserialize2ObjectEmptyError(
-                            data=data, obj=obj, qualname=qualname
-                        ) from None
-                    values = (
-                        _object_hook(v, data=data, objects=objects) for v in value
-                    )
-                    return cls(values)
                 result = _object_hook_dataclass(key, value, data=data, objects=objects)
                 if result is not None:
                     return result

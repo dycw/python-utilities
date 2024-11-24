@@ -150,7 +150,6 @@ fills = builds(Fill, contract=forexes)
 trades = builds(Trade, fills=lists(fills))
 
 
-@mark.only
 class TestSerializeAndDeserialize2:
     @given(obj=extend(base))
     def test_main(self, *, obj: Any) -> None:
