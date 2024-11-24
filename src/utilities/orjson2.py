@@ -7,14 +7,7 @@ from enum import Enum, unique
 from functools import partial
 from pathlib import Path
 from re import Match, Pattern
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Never,
-    assert_never,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Never, assert_never, cast
 
 from orjson import (
     OPT_PASSTHROUGH_DATACLASS,
@@ -194,12 +187,7 @@ def _dataclass_final(
     return {f"[{_Prefixes.dataclass.value}|{cls.__qualname__}]": mapping}
 
 
-def _serialize2_default(
-    obj: Any,
-    /,
-    *,
-    fallback: bool = False,
-) -> str:
+def _serialize2_default(obj: Any, /, *, fallback: bool = False) -> str:
     if isinstance(obj, dt.datetime):
         if obj.tzinfo is None:
             ser = serialize_local_datetime(obj)
@@ -354,39 +342,15 @@ def _object_hook_container(
 ) -> Any:
     if not (match := pattern.search(key)):
         return None
-    match value:
-        case dict():
-            cls = _object_hook_get_container(match, cls, data=data, objects=objects)
-            items = {
-                k: _object_hook(v, data=data, objects=objects) for k, v in value.items()
-            }
-            return cls(**items)
-        case list():
-            cls = _object_hook_get_container(match, cls, data=data, objects=objects)
-            return cls(_object_hook(v, data=data, objects=objects) for v in value)
-        case _:
-            return None
-
-
-def _object_hook_get_container(
-    match: Match[str],
-    cls: type[Any],
-    /,
-    *,
-    data: bytes,
-    objects: AbstractSet[type[Any]] | None = None,
-) -> type[Any]:
     if match.group(1) is None:
-        return cls
-    return _object_hook_get_object(match, data=data, objects=objects)
+        cls_use = cls
+    else:
+        cls_use = _object_hook_get_object(match, data=data, objects=objects)
+    return cls_use(_object_hook(v, data=data, objects=objects) for v in value)
 
 
 def _object_hook_get_object(
-    match: Match[str],
-    /,
-    *,
-    data: bytes,
-    objects: AbstractSet[type[Any]] | None = None,
+    match: Match[str], /, *, data: bytes, objects: AbstractSet[type[Any]] | None = None
 ) -> type[Any]:
     qualname = match.group(1)
     if objects is None:
@@ -406,8 +370,6 @@ def _object_hook_dataclass(
     objects: AbstractSet[type[Any]] | None = None,
 ) -> Any:
     if not (match := _DATACLASS_PATTERN.search(key)):
-        return None
-    if not isinstance(value, dict):
         return None
     cls = _object_hook_get_object(match, data=data, objects=objects)
     items = {k: _object_hook(v, data=data, objects=objects) for k, v in value.items()}
