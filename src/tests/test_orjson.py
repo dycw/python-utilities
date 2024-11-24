@@ -26,17 +26,6 @@ from hypothesis.strategies import (
     timezones,
     tuples,
 )
-from ib_async import (
-    ComboLeg,
-    CommissionReport,
-    Contract,
-    DeltaNeutralContract,
-    Execution,
-    Fill,
-    Forex,
-    Order,
-    Trade,
-)
 from pytest import mark, param, raises
 
 from tests.conftest import IS_CI_AND_WINDOWS
@@ -103,6 +92,8 @@ def objects(
     if enum:
         base |= sampled_from(Truth)
     if ib_trades:
+        from ib_async import Fill, Forex, Trade
+
         forexes = builds(Forex)
         fills = builds(Fill, contract=forexes)
         base |= builds(Trade, fills=lists(fills))
@@ -304,6 +295,18 @@ class Testserialize:
     @given(obj=objects(ib_trades=True))
     @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
     def test_ib_trades(self, *, obj: Any) -> None:
+        from ib_async import (
+            ComboLeg,
+            CommissionReport,
+            Contract,
+            DeltaNeutralContract,
+            Execution,
+            Fill,
+            Forex,
+            Order,
+            Trade,
+        )
+
         def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
             if issubclass(cls, Contract) and not issubclass(Contract, cls):
                 mapping = {k: v for k, v in mapping.items() if k != "secType"}
