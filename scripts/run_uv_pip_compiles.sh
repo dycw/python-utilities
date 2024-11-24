@@ -3,7 +3,7 @@
 _PATH='scripts/packages.txt'
 while IFS= read -r _PACKAGE; do
 	uv pip compile \
-		"--extra=zzz-test-defaults" \
+		"--extra=test" \
 		"--extra=zzz-test-${_PACKAGE}" \
 		--quiet \
 		--prerelease=explicit \
