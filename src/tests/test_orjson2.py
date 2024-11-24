@@ -72,10 +72,7 @@ if TYPE_CHECKING:
 # strategies
 
 
-if IS_CI_AND_WINDOWS:
-    time_zones = timezones() | just(dt.UTC)
-else:
-    time_zones = sampled_from([HongKong, UTC, dt.UTC])
+time_zones = sampled_from([HongKong, UTC]) if IS_CI_AND_WINDOWS else timezones()
 base = (
     booleans()
     | floats(allow_nan=False, allow_infinity=False)
@@ -86,7 +83,7 @@ base = (
     | text_printable()
     | times()
     | timedeltas_2w()
-    | zoned_datetimes(time_zone=time_zones, valid=True)
+    | zoned_datetimes(time_zone=time_zones | just(dt.UTC), valid=True)
 )
 
 
