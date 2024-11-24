@@ -53,7 +53,7 @@ class StreamCommandOutput:
 
     @property
     def return_code(self) -> int:
-        return ensure_int(self.process.returncode)
+        return ensure_int(self.process.returncode)  # skipif-not-windows
 
 
 async def stream_command(cmd: str, /) -> StreamCommandOutput:
