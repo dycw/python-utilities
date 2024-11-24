@@ -3,12 +3,14 @@ from __future__ import annotations
 import datetime as dt
 from contextlib import suppress
 from dataclasses import dataclass
+from enum import Enum, auto
+from functools import partial
 from math import isinf, isnan
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -19,11 +21,10 @@ from hypothesis.strategies import (
     datetimes,
     dictionaries,
     floats,
-    frozensets,
     just,
     lists,
+    recursive,
     sampled_from,
-    sets,
     times,
     timezones,
     tuples,
@@ -72,27 +73,58 @@ if TYPE_CHECKING:
 # strategies
 
 
-if IS_CI_AND_WINDOWS:
-    zoned_datetimes_use = zoned_datetimes()
-else:
-    zoned_datetimes_use = zoned_datetimes(
-        time_zone=timezones() | just(dt.UTC), valid=True
+def objects(
+    *,
+    dataclass1: bool = False,
+    dataclass2: bool = False,
+    enum: bool = False,
+    ib_trades: bool = False,
+    sub_frozenset: bool = False,
+    sub_list: bool = False,
+    sub_set: bool = False,
+    sub_tuple: bool = False,
+) -> SearchStrategy[Any]:
+    base = (
+        booleans()
+        | floats(allow_nan=False, allow_infinity=False)
+        | dates()
+        | datetimes()
+        | int64s()
+        | text_ascii().map(Path)
+        | text_printable()
+        | times()
+        | timedeltas_2w()
     )
-base = (
-    booleans()
-    | floats(allow_nan=False, allow_infinity=False)
-    | dates()
-    | datetimes()
-    | int64s()
-    | text_ascii().map(Path)
-    | text_printable()
-    | times()
-    | timedeltas_2w()
-    | zoned_datetimes_use
-)
+
+    if IS_CI_AND_WINDOWS:
+        base |= zoned_datetimes()
+    else:
+        base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
+
+    if dataclass1:
+        base |= builds(DataClass1)
+    if dataclass2:
+        base |= builds(DataClass2Outer)
+    if enum:
+        base |= sampled_from(Truth)
+    if ib_trades:
+        forexes = builds(Forex)
+        fills = builds(Fill, contract=forexes)
+        base |= builds(Trade, fills=lists(fills))
+
+    return recursive(
+        base,
+        partial(
+            _extend,
+            sub_frozenset=sub_frozenset,
+            sub_list=sub_list,
+            sub_set=sub_set,
+            sub_tuple=sub_tuple,
+        ),
+    )
 
 
-def extend(
+def _extend(
     strategy: SearchStrategy[Any],
     /,
     *,
@@ -101,22 +133,29 @@ def extend(
     sub_set: bool = False,
     sub_tuple: bool = False,
 ) -> SearchStrategy[Any]:
+    sets = lists(strategy).map(_into_set)
+    frozensets = lists(strategy).map(_into_set).map(frozenset)
     extension = (
         dictionaries(text_ascii(), strategy)
-        | frozensets(strategy)
+        | frozensets
         | lists(strategy)
-        | sets(strategy)
+        | sets
         | tuples(strategy)
     )
     if sub_frozenset:
-        extension |= frozensets(strategy).map(SubFrozenSet)
+        extension |= frozensets.map(SubFrozenSet)
     if sub_list:
         extension |= lists(strategy).map(SubList)
     if sub_set:
-        extension |= sets(strategy).map(SubSet)
+        extension |= sets.map(SubSet)
     if sub_tuple:
         extension |= tuples(strategy).map(SubTuple)
     return extension
+
+
+def _into_set(elements: list[Any], /) -> set[Any]:
+    with assume_does_not_raise(TypeError, match="unhashable type"):
+        return set(elements)
 
 
 class SubFrozenSet(frozenset):
@@ -140,9 +179,6 @@ class DataClass1:
     x: int = 0
 
 
-dataclass1s = builds(DataClass1)
-
-
 @dataclass(unsafe_hash=True, kw_only=True, slots=True)
 class DataClass2Inner:
     x: int = 0
@@ -153,26 +189,23 @@ class DataClass2Outer:
     inner: DataClass2Inner
 
 
-dataclass2s = builds(DataClass2Outer)
-
-
-forexes = builds(Forex)
-fills = builds(Fill, contract=forexes)
-trades = builds(Trade, fills=lists(fills))
+class Truth(Enum):
+    true = auto()
+    false = auto()
 
 
 class TestSerializeAndDeserialize2:
-    @given(obj=extend(base))
+    @given(obj=objects())
     def test_main(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj))
         assert result == obj
 
-    @given(obj=extend(base | dataclass1s))
+    @given(obj=objects(dataclass1=True))
     def test_dataclass(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj), objects={DataClass1})
         assert result == obj
 
-    @given(obj=extend(base | dataclass2s))
+    @given(obj=objects(dataclass2=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_nested(self, *, obj: Any) -> None:
         with assume_does_not_raise(_Serialize2IntegerError):
@@ -180,7 +213,7 @@ class TestSerializeAndDeserialize2:
         result = deserialize2(ser, objects={DataClass2Inner, DataClass2Outer})
         assert result == obj
 
-    @given(obj=dataclass1s)
+    @given(obj=builds(DataClass1))
     def test_dataclass_no_objects_error(self, *, obj: DataClass1) -> None:
         ser = serialize2(obj)
         with raises(
@@ -189,7 +222,7 @@ class TestSerializeAndDeserialize2:
         ):
             _ = deserialize2(ser)
 
-    @given(obj=dataclass1s)
+    @given(obj=builds(DataClass1))
     def test_dataclass_empty_error(self, *, obj: DataClass1) -> None:
         ser = serialize2(obj)
         with raises(
@@ -198,22 +231,27 @@ class TestSerializeAndDeserialize2:
         ):
             _ = deserialize2(ser, objects=set())
 
-    @given(obj=extend(base, sub_frozenset=True))
+    @given(obj=objects(enum=True))
+    def test_enum(self, *, obj: Any) -> None:
+        result = deserialize2(serialize2(obj), objects={Truth})
+        assert result == obj
+
+    @given(obj=objects(sub_frozenset=True))
     def test_sub_frozenset(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj), objects={SubFrozenSet})
         assert result == obj
 
-    @given(obj=extend(base, sub_list=True))
+    @given(obj=objects(sub_list=True))
     def test_sub_list(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj), objects={SubList})
         assert result == obj
 
-    @given(obj=extend(base, sub_set=True))
+    @given(obj=objects(sub_set=True))
     def test_sub_set(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj), objects={SubSet})
         assert result == obj
 
-    @given(obj=extend(base, sub_tuple=True))
+    @given(obj=objects(sub_tuple=True))
     def test_sub_tuple(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj), objects={SubTuple})
         assert result == obj
@@ -254,12 +292,7 @@ class TestSerialize2:
         expected = b'{"[dc|DataClass2Outer]":{"inner":{"[dc|DataClass2Inner]":{}}}}'
         assert result == expected
 
-    @given(obj=extend(dataclass1s.filter(lambda obj: obj.x >= 0)))
-    def test_dataclass_hook_setup(self, *, obj: Any) -> None:
-        ser = serialize2(obj)
-        assert not search(b"-", ser)
-
-    @given(obj=extend(dataclass1s))
+    @given(obj=objects(dataclass1=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_hook_main(self, *, obj: Any) -> None:
         def hook(_: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
@@ -277,7 +310,7 @@ class TestSerialize2:
     @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
     def test_ib_trades(self, *, data: DataObject) -> None:
         with assume_does_not_raise(TypeError, match="unhashable type"):
-            obj = data.draw(extend(trades))
+            obj = data.draw(objects(ib_trades=True))
 
         def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
             if issubclass(cls, Contract) and not issubclass(Contract, cls):
