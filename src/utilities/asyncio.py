@@ -78,7 +78,7 @@ async def _stream_one(
     input_: StreamReader, out_stream: TextIO, ret_stream: StringIO, /
 ) -> None:
     """Asynchronously read from a stream and write to the target output stream."""
-    while True:
+    while True:  # skipif-not-windows
         line = await input_.readline()
         if not line:
             break
