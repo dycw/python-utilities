@@ -47,7 +47,6 @@ python-dotenv
 random
 re
 redis
-reprlib
 rich
 scipy
 sentinel
