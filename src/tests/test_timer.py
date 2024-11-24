@@ -48,7 +48,7 @@ class TestTimer:
         self, *, op: Callable[[Any, Any], Any], cls: type[Any]
     ) -> None:
         with Timer() as timer1, Timer() as timer2:
-            pass
+            sleep(0.01)
         assert isinstance(op(timer1, timer2), cls)
 
     @mark.parametrize(

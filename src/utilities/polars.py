@@ -58,7 +58,7 @@ from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
 from typing_extensions import override
 
-from utilities.dataclasses import Dataclass, is_dataclass_class
+from utilities.dataclasses import Dataclass, asdict_without_defaults, is_dataclass_class
 from utilities.iterables import (
     CheckIterablesEqualError,
     CheckMappingsEqualError,
@@ -486,7 +486,10 @@ def _convert_time_zone_series(
 
 def dataclass_to_row(obj: Dataclass, /) -> DataFrame:
     """Convert a dataclass into a 1-row DataFrame."""
-    df = DataFrame([obj], orient="row")
+    try:
+        df = DataFrame([obj], orient="row")
+    except NameError:
+        df = DataFrame([asdict_without_defaults(obj, recursive=True)], orient="row")
     return reduce(partial(_dataclass_to_row_reducer, obj=obj), df.columns, df)
 
 
@@ -873,12 +876,21 @@ class SetFirstRowAsColumnsError(Exception):
 
 
 def struct_data_type(
-    cls: type[Dataclass], /, *, time_zone: ZoneInfo | str | None = None
+    cls: type[Dataclass],
+    /,
+    *,
+    globalns: dict[str, Any] | None = None,
+    localns: dict[str, Any] | None = None,
+    time_zone: ZoneInfo | str | None = None,
 ) -> Struct:
     """Construct the Struct data type for a dataclass."""
     if not is_dataclass_class(cls):
         raise _StructDataTypeNotADataclassError(cls=cls)
-    anns = get_type_hints(cls)
+    anns = get_type_hints(
+        cls,
+        globalns=globals() if globalns is None else globalns,
+        localns=locals() if localns is None else localns,
+    )
     data_types = {
         k: _struct_data_type_one(v, time_zone=time_zone) for k, v in anns.items()
     }
@@ -1090,6 +1102,7 @@ def yield_struct_series_dataclasses(
     cls: type[_TDataclass],
     /,
     *,
+    forward_references: dict[str, Any] | None = ...,
     check_types: bool = ...,
     strict: Literal[True],
 ) -> Iterator[_TDataclass]: ...
@@ -1099,6 +1112,7 @@ def yield_struct_series_dataclasses(
     cls: type[_TDataclass],
     /,
     *,
+    forward_references: dict[str, Any] | None = ...,
     check_types: bool = ...,
     strict: bool = False,
 ) -> Iterator[_TDataclass | None]: ...
@@ -1107,13 +1121,16 @@ def yield_struct_series_dataclasses(
     cls: type[_TDataclass],
     /,
     *,
+    forward_references: dict[str, Any] | None = None,
     check_types: bool = True,
     strict: bool = False,
 ) -> Iterator[_TDataclass | None]:
     """Yield the elements of a struct-dtype Series as dataclasses."""
     from dacite import Config, from_dict
 
-    config = Config(check_types=check_types, strict=True)
+    config = Config(
+        forward_references=forward_references, check_types=check_types, strict=True
+    )
     for value in yield_struct_series_elements(series, strict=strict):
         yield None if value is None else from_dict(cls, value, config=config)
 

@@ -11,9 +11,11 @@ from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
+    DataObject,
     SearchStrategy,
     booleans,
     builds,
+    data,
     dates,
     datetimes,
     dictionaries,
@@ -25,17 +27,6 @@ from hypothesis.strategies import (
     times,
     timezones,
     tuples,
-)
-from ib_async import (
-    ComboLeg,
-    CommissionReport,
-    Contract,
-    DeltaNeutralContract,
-    Execution,
-    Fill,
-    Forex,
-    Order,
-    Trade,
 )
 from pytest import mark, param, raises
 
@@ -103,6 +94,8 @@ def objects(
     if enum:
         base |= sampled_from(Truth)
     if ib_trades:
+        from ib_async import Fill, Forex, Trade
+
         forexes = builds(Forex)
         fills = builds(Fill, contract=forexes)
         base |= builds(Trade, fills=lists(fills))
@@ -267,7 +260,7 @@ class TestSerializeAndDeserialize:
         assert result.tzinfo is utc
 
 
-class Testserialize:
+class TestSerialize:
     @given(text=text_printable())
     def test_before(self, *, text: str) -> None:
         result = serialize(text, before=str.upper)
@@ -301,9 +294,23 @@ class Testserialize:
         with raises(_SerializeIntegerError, match="Integer .* is out of range"):
             _ = serialize(x)
 
-    @given(obj=objects(ib_trades=True))
+    @given(data=data())
     @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
-    def test_ib_trades(self, *, obj: Any) -> None:
+    def test_ib_trades(self, *, data: DataObject) -> None:
+        from ib_async import (
+            ComboLeg,
+            CommissionReport,
+            Contract,
+            DeltaNeutralContract,
+            Execution,
+            Fill,
+            Forex,
+            Order,
+            Trade,
+        )
+
+        obj = data.draw(objects(ib_trades=True))  # put inside test, due to imports
+
         def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
             if issubclass(cls, Contract) and not issubclass(Contract, cls):
                 mapping = {k: v for k, v in mapping.items() if k != "secType"}

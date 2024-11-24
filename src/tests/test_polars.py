@@ -1,11 +1,11 @@
+from __future__ import annotations
+
 import datetime as dt
-from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import Enum, auto
 from math import isfinite, nan
 from re import escape
-from typing import Any, ClassVar, Literal, cast
-from zoneinfo import ZoneInfo
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 from hypothesis import assume, given
 from hypothesis.strategies import (
@@ -34,7 +34,6 @@ from polars import (
     int_range,
     lit,
 )
-from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 
@@ -93,7 +92,6 @@ from utilities.polars import (
     yield_struct_series_elements,
     zoned_datetime,
 )
-from utilities.types import StrMapping
 from utilities.zoneinfo import (
     UTC,
     HongKong,
@@ -102,6 +100,14 @@ from utilities.zoneinfo import (
     USEastern,
     get_time_zone_name,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+    from zoneinfo import ZoneInfo
+
+    from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
+
+    from utilities.types import StrMapping
 
 
 class TestAppendDataClass:
@@ -1136,7 +1142,7 @@ class TestStructDataType:
         class Example:
             field: Truth
 
-        result = struct_data_type(Example)
+        result = struct_data_type(Example, localns=locals())
         expected = Struct({"field": Utf8})
         assert result == expected
 
@@ -1147,7 +1153,7 @@ class TestStructDataType:
         class Example:
             field: LowOrHigh  # pyright: ignore[reportInvalidTypeForm]
 
-        result = struct_data_type(Example)
+        result = struct_data_type(Example, localns=locals())
         expected = Struct({"field": Utf8})
         assert result == expected
 
@@ -1175,7 +1181,7 @@ class TestStructDataType:
         class Outer:
             inner: list[Inner]
 
-        result = struct_data_type(Outer, time_zone=UTC)
+        result = struct_data_type(Outer, localns=locals(), time_zone=UTC)
         expected = Struct({"inner": List(Struct({"field": Int64}))})
         assert result == expected
 
@@ -1188,7 +1194,7 @@ class TestStructDataType:
         class Outer:
             inner: Inner
 
-        result = struct_data_type(Outer, time_zone=UTC)
+        result = struct_data_type(Outer, localns=locals(), time_zone=UTC)
         expected = Struct({"inner": Struct({"field": Int64})})
         assert result == expected
 
@@ -1201,7 +1207,7 @@ class TestStructDataType:
         class Outer:
             inner: Inner
 
-        result = struct_data_type(Outer, time_zone=UTC)
+        result = struct_data_type(Outer, localns=locals(), time_zone=UTC)
         expected = Struct({"inner": Struct({"field": List(Int64)})})
         assert result == expected
 
@@ -1386,7 +1392,11 @@ class TestYieldStructSeriesDataclasses:
                 "inner": Struct({"lower": Int64, "upper": Int64}),
             }),
         )
-        result = list(yield_struct_series_dataclasses(series, Outer))
+        result = list(
+            yield_struct_series_dataclasses(
+                series, Outer, forward_references={"Inner": Inner}
+            )
+        )
         expected = [
             Outer(a=1, b=2, inner=Inner(lower=3, upper=4)),
             Outer(a=1, b=2, inner=None),
