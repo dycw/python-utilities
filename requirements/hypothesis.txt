@@ -4,6 +4,8 @@ aiosqlite==0.20.0
     # via dycw-utilities (pyproject.toml)
 async-timeout==5.0.1
     # via redis
+asyncpg==0.30.0
+    # via dycw-utilities (pyproject.toml)
 attrs==24.2.0
     # via hypothesis
 coverage==7.6.8

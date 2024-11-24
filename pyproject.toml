@@ -142,6 +142,7 @@ zzz-test-http = [
 zzz-test-humps = ["pyhumps >= 3.8.0, < 3.9"]
 zzz-test-hypothesis = [
   "aiosqlite >= 0.20.0, < 0.21",
+  "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
   "hypothesis >= 6.119.4, < 6.120",
   "numpy >= 2.0.2, < 2.1",
