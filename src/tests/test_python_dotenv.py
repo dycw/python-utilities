@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Literal
 
-from hypothesis import given, reproduce_failure
+from hypothesis import given
 from hypothesis.strategies import DataObject, data, integers, sampled_from
 from pytest import raises
 
@@ -170,7 +170,6 @@ class TestLoadSettings:
 
     @given(root=git_repos(), value=text_ascii())
     @settings_with_reduced_examples()
-    @reproduce_failure("6.119.4", b"AAAAAAAAAAAAAAA=")
     def test_env_var_main(self, *, root: Path, value: str) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
