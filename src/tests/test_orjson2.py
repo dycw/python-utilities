@@ -8,7 +8,7 @@ from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import HealthCheck, given, reproduce_failure, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -192,9 +192,8 @@ class TestSerializeAndDeserialize2:
             _ = deserialize2(ser, objects=set())
 
     @given(obj=extend(base, sub_frozenset=True))
-    # @mark.only
     def test_sub_frozenset(self, *, obj: Any) -> None:
-        result = deserialize2(ser := serialize2(obj), objects={SubFrozenSet})
+        result = deserialize2(serialize2(obj), objects={SubFrozenSet})
         assert result == obj
 
     @given(obj=extend(base, sub_list=True))
