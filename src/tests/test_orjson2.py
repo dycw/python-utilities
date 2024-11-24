@@ -82,7 +82,6 @@ base = (
     | text_printable()
     | times()
     | timedeltas_2w()
-    | zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
 )
 if IS_CI_AND_WINDOWS:
     base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
