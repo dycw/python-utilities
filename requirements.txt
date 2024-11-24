@@ -14,13 +14,14 @@ altair==5.5.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   streamlit
-    #   vegafusion
 annotated-types==0.7.0
     # via pydantic
 anyio==4.6.2.post1
     # via httpx
 argcomplete==3.5.1
     # via nox
+arro3-core==0.4.2
+    # via vegafusion
 astor==0.8.1
     # via dycw-utilities (pyproject.toml)
 async-timeout==5.0.1
@@ -193,7 +194,9 @@ multidict==6.1.0
     #   aiohttp
     #   yarl
 narwhals==1.14.2
-    # via altair
+    # via
+    #   altair
+    #   vegafusion
 nest-asyncio==1.6.0
     # via
     #   dycw-utilities (pyproject.toml)
@@ -239,10 +242,9 @@ packaging==24.2
     #   pytest
     #   pytest-rerunfailures
     #   streamlit
-pandas==2.2.3
-    # via
-    #   streamlit
     #   vegafusion
+pandas==2.2.3
+    # via streamlit
 pathspec==0.12.1
     # via hatchling
 pexpect==4.9.0
@@ -274,21 +276,15 @@ propcache==0.2.0
     #   aiohttp
     #   yarl
 protobuf==5.28.3
-    # via
-    #   streamlit
-    #   vegafusion
+    # via streamlit
 psutil==6.1.0
-    # via
-    #   memory-profiler
-    #   vegafusion
+    # via memory-profiler
 psycopg2-binary==2.9.10
     # via dycw-utilities (pyproject.toml)
 ptyprocess==0.7.0
     # via pexpect
 pyarrow==18.0.0
-    # via
-    #   streamlit
-    #   vegafusion
+    # via streamlit
 pycparser==2.22
     # via cffi
 pydantic==2.10.1
@@ -436,7 +432,7 @@ userpath==1.9.2
     # via hatch
 uv==0.5.4
     # via hatch
-vegafusion==1.6.9
+vegafusion==2.0.0
     # via dycw-utilities (pyproject.toml)
 vegafusion-python-embed==1.6.9
     # via dycw-utilities (pyproject.toml)
