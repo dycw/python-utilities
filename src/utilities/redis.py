@@ -111,9 +111,9 @@ class _RedisHashMapKey(Generic[_K, _V]):
                 return None
             case bytes() as data:
                 if self.value_deserializer is None:
-                    from utilities.orjson import deserialize2
+                    from utilities.orjson import deserialize
 
-                    return deserialize2(data)
+                    return deserialize(data)
                 return self.value_deserializer(data)
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{redis=}"])
@@ -124,9 +124,9 @@ class _RedisHashMapKey(Generic[_K, _V]):
         """Set a value in a hashmap in `redis`."""
         ser_key = self._serialize_key(key)  # skipif-ci-and-not-linux
         if self.value_serializer is None:  # skipif-ci-and-not-linux
-            from utilities.orjson import serialize2
+            from utilities.orjson import serialize
 
-            ser_value = serialize2(value)
+            ser_value = serialize(value)
         else:  # skipif-ci-and-not-linux
             ser_value = self.value_serializer(value)
         async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
@@ -140,9 +140,9 @@ class _RedisHashMapKey(Generic[_K, _V]):
     def _serialize_key(self, key: _K, /) -> bytes:
         """Serialize the key."""
         if self.key_serializer is None:  # skipif-ci-and-not-linux
-            from utilities.orjson import serialize2
+            from utilities.orjson import serialize
 
-            return serialize2(key)
+            return serialize(key)
         return self.key_serializer(key)  # skipif-ci-and-not-linux
 
 
@@ -301,9 +301,9 @@ class _RedisKey(Generic[_T]):
                 return None
             case bytes() as data:
                 if self.deserializer is None:
-                    from utilities.orjson import deserialize2
+                    from utilities.orjson import deserialize
 
-                    return deserialize2(data)
+                    return deserialize(data)
                 return self.deserializer(data)
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{redis=}"])
@@ -313,9 +313,9 @@ class _RedisKey(Generic[_T]):
     ) -> int:
         """Set a value in `redis`."""
         if self.serializer is None:  # skipif-ci-and-not-linux
-            from utilities.orjson import serialize2
+            from utilities.orjson import serialize
 
-            value_use = serialize2(value)
+            value_use = serialize(value)
         else:  # skipif-ci-and-not-linux
             value_use = self.serializer(value)
         async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux

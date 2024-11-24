@@ -57,7 +57,7 @@ class _Prefixes(Enum):
     tuple_ = "tu"
 
 
-def serialize2(
+def serialize(
     obj: Any,
     /,
     *,
@@ -74,11 +74,11 @@ def serialize2(
     try:
         return dumps(
             obj_use,
-            default=partial(_serialize2_default, fallback=fallback),
+            default=partial(_serialize_default, fallback=fallback),
             option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
         )
     except TypeError:
-        raise _Serialize2TypeError(obj=obj) from None
+        raise _SerializeTypeError(obj=obj) from None
 
 
 def _pre_process(
@@ -101,7 +101,7 @@ def _pre_process(
     match obj:
         case int():
             if not (MIN_INT64 <= obj <= MAX_INT64):
-                raise _Serialize2IntegerError(obj=obj)
+                raise _SerializeIntegerError(obj=obj)
         case dict():
             return {k: pre(v) for k, v in obj.items()}
         case Enum():
@@ -192,7 +192,7 @@ def _dataclass_final(
     return {f"[{_Prefixes.dataclass.value}|{cls.__qualname__}]": mapping}
 
 
-def _serialize2_default(obj: Any, /, *, fallback: bool = False) -> str:
+def _serialize_default(obj: Any, /, *, fallback: bool = False) -> str:
     if isinstance(obj, dt.datetime):
         if obj.tzinfo is None:
             ser = serialize_local_datetime(obj)
@@ -219,12 +219,12 @@ def _serialize2_default(obj: Any, /, *, fallback: bool = False) -> str:
 
 
 @dataclass(kw_only=True, slots=True)
-class Serialize2Error(Exception):
+class SerializeError(Exception):
     obj: Any
 
 
 @dataclass(kw_only=True, slots=True)
-class _Serialize2TypeError(Serialize2Error):
+class _SerializeTypeError(SerializeError):
     @override
     def __str__(self) -> str:
         from rich.pretty import pretty_repr
@@ -234,13 +234,13 @@ class _Serialize2TypeError(Serialize2Error):
 
 
 @dataclass(kw_only=True, slots=True)
-class _Serialize2IntegerError(Serialize2Error):
+class _SerializeIntegerError(SerializeError):
     @override
     def __str__(self) -> str:
         return f"Integer {self.obj} is out of range"
 
 
-def deserialize2(
+def deserialize(
     data: bytes, /, *, objects: AbstractSet[type[Any]] | None = None
 ) -> Any:
     """Deserialize an object."""
@@ -383,11 +383,11 @@ def _object_hook_get_object(
 ) -> type[Any]:
     qualname = match.group(1)
     if objects is None:
-        raise _Deserialize2NoObjectsError(data=data, qualname=qualname)
+        raise _DeserializeNoObjectsError(data=data, qualname=qualname)
     try:
         return one(o for o in objects if o.__qualname__ == qualname)
     except OneEmptyError:
-        raise _Deserialize2ObjectEmptyError(data=data, qualname=qualname) from None
+        raise _DeserializeObjectNotFoundError(data=data, qualname=qualname) from None
 
 
 def _object_hook_dataclass(
@@ -421,20 +421,20 @@ def _object_hook_enum(
 
 
 @dataclass(kw_only=True, slots=True)
-class Deserialize2Error(Exception):
+class DeserializeError(Exception):
     data: bytes
     qualname: str
 
 
 @dataclass(kw_only=True, slots=True)
-class _Deserialize2NoObjectsError(Deserialize2Error):
+class _DeserializeNoObjectsError(DeserializeError):
     @override
     def __str__(self) -> str:
         return f"Objects required to deserialize {self.qualname!r} from {self.data!r}"
 
 
 @dataclass(kw_only=True, slots=True)
-class _Deserialize2ObjectEmptyError(Deserialize2Error):
+class _DeserializeObjectNotFoundError(DeserializeError):
     @override
     def __str__(self) -> str:
         return (
@@ -442,4 +442,4 @@ class _Deserialize2ObjectEmptyError(Deserialize2Error):
         )
 
 
-__all__ = ["Deserialize2Error", "Serialize2Error", "deserialize2", "serialize2"]
+__all__ = ["DeserializeError", "SerializeError", "deserialize", "serialize"]

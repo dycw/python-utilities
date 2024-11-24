@@ -17,7 +17,7 @@ from utilities.hypothesis import (
     text_ascii,
     yield_test_redis,
 )
-from utilities.orjson import Serialize2Error, deserialize2, serialize2
+from utilities.orjson import deserialize, serialize, serializeError
 from utilities.redis import (
     publish,
     redis_hash_map_key,
@@ -54,13 +54,13 @@ class TestPublishAndSubscribe:
 
             async def listener() -> None:
                 async for msg in subscribe(
-                    test.redis.pubsub(), channel, deserializer=deserialize2
+                    test.redis.pubsub(), channel, deserializer=deserialize
                 ):
                     print(msg)  # noqa: T201
 
             task = create_task(listener())
             await sleep(0.05)
-            _ = await publish(test.redis, channel, obj, serializer=serialize2)
+            _ = await publish(test.redis, channel, obj, serializer=serialize)
             await sleep(0.05)
             try:
                 out = capsys.readouterr().out
@@ -292,7 +292,7 @@ class TestRedisKey:
         async with yield_test_redis(data) as test:
             key = redis_key(test.key, Sentinel)
             with raises(
-                Serialize2Error, match="Unable to serialize object of type 'Sentinel'"
+                serializeError, match="Unable to serialize object of type 'Sentinel'"
             ):
                 _ = await key.set(test.redis, sentinel)
 
