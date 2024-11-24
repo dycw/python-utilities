@@ -62,7 +62,7 @@ from utilities.orjson2 import (
     serialize2,
 )
 from utilities.sentinel import sentinel
-from utilities.zoneinfo import UTC
+from utilities.zoneinfo import UTC, HongKong
 
 if TYPE_CHECKING:
     from utilities.dataclasses import Dataclass
@@ -72,6 +72,10 @@ if TYPE_CHECKING:
 # strategies
 
 
+if IS_CI_AND_WINDOWS:
+    time_zones = timezones() | just(dt.UTC)
+else:
+    time_zones = sampled_from([HongKong, UTC, dt.UTC])
 base = (
     booleans()
     | floats(allow_nan=False, allow_infinity=False)
@@ -82,11 +86,8 @@ base = (
     | text_printable()
     | times()
     | timedeltas_2w()
+    | zoned_datetimes(time_zone=time_zones, valid=True)
 )
-if IS_CI_AND_WINDOWS:
-    base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
-else:
-    base |= zoned_datetimes(time_zone=sampled_from([UTC, dt.UTC]), valid=True)
 
 
 def extend(
