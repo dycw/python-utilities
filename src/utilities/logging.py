@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from itertools import product
 from logging import (
     Formatter,
+    Handler,
     Logger,
     LogRecord,
     StreamHandler,
@@ -173,6 +175,16 @@ def setup_logging(
         extra(logger)  # skipif-ci-and-windows
 
 
+@contextmanager
+def temp_handler(logger: Logger, handler: Handler, /) -> Iterator[None]:
+    """Context manager with temporary handler set."""
+    logger.addHandler(handler)
+    try:
+        yield
+    finally:
+        _ = logger.removeHandler(handler)
+
+
 class _AdvancedLogRecord(LogRecord):
     """Advanced log record."""
 
@@ -245,4 +257,5 @@ __all__ = [
     "basic_config",
     "get_logging_level_number",
     "setup_logging",
+    "temp_handler",
 ]
