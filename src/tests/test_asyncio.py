@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from asyncio import run, sleep
+from re import search
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import Phase, given, settings
@@ -96,7 +97,9 @@ class TestStreamCommand:
         await sleep(0.01)
         assert output.return_code == 127
         assert output.stdout == ""
-        assert output.stderr == "/bin/sh: this-is-an-error: command not found\n"
+        assert search(
+            r"^/bin/sh: (1: )?this-is-an-error: (command )?not found$", output.stderr
+        )
 
 
 class TestTimeoutDur:
