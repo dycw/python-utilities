@@ -55,7 +55,7 @@ class _Prefixes(Enum):
     date = "d"
     datetime = "dt"
     frozenset_ = "f"
-    list_subclass = "l"
+    list_ = "l"
     path = "p"
     set_ = "s"
     timedelta = "td"
@@ -120,11 +120,14 @@ def _pre_process(
                 dataclass_final_hook=dataclass_final_hook,
             )
         case list():
-            values = list(map(pre, obj))
-            if issubclass(list, type(obj)):
-                return values
-            key = f"[{_Prefixes.list_subclass.value}|{type(obj).__qualname__}]"
-            return {key: values}
+            return _pre_process_container(
+                obj,
+                list,
+                _Prefixes.list_,
+                before=before,
+                after=after,
+                dataclass_final_hook=dataclass_final_hook,
+            )
         case set():
             return _pre_process_container(
                 obj,
@@ -155,7 +158,7 @@ def _pre_process(
 
 def _pre_process_container(
     obj: Any,
-    cls: type[Any],
+    cls: type[frozenset | list | set | tuple],
     prefix: _Prefixes,
     /,
     *,
@@ -163,17 +166,19 @@ def _pre_process_container(
     after: Callable[[Any], Any] | None = None,
     dataclass_final_hook: Callable[[type[Dataclass], StrMapping], StrMapping]
     | None = None,
-) -> StrMapping:
-    if issubclass(cls, type(obj)):
-        key = f"[{prefix.value}]"
-    else:
-        key = f"[{prefix.value}|{type(obj).__qualname__}]"
+) -> Any:
     values = [
         _pre_process(
             o, before=before, after=after, dataclass_final_hook=dataclass_final_hook
         )
         for o in obj
     ]
+    if issubclass(cls, list) and issubclass(list, type(obj)):
+        return values
+    if issubclass(cls, type(obj)):
+        key = f"[{prefix.value}]"
+    else:
+        key = f"[{prefix.value}|{type(obj).__qualname__}]"
     return {key: values}
 
 
@@ -248,9 +253,7 @@ def deserialize2(
 
 
 _DATACLASS_PATTERN = re.compile(r"^\[" + _Prefixes.dataclass.value + r"\|(.+)\]$")
-_LIST_SUBCLASS_PATTERN = re.compile(
-    r"^\[" + _Prefixes.list_subclass.value + r"\|(.+)\]$"
-)
+_LIST_SUBCLASS_PATTERN = re.compile(r"^\[" + _Prefixes.list_.value + r"\|(.+)\]$")
 _LOCAL_DATETIME_PATTERN = re.compile(
     r"^\[" + _Prefixes.datetime.value + r"\](?!(?:.+\+\d{2}:\d{2}\[.+?\]))(.+)$"
 )
