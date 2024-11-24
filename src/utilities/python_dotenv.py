@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, fields
 from enum import Enum
+from os import environ
 from typing import TYPE_CHECKING, Any, TypeVar, get_type_hints
 
 from dotenv import dotenv_values
@@ -45,7 +46,7 @@ def load_settings(
     path = get_repo_root(cwd=cwd).joinpath(".env")
     if not path.exists():
         raise _LoadSettingsFileNotFoundError(path=path) from None
-    maybe_values = dotenv_values(path)
+    maybe_values = {**dotenv_values(path), **environ}
     values = {k: v for k, v in maybe_values.items() if v is not None}
 
     def yield_items() -> Iterator[tuple[str, Any]]:

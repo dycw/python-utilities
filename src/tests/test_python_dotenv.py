@@ -9,6 +9,7 @@ from hypothesis.strategies import DataObject, data, integers, sampled_from
 from pytest import raises
 
 from utilities.hypothesis import git_repos, settings_with_reduced_examples, text_ascii
+from utilities.os import temp_environ
 from utilities.python_dotenv import (
     _LoadSettingsEmptyError,
     _LoadSettingsFileNotFoundError,
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
 class TestLoadSettings:
     @given(root=git_repos(), value=text_ascii())
     @settings_with_reduced_examples()
-    def test_main(self, *, root: Path, value: str) -> None:
+    def test_dotenv_file_main(self, *, root: Path, value: str) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
             key: str
@@ -41,21 +42,7 @@ class TestLoadSettings:
 
     @given(root=git_repos(), value=text_ascii())
     @settings_with_reduced_examples()
-    def test_upper_case_dotenv(self, *, root: Path, value: str) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: str
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write(f"KEY = {value}\n")
-
-        settings = load_settings(Settings, cwd=root)
-        expected = Settings(key=str(value))
-        assert settings == expected
-
-    @given(root=git_repos(), value=text_ascii())
-    @settings_with_reduced_examples()
-    def test_upper_case_key(self, *, root: Path, value: str) -> None:
+    def test_settings_upper_case_key(self, *, root: Path, value: str) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
             KEY: str
@@ -69,7 +56,21 @@ class TestLoadSettings:
 
     @given(root=git_repos(), value=text_ascii())
     @settings_with_reduced_examples()
-    def test_extra_key(self, *, root: Path, value: str) -> None:
+    def test_dotenv_file_upper_case_key(self, *, root: Path, value: str) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: str
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"KEY = {value}\n")
+
+        settings = load_settings(Settings, cwd=root)
+        expected = Settings(key=str(value))
+        assert settings == expected
+
+    @given(root=git_repos(), value=text_ascii())
+    @settings_with_reduced_examples()
+    def test_dotenv_file_extra_key(self, *, root: Path, value: str) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
             key: str
@@ -84,7 +85,7 @@ class TestLoadSettings:
 
     @given(root=git_repos(), value=integers())
     @settings_with_reduced_examples()
-    def test_int(self, *, root: Path, value: int) -> None:
+    def test_settings_int_value(self, *, root: Path, value: int) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
             key: int
@@ -98,7 +99,7 @@ class TestLoadSettings:
 
     @given(root=git_repos())
     @settings_with_reduced_examples()
-    def test_int_error(self, *, root: Path) -> None:
+    def test_settings_int_value_error(self, *, root: Path) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
             key: int
@@ -114,7 +115,7 @@ class TestLoadSettings:
 
     @given(data=data(), root=git_repos())
     @settings_with_reduced_examples()
-    def test_enum(self, *, data: DataObject, root: Path) -> None:
+    def test_settings_enum_value(self, *, data: DataObject, root: Path) -> None:
         class Truth(Enum):
             true = auto()
             false = auto()
@@ -133,7 +134,7 @@ class TestLoadSettings:
 
     @given(root=git_repos())
     @settings_with_reduced_examples()
-    def test_enum_error(self, *, root: Path) -> None:
+    def test_settings_enum_value_error(self, *, root: Path) -> None:
         class Truth(Enum):
             true = auto()
             false = auto()
@@ -153,7 +154,9 @@ class TestLoadSettings:
 
     @given(root=git_repos(), value=sampled_from(["true", "false"]))
     @settings_with_reduced_examples()
-    def test_literal(self, *, root: Path, value: Literal["true", "false"]) -> None:
+    def test_settings_literal_value(
+        self, *, root: Path, value: Literal["true", "false"]
+    ) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
             key: Literal["true", "false"]
@@ -162,6 +165,20 @@ class TestLoadSettings:
             _ = fh.write(f"key = {value}\n")
 
         settings = load_settings(Settings, cwd=root, localns={"Literal": Literal})
+        expected = Settings(key=value)
+        assert settings == expected
+
+    @given(root=git_repos(), value=text_ascii())
+    @settings_with_reduced_examples()
+    def test_env_var_main(self, *, root: Path, value: str) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: str
+
+        root.joinpath(".env").touch()
+        with temp_environ(key=value):
+            settings = load_settings(Settings, cwd=root)
+
         expected = Settings(key=value)
         assert settings == expected
 
