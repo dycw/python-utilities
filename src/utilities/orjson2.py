@@ -6,7 +6,14 @@ from dataclasses import dataclass
 from enum import Enum, unique
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, Never, TypeVar, assert_never, cast
+from re import Pattern
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Never,
+    assert_never,
+    cast,
+)
 
 from orjson import (
     OPT_PASSTHROUGH_DATACLASS,
@@ -41,9 +48,6 @@ if TYPE_CHECKING:
     from utilities.types import StrMapping
 
 
-_T = TypeVar("_T")
-
-
 @unique
 class _Prefixes(Enum):
     dataclass = "dc"
@@ -75,13 +79,7 @@ def serialize2(
     try:
         return dumps(
             obj_use,
-            default=partial(
-                _serialize2_default,
-                before=before,
-                after=after,
-                dataclass_final_hook=dataclass_final_hook,
-                fallback=fallback,
-            ),
+            default=partial(_serialize2_default, fallback=fallback),
             option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
         )
     except TypeError:
@@ -112,12 +110,13 @@ def _pre_process(
         case dict():
             return {k: pre(v) for k, v in obj.items()}
         case frozenset():
-            values = list(map(pre, obj))
-            if issubclass(frozenset, type(obj)):
-                key = f"[{_Prefixes.frozenset_.value}]"
-            else:
-                key = f"[{_Prefixes.frozenset_.value}|{type(obj).__qualname__}]"
-            return {key: values}
+            return _pre_process_container(
+                obj,
+                _Prefixes.frozenset_,
+                before=before,
+                after=after,
+                dataclass_final_hook=dataclass_final_hook,
+            )
         case list():
             values = list(map(pre, obj))
             if issubclass(list, type(obj)):
@@ -125,9 +124,21 @@ def _pre_process(
             key = f"[{_Prefixes.list_subclass.value}|{type(obj).__qualname__}]"
             return {key: values}
         case set():
-            return _SetContainer(as_list=list(map(pre, obj)))
+            return _pre_process_container(
+                obj,
+                _Prefixes.set_,
+                before=before,
+                after=after,
+                dataclass_final_hook=dataclass_final_hook,
+            )
         case tuple():
-            return _TupleContainer(as_list=list(map(pre, obj)))
+            return _pre_process_container(
+                obj,
+                _Prefixes.tuple_,
+                before=before,
+                after=after,
+                dataclass_final_hook=dataclass_final_hook,
+            )
         case Dataclass():
             obj = asdict_without_defaults(
                 obj, final=partial(_dataclass_final, hook=dataclass_final_hook)
@@ -138,14 +149,27 @@ def _pre_process(
     return obj if after is None else after(obj)
 
 
-@dataclass(kw_only=True, slots=True)
-class _SetContainer(Generic[_T]):
-    as_list: list[_T]
-
-
-@dataclass(kw_only=True, slots=True)
-class _TupleContainer(Generic[_T]):
-    as_list: list[_T]
+def _pre_process_container(
+    obj: Any,
+    prefix: _Prefixes,
+    /,
+    *,
+    before: Callable[[Any], Any] | None = None,
+    after: Callable[[Any], Any] | None = None,
+    dataclass_final_hook: Callable[[type[Dataclass], StrMapping], StrMapping]
+    | None = None,
+) -> StrMapping:
+    if issubclass(frozenset, type(obj)):
+        key = f"[{prefix.value}]"
+    else:
+        key = f"[{prefix.value}|{type(obj).__qualname__}]"
+    values = [
+        _pre_process(
+            o, before=before, after=after, dataclass_final_hook=dataclass_final_hook
+        )
+        for o in obj
+    ]
+    return {key: values}
 
 
 def _dataclass_final(
@@ -164,10 +188,6 @@ def _serialize2_default(
     obj: Any,
     /,
     *,
-    before: Callable[[Any], Any] | None = None,
-    after: Callable[[Any], Any] | None = None,
-    dataclass_final_hook: Callable[[type[Dataclass], StrMapping], StrMapping]
-    | None = None,
     fallback: bool = False,
 ) -> str:
     if isinstance(obj, dt.datetime):
@@ -188,22 +208,6 @@ def _serialize2_default(
     if isinstance(obj, Path):
         ser = str(obj)
         return f"[{_Prefixes.path.value}]{ser}"
-    if isinstance(obj, _SetContainer):
-        ser = serialize2(
-            obj.as_list,
-            before=before,
-            after=after,
-            dataclass_final_hook=dataclass_final_hook,
-        ).decode()
-        return f"[{_Prefixes.set_.value}]{ser}"
-    if isinstance(obj, _TupleContainer):
-        ser = serialize2(
-            obj.as_list,
-            before=before,
-            after=after,
-            dataclass_final_hook=dataclass_final_hook,
-        ).decode()
-        return f"[{_Prefixes.tuple_.value}]{ser}"
     if fallback:
         return str(obj)
     raise TypeError
@@ -232,7 +236,7 @@ class _Serialize2IntegerError(Serialize2Error):
 
 
 def deserialize2(
-    data: bytes, /, *, objects: AbstractSet[type[Dataclass]] | None = None
+    data: bytes, /, *, objects: AbstractSet[type[Any]] | None = None
 ) -> Any:
     """Deserialize an object."""
     return _object_hook(loads(data), data=data, objects=objects)
@@ -240,18 +244,24 @@ def deserialize2(
 
 _DATACLASS_PATTERN = re.compile(r"^\[" + _Prefixes.dataclass.value + r"\|(.+)\]$")
 _DATE_PATTERN = re.compile(r"^\[" + _Prefixes.date.value + r"\](.+)$")
-_FROZENSET_PATTERN = re.compile(r"^\[" + _Prefixes.frozenset_.value + r"(?:\|(.+))?\]$")
 _LIST_SUBCLASS_PATTERN = re.compile(
     r"^\[" + _Prefixes.list_subclass.value + r"\|(.+)\]$"
 )
 _LOCAL_DATETIME_PATTERN = re.compile(r"^\[" + _Prefixes.datetime.value + r"\](.+)$")
 _PATH_PATTERN = re.compile(r"^\[" + _Prefixes.path.value + r"\](.+)$")
-_SET_PATTERN = re.compile(r"^\[" + _Prefixes.set_.value + r"\](.+)$")
 _TIME_PATTERN = re.compile(r"^\[" + _Prefixes.time.value + r"\](.+)$")
 _TIMEDELTA_PATTERN = re.compile(r"^\[" + _Prefixes.timedelta.value + r"\](.+)$")
-_TUPLE_PATTERN = re.compile(r"^\[" + _Prefixes.tuple_.value + r"\](.+)$")
 _ZONED_DATETIME_PATTERN = re.compile(
     r"^\[" + _Prefixes.datetime.value + r"\](.+\+\d{2}:\d{2}\[.+?\])$"
+)
+
+
+def _make_tuple_pattern(prefix: _Prefixes, /) -> Pattern[str]:
+    return re.compile(r"^\[" + prefix.value + r"(?:\|(.+))?\]$")
+
+
+_FROZENSET_PATTERN, _SET_PATTERN, _TUPLE_PATTERN = map(
+    _make_tuple_pattern, [_Prefixes.frozenset_, _Prefixes.set_, _Prefixes.tuple_]
 )
 
 
@@ -260,7 +270,7 @@ def _object_hook(
     /,
     *,
     data: bytes,
-    objects: AbstractSet[type[Dataclass]] | None = None,
+    objects: AbstractSet[type[Any]] | None = None,
 ) -> Any:
     match obj:
         case bool() | int() | float() | Dataclass() | None:
@@ -351,6 +361,27 @@ def _object_hook(
             }
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(cast(Never, never))
+
+
+def _object_hook_container(
+    key: str,
+    value: Any,
+    pattern: Pattern[str],
+) -> Any:
+    if (match := pattern.search(key)) and isinstance(value, dict):
+        if objects is None:
+            raise _Deserialize2NoObjectsError(data=data, obj=obj)
+        qualname = match.group(1)
+        try:
+            cls = one(o for o in objects if o.__qualname__ == qualname)
+        except OneEmptyError:
+            raise _Deserialize2ObjectEmptyError(
+                data=data, obj=obj, qualname=qualname
+            ) from None
+        return cls(**{
+            k: _object_hook(v, data=data, objects=objects) for k, v in value.items()
+        })
+    return None
 
 
 @dataclass(kw_only=True, slots=True)
