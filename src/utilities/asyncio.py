@@ -46,7 +46,7 @@ async def sleep_dur(*, duration: Duration | None = None) -> None:
 
 
 @dataclass(kw_only=True, slots=True)
-class _StreamCommandOutput:
+class StreamCommandOutput:
     process: Process
     stdout: str
     stderr: str
@@ -56,7 +56,7 @@ class _StreamCommandOutput:
         return ensure_int(self.process.returncode)
 
 
-async def stream_command(cmd: str, /) -> _StreamCommandOutput:
+async def stream_command(cmd: str, /) -> StreamCommandOutput:
     """Run a shell command asynchronously and stream its output in real time."""
     process = await create_subprocess_shell(cmd, stdout=PIPE, stderr=PIPE)
     proc_stdout = ensure_not_none(process.stdout)
@@ -67,7 +67,7 @@ async def stream_command(cmd: str, /) -> _StreamCommandOutput:
         _ = tg.create_task(_stream_one(proc_stdout, stdout, ret_stdout))
         _ = tg.create_task(_stream_one(proc_stderr, stderr, ret_stderr))
     _ = await process.wait()
-    return _StreamCommandOutput(
+    return StreamCommandOutput(
         process=process, stdout=ret_stdout.getvalue(), stderr=ret_stderr.getvalue()
     )
 
@@ -119,6 +119,7 @@ __all__ = [
     "Coroutine1",
     "MaybeAwaitable",
     "MaybeCoroutine1",
+    "StreamCommandOutput",
     "is_awaitable",
     "sleep_dur",
     "stream_command",
