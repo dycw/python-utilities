@@ -81,14 +81,47 @@ base = (
 )
 
 
-def extend(strategy: SearchStrategy[Any]) -> SearchStrategy[Any]:
-    return (
+def extend(
+    strategy: SearchStrategy[Any],
+    /,
+    *,
+    sub_frozenset: bool = False,
+    sub_list: bool = False,
+    sub_set: bool = False,
+    sub_tuple: bool = False,
+) -> SearchStrategy[Any]:
+    extension = (
         dictionaries(text_ascii(), strategy)
         | frozensets(strategy)
         | lists(strategy)
         | sets(strategy)
         | tuples(strategy)
     )
+    if sub_frozenset:
+        extension |= frozensets(strategy).map(SubFrozenSet)
+    if sub_list:
+        extension |= lists(strategy).map(SubList)
+    if sub_set:
+        extension |= sets(strategy).map(SubSet)
+    if sub_tuple:
+        extension |= tuples(strategy).map(SubTuple)
+    return extension
+
+
+class SubFrozenSet(frozenset):
+    pass
+
+
+class SubList(list):
+    pass
+
+
+class SubSet(set):
+    pass
+
+
+class SubTuple(tuple):  # noqa: SLOT001
+    pass
 
 
 @dataclass(unsafe_hash=True, kw_only=True, slots=True)
@@ -141,7 +174,7 @@ class TestSerializeAndDeserialize2:
         ser = serialize2(obj)
         with raises(
             _Deserialize2NoObjectsError,
-            match="Objects required to deserialize .* from .*",
+            match="Objects required to deserialize '.*' from .*",
         ):
             _ = deserialize2(ser)
 
@@ -150,9 +183,29 @@ class TestSerializeAndDeserialize2:
         ser = serialize2(obj)
         with raises(
             _Deserialize2ObjectEmptyError,
-            match=r"Unable to find object '.*' to deserialize .* \(from .*\)",
+            match=r"Unable to find object to deserialize '.*' from .*",
         ):
             _ = deserialize2(ser, objects=set())
+
+    @given(obj=extend(base, sub_frozenset=True))
+    def test_sub_frozenset(self, *, obj: Any) -> None:
+        result = deserialize2(serialize2(obj), objects={SubFrozenSet})
+        assert result == obj
+
+    @given(obj=extend(base, sub_list=True))
+    def test_sub_list(self, *, obj: Any) -> None:
+        result = deserialize2(serialize2(obj), objects={SubList})
+        assert result == obj
+
+    @given(obj=extend(base, sub_set=True))
+    def test_sub_set(self, *, obj: Any) -> None:
+        result = deserialize2(serialize2(obj), objects={SubSet})
+        assert result == obj
+
+    @given(obj=extend(base, sub_tuple=True))
+    def test_sub_tuple(self, *, obj: Any) -> None:
+        result = deserialize2(serialize2(obj), objects={SubTuple})
+        assert result == obj
 
 
 class TestSerialize2:
