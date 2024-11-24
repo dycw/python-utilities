@@ -1,11 +1,11 @@
+from __future__ import annotations
+
 import datetime as dt
-from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import Enum, auto
 from math import isfinite, nan
 from re import escape
-from typing import Any, ClassVar, Literal, cast
-from zoneinfo import ZoneInfo
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 from hypothesis import assume, given
 from hypothesis.strategies import (
@@ -34,7 +34,6 @@ from polars import (
     int_range,
     lit,
 )
-from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 
@@ -93,7 +92,6 @@ from utilities.polars import (
     yield_struct_series_elements,
     zoned_datetime,
 )
-from utilities.types import StrMapping
 from utilities.zoneinfo import (
     UTC,
     HongKong,
@@ -102,6 +100,14 @@ from utilities.zoneinfo import (
     USEastern,
     get_time_zone_name,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+    from zoneinfo import ZoneInfo
+
+    from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
+
+    from utilities.types import StrMapping
 
 
 class TestAppendDataClass:
