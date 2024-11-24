@@ -178,13 +178,11 @@ def setup_logging(
 @contextmanager
 def temp_handler(logger: Logger, handler: Handler, /) -> Iterator[None]:
     """Context manager with temporary handler set."""
-    num_handlers = len(logger.handlers)
     logger.addHandler(handler)
     try:
         yield
     finally:
-        if logger.handlers[num_handlers] is handler:
-            _ = logger.handlers.pop(num_handlers)
+        _ = logger.removeHandler(handler)
 
 
 class _AdvancedLogRecord(LogRecord):
