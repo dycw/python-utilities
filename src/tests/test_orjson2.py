@@ -92,12 +92,10 @@ def objects(
         | times()
         | timedeltas_2w()
     )
-
     if IS_CI_AND_WINDOWS:
         base |= zoned_datetimes()
     else:
         base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
-
     if dataclass1:
         base |= builds(DataClass1)
     if dataclass2:
@@ -108,7 +106,6 @@ def objects(
         forexes = builds(Forex)
         fills = builds(Fill, contract=forexes)
         base |= builds(Trade, fills=lists(fills))
-
     return recursive(
         base,
         partial(
