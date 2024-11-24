@@ -20,10 +20,12 @@ from hypothesis.strategies import (
     dictionaries,
     floats,
     frozensets,
+    just,
     lists,
     sampled_from,
     sets,
     times,
+    timezones,
     tuples,
 )
 from ib_async import (
@@ -39,6 +41,7 @@ from ib_async import (
 )
 from pytest import mark, param, raises
 
+from tests.conftest import IS_CI_AND_WINDOWS
 from utilities.dataclasses import asdict_without_defaults, is_dataclass_instance
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -69,6 +72,12 @@ if TYPE_CHECKING:
 # strategies
 
 
+if IS_CI_AND_WINDOWS:
+    zoned_datetimes_use = zoned_datetimes()
+else:
+    zoned_datetimes_use = zoned_datetimes(
+        time_zone=timezones() | just(dt.UTC), valid=True
+    )
 base = (
     booleans()
     | floats(allow_nan=False, allow_infinity=False)
@@ -79,7 +88,7 @@ base = (
     | text_printable()
     | times()
     | timedeltas_2w()
-    | zoned_datetimes()
+    | zoned_datetimes_use
 )
 
 

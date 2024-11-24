@@ -13,9 +13,11 @@ from hypothesis.strategies import (
     dates,
     datetimes,
     integers,
+    just,
     sampled_from,
     timedeltas,
     times,
+    timezones,
 )
 from pytest import mark, param, raises
 from whenever import DateTimeDelta
@@ -338,11 +340,7 @@ class TestParseAndSerializeTimedelta:
 
 
 class TestParseAndSerializeZonedDateTime:
-    @given(
-        datetime=zoned_datetimes(
-            time_zone=sampled_from([HongKong, UTC, dt.UTC]), valid=True
-        )
-    )
+    @given(datetime=zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True))
     @SKIPIF_CI_AND_WINDOWS
     def test_main(self, *, datetime: dt.datetime) -> None:
         serialized = serialize_zoned_datetime(datetime)
