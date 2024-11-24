@@ -252,7 +252,7 @@ _LIST_SUBCLASS_PATTERN = re.compile(
     r"^\[" + _Prefixes.list_subclass.value + r"\|(.+)\]$"
 )
 _LOCAL_DATETIME_PATTERN = re.compile(
-    r"^\[" + _Prefixes.datetime.value + r"\](?!.*\+)(.+)$"
+    r"^\[" + _Prefixes.datetime.value + r"\](?!(?:.+\+\d{2}:\d{2}\[.+?\]))(.+)$"
 )
 _ZONED_DATETIME_PATTERN = re.compile(
     r"^\[" + _Prefixes.datetime.value + r"\](.+\+\d{2}:\d{2}\[.+?\])$"

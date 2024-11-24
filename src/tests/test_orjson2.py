@@ -126,14 +126,15 @@ fills = builds(Fill, contract=forexes)
 trades = builds(Trade, fills=lists(fills))
 
 
+# @mark.only
 class TestSerializeAndDeserialize2:
     @given(obj=extend(base))
-    @mark.only
     def test_main(self, *, obj: Any) -> None:
-        result = deserialize2(s := serialize2(obj))
+        result = deserialize2(serialize2(obj))
         assert result == obj
 
     @given(obj=extend(base | dataclass1s))
+    @mark.only
     def test_dataclass(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj), objects={DataClass1})
         assert result == obj
@@ -164,7 +165,7 @@ class TestSerializeAndDeserialize2:
         ):
             _ = deserialize2(ser, objects=set())
 
-    @given(obj=extend(base, sublist=False))
+    @given(obj=extend(base, sublist=True))
     def test_sub_list(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj), objects={SubList})
         assert result == obj
