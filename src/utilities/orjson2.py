@@ -10,6 +10,7 @@ from re import Pattern
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
     Never,
     assert_never,
     cast,
@@ -151,6 +152,7 @@ def _pre_process(
 
 def _pre_process_container(
     obj: Any,
+    cls: type[Any],
     prefix: _Prefixes,
     /,
     *,
@@ -159,7 +161,7 @@ def _pre_process_container(
     dataclass_final_hook: Callable[[type[Dataclass], StrMapping], StrMapping]
     | None = None,
 ) -> StrMapping:
-    if issubclass(frozenset, type(obj)):
+    if issubclass(cls, type(obj)):
         key = f"[{prefix.value}]"
     else:
         key = f"[{prefix.value}|{type(obj).__qualname__}]"
@@ -243,25 +245,31 @@ def deserialize2(
 
 
 _DATACLASS_PATTERN = re.compile(r"^\[" + _Prefixes.dataclass.value + r"\|(.+)\]$")
-_DATE_PATTERN = re.compile(r"^\[" + _Prefixes.date.value + r"\](.+)$")
 _LIST_SUBCLASS_PATTERN = re.compile(
     r"^\[" + _Prefixes.list_subclass.value + r"\|(.+)\]$"
 )
 _LOCAL_DATETIME_PATTERN = re.compile(r"^\[" + _Prefixes.datetime.value + r"\](.+)$")
-_PATH_PATTERN = re.compile(r"^\[" + _Prefixes.path.value + r"\](.+)$")
-_TIME_PATTERN = re.compile(r"^\[" + _Prefixes.time.value + r"\](.+)$")
-_TIMEDELTA_PATTERN = re.compile(r"^\[" + _Prefixes.timedelta.value + r"\](.+)$")
 _ZONED_DATETIME_PATTERN = re.compile(
     r"^\[" + _Prefixes.datetime.value + r"\](.+\+\d{2}:\d{2}\[.+?\])$"
 )
 
 
-def _make_tuple_pattern(prefix: _Prefixes, /) -> Pattern[str]:
+def _make_unit_pattern(prefix: _Prefixes, /) -> Pattern[str]:
+    return re.compile(r"^\[" + prefix.value + r"\|(.+)\]$")
+
+
+_DATE_PATTERN, _PATH_PATTERN, _TIME_PATTERN, _TIMEDELTA_PATTERN = map(
+    _make_unit_pattern,
+    [_Prefixes.date, _Prefixes.datetime, _Prefixes.path, _Prefixes.time],
+)
+
+
+def _make_container_pattern(prefix: _Prefixes, /) -> Pattern[str]:
     return re.compile(r"^\[" + prefix.value + r"(?:\|(.+))?\]$")
 
 
 _FROZENSET_PATTERN, _SET_PATTERN, _TUPLE_PATTERN = map(
-    _make_tuple_pattern, [_Prefixes.frozenset_, _Prefixes.set_, _Prefixes.tuple_]
+    _make_container_pattern, [_Prefixes.frozenset_, _Prefixes.set_, _Prefixes.tuple_]
 )
 
 
@@ -317,6 +325,7 @@ def _object_hook(
                         k: _object_hook(v, data=data, objects=objects)
                         for k, v in value.items()
                     })
+                # if (result:=_object_hook_container(key, value, _FROZENSET_PATTERN))
                 if (match := _FROZENSET_PATTERN.search(key)) and isinstance(
                     value, list
                 ):
@@ -364,23 +373,31 @@ def _object_hook(
 
 
 def _object_hook_container(
+    obj: Any,
     key: str,
     value: Any,
     pattern: Pattern[str],
+    /,
+    *,
+    data: bytes,
+    objects: AbstractSet[type[Any]] | None = None,
 ) -> Any:
-    if (match := pattern.search(key)) and isinstance(value, dict):
-        if objects is None:
-            raise _Deserialize2NoObjectsError(data=data, obj=obj)
-        qualname = match.group(1)
-        try:
-            cls = one(o for o in objects if o.__qualname__ == qualname)
-        except OneEmptyError:
-            raise _Deserialize2ObjectEmptyError(
-                data=data, obj=obj, qualname=qualname
-            ) from None
-        return cls(**{
-            k: _object_hook(v, data=data, objects=objects) for k, v in value.items()
-        })
+    if not (match := pattern.search(key)):
+        return None
+    match value:
+        if isinstance(value, dict):
+            if objects is None:
+                raise _Deserialize2NoObjectsError(data=data, obj=obj)
+            qualname = match.group(1)
+            try:
+                cls = one(o for o in objects if o.__qualname__ == qualname)
+            except OneEmptyError:
+                raise _Deserialize2ObjectEmptyError(
+                    data=data, obj=obj, qualname=qualname
+                ) from None
+            return cls(**{
+                k: _object_hook(v, data=data, objects=objects) for k, v in value.items()
+            })
     return None
 
 
