@@ -25,8 +25,6 @@ from utilities.timer import Timer
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterable, Iterator
 
-    from pytest import CaptureFixture
-
     from utilities.types import Duration
 
 _STRS = list("AAAABBBCCDAABB")
@@ -83,14 +81,22 @@ class TestSleepDur:
 
 class TestStreamCommand:
     @skipif_windows
-    async def test_main(self, *, capsys: CaptureFixture) -> None:
+    async def test_main(self) -> None:
         output = await stream_command(
             'echo "stdout message" && sleep 0.1 && echo "stderr message" >&2'
         )
-        assert output.returncode == 0
-        await sleep(0.1)
-        out = capsys.readouterr().out
-        assert out == ""
+        await sleep(0.01)
+        assert output.return_code == 0
+        assert output.stdout == "stdout message\n"
+        assert output.stderr == "stderr message\n"
+
+    @skipif_windows
+    async def test_error(self) -> None:
+        output = await stream_command("this-is-an-error")
+        await sleep(0.01)
+        assert output.return_code == 127
+        assert output.stdout == ""
+        assert output.stderr == "/bin/sh: this-is-an-error: command not found\n"
 
 
 class TestTimeoutDur:
