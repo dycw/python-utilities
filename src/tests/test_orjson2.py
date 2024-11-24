@@ -126,7 +126,7 @@ fills = builds(Fill, contract=forexes)
 trades = builds(Trade, fills=lists(fills))
 
 
-# @mark.only
+@mark.only
 class TestSerializeAndDeserialize2:
     @given(obj=extend(base))
     def test_main(self, *, obj: Any) -> None:
@@ -134,7 +134,6 @@ class TestSerializeAndDeserialize2:
         assert result == obj
 
     @given(obj=extend(base | dataclass1s))
-    @mark.only
     def test_dataclass(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj), objects={DataClass1})
         assert result == obj
@@ -152,7 +151,7 @@ class TestSerializeAndDeserialize2:
         ser = serialize2(obj)
         with raises(
             _Deserialize2NoObjectsError,
-            match="Objects required to deserialize .* from .*",
+            match="Objects required to deserialize '.*' from .*",
         ):
             _ = deserialize2(ser)
 
@@ -161,7 +160,7 @@ class TestSerializeAndDeserialize2:
         ser = serialize2(obj)
         with raises(
             _Deserialize2ObjectEmptyError,
-            match=r"Unable to find object '.*' to deserialize .* \(from .*\)",
+            match=r"Unable to find object to deserialize '.*' from .*",
         ):
             _ = deserialize2(ser, objects=set())
 

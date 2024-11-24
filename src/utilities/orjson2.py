@@ -309,22 +309,23 @@ def _object_hook(
         case dict():
             if len(obj) == 1:
                 key, value = one(obj.items())
-                if (match := _DATACLASS_PATTERN.search(key)) and isinstance(
-                    value, dict
-                ):
-                    if objects is None:
-                        raise _Deserialize2NoObjectsError(data=data, obj=obj)
-                    qualname = match.group(1)
-                    try:
-                        cls = one(o for o in objects if o.__qualname__ == qualname)
-                    except OneEmptyError:
-                        raise _Deserialize2ObjectEmptyError(
-                            data=data, obj=obj, qualname=qualname
-                        ) from None
-                    return cls(**{
-                        k: _object_hook(v, data=data, objects=objects)
-                        for k, v in value.items()
-                    })
+                if 0:
+                    if (match := _DATACLASS_PATTERN.search(key)) and isinstance(
+                        value, dict
+                    ):
+                        if objects is None:
+                            raise _Deserialize2NoObjectsError(data=data, obj=obj)
+                        qualname = match.group(1)
+                        try:
+                            cls = one(o for o in objects if o.__qualname__ == qualname)
+                        except OneEmptyError:
+                            raise _Deserialize2ObjectEmptyError(
+                                data=data, obj=obj, qualname=qualname
+                            ) from None
+                        return cls(**{
+                            k: _object_hook(v, data=data, objects=objects)
+                            for k, v in value.items()
+                        })
                 for cls, pattern in [
                     (frozenset, _FROZENSET_PATTERN),
                     (set, _SET_PATTERN),
@@ -351,6 +352,9 @@ def _object_hook(
                         _object_hook(v, data=data, objects=objects) for v in value
                     )
                     return cls(values)
+                result = _object_hook_dataclass(key, value, data=data, objects=objects)
+                if result is not None:
+                    return result
                 return {
                     k: _object_hook(v, data=data, objects=objects)
                     for k, v in obj.items()
@@ -376,19 +380,19 @@ def _object_hook_container(
         return None
     match value:
         case dict():
-            cls = _object_hook_get_object(match, cls, data=data, objects=objects)
+            cls = _object_hook_get_container(match, cls, data=data, objects=objects)
             items = {
                 k: _object_hook(v, data=data, objects=objects) for k, v in value.items()
             }
             return cls(**items)
         case list():
-            cls = _object_hook_get_object(match, cls, data=data, objects=objects)
+            cls = _object_hook_get_container(match, cls, data=data, objects=objects)
             return cls(_object_hook(v, data=data, objects=objects) for v in value)
         case _:
             return None
 
 
-def _object_hook_get_object(
+def _object_hook_get_container(
     match: Match[str],
     cls: type[Any],
     /,
@@ -396,14 +400,42 @@ def _object_hook_get_object(
     data: bytes,
     objects: AbstractSet[type[Any]] | None = None,
 ) -> type[Any]:
-    if (qualname := match.group(1)) is None:
+    if match.group(1) is None:
         return cls
+    return _object_hook_get_object(match, data=data, objects=objects)
+
+
+def _object_hook_get_object(
+    match: Match[str],
+    /,
+    *,
+    data: bytes,
+    objects: AbstractSet[type[Any]] | None = None,
+) -> type[Any]:
+    qualname = match.group(1)
     if objects is None:
         raise _Deserialize2NoObjectsError(data=data, qualname=qualname)
     try:
         return one(o for o in objects if o.__qualname__ == qualname)
     except OneEmptyError:
         raise _Deserialize2ObjectEmptyError(data=data, qualname=qualname) from None
+
+
+def _object_hook_dataclass(
+    key: str,
+    value: Any,
+    /,
+    *,
+    data: bytes,
+    objects: AbstractSet[type[Any]] | None = None,
+) -> Any:
+    if not (match := _DATACLASS_PATTERN.search(key)):
+        return None
+    if not isinstance(value, dict):
+        return None
+    cls = _object_hook_get_object(match, data=data, objects=objects)
+    items = {k: _object_hook(v, data=data, objects=objects) for k, v in value.items()}
+    return cls(**items)
 
 
 @dataclass(kw_only=True, slots=True)
