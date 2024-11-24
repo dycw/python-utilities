@@ -6,7 +6,7 @@ while IFS= read -r _PACKAGE; do
 		"--extra=zzz-test-defaults" \
 		"--extra=zzz-test-${_PACKAGE}" \
 		--quiet \
-		--prerelease=disallow \
+		--prerelease=explicit \
 		"--output-file=requirements/${_PACKAGE}.txt" \
 		--upgrade \
 		--python-version=3.11 \
