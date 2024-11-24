@@ -127,7 +127,10 @@ zzz-test-functions = []
 zzz-test-functools = []
 zzz-test-getpass = []
 zzz-test-git = []
-zzz-test-hashlib = ["orjson >= 3.10.12, < 3.11"]
+zzz-test-hashlib = [
+  "orjson >= 3.10.12, < 3.11",
+  "whenever >= 0.6.13, < 0.7",
+]
 zzz-test-http = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-humps = ["pyhumps >= 3.8.0, < 3.9"]
 zzz-test-hypothesis = [
