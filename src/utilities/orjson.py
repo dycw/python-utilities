@@ -22,6 +22,18 @@ from utilities.dataclasses import Dataclass, asdict_without_defaults
 from utilities.functions import get_class_name
 from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
+from utilities.whenever import (
+    parse_date,
+    parse_local_datetime,
+    parse_time,
+    parse_timedelta,
+    parse_zoned_datetime,
+    serialize_date,
+    serialize_local_datetime,
+    serialize_time,
+    serialize_timedelta,
+    serialize_zoned_datetime,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -182,11 +194,6 @@ def _dataclass_final(
 
 def _serialize_default(obj: Any, /, *, fallback: bool = False) -> str:
     if isinstance(obj, dt.datetime):
-        from utilities.whenever import (
-            serialize_local_datetime,
-            serialize_zoned_datetime,
-        )
-
         if obj.tzinfo is None:
             ser = serialize_local_datetime(obj)
         elif obj.tzinfo is dt.UTC:
@@ -195,18 +202,12 @@ def _serialize_default(obj: Any, /, *, fallback: bool = False) -> str:
             ser = serialize_zoned_datetime(obj)
         return f"[{_Prefixes.datetime.value}]{ser}"
     if isinstance(obj, dt.date):  # after datetime
-        from utilities.whenever import serialize_date
-
         ser = serialize_date(obj)
         return f"[{_Prefixes.date.value}]{ser}"
     if isinstance(obj, dt.time):
-        from utilities.whenever import serialize_time
-
         ser = serialize_time(obj)
         return f"[{_Prefixes.time.value}]{ser}"
     if isinstance(obj, dt.timedelta):
-        from utilities.whenever import serialize_timedelta
-
         ser = serialize_timedelta(obj)
         return f"[{_Prefixes.timedelta.value}]{ser}"
     if isinstance(obj, Path):
@@ -309,30 +310,18 @@ def _object_hook(
             return obj
         case str():
             if match := _DATE_PATTERN.search(obj):
-                from utilities.whenever import parse_date
-
                 return parse_date(match.group(1))
             if match := _LOCAL_DATETIME_PATTERN.search(obj):
-                from utilities.whenever import parse_local_datetime
-
                 return parse_local_datetime(match.group(1))
             if match := _PATH_PATTERN.search(obj):
                 return Path(match.group(1))
             if match := _TIME_PATTERN.search(obj):
-                from utilities.whenever import parse_time
-
                 return parse_time(match.group(1))
             if match := _TIMEDELTA_PATTERN.search(obj):
-                from utilities.whenever import parse_timedelta
-
                 return parse_timedelta(match.group(1))
             if match := _ZONED_DATETIME_PATTERN.search(obj):
-                from utilities.whenever import parse_zoned_datetime
-
                 return parse_zoned_datetime(match.group(1))
             if match := _ZONED_DATETIME_ALTERNATIVE_PATTERN.search(obj):
-                from utilities.whenever import parse_zoned_datetime
-
                 return parse_zoned_datetime(
                     match.group(1).replace("dt.UTC", "UTC")
                 ).replace(tzinfo=dt.UTC)
