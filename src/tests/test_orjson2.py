@@ -11,11 +11,9 @@ from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
-    DataObject,
     SearchStrategy,
     booleans,
     builds,
-    data,
     dates,
     datetimes,
     dictionaries,
@@ -306,12 +304,9 @@ class TestSerialize2:
         with raises(_Serialize2IntegerError, match="Integer .* is out of range"):
             _ = serialize2(x)
 
-    @given(data=data())
+    @given(obj=objects(ib_trades=True))
     @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
-    def test_ib_trades(self, *, data: DataObject) -> None:
-        with assume_does_not_raise(TypeError, match="unhashable type"):
-            obj = data.draw(objects(ib_trades=True))
-
+    def test_ib_trades(self, *, obj: Any) -> None:
         def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
             if issubclass(cls, Contract) and not issubclass(Contract, cls):
                 mapping = {k: v for k, v in mapping.items() if k != "secType"}
