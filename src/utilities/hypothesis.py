@@ -50,7 +50,6 @@ from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
-from utilities.whenever import CheckValidZonedDateimeError, check_valid_zoned_datetime
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -716,6 +715,11 @@ def zoned_datetimes(
     valid: bool = False,
 ) -> dt.datetime:
     """Strategy for generating zoned datetimes."""
+    from utilities.whenever import (
+        CheckValidZonedDateimeError,
+        check_valid_zoned_datetime,
+    )
+
     draw = lift_draw(_draw)
     min_value_, max_value_, time_zone_ = (
         draw(min_value),
