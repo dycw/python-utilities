@@ -39,7 +39,7 @@ class TestPublishAndSubscribe:
         channel=text_ascii(min_size=1).map(
             lambda c: f"{get_class_name(TestPublishAndSubscribe)}_obj_ser_{c}"
         ),
-        obj=objects,
+        obj=objects(),
     )
     @settings(
         max_examples=1,
