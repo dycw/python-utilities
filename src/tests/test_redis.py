@@ -17,7 +17,7 @@ from utilities.hypothesis import (
     text_ascii,
     yield_test_redis,
 )
-from utilities.orjson import deserialize, serialize, serializeError
+from utilities.orjson import SerializeError, deserialize, serialize
 from utilities.redis import (
     publish,
     redis_hash_map_key,
@@ -292,7 +292,7 @@ class TestRedisKey:
         async with yield_test_redis(data) as test:
             key = redis_key(test.key, Sentinel)
             with raises(
-                serializeError, match="Unable to serialize object of type 'Sentinel'"
+                SerializeError, match="Unable to serialize object of type 'Sentinel'"
             ):
                 _ = await key.set(test.redis, sentinel)
 
