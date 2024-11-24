@@ -41,7 +41,7 @@ from ib_async import (
 )
 from pytest import mark, param, raises
 
-from tests.conftest import SKIPIF_CI_AND_WINDOWS
+from tests.conftest import IS_CI_AND_WINDOWS
 from utilities.dataclasses import asdict_without_defaults, is_dataclass_instance
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -84,6 +84,10 @@ base = (
     | timedeltas_2w()
     | zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
 )
+if IS_CI_AND_WINDOWS:
+    base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
+else:
+    base |= zoned_datetimes(time_zone=sampled_from([UTC, dt.UTC]), valid=True)
 
 
 def extend(
@@ -157,20 +161,17 @@ trades = builds(Trade, fills=lists(fills))
 
 class TestSerializeAndDeserialize2:
     @given(obj=extend(base))
-    @SKIPIF_CI_AND_WINDOWS
     def test_main(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj))
         assert result == obj
 
     @given(obj=extend(base | dataclass1s))
-    @SKIPIF_CI_AND_WINDOWS
     def test_dataclass(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj), objects={DataClass1})
         assert result == obj
 
     @given(obj=extend(base | dataclass2s))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
-    @SKIPIF_CI_AND_WINDOWS
     def test_dataclass_nested(self, *, obj: Any) -> None:
         with assume_does_not_raise(_Serialize2IntegerError):
             ser = serialize2(obj)
@@ -178,7 +179,6 @@ class TestSerializeAndDeserialize2:
         assert result == obj
 
     @given(obj=dataclass1s)
-    @SKIPIF_CI_AND_WINDOWS
     def test_dataclass_no_objects_error(self, *, obj: DataClass1) -> None:
         ser = serialize2(obj)
         with raises(
@@ -188,7 +188,6 @@ class TestSerializeAndDeserialize2:
             _ = deserialize2(ser)
 
     @given(obj=dataclass1s)
-    @SKIPIF_CI_AND_WINDOWS
     def test_dataclass_empty_error(self, *, obj: DataClass1) -> None:
         ser = serialize2(obj)
         with raises(
@@ -198,25 +197,21 @@ class TestSerializeAndDeserialize2:
             _ = deserialize2(ser, objects=set())
 
     @given(obj=extend(base, sub_frozenset=True))
-    @SKIPIF_CI_AND_WINDOWS
     def test_sub_frozenset(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj), objects={SubFrozenSet})
         assert result == obj
 
     @given(obj=extend(base, sub_list=True))
-    @SKIPIF_CI_AND_WINDOWS
     def test_sub_list(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj), objects={SubList})
         assert result == obj
 
     @given(obj=extend(base, sub_set=True))
-    @SKIPIF_CI_AND_WINDOWS
     def test_sub_set(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj), objects={SubSet})
         assert result == obj
 
     @given(obj=extend(base, sub_tuple=True))
-    @SKIPIF_CI_AND_WINDOWS
     def test_sub_tuple(self, *, obj: Any) -> None:
         result = deserialize2(serialize2(obj), objects={SubTuple})
         assert result == obj
@@ -258,14 +253,12 @@ class TestSerialize2:
         assert result == expected
 
     @given(obj=extend(dataclass1s.filter(lambda obj: obj.x >= 0)))
-    @SKIPIF_CI_AND_WINDOWS
     def test_dataclass_hook_setup(self, *, obj: Any) -> None:
         ser = serialize2(obj)
         assert not search(b"-", ser)
 
     @given(obj=extend(dataclass1s))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
-    @SKIPIF_CI_AND_WINDOWS
     def test_dataclass_hook_main(self, *, obj: Any) -> None:
         def hook(_: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
             return {k: v for k, v in mapping.items() if v >= 0}
@@ -280,7 +273,6 @@ class TestSerialize2:
 
     @given(data=data())
     @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
-    @SKIPIF_CI_AND_WINDOWS
     def test_ib_trades(self, *, data: DataObject) -> None:
         with assume_does_not_raise(TypeError, match="unhashable type"):
             obj = data.draw(extend(trades))
