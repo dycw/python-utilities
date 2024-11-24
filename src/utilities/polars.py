@@ -486,7 +486,10 @@ def _convert_time_zone_series(
 
 def dataclass_to_row(obj: Dataclass, /) -> DataFrame:
     """Convert a dataclass into a 1-row DataFrame."""
-    df = DataFrame([asdict_without_defaults(obj, recursive=True)], orient="row")
+    try:
+        df = DataFrame([obj], orient="row")
+    except NameError:
+        df = DataFrame([asdict_without_defaults(obj, recursive=True)], orient="row")
     return reduce(partial(_dataclass_to_row_reducer, obj=obj), df.columns, df)
 
 
