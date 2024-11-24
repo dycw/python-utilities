@@ -436,7 +436,6 @@ select = [
 
 [tool.ruff.lint.extend-per-file-ignores]
 "src/tests/**/*.py" = ["S101"]  # assert
-"src/tests/test_orjson.py" = ["I002"]  # missing-required-import
 "src/tests/test_polars.py" = ["I002"]  # missing-required-import
 
 [tool.ruff.lint.flake8-bugbear]
