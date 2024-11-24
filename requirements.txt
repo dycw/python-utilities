@@ -76,7 +76,7 @@ colorlog==6.9.0
     #   optuna
 concurrent-log-handler==0.9.25
     # via dycw-utilities (pyproject.toml)
-coverage==7.6.7
+coverage==7.6.8
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -223,7 +223,7 @@ numpy==2.0.2
     #   streamlit
 optuna==4.1.0
     # via dycw-utilities (pyproject.toml)
-orjson==3.10.11
+orjson==3.10.12
     # via dycw-utilities (pyproject.toml)
 osqp==0.6.7.post3
     # via cvxpy
