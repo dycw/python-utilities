@@ -309,23 +309,6 @@ def _object_hook(
         case dict():
             if len(obj) == 1:
                 key, value = one(obj.items())
-                if 0:
-                    if (match := _DATACLASS_PATTERN.search(key)) and isinstance(
-                        value, dict
-                    ):
-                        if objects is None:
-                            raise _Deserialize2NoObjectsError(data=data, obj=obj)
-                        qualname = match.group(1)
-                        try:
-                            cls = one(o for o in objects if o.__qualname__ == qualname)
-                        except OneEmptyError:
-                            raise _Deserialize2ObjectEmptyError(
-                                data=data, obj=obj, qualname=qualname
-                            ) from None
-                        return cls(**{
-                            k: _object_hook(v, data=data, objects=objects)
-                            for k, v in value.items()
-                        })
                 for cls, pattern in [
                     (frozenset, _FROZENSET_PATTERN),
                     (set, _SET_PATTERN),
