@@ -148,6 +148,7 @@ zzz-test-hypothesis = [
   "numpy >= 2.0.2, < 2.1",
   "redis >= 5.2.0, < 5.3",
   "sqlalchemy >= 2.0.36, < 2.1",
+  "tzlocal >= 5.2, < 5.3",
   "whenever >= 0.6.13, < 0.7",
 ]
 zzz-test-ipython = ["ipython >= 8.24.0, < 8.25"]
