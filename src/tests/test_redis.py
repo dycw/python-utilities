@@ -9,7 +9,7 @@ from pytest import raises
 from redis.asyncio import Redis
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
-from tests.test_orjson2 import objects
+from tests.test_orjson import objects
 from utilities.functions import get_class_name
 from utilities.hypothesis import (
     int64s,
@@ -17,7 +17,7 @@ from utilities.hypothesis import (
     text_ascii,
     yield_test_redis,
 )
-from utilities.orjson2 import Serialize2Error, deserialize2, serialize2
+from utilities.orjson import SerializeError, deserialize, serialize
 from utilities.redis import (
     publish,
     redis_hash_map_key,
@@ -54,13 +54,13 @@ class TestPublishAndSubscribe:
 
             async def listener() -> None:
                 async for msg in subscribe(
-                    test.redis.pubsub(), channel, deserializer=deserialize2
+                    test.redis.pubsub(), channel, deserializer=deserialize
                 ):
                     print(msg)  # noqa: T201
 
             task = create_task(listener())
             await sleep(0.05)
-            _ = await publish(test.redis, channel, obj, serializer=serialize2)
+            _ = await publish(test.redis, channel, obj, serializer=serialize)
             await sleep(0.05)
             try:
                 out = capsys.readouterr().out
@@ -292,7 +292,7 @@ class TestRedisKey:
         async with yield_test_redis(data) as test:
             key = redis_key(test.key, Sentinel)
             with raises(
-                Serialize2Error, match="Unable to serialize object of type 'Sentinel'"
+                SerializeError, match="Unable to serialize object of type 'Sentinel'"
             ):
                 _ = await key.set(test.redis, sentinel)
 
