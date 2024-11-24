@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from logging import DEBUG, FileHandler, Logger, getLogger
+from logging import DEBUG, FileHandler, Logger, StreamHandler, getLogger
 from typing import TYPE_CHECKING, Any, cast
 
 from pytest import LogCaptureFixture, mark, param, raises
@@ -15,6 +15,7 @@ from utilities.logging import (
     basic_config,
     get_logging_level_number,
     setup_logging,
+    temp_handler,
 )
 from utilities.pathlib import temp_cwd
 from utilities.pytest import skipif_windows
@@ -121,3 +122,17 @@ class TestSetupLogging:
         logger = getLogger(__name__)
         logger.info("Test")
         assert len(list(tmp_path.iterdir())) == 8
+
+
+class TestTempHandler:
+    def test_main(self) -> None:
+        logger = getLogger(__name__ + TestTempHandler.test_main.__qualname__)
+        logger.addHandler(h1 := StreamHandler())
+        logger.addHandler(h2 := StreamHandler())
+        assert len(logger.handlers) == 2
+        handler = StreamHandler()
+        with temp_handler(logger, handler):
+            assert len(logger.handlers) == 3
+        assert len(logger.handlers) == 2
+        assert logger.handlers[0] is h1
+        assert logger.handlers[1] is h2
