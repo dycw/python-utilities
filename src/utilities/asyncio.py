@@ -1,23 +1,27 @@
 from __future__ import annotations
 
-from asyncio import sleep
+from asyncio import (
+    StreamReader,
+    create_subprocess_shell,
+    create_task,
+    gather,
+    sleep,
+    timeout,
+)
+from collections.abc import AsyncIterable, Awaitable, Coroutine, Iterable
 from re import search
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from subprocess import PIPE
+from sys import stderr, stdout
+from typing import TYPE_CHECKING, Any, TextIO, TypeGuard, TypeVar, cast
 
+from utilities.datetime import duration_to_float
+from utilities.functions import ensure_not_none
 from utilities.iterables import OneError, one
 from utilities.text import EnsureStrError, ensure_str
 
 if TYPE_CHECKING:
-    from collections.abc import Coroutine
-
-from asyncio import timeout
-from collections.abc import AsyncIterable, Awaitable, Coroutine, Iterable
-from typing import TYPE_CHECKING, TypeGuard
-
-from utilities.datetime import duration_to_float
-
-if TYPE_CHECKING:
     from asyncio import Timeout
+    from asyncio.subprocess import Process
 
     from utilities.types import Duration
 
@@ -43,6 +47,29 @@ async def sleep_dur(*, duration: Duration | None = None) -> None:
     if duration is None:
         return
     await sleep(duration_to_float(duration))
+
+
+async def stream_command(cmd: str, /) -> Process:
+    """Run a shell command asynchronously and stream its output in real time."""
+    process = await create_subprocess_shell(cmd, stdout=PIPE, stderr=PIPE)
+    tasks = [
+        create_task(_stream_one(ensure_not_none(process.stdout), stdout)),
+        create_task(_stream_one(ensure_not_none(process.stderr), stderr)),
+    ]
+    _ = await process.wait()
+    _ = await gather(*tasks)
+    return process
+
+
+async def _stream_one(input_: StreamReader, output: TextIO, /) -> None:
+    """Asynchronously read from a stream and write to the target output stream."""
+    while True:
+        line = await input_.readline()
+        if line:
+            _ = output.write(line.decode())
+            output.flush()
+        else:
+            break
 
 
 def timeout_dur(*, duration: Duration | None = None) -> Timeout:
@@ -80,6 +107,7 @@ __all__ = [
     "MaybeCoroutine1",
     "is_awaitable",
     "sleep_dur",
+    "stream_command",
     "timeout_dur",
     "to_list",
 ]
