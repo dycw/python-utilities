@@ -2,6 +2,8 @@
 #    uv pip compile --extra=test --extra=zzz-test-sqlalchemy-polars --prerelease=explicit --output-file=requirements/sqlalchemy-polars.txt --python-version=3.11 pyproject.toml
 aiosqlite==0.20.0
     # via dycw-utilities (pyproject.toml)
+asyncpg==0.30.0
+    # via dycw-utilities (pyproject.toml)
 attrs==24.2.0
     # via hypothesis
 coverage==7.6.8
