@@ -401,7 +401,7 @@ tomlkit==0.13.2
     # via hatch
 tornado==6.4.2
     # via streamlit
-tqdm==4.67.0
+tqdm==4.67.1
     # via
     #   optuna
     #   pqdm
@@ -432,7 +432,7 @@ userpath==1.9.2
     # via hatch
 uv==0.5.4
     # via hatch
-vegafusion==2.0.0
+vegafusion==2.0.1
     # via dycw-utilities (pyproject.toml)
 vegafusion-python-embed==1.6.9
     # via dycw-utilities (pyproject.toml)

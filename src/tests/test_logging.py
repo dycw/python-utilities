@@ -61,50 +61,68 @@ class TestLogLevel:
 class TestSetupLogging:
     @skipif_windows
     def test_main(self, *, tmp_path: Path) -> None:
-        setup_logging(files_dir=tmp_path)
+        name = TestSetupLogging.test_main.__qualname__
+        setup_logging(logger_name=name, files_dir=tmp_path)
+        logger = getLogger(name)
+        assert len(logger.handlers) == 7
         assert len(list(tmp_path.iterdir())) == 7
 
     @skipif_windows
     def test_files_dir_cwd(self, *, tmp_path: Path) -> None:
+        name = TestSetupLogging.test_files_dir_cwd.__qualname__
         with temp_cwd(tmp_path):
-            setup_logging(files_dir=None)
-            logger = getLogger(__name__)
+            setup_logging(logger_name=name, files_dir=None)
+            logger = getLogger(name)
             logger.info("message")
             assert len(list(tmp_path.iterdir())) == 7
 
     @skipif_windows
     def test_files_dir_callable(self, *, tmp_path: Path) -> None:
-        setup_logging(files_dir=lambda: tmp_path)
+        name = TestSetupLogging.test_files_dir_callable.__qualname__
+        setup_logging(logger_name=name, files_dir=lambda: tmp_path)
         assert len(list(tmp_path.iterdir())) == 7
 
     def test_default_path(self) -> None:
         _ = _setup_logging_default_path()
 
+    @skipif_windows
     def test_regular_percent_formatting(
         self, *, caplog: LogCaptureFixture, tmp_path: Path
     ) -> None:
-        setup_logging(logger_name=__name__, files_dir=tmp_path)
-        logger = getLogger(__name__)
+        name = TestSetupLogging.test_regular_percent_formatting.__qualname__
+        setup_logging(logger_name=name, files_dir=tmp_path)
+        logger = getLogger(name)
         logger.info("int: %d, float: %.2f", 1, 12.3456)
         record = one(caplog.records)
         assert isinstance(record, _AdvancedLogRecord)
         expected = "int: 1, float: 12.35"
         assert record.message == expected
 
+    @skipif_windows
     def test_new_brace_formatting(
         self, *, caplog: LogCaptureFixture, tmp_path: Path
     ) -> None:
-        setup_logging(logger_name=__name__, files_dir=tmp_path)
-        logger = getLogger(__name__)
+        name = TestSetupLogging.test_new_brace_formatting.__qualname__
+        setup_logging(logger_name=name, files_dir=tmp_path)
+        logger = getLogger(name)
         logger.info("int: {:d}, float: {:.2f}, percent: {:.2%}", 1, 12.3456, 0.123456)
         record = one(caplog.records)
         assert isinstance(record, _AdvancedLogRecord)
         expected = "int: 1, float: 12.35, percent: 12.35%"
         assert record.message == expected
 
+    @skipif_windows
+    def test_no_console(self, *, tmp_path: Path) -> None:
+        name = TestSetupLogging.test_no_console.__qualname__
+        setup_logging(logger_name=name, console_level=None, files_dir=tmp_path)
+        logger = getLogger(name)
+        assert len(logger.handlers) == 6
+
+    @skipif_windows
     def test_zoned_datetime(self, *, caplog: LogCaptureFixture, tmp_path: Path) -> None:
-        setup_logging(logger_name=__name__, files_dir=tmp_path)
-        logger = getLogger(__name__)
+        name = TestSetupLogging.test_zoned_datetime.__qualname__
+        setup_logging(logger_name=name, files_dir=tmp_path)
+        logger = getLogger(name)
         logger.info("")
         record = one(caplog.records)
         assert isinstance(record, _AdvancedLogRecord)
@@ -113,20 +131,23 @@ class TestSetupLogging:
 
     @skipif_windows
     def test_extra(self, *, tmp_path: Path) -> None:
+        name = TestSetupLogging.test_extra.__qualname__
+
         def extra(logger: Logger, /) -> None:
             handler = FileHandler(tmp_path.joinpath("extra.log"))
             handler.setLevel(DEBUG)
             logger.addHandler(handler)
 
-        setup_logging(logger_name=__name__, files_dir=tmp_path, extra=extra)
-        logger = getLogger(__name__)
-        logger.info("Test")
+        setup_logging(logger_name=name, files_dir=tmp_path, extra=extra)
+        logger = getLogger(name)
+        logger.info("")
         assert len(list(tmp_path.iterdir())) == 8
 
 
 class TestTempHandler:
     def test_main(self) -> None:
-        logger = getLogger(__name__ + TestTempHandler.test_main.__qualname__)
+        name = TestTempHandler.test_main.__qualname__
+        logger = getLogger(name)
         logger.addHandler(h1 := StreamHandler())
         logger.addHandler(h2 := StreamHandler())
         assert len(logger.handlers) == 2

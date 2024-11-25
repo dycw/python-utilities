@@ -78,7 +78,7 @@ def _setup_logging_default_path() -> Path:
 def setup_logging(
     *,
     logger_name: str | None = None,
-    console_level: LogLevel = "INFO",
+    console_level: LogLevel | None = "INFO",
     console_fmt: str = "❯ {zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
     files_dir: PathLike | Callable[[], Path] | None = _setup_logging_default_path,
     files_when: str = "D",
@@ -126,12 +126,11 @@ def setup_logging(
     plain_formatter = Formatter(fmt=files_fmt, style="{")  # skipif-ci-and-windows
 
     # console
-    console_handler = StreamHandler(stream=stdout)  # skipif-ci-and-windows
-    console_handler.setFormatter(console_formatter)  # skipif-ci-and-windows
-    console_handler.setLevel(
-        get_logging_level_number(console_level)
-    )  # skipif-ci-and-windows
-    logger.addHandler(console_handler)  # skipif-ci-and-windows
+    if console_level is not None:  # skipif-ci-and-windows
+        console_handler = StreamHandler(stream=stdout)
+        console_handler.setFormatter(console_formatter)
+        console_handler.setLevel(get_logging_level_number(console_level))
+        logger.addHandler(console_handler)
 
     # files
     match files_dir:  # skipif-ci-and-windows
@@ -171,8 +170,8 @@ def setup_logging(
         logger.addHandler(file_handler)
 
     # extra
-    if extra is not None:
-        extra(logger)  # skipif-ci-and-windows
+    if extra is not None:  # skipif-ci-and-windows
+        extra(logger)
 
 
 @contextmanager
@@ -219,25 +218,25 @@ class _AdvancedLogRecord(LogRecord):
     @override
     def getMessage(self) -> str:
         """Return the message for this LogRecord."""
-        msg = str(self.msg)
-        if self.args:
+        msg = str(self.msg)  # pragma: no cover
+        if self.args:  # pragma: no cover
             try:
                 return msg % self.args  # compability for 3rd party code
             except ValueError as error:
-                if len(error.args) == 0:  # pragma: no cover
+                if len(error.args) == 0:
                     raise
                 first = error.args[0]
                 if search("unsupported format character", first):
                     return msg.format(*self.args)
-                raise  # pragma: no cover
-            except TypeError as error:  # pragma: no cover
+                raise
+            except TypeError as error:
                 if len(error.args) == 0:
                     raise
                 first = error.args[0]
                 if search("not all arguments converted", first):
                     return msg.format(*self.args)
                 raise
-        return msg
+        return msg  # pragma: no cover
 
     @classmethod
     def get_now(cls) -> Any:
