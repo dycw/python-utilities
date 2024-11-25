@@ -78,7 +78,7 @@ def _setup_logging_default_path() -> Path:
 def setup_logging(
     *,
     logger_name: str | None = None,
-    console_level: LogLevel = "INFO",
+    console_level: LogLevel | None = "INFO",
     console_fmt: str = "❯ {zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
     files_dir: PathLike | Callable[[], Path] | None = _setup_logging_default_path,
     files_when: str = "D",
@@ -126,12 +126,11 @@ def setup_logging(
     plain_formatter = Formatter(fmt=files_fmt, style="{")  # skipif-ci-and-windows
 
     # console
-    console_handler = StreamHandler(stream=stdout)  # skipif-ci-and-windows
-    console_handler.setFormatter(console_formatter)  # skipif-ci-and-windows
-    console_handler.setLevel(
-        get_logging_level_number(console_level)
-    )  # skipif-ci-and-windows
-    logger.addHandler(console_handler)  # skipif-ci-and-windows
+    if console_level is not None:
+        console_handler = StreamHandler(stream=stdout)
+        console_handler.setFormatter(console_formatter)
+        console_handler.setLevel(get_logging_level_number(console_level))
+        logger.addHandler(console_handler)  # skipif-ci-and-windows
 
     # files
     match files_dir:  # skipif-ci-and-windows
