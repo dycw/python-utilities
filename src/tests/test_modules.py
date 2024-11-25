@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from pytest import mark, param
 
-from tests.modules import package_with, package_without, standalone
+from tests.modules import package_with, package_without, standalone, with_imports
 from utilities.functions import get_class_name
 from utilities.modules import (
     is_installed,
@@ -128,3 +128,8 @@ class TestYieldModuleSubclasses:
             module, type_, recursive=recursive, predicate=predicate
         )
         assert len(list(it)) == (factor * expected)
+
+    @mark.parametrize(("is_module", "expected"), [param(True, 1), param(False, 2)])
+    def test_is_module(self, *, is_module: bool, expected: int) -> None:
+        it = yield_module_subclasses(with_imports, object, is_module=is_module)
+        assert len(list(it)) == expected

@@ -65,17 +65,20 @@ def yield_module_subclasses(
     *,
     recursive: bool = False,
     predicate: Callable[[type[Any]], bool] | None = None,
+    is_module: bool = False,
 ) -> Iterator[Any]:
     """Yield all the module subclasses under a package.
 
     Optionally, recurse into sub-packages.
     """
+    name = module.__name__
 
     def predicate_use(obj: type[Any], /) -> bool:
         return (
             issubclass(obj, cls)
             and not issubclass(cls, obj)
             and ((predicate is None) or predicate(obj))
+            and ((is_module and (obj.__module__ == name)) or not is_module)
         )
 
     return yield_module_contents(
