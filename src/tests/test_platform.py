@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, assert_never
+from typing import TYPE_CHECKING, assert_never
 
 from hypothesis import given
 from hypothesis.strategies import sets
@@ -19,6 +19,7 @@ from utilities.platform import (
     get_system,
     maybe_yield_lower_case,
 )
+from utilities.typing import get_args
 
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
@@ -41,19 +42,21 @@ class TestMaybeYieldLowerCase:
 
 class TestSystem:
     def test_function(self) -> None:
-        assert isinstance(get_system(), System)
+        assert get_system() in get_args(System)
+
+    def test_constant(self) -> None:
+        assert SYSTEM in get_args(System)
 
     @mark.parametrize(
-        ("constant", "cls"),
+        "predicate",
         [
-            param(SYSTEM, System),
-            param(IS_WINDOWS, bool),
-            param(IS_MAC, bool),
-            param(IS_LINUX, bool),
-            param(IS_NOT_WINDOWS, bool),
-            param(IS_NOT_MAC, bool),
-            param(IS_NOT_LINUX, bool),
+            param(IS_WINDOWS),
+            param(IS_MAC),
+            param(IS_LINUX),
+            param(IS_NOT_WINDOWS),
+            param(IS_NOT_MAC),
+            param(IS_NOT_LINUX),
         ],
     )
-    def test_constants(self, *, constant: Any, cls: type) -> None:
-        assert isinstance(constant, cls)
+    def test_predicates(self, *, predicate: bool) -> None:
+        assert isinstance(predicate, bool)
