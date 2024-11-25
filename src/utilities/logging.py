@@ -170,8 +170,8 @@ def setup_logging(
         logger.addHandler(file_handler)
 
     # extra
-    if extra is not None:
-        extra(logger)  # skipif-ci-and-windows
+    if extra is not None:  # skipif-ci-and-windows
+        extra(logger)
 
 
 @contextmanager
@@ -218,25 +218,25 @@ class _AdvancedLogRecord(LogRecord):
     @override
     def getMessage(self) -> str:
         """Return the message for this LogRecord."""
-        msg = str(self.msg)
-        if self.args:
+        msg = str(self.msg)  # pragma: no cover
+        if self.args:  # pragma: no cover
             try:
                 return msg % self.args  # compability for 3rd party code
             except ValueError as error:
-                if len(error.args) == 0:  # pragma: no cover
+                if len(error.args) == 0:
                     raise
                 first = error.args[0]
                 if search("unsupported format character", first):
                     return msg.format(*self.args)
-                raise  # pragma: no cover
-            except TypeError as error:  # pragma: no cover
+                raise
+            except TypeError as error:
                 if len(error.args) == 0:
                     raise
                 first = error.args[0]
                 if search("not all arguments converted", first):
                     return msg.format(*self.args)
                 raise
-        return msg
+        return msg  # pragma: no cover
 
     @classmethod
     def get_now(cls) -> Any:
