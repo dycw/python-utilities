@@ -140,7 +140,7 @@ class TestSetupLogging:
 
         setup_logging(logger_name=name, files_dir=tmp_path, extra=extra)
         logger = getLogger(name)
-        logger.info("Test")
+        logger.info("")
         assert len(list(tmp_path.iterdir())) == 8
 
 
