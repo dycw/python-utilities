@@ -18,7 +18,7 @@ from typing import (
 from typing_extensions import override
 
 from utilities.functions import ensure_not_none
-from utilities.platform import SYSTEM, System
+from utilities.platform import SYSTEM
 from utilities.zoneinfo import (
     UTC,
     HongKong,
@@ -312,11 +312,11 @@ def is_zoned_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
 def maybe_sub_pct_y(text: str, /) -> str:
     """Substitute the `%Y' token with '%4Y' if necessary."""
     match SYSTEM:
-        case System.windows:  # skipif-not-windows
+        case "windows":  # skipif-not-windows
             return text
-        case System.mac:  # skipif-not-macos
+        case "mac":  # skipif-not-macos
             return text
-        case System.linux:  # skipif-not-linux
+        case "linux":  # skipif-not-linux
             return sub("%Y", "%4Y", text)
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
