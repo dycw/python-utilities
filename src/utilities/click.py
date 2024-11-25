@@ -3,11 +3,11 @@ from __future__ import annotations
 import datetime as dt
 import enum
 import pathlib
-from typing import Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 from uuid import UUID
 
 import click
-from click import Context, Parameter, ParamType
+from click import Choice, Context, Parameter, ParamType
 from click.types import (
     BoolParamType,
     FloatParamType,
@@ -25,6 +25,9 @@ from utilities.functions import get_class_name
 from utilities.iterables import is_iterable_not_str
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 _T = TypeVar("_T")
 _TParam = TypeVar("_TParam", bound=ParamType)
@@ -284,6 +287,25 @@ class FrozenSetDates(FrozenSetParameter[Date, dt.date]):
         super().__init__(Date(), separator=separator, empty=empty)
 
 
+class FrozenSetChoices(FrozenSetParameter[Choice, str]):
+    """A frozenset-of-choices-valued parameter."""
+
+    def __init__(
+        self,
+        choices: Sequence[str],
+        /,
+        *,
+        case_sensitive: bool = False,
+        separator: str = ",",
+        empty: str = SENTINEL_REPR,
+    ) -> None:
+        super().__init__(
+            Choice(choices, case_sensitive=case_sensitive),
+            separator=separator,
+            empty=empty,
+        )
+
+
 class FrozenSetEnums(FrozenSetParameter[Enum[_E], _E]):
     """A frozenset-of-enums-valued parameter."""
 
@@ -462,6 +484,7 @@ __all__ = [
     "ExistingFilePath",
     "FilePath",
     "FrozenSetBools",
+    "FrozenSetChoices",
     "FrozenSetDates",
     "FrozenSetEnums",
     "FrozenSetFloats",

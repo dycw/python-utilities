@@ -40,6 +40,7 @@ from utilities.click import (
     ExistingFilePath,
     FilePath,
     FrozenSetBools,
+    FrozenSetChoices,
     FrozenSetDates,
     FrozenSetEnums,
     FrozenSetFloats,
@@ -214,6 +215,14 @@ class TestParameters:
             frozenset[dt.date],
             frozensets(dates(), max_size=1),
             _lift_serializer(serialize_date),
+            True,
+        ),
+        param(
+            FrozenSetChoices(["a", "b", "c"]),
+            "FROZENSET[Choice(['a', 'b', 'c'])]",
+            frozenset[str],
+            frozensets(sampled_from(["a", "b", "c"]), max_size=1),
+            _lift_serializer(str),
             True,
         ),
         param(
