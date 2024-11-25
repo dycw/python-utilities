@@ -126,11 +126,11 @@ def setup_logging(
     plain_formatter = Formatter(fmt=files_fmt, style="{")  # skipif-ci-and-windows
 
     # console
-    if console_level is not None:
+    if console_level is not None:  # skipif-ci-and-windows
         console_handler = StreamHandler(stream=stdout)
         console_handler.setFormatter(console_formatter)
         console_handler.setLevel(get_logging_level_number(console_level))
-        logger.addHandler(console_handler)  # skipif-ci-and-windows
+        logger.addHandler(console_handler)
 
     # files
     match files_dir:  # skipif-ci-and-windows
