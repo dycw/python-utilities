@@ -7,7 +7,7 @@ from enum import Enum, auto
 from functools import partial
 from math import isinf, isnan
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
@@ -51,6 +51,7 @@ from utilities.orjson import (
     serialize,
 )
 from utilities.sentinel import sentinel
+from utilities.typing import get_args
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -65,6 +66,7 @@ def objects(
     *,
     dataclass1: bool = False,
     dataclass2: bool = False,
+    dataclass3: bool = False,
     enum: bool = False,
     ib_trades: bool = False,
     sub_frozenset: bool = False,
@@ -78,6 +80,7 @@ def objects(
         | dates()
         | datetimes()
         | int64s()
+        | sampled_from(get_args(TruthLit))
         | text_ascii().map(Path)
         | text_printable()
         | times()
@@ -91,8 +94,10 @@ def objects(
         base |= builds(DataClass1)
     if dataclass2:
         base |= builds(DataClass2Outer)
+    if dataclass3:
+        base |= builds(DataClass3)
     if enum:
-        base |= sampled_from(Truth)
+        base |= sampled_from(TruthEnum)
     if ib_trades:
         from ib_async import Fill, Forex, Trade
 
@@ -176,9 +181,17 @@ class DataClass2Outer:
     inner: DataClass2Inner
 
 
-class Truth(Enum):
+@dataclass(unsafe_hash=True, kw_only=True, slots=True)
+class DataClass3:
+    truth: Literal["true", "false"]
+
+
+class TruthEnum(Enum):
     true = auto()
     false = auto()
+
+
+TruthLit = Literal["true", "false"]
 
 
 class TestSerializeAndDeserialize:
@@ -198,6 +211,12 @@ class TestSerializeAndDeserialize:
         with assume_does_not_raise(_SerializeIntegerError):
             ser = serialize(obj)
         result = deserialize(ser, objects={DataClass2Inner, DataClass2Outer})
+        assert result == obj
+
+    @given(obj=objects(dataclass3=True))
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_dataclass_lit(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={DataClass3})
         assert result == obj
 
     @given(obj=builds(DataClass1))
@@ -220,7 +239,7 @@ class TestSerializeAndDeserialize:
 
     @given(obj=objects(enum=True))
     def test_enum(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={Truth})
+        result = deserialize(serialize(obj), objects={TruthEnum})
         assert result == obj
 
     @given(obj=objects(sub_frozenset=True))
