@@ -265,7 +265,7 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==1.14.0
+polars-lts-cpu==1.15.0
     # via dycw-utilities (pyproject.toml)
 portalocker==3.0.0
     # via concurrent-log-handler
@@ -283,11 +283,11 @@ psycopg2-binary==2.9.10
     # via dycw-utilities (pyproject.toml)
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==18.0.0
+pyarrow==18.1.0
     # via streamlit
 pycparser==2.22
     # via cffi
-pydantic==2.10.1
+pydantic==2.10.2
     # via dycw-utilities (pyproject.toml)
 pydantic-core==2.27.1
     # via pydantic
@@ -385,7 +385,7 @@ sqlalchemy==2.0.36
     #   dycw-utilities (pyproject.toml)
     #   alembic
     #   optuna
-streamlit==1.40.1
+streamlit==1.40.2
     # via dycw-utilities (pyproject.toml)
 tenacity==9.0.0
     # via
@@ -436,7 +436,7 @@ vegafusion==2.0.1
     # via dycw-utilities (pyproject.toml)
 vegafusion-python-embed==1.6.9
     # via dycw-utilities (pyproject.toml)
-virtualenv==20.27.1
+virtualenv==20.28.0
     # via
     #   hatch
     #   nox
