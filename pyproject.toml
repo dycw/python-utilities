@@ -51,7 +51,7 @@ dev = [
   "polars-lts-cpu >= 1.14.0, < 1.15",
   "pqdm >= 0.2.0, < 0.3",
   "psycopg2-binary >= 2.9.10, < 2.10",  # for sqlalchemy
-  "pydantic >= 2.10.1, < 2.11",
+  "pydantic >= 2.10.2, < 2.11",
   "pyhumps >= 3.8.0, < 3.9",
   "pyinstrument >= 5.0.0, < 5.1",
   "pyrsistent >= 0.20.0, < 0.21",
@@ -62,7 +62,7 @@ dev = [
   "scipy >= 1.14.1, < 1.15",
   "slack-sdk >= 3.33.4, < 3.34",
   "sqlalchemy >= 2.0.36, < 2.1",
-  "streamlit >= 1.40.1, < 1.41",
+  "streamlit >= 1.40.2, < 1.41",
   "tenacity >= 9.0.0, < 9.1",
   "treelib >= 1.7.0, < 1.8",
   "tzdata >= 2024.2, < 2024.3",
@@ -193,7 +193,7 @@ zzz-test-polars = [
 zzz-test-pqdm = ["pqdm >= 0.2.0, < 0.3"]
 zzz-test-pydantic = [
   "atomicwrites >= 1.4.1, < 1.5",
-  "pydantic >= 2.10.1, < 2.11",
+  "pydantic >= 2.10.2, < 2.11",
 ]
 zzz-test-pyinstrument = [
   "atomicwrites >= 1.4.1, < 1.5",
@@ -243,7 +243,7 @@ zzz-test-sqlalchemy-polars = [
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.36, < 2.1",
 ]
-zzz-test-streamlit = ["streamlit >= 1.40.1, < 1.41"]
+zzz-test-streamlit = ["streamlit >= 1.40.2, < 1.41"]
 zzz-test-sys = []
 zzz-test-tempfile = []
 zzz-test-tenacity = ["tenacity >= 9.0.0, < 9.1"]
@@ -257,6 +257,7 @@ zzz-test-traceback = [
 zzz-test-treelib = ["treelib >= 1.7.0, < 1.8"]
 zzz-test-types = []
 zzz-test-typing = []
+zzz-test-uuid = []
 zzz-test-warnings = []
 zzz-test-whenever = ["whenever >= 0.6.13, < 0.7"]
 zzz-test-zipfile = []
