@@ -16,7 +16,7 @@ execnet==2.1.1
     # via pytest-xdist
 executing==2.1.0
     # via stack-data
-hypothesis==6.119.4
+hypothesis==6.121.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -75,7 +75,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 stack-data==0.6.3
     # via ipython
-tomli==2.1.0
+tomli==2.2.1
     # via coverage
 traitlets==5.14.3
     # via

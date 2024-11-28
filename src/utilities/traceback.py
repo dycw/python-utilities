@@ -101,7 +101,7 @@ def _trace_build_and_raise_trace_mixin(
     else:
         kwargs = {}
     new_error = new_cls(*error.args, **kwargs)
-    raise new_error from None
+    raise new_error from error
 
 
 @dataclass(kw_only=True, slots=True)

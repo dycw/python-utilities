@@ -12,7 +12,7 @@ eventkit==1.0.3
     # via ib-async-dataclass
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.119.4
+hypothesis==6.121.0
     # via dycw-utilities (pyproject.toml)
 ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
@@ -55,7 +55,7 @@ pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)
 sortedcontainers==2.4.0
     # via hypothesis
-tomli==2.1.0
+tomli==2.2.1
     # via coverage
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)

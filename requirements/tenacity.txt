@@ -10,7 +10,7 @@ coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.119.4
+hypothesis==6.121.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -49,7 +49,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 tenacity==9.0.0
     # via dycw-utilities (pyproject.toml)
-tomli==2.1.0
+tomli==2.2.1
     # via coverage
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
