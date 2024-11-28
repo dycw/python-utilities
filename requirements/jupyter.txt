@@ -64,7 +64,7 @@ httpcore==1.0.7
     # via httpx
 httpx==0.28.0
     # via jupyterlab
-hypothesis==6.119.4
+hypothesis==6.121.0
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via

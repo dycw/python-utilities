@@ -83,7 +83,7 @@ coverage==7.6.8
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
-cryptography==43.0.3
+cryptography==44.0.0
     # via dycw-utilities (pyproject.toml)
 cvxpy==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -133,7 +133,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.119.4
+hypothesis==6.121.0
     # via dycw-utilities (pyproject.toml)
 ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
