@@ -72,7 +72,7 @@ scs==3.2.7
     # via cvxpy
 sortedcontainers==2.4.0
     # via hypothesis
-tomli==2.1.0
+tomli==2.2.1
     # via coverage
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)

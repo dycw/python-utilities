@@ -2,7 +2,7 @@
 #    uv pip compile --extra=dev --prerelease=explicit --output-file=requirements.txt --python-version=3.11 pyproject.toml
 aiohappyeyeballs==2.4.3
     # via aiohttp
-aiohttp==3.11.7
+aiohttp==3.11.8
     # via dycw-utilities (pyproject.toml)
 aiosignal==1.3.1
     # via aiohttp
@@ -127,7 +127,7 @@ hatchling==1.26.3
     # via hatch
 httpcore==1.0.7
     # via httpx
-httpx==0.27.2
+httpx==0.28.0
     # via hatch
 humanfriendly==10.0
     # via coloredlogs
@@ -193,7 +193,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.14.2
+narwhals==1.14.3
     # via
     #   altair
     #   vegafusion
@@ -275,7 +275,7 @@ propcache==0.2.0
     # via
     #   aiohttp
     #   yarl
-protobuf==5.28.3
+protobuf==5.29.0
     # via streamlit
 psutil==6.1.0
     # via memory-profiler
@@ -375,9 +375,7 @@ slack-sdk==3.33.4
 smmap==5.0.1
     # via gitdb
 sniffio==1.3.1
-    # via
-    #   anyio
-    #   httpx
+    # via anyio
 sortedcontainers==2.4.0
     # via hypothesis
 sqlalchemy==2.0.36
@@ -393,7 +391,7 @@ tenacity==9.0.0
     #   streamlit
 toml==0.10.2
     # via streamlit
-tomli==2.1.0
+tomli==2.2.1
     # via coverage
 tomli-w==1.1.0
     # via hatch
@@ -430,7 +428,7 @@ urllib3==2.2.3
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.5.4
+uv==0.5.5
     # via hatch
 vegafusion==2.0.1
     # via dycw-utilities (pyproject.toml)
@@ -442,7 +440,7 @@ virtualenv==20.28.0
     #   nox
 vl-convert-python==1.7.0
     # via dycw-utilities (pyproject.toml)
-whenever==0.6.13
+whenever==0.6.14
     # via dycw-utilities (pyproject.toml)
 win32-setctime==1.1.0
     # via dycw-utilities (pyproject.toml)

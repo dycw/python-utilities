@@ -70,7 +70,7 @@ dev = [
   "vegafusion >= 2.0.1, < 2.1",
   "vegafusion-python-embed >= 1.6.9, < 1.7",
   "vl-convert-python >= 1.7.0, < 1.8",
-  "whenever >= 0.6.13, < 0.7",
+  "whenever >= 0.6.14, < 0.7",
   # test
   "coverage-conditional-plugin >= 0.9.0, < 0.10",
   "pytest-asyncio >= 0.24.0, < 0.25",
@@ -113,7 +113,7 @@ zzz-test-cachetools = ["cachetools >= 5.5.0, < 5.6"]
 zzz-test-click = [
   "click >= 8.1.7, < 8.2",
   "sqlalchemy >= 2.0.36, < 2.1",
-  "whenever >= 0.6.13, < 0.7",
+  "whenever >= 0.6.14, < 0.7",
 ]
 zzz-test-cryptography = ["cryptography >= 43.0.3, < 43.1"]
 zzz-test-cvxpy = ["cvxpy >= 1.6.0, < 1.7"]
@@ -132,12 +132,12 @@ zzz-test-getpass = []
 zzz-test-git = []
 zzz-test-hashlib = [
   "orjson >= 3.10.12, < 3.11",
-  "whenever >= 0.6.13, < 0.7",
+  "whenever >= 0.6.14, < 0.7",
 ]
 zzz-test-http = [
   "atomicwrites >= 1.4.1, < 1.5",
   "orjson >= 3.10.12, < 3.11",
-  "whenever >= 0.6.13, < 0.7",
+  "whenever >= 0.6.14, < 0.7",
 ]
 zzz-test-humps = ["pyhumps >= 3.8.0, < 3.9"]
 zzz-test-hypothesis = [
@@ -149,7 +149,7 @@ zzz-test-hypothesis = [
   "redis >= 5.2.0, < 5.3",
   "sqlalchemy >= 2.0.36, < 2.1",
   "tzlocal >= 5.2, < 5.3",
-  "whenever >= 0.6.13, < 0.7",
+  "whenever >= 0.6.14, < 0.7",
 ]
 zzz-test-ipython = ["ipython >= 8.24.0, < 8.25"]
 zzz-test-iterables = []
@@ -162,7 +162,7 @@ zzz-test-logging = [
   "coloredlogs >= 15.0.1, < 15.1",
   "concurrent-log-handler >= 0.9.25, < 0.10",
   "tzlocal >= 5.2, < 5.3",
-  "whenever >= 0.6.13, < 0.7",
+  "whenever >= 0.6.14, < 0.7",
 ]
 zzz-test-loguru = ["loguru >= 0.7.2, < 0.8"]
 zzz-test-math = ["numpy >= 2.0.2, < 2.1"]
@@ -179,7 +179,7 @@ zzz-test-orjson = [
   "ib-async-dataclass >= 1.0.3rc5, < 1.1",
   "orjson >= 3.10.12, < 3.11",
   "rich >= 13.8.1, < 13.9",
-  "whenever >= 0.6.13, < 0.7",
+  "whenever >= 0.6.14, < 0.7",
 ]
 zzz-test-os = []
 zzz-test-pathlib = []
@@ -188,7 +188,7 @@ zzz-test-platform = []
 zzz-test-polars = [
   "dacite >= 1.8.1, < 1.9",
   "polars-lts-cpu >= 1.15.0, < 1.16",
-  "whenever >= 0.6.13, < 0.7",
+  "whenever >= 0.6.14, < 0.7",
 ]
 zzz-test-pqdm = ["pqdm >= 0.2.0, < 0.3"]
 zzz-test-pydantic = [
@@ -204,7 +204,7 @@ zzz-test-pyrsistent = ["pyrsistent >= 0.20.0, < 0.21"]
 zzz-test-pytest = [
   "atomicwrites >= 1.4.1, < 1.5",
   "orjson >= 3.10.12, < 3.11",
-  "whenever >= 0.6.13, < 0.7",
+  "whenever >= 0.6.14, < 0.7",
 ]
 zzz-test-python-dotenv = ["python-dotenv >= 1.0.1, < 1.1"]
 zzz-test-random = []
@@ -215,7 +215,7 @@ zzz-test-redis = [
   "redis >= 5.2.0, < 5.3",
   "rich >= 13.8.1, < 13.9",
   "tzlocal >= 5.2, < 5.3",
-  "whenever >= 0.6.13, < 0.7",
+  "whenever >= 0.6.14, < 0.7",
 ]
 zzz-test-reprlib = ["polars-lts-cpu >= 1.15.0, < 1.16"]
 zzz-test-rich = ["rich >= 13.8.1, < 13.9"]
@@ -259,7 +259,7 @@ zzz-test-types = []
 zzz-test-typing = []
 zzz-test-uuid = []
 zzz-test-warnings = []
-zzz-test-whenever = ["whenever >= 0.6.13, < 0.7"]
+zzz-test-whenever = ["whenever >= 0.6.14, < 0.7"]
 zzz-test-zipfile = []
 zzz-test-zoneinfo = ["tzdata >= 2024.2, < 2024.3"]
 
