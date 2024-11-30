@@ -27,10 +27,12 @@ def calls_func_first(a: int, b: int, /, *args: int, c: int = 0, **kwargs: int) -
     args = tuple(2 * arg for arg in args)
     c *= 2
     kwargs = {k: 2 * v for k, v in kwargs.items()}
+    return func_decorated_first(a, b, *args, c, **kwargs)
     try:
         return func_decorated_first(a, b, *args, c, **kwargs)
     except AssertionError as error:
-        raise ValueError(*error.args)
+        msg = "We diverted into a value error"
+        raise ValueError(msg)
 
 
 _ = calls_func_first(1, 2, 3, 4, c=5, d=6, e=7)
