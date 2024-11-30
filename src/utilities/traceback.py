@@ -7,8 +7,8 @@ from inspect import iscoroutinefunction, signature
 from pathlib import Path
 from sys import exc_info
 from textwrap import indent
-from traceback import TracebackException
-from typing import TYPE_CHECKING, Any, NoReturn, Self, TypeVar, cast, overload
+from traceback import FrameSummary, TracebackException
+from typing import TYPE_CHECKING, Any, Generic, NoReturn, Self, TypeVar, cast, overload
 
 from utilities.dataclasses import yield_field_names
 from utilities.functions import ensure_not_none, get_class_name, get_func_name
@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from utilities.typing import StrMapping
 
 _F = TypeVar("_F", bound=Callable[..., Any])
+_T = TypeVar("_T")
 _Ignore = type[Exception] | tuple[type[Exception], ...]
 _MAX_WIDTH = 80
 _INDENT_SIZE = 4
@@ -77,7 +78,11 @@ def _trace_build_and_raise_trace_mixin(
     """Build and raise a TraceMixin exception."""
     if (ignore is not None) and isinstance(error, ignore):
         raise error
-    frames = list(yield_extended_frame_summaries(error))
+
+    def extra(_: FrameSummary, frame: FrameType) -> _CallArgs | None:
+        return frame.f_locals.get("call_args")
+
+    frames = list(yield_extended_frame_summaries(error, extra=extra))
     matches = (
         f for f in frames if (f.name == get_func_name(func)) and (f.code_line != "")
     )
@@ -307,7 +312,7 @@ class _TraceMixinFrame:
 
 
 @dataclass(kw_only=True, slots=True)
-class _ExtFrameSummary:
+class _ExtFrameSummary(Generic[_T]):
     """An extended frame summary."""
 
     filename: Path
@@ -321,11 +326,28 @@ class _ExtFrameSummary:
     col_num: int
     end_col_num: int
     locals: dict[str, Any] = field(default_factory=dict)
+    extra: _T
 
 
+@overload
 def yield_extended_frame_summaries(
-    error: Exception, /, *, traceback: TracebackType | None = None
-) -> Iterator[_ExtFrameSummary]:
+    error: Exception,
+    /,
+    *,
+    traceback: TracebackType | None = None,
+    extra: Callable[[FrameSummary, FrameType], _T],
+) -> Iterator[_ExtFrameSummary[_T]]: ...
+@overload
+def yield_extended_frame_summaries(
+    error: Exception, /, *, traceback: TracebackType | None = None, extra: None = None
+) -> Iterator[_ExtFrameSummary[None]]: ...
+def yield_extended_frame_summaries(
+    error: Exception,
+    /,
+    *,
+    traceback: TracebackType | None = None,
+    extra: Callable[[FrameSummary, FrameType], _T] | None = None,
+) -> Iterator[_ExtFrameSummary[Any]]:
     """Yield the extended frame summaries."""
     tb_exc = TracebackException.from_exception(error, capture_locals=True)
     if traceback is None:
@@ -334,6 +356,10 @@ def yield_extended_frame_summaries(
         traceback_use = traceback
     frames = yield_frames(traceback=traceback_use)
     for summary, frame in zip(tb_exc.stack, frames, strict=True):
+        if extra is None:
+            extra_use: _T | None = None
+        else:
+            extra_use: _T | None = extra(summary, frame)
         yield _ExtFrameSummary(
             filename=Path(summary.filename),
             module=frame.f_globals.get("__name__"),
@@ -346,6 +372,7 @@ def yield_extended_frame_summaries(
             col_num=ensure_not_none(summary.colno),
             end_col_num=ensure_not_none(summary.end_colno),
             locals=frame.f_locals,
+            extra=extra_use,
         )
 
 

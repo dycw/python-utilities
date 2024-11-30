@@ -32,6 +32,8 @@ from utilities.traceback import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from traceback import FrameSummary
+    from types import FrameType
 
 
 class TestTrace:
@@ -367,6 +369,26 @@ class TestYieldExtendedFrameSummaries:
             ]
             for frame, exp in zip(frames, expected, strict=True):
                 assert frame.qualname == exp
+
+    def test_extra(self) -> None:
+        def f() -> None:
+            return g()
+
+        def g() -> None:
+            raise NotImplementedError
+
+        def extra(summary: FrameSummary, frame: FrameType, /) -> tuple[int | None, int]:
+            left = None if summary.locals is None else len(summary.locals)
+            return left, len(frame.f_locals)
+
+        try:
+            f()
+        except NotImplementedError as error:
+            frames = list(yield_extended_frame_summaries(error, extra=extra))
+            assert len(frames) == 3
+            expected = [(5, 5), (1, 1), (None, 0)]
+            for frame, exp in zip(frames, expected, strict=True):
+                assert frame.extra == exp
 
 
 class TestYieldFrames:
