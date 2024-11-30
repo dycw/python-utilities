@@ -17,6 +17,7 @@ from utilities.functions import (
     get_class,
     get_class_name,
     get_func_name,
+    get_func_qualname,
     identity,
     is_none,
     is_not_none,
@@ -28,6 +29,7 @@ from utilities.functions import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
+
 
 _T = TypeVar("_T")
 
@@ -61,23 +63,30 @@ class TestGetClassName:
 
 class TestGetFuncName:
     @mark.parametrize(
-        ("func", "expected"),
+        ("func", "exp_name", "exp_qual_name"),
         [
-            param(identity, "identity"),
-            param(lambda x: x, "<lambda>"),  # pyright: ignore[reportUnknownLambdaType]
-            param(len, "len"),
-            param(neg, "neg"),
-            param(object.__init__, "object.__init__"),
-            param(object().__str__, "object.__str__"),
-            param(repr, "repr"),
-            param(str, "str"),
-            param(try_await, "try_await"),
-            param(str.join, "str.join"),
-            param(sys.exit, "exit"),
+            param(identity, "identity", "utilities.functions.identity"),
+            param(
+                lambda x: x,  # pyright: ignore[reportUnknownLambdaType]
+                "<lambda>",
+                "tests.test_functions.TestGetFuncName.<lambda>",
+            ),
+            param(len, "len", "builtins.len"),
+            param(neg, "neg", "_operator.neg"),
+            param(object.__init__, "object.__init__", "builtins.object.__init__"),
+            param(object.__str__, "object.__str__", "builtins.object.__str__"),
+            param(repr, "repr", "builtins.repr"),
+            param(str, "str", "builtins.str"),
+            param(try_await, "try_await", "utilities.asyncio.try_await"),
+            param(str.join, "str.join", "builtins.str.join"),
+            param(sys.exit, "exit", "sys.exit"),
         ],
     )
-    def test_main(self, *, func: Callable[..., Any], expected: str) -> None:
-        assert get_func_name(func) == expected
+    def test_main(
+        self, *, func: Callable[..., Any], exp_name: str, exp_qual_name: str
+    ) -> None:
+        assert get_func_name(func) == exp_name
+        assert get_func_qualname(func) == exp_qual_name
 
     def test_cache(self) -> None:
         @cache
@@ -85,6 +94,10 @@ class TestGetFuncName:
             return x
 
         assert get_func_name(cache_func) == "cache_func"
+        assert (
+            get_func_qualname(cache_func)
+            == "tests.test_functions.TestGetFuncName.test_cache.<locals>.cache_func"
+        )
 
     def test_decorated(self) -> None:
         @wraps(identity)
@@ -92,6 +105,7 @@ class TestGetFuncName:
             return identity(x)
 
         assert get_func_name(wrapped) == "identity"
+        assert get_func_qualname(wrapped) == "utilities.functions.identity"
 
     def test_lru_cache(self) -> None:
         @lru_cache
@@ -99,6 +113,10 @@ class TestGetFuncName:
             return x
 
         assert get_func_name(lru_cache_func) == "lru_cache_func"
+        assert (
+            get_func_qualname(lru_cache_func)
+            == "tests.test_functions.TestGetFuncName.test_lru_cache.<locals>.lru_cache_func"
+        )
 
     def test_object(self) -> None:
         class Example:
@@ -107,6 +125,7 @@ class TestGetFuncName:
 
         obj = Example()
         assert get_func_name(obj) == "Example"
+        assert get_func_qualname(obj) == "tests.test_functions.Example"
 
     def test_obj_method(self) -> None:
         class Example:
@@ -115,6 +134,10 @@ class TestGetFuncName:
 
         obj = Example()
         assert get_func_name(obj.obj_method) == "obj_method"
+        assert (
+            get_func_qualname(obj.obj_method)
+            == "tests.test_functions.TestGetFuncName.test_obj_method.<locals>.Example.obj_method"
+        )
 
     def test_obj_classmethod(self) -> None:
         class Example:
@@ -123,6 +146,10 @@ class TestGetFuncName:
                 return identity(cls)
 
         assert get_func_name(Example.obj_classmethod) == "obj_classmethod"
+        assert (
+            get_func_qualname(Example.obj_classmethod)
+            == "tests.test_functions.TestGetFuncName.test_obj_classmethod.<locals>.Example.obj_classmethod"
+        )
 
     def test_obj_staticmethod(self) -> None:
         class Example:
@@ -131,6 +158,10 @@ class TestGetFuncName:
                 return identity(x)
 
         assert get_func_name(Example.obj_staticmethod) == "obj_staticmethod"
+        assert (
+            get_func_qualname(Example.obj_staticmethod)
+            == "tests.test_functions.TestGetFuncName.test_obj_staticmethod.<locals>.Example.obj_staticmethod"
+        )
 
 
 class TestIdentity:

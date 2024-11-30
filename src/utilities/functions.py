@@ -62,15 +62,30 @@ def get_func_name(obj: Callable[..., Any], /) -> str:
     """Get the name of a callable."""
     if isinstance(obj, BuiltinFunctionType | FunctionType | MethodType):
         return obj.__name__
-    if isinstance(obj, _lru_cache_wrapper):
-        return cast(Any, obj).__name__
     if isinstance(
         obj, MethodDescriptorType | MethodWrapperType | WrapperDescriptorType
     ):
         return obj.__qualname__
+    if isinstance(obj, _lru_cache_wrapper):
+        return cast(Any, obj).__name__
     if isinstance(obj, partial):
         return get_func_name(obj.func)
     return get_class_name(obj)
+
+
+def get_func_qualname(obj: Callable[..., Any], /) -> str:
+    """Get the qualified name of a callable."""
+    if isinstance(
+        obj, BuiltinFunctionType | FunctionType | MethodType | _lru_cache_wrapper
+    ):
+        return f"{obj.__module__}.{obj.__qualname__}"
+    if isinstance(
+        obj, MethodDescriptorType | MethodWrapperType | WrapperDescriptorType
+    ):
+        return f"{obj.__objclass__.__module__}.{obj.__qualname__}"
+    if isinstance(obj, partial):
+        return get_func_qualname(obj.func)
+    return f"{obj.__module__}.{get_class_name(obj)}"
 
 
 def identity(obj: _T, /) -> _T:
@@ -131,6 +146,7 @@ __all__ = [
     "get_class",
     "get_class_name",
     "get_func_name",
+    "get_func_qualname",
     "identity",
     "is_none",
     "is_not_none",
