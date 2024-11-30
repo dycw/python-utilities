@@ -1,28 +1,18 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from dataclasses import asdict, dataclass, field, is_dataclass
+from dataclasses import dataclass, field
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
 from pathlib import Path
 from sys import exc_info
 from textwrap import indent
-from traceback import TracebackException
+from traceback import FrameSummary, TracebackException
 from types import TracebackType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    NoReturn,
-    Self,
-    TypeAlias,
-    TypeVar,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Generic, Self, TypeAlias, TypeVar, cast, overload
 
 from typing_extensions import override
 
-from utilities.dataclasses import yield_field_names
 from utilities.functions import ensure_not_none, get_class_name, get_func_name
 from utilities.iterables import one
 from utilities.rich import yield_pretty_repr_args_and_kwargs
@@ -35,6 +25,7 @@ if TYPE_CHECKING:
     from utilities.typing import StrMapping
 
 _F = TypeVar("_F", bound=Callable[..., Any])
+_T = TypeVar("_T")
 _CALL_ARGS = "_CALL_ARGS"
 ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
 OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
@@ -66,7 +57,9 @@ def trace(
             except Exception as error:
                 error2 = cast(Any, error)
                 error2.call_args = call_args
-                error2.frames = list(yield_extended_frame_summaries(error))
+                error2.frames = list(
+                    yield_extended_frame_summaries(error, extra=_extra)
+                )
                 raise
 
         return cast(_F, trace_sync)
@@ -79,7 +72,7 @@ def trace(
         except Exception as error:
             error2 = cast(Any, error)
             error2.call_args = call_args
-            error2.frames = list(yield_extended_frame_summaries(error))
+            error2.frames = list(yield_extended_frame_summaries(error, extra=_extra))
             raise
 
     return cast(_F, log_call_async)
@@ -92,22 +85,8 @@ class TraceError(Exception):
         return "Traceback missing"
 
 
-def _add_frames_to_error(
-    func: Callable[..., Any],
-    call_args: _CallArgs,
-    error: Exception,
-    traceback: TracebackType,
-    /,
-) -> NoReturn:
-    """Build and raise a TraceMixin exception."""
-    frames = list(yield_extended_frame_summaries(error, traceback=traceback))
-    matches = (
-        f for f in frames if (f.name == get_func_name(func)) and (f.code_line != "")
-    )
-    frame = next(matches)
-    raw_frame = _RawTraceMixinFrame(call_args=call_args, ext_frame_summary=frame)
-    error.raw_frame = raw_frame
-    raise error
+def _extra(_: FrameSummary, frame: FrameType) -> _CallArgs | None:
+    return frame.f_locals.get(_CALL_ARGS)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -370,8 +349,27 @@ class _ExtFrameSummary(Generic[_T]):
 
 @overload
 def yield_extended_frame_summaries(
-    error: BaseException, /, *, traceback: TracebackType | None = None
-) -> Iterator[_ExtFrameSummary]:
+    error: BaseException,
+    /,
+    *,
+    traceback: TracebackType | None = ...,
+    extra: Callable[[FrameSummary, FrameType], _T],
+) -> Iterator[_ExtFrameSummary[_T]]: ...
+@overload
+def yield_extended_frame_summaries(
+    error: BaseException,
+    /,
+    *,
+    traceback: TracebackType | None = ...,
+    extra: None = None,
+) -> Iterator[_ExtFrameSummary[None]]: ...
+def yield_extended_frame_summaries(
+    error: BaseException,
+    /,
+    *,
+    traceback: TracebackType | None = None,
+    extra: Callable[[FrameSummary, FrameType], _T] | None = None,
+) -> Iterator[_ExtFrameSummary[Any]]:
     """Yield the extended frame summaries."""
     tb_exc = TracebackException.from_exception(error, capture_locals=True)
     if traceback is None:
