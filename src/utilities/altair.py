@@ -213,7 +213,7 @@ def plot_intraday_dataframe(
         .encode(
             x=f"{datetime} index",
             opacity=cast(Any, condition(nearest, value(1.0), value(0.0))),
-            tooltip=[Tooltip(f"{datetime} index:Q", format="%Y%m%dT%H:%M:%S")]
+            tooltip=[Tooltip(f"{datetime} index:Q", format="%Y-%m-%d %H:%M:%S (%a)")]
             + [f"{c}:Q" for c in other_cols],
         )
         .add_params(nearest)
