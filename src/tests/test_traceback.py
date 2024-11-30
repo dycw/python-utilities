@@ -299,7 +299,7 @@ class TestTrace:
         assert frame.filename.parts[-2:] == ("test_traceback_funcs", filename)
         assert frame.module == func.__module__
         assert frame.name == get_func_name(func)
-        assert frame.frame_qualname == get_func_name(func)
+        assert frame.qualname == get_func_name(func)
         assert frame.code_line == code_line
         assert frame.first_line_num == first_line_num
         assert frame.line_num == line_num

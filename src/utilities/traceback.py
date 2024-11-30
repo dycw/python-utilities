@@ -279,7 +279,7 @@ class _TraceMixinFrame:
         return self.raw_frame.ext_frame_summary.name
 
     @property
-    def frame_qualname(self) -> str:
+    def qualname(self) -> str:
         return self.raw_frame.ext_frame_summary.qualname
 
     @property
