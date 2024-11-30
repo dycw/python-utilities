@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup
-from inspect import signature
 from typing import TYPE_CHECKING, Any
 
 from pytest import raises
@@ -19,7 +18,7 @@ from tests.test_traceback_funcs.ignore import func_ignore
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.recursive import func_recursive
 from tests.test_traceback_funcs.two import func_two_first, func_two_second
-from utilities.functions import get_func_name
+from utilities.functions import get_func_name, get_func_qualname
 from utilities.iterables import OneNonUniqueError, one
 from utilities.text import ensure_str, strip_and_dedent
 from utilities.traceback import (
@@ -291,14 +290,13 @@ class TestTrace:
     ) -> None:
         assert frame.depth == depth
         assert frame.max_depth == max_depth
-        assert get_func_name(frame.func) == get_func_name(func)
-        assert signature(frame.func) == signature(func)
+        assert frame.func_qualname == get_func_qualname(func)
         scale = 2 ** (depth - 1)
         assert frame.args == (scale, 2 * scale, 3 * scale, 4 * scale)
         assert frame.kwargs == {"c": 5 * scale, "d": 6 * scale, "e": 7 * scale}
         assert frame.filename.parts[-2:] == ("test_traceback_funcs", filename)
         assert frame.name == get_func_name(func)
-        assert frame.qualname == get_func_name(func)
+        assert frame.frame_qualname == get_func_name(func)
         assert frame.code_line == code_line
         assert frame.first_line_num == first_line_num
         assert frame.line_num == line_num
