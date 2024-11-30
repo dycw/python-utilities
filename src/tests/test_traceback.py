@@ -290,11 +290,12 @@ class TestTrace:
     ) -> None:
         assert frame.depth == depth
         assert frame.max_depth == max_depth
-        assert frame.func_qualname == get_func_qualname(func)
+        assert get_func_qualname(frame.func) == get_func_qualname(func)
         scale = 2 ** (depth - 1)
         assert frame.args == (scale, 2 * scale, 3 * scale, 4 * scale)
         assert frame.kwargs == {"c": 5 * scale, "d": 6 * scale, "e": 7 * scale}
         assert frame.filename.parts[-2:] == ("test_traceback_funcs", filename)
+        assert frame.module == func.__module__
         assert frame.name == get_func_name(func)
         assert frame.frame_qualname == get_func_name(func)
         assert frame.code_line == code_line

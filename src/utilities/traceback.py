@@ -11,12 +11,7 @@ from traceback import TracebackException
 from typing import TYPE_CHECKING, Any, NoReturn, Self, TypeVar, cast, overload
 
 from utilities.dataclasses import yield_field_names
-from utilities.functions import (
-    ensure_not_none,
-    get_class_name,
-    get_func_name,
-    get_func_qualname,
-)
+from utilities.functions import ensure_not_none, get_class_name, get_func_name
 from utilities.iterables import one
 from utilities.rich import yield_pretty_repr_args_and_kwargs
 from utilities.text import ensure_str
@@ -114,7 +109,6 @@ class _CallArgs:
     """A collection of call arguments."""
 
     func: Callable[..., Any]
-    qualname: str
     args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
 
@@ -132,12 +126,7 @@ class _CallArgs:
             lines.extend(yield_pretty_repr_args_and_kwargs(*args, **kwargs))
             new = "\n".join(lines)
             raise _CallArgsError(new) from None
-        return cls(
-            func=func,
-            qualname=get_func_qualname(func),
-            args=bound_args.args,
-            kwargs=bound_args.kwargs,
-        )
+        return cls(func=func, args=bound_args.args, kwargs=bound_args.kwargs)
 
 
 class _CallArgsError(TypeError):
@@ -265,10 +254,6 @@ class _TraceMixinFrame:
         return self.raw_frame.call_args.func
 
     @property
-    def func_qualname(self) -> str:
-        return self.raw_frame.call_args.qualname
-
-    @property
     def args(self) -> tuple[Any, ...]:
         return self.raw_frame.call_args.args
 
@@ -279,6 +264,10 @@ class _TraceMixinFrame:
     @property
     def filename(self) -> Path:
         return self.raw_frame.ext_frame_summary.filename
+
+    @property
+    def module(self) -> str | None:
+        return self.raw_frame.ext_frame_summary.module
 
     @property
     def name(self) -> str:
@@ -322,6 +311,7 @@ class _ExtFrameSummary:
     """An extended frame summary."""
 
     filename: Path
+    module: str | None = None
     name: str
     qualname: str
     code_line: str
@@ -346,6 +336,7 @@ def yield_extended_frame_summaries(
     for summary, frame in zip(tb_exc.stack, frames, strict=True):
         yield _ExtFrameSummary(
             filename=Path(summary.filename),
+            module=frame.f_globals.get("__name__"),
             name=summary.name,
             qualname=frame.f_code.co_qualname,
             code_line=ensure_not_none(summary.line),
