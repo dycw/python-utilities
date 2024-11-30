@@ -22,6 +22,7 @@ from altair import (
     vconcat,
 )
 from altair.utils.schemapi import Undefined
+from polars import Date, Datetime
 
 from utilities.iterables import always_iterable
 from utilities.tempfile import TemporaryDirectory
@@ -115,13 +116,19 @@ def plot_dataframes(
     ]
 
     # rules
+    if isinstance(data.schema[x_use], Date):
+        tooltip_format_use = "%Y-%m-%d (%a)"
+    elif isinstance(data.schema[x_use], Datetime):
+        tooltip_format_use = "%Y-%m-%d %H:%M:%S (%a)"
+    else:
+        tooltip_format_use = Undefined
     rules = [
         chart.transform_pivot(var_name, value=value_name, groupby=[x_use])
         .mark_rule(color="gray")
         .encode(
             x=x_use,
             opacity=cast(Any, condition(nearest, value(0.3), value(0))),
-            tooltip=[Tooltip(x_use, title=x_use)]
+            tooltip=[Tooltip(x_use, format=tooltip_format_use, title=x_use)]
             + [Tooltip(c, type="quantitative") for c in spec.y],
         )
         .add_params(nearest)
@@ -206,7 +213,8 @@ def plot_intraday_dataframe(
         .encode(
             x=f"{datetime} index",
             opacity=cast(Any, condition(nearest, value(1.0), value(0.0))),
-            tooltip=[f"{datetime} index:Q"] + [f"{c}:Q" for c in other_cols],
+            tooltip=[Tooltip(f"{datetime} index:Q", format="%Y-%m-%d %H:%M:%S (%a)")]
+            + [f"{c}:Q" for c in other_cols],
         )
         .add_params(nearest)
     )

@@ -133,7 +133,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.121.0
+hypothesis==6.122.0
     # via dycw-utilities (pyproject.toml)
 ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
@@ -265,7 +265,7 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==1.15.0
+polars-lts-cpu==1.16.0
     # via dycw-utilities (pyproject.toml)
 portalocker==3.0.0
     # via concurrent-log-handler
