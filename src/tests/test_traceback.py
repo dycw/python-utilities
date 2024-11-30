@@ -16,13 +16,13 @@ from utilities.functions import get_func_name, get_func_qualname
 from utilities.iterables import OneNonUniqueError, one
 from utilities.text import ensure_str, strip_and_dedent
 from utilities.traceback import (
-    ErrorWithFrames,
+    ExcGroup,
+    ExcPath,
     TraceMixin,
     _CallArgs,
     _CallArgsError,
-    _Frame,
     _TraceMixinFrame,
-    assemble_extended_tracebacks,
+    assemble_exception_paths,
     trace,
     yield_extended_frame_summaries,
     yield_frames,
@@ -35,14 +35,14 @@ if TYPE_CHECKING:
 
 
 @mark.only
-class TestAssert:
+class TestAssembleExceptionsPaths:
     def test_func_one(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        error_with_frames = assemble_extended_tracebacks(exc_info.value)
-        assert isinstance(error_with_frames, ErrorWithFrames)
-        assert len(error_with_frames) == 1
-        frame = one(error_with_frames)
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
+        assert len(exc_path) == 1
+        frame = one(exc_path)
         assert frame.module == "tests.test_traceback_funcs.one"
         assert frame.name == "func_one"
         assert (
@@ -57,15 +57,15 @@ class TestAssert:
         assert frame.locals["b"] == 4
         assert frame.locals["args"] == (6, 8)
         assert frame.locals["kwargs"] == {"d": 12, "e": 14}
-        assert isinstance(error_with_frames.error, AssertionError)
+        assert isinstance(exc_path.error, AssertionError)
 
     def test_func_two(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
-        error_with_frames = assemble_extended_tracebacks(exc_info.value)
-        assert isinstance(error_with_frames, ErrorWithFrames)
-        assert len(error_with_frames) == 2
-        first, second = error_with_frames
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
+        assert len(exc_path) == 2
+        first, second = exc_path
         assert first.module == "tests.test_traceback_funcs.two"
         assert first.name == "func_two_first"
         assert first.code_line == "return func_two_second(a, b, *args, c=c, **kwargs)"
@@ -87,31 +87,82 @@ class TestAssert:
         assert second.locals["b"] == 8
         assert second.locals["args"] == (12, 16)
         assert second.locals["kwargs"] == {"d": 24, "e": 28}
-        assert isinstance(error_with_frames.error, AssertionError)
+        assert isinstance(exc_path.error, AssertionError)
 
     def test_func_decorated_sync(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_decorated_sync_first(1, 2, 3, 4, c=5, d=6, e=7)
-        error_with_frames = assemble_extended_tracebacks(exc_info.value)
-        assert isinstance(error_with_frames, ErrorWithFrames)
-        self._assert_decorated(error_with_frames, "sync")
-        assert len(error_with_frames) == 5
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
+        self._assert_decorated(exc_path, "sync")
+        assert len(exc_path) == 5
 
     async def test_func_decorated_async(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = await func_decorated_async_first(1, 2, 3, 4, c=5, d=6, e=7)
-        error_with_frames = assemble_extended_tracebacks(exc_info.value)
-        assert isinstance(error_with_frames, ErrorWithFrames)
-        self._assert_decorated(error_with_frames, "async")
+        error = assemble_exception_paths(exc_info.value)
+        assert isinstance(error, ExcPath)
+        self._assert_decorated(error, "async")
+
+    def test_func_recursive(self) -> None:
+        with raises(AssertionError) as exc_info:
+            _ = func_recursive(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
+        assert len(exc_path) == 2
+        first, second = exc_path
+        assert first.module == "tests.test_traceback_funcs.recursive"
+        assert first.name == "func_recursive"
+        assert first.code_line == "return func_recursive(a, b, *args, c=c, **kwargs)"
+        assert first.args == (1, 2, 3, 4)
+        assert first.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert first.locals["a"] == 2
+        assert first.locals["b"] == 4
+        assert first.locals["args"] == (6, 8)
+        assert first.locals["kwargs"] == {"d": 12, "e": 14}
+        assert second.module == "tests.test_traceback_funcs.recursive"
+        assert second.name == "func_recursive"
+        assert (
+            second.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert second.args == (2, 4, 6, 8)
+        assert second.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert second.locals["a"] == 4
+        assert second.locals["b"] == 8
+        assert second.locals["args"] == (12, 16)
+        assert second.locals["kwargs"] == {"d": 24, "e": 28}
+        assert isinstance(exc_path.error, AssertionError)
+
+    async def test_task_group(self) -> None:
+        with raises(ExceptionGroup) as exc_info:
+            async with TaskGroup() as tg:
+                _ = tg.create_task(func_async(1, 2, 3, 4, c=5, d=6, e=7))
+        exc_group = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_group, ExcGroup)
+        assert len(exc_group) == 1
+        exc_path = one(exc_group)
+        assert isinstance(exc_path, ExcPath)
+        frame = one(exc_path)
+        assert frame.module == "tests.test_traceback_funcs.async_"
+        assert frame.name == "func_async"
+        assert (
+            frame.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert frame.args == (1, 2, 3, 4)
+        assert frame.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert frame.locals["a"] == 2
+        assert frame.locals["b"] == 4
+        assert frame.locals["args"] == (6, 8)
+        assert frame.locals["kwargs"] == {"d": 12, "e": 14}
+        assert isinstance(exc_path.error, AssertionError)
 
     def _assert_decorated(
-        self,
-        error_with_frames: ErrorWithFrames,
-        sync_or_async: Literal["sync", "async"],
-        /,
+        self, exc_path: ExcPath, sync_or_async: Literal["sync", "async"], /
     ) -> None:
-        assert len(error_with_frames) == 5
-        first, second, _, fourth, fifth = error_with_frames
+        assert len(exc_path) == 5
+        first, second, _, fourth, fifth = exc_path
         match sync_or_async:
             case "sync":
                 maybe_await = ""
@@ -165,67 +216,10 @@ class TestAssert:
         assert fifth.locals["b"] == 64
         assert fifth.locals["args"] == (96, 128)
         assert fifth.locals["kwargs"] == {"d": 192, "e": 224}
-        assert isinstance(error_with_frames.error, AssertionError)
+        assert isinstance(exc_path.error, AssertionError)
 
 
 class TestTrace:
-    def test_func_recursive(self) -> None:
-        with raises(AssertionError) as exc_info:
-            _ = func_recursive(1, 2, 3, 4, c=5, d=6, e=7)
-        error = exc_info.value
-        assert isinstance(error, TraceMixin)
-        assert len(error.frames) == 2
-        expected = [
-            (
-                13,
-                23,
-                15,
-                72,
-                "return func_recursive(a, b, *args, c=c, _is_last=True, **kwargs)",
-                {"result": 56},
-            ),
-            (10, 21, 11, 27, self._code_line_assert, {}),
-        ]
-        for depth, (frame, (ln1st, ln, col, col1st, code_ln, extra)) in enumerate(
-            zip(error.frames, expected, strict=True), start=1
-        ):
-            if depth != 2:
-                continue
-            self._assert(
-                frame,
-                depth,
-                2,
-                func_recursive,
-                "recursive.py",
-                ln1st,
-                ln,
-                col,
-                col1st,
-                code_ln,
-                extra_locals=extra,
-            )
-
-    async def test_func_async(self) -> None:
-        with raises(AssertionError) as exc_info:
-            _ = await func_async(1, 2, 3, 4, c=5, d=6, e=7)
-        error = exc_info.value
-        assert isinstance(error, TraceMixin)
-        frame = one(error.frames)
-        self._assert(
-            frame, 1, 1, func_async, "async_.py", 9, 18, 11, 27, self._code_line_assert
-        )
-
-    async def test_task_group(self) -> None:
-        with raises(ExceptionGroup) as exc_info:
-            async with TaskGroup() as tg:
-                _ = tg.create_task(func_async(1, 2, 3, 4, c=5, d=6, e=7))
-        error = one(exc_info.value.exceptions)
-        assert isinstance(error, TraceMixin)
-        frame = one(error.frames)
-        self._assert(
-            frame, 1, 1, func_async, "async_.py", 9, 18, 11, 27, self._code_line_assert
-        )
-
     def test_custom_error(self) -> None:
         @trace
         def raises_custom_error() -> bool:

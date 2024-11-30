@@ -4,7 +4,6 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
-from itertools import chain
 from pathlib import Path
 from sys import exc_info
 from textwrap import indent
@@ -139,8 +138,8 @@ _ExtFrameSummaryCA: TypeAlias = _ExtFrameSummary[str, _CallArgs]
 
 
 @dataclass(repr=False, kw_only=True, slots=True)
-class _ExtendedTraceback:
-    """An extended traceback."""
+class _ExceptionPathInternal:
+    """An (internal) exception path."""
 
     raw: list[_ExtFrameSummaryCAOptOpt] = field(default_factory=list)
     frames: list[_ExtFrameSummaryCA] = field(default_factory=list)
@@ -159,29 +158,35 @@ class _ExtendedTraceback:
 
 
 @runtime_checkable
-class HasExtendedTraceback(Protocol):
+class HasExceptionPath(Protocol):
     @property
-    def extended_traceback(self) -> _ExtendedTraceback: ...
+    def exc_path(self) -> _ExceptionPathInternal: ...
 
 
 @dataclass(kw_only=True, slots=True)
-class ErrorChain:
-    errors: list[_ErrorOrChainOrGroup] = field(default_factory=list)
+class ExcChain:
+    errors: list[_ExcOrExcPathOrExcChainOrExcGroup] = field(default_factory=list)
+
+    def __iter__(self) -> Iterator[_ExcOrExcPathOrExcChainOrExcGroup]:
+        yield from self.errors
 
     def __len__(self) -> int:
         return len(self.errors)
 
 
 @dataclass(kw_only=True, slots=True)
-class ErrorGroup:
-    errors: list[_ErrorOrChainOrGroup] = field(default_factory=list)
+class ExcGroup:
+    errors: list[_ExcOrExcPathOrExcChainOrExcGroup] = field(default_factory=list)
+
+    def __iter__(self) -> Iterator[_ExcOrExcPathOrExcChainOrExcGroup]:
+        yield from self.errors
 
     def __len__(self) -> int:
         return len(self.errors)
 
 
 @dataclass(kw_only=True, slots=True)
-class ErrorWithFrames:
+class ExcPath:
     frames: list[_Frame] = field(default_factory=list)
     error: BaseException
 
@@ -203,25 +208,27 @@ class _Frame:
     locals: dict[str, Any] = field(default_factory=dict)
 
 
-_ErrorOrChainOrGroup: TypeAlias = (
-    BaseException | ErrorWithFrames | ErrorChain | ErrorGroup
+_ExcOrExcPathOrExcChainOrExcGroup: TypeAlias = (
+    BaseException | ExcPath | ExcChain | ExcGroup
 )
 
 
-def assemble_extended_tracebacks(error: BaseException, /) -> _ErrorOrChainOrGroup:
+def assemble_exception_paths(
+    error: BaseException, /
+) -> _ExcOrExcPathOrExcChainOrExcGroup:
     """Assemble a set of extended tracebacks."""
-    return _assemble_extended_traceback_one(error)
+    return _assemble_exception_paths_one(error)
 
 
-def _assemble_extended_traceback_one(
-    error: _ErrorOrChainOrGroup, /
-) -> _ErrorOrChainOrGroup:
+def _assemble_exception_paths_one(
+    error: _ExcOrExcPathOrExcChainOrExcGroup, /
+) -> _ExcOrExcPathOrExcChainOrExcGroup:
     match error:
-        case ErrorChain(errors=errors):
+        case ExcChain(errors=errors):
             return error
-        case ErrorGroup(errors=errors):
+        case ExcGroup(errors=errors):
             return error
-        case ErrorWithFrames():
+        case ExcPath():
             return error
         case BaseException():
             match list(yield_exceptions(error)):
@@ -229,12 +236,12 @@ def _assemble_extended_traceback_one(
                     raise ImpossibleCaseError(case=[f"{error}"])
                 case [err]:
                     if isinstance(err, ExceptionGroup):
-                        return ErrorGroup(
+                        return ExcGroup(
                             errors=list(
-                                map(_assemble_extended_traceback_one, err.exceptions)
+                                map(_assemble_exception_paths_one, err.exceptions)
                             )
                         )
-                    if isinstance(err, HasExtendedTraceback):
+                    if isinstance(err, HasExceptionPath):
                         frames = [
                             _Frame(
                                 module=f.module,
@@ -245,13 +252,13 @@ def _assemble_extended_traceback_one(
                                 kwargs=f.extra.kwargs,
                                 locals=f.locals,
                             )
-                            for f in err.extended_traceback.frames
+                            for f in err.exc_path.frames
                         ]
-                        return ErrorWithFrames(frames=frames, error=error)
+                        return ExcPath(frames=frames, error=error)
                     return error
                 case errors:
-                    return ErrorChain(
-                        errors=list(map(_assemble_extended_traceback_one, errors))[::-1]
+                    return ExcChain(
+                        errors=list(map(_assemble_exception_paths_one, errors))[::-1]
                     )
 
 
@@ -272,7 +279,7 @@ def trace(func: _F | None = None, /) -> _F | Callable[[_F], _F]:
             try:
                 return func(*args, **kwargs)
             except Exception as error:
-                cast(Any, error).extended_traceback = _get_extended_traceback(error)
+                cast(Any, error).exc_path = _get_call_frame_summaries(error)
                 raise
 
         return cast(_F, trace_sync)
@@ -283,7 +290,7 @@ def trace(func: _F | None = None, /) -> _F | Callable[[_F], _F]:
         try:
             return await func(*args, **kwargs)
         except Exception as error:
-            cast(Any, error).extended_traceback = _get_extended_traceback(error)
+            cast(Any, error).exc_path = _get_call_frame_summaries(error)
             raise
 
     return cast(_F, trace_async)
@@ -536,16 +543,16 @@ def yield_frames(*, traceback: TracebackType | None = None) -> Iterator[FrameTyp
         traceback = traceback.tb_next
 
 
-def _get_extended_traceback(
+def _get_call_frame_summaries(
     error: BaseException, /, *, traceback: TracebackType | None = None
-) -> _ExtendedTraceback:
+) -> _ExceptionPathInternal:
     """Get an extended traceback."""
 
     def extra(_: FrameSummary, frame: FrameType) -> _CallArgs | None:
         return frame.f_locals.get(_CALL_ARGS)
 
     raw = list(yield_extended_frame_summaries(error, traceback=traceback, extra=extra))
-    return _ExtendedTraceback(raw=raw, frames=_merge_frames(raw), error=error)
+    return _ExceptionPathInternal(raw=raw, frames=_merge_frames(raw), error=error)
 
 
 def _merge_frames(
@@ -603,10 +610,10 @@ def _merge_frames(
 
 
 __all__ = [
-    "ErrorChain",
-    "ErrorGroup",
-    "ErrorWithFrames",
+    "ExcChain",
+    "ExcGroup",
     "ExcInfo",
+    "ExcPath",
     "OptExcInfo",
     "TraceMixin",
     "trace",

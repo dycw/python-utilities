@@ -30,7 +30,7 @@ def calls_func_first(a: int, b: int, /, *args: int, c: int = 0, **kwargs: int) -
     return func_decorated_first(a, b, *args, c, **kwargs)
     try:
         return func_decorated_first(a, b, *args, c, **kwargs)
-    except AssertionError as error:
+    except AssertionError:
         msg = "We diverted into a value error"
         raise ValueError(msg)
 
