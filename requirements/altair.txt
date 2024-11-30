@@ -19,7 +19,7 @@ deprecated==1.2.15
     # via pikepdf
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.121.2
+hypothesis==6.122.0
     # via dycw-utilities (pyproject.toml)
 img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
@@ -52,7 +52,7 @@ pillow==11.0.0
     #   pikepdf
 pluggy==1.5.0
     # via pytest
-polars-lts-cpu==1.15.0
+polars-lts-cpu==1.16.0
     # via dycw-utilities (pyproject.toml)
 pytest==8.3.3
     # via

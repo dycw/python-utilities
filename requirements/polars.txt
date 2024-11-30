@@ -12,7 +12,7 @@ dacite==1.8.1
     # via dycw-utilities (pyproject.toml)
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.121.2
+hypothesis==6.122.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -23,7 +23,7 @@ packaging==24.2
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-polars-lts-cpu==1.15.0
+polars-lts-cpu==1.16.0
     # via dycw-utilities (pyproject.toml)
 pytest==8.3.3
     # via
