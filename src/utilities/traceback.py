@@ -565,9 +565,7 @@ def _merge_frames(
         return None
 
     def get_solution(
-        curr: _ExtFrameSummaryCAStrOpt,
-        rev: list[_ExtFrameSummaryCAOptOpt],
-        /,
+        curr: _ExtFrameSummaryCAStrOpt, rev: list[_ExtFrameSummaryCAOptOpt], /
     ) -> _ExtFrameSummaryCA:
         while len(rev) >= 1:
             next_ = rev.pop(0)

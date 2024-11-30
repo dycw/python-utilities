@@ -1,22 +1,17 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
-from pytest import mark, param, raises
+from pytest import mark, raises
 
 from tests.test_traceback_funcs.async_ import func_async
-from tests.test_traceback_funcs.decorated import (
-    func_decorated_fifth,
-    func_decorated_first,
-    func_decorated_fourth,
-    func_decorated_second,
-    func_decorated_third,
-)
+from tests.test_traceback_funcs.decorated_async import func_decorated_async_first
+from tests.test_traceback_funcs.decorated_sync import func_decorated_sync_first
 from tests.test_traceback_funcs.error import func_error_async, func_error_sync
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.recursive import func_recursive
-from tests.test_traceback_funcs.two import func_two_first, func_two_second
+from tests.test_traceback_funcs.two import func_two_first
 from utilities.functions import get_func_name, get_func_qualname
 from utilities.iterables import OneNonUniqueError, one
 from utilities.text import ensure_str, strip_and_dedent
@@ -25,6 +20,7 @@ from utilities.traceback import (
     TraceMixin,
     _CallArgs,
     _CallArgsError,
+    _Frame,
     _TraceMixinFrame,
     assemble_extended_tracebacks,
     trace,
@@ -38,8 +34,8 @@ if TYPE_CHECKING:
     from types import FrameType
 
 
+@mark.only
 class TestAssert:
-    @mark.only
     def test_func_one(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
@@ -63,7 +59,6 @@ class TestAssert:
         assert frame.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(error_with_frames.error, AssertionError)
 
-    @mark.only
     def test_func_two(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
@@ -94,55 +89,86 @@ class TestAssert:
         assert second.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(error_with_frames.error, AssertionError)
 
+    def test_func_decorated_sync(self) -> None:
+        with raises(AssertionError) as exc_info:
+            _ = func_decorated_sync_first(1, 2, 3, 4, c=5, d=6, e=7)
+        error_with_frames = assemble_extended_tracebacks(exc_info.value)
+        assert isinstance(error_with_frames, ErrorWithFrames)
+        self._assert_decorated(error_with_frames, "sync")
+        assert len(error_with_frames) == 5
+
+    async def test_func_decorated_async(self) -> None:
+        with raises(AssertionError) as exc_info:
+            _ = await func_decorated_async_first(1, 2, 3, 4, c=5, d=6, e=7)
+        error_with_frames = assemble_extended_tracebacks(exc_info.value)
+        assert isinstance(error_with_frames, ErrorWithFrames)
+        self._assert_decorated(error_with_frames, "async")
+
+    def _assert_decorated(
+        self,
+        error_with_frames: ErrorWithFrames,
+        sync_or_async: Literal["sync", "async"],
+        /,
+    ) -> None:
+        assert len(error_with_frames) == 5
+        first, second, _, fourth, fifth = error_with_frames
+        match sync_or_async:
+            case "sync":
+                maybe_await = ""
+            case "async":
+                maybe_await = "await "
+        assert first.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
+        assert first.name == f"func_decorated_{sync_or_async}_first"
+        assert (
+            first.code_line
+            == f"return {maybe_await}func_decorated_{sync_or_async}_second(a, b, *args, c=c, **kwargs)"
+        )
+        assert first.args == (1, 2, 3, 4)
+        assert first.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert first.locals["a"] == 2
+        assert first.locals["b"] == 4
+        assert first.locals["args"] == (6, 8)
+        assert first.locals["kwargs"] == {"d": 12, "e": 14}
+        assert second.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
+        assert second.name == f"func_decorated_{sync_or_async}_second"
+        assert (
+            second.code_line
+            == f"return {maybe_await}func_decorated_{sync_or_async}_third(a, b, *args, c=c, **kwargs)"
+        )
+        assert second.args == (2, 4, 6, 8)
+        assert second.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert second.locals["a"] == 4
+        assert second.locals["b"] == 8
+        assert second.locals["args"] == (12, 16)
+        assert second.locals["kwargs"] == {"d": 24, "e": 28}
+        assert fourth.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
+        assert fourth.name == f"func_decorated_{sync_or_async}_fourth"
+        assert (
+            fourth.code_line
+            == f"return {maybe_await}func_decorated_{sync_or_async}_fifth(a, b, *args, c=c, **kwargs)"
+        )
+        assert fourth.args == (8, 16, 24, 32)
+        assert fourth.kwargs == {"c": 40, "d": 48, "e": 56}
+        assert fourth.locals["a"] == 16
+        assert fourth.locals["b"] == 32
+        assert fourth.locals["args"] == (48, 64)
+        assert fourth.locals["kwargs"] == {"d": 96, "e": 112}
+        assert fifth.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
+        assert fifth.name == f"func_decorated_{sync_or_async}_fifth"
+        assert (
+            fifth.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert fifth.args == (16, 32, 48, 64)
+        assert fifth.kwargs == {"c": 80, "d": 96, "e": 112}
+        assert fifth.locals["a"] == 32
+        assert fifth.locals["b"] == 64
+        assert fifth.locals["args"] == (96, 128)
+        assert fifth.locals["kwargs"] == {"d": 192, "e": 224}
+        assert isinstance(error_with_frames.error, AssertionError)
+
 
 class TestTrace:
-    def test_func_decorated(self) -> None:
-        with raises(AssertionError) as exc_info:
-            _ = func_decorated_first(1, 2, 3, 4, c=5, d=6, e=7)
-        error = exc_info.value
-        assert isinstance(error, TraceMixin)
-        expected = [
-            (
-                func_decorated_first,
-                21,
-                30,
-                11,
-                60,
-                self._code_line_call("func_decorated_second"),
-            ),
-            (
-                func_decorated_second,
-                33,
-                43,
-                11,
-                59,
-                self._code_line_call("func_decorated_third"),
-            ),
-            (
-                func_decorated_third,
-                46,
-                56,
-                11,
-                60,
-                self._code_line_call("func_decorated_fourth"),
-            ),
-            (
-                func_decorated_fourth,
-                59,
-                70,
-                11,
-                59,
-                self._code_line_call("func_decorated_fifth"),
-            ),
-            (func_decorated_fifth, 73, 88, 11, 27, self._code_line_assert),
-        ]
-        for depth, (frame, (func, ln1st, ln, col, col1st, code_ln)) in enumerate(
-            zip(error.frames, expected, strict=True), start=1
-        ):
-            self._assert(
-                frame, depth, 5, func, "decorated.py", ln1st, ln, col, col1st, code_ln
-            )
-
     def test_func_recursive(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_recursive(1, 2, 3, 4, c=5, d=6, e=7)
