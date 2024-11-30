@@ -158,6 +158,18 @@ class TestAssembleExceptionsPaths:
         assert frame.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(exc_path.error, AssertionError)
 
+    def test_custom_error(self) -> None:
+        @trace
+        def raises_custom_error() -> bool:
+            return one([True, False])
+
+        with raises(OneNonUniqueError) as exc_info:
+            _ = raises_custom_error()
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
+        assert exc_path.error.first is True
+        assert exc_path.error.second is False
+
     def _assert_decorated(
         self, exc_path: ExcPath, sync_or_async: Literal["sync", "async"], /
     ) -> None:
@@ -220,18 +232,6 @@ class TestAssembleExceptionsPaths:
 
 
 class TestTrace:
-    def test_custom_error(self) -> None:
-        @trace
-        def raises_custom_error() -> bool:
-            return one([True, False])
-
-        with raises(OneNonUniqueError) as exc_info:
-            _ = raises_custom_error()
-        one_error = exc_info.value
-        assert isinstance(one_error, TraceMixin)
-        assert one_error.first is True
-        assert one_error.second is False
-
     def test_pretty(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)

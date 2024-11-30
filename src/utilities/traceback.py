@@ -45,6 +45,7 @@ if TYPE_CHECKING:
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 _T = TypeVar("_T")
+_TExc = TypeVar("_TExc", bound=BaseException)
 _TStrNone = TypeVar("_TStrNone", str, None, str | None)
 _CALL_ARGS = "_CALL_ARGS"
 ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
@@ -164,10 +165,10 @@ class HasExceptionPath(Protocol):
 
 
 @dataclass(kw_only=True, slots=True)
-class ExcChain:
-    errors: list[_ExcOrExcPathOrExcChainOrExcGroup] = field(default_factory=list)
+class ExcChain(Generic[_TExc]):
+    errors: list[_ExcOrExcPathOrExcChainOrExcGroup[_TExc]] = field(default_factory=list)
 
-    def __iter__(self) -> Iterator[_ExcOrExcPathOrExcChainOrExcGroup]:
+    def __iter__(self) -> Iterator[_ExcOrExcPathOrExcChainOrExcGroup[_TExc]]:
         yield from self.errors
 
     def __len__(self) -> int:
@@ -175,10 +176,10 @@ class ExcChain:
 
 
 @dataclass(kw_only=True, slots=True)
-class ExcGroup:
-    errors: list[_ExcOrExcPathOrExcChainOrExcGroup] = field(default_factory=list)
+class ExcGroup(Generic[_TExc]):
+    errors: list[_ExcOrExcPathOrExcChainOrExcGroup[_TExc]] = field(default_factory=list)
 
-    def __iter__(self) -> Iterator[_ExcOrExcPathOrExcChainOrExcGroup]:
+    def __iter__(self) -> Iterator[_ExcOrExcPathOrExcChainOrExcGroup[_TExc]]:
         yield from self.errors
 
     def __len__(self) -> int:
@@ -186,9 +187,9 @@ class ExcGroup:
 
 
 @dataclass(kw_only=True, slots=True)
-class ExcPath:
+class ExcPath(Generic[_TExc]):
     frames: list[_Frame] = field(default_factory=list)
-    error: BaseException
+    error: _TExc
 
     def __iter__(self) -> Iterator[_Frame]:
         yield from self.frames
@@ -209,20 +210,20 @@ class _Frame:
 
 
 _ExcOrExcPathOrExcChainOrExcGroup: TypeAlias = (
-    BaseException | ExcPath | ExcChain | ExcGroup
+    BaseException | ExcPath[_TExc] | ExcChain[_TExc] | ExcGroup[_TExc]
 )
 
 
 def assemble_exception_paths(
-    error: BaseException, /
-) -> _ExcOrExcPathOrExcChainOrExcGroup:
+    error: _TExc, /
+) -> _ExcOrExcPathOrExcChainOrExcGroup[_TExc]:
     """Assemble a set of extended tracebacks."""
     return _assemble_exception_paths_one(error)
 
 
 def _assemble_exception_paths_one(
-    error: _ExcOrExcPathOrExcChainOrExcGroup, /
-) -> _ExcOrExcPathOrExcChainOrExcGroup:
+    error: _ExcOrExcPathOrExcChainOrExcGroup[_TExc], /
+) -> _ExcOrExcPathOrExcChainOrExcGroup[_TExc]:
     match error:
         case ExcChain(errors=errors):
             return error
