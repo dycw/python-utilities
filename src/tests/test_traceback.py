@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup
-from inspect import signature
 from typing import TYPE_CHECKING, Any
 
 from pytest import raises
@@ -19,11 +18,12 @@ from tests.test_traceback_funcs.ignore import func_ignore
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.recursive import func_recursive
 from tests.test_traceback_funcs.two import func_two_first, func_two_second
-from utilities.functions import get_func_name
+from utilities.functions import get_func_name, get_func_qualname
 from utilities.iterables import OneNonUniqueError, one
 from utilities.text import ensure_str, strip_and_dedent
 from utilities.traceback import (
     TraceMixin,
+    _CallArgs,
     _CallArgsError,
     _TraceMixinFrame,
     trace,
@@ -33,6 +33,8 @@ from utilities.traceback import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from traceback import FrameSummary
+    from types import FrameType
 
 
 class TestTrace:
@@ -275,7 +277,7 @@ class TestTrace:
 
     def _assert(
         self,
-        frame: _TraceMixinFrame,
+        frame: _TraceMixinFrame[_CallArgs | None],
         depth: int,
         max_depth: int,
         func: Callable[..., Any],
@@ -291,12 +293,12 @@ class TestTrace:
     ) -> None:
         assert frame.depth == depth
         assert frame.max_depth == max_depth
-        assert get_func_name(frame.func) == get_func_name(func)
-        assert signature(frame.func) == signature(func)
+        assert get_func_qualname(frame.func) == get_func_qualname(func)
         scale = 2 ** (depth - 1)
         assert frame.args == (scale, 2 * scale, 3 * scale, 4 * scale)
         assert frame.kwargs == {"c": 5 * scale, "d": 6 * scale, "e": 7 * scale}
         assert frame.filename.parts[-2:] == ("test_traceback_funcs", filename)
+        assert frame.module == func.__module__
         assert frame.name == get_func_name(func)
         assert frame.qualname == get_func_name(func)
         assert frame.code_line == code_line
@@ -305,6 +307,7 @@ class TestTrace:
         assert frame.end_line_num == line_num
         assert frame.col_num == col_num
         assert frame.end_col_num == end_col_num
+        assert (frame.extra is None) or isinstance(frame.extra, _CallArgs)
         scale_plus = 2 * scale
         locals_ = (
             {
@@ -368,6 +371,26 @@ class TestYieldExtendedFrameSummaries:
             ]
             for frame, exp in zip(frames, expected, strict=True):
                 assert frame.qualname == exp
+
+    def test_extra(self) -> None:
+        def f() -> None:
+            return g()
+
+        def g() -> None:
+            raise NotImplementedError
+
+        def extra(summary: FrameSummary, frame: FrameType, /) -> tuple[int | None, int]:
+            left = None if summary.locals is None else len(summary.locals)
+            return left, len(frame.f_locals)
+
+        try:
+            f()
+        except NotImplementedError as error:
+            frames = list(yield_extended_frame_summaries(error, extra=extra))
+            assert len(frames) == 3
+            expected = [(5, 5), (1, 1), (None, 0)]
+            for frame, exp in zip(frames, expected, strict=True):
+                assert frame.extra == exp
 
 
 class TestYieldFrames:
