@@ -2,13 +2,25 @@ from __future__ import annotations
 
 import datetime as dt
 from math import inf
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import polars as pl
 from hypothesis import HealthCheck, given, settings
-from hypothesis.strategies import booleans, integers, just, none, sampled_from
-from polars import DataFrame, Float64, datetime_range, int_range
-from pytest import fixture, mark, param
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    dates,
+    floats,
+    integers,
+    just,
+    lists,
+    none,
+    sampled_from,
+    tuples,
+)
+from polars import DataFrame, Date, Float64, datetime_range, int_range
+from pytest import fixture
 
 from utilities.altair import (
     plot_dataframes,
@@ -18,6 +30,7 @@ from utilities.altair import (
     vconcat_charts,
 )
 from utilities.datetime import get_now
+from utilities.hypothesis import zoned_datetimes
 from utilities.polars import DatetimeUTC, zoned_datetime
 from utilities.types import ensure_class
 from utilities.zoneinfo import UTC, HongKong, Tokyo
@@ -75,7 +88,7 @@ class TestPlotDataFrames:
     ) -> None:
         _ = plot_dataframes(time_series, x=x, y=y, height=height, width=width)
 
-    @mark.parametrize("time_zone", [param(UTC), param(HongKong), param(Tokyo)], ids=str)
+    @given(time_zone=sampled_from([UTC, HongKong, Tokyo]))
     def test_auto_localization(self, *, time_zone: ZoneInfo) -> None:
         df = DataFrame(
             data=[(dt.datetime(2000, 1, 1, 12, tzinfo=time_zone), 0.0)],
@@ -86,6 +99,22 @@ class TestPlotDataFrames:
         datetime = ensure_class(chart.data, DataFrame)["datetime"].item()
         expected = dt.datetime(2000, 1, 1, 12, tzinfo=time_zone).replace(tzinfo=None)
         assert datetime == expected
+
+    @given(data=data(), case=sampled_from(["date", "datetime"]))
+    def test_tooltip_format(
+        self, *, data: DataObject, case: Literal["date", "datetime"]
+    ) -> None:
+        match case:
+            case "date":
+                values = data.draw(lists(tuples(dates(), floats(-10, 10))))
+                dtype = Date()
+            case "datetime":
+                values = data.draw(lists(tuples(zoned_datetimes(), floats(-10, 10))))
+                dtype = DatetimeUTC
+        df = DataFrame(
+            data=values, schema={"index": dtype, "value": Float64}, orient="row"
+        )
+        _ = plot_dataframes(df, x="index", y="value")
 
 
 class TestPlotIntradayDataFrame:
