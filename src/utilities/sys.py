@@ -5,12 +5,7 @@ from os import environ
 from sys import version_info
 from typing import TYPE_CHECKING
 
-from rich.pretty import pretty_repr
-
-from utilities.traceback import (
-    HasExtendedTraceback,
-    yield_exceptions,
-)
+from utilities.traceback import HasExtendedTraceback, yield_exceptions
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -39,13 +34,16 @@ def log_traceback_excepthook(
     ]
     match len(errors):
         case 1:
-            (a,) = errors
-            am = a.extended_traceback.merged
-            if isinstance(a, ExceptionGroup):
-                inner = [e for e in a.exceptions if isinstance(e, HasExtendedTraceback)]
+            errors[0].extended_traceback
+            if isinstance(errors[0], ExceptionGroup):
+                inner = [
+                    e
+                    for e in errors[0].exceptions
+                    if isinstance(e, HasExtendedTraceback)
+                ]
                 from utilities.iterables import one
 
-                one(inner)
+                one(inner).extended_traceback
                 if "BREAKPOINT" in environ:
                     breakpoint()
             elif "BREAKPOINT" in environ:

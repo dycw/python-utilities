@@ -465,10 +465,7 @@ def _merge_frames(
         return None
 
     def get_solution(
-        curr: _ExtFrameSummary[Any],
-        module: str,
-        rev: list[_ExtFrameSummary[Any]],
-        /,
+        curr: _ExtFrameSummary[Any], module: str, rev: list[_ExtFrameSummary[Any]], /
     ) -> _ExtFrameSummary[_CallArgs]:
         while len(rev) >= 1:
             next_ = rev.pop(0)
@@ -495,10 +492,7 @@ def _merge_frames(
         return is_match(curr, module, next_)
 
     def is_match(
-        curr: _ExtFrameSummary[Any],
-        module: str,
-        next_: _ExtFrameSummary[Any],
-        /,
+        curr: _ExtFrameSummary[Any], module: str, next_: _ExtFrameSummary[Any], /
     ) -> bool:
         return (
             curr.name == next_.extra.func.__name__
