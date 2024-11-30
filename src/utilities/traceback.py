@@ -15,7 +15,6 @@ from typing import (
     Generic,
     Protocol,
     Self,
-    Type,
     TypeAlias,
     TypeGuard,
     TypeVar,
@@ -444,10 +443,7 @@ class _TraceMixinFrame(Generic[_T]):
 
 
 def get_frame_summaries_with_call_args(
-    error: BaseException,
-    /,
-    *,
-    traceback: TracebackType | None = None,
+    error: BaseException, /, *, traceback: TracebackType | None = None
 ) -> _CallArgFrameSummaries:
     """Yield the extended frame summaries."""
 
