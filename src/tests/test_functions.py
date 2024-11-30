@@ -145,7 +145,7 @@ class TestGetFuncNameAndGetFuncQualName:
                 return identity(x)
 
         obj = Example()
-        assert get_func_name(obj.obj_method) == "obj_method"
+        assert get_func_name(obj.obj_method) == "Example.obj_method"
         assert (
             get_func_qualname(obj.obj_method)
             == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_obj_method.<locals>.Example.obj_method"
@@ -157,7 +157,7 @@ class TestGetFuncNameAndGetFuncQualName:
             def obj_classmethod(cls: _T) -> _T:
                 return identity(cls)
 
-        assert get_func_name(Example.obj_classmethod) == "obj_classmethod"
+        assert get_func_name(Example.obj_classmethod) == "Example.obj_classmethod"
         assert (
             get_func_qualname(Example.obj_classmethod)
             == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_obj_classmethod.<locals>.Example.obj_classmethod"
@@ -169,7 +169,7 @@ class TestGetFuncNameAndGetFuncQualName:
             def obj_staticmethod(x: _T) -> _T:
                 return identity(x)
 
-        assert get_func_name(Example.obj_staticmethod) == "obj_staticmethod"
+        assert get_func_name(Example.obj_staticmethod) == "Example.obj_staticmethod"
         assert (
             get_func_qualname(Example.obj_staticmethod)
             == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_obj_staticmethod.<locals>.Example.obj_staticmethod"

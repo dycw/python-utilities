@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import _lru_cache_wrapper, partial, wraps
+from re import findall
 from types import (
     BuiltinFunctionType,
     FunctionType,
@@ -60,10 +61,21 @@ def get_class_name(obj: Any, /) -> str:
 
 def get_func_name(obj: Callable[..., Any], /) -> str:
     """Get the name of a callable."""
-    if isinstance(obj, BuiltinFunctionType | FunctionType | MethodType):
+    if isinstance(obj, BuiltinFunctionType):
         return obj.__name__
+    if isinstance(obj, FunctionType):
+        name = obj.__name__
+        pattern = r"^.+\.([A-Z]\w+\." + name + ")$"
+        try:
+            (full_name,) = findall(pattern, obj.__qualname__)
+        except ValueError:
+            return name
+        return full_name
+    if isinstance(obj, MethodType):
+        return f"{get_class_name(obj.__self__)}.{obj.__name__}"
     if isinstance(
-        obj, MethodDescriptorType | MethodWrapperType | WrapperDescriptorType
+        obj,
+        MethodType | MethodDescriptorType | MethodWrapperType | WrapperDescriptorType,
     ):
         return obj.__qualname__
     if isinstance(obj, _lru_cache_wrapper):
