@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Literal
 
-from pytest import mark, raises
+from pytest import raises
 
 from tests.test_traceback_funcs.async_ import func_async
 from tests.test_traceback_funcs.decorated_async import func_decorated_async_first
@@ -12,16 +12,13 @@ from tests.test_traceback_funcs.error import func_error_async, func_error_sync
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.recursive import func_recursive
 from tests.test_traceback_funcs.two import func_two_first
-from utilities.functions import get_func_name, get_func_qualname
 from utilities.iterables import OneNonUniqueError, one
 from utilities.text import ensure_str, strip_and_dedent
 from utilities.traceback import (
     ExcGroup,
     ExcPath,
     TraceMixin,
-    _CallArgs,
     _CallArgsError,
-    _TraceMixinFrame,
     assemble_exception_paths,
     trace,
     yield_extended_frame_summaries,
@@ -29,12 +26,10 @@ from utilities.traceback import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from traceback import FrameSummary
     from types import FrameType
 
 
-@mark.only
 class TestAssembleExceptionsPaths:
     def test_func_one(self) -> None:
         with raises(AssertionError) as exc_info:
@@ -170,6 +165,32 @@ class TestAssembleExceptionsPaths:
         assert exc_path.error.first is True
         assert exc_path.error.second is False
 
+    def test_error_bind_sync(self) -> None:
+        with raises(_CallArgsError) as exc_info:
+            _ = func_error_sync(1)  # pyright: ignore[reportCallIssue]
+        msg = ensure_str(one(exc_info.value.args))
+        expected = strip_and_dedent(
+            """
+            Unable to bind arguments for 'func_error_sync'; missing a required argument: 'b'
+            args[0] = 1
+            """
+        )
+        assert msg == expected
+
+    async def test_error_bind_async(self) -> None:
+        with raises(_CallArgsError) as exc_info:
+            _ = await func_error_async(1, 2, 3)  # pyright: ignore[reportCallIssue]
+        msg = ensure_str(one(exc_info.value.args))
+        expected = strip_and_dedent(
+            """
+            Unable to bind arguments for 'func_error_async'; too many positional arguments
+            args[0] = 1
+            args[1] = 2
+            args[2] = 3
+            """
+        )
+        assert msg == expected
+
     def _assert_decorated(
         self, exc_path: ExcPath, sync_or_async: Literal["sync", "async"], /
     ) -> None:
@@ -295,110 +316,9 @@ class TestTrace:
         """)
         assert result == expected
 
-    def test_error_bind_sync(self) -> None:
-        with raises(_CallArgsError) as exc_info:
-            _ = func_error_sync(1)  # pyright: ignore[reportCallIssue]
-        msg = ensure_str(one(exc_info.value.args))
-        expected = strip_and_dedent(
-            """
-            Unable to bind arguments for 'func_error_sync'; missing a required argument: 'b'
-            args[0] = 1
-            """
-        )
-        assert msg == expected
-
-    async def test_error_bind_async(self) -> None:
-        with raises(_CallArgsError) as exc_info:
-            _ = await func_error_async(1, 2, 3)  # pyright: ignore[reportCallIssue]
-        msg = ensure_str(one(exc_info.value.args))
-        expected = strip_and_dedent(
-            """
-            Unable to bind arguments for 'func_error_async'; too many positional arguments
-            args[0] = 1
-            args[1] = 2
-            args[2] = 3
-            """
-        )
-        assert msg == expected
-
-    def _assert(
-        self,
-        frame: _TraceMixinFrame[_CallArgs | None],
-        depth: int,
-        max_depth: int,
-        func: Callable[..., Any],
-        filename: str,
-        first_line_num: int,
-        line_num: int,
-        col_num: int,
-        end_col_num: int,
-        code_line: str,
-        /,
-        *,
-        extra_locals: dict[str, Any] | None = None,
-    ) -> None:
-        assert frame.depth == depth
-        assert frame.max_depth == max_depth
-        assert get_func_qualname(frame.func) == get_func_qualname(func)
-        scale = 2 ** (depth - 1)
-        assert frame.args == (scale, 2 * scale, 3 * scale, 4 * scale)
-        assert frame.kwargs == {"c": 5 * scale, "d": 6 * scale, "e": 7 * scale}
-        assert frame.filename.parts[-2:] == ("test_traceback_funcs", filename)
-        assert frame.module == func.__module__
-        assert frame.name == get_func_name(func)
-        assert frame.qualname == get_func_name(func)
-        assert frame.code_line == code_line
-        assert frame.first_line_num == first_line_num
-        assert frame.line_num == line_num
-        assert frame.end_line_num == line_num
-        assert frame.col_num == col_num
-        assert frame.end_col_num == end_col_num
-        assert (frame.extra is None) or isinstance(frame.extra, _CallArgs)
-        scale_plus = 2 * scale
-        locals_ = (
-            {
-                "a": scale_plus,
-                "b": 2 * scale_plus,
-                "c": 5 * scale_plus,
-                "args": (3 * scale_plus, 4 * scale_plus),
-                "kwargs": {"d": 6 * scale_plus, "e": 7 * scale_plus},
-            }
-            | ({"result": frame.locals["result"]} if depth == max_depth else {})
-            | ({} if extra_locals is None else extra_locals)
-        )
-        assert frame.locals == locals_
-
-    @property
-    def _code_line_assert(self) -> str:
-        return 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
-
-    def _code_line_call(self, func: str, /) -> str:
-        return f"return {func}(a, b, *args, c=c, **kwargs)"
-
 
 class TestYieldExtendedFrameSummaries:
-    def test_explicit_traceback(self) -> None:
-        def f() -> None:
-            return g()
-
-        def g() -> None:
-            raise NotImplementedError
-
-        with raises(NotImplementedError) as exc_info:
-            f()
-        frames = list(
-            yield_extended_frame_summaries(exc_info.value, traceback=exc_info.tb)
-        )
-        assert len(frames) == 3
-        expected = [
-            TestYieldExtendedFrameSummaries.test_explicit_traceback.__qualname__,
-            f.__qualname__,
-            g.__qualname__,
-        ]
-        for frame, exp in zip(frames, expected, strict=True):
-            assert frame.qualname == exp
-
-    def test_implicit_traceback(self) -> None:
+    def test_main(self) -> None:
         def f() -> None:
             return g()
 
@@ -411,7 +331,7 @@ class TestYieldExtendedFrameSummaries:
             frames = list(yield_extended_frame_summaries(error))
             assert len(frames) == 3
             expected = [
-                TestYieldExtendedFrameSummaries.test_implicit_traceback.__qualname__,
+                TestYieldExtendedFrameSummaries.test_main.__qualname__,
                 f.__qualname__,
                 g.__qualname__,
             ]

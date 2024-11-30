@@ -255,7 +255,7 @@ def _assemble_exception_paths_one(
                             )
                             for f in err.exc_path.frames
                         ]
-                        return ExcPath(frames=frames, error=error)
+                        return ExcPath(frames=frames, error=cast(_TExc, err))
                     return error
                 case errors:
                     return ExcChain(
@@ -480,34 +480,22 @@ class _TraceMixinFrame(Generic[_T]):
 
 @overload
 def yield_extended_frame_summaries(
-    error: BaseException,
-    /,
-    *,
-    traceback: TracebackType | None = ...,
-    extra: Callable[[FrameSummary, FrameType], _T],
+    error: BaseException, /, *, extra: Callable[[FrameSummary, FrameType], _T]
 ) -> Iterator[_ExtFrameSummary[Any, _T]]: ...
 @overload
 def yield_extended_frame_summaries(
-    error: BaseException,
-    /,
-    *,
-    traceback: TracebackType | None = ...,
-    extra: None = None,
+    error: BaseException, /, *, extra: None = None
 ) -> Iterator[_ExtFrameSummary[Any, None]]: ...
 def yield_extended_frame_summaries(
     error: BaseException,
     /,
     *,
-    traceback: TracebackType | None = None,
     extra: Callable[[FrameSummary, FrameType], _T] | None = None,
 ) -> Iterator[_ExtFrameSummary[Any, Any]]:
     """Yield the extended frame summaries."""
     tb_exc = TracebackException.from_exception(error, capture_locals=True)
-    if traceback is None:
-        _, _, traceback_use = exc_info()
-    else:
-        traceback_use = traceback
-    frames = yield_frames(traceback=traceback_use)
+    _, _, traceback = exc_info()
+    frames = yield_frames(traceback=traceback)
     for summary, frame in zip(tb_exc.stack, frames, strict=True):
         if extra is None:
             extra_use: _T | None = None
@@ -544,15 +532,13 @@ def yield_frames(*, traceback: TracebackType | None = None) -> Iterator[FrameTyp
         traceback = traceback.tb_next
 
 
-def _get_call_frame_summaries(
-    error: BaseException, /, *, traceback: TracebackType | None = None
-) -> _ExceptionPathInternal:
+def _get_call_frame_summaries(error: BaseException, /) -> _ExceptionPathInternal:
     """Get an extended traceback."""
 
     def extra(_: FrameSummary, frame: FrameType) -> _CallArgs | None:
         return frame.f_locals.get(_CALL_ARGS)
 
-    raw = list(yield_extended_frame_summaries(error, traceback=traceback, extra=extra))
+    raw = list(yield_extended_frame_summaries(error, extra=extra))
     return _ExceptionPathInternal(raw=raw, frames=_merge_frames(raw), error=error)
 
 
