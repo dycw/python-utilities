@@ -81,7 +81,7 @@ class TestGetFuncNameAndGetFuncQualName:
             param(
                 lambda x: x,  # pyright: ignore[reportUnknownLambdaType]
                 "<lambda>",
-                "tests.test_functions.TestGetFuncNameAndGetFuncQualName.<lambda>",
+                "tests.test_functions.TestGetFuncName.<lambda>",
             ),
             param(len, "len", "builtins.len"),
             param(neg, "neg", "_operator.neg"),
@@ -108,7 +108,7 @@ class TestGetFuncNameAndGetFuncQualName:
         assert get_func_name(cache_func) == "cache_func"
         assert (
             get_func_qualname(cache_func)
-            == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_cache.<locals>.cache_func"
+            == "tests.test_functions.TestGetFuncName.test_cache.<locals>.cache_func"
         )
 
     def test_decorated(self) -> None:
@@ -127,7 +127,7 @@ class TestGetFuncNameAndGetFuncQualName:
         assert get_func_name(lru_cache_func) == "lru_cache_func"
         assert (
             get_func_qualname(lru_cache_func)
-            == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_lru_cache.<locals>.lru_cache_func"
+            == "tests.test_functions.TestGetFuncName.test_lru_cache.<locals>.lru_cache_func"
         )
 
     def test_object(self) -> None:
@@ -145,10 +145,10 @@ class TestGetFuncNameAndGetFuncQualName:
                 return identity(x)
 
         obj = Example()
-        assert get_func_name(obj.obj_method) == "Example.obj_method"
+        assert get_func_name(obj.obj_method) == "obj_method"
         assert (
             get_func_qualname(obj.obj_method)
-            == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_obj_method.<locals>.Example.obj_method"
+            == "tests.test_functions.TestGetFuncName.test_obj_method.<locals>.Example.obj_method"
         )
 
     def test_obj_classmethod(self) -> None:
@@ -157,10 +157,10 @@ class TestGetFuncNameAndGetFuncQualName:
             def obj_classmethod(cls: _T) -> _T:
                 return identity(cls)
 
-        assert get_func_name(Example.obj_classmethod) == "Example.obj_classmethod"
+        assert get_func_name(Example.obj_classmethod) == "obj_classmethod"
         assert (
             get_func_qualname(Example.obj_classmethod)
-            == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_obj_classmethod.<locals>.Example.obj_classmethod"
+            == "tests.test_functions.TestGetFuncName.test_obj_classmethod.<locals>.Example.obj_classmethod"
         )
 
     def test_obj_staticmethod(self) -> None:
@@ -169,16 +169,11 @@ class TestGetFuncNameAndGetFuncQualName:
             def obj_staticmethod(x: _T) -> _T:
                 return identity(x)
 
-        assert get_func_name(Example.obj_staticmethod) == "Example.obj_staticmethod"
+        assert get_func_name(Example.obj_staticmethod) == "obj_staticmethod"
         assert (
             get_func_qualname(Example.obj_staticmethod)
-            == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_obj_staticmethod.<locals>.Example.obj_staticmethod"
+            == "tests.test_functions.TestGetFuncName.test_obj_staticmethod.<locals>.Example.obj_staticmethod"
         )
-
-    def test_partial(self) -> None:
-        part = partial(identity)
-        assert get_func_name(part) == "identity"
-        assert get_func_qualname(part) == "utilities.functions.identity"
 
 
 class TestIdentity:

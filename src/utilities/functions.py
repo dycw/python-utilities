@@ -63,16 +63,6 @@ def get_func_name(obj: Callable[..., Any], /) -> str:
     """Get the name of a callable."""
     if isinstance(obj, BuiltinFunctionType):
         return obj.__name__
-    if isinstance(obj, FunctionType):
-        name = obj.__name__
-        pattern = r"^.+\.([A-Z]\w+\." + name + ")$"
-        try:
-            (full_name,) = findall(pattern, obj.__qualname__)
-        except ValueError:
-            return name
-        return full_name
-    if isinstance(obj, MethodType):
-        return f"{get_class_name(obj.__self__)}.{obj.__name__}"
     if isinstance(
         obj,
         MethodType | MethodDescriptorType | MethodWrapperType | WrapperDescriptorType,
