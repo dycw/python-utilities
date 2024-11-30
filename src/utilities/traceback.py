@@ -143,13 +143,17 @@ class TraceMixin:
     """Mix-in for tracking an exception and its call stack."""
 
     error: Exception
-    raw_frames: list[_RawTraceMixinFrame] = field(default_factory=list)
+    raw_frames: list[_RawTraceMixinFrame[_CallArgs | None]] = field(
+        default_factory=list
+    )
 
     @property
-    def frames(self) -> list[_TraceMixinFrame]:
+    def frames(self) -> list[_TraceMixinFrame[_CallArgs | None]]:
         raw_frames = self.raw_frames
         return [
-            _TraceMixinFrame(depth=i, max_depth=len(raw_frames), raw_frame=frame)
+            _TraceMixinFrame[_CallArgs | None](
+                depth=i, max_depth=len(raw_frames), raw_frame=frame
+            )
             for i, frame in enumerate(raw_frames[::-1], start=1)
         ]
 
@@ -239,20 +243,20 @@ class TraceMixin:
 
 
 @dataclass(kw_only=True, slots=True)
-class _RawTraceMixinFrame:
+class _RawTraceMixinFrame(Generic[_T]):
     """A collection of call arguments and an extended frame summary."""
 
     call_args: _CallArgs
-    ext_frame_summary: _ExtFrameSummary
+    ext_frame_summary: _ExtFrameSummary[_T]
 
 
 @dataclass(kw_only=True, slots=True)
-class _TraceMixinFrame:
+class _TraceMixinFrame(Generic[_T]):
     """A collection of call arguments and an extended frame summary."""
 
     depth: int
     max_depth: int
-    raw_frame: _RawTraceMixinFrame
+    raw_frame: _RawTraceMixinFrame[_T]
 
     @property
     def func(self) -> Callable[..., Any]:
@@ -309,6 +313,10 @@ class _TraceMixinFrame:
     @property
     def locals(self) -> StrMapping:
         return self.raw_frame.ext_frame_summary.locals
+
+    @property
+    def extra(self) -> _T:
+        return self.raw_frame.ext_frame_summary.extra
 
 
 @dataclass(kw_only=True, slots=True)

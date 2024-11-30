@@ -23,6 +23,7 @@ from utilities.iterables import OneNonUniqueError, one
 from utilities.text import ensure_str, strip_and_dedent
 from utilities.traceback import (
     TraceMixin,
+    _CallArgs,
     _CallArgsError,
     _TraceMixinFrame,
     trace,
@@ -276,7 +277,7 @@ class TestTrace:
 
     def _assert(
         self,
-        frame: _TraceMixinFrame,
+        frame: _TraceMixinFrame[_CallArgs | None],
         depth: int,
         max_depth: int,
         func: Callable[..., Any],
@@ -306,6 +307,7 @@ class TestTrace:
         assert frame.end_line_num == line_num
         assert frame.col_num == col_num
         assert frame.end_col_num == end_col_num
+        assert (frame.extra is None) or isinstance(frame.extra, _CallArgs)
         scale_plus = 2 * scale
         locals_ = (
             {
