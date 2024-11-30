@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
 from pathlib import Path
@@ -9,11 +9,29 @@ from sys import exc_info
 from textwrap import indent
 from traceback import FrameSummary, TracebackException
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Generic, Self, TypeAlias, TypeVar, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Protocol,
+    Self,
+    Type,
+    TypeAlias,
+    TypeGuard,
+    TypeVar,
+    cast,
+    overload,
+    runtime_checkable,
+)
 
 from typing_extensions import override
 
-from utilities.functions import ensure_not_none, get_class_name, get_func_name
+from utilities.functions import (
+    ensure_not_none,
+    get_class_name,
+    get_func_name,
+    get_func_qualname,
+)
 from utilities.iterables import one
 from utilities.rich import yield_pretty_repr_args_and_kwargs
 from utilities.text import ensure_str
@@ -32,6 +50,167 @@ OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
 _Ignore = type[Exception] | tuple[type[Exception], ...]
 _MAX_WIDTH = 80
 _INDENT_SIZE = 4
+
+
+@dataclass(repr=False, kw_only=True, slots=True)
+class _CallArgs:
+    """A collection of call arguments."""
+
+    func: Callable[..., Any]
+    args: tuple[Any, ...] = field(default_factory=tuple)
+    kwargs: dict[str, Any] = field(default_factory=dict)
+
+    @override
+    def __repr__(self) -> str:
+        cls = get_class_name(self)
+        parts: list[tuple[str, Any]] = [
+            ("func", get_func_qualname(self.func)),
+            ("args", self.args),
+            ("kwargs", self.kwargs),
+        ]
+        joined = ", ".join(f"{k}={v!r}" for k, v in parts)
+        return f"{cls}({joined})"
+
+    @classmethod
+    def create(cls, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Self:
+        """Make the initial trace data."""
+        sig = signature(func)
+        try:
+            bound_args = sig.bind(*args, **kwargs)
+        except TypeError as error:
+            orig = ensure_str(one(error.args))
+            lines: list[str] = [
+                f"Unable to bind arguments for {get_func_name(func)!r}; {orig}"
+            ]
+            lines.extend(yield_pretty_repr_args_and_kwargs(*args, **kwargs))
+            new = "\n".join(lines)
+            raise _CallArgsError(new) from None
+        return cls(func=func, args=bound_args.args, kwargs=bound_args.kwargs)
+
+
+class _CallArgsError(TypeError):
+    """Raised when a set of call arguments cannot be created."""
+
+
+@dataclass(kw_only=True, slots=True)
+class _ExtFrameSummary(Generic[_T]):
+    """An extended frame summary."""
+
+    filename: Path
+    module: str | None = None
+    name: str
+    qualname: str
+    code_line: str
+    first_line_num: int
+    line_num: int
+    end_line_num: int
+    col_num: int
+    end_col_num: int
+    locals: dict[str, Any] = field(default_factory=dict)
+    extra: _T
+
+    @override
+    def __repr__(self) -> str:
+        cls = get_class_name(self)
+        parts: list[tuple[str, Any]] = [
+            ("name", self.name),
+            ("module", self.module),
+            ("filename", str(self.filename)),
+            ("name", self.name),
+            ("qualname", self.qualname),
+            ("code_line", self.code_line),
+            ("first_line_num", self.first_line_num),
+            ("line_num", self.line_num),
+            ("end_line_num", self.end_line_num),
+            ("col_num", self.col_num),
+            ("end_col_num", self.end_col_num),
+        ]
+        if self.extra is not None:
+            parts.append(("extra", self.extra))
+        joined = ", ".join(f"{k}={v!r}" for k, v in parts)
+        return f"{cls}({joined})"
+
+
+class _CallArgFrameSummaries(list[_ExtFrameSummary[_CallArgs | None]]):
+    """A list of call-arg frame summaries."""
+
+    def merge(self) -> list[_ExtFrameSummary[_CallArgs]]:
+        values: list[_ExtFrameSummary[_CallArgs]] = []
+        rev = self[::-1]
+        while len(rev) >= 1:
+            if (curr_and_module := self._get_curr(rev)) is None:
+                continue
+            curr, module = curr_and_module
+            if not self._has_solution_later(rev, curr=curr, module=module):
+                continue
+            next_ = self._get_solution(rev, curr=curr, module=module)
+            new = cast(_ExtFrameSummary[_CallArgs], replace(curr, extra=next_.extra))
+            values.append(new)
+        return values[::-1]
+
+    def _get_curr(
+        self, rev: list[_ExtFrameSummary[Any]], /
+    ) -> tuple[_ExtFrameSummary[Any], str] | None:
+        while len(rev) >= 1:
+            curr = rev.pop(0)
+            if (module := curr.module) is not None:
+                return curr, module
+        return None
+
+    def _get_solution(
+        self,
+        rev: list[_ExtFrameSummary[Any]],
+        /,
+        *,
+        curr: _ExtFrameSummary[Any],
+        module: str,
+    ) -> _ExtFrameSummary[_CallArgs]:
+        while len(rev) >= 1:
+            next_ = rev.pop(0)
+            if self._has_extra(next_) and self._is_match(
+                next_, curr=curr, module=module
+            ):
+                return next_
+        msg = "No solution found"
+        raise RuntimeError(msg)
+
+    def _has_extra(
+        self, frame: _ExtFrameSummary[Any], /
+    ) -> TypeGuard[_ExtFrameSummary[_CallArgs]]:
+        return frame.extra is not None
+
+    def _has_solution_later(
+        self,
+        rev: list[_ExtFrameSummary[_CallArgs | None]],
+        /,
+        *,
+        curr: _ExtFrameSummary[Any],
+        module: str,
+    ) -> bool:
+        try:
+            next_, *_ = filter(self._has_extra, rev)
+        except ValueError:
+            return False
+        return self._is_match(next_, curr=curr, module=module)
+
+    def _is_match(
+        self,
+        next_: _ExtFrameSummary[Any],
+        /,
+        *,
+        curr: _ExtFrameSummary[Any],
+        module: str,
+    ) -> bool:
+        return (
+            curr.name == next_.extra.func.__name__
+            and module == next_.extra.func.__module__
+        )
+
+
+@runtime_checkable
+class HasCallArgFrameSummaries(Protocol):
+    @property
+    def frames(self) -> _CallArgFrameSummaries: ...
 
 
 @overload
@@ -57,9 +236,7 @@ def trace(
             except Exception as error:
                 error2 = cast(Any, error)
                 error2.call_args = call_args
-                error2.frames = list(
-                    yield_extended_frame_summaries(error, extra=_extra)
-                )
+                error2.frames = get_frame_summaries_with_call_args(error)
                 raise
 
         return cast(_F, trace_sync)
@@ -72,7 +249,7 @@ def trace(
         except Exception as error:
             error2 = cast(Any, error)
             error2.call_args = call_args
-            error2.frames = list(yield_extended_frame_summaries(error, extra=_extra))
+            error2.frames = get_frame_summaries_with_call_args(error)
             raise
 
     return cast(_F, log_call_async)
@@ -83,39 +260,6 @@ class TraceError(Exception):
     @override
     def __str__(self) -> str:
         return "Traceback missing"
-
-
-def _extra(_: FrameSummary, frame: FrameType) -> _CallArgs | None:
-    return frame.f_locals.get(_CALL_ARGS)
-
-
-@dataclass(kw_only=True, slots=True)
-class _CallArgs:
-    """A collection of call arguments."""
-
-    func: Callable[..., Any]
-    args: tuple[Any, ...] = field(default_factory=tuple)
-    kwargs: dict[str, Any] = field(default_factory=dict)
-
-    @classmethod
-    def create(cls, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Self:
-        """Make the initial trace data."""
-        sig = signature(func)
-        try:
-            bound_args = sig.bind(*args, **kwargs)
-        except TypeError as error:
-            orig = ensure_str(one(error.args))
-            lines: list[str] = [
-                f"Unable to bind arguments for {get_func_name(func)!r}; {orig}"
-            ]
-            lines.extend(yield_pretty_repr_args_and_kwargs(*args, **kwargs))
-            new = "\n".join(lines)
-            raise _CallArgsError(new) from None
-        return cls(func=func, args=bound_args.args, kwargs=bound_args.kwargs)
-
-
-class _CallArgsError(TypeError):
-    """Raised when a set of call arguments cannot be created."""
 
 
 @dataclass(kw_only=True, slots=False)  # no slots
@@ -299,52 +443,20 @@ class _TraceMixinFrame(Generic[_T]):
         return self.raw_frame.ext_frame_summary.extra
 
 
-@dataclass(kw_only=True, slots=True)
-class _ExtFrameSummary(Generic[_T]):
-    """An extended frame summary."""
+def get_frame_summaries_with_call_args(
+    error: BaseException,
+    /,
+    *,
+    traceback: TracebackType | None = None,
+) -> _CallArgFrameSummaries:
+    """Yield the extended frame summaries."""
 
-    filename: Path
-    module: str | None = None
-    name: str
-    qualname: str
-    code_line: str
-    first_line_num: int
-    line_num: int
-    end_line_num: int
-    col_num: int
-    end_col_num: int
-    locals: dict[str, Any] = field(default_factory=dict)
-    extra: _T
+    def extra(_: FrameSummary, frame: FrameType) -> _CallArgs | None:
+        return frame.f_locals.get(_CALL_ARGS)
 
-    @override
-    def __repr__(self) -> str:
-        cls = get_class_name(self)
-        parts: list[tuple[str, str]] = [
-            (k, repr(v))
-            for k, v in [
-                ("name", self.name),
-                ("filename", str(self.filename)),
-                ("name", self.name),
-                ("qualname", self.qualname),
-                ("code_line", self.code_line),
-                ("first_line_num", self.first_line_num),
-                ("line_num", self.line_num),
-                ("end_line_num", self.end_line_num),
-                ("col_num", self.col_num),
-                ("end_col_num", self.end_col_num),
-            ]
-        ]
-        if (call_args := self.call_args) is not None:
-            parts.append(("func", get_func_name(call_args.func)))
-            parts.append(("call_args", repr(call_args.args)))
-            parts.append(("call_kwargs", repr(call_args.kwargs)))
-        parts.append(("locals", repr(list(self.locals))))
-        joined = ", ".join(f"{k}={v}" for k, v in parts)
-        return f"{cls}({joined})"
-
-    @property
-    def call_args(self) -> _CallArgs | None:
-        return self.locals.get(_CALL_ARGS)
+    return _CallArgFrameSummaries(
+        yield_extended_frame_summaries(error, traceback=traceback, extra=extra)
+    )
 
 
 @overload
@@ -398,6 +510,14 @@ def yield_extended_frame_summaries(
         )
 
 
+def yield_exceptions(error: BaseException, /) -> Iterator[BaseException]:
+    """Yield the exceptions in a context chain."""
+    curr: BaseException | None = error
+    while curr is not None:
+        yield curr
+        curr = curr.__context__
+
+
 def yield_frames(*, traceback: TracebackType | None = None) -> Iterator[FrameType]:
     """Yield the frames of a traceback."""
     while traceback is not None:
@@ -410,7 +530,9 @@ __all__ = [
     "OptExcInfo",
     "TraceError",
     "TraceMixin",
+    "get_frame_summaries_with_call_args",
     "trace",
+    "yield_exceptions",
     "yield_extended_frame_summaries",
     "yield_frames",
 ]
