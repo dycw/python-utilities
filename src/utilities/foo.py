@@ -2,19 +2,35 @@ from __future__ import annotations
 
 import sys
 from io import StringIO
+from logging import StreamHandler, getLogger
+from sys import stdout
+
+from utilities.foo_funcs import func_decorated_first
+from utilities.sys import log_traceback_excepthook
+from utilities.traceback import trace
 
 buffer = StringIO()
+LOGGER = getLogger("utilities.sys")
+LOGGER.setLevel("INFO")
+handler = StreamHandler(stdout)
+handler.setLevel("INFO")
+LOGGER.addHandler(handler)
 
 
-def custom_excepthook(exc_type, exc_value, exc_traceback) -> None:
-    print("""HELLO THERE""", file=buffer)
-    print("Custom exception hook called", file=buffer)
-    print(f"Exception type: {exc_type}", file=buffer)
-    print(f"Exception value: {exc_value}", file=buffer)
-    print(buffer.getvalue())
+sys.excepthook = log_traceback_excepthook
 
 
-sys.excepthook = custom_excepthook
+@trace
+def calls_func_first(a: int, b: int, /, *args: int, c: int = 0, **kwargs: int) -> int:
+    a *= 2
+    b *= 2
+    args = tuple(2 * arg for arg in args)
+    c *= 2
+    kwargs = {k: 2 * v for k, v in kwargs.items()}
+    try:
+        return func_decorated_first(a, b, *args, c, **kwargs)
+    except AssertionError as error:
+        raise ValueError(*error.args)
 
-msg = "Test exception"
-raise ValueError(msg)
+
+_ = calls_func_first(1, 2, 3, 4, c=5, d=6, e=7)

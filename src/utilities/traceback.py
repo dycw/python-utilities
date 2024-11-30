@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass, field, is_dataclass
+from dataclasses import asdict, dataclass, field, is_dataclass
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
 from pathlib import Path
@@ -20,6 +20,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import override
+
 from utilities.dataclasses import yield_field_names
 from utilities.functions import ensure_not_none, get_class_name, get_func_name
 from utilities.iterables import one
@@ -33,6 +35,7 @@ if TYPE_CHECKING:
     from utilities.typing import StrMapping
 
 _F = TypeVar("_F", bound=Callable[..., Any])
+_CALL_ARGS = "_CALL_ARGS"
 ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
 OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
 _Ignore = type[Exception] | tuple[type[Exception], ...]
@@ -57,67 +60,54 @@ def trace(
 
         @wraps(func)
         def trace_sync(*args: Any, **kwargs: Any) -> Any:
-            call_args = _CallArgs.create(func, *args, **kwargs)
+            call_args = locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
             try:
                 return func(*args, **kwargs)
-            except Exception as error:  # noqa: BLE001
-                _trace_build_and_raise_trace_mixin(
-                    error, func, call_args, ignore=ignore
-                )
+            except Exception as error:
+                error2 = cast(Any, error)
+                error2.call_args = call_args
+                error2.frames = list(yield_extended_frame_summaries(error))
+                raise
 
         return cast(_F, trace_sync)
 
     @wraps(func)
     async def log_call_async(*args: Any, **kwargs: Any) -> Any:
-        call_args = _CallArgs.create(func, *args, **kwargs)
+        call_args = locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
         try:
             return await func(*args, **kwargs)
-        except Exception as error:  # noqa: BLE001
-            _trace_build_and_raise_trace_mixin(error, func, call_args, ignore=ignore)
+        except Exception as error:
+            error2 = cast(Any, error)
+            error2.call_args = call_args
+            error2.frames = list(yield_extended_frame_summaries(error))
+            raise
 
     return cast(_F, log_call_async)
 
 
-def _trace_build_and_raise_trace_mixin(
-    error: Exception,
+@dataclass(kw_only=True, slots=True)
+class TraceError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "Traceback missing"
+
+
+def _add_frames_to_error(
     func: Callable[..., Any],
     call_args: _CallArgs,
+    error: Exception,
+    traceback: TracebackType,
     /,
-    *,
-    ignore: _Ignore | None = None,
 ) -> NoReturn:
     """Build and raise a TraceMixin exception."""
-    if (ignore is not None) and isinstance(error, ignore):
-        raise error
-
-    def extra(_: FrameSummary, frame: FrameType) -> _CallArgs | None:
-        return frame.f_locals.get("call_args")
-
-    frames = list(yield_extended_frame_summaries(error, extra=extra))
+    frames = list(yield_extended_frame_summaries(error, traceback=traceback))
     matches = (
         f for f in frames if (f.name == get_func_name(func)) and (f.code_line != "")
     )
     frame = next(matches)
-    trace_frame = _RawTraceMixinFrame(call_args=call_args, ext_frame_summary=frame)
-    if isinstance(error, TraceMixin):
-        raw_frames = [*error.raw_frames, trace_frame]
-    else:
-        raw_frames = [trace_frame]
-    base = error
-    while isinstance(base, TraceMixin):
-        base = base.error
-    native = type(base)
-    new_cls = type(
-        native.__name__,
-        (native, TraceMixin),
-        {"error": error, "raw_frames": raw_frames},
-    )
-    if is_dataclass(base):
-        kwargs = {f: getattr(error, f) for f in yield_field_names(base)}
-    else:
-        kwargs = {}
-    new_error = new_cls(*error.args, **kwargs)
-    raise new_error from error
+    raw_frame = _RawTraceMixinFrame(call_args=call_args, ext_frame_summary=frame)
+    error.raw_frame = raw_frame
+    raise error
 
 
 @dataclass(kw_only=True, slots=True)
@@ -347,6 +337,36 @@ class _ExtFrameSummary(Generic[_T]):
     locals: dict[str, Any] = field(default_factory=dict)
     extra: _T
 
+    @override
+    def __repr__(self) -> str:
+        cls = get_class_name(self)
+        parts: list[tuple[str, str]] = [
+            (k, repr(v))
+            for k, v in [
+                ("name", self.name),
+                ("filename", str(self.filename)),
+                ("name", self.name),
+                ("qualname", self.qualname),
+                ("code_line", self.code_line),
+                ("first_line_num", self.first_line_num),
+                ("line_num", self.line_num),
+                ("end_line_num", self.end_line_num),
+                ("col_num", self.col_num),
+                ("end_col_num", self.end_col_num),
+            ]
+        ]
+        if (call_args := self.call_args) is not None:
+            parts.append(("func", get_func_name(call_args.func)))
+            parts.append(("call_args", repr(call_args.args)))
+            parts.append(("call_kwargs", repr(call_args.kwargs)))
+        parts.append(("locals", repr(list(self.locals))))
+        joined = ", ".join(f"{k}={v}" for k, v in parts)
+        return f"{cls}({joined})"
+
+    @property
+    def call_args(self) -> _CallArgs | None:
+        return self.locals.get(_CALL_ARGS)
+
 
 @overload
 def yield_extended_frame_summaries(
@@ -390,6 +410,7 @@ def yield_frames(*, traceback: TracebackType | None = None) -> Iterator[FrameTyp
 __all__ = [
     "ExcInfo",
     "OptExcInfo",
+    "TraceError",
     "TraceMixin",
     "trace",
     "yield_extended_frame_summaries",

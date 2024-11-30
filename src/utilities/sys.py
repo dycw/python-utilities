@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from logging import getLogger
+from os import environ, getenv
 from sys import version_info
 from typing import TYPE_CHECKING
+
+from rich.pretty import pretty_repr
 
 from utilities.traceback import yield_extended_frame_summaries
 
@@ -29,8 +32,15 @@ def log_traceback_excepthook(
         raise RuntimeError(msg)
         return
     contents = list(yield_extended_frame_summaries(exc_val, traceback=traceback))
-    print(contents)
-    _LOGGER.info("%s", contents)
+    _LOGGER.info("%s", pretty_repr(contents))
+    exc_with_tb = exc_val.with_traceback(traceback)
+    this_frames = exc_val.frames
+    parent = exc_val.__context__
+    assert parent is not None
+    parent_frames = parent.frames
+
+    if "BREAKPOINT" in environ:
+        breakpoint()
 
 
 __all__ = ["VERSION_MAJOR_MINOR"]
