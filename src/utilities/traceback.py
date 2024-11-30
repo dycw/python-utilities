@@ -46,7 +46,6 @@ _T = TypeVar("_T")
 _CALL_ARGS = "_CALL_ARGS"
 ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
 OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
-_Ignore = type[Exception] | tuple[type[Exception], ...]
 _MAX_WIDTH = 80
 _INDENT_SIZE = 4
 
@@ -91,7 +90,7 @@ class _CallArgsError(TypeError):
     """Raised when a set of call arguments cannot be created."""
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(repr=False, kw_only=True, slots=True)
 class _ExtFrameSummary(Generic[_T]):
     """An extended frame summary."""
 
@@ -130,135 +129,76 @@ class _ExtFrameSummary(Generic[_T]):
         return f"{cls}({joined})"
 
 
-class _CallArgFrameSummaries(list[_ExtFrameSummary[_CallArgs | None]]):
-    """A list of call-arg frame summaries."""
+@dataclass(repr=False, kw_only=True, slots=True)
+class _ExtendedTraceback:
+    """An extended traceback."""
 
-    def merge(self) -> list[_ExtFrameSummary[_CallArgs]]:
-        values: list[_ExtFrameSummary[_CallArgs]] = []
-        rev = self[::-1]
-        while len(rev) >= 1:
-            if (curr_and_module := self._get_curr(rev)) is None:
-                continue
-            curr, module = curr_and_module
-            if not self._has_solution_later(rev, curr=curr, module=module):
-                continue
-            next_ = self._get_solution(rev, curr=curr, module=module)
-            new = cast(_ExtFrameSummary[_CallArgs], replace(curr, extra=next_.extra))
-            values.append(new)
-        return values[::-1]
+    raw: list[_ExtFrameSummary[_CallArgs | None]] = field(default_factory=list)
+    frames: list[_ExtFrameSummary[_CallArgs]] = field(default_factory=list)
+    error: BaseException
 
-    def _get_curr(
-        self, rev: list[_ExtFrameSummary[Any]], /
-    ) -> tuple[_ExtFrameSummary[Any], str] | None:
-        while len(rev) >= 1:
-            curr = rev.pop(0)
-            if (module := curr.module) is not None:
-                return curr, module
-        return None
-
-    def _get_solution(
-        self,
-        rev: list[_ExtFrameSummary[Any]],
-        /,
-        *,
-        curr: _ExtFrameSummary[Any],
-        module: str,
-    ) -> _ExtFrameSummary[_CallArgs]:
-        while len(rev) >= 1:
-            next_ = rev.pop(0)
-            if self._has_extra(next_) and self._is_match(
-                next_, curr=curr, module=module
-            ):
-                return next_
-        msg = "No solution found"
-        raise RuntimeError(msg)
-
-    def _has_extra(
-        self, frame: _ExtFrameSummary[Any], /
-    ) -> TypeGuard[_ExtFrameSummary[_CallArgs]]:
-        return frame.extra is not None
-
-    def _has_solution_later(
-        self,
-        rev: list[_ExtFrameSummary[_CallArgs | None]],
-        /,
-        *,
-        curr: _ExtFrameSummary[Any],
-        module: str,
-    ) -> bool:
-        try:
-            next_, *_ = filter(self._has_extra, rev)
-        except ValueError:
-            return False
-        return self._is_match(next_, curr=curr, module=module)
-
-    def _is_match(
-        self,
-        next_: _ExtFrameSummary[Any],
-        /,
-        *,
-        curr: _ExtFrameSummary[Any],
-        module: str,
-    ) -> bool:
-        return (
-            curr.name == next_.extra.func.__name__
-            and module == next_.extra.func.__module__
-        )
+    @override
+    def __repr__(self) -> str:
+        cls = get_class_name(self)
+        parts: list[tuple[str, Any]] = [
+            ("raw", f"{len(self.raw)} frame(s)"),
+            ("frames", self.frames),
+            ("error", self.error),
+        ]
+        joined = ", ".join(f"{k}={v!r}" for k, v in parts)
+        return f"{cls}({joined})"
 
 
 @runtime_checkable
-class HasCallArgFrameSummaries(Protocol):
+class HasExtendedTraceback(Protocol):
     @property
-    def frames(self) -> _CallArgFrameSummaries: ...
+    def extended_traceback(self) -> _ExtendedTraceback: ...
+
+
+def get_extended_traceback(
+    error: BaseException, /, *, traceback: TracebackType | None = None
+) -> _ExtendedTraceback:
+    """Get an extended traceback."""
+
+    def extra(_: FrameSummary, frame: FrameType) -> _CallArgs | None:
+        return frame.f_locals.get(_CALL_ARGS)
+
+    raw = list(yield_extended_frame_summaries(error, traceback=traceback, extra=extra))
+    return _ExtendedTraceback(raw=raw, frames=_merge_frames(raw), error=error)
 
 
 @overload
-def trace(func: _F, /, *, ignore: _Ignore | None = ...) -> _F: ...
+def trace(func: _F, /) -> _F: ...
 @overload
-def trace(
-    func: None = None, /, *, ignore: _Ignore | None = ...
-) -> Callable[[_F], _F]: ...
-def trace(
-    func: _F | None = None, /, *, ignore: _Ignore | None = None
-) -> _F | Callable[[_F], _F]:
+def trace(func: None = None, /) -> Callable[[_F], _F]: ...
+def trace(func: _F | None = None, /) -> _F | Callable[[_F], _F]:
     """Trace a function call."""
     if func is None:
-        result = partial(trace, ignore=ignore)
+        result = partial(trace)
         return cast(Callable[[_F], _F], result)
     if not iscoroutinefunction(func):
 
         @wraps(func)
         def trace_sync(*args: Any, **kwargs: Any) -> Any:
-            call_args = locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
+            locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
             try:
                 return func(*args, **kwargs)
             except Exception as error:
-                error2 = cast(Any, error)
-                error2.call_args = call_args
-                error2.frames = get_frame_summaries_with_call_args(error)
+                cast(Any, error).extended_traceback = get_extended_traceback(error)
                 raise
 
         return cast(_F, trace_sync)
 
     @wraps(func)
-    async def log_call_async(*args: Any, **kwargs: Any) -> Any:
-        call_args = locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
+    async def trace_async(*args: Any, **kwargs: Any) -> Any:
+        locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
         try:
             return await func(*args, **kwargs)
         except Exception as error:
-            error2 = cast(Any, error)
-            error2.call_args = call_args
-            error2.frames = get_frame_summaries_with_call_args(error)
+            cast(Any, error).extended_traceback = get_extended_traceback(error)
             raise
 
-    return cast(_F, log_call_async)
-
-
-@dataclass(kw_only=True, slots=True)
-class TraceError(Exception):
-    @override
-    def __str__(self) -> str:
-        return "Traceback missing"
+    return cast(_F, trace_async)
 
 
 @dataclass(kw_only=True, slots=False)  # no slots
@@ -442,19 +382,6 @@ class _TraceMixinFrame(Generic[_T]):
         return self.raw_frame.ext_frame_summary.extra
 
 
-def get_frame_summaries_with_call_args(
-    error: BaseException, /, *, traceback: TracebackType | None = None
-) -> _CallArgFrameSummaries:
-    """Yield the extended frame summaries."""
-
-    def extra(_: FrameSummary, frame: FrameType) -> _CallArgs | None:
-        return frame.f_locals.get(_CALL_ARGS)
-
-    return _CallArgFrameSummaries(
-        yield_extended_frame_summaries(error, traceback=traceback, extra=extra)
-    )
-
-
 @overload
 def yield_extended_frame_summaries(
     error: BaseException,
@@ -521,12 +448,80 @@ def yield_frames(*, traceback: TracebackType | None = None) -> Iterator[FrameTyp
         traceback = traceback.tb_next
 
 
+def _merge_frames(
+    frames: Iterable[_ExtFrameSummary[_CallArgs | None]], /
+) -> list[_ExtFrameSummary[_CallArgs]]:
+    """Merge a set of frames."""
+    rev = list(frames)[::-1]
+    values: list[_ExtFrameSummary[_CallArgs]] = []
+
+    def get_curr(
+        rev: list[_ExtFrameSummary[Any]], /
+    ) -> tuple[_ExtFrameSummary[Any], str] | None:
+        while len(rev) >= 1:
+            curr = rev.pop(0)
+            if (module := curr.module) is not None:
+                return curr, module
+        return None
+
+    def get_solution(
+        curr: _ExtFrameSummary[Any],
+        module: str,
+        rev: list[_ExtFrameSummary[Any]],
+        /,
+    ) -> _ExtFrameSummary[_CallArgs]:
+        while len(rev) >= 1:
+            next_ = rev.pop(0)
+            if has_extra(next_) and is_match(curr, module, next_):
+                return next_
+        msg = "No solution found"
+        raise RuntimeError(msg)
+
+    def has_extra(
+        frame: _ExtFrameSummary[Any], /
+    ) -> TypeGuard[_ExtFrameSummary[_CallArgs]]:
+        return frame.extra is not None
+
+    def has_match(
+        curr: _ExtFrameSummary[Any],
+        module: str,
+        rev: list[_ExtFrameSummary[_CallArgs | None]],
+        /,
+    ) -> bool:
+        try:
+            next_, *_ = filter(has_extra, rev)
+        except ValueError:
+            return False
+        return is_match(curr, module, next_)
+
+    def is_match(
+        curr: _ExtFrameSummary[Any],
+        module: str,
+        next_: _ExtFrameSummary[Any],
+        /,
+    ) -> bool:
+        return (
+            curr.name == next_.extra.func.__name__
+            and module == next_.extra.func.__module__
+        )
+
+    while len(rev) >= 1:
+        if (curr_and_module := get_curr(rev)) is None:
+            continue
+        curr, module = curr_and_module
+        if not has_match(curr, module, rev):
+            continue
+        next_ = get_solution(curr, module, rev)
+        new = cast(_ExtFrameSummary[_CallArgs], replace(curr, extra=next_.extra))
+        values.append(new)
+    return values[::-1]
+
+
 __all__ = [
     "ExcInfo",
     "OptExcInfo",
-    "TraceError",
     "TraceMixin",
-    "get_frame_summaries_with_call_args",
+    "get_extended_traceback",
     "trace",
     "yield_exceptions",
     "yield_extended_frame_summaries",
