@@ -7,8 +7,18 @@ from inspect import iscoroutinefunction, signature
 from pathlib import Path
 from sys import exc_info
 from textwrap import indent
-from traceback import FrameSummary, TracebackException
-from typing import TYPE_CHECKING, Any, Generic, NoReturn, Self, TypeVar, cast, overload
+from traceback import TracebackException
+from types import TracebackType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    NoReturn,
+    Self,
+    TypeAlias,
+    TypeVar,
+    cast,
+    overload,
+)
 
 from utilities.dataclasses import yield_field_names
 from utilities.functions import ensure_not_none, get_class_name, get_func_name
@@ -18,12 +28,13 @@ from utilities.text import ensure_str
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from types import FrameType, TracebackType
+    from types import FrameType
 
     from utilities.typing import StrMapping
 
 _F = TypeVar("_F", bound=Callable[..., Any])
-_T = TypeVar("_T")
+ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
+OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
 _Ignore = type[Exception] | tuple[type[Exception], ...]
 _MAX_WIDTH = 80
 _INDENT_SIZE = 4
@@ -339,23 +350,8 @@ class _ExtFrameSummary(Generic[_T]):
 
 @overload
 def yield_extended_frame_summaries(
-    error: Exception,
-    /,
-    *,
-    traceback: TracebackType | None = None,
-    extra: Callable[[FrameSummary, FrameType], _T],
-) -> Iterator[_ExtFrameSummary[_T]]: ...
-@overload
-def yield_extended_frame_summaries(
-    error: Exception, /, *, traceback: TracebackType | None = None, extra: None = None
-) -> Iterator[_ExtFrameSummary[None]]: ...
-def yield_extended_frame_summaries(
-    error: Exception,
-    /,
-    *,
-    traceback: TracebackType | None = None,
-    extra: Callable[[FrameSummary, FrameType], _T] | None = None,
-) -> Iterator[_ExtFrameSummary[Any]]:
+    error: BaseException, /, *, traceback: TracebackType | None = None
+) -> Iterator[_ExtFrameSummary]:
     """Yield the extended frame summaries."""
     tb_exc = TracebackException.from_exception(error, capture_locals=True)
     if traceback is None:
@@ -391,4 +387,11 @@ def yield_frames(*, traceback: TracebackType | None = None) -> Iterator[FrameTyp
         traceback = traceback.tb_next
 
 
-__all__ = ["TraceMixin", "trace", "yield_extended_frame_summaries", "yield_frames"]
+__all__ = [
+    "ExcInfo",
+    "OptExcInfo",
+    "TraceMixin",
+    "trace",
+    "yield_extended_frame_summaries",
+    "yield_frames",
+]

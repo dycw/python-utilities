@@ -86,9 +86,9 @@ class _Show:
         self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
+        traceback: TracebackType | None,
     ) -> None:
-        _ = self.stack.__exit__(exc_type, exc_val, exc_tb)
+        _ = self.stack.__exit__(exc_type, exc_val, traceback)
 
 
 show = _Show()
