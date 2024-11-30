@@ -14,7 +14,7 @@ execnet==2.1.1
     # via pytest-xdist
 frozendict==2.4.6
     # via atools
-hypothesis==6.121.0
+hypothesis==6.121.2
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
