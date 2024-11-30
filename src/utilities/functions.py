@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import _lru_cache_wrapper, partial, wraps
+from re import findall
 from types import (
     BuiltinFunctionType,
     FunctionType,
@@ -60,17 +61,43 @@ def get_class_name(obj: Any, /) -> str:
 
 def get_func_name(obj: Callable[..., Any], /) -> str:
     """Get the name of a callable."""
-    if isinstance(obj, BuiltinFunctionType | FunctionType | MethodType):
+    if isinstance(obj, BuiltinFunctionType):
         return obj.__name__
-    if isinstance(obj, _lru_cache_wrapper):
-        return cast(Any, obj).__name__
+    if isinstance(obj, FunctionType):
+        name = obj.__name__
+        pattern = r"^.+\.([A-Z]\w+\." + name + ")$"
+        try:
+            (full_name,) = findall(pattern, obj.__qualname__)
+        except ValueError:
+            return name
+        return full_name
+    if isinstance(obj, MethodType):
+        return f"{get_class_name(obj.__self__)}.{obj.__name__}"
     if isinstance(
-        obj, MethodDescriptorType | MethodWrapperType | WrapperDescriptorType
+        obj,
+        MethodType | MethodDescriptorType | MethodWrapperType | WrapperDescriptorType,
     ):
         return obj.__qualname__
+    if isinstance(obj, _lru_cache_wrapper):
+        return cast(Any, obj).__name__
     if isinstance(obj, partial):
         return get_func_name(obj.func)
     return get_class_name(obj)
+
+
+def get_func_qualname(obj: Callable[..., Any], /) -> str:
+    """Get the qualified name of a callable."""
+    if isinstance(
+        obj, BuiltinFunctionType | FunctionType | MethodType | _lru_cache_wrapper
+    ):
+        return f"{obj.__module__}.{obj.__qualname__}"
+    if isinstance(
+        obj, MethodDescriptorType | MethodWrapperType | WrapperDescriptorType
+    ):
+        return f"{obj.__objclass__.__module__}.{obj.__qualname__}"
+    if isinstance(obj, partial):
+        return get_func_qualname(obj.func)
+    return f"{obj.__module__}.{get_class_name(obj)}"
 
 
 def identity(obj: _T, /) -> _T:
@@ -131,6 +158,7 @@ __all__ = [
     "get_class",
     "get_class_name",
     "get_func_name",
+    "get_func_qualname",
     "identity",
     "is_none",
     "is_not_none",

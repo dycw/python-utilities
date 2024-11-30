@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import sys
-from functools import cache, lru_cache, wraps
+from functools import cache, lru_cache, partial, wraps
 from operator import neg
 from types import NoneType
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from hypothesis import given
 from hypothesis.strategies import booleans, integers
@@ -12,11 +12,13 @@ from pytest import CaptureFixture, mark, param, raises
 
 from utilities.asyncio import try_await
 from utilities.functions import (
+    EnsureNotNoneError,
     ensure_not_none,
     first,
     get_class,
     get_class_name,
     get_func_name,
+    get_func_qualname,
     identity,
     is_none,
     is_not_none,
@@ -29,7 +31,19 @@ from utilities.functions import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 
+
 _T = TypeVar("_T")
+
+
+class TestEnsureNotNone:
+    def test_main(self) -> None:
+        maybe_int = cast(int | None, 0)
+        result = ensure_not_none(maybe_int)
+        assert result == 0
+
+    def test_error(self) -> None:
+        with raises(EnsureNotNoneError, match="Object .* must not be None"):
+            _ = ensure_not_none(None)
 
 
 class TestFirst:
@@ -59,25 +73,32 @@ class TestGetClassName:
         assert get_class_name(Example()) == "Example"
 
 
-class TestGetFuncName:
+class TestGetFuncNameAndGetFuncQualName:
     @mark.parametrize(
-        ("func", "expected"),
+        ("func", "exp_name", "exp_qual_name"),
         [
-            param(identity, "identity"),
-            param(lambda x: x, "<lambda>"),  # pyright: ignore[reportUnknownLambdaType]
-            param(len, "len"),
-            param(neg, "neg"),
-            param(object.__init__, "object.__init__"),
-            param(object().__str__, "object.__str__"),
-            param(repr, "repr"),
-            param(str, "str"),
-            param(try_await, "try_await"),
-            param(str.join, "str.join"),
-            param(sys.exit, "exit"),
+            param(identity, "identity", "utilities.functions.identity"),
+            param(
+                lambda x: x,  # pyright: ignore[reportUnknownLambdaType]
+                "<lambda>",
+                "tests.test_functions.TestGetFuncNameAndGetFuncQualName.<lambda>",
+            ),
+            param(len, "len", "builtins.len"),
+            param(neg, "neg", "_operator.neg"),
+            param(object.__init__, "object.__init__", "builtins.object.__init__"),
+            param(object.__str__, "object.__str__", "builtins.object.__str__"),
+            param(repr, "repr", "builtins.repr"),
+            param(str, "str", "builtins.str"),
+            param(try_await, "try_await", "utilities.asyncio.try_await"),
+            param(str.join, "str.join", "builtins.str.join"),
+            param(sys.exit, "exit", "sys.exit"),
         ],
     )
-    def test_main(self, *, func: Callable[..., Any], expected: str) -> None:
-        assert get_func_name(func) == expected
+    def test_main(
+        self, *, func: Callable[..., Any], exp_name: str, exp_qual_name: str
+    ) -> None:
+        assert get_func_name(func) == exp_name
+        assert get_func_qualname(func) == exp_qual_name
 
     def test_cache(self) -> None:
         @cache
@@ -85,6 +106,10 @@ class TestGetFuncName:
             return x
 
         assert get_func_name(cache_func) == "cache_func"
+        assert (
+            get_func_qualname(cache_func)
+            == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_cache.<locals>.cache_func"
+        )
 
     def test_decorated(self) -> None:
         @wraps(identity)
@@ -92,6 +117,7 @@ class TestGetFuncName:
             return identity(x)
 
         assert get_func_name(wrapped) == "identity"
+        assert get_func_qualname(wrapped) == "utilities.functions.identity"
 
     def test_lru_cache(self) -> None:
         @lru_cache
@@ -99,6 +125,10 @@ class TestGetFuncName:
             return x
 
         assert get_func_name(lru_cache_func) == "lru_cache_func"
+        assert (
+            get_func_qualname(lru_cache_func)
+            == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_lru_cache.<locals>.lru_cache_func"
+        )
 
     def test_object(self) -> None:
         class Example:
@@ -107,6 +137,7 @@ class TestGetFuncName:
 
         obj = Example()
         assert get_func_name(obj) == "Example"
+        assert get_func_qualname(obj) == "tests.test_functions.Example"
 
     def test_obj_method(self) -> None:
         class Example:
@@ -114,7 +145,11 @@ class TestGetFuncName:
                 return identity(x)
 
         obj = Example()
-        assert get_func_name(obj.obj_method) == "obj_method"
+        assert get_func_name(obj.obj_method) == "Example.obj_method"
+        assert (
+            get_func_qualname(obj.obj_method)
+            == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_obj_method.<locals>.Example.obj_method"
+        )
 
     def test_obj_classmethod(self) -> None:
         class Example:
@@ -122,7 +157,11 @@ class TestGetFuncName:
             def obj_classmethod(cls: _T) -> _T:
                 return identity(cls)
 
-        assert get_func_name(Example.obj_classmethod) == "obj_classmethod"
+        assert get_func_name(Example.obj_classmethod) == "Example.obj_classmethod"
+        assert (
+            get_func_qualname(Example.obj_classmethod)
+            == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_obj_classmethod.<locals>.Example.obj_classmethod"
+        )
 
     def test_obj_staticmethod(self) -> None:
         class Example:
@@ -130,7 +169,16 @@ class TestGetFuncName:
             def obj_staticmethod(x: _T) -> _T:
                 return identity(x)
 
-        assert get_func_name(Example.obj_staticmethod) == "obj_staticmethod"
+        assert get_func_name(Example.obj_staticmethod) == "Example.obj_staticmethod"
+        assert (
+            get_func_qualname(Example.obj_staticmethod)
+            == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_obj_staticmethod.<locals>.Example.obj_staticmethod"
+        )
+
+    def test_partial(self) -> None:
+        part = partial(identity)
+        assert get_func_name(part) == "identity"
+        assert get_func_qualname(part) == "utilities.functions.identity"
 
 
 class TestIdentity:
