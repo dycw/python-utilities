@@ -76,7 +76,7 @@ class TestBeartypeCond:
             _ = Example(x=cast(Any, "0"))
 
     def test_setup(self) -> None:
-        @beartype_cond(setup=False)
+        @beartype_cond(setup=lambda: False)
         def func(a: int, b: int, /) -> int:
             return cast(Any, str(a + b))
 

@@ -5,7 +5,7 @@ from itertools import chain
 from utilities.traceback import trace
 
 
-@trace(setup=False)
+@trace(setup=lambda: False)
 def func_setup(a: int, b: int, /, *args: int, c: int = 0, **kwargs: int) -> int:
     a *= 2
     b *= 2

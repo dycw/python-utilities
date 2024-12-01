@@ -219,17 +219,25 @@ def _assemble_exception_paths_no_chain_no_group(
 
 @overload
 def trace(
-    func: _F, /, *, setup: bool = ..., runtime: Callable[[], bool] | None = ...
+    func: _F,
+    /,
+    *,
+    setup: Callable[[], bool] | None = ...,
+    runtime: Callable[[], bool] | None = ...,
 ) -> _F: ...
 @overload
 def trace(
-    func: None = None, /, *, setup: bool = ..., runtime: Callable[[], bool] | None = ...
+    func: None = None,
+    /,
+    *,
+    setup: Callable[[], bool] | None = ...,
+    runtime: Callable[[], bool] | None = ...,
 ) -> Callable[[_F], _F]: ...
 def trace(
     func: _F | None = None,
     /,
     *,
-    setup: bool = True,
+    setup: Callable[[], bool] | None = None,
     runtime: Callable[[], bool] | None = None,
 ) -> _F | Callable[[_F], _F]:
     """Trace a function call."""
@@ -237,7 +245,7 @@ def trace(
         result = partial(trace, setup=setup, runtime=runtime)
         return cast(Callable[[_F], _F], result)
 
-    if not setup:
+    if (setup is not None) and not setup():
         return func
 
     if runtime is None:
