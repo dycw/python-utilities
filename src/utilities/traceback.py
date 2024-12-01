@@ -361,6 +361,7 @@ __all__ = [
     "ExcInfo",
     "ExcPath",
     "OptExcInfo",
+    "assemble_exception_paths",
     "trace",
     "yield_exceptions",
     "yield_extended_frame_summaries",
