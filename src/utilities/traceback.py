@@ -319,20 +319,14 @@ def _merge_frames(
     rev = list(frames)[::-1]
     values: list[_ExtFrameSummaryCA] = []
 
-    def get_curr(rev: list[_ExtFrameSummaryCAOptOpt], /) -> _ExtFrameSummaryCAStrOpt:
-        curr = rev.pop(0)
-        if curr.module is None:
-            from utilities.pickle import write_pickle
-
-            write_pickle(
-                [pretty_repr(init), pretty_repr(rev), pretty_repr(curr)],
-                "curr.pkl",
-                overwrite=True,
-            )
-
-            raise ValueError("no curr.module...\n\n" + pretty_repr(init))
-        _ = ensure_not_none(curr.module, desc="curr.module\n\n" + pretty_repr(init))
-        return cast(_ExtFrameSummaryCAStrOpt, curr)
+    def get_curr(
+        rev: list[_ExtFrameSummaryCAOptOpt], /
+    ) -> _ExtFrameSummaryCAStrOpt | None:
+        while len(rev) >= 1:
+            curr = rev.pop(0)
+            if curr.module is not None:
+                return cast(_ExtFrameSummaryCAStrOpt, curr)
+        return None
 
     def get_solution(
         curr: _ExtFrameSummaryCAStrOpt, rev: list[_ExtFrameSummaryCAOptOpt], /
@@ -348,7 +342,10 @@ def _merge_frames(
     def has_match(
         curr: _ExtFrameSummaryCAStrOpt, rev: list[_ExtFrameSummaryCAOptOpt], /
     ) -> bool:
-        next_, *_ = filter(has_extra, rev)
+        try:
+            next_, *_ = filter(has_extra, rev)
+        except ValueError:
+            return False
         return is_match(curr, next_)
 
     def is_match(curr: _ExtFrameSummaryCAStrOpt, next_: _ExtFrameSummaryCA, /) -> bool:
@@ -357,7 +354,8 @@ def _merge_frames(
         )
 
     while len(rev) >= 1:
-        curr = get_curr(rev)
+        if (curr := get_curr(rev)) is None:
+            continue
         if not has_match(curr, rev):
             continue
         next_ = get_solution(curr, rev)
