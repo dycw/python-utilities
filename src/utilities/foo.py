@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import sys
-from functools import partial
 from itertools import chain
-from logging import getLogger
 
 from utilities.sys import log_exception_paths
 from utilities.traceback import trace
 
-_LOGGER = getLogger(__name__)
-sys.excepthook = partial(log_exception_paths, logger=_LOGGER)
+sys.excepthook = log_exception_paths
 
 
 @trace
