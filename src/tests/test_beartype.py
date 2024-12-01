@@ -8,6 +8,8 @@ from beartype.roar import (
     BeartypeCallHintParamViolation,
     BeartypeCallHintReturnViolation,
 )
+from hypothesis import given
+from hypothesis.strategies import booleans
 from pytest import raises
 
 from utilities.beartype import beartype_cond
@@ -22,10 +24,10 @@ class TestBeartypeCond:
         with raises(BeartypeCallHintReturnViolation):
             _ = func(1, 2)
 
-    def test_enable_sync(self) -> None:
+    def test_runtime_sync(self) -> None:
         enable = True
 
-        @beartype_cond(enable=lambda: enable)
+        @beartype_cond(runtime=lambda: enable)
         def func(a: int, b: int, /) -> int:
             return cast(Any, str(a + b))
 
@@ -37,10 +39,10 @@ class TestBeartypeCond:
         with raises(BeartypeCallHintReturnViolation):
             _ = func(1, 2)
 
-    async def test_enable_async(self) -> None:
+    async def test_runtime_async(self) -> None:
         enable = True
 
-        @beartype_cond(enable=lambda: enable)
+        @beartype_cond(runtime=lambda: enable)
         async def func(a: int, b: int, /) -> int:
             await sleep(0.01)
             return cast(Any, str(a + b))
@@ -53,7 +55,7 @@ class TestBeartypeCond:
         with raises(BeartypeCallHintReturnViolation):
             _ = await func(1, 2)
 
-    def test_class_main(self) -> None:
+    def test_runtime_class_main(self) -> None:
         @beartype_cond
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -63,10 +65,9 @@ class TestBeartypeCond:
             _ = Example(x=cast(Any, "0"))
         _ = Example(x=0)
 
-    def test_class_enable(self) -> None:
-        enable = True
-
-        @beartype_cond(enable=lambda: enable)
+    @given(runtime=booleans())
+    def test_runtime_class_enable(self, *, runtime: bool) -> None:
+        @beartype_cond(runtime=lambda: runtime)
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: int = 0
