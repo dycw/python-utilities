@@ -122,7 +122,7 @@ class _ExceptionPathInternal:
 
 
 @runtime_checkable
-class HasExceptionPath(Protocol):
+class _HasExceptionPath(Protocol):
     @property
     def exc_path(self) -> _ExceptionPathInternal: ...  # pragma: no cover
 
@@ -202,7 +202,7 @@ def _assemble_exception_paths_no_chain(
 def _assemble_exception_paths_no_chain_no_group(
     error: _TExc, /
 ) -> ExcPath[_TExc] | BaseException:
-    if isinstance(error, HasExceptionPath):
+    if isinstance(error, _HasExceptionPath):
         frames = [
             _Frame(
                 module=f.module,
