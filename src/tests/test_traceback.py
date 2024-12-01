@@ -11,6 +11,14 @@ from tests.test_traceback_funcs.beartype_error import func_beartype_error_first
 from tests.test_traceback_funcs.chain import func_chain_first
 from tests.test_traceback_funcs.decorated_async import func_decorated_async_first
 from tests.test_traceback_funcs.decorated_sync import func_decorated_sync_first
+from tests.test_traceback_funcs.enable_async import (
+    disable_trace_for_func_enable_async,
+    func_enable_async,
+)
+from tests.test_traceback_funcs.enable_sync import (
+    disable_trace_for_func_enable_sync,
+    func_enable_sync,
+)
 from tests.test_traceback_funcs.error_bind import (
     func_error_bind_async,
     func_error_bind_sync,
@@ -189,6 +197,36 @@ class TestAssembleExceptionsPaths:
         error = assemble_exception_paths(exc_info.value)
         assert isinstance(error, ExcPath)
         self._assert_decorated(error, "async")
+
+    def test_func_enable_sync(self) -> None:
+        with raises(AssertionError) as exc_info1:
+            _ = func_enable_sync(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_path1 = assemble_exception_paths(exc_info1.value)
+        assert isinstance(exc_path1, ExcPath)
+        with disable_trace_for_func_enable_sync():
+            with raises(AssertionError) as exc_info2:
+                _ = func_enable_sync(1, 2, 3, 4, c=5, d=6, e=7)
+            exc_path2 = assemble_exception_paths(exc_info2.value)
+            assert isinstance(exc_path2, AssertionError)
+        with raises(AssertionError) as exc_info3:
+            _ = func_enable_sync(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_path3 = assemble_exception_paths(exc_info3.value)
+        assert isinstance(exc_path3, ExcPath)
+
+    async def test_func_enable_async(self) -> None:
+        with raises(AssertionError) as exc_info1:
+            _ = await func_enable_async(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_path1 = assemble_exception_paths(exc_info1.value)
+        assert isinstance(exc_path1, ExcPath)
+        with disable_trace_for_func_enable_async():
+            with raises(AssertionError) as exc_info2:
+                _ = await func_enable_async(1, 2, 3, 4, c=5, d=6, e=7)
+            exc_path2 = assemble_exception_paths(exc_info2.value)
+            assert isinstance(exc_path2, AssertionError)
+        with raises(AssertionError) as exc_info3:
+            _ = await func_enable_async(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_path3 = assemble_exception_paths(exc_info3.value)
+        assert isinstance(exc_path3, ExcPath)
 
     def test_func_recursive(self) -> None:
         with raises(AssertionError) as exc_info:

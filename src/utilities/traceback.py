@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
-from functools import wraps
+from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
 from pathlib import Path
 from sys import exc_info
@@ -217,28 +217,69 @@ def _assemble_exception_paths_no_chain_no_group(
     return error
 
 
-def trace(func: _F, /) -> _F:
+@overload
+def trace(func: _F, /, *, enable: Callable[[], bool] | None = ...) -> _F: ...
+@overload
+def trace(
+    func: None = None, /, *, enable: Callable[[], bool] | None = ...
+) -> Callable[[_F], _F]: ...
+def trace(
+    func: _F | None = None, /, *, enable: Callable[[], bool] | None = None
+) -> _F | Callable[[_F], _F]:
     """Trace a function call."""
+    if func is None:
+        result = partial(trace, enable=enable)
+        return cast(Callable[[_F], _F], result)
+
+    if enable is None:
+        if not iscoroutinefunction(func):
+
+            @wraps(func)
+            def trace_sync(*args: Any, **kwargs: Any) -> Any:
+                locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
+                try:
+                    return func(*args, **kwargs)
+                except Exception as error:
+                    cast(Any, error).exc_path = _get_call_frame_summaries(error)
+                    raise
+
+            return cast(_F, trace_sync)
+
+        @wraps(func)
+        async def trace_async(*args: Any, **kwargs: Any) -> Any:
+            locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
+            try:
+                return await func(*args, **kwargs)
+            except Exception as error:
+                cast(Any, error).exc_path = _get_call_frame_summaries(error)
+                raise
+
+        return cast(_F, trace_async)
+
     if not iscoroutinefunction(func):
 
         @wraps(func)
         def trace_sync(*args: Any, **kwargs: Any) -> Any:
-            locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
+            if en := enable():
+                locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
             try:
                 return func(*args, **kwargs)
             except Exception as error:
-                cast(Any, error).exc_path = _get_call_frame_summaries(error)
+                if en:
+                    cast(Any, error).exc_path = _get_call_frame_summaries(error)
                 raise
 
         return cast(_F, trace_sync)
 
     @wraps(func)
     async def trace_async(*args: Any, **kwargs: Any) -> Any:
-        locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
+        if en := enable():
+            locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
         try:
             return await func(*args, **kwargs)
         except Exception as error:
-            cast(Any, error).exc_path = _get_call_frame_summaries(error)
+            if en:
+                cast(Any, error).exc_path = _get_call_frame_summaries(error)
             raise
 
     return cast(_F, trace_async)
