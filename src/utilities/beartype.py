@@ -5,21 +5,23 @@ from collections.abc import Callable
 from functools import partial, wraps
 from typing import Any, TypeVar, cast, overload
 
+from beartype import beartype
+
 _F = TypeVar("_F", bound=Callable[..., Any])
 
 
 @overload
-def beartype(func: _F, /, *, enable: Callable[[], bool] | None = ...) -> _F: ...
+def beartype_cond(func: _F, /, *, enable: Callable[[], bool] | None = ...) -> _F: ...
 @overload
-def beartype(
+def beartype_cond(
     func: None = None, /, *, enable: Callable[[], bool] | None = ...
 ) -> Callable[[_F], _F]: ...
-def beartype(
+def beartype_cond(
     func: _F | None = None, /, *, enable: Callable[[], bool] | None = None
 ) -> _F | Callable[[_F], _F]:
-    """Apply `beartype` in the development environment."""
+    """Apply `beartype` conditionally."""
     if func is None:
-        result = partial(beartype)
+        result = partial(beartype_cond)
         return cast(Callable[[_F], _F], result)
 
     decorated = beartype(func)
