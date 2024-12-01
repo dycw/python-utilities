@@ -11,18 +11,27 @@ _F = TypeVar("_F", bound=Callable[..., Any])
 
 
 @overload
-def beartype_cond(func: _F, /, *, runtime: Callable[[], bool] | None = ...) -> _F: ...
+def beartype_cond(
+    func: _F, /, *, setup: bool = ..., runtime: Callable[[], bool] | None = ...
+) -> _F: ...
 @overload
 def beartype_cond(
-    func: None = None, /, *, runtime: Callable[[], bool] | None = ...
+    func: None = None, /, *, setup: bool = ..., runtime: Callable[[], bool] | None = ...
 ) -> Callable[[_F], _F]: ...
 def beartype_cond(
-    func: _F | None = None, /, *, runtime: Callable[[], bool] | None = None
+    func: _F | None = None,
+    /,
+    *,
+    setup: bool = True,
+    runtime: Callable[[], bool] | None = None,
 ) -> _F | Callable[[_F], _F]:
     """Apply `beartype` conditionally."""
     if func is None:
         result = partial(beartype_cond, runtime=runtime)
         return cast(Callable[[_F], _F], result)
+
+    if not setup:
+        return func
 
     decorated = beartype(func)
     if runtime is None:

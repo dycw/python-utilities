@@ -74,3 +74,10 @@ class TestBeartypeCond:
 
         with raises(BeartypeCallHintParamViolation):
             _ = Example(x=cast(Any, "0"))
+
+    def test_setup(self) -> None:
+        @beartype_cond(setup=False)
+        def func(a: int, b: int, /) -> int:
+            return cast(Any, str(a + b))
+
+        _ = func(1, 2)
