@@ -109,6 +109,7 @@ zzz-test-atomicwrites = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-atools = [
   "atools >= 0.14.2, < 0.15",
 ]
+zzz-test-beartype = ["beartype >= 0.19.0, < 0.20"]
 zzz-test-cachetools = ["cachetools >= 5.5.0, < 5.6"]
 zzz-test-click = [
   "click >= 8.1.7, < 8.2",

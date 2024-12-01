@@ -3,6 +3,7 @@ astor
 asyncio
 atomicwrites
 atools
+beartype
 cachetools
 click
 cryptography

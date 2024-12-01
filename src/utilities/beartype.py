@@ -21,7 +21,7 @@ def beartype_cond(
 ) -> _F | Callable[[_F], _F]:
     """Apply `beartype` conditionally."""
     if func is None:
-        result = partial(beartype_cond)
+        result = partial(beartype_cond, enable=enable)
         return cast(Callable[[_F], _F], result)
 
     decorated = beartype(func)
@@ -41,7 +41,10 @@ def beartype_cond(
     @wraps(func)
     async def beartype_async(*args: Any, **kwargs: Any) -> Any:
         if enable():
-            return decorated(*args, **kwargs)
-        return func(*args, **kwargs)
+            return await decorated(*args, **kwargs)
+        return await func(*args, **kwargs)
 
     return cast(_F, beartype_async)
+
+
+__all__ = ["beartype_cond"]
