@@ -144,7 +144,9 @@ class TestRedisHashMapKey:
     @given(data=data(), key=int64s(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, data: DataObject, key: int, value: bool) -> None:
+    async def test_get_and_set_bool(
+        self, *, data: DataObject, key: int, value: bool
+    ) -> None:
         async with yield_test_redis(data) as test:
             hm_key = redis_hash_map_key(test.key, int, bool)
             assert await hm_key.get(test.redis, key) is None
@@ -155,7 +157,7 @@ class TestRedisHashMapKey:
     @given(data=data(), key=booleans() | int64s(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_union_key(
+    async def test_get_and_set_union_key(
         self, *, data: DataObject, key: bool | int, value: bool
     ) -> None:
         async with yield_test_redis(data) as test:
@@ -168,7 +170,9 @@ class TestRedisHashMapKey:
     @given(data=data(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_sentinel_key(self, *, data: DataObject, value: bool) -> None:
+    async def test_get_and_set_sentinel_key(
+        self, *, data: DataObject, value: bool
+    ) -> None:
         def serializer(sentinel: Sentinel, /) -> bytes:
             return repr(sentinel).encode()
 
@@ -184,7 +188,7 @@ class TestRedisHashMapKey:
     @given(data=data(), key=int64s(), value=int64s() | booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_union_value(
+    async def test_get_and_set_union_value(
         self, *, data: DataObject, key: int, value: bool | int
     ) -> None:
         async with yield_test_redis(data) as test:
@@ -197,7 +201,9 @@ class TestRedisHashMapKey:
     @given(data=data(), key=int64s())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_sentinel_value(self, *, data: DataObject, key: int) -> None:
+    async def test_get_and_set_sentinel_value(
+        self, *, data: DataObject, key: int
+    ) -> None:
         def serializer(sentinel: Sentinel, /) -> bytes:
             return repr(sentinel).encode()
 
@@ -240,13 +246,25 @@ class TestRedisHashMapKey:
             _ = await hm_key.set(test.redis, key, value)
             assert await hm_key.exists(test.redis, key)
 
+    @FLAKY
+    @given(data=data(), key=int64s(), value=booleans())
+    @settings_with_reduced_examples()
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_ttl(self, *, data: DataObject, key: int, value: bool) -> None:
+        async with yield_test_redis(data) as test:
+            hm_key = redis_hash_map_key(test.key, int, bool, ttl=0.01)
+            _ = await hm_key.set(test.redis, key, value)
+            assert await hm_key.exists(test.redis, key)
+            await sleep(0.02)
+            assert not await test.redis.exists(hm_key.name)
+
 
 class TestRedisKey:
     @FLAKY
     @given(data=data(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_bool(self, *, data: DataObject, value: bool) -> None:
+    async def test_get_and_set_bool(self, *, data: DataObject, value: bool) -> None:
         async with yield_test_redis(data) as test:
             key = redis_key(test.key, bool)
             assert await key.get(test.redis) is None
@@ -257,7 +275,9 @@ class TestRedisKey:
     @given(data=data(), value=booleans() | int64s())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_union(self, *, data: DataObject, value: bool | int) -> None:
+    async def test_get_and_set_union(
+        self, *, data: DataObject, value: bool | int
+    ) -> None:
         async with yield_test_redis(data) as test:
             key = redis_key(test.key, (bool, int))
             assert await key.get(test.redis) is None
@@ -268,7 +288,9 @@ class TestRedisKey:
     @given(data=data())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_sentinel_with_serialize(self, *, data: DataObject) -> None:
+    async def test_get_and_set_sentinel_with_serialize(
+        self, *, data: DataObject
+    ) -> None:
         def serializer(sentinel: Sentinel, /) -> bytes:
             return repr(sentinel).encode()
 
@@ -288,7 +310,9 @@ class TestRedisKey:
     @given(data=data())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_sentinel_without_serialize(self, *, data: DataObject) -> None:
+    async def test_get_and_set_sentinel_without_serialize(
+        self, *, data: DataObject
+    ) -> None:
         async with yield_test_redis(data) as test:
             key = redis_key(test.key, Sentinel)
             with raises(
@@ -318,6 +342,18 @@ class TestRedisKey:
             assert not (await key.exists(test.redis))
             _ = await key.set(test.redis, value)
             assert await key.exists(test.redis)
+
+    @FLAKY
+    @given(data=data(), value=booleans())
+    @settings_with_reduced_examples()
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_ttl(self, *, data: DataObject, value: bool) -> None:
+        async with yield_test_redis(data) as test:
+            key = redis_key(test.key, bool, ttl=0.01)
+            _ = await key.set(test.redis, value)
+            assert await key.exists(test.redis)
+            await sleep(0.02)
+            assert not await key.exists(test.redis)
 
 
 class TestYieldClient:

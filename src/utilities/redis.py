@@ -20,7 +20,13 @@ from redis.asyncio import Redis
 from redis.typing import EncodableT
 
 from utilities.asyncio import timeout_dur
-from utilities.datetime import MILLISECOND, SECOND, duration_to_float, get_now
+from utilities.datetime import (
+    MILLISECOND,
+    SECOND,
+    duration_to_float,
+    duration_to_timedelta,
+    get_now,
+)
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
 from utilities.types import Duration, ensure_int
@@ -82,6 +88,7 @@ class _RedisHashMapKey(Generic[_K, _V]):
     value: type[_V]
     value_serializer: Callable[[_V], bytes] | None = None
     value_deserializer: Callable[[bytes], _V] | None = None
+    ttl: Duration | None = None
 
     async def delete(
         self, redis: Redis, key: _K, /, *, timeout: Duration | None = None
@@ -130,12 +137,15 @@ class _RedisHashMapKey(Generic[_K, _V]):
         else:  # skipif-ci-and-not-linux
             ser_value = self.value_serializer(value)
         async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
-            return await cast(
+            result = await cast(
                 Awaitable[int],
                 redis.hset(
                     self.name, key=cast(Any, ser_key), value=cast(Any, ser_value)
                 ),
             )
+            if self.ttl is not None:
+                await redis.pexpire(self.name, duration_to_timedelta(self.ttl))
+            return result
 
     def _serialize_key(self, key: _K, /) -> bytes:
         """Serialize the key."""
@@ -156,6 +166,7 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K], bytes] | None = ...,
     value_serializer: Callable[[_V], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V] | None = ...,
+    ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K, _V]: ...
 @overload
 def redis_hash_map_key(
@@ -167,6 +178,7 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
+    ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K, _V1 | _V2]: ...
 @overload
 def redis_hash_map_key(
@@ -178,6 +190,7 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
+    ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K, _V1 | _V2 | _V3]: ...
 @overload
 def redis_hash_map_key(
@@ -189,6 +202,7 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2], bytes] | None = ...,
     value_serializer: Callable[[_V], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V] | None = ...,
+    ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2, _V]: ...
 @overload
 def redis_hash_map_key(
@@ -200,6 +214,7 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
+    ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2, _V1 | _V2]: ...
 @overload
 def redis_hash_map_key(
@@ -211,6 +226,7 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
+    ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2, _V1 | _V2 | _V3]: ...
 @overload
 def redis_hash_map_key(
@@ -222,6 +238,7 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = ...,
     value_serializer: Callable[[_V], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V] | None = ...,
+    ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V]: ...
 @overload
 def redis_hash_map_key(
@@ -233,6 +250,7 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
+    ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2]: ...
 @overload
 def redis_hash_map_key(
@@ -244,6 +262,7 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
+    ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2 | _V3]: ...
 def redis_hash_map_key(
     name: str,
@@ -254,6 +273,7 @@ def redis_hash_map_key(
     key_serializer: Callable[[Any], bytes] | None = None,
     value_serializer: Callable[[Any], bytes] | None = None,
     value_deserializer: Callable[[bytes], Any] | None = None,
+    ttl: Duration | None = None,
 ) -> _RedisHashMapKey[Any, Any]:
     """Create a redis key."""
     return _RedisHashMapKey(  # skipif-ci-and-not-linux
@@ -263,6 +283,7 @@ def redis_hash_map_key(
         value=value,
         value_serializer=value_serializer,
         value_deserializer=value_deserializer,
+        ttl=ttl,
     )
 
 
@@ -274,6 +295,7 @@ class _RedisKey(Generic[_T]):
     type: type[_T]
     serializer: Callable[[_T], bytes] | None = None
     deserializer: Callable[[bytes], _T] | None = None
+    ttl: Duration | None = None
 
     async def delete(self, redis: Redis, /, *, timeout: Duration | None = None) -> int:
         """Delete the key from `redis`."""
@@ -318,8 +340,11 @@ class _RedisKey(Generic[_T]):
             value_use = serialize(value)
         else:  # skipif-ci-and-not-linux
             value_use = self.serializer(value)
+        ttl = (  # skipif-ci-and-not-linux
+            None if self.ttl is None else round(1000 * duration_to_float(self.ttl))
+        )
         async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
-            result = await redis.set(self.name, value_use)
+            result = await redis.set(self.name, value_use, px=ttl)
         return ensure_int(result)  # skipif-ci-and-not-linux
 
 
@@ -331,6 +356,7 @@ def redis_key(
     *,
     serializer: Callable[[_T], bytes] | None = ...,
     deserializer: Callable[[bytes], _T] | None = ...,
+    ttl: Duration | None = ...,
 ) -> _RedisKey[_T]: ...
 @overload
 def redis_key(
@@ -340,6 +366,7 @@ def redis_key(
     *,
     serializer: Callable[[_T1 | _T2], bytes] | None = None,
     deserializer: Callable[[bytes], _T1 | _T2] | None = None,
+    ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2]: ...
 @overload
 def redis_key(
@@ -349,6 +376,7 @@ def redis_key(
     *,
     serializer: Callable[[_T1 | _T2 | _T3], bytes] | None = None,
     deserializer: Callable[[bytes], _T1 | _T2 | _T3] | None = None,
+    ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2 | _T3]: ...
 @overload
 def redis_key(
@@ -358,6 +386,7 @@ def redis_key(
     *,
     serializer: Callable[[_T1 | _T2 | _T3 | _T4], bytes] | None = None,
     deserializer: Callable[[bytes], _T1 | _T2 | _T3 | _T4] | None = None,
+    ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2 | _T3 | _T4]: ...
 @overload
 def redis_key(
@@ -367,6 +396,7 @@ def redis_key(
     *,
     serializer: Callable[[_T1 | _T2 | _T3 | _T4 | _T5], bytes] | None = None,
     deserializer: Callable[[bytes], _T1 | _T2 | _T3 | _T4 | _T5] | None = None,
+    ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2 | _T3 | _T4 | _T5]: ...
 def redis_key(
     name: str,
@@ -375,10 +405,11 @@ def redis_key(
     *,
     serializer: Callable[[Any], bytes] | None = None,
     deserializer: Callable[[bytes], Any] | None = None,
+    ttl: Duration | None = None,
 ) -> _RedisKey[Any]:
     """Create a redis key."""
     return _RedisKey(  # skipif-ci-and-not-linux
-        name=name, type=type_, serializer=serializer, deserializer=deserializer
+        name=name, type=type_, serializer=serializer, deserializer=deserializer, ttl=ttl
     )
 
 
