@@ -112,6 +112,28 @@ class TestAssembleExceptionsPaths:
         assert frame.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(exc_path.error, AssertionError)
 
+    async def test_func_beartype_aenter(self) -> None:
+        with raises(AssertionError) as exc_info:
+            _ = await func_beartype_aenter(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
+        assert len(exc_path) == 1
+        frame = one(exc_path)
+        assert frame.module == "tests.test_traceback_funcs.beartype_aenter"
+        assert frame.name == "func_beartype_aenter"
+        assert (
+            frame.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert frame.args == (1, 2, 3, 4)
+        assert frame.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert set(frame.locals) == {"a", "b", "c", "args", "kwargs", "result"}
+        assert frame.locals["a"] == 2
+        assert frame.locals["b"] == 4
+        assert frame.locals["args"] == (6, 8)
+        assert frame.locals["kwargs"] == {"d": 12, "e": 14}
+        assert isinstance(exc_path.error, AssertionError)
+
     def test_func_chain(self) -> None:
         with raises(ValueError, match=".*") as exc_info:
             _ = func_chain_first(1, 2, 3, 4, c=5, d=6, e=7)
@@ -249,28 +271,6 @@ class TestAssembleExceptionsPaths:
             _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
         error = assemble_exception_paths(exc_info.value)
         assert isinstance(error, AssertionError)
-
-    async def test_func_beartype_aenter(self) -> None:
-        with raises(AssertionError) as exc_info:
-            _ = await func_beartype_aenter(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path = assemble_exception_paths(exc_info.value)
-        assert isinstance(exc_path, ExcPath)
-        assert len(exc_path) == 1
-        frame = one(exc_path)
-        assert frame.module == "tests.test_traceback_funcs.beartype_aenter"
-        assert frame.name == "func_beartype_aenter"
-        assert (
-            frame.code_line
-            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
-        )
-        assert frame.args == (1, 2, 3, 4)
-        assert frame.kwargs == {"c": 5, "d": 6, "e": 7}
-        assert set(frame.locals) == {"a", "b", "c", "args", "kwargs", "result"}
-        assert frame.locals["a"] == 2
-        assert frame.locals["b"] == 4
-        assert frame.locals["args"] == (6, 8)
-        assert frame.locals["kwargs"] == {"d": 12, "e": 14}
-        assert isinstance(exc_path.error, AssertionError)
 
     def test_custom_error(self) -> None:
         @trace
