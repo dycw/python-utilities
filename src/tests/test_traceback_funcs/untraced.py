@@ -5,8 +5,7 @@ from itertools import chain
 from utilities.traceback import trace
 
 
-@trace(ignore=AssertionError)
-def func_ignore(a: int, b: int, /, *args: int, c: int = 0, **kwargs: int) -> int:
+def func_untraced(a: int, b: int, /, *args: int, c: int = 0, **kwargs: int) -> int:
     a *= 2
     b *= 2
     args = tuple(2 * arg for arg in args)

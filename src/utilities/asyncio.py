@@ -61,8 +61,12 @@ async def stream_command(cmd: str, /) -> StreamCommandOutput:
     process = await create_subprocess_shell(  # skipif-not-windows
         cmd, stdout=PIPE, stderr=PIPE
     )
-    proc_stdout = ensure_not_none(process.stdout)  # skipif-not-windows
-    proc_stderr = ensure_not_none(process.stderr)  # skipif-not-windows
+    proc_stdout = ensure_not_none(  # skipif-not-windows
+        process.stdout, desc="process.stdout"
+    )
+    proc_stderr = ensure_not_none(  # skipif-not-windows
+        process.stderr, desc="process.stderr"
+    )
     ret_stdout = StringIO()  # skipif-not-windows
     ret_stderr = StringIO()  # skipif-not-windows
     async with TaskGroup() as tg:  # skipif-not-windows

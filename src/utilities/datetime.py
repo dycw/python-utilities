@@ -167,7 +167,9 @@ class EnsureMonthError(Exception):
 def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
     """Format a local datetime locally & in UTC."""
     check_zoned_datetime(datetime)
-    time_zone = ensure_time_zone(ensure_not_none(datetime.tzinfo))
+    time_zone = ensure_time_zone(
+        ensure_not_none(datetime.tzinfo, desc="datetime.tzinfo")
+    )
     if time_zone is UTC:
         return datetime.strftime("%Y-%m-%d %H:%M:%S (%a, UTC)")
     as_utc = datetime.astimezone(UTC)

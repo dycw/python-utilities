@@ -40,8 +40,12 @@ class TestEnsureNotNone:
         assert result == 0
 
     def test_error(self) -> None:
-        with raises(EnsureNotNoneError, match="Object .* must not be None"):
+        with raises(EnsureNotNoneError, match="Object must not be None"):
             _ = ensure_not_none(None)
+
+    def test_error_with_desc(self) -> None:
+        with raises(EnsureNotNoneError, match="Name must not be None"):
+            _ = ensure_not_none(None, desc="Name")
 
 
 class TestFirst:

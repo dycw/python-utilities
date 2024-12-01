@@ -1,178 +1,316 @@
 from __future__ import annotations
 
-from asyncio import TaskGroup
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Literal
 
 from pytest import raises
 
-from tests.test_traceback_funcs.async_ import func_async
-from tests.test_traceback_funcs.decorated import (
-    func_decorated_fifth,
-    func_decorated_first,
-    func_decorated_fourth,
-    func_decorated_second,
-    func_decorated_third,
+from tests.conftest import SKIPIF_CI
+from tests.test_traceback_funcs.beartype import func_beartype
+from tests.test_traceback_funcs.beartype_aenter import func_beartype_aenter
+from tests.test_traceback_funcs.chain import func_chain_first
+from tests.test_traceback_funcs.decorated_async import func_decorated_async_first
+from tests.test_traceback_funcs.decorated_sync import func_decorated_sync_first
+from tests.test_traceback_funcs.error_bind import (
+    func_error_bind_async,
+    func_error_bind_sync,
 )
-from tests.test_traceback_funcs.error import func_error_async, func_error_sync
-from tests.test_traceback_funcs.ignore import func_ignore
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.recursive import func_recursive
-from tests.test_traceback_funcs.two import func_two_first, func_two_second
-from utilities.functions import get_func_name, get_func_qualname
+from tests.test_traceback_funcs.task_group_one import func_task_group_one_first
+from tests.test_traceback_funcs.task_group_two import func_task_group_two_first
+from tests.test_traceback_funcs.two import func_two_first
+from tests.test_traceback_funcs.untraced import func_untraced
 from utilities.iterables import OneNonUniqueError, one
 from utilities.text import ensure_str, strip_and_dedent
 from utilities.traceback import (
-    TraceMixin,
-    _CallArgs,
+    ExcChain,
+    ExcGroup,
+    ExcPath,
     _CallArgsError,
-    _TraceMixinFrame,
+    assemble_exception_paths,
     trace,
+    yield_exceptions,
     yield_extended_frame_summaries,
     yield_frames,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from traceback import FrameSummary
     from types import FrameType
 
 
-class TestTrace:
+class TestAssembleExceptionsPaths:
     def test_func_one(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        error = exc_info.value
-        assert isinstance(error, TraceMixin)
-        frame = one(error.frames)
-        self._assert(
-            frame, 1, 1, func_one, "one.py", 8, 16, 11, 27, self._code_line_assert
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
+        assert len(exc_path) == 1
+        frame = one(exc_path)
+        assert frame.module == "tests.test_traceback_funcs.one"
+        assert frame.name == "func_one"
+        assert (
+            frame.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
         )
+        assert frame.args == (1, 2, 3, 4)
+        assert frame.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert set(frame.locals) == {"a", "b", "c", "args", "kwargs", "result"}
+        assert frame.locals["a"] == 2
+        assert frame.locals["b"] == 4
+        assert frame.locals["args"] == (6, 8)
+        assert frame.locals["kwargs"] == {"d": 12, "e": 14}
+        assert isinstance(exc_path.error, AssertionError)
 
     def test_func_two(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
-        error = exc_info.value
-        assert isinstance(error, TraceMixin)
-        expected = [
-            (func_two_first, 8, 15, 11, 54, self._code_line_call("func_two_second")),
-            (func_two_second, 18, 26, 11, 27, self._code_line_assert),
-        ]
-        for depth, (frame, (func, ln1st, ln, col, col1st, code_ln)) in enumerate(
-            zip(error.frames, expected, strict=True), start=1
-        ):
-            self._assert(
-                frame, depth, 2, func, "two.py", ln1st, ln, col, col1st, code_ln
-            )
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
+        assert len(exc_path) == 2
+        frame1, frame2 = exc_path
+        assert frame1.module == "tests.test_traceback_funcs.two"
+        assert frame1.name == "func_two_first"
+        assert frame1.code_line == "return func_two_second(a, b, *args, c=c, **kwargs)"
+        assert frame1.args == (1, 2, 3, 4)
+        assert frame1.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert frame1.locals["a"] == 2
+        assert frame1.locals["b"] == 4
+        assert frame1.locals["args"] == (6, 8)
+        assert frame1.locals["kwargs"] == {"d": 12, "e": 14}
+        assert frame2.module == "tests.test_traceback_funcs.two"
+        assert frame2.name == "func_two_second"
+        assert (
+            frame2.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert frame2.args == (2, 4, 6, 8)
+        assert frame2.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert frame2.locals["a"] == 4
+        assert frame2.locals["b"] == 8
+        assert frame2.locals["args"] == (12, 16)
+        assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
+        assert isinstance(exc_path.error, AssertionError)
 
-    def test_func_decorated(self) -> None:
+    def test_func_beartype(self) -> None:
         with raises(AssertionError) as exc_info:
-            _ = func_decorated_first(1, 2, 3, 4, c=5, d=6, e=7)
-        error = exc_info.value
-        assert isinstance(error, TraceMixin)
-        expected = [
-            (
-                func_decorated_first,
-                21,
-                30,
-                11,
-                60,
-                self._code_line_call("func_decorated_second"),
-            ),
-            (
-                func_decorated_second,
-                33,
-                43,
-                11,
-                59,
-                self._code_line_call("func_decorated_third"),
-            ),
-            (
-                func_decorated_third,
-                46,
-                56,
-                11,
-                60,
-                self._code_line_call("func_decorated_fourth"),
-            ),
-            (
-                func_decorated_fourth,
-                59,
-                70,
-                11,
-                59,
-                self._code_line_call("func_decorated_fifth"),
-            ),
-            (func_decorated_fifth, 73, 88, 11, 27, self._code_line_assert),
-        ]
-        for depth, (frame, (func, ln1st, ln, col, col1st, code_ln)) in enumerate(
-            zip(error.frames, expected, strict=True), start=1
-        ):
-            self._assert(
-                frame, depth, 5, func, "decorated.py", ln1st, ln, col, col1st, code_ln
-            )
+            _ = func_beartype(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
+        assert len(exc_path) == 1
+        frame = one(exc_path)
+        assert frame.module == "tests.test_traceback_funcs.beartype"
+        assert frame.name == "func_beartype"
+        assert (
+            frame.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert frame.args == (1, 2, 3, 4)
+        assert frame.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert set(frame.locals) == {"a", "b", "c", "args", "kwargs", "result"}
+        assert frame.locals["a"] == 2
+        assert frame.locals["b"] == 4
+        assert frame.locals["args"] == (6, 8)
+        assert frame.locals["kwargs"] == {"d": 12, "e": 14}
+        assert isinstance(exc_path.error, AssertionError)
+
+    async def test_func_beartype_aenter(self) -> None:
+        with raises(AssertionError) as exc_info:
+            _ = await func_beartype_aenter(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
+        assert len(exc_path) == 1
+        frame = one(exc_path)
+        assert frame.module == "tests.test_traceback_funcs.beartype_aenter"
+        assert frame.name == "func_beartype_aenter"
+        assert (
+            frame.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert frame.args == (1, 2, 3, 4)
+        assert frame.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert set(frame.locals) == {"a", "b", "c", "args", "kwargs", "result"}
+        assert frame.locals["a"] == 2
+        assert frame.locals["b"] == 4
+        assert frame.locals["args"] == (6, 8)
+        assert frame.locals["kwargs"] == {"d": 12, "e": 14}
+        assert isinstance(exc_path.error, AssertionError)
+
+    def test_func_chain(self) -> None:
+        with raises(ValueError, match=".*") as exc_info:
+            _ = func_chain_first(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_chain = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_chain, ExcChain)
+        assert len(exc_chain) == 2
+        path1, path2 = exc_chain
+        assert isinstance(path1, ExcPath)
+        assert len(path1) == 1
+        frame1 = one(path1)
+        assert frame1.module == "tests.test_traceback_funcs.chain"
+        assert frame1.name == "func_chain_second"
+        assert (
+            frame1.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert frame1.args == (2, 4, 6, 8)
+        assert frame1.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert frame1.locals["a"] == 4
+        assert frame1.locals["b"] == 8
+        assert frame1.locals["args"] == (12, 16)
+        assert frame1.locals["kwargs"] == {"d": 24, "e": 28}
+        assert isinstance(path2, ExcPath)
+        frame2 = one(path2)
+        assert frame2.module == "tests.test_traceback_funcs.chain"
+        assert frame2.name == "func_chain_first"
+        assert frame2.code_line == "raise ValueError(msg) from error"
+        assert frame2.args == (1, 2, 3, 4)
+        assert frame2.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert frame2.locals["a"] == 2
+        assert frame2.locals["b"] == 4
+        assert frame2.locals["args"] == (6, 8)
+        assert frame2.locals["kwargs"] == {"d": 12, "e": 14}
+
+    def test_func_decorated_sync(self) -> None:
+        with raises(AssertionError) as exc_info:
+            _ = func_decorated_sync_first(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
+        self._assert_decorated(exc_path, "sync")
+        assert len(exc_path) == 5
+
+    async def test_func_decorated_async(self) -> None:
+        with raises(AssertionError) as exc_info:
+            _ = await func_decorated_async_first(1, 2, 3, 4, c=5, d=6, e=7)
+        error = assemble_exception_paths(exc_info.value)
+        assert isinstance(error, ExcPath)
+        self._assert_decorated(error, "async")
 
     def test_func_recursive(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_recursive(1, 2, 3, 4, c=5, d=6, e=7)
-        error = exc_info.value
-        assert isinstance(error, TraceMixin)
-        assert len(error.frames) == 2
-        expected = [
-            (
-                13,
-                23,
-                15,
-                72,
-                "return func_recursive(a, b, *args, c=c, _is_last=True, **kwargs)",
-                {"result": 56},
-            ),
-            (10, 21, 11, 27, self._code_line_assert, {}),
-        ]
-        for depth, (frame, (ln1st, ln, col, col1st, code_ln, extra)) in enumerate(
-            zip(error.frames, expected, strict=True), start=1
-        ):
-            if depth != 2:
-                continue
-            self._assert(
-                frame,
-                depth,
-                2,
-                func_recursive,
-                "recursive.py",
-                ln1st,
-                ln,
-                col,
-                col1st,
-                code_ln,
-                extra_locals=extra,
-            )
-
-    def test_func_ignore(self) -> None:
-        with raises(AssertionError) as exc_info:
-            _ = func_ignore(1, 2, 3, 4, c=5, d=6, e=7)
-        error = exc_info.value
-        assert not isinstance(error, TraceMixin)
-
-    async def test_func_async(self) -> None:
-        with raises(AssertionError) as exc_info:
-            _ = await func_async(1, 2, 3, 4, c=5, d=6, e=7)
-        error = exc_info.value
-        assert isinstance(error, TraceMixin)
-        frame = one(error.frames)
-        self._assert(
-            frame, 1, 1, func_async, "async_.py", 9, 18, 11, 27, self._code_line_assert
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
+        assert len(exc_path) == 2
+        first, second = exc_path
+        assert first.module == "tests.test_traceback_funcs.recursive"
+        assert first.name == "func_recursive"
+        assert first.code_line == "return func_recursive(a, b, *args, c=c, **kwargs)"
+        assert first.args == (1, 2, 3, 4)
+        assert first.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert first.locals["a"] == 2
+        assert first.locals["b"] == 4
+        assert first.locals["args"] == (6, 8)
+        assert first.locals["kwargs"] == {"d": 12, "e": 14}
+        assert second.module == "tests.test_traceback_funcs.recursive"
+        assert second.name == "func_recursive"
+        assert (
+            second.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
         )
+        assert second.args == (2, 4, 6, 8)
+        assert second.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert second.locals["a"] == 4
+        assert second.locals["b"] == 8
+        assert second.locals["args"] == (12, 16)
+        assert second.locals["kwargs"] == {"d": 24, "e": 28}
+        assert isinstance(exc_path.error, AssertionError)
 
-    async def test_task_group(self) -> None:
+    async def test_func_task_group_one(self) -> None:
         with raises(ExceptionGroup) as exc_info:
-            async with TaskGroup() as tg:
-                _ = tg.create_task(func_async(1, 2, 3, 4, c=5, d=6, e=7))
-        error = one(exc_info.value.exceptions)
-        assert isinstance(error, TraceMixin)
-        frame = one(error.frames)
-        self._assert(
-            frame, 1, 1, func_async, "async_.py", 9, 18, 11, 27, self._code_line_assert
+            await func_task_group_one_first(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_group = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_group, ExcGroup)
+        assert exc_group.path is not None
+        assert len(exc_group.path) == 1
+        path_frame = one(exc_group.path)
+        assert path_frame.module == "tests.test_traceback_funcs.task_group_one"
+        assert path_frame.name == "func_task_group_one_first"
+        assert path_frame.code_line == "async with TaskGroup() as tg:"
+        assert path_frame.args == (1, 2, 3, 4)
+        assert path_frame.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert path_frame.locals["a"] == 2
+        assert path_frame.locals["b"] == 4
+        assert path_frame.locals["args"] == (6, 8)
+        assert path_frame.locals["kwargs"] == {"d": 12, "e": 14}
+        assert isinstance(exc_group.path.error, ExceptionGroup)
+        assert len(exc_group.errors) == 1
+        (first,) = exc_group.errors
+        assert isinstance(first, ExcPath)
+        assert len(first) == 1
+        first_frame = one(first)
+        assert first_frame.module == "tests.test_traceback_funcs.task_group_one"
+        assert first_frame.name == "func_task_group_one_second"
+        assert (
+            first_frame.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
         )
+        assert first_frame.args == (2, 4, 6, 8)
+        assert first_frame.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert first_frame.locals["a"] == 4
+        assert first_frame.locals["b"] == 8
+        assert first_frame.locals["args"] == (12, 16)
+        assert first_frame.locals["kwargs"] == {"d": 24, "e": 28}
+        assert isinstance(first.error, AssertionError)
+
+    @SKIPIF_CI
+    async def test_func_task_group_two(self) -> None:
+        with raises(ExceptionGroup) as exc_info:
+            await func_task_group_two_first(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_group = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_group, ExcGroup)
+        assert exc_group.path is not None
+        assert len(exc_group.path) == 1
+        path_frame = one(exc_group.path)
+        assert path_frame.module == "tests.test_traceback_funcs.task_group_two"
+        assert path_frame.name == "func_task_group_two_first"
+        assert path_frame.code_line == "async with TaskGroup() as tg:"
+        assert path_frame.args == (1, 2, 3, 4)
+        assert path_frame.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert path_frame.locals["a"] == 2
+        assert path_frame.locals["b"] == 4
+        assert path_frame.locals["args"] == (6, 8)
+        assert path_frame.locals["kwargs"] == {"d": 12, "e": 14}
+        assert isinstance(exc_group.path.error, ExceptionGroup)
+        assert len(exc_group.errors) == 2
+        first, second = exc_group.errors
+        assert isinstance(first, ExcPath)
+        assert len(first) == 1
+        first_frame = one(first)
+        assert first_frame.module == "tests.test_traceback_funcs.task_group_two"
+        assert first_frame.name == "func_task_group_two_second"
+        assert (
+            first_frame.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert first_frame.args == (2, 4, 6, 8)
+        assert first_frame.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert first_frame.locals["a"] == 4
+        assert first_frame.locals["b"] == 8
+        assert first_frame.locals["args"] == (12, 16)
+        assert first_frame.locals["kwargs"] == {"d": 24, "e": 28}
+        assert isinstance(first.error, AssertionError)
+        assert isinstance(second, ExcPath)
+        assert len(second) == 1
+        second_frame = one(second)
+        assert second_frame.module == "tests.test_traceback_funcs.task_group_two"
+        assert second_frame.name == "func_task_group_two_second"
+        assert (
+            second_frame.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert second_frame.args == (3, 5, 7, 9)
+        assert second_frame.kwargs == {"c": 11, "d": 13, "e": 15}
+        assert second_frame.locals["a"] == 6
+        assert second_frame.locals["b"] == 10
+        assert second_frame.locals["args"] == (14, 18)
+        assert second_frame.locals["kwargs"] == {"d": 26, "e": 30}
+        assert isinstance(second.error, AssertionError)
+
+    def test_func_untraced(self) -> None:
+        with raises(AssertionError) as exc_info:
+            _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
+        error = assemble_exception_paths(exc_info.value)
+        assert isinstance(error, AssertionError)
 
     def test_custom_error(self) -> None:
         @trace
@@ -181,81 +319,18 @@ class TestTrace:
 
         with raises(OneNonUniqueError) as exc_info:
             _ = raises_custom_error()
-        one_error = exc_info.value
-        assert isinstance(one_error, TraceMixin)
-        assert one_error.first is True
-        assert one_error.second is False
-
-    def test_pretty(self) -> None:
-        with raises(AssertionError) as exc_info:
-            _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
-        error = exc_info.value
-        assert isinstance(error, TraceMixin)
-        result = error.pretty(location=False)
-        expected = strip_and_dedent("""
-            Error running:
-
-              1. func_two_first
-              2. func_two_second
-              >> AssertionError: Result (112) must be divisible by 10
-
-            Frames:
-
-              1/2. func_two_first
-
-                Inputs:
-
-                  args[0] = 1
-                  args[1] = 2
-                  args[2] = 3
-                  args[3] = 4
-                  kwargs[c] = 5
-                  kwargs[d] = 6
-                  kwargs[e] = 7
-
-                Locals:
-
-                  a = 2
-                  b = 4
-                  c = 10
-                  args = (6, 8)
-                  kwargs = {'d': 12, 'e': 14}
-
-                >> return func_two_second(a, b, *args, c=c, **kwargs)
-
-              2/2. func_two_second
-
-                Inputs:
-
-                  args[0] = 2
-                  args[1] = 4
-                  args[2] = 6
-                  args[3] = 8
-                  kwargs[c] = 10
-                  kwargs[d] = 12
-                  kwargs[e] = 14
-
-                Locals:
-
-                  a = 4
-                  b = 8
-                  c = 20
-                  args = (12, 16)
-                  kwargs = {'d': 24, 'e': 28}
-                  result = 112
-
-                >> assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
-                >> AssertionError: Result (112) must be divisible by 10
-        """)
-        assert result == expected
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
+        assert exc_path.error.first is True
+        assert exc_path.error.second is False
 
     def test_error_bind_sync(self) -> None:
         with raises(_CallArgsError) as exc_info:
-            _ = func_error_sync(1)  # pyright: ignore[reportCallIssue]
+            _ = func_error_bind_sync(1)  # pyright: ignore[reportCallIssue]
         msg = ensure_str(one(exc_info.value.args))
         expected = strip_and_dedent(
             """
-            Unable to bind arguments for 'func_error_sync'; missing a required argument: 'b'
+            Unable to bind arguments for 'func_error_bind_sync'; missing a required argument: 'b'
             args[0] = 1
             """
         )
@@ -263,11 +338,11 @@ class TestTrace:
 
     async def test_error_bind_async(self) -> None:
         with raises(_CallArgsError) as exc_info:
-            _ = await func_error_async(1, 2, 3)  # pyright: ignore[reportCallIssue]
+            _ = await func_error_bind_async(1, 2, 3)  # pyright: ignore[reportCallIssue]
         msg = ensure_str(one(exc_info.value.args))
         expected = strip_and_dedent(
             """
-            Unable to bind arguments for 'func_error_async'; too many positional arguments
+            Unable to bind arguments for 'func_error_bind_async'; too many positional arguments
             args[0] = 1
             args[1] = 2
             args[2] = 3
@@ -275,84 +350,93 @@ class TestTrace:
         )
         assert msg == expected
 
-    def _assert(
-        self,
-        frame: _TraceMixinFrame[_CallArgs | None],
-        depth: int,
-        max_depth: int,
-        func: Callable[..., Any],
-        filename: str,
-        first_line_num: int,
-        line_num: int,
-        col_num: int,
-        end_col_num: int,
-        code_line: str,
-        /,
-        *,
-        extra_locals: dict[str, Any] | None = None,
+    def _assert_decorated(
+        self, exc_path: ExcPath, sync_or_async: Literal["sync", "async"], /
     ) -> None:
-        assert frame.depth == depth
-        assert frame.max_depth == max_depth
-        assert get_func_qualname(frame.func) == get_func_qualname(func)
-        scale = 2 ** (depth - 1)
-        assert frame.args == (scale, 2 * scale, 3 * scale, 4 * scale)
-        assert frame.kwargs == {"c": 5 * scale, "d": 6 * scale, "e": 7 * scale}
-        assert frame.filename.parts[-2:] == ("test_traceback_funcs", filename)
-        assert frame.module == func.__module__
-        assert frame.name == get_func_name(func)
-        assert frame.qualname == get_func_name(func)
-        assert frame.code_line == code_line
-        assert frame.first_line_num == first_line_num
-        assert frame.line_num == line_num
-        assert frame.end_line_num == line_num
-        assert frame.col_num == col_num
-        assert frame.end_col_num == end_col_num
-        assert (frame.extra is None) or isinstance(frame.extra, _CallArgs)
-        scale_plus = 2 * scale
-        locals_ = (
-            {
-                "a": scale_plus,
-                "b": 2 * scale_plus,
-                "c": 5 * scale_plus,
-                "args": (3 * scale_plus, 4 * scale_plus),
-                "kwargs": {"d": 6 * scale_plus, "e": 7 * scale_plus},
-            }
-            | ({"result": frame.locals["result"]} if depth == max_depth else {})
-            | ({} if extra_locals is None else extra_locals)
+        assert len(exc_path) == 5
+        first, second, _, fourth, fifth = exc_path
+        match sync_or_async:
+            case "sync":
+                maybe_await = ""
+            case "async":
+                maybe_await = "await "
+        assert first.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
+        assert first.name == f"func_decorated_{sync_or_async}_first"
+        assert (
+            first.code_line
+            == f"return {maybe_await}func_decorated_{sync_or_async}_second(a, b, *args, c=c, **kwargs)"
         )
-        assert frame.locals == locals_
+        assert first.args == (1, 2, 3, 4)
+        assert first.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert first.locals["a"] == 2
+        assert first.locals["b"] == 4
+        assert first.locals["args"] == (6, 8)
+        assert first.locals["kwargs"] == {"d": 12, "e": 14}
+        assert second.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
+        assert second.name == f"func_decorated_{sync_or_async}_second"
+        assert (
+            second.code_line
+            == f"return {maybe_await}func_decorated_{sync_or_async}_third(a, b, *args, c=c, **kwargs)"
+        )
+        assert second.args == (2, 4, 6, 8)
+        assert second.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert second.locals["a"] == 4
+        assert second.locals["b"] == 8
+        assert second.locals["args"] == (12, 16)
+        assert second.locals["kwargs"] == {"d": 24, "e": 28}
+        assert fourth.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
+        assert fourth.name == f"func_decorated_{sync_or_async}_fourth"
+        assert (
+            fourth.code_line
+            == f"return {maybe_await}func_decorated_{sync_or_async}_fifth(a, b, *args, c=c, **kwargs)"
+        )
+        assert fourth.args == (8, 16, 24, 32)
+        assert fourth.kwargs == {"c": 40, "d": 48, "e": 56}
+        assert fourth.locals["a"] == 16
+        assert fourth.locals["b"] == 32
+        assert fourth.locals["args"] == (48, 64)
+        assert fourth.locals["kwargs"] == {"d": 96, "e": 112}
+        assert fifth.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
+        assert fifth.name == f"func_decorated_{sync_or_async}_fifth"
+        assert (
+            fifth.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert fifth.args == (16, 32, 48, 64)
+        assert fifth.kwargs == {"c": 80, "d": 96, "e": 112}
+        assert fifth.locals["a"] == 32
+        assert fifth.locals["b"] == 64
+        assert fifth.locals["args"] == (96, 128)
+        assert fifth.locals["kwargs"] == {"d": 192, "e": 224}
+        assert isinstance(exc_path.error, AssertionError)
 
-    @property
-    def _code_line_assert(self) -> str:
-        return 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
 
-    def _code_line_call(self, func: str, /) -> str:
-        return f"return {func}(a, b, *args, c=c, **kwargs)"
+class TestYieldExceptions:
+    def test_main(self) -> None:
+        class FirstError(Exception): ...
+
+        class SecondError(Exception): ...
+
+        def f() -> None:
+            try:
+                return g()
+            except FirstError:
+                raise SecondError from FirstError
+
+        def g() -> None:
+            raise FirstError
+
+        with raises(SecondError) as exc_info:
+            f()
+        errors = list(yield_exceptions(exc_info.value))
+        assert len(errors) == 2
+        first, second = errors
+        assert isinstance(first, SecondError)
+        assert isinstance(second, FirstError)
 
 
 class TestYieldExtendedFrameSummaries:
-    def test_explicit_traceback(self) -> None:
-        def f() -> None:
-            return g()
-
-        def g() -> None:
-            raise NotImplementedError
-
-        with raises(NotImplementedError) as exc_info:
-            f()
-        frames = list(
-            yield_extended_frame_summaries(exc_info.value, traceback=exc_info.tb)
-        )
-        assert len(frames) == 3
-        expected = [
-            TestYieldExtendedFrameSummaries.test_explicit_traceback.__qualname__,
-            f.__qualname__,
-            g.__qualname__,
-        ]
-        for frame, exp in zip(frames, expected, strict=True):
-            assert frame.qualname == exp
-
-    def test_implicit_traceback(self) -> None:
+    def test_main(self) -> None:
         def f() -> None:
             return g()
 
@@ -365,12 +449,15 @@ class TestYieldExtendedFrameSummaries:
             frames = list(yield_extended_frame_summaries(error))
             assert len(frames) == 3
             expected = [
-                TestYieldExtendedFrameSummaries.test_implicit_traceback.__qualname__,
+                TestYieldExtendedFrameSummaries.test_main.__qualname__,
                 f.__qualname__,
                 g.__qualname__,
             ]
             for frame, exp in zip(frames, expected, strict=True):
                 assert frame.qualname == exp
+        else:
+            msg = "Expected an error"
+            raise RuntimeError(msg)
 
     def test_extra(self) -> None:
         def f() -> None:

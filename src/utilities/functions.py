@@ -23,20 +23,20 @@ _T = TypeVar("_T")
 _U = TypeVar("_U")
 
 
-def ensure_not_none(obj: _T | None, /) -> _T:
+def ensure_not_none(obj: _T | None, /, *, desc: str = "Object") -> _T:
     """Ensure an object is not None."""
     if obj is None:
-        raise EnsureNotNoneError(obj=obj)
+        raise EnsureNotNoneError(desc=desc)
     return obj
 
 
 @dataclass(kw_only=True, slots=True)
 class EnsureNotNoneError(Exception):
-    obj: Any
+    desc: str = "Object"
 
     @override
     def __str__(self) -> str:
-        return f"Object {self.obj} must not be None"
+        return f"{self.desc} must not be None"
 
 
 def first(pair: tuple[_T, Any], /) -> _T:
