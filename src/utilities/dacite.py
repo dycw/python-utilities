@@ -32,17 +32,16 @@ def yield_literal_forward_references(
         globalns=globals() if globalns is None else dict(globalns),
         localns=locals() if localns is None else dict(localns),
     )
-    for fld in fields(cls):
-        if isinstance(fld.type, str):
-            type_ = hints[fld.name]
-            result = _yield_literal_forward_references_core(type_)
-            if result is not None:
-                yield result
+    for fld in filter(lambda f: isinstance(f.type, str), fields(cls)):
+        type_ = hints[fld.name]
+        result = _yield_literal_forward_references_core(type_)
+        if result is not None:  # pragma: no cover
+            yield result
 
 
 def _yield_literal_forward_references_core(obj: Any, /) -> tuple[str, Any] | None:
     """Yield forward references."""
-    if (TypeAliasType is not None) and isinstance(  # skipif-version-ge-312
+    if (TypeAliasType is not None) and isinstance(  # pragma: no cover
         obj, TypeAliasType
     ):
         return obj.__name__, Literal[get_args(obj)]

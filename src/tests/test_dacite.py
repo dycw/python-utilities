@@ -5,7 +5,7 @@ from typing import Literal
 
 from dacite import Config, from_dict
 from hypothesis import given
-from hypothesis.strategies import none, sampled_from
+from hypothesis.strategies import integers, none, sampled_from
 
 from utilities.dacite import yield_literal_forward_references
 
@@ -59,4 +59,16 @@ class TestYieldLiteralForwardReferences:
         fwd_refs = dict(yield_literal_forward_references(Example, globalns=globals()))
         result = from_dict(Example, data, config=Config(forward_references=fwd_refs))
         expected = Example(truth=truth)
+        assert result == expected
+
+    @given(n=integers())
+    def test_non_literal_type_nullable(self, *, n: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            n: int = 0
+
+        data = {"n": n}
+        fwd_refs = dict(yield_literal_forward_references(Example, globalns=globals()))
+        result = from_dict(Example, data, config=Config(forward_references=fwd_refs))
+        expected = Example(n=n)
         assert result == expected
