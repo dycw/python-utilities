@@ -329,10 +329,7 @@ def _merge_frames(
     def has_match(
         curr: _ExtFrameSummaryCAOpt, rev: list[_ExtFrameSummaryCAOpt], /
     ) -> bool:
-        try:
-            next_, *_ = filter(has_extra, rev)
-        except ValueError:
-            return False
+        next_, *_ = filter(has_extra, rev)
         return is_match(curr, next_)
 
     def is_match(curr: _ExtFrameSummaryCAOpt, next_: _ExtFrameSummaryCA, /) -> bool:
