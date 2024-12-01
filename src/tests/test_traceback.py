@@ -105,15 +105,23 @@ class TestAssembleExceptionsPaths:
             frame1.code_line
             == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
         )
-        assert frame1.args == (1, 2, 3, 4)
-        assert frame1.kwargs == {"c": 5, "d": 6, "e": 7}
-        assert frame1.locals["a"] == 2
-        assert frame1.locals["b"] == 4
-        assert frame1.locals["args"] == (6, 8)
-        assert frame1.locals["kwargs"] == {"d": 12, "e": 14}
+        assert frame1.args == (2, 4, 6, 8)
+        assert frame1.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert frame1.locals["a"] == 4
+        assert frame1.locals["b"] == 8
+        assert frame1.locals["args"] == (12, 16)
+        assert frame1.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(path2, ExcPath)
         frame2 = one(path2)
-        assert 0, frame2
+        assert frame2.module == "tests.test_traceback_funcs.chain"
+        assert frame2.name == "func_chain_first"
+        assert frame2.code_line == "raise ValueError(msg) from error"
+        assert frame2.args == (1, 2, 3, 4)
+        assert frame2.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert frame2.locals["a"] == 2
+        assert frame2.locals["b"] == 4
+        assert frame2.locals["args"] == (6, 8)
+        assert frame2.locals["kwargs"] == {"d": 12, "e": 14}
 
     def test_func_decorated_sync(self) -> None:
         with raises(AssertionError) as exc_info:
