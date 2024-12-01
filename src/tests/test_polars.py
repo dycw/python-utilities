@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from math import isfinite, nan
 from re import escape
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, cast
 
 from hypothesis import assume, given
 from hypothesis.strategies import (
@@ -108,6 +108,9 @@ if TYPE_CHECKING:
     from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
 
     from utilities.types import StrMapping
+
+Truth: TypeAlias = Literal["true", "false"]
+type TruthLit = Literal["true", "false"]
 
 
 class TestAppendDataClass:
@@ -1284,6 +1287,50 @@ class TestYieldRowsAsDataclasses:
 
         result = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
         expected = [Row(x=1), Row(x=2), Row(x=3)]
+        assert result == expected
+
+    def test_literals(self) -> None:
+        df = DataFrame(
+            [("true",), ("false",), ("true",)], schema={"x": Utf8}, orient="row"
+        )
+
+        @dataclass(kw_only=True, slots=True)
+        class Row:
+            x: Literal["true", "false"]
+
+        result = list(yield_rows_as_dataclasses(df, Row, check_types="all"))
+        expected = [Row(x="true"), Row(x="false"), Row(x="true")]
+        assert result == expected
+
+    def test_literals_nullable(self) -> None:
+        df = DataFrame(
+            [("true",), ("false",), (None,)], schema={"x": Utf8}, orient="row"
+        )
+
+        @dataclass(kw_only=True, slots=True)
+        class Row:
+            x: Literal["true", "false"] | None = None
+
+        result = list(yield_rows_as_dataclasses(df, Row, check_types="all"))
+        expected = [Row(x="true"), Row(x="false"), Row()]
+        assert result == expected
+
+    @mark.only
+    def test_literal_types(self) -> None:
+        df = DataFrame(
+            [("true",), ("false",), ("true",)], schema={"x": Utf8}, orient="row"
+        )
+
+        @dataclass(kw_only=True, slots=True)
+        class Row:
+            x: TruthLit | None = None
+
+        result = list(
+            yield_rows_as_dataclasses(
+                df, Row, check_types="all", forward_references={"Truth2": Truth}
+            )
+        )
+        expected = [Row(x="true"), Row(x="false"), Row(x="true")]
         assert result == expected
 
     @mark.parametrize(

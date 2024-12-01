@@ -80,7 +80,7 @@ from utilities.math import (
     check_integer,
     ewm_parameters,
 )
-from utilities.types import ensure_datetime
+from utilities.types import StrMapping, ensure_datetime
 from utilities.typing import (
     get_args,
     is_frozenset_type,
@@ -955,9 +955,10 @@ def yield_rows_as_dataclasses(
     /,
     *,
     check_types: Literal["none", "first", "all"] = "first",
+    forward_references: StrMapping | None = None,
 ) -> Iterator[_TDataclass]:
     """Yield the rows of a DataFrame as dataclasses."""
-    from dacite import from_dict
+    from dacite import Config, from_dict
     from dacite.exceptions import WrongTypeError
 
     columns = df.columns
@@ -982,17 +983,21 @@ def yield_rows_as_dataclasses(
                 first = next(rows)
             except StopIteration:
                 return
+            fwd_refs = None if forward_references is None else dict(forward_references)
+            config = Config(forward_references=fwd_refs)
             try:
-                yield from_dict(cls, first)
+                yield from_dict(cls, first, config=config)
             except WrongTypeError as error:
                 raise _YieldRowsAsDataClassesWrongTypeError(
                     df=df, cls=cls, msg=str(error)
                 ) from None
             yield from _yield_rows_as_dataclasses_no_check_types(rows, cls)
         case "all":
+            fwd_refs = None if forward_references is None else dict(forward_references)
+            config = Config(forward_references=fwd_refs)
             try:
                 for row in rows:
-                    yield from_dict(cls, row)
+                    yield from_dict(cls, row, config=config)
             except WrongTypeError as error:
                 raise _YieldRowsAsDataClassesWrongTypeError(
                     df=df, cls=cls, msg=str(error)
