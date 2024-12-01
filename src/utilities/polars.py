@@ -58,6 +58,7 @@ from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
 from typing_extensions import override
 
+from utilities.dacite import yield_literal_forward_references
 from utilities.dataclasses import Dataclass, asdict_without_defaults, is_dataclass_class
 from utilities.iterables import (
     CheckIterablesEqualError,
@@ -955,7 +956,8 @@ def yield_rows_as_dataclasses(
     /,
     *,
     check_types: Literal["none", "first", "all"] = "first",
-    forward_references: StrMapping | None = None,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
 ) -> Iterator[_TDataclass]:
     """Yield the rows of a DataFrame as dataclasses."""
     from dacite import Config, from_dict
@@ -983,7 +985,11 @@ def yield_rows_as_dataclasses(
                 first = next(rows)
             except StopIteration:
                 return
-            fwd_refs = None if forward_references is None else dict(forward_references)
+            fwd_refs = dict(
+                yield_literal_forward_references(
+                    cls, globalns=globalns, localns=localns
+                )
+            )
             config = Config(forward_references=fwd_refs)
             try:
                 yield from_dict(cls, first, config=config)
@@ -993,7 +999,11 @@ def yield_rows_as_dataclasses(
                 ) from None
             yield from _yield_rows_as_dataclasses_no_check_types(rows, cls)
         case "all":
-            fwd_refs = None if forward_references is None else dict(forward_references)
+            fwd_refs = dict(
+                yield_literal_forward_references(
+                    cls, globalns=globalns, localns=localns
+                )
+            )
             config = Config(forward_references=fwd_refs)
             try:
                 for row in rows:
