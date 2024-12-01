@@ -20,7 +20,7 @@ from utilities.iterables import OneNonUniqueError, one
 from utilities.text import ensure_str, strip_and_dedent
 from utilities.traceback import (
     ExcChain,
-    ExcGroupWithPath,
+    ExcGroup,
     ExcPath,
     _CallArgsError,
     assemble_exception_paths,
@@ -99,6 +99,18 @@ class TestAssembleExceptionsPaths:
         assert isinstance(path1, ExcPath)
         assert len(path1) == 1
         frame1 = one(path1)
+        assert frame1.module == "tests.test_traceback_funcs.chain"
+        assert frame1.name == "func_chain_second"
+        assert (
+            frame1.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert frame1.args == (1, 2, 3, 4)
+        assert frame1.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert frame1.locals["a"] == 2
+        assert frame1.locals["b"] == 4
+        assert frame1.locals["args"] == (6, 8)
+        assert frame1.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(path2, ExcPath)
         frame2 = one(path2)
         assert 0, frame2
@@ -152,7 +164,8 @@ class TestAssembleExceptionsPaths:
         with raises(ExceptionGroup) as exc_info:
             await func_task_group_first(1, 2, 3, 4, c=5, d=6, e=7)
         exc_group = assemble_exception_paths(exc_info.value)
-        assert isinstance(exc_group, ExcGroupWithPath)
+        assert isinstance(exc_group, ExcGroup)
+        assert exc_group.path is not None
         assert len(exc_group.path) == 1
         path_frame = one(exc_group.path)
         assert path_frame.module == "tests.test_traceback_funcs.task_group"

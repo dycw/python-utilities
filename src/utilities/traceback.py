@@ -164,9 +164,13 @@ class HasExceptionPath(Protocol):
 
 @dataclass(kw_only=True, slots=True)
 class ExcChain(Generic[_TExc]):
-    errors: list[_ExcOrExcPathOrExcChainOrExcGroup[_TExc]] = field(default_factory=list)
+    errors: list[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException] = field(
+        default_factory=list
+    )
 
-    def __iter__(self) -> Iterator[_ExcOrExcPathOrExcChainOrExcGroup[_TExc]]:
+    def __iter__(
+        self,
+    ) -> Iterator[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException]:
         yield from self.errors
 
     def __len__(self) -> int:
@@ -175,19 +179,18 @@ class ExcChain(Generic[_TExc]):
 
 @dataclass(kw_only=True, slots=True)
 class ExcGroup(Generic[_TExc]):
-    errors: list[_ExcOrExcPathOrExcChainOrExcGroup[_TExc]] = field(default_factory=list)
+    path: ExcPath[_TExc] | None = None
+    errors: list[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException] = field(
+        default_factory=list
+    )
 
-    def __iter__(self) -> Iterator[_ExcOrExcPathOrExcChainOrExcGroup[_TExc]]:
+    def __iter__(
+        self,
+    ) -> Iterator[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException]:
         yield from self.errors
 
     def __len__(self) -> int:
         return len(self.errors)
-
-
-@dataclass(kw_only=True, slots=True)
-class ExcGroupWithPath(Generic[_TExc]):
-    path: ExcPath[_TExc]
-    errors: list[_ExcOrExcPathOrExcChainOrExcGroup[_TExc]] = field(default_factory=list)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -213,52 +216,41 @@ class _Frame:
     locals: dict[str, Any] = field(default_factory=dict)
 
 
-_ExcOrExcPathOrExcChainOrExcGroup: TypeAlias = (
-    BaseException
-    | ExcPath[_TExc]
-    | ExcChain[_TExc]
-    | ExcGroup[_TExc]
-    | ExcGroupWithPath[_TExc]
-)
-
-
 def assemble_exception_paths(
     error: _TExc, /
-) -> _ExcOrExcPathOrExcChainOrExcGroup[_TExc]:
+) -> ExcChain[_TExc] | ExcGroup[_TExc] | ExcPath[_TExc] | BaseException:
     """Assemble a set of extended tracebacks."""
     match list(yield_exceptions(error)):
         case []:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{error}"])
         case [err]:
             err = cast(_TExc, err)
-            return _assemble_exception_paths_no_chain_maybe_group(err)
+            return _assemble_exception_paths_no_chain(err)
         case errors:
-            errs = cast(list[_TExc], errors)
+            errs = cast(list[_TExc], errors[::-1])
             return ExcChain(
-                errors=[
-                    _assemble_exception_paths_no_chain_maybe_group(e)
-                    for e in errs[::-1]
-                ]
+                errors=[_assemble_exception_paths_no_chain(e) for e in errs]
             )
 
 
-def _assemble_exception_paths_no_chain_maybe_group(
+def _assemble_exception_paths_no_chain(
     error: _TExc, /
-) -> _ExcOrExcPathOrExcChainOrExcGroup[_TExc]:
+) -> ExcPath[_TExc] | ExcGroup[_TExc] | BaseException:
     if not isinstance(error, ExceptionGroup):
-        return _assemble_exception_paths_no_chain_no_group_maybe_path(error)
+        return _assemble_exception_paths_no_chain_no_group(error)
     errors = cast(list[_TExc], error.exceptions)
-    errors = list(map(_assemble_exception_paths_no_chain_maybe_group, errors))
+    errors = list(map(_assemble_exception_paths_no_chain, errors))
     if isinstance(error, HasExceptionPath):
         path = cast(
             ExcPath[_TExc],
-            _assemble_exception_paths_no_chain_no_group_maybe_path(error),
+            _assemble_exception_paths_no_chain_no_group(error),
         )
-        return ExcGroupWithPath(path=path, errors=errors)
-    return ExcGroup(errors=errors)
+    else:
+        path = None
+    return ExcGroup(path=path, errors=errors)
 
 
-def _assemble_exception_paths_no_chain_no_group_maybe_path(
+def _assemble_exception_paths_no_chain_no_group(
     error: _TExc, /
 ) -> ExcPath[_TExc] | BaseException:
     if isinstance(error, HasExceptionPath):
