@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from logging import Logger, getLogger
 from sys import version_info
 from typing import TYPE_CHECKING
+
+from typing_extensions import override
 
 from utilities.traceback import assemble_exception_paths
 
@@ -22,21 +25,24 @@ def log_exception_paths(
     logger: Logger = _LOGGER,
 ) -> None:
     """Exception hook to log the traceback."""
-    if (exc_type is None) and (exc_val is None) and (traceback is None):
-        return
-    if not (
-        (exc_type is not None) and (exc_val is not None) and (traceback is not None)
-    ):
-        msg = f"Exception type, exception value, and traceback must all be non-null; got {exc_type=}, {exc_val=}, {traceback=}"
-        raise RuntimeError(msg)
+    _ = (exc_type, traceback)
+    if exc_val is None:  # pragma: no cover
+        raise LogExceptionPathsError
     error = assemble_exception_paths(exc_val)
     try:
         from rich.pretty import pretty_repr
-    except ImportError:
+    except ImportError:  # pragma: no cover
         repr_use = repr(error)
     else:
         repr_use = pretty_repr(error)
     logger.error("%s", repr_use)
 
 
-__all__ = ["VERSION_MAJOR_MINOR"]
+@dataclass(kw_only=True, slots=True)
+class LogExceptionPathsError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "No exception to log"
+
+
+__all__ = ["VERSION_MAJOR_MINOR", "LogExceptionPathsError", "log_exception_paths"]

@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
-from functools import partial, wraps
+from functools import wraps
 from inspect import iscoroutinefunction, signature
 from pathlib import Path
 from sys import exc_info
-from textwrap import indent
 from traceback import FrameSummary, TracebackException
 from types import TracebackType
 from typing import (
@@ -48,8 +47,6 @@ _TStrNone = TypeVar("_TStrNone", str, None, str | None)
 _CALL_ARGS = "_CALL_ARGS"
 ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
 OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
-_MAX_WIDTH = 80
-_INDENT_SIZE = 4
 
 
 @dataclass(repr=False, kw_only=True, slots=True)
@@ -288,95 +285,6 @@ def trace(func: _F, /) -> _F:
             raise
 
     return cast(_F, trace_async)
-
-
-@dataclass(kw_only=True, slots=False)  # no slots
-class TraceMixinZZZ:
-    """Mix-in for tracking an exception and its call stack."""
-
-    def pretty(
-        self,
-        *,
-        location: bool = True,
-        max_width: int = _MAX_WIDTH,
-        indent_size: int = _INDENT_SIZE,
-        max_length: int | None = None,
-        max_string: int | None = None,
-        max_depth: int | None = None,
-        expand_all: bool = False,
-    ) -> str:
-        """Pretty print the exception data."""
-        return "\n".join(
-            self._pretty_yield(
-                location=location,
-                max_width=max_width,
-                indent_size=indent_size,
-                max_length=max_length,
-                max_string=max_string,
-                max_depth=max_depth,
-                expand_all=expand_all,
-            )
-        )
-
-    def _pretty_yield(
-        self,
-        /,
-        *,
-        location: bool = True,
-        max_width: int = _MAX_WIDTH,
-        indent_size: int = _INDENT_SIZE,
-        max_length: int | None = None,
-        max_string: int | None = None,
-        max_depth: int | None = None,
-        expand_all: bool = False,
-    ) -> Iterable[str]:
-        """Yield the rows for pretty printing the exception."""
-        from rich.pretty import pretty_repr
-
-        indent = self._indent
-        pretty = partial(
-            pretty_repr,
-            max_width=max_width,
-            indent_size=indent_size,
-            max_length=max_length,
-            max_string=max_string,
-            max_depth=max_depth,
-            expand_all=expand_all,
-        )
-
-        yield "Error running:"
-        yield ""
-        for frame in self.frames:
-            yield indent(f"{frame.depth}. {get_func_name(frame.func)}", 1)
-        error = f">> {get_class_name(self.error)}: {self.error}"
-        yield indent(error, 1)
-        yield ""
-        yield "Frames:"
-        for frame in self.frames:
-            yield ""
-            name, filename = get_func_name(frame.func), frame.filename
-            desc = f"{name} ({filename}:{frame.first_line_num})" if location else name
-            yield indent(f"{frame.depth}/{frame.max_depth}. {desc}", 1)
-            yield ""
-            yield indent("Inputs:", 2)
-            yield ""
-            for line in yield_pretty_repr_args_and_kwargs(*frame.args, **frame.kwargs):
-                yield indent(line, 3)
-            yield ""
-            yield indent("Locals:", 2)
-            yield ""
-            for k, v in frame.locals.items():
-                yield indent(f"{k} = {pretty(v)}", 3)
-            yield ""
-            yield indent(f">> {frame.code_line}", 2)
-            if location:  # pragma: no cover
-                yield indent(f"   ({filename}:{frame.line_num})", 2)
-            if frame.depth == frame.max_depth:
-                yield indent(error, 2)
-
-    def _indent(self, text: str, depth: int, /) -> str:
-        """Indent the text."""
-        return indent(text, 2 * depth * " ")
 
 
 @overload

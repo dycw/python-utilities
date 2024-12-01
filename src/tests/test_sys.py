@@ -2,15 +2,20 @@ from __future__ import annotations
 
 import sys
 from subprocess import PIPE, CalledProcessError, check_output
+from sys import exc_info
 
 from pytest import raises
 
-from utilities.sys import VERSION_MAJOR_MINOR
+from utilities.sys import (
+    VERSION_MAJOR_MINOR,
+    LogExceptionPathsError,
+    log_exception_paths,
+)
 from utilities.text import strip_and_dedent
 
 
-class TestExceptHook:
-    def test_custom_excepthook(self) -> None:
+class TestLogExceptionPaths:
+    def test_main(self) -> None:
         code = strip_and_dedent("""
             from __future__ import annotations
 
@@ -90,6 +95,11 @@ class TestExceptHook:
             )
             """)
         assert stderr == expected
+
+    def test_non_error(self) -> None:
+        exc_type, exc_val, traceback = exc_info()
+        with raises(LogExceptionPathsError, match="No exception to log"):
+            log_exception_paths(exc_type, exc_val, traceback)
 
 
 class TestVersionMajorMinor:
