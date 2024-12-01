@@ -265,51 +265,51 @@ class TestAssembleExceptionsPaths:
         assert isinstance(exc_group, ExcGroup)
         assert exc_group.path is not None
         assert len(exc_group.path) == 1
-        path_frame = one(exc_group.path)
-        assert path_frame.module == "tests.test_traceback_funcs.task_group_two"
-        assert path_frame.name == "func_task_group_two_first"
-        assert path_frame.code_line == "async with TaskGroup() as tg:"
-        assert path_frame.args == (1, 2, 3, 4)
-        assert path_frame.kwargs == {"c": 5, "d": 6, "e": 7}
-        assert path_frame.locals["a"] == 2
-        assert path_frame.locals["b"] == 4
-        assert path_frame.locals["args"] == (6, 8)
-        assert path_frame.locals["kwargs"] == {"d": 12, "e": 14}
+        frame0 = one(exc_group.path)
+        assert frame0.module == "tests.test_traceback_funcs.task_group_two"
+        assert frame0.name == "func_task_group_two_first"
+        assert frame0.code_line == "async with TaskGroup() as tg:"
+        assert frame0.args == (1, 2, 3, 4)
+        assert frame0.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert frame0.locals["a"] == 2
+        assert frame0.locals["b"] == 4
+        assert frame0.locals["args"] == (6, 8)
+        assert frame0.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(exc_group.path.error, ExceptionGroup)
         assert len(exc_group.errors) == 2
-        first, second = exc_group.errors
-        assert isinstance(first, ExcPath)
-        assert len(first) == 1
-        first_frame = one(first)
-        assert first_frame.module == "tests.test_traceback_funcs.task_group_two"
-        assert first_frame.name == "func_task_group_two_second"
+        exc_path1, exc_path2 = exc_group.errors
+        assert isinstance(exc_path1, ExcPath)
+        assert len(exc_path1) == 1
+        frame1 = one(exc_path1)
+        assert frame1.module == "tests.test_traceback_funcs.task_group_two"
+        assert frame1.name == "func_task_group_two_second"
         assert (
-            first_frame.code_line
+            frame1.code_line
             == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
         )
-        assert first_frame.args == (2, 4, 6, 8)
-        assert first_frame.kwargs == {"c": 10, "d": 12, "e": 14}
-        assert first_frame.locals["a"] == 4
-        assert first_frame.locals["b"] == 8
-        assert first_frame.locals["args"] == (12, 16)
-        assert first_frame.locals["kwargs"] == {"d": 24, "e": 28}
-        assert isinstance(first.error, AssertionError)
-        assert isinstance(second, ExcPath)
-        assert len(second) == 1
-        second_frame = one(second)
-        assert second_frame.module == "tests.test_traceback_funcs.task_group_two"
-        assert second_frame.name == "func_task_group_two_second"
+        assert frame1.args == (2, 4, 6, 8)
+        assert frame1.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert frame1.locals["a"] == 4
+        assert frame1.locals["b"] == 8
+        assert frame1.locals["args"] == (12, 16)
+        assert frame1.locals["kwargs"] == {"d": 24, "e": 28}
+        assert isinstance(exc_path1.error, AssertionError)
+        assert isinstance(exc_path2, ExcPath)
+        assert len(exc_path2) == 1
+        frame2 = one(exc_path2)
+        assert frame2.module == "tests.test_traceback_funcs.task_group_two"
+        assert frame2.name == "func_task_group_two_second"
         assert (
-            second_frame.code_line
+            frame2.code_line
             == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
         )
-        assert second_frame.args == (3, 5, 7, 9)
-        assert second_frame.kwargs == {"c": 11, "d": 13, "e": 15}
-        assert second_frame.locals["a"] == 6
-        assert second_frame.locals["b"] == 10
-        assert second_frame.locals["args"] == (14, 18)
-        assert second_frame.locals["kwargs"] == {"d": 26, "e": 30}
-        assert isinstance(second.error, AssertionError)
+        assert frame2.args == (3, 5, 7, 9)
+        assert frame2.kwargs == {"c": 11, "d": 13, "e": 15}
+        assert frame2.locals["a"] == 6
+        assert frame2.locals["b"] == 10
+        assert frame2.locals["args"] == (14, 18)
+        assert frame2.locals["kwargs"] == {"d": 26, "e": 30}
+        assert isinstance(exc_path2.error, AssertionError)
 
     def test_func_untraced(self) -> None:
         with raises(AssertionError) as exc_info:
@@ -359,60 +359,60 @@ class TestAssembleExceptionsPaths:
         self, exc_path: ExcPath, sync_or_async: Literal["sync", "async"], /
     ) -> None:
         assert len(exc_path) == 5
-        first, second, _, fourth, fifth = exc_path
+        frame1, frame2, _, frame4, frame5 = exc_path
         match sync_or_async:
             case "sync":
                 maybe_await = ""
             case "async":
                 maybe_await = "await "
-        assert first.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
-        assert first.name == f"func_decorated_{sync_or_async}_first"
+        assert frame1.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
+        assert frame1.name == f"func_decorated_{sync_or_async}_first"
         assert (
-            first.code_line
+            frame1.code_line
             == f"return {maybe_await}func_decorated_{sync_or_async}_second(a, b, *args, c=c, **kwargs)"
         )
-        assert first.args == (1, 2, 3, 4)
-        assert first.kwargs == {"c": 5, "d": 6, "e": 7}
-        assert first.locals["a"] == 2
-        assert first.locals["b"] == 4
-        assert first.locals["args"] == (6, 8)
-        assert first.locals["kwargs"] == {"d": 12, "e": 14}
-        assert second.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
-        assert second.name == f"func_decorated_{sync_or_async}_second"
+        assert frame1.args == (1, 2, 3, 4)
+        assert frame1.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert frame1.locals["a"] == 2
+        assert frame1.locals["b"] == 4
+        assert frame1.locals["args"] == (6, 8)
+        assert frame1.locals["kwargs"] == {"d": 12, "e": 14}
+        assert frame2.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
+        assert frame2.name == f"func_decorated_{sync_or_async}_second"
         assert (
-            second.code_line
+            frame2.code_line
             == f"return {maybe_await}func_decorated_{sync_or_async}_third(a, b, *args, c=c, **kwargs)"
         )
-        assert second.args == (2, 4, 6, 8)
-        assert second.kwargs == {"c": 10, "d": 12, "e": 14}
-        assert second.locals["a"] == 4
-        assert second.locals["b"] == 8
-        assert second.locals["args"] == (12, 16)
-        assert second.locals["kwargs"] == {"d": 24, "e": 28}
-        assert fourth.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
-        assert fourth.name == f"func_decorated_{sync_or_async}_fourth"
+        assert frame2.args == (2, 4, 6, 8)
+        assert frame2.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert frame2.locals["a"] == 4
+        assert frame2.locals["b"] == 8
+        assert frame2.locals["args"] == (12, 16)
+        assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
+        assert frame4.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
+        assert frame4.name == f"func_decorated_{sync_or_async}_fourth"
         assert (
-            fourth.code_line
+            frame4.code_line
             == f"return {maybe_await}func_decorated_{sync_or_async}_fifth(a, b, *args, c=c, **kwargs)"
         )
-        assert fourth.args == (8, 16, 24, 32)
-        assert fourth.kwargs == {"c": 40, "d": 48, "e": 56}
-        assert fourth.locals["a"] == 16
-        assert fourth.locals["b"] == 32
-        assert fourth.locals["args"] == (48, 64)
-        assert fourth.locals["kwargs"] == {"d": 96, "e": 112}
-        assert fifth.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
-        assert fifth.name == f"func_decorated_{sync_or_async}_fifth"
+        assert frame4.args == (8, 16, 24, 32)
+        assert frame4.kwargs == {"c": 40, "d": 48, "e": 56}
+        assert frame4.locals["a"] == 16
+        assert frame4.locals["b"] == 32
+        assert frame4.locals["args"] == (48, 64)
+        assert frame4.locals["kwargs"] == {"d": 96, "e": 112}
+        assert frame5.module == f"tests.test_traceback_funcs.decorated_{sync_or_async}"
+        assert frame5.name == f"func_decorated_{sync_or_async}_fifth"
         assert (
-            fifth.code_line
+            frame5.code_line
             == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
         )
-        assert fifth.args == (16, 32, 48, 64)
-        assert fifth.kwargs == {"c": 80, "d": 96, "e": 112}
-        assert fifth.locals["a"] == 32
-        assert fifth.locals["b"] == 64
-        assert fifth.locals["args"] == (96, 128)
-        assert fifth.locals["kwargs"] == {"d": 192, "e": 224}
+        assert frame5.args == (16, 32, 48, 64)
+        assert frame5.kwargs == {"c": 80, "d": 96, "e": 112}
+        assert frame5.locals["a"] == 32
+        assert frame5.locals["b"] == 64
+        assert frame5.locals["args"] == (96, 128)
+        assert frame5.locals["kwargs"] == {"d": 192, "e": 224}
         assert isinstance(exc_path.error, AssertionError)
 
 
