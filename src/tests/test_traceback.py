@@ -65,28 +65,28 @@ class TestAssembleExceptionsPaths:
         exc_path = assemble_exception_paths(exc_info.value)
         assert isinstance(exc_path, ExcPath)
         assert len(exc_path) == 2
-        first, second = exc_path
-        assert first.module == "tests.test_traceback_funcs.two"
-        assert first.name == "func_two_first"
-        assert first.code_line == "return func_two_second(a, b, *args, c=c, **kwargs)"
-        assert first.args == (1, 2, 3, 4)
-        assert first.kwargs == {"c": 5, "d": 6, "e": 7}
-        assert first.locals["a"] == 2
-        assert first.locals["b"] == 4
-        assert first.locals["args"] == (6, 8)
-        assert first.locals["kwargs"] == {"d": 12, "e": 14}
-        assert second.module == "tests.test_traceback_funcs.two"
-        assert second.name == "func_two_second"
+        frame1, frame2 = exc_path
+        assert frame1.module == "tests.test_traceback_funcs.two"
+        assert frame1.name == "func_two_first"
+        assert frame1.code_line == "return func_two_second(a, b, *args, c=c, **kwargs)"
+        assert frame1.args == (1, 2, 3, 4)
+        assert frame1.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert frame1.locals["a"] == 2
+        assert frame1.locals["b"] == 4
+        assert frame1.locals["args"] == (6, 8)
+        assert frame1.locals["kwargs"] == {"d": 12, "e": 14}
+        assert frame2.module == "tests.test_traceback_funcs.two"
+        assert frame2.name == "func_two_second"
         assert (
-            second.code_line
+            frame2.code_line
             == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
         )
-        assert second.args == (2, 4, 6, 8)
-        assert second.kwargs == {"c": 10, "d": 12, "e": 14}
-        assert second.locals["a"] == 4
-        assert second.locals["b"] == 8
-        assert second.locals["args"] == (12, 16)
-        assert second.locals["kwargs"] == {"d": 24, "e": 28}
+        assert frame2.args == (2, 4, 6, 8)
+        assert frame2.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert frame2.locals["a"] == 4
+        assert frame2.locals["b"] == 8
+        assert frame2.locals["args"] == (12, 16)
+        assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_path.error, AssertionError)
 
     def test_func_chain(self) -> None:
@@ -94,6 +94,14 @@ class TestAssembleExceptionsPaths:
             _ = func_chain_first(1, 2, 3, 4, c=5, d=6, e=7)
         exc_chain = assemble_exception_paths(exc_info.value)
         assert isinstance(exc_chain, ExcChain)
+        assert len(exc_chain) == 2
+        path1, path2 = exc_chain
+        assert isinstance(path1, ExcPath)
+        assert len(path1) == 1
+        frame1 = one(path1)
+        assert isinstance(path2, ExcPath)
+        frame2 = one(path2)
+        assert 0, frame2
 
     def test_func_decorated_sync(self) -> None:
         with raises(AssertionError) as exc_info:
