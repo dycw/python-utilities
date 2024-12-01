@@ -1,10 +1,14 @@
+from __future__ import annotations
+
 from itertools import chain
-from types import TracebackType
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 from beartype import beartype
 
 from utilities.traceback import trace
+
+if TYPE_CHECKING:
+    from types import TracebackType
 
 
 @trace
