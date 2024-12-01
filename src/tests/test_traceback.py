@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Literal
 
 from pytest import raises
 
-from tests.conftest import FLAKY
+from tests.conftest import SKIPIF_CI
 from tests.test_traceback_funcs.beartype import func_beartype
 from tests.test_traceback_funcs.beartype_aenter import func_beartype_aenter
 from tests.test_traceback_funcs.chain import func_chain_first
@@ -16,7 +16,8 @@ from tests.test_traceback_funcs.error_bind import (
 )
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.recursive import func_recursive
-from tests.test_traceback_funcs.task_group import func_task_group_first
+from tests.test_traceback_funcs.task_group_one import func_task_group_one_first
+from tests.test_traceback_funcs.task_group_two import func_task_group_two_first
 from tests.test_traceback_funcs.two import func_two_first
 from tests.test_traceback_funcs.untraced import func_untraced
 from utilities.iterables import OneNonUniqueError, one
@@ -214,17 +215,54 @@ class TestAssembleExceptionsPaths:
         assert second.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_path.error, AssertionError)
 
-    @FLAKY
-    async def test_func_task_group(self) -> None:
+    async def test_func_task_group_one(self) -> None:
         with raises(ExceptionGroup) as exc_info:
-            await func_task_group_first(1, 2, 3, 4, c=5, d=6, e=7)
+            await func_task_group_one_first(1, 2, 3, 4, c=5, d=6, e=7)
         exc_group = assemble_exception_paths(exc_info.value)
         assert isinstance(exc_group, ExcGroup)
         assert exc_group.path is not None
         assert len(exc_group.path) == 1
         path_frame = one(exc_group.path)
-        assert path_frame.module == "tests.test_traceback_funcs.task_group"
-        assert path_frame.name == "func_task_group_first"
+        assert path_frame.module == "tests.test_traceback_funcs.task_group_one"
+        assert path_frame.name == "func_task_group_one_first"
+        assert path_frame.code_line == "async with TaskGroup() as tg:"
+        assert path_frame.args == (1, 2, 3, 4)
+        assert path_frame.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert path_frame.locals["a"] == 2
+        assert path_frame.locals["b"] == 4
+        assert path_frame.locals["args"] == (6, 8)
+        assert path_frame.locals["kwargs"] == {"d": 12, "e": 14}
+        assert isinstance(exc_group.path.error, ExceptionGroup)
+        assert len(exc_group.errors) == 1
+        (first,) = exc_group.errors
+        assert isinstance(first, ExcPath)
+        assert len(first) == 1
+        first_frame = one(first)
+        assert first_frame.module == "tests.test_traceback_funcs.task_group_one"
+        assert first_frame.name == "func_task_group_one_second"
+        assert (
+            first_frame.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert first_frame.args == (2, 4, 6, 8)
+        assert first_frame.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert first_frame.locals["a"] == 4
+        assert first_frame.locals["b"] == 8
+        assert first_frame.locals["args"] == (12, 16)
+        assert first_frame.locals["kwargs"] == {"d": 24, "e": 28}
+        assert isinstance(first.error, AssertionError)
+
+    @SKIPIF_CI
+    async def test_func_task_group_two(self) -> None:
+        with raises(ExceptionGroup) as exc_info:
+            await func_task_group_two_first(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_group = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_group, ExcGroup)
+        assert exc_group.path is not None
+        assert len(exc_group.path) == 1
+        path_frame = one(exc_group.path)
+        assert path_frame.module == "tests.test_traceback_funcs.task_group_two"
+        assert path_frame.name == "func_task_group_two_first"
         assert path_frame.code_line == "async with TaskGroup() as tg:"
         assert path_frame.args == (1, 2, 3, 4)
         assert path_frame.kwargs == {"c": 5, "d": 6, "e": 7}
@@ -238,8 +276,8 @@ class TestAssembleExceptionsPaths:
         assert isinstance(first, ExcPath)
         assert len(first) == 1
         first_frame = one(first)
-        assert first_frame.module == "tests.test_traceback_funcs.task_group"
-        assert first_frame.name == "func_task_group_second"
+        assert first_frame.module == "tests.test_traceback_funcs.task_group_two"
+        assert first_frame.name == "func_task_group_two_second"
         assert (
             first_frame.code_line
             == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
@@ -254,8 +292,8 @@ class TestAssembleExceptionsPaths:
         assert isinstance(second, ExcPath)
         assert len(second) == 1
         second_frame = one(second)
-        assert second_frame.module == "tests.test_traceback_funcs.task_group"
-        assert second_frame.name == "func_task_group_second"
+        assert second_frame.module == "tests.test_traceback_funcs.task_group_two"
+        assert second_frame.name == "func_task_group_two_second"
         assert (
             second_frame.code_line
             == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
