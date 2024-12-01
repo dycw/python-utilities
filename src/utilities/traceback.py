@@ -319,9 +319,9 @@ def _merge_frames(
 
     def get_curr(rev: list[_ExtFrameSummaryCAOptOpt], /) -> _ExtFrameSummaryCAStrOpt:
         curr = rev.pop(0)
-        if curr.module is not None:
-            return cast(_ExtFrameSummaryCAStrOpt, curr)
-        raise ImpossibleCaseError(case=[f"{curr=}"])
+        if curr.module is None:  # pragma: no cover
+            raise ImpossibleCaseError(case=[f"{curr=}"])
+        return cast(_ExtFrameSummaryCAStrOpt, curr)
 
     def get_solution(
         curr: _ExtFrameSummaryCAStrOpt, rev: list[_ExtFrameSummaryCAOptOpt], /
