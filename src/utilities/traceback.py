@@ -321,6 +321,8 @@ def _merge_frames(
 
     def get_curr(rev: list[_ExtFrameSummaryCAOptOpt], /) -> _ExtFrameSummaryCAStrOpt:
         curr = rev.pop(0)
+        if curr.module is None:
+            raise ValueError("no curr.module...\n\n" + pretty_repr(init))
         _ = ensure_not_none(curr.module, desc="curr.module\n\n" + pretty_repr(init))
         return cast(_ExtFrameSummaryCAStrOpt, curr)
 
