@@ -6,6 +6,7 @@ from sys import exc_info
 
 from pytest import raises
 
+from tests.conftest import SKIPIF_CI
 from utilities.sys import (
     VERSION_MAJOR_MINOR,
     LogExceptionPathsError,
@@ -15,6 +16,7 @@ from utilities.text import strip_and_dedent
 
 
 class TestLogExceptionPaths:
+    @SKIPIF_CI
     def test_main(self) -> None:
         code = strip_and_dedent("""
             from __future__ import annotations

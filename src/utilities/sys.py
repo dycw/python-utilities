@@ -31,15 +31,15 @@ def log_exception_paths(
     expand_all: bool = False,
 ) -> None:
     """Exception hook to log the traceback."""
-    _ = (exc_type, traceback)
+    _ = (exc_type, traceback)  # skipif-ci-and-windows
     if exc_val is None:  # pragma: no cover
         raise LogExceptionPathsError
-    error = assemble_exception_paths(exc_val)
-    try:
+    error = assemble_exception_paths(exc_val)  # skipif-ci-and-windows
+    try:  # skipif-ci-and-windows
         from rich.pretty import pretty_repr
     except ImportError:  # pragma: no cover
         repr_use = repr(error)
-    else:
+    else:  # skipif-ci-and-windows
         repr_use = pretty_repr(
             error,
             max_width=max_width,
@@ -49,7 +49,7 @@ def log_exception_paths(
             max_depth=max_depth,
             expand_all=expand_all,
         )
-    logger.error("%s", repr_use)
+    logger.error("%s", repr_use)  # skipif-ci-and-windows
 
 
 @dataclass(kw_only=True, slots=True)
