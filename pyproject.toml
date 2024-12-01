@@ -55,7 +55,7 @@ dev = [
   "pyhumps >= 3.8.0, < 3.9",
   "pyinstrument >= 5.0.0, < 5.1",
   "pyrsistent >= 0.20.0, < 0.21",
-  "pytest >= 8.3.3, < 8.4",
+  "pytest >= 8.3.4, < 8.4",
   "python-dotenv >= 1.0.1, < 1.1",
   "redis >= 5.2.0, < 5.3",
   "rich >= 13.8.1, < 13.9",  # if 13.9, twine upload fails https://github.com/dycw/python-utilities/actions/runs/11125686648/job/30913966455
@@ -87,7 +87,7 @@ dev = [
 test = [
   "coverage-conditional-plugin >= 0.9.0, < 0.10",
   "hypothesis >= 6.122.0, < 6.123",
-  "pytest >= 8.3.3, < 8.4",
+  "pytest >= 8.3.4, < 8.4",
   "pytest-asyncio >= 0.24.0, < 0.25",
   "pytest-cov >= 6.0.0, < 6.1",
   "pytest-instafail >= 0.5.0, < 0.6",
@@ -118,6 +118,7 @@ zzz-test-click = [
 ]
 zzz-test-cryptography = ["cryptography >= 44.0.0, < 44.1"]
 zzz-test-cvxpy = ["cvxpy >= 1.6.0, < 1.7"]
+zzz-test-dacite = ["dacite >= 1.8.1, < 1.9"]
 zzz-test-dataclasses = ["ib-async-dataclass >= 1.0.3rc5, < 1.1"]
 zzz-test-datetime = ["tzlocal >= 5.2, < 5.3"]
 zzz-test-enum = []

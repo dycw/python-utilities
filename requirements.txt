@@ -193,7 +193,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.15.0
+narwhals==1.15.1
     # via
     #   altair
     #   vegafusion
@@ -301,7 +301,7 @@ pyinstrument==5.0.0
     # via dycw-utilities (pyproject.toml)
 pyrsistent==0.20.0
     # via dycw-utilities (pyproject.toml)
-pytest==8.3.3
+pytest==8.3.4
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio

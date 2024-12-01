@@ -8,6 +8,7 @@ cachetools
 click
 cryptography
 cvxpy
+dacite
 dataclasses
 datetime
 enum
