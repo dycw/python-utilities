@@ -22,7 +22,6 @@ from typing import (
     runtime_checkable,
 )
 
-from rich.pretty import pretty_repr
 from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
@@ -325,6 +324,7 @@ def _merge_frames(
             curr = rev.pop(0)
             if curr.module is not None:
                 return cast(_ExtFrameSummaryCAStrOpt, curr)
+        assert 0, "!!!"
         return None
 
     def get_solution(
