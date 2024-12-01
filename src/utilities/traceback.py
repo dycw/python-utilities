@@ -324,7 +324,11 @@ def _merge_frames(
         if curr.module is None:
             from utilities.pickle import write_pickle
 
-            write_pickle([init, rev, curr], "curr.pkl", overwrite=True)
+            write_pickle(
+                [pretty_repr(init), pretty_repr(rev), pretty_repr(curr)],
+                "curr.pkl",
+                overwrite=True,
+            )
 
             raise ValueError("no curr.module...\n\n" + pretty_repr(init))
         _ = ensure_not_none(curr.module, desc="curr.module\n\n" + pretty_repr(init))
