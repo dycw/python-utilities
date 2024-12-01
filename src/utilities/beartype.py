@@ -27,7 +27,7 @@ def beartype_cond(
 ) -> _F | Callable[[_F], _F]:
     """Apply `beartype` conditionally."""
     if func is None:
-        result = partial(beartype_cond, runtime=runtime)
+        result = partial(beartype_cond, setup=setup, runtime=runtime)
         return cast(Callable[[_F], _F], result)
 
     if not setup:
