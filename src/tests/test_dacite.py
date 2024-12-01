@@ -9,7 +9,7 @@ from hypothesis.strategies import none, sampled_from
 
 from utilities.dacite import yield_literal_forward_references
 
-type TruthLit = Literal["true", "false"]
+TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
 
 
 class TestYieldLiteralForwardReferences:

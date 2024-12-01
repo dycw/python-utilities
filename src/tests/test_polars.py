@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from math import isfinite, nan
 from re import escape
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 from hypothesis import assume, given
 from hypothesis.strategies import (
@@ -109,8 +109,7 @@ if TYPE_CHECKING:
 
     from utilities.types import StrMapping
 
-Truth: TypeAlias = Literal["true", "false"]
-type TruthLit = Literal["true", "false"]
+TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
 
 
 class TestAppendDataClass:

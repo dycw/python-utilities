@@ -49,3 +49,6 @@ def _yield_literal_forward_references_core(obj: Any, /) -> tuple[str, Any] | Non
     if is_optional_type(obj):
         return _yield_literal_forward_references_core(one(get_args(obj)))
     return None
+
+
+__all__ = ["yield_literal_forward_references"]
