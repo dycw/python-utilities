@@ -317,15 +317,11 @@ def _merge_frames(
     rev = list(frames)[::-1]
     values: list[_ExtFrameSummaryCA] = []
 
-    def get_curr(
-        rev: list[_ExtFrameSummaryCAOptOpt], /
-    ) -> _ExtFrameSummaryCAStrOpt | None:
-        while len(rev) >= 1:
-            curr = rev.pop(0)
-            if curr.module is not None:
-                return cast(_ExtFrameSummaryCAStrOpt, curr)
-            assert 0, "!!!"
-        return None
+    def get_curr(rev: list[_ExtFrameSummaryCAOptOpt], /) -> _ExtFrameSummaryCAStrOpt:
+        curr = rev.pop(0)
+        if curr.module is not None:
+            return cast(_ExtFrameSummaryCAStrOpt, curr)
+        raise ImpossibleCaseError(case=[f"{curr=}"])
 
     def get_solution(
         curr: _ExtFrameSummaryCAStrOpt, rev: list[_ExtFrameSummaryCAOptOpt], /
@@ -341,10 +337,7 @@ def _merge_frames(
     def has_match(
         curr: _ExtFrameSummaryCAStrOpt, rev: list[_ExtFrameSummaryCAOptOpt], /
     ) -> bool:
-        try:
-            next_, *_ = filter(has_extra, rev)
-        except ValueError:
-            return False
+        next_, *_ = filter(has_extra, rev)
         return is_match(curr, next_)
 
     def is_match(curr: _ExtFrameSummaryCAStrOpt, next_: _ExtFrameSummaryCA, /) -> bool:
@@ -353,8 +346,7 @@ def _merge_frames(
         )
 
     while len(rev) >= 1:
-        if (curr := get_curr(rev)) is None:
-            continue
+        curr = get_curr(rev)
         if not has_match(curr, rev):
             continue
         next_ = get_solution(curr, rev)
