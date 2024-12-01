@@ -315,18 +315,16 @@ def _merge_frames(
     frames: Iterable[_ExtFrameSummaryCAOptOpt], /
 ) -> list[_ExtFrameSummaryCA]:
     """Merge a set of frames."""
-    init = list(frames)
     rev = list(frames)[::-1]
     values: list[_ExtFrameSummaryCA] = []
 
     def get_curr(
         rev: list[_ExtFrameSummaryCAOptOpt], /
     ) -> _ExtFrameSummaryCAStrOpt | None:
-        while len(rev) >= 1:
+        while True:
             curr = rev.pop(0)
             if curr.module is not None:
                 return cast(_ExtFrameSummaryCAStrOpt, curr)
-        return None
 
     def get_solution(
         curr: _ExtFrameSummaryCAStrOpt, rev: list[_ExtFrameSummaryCAOptOpt], /
