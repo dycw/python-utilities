@@ -218,20 +218,29 @@ def _assemble_exception_paths_no_chain_no_group(
 
 
 @overload
-def trace(func: _F, /, *, enable: Callable[[], bool] | None = ...) -> _F: ...
+def trace(
+    func: _F, /, *, setup: bool = ..., runtime: Callable[[], bool] | None = ...
+) -> _F: ...
 @overload
 def trace(
-    func: None = None, /, *, enable: Callable[[], bool] | None = ...
+    func: None = None, /, *, setup: bool = ..., runtime: Callable[[], bool] | None = ...
 ) -> Callable[[_F], _F]: ...
 def trace(
-    func: _F | None = None, /, *, enable: Callable[[], bool] | None = None
+    func: _F | None = None,
+    /,
+    *,
+    setup: bool = True,
+    runtime: Callable[[], bool] | None = None,
 ) -> _F | Callable[[_F], _F]:
     """Trace a function call."""
     if func is None:
-        result = partial(trace, enable=enable)
+        result = partial(trace, setup=setup, runtime=runtime)
         return cast(Callable[[_F], _F], result)
 
-    if enable is None:
+    if not setup:
+        return func
+
+    if runtime is None:
         if not iscoroutinefunction(func):
 
             @wraps(func)
@@ -260,7 +269,7 @@ def trace(
 
         @wraps(func)
         def trace_sync(*args: Any, **kwargs: Any) -> Any:
-            if en := enable():
+            if en := runtime():
                 locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
             try:
                 return func(*args, **kwargs)
@@ -273,7 +282,7 @@ def trace(
 
     @wraps(func)
     async def trace_async(*args: Any, **kwargs: Any) -> Any:
-        if en := enable():
+        if en := runtime():
             locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
         try:
             return await func(*args, **kwargs)
