@@ -200,7 +200,7 @@ pygments==2.18.0
     # via
     #   ipython
     #   nbconvert
-pytest==8.3.3
+pytest==8.3.4
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio
