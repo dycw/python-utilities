@@ -23,6 +23,12 @@ def log_exception_paths(
     /,
     *,
     logger: Logger = _LOGGER,
+    max_width: int = 80,
+    indent_size: int = 4,
+    max_length: int | None = None,
+    max_string: int | None = None,
+    max_depth: int | None = None,
+    expand_all: bool = False,
 ) -> None:
     """Exception hook to log the traceback."""
     _ = (exc_type, traceback)
@@ -34,7 +40,15 @@ def log_exception_paths(
     except ImportError:  # pragma: no cover
         repr_use = repr(error)
     else:
-        repr_use = pretty_repr(error)
+        repr_use = pretty_repr(
+            error,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
+        )
     logger.error("%s", repr_use)
 
 
