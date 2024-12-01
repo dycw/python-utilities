@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from beartype.roar import BeartypeCallHintReturnViolation
 from pytest import raises
 
 from tests.conftest import SKIPIF_CI
@@ -55,7 +56,6 @@ class TestAssembleExceptionsPaths:
         )
         assert frame.args == (1, 2, 3, 4)
         assert frame.kwargs == {"c": 5, "d": 6, "e": 7}
-        assert set(frame.locals) == {"a", "b", "c", "args", "kwargs", "result"}
         assert frame.locals["a"] == 2
         assert frame.locals["b"] == 4
         assert frame.locals["args"] == (6, 8)
@@ -107,34 +107,39 @@ class TestAssembleExceptionsPaths:
         )
         assert frame.args == (1, 2, 3, 4)
         assert frame.kwargs == {"c": 5, "d": 6, "e": 7}
-        assert set(frame.locals) == {"a", "b", "c", "args", "kwargs", "result"}
         assert frame.locals["a"] == 2
         assert frame.locals["b"] == 4
         assert frame.locals["args"] == (6, 8)
         assert frame.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(exc_path.error, AssertionError)
 
-    def test_func_beartype_aenter(self) -> None:
-        with raises(AssertionError) as exc_info:
+    def test_func_beartype_error(self) -> None:
+        with raises(BeartypeCallHintReturnViolation) as exc_info:
             _ = func_beartype_error_first(1, 2, 3, 4, c=5, d=6, e=7)
         exc_path = assemble_exception_paths(exc_info.value)
         assert isinstance(exc_path, ExcPath)
-        assert len(exc_path) == 1
-        frame = one(exc_path)
-        assert frame.module == "tests.test_traceback_funcs.beartype_aenter"
-        assert frame.name == "func_beartype_aenter"
+        assert len(exc_path) == 2
+        frame1, frame2 = exc_path
+        assert frame1.module == "tests.test_traceback_funcs.beartype_error"
+        assert frame1.name == "func_beartype_error_first"
         assert (
-            frame.code_line
-            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+            frame1.code_line
+            == "return func_beartype_error_second(a, b, *args, c=c, **kwargs)"
         )
-        assert frame.args == (1, 2, 3, 4)
-        assert frame.kwargs == {"c": 5, "d": 6, "e": 7}
-        assert set(frame.locals) == {"a", "b", "c", "args", "kwargs", "result"}
-        assert frame.locals["a"] == 2
-        assert frame.locals["b"] == 4
-        assert frame.locals["args"] == (6, 8)
-        assert frame.locals["kwargs"] == {"d": 12, "e": 14}
-        assert isinstance(exc_path.error, AssertionError)
+        assert frame1.args == (1, 2, 3, 4)
+        assert frame1.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert frame1.locals["a"] == 2
+        assert frame1.locals["b"] == 4
+        assert frame1.locals["args"] == (6, 8)
+        assert frame1.locals["kwargs"] == {"d": 12, "e": 14}
+        assert frame2.module is None
+        assert frame2.name == "func_beartype_error_second"
+        assert frame2.code_line == ""
+        assert frame2.args == (2, 4, 6, 8)
+        assert frame2.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert frame2.locals["args"] == (2, 4, 6, 8)
+        assert frame2.locals["kwargs"] == {"c": 10, "d": 12, "e": 14}
+        assert isinstance(exc_path.error, BeartypeCallHintReturnViolation)
 
     def test_func_chain(self) -> None:
         with raises(ValueError, match=".*") as exc_info:

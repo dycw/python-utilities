@@ -18,7 +18,7 @@ def func_beartype_error_first(
     args = tuple(2 * arg for arg in args)
     c *= 2
     kwargs = {k: 2 * v for k, v in kwargs.items()}
-    return func_beartype_error_second(a, b, *args, c, **kwargs)
+    return func_beartype_error_second(a, b, *args, c=c, **kwargs)
 
 
 @trace
