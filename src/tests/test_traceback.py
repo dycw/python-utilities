@@ -19,6 +19,7 @@ from tests.test_traceback_funcs.untraced import func_untraced
 from utilities.iterables import OneNonUniqueError, one
 from utilities.text import ensure_str, strip_and_dedent
 from utilities.traceback import (
+    ExcChain,
     ExcGroupWithPath,
     ExcPath,
     _CallArgsError,
@@ -91,7 +92,8 @@ class TestAssembleExceptionsPaths:
     def test_func_chain(self) -> None:
         with raises(ValueError, match=".*") as exc_info:
             _ = func_chain_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path = assemble_exception_paths(exc_info.value)
+        exc_chain = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_chain, ExcChain)
 
     def test_func_decorated_sync(self) -> None:
         with raises(AssertionError) as exc_info:

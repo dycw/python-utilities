@@ -226,77 +226,56 @@ def assemble_exception_paths(
     error: _TExc, /
 ) -> _ExcOrExcPathOrExcChainOrExcGroup[_TExc]:
     """Assemble a set of extended tracebacks."""
-    return _assemble_exception_paths_one(error)
+    match list(yield_exceptions(error)):
+        case []:  # pragma: no cover
+            raise ImpossibleCaseError(case=[f"{error}"])
+        case [err]:
+            err = cast(_TExc, err)
+            return _assemble_exception_paths_no_chain_maybe_group(err)
+        case errors:
+            errs = cast(list[_TExc], errors)
+            return ExcChain(
+                errors=[
+                    _assemble_exception_paths_no_chain_maybe_group(e)
+                    for e in errs[::-1]
+                ]
+            )
 
 
-def _assemble_exception_paths_one(
-    error: _ExcOrExcPathOrExcChainOrExcGroup[_TExc], /
+def _assemble_exception_paths_no_chain_maybe_group(
+    error: _TExc, /
 ) -> _ExcOrExcPathOrExcChainOrExcGroup[_TExc]:
-    match error:
-        case ExcChain():
-            return error
-        case ExcGroup():
-            return error
-        case ExcGroupWithPath():
-            return error
-        case ExcPath():
-            return error
-        case BaseException():
-            match list(yield_exceptions(error)):
-                case []:  # pragma: no cover
-                    raise ImpossibleCaseError(case=[f"{error}"])
-                case [err]:
-                    if isinstance(err, ExceptionGroup) and isinstance(
-                        err, HasExceptionPath
-                    ):
-                        frames = [
-                            _Frame(
-                                module=f.module,
-                                name=f.name,
-                                code_line=f.code_line,
-                                line_num=f.line_num,
-                                args=f.extra.args,
-                                kwargs=f.extra.kwargs,
-                                locals=f.locals,
-                            )
-                            for f in err.exc_path.frames
-                        ]
-                        exc_path = ExcPath(frames=frames, error=cast(_TExc, err))
-                        return ExcGroupWithPath(
-                            path=exc_path,
-                            errors=list(
-                                map(_assemble_exception_paths_one, err.exceptions)
-                            ),
-                        )
-                    if isinstance(err, ExceptionGroup) and not isinstance(
-                        err, HasExceptionPath
-                    ):
-                        return ExcGroup(
-                            errors=list(
-                                map(_assemble_exception_paths_one, err.exceptions)
-                            )
-                        )
-                    if isinstance(err, HasExceptionPath):
-                        frames = [
-                            _Frame(
-                                module=f.module,
-                                name=f.name,
-                                code_line=f.code_line,
-                                line_num=f.line_num,
-                                args=f.extra.args,
-                                kwargs=f.extra.kwargs,
-                                locals=f.locals,
-                            )
-                            for f in err.exc_path.frames
-                        ]
-                        return ExcPath(frames=frames, error=cast(_TExc, err))
-                    return error
-                case errors:
-                    breakpoint()
+    if not isinstance(error, ExceptionGroup):
+        return _assemble_exception_paths_no_chain_no_group_maybe_path(error)
+    errors = cast(list[_TExc], error.exceptions)
+    errors = list(map(_assemble_exception_paths_no_chain_maybe_group, errors))
+    if isinstance(error, HasExceptionPath):
+        path = cast(
+            ExcPath[_TExc],
+            _assemble_exception_paths_no_chain_no_group_maybe_path(error),
+        )
+        return ExcGroupWithPath(path=path, errors=errors)
+    return ExcGroup(errors=errors)
 
-                    return ExcChain(
-                        errors=list(map(_assemble_exception_paths_one, errors))[::-1]
-                    )
+
+def _assemble_exception_paths_no_chain_no_group_maybe_path(
+    error: _TExc, /
+) -> ExcPath[_TExc] | BaseException:
+    if isinstance(error, HasExceptionPath):
+        frames = [
+            _Frame(
+                module=f.module,
+                name=f.name,
+                code_line=f.code_line,
+                line_num=f.line_num,
+                args=f.extra.args,
+                kwargs=f.extra.kwargs,
+                locals=f.locals,
+            )
+            for f in error.exc_path.frames
+        ]
+        return ExcPath(frames=frames, error=cast(_TExc, error))
+    return error
 
 
 def trace(func: _F, /) -> _F:
