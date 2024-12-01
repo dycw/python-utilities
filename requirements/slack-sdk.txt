@@ -43,7 +43,7 @@ propcache==0.2.0
     # via
     #   aiohttp
     #   yarl
-pytest==8.3.3
+pytest==8.3.4
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio
