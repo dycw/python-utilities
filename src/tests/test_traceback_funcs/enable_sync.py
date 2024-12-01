@@ -1,13 +1,8 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 from itertools import chain
-from typing import TYPE_CHECKING
 
 from utilities.traceback import trace
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
 
 _enable = True
 
@@ -16,14 +11,14 @@ def _get_enable() -> bool:
     return _enable
 
 
-@contextmanager
-def disable_trace_for_func_enable_sync() -> Iterator[None]:
+def set_enable_for_func_enable_sync() -> None:
     global _enable  # noqa: PLW0603
-    _enable = False
-    try:
-        yield
-    finally:
-        _enable = True
+    _enable = True
+
+
+def set_disable_func_enable_sync() -> None:
+    global _enable  # noqa: PLW0603
+    _enable = True
 
 
 @trace(enable=_get_enable)
