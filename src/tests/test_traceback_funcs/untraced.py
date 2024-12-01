@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from itertools import chain
 
-from utilities.traceback import trace
-
 
 def func_untraced(a: int, b: int, /, *args: int, c: int = 0, **kwargs: int) -> int:
     a *= 2
