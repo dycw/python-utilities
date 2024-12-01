@@ -58,7 +58,6 @@ from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
 from typing_extensions import override
 
-from utilities.dacite import yield_literal_forward_references
 from utilities.dataclasses import Dataclass, asdict_without_defaults, is_dataclass_class
 from utilities.iterables import (
     CheckIterablesEqualError,
@@ -962,6 +961,8 @@ def yield_rows_as_dataclasses(
     """Yield the rows of a DataFrame as dataclasses."""
     from dacite import Config, from_dict
     from dacite.exceptions import WrongTypeError
+
+    from utilities.dacite import yield_literal_forward_references
 
     columns = df.columns
     required: set[str] = set()
