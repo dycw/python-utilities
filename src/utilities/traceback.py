@@ -274,12 +274,12 @@ def yield_extended_frame_summaries(
             module=frame.f_globals.get("__name__"),
             name=summary.name,
             qualname=frame.f_code.co_qualname,
-            code_line=ensure_not_none(summary.line),
+            code_line=ensure_not_none(summary.line, desc="summary.line"),
             first_line_num=frame.f_code.co_firstlineno,
-            line_num=ensure_not_none(summary.lineno),
-            end_line_num=ensure_not_none(summary.end_lineno),
-            col_num=ensure_not_none(summary.colno),
-            end_col_num=ensure_not_none(summary.end_colno),
+            line_num=ensure_not_none(summary.lineno, desc="summary.lineno"),
+            end_line_num=ensure_not_none(summary.end_lineno, desc="summary.end_lineno"),
+            col_num=ensure_not_none(summary.colno, desc="summary.colno"),
+            end_col_num=ensure_not_none(summary.end_colno, desc="summary.end_colno"),
             locals=frame.f_locals,
             extra=extra_use,
         )
@@ -319,7 +319,7 @@ def _merge_frames(
 
     def get_curr(rev: list[_ExtFrameSummaryCAOptOpt], /) -> _ExtFrameSummaryCAStrOpt:
         curr = rev.pop(0)
-        _ = ensure_not_none(curr.module)
+        _ = ensure_not_none(curr.module, desc="curr.module")
         return cast(_ExtFrameSummaryCAStrOpt, curr)
 
     def get_solution(

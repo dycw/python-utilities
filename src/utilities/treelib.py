@@ -128,7 +128,7 @@ class Node(treelib.Node, Generic[_T]):
     @property
     @override
     def identifier(self) -> str:
-        return ensure_not_none(super().identifier)
+        return ensure_not_none(super().identifier, desc="super().identifier")
 
     @identifier.setter
     @override
