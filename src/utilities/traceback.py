@@ -40,8 +40,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from types import FrameType
 
-    from utilities.typing import StrMapping
-
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 _T = TypeVar("_T")
@@ -187,6 +185,12 @@ class ExcGroup(Generic[_TExc]):
 
 
 @dataclass(kw_only=True, slots=True)
+class ExcGroupWithPath(Generic[_TExc]):
+    path: ExcPath[_TExc]
+    errors: list[_ExcOrExcPathOrExcChainOrExcGroup[_TExc]] = field(default_factory=list)
+
+
+@dataclass(kw_only=True, slots=True)
 class ExcPath(Generic[_TExc]):
     frames: list[_Frame] = field(default_factory=list)
     error: _TExc
@@ -210,7 +214,11 @@ class _Frame:
 
 
 _ExcOrExcPathOrExcChainOrExcGroup: TypeAlias = (
-    BaseException | ExcPath[_TExc] | ExcChain[_TExc] | ExcGroup[_TExc]
+    BaseException
+    | ExcPath[_TExc]
+    | ExcChain[_TExc]
+    | ExcGroup[_TExc]
+    | ExcGroupWithPath[_TExc]
 )
 
 
@@ -225,9 +233,11 @@ def _assemble_exception_paths_one(
     error: _ExcOrExcPathOrExcChainOrExcGroup[_TExc], /
 ) -> _ExcOrExcPathOrExcChainOrExcGroup[_TExc]:
     match error:
-        case ExcChain(errors=errors):
+        case ExcChain():
             return error
-        case ExcGroup(errors=errors):
+        case ExcGroup():
+            return error
+        case ExcGroupWithPath():
             return error
         case ExcPath():
             return error
@@ -236,7 +246,31 @@ def _assemble_exception_paths_one(
                 case []:  # pragma: no cover
                     raise ImpossibleCaseError(case=[f"{error}"])
                 case [err]:
-                    if isinstance(err, ExceptionGroup):
+                    if isinstance(err, ExceptionGroup) and isinstance(
+                        err, HasExceptionPath
+                    ):
+                        frames = [
+                            _Frame(
+                                module=f.module,
+                                name=f.name,
+                                code_line=f.code_line,
+                                line_num=f.line_num,
+                                args=f.extra.args,
+                                kwargs=f.extra.kwargs,
+                                locals=f.locals,
+                            )
+                            for f in err.exc_path.frames
+                        ]
+                        exc_path = ExcPath(frames=frames, error=cast(_TExc, err))
+                        return ExcGroupWithPath(
+                            path=exc_path,
+                            errors=list(
+                                map(_assemble_exception_paths_one, err.exceptions)
+                            ),
+                        )
+                    if isinstance(err, ExceptionGroup) and not isinstance(
+                        err, HasExceptionPath
+                    ):
                         return ExcGroup(
                             errors=list(
                                 map(_assemble_exception_paths_one, err.exceptions)
@@ -263,15 +297,8 @@ def _assemble_exception_paths_one(
                     )
 
 
-@overload
-def trace(func: _F, /) -> _F: ...
-@overload
-def trace(func: None = None, /) -> Callable[[_F], _F]: ...
-def trace(func: _F | None = None, /) -> _F | Callable[[_F], _F]:
+def trace(func: _F, /) -> _F:
     """Trace a function call."""
-    if func is None:
-        result = partial(trace)
-        return cast(Callable[[_F], _F], result)
     if not iscoroutinefunction(func):
 
         @wraps(func)
@@ -298,23 +325,8 @@ def trace(func: _F | None = None, /) -> _F | Callable[[_F], _F]:
 
 
 @dataclass(kw_only=True, slots=False)  # no slots
-class TraceMixin:
+class TraceMixinZZZ:
     """Mix-in for tracking an exception and its call stack."""
-
-    error: Exception
-    raw_frames: list[_RawTraceMixinFrame[_CallArgs | None]] = field(
-        default_factory=list
-    )
-
-    @property
-    def frames(self) -> list[_TraceMixinFrame[_CallArgs | None]]:
-        raw_frames = self.raw_frames
-        return [
-            _TraceMixinFrame[_CallArgs | None](
-                depth=i, max_depth=len(raw_frames), raw_frame=frame
-            )
-            for i, frame in enumerate(raw_frames[::-1], start=1)
-        ]
 
     def pretty(
         self,
@@ -399,83 +411,6 @@ class TraceMixin:
     def _indent(self, text: str, depth: int, /) -> str:
         """Indent the text."""
         return indent(text, 2 * depth * " ")
-
-
-@dataclass(kw_only=True, slots=True)
-class _RawTraceMixinFrame(Generic[_T]):
-    """A collection of call arguments and an extended frame summary."""
-
-    call_args: _CallArgs
-    ext_frame_summary: _ExtFrameSummary[Any, _T]
-
-
-@dataclass(kw_only=True, slots=True)
-class _TraceMixinFrame(Generic[_T]):
-    """A collection of call arguments and an extended frame summary."""
-
-    depth: int
-    max_depth: int
-    raw_frame: _RawTraceMixinFrame[_T]
-
-    @property
-    def func(self) -> Callable[..., Any]:
-        return self.raw_frame.call_args.func
-
-    @property
-    def args(self) -> tuple[Any, ...]:
-        return self.raw_frame.call_args.args
-
-    @property
-    def kwargs(self) -> dict[str, Any]:
-        return self.raw_frame.call_args.kwargs
-
-    @property
-    def filename(self) -> Path:
-        return self.raw_frame.ext_frame_summary.filename
-
-    @property
-    def module(self) -> str | None:
-        return self.raw_frame.ext_frame_summary.module
-
-    @property
-    def name(self) -> str:
-        return self.raw_frame.ext_frame_summary.name
-
-    @property
-    def qualname(self) -> str:
-        return self.raw_frame.ext_frame_summary.qualname
-
-    @property
-    def code_line(self) -> str | None:
-        return self.raw_frame.ext_frame_summary.code_line
-
-    @property
-    def first_line_num(self) -> int:
-        return self.raw_frame.ext_frame_summary.first_line_num
-
-    @property
-    def line_num(self) -> int | None:
-        return self.raw_frame.ext_frame_summary.line_num
-
-    @property
-    def end_line_num(self) -> int | None:
-        return self.raw_frame.ext_frame_summary.end_line_num
-
-    @property
-    def col_num(self) -> int | None:
-        return self.raw_frame.ext_frame_summary.col_num
-
-    @property
-    def end_col_num(self) -> int | None:
-        return self.raw_frame.ext_frame_summary.end_col_num
-
-    @property
-    def locals(self) -> StrMapping:
-        return self.raw_frame.ext_frame_summary.locals
-
-    @property
-    def extra(self) -> _T:
-        return self.raw_frame.ext_frame_summary.extra
 
 
 @overload
@@ -602,7 +537,6 @@ __all__ = [
     "ExcInfo",
     "ExcPath",
     "OptExcInfo",
-    "TraceMixin",
     "trace",
     "yield_exceptions",
     "yield_extended_frame_summaries",
