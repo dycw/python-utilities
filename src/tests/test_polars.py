@@ -1325,9 +1325,13 @@ class TestYieldRowsAsDataclasses:
         class Row:
             x: TruthLit | None = None
 
+        # assert 0, type(TruthLit)
         result = list(
             yield_rows_as_dataclasses(
-                df, Row, check_types="all", forward_references={"Truth2": Truth}
+                df,
+                Row,
+                check_types="all",
+                # forward_references={"TruthLit": Truth},
             )
         )
         expected = [Row(x="true"), Row(x="false"), Row(x="true")]
