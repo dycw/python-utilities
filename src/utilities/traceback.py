@@ -292,6 +292,8 @@ def _assemble_exception_paths_one(
                         return ExcPath(frames=frames, error=cast(_TExc, err))
                     return error
                 case errors:
+                    breakpoint()
+
                     return ExcChain(
                         errors=list(map(_assemble_exception_paths_one, errors))[::-1]
                     )

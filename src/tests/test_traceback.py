@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Literal
 
 from pytest import raises
 
+from tests.test_traceback_funcs.chain import func_chain_first
 from tests.test_traceback_funcs.decorated_async import func_decorated_async_first
 from tests.test_traceback_funcs.decorated_sync import func_decorated_sync_first
 from tests.test_traceback_funcs.error_bind import (
@@ -14,6 +15,7 @@ from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.recursive import func_recursive
 from tests.test_traceback_funcs.task_group import func_task_group_first
 from tests.test_traceback_funcs.two import func_two_first
+from tests.test_traceback_funcs.untraced import func_untraced
 from utilities.iterables import OneNonUniqueError, one
 from utilities.text import ensure_str, strip_and_dedent
 from utilities.traceback import (
@@ -86,6 +88,11 @@ class TestAssembleExceptionsPaths:
         assert second.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_path.error, AssertionError)
 
+    def test_func_chain(self) -> None:
+        with raises(ValueError, match=".*") as exc_info:
+            _ = func_chain_first(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_path = assemble_exception_paths(exc_info.value)
+
     def test_func_decorated_sync(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_decorated_sync_first(1, 2, 3, 4, c=5, d=6, e=7)
@@ -131,7 +138,7 @@ class TestAssembleExceptionsPaths:
         assert second.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_path.error, AssertionError)
 
-    async def test_task_group(self) -> None:
+    async def test_func_task_group(self) -> None:
         with raises(ExceptionGroup) as exc_info:
             await func_task_group_first(1, 2, 3, 4, c=5, d=6, e=7)
         exc_group = assemble_exception_paths(exc_info.value)
@@ -182,6 +189,12 @@ class TestAssembleExceptionsPaths:
         assert second_frame.locals["args"] == (14, 18)
         assert second_frame.locals["kwargs"] == {"d": 26, "e": 30}
         assert isinstance(second.error, AssertionError)
+
+    def test_func_untraced(self) -> None:
+        with raises(AssertionError) as exc_info:
+            _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
+        error = assemble_exception_paths(exc_info.value)
+        assert isinstance(error, AssertionError)
 
     def test_custom_error(self) -> None:
         @trace
