@@ -11,28 +11,45 @@ _F = TypeVar("_F", bound=Callable[..., Any])
 
 
 @overload
-def beartype_cond(func: _F, /, *, enable: Callable[[], bool] | None = ...) -> _F: ...
+def beartype_cond(
+    func: _F,
+    /,
+    *,
+    setup: Callable[[], bool] | None = ...,
+    runtime: Callable[[], bool] | None = ...,
+) -> _F: ...
 @overload
 def beartype_cond(
-    func: None = None, /, *, enable: Callable[[], bool] | None = ...
+    func: None = None,
+    /,
+    *,
+    setup: Callable[[], bool] | None = ...,
+    runtime: Callable[[], bool] | None = ...,
 ) -> Callable[[_F], _F]: ...
 def beartype_cond(
-    func: _F | None = None, /, *, enable: Callable[[], bool] | None = None
+    func: _F | None = None,
+    /,
+    *,
+    setup: Callable[[], bool] | None = None,
+    runtime: Callable[[], bool] | None = None,
 ) -> _F | Callable[[_F], _F]:
     """Apply `beartype` conditionally."""
     if func is None:
-        result = partial(beartype_cond, enable=enable)
+        result = partial(beartype_cond, setup=setup, runtime=runtime)
         return cast(Callable[[_F], _F], result)
 
+    if (setup is not None) and not setup():
+        return func
+
     decorated = beartype(func)
-    if enable is None:
+    if runtime is None:
         return decorated
 
     if not iscoroutinefunction(func):
 
         @wraps(func)
         def beartype_sync(*args: Any, **kwargs: Any) -> Any:
-            if enable():
+            if runtime():
                 return decorated(*args, **kwargs)
             return func(*args, **kwargs)
 
@@ -40,7 +57,7 @@ def beartype_cond(
 
     @wraps(func)
     async def beartype_async(*args: Any, **kwargs: Any) -> Any:
-        if enable():
+        if runtime():
             return await decorated(*args, **kwargs)
         return await func(*args, **kwargs)
 

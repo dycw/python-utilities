@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from asyncio import sleep
 from contextlib import contextmanager
 from itertools import chain
 from typing import TYPE_CHECKING
@@ -18,7 +17,7 @@ def _get_enable() -> bool:
 
 
 @contextmanager
-def disable_trace_for_func_enable_async() -> Iterator[None]:
+def disable_trace_for_func_runtime_sync() -> Iterator[None]:
     global _enable  # noqa: PLW0603
     _enable = False
     try:
@@ -27,11 +26,8 @@ def disable_trace_for_func_enable_async() -> Iterator[None]:
         _enable = True
 
 
-@trace(enable=_get_enable)
-async def func_enable_async(
-    a: int, b: int, /, *args: int, c: int = 0, **kwargs: int
-) -> int:
-    await sleep(0.01)
+@trace(runtime=_get_enable)
+def func_runtime_sync(a: int, b: int, /, *args: int, c: int = 0, **kwargs: int) -> int:
     a *= 2
     b *= 2
     args = tuple(2 * arg for arg in args)
