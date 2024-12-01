@@ -89,7 +89,7 @@ class _CallArgsError(TypeError):
     """Raised when a set of call arguments cannot be created."""
 
 
-@dataclass(repr=False, kw_only=True, slots=True)
+@dataclass(kw_only=True, slots=True)
 class _ExtFrameSummary(Generic[_TStrNone, _T]):
     """An extended frame summary."""
 
@@ -106,27 +106,6 @@ class _ExtFrameSummary(Generic[_TStrNone, _T]):
     locals: dict[str, Any] = field(default_factory=dict)
     extra: _T
 
-    @override
-    def __repr__(self) -> str:
-        cls = get_class_name(self)
-        parts: list[tuple[str, Any]] = [
-            ("name", self.name),
-            ("module", self.module),
-            ("filename", str(self.filename)),
-            ("name", self.name),
-            ("qualname", self.qualname),
-            ("code_line", self.code_line),
-            ("first_line_num", self.first_line_num),
-            ("line_num", self.line_num),
-            ("end_line_num", self.end_line_num),
-            ("col_num", self.col_num),
-            ("end_col_num", self.end_col_num),
-        ]
-        if self.extra is not None:
-            parts.append(("extra", self.extra))
-        joined = ", ".join(f"{k}={v!r}" for k, v in parts)
-        return f"{cls}({joined})"
-
 
 _ExtFrameSummaryCAOptOpt: TypeAlias = _ExtFrameSummary[str | None, _CallArgs | None]
 _ExtFrameSummaryCAStrOpt: TypeAlias = _ExtFrameSummary[str, _CallArgs | None]
@@ -141,22 +120,11 @@ class _ExceptionPathInternal:
     frames: list[_ExtFrameSummaryCA] = field(default_factory=list)
     error: BaseException
 
-    @override
-    def __repr__(self) -> str:
-        cls = get_class_name(self)
-        parts: list[tuple[str, Any]] = [
-            ("raw", f"{len(self.raw)} frame(s)"),
-            ("frames", self.frames),
-            ("error", self.error),
-        ]
-        joined = ", ".join(f"{k}={v!r}" for k, v in parts)
-        return f"{cls}({joined})"
-
 
 @runtime_checkable
 class HasExceptionPath(Protocol):
     @property
-    def exc_path(self) -> _ExceptionPathInternal: ...
+    def exc_path(self) -> _ExceptionPathInternal: ...  # pragma: no cover
 
 
 @dataclass(kw_only=True, slots=True)
@@ -174,16 +142,10 @@ class ExcChain(Generic[_TExc]):
 
 @dataclass(kw_only=True, slots=True)
 class ExcGroup(Generic[_TExc]):
-    path: ExcPath[_TExc] | None = None
+    path: ExcPath[_TExc]
     errors: list[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException] = field(
         default_factory=list
     )
-
-    def __iter__(self) -> Iterator[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException]:
-        yield from self.errors
-
-    def __len__(self) -> int:
-        return len(self.errors)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -231,12 +193,9 @@ def _assemble_exception_paths_no_chain(
 ) -> ExcPath[_TExc] | ExcGroup[_TExc] | BaseException:
     if not isinstance(error, ExceptionGroup):
         return _assemble_exception_paths_no_chain_no_group(error)
+    path = cast(ExcPath[_TExc], _assemble_exception_paths_no_chain_no_group(error))
     errors = cast(list[_TExc], error.exceptions)
     errors = list(map(_assemble_exception_paths_no_chain, errors))
-    if isinstance(error, HasExceptionPath):
-        path = cast(ExcPath[_TExc], _assemble_exception_paths_no_chain_no_group(error))
-    else:
-        path = None
     return ExcGroup(path=path, errors=errors)
 
 
@@ -358,24 +317,18 @@ def _merge_frames(
     rev = list(frames)[::-1]
     values: list[_ExtFrameSummaryCA] = []
 
-    def get_curr(
-        rev: list[_ExtFrameSummaryCAOptOpt], /
-    ) -> _ExtFrameSummaryCAStrOpt | None:
-        while len(rev) >= 1:
-            curr = rev.pop(0)
-            if curr.module is not None:
-                return cast(_ExtFrameSummaryCAStrOpt, curr)
-        return None
+    def get_curr(rev: list[_ExtFrameSummaryCAOptOpt], /) -> _ExtFrameSummaryCAStrOpt:
+        curr = rev.pop(0)
+        _ = ensure_not_none(curr.module)
+        return cast(_ExtFrameSummaryCAStrOpt, curr)
 
     def get_solution(
         curr: _ExtFrameSummaryCAStrOpt, rev: list[_ExtFrameSummaryCAOptOpt], /
     ) -> _ExtFrameSummaryCA:
-        while len(rev) >= 1:
+        while True:
             next_ = rev.pop(0)
             if has_extra(next_) and is_match(curr, next_):
                 return next_
-        msg = "No solution found"
-        raise RuntimeError(msg)
 
     def has_extra(frame: _ExtFrameSummaryCAOptOpt, /) -> TypeGuard[_ExtFrameSummaryCA]:
         return frame.extra is not None
@@ -383,10 +336,7 @@ def _merge_frames(
     def has_match(
         curr: _ExtFrameSummaryCAStrOpt, rev: list[_ExtFrameSummaryCAOptOpt], /
     ) -> bool:
-        try:
-            next_, *_ = filter(has_extra, rev)
-        except ValueError:
-            return False
+        next_, *_ = filter(has_extra, rev)
         return is_match(curr, next_)
 
     def is_match(curr: _ExtFrameSummaryCAStrOpt, next_: _ExtFrameSummaryCA, /) -> bool:
@@ -395,8 +345,7 @@ def _merge_frames(
         )
 
     while len(rev) >= 1:
-        if (curr := get_curr(rev)) is None:
-            continue
+        curr = get_curr(rev)
         if not has_match(curr, rev):
             continue
         next_ = get_solution(curr, rev)

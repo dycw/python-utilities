@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Literal
 
 from pytest import raises
 
+from tests.test_traceback_funcs.beartype import func_beartype
 from tests.test_traceback_funcs.chain import func_chain_first
 from tests.test_traceback_funcs.decorated_async import func_decorated_async_first
 from tests.test_traceback_funcs.decorated_sync import func_decorated_sync_first
@@ -87,6 +88,29 @@ class TestAssembleExceptionsPaths:
         assert frame2.locals["b"] == 8
         assert frame2.locals["args"] == (12, 16)
         assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
+        assert isinstance(exc_path.error, AssertionError)
+
+    def test_func_beartype(self) -> None:
+        with raises(AssertionError) as exc_info:
+            _ = func_beartype(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
+        assert len(exc_path) == 1
+        frame = one(exc_path)
+        assert frame.module == "tests.test_traceback_funcs.beartype"
+        assert frame.name == "func_beartype"
+        assert (
+            frame.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert frame.line_num == 19
+        assert frame.args == (1, 2, 3, 4)
+        assert frame.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert set(frame.locals) == {"a", "b", "c", "args", "kwargs", "result"}
+        assert frame.locals["a"] == 2
+        assert frame.locals["b"] == 4
+        assert frame.locals["args"] == (6, 8)
+        assert frame.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(exc_path.error, AssertionError)
 
     def test_func_chain(self) -> None:
