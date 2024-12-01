@@ -321,10 +321,11 @@ def _merge_frames(
     def get_curr(
         rev: list[_ExtFrameSummaryCAOptOpt], /
     ) -> _ExtFrameSummaryCAStrOpt | None:
-        while True:
+        while len(rev) >= 1:
             curr = rev.pop(0)
             if curr.module is not None:
                 return cast(_ExtFrameSummaryCAStrOpt, curr)
+        return None
 
     def get_solution(
         curr: _ExtFrameSummaryCAStrOpt, rev: list[_ExtFrameSummaryCAOptOpt], /

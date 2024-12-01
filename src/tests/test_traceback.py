@@ -5,7 +5,10 @@ from typing import TYPE_CHECKING, Literal
 from pytest import raises
 
 from tests.test_traceback_funcs.beartype import func_beartype
-from tests.test_traceback_funcs.beartype_aenter import func_beartype_aenter
+from tests.test_traceback_funcs.beartype_aenter import (
+    ClassBeartypeAsyncContextManager,
+    func_beartype_aenter,
+)
 from tests.test_traceback_funcs.chain import func_chain_first
 from tests.test_traceback_funcs.decorated_async import func_decorated_async_first
 from tests.test_traceback_funcs.decorated_sync import func_decorated_sync_first
