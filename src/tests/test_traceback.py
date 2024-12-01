@@ -6,7 +6,7 @@ from pytest import raises
 
 from tests.conftest import SKIPIF_CI
 from tests.test_traceback_funcs.beartype import func_beartype
-from tests.test_traceback_funcs.beartype_aenter import func_beartype_aenter
+from tests.test_traceback_funcs.beartype_error import func_beartype_error_first
 from tests.test_traceback_funcs.chain import func_chain_first
 from tests.test_traceback_funcs.decorated_async import func_decorated_async_first
 from tests.test_traceback_funcs.decorated_sync import func_decorated_sync_first
@@ -114,9 +114,9 @@ class TestAssembleExceptionsPaths:
         assert frame.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(exc_path.error, AssertionError)
 
-    async def test_func_beartype_aenter(self) -> None:
+    def test_func_beartype_aenter(self) -> None:
         with raises(AssertionError) as exc_info:
-            _ = await func_beartype_aenter(1, 2, 3, 4, c=5, d=6, e=7)
+            _ = func_beartype_error_first(1, 2, 3, 4, c=5, d=6, e=7)
         exc_path = assemble_exception_paths(exc_info.value)
         assert isinstance(exc_path, ExcPath)
         assert len(exc_path) == 1
