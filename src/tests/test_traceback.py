@@ -196,28 +196,28 @@ class TestAssembleExceptionsPaths:
         exc_path = assemble_exception_paths(exc_info.value)
         assert isinstance(exc_path, ExcPath)
         assert len(exc_path) == 2
-        first, second = exc_path
-        assert first.module == "tests.test_traceback_funcs.recursive"
-        assert first.name == "func_recursive"
-        assert first.code_line == "return func_recursive(a, b, *args, c=c, **kwargs)"
-        assert first.args == (1, 2, 3, 4)
-        assert first.kwargs == {"c": 5, "d": 6, "e": 7}
-        assert first.locals["a"] == 2
-        assert first.locals["b"] == 4
-        assert first.locals["args"] == (6, 8)
-        assert first.locals["kwargs"] == {"d": 12, "e": 14}
-        assert second.module == "tests.test_traceback_funcs.recursive"
-        assert second.name == "func_recursive"
+        frame1, frame2 = exc_path
+        assert frame1.module == "tests.test_traceback_funcs.recursive"
+        assert frame1.name == "func_recursive"
+        assert frame1.code_line == "return func_recursive(a, b, *args, c=c, **kwargs)"
+        assert frame1.args == (1, 2, 3, 4)
+        assert frame1.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert frame1.locals["a"] == 2
+        assert frame1.locals["b"] == 4
+        assert frame1.locals["args"] == (6, 8)
+        assert frame1.locals["kwargs"] == {"d": 12, "e": 14}
+        assert frame2.module == "tests.test_traceback_funcs.recursive"
+        assert frame2.name == "func_recursive"
         assert (
-            second.code_line
+            frame2.code_line
             == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
         )
-        assert second.args == (2, 4, 6, 8)
-        assert second.kwargs == {"c": 10, "d": 12, "e": 14}
-        assert second.locals["a"] == 4
-        assert second.locals["b"] == 8
-        assert second.locals["args"] == (12, 16)
-        assert second.locals["kwargs"] == {"d": 24, "e": 28}
+        assert frame2.args == (2, 4, 6, 8)
+        assert frame2.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert frame2.locals["a"] == 4
+        assert frame2.locals["b"] == 8
+        assert frame2.locals["args"] == (12, 16)
+        assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_path.error, AssertionError)
 
     async def test_func_task_group_one(self) -> None:
@@ -239,23 +239,23 @@ class TestAssembleExceptionsPaths:
         assert path_frame.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(exc_group.path.error, ExceptionGroup)
         assert len(exc_group.errors) == 1
-        (first,) = exc_group.errors
-        assert isinstance(first, ExcPath)
-        assert len(first) == 1
-        first_frame = one(first)
-        assert first_frame.module == "tests.test_traceback_funcs.task_group_one"
-        assert first_frame.name == "func_task_group_one_second"
+        exc_path = one(exc_group.errors)
+        assert isinstance(exc_path, ExcPath)
+        assert len(exc_path) == 1
+        frame = one(exc_path)
+        assert frame.module == "tests.test_traceback_funcs.task_group_one"
+        assert frame.name == "func_task_group_one_second"
         assert (
-            first_frame.code_line
+            frame.code_line
             == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
         )
-        assert first_frame.args == (2, 4, 6, 8)
-        assert first_frame.kwargs == {"c": 10, "d": 12, "e": 14}
-        assert first_frame.locals["a"] == 4
-        assert first_frame.locals["b"] == 8
-        assert first_frame.locals["args"] == (12, 16)
-        assert first_frame.locals["kwargs"] == {"d": 24, "e": 28}
-        assert isinstance(first.error, AssertionError)
+        assert frame.args == (2, 4, 6, 8)
+        assert frame.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert frame.locals["a"] == 4
+        assert frame.locals["b"] == 8
+        assert frame.locals["args"] == (12, 16)
+        assert frame.locals["kwargs"] == {"d": 24, "e": 28}
+        assert isinstance(exc_path.error, AssertionError)
 
     @SKIPIF_CI
     async def test_func_task_group_two(self) -> None:
