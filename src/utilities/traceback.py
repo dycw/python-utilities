@@ -168,9 +168,7 @@ class ExcChain(Generic[_TExc]):
         default_factory=list
     )
 
-    def __iter__(
-        self,
-    ) -> Iterator[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException]:
+    def __iter__(self) -> Iterator[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException]:
         yield from self.errors
 
     def __len__(self) -> int:
@@ -184,9 +182,7 @@ class ExcGroup(Generic[_TExc]):
         default_factory=list
     )
 
-    def __iter__(
-        self,
-    ) -> Iterator[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException]:
+    def __iter__(self) -> Iterator[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException]:
         yield from self.errors
 
     def __len__(self) -> int:
@@ -241,10 +237,7 @@ def _assemble_exception_paths_no_chain(
     errors = cast(list[_TExc], error.exceptions)
     errors = list(map(_assemble_exception_paths_no_chain, errors))
     if isinstance(error, HasExceptionPath):
-        path = cast(
-            ExcPath[_TExc],
-            _assemble_exception_paths_no_chain_no_group(error),
-        )
+        path = cast(ExcPath[_TExc], _assemble_exception_paths_no_chain_no_group(error))
     else:
         path = None
     return ExcGroup(path=path, errors=errors)

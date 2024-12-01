@@ -1,23 +1,15 @@
 from __future__ import annotations
 
 import sys
-from io import StringIO
-from logging import StreamHandler, getLogger
-from sys import stdout
+from functools import partial
+from logging import getLogger
 
 from utilities.foo_funcs import func_decorated_first
-from utilities.sys import log_traceback_excepthook
+from utilities.sys import log_exception_paths
 from utilities.traceback import trace
 
-buffer = StringIO()
-LOGGER = getLogger("utilities.sys")
-LOGGER.setLevel("INFO")
-handler = StreamHandler(stdout)
-handler.setLevel("INFO")
-LOGGER.addHandler(handler)
-
-
-sys.excepthook = log_traceback_excepthook
+_LOGGER = getLogger(__name__)
+sys.excepthook = partial(log_exception_paths, logger=_LOGGER)
 
 
 @trace
@@ -28,11 +20,6 @@ def calls_func_first(a: int, b: int, /, *args: int, c: int = 0, **kwargs: int) -
     c *= 2
     kwargs = {k: 2 * v for k, v in kwargs.items()}
     return func_decorated_first(a, b, *args, c, **kwargs)
-    try:
-        return func_decorated_first(a, b, *args, c, **kwargs)
-    except AssertionError:
-        msg = "We diverted into a value error"
-        raise ValueError(msg)
 
 
 _ = calls_func_first(1, 2, 3, 4, c=5, d=6, e=7)

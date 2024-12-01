@@ -11,18 +11,15 @@ from utilities.sys import VERSION_MAJOR_MINOR
 class TestExceptHook:
     def test_custom_excepthook(self) -> None:
         code = """
-import sys
+from sys import stdout
 from io import StringIO
+from logging import getLogger
+from utilities.sys import log_exception_paths
 
-buffer = StringIO()
+sys.excepthook = log_exception_paths
+_LOGGER = getLogger(__name__)
+_LOGGER.addHandler(StreamHandler(stdout))
 
-def custom_excepthook(exc_type, exc_value, exc_traceback):
-    print("Custom exception hook called", file=buffer)
-    print(f"Exception type: {exc_type}", file=buffer)
-    print(f"Exception value: {exc_value}", file=buffer)
-    print(buffer.getvalue())
-
-sys.excepthook = custom_excepthook
 
 raise ValueError("Test exception")
     """
