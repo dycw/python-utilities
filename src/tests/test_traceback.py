@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
-from pytest import raises
+from pytest import mark, raises
 
 from tests.conftest import SKIPIF_CI
 from tests.test_traceback_funcs.beartype import func_beartype
@@ -11,6 +11,10 @@ from tests.test_traceback_funcs.beartype_error import func_beartype_error_first
 from tests.test_traceback_funcs.chain import func_chain_first
 from tests.test_traceback_funcs.decorated_async import func_decorated_async_first
 from tests.test_traceback_funcs.decorated_sync import func_decorated_sync_first
+from tests.test_traceback_funcs.enable_sync import (
+    func_enable_sync,
+    set_disable_func_enable_sync,
+)
 from tests.test_traceback_funcs.error_bind import (
     func_error_bind_async,
     func_error_bind_sync,
@@ -189,6 +193,18 @@ class TestAssembleExceptionsPaths:
         error = assemble_exception_paths(exc_info.value)
         assert isinstance(error, ExcPath)
         self._assert_decorated(error, "async")
+
+    @mark.only
+    def test_func_enable_sync(self) -> None:
+        with raises(AssertionError) as exc_info:
+            _ = func_enable_sync(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
+        set_disable_func_enable_sync()
+        with raises(AssertionError) as exc_info:
+            _ = func_enable_sync(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_path = assemble_exception_paths(exc_info.value)
+        assert isinstance(exc_path, ExcPath)
 
     def test_func_recursive(self) -> None:
         with raises(AssertionError) as exc_info:
