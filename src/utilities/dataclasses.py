@@ -172,17 +172,29 @@ def yield_field_names(obj: Dataclass | type[Dataclass], /) -> Iterator[str]:
         yield field.name
 
 
-def _is_not_default_value(field: Field, value: Any, /) -> bool:
+def _is_not_default_value(
+    cls: Dataclass | type[Dataclass],
+    field: Field,
+    value: Any,
+    /,
+    *,
+    comparisons: Mapping[type[Any], Callable[[Any, Any], bool]] | None = None,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+) -> bool:
     if (field.default is MISSING) and (field.default_factory is MISSING):
         return True
     if (field.default is not MISSING) and (field.default_factory is MISSING):
-        try:
-            return bool(value != field.default)
-        except TypeError:
-            return True
+        return bool(value != field.default)
     if (field.default is MISSING) and (field.default_factory is not MISSING):
+        if comparisons is None:
+            cmp = eq
+        else:
+            hints = get_type_hints(cls)
+            type_ = hints[field.name]
+            cmp = comparisons.get(type_, eq)
         try:
-            return bool(value != field.default_factory())
+            return not cmp(value, field.default_factory())
         except TypeError:
             return True
     raise ImpossibleCaseError(  # pragma: no cover
