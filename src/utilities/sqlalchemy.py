@@ -67,7 +67,7 @@ from utilities.types import (
     Duration,
     StrMapping,
     TupleOrStrMapping,
-    is_sequence_of_tuple_or_string_mapping,
+    is_sequence_of_tuple_or_str_mapping,
     is_string_mapping,
     is_tuple,
     is_tuple_or_str_mapping,
@@ -673,9 +673,7 @@ def _is_pair_of_sequence_of_tuple_or_string_mapping_and_table(
     obj: Any, /
 ) -> TypeGuard[_PairOfSequenceOfTupleOrStrMappingAndTable]:
     """Check if an object is a pair of a sequence of tuples/string mappings and a table."""
-    return _is_pair_with_predicate_and_table(
-        obj, is_sequence_of_tuple_or_string_mapping
-    )
+    return _is_pair_with_predicate_and_table(obj, is_sequence_of_tuple_or_str_mapping)
 
 
 def _is_pair_of_str_mapping_and_table(

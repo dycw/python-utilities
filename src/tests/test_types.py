@@ -37,7 +37,7 @@ from utilities.types import (
     ensure_sized_not_str,
     ensure_time,
     is_hashable,
-    is_sequence_of_tuple_or_string_mapping,
+    is_sequence_of_tuple_or_str_mapping,
     is_sized,
     is_sized_not_str,
     is_string_mapping,
@@ -292,7 +292,7 @@ class TestIsHashable:
         assert is_hashable(obj) is expected
 
 
-class TestIsSequenceOfTupleOrStringMapping:
+class TestIsSequenceOfTupleOrStrgMapping:
     @mark.parametrize(
         ("obj", "expected"),
         [
@@ -303,7 +303,7 @@ class TestIsSequenceOfTupleOrStringMapping:
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = is_sequence_of_tuple_or_string_mapping(obj)
+        result = is_sequence_of_tuple_or_str_mapping(obj)
         assert result is expected
 
 

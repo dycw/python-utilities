@@ -370,7 +370,7 @@ def is_sized(obj: Any, /) -> TypeGuard[Sized]:
     return True
 
 
-def is_sequence_of_tuple_or_string_mapping(
+def is_sequence_of_tuple_or_str_mapping(
     obj: Any, /
 ) -> TypeGuard[Sequence[TupleOrStrMapping]]:
     """Check if an object is a sequence of tuple or string mappings."""
@@ -435,7 +435,7 @@ __all__ = [
     "ensure_sized_not_str",
     "ensure_time",
     "is_hashable",
-    "is_sequence_of_tuple_or_string_mapping",
+    "is_sequence_of_tuple_or_str_mapping",
     "is_sized",
     "is_sized_not_str",
     "is_string_mapping",
