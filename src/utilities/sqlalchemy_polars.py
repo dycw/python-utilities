@@ -97,6 +97,7 @@ async def insert_dataframe(
             await insert_items(
                 engine,
                 (items, table_or_orm),
+                snake=snake,
                 chunk_size_frac=chunk_size_frac,
                 assume_tables_exist=assume_tables_exist,
                 timeout_create=timeout_create,
@@ -106,6 +107,7 @@ async def insert_dataframe(
             await upsert_items(
                 engine,
                 (items, table_or_orm),
+                snake=snake,
                 chunk_size_frac=chunk_size_frac,
                 selected_or_all=selected_or_all,
                 assume_tables_exist=assume_tables_exist,

@@ -3,15 +3,15 @@ from __future__ import annotations
 import reprlib
 from collections import defaultdict
 from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence, Sized
+from collections.abc import Set as AbstractSet
 from dataclasses import dataclass, field
 from functools import partial, reduce
 from itertools import chain
 from math import floor
 from operator import ge, le, or_
 from re import search
-from typing import AbstractSet, Any, Literal, TypeGuard, TypeVar, assert_never, cast
+from typing import Any, Literal, TypeGuard, TypeVar, assert_never, cast
 
-from hypothesis.strategies import data
 from sqlalchemy import (
     URL,
     Column,
@@ -54,16 +54,13 @@ from utilities.functions import get_class_name
 from utilities.iterables import (
     CheckLengthError,
     CheckSubSetError,
-    CheckSuperSetError,
     MaybeIterable,
     OneEmptyError,
     OneNonUniqueError,
     check_length,
     check_subset,
-    check_superset,
     chunked,
     one,
-    one_str,
 )
 from utilities.text import ensure_str
 from utilities.types import (
@@ -451,10 +448,14 @@ class _NormalizedItem:
 
 
 def _normalize_upsert_item(
-    item: _InsertItem, /, *, selected_or_all: Literal["selected", "all"] = "selected"
+    item: _InsertItem,
+    /,
+    *,
+    snake: bool = False,
+    selected_or_all: Literal["selected", "all"] = "selected",
 ) -> Iterator[_NormalizedItem]:
     """Normalize an upsert item."""
-    normalized = _normalize_insert_item(item)
+    normalized = _normalize_insert_item(item, snake=snake)
     match selected_or_all:
         case "selected":
             for norm in normalized:
@@ -490,6 +491,7 @@ async def upsert_items(
     engine: AsyncEngine,
     /,
     *items: _InsertItem,
+    snake: bool = False,
     selected_or_all: Literal["selected", "all"] = "selected",
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
@@ -522,7 +524,9 @@ async def upsert_items(
 
     try:
         prepared = _prepare_insert_or_upsert_items(
-            partial(_normalize_upsert_item, selected_or_all=selected_or_all),
+            partial(
+                _normalize_upsert_item, snake=snake, selected_or_all=selected_or_all
+            ),
             engine,
             build_insert,
             *items,

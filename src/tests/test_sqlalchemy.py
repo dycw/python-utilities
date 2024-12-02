@@ -4,7 +4,7 @@ from itertools import chain
 from time import time_ns
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
-from hypothesis import Phase, assume, given, reproduce_failure, settings
+from hypothesis import Phase, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -868,11 +868,7 @@ class TestNormalizeInsertItem:
 
     @given(case=sampled_from(["tuple", "dict"]), id_=integers(0, 10))
     def test_snake(self, *, case: Literal["tuple", "dict"], id_: int) -> None:
-        table = Table(
-            "example",
-            MetaData(),
-            Column("Id_", Integer, primary_key=True),
-        )
+        table = Table("example", MetaData(), Column("Id_", Integer, primary_key=True))
         match case:
             case "tuple":
                 item = (id_,), table
