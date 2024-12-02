@@ -92,7 +92,6 @@ async def insert_dataframe(
         if not assume_tables_exist:
             await ensure_tables_created(engine, table_or_orm, timeout=timeout_create)
         return
-    assert 0, items
     match upsert:
         case None:
             await insert_items(

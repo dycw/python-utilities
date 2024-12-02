@@ -9,8 +9,9 @@ from itertools import chain
 from math import floor
 from operator import ge, le, or_
 from re import search
-from typing import Any, Literal, TypeGuard, TypeVar, assert_never, cast
+from typing import AbstractSet, Any, Literal, TypeGuard, TypeVar, assert_never, cast
 
+from hypothesis.strategies import data
 from sqlalchemy import (
     URL,
     Column,
@@ -52,11 +53,17 @@ from utilities.asyncio import timeout_dur
 from utilities.functions import get_class_name
 from utilities.iterables import (
     CheckLengthError,
+    CheckSubSetError,
+    CheckSuperSetError,
     MaybeIterable,
+    OneEmptyError,
+    OneNonUniqueError,
     check_length,
     check_subset,
+    check_superset,
     chunked,
     one,
+    one_str,
 )
 from utilities.text import ensure_str
 from utilities.types import (
@@ -348,6 +355,7 @@ async def insert_items(
             case _:
                 return insert(table).values(list(values)), None
 
+    breakpoint()
     try:
         prepared = _prepare_insert_or_upsert_items(
             _normalize_insert_item,
@@ -391,57 +399,39 @@ def is_table_or_orm(obj: Any, /) -> TypeGuard[TableOrORMInstOrClass]:
     return isinstance(obj, Table) or is_orm(obj)
 
 
-def mapped_class_to_dict(obj: DeclarativeBase, /) -> dict[str, Any]:
-    """Construct a dictionary of elements for insertion."""
-    cls = type(obj)
-
-    def is_attr(attr: str, key: str, /) -> str | None:
-        if isinstance(value := getattr(cls, attr), InstrumentedAttribute) and (
-            value.name == key
-        ):
-            return attr
-        return None
-
-    def yield_items() -> Iterator[tuple[str, Any]]:
-        for key in get_column_names(cls):
-            attr = one(attr for attr in dir(cls) if is_attr(attr, key) is not None)
-            yield key, getattr(obj, attr)
-
-    return dict(yield_items())
-
-
-def _normalize_insert_item(item: _InsertItem, /) -> list[_NormalizedItem]:
+def _normalize_insert_item(
+    item: _InsertItem, /, *, snake: bool = False
+) -> list[_NormalizedItem]:
     """Normalize an insertion item."""
-    if _is_pair_of_tuple_and_table(item):
-        tuple_, table_or_orm = item
-        normalized = _NormalizedItem(
-            mapping=_tuple_to_mapping(tuple_, table_or_orm),
-            table=get_table(table_or_orm),
-        )
-        return [normalized]
     if _is_pair_of_str_mapping_and_table(item):
         mapping, table_or_orm = item
+        raise NotImplementedError(item, get_columns(table_or_orm))
         normalized = _NormalizedItem(mapping=mapping, table=get_table(table_or_orm))
         return [normalized]
+    if _is_pair_of_tuple_and_table(item):
+        tuple_, table_or_orm = item
+        mapping = _tuple_to_mapping(tuple_, table_or_orm)
+        return _normalize_insert_item((mapping, table_or_orm), snake=snake)
     if _is_pair_of_sequence_of_tuple_or_string_mapping_and_table(item):
         items, table_or_orm = item
         pairs = [(i, table_or_orm) for i in items]
-        return list(chain.from_iterable(map(_normalize_insert_item, pairs)))
+        normalized = (_normalize_insert_item(p, snake=snake) for p in pairs)
+        return list(chain.from_iterable(normalized))
     if isinstance(item, DeclarativeBase):
-        normalized = _NormalizedItem(
-            mapping=mapped_class_to_dict(item), table=get_table(item)
-        )
-        return [normalized]
+        mapping = _orm_inst_to_dict(item)
+        return _normalize_insert_item((mapping, item), snake=snake)
     try:
         _ = iter(item)
     except TypeError:
         raise _NormalizeInsertItemError(item=item) from None
     if all(map(_is_pair_of_tuple_or_str_mapping_and_table, item)):
-        item2 = cast(Sequence[_PairOfTupleOrStrMappingAndTable], item)
-        return list(chain.from_iterable(map(_normalize_insert_item, item2)))
+        seq = cast(Sequence[_PairOfTupleOrStrMappingAndTable], item)
+        normalized = (_normalize_insert_item(p, snake=snake) for p in seq)
+        return list(chain.from_iterable(normalized))
     if all(map(is_orm, item)):
-        item2 = cast(Sequence[DeclarativeBase], item)
-        return list(chain.from_iterable(map(_normalize_insert_item, item2)))
+        seq = cast(Sequence[DeclarativeBase], item)
+        normalized = (_normalize_insert_item(p, snake=snake) for p in seq)
+        return list(chain.from_iterable(normalized))
     raise _NormalizeInsertItemError(item=item)
 
 
@@ -712,6 +702,97 @@ def _is_pair_with_predicate_and_table(
     )
 
 
+def _map_mapping_to_table(
+    mapping: StrMapping, table: Table, /, *, snake: bool = False
+) -> StrMapping:
+    """Map a mapping to a table."""
+    columns = get_column_names(table)
+    if not snake:
+        try:
+            check_subset(mapping, columns)
+        except CheckSubSetError as error:
+            raise _MapMappingToTableExtraColumnsError(
+                mapping=mapping, columns=columns, extra=error.extra
+            ) from None
+        return {k: v for k, v in mapping.items() if k in columns}
+
+    from utilities.humps import snake_case
+
+    out: dict[str, Any] = {}
+    for key, value in mapping.items():
+        try:
+            col = one(c for c in columns if snake_case(c) == snake_case(key))
+        except OneEmptyError:
+            raise _MapMappingToTableSnakeMapEmptyError(
+                mapping=mapping, columns=columns, key=key
+            ) from None
+        except OneNonUniqueError as error:
+            raise _MapMappingToTableSnakeMapNonUniqueError(
+                mapping=mapping,
+                columns=columns,
+                key=key,
+                first=error.first,
+                second=error.second,
+            ) from None
+        else:
+            out[col] = value
+    return out
+
+
+@dataclass(kw_only=True, slots=True)
+class _MapMappingToTableError(Exception):
+    mapping: StrMapping
+    columns: Sequence[str]
+
+
+@dataclass(kw_only=True, slots=True)
+class _MapMappingToTableExtraColumnsError(_MapMappingToTableError):
+    extra: AbstractSet[str]
+
+    @override
+    def __str__(self) -> str:
+        return f"Mapping {reprlib.repr(self.mapping)} must be a subset of table columns {reprlib.repr(self.columns)}; got extra {self.extra}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _MapMappingToTableSnakeMapEmptyError(_MapMappingToTableError):
+    key: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Mapping {reprlib.repr(self.mapping)} must be a subset of table columns {reprlib.repr(self.columns)}; cannot find column to map to {self.key!r} modulo snake casing"
+
+
+@dataclass(kw_only=True, slots=True)
+class _MapMappingToTableSnakeMapNonUniqueError(_MapMappingToTableError):
+    key: str
+    first: str
+    second: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Mapping {reprlib.repr(self.mapping)} must be a subset of table columns {reprlib.repr(self.columns)}; found columns {self.first!r}, {self.second!r} and perhaps more to map to {self.key!r} modulo snake casing"
+
+
+def _orm_inst_to_dict(obj: DeclarativeBase, /) -> StrMapping:
+    """Map an ORM instance to a dictionary."""
+    cls = type(obj)
+
+    def is_attr(attr: str, key: str, /) -> str | None:
+        if isinstance(value := getattr(cls, attr), InstrumentedAttribute) and (
+            value.name == key
+        ):
+            return attr
+        return None
+
+    def yield_items() -> Iterator[tuple[str, Any]]:
+        for key in get_column_names(cls):
+            attr = one(attr for attr in dir(cls) if is_attr(attr, key) is not None)
+            yield key, getattr(obj, attr)
+
+    return dict(yield_items())
+
+
 @dataclass(kw_only=True, slots=True)
 class _PrepareInsertOrUpsertItems:
     mapping: dict[Table, list[StrMapping]] = field(default_factory=dict)
@@ -812,7 +893,6 @@ __all__ = [
     "insert_items",
     "is_orm",
     "is_table_or_orm",
-    "mapped_class_to_dict",
     "selectable_to_string",
     "upsert_items",
     "yield_primary_key_columns",
