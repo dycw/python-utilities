@@ -512,7 +512,7 @@ _SQLALCHEMY_ENGINE_DIALECTS = sampled_from(_STRATEGY_DIALECTS)
 async def sqlalchemy_engines(
     _data: DataObject,
     /,
-    *tables_or_mapped_classes: TableOrORMInstOrClass,
+    *tables_or_orms: TableOrORMInstOrClass,
     dialect: MaybeSearchStrategy[Dialect] = _SQLALCHEMY_ENGINE_DIALECTS,
 ) -> AsyncEngine:
     """Strategy for generating sqlalchemy engines."""
@@ -539,7 +539,7 @@ async def sqlalchemy_engines(
             engine = create_async_engine(
                 "postgresql+asyncpg", host="localhost", port=5432, database="testing"
             )
-            await ensure_tables_dropped(engine, *tables_or_mapped_classes)
+            await ensure_tables_dropped(engine, *tables_or_orms)
             return engine
         case _:  # pragma: no cover
             raise NotImplementedError(dialect)
