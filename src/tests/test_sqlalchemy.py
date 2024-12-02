@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import chain
 from time import time_ns
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
@@ -1019,7 +1020,7 @@ class TestUpsertItems:
         selected_or_all=sampled_from(["selected", "all"]),
     )
     @settings(phases={Phase.generate})
-    async def test_async_sel_or_all(
+    async def test_sel_or_all(
         self,
         *,
         data: DataObject,
@@ -1094,10 +1095,34 @@ class TestUpsertItems:
         table = self._make_table(name)
         engine = await sqlalchemy_engines(data, table)
         _ = assume(id1 != id2)
-        await upsert_items(
-            engine,
-            ([{"id_": id1, "value": value1}, {"id_": id2, "value": value2}], table),
-        )
+        item = [{"id_": id1, "value": value1}, {"id_": id2, "value": value2}], table
+        await upsert_items(engine, item)
+
+    @FLAKY
+    @given(
+        data=data(),
+        name=_table_names(),
+        triples=_upsert_lists(nullable=True, min_size=1),
+    )
+    @settings(phases={Phase.generate})
+    async def test_multiple_elements_with_the_same_primary_key(
+        self,
+        *,
+        data: DataObject,
+        name: str,
+        triples: list[tuple[int, bool, bool | None]],
+    ) -> None:
+        table = self._make_table(name)
+        engine = await sqlalchemy_engines(data, table)
+        pairs = [
+            ({"id_": id_, "value": init}, {"id_": id_, "value": post})
+            for id_, init, post in triples
+        ]
+        item = list(chain.from_iterable(pairs)), table
+        expected = {
+            (id_, init if post is None else post) for id_, init, post in triples
+        }
+        await self._run_test(engine, table, item, expected=expected)
 
     @FLAKY
     @given(data=data(), name=_table_names())

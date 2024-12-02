@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import reprlib
 from collections import defaultdict
-from collections.abc import Callable, Iterable, Iterator, Sequence, Sized
+from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence, Sized
 from dataclasses import dataclass, field
 from functools import partial, reduce
 from math import floor
@@ -54,6 +54,7 @@ from utilities.iterables import (
     MaybeIterable,
     always_iterable,
     check_length,
+    check_subset,
     chunked,
     is_iterable_not_str,
     one,
@@ -806,7 +807,7 @@ def _prepare_insert_or_upsert_items(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
 ) -> _PrepareInsertOrUpsertItems:
     """Prepare a set of insert/upsert items."""
-    mapping: dict[Table, list[Any]] = defaultdict(list)
+    mapping: defaultdict[Table, list[Any]] = defaultdict(list)
     lengths: set[int] = set()
     try:
         for item in items:
@@ -816,13 +817,17 @@ def _prepare_insert_or_upsert_items(
                 lengths.add(len(values))
     except (_NormalizeInsertItemError, _NormalizeUpsertItemError) as error:
         raise _PrepareInsertOrUpsertItemsError(item=error.item) from None
+    merged = {
+        table: _prepare_insert_or_upsert_items_merge_items(table, values)
+        for table, values in mapping.items()
+    }
     max_length = max(lengths, default=1)
     chunk_size = get_chunk_size(
         engine, chunk_size_frac=chunk_size_frac, scaling=max_length
     )
 
     def yield_pairs() -> Iterator[tuple[Insert, None]]:
-        for table, values in mapping.items():
+        for table, values in merged.items():
             for chunk in chunked(values, chunk_size):
                 yield build_insert(table, chunk)
 
@@ -836,6 +841,21 @@ class _PrepareInsertOrUpsertItemsError(Exception):
     @override
     def __str__(self) -> str:
         return f"Item must be valid; got {self.item}"
+
+
+def _prepare_insert_or_upsert_items_merge_items(
+    table: Table, items: Iterable[Any], /
+) -> list[Any]:
+    items = list(items)
+    cols = tuple(c.name for c in yield_primary_key_columns(table))
+    mapping: defaultdict[tuple[Hashable, ...], list[dict[str, Any]]] = defaultdict(list)
+    for item in items:
+        check_subset(cols, item)
+        pkey = tuple(item[k] for k in cols)
+        rest = {k: v for k, v in item.items() if k not in cols}
+        mapping[pkey].append(rest)
+    merged = {k: reduce(or_, v) for k, v in mapping.items()}
+    return [dict(zip(cols, k, strict=True)) | v for k, v in merged.items()]
 
 
 __all__ = [
