@@ -405,8 +405,8 @@ def _normalize_insert_item(
     """Normalize an insertion item."""
     if _is_pair_of_str_mapping_and_table(item):
         mapping, table_or_orm = item
-        raise NotImplementedError(item, get_columns(table_or_orm))
-        normalized = _NormalizedItem(mapping=mapping, table=get_table(table_or_orm))
+        adjusted = _map_mapping_to_table(mapping, table_or_orm, snake=snake)
+        normalized = _NormalizedItem(mapping=adjusted, table=get_table(table_or_orm))
         return [normalized]
     if _is_pair_of_tuple_and_table(item):
         tuple_, table_or_orm = item
@@ -703,10 +703,10 @@ def _is_pair_with_predicate_and_table(
 
 
 def _map_mapping_to_table(
-    mapping: StrMapping, table: Table, /, *, snake: bool = False
+    mapping: StrMapping, table_or_orm: TableOrORMInstOrClass, /, *, snake: bool = False
 ) -> StrMapping:
     """Map a mapping to a table."""
-    columns = get_column_names(table)
+    columns = get_column_names(table_or_orm)
     if not snake:
         try:
             check_subset(mapping, columns)

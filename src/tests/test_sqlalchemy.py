@@ -853,9 +853,7 @@ class TestNormalizeInsertItem:
         ]
         assert result == expected
 
-    @mark.only
     @given(case=sampled_from(["tuple", "dict"]), id_=integers(0, 10))
-    @reproduce_failure("6.122.0", b"AAEA")
     def test_snake(self, *, case: Literal["tuple", "dict"], id_: int) -> None:
         table = Table(
             "example",
