@@ -125,9 +125,12 @@ class TestAsDictWithoutDefaultsAndRepr:
             inner: Inner
 
         obj = Outer(inner=Inner(x=x))
-        result = asdict_without_defaults(obj, recursive=True)
-        expected = {"inner": {"x": x}}
-        assert result == expected
+        asdict_res = asdict_without_defaults(obj, recursive=True)
+        asdict_exp = {"inner": {"x": x}}
+        assert asdict_res == asdict_exp
+        repr_res = repr_without_defaults(obj, recursive=True)
+        repr_exp = f"Outer(inner=Inner(x={x}))"
+        assert repr_res == repr_exp
 
     @given(x=integers())
     def test_nested_without_recursive(self, *, x: int) -> None:
@@ -140,9 +143,12 @@ class TestAsDictWithoutDefaultsAndRepr:
             inner: Inner
 
         obj = Outer(inner=Inner(x=x))
-        result = asdict_without_defaults(obj)
-        expected = {"inner": Inner(x=x)}
-        assert result == expected
+        asdict_res = asdict_without_defaults(obj)
+        asdict_exp = {"inner": Inner(x=x)}
+        assert asdict_res == asdict_exp
+        repr_res = repr_without_defaults(obj)
+        repr_exp = f"Outer(inner=TestAsDictWithoutDefaultsAndRepr.test_nested_without_recursive.<locals>.Inner(x={x}))"
+        assert repr_res == repr_exp
 
     def test_ib_async(self) -> None:
         fut = Future(
