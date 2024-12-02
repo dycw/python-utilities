@@ -8,8 +8,8 @@ from functools import partial, reduce
 from itertools import chain
 from math import floor
 from operator import ge, le, or_
-from re import DOTALL, S, search
-from typing import Any, Literal, TypeGuard, TypeVar, assert_never, cast, overload
+from re import search
+from typing import Any, Literal, TypeGuard, TypeVar, assert_never, cast
 
 from sqlalchemy import (
     URL,
@@ -430,9 +430,6 @@ def _normalize_insert_item(item: _InsertItem, /) -> list[_NormalizedItem]:
     if _is_pair_of_sequence_of_tuple_or_string_mapping_and_table(item):
         items, table_or_mapped_class = item
         pairs = [(i, table_or_mapped_class) for i in items]
-        mmm = list(chain.from_iterable(map(_normalize_insert_item, pairs)))
-        breakpoint()
-
         return list(chain.from_iterable(map(_normalize_insert_item, pairs)))
     if isinstance(item, DeclarativeBase):
         normalized = _NormalizedItem(
@@ -804,8 +801,6 @@ def _prepare_insert_or_upsert_items(
                 lengths.add(len(normed.mapping))
     except (_NormalizeInsertItemError, _NormalizeUpsertItemError) as error:
         raise _PrepareInsertOrUpsertItemsError(item=error.item) from None
-    breakpoint()
-
     merged = {
         table: _prepare_insert_or_upsert_items_merge_items(table, values)
         for table, values in mapping.items()

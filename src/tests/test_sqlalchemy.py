@@ -4,7 +4,7 @@ from itertools import chain
 from time import time_ns
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
-from hypothesis import Phase, assume, given, reproduce_failure, settings
+from hypothesis import Phase, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -942,10 +942,7 @@ class TestPrepareInsertOrUpsertItems:
             {"id_": 2, "value": True},
         ]
         result = _prepare_insert_or_upsert_items_merge_items(table, items)
-        expected = [
-            {"id_": 1, "value": False},
-            {"id_": 2, "value": True},
-        ]
+        expected = [{"id_": 1, "value": False}, {"id_": 2, "value": True}]
         assert result == expected
 
     def test_merge_items_skip_null(self) -> None:
@@ -956,10 +953,7 @@ class TestPrepareInsertOrUpsertItems:
             Column("x", Integer),
             Column("y", Integer),
         )
-        items = [
-            {"x": 1, "y": 1},
-            {"x": 1, "y": 2},
-        ]
+        items = [{"x": 1, "y": 1}, {"x": 1, "y": 2}]
         result = _prepare_insert_or_upsert_items_merge_items(table, items)
         assert result == items
 
