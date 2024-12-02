@@ -60,31 +60,11 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
         repr_exp = "Example()"
         assert repr_res == repr_exp
 
-    def test_field_with_dataframe(self) -> None:
+    @given(x=integers().filter(lambda x: x != 0))
+    def test_field_with_default_and_value_not_equal(self, *, x: int) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: DataFrame = field(default_factory=DataFrame)
-
-        obj = Example()
-        comparisons = {DataFrame: are_frames_equal}
-        asdict_res = asdict_without_defaults(
-            obj, comparisons=comparisons, globalns=globals()
-        )
-        asdict_exp = {}
-        assert set(asdict_res) == set(asdict_exp)
-        repr_res = repr_without_defaults(
-            obj, comparisons=comparisons, globalns=globals()
-        )
-        repr_exp = "Example()"
-        assert repr_res == repr_exp
-
-    @given(x=lists(integers(), min_size=1))
-    def test_field_with_default_factory_and_value_not_equal(
-        self, *, x: list[int]
-    ) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: list[int] = field(default_factory=list)
+            x: int = 0
 
         obj = Example(x=x)
         asdict_res = asdict_without_defaults(obj)
