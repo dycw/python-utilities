@@ -412,16 +412,25 @@ def mapped_class_to_dict(obj: Any, /) -> dict[str, Any]:
     return dict(yield_items())
 
 
-def _normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedItem]:
+def _normalize_insert_item(item: _InsertItem, /) -> list[_NormalizedItem]:
     """Normalize an insertion item."""
     if _is_pair_of_tuple_and_table(item):
         tuple_, table_or_mapped_class = item
-        yield _NormalizedItem(
+        normalized = _NormalizedItem(
             mapping=_tuple_to_mapping(tuple_, table_or_mapped_class),
             table=get_table(table_or_mapped_class),
         )
-        item
-        assert 0, item
+        return [normalized]
+    if _is_pair_of_str_mapping_and_table(item):
+        mapping, table_or_mapped_class = item
+        normalized = _NormalizedItem(
+            mapping=mapping, table=get_table(table_or_mapped_class)
+        )
+        return [normalized]
+    raise _NormalizeInsertItemError(item=item)
+
+
+def _normalize_insert_item_REST(item: _InsertItem, /) -> list[_NormalizedItem]:
     try:
         for norm in _normalize_upsert_item(cast(Any, item), selected_or_all="all"):
             yield _NormalizedItem(mapping=norm.mapping, table=norm.table)
@@ -491,7 +500,7 @@ def _normalize_upsert_item(
 
 
 def _normalize_upsert_item_inner(item: _UpsertItem, /) -> Iterator[_NormalizedItem]:
-    if _is_upsert_item_pair(item):
+    if _is_pair_of_str_mapping_and_table(item):
         yield _NormalizedItem(mapping=item[0], table=get_table(item[1]))
         return
 
@@ -519,7 +528,9 @@ def _normalize_upsert_item_inner(item: _UpsertItem, /) -> Iterator[_NormalizedIt
         _ListOfPairOfDictAndTable | DeclarativeBase | Sequence[DeclarativeBase], item
     )
 
-    if is_iterable_not_str(item) and all(_is_upsert_item_pair(i) for i in item):
+    if is_iterable_not_str(item) and all(
+        _is_pair_of_str_mapping_and_table(i) for i in item
+    ):
         item = cast(_ListOfPairOfDictAndTable, item)
         for i in item:
             yield _NormalizedItem(mapping=i[0], table=get_table(i[1]))
@@ -745,25 +756,29 @@ def _get_dialect_max_params(
             assert_never(never)
 
 
-def _is_insert_item_pair(
-    obj: Any, /
-) -> TypeGuard[tuple[TupleOrStrMapping, TableOrMappedClass]]:
-    """Check if an object is an insert-ready pair."""
-    return _is_pair_with_predicate_and_table(obj, is_tuple_or_string_mapping)
-
-
 def _is_pair_of_tuple_and_table(
     obj: Any, /
 ) -> TypeGuard[tuple[tuple[Any, ...], TableOrMappedClass]]:
-    """Check if an object is a pair of a tuple and table."""
+    """Check if an object is a pair of a tuple and a table."""
     return _is_pair_with_predicate_and_table(obj, is_tuple)
 
 
-def _is_upsert_item_pair(
+def _is_pair_of_str_mapping_and_table(
     obj: Any, /
 ) -> TypeGuard[tuple[StrMapping, TableOrMappedClass]]:
-    """Check if an object is an upsert-ready pair."""
+    """Check if an object is a pair of a string mapping and a table."""
     return _is_pair_with_predicate_and_table(obj, is_string_mapping)
+
+
+def _is_pair_of_list_of_objs_and_table(
+    obj: Any, /
+) -> TypeGuard[tuple[tuple[list[tuple[Any, ...] | StrMapping]], TableOrMappedClass]]:
+    """Check if an object is a p."""
+
+    def predicate(obj: Any, /) -> TypeGuard[list[tuple[Any, ...] | StrMapping]]:
+        return isinstance(obj, list) and all(map(is_tuple_or_string_mapping, obj))
+
+    return _is_pair_with_predicate_and_table(obj, predicate)
 
 
 def _is_pair_with_predicate_and_table(

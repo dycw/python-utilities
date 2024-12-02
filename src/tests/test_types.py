@@ -340,11 +340,7 @@ class TestIsSubclassExceptBoolInt:
 class TestIsTuple:
     @mark.parametrize(
         ("obj", "expected"),
-        [
-            param(None, False),
-            param((1, 2, 3), True),
-            param([1, 2, 3], False),
-        ],
+        [param(None, False), param((1, 2, 3), True), param([1, 2, 3], False)],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         result = is_tuple(obj)

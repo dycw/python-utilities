@@ -387,7 +387,7 @@ def is_tuple(obj: Any, /) -> TypeGuard[tuple[Any, ...]]:
 
 def is_tuple_or_string_mapping(obj: Any, /) -> TypeGuard[TupleOrStrMapping]:
     """Check if an object is a tuple or string mapping."""
-    return isinstance(obj, tuple) or is_string_mapping(obj)
+    return is_tuple(obj) or is_string_mapping(obj)
 
 
 def make_isinstance(cls: type[_T], /) -> Callable[[Any], TypeGuard[_T]]:

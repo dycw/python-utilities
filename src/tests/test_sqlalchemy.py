@@ -40,8 +40,9 @@ from utilities.sqlalchemy import (
     _get_dialect,
     _get_dialect_max_params,
     _InsertItem,
-    _is_insert_item_pair,
-    _is_upsert_item_pair,
+    _is_pair_of_list_of_objs_and_table,
+    _is_pair_of_str_mapping_and_table,
+    _is_pair_of_tuple_and_table,
     _normalize_insert_item,
     _normalize_upsert_item,
     _NormalizedItem,
@@ -581,14 +582,40 @@ class TestInsertItems:
         assert set(results) == ids
 
 
-class TestIsInsertItemPair:
+class TestIsPairOfListOfObjsAndTable:
     @mark.parametrize(
         ("obj", "expected"),
         [
             param(None, False),
-            param((), False),
-            param((1,), False),
-            param((1, 2), False),
+            param(([(1, 2, 3)], Table("example", MetaData())), True),
+            param(([(1, 2, 3), None], Table("example", MetaData())), False),
+            param(([{"a": 1, "b": 2, "c": 3}], Table("example", MetaData())), True),
+            param(
+                ([{"a": 1, "b": 2, "c": 3}, None], Table("example", MetaData())), False
+            ),
+            param(
+                ([(1, 2, 3), {"a": 1, "b": 2, "c": 3}], Table("example", MetaData())),
+                True,
+            ),
+            param(
+                (
+                    [(1, 2, 3), {"a": 1, "b": 2, "c": 3}, None],
+                    Table("example", MetaData()),
+                ),
+                False,
+            ),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = _is_pair_of_list_of_objs_and_table(obj)
+        assert result is expected
+
+
+class TestIsPairOfTupleAndTable:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
             param(((1, 2, 3), None), False),
             param(((1, 2, 3), Table("example", MetaData())), True),
             param(({"a": 1, "b": 2, "c": 3}, None), False),
@@ -596,18 +623,15 @@ class TestIsInsertItemPair:
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = _is_insert_item_pair(obj)
+        result = _is_pair_of_tuple_and_table(obj)
         assert result is expected
 
 
-class TestIsUpsertItemPair:
+class TestIsPairOfStrMappingAndTable:
     @mark.parametrize(
         ("obj", "expected"),
         [
             param(None, False),
-            param((), False),
-            param((1,), False),
-            param((1, 2), False),
             param(((1, 2, 3), None), False),
             param(((1, 2, 3), Table("example", MetaData())), False),
             param(({"a": 1, "b": 2, "c": 3}, None), False),
@@ -615,7 +639,7 @@ class TestIsUpsertItemPair:
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = _is_upsert_item_pair(obj)
+        result = _is_pair_of_str_mapping_and_table(obj)
         assert result is expected
 
 
@@ -686,7 +710,6 @@ class TestMappedClassToDict:
         assert result == expected
 
 
-@mark.only
 class TestNormalizeInsertItem:
     @given(case=sampled_from(["tuple", "dict"]), id_=integers(0, 10))
     def test_pair_of_obj_and_table(
@@ -697,12 +720,13 @@ class TestNormalizeInsertItem:
             case "tuple":
                 item = (id_,), table
             case "dict":
-                item = {"id": id_}, table
+                item = {"id_": id_}, table
         result = one(_normalize_insert_item(item))
-        expected = _NormalizedItem(mapping=item[0], table=table)
+        expected = _NormalizedItem(mapping={"id_": id_}, table=table)
         assert result == expected
 
     @given(case=sampled_from(["tuple", "dict"]), ids=sets(integers(0, 10)))
+    @mark.only
     def test_pair_of_objs_and_table(
         self, *, case: Literal["tuple", "dict"], ids: set[int]
     ) -> None:
