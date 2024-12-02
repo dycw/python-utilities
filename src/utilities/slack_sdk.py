@@ -13,7 +13,6 @@ from utilities.asyncio import sleep_dur
 from utilities.datetime import MINUTE, SECOND, duration_to_float
 from utilities.functools import cache
 from utilities.math import safe_round
-from utilities.timer import Timer
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -25,7 +24,6 @@ if TYPE_CHECKING:
 _LOGGER = getLogger(__name__)
 _TIMEOUT = MINUTE
 _FREQ = SECOND
-_COMPLETE_MULTIPLIER = 5.0
 
 
 class SlackHandler(Handler):
@@ -35,8 +33,7 @@ class SlackHandler(Handler):
     _timeout: Duration
     _lock: Lock
     _callback: Callable[[], None] | None
-    _complete_multiplier: float
-    _queue: Queue[str | None]
+    _queue: Queue[str]
     _task: Task[None]
 
     @override
@@ -49,28 +46,15 @@ class SlackHandler(Handler):
         timeout: Duration = _TIMEOUT,
         freq: Duration = _FREQ,
         callback: Callable[[], None] | None = None,
-        complete_multiplier: float = _COMPLETE_MULTIPLIER,
     ) -> None:
         super().__init__(level=level)
         self._url = url
         self._timeout = timeout
         self._freq = freq
         self._callback = callback
-        self._complete_multiplier = complete_multiplier
         self._lock = Lock()
         self._queue = Queue()
-        self._task = get_event_loop().create_task(self._process_queue())
-
-    async def complete(self) -> None:
-        """Complete the task."""
-        async with self._lock:
-            await self._queue.put(None)
-        max_ = self._complete_multiplier * self._freq
-        with Timer() as timer:
-            while not self._queue.empty():
-                if timer >= max_:  # pragma: no cover
-                    raise SlackHandlerError(queue=self._queue)
-                await sleep_dur(duration=0.01)
+        self._task = get_event_loop().create_task(self._loop_send())
 
     @override
     def emit(self, record: LogRecord) -> None:
@@ -79,44 +63,34 @@ class SlackHandler(Handler):
         except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
-    async def _process_queue(self) -> None:
-        while True:
+    async def send(self) -> None:
+        """Send the queued messages to Slack."""
+        async with self._lock:
             messages: list[str] = []
-            exit_ = False
-            async with self._lock:
-                while True:
-                    try:
-                        message = self._queue.get_nowait()
-                    except QueueEmpty:
-                        break
-                    else:
-                        if message is not None:
-                            messages.append(message)
-                        exit_ |= message is None
-            if len(messages) >= 1:  # pragma: no cover
-                _LOGGER.debug("Sending %s messages(s)", len(messages))
-                text = "\n".join(messages)
+            while True:
                 try:
-                    await send_to_slack(self._url, text, timeout=self._timeout)
-                except CancelledError:
+                    message = self._queue.get_nowait()
+                except QueueEmpty:
                     break
-                except Exception:
-                    _LOGGER.exception("Slack handler error")
                 else:
-                    if self._callback is not None:
-                        self._callback()
-            if exit_:
-                return
+                    messages.append(message)
+        if len(messages) >= 1:
+            _LOGGER.debug("Sending %s messages(s)", len(messages))
+            text = "\n".join(messages)
+            try:
+                await send_to_slack(self._url, text, timeout=self._timeout)
+            except CancelledError:
+                return  # pragma: no cover
+            except Exception:
+                _LOGGER.exception("Slack handler error")
+            else:
+                if self._callback is not None:  # pragma: no cover
+                    self._callback()
+
+    async def _loop_send(self) -> None:
+        while True:
+            await self.send()
             await sleep_dur(duration=self._freq)
-
-
-@dataclass(kw_only=True, slots=True)
-class SlackHandlerError(Exception):
-    queue: Queue[str | None]
-
-    @override
-    def __str__(self) -> str:
-        return f"Message queue must be empty upon completion; got {self.queue}"  # pragma: no cover
 
 
 async def send_to_slack(

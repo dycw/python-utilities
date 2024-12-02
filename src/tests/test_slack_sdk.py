@@ -33,12 +33,12 @@ class TestSlackHandler:
         logger.debug("message")
         await sleep(0.1)
 
-    async def test_complete(self) -> None:
-        name = TestSlackHandler.test_complete.__qualname__
+    async def test_send(self) -> None:
+        name = TestSlackHandler.test_send.__qualname__
         logger = getLogger(name)
         logger.setLevel(DEBUG)
         handler = SlackHandler("url")
         handler.setLevel(DEBUG)
         logger.addHandler(handler)
         logger.debug("message")
-        await handler.complete()
+        await handler.send()
