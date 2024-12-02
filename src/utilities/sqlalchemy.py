@@ -53,11 +53,9 @@ from utilities.functions import get_class_name
 from utilities.iterables import (
     CheckLengthError,
     MaybeIterable,
-    always_iterable,
     check_length,
     check_subset,
     chunked,
-    is_iterable_not_str,
     one,
 )
 from utilities.text import ensure_str
@@ -468,7 +466,7 @@ def _normalize_upsert_item(
     item: _InsertItem, /, *, selected_or_all: Literal["selected", "all"] = "selected"
 ) -> Iterator[_NormalizedItem]:
     """Normalize an upsert item."""
-    normalized = _normalize_upsert_item_inner(item)
+    normalized = _normalize_insert_item(item)
     match selected_or_all:
         case "selected":
             for norm in normalized:
@@ -478,63 +476,6 @@ def _normalize_upsert_item(
             yield from normalized
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
-
-
-def _normalize_upsert_item_inner(item: _InsertItem, /) -> Iterator[_NormalizedItem]:
-    if _is_pair_of_str_mapping_and_table(item):
-        yield _NormalizedItem(mapping=item[0], table=get_table(item[1]))
-        return
-
-    item = cast(
-        _PairOfListOfStrMappingsAndTable
-        | _SeqOfPairOfDictAndTable
-        | DeclarativeBase
-        | Sequence[DeclarativeBase],
-        item,
-    )
-
-    if (
-        isinstance(item, tuple)
-        and (len(item) == 2)
-        and is_iterable_not_str(item[0])
-        and all(is_string_mapping(i) for i in item[0])
-        and is_table_or_orm(item[1])
-    ):
-        item = cast(_PairOfListOfStrMappingsAndTable, item)
-        for i in item[0]:
-            yield _NormalizedItem(mapping=i, table=get_table(item[1]))
-        return
-
-    item = cast(
-        _SeqOfPairOfDictAndTable | DeclarativeBase | Sequence[DeclarativeBase], item
-    )
-
-    if is_iterable_not_str(item) and all(
-        _is_pair_of_str_mapping_and_table(i) for i in item
-    ):
-        item = cast(_SeqOfPairOfDictAndTable, item)
-        for i in item:
-            yield _NormalizedItem(mapping=i[0], table=get_table(i[1]))
-        return
-
-    item = cast(MaybeIterable[DeclarativeBase], item)
-    if isinstance(item, DeclarativeBase) or (
-        is_iterable_not_str(item) and all(isinstance(i, DeclarativeBase) for i in item)
-    ):
-        for i in always_iterable(item):
-            yield _NormalizedItem(mapping=mapped_class_to_dict(i), table=get_table(i))
-        return
-
-    raise _NormalizeUpsertItemError(item=item)
-
-
-@dataclass(kw_only=True, slots=True)
-class _NormalizeUpsertItemError(Exception):
-    item: _InsertItem
-
-    @override
-    def __str__(self) -> str:
-        return f"Item must be valid; got {self.item}"
 
 
 def selectable_to_string(
@@ -799,7 +740,7 @@ def _prepare_insert_or_upsert_items(
             for normed in normalize_item(item):
                 mapping[normed.table].append(normed.mapping)
                 lengths.add(len(normed.mapping))
-    except (_NormalizeInsertItemError, _NormalizeUpsertItemError) as error:
+    except _NormalizeInsertItemError as error:
         raise _PrepareInsertOrUpsertItemsError(item=error.item) from None
     merged = {
         table: _prepare_insert_or_upsert_items_merge_items(table, values)

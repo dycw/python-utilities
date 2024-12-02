@@ -48,7 +48,6 @@ from utilities.sqlalchemy import (
     _normalize_upsert_item,
     _NormalizedItem,
     _NormalizeInsertItemError,
-    _NormalizeUpsertItemError,
     _prepare_insert_or_upsert_items,
     _prepare_insert_or_upsert_items_merge_items,
     _PrepareInsertOrUpsertItemsError,
@@ -820,79 +819,6 @@ class TestNormalizeInsertItem:
     def test_errors(self, *, item: Any) -> None:
         with raises(_NormalizeInsertItemError, match="Item must be valid; got .*"):
             _ = list(_normalize_insert_item(item))
-
-    @property
-    def _table(self) -> Table:
-        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
-
-    @property
-    def _mapped_class(self) -> type[DeclarativeBase]:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
-
-        class Example(Base):
-            __tablename__ = "example"
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-
-        return Example
-
-
-class TestNormalizeUpsertItem:
-    @given(id_=integers())
-    def test_pair_of_dict_and_table(self, *, id_: int) -> None:
-        table = self._table
-        item = {"id": id_}, table
-        result = one(_normalize_upsert_item(item))
-        expected = _NormalizedItem(mapping=item[0], table=table)
-        assert result == expected
-
-    @given(ids=sets(integers()))
-    def test_pair_of_list_of_dicts_and_table(self, *, ids: set[int]) -> None:
-        table = self._table
-        item = [({"id_": id_}) for id_ in ids], table
-        result = list(_normalize_upsert_item(item))
-        expected = [_NormalizedItem(mapping=i, table=table) for i in item[0]]
-        assert result == expected
-
-    @given(ids=sets(integers()))
-    def test_list_of_pairs_of_dicts_and_table(self, *, ids: set[int]) -> None:
-        table = self._table
-        item = [({"id_": id_}, table) for id_ in ids]
-        result = list(_normalize_upsert_item(item))
-        expected = [_NormalizedItem(mapping=i[0], table=table) for i in item]
-        assert result == expected
-
-    @given(id_=integers())
-    def test_mapped_class(self, *, id_: int) -> None:
-        cls = self._mapped_class
-        result = one(_normalize_upsert_item(cls(id_=id_)))
-        expected = _NormalizedItem(mapping={"id_": id_}, table=get_table(cls))
-        assert result == expected
-
-    @given(ids=sets(integers(0, 10), min_size=1))
-    def test_mapped_classes(self, *, ids: set[int]) -> None:
-        cls = self._mapped_class
-        result = list(_normalize_upsert_item([cls(id_=id_) for id_ in ids]))
-        expected = [
-            _NormalizedItem(mapping={"id_": id_}, table=get_table(cls)) for id_ in ids
-        ]
-        assert result == expected
-
-    @mark.parametrize(
-        "item",
-        [
-            param((None,), id="tuple, not pair"),
-            param(
-                (None, Table("example", MetaData())), id="pair, first element invalid"
-            ),
-            param(((1, 2, 3), None), id="pair, second element invalid"),
-            param([None], id="iterable, invalid"),
-            param(None, id="outright invalid"),
-        ],
-    )
-    def test_errors(self, *, item: Any) -> None:
-        with raises(_NormalizeUpsertItemError, match="Item must be valid; got .*"):
-            _ = list(_normalize_upsert_item(item))
 
     @property
     def _table(self) -> Table:
