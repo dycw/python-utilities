@@ -10,17 +10,21 @@ from typing import TYPE_CHECKING
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 from typing_extensions import override
 
-from utilities.datetime import MINUTE, duration_to_float
+from utilities.asyncio import sleep_dur
+from utilities.datetime import MINUTE, SECOND, duration_to_float
 from utilities.functools import cache
 from utilities.math import safe_round
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from slack_sdk.webhook import WebhookResponse
 
     from utilities.types import Duration
 
 _LOGGER = getLogger(__name__)
 _TIMEOUT = MINUTE
+_FREQ = SECOND
 
 
 class SlackHandler(Handler):
@@ -29,16 +33,26 @@ class SlackHandler(Handler):
     _url: str
     _timeout: Duration
     _lock: Lock
+    _callback: Callable[[], None] | None = None
     _queue: Queue[str]
     _task: Task[None]
 
     @override
     def __init__(
-        self, url: str, /, *, level: int = NOTSET, timeout: Duration = _TIMEOUT
+        self,
+        url: str,
+        /,
+        *,
+        level: int = NOTSET,
+        timeout: Duration = _TIMEOUT,
+        freq: Duration = _FREQ,
+        callback: Callable[[], None] | None = None,
     ) -> None:
         super().__init__(level=level)
         self._url = url
         self._timeout = timeout
+        self._freq = freq
+        self._callback = callback
         self._lock = Lock()
         self._queue = Queue()
         self._task = get_event_loop().create_task(self._process_queue())
@@ -54,19 +68,24 @@ class SlackHandler(Handler):
         while True:
             messages: list[str] = []
             async with self._lock:
-                try:
-                    messages.append(self._queue.get_nowait())
-                except QueueEmpty:
-                    break
-                if len(messages) >= 1:
-                    _LOGGER.debug("Sending %s messages(s)", len(messages))
-                    text = "\n".join(messages)
+                while True:
                     try:
-                        await send_to_slack(self._url, text, timeout=self._timeout)
-                    except CancelledError:
+                        messages.append(self._queue.get_nowait())
+                    except QueueEmpty:
                         break
-                    except Exception:
-                        _LOGGER.exception("Slack handler error")
+            if len(messages) >= 1:
+                _LOGGER.debug("Sending %s messages(s)", len(messages))
+                text = "\n".join(messages)
+                try:
+                    await send_to_slack(self._url, text, timeout=self._timeout)
+                except CancelledError:
+                    break
+                except Exception:
+                    _LOGGER.exception("Slack handler error")
+                else:
+                    if self._callback is not None:
+                        self._callback()
+            await sleep_dur(duration=self._freq)
 
     async def aclose(self) -> None:
         """Close the handler."""
