@@ -318,6 +318,7 @@ _InsertItem = (
 async def insert_items(
     engine: AsyncEngine,
     *items: _InsertItem,
+    snake: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     timeout_create: Duration | None = None,
@@ -355,10 +356,9 @@ async def insert_items(
             case _:
                 return insert(table).values(list(values)), None
 
-    breakpoint()
     try:
         prepared = _prepare_insert_or_upsert_items(
-            _normalize_insert_item,
+            partial(_normalize_insert_item, snake=snake),
             engine,
             build_insert,
             *items,

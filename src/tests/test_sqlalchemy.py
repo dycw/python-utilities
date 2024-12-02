@@ -529,7 +529,7 @@ class TestInsertItems:
         engine = await sqlalchemy_engines(data, table)
         await self._run_test(engine, table, ids, [({"id_": id_}, table) for id_ in ids])
 
-    # @FLAKY
+    @FLAKY
     @given(data=data(), name=_table_names(), id_=integers(0, 10))
     @settings(phases={Phase.generate})
     async def test_mapped_class(self, *, data: DataObject, name: str, id_: int) -> None:
@@ -546,6 +546,15 @@ class TestInsertItems:
         cls = self._make_mapped_class(name)
         engine = await sqlalchemy_engines(data, cls)
         await self._run_test(engine, cls, ids, [cls(id_=id_) for id_ in ids])
+
+    @FLAKY
+    @given(data=data(), name=_table_names(), id_=integers(0, 10))
+    @settings(phases={Phase.generate})
+    async def test_snake(self, *, data: DataObject, name: str, id_: int) -> None:
+        table = self._make_table(name, title=True)
+        engine = await sqlalchemy_engines(data, table)
+        item = {data.draw(sampled_from(["Id_", "id_"])): id_}, table
+        await self._run_test(engine, table, {id_}, item, snake=True)
 
     @FLAKY
     @given(data=data(), name=_table_names(), id_=integers(0, 10))
@@ -569,8 +578,12 @@ class TestInsertItems:
         with raises(InsertItemsError, match="Item must be valid; got None"):
             await self._run_test(engine, cls, set(), cast(Any, None))
 
-    def _make_table(self, name: str, /) -> Table:
-        return Table(name, MetaData(), Column("id_", Integer, primary_key=True))
+    def _make_table(self, name: str, /, *, title: bool = False) -> Table:
+        return Table(
+            name,
+            MetaData(),
+            Column("Id_" if title else "id_", Integer, primary_key=True),
+        )
 
     def _make_mapped_class(self, name: str, /) -> type[DeclarativeBase]:
         class Base(DeclarativeBase, MappedAsDataclass): ...
@@ -589,9 +602,10 @@ class TestInsertItems:
         ids: set[int],
         /,
         *items: _InsertItem,
+        snake: bool = False,
     ) -> None:
-        await insert_items(engine, *items)
-        sel = select(get_table(table_or_orm).c["id_"])
+        await insert_items(engine, *items, snake=snake)
+        sel = select(get_table(table_or_orm).c["Id_" if snake else "id_"])
         async with engine.begin() as conn:
             results = (await conn.execute(sel)).scalars().all()
         assert set(results) == ids
@@ -717,7 +731,6 @@ class TestIsTableOrORM:
         assert not is_table_or_orm(None)
 
 
-@mark.only
 class TestMapMappingToTable:
     @given(id_=integers(0, 10), value=booleans())
     def test_main(self, *, id_: int, value: bool) -> None:
