@@ -41,4 +41,4 @@ class TestSlackHandler:
         handler.setLevel(DEBUG)
         logger.addHandler(handler)
         logger.debug("message")
-        await handler.complete()
+        await handler.send()

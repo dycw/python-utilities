@@ -54,13 +54,7 @@ class SlackHandler(Handler):
         self._callback = callback
         self._lock = Lock()
         self._queue = Queue()
-        self._task = get_event_loop().create_task(self._loop_get_and_send())
-
-    async def complete(self) -> None:
-        """Complete the task."""
-        _ = await self._get_and_send()
-        if not self._queue.empty():
-            raise SlackHandlerError(queue=self._queue)
+        self._task = get_event_loop().create_task(self._loop_send())
 
     @override
     def emit(self, record: LogRecord) -> None:
@@ -69,7 +63,7 @@ class SlackHandler(Handler):
         except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
-    async def _get_and_send(self) -> None:
+    async def send(self) -> None:
         async with self._lock:
             messages: list[str] = []
             while True:
@@ -92,9 +86,9 @@ class SlackHandler(Handler):
                 if self._callback is not None:
                     self._callback()
 
-    async def _loop_get_and_send(self) -> None:
+    async def _loop_send(self) -> None:
         while True:
-            await self._get_and_send()
+            await self.send()
             await sleep_dur(duration=self._freq)
 
 
