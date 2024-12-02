@@ -184,6 +184,36 @@ def temp_handler(logger: Logger, handler: Handler, /) -> Iterator[None]:
         _ = logger.removeHandler(handler)
 
 
+@contextmanager
+def temp_logger(
+    logger: Logger,
+    /,
+    *,
+    disabled: bool | None = None,
+    level: LogLevel | None = None,
+    propagate: bool | None = None,
+) -> Iterator[Logger]:
+    """Context manager with temporary logger settings."""
+    init_disabled = logger.disabled
+    init_level = logger.level
+    init_propagate = logger.propagate
+    if disabled is not None:
+        logger.disabled = disabled
+    if level is not None:
+        logger.setLevel(level)
+    if propagate is not None:
+        logger.propagate = propagate
+    try:
+        yield logger
+    finally:
+        if disabled is not None:
+            logger.disabled = init_disabled
+        if level is not None:
+            logger.setLevel(init_level)
+        if propagate is not None:
+            logger.propagate = init_propagate
+
+
 class _AdvancedLogRecord(LogRecord):
     """Advanced log record."""
 
@@ -257,4 +287,5 @@ __all__ = [
     "get_logging_level_number",
     "setup_logging",
     "temp_handler",
+    "temp_logger",
 ]

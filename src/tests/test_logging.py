@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from logging import DEBUG, FileHandler, Logger, StreamHandler, getLogger
+from logging import DEBUG, INFO, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from typing import TYPE_CHECKING, Any, cast
 
 from pytest import LogCaptureFixture, mark, param, raises
@@ -16,6 +16,7 @@ from utilities.logging import (
     get_logging_level_number,
     setup_logging,
     temp_handler,
+    temp_logger,
 )
 from utilities.pathlib import temp_cwd
 from utilities.pytest import skipif_windows
@@ -157,3 +158,29 @@ class TestTempHandler:
         assert len(logger.handlers) == 2
         assert logger.handlers[0] is h1
         assert logger.handlers[1] is h2
+
+
+class TestTempLogger:
+    def test_disabled(self) -> None:
+        name = TestTempLogger.test_disabled.__qualname__
+        logger = getLogger(name)
+        assert not logger.disabled
+        with temp_logger(logger, disabled=True):
+            assert logger.disabled
+        assert not logger.disabled
+
+    def test_level(self) -> None:
+        name = TestTempLogger.test_level.__qualname__
+        logger = getLogger(name)
+        assert logger.level == NOTSET
+        with temp_logger(logger, level="INFO"):
+            assert logger.level == INFO
+        assert logger.level == NOTSET
+
+    def test_propagate(self) -> None:
+        name = TestTempLogger.test_propagate.__qualname__
+        logger = getLogger(name)
+        assert logger.propagate
+        with temp_logger(logger, propagate=False):
+            assert not logger.propagate
+        assert logger.propagate
