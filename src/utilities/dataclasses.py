@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import MISSING, dataclass, fields, is_dataclass, replace
+from dataclasses import MISSING, Field, dataclass, fields, is_dataclass, replace
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -15,6 +15,7 @@ from typing import (
 
 from typing_extensions import Protocol, override
 
+from utilities.functions import get_class_name
 from utilities.sentinel import Sentinel
 
 if TYPE_CHECKING:
@@ -42,19 +43,7 @@ def asdict_without_defaults(
     for field in fields(obj):
         name = field.name
         value = getattr(obj, name)
-        if (
-            ((field.default is MISSING) and (field.default_factory is MISSING))
-            or (
-                (field.default is not MISSING)
-                and (field.default_factory is MISSING)
-                and (value != field.default)
-            )
-            or (
-                (field.default is MISSING)
-                and (field.default_factory is not MISSING)
-                and (value != field.default_factory())
-            )
-        ):
+        if _is_not_default_value(field, value):
             if recursive and is_dataclass_instance(value):
                 value_as_dict = asdict_without_defaults(
                     value, final=final, recursive=recursive
@@ -137,10 +126,43 @@ def replace_non_sentinel(
     )
 
 
+def repr_without_defaults(obj: Dataclass, /, *, recursive: bool = False) -> str:
+    """Repr a dataclass, without its defaults."""
+    out: dict[str, str] = {}
+    for field in fields(obj):
+        name = field.name
+        value = getattr(obj, name)
+        if _is_not_default_value(field, value):
+            if recursive and is_dataclass_instance(value):
+                repr_as_dict = repr_without_defaults(value, recursive=recursive)
+            else:
+                repr_as_dict = repr(value)
+            out[name] = repr_as_dict
+    cls = get_class_name(obj)
+    joined = ", ".join(f"{k}={v}" for k, v in out.items())
+    return f"{cls}({joined})"
+
+
 def yield_field_names(obj: Dataclass | type[Dataclass], /) -> Iterator[str]:
     """Yield the field names of a dataclass."""
     for field in fields(obj):
         yield field.name
+
+
+def _is_not_default_value(field: Field, value: Any, /) -> bool:
+    return (
+        ((field.default is MISSING) and (field.default_factory is MISSING))
+        or (
+            (field.default is not MISSING)
+            and (field.default_factory is MISSING)
+            and (value != field.default)
+        )
+        or (
+            (field.default is MISSING)
+            and (field.default_factory is not MISSING)
+            and (value != field.default_factory())
+        )
+    )
 
 
 __all__ = [

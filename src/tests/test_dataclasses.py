@@ -19,6 +19,7 @@ from utilities.dataclasses import (
     is_dataclass_class,
     is_dataclass_instance,
     replace_non_sentinel,
+    repr_without_defaults,
     yield_field_names,
 )
 from utilities.functions import get_class_name
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
     from utilities.types import StrMapping
 
 
-class TestAsDictWithoutDefaults:
+class TestAsDictWithoutDefaultsAndRepr:
     @given(x=integers())
     def test_field_without_defaults(self, *, x: int) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -36,9 +37,12 @@ class TestAsDictWithoutDefaults:
             x: int
 
         obj = Example(x=x)
-        result = asdict_without_defaults(obj)
-        expected = {"x": x}
-        assert result == expected
+        asdict_res = asdict_without_defaults(obj)
+        asdict_exp = {"x": x}
+        assert asdict_res == asdict_exp
+        repr_res = repr_without_defaults(obj)
+        repr_exp = f"Example(x={x})"
+        assert repr_res == repr_exp
 
     def test_field_with_default_and_value_equal(self) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -46,9 +50,12 @@ class TestAsDictWithoutDefaults:
             x: int = 0
 
         obj = Example()
-        result = asdict_without_defaults(obj)
-        expected = {}
-        assert result == expected
+        asdict_res = asdict_without_defaults(obj)
+        asdict_exp = {}
+        assert asdict_res == asdict_exp
+        repr_res = repr_without_defaults(obj)
+        repr_exp = "Example()"
+        assert repr_res == repr_exp
 
     @given(x=integers().filter(lambda x: x != 0))
     def test_field_with_default_and_value_not_equal(self, *, x: int) -> None:
@@ -57,9 +64,12 @@ class TestAsDictWithoutDefaults:
             x: int = 0
 
         obj = Example(x=x)
-        result = asdict_without_defaults(obj)
-        expected = {"x": x}
-        assert result == expected
+        asdict_res = asdict_without_defaults(obj)
+        asdict_exp = {"x": x}
+        assert asdict_res == asdict_exp
+        repr_res = repr_without_defaults(obj)
+        repr_exp = f"Example(x={x})"
+        assert repr_res == repr_exp
 
     def test_field_with_default_factory_and_value_equal(self) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -67,9 +77,12 @@ class TestAsDictWithoutDefaults:
             x: list[int] = field(default_factory=list)
 
         obj = Example()
-        result = asdict_without_defaults(obj)
-        expected = {}
-        assert result == expected
+        asdict_res = asdict_without_defaults(obj)
+        asdict_exp = {}
+        assert asdict_res == asdict_exp
+        repr_res = repr_without_defaults(obj)
+        repr_exp = "Example()"
+        assert repr_res == repr_exp
 
     @given(x=lists(integers(), min_size=1))
     def test_field_with_default_factory_and_value_not_equal(
@@ -80,9 +93,12 @@ class TestAsDictWithoutDefaults:
             x: list[int] = field(default_factory=list)
 
         obj = Example(x=x)
-        result = asdict_without_defaults(obj)
-        expected = {"x": x}
-        assert result == expected
+        asdict_res = asdict_without_defaults(obj)
+        asdict_exp = {"x": x}
+        assert asdict_res == asdict_exp
+        repr_res = repr_without_defaults(obj)
+        repr_exp = f"Example(x={x})"
+        assert repr_res == repr_exp
 
     @given(x=integers())
     def test_final(self, *, x: int) -> None:
