@@ -605,12 +605,15 @@ class UpsertItemsError(Exception):
 
 
 def yield_primary_key_columns(
-    obj: TableOrORMInstOrClass, /, *, autoincrement: bool | None = None
+    obj: TableOrORMInstOrClass,
+    /,
+    *,
+    autoincrement: bool | Literal["auto", "ignore_fk"] | None = None,
 ) -> Iterator[Column]:
     """Yield the primary key columns of a table."""
     table = get_table(obj)
     for column in table.primary_key:
-        if (autoincrement is None) or (autoincrement is column.autoincrement):
+        if (autoincrement is None) or (autoincrement == column.autoincrement):
             yield column
 
 
@@ -855,17 +858,24 @@ def _prepare_insert_or_upsert_items_merge_items(
     table: Table, items: Iterable[StrMapping], /
 ) -> list[StrMapping]:
     columns = list(yield_primary_key_columns(table))
-    if any(c.autoincrement is True for c in columns):
-        return list(items)
     col_names = [c.name for c in columns]
+    cols_auto = {c.name for c in columns if c.autoincrement in {True, "auto"}}
+    cols_non_auto = set(col_names) - cols_auto
     mapping: defaultdict[tuple[Hashable, ...], list[StrMapping]] = defaultdict(list)
+    unchanged: list[StrMapping] = []
     for item in items:
-        check_subset(col_names, item)
-        pkey = tuple(item[k] for k in col_names)
-        rest: StrMapping = {k: v for k, v in item.items() if k not in col_names}
-        mapping[pkey].append(rest)
+        check_subset(cols_non_auto, item)
+        has_all_auto = set(cols_auto).issubset(item)
+        if has_all_auto:
+            pkey = tuple(item[k] for k in col_names)
+            rest: StrMapping = {k: v for k, v in item.items() if k not in col_names}
+            mapping[pkey].append(rest)
+        else:
+            unchanged.append(item)
     merged = {k: cast(StrMapping, reduce(or_, v)) for k, v in mapping.items()}
-    return [dict(zip(col_names, k, strict=True)) | dict(v) for k, v in merged.items()]
+    return [
+        dict(zip(col_names, k, strict=True)) | dict(v) for k, v in merged.items()
+    ] + unchanged
 
 
 def _tuple_to_mapping(
