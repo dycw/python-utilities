@@ -68,6 +68,7 @@ from utilities.polars import (
     _YieldRowsAsDataClassesColumnsSuperSetError,
     _YieldRowsAsDataClassesWrongTypeError,
     append_dataclass,
+    are_frames_equal,
     ceil_datetime,
     check_polars_dataframe,
     collect_series,
@@ -197,6 +198,20 @@ class TestAppendDataClass:
             match="Dataclass fields .* must be a subset of DataFrame columns .*; dataclass had extra items .*",
         ):
             _ = append_dataclass(df, row)
+
+
+class TestAreFramesEqual:
+    @mark.parametrize(
+        ("left", "right", "expected"),
+        [
+            param(DataFrame(), DataFrame(), True),
+            param(DataFrame(), DataFrame(schema={"value": Int64}), False),
+        ],
+        ids=str,
+    )
+    def test_main(self, *, left: DataFrame, right: DataFrame, expected: bool) -> None:
+        result = are_frames_equal(left, right)
+        assert result is expected
 
 
 class TestCeilDatetime:

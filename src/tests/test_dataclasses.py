@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from enum import Enum, auto
 from types import NoneType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
@@ -15,6 +15,7 @@ from typing_extensions import override
 from utilities.dataclasses import (
     Dataclass,
     GetDataClassClassError,
+    _is_not_default_value,
     asdict_without_defaults,
     get_dataclass_class,
     get_dataclass_fields,
@@ -25,6 +26,7 @@ from utilities.dataclasses import (
     yield_field_names,
 )
 from utilities.functions import get_class_name
+from utilities.iterables import one
 from utilities.sentinel import sentinel
 
 if TYPE_CHECKING:
@@ -291,6 +293,67 @@ class TestIsDataClassInstance:
     @mark.parametrize("obj", [param(None), param(NoneType)])
     def test_others(self, *, obj: Any) -> None:
         assert not is_dataclass_instance(obj)
+
+
+class TestIsNotDefaultValue:
+    @given(x=integers())
+    def test_no_defaults(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        fld = one(fields(Example))
+        assert _is_not_default_value(fld, x)
+
+    def test_default_and_value_equal(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+        fld = one(fields(Example))
+        assert not _is_not_default_value(fld, 0)
+
+    @given(x=integers().filter(lambda x: x != 0))
+    def test_default_and_value_not_equal(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+        fld = one(fields(Example))
+        assert _is_not_default_value(fld, x)
+
+    def test_default_factory_and_value_equal(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: list[int] = field(default_factory=list)
+
+        fld = one(fields(Example))
+        assert not _is_not_default_value(fld, [])
+
+    @given(x=lists(integers(), min_size=1))
+    def test_default_factory_and_value_not_equal(self, *, x: list[int]) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: list[int] = field(default_factory=list)
+
+        fld = one(fields(Example))
+        assert _is_not_default_value(fld, x)
+
+    def test_dataframe_without_comparison(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DataFrame = field(default_factory=DataFrame)
+
+        fld = one(fields(Example))
+        assert _is_not_default_value(fld, DataFrame())
+
+    def test_dataframe_with_comparison_and_equal(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DataFrame = field(default_factory=DataFrame)
+
+        fld = one(fields(Example))
+        assert not _is_not_default_value(fld, DataFrame(), comparisons={DataFrame: eq})
 
 
 class TestReplaceNonSentinel:

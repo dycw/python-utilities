@@ -130,6 +130,37 @@ class AppendDataClassError(Exception, Generic[_T]):
         return f"Dataclass fields {reprlib.repr(self.left)} must be a subset of DataFrame columns {reprlib.repr(self.right)}; dataclass had extra items {reprlib.repr(self.extra)}"
 
 
+def are_frames_equal(
+    left: DataFrame,
+    right: DataFrame,
+    /,
+    *,
+    check_row_order: bool = True,
+    check_column_order: bool = True,
+    check_dtypes: bool = True,
+    check_exact: bool = False,
+    rtol: float = 1e-5,
+    atol: float = 1e-8,
+    categorical_as_str: bool = False,
+) -> bool:
+    """Check if two DataFrames are equal."""
+    try:
+        assert_frame_equal(
+            left,
+            right,
+            check_row_order=check_row_order,
+            check_column_order=check_column_order,
+            check_dtypes=check_dtypes,
+            check_exact=check_exact,
+            rtol=rtol,
+            atol=atol,
+            categorical_as_str=categorical_as_str,
+        )
+    except AssertionError:
+        return False
+    return True
+
+
 @overload
 def ceil_datetime(column: Expr | str, every: Expr | str, /) -> Expr: ...
 @overload
@@ -1176,6 +1207,7 @@ __all__ = [
     "YieldRowsAsDataClassesError",
     "YieldStructSeriesElementsError",
     "append_dataclass",
+    "are_frames_equal",
     "ceil_datetime",
     "check_polars_dataframe",
     "collect_series",
