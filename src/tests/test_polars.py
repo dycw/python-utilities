@@ -1126,7 +1126,7 @@ class TestStructDataType:
             str_: str
             str_maybe: str | None = None
 
-        result = struct_data_type(Example)
+        result = struct_data_type(Example, globalns=globals())
         expected = Struct({
             "bool_": Boolean,
             "bool_maybe": Boolean,
@@ -1146,7 +1146,7 @@ class TestStructDataType:
         class Example:
             field: dt.datetime
 
-        result = struct_data_type(Example, time_zone=UTC)
+        result = struct_data_type(Example, time_zone=UTC, globalns=globals())
         expected = Struct({"field": DatetimeUTC})
         assert result == expected
 
@@ -1238,7 +1238,7 @@ class TestStructDataType:
             field: dt.datetime
 
         with raises(StructDataTypeError, match="Time-zone must be given"):
-            _ = struct_data_type(Example)
+            _ = struct_data_type(Example, globalns=globals())
 
     def test_missing_type_error(self) -> None:
         @dataclass(kw_only=True, slots=True)
