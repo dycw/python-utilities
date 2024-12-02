@@ -5,6 +5,7 @@ from collections import defaultdict
 from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence, Sized
 from dataclasses import dataclass, field
 from functools import partial, reduce
+from itertools import chain
 from math import floor
 from operator import ge, le, or_
 from re import search
@@ -64,10 +65,10 @@ from utilities.types import (
     Duration,
     StrMapping,
     TupleOrStrMapping,
+    is_sequence_of_tuple_or_string_mapping,
     is_string_mapping,
     is_tuple,
-    is_tuple_or_string_mapping,
-    make_isinstance,
+    is_tuple_or_str_mapping,
 )
 
 _T = TypeVar("_T")
@@ -294,18 +295,19 @@ def get_table_name(table_or_mapped_class: TableOrMappedClass, /) -> str:
 
 
 _PairOfTupleAndTable = tuple[tuple[Any, ...], TableOrMappedClass]
-_PairOfDictAndTable = tuple[StrMapping, TableOrMappedClass]
+_PairOfStrMappingAndTable = tuple[StrMapping, TableOrMappedClass]
+_PairOfTupleOrStrMappingAndTable = tuple[TupleOrStrMapping, TableOrMappedClass]
+_PairOfSequenceOfTupleOrStrMappingAndTable = tuple[
+    Sequence[TupleOrStrMapping], TableOrMappedClass
+]
 _PairOfListOfTuplesAndTable = tuple[Sequence[tuple[Any, ...]], TableOrMappedClass]
-_PairOfListOfDictsAndTable = tuple[Sequence[StrMapping], TableOrMappedClass]
-_ListOfPairOfTupleAndTable = Sequence[tuple[tuple[Any, ...], TableOrMappedClass]]
-_ListOfPairOfDictAndTable = Sequence[tuple[StrMapping, TableOrMappedClass]]
+_PairOfListOfStrMappingsAndTable = tuple[Sequence[StrMapping], TableOrMappedClass]
+_SeqOfPairOfTupleAndTable = Sequence[tuple[tuple[Any, ...], TableOrMappedClass]]
+_SeqOfPairOfDictAndTable = Sequence[tuple[StrMapping, TableOrMappedClass]]
 _InsertItem = (
-    _PairOfTupleAndTable
-    | _PairOfDictAndTable
-    | _PairOfListOfTuplesAndTable
-    | _PairOfListOfDictsAndTable
-    | _ListOfPairOfTupleAndTable
-    | _ListOfPairOfDictAndTable
+    _PairOfTupleOrStrMappingAndTable
+    | _PairOfSequenceOfTupleOrStrMappingAndTable
+    | Sequence[_PairOfTupleOrStrMappingAndTable]
     | MaybeIterable[DeclarativeBase]
 )
 
@@ -427,6 +429,15 @@ def _normalize_insert_item(item: _InsertItem, /) -> list[_NormalizedItem]:
             mapping=mapping, table=get_table(table_or_mapped_class)
         )
         return [normalized]
+    if _is_pair_of_sequence_of_tuple_or_string_mapping_and_table(item):
+        items, table_or_mapped_class = item
+        pairs = [(i, table_or_mapped_class) for i in items]
+        return list(chain.from_iterable(map(_normalize_insert_item, pairs)))
+    if isinstance(item, Sequence) and all(
+        map(_is_pair_of_tuple_or_str_mapping_and_table, item)
+    ):
+        assert 0, item
+        _PairOfSequenceOfTupleOrStrMappingAndTable
     raise _NormalizeInsertItemError(item=item)
 
 
@@ -443,13 +454,13 @@ def _normalize_insert_item_REST(item: _InsertItem, /) -> list[_NormalizedItem]:
         yield _NormalizedItem(mapping=item[0], table=get_table(item[1]))
         return
 
-    item = cast(_PairOfListOfTuplesAndTable | _ListOfPairOfTupleAndTable, item)
+    item = cast(_PairOfListOfTuplesAndTable | _SeqOfPairOfTupleAndTable, item)
 
     if (
         isinstance(item, tuple)
         and (len(item) == 2)
         and is_iterable_not_str(item[0])
-        and all(is_tuple_or_string_mapping(i) for i in item[0])
+        and all(is_sequence_of_tuple_or_string_mapping(i) for i in item[0])
         and is_table_or_mapped_class(item[1])
     ):
         item = cast(_PairOfListOfTuplesAndTable, item)
@@ -457,10 +468,10 @@ def _normalize_insert_item_REST(item: _InsertItem, /) -> list[_NormalizedItem]:
             yield _NormalizedItem(mapping=i, table=get_table(item[1]))
         return
 
-    item = cast(_ListOfPairOfDictAndTable, item)
+    item = cast(_SeqOfPairOfDictAndTable, item)
 
     if is_iterable_not_str(item) and all(_is_insert_item_pair(i) for i in item):
-        item = cast(_ListOfPairOfTupleAndTable | _ListOfPairOfDictAndTable, item)
+        item = cast(_SeqOfPairOfTupleAndTable | _SeqOfPairOfDictAndTable, item)
         for i in item:
             yield _NormalizedItem(mapping=i[0], table=get_table(i[1]))
         return
@@ -505,8 +516,8 @@ def _normalize_upsert_item_inner(item: _UpsertItem, /) -> Iterator[_NormalizedIt
         return
 
     item = cast(
-        _PairOfListOfDictsAndTable
-        | _ListOfPairOfDictAndTable
+        _PairOfListOfStrMappingsAndTable
+        | _SeqOfPairOfDictAndTable
         | DeclarativeBase
         | Sequence[DeclarativeBase],
         item,
@@ -519,19 +530,19 @@ def _normalize_upsert_item_inner(item: _UpsertItem, /) -> Iterator[_NormalizedIt
         and all(is_string_mapping(i) for i in item[0])
         and is_table_or_mapped_class(item[1])
     ):
-        item = cast(_PairOfListOfDictsAndTable, item)
+        item = cast(_PairOfListOfStrMappingsAndTable, item)
         for i in item[0]:
             yield _NormalizedItem(mapping=i, table=get_table(item[1]))
         return
 
     item = cast(
-        _ListOfPairOfDictAndTable | DeclarativeBase | Sequence[DeclarativeBase], item
+        _SeqOfPairOfDictAndTable | DeclarativeBase | Sequence[DeclarativeBase], item
     )
 
     if is_iterable_not_str(item) and all(
         _is_pair_of_str_mapping_and_table(i) for i in item
     ):
-        item = cast(_ListOfPairOfDictAndTable, item)
+        item = cast(_SeqOfPairOfDictAndTable, item)
         for i in item:
             yield _NormalizedItem(mapping=i[0], table=get_table(i[1]))
         return
@@ -577,9 +588,9 @@ class TablenameMixin:
 
 
 _UpsertItem = (
-    _PairOfDictAndTable
-    | _PairOfListOfDictsAndTable
-    | _ListOfPairOfDictAndTable
+    _PairOfStrMappingAndTable
+    | _PairOfListOfStrMappingsAndTable
+    | _SeqOfPairOfDictAndTable
     | MaybeIterable[DeclarativeBase]
 )
 
@@ -756,29 +767,32 @@ def _get_dialect_max_params(
             assert_never(never)
 
 
-def _is_pair_of_tuple_and_table(
+def _is_pair_of_sequence_of_tuple_or_string_mapping_and_table(
     obj: Any, /
-) -> TypeGuard[tuple[tuple[Any, ...], TableOrMappedClass]]:
-    """Check if an object is a pair of a tuple and a table."""
-    return _is_pair_with_predicate_and_table(obj, is_tuple)
+) -> TypeGuard[_PairOfSequenceOfTupleOrStrMappingAndTable]:
+    """Check if an object is a pair of a sequence of tuples/string mappings and a table."""
+    return _is_pair_with_predicate_and_table(
+        obj, is_sequence_of_tuple_or_string_mapping
+    )
 
 
 def _is_pair_of_str_mapping_and_table(
     obj: Any, /
-) -> TypeGuard[tuple[StrMapping, TableOrMappedClass]]:
+) -> TypeGuard[_PairOfStrMappingAndTable]:
     """Check if an object is a pair of a string mapping and a table."""
     return _is_pair_with_predicate_and_table(obj, is_string_mapping)
 
 
-def _is_pair_of_list_of_objs_and_table(
+def _is_pair_of_tuple_and_table(obj: Any, /) -> TypeGuard[_PairOfTupleAndTable]:
+    """Check if an object is a pair of a tuple and a table."""
+    return _is_pair_with_predicate_and_table(obj, is_tuple)
+
+
+def _is_pair_of_tuple_or_str_mapping_and_table(
     obj: Any, /
-) -> TypeGuard[tuple[tuple[list[tuple[Any, ...] | StrMapping]], TableOrMappedClass]]:
-    """Check if an object is a p."""
-
-    def predicate(obj: Any, /) -> TypeGuard[list[tuple[Any, ...] | StrMapping]]:
-        return isinstance(obj, list) and all(map(is_tuple_or_string_mapping, obj))
-
-    return _is_pair_with_predicate_and_table(obj, predicate)
+) -> TypeGuard[_PairOfTupleOrStrMappingAndTable]:
+    """Check if an object is a pair of a tuple/string mapping and a table."""
+    return _is_pair_with_predicate_and_table(obj, is_tuple_or_str_mapping)
 
 
 def _is_pair_with_predicate_and_table(

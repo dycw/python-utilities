@@ -37,11 +37,12 @@ from utilities.types import (
     ensure_sized_not_str,
     ensure_time,
     is_hashable,
+    is_sequence_of_tuple_or_string_mapping,
     is_sized,
     is_sized_not_str,
     is_string_mapping,
     is_tuple,
-    is_tuple_or_string_mapping,
+    is_tuple_or_str_mapping,
     issubclass_except_bool_int,
     make_isinstance,
 )
@@ -291,6 +292,21 @@ class TestIsHashable:
         assert is_hashable(obj) is expected
 
 
+class TestIsSequenceOfTupleOrStringMapping:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param([(1, 2, 3)], True),
+            param([{"a": 1, "b": 2, "c": 3}], True),
+            param([(1, 2, 3), {"a": 1, "b": 2, "c": 3}], True),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_sequence_of_tuple_or_string_mapping(obj)
+        assert result is expected
+
+
 class TestIsSized:
     @mark.parametrize(
         ("obj", "expected"),
@@ -358,7 +374,7 @@ class TestIsTupleOrStringMapping:
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = is_tuple_or_string_mapping(obj)
+        result = is_tuple_or_str_mapping(obj)
         assert result is expected
 
 
