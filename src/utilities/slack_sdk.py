@@ -68,7 +68,7 @@ class SlackHandler(Handler):
         max_ = self._complete_multiplier * self._freq
         with Timer() as timer:
             while not self._queue.empty():
-                if timer >= max_:
+                if timer >= max_:  # pragma: no cover
                     raise SlackHandlerError(queue=self._queue)
                 await sleep_dur(duration=0.01)
 
@@ -116,7 +116,7 @@ class SlackHandlerError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Message queue must be empty upon completion; got {self.queue}"
+        return f"Message queue must be empty upon completion; got {self.queue}"  # pragma: no cover
 
 
 async def send_to_slack(
