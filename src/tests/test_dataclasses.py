@@ -78,6 +78,35 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
         repr_exp = "Example()"
         assert repr_res == repr_exp
 
+    @given(x=lists(integers(), min_size=1))
+    def test_field_with_default_factory_and_value_not_equal(
+        self, *, x: list[int]
+    ) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: list[int] = field(default_factory=list)
+
+        obj = Example(x=x)
+        asdict_res = asdict_without_defaults(obj)
+        asdict_exp = {"x": x}
+        assert asdict_res == asdict_exp
+        repr_res = repr_without_defaults(obj)
+        repr_exp = f"Example(x={x})"
+        assert repr_res == repr_exp
+
+    def test_field_with_dataframe(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DataFrame = field(default_factory=DataFrame)
+
+        obj = Example()
+        asdict_res = asdict_without_defaults(obj)
+        asdict_exp = {"x": DataFrame()}
+        assert set(asdict_res) == set(asdict_exp)
+        repr_res = repr_without_defaults(obj)
+        repr_exp = f"Example(x={DataFrame()})"
+        assert repr_res == repr_exp
+
     @given(x=integers())
     def test_final(self, *, x: int) -> None:
         @dataclass(unsafe_hash=True, kw_only=True, slots=True)
