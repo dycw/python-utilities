@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field, fields
-from enum import Enum, auto
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from hypothesis import given
 from hypothesis.strategies import integers, lists
@@ -111,11 +110,15 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
 
         obj = Example()
         comparisons = {DataFrame: are_frames_equal}
-        asdict_res = asdict_without_defaults(obj, comparisons=comparisons)
-        asdict_exp = {"x": DataFrame()}
+        asdict_res = asdict_without_defaults(
+            obj, comparisons=comparisons, globalns=globals()
+        )
+        asdict_exp = {}
         assert set(asdict_res) == set(asdict_exp)
-        repr_res = repr_without_defaults(obj, comparisons=comparisons)
-        repr_exp = f"Example(x={DataFrame()})"
+        repr_res = repr_without_defaults(
+            obj, comparisons=comparisons, globalns=globals()
+        )
+        repr_exp = "Example()"
         assert repr_res == repr_exp
 
     @given(x=integers())
@@ -321,7 +324,9 @@ class TestIsNotDefaultValue:
             x: DataFrame = field(default_factory=DataFrame)
 
         fld = one(fields(Example))
-        assert _is_not_default_value(Example, fld, DataFrame(), comparisons={})
+        assert _is_not_default_value(
+            Example, fld, DataFrame(), comparisons={}, globalns=globals()
+        )
 
     def test_default_factory_with_comparison_with_type_and_equal(self) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -330,7 +335,11 @@ class TestIsNotDefaultValue:
 
         fld = one(fields(Example))
         assert not _is_not_default_value(
-            Example, fld, DataFrame(), comparisons={DataFrame: are_frames_equal}
+            Example,
+            fld,
+            DataFrame(),
+            comparisons={DataFrame: are_frames_equal},
+            globalns=globals(),
         )
 
     def test_default_factory_with_comparison_with_type_and_not_equal(self) -> None:
@@ -340,7 +349,11 @@ class TestIsNotDefaultValue:
 
         fld = one(fields(Example))
         assert not _is_not_default_value(
-            Example, fld, DataFrame(), comparisons={DataFrame: are_frames_equal}
+            Example,
+            fld,
+            DataFrame(),
+            comparisons={DataFrame: are_frames_equal},
+            globalns=globals(),
         )
 
 

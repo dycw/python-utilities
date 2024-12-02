@@ -190,7 +190,7 @@ def _is_not_default_value(
         if comparisons is None:
             cmp = eq
         else:
-            hints = get_type_hints(cls)
+            hints = get_type_hints(cls, globalns=globalns, localns=localns)
             type_ = hints[field.name]
             cmp = comparisons.get(type_, eq)
         try:
