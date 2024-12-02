@@ -8,7 +8,7 @@ from functools import partial, reduce
 from math import floor
 from operator import ge, le, or_
 from re import search
-from typing import Any, Literal, TypeGuard, assert_never, cast, overload
+from typing import Any, Literal, TypeGuard, TypeVar, assert_never, cast, overload
 
 from sqlalchemy import (
     URL,
@@ -65,9 +65,12 @@ from utilities.types import (
     StrMapping,
     TupleOrStrMapping,
     is_string_mapping,
+    is_tuple,
     is_tuple_or_string_mapping,
+    make_isinstance,
 )
 
+_T = TypeVar("_T")
 _EngineOrConnectionOrAsync = Engine | Connection | AsyncEngine | AsyncConnection
 Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
 TableOrMappedClass = Table | type[DeclarativeBase]
@@ -409,24 +412,26 @@ def mapped_class_to_dict(obj: Any, /) -> dict[str, Any]:
     return dict(yield_items())
 
 
-@dataclass(kw_only=True, slots=True)
-class _NormalizedInsertItem:
-    values: TupleOrStrMapping
-    table: Table
-
-
-def _normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertItem]:
+def _normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedItem]:
     """Normalize an insertion item."""
+    if _is_pair_of_tuple_and_table(item):
+        tuple_, table_or_mapped_class = item
+        yield _NormalizedItem(
+            mapping=_tuple_to_mapping(tuple_, table_or_mapped_class),
+            table=get_table(table_or_mapped_class),
+        )
+        item
+        assert 0, item
     try:
         for norm in _normalize_upsert_item(cast(Any, item), selected_or_all="all"):
-            yield _NormalizedInsertItem(values=norm.values, table=norm.table)
+            yield _NormalizedItem(mapping=norm.mapping, table=norm.table)
     except _NormalizeUpsertItemError:
         pass
     else:
         return
 
     if _is_insert_item_pair(item):
-        yield _NormalizedInsertItem(values=item[0], table=get_table(item[1]))
+        yield _NormalizedItem(mapping=item[0], table=get_table(item[1]))
         return
 
     item = cast(_PairOfListOfTuplesAndTable | _ListOfPairOfTupleAndTable, item)
@@ -440,7 +445,7 @@ def _normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertIt
     ):
         item = cast(_PairOfListOfTuplesAndTable, item)
         for i in item[0]:
-            yield _NormalizedInsertItem(values=i, table=get_table(item[1]))
+            yield _NormalizedItem(mapping=i, table=get_table(item[1]))
         return
 
     item = cast(_ListOfPairOfDictAndTable, item)
@@ -448,7 +453,7 @@ def _normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertIt
     if is_iterable_not_str(item) and all(_is_insert_item_pair(i) for i in item):
         item = cast(_ListOfPairOfTupleAndTable | _ListOfPairOfDictAndTable, item)
         for i in item:
-            yield _NormalizedInsertItem(values=i[0], table=get_table(i[1]))
+            yield _NormalizedItem(mapping=i[0], table=get_table(i[1]))
         return
 
     raise _NormalizeInsertItemError(item=item)
@@ -464,32 +469,30 @@ class _NormalizeInsertItemError(Exception):
 
 
 @dataclass(kw_only=True, slots=True)
-class _NormalizedUpsertItem:
-    values: StrMapping
+class _NormalizedItem:
+    mapping: StrMapping
     table: Table
 
 
 def _normalize_upsert_item(
     item: _UpsertItem, /, *, selected_or_all: Literal["selected", "all"] = "selected"
-) -> Iterator[_NormalizedUpsertItem]:
+) -> Iterator[_NormalizedItem]:
     """Normalize an upsert item."""
     normalized = _normalize_upsert_item_inner(item)
     match selected_or_all:
         case "selected":
             for norm in normalized:
-                values = {k: v for k, v in norm.values.items() if v is not None}
-                yield _NormalizedUpsertItem(values=values, table=norm.table)
+                values = {k: v for k, v in norm.mapping.items() if v is not None}
+                yield _NormalizedItem(mapping=values, table=norm.table)
         case "all":
             yield from normalized
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
 
 
-def _normalize_upsert_item_inner(
-    item: _UpsertItem, /
-) -> Iterator[_NormalizedUpsertItem]:
+def _normalize_upsert_item_inner(item: _UpsertItem, /) -> Iterator[_NormalizedItem]:
     if _is_upsert_item_pair(item):
-        yield _NormalizedUpsertItem(values=item[0], table=get_table(item[1]))
+        yield _NormalizedItem(mapping=item[0], table=get_table(item[1]))
         return
 
     item = cast(
@@ -509,7 +512,7 @@ def _normalize_upsert_item_inner(
     ):
         item = cast(_PairOfListOfDictsAndTable, item)
         for i in item[0]:
-            yield _NormalizedUpsertItem(values=i, table=get_table(item[1]))
+            yield _NormalizedItem(mapping=i, table=get_table(item[1]))
         return
 
     item = cast(
@@ -519,7 +522,7 @@ def _normalize_upsert_item_inner(
     if is_iterable_not_str(item) and all(_is_upsert_item_pair(i) for i in item):
         item = cast(_ListOfPairOfDictAndTable, item)
         for i in item:
-            yield _NormalizedUpsertItem(values=i[0], table=get_table(i[1]))
+            yield _NormalizedItem(mapping=i[0], table=get_table(i[1]))
         return
 
     item = cast(MaybeIterable[DeclarativeBase], item)
@@ -527,9 +530,7 @@ def _normalize_upsert_item_inner(
         is_iterable_not_str(item) and all(isinstance(i, DeclarativeBase) for i in item)
     ):
         for i in always_iterable(item):
-            yield _NormalizedUpsertItem(
-                values=mapped_class_to_dict(i), table=get_table(i)
-            )
+            yield _NormalizedItem(mapping=mapped_class_to_dict(i), table=get_table(i))
         return
 
     raise _NormalizeUpsertItemError(item=item)
@@ -748,20 +749,27 @@ def _is_insert_item_pair(
     obj: Any, /
 ) -> TypeGuard[tuple[TupleOrStrMapping, TableOrMappedClass]]:
     """Check if an object is an insert-ready pair."""
-    return _is_insert_or_upsert_pair(obj, is_tuple_or_string_mapping)
+    return _is_pair_with_predicate_and_table(obj, is_tuple_or_string_mapping)
+
+
+def _is_pair_of_tuple_and_table(
+    obj: Any, /
+) -> TypeGuard[tuple[tuple[Any, ...], TableOrMappedClass]]:
+    """Check if an object is a pair of a tuple and table."""
+    return _is_pair_with_predicate_and_table(obj, is_tuple)
 
 
 def _is_upsert_item_pair(
     obj: Any, /
 ) -> TypeGuard[tuple[StrMapping, TableOrMappedClass]]:
     """Check if an object is an upsert-ready pair."""
-    return _is_insert_or_upsert_pair(obj, is_string_mapping)
+    return _is_pair_with_predicate_and_table(obj, is_string_mapping)
 
 
-def _is_insert_or_upsert_pair(
-    obj: Any, predicate: Callable[[TupleOrStrMapping], bool], /
-) -> bool:
-    """Check if an object is an insert/upsert-ready pair."""
+def _is_pair_with_predicate_and_table(
+    obj: Any, predicate: Callable[[Any], TypeGuard[_T]], /
+) -> TypeGuard[tuple[_T, TableOrMappedClass]]:
+    """Check if an object is pair and a table."""
     return (
         isinstance(obj, tuple)
         and (len(obj) == 2)
@@ -782,7 +790,7 @@ class _PrepareInsertOrUpsertItems:
 
 @overload
 def _prepare_insert_or_upsert_items(
-    normalize_item: Callable[[_InsertItem], Iterator[_NormalizedInsertItem]],
+    normalize_item: Callable[[_InsertItem], Iterator[_NormalizedItem]],
     engine: AsyncEngine,
     build_insert: Callable[[Table, Iterable[TupleOrStrMapping]], tuple[Insert, Any]],
     /,
@@ -791,7 +799,7 @@ def _prepare_insert_or_upsert_items(
 ) -> _PrepareInsertOrUpsertItems: ...
 @overload
 def _prepare_insert_or_upsert_items(
-    normalize_item: Callable[[_UpsertItem], Iterator[_NormalizedUpsertItem]],
+    normalize_item: Callable[[_UpsertItem], Iterator[_NormalizedItem]],
     engine: AsyncEngine,
     build_insert: Callable[[Table, Iterable[StrMapping]], tuple[Insert, Any]],
     /,
@@ -817,6 +825,7 @@ def _prepare_insert_or_upsert_items(
                 lengths.add(len(values))
     except (_NormalizeInsertItemError, _NormalizeUpsertItemError) as error:
         raise _PrepareInsertOrUpsertItemsError(item=error.item) from None
+    assert 0, mapping
     merged = {
         table: _prepare_insert_or_upsert_items_merge_items(table, values)
         for table, values in mapping.items()
@@ -856,6 +865,14 @@ def _prepare_insert_or_upsert_items_merge_items(
         mapping[pkey].append(rest)
     merged = {k: reduce(or_, v) for k, v in mapping.items()}
     return [dict(zip(cols, k, strict=True)) | v for k, v in merged.items()]
+
+
+def _tuple_to_mapping(
+    values: tuple[Any, ...], table_or_mapped_class: TableOrMappedClass, /
+) -> dict[str, Any]:
+    columns = get_column_names(table_or_mapped_class)
+    mapping = dict(zip(columns, tuple(values), strict=False))
+    return {k: v for k, v in mapping.items() if v is not None}
 
 
 __all__ = [

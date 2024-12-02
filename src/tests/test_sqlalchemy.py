@@ -4,7 +4,7 @@ from itertools import chain
 from time import time_ns
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
-from hypothesis import Phase, assume, given, settings
+from hypothesis import Phase, assume, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -44,12 +44,12 @@ from utilities.sqlalchemy import (
     _is_upsert_item_pair,
     _normalize_insert_item,
     _normalize_upsert_item,
-    _NormalizedInsertItem,
-    _NormalizedUpsertItem,
+    _NormalizedItem,
     _NormalizeInsertItemError,
     _NormalizeUpsertItemError,
     _prepare_insert_or_upsert_items,
     _PrepareInsertOrUpsertItemsError,
+    _tuple_to_mapping,
     _UpsertItem,
     check_engine,
     columnwise_max,
@@ -76,6 +76,8 @@ from utilities.typing import get_args
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from pathlib import Path
+
+    from utilities.types import StrMapping
 
 
 def _table_names() -> SearchStrategy[str]:
@@ -456,7 +458,8 @@ class TestInsertItems:
                 item = {"id_": id_}, table
         await self._run_test(engine, table, {id_}, item)
 
-    @FLAKY
+    # @FLAKY
+    @reproduce_failure("6.122.0", b"AAAAAAAAAAAAAAABAAAA")
     @given(
         data=data(),
         name=_table_names(),
@@ -469,6 +472,7 @@ class TestInsertItems:
         ids=sets(integers(0, 10), min_size=1),
     )
     @settings(phases={Phase.generate})
+    # @mark.only
     async def test_pair_of_objs_and_table_or_list_of_pairs_of_objs_and_table(
         self,
         *,
@@ -682,6 +686,7 @@ class TestMappedClassToDict:
         assert result == expected
 
 
+@mark.only
 class TestNormalizeInsertItem:
     @given(case=sampled_from(["tuple", "dict"]), id_=integers(0, 10))
     def test_pair_of_obj_and_table(
@@ -694,7 +699,7 @@ class TestNormalizeInsertItem:
             case "dict":
                 item = {"id": id_}, table
         result = one(_normalize_insert_item(item))
-        expected = _NormalizedInsertItem(values=item[0], table=table)
+        expected = _NormalizedItem(mapping=item[0], table=table)
         assert result == expected
 
     @given(case=sampled_from(["tuple", "dict"]), ids=sets(integers(0, 10)))
@@ -708,7 +713,7 @@ class TestNormalizeInsertItem:
             case "dict":
                 item = [({"id_": id_}) for id_ in ids], table
         result = list(_normalize_insert_item(item))
-        expected = [_NormalizedInsertItem(values=i, table=table) for i in item[0]]
+        expected = [_NormalizedItem(mapping=i, table=table) for i in item[0]]
         assert result == expected
 
     @given(case=sampled_from(["tuple", "dict"]), ids=sets(integers()))
@@ -722,14 +727,14 @@ class TestNormalizeInsertItem:
             case "dict":
                 item = [({"id_": id_}, table) for id_ in ids]
         result = list(_normalize_insert_item(item))
-        expected = [_NormalizedInsertItem(values=i[0], table=table) for i in item]
+        expected = [_NormalizedItem(mapping=i[0], table=table) for i in item]
         assert result == expected
 
     @given(id_=integers())
     def test_mapped_class(self, *, id_: int) -> None:
         cls = self._mapped_class
         result = one(_normalize_insert_item(cls(id_=id_)))
-        expected = _NormalizedInsertItem(values={"id_": id_}, table=get_table(cls))
+        expected = _NormalizedItem(mapping={"id_": id_}, table=get_table(cls))
         assert result == expected
 
     @given(ids=sets(integers(0, 10), min_size=1))
@@ -737,8 +742,7 @@ class TestNormalizeInsertItem:
         cls = self._mapped_class
         result = list(_normalize_insert_item([cls(id_=id_) for id_ in ids]))
         expected = [
-            _NormalizedInsertItem(values={"id_": id_}, table=get_table(cls))
-            for id_ in ids
+            _NormalizedItem(mapping={"id_": id_}, table=get_table(cls)) for id_ in ids
         ]
         assert result == expected
 
@@ -780,7 +784,7 @@ class TestNormalizeUpsertItem:
         table = self._table
         item = {"id": id_}, table
         result = one(_normalize_upsert_item(item))
-        expected = _NormalizedUpsertItem(values=item[0], table=table)
+        expected = _NormalizedItem(mapping=item[0], table=table)
         assert result == expected
 
     @given(ids=sets(integers()))
@@ -788,7 +792,7 @@ class TestNormalizeUpsertItem:
         table = self._table
         item = [({"id_": id_}) for id_ in ids], table
         result = list(_normalize_upsert_item(item))
-        expected = [_NormalizedUpsertItem(values=i, table=table) for i in item[0]]
+        expected = [_NormalizedItem(mapping=i, table=table) for i in item[0]]
         assert result == expected
 
     @given(ids=sets(integers()))
@@ -796,14 +800,14 @@ class TestNormalizeUpsertItem:
         table = self._table
         item = [({"id_": id_}, table) for id_ in ids]
         result = list(_normalize_upsert_item(item))
-        expected = [_NormalizedUpsertItem(values=i[0], table=table) for i in item]
+        expected = [_NormalizedItem(mapping=i[0], table=table) for i in item]
         assert result == expected
 
     @given(id_=integers())
     def test_mapped_class(self, *, id_: int) -> None:
         cls = self._mapped_class
         result = one(_normalize_upsert_item(cls(id_=id_)))
-        expected = _NormalizedUpsertItem(values={"id_": id_}, table=get_table(cls))
+        expected = _NormalizedItem(mapping={"id_": id_}, table=get_table(cls))
         assert result == expected
 
     @given(ids=sets(integers(0, 10), min_size=1))
@@ -811,8 +815,7 @@ class TestNormalizeUpsertItem:
         cls = self._mapped_class
         result = list(_normalize_upsert_item([cls(id_=id_) for id_ in ids]))
         expected = [
-            _NormalizedUpsertItem(values={"id_": id_}, table=get_table(cls))
-            for id_ in ids
+            _NormalizedItem(mapping={"id_": id_}, table=get_table(cls)) for id_ in ids
         ]
         assert result == expected
 
@@ -899,6 +902,28 @@ class TestTablenameMixin:
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         assert get_table_name(Example) == "example"
+
+
+class TestTupleToMapping:
+    @mark.parametrize(
+        ("values", "expected"),
+        [
+            param((), {}),
+            param((1,), {"id_": 1}),
+            param((1, True), {"id_": 1, "value": True}),
+            param((None, True), {"value": True}),
+        ],
+        ids=str,
+    )
+    def test_main(self, *, values: tuple[Any, ...], expected: StrMapping) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+        )
+        result = _tuple_to_mapping(values, table)
+        assert result == expected
 
 
 class TestUpsertItems:

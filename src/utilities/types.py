@@ -380,6 +380,11 @@ def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
     return isinstance(obj, dict) and all(isinstance(key, str) for key in obj)
 
 
+def is_tuple(obj: Any, /) -> TypeGuard[tuple[Any, ...]]:
+    """Check if an object is a tuple or string mapping."""
+    return make_isinstance(tuple)(obj)
+
+
 def is_tuple_or_string_mapping(obj: Any, /) -> TypeGuard[TupleOrStrMapping]:
     """Check if an object is a tuple or string mapping."""
     return isinstance(obj, tuple) or is_string_mapping(obj)
@@ -426,6 +431,7 @@ __all__ = [
     "is_sized",
     "is_sized_not_str",
     "is_string_mapping",
+    "is_tuple",
     "is_tuple_or_string_mapping",
     "issubclass_except_bool_int",
     "make_isinstance",
