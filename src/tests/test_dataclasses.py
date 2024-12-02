@@ -1,21 +1,22 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from enum import Enum, auto
+from dataclasses import dataclass, field, fields
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from hypothesis import given
 from hypothesis.strategies import integers, lists
 from ib_async import Future
+from polars import DataFrame
 from pytest import mark, param, raises
+from typing_extensions import override
 
 from utilities.dataclasses import (
     Dataclass,
     GetDataClassClassError,
+    _is_not_default_value,
     asdict_without_defaults,
     get_dataclass_class,
-    get_dataclass_fields,
     is_dataclass_class,
     is_dataclass_instance,
     replace_non_sentinel,
@@ -23,13 +24,15 @@ from utilities.dataclasses import (
     yield_field_names,
 )
 from utilities.functions import get_class_name
+from utilities.iterables import one
+from utilities.polars import are_frames_equal
 from utilities.sentinel import sentinel
 
 if TYPE_CHECKING:
     from utilities.types import StrMapping
 
 
-class TestAsDictWithoutDefaultsAndRepr:
+class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
     @given(x=integers())
     def test_field_without_defaults(self, *, x: int) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -44,7 +47,7 @@ class TestAsDictWithoutDefaultsAndRepr:
         repr_exp = f"Example(x={x})"
         assert repr_res == repr_exp
 
-    def test_field_with_default_and_value_equal(self) -> None:
+    def test_field_with_default(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: int = 0
@@ -57,47 +60,22 @@ class TestAsDictWithoutDefaultsAndRepr:
         repr_exp = "Example()"
         assert repr_res == repr_exp
 
-    @given(x=integers().filter(lambda x: x != 0))
-    def test_field_with_default_and_value_not_equal(self, *, x: int) -> None:
+    def test_field_with_dataframe(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: int = 0
-
-        obj = Example(x=x)
-        asdict_res = asdict_without_defaults(obj)
-        asdict_exp = {"x": x}
-        assert asdict_res == asdict_exp
-        repr_res = repr_without_defaults(obj)
-        repr_exp = f"Example(x={x})"
-        assert repr_res == repr_exp
-
-    def test_field_with_default_factory_and_value_equal(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: list[int] = field(default_factory=list)
+            x: DataFrame = field(default_factory=DataFrame)
 
         obj = Example()
-        asdict_res = asdict_without_defaults(obj)
+        comparisons = {DataFrame: are_frames_equal}
+        asdict_res = asdict_without_defaults(
+            obj, comparisons=comparisons, globalns=globals()
+        )
         asdict_exp = {}
-        assert asdict_res == asdict_exp
-        repr_res = repr_without_defaults(obj)
+        assert set(asdict_res) == set(asdict_exp)
+        repr_res = repr_without_defaults(
+            obj, comparisons=comparisons, globalns=globals()
+        )
         repr_exp = "Example()"
-        assert repr_res == repr_exp
-
-    @given(x=lists(integers(), min_size=1))
-    def test_field_with_default_factory_and_value_not_equal(
-        self, *, x: list[int]
-    ) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: list[int] = field(default_factory=list)
-
-        obj = Example(x=x)
-        asdict_res = asdict_without_defaults(obj)
-        asdict_exp = {"x": x}
-        assert asdict_res == asdict_exp
-        repr_res = repr_without_defaults(obj)
-        repr_exp = f"Example(x={x})"
         assert repr_res == repr_exp
 
     @given(x=integers())
@@ -147,7 +125,7 @@ class TestAsDictWithoutDefaultsAndRepr:
         asdict_exp = {"inner": Inner(x=x)}
         assert asdict_res == asdict_exp
         repr_res = repr_without_defaults(obj)
-        repr_exp = f"Outer(inner=TestAsDictWithoutDefaultsAndRepr.test_nested_without_recursive.<locals>.Inner(x={x}))"
+        repr_exp = f"Outer(inner=TestAsDictWithoutDefaultsAndReprWithoutDefaults.test_nested_without_recursive.<locals>.Inner(x={x}))"
         assert repr_res == repr_exp
 
     def test_ib_async(self) -> None:
@@ -217,39 +195,6 @@ class TestGetDataClassClass:
             _ = get_dataclass_class(cast(Any, None))
 
 
-class TestGetDataClassFields:
-    def test_main(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: bool
-
-        result = get_dataclass_fields(Example)
-        expected = {"x": bool}
-        assert result == expected
-
-    def test_enum(self) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: Truth
-
-        result = get_dataclass_fields(Example, localns=locals())
-        expected = {"x": Truth}
-        assert result == expected
-
-    def test_literal(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: Literal["true", "false"]
-
-        result = get_dataclass_fields(Example, localns={"Literal": Literal})
-        expected = {"x": Literal["true", "false"]}
-        assert result == expected
-
-
 class TestIsDataClassClass:
     def test_main(self) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -278,6 +223,97 @@ class TestIsDataClassInstance:
         assert not is_dataclass_instance(obj)
 
 
+class TestIsNotDefaultValue:
+    @given(x=integers())
+    def test_no_defaults(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        fld = one(fields(Example))
+        assert _is_not_default_value(Example, fld, x)
+
+    def test_default_and_value_equal(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+        fld = one(fields(Example))
+        assert not _is_not_default_value(Example, fld, 0)
+
+    @given(x=integers().filter(lambda x: x != 0))
+    def test_default_and_value_not_equal(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+        fld = one(fields(Example))
+        assert _is_not_default_value(Example, fld, x)
+
+    def test_default_factory_and_value_equal(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: list[int] = field(default_factory=list)
+
+        fld = one(fields(Example))
+        assert not _is_not_default_value(Example, fld, [])
+
+    @given(x=lists(integers(), min_size=1))
+    def test_default_factory_and_value_not_equal(self, *, x: list[int]) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: list[int] = field(default_factory=list)
+
+        fld = one(fields(Example))
+        assert _is_not_default_value(Example, fld, x)
+
+    def test_default_factory_without_comparison(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DataFrame = field(default_factory=DataFrame)
+
+        fld = one(fields(Example))
+        assert _is_not_default_value(Example, fld, DataFrame())
+
+    def test_default_factory_with_comparison_without_type(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DataFrame = field(default_factory=DataFrame)
+
+        fld = one(fields(Example))
+        assert _is_not_default_value(
+            Example, fld, DataFrame(), comparisons={}, globalns=globals()
+        )
+
+    def test_default_factory_with_comparison_with_type_and_equal(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DataFrame = field(default_factory=DataFrame)
+
+        fld = one(fields(Example))
+        assert not _is_not_default_value(
+            Example,
+            fld,
+            DataFrame(),
+            comparisons={DataFrame: are_frames_equal},
+            globalns=globals(),
+        )
+
+    def test_default_factory_with_comparison_with_type_and_not_equal(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DataFrame = field(default_factory=DataFrame)
+
+        fld = one(fields(Example))
+        assert not _is_not_default_value(
+            Example,
+            fld,
+            DataFrame(),
+            comparisons={DataFrame: are_frames_equal},
+            globalns=globals(),
+        )
+
+
 class TestReplaceNonSentinel:
     def test_main(self) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -302,6 +338,36 @@ class TestReplaceNonSentinel:
         assert obj.x == 1
         replace_non_sentinel(obj, x=sentinel, in_place=True)
         assert obj.x == 1
+
+
+class TestReprWithoutDefaults:
+    def test_with_default_and_value_equal(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+            @override
+            def __repr__(self) -> str:
+                return repr_without_defaults(self)
+
+        obj = Example()
+        result = repr(obj)
+        expected = "Example()"
+        assert result == expected
+
+    def test_field_with_dataframe(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DataFrame = field(default_factory=DataFrame)
+
+            @override
+            def __repr__(self) -> str:
+                return repr_without_defaults(self)
+
+        obj = Example()
+        result = repr(obj)
+        expected = f"Example(x={DataFrame()})"
+        assert result == expected
 
 
 class TestYieldDataClassFieldNames:

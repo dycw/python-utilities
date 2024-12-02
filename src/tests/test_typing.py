@@ -9,6 +9,7 @@ from pytest import mark, param
 from utilities.typing import (
     eval_typed_dict,
     get_args,
+    get_type_hints,
     is_dict_type,
     is_frozenset_type,
     is_list_type,
@@ -73,6 +74,17 @@ class TestGetArgs:
     )
     def test_main(self, *, obj: Any, expected: tuple[Any, ...]) -> None:
         result = get_args(obj)
+        assert result == expected
+
+
+class TestGetTypeHints:
+    def test_main(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        result = get_type_hints(Example)
+        expected = {"x": int}
         assert result == expected
 
 

@@ -68,6 +68,7 @@ from utilities.polars import (
     _YieldRowsAsDataClassesColumnsSuperSetError,
     _YieldRowsAsDataClassesWrongTypeError,
     append_dataclass,
+    are_frames_equal,
     ceil_datetime,
     check_polars_dataframe,
     collect_series,
@@ -197,6 +198,20 @@ class TestAppendDataClass:
             match="Dataclass fields .* must be a subset of DataFrame columns .*; dataclass had extra items .*",
         ):
             _ = append_dataclass(df, row)
+
+
+class TestAreFramesEqual:
+    @mark.parametrize(
+        ("left", "right", "expected"),
+        [
+            param(DataFrame(), DataFrame(), True),
+            param(DataFrame(), DataFrame(schema={"value": Int64}), False),
+        ],
+        ids=str,
+    )
+    def test_main(self, *, left: DataFrame, right: DataFrame, expected: bool) -> None:
+        result = are_frames_equal(left, right)
+        assert result is expected
 
 
 class TestCeilDatetime:
@@ -1111,7 +1126,7 @@ class TestStructDataType:
             str_: str
             str_maybe: str | None = None
 
-        result = struct_data_type(Example)
+        result = struct_data_type(Example, globalns=globals())
         expected = Struct({
             "bool_": Boolean,
             "bool_maybe": Boolean,
@@ -1131,7 +1146,7 @@ class TestStructDataType:
         class Example:
             field: dt.datetime
 
-        result = struct_data_type(Example, time_zone=UTC)
+        result = struct_data_type(Example, time_zone=UTC, globalns=globals())
         expected = Struct({"field": DatetimeUTC})
         assert result == expected
 
@@ -1223,7 +1238,7 @@ class TestStructDataType:
             field: dt.datetime
 
         with raises(StructDataTypeError, match="Time-zone must be given"):
-            _ = struct_data_type(Example)
+            _ = struct_data_type(Example, globalns=globals())
 
     def test_missing_type_error(self) -> None:
         @dataclass(kw_only=True, slots=True)

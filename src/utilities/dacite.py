@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import fields
-from typing import TYPE_CHECKING, Any, Literal, get_type_hints
+from typing import TYPE_CHECKING, Any, Literal
 
 from utilities.iterables import one
-from utilities.typing import get_args, is_optional_type
+from utilities.typing import get_args, get_type_hints, is_optional_type
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -27,11 +27,7 @@ def yield_literal_forward_references(
     localns: StrMapping | None = None,
 ) -> Iterator[tuple[str, Any]]:
     """Yield forward references."""
-    hints = get_type_hints(
-        cls,
-        globalns=globals() if globalns is None else dict(globalns),
-        localns=locals() if localns is None else dict(localns),
-    )
+    hints = get_type_hints(cls, globalns=globalns, localns=localns)
     for fld in filter(lambda f: isinstance(f.type, str), fields(cls)):
         type_ = hints[fld.name]
         result = _yield_literal_forward_references_core(type_)
