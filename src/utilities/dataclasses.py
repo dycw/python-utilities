@@ -15,6 +15,7 @@ from typing import (
 
 from typing_extensions import Protocol, override
 
+from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
 from utilities.sentinel import Sentinel
 
@@ -150,18 +151,20 @@ def yield_field_names(obj: Dataclass | type[Dataclass], /) -> Iterator[str]:
 
 
 def _is_not_default_value(field: Field, value: Any, /) -> bool:
-    return (
-        ((field.default is MISSING) and (field.default_factory is MISSING))
-        or (
-            (field.default is not MISSING)
-            and (field.default_factory is MISSING)
-            and (value != field.default)
-        )
-        or (
-            (field.default is MISSING)
-            and (field.default_factory is not MISSING)
-            and (value != field.default_factory())
-        )
+    if (field.default is MISSING) and (field.default_factory is MISSING):
+        return True
+    if (field.default is not MISSING) and (field.default_factory is MISSING):
+        try:
+            return bool(value != field.default)
+        except TypeError:
+            return True
+    if (field.default is MISSING) and (field.default_factory is not MISSING):
+        try:
+            return bool(value != field.default_factory())
+        except TypeError:
+            return True
+    raise ImpossibleCaseError(  # pragma: no cover
+        case=[f"{field.default_factory=}", f"{field.default_factory=}"]
     )
 
 

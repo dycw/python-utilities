@@ -8,7 +8,9 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 from hypothesis import given
 from hypothesis.strategies import integers, lists
 from ib_async import Future
+from polars import DataFrame
 from pytest import mark, param, raises
+from typing_extensions import override
 
 from utilities.dataclasses import (
     Dataclass,
@@ -29,7 +31,7 @@ if TYPE_CHECKING:
     from utilities.types import StrMapping
 
 
-class TestAsDictWithoutDefaultsAndRepr:
+class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
     @given(x=integers())
     def test_field_without_defaults(self, *, x: int) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -100,6 +102,19 @@ class TestAsDictWithoutDefaultsAndRepr:
         repr_exp = f"Example(x={x})"
         assert repr_res == repr_exp
 
+    def test_field_with_dataframe(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DataFrame = field(default_factory=DataFrame)
+
+        obj = Example()
+        asdict_res = asdict_without_defaults(obj)
+        asdict_exp = {"x": DataFrame()}
+        assert set(asdict_res) == set(asdict_exp)
+        repr_res = repr_without_defaults(obj)
+        repr_exp = f"Example(x={DataFrame()})"
+        assert repr_res == repr_exp
+
     @given(x=integers())
     def test_final(self, *, x: int) -> None:
         @dataclass(unsafe_hash=True, kw_only=True, slots=True)
@@ -147,7 +162,7 @@ class TestAsDictWithoutDefaultsAndRepr:
         asdict_exp = {"inner": Inner(x=x)}
         assert asdict_res == asdict_exp
         repr_res = repr_without_defaults(obj)
-        repr_exp = f"Outer(inner=TestAsDictWithoutDefaultsAndRepr.test_nested_without_recursive.<locals>.Inner(x={x}))"
+        repr_exp = f"Outer(inner=TestAsDictWithoutDefaultsAndReprWithoutDefaults.test_nested_without_recursive.<locals>.Inner(x={x}))"
         assert repr_res == repr_exp
 
     def test_ib_async(self) -> None:
@@ -302,6 +317,36 @@ class TestReplaceNonSentinel:
         assert obj.x == 1
         replace_non_sentinel(obj, x=sentinel, in_place=True)
         assert obj.x == 1
+
+
+class TestReprWithoutDefaults:
+    def test_with_default_and_value_equal(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+            @override
+            def __repr__(self) -> str:
+                return repr_without_defaults(self)
+
+        obj = Example()
+        result = repr(obj)
+        expected = "Example()"
+        assert result == expected
+
+    def test_field_with_dataframe(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DataFrame = field(default_factory=DataFrame)
+
+            @override
+            def __repr__(self) -> str:
+                return repr_without_defaults(self)
+
+        obj = Example()
+        result = repr(obj)
+        expected = f"Example(x={DataFrame()})"
+        assert result == expected
 
 
 class TestYieldDataClassFieldNames:
