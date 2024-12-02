@@ -73,32 +73,23 @@ class SlackHandler(Handler):
                     break
                 else:
                     messages.append(message)
-        if len(messages) >= 1:  # pragma: no cover
+        if len(messages) >= 1:
             _LOGGER.debug("Sending %s messages(s)", len(messages))
             text = "\n".join(messages)
             try:
                 await send_to_slack(self._url, text, timeout=self._timeout)
             except CancelledError:
-                return
+                return  # pragma: no cover
             except Exception:
                 _LOGGER.exception("Slack handler error")
             else:
-                if self._callback is not None:
+                if self._callback is not None:  # pragma: no cover
                     self._callback()
 
     async def _loop_send(self) -> None:
         while True:
             await self.send()
             await sleep_dur(duration=self._freq)
-
-
-@dataclass(kw_only=True, slots=True)
-class SlackHandlerError(Exception):
-    queue: Queue[str]
-
-    @override
-    def __str__(self) -> str:
-        return f"Message queue must be empty upon completion; got {self.queue}"
 
 
 async def send_to_slack(
