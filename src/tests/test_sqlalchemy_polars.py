@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 import polars as pl
 import sqlalchemy
-from hypothesis import Phase, given, settings
+from hypothesis import Phase, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -427,7 +427,8 @@ class TestSelectToDataFrame:
         result = await select_to_dataframe(sel, engine)
         assert_frame_equal(result, df)
 
-    @FLAKY
+    # @FLAKY
+    @reproduce_failure("6.122.0", b"AXicY2CAAkYwCQAAFQAC")
     @given(
         data=data(),
         name=_table_names(),
@@ -435,6 +436,7 @@ class TestSelectToDataFrame:
         sr_name=sampled_from(["Value", "value"]),
     )
     @settings(phases={Phase.generate})
+    @mark.only
     async def test_snake(
         self, *, data: DataObject, name: str, values: list[bool], sr_name: str
     ) -> None:

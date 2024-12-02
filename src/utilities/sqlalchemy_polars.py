@@ -70,7 +70,7 @@ if TYPE_CHECKING:
 
 async def insert_dataframe(
     df: DataFrame,
-    table_or_mapped_class: TableOrORMInstOrClass,
+    table_or_orm: TableOrORMInstOrClass,
     engine: AsyncEngine,
     /,
     *,
@@ -83,22 +83,21 @@ async def insert_dataframe(
 ) -> None:
     """Insert/upsert a DataFrame into a database."""
     mapping = _insert_dataframe_map_df_schema_to_table(
-        df.schema, table_or_mapped_class, snake=snake
+        df.schema, table_or_orm, snake=snake
     )
     items = df.select(mapping).rename(mapping).to_dicts()
     if len(items) == 0:
         if not df.is_empty():
             raise InsertDataFrameError(df=df)
         if not assume_tables_exist:
-            await ensure_tables_created(
-                engine, table_or_mapped_class, timeout=timeout_create
-            )
+            await ensure_tables_created(engine, table_or_orm, timeout=timeout_create)
         return
+    assert 0, items
     match upsert:
         case None:
             await insert_items(
                 engine,
-                (items, table_or_mapped_class),
+                (items, table_or_orm),
                 chunk_size_frac=chunk_size_frac,
                 assume_tables_exist=assume_tables_exist,
                 timeout_create=timeout_create,
@@ -107,7 +106,7 @@ async def insert_dataframe(
         case "selected" | "all" as selected_or_all:  # skipif-ci-and-not-linux
             await upsert_items(
                 engine,
-                (items, table_or_mapped_class),
+                (items, table_or_orm),
                 chunk_size_frac=chunk_size_frac,
                 selected_or_all=selected_or_all,
                 assume_tables_exist=assume_tables_exist,
@@ -120,15 +119,13 @@ async def insert_dataframe(
 
 def _insert_dataframe_map_df_schema_to_table(
     df_schema: SchemaDict,
-    table_or_mapped_class: TableOrORMInstOrClass,
+    table_or_orm: TableOrORMInstOrClass,
     /,
     *,
     snake: bool = False,
 ) -> dict[str, str]:
     """Map a DataFrame schema to a table."""
-    table_schema = {
-        col.name: col.type.python_type for col in get_columns(table_or_mapped_class)
-    }
+    table_schema = {col.name: col.type.python_type for col in get_columns(table_or_orm)}
     out: dict[str, str] = {}
     for df_col_name, df_col_type in df_schema.items():
         with suppress(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):

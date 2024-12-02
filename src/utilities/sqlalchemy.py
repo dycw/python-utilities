@@ -222,11 +222,11 @@ async def ensure_tables_created(
 
 async def ensure_tables_dropped(
     engine: AsyncEngine,
-    *tables_or_mapped_classes: TableOrORMInstOrClass,
+    *tables_or_orms: TableOrORMInstOrClass,
     timeout: Duration | None = None,
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
-    tables = set(map(get_table, tables_or_mapped_classes))
+    tables = set(map(get_table, tables_or_orms))
     match dialect := _get_dialect(engine):
         case "mysql":  # pragma: no cover
             raise NotImplementedError(dialect)
@@ -288,9 +288,9 @@ class GetTableError(Exception):
         return f"Object {self.obj} must be a Table or mapped class; got {get_class_name(self.obj)!r}"
 
 
-def get_table_name(table_or_mapped_class: TableOrORMInstOrClass, /) -> str:
+def get_table_name(table_or_orm: TableOrORMInstOrClass, /) -> str:
     """Get the table name from a Table or mapped class."""
-    return get_table(table_or_mapped_class).name
+    return get_table(table_or_orm).name
 
 
 _PairOfTupleAndTable = tuple[tuple[Any, ...], TableOrORMInstOrClass]
@@ -413,21 +413,19 @@ def mapped_class_to_dict(obj: DeclarativeBase, /) -> dict[str, Any]:
 def _normalize_insert_item(item: _InsertItem, /) -> list[_NormalizedItem]:
     """Normalize an insertion item."""
     if _is_pair_of_tuple_and_table(item):
-        tuple_, table_or_mapped_class = item
+        tuple_, table_or_orm = item
         normalized = _NormalizedItem(
-            mapping=_tuple_to_mapping(tuple_, table_or_mapped_class),
-            table=get_table(table_or_mapped_class),
+            mapping=_tuple_to_mapping(tuple_, table_or_orm),
+            table=get_table(table_or_orm),
         )
         return [normalized]
     if _is_pair_of_str_mapping_and_table(item):
-        mapping, table_or_mapped_class = item
-        normalized = _NormalizedItem(
-            mapping=mapping, table=get_table(table_or_mapped_class)
-        )
+        mapping, table_or_orm = item
+        normalized = _NormalizedItem(mapping=mapping, table=get_table(table_or_orm))
         return [normalized]
     if _is_pair_of_sequence_of_tuple_or_string_mapping_and_table(item):
-        items, table_or_mapped_class = item
-        pairs = [(i, table_or_mapped_class) for i in items]
+        items, table_or_orm = item
+        pairs = [(i, table_or_orm) for i in items]
         return list(chain.from_iterable(map(_normalize_insert_item, pairs)))
     if isinstance(item, DeclarativeBase):
         normalized = _NormalizedItem(
