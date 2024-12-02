@@ -26,7 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 from tests.conftest import FLAKY
-from utilities.hypothesis import int32s, months, sqlalchemy_engines, temp_paths
+from utilities.hypothesis import int32s, sqlalchemy_engines, temp_paths
 from utilities.iterables import one
 from utilities.modules import is_installed
 from utilities.sqlalchemy import (
@@ -962,7 +962,7 @@ class TestPrepareInsertOrUpsertItems:
 
 
 class TestPrepareInsertOrUpsertItemsMergeItems:
-    # @FLAKY
+    @FLAKY
     @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
     async def test_main(self, *, data: DataObject, name: str) -> None:
@@ -986,10 +986,9 @@ class TestPrepareInsertOrUpsertItemsMergeItems:
         async with engine.begin() as conn:
             _ = await conn.execute(table.insert().values(expected))
 
-    # @FLAKY
+    @FLAKY
     @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
-    # @mark.only
     async def test_just_value(self, *, data: DataObject, name: str) -> None:
         engine = await sqlalchemy_engines(data)
         table = Table(
@@ -1005,7 +1004,7 @@ class TestPrepareInsertOrUpsertItemsMergeItems:
         async with engine.begin() as conn:
             _ = await conn.execute(table.insert().values(items))
 
-    # @FLAKY
+    @FLAKY
     @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
     async def test_autoincrement(self, *, data: DataObject, name: str) -> None:

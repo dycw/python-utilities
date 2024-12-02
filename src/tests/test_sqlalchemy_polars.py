@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 import polars as pl
 import sqlalchemy
-from hypothesis import Phase, given, reproduce_failure, settings
+from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
