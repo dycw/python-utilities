@@ -174,5 +174,6 @@ __all__ = [
     "is_dataclass_class",
     "is_dataclass_instance",
     "replace_non_sentinel",
+    "repr_without_defaults",
     "yield_field_names",
 ]
