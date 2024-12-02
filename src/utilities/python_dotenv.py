@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, fields
 from enum import Enum
 from os import environ
-from typing import TYPE_CHECKING, Any, TypeVar, get_type_hints
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from dotenv import dotenv_values
 from typing_extensions import override
@@ -18,7 +18,7 @@ from utilities.iterables import (
     one_str,
 )
 from utilities.pathlib import PWD
-from utilities.typing import get_args, is_literal_type
+from utilities.typing import get_args, get_type_hints, is_literal_type
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
@@ -38,11 +38,7 @@ def load_settings(
     localns: StrMapping | None = None,
 ) -> _TDataclass:
     """Load a set of settings from the `.env` file."""
-    hints = get_type_hints(
-        cls,
-        globalns=globals() if globalns is None else dict(globalns),
-        localns=locals() if localns is None else dict(localns),
-    )
+    hints = get_type_hints(cls, globalns=globalns, localns=localns)
     path = get_repo_root(cwd=cwd).joinpath(".env")
     if not path.exists():
         raise _LoadSettingsFileNotFoundError(path=path) from None

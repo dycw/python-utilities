@@ -20,7 +20,6 @@ from typing import (
     TypeVar,
     assert_never,
     cast,
-    get_type_hints,
     overload,
 )
 from zoneinfo import ZoneInfo
@@ -83,6 +82,7 @@ from utilities.math import (
 from utilities.types import StrMapping, ensure_datetime
 from utilities.typing import (
     get_args,
+    get_type_hints,
     is_frozenset_type,
     is_list_type,
     is_literal_type,
@@ -910,18 +910,14 @@ def struct_data_type(
     cls: type[Dataclass],
     /,
     *,
-    globalns: dict[str, Any] | None = None,
-    localns: dict[str, Any] | None = None,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
     time_zone: ZoneInfo | str | None = None,
 ) -> Struct:
     """Construct the Struct data type for a dataclass."""
     if not is_dataclass_class(cls):
         raise _StructDataTypeNotADataclassError(cls=cls)
-    anns = get_type_hints(
-        cls,
-        globalns=globals() if globalns is None else globalns,
-        localns=locals() if localns is None else localns,
-    )
+    anns = get_type_hints(cls, globalns=globalns, localns=localns)
     data_types = {
         k: _struct_data_type_one(v, time_zone=time_zone) for k, v in anns.items()
     }

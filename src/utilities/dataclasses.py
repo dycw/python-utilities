@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import MISSING, Field, dataclass, fields, is_dataclass, replace
+from operator import eq
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -8,7 +9,6 @@ from typing import (
     Literal,
     TypeGuard,
     TypeVar,
-    get_type_hints,
     overload,
     runtime_checkable,
 )
@@ -18,9 +18,10 @@ from typing_extensions import Protocol, override
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
 from utilities.sentinel import Sentinel
+from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterator, Mapping
 
     from utilities.types import StrMapping
 
@@ -36,6 +37,9 @@ def asdict_without_defaults(
     obj: Dataclass,
     /,
     *,
+    comparisons: Mapping[type[Any], Callable[[Any, Any], bool]] | None = None,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
     final: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
     recursive: bool = False,
 ) -> StrMapping:
@@ -44,10 +48,22 @@ def asdict_without_defaults(
     for field in fields(obj):
         name = field.name
         value = getattr(obj, name)
-        if _is_not_default_value(field, value):
+        if _is_not_default_value(
+            obj,
+            field,
+            value,
+            comparisons=comparisons,
+            globalns=globalns,
+            localns=localns,
+        ):
             if recursive and is_dataclass_instance(value):
                 value_as_dict = asdict_without_defaults(
-                    value, final=final, recursive=recursive
+                    value,
+                    comparisons=comparisons,
+                    final=final,
+                    recursive=recursive,
+                    globalns=globalns,
+                    localns=localns,
                 )
             else:
                 value_as_dict = value
@@ -71,21 +87,6 @@ class GetDataClassClassError(Exception):
     @override
     def __str__(self) -> str:
         return f"Object must be a dataclass instance or class; got {self.obj}"
-
-
-def get_dataclass_fields(
-    cls: type[Dataclass],
-    /,
-    *,
-    globalns: StrMapping | None = None,
-    localns: StrMapping | None = None,
-) -> StrMapping:
-    """Get the fields of a dataclass."""
-    return get_type_hints(
-        cls,
-        globalns=globals() if globalns is None else dict(globalns),
-        localns=locals() if localns is None else dict(localns),
-    )
 
 
 def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:
@@ -127,15 +128,36 @@ def replace_non_sentinel(
     )
 
 
-def repr_without_defaults(obj: Dataclass, /, *, recursive: bool = False) -> str:
+def repr_without_defaults(
+    obj: Dataclass,
+    /,
+    *,
+    comparisons: Mapping[type[Any], Callable[[Any, Any], bool]] | None = None,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    recursive: bool = False,
+) -> str:
     """Repr a dataclass, without its defaults."""
     out: dict[str, str] = {}
     for field in fields(obj):
         name = field.name
         value = getattr(obj, name)
-        if _is_not_default_value(field, value):
+        if _is_not_default_value(
+            obj,
+            field,
+            value,
+            comparisons=comparisons,
+            globalns=globalns,
+            localns=localns,
+        ):
             if recursive and is_dataclass_instance(value):
-                repr_as_dict = repr_without_defaults(value, recursive=recursive)
+                repr_as_dict = repr_without_defaults(
+                    value,
+                    comparisons=comparisons,
+                    globalns=globalns,
+                    localns=localns,
+                    recursive=recursive,
+                )
             else:
                 repr_as_dict = repr(value)
             out[name] = repr_as_dict
@@ -150,17 +172,29 @@ def yield_field_names(obj: Dataclass | type[Dataclass], /) -> Iterator[str]:
         yield field.name
 
 
-def _is_not_default_value(field: Field, value: Any, /) -> bool:
+def _is_not_default_value(
+    cls: Dataclass | type[Dataclass],
+    field: Field,
+    value: Any,
+    /,
+    *,
+    comparisons: Mapping[type[Any], Callable[[Any, Any], bool]] | None = None,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+) -> bool:
     if (field.default is MISSING) and (field.default_factory is MISSING):
         return True
     if (field.default is not MISSING) and (field.default_factory is MISSING):
-        try:
-            return bool(value != field.default)
-        except TypeError:
-            return True
+        return bool(value != field.default)
     if (field.default is MISSING) and (field.default_factory is not MISSING):
+        if comparisons is None:
+            cmp = eq
+        else:
+            hints = get_type_hints(cls)
+            type_ = hints[field.name]
+            cmp = comparisons.get(type_, eq)
         try:
-            return bool(value != field.default_factory())
+            return not cmp(value, field.default_factory())
         except TypeError:
             return True
     raise ImpossibleCaseError(  # pragma: no cover
@@ -173,7 +207,6 @@ __all__ = [
     "GetDataClassClassError",
     "asdict_without_defaults",
     "get_dataclass_class",
-    "get_dataclass_fields",
     "is_dataclass_class",
     "is_dataclass_instance",
     "replace_non_sentinel",

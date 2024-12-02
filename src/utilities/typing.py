@@ -15,6 +15,7 @@ from typing import (
     get_origin,
 )
 from typing import get_args as _get_args
+from typing import get_type_hints as _get_type_hints
 
 if TYPE_CHECKING:
     from utilities.types import StrMapping
@@ -49,7 +50,7 @@ def eval_typed_dict(
 ) -> Mapping[str, Any]:
     """Evaluate a typed dict."""
     return {
-        k: _eval_typed_dict_one(v, globals_=globals_, locals_=locals_)
+        k: _eval_typed_dict_one(v, globalsns=globals_, localns=locals_)
         for k, v in cls.__annotations__.items()
     }
 
@@ -58,12 +59,12 @@ def _eval_typed_dict_one(
     cls: Any,
     /,
     *,
-    globals_: StrMapping | None = None,
-    locals_: StrMapping | None = None,
+    globalsns: StrMapping | None = None,
+    localns: StrMapping | None = None,
 ) -> Any:
     """Evaluate the field of a typed dict."""
-    globals_use = globals() if globals_ is None else globals_
-    locals_use = locals() if locals_ is None else locals_
+    globals_use = globals() if globalsns is None else globalsns
+    locals_use = locals() if localns is None else localns
     result = _eval_type(cls, globals_use, locals_use)
     return eval_typed_dict(result) if isinstance(result, _TypedDictMeta) else result
 
@@ -78,6 +79,20 @@ def get_args(obj: Any, /) -> tuple[Any, ...]:
         args = _get_args(obj)
         return tuple(a for a in args if a is not NoneType)
     return _get_args(obj)
+
+
+def get_type_hints(
+    cls: Any,
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+) -> dict[str, Any]:
+    return _get_type_hints(
+        cls,
+        globalns=globals() if globalns is None else dict(globalns),
+        localns=locals() if localns is None else dict(localns),
+    )
 
 
 def is_dict_type(obj: Any, /) -> bool:
@@ -158,6 +173,7 @@ __all__ = [
     "SupportsDunderLT",
     "SupportsRichComparison",
     "eval_typed_dict",
+    "get_type_hints",
     "is_dict_type",
     "is_frozenset_type",
     "is_list_type",
