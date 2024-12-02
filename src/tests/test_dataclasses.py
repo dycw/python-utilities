@@ -341,7 +341,7 @@ class TestReplaceNonSentinel:
 
 
 class TestReprWithoutDefaults:
-    def test_with_default_and_value_equal(self) -> None:
+    def test_overriding_repr(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: int = 0
@@ -355,18 +355,15 @@ class TestReprWithoutDefaults:
         expected = "Example()"
         assert result == expected
 
-    def test_field_with_dataframe(self) -> None:
+    @given(x=integers())
+    def test_non_repr_field(self, *, x: int) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: DataFrame = field(default_factory=DataFrame)
+            x: int = field(default=0, repr=False)
 
-            @override
-            def __repr__(self) -> str:
-                return repr_without_defaults(self)
-
-        obj = Example()
-        result = repr(obj)
-        expected = f"Example(x={DataFrame()})"
+        obj = Example(x=x)
+        result = repr_without_defaults(obj)
+        expected = "Example()"
         assert result == expected
 
 
