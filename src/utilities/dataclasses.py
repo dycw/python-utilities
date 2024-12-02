@@ -142,13 +142,16 @@ def repr_without_defaults(
     for field in fields(obj):
         name = field.name
         value = getattr(obj, name)
-        if _is_not_default_value(
-            obj,
-            field,
-            value,
-            comparisons=comparisons,
-            globalns=globalns,
-            localns=localns,
+        if (
+            _is_not_default_value(
+                obj,
+                field,
+                value,
+                comparisons=comparisons,
+                globalns=globalns,
+                localns=localns,
+            )
+            and field.repr
         ):
             if recursive and is_dataclass_instance(value):
                 repr_as_dict = repr_without_defaults(
