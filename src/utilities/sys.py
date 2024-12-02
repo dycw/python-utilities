@@ -56,7 +56,7 @@ def log_exception_paths(
 class LogExceptionPathsError(Exception):
     @override
     def __str__(self) -> str:
-        return "No exception to log"
+        return "No exception to log"  # skipif-ci-and-windows
 
 
 __all__ = ["VERSION_MAJOR_MINOR", "LogExceptionPathsError", "log_exception_paths"]

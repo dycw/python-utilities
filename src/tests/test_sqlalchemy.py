@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import chain
 from time import time_ns
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
@@ -34,22 +35,28 @@ from utilities.sqlalchemy import (
     GetTableError,
     InsertItemsError,
     TablenameMixin,
-    TableOrMappedClass,
+    TableOrORMInstOrClass,
     UpsertItemsError,
     _get_dialect,
     _get_dialect_max_params,
     _InsertItem,
-    _is_insert_item_pair,
-    _is_upsert_item_pair,
+    _is_pair_of_sequence_of_tuple_or_string_mapping_and_table,
+    _is_pair_of_str_mapping_and_table,
+    _is_pair_of_tuple_and_table,
+    _is_pair_of_tuple_or_str_mapping_and_table,
+    _map_mapping_to_table,
+    _MapMappingToTableExtraColumnsError,
+    _MapMappingToTableSnakeMapEmptyError,
+    _MapMappingToTableSnakeMapNonUniqueError,
     _normalize_insert_item,
     _normalize_upsert_item,
-    _NormalizedInsertItem,
-    _NormalizedUpsertItem,
+    _NormalizedItem,
     _NormalizeInsertItemError,
-    _NormalizeUpsertItemError,
+    _orm_inst_to_dict,
     _prepare_insert_or_upsert_items,
+    _prepare_insert_or_upsert_items_merge_items,
     _PrepareInsertOrUpsertItemsError,
-    _UpsertItem,
+    _tuple_to_mapping,
     check_engine,
     columnwise_max,
     columnwise_min,
@@ -62,9 +69,8 @@ from utilities.sqlalchemy import (
     get_table,
     get_table_name,
     insert_items,
-    is_mapped_class,
-    is_table_or_mapped_class,
-    mapped_class_to_dict,
+    is_orm,
+    is_table_or_orm,
     selectable_to_string,
     upsert_items,
     yield_primary_key_columns,
@@ -75,6 +81,8 @@ from utilities.typing import get_args
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from pathlib import Path
+
+    from utilities.types import StrMapping
 
 
 def _table_names() -> SearchStrategy[str]:
@@ -249,11 +257,11 @@ class TestEnsureTablesCreated:
         await self._run_test(engine, Example)
 
     async def _run_test(
-        self, engine: AsyncEngine, table_or_mapped_class: TableOrMappedClass, /
+        self, engine: AsyncEngine, table_or_orm: TableOrORMInstOrClass, /
     ) -> None:
         for _ in range(2):
-            await ensure_tables_created(engine, table_or_mapped_class)
-        sel = select(get_table(table_or_mapped_class))
+            await ensure_tables_created(engine, table_or_orm)
+        sel = select(get_table(table_or_orm))
         async with engine.begin() as conn:
             _ = (await conn.execute(sel)).all()
 
@@ -282,11 +290,11 @@ class TestEnsureTablesDropped:
         await self._run_test(engine, Example)
 
     async def _run_test(
-        self, engine: AsyncEngine, table_or_mapped_class: TableOrMappedClass, /
+        self, engine: AsyncEngine, table_or_orm: TableOrORMInstOrClass, /
     ) -> None:
         for _ in range(2):
-            await ensure_tables_dropped(engine, table_or_mapped_class)
-        sel = select(get_table(table_or_mapped_class))
+            await ensure_tables_dropped(engine, table_or_orm)
+        sel = select(get_table(table_or_orm))
         with raises(DatabaseError):
             async with engine.begin() as conn:
                 _ = await conn.execute(sel)
@@ -321,8 +329,8 @@ class TestGetColumnNames:
 
         self._run_test(Example)
 
-    def _run_test(self, table_or_mapped_class: TableOrMappedClass, /) -> None:
-        assert get_column_names(table_or_mapped_class) == ["id_"]
+    def _run_test(self, table_or_orm: TableOrORMInstOrClass, /) -> None:
+        assert get_column_names(table_or_orm) == ["id_"]
 
 
 class TestGetColumns:
@@ -340,8 +348,8 @@ class TestGetColumns:
 
         self._run_test(Example)
 
-    def _run_test(self, table_or_mapped_class: TableOrMappedClass, /) -> None:
-        columns = get_columns(table_or_mapped_class)
+    def _run_test(self, table_or_orm: TableOrORMInstOrClass, /) -> None:
+        columns = get_columns(table_or_orm)
         assert isinstance(columns, list)
         assert len(columns) == 1
         assert isinstance(columns[0], Column)
@@ -403,9 +411,22 @@ class TestGetTable:
 
             id: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        table = get_table(Example)
-        result = get_table(table)
-        assert result is Example.__table__
+        result = get_table(Example)
+        expected = Example.__table__
+        assert result is expected
+
+    def test_instance_of_mapped_class(self) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
+            __tablename__ = "example"
+
+            id: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+
+        obj = Example(id=1)
+        result = get_table(obj)
+        expected = Example.__table__
+        assert result is expected
 
     def test_error(self) -> None:
         with raises(
@@ -529,6 +550,15 @@ class TestInsertItems:
     @FLAKY
     @given(data=data(), name=_table_names(), id_=integers(0, 10))
     @settings(phases={Phase.generate})
+    async def test_snake(self, *, data: DataObject, name: str, id_: int) -> None:
+        table = self._make_table(name, title=True)
+        engine = await sqlalchemy_engines(data, table)
+        item = {data.draw(sampled_from(["Id_", "id_"])): id_}, table
+        await self._run_test(engine, table, {id_}, item, snake=True)
+
+    @FLAKY
+    @given(data=data(), name=_table_names(), id_=integers(0, 10))
+    @settings(phases={Phase.generate})
     async def test_assume_table_exists(
         self, *, data: DataObject, name: str, id_: int
     ) -> None:
@@ -548,8 +578,12 @@ class TestInsertItems:
         with raises(InsertItemsError, match="Item must be valid; got None"):
             await self._run_test(engine, cls, set(), cast(Any, None))
 
-    def _make_table(self, name: str, /) -> Table:
-        return Table(name, MetaData(), Column("id_", Integer, primary_key=True))
+    def _make_table(self, name: str, /, *, title: bool = False) -> Table:
+        return Table(
+            name,
+            MetaData(),
+            Column("Id_" if title else "id_", Integer, primary_key=True),
+        )
 
     def _make_mapped_class(self, name: str, /) -> type[DeclarativeBase]:
         class Base(DeclarativeBase, MappedAsDataclass): ...
@@ -564,77 +598,115 @@ class TestInsertItems:
     async def _run_test(
         self,
         engine: AsyncEngine,
-        table_or_mapped_class: TableOrMappedClass,
+        table_or_orm: TableOrORMInstOrClass,
         ids: set[int],
         /,
         *items: _InsertItem,
+        snake: bool = False,
     ) -> None:
-        await insert_items(engine, *items)
-        sel = select(get_table(table_or_mapped_class).c["id_"])
+        await insert_items(engine, *items, snake=snake)
+        sel = select(get_table(table_or_orm).c["Id_" if snake else "id_"])
         async with engine.begin() as conn:
             results = (await conn.execute(sel)).scalars().all()
         assert set(results) == ids
 
 
-class TestIsInsertItemPair:
+class TestIsPairOfSequenceOfTupleOrStringMappingAndTable:
     @mark.parametrize(
         ("obj", "expected"),
         [
             param(None, False),
-            param((), False),
-            param((1,), False),
-            param((1, 2), False),
-            param(((1, 2, 3), None), False),
-            param(((1, 2, 3), Table("example", MetaData())), True),
-            param(({"a": 1, "b": 2, "c": 3}, None), False),
-            param(({"a": 1, "b": 2, "c": 3}, Table("example", MetaData())), True),
+            param(([(1, 2, 3)], Table("example", MetaData())), True),
+            param(([{"a": 1, "b": 2, "c": 3}], Table("example", MetaData())), True),
+            param(
+                ([(1, 2, 3), {"a": 1, "b": 2, "c": 3}], Table("example", MetaData())),
+                True,
+            ),
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = _is_insert_item_pair(obj)
+        result = _is_pair_of_sequence_of_tuple_or_string_mapping_and_table(obj)
         assert result is expected
 
 
-class TestIsUpsertItemPair:
+class TestIsPairOfStrMappingAndTable:
     @mark.parametrize(
         ("obj", "expected"),
         [
             param(None, False),
-            param((), False),
-            param((1,), False),
-            param((1, 2), False),
-            param(((1, 2, 3), None), False),
             param(((1, 2, 3), Table("example", MetaData())), False),
-            param(({"a": 1, "b": 2, "c": 3}, None), False),
             param(({"a": 1, "b": 2, "c": 3}, Table("example", MetaData())), True),
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = _is_upsert_item_pair(obj)
+        result = _is_pair_of_str_mapping_and_table(obj)
         assert result is expected
 
 
-class TestIsMappedClass:
-    def test_mapped_class_instance(self) -> None:
+class TestIsPairOfTupleAndTable:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param(((1, 2, 3), Table("example", MetaData())), True),
+            param(({"a": 1, "b": 2, "c": 3}, Table("example", MetaData())), False),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = _is_pair_of_tuple_and_table(obj)
+        assert result is expected
+
+
+class TestIsPairOfTupleStrMappingAndTable:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param(((1, 2, 3), Table("example", MetaData())), True),
+            param(({"a": 1, "b": 2, "c": 3}, Table("example", MetaData())), True),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = _is_pair_of_tuple_or_str_mapping_and_table(obj)
+        assert result is expected
+
+
+class TestIsORM:
+    def test_orm_inst(self) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
+
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        assert is_mapped_class(Example)
-        assert is_mapped_class(Example(id_=1))
+        obj = Example(id_=1)
+        assert is_table_or_orm(obj)
 
-    def test_other(self) -> None:
-        assert not is_mapped_class(None)
+    def test_orm_class(self) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
+        class Example(Base):
+            __tablename__ = "example"
 
-class TestIsTableOrMappedClass:
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+
+        assert is_table_or_orm(Example)
+
     def test_table(self) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
-        assert is_table_or_mapped_class(table)
+        assert not is_orm(table)
 
-    def test_mapped_class(self) -> None:
+    def test_none(self) -> None:
+        assert not is_orm(None)
+
+
+class TestIsTableOrORM:
+    def test_table(self) -> None:
+        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+        assert is_table_or_orm(table)
+
+    def test_orm_inst(self) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
@@ -642,48 +714,102 @@ class TestIsTableOrMappedClass:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        assert is_table_or_mapped_class(Example)
-        assert is_table_or_mapped_class(Example(id_=1))
+        obj = Example(id_=1)
+        assert is_table_or_orm(obj)
+
+    def test_orm_class(self) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
+            __tablename__ = "example"
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+
+        assert is_table_or_orm(Example)
 
     def test_other(self) -> None:
-        assert not is_table_or_mapped_class(None)
+        assert not is_table_or_orm(None)
 
 
-class TestMappedClassToDict:
-    @given(id_=integers())
-    def test_main(self, *, id_: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+class TestMapMappingToTable:
+    @given(id_=integers(0, 10), value=booleans())
+    def test_main(self, *, id_: int, value: bool) -> None:
+        mapping = {"id_": id_, "value": value}
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean),
+        )
+        result = _map_mapping_to_table(mapping, table)
+        assert result == mapping
 
-        class Example(Base):
-            __tablename__ = "example"
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-
-        example = Example(id_=id_)
-        result = mapped_class_to_dict(example)
-        expected = {"id_": id_}
+    @given(data=data(), id_=integers(0, 10), value=booleans())
+    def test_snake(self, *, data: DataObject, id_: int, value: bool) -> None:
+        mapping = {
+            data.draw(sampled_from(["Id_", "id_"])): id_,
+            data.draw(sampled_from(["Value", "value"])): value,
+        }
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean),
+        )
+        result = _map_mapping_to_table(mapping, table, snake=True)
+        expected = {"id_": id_, "value": value}
         assert result == expected
 
-    @given(id_=integers())
-    def test_explicitly_named_column(self, *, id_: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+    @given(id_=integers(0, 10), value=booleans(), extra=booleans())
+    def test_error_extra_columns(self, *, id_: int, value: bool, extra: bool) -> None:
+        mapping = {"id_": id_, "value": value, "extra": extra}
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean),
+        )
+        with raises(
+            _MapMappingToTableExtraColumnsError,
+            match=r"Mapping .* must be a subset of table columns .*; got extra .*",
+        ):
+            _ = _map_mapping_to_table(mapping, table)
 
-        class Example(Base):
-            __tablename__ = "example"
+    @given(id_=integers(0, 10), value=booleans())
+    def test_error_snake_empty_error(self, *, id_: int, value: bool) -> None:
+        mapping = {"id_": id_, "invalid": value}
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean),
+        )
+        with raises(
+            _MapMappingToTableSnakeMapEmptyError,
+            match=r"Mapping .* must be a subset of table columns .*; cannot find column to map to 'invalid' modulo snake casing",
+        ):
+            _ = _map_mapping_to_table(mapping, table, snake=True)
 
-            ID: Mapped[int] = mapped_column(
-                Integer, kw_only=True, primary_key=True, name="id"
-            )
-
-        example = Example(ID=id_)
-        result = mapped_class_to_dict(example)
-        expected = {"id": id_}
-        assert result == expected
+    @given(id_=integers(0, 10), value=booleans())
+    def test_error_snake_non_unique_error(self, *, id_: int, value: bool) -> None:
+        mapping = {"id_": id_, "value": value}
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean),
+            Column("Value", Boolean),
+        )
+        with raises(
+            _MapMappingToTableSnakeMapNonUniqueError,
+            match=r"Mapping .* must be a subset of table columns .*; found columns 'value', 'Value' and perhaps more to map to 'value' modulo snake casing",
+        ):
+            _ = _map_mapping_to_table(mapping, table, snake=True)
 
 
 class TestNormalizeInsertItem:
     @given(case=sampled_from(["tuple", "dict"]), id_=integers(0, 10))
-    def test_pair_of_obj_and_table(
+    def test_pair_of_tuple_or_str_mapping_and_table(
         self, *, case: Literal["tuple", "dict"], id_: int
     ) -> None:
         table = self._table
@@ -691,13 +817,13 @@ class TestNormalizeInsertItem:
             case "tuple":
                 item = (id_,), table
             case "dict":
-                item = {"id": id_}, table
+                item = {"id_": id_}, table
         result = one(_normalize_insert_item(item))
-        expected = _NormalizedInsertItem(values=item[0], table=table)
+        expected = _NormalizedItem(mapping={"id_": id_}, table=table)
         assert result == expected
 
     @given(case=sampled_from(["tuple", "dict"]), ids=sets(integers(0, 10)))
-    def test_pair_of_objs_and_table(
+    def test_pair_of_list_of_tuples_or_str_mappings_and_table(
         self, *, case: Literal["tuple", "dict"], ids: set[int]
     ) -> None:
         table = self._table
@@ -707,7 +833,7 @@ class TestNormalizeInsertItem:
             case "dict":
                 item = [({"id_": id_}) for id_ in ids], table
         result = list(_normalize_insert_item(item))
-        expected = [_NormalizedInsertItem(values=i, table=table) for i in item[0]]
+        expected = [_NormalizedItem(mapping={"id_": id_}, table=table) for id_ in ids]
         assert result == expected
 
     @given(case=sampled_from(["tuple", "dict"]), ids=sets(integers()))
@@ -721,14 +847,14 @@ class TestNormalizeInsertItem:
             case "dict":
                 item = [({"id_": id_}, table) for id_ in ids]
         result = list(_normalize_insert_item(item))
-        expected = [_NormalizedInsertItem(values=i[0], table=table) for i in item]
+        expected = [_NormalizedItem(mapping={"id_": id_}, table=table) for id_ in ids]
         assert result == expected
 
     @given(id_=integers())
     def test_mapped_class(self, *, id_: int) -> None:
         cls = self._mapped_class
         result = one(_normalize_insert_item(cls(id_=id_)))
-        expected = _NormalizedInsertItem(values={"id_": id_}, table=get_table(cls))
+        expected = _NormalizedItem(mapping={"id_": id_}, table=get_table(cls))
         assert result == expected
 
     @given(ids=sets(integers(0, 10), min_size=1))
@@ -736,9 +862,20 @@ class TestNormalizeInsertItem:
         cls = self._mapped_class
         result = list(_normalize_insert_item([cls(id_=id_) for id_ in ids]))
         expected = [
-            _NormalizedInsertItem(values={"id_": id_}, table=get_table(cls))
-            for id_ in ids
+            _NormalizedItem(mapping={"id_": id_}, table=get_table(cls)) for id_ in ids
         ]
+        assert result == expected
+
+    @given(case=sampled_from(["tuple", "dict"]), id_=integers(0, 10))
+    def test_snake(self, *, case: Literal["tuple", "dict"], id_: int) -> None:
+        table = Table("example", MetaData(), Column("Id_", Integer, primary_key=True))
+        match case:
+            case "tuple":
+                item = (id_,), table
+            case "dict":
+                item = {"id_": id_}, table
+        result = one(_normalize_insert_item(item, snake=True))
+        expected = _NormalizedItem(mapping={"Id_": id_}, table=table)
         assert result == expected
 
     @mark.parametrize(
@@ -773,70 +910,9 @@ class TestNormalizeInsertItem:
         return Example
 
 
-class TestNormalizeUpsertItem:
+class TestORMInstToDict:
     @given(id_=integers())
-    def test_pair_of_dict_and_table(self, *, id_: int) -> None:
-        table = self._table
-        item = {"id": id_}, table
-        result = one(_normalize_upsert_item(item))
-        expected = _NormalizedUpsertItem(values=item[0], table=table)
-        assert result == expected
-
-    @given(ids=sets(integers()))
-    def test_pair_of_list_of_dicts_and_table(self, *, ids: set[int]) -> None:
-        table = self._table
-        item = [({"id_": id_}) for id_ in ids], table
-        result = list(_normalize_upsert_item(item))
-        expected = [_NormalizedUpsertItem(values=i, table=table) for i in item[0]]
-        assert result == expected
-
-    @given(ids=sets(integers()))
-    def test_list_of_pairs_of_dicts_and_table(self, *, ids: set[int]) -> None:
-        table = self._table
-        item = [({"id_": id_}, table) for id_ in ids]
-        result = list(_normalize_upsert_item(item))
-        expected = [_NormalizedUpsertItem(values=i[0], table=table) for i in item]
-        assert result == expected
-
-    @given(id_=integers())
-    def test_mapped_class(self, *, id_: int) -> None:
-        cls = self._mapped_class
-        result = one(_normalize_upsert_item(cls(id_=id_)))
-        expected = _NormalizedUpsertItem(values={"id_": id_}, table=get_table(cls))
-        assert result == expected
-
-    @given(ids=sets(integers(0, 10), min_size=1))
-    def test_mapped_classes(self, *, ids: set[int]) -> None:
-        cls = self._mapped_class
-        result = list(_normalize_upsert_item([cls(id_=id_) for id_ in ids]))
-        expected = [
-            _NormalizedUpsertItem(values={"id_": id_}, table=get_table(cls))
-            for id_ in ids
-        ]
-        assert result == expected
-
-    @mark.parametrize(
-        "item",
-        [
-            param((None,), id="tuple, not pair"),
-            param(
-                (None, Table("example", MetaData())), id="pair, first element invalid"
-            ),
-            param(((1, 2, 3), None), id="pair, second element invalid"),
-            param([None], id="iterable, invalid"),
-            param(None, id="outright invalid"),
-        ],
-    )
-    def test_errors(self, *, item: Any) -> None:
-        with raises(_NormalizeUpsertItemError, match="Item must be valid; got .*"):
-            _ = list(_normalize_upsert_item(item))
-
-    @property
-    def _table(self) -> Table:
-        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
-
-    @property
-    def _mapped_class(self) -> type[DeclarativeBase]:
+    def test_main(self, *, id_: int) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
@@ -844,7 +920,26 @@ class TestNormalizeUpsertItem:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        return Example
+        example = Example(id_=id_)
+        result = _orm_inst_to_dict(example)
+        expected = {"id_": id_}
+        assert result == expected
+
+    @given(id_=integers())
+    def test_explicitly_named_column(self, *, id_: int) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
+            __tablename__ = "example"
+
+            ID: Mapped[int] = mapped_column(
+                Integer, kw_only=True, primary_key=True, name="id"
+            )
+
+        example = Example(ID=id_)
+        result = _orm_inst_to_dict(example)
+        expected = {"id": id_}
+        assert result == expected
 
 
 class TestPrepareInsertOrUpsertItems:
@@ -864,6 +959,68 @@ class TestPrepareInsertOrUpsertItems:
             _ = _prepare_insert_or_upsert_items(
                 normalize_item, engine, cast(Any, None), cast(Any, None)
             )
+
+
+class TestPrepareInsertOrUpsertItemsMergeItems:
+    @FLAKY
+    @given(data=data(), name=_table_names())
+    @settings(phases={Phase.generate})
+    async def test_main(self, *, data: DataObject, name: str) -> None:
+        engine = await sqlalchemy_engines(data)
+        table = Table(
+            name,
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+        )
+        await ensure_tables_created(engine, table)
+        items = [
+            {"id_": 1, "value": True},
+            {"id_": 1, "value": False},
+            {"id_": 2, "value": False},
+            {"id_": 2, "value": True},
+        ]
+        result = _prepare_insert_or_upsert_items_merge_items(table, items)
+        expected = [{"id_": 1, "value": False}, {"id_": 2, "value": True}]
+        assert result == expected
+        async with engine.begin() as conn:
+            _ = await conn.execute(table.insert().values(expected))
+
+    @FLAKY
+    @given(data=data(), name=_table_names())
+    @settings(phases={Phase.generate})
+    async def test_just_value(self, *, data: DataObject, name: str) -> None:
+        engine = await sqlalchemy_engines(data)
+        table = Table(
+            name,
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Integer),
+        )
+        await ensure_tables_created(engine, table)
+        items = [{"value": 1}, {"value": 2}]
+        result = _prepare_insert_or_upsert_items_merge_items(table, items)
+        assert result == items
+        async with engine.begin() as conn:
+            _ = await conn.execute(table.insert().values(items))
+
+    @FLAKY
+    @given(data=data(), name=_table_names())
+    @settings(phases={Phase.generate})
+    async def test_autoincrement(self, *, data: DataObject, name: str) -> None:
+        engine = await sqlalchemy_engines(data)
+        table = Table(
+            name,
+            MetaData(),
+            Column("id_", Integer, primary_key=True, autoincrement=True),
+            Column("value", Integer),
+        )
+        await ensure_tables_created(engine, table)
+        items = [{"value": 1}, {"value": 2}]
+        result = _prepare_insert_or_upsert_items_merge_items(table, items)
+        assert result == items
+        async with engine.begin() as conn:
+            _ = await conn.execute(table.insert().values(items))
 
 
 class TestSelectableToString:
@@ -898,6 +1055,28 @@ class TestTablenameMixin:
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         assert get_table_name(Example) == "example"
+
+
+class TestTupleToMapping:
+    @mark.parametrize(
+        ("values", "expected"),
+        [
+            param((), {}),
+            param((1,), {"id_": 1}),
+            param((1, True), {"id_": 1, "value": True}),
+            param((None, True), {"value": True}),
+        ],
+        ids=str,
+    )
+    def test_main(self, *, values: tuple[Any, ...], expected: StrMapping) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+        )
+        result = _tuple_to_mapping(values, table)
+        assert result == expected
 
 
 class TestUpsertItems:
@@ -1019,7 +1198,7 @@ class TestUpsertItems:
         selected_or_all=sampled_from(["selected", "all"]),
     )
     @settings(phases={Phase.generate})
-    async def test_async_sel_or_all(
+    async def test_sel_or_all(
         self,
         *,
         data: DataObject,
@@ -1094,10 +1273,34 @@ class TestUpsertItems:
         table = self._make_table(name)
         engine = await sqlalchemy_engines(data, table)
         _ = assume(id1 != id2)
-        await upsert_items(
-            engine,
-            ([{"id_": id1, "value": value1}, {"id_": id2, "value": value2}], table),
-        )
+        item = [{"id_": id1, "value": value1}, {"id_": id2, "value": value2}], table
+        await upsert_items(engine, item)
+
+    @FLAKY
+    @given(
+        data=data(),
+        name=_table_names(),
+        triples=_upsert_lists(nullable=True, min_size=1),
+    )
+    @settings(phases={Phase.generate})
+    async def test_multiple_elements_with_the_same_primary_key(
+        self,
+        *,
+        data: DataObject,
+        name: str,
+        triples: list[tuple[int, bool, bool | None]],
+    ) -> None:
+        table = self._make_table(name)
+        engine = await sqlalchemy_engines(data, table)
+        pairs = [
+            ({"id_": id_, "value": init}, {"id_": id_, "value": post})
+            for id_, init, post in triples
+        ]
+        item = list(chain.from_iterable(pairs)), table
+        expected = {
+            (id_, init if post is None else post) for id_, init, post in triples
+        }
+        await self._run_test(engine, table, item, expected=expected)
 
     @FLAKY
     @given(data=data(), name=_table_names())
@@ -1130,14 +1333,14 @@ class TestUpsertItems:
     async def _run_test(
         self,
         engine: AsyncEngine,
-        table_or_mapped_class: TableOrMappedClass,
+        table_or_orm: TableOrORMInstOrClass,
         /,
-        *items: _UpsertItem,
+        *items: _InsertItem,
         selected_or_all: Literal["selected", "all"] = "selected",
         expected: set[tuple[Any, ...]] | None = None,
     ) -> None:
         await upsert_items(engine, *items, selected_or_all=selected_or_all)
-        sel = select(get_table(table_or_mapped_class))
+        sel = select(get_table(table_or_orm))
         async with engine.begin() as conn:
             results = (await conn.execute(sel)).all()
         if expected is not None:
@@ -1153,11 +1356,22 @@ class TestYieldPrimaryKeyColumns:
             Column("id2", Integer, primary_key=True),
             Column("id3", Integer),
         )
-        columns = list(yield_primary_key_columns(table))
+        result = list(yield_primary_key_columns(table))
         expected = [
             Column("id1", Integer, primary_key=True),
             Column("id2", Integer, primary_key=True),
         ]
-        for c, e in zip(columns, expected, strict=True):
+        for c, e in zip(result, expected, strict=True):
             assert c.name == e.name
             assert c.primary_key == e.primary_key
+
+    def test_autoincrement(self) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True, autoincrement=True),
+            Column("x", Integer),
+            Column("y", Integer),
+        )
+        result = list(yield_primary_key_columns(table, autoincrement=False))
+        assert result == []

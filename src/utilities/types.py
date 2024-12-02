@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, overload
@@ -370,6 +370,13 @@ def is_sized(obj: Any, /) -> TypeGuard[Sized]:
     return True
 
 
+def is_sequence_of_tuple_or_str_mapping(
+    obj: Any, /
+) -> TypeGuard[Sequence[TupleOrStrMapping]]:
+    """Check if an object is a sequence of tuple or string mappings."""
+    return isinstance(obj, Sequence) and all(map(is_tuple_or_str_mapping, obj))
+
+
 def is_sized_not_str(obj: Any, /) -> TypeGuard[Sized]:
     """Check if an object is sized, but not a string."""
     return is_sized(obj) and not isinstance(obj, str)
@@ -380,9 +387,14 @@ def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
     return isinstance(obj, dict) and all(isinstance(key, str) for key in obj)
 
 
-def is_tuple_or_string_mapping(obj: Any, /) -> TypeGuard[TupleOrStrMapping]:
+def is_tuple(obj: Any, /) -> TypeGuard[tuple[Any, ...]]:
     """Check if an object is a tuple or string mapping."""
-    return isinstance(obj, tuple) or is_string_mapping(obj)
+    return make_isinstance(tuple)(obj)
+
+
+def is_tuple_or_str_mapping(obj: Any, /) -> TypeGuard[TupleOrStrMapping]:
+    """Check if an object is a tuple or string mapping."""
+    return is_tuple(obj) or is_string_mapping(obj)
 
 
 def make_isinstance(cls: type[_T], /) -> Callable[[Any], TypeGuard[_T]]:
@@ -423,10 +435,12 @@ __all__ = [
     "ensure_sized_not_str",
     "ensure_time",
     "is_hashable",
+    "is_sequence_of_tuple_or_str_mapping",
     "is_sized",
     "is_sized_not_str",
     "is_string_mapping",
-    "is_tuple_or_string_mapping",
+    "is_tuple",
+    "is_tuple_or_str_mapping",
     "issubclass_except_bool_int",
     "make_isinstance",
 ]
