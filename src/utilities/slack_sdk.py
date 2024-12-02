@@ -64,6 +64,7 @@ class SlackHandler(Handler):
             self.handleError(record)
 
     async def send(self) -> None:
+        """Send the queued messages to Slack."""
         async with self._lock:
             messages: list[str] = []
             while True:
