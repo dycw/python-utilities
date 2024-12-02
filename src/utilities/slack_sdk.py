@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from asyncio import CancelledError, Lock, Queue, QueueEmpty, Task, get_event_loop
-from contextlib import suppress
 from dataclasses import dataclass
 from http import HTTPStatus
 from logging import NOTSET, Handler, LogRecord, getLogger
@@ -61,7 +60,7 @@ class SlackHandler(Handler):
     def emit(self, record: LogRecord) -> None:
         try:
             self._queue.put_nowait(self.format(record))
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
     async def _process_queue(self) -> None:
@@ -73,7 +72,7 @@ class SlackHandler(Handler):
                         messages.append(self._queue.get_nowait())
                     except QueueEmpty:
                         break
-            if len(messages) >= 1:
+            if len(messages) >= 1:  # pragma: no cover
                 _LOGGER.debug("Sending %s messages(s)", len(messages))
                 text = "\n".join(messages)
                 try:
@@ -87,20 +86,13 @@ class SlackHandler(Handler):
                         self._callback()
             await sleep_dur(duration=self._freq)
 
-    async def aclose(self) -> None:
-        """Close the handler."""
-        _ = self._task.cancel()
-        with suppress(CancelledError):
-            await self._task
-        super().close()
-
 
 async def send_to_slack(
     url: str, text: str, /, *, timeout: Duration = _TIMEOUT
 ) -> None:
     """Send a message via Slack."""
-    client = _get_client(url, timeout=timeout)  # pragma: no cover
-    response = await client.send(text=text)  # pragma: no cover
+    client = _get_client(url, timeout=timeout)
+    response = await client.send(text=text)
     if response.status_code != HTTPStatus.OK:  # pragma: no cover
         raise SendToSlackError(text=text, response=response)
 
