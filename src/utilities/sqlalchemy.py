@@ -8,7 +8,7 @@ from functools import partial, reduce
 from itertools import chain
 from math import floor
 from operator import ge, le, or_
-from re import search
+from re import DOTALL, S, search
 from typing import Any, Literal, TypeGuard, TypeVar, assert_never, cast, overload
 
 from sqlalchemy import (
@@ -342,7 +342,7 @@ async def insert_items(
     """
 
     def build_insert(
-        table: Table, values: Iterable[TupleOrStrMapping], /
+        table: Table, values: Iterable[StrMapping], /
     ) -> tuple[Insert, Any]:
         match _get_dialect(engine):
             case "oracle":  # pragma: no cover
@@ -430,20 +430,25 @@ def _normalize_insert_item(item: _InsertItem, /) -> list[_NormalizedItem]:
     if _is_pair_of_sequence_of_tuple_or_string_mapping_and_table(item):
         items, table_or_mapped_class = item
         pairs = [(i, table_or_mapped_class) for i in items]
+        mmm = list(chain.from_iterable(map(_normalize_insert_item, pairs)))
+        breakpoint()
+
         return list(chain.from_iterable(map(_normalize_insert_item, pairs)))
     if isinstance(item, DeclarativeBase):
         normalized = _NormalizedItem(
             mapping=mapped_class_to_dict(item), table=get_table(item)
         )
         return [normalized]
-    if isinstance(item, Sequence):
-        if all(map(_is_pair_of_tuple_or_str_mapping_and_table, item)):
-            item2 = cast(Sequence[_PairOfTupleOrStrMappingAndTable], item)
-            return list(chain.from_iterable(map(_normalize_insert_item, item2)))
-        if all(map(is_orm, item)):
-            item2 = cast(Sequence[DeclarativeBase], item)
-            return list(chain.from_iterable(map(_normalize_insert_item, item2)))
-
+    try:
+        _ = iter(item)
+    except TypeError:
+        raise _NormalizeInsertItemError(item=item) from None
+    if all(map(_is_pair_of_tuple_or_str_mapping_and_table, item)):
+        item2 = cast(Sequence[_PairOfTupleOrStrMappingAndTable], item)
+        return list(chain.from_iterable(map(_normalize_insert_item, item2)))
+    if all(map(is_orm, item)):
+        item2 = cast(Sequence[DeclarativeBase], item)
+        return list(chain.from_iterable(map(_normalize_insert_item, item2)))
     raise _NormalizeInsertItemError(item=item)
 
 
@@ -669,10 +674,14 @@ class UpsertItemsError(Exception):
         return f"Item must be valid; got {self.item}"
 
 
-def yield_primary_key_columns(obj: TableOrORMInstOrClass, /) -> Iterator[Column]:
+def yield_primary_key_columns(
+    obj: TableOrORMInstOrClass, /, *, autoincrement: bool | None = None
+) -> Iterator[Column]:
     """Yield the primary key columns of a table."""
     table = get_table(obj)
-    yield from table.primary_key
+    for column in table.primary_key:
+        if (autoincrement is None) or (autoincrement is column.autoincrement):
+            yield column
 
 
 def _ensure_tables_maybe_reraise(error: DatabaseError, match: str, /) -> None:
@@ -769,7 +778,7 @@ def _is_pair_with_predicate_and_table(
 
 @dataclass(kw_only=True, slots=True)
 class _PrepareInsertOrUpsertItems:
-    mapping: dict[Table, list[Any]] = field(default_factory=dict)
+    mapping: dict[Table, list[StrMapping]] = field(default_factory=dict)
     yield_pairs: Callable[[], Iterator[tuple[Insert, Any]]]
 
     @property
@@ -777,44 +786,26 @@ class _PrepareInsertOrUpsertItems:
         return list(self.mapping)
 
 
-@overload
 def _prepare_insert_or_upsert_items(
-    normalize_item: Callable[[_InsertItem], Iterator[_NormalizedItem]],
-    engine: AsyncEngine,
-    build_insert: Callable[[Table, Iterable[TupleOrStrMapping]], tuple[Insert, Any]],
-    /,
-    *items: _InsertItem,
-    chunk_size_frac: float = ...,
-) -> _PrepareInsertOrUpsertItems: ...
-@overload
-def _prepare_insert_or_upsert_items(
-    normalize_item: Callable[[_InsertItem], Iterator[_NormalizedItem]],
+    normalize_item: Callable[[_InsertItem], Iterable[_NormalizedItem]],
     engine: AsyncEngine,
     build_insert: Callable[[Table, Iterable[StrMapping]], tuple[Insert, Any]],
-    /,
-    *items: _InsertItem,
-    chunk_size_frac: float = ...,
-) -> _PrepareInsertOrUpsertItems: ...
-def _prepare_insert_or_upsert_items(
-    normalize_item: Callable[[Any], Iterator[Any]],
-    engine: AsyncEngine,
-    build_insert: Callable[[Table, Iterable[Any]], tuple[Insert, Any]],
     /,
     *items: Any,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
 ) -> _PrepareInsertOrUpsertItems:
     """Prepare a set of insert/upsert items."""
-    mapping: defaultdict[Table, list[Any]] = defaultdict(list)
+    mapping: defaultdict[Table, list[StrMapping]] = defaultdict(list)
     lengths: set[int] = set()
     try:
         for item in items:
             for normed in normalize_item(item):
-                values = normed.values
-                mapping[normed.table].append(values)
-                lengths.add(len(values))
+                mapping[normed.table].append(normed.mapping)
+                lengths.add(len(normed.mapping))
     except (_NormalizeInsertItemError, _NormalizeUpsertItemError) as error:
         raise _PrepareInsertOrUpsertItemsError(item=error.item) from None
-    assert 0, mapping
+    breakpoint()
+
     merged = {
         table: _prepare_insert_or_upsert_items_merge_items(table, values)
         for table, values in mapping.items()
@@ -842,18 +833,20 @@ class _PrepareInsertOrUpsertItemsError(Exception):
 
 
 def _prepare_insert_or_upsert_items_merge_items(
-    table: Table, items: Iterable[Any], /
-) -> list[Any]:
-    items = list(items)
-    cols = tuple(c.name for c in yield_primary_key_columns(table))
-    mapping: defaultdict[tuple[Hashable, ...], list[dict[str, Any]]] = defaultdict(list)
+    table: Table, items: Iterable[StrMapping], /
+) -> list[StrMapping]:
+    columns = list(yield_primary_key_columns(table))
+    if any(c.autoincrement is True for c in columns):
+        return list(items)
+    col_names = [c.name for c in columns]
+    mapping: defaultdict[tuple[Hashable, ...], list[StrMapping]] = defaultdict(list)
     for item in items:
-        check_subset(cols, item)
-        pkey = tuple(item[k] for k in cols)
-        rest = {k: v for k, v in item.items() if k not in cols}
+        check_subset(col_names, item)
+        pkey = tuple(item[k] for k in col_names)
+        rest: StrMapping = {k: v for k, v in item.items() if k not in col_names}
         mapping[pkey].append(rest)
-    merged = {k: reduce(or_, v) for k, v in mapping.items()}
-    return [dict(zip(cols, k, strict=True)) | v for k, v in merged.items()]
+    merged = {k: cast(StrMapping, reduce(or_, v)) for k, v in mapping.items()}
+    return [dict(zip(col_names, k, strict=True)) | dict(v) for k, v in merged.items()]
 
 
 def _tuple_to_mapping(

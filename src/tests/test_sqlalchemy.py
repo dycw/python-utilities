@@ -50,6 +50,7 @@ from utilities.sqlalchemy import (
     _NormalizeInsertItemError,
     _NormalizeUpsertItemError,
     _prepare_insert_or_upsert_items,
+    _prepare_insert_or_upsert_items_merge_items,
     _PrepareInsertOrUpsertItemsError,
     _tuple_to_mapping,
     check_engine,
@@ -472,8 +473,7 @@ class TestInsertItems:
                 item = {"id_": id_}, table
         await self._run_test(engine, table, {id_}, item)
 
-    # @FLAKY
-    @reproduce_failure("6.122.0", b"AAAAAAAAAAAAAAABAAAA")
+    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
@@ -526,7 +526,7 @@ class TestInsertItems:
         engine = await sqlalchemy_engines(data, table)
         await self._run_test(engine, table, ids, [({"id_": id_}, table) for id_ in ids])
 
-    @FLAKY
+    # @FLAKY
     @given(data=data(), name=_table_names(), id_=integers(0, 10))
     @settings(phases={Phase.generate})
     async def test_mapped_class(self, *, data: DataObject, name: str, id_: int) -> None:
@@ -928,6 +928,41 @@ class TestPrepareInsertOrUpsertItems:
                 normalize_item, engine, cast(Any, None), cast(Any, None)
             )
 
+    def test_merge_items(self) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+        )
+        items = [
+            {"id_": 1, "value": True},
+            {"id_": 1, "value": False},
+            {"id_": 2, "value": False},
+            {"id_": 2, "value": True},
+        ]
+        result = _prepare_insert_or_upsert_items_merge_items(table, items)
+        expected = [
+            {"id_": 1, "value": False},
+            {"id_": 2, "value": True},
+        ]
+        assert result == expected
+
+    def test_merge_items_skip_null(self) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True, autoincrement=True),
+            Column("x", Integer),
+            Column("y", Integer),
+        )
+        items = [
+            {"x": 1, "y": 1},
+            {"x": 1, "y": 2},
+        ]
+        result = _prepare_insert_or_upsert_items_merge_items(table, items)
+        assert result == items
+
 
 class TestSelectableToString:
     @FLAKY
@@ -1262,11 +1297,22 @@ class TestYieldPrimaryKeyColumns:
             Column("id2", Integer, primary_key=True),
             Column("id3", Integer),
         )
-        columns = list(yield_primary_key_columns(table))
+        result = list(yield_primary_key_columns(table))
         expected = [
             Column("id1", Integer, primary_key=True),
             Column("id2", Integer, primary_key=True),
         ]
-        for c, e in zip(columns, expected, strict=True):
+        for c, e in zip(result, expected, strict=True):
             assert c.name == e.name
             assert c.primary_key == e.primary_key
+
+    def test_autoincrement(self) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True, autoincrement=True),
+            Column("x", Integer),
+            Column("y", Integer),
+        )
+        result = list(yield_primary_key_columns(table, autoincrement=False))
+        assert result == []
