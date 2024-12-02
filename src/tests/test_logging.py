@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from logging import DEBUG, INFO, NOTSET, FileHandler, Logger, StreamHandler, getLogger
+from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from typing import TYPE_CHECKING, Any, cast
 
 from pytest import LogCaptureFixture, mark, param, raises
@@ -173,8 +173,8 @@ class TestTempLogger:
         name = TestTempLogger.test_level.__qualname__
         logger = getLogger(name)
         assert logger.level == NOTSET
-        with temp_logger(logger, level="INFO"):
-            assert logger.level == INFO
+        with temp_logger(logger, level="DEBUG"):
+            assert logger.level == DEBUG
         assert logger.level == NOTSET
 
     def test_propagate(self) -> None:
