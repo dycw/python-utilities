@@ -74,7 +74,8 @@ from utilities.types import (
 _T = TypeVar("_T")
 _EngineOrConnectionOrAsync = Engine | Connection | AsyncEngine | AsyncConnection
 Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
-TableOrMappedClass = Table | type[DeclarativeBase]
+ORMInstOrClass = DeclarativeBase | type[DeclarativeBase]
+TableOrORMInstOrClass = Table | ORMInstOrClass
 CHUNK_SIZE_FRAC = 0.95
 
 
@@ -195,11 +196,11 @@ def create_async_engine(
 async def ensure_tables_created(
     engine: AsyncEngine,
     /,
-    *tables_or_mapped_classes: TableOrMappedClass,
+    *tables_or_orms: TableOrORMInstOrClass,
     timeout: Duration | None = None,
 ) -> None:
     """Ensure a table/set of tables is/are created."""
-    tables = set(map(get_table, tables_or_mapped_classes))
+    tables = set(map(get_table, tables_or_orms))
     match dialect := _get_dialect(engine):
         case "mysql":  # pragma: no cover
             raise NotImplementedError(dialect)
@@ -223,7 +224,7 @@ async def ensure_tables_created(
 
 async def ensure_tables_dropped(
     engine: AsyncEngine,
-    *tables_or_mapped_classes: TableOrMappedClass,
+    *tables_or_mapped_classes: TableOrORMInstOrClass,
     timeout: Duration | None = None,
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
@@ -261,23 +262,23 @@ def get_chunk_size(
     return max(floor(chunk_size_frac * max_params / scaling), 1)
 
 
-def get_column_names(table_or_mapped_class: TableOrMappedClass, /) -> list[str]:
-    """Get the column names from a table or model."""
-    return [col.name for col in get_columns(table_or_mapped_class)]
+def get_column_names(table_or_orm: TableOrORMInstOrClass, /) -> list[str]:
+    """Get the column names from a table or ORM instance/class."""
+    return [col.name for col in get_columns(table_or_orm)]
 
 
-def get_columns(table_or_mapped_class: TableOrMappedClass, /) -> list[Column[Any]]:
-    """Get the columns from a table or model."""
-    return list(get_table(table_or_mapped_class).columns)
+def get_columns(table_or_orm: TableOrORMInstOrClass, /) -> list[Column[Any]]:
+    """Get the columns from a table or ORM instance/class."""
+    return list(get_table(table_or_orm).columns)
 
 
-def get_table(obj: TableOrMappedClass, /) -> Table:
+def get_table(table_or_orm: TableOrORMInstOrClass, /) -> Table:
     """Get the table from a Table or mapped class."""
-    if isinstance(obj, Table):
-        return obj
-    if is_mapped_class(obj):
-        return cast(Table, obj.__table__)
-    raise GetTableError(obj=obj)
+    if isinstance(table_or_orm, Table):
+        return table_or_orm
+    if is_orm(table_or_orm):
+        return cast(Table, table_or_orm.__table__)
+    raise GetTableError(obj=table_or_orm)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -289,26 +290,23 @@ class GetTableError(Exception):
         return f"Object {self.obj} must be a Table or mapped class; got {get_class_name(self.obj)!r}"
 
 
-def get_table_name(table_or_mapped_class: TableOrMappedClass, /) -> str:
+def get_table_name(table_or_mapped_class: TableOrORMInstOrClass, /) -> str:
     """Get the table name from a Table or mapped class."""
     return get_table(table_or_mapped_class).name
 
 
-_PairOfTupleAndTable = tuple[tuple[Any, ...], TableOrMappedClass]
-_PairOfStrMappingAndTable = tuple[StrMapping, TableOrMappedClass]
-_PairOfTupleOrStrMappingAndTable = tuple[TupleOrStrMapping, TableOrMappedClass]
+_PairOfTupleAndTable = tuple[tuple[Any, ...], TableOrORMInstOrClass]
+_PairOfStrMappingAndTable = tuple[StrMapping, TableOrORMInstOrClass]
+_PairOfTupleOrStrMappingAndTable = tuple[TupleOrStrMapping, TableOrORMInstOrClass]
 _PairOfSequenceOfTupleOrStrMappingAndTable = tuple[
-    Sequence[TupleOrStrMapping], TableOrMappedClass
+    Sequence[TupleOrStrMapping], TableOrORMInstOrClass
 ]
-_PairOfListOfTuplesAndTable = tuple[Sequence[tuple[Any, ...]], TableOrMappedClass]
-_PairOfListOfStrMappingsAndTable = tuple[Sequence[StrMapping], TableOrMappedClass]
-_SeqOfPairOfTupleAndTable = Sequence[tuple[tuple[Any, ...], TableOrMappedClass]]
-_SeqOfPairOfDictAndTable = Sequence[tuple[StrMapping, TableOrMappedClass]]
 _InsertItem = (
     _PairOfTupleOrStrMappingAndTable
     | _PairOfSequenceOfTupleOrStrMappingAndTable
+    | DeclarativeBase
     | Sequence[_PairOfTupleOrStrMappingAndTable]
-    | MaybeIterable[DeclarativeBase]
+    | Sequence[DeclarativeBase]
 )
 
 
@@ -379,23 +377,23 @@ class InsertItemsError(Exception):
         return f"Item must be valid; got {self.item}"
 
 
-def is_mapped_class(obj: Any, /) -> bool:
-    """Check if an object is a mapped class."""
+def is_orm(obj: Any, /) -> TypeGuard[ORMInstOrClass]:
+    """Check if an object is an ORM instance/class."""
     if isinstance(obj, type):
         try:
             _ = class_mapper(cast(Any, obj))
         except (ArgumentError, UnmappedClassError):
             return False
         return True
-    return is_mapped_class(type(obj))
+    return is_orm(type(obj))
 
 
-def is_table_or_mapped_class(obj: Any, /) -> bool:
-    """Check if an object is a Table or a mapped class."""
-    return isinstance(obj, Table) or is_mapped_class(obj)
+def is_table_or_orm(obj: Any, /) -> TypeGuard[TableOrORMInstOrClass]:
+    """Check if an object is a Table or an ORM instance/class."""
+    return isinstance(obj, Table) or is_orm(obj)
 
 
-def mapped_class_to_dict(obj: Any, /) -> dict[str, Any]:
+def mapped_class_to_dict(obj: DeclarativeBase, /) -> dict[str, Any]:
     """Construct a dictionary of elements for insertion."""
     cls = type(obj)
 
@@ -433,48 +431,18 @@ def _normalize_insert_item(item: _InsertItem, /) -> list[_NormalizedItem]:
         items, table_or_mapped_class = item
         pairs = [(i, table_or_mapped_class) for i in items]
         return list(chain.from_iterable(map(_normalize_insert_item, pairs)))
-    if isinstance(item, Sequence) and all(
-        map(_is_pair_of_tuple_or_str_mapping_and_table, item)
-    ):
-        assert 0, item
-        _PairOfSequenceOfTupleOrStrMappingAndTable
-    raise _NormalizeInsertItemError(item=item)
-
-
-def _normalize_insert_item_REST(item: _InsertItem, /) -> list[_NormalizedItem]:
-    try:
-        for norm in _normalize_upsert_item(cast(Any, item), selected_or_all="all"):
-            yield _NormalizedItem(mapping=norm.mapping, table=norm.table)
-    except _NormalizeUpsertItemError:
-        pass
-    else:
-        return
-
-    if _is_insert_item_pair(item):
-        yield _NormalizedItem(mapping=item[0], table=get_table(item[1]))
-        return
-
-    item = cast(_PairOfListOfTuplesAndTable | _SeqOfPairOfTupleAndTable, item)
-
-    if (
-        isinstance(item, tuple)
-        and (len(item) == 2)
-        and is_iterable_not_str(item[0])
-        and all(is_sequence_of_tuple_or_string_mapping(i) for i in item[0])
-        and is_table_or_mapped_class(item[1])
-    ):
-        item = cast(_PairOfListOfTuplesAndTable, item)
-        for i in item[0]:
-            yield _NormalizedItem(mapping=i, table=get_table(item[1]))
-        return
-
-    item = cast(_SeqOfPairOfDictAndTable, item)
-
-    if is_iterable_not_str(item) and all(_is_insert_item_pair(i) for i in item):
-        item = cast(_SeqOfPairOfTupleAndTable | _SeqOfPairOfDictAndTable, item)
-        for i in item:
-            yield _NormalizedItem(mapping=i[0], table=get_table(i[1]))
-        return
+    if isinstance(item, DeclarativeBase):
+        normalized = _NormalizedItem(
+            mapping=mapped_class_to_dict(item), table=get_table(item)
+        )
+        return [normalized]
+    if isinstance(item, Sequence):
+        if all(map(_is_pair_of_tuple_or_str_mapping_and_table, item)):
+            item2 = cast(Sequence[_PairOfTupleOrStrMappingAndTable], item)
+            return list(chain.from_iterable(map(_normalize_insert_item, item2)))
+        if all(map(is_orm, item)):
+            item2 = cast(Sequence[DeclarativeBase], item)
+            return list(chain.from_iterable(map(_normalize_insert_item, item2)))
 
     raise _NormalizeInsertItemError(item=item)
 
@@ -495,7 +463,7 @@ class _NormalizedItem:
 
 
 def _normalize_upsert_item(
-    item: _UpsertItem, /, *, selected_or_all: Literal["selected", "all"] = "selected"
+    item: _InsertItem, /, *, selected_or_all: Literal["selected", "all"] = "selected"
 ) -> Iterator[_NormalizedItem]:
     """Normalize an upsert item."""
     normalized = _normalize_upsert_item_inner(item)
@@ -510,7 +478,7 @@ def _normalize_upsert_item(
             assert_never(never)
 
 
-def _normalize_upsert_item_inner(item: _UpsertItem, /) -> Iterator[_NormalizedItem]:
+def _normalize_upsert_item_inner(item: _InsertItem, /) -> Iterator[_NormalizedItem]:
     if _is_pair_of_str_mapping_and_table(item):
         yield _NormalizedItem(mapping=item[0], table=get_table(item[1]))
         return
@@ -528,7 +496,7 @@ def _normalize_upsert_item_inner(item: _UpsertItem, /) -> Iterator[_NormalizedIt
         and (len(item) == 2)
         and is_iterable_not_str(item[0])
         and all(is_string_mapping(i) for i in item[0])
-        and is_table_or_mapped_class(item[1])
+        and is_table_or_orm(item[1])
     ):
         item = cast(_PairOfListOfStrMappingsAndTable, item)
         for i in item[0]:
@@ -560,7 +528,7 @@ def _normalize_upsert_item_inner(item: _UpsertItem, /) -> Iterator[_NormalizedIt
 
 @dataclass(kw_only=True, slots=True)
 class _NormalizeUpsertItemError(Exception):
-    item: _UpsertItem
+    item: _InsertItem
 
     @override
     def __str__(self) -> str:
@@ -587,18 +555,10 @@ class TablenameMixin:
         return snake_case(get_class_name(cls))
 
 
-_UpsertItem = (
-    _PairOfStrMappingAndTable
-    | _PairOfListOfStrMappingsAndTable
-    | _SeqOfPairOfDictAndTable
-    | MaybeIterable[DeclarativeBase]
-)
-
-
 async def upsert_items(
     engine: AsyncEngine,
     /,
-    *items: _UpsertItem,
+    *items: _InsertItem,
     selected_or_all: Literal["selected", "all"] = "selected",
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
@@ -709,7 +669,7 @@ class UpsertItemsError(Exception):
         return f"Item must be valid; got {self.item}"
 
 
-def yield_primary_key_columns(obj: TableOrMappedClass, /) -> Iterator[Column]:
+def yield_primary_key_columns(obj: TableOrORMInstOrClass, /) -> Iterator[Column]:
     """Yield the primary key columns of a table."""
     table = get_table(obj)
     yield from table.primary_key
@@ -797,13 +757,13 @@ def _is_pair_of_tuple_or_str_mapping_and_table(
 
 def _is_pair_with_predicate_and_table(
     obj: Any, predicate: Callable[[Any], TypeGuard[_T]], /
-) -> TypeGuard[tuple[_T, TableOrMappedClass]]:
+) -> TypeGuard[tuple[_T, TableOrORMInstOrClass]]:
     """Check if an object is pair and a table."""
     return (
         isinstance(obj, tuple)
         and (len(obj) == 2)
         and predicate(obj[0])
-        and is_table_or_mapped_class(obj[1])
+        and is_table_or_orm(obj[1])
     )
 
 
@@ -828,11 +788,11 @@ def _prepare_insert_or_upsert_items(
 ) -> _PrepareInsertOrUpsertItems: ...
 @overload
 def _prepare_insert_or_upsert_items(
-    normalize_item: Callable[[_UpsertItem], Iterator[_NormalizedItem]],
+    normalize_item: Callable[[_InsertItem], Iterator[_NormalizedItem]],
     engine: AsyncEngine,
     build_insert: Callable[[Table, Iterable[StrMapping]], tuple[Insert, Any]],
     /,
-    *items: _UpsertItem,
+    *items: _InsertItem,
     chunk_size_frac: float = ...,
 ) -> _PrepareInsertOrUpsertItems: ...
 def _prepare_insert_or_upsert_items(
@@ -897,9 +857,9 @@ def _prepare_insert_or_upsert_items_merge_items(
 
 
 def _tuple_to_mapping(
-    values: tuple[Any, ...], table_or_mapped_class: TableOrMappedClass, /
+    values: tuple[Any, ...], table_or_orm: TableOrORMInstOrClass, /
 ) -> dict[str, Any]:
-    columns = get_column_names(table_or_mapped_class)
+    columns = get_column_names(table_or_orm)
     mapping = dict(zip(columns, tuple(values), strict=False))
     return {k: v for k, v in mapping.items() if v is not None}
 
@@ -923,8 +883,8 @@ __all__ = [
     "get_table",
     "get_table_name",
     "insert_items",
-    "is_mapped_class",
-    "is_table_or_mapped_class",
+    "is_orm",
+    "is_table_or_orm",
     "mapped_class_to_dict",
     "selectable_to_string",
     "upsert_items",

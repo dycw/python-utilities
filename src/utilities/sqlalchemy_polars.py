@@ -42,7 +42,7 @@ from utilities.iterables import (
 from utilities.polars import zoned_datetime
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
-    TableOrMappedClass,
+    TableOrORMInstOrClass,
     ensure_tables_created,
     get_chunk_size,
     get_columns,
@@ -70,7 +70,7 @@ if TYPE_CHECKING:
 
 async def insert_dataframe(
     df: DataFrame,
-    table_or_mapped_class: TableOrMappedClass,
+    table_or_mapped_class: TableOrORMInstOrClass,
     engine: AsyncEngine,
     /,
     *,
@@ -120,7 +120,7 @@ async def insert_dataframe(
 
 def _insert_dataframe_map_df_schema_to_table(
     df_schema: SchemaDict,
-    table_or_mapped_class: TableOrMappedClass,
+    table_or_mapped_class: TableOrORMInstOrClass,
     /,
     *,
     snake: bool = False,

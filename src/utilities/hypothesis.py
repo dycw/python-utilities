@@ -59,7 +59,7 @@ if TYPE_CHECKING:
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.redis import _TestRedis
-    from utilities.sqlalchemy import Dialect, TableOrMappedClass
+    from utilities.sqlalchemy import Dialect, TableOrORMInstOrClass
     from utilities.types import Duration, Number
 
 
@@ -512,7 +512,7 @@ _SQLALCHEMY_ENGINE_DIALECTS = sampled_from(_STRATEGY_DIALECTS)
 async def sqlalchemy_engines(
     _data: DataObject,
     /,
-    *tables_or_mapped_classes: TableOrMappedClass,
+    *tables_or_mapped_classes: TableOrORMInstOrClass,
     dialect: MaybeSearchStrategy[Dialect] = _SQLALCHEMY_ENGINE_DIALECTS,
 ) -> AsyncEngine:
     """Strategy for generating sqlalchemy engines."""
