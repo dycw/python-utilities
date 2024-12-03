@@ -12,7 +12,6 @@ from pytest import LogCaptureFixture, raises
 from tests.test_traceback_funcs.one import func_one
 from utilities.iterables import one
 from utilities.pathlib import temp_cwd
-from utilities.pytest import skipif_windows
 from utilities.sys import (
     VERSION_MAJOR_MINOR,
     MakeExceptHookError,
@@ -51,7 +50,6 @@ class TestMakeExceptHook:
         expected = "Result (56) must be divisible by 10"
         assert record.message == expected
 
-    @skipif_windows
     def test_log_assembled_path_cwd(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
@@ -64,7 +62,6 @@ class TestMakeExceptHook:
                 hook(exc_type, exc_val, traceback)
         self._assert_assemble(tmp_path, caplog)
 
-    @skipif_windows
     def test_log_assembled_path_path(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
@@ -77,7 +74,6 @@ class TestMakeExceptHook:
                 hook(exc_type, exc_val, traceback)
         self._assert_assemble(tmp_path, caplog)
 
-    @skipif_windows
     def test_log_assembled_path_callable(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
