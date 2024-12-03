@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from logging import basicConfig
+from pathlib import Path
 from re import search
 from sys import exc_info
-from typing import TYPE_CHECKING
 
 from pytest import LogCaptureFixture, raises
 
@@ -14,12 +14,15 @@ from utilities.pytest import skipif_windows
 from utilities.sys import (
     VERSION_MAJOR_MINOR,
     LogExceptionPathsError,
+    _get_default_logging_path,
     log_exception_paths,
 )
 from utilities.text import strip_and_dedent
 
-if TYPE_CHECKING:
-    from pathlib import Path
+
+class TestGetDefaultLoggingPath:
+    def test_main(self) -> None:
+        assert isinstance(_get_default_logging_path(), Path)
 
 
 class TestLogExceptionPaths:
