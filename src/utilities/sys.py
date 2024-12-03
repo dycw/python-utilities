@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import partial
-from logging import Logger, getLogger
+from logging import getLogger
 from pathlib import Path
 from sys import version_info
 from typing import TYPE_CHECKING
@@ -11,7 +11,7 @@ from typing_extensions import override
 
 from utilities.atomicwrites import writer
 from utilities.datetime import get_now
-from utilities.logging import get_default_logging_path
+from utilities.logging import LoggerOrName, get_default_logging_path, get_logger
 from utilities.traceback import assemble_exception_paths
 
 if TYPE_CHECKING:
@@ -31,7 +31,7 @@ def _get_default_logging_path() -> Path:
 
 def make_except_hook(
     *,
-    logger: Logger = _LOGGER,
+    logger: LoggerOrName = _LOGGER,
     log_raw: bool = False,
     log_raw_extra: StrMapping | None = None,
     max_width: int = 80,
@@ -70,7 +70,7 @@ def _make_except_hook_inner(
     traceback: TracebackType | None,
     /,
     *,
-    logger: Logger = _LOGGER,
+    logger: LoggerOrName,
     log_raw: bool = False,
     log_raw_extra: StrMapping | None = None,
     max_width: int = 80,
@@ -87,8 +87,9 @@ def _make_except_hook_inner(
     _ = (exc_type, traceback)
     if exc_val is None:
         raise MakeExceptHookError
+    logger = get_logger(logger)
     if log_raw:
-        _LOGGER.error("%s", exc_val, extra=log_raw_extra)
+        logger.error("%s", exc_val, extra=log_raw_extra)
     error = assemble_exception_paths(exc_val)
     try:
         from rich.pretty import pretty_repr

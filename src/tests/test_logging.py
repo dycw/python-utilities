@@ -15,6 +15,7 @@ from utilities.logging import (
     add_filters,
     basic_config,
     get_default_logging_path,
+    get_logger,
     get_logging_level_number,
     setup_logging,
     temp_handler,
@@ -49,6 +50,18 @@ class TestBasicConfig:
 class TestGetDefaultLoggingPath:
     def test_main(self) -> None:
         assert isinstance(get_default_logging_path(), Path)
+
+
+class TestGetLogger:
+    def test_logger(self) -> None:
+        logger = getLogger(__name__)
+        result = get_logger(logger)
+        assert result is logger
+
+    def test_str(self) -> None:
+        result = get_logger(__name__)
+        assert isinstance(result, Logger)
+        assert result.name == __name__
 
 
 class TestGetLoggingLevelNumber:

@@ -19,7 +19,7 @@ from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from re import search
 from sys import stdout
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, assert_never, cast
 
 from typing_extensions import override
 
@@ -39,6 +39,7 @@ except ModuleNotFoundError:  # pragma: no cover
 
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+LoggerOrName: TypeAlias = Logger | str
 
 
 def add_filters(
@@ -66,6 +67,15 @@ def basic_config(
 def get_default_logging_path() -> Path:
     """Get the logging default path."""
     return get_repo_root().joinpath(".logs")
+
+
+def get_logger(logger: LoggerOrName, /) -> Logger:
+    """Get a logger."""
+    match logger:
+        case Logger():
+            return logger
+        case str():
+            return getLogger(logger)
 
 
 def get_logging_level_number(level: LogLevel, /) -> int:
@@ -202,8 +212,9 @@ def setup_logging(
 
 
 @contextmanager
-def temp_handler(logger: Logger, handler: Handler, /) -> Iterator[None]:
+def temp_handler(logger: LoggerOrName, handler: Handler, /) -> Iterator[None]:
     """Context manager with temporary handler set."""
+    logger = get_logger(logger)
     logger.addHandler(handler)
     try:
         yield
@@ -213,7 +224,7 @@ def temp_handler(logger: Logger, handler: Handler, /) -> Iterator[None]:
 
 @contextmanager
 def temp_logger(
-    logger: Logger,
+    logger: LoggerOrName,
     /,
     *,
     disabled: bool | None = None,
@@ -221,6 +232,7 @@ def temp_logger(
     propagate: bool | None = None,
 ) -> Iterator[Logger]:
     """Context manager with temporary logger settings."""
+    logger = get_logger(logger)
     init_disabled = logger.disabled
     init_level = logger.level
     init_propagate = logger.propagate
@@ -313,6 +325,7 @@ __all__ = [
     "add_filters",
     "basic_config",
     "get_default_logging_path",
+    "get_logger",
     "get_logging_level_number",
     "setup_logging",
     "temp_handler",
