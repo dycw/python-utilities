@@ -34,6 +34,12 @@ class TestAddFilters:
         add_filters(handler, filters=[lambda _: True])
         assert len(handler.filters) == 1
 
+    def test_no_handlers(self) -> None:
+        handler = StreamHandler()
+        assert len(handler.filters) == 0
+        add_filters(handler)
+        assert len(handler.filters) == 0
+
 
 class TestBasicConfig:
     def test_main(self) -> None:
