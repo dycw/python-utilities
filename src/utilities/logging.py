@@ -63,6 +63,11 @@ def basic_config(
     )
 
 
+def get_default_logging_path() -> Path:
+    """Get the logging default path."""
+    return get_repo_root().joinpath(".logs")
+
+
 def get_logging_level_number(level: LogLevel, /) -> int:
     """Get the logging level number."""
     mapping = getLevelNamesMapping()
@@ -81,17 +86,13 @@ class GetLoggingLevelNumberError(Exception):
         return f"Invalid logging level: {self.level!r}"
 
 
-def _setup_logging_default_path() -> Path:
-    return get_repo_root().joinpath(".logs")
-
-
 def setup_logging(
     *,
     logger_name: str | None = None,
     console_level: LogLevel | None = "INFO",
     console_filters: Iterable[_FilterType] | None = None,
     console_fmt: str = "❯ {zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
-    files_dir: PathLike | Callable[[], Path] | None = _setup_logging_default_path,
+    files_dir: PathLike | Callable[[], Path] | None = get_default_logging_path,
     files_when: str = "D",
     files_interval: int = 1,
     files_backup_count: int = 10,
@@ -311,6 +312,7 @@ __all__ = [
     "LogLevel",
     "add_filters",
     "basic_config",
+    "get_default_logging_path",
     "get_logging_level_number",
     "setup_logging",
     "temp_handler",

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
-from typing import TYPE_CHECKING, Any, cast
+from pathlib import Path
+from typing import Any, cast
 
 from pytest import LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
@@ -11,9 +12,9 @@ from utilities.logging import (
     GetLoggingLevelNumberError,
     LogLevel,
     _AdvancedLogRecord,
-    _setup_logging_default_path,
     add_filters,
     basic_config,
+    get_default_logging_path,
     get_logging_level_number,
     setup_logging,
     temp_handler,
@@ -22,9 +23,6 @@ from utilities.logging import (
 from utilities.pathlib import temp_cwd
 from utilities.pytest import skipif_windows
 from utilities.typing import get_args
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 class TestAddFilters:
@@ -46,6 +44,11 @@ class TestBasicConfig:
         basic_config()
         logger = getLogger(__name__)
         logger.info("message")
+
+
+class TestGetDefaultLoggingPath:
+    def test_main(self) -> None:
+        assert isinstance(get_default_logging_path(), Path)
 
 
 class TestGetLoggingLevelNumber:
@@ -97,9 +100,6 @@ class TestSetupLogging:
         name = TestSetupLogging.test_files_dir_callable.__qualname__
         setup_logging(logger_name=name, files_dir=lambda: tmp_path)
         assert len(list(tmp_path.iterdir())) == 7
-
-    def test_default_path(self) -> None:
-        _ = _setup_logging_default_path()
 
     @skipif_windows
     def test_regular_percent_formatting(
