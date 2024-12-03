@@ -15,7 +15,7 @@ from utilities.sys import (
     VERSION_MAJOR_MINOR,
     LogExceptionPathsError,
     _get_default_logging_path,
-    log_exception_paths,
+    make_except_hook,
 )
 from utilities.text import strip_and_dedent
 
@@ -25,10 +25,10 @@ class TestGetDefaultLoggingPath:
         assert isinstance(_get_default_logging_path(), Path)
 
 
-class TestLogExceptionPaths:
+class TestMakeExceptHook:
     def test_none(self, *, caplog: LogCaptureFixture) -> None:
         basicConfig(format="{message}", style="{")
-        hook = log_exception_paths()
+        hook = make_except_hook()
         try:
             _ = 1 / 0
         except ZeroDivisionError:
@@ -37,7 +37,7 @@ class TestLogExceptionPaths:
         assert len(caplog.records) == 0
 
     def test_log_raw(self, *, caplog: LogCaptureFixture) -> None:
-        hook = log_exception_paths(log_raw=True)
+        hook = make_except_hook(log_raw=True)
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
@@ -51,7 +51,7 @@ class TestLogExceptionPaths:
     def test_log_assembled_path_cwd(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
-        hook = log_exception_paths(log_assembled=True, log_assembled_dir=None)
+        hook = make_except_hook(log_assembled=True, log_assembled_dir=None)
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
@@ -64,7 +64,7 @@ class TestLogExceptionPaths:
     def test_log_assembled_path_path(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
-        hook = log_exception_paths(log_assembled=True, log_assembled_dir=tmp_path)
+        hook = make_except_hook(log_assembled=True, log_assembled_dir=tmp_path)
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
@@ -76,9 +76,7 @@ class TestLogExceptionPaths:
     def test_log_assembled_path_callable(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
-        hook = log_exception_paths(
-            log_assembled=True, log_assembled_dir=lambda: tmp_path
-        )
+        hook = make_except_hook(log_assembled=True, log_assembled_dir=lambda: tmp_path)
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
@@ -87,7 +85,7 @@ class TestLogExceptionPaths:
         self._assert_assemble(tmp_path, caplog)
 
     def test_non_error(self) -> None:
-        hook = log_exception_paths()
+        hook = make_except_hook()
         exc_type, exc_val, traceback = exc_info()
         with raises(LogExceptionPathsError, match="No exception to log"):
             hook(exc_type, exc_val, traceback)

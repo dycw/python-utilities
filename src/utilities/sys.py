@@ -29,7 +29,7 @@ def _get_default_logging_path() -> Path:
     return get_default_logging_path().joinpath("errors")
 
 
-def log_exception_paths(
+def make_except_hook(
     *,
     logger: Logger = _LOGGER,
     log_raw: bool = False,
@@ -46,9 +46,9 @@ def log_exception_paths(
 ) -> Callable[
     [type[BaseException] | None, BaseException | None, TracebackType | None], None
 ]:
-    """Exception hook to log the traceback."""
+    """Create an exception hook with various features."""
     return partial(
-        _log_exception_paths_inner,
+        _make_except_hook_inner,
         logger=logger,
         log_raw=log_raw,
         log_raw_extra=log_raw_extra,
@@ -64,7 +64,7 @@ def log_exception_paths(
     )
 
 
-def _log_exception_paths_inner(
+def _make_except_hook_inner(
     exc_type: type[BaseException] | None,
     exc_val: BaseException | None,
     traceback: TracebackType | None,
@@ -129,4 +129,4 @@ class LogExceptionPathsError(Exception):
         return "No exception to log"
 
 
-__all__ = ["VERSION_MAJOR_MINOR", "LogExceptionPathsError", "log_exception_paths"]
+__all__ = ["VERSION_MAJOR_MINOR", "LogExceptionPathsError", "make_except_hook"]
