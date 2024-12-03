@@ -42,7 +42,7 @@ def log_exception_paths(
     expand_all: bool = False,
     log_assembled: bool = False,
     log_assembled_extra: StrMapping | None = None,
-    log_assembled_dir: PathLike | Callable[[], Path] = _get_default_logging_path,
+    log_assembled_dir: PathLike | Callable[[], Path] | None = _get_default_logging_path,
 ) -> Callable[
     [type[BaseException] | None, BaseException | None, TracebackType | None], None
 ]:
@@ -81,20 +81,20 @@ def _log_exception_paths_inner(
     expand_all: bool = False,
     log_assembled: bool = False,
     log_assembled_extra: StrMapping | None = None,
-    log_assembled_dir: PathLike | Callable[[], Path] = _get_default_logging_path,
+    log_assembled_dir: PathLike | Callable[[], Path] | None = _get_default_logging_path,
 ) -> None:
     """Exception hook to log the traceback."""
-    _ = (exc_type, traceback)  # skipif-ci-and-windows
-    if exc_val is None:  # skipif-ci-and-windows
+    _ = (exc_type, traceback)
+    if exc_val is None:
         raise LogExceptionPathsError
-    if log_raw:  # skipif-ci-and-windows
+    if log_raw:
         _LOGGER.error("%s", exc_val, extra=log_raw_extra)
-    error = assemble_exception_paths(exc_val)  # skipif-ci-and-windows
-    try:  # skipif-ci-and-windows
+    error = assemble_exception_paths(exc_val)
+    try:
         from rich.pretty import pretty_repr
     except ImportError:  # pragma: no cover
         repr_use = repr(error)
-    else:  # skipif-ci-and-windows
+    else:
         repr_use = pretty_repr(
             error,
             max_width=max_width,
@@ -104,9 +104,11 @@ def _log_exception_paths_inner(
             max_depth=max_depth,
             expand_all=expand_all,
         )
-    if log_assembled:  # skipif-ci-and-windows
+    if log_assembled:
         logger.error("%s", repr_use, extra=log_assembled_extra)
         match log_assembled_dir:
+            case None:
+                path = Path.cwd()
             case Path() | str():
                 path = Path(log_assembled_dir)
             case _:
@@ -124,7 +126,7 @@ def _log_exception_paths_inner(
 class LogExceptionPathsError(Exception):
     @override
     def __str__(self) -> str:
-        return "No exception to log"  # skipif-ci-and-windows
+        return "No exception to log"
 
 
 __all__ = ["VERSION_MAJOR_MINOR", "LogExceptionPathsError", "log_exception_paths"]

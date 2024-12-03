@@ -79,8 +79,8 @@ class TestLogLevel:
 
 class TestSetupLogging:
     @skipif_windows
-    def test_main(self, *, tmp_path: Path) -> None:
-        name = TestSetupLogging.test_main.__qualname__
+    def test_files_dir_path(self, *, tmp_path: Path) -> None:
+        name = TestSetupLogging.test_files_dir_path.__qualname__
         setup_logging(logger_name=name, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 7
