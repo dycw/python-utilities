@@ -13,7 +13,7 @@ from utilities.pathlib import temp_cwd
 from utilities.pytest import skipif_windows
 from utilities.sys import (
     VERSION_MAJOR_MINOR,
-    LogExceptionPathsError,
+    MakeExceptHookError,
     _get_default_logging_path,
     make_except_hook,
 )
@@ -87,7 +87,7 @@ class TestMakeExceptHook:
     def test_non_error(self) -> None:
         hook = make_except_hook()
         exc_type, exc_val, traceback = exc_info()
-        with raises(LogExceptionPathsError, match="No exception to log"):
+        with raises(MakeExceptHookError, match="No exception to log"):
             hook(exc_type, exc_val, traceback)
 
     def _assert_assemble(self, tmp_path: Path, caplog: LogCaptureFixture, /) -> None:

@@ -86,7 +86,7 @@ def _make_except_hook_inner(
     """Exception hook to log the traceback."""
     _ = (exc_type, traceback)
     if exc_val is None:
-        raise LogExceptionPathsError
+        raise MakeExceptHookError
     if log_raw:
         _LOGGER.error("%s", exc_val, extra=log_raw_extra)
     error = assemble_exception_paths(exc_val)
@@ -123,10 +123,10 @@ def _make_except_hook_inner(
 
 
 @dataclass(kw_only=True, slots=True)
-class LogExceptionPathsError(Exception):
+class MakeExceptHookError(Exception):
     @override
     def __str__(self) -> str:
         return "No exception to log"
 
 
-__all__ = ["VERSION_MAJOR_MINOR", "LogExceptionPathsError", "make_except_hook"]
+__all__ = ["VERSION_MAJOR_MINOR", "MakeExceptHookError", "make_except_hook"]
