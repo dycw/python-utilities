@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import partial
 from logging import Logger, getLogger
 from pathlib import Path
 from sys import version_info
@@ -29,6 +30,41 @@ def _get_default_logging_path() -> Path:
 
 
 def log_exception_paths(
+    *,
+    logger: Logger = _LOGGER,
+    log_raw: bool = False,
+    log_raw_extra: StrMapping | None = None,
+    max_width: int = 80,
+    indent_size: int = 4,
+    max_length: int | None = None,
+    max_string: int | None = None,
+    max_depth: int | None = None,
+    expand_all: bool = False,
+    log_assembled: bool = False,
+    log_assembled_extra: StrMapping | None = None,
+    log_assembled_dir: PathLike | Callable[[], Path] = _get_default_logging_path,
+) -> Callable[
+    [type[BaseException] | None, BaseException | None, TracebackType | None], None
+]:
+    """Exception hook to log the traceback."""
+    return partial(
+        _log_exception_paths_inner,
+        logger=logger,
+        log_raw=log_raw,
+        log_raw_extra=log_raw_extra,
+        max_width=max_width,
+        indent_size=indent_size,
+        max_length=max_length,
+        max_string=max_string,
+        max_depth=max_depth,
+        expand_all=expand_all,
+        log_assembled=log_assembled,
+        log_assembled_extra=log_assembled_extra,
+        log_assembled_dir=log_assembled_dir,
+    )
+
+
+def _log_exception_paths_inner(
     exc_type: type[BaseException] | None,
     exc_val: BaseException | None,
     traceback: TracebackType | None,

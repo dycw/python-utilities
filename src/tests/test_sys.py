@@ -28,7 +28,7 @@ class TestLogExceptionPaths:
             from utilities.sys import log_exception_paths
             from utilities.traceback import trace
 
-            sys.excepthook = log_exception_paths
+            sys.excepthook = log_exception_paths()
 
 
             @trace
