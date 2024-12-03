@@ -134,10 +134,10 @@ def _make_except_hook_inner(
         for callback in callbacks:
             if not iscoroutinefunction(callback):
                 cast(Callable[[], None], callback)()
-            else:
+            else:  # skipif-ci
                 async_callback = cast(Callable[[], Coroutine1[None]], callback)
                 async_callbacks.append(async_callback)
-    if len(async_callbacks) >= 1:
+    if len(async_callbacks) >= 1:  # skipif-ci
         run(_run_async_callbacks(async_callbacks))
 
 
@@ -152,7 +152,7 @@ async def _run_async_callbacks(
     callbacks: Iterable[Callable[[], Coroutine1[None]]], /
 ) -> None:
     """Run all asynchronous callbacks."""
-    async with TaskGroup() as tg:
+    async with TaskGroup() as tg:  # skipif-ci
         for callback in callbacks:
             _ = tg.create_task(callback())
 
