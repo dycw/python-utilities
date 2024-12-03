@@ -19,7 +19,7 @@ from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from re import search
 from sys import stdout
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, assert_never, cast
 
 from typing_extensions import override
 
@@ -39,6 +39,7 @@ except ModuleNotFoundError:  # pragma: no cover
 
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+LoggerOrName: TypeAlias = Logger | str
 
 
 def add_filters(
@@ -63,6 +64,22 @@ def basic_config(
     )
 
 
+def get_default_logging_path() -> Path:
+    """Get the logging default path."""
+    return get_repo_root().joinpath(".logs")
+
+
+def get_logger(logger: LoggerOrName, /) -> Logger:
+    """Get a logger."""
+    match logger:
+        case Logger():
+            return logger
+        case str():
+            return getLogger(logger)
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+
+
 def get_logging_level_number(level: LogLevel, /) -> int:
     """Get the logging level number."""
     mapping = getLevelNamesMapping()
@@ -81,17 +98,13 @@ class GetLoggingLevelNumberError(Exception):
         return f"Invalid logging level: {self.level!r}"
 
 
-def _setup_logging_default_path() -> Path:
-    return get_repo_root().joinpath(".logs")
-
-
 def setup_logging(
     *,
     logger_name: str | None = None,
     console_level: LogLevel | None = "INFO",
     console_filters: Iterable[_FilterType] | None = None,
     console_fmt: str = "❯ {zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
-    files_dir: PathLike | Callable[[], Path] | None = _setup_logging_default_path,
+    files_dir: PathLike | Callable[[], Path] | None = get_default_logging_path,
     files_when: str = "D",
     files_interval: int = 1,
     files_backup_count: int = 10,
@@ -201,8 +214,9 @@ def setup_logging(
 
 
 @contextmanager
-def temp_handler(logger: Logger, handler: Handler, /) -> Iterator[None]:
+def temp_handler(logger: LoggerOrName, handler: Handler, /) -> Iterator[None]:
     """Context manager with temporary handler set."""
+    logger = get_logger(logger)
     logger.addHandler(handler)
     try:
         yield
@@ -212,7 +226,7 @@ def temp_handler(logger: Logger, handler: Handler, /) -> Iterator[None]:
 
 @contextmanager
 def temp_logger(
-    logger: Logger,
+    logger: LoggerOrName,
     /,
     *,
     disabled: bool | None = None,
@@ -220,6 +234,7 @@ def temp_logger(
     propagate: bool | None = None,
 ) -> Iterator[Logger]:
     """Context manager with temporary logger settings."""
+    logger = get_logger(logger)
     init_disabled = logger.disabled
     init_level = logger.level
     init_propagate = logger.propagate
@@ -311,6 +326,8 @@ __all__ = [
     "LogLevel",
     "add_filters",
     "basic_config",
+    "get_default_logging_path",
+    "get_logger",
     "get_logging_level_number",
     "setup_logging",
     "temp_handler",

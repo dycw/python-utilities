@@ -348,7 +348,7 @@ rich==13.8.1
     #   dycw-utilities (pyproject.toml)
     #   hatch
     #   streamlit
-rpds-py==0.21.0
+rpds-py==0.22.0
     # via
     #   jsonschema
     #   referencing

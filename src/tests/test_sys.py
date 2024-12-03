@@ -1,71 +1,139 @@
 from __future__ import annotations
 
-import sys
-from subprocess import PIPE, CalledProcessError, check_output
+from asyncio import sleep
+from contextlib import suppress
+from logging import basicConfig
+from pathlib import Path
+from re import search
 from sys import exc_info
 
-from pytest import raises
+from pytest import LogCaptureFixture, raises
 
-from tests.conftest import SKIPIF_CI
+from tests.test_traceback_funcs.one import func_one
+from utilities.iterables import one
+from utilities.pathlib import temp_cwd
 from utilities.sys import (
     VERSION_MAJOR_MINOR,
-    LogExceptionPathsError,
-    log_exception_paths,
+    MakeExceptHookError,
+    _get_default_logging_path,
+    make_except_hook,
 )
 from utilities.text import strip_and_dedent
 
 
-class TestLogExceptionPaths:
-    @SKIPIF_CI
+class TestGetDefaultLoggingPath:
     def test_main(self) -> None:
-        code = strip_and_dedent("""
-            from __future__ import annotations
-
-            import sys
-            from itertools import chain
-            from logging import getLogger
-
-            from utilities.sys import log_exception_paths
-            from utilities.traceback import trace
-
-            sys.excepthook = log_exception_paths
+        assert isinstance(_get_default_logging_path(), Path)
 
 
-            @trace
-            def first(a: int, b: int, /, *args: int, c: int = 0, **kwargs: int) -> int:
-                a *= 2
-                b *= 2
-                args = tuple(2 * arg for arg in args)
-                c *= 2
-                kwargs = {k: 2 * v for k, v in kwargs.items()}
-                return second(a, b, *args, c, **kwargs)
+class TestMakeExceptHook:
+    def test_none(self, *, caplog: LogCaptureFixture) -> None:
+        basicConfig(format="{message}", style="{")
+        hook = make_except_hook()
+        try:
+            _ = 1 / 0
+        except ZeroDivisionError:
+            exc_type, exc_val, traceback = exc_info()
+            with suppress(ZeroDivisionError):
+                hook(exc_type, exc_val, traceback)
+        assert len(caplog.records) == 0
 
+    def test_log_raw(self, *, caplog: LogCaptureFixture) -> None:
+        hook = make_except_hook(log_raw=True)
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError:
+            exc_type, exc_val, traceback = exc_info()
+            with suppress(AssertionError):
+                hook(exc_type, exc_val, traceback)
+        record = one(caplog.records)
+        expected = "Result (56) must be divisible by 10"
+        assert record.message == expected
 
-            @trace
-            def second(a: int, b: int, /, *args: int, c: int = 0, **kwargs: int) -> int:
-                a *= 2
-                b *= 2
-                args = tuple(2 * arg for arg in args)
-                c *= 2
-                kwargs = {k: 2 * v for k, v in kwargs.items()}
-                result = sum(chain([a, b], args, [c], kwargs.values()))
-                assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
-                return result
+    def test_log_assembled_path_cwd(
+        self, *, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
+        hook = make_except_hook(log_assembled=True, log_assembled_dir=None)
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError:
+            exc_type, exc_val, traceback = exc_info()
+            with temp_cwd(tmp_path), suppress(AssertionError):
+                hook(exc_type, exc_val, traceback)
+        self._assert_assemble(tmp_path, caplog)
 
+    def test_log_assembled_path_path(
+        self, *, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
+        hook = make_except_hook(log_assembled=True, log_assembled_dir=tmp_path)
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError:
+            exc_type, exc_val, traceback = exc_info()
+            with suppress(AssertionError):
+                hook(exc_type, exc_val, traceback)
+        self._assert_assemble(tmp_path, caplog)
 
-            _ = first(1, 2, 3, 4, c=5, d=6, e=7)
-            """)
-        with raises(CalledProcessError) as exc_info:
-            _ = check_output([sys.executable, "-c", code], stderr=PIPE, text=True)
-        stderr = exc_info.value.stderr.strip("\n")
+    def test_log_assembled_path_callable(
+        self, *, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
+        hook = make_except_hook(log_assembled=True, log_assembled_dir=lambda: tmp_path)
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError:
+            exc_type, exc_val, traceback = exc_info()
+            with suppress(AssertionError):
+                hook(exc_type, exc_val, traceback)
+        self._assert_assemble(tmp_path, caplog)
+
+    def test_non_error(self) -> None:
+        hook = make_except_hook()
+        exc_type, exc_val, traceback = exc_info()
+        with raises(MakeExceptHookError, match="No exception to log"):
+            hook(exc_type, exc_val, traceback)
+
+    def test_callback_sync(self) -> None:
+        flag = False
+
+        def set_true() -> None:
+            nonlocal flag
+            flag = True
+
+        hook = make_except_hook(callbacks=[set_true])
+        try:
+            _ = 1 / 0
+        except ZeroDivisionError:
+            exc_type, exc_val, traceback = exc_info()
+            with suppress(ZeroDivisionError):
+                hook(exc_type, exc_val, traceback)
+        assert flag
+
+    def test_callback_async(self) -> None:
+        flag = False
+
+        async def set_true() -> None:
+            nonlocal flag
+            flag = True
+            await sleep(0.01)
+
+        hook = make_except_hook(callbacks=[set_true])
+        try:
+            _ = 1 / 0
+        except ZeroDivisionError:
+            exc_type, exc_val, traceback = exc_info()
+            with suppress(ZeroDivisionError):
+                hook(exc_type, exc_val, traceback)
+        assert flag
+
+    def _assert_assemble(self, tmp_path: Path, caplog: LogCaptureFixture, /) -> None:
         expected = strip_and_dedent("""
             ExcPath(
                 frames=[
                     _Frame(
-                        module='__main__',
-                        name='first',
-                        code_line='',
-                        line_num=20,
+                        module='tests.test_traceback_funcs.one',
+                        name='func_one',
+                        code_line='assert result % 10 == 0, f"Result ({result}) must be divisible by 10"',
+                        line_num=16,
                         args=(1, 2, 3, 4),
                         kwargs={'c': 5, 'd': 6, 'e': 7},
                         locals={
@@ -73,35 +141,22 @@ class TestLogExceptionPaths:
                             'b': 4,
                             'c': 10,
                             'args': (6, 8),
-                            'kwargs': {'d': 12, 'e': 14}
-                        }
-                    ),
-                    _Frame(
-                        module='__main__',
-                        name='second',
-                        code_line='',
-                        line_num=31,
-                        args=(2, 4, 6, 8, 10),
-                        kwargs={'d': 12, 'e': 14},
-                        locals={
-                            'a': 4,
-                            'b': 8,
-                            'c': 0,
-                            'args': (12, 16, 20),
-                            'kwargs': {'d': 24, 'e': 28},
-                            'result': 112
+                            'kwargs': {'d': 12, 'e': 14},
+                            'result': 56
                         }
                     )
                 ],
-                error=AssertionError('Result (112) must be divisible by 10')
-            )
-            """)
-        assert stderr == expected
+                error=AssertionError('Result (56) must be divisible by 10')
+            )""")
+        files = list(tmp_path.iterdir())
+        assert len(files) == 1
+        file = one(files)
+        assert search(r"^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$", file.name)
+        with file.open("r") as fh:
+            assert fh.read() == expected
 
-    def test_non_error(self) -> None:
-        exc_type, exc_val, traceback = exc_info()
-        with raises(LogExceptionPathsError, match="No exception to log"):
-            log_exception_paths(exc_type, exc_val, traceback)
+        record = one(caplog.records)
+        assert record.message == expected
 
 
 class TestVersionMajorMinor:
