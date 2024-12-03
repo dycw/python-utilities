@@ -139,7 +139,6 @@ def _make_except_hook_inner(
                 async_callbacks.append(async_callback)
     if len(async_callbacks) >= 1:
         run(_run_async_callbacks(async_callbacks))
-    raise exc_val
 
 
 @dataclass(kw_only=True, slots=True)

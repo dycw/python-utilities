@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from asyncio import sleep
-from contextlib import suppress
 from logging import basicConfig
 from pathlib import Path
 from re import search
@@ -34,8 +33,7 @@ class TestMakeExceptHook:
             _ = 1 / 0
         except ZeroDivisionError:
             exc_type, exc_val, traceback = exc_info()
-            with suppress(ZeroDivisionError):
-                hook(exc_type, exc_val, traceback)
+            hook(exc_type, exc_val, traceback)
         assert len(caplog.records) == 0
 
     def test_log_raw(self, *, caplog: LogCaptureFixture) -> None:
@@ -44,8 +42,7 @@ class TestMakeExceptHook:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             exc_type, exc_val, traceback = exc_info()
-            with suppress(AssertionError):
-                hook(exc_type, exc_val, traceback)
+            hook(exc_type, exc_val, traceback)
         record = one(caplog.records)
         expected = "Result (56) must be divisible by 10"
         assert record.message == expected
@@ -58,7 +55,7 @@ class TestMakeExceptHook:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             exc_type, exc_val, traceback = exc_info()
-            with temp_cwd(tmp_path), suppress(AssertionError):
+            with temp_cwd(tmp_path):
                 hook(exc_type, exc_val, traceback)
         self._assert_assemble(tmp_path, caplog)
 
@@ -70,8 +67,7 @@ class TestMakeExceptHook:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             exc_type, exc_val, traceback = exc_info()
-            with suppress(AssertionError):
-                hook(exc_type, exc_val, traceback)
+            hook(exc_type, exc_val, traceback)
         self._assert_assemble(tmp_path, caplog)
 
     def test_log_assembled_path_callable(
@@ -82,8 +78,7 @@ class TestMakeExceptHook:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             exc_type, exc_val, traceback = exc_info()
-            with suppress(AssertionError):
-                hook(exc_type, exc_val, traceback)
+            hook(exc_type, exc_val, traceback)
         self._assert_assemble(tmp_path, caplog)
 
     def test_non_error(self) -> None:
@@ -104,8 +99,7 @@ class TestMakeExceptHook:
             _ = 1 / 0
         except ZeroDivisionError:
             exc_type, exc_val, traceback = exc_info()
-            with suppress(ZeroDivisionError):
-                hook(exc_type, exc_val, traceback)
+            hook(exc_type, exc_val, traceback)
         assert flag
 
     def test_callback_async(self) -> None:
@@ -121,8 +115,7 @@ class TestMakeExceptHook:
             _ = 1 / 0
         except ZeroDivisionError:
             exc_type, exc_val, traceback = exc_info()
-            with suppress(ZeroDivisionError):
-                hook(exc_type, exc_val, traceback)
+            hook(exc_type, exc_val, traceback)
         assert flag
 
     def _assert_assemble(self, tmp_path: Path, caplog: LogCaptureFixture, /) -> None:
