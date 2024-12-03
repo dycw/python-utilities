@@ -12,6 +12,7 @@ from utilities.logging import (
     LogLevel,
     _AdvancedLogRecord,
     _setup_logging_default_path,
+    add_filters,
     basic_config,
     get_logging_level_number,
     setup_logging,
@@ -24,6 +25,14 @@ from utilities.typing import get_args
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+class TestAddFilters:
+    def test_main(self) -> None:
+        handler = StreamHandler()
+        assert len(handler.filters) == 0
+        add_filters(handler, filters=[lambda _: True])
+        assert len(handler.filters) == 1
 
 
 class TestBasicConfig:

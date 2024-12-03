@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from itertools import product
@@ -27,6 +27,7 @@ from utilities.datetime import maybe_sub_pct_y
 from utilities.git import get_repo_root
 
 if TYPE_CHECKING:
+    from logging import _FilterType
     from zoneinfo import ZoneInfo
 
     from utilities.types import PathLike
@@ -38,6 +39,15 @@ except ModuleNotFoundError:  # pragma: no cover
 
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
+
+def add_filters(
+    handler: Handler, /, *, filters: Iterable[_FilterType] | None = None
+) -> None:
+    """Add a set of filters to a handler."""
+    if filters is not None:
+        for filter_ in filters:
+            handler.addFilter(filter_)
 
 
 def basic_config(
@@ -79,13 +89,16 @@ def setup_logging(
     *,
     logger_name: str | None = None,
     console_level: LogLevel | None = "INFO",
+    console_filters: Iterable[_FilterType] | None = None,
     console_fmt: str = "❯ {zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
     files_dir: PathLike | Callable[[], Path] | None = _setup_logging_default_path,
     files_when: str = "D",
     files_interval: int = 1,
     files_backup_count: int = 10,
     files_max_bytes: int = 10 * 1024**2,
+    files_filters: Iterable[_FilterType] | None = None,
     files_fmt: str = "{zoned_datetime_str} | {name}:{funcName}:{lineno} | {levelname:8} | {message}",
+    filters: Iterable[_FilterType] | None = None,
     extra: Callable[[Logger], None] | None = None,
 ) -> None:
     """Set up logger."""
@@ -106,6 +119,15 @@ def setup_logging(
     # logger
     logger = getLogger(name=logger_name)  # skipif-ci-and-windows
     logger.setLevel(get_logging_level_number("DEBUG"))  # skipif-ci-and-windows
+
+    # filters
+    console_filters = (  # skipif-ci-and-windows
+        None if console_filters is None else list(console_filters)
+    )
+    files_filters = (  # skipif-ci-and-windows
+        None if files_filters is None else list(files_filters)
+    )
+    filters = None if filters is None else list(filters)  # skipif-ci-and-windows
 
     # formatter
     try:  # skipif-ci-and-windows
@@ -128,6 +150,8 @@ def setup_logging(
     # console
     if console_level is not None:  # skipif-ci-and-windows
         console_handler = StreamHandler(stream=stdout)
+        add_filters(console_handler, filters=console_filters)
+        add_filters(console_handler, filters=filters)
         console_handler.setFormatter(console_formatter)
         console_handler.setLevel(get_logging_level_number(console_level))
         logger.addHandler(console_handler)
@@ -165,6 +189,8 @@ def setup_logging(
                 backupCount=files_backup_count,
                 maxBytes=files_max_bytes,
             )
+        add_filters(file_handler, filters=files_filters)
+        add_filters(file_handler, filters=filters)
         file_handler.setFormatter(formatter)
         file_handler.setLevel(level)
         logger.addHandler(file_handler)
@@ -283,6 +309,7 @@ class _AdvancedLogRecord(LogRecord):
 __all__ = [
     "GetLoggingLevelNumberError",
     "LogLevel",
+    "add_filters",
     "basic_config",
     "get_logging_level_number",
     "setup_logging",
