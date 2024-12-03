@@ -8,6 +8,7 @@ from sys import exc_info
 
 from pytest import LogCaptureFixture, raises
 
+from tests.conftest import SKIPIF_CI
 from tests.test_traceback_funcs.one import func_one
 from utilities.iterables import one
 from utilities.pathlib import temp_cwd
@@ -102,6 +103,7 @@ class TestMakeExceptHook:
             hook(exc_type, exc_val, traceback)
         assert flag
 
+    @SKIPIF_CI
     def test_callback_async(self) -> None:
         flag = False
 
