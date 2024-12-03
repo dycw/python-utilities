@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from asyncio import sleep
 from contextlib import suppress
 from logging import basicConfig
 from pathlib import Path
@@ -94,6 +95,39 @@ class TestMakeExceptHook:
         exc_type, exc_val, traceback = exc_info()
         with raises(MakeExceptHookError, match="No exception to log"):
             hook(exc_type, exc_val, traceback)
+
+    def test_callback_sync(self) -> None:
+        flag = False
+
+        def set_true() -> None:
+            nonlocal flag
+            flag = True
+
+        hook = make_except_hook(callbacks=[set_true])
+        try:
+            _ = 1 / 0
+        except ZeroDivisionError:
+            exc_type, exc_val, traceback = exc_info()
+            with suppress(ZeroDivisionError):
+                hook(exc_type, exc_val, traceback)
+        assert flag
+
+    def test_callback_async(self) -> None:
+        flag = False
+
+        async def set_true() -> None:
+            nonlocal flag
+            flag = True
+            await sleep(0.01)
+
+        hook = make_except_hook(callbacks=[set_true])
+        try:
+            _ = 1 / 0
+        except ZeroDivisionError:
+            exc_type, exc_val, traceback = exc_info()
+            with suppress(ZeroDivisionError):
+                hook(exc_type, exc_val, traceback)
+        assert flag
 
     def _assert_assemble(self, tmp_path: Path, caplog: LogCaptureFixture, /) -> None:
         expected = strip_and_dedent("""
