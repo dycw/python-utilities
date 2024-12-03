@@ -76,6 +76,8 @@ def get_logger(logger: LoggerOrName, /) -> Logger:
             return logger
         case str():
             return getLogger(logger)
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
 
 
 def get_logging_level_number(level: LogLevel, /) -> int:
