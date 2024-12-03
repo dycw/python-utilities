@@ -56,6 +56,9 @@ class SlackHandler(Handler):
         self._queue = Queue()
         self._task = get_event_loop().create_task(self._loop_send())
 
+    def __del__(self) -> None:
+        _ = self._task.cancel()  # pragma: no cover
+
     @override
     def emit(self, record: LogRecord) -> None:
         try:
@@ -63,29 +66,33 @@ class SlackHandler(Handler):
         except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
-    async def send(self) -> None:
+    async def send(self, *, cancel: bool = False) -> None:
         """Send the queued messages to Slack."""
-        async with self._lock:
-            messages: list[str] = []
-            while True:
+        try:
+            async with self._lock:
+                messages: list[str] = []
+                while True:
+                    try:
+                        message = self._queue.get_nowait()
+                    except QueueEmpty:
+                        break
+                    else:
+                        messages.append(message)
+            if len(messages) >= 1:
+                _LOGGER.debug("Sending %s messages(s)", len(messages))
+                text = "\n".join(messages)
                 try:
-                    message = self._queue.get_nowait()
-                except QueueEmpty:
-                    break
+                    await send_to_slack(self._url, text, timeout=self._timeout)
+                except CancelledError:
+                    return  # pragma: no cover
+                except Exception:
+                    _LOGGER.exception("Slack handler error")
                 else:
-                    messages.append(message)
-        if len(messages) >= 1:
-            _LOGGER.debug("Sending %s messages(s)", len(messages))
-            text = "\n".join(messages)
-            try:
-                await send_to_slack(self._url, text, timeout=self._timeout)
-            except CancelledError:
-                return  # pragma: no cover
-            except Exception:
-                _LOGGER.exception("Slack handler error")
-            else:
-                if self._callback is not None:  # pragma: no cover
-                    self._callback()
+                    if self._callback is not None:  # pragma: no cover
+                        self._callback()
+        finally:
+            if cancel:
+                _ = self._task.cancel()
 
     async def _loop_send(self) -> None:
         while True:
