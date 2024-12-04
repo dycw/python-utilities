@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, NotRequired, Self, T
 
 from pytest import mark, param
 
+from tests.test_typing_funcs.no_future import Inner, Outer
 from utilities.typing import (
     contains_self,
     eval_typed_dict,
@@ -93,6 +94,11 @@ class TestGetTypeHints:
         result = get_type_hints(Example)
         expected = {"x": int}
         assert result == expected
+
+    def test_no_future(self) -> None:
+        hints = get_type_hints(Outer)
+        expected = {"inner": "Inner"}
+        assert hints == expected
 
 
 class TestIsAnnotationOfType:

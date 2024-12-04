@@ -12,6 +12,7 @@ from hypothesis import given
 from hypothesis.strategies import booleans
 from pytest import raises
 
+from tests.test_beartype_funcs.no_future import Inner, Outer
 from utilities.beartype import beartype_cond
 
 
@@ -23,6 +24,10 @@ class TestBeartypeCond:
 
         with raises(BeartypeCallHintReturnViolation):
             _ = func(1, 2)
+
+    def test_no_future(self) -> None:
+        outer = Outer(inner=Inner())
+        assert isinstance(outer, Outer)
 
     def test_object_method_normal(self) -> None:
         @beartype_cond
