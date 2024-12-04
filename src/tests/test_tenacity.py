@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from asyncio import sleep, timeout
 from typing import TYPE_CHECKING
 
 from hypothesis import given
@@ -27,19 +28,34 @@ class TestWaitExponentialJitter:
 
 class TestYieldAttempts:
     async def test_main(self) -> None:
-        i = 0
-        with raises(RetryError):  # noqa: PT012
+        with raises(RetryError) as exc_info:  # noqa: PT012
             async for attempt in yield_attempts(stop=stop_after_attempt(3)):
                 with attempt:
-                    i += 1
                     raise RuntimeError
-        assert i == 3
+        assert isinstance(exc_info.value.last_attempt.exception(), RuntimeError)
 
     async def test_disabled(self) -> None:
         i = 0
         with raises(RuntimeError):  # noqa: PT012
             async for attempt in yield_attempts():
+                i += 1
                 with attempt:
-                    i += 1
                     raise RuntimeError
         assert i == 1
+
+    async def test_timeout_success(self) -> None:
+        i = 1
+        async for attempt in yield_attempts(stop=stop_after_attempt(10)):
+            i += 1
+            with attempt:
+                async with timeout(i * 0.01):
+                    await sleep(0.05)
+        assert i == 6
+
+    async def test_timeout_fail(self) -> None:
+        with raises(RetryError) as exc_info:  # noqa: PT012
+            async for attempt in yield_attempts(stop=stop_after_attempt(3)):
+                with attempt:
+                    async with timeout(0.01):
+                        await sleep(0.02)
+        assert isinstance(exc_info.value.last_attempt.exception(), TimeoutError)
