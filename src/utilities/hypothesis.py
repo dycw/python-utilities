@@ -45,7 +45,16 @@ from hypothesis.strategies import (
 from hypothesis.utils.conventions import not_set
 
 from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month, get_now
-from utilities.math import MAX_INT32, MAX_INT64, MAX_UINT32, MIN_INT32, MIN_INT64
+from utilities.math import (
+    MAX_INT32,
+    MAX_INT64,
+    MAX_UINT32,
+    MAX_UINT64,
+    MIN_INT32,
+    MIN_INT64,
+    MIN_UINT32,
+    MIN_UINT64,
+)
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
@@ -674,6 +683,38 @@ def timedeltas_2w(
     return draw(timedeltas(min_value=min_value_, max_value=max_value_))
 
 
+@composite
+def uint32s(
+    _draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[int] = MIN_UINT32,
+    max_value: MaybeSearchStrategy[int] = MAX_UINT32,
+) -> int:
+    """Strategy for generating uint32s."""
+    draw = lift_draw(_draw)
+    min_value_, max_value_ = draw(min_value), draw(max_value)
+    min_value_ = max(min_value_, MIN_UINT32)
+    max_value_ = min(max_value_, MAX_UINT32)
+    return draw(integers(min_value_, max_value_))
+
+
+@composite
+def uint64s(
+    _draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[int] = MIN_UINT64,
+    max_value: MaybeSearchStrategy[int] = MAX_UINT64,
+) -> int:
+    """Strategy for generating uint64s."""
+    draw = lift_draw(_draw)
+    min_value_, max_value_ = draw(min_value), draw(max_value)
+    min_value_ = max(min_value_, MIN_UINT64)
+    max_value_ = min(max_value_, MAX_UINT64)
+    return draw(integers(min_value_, max_value_))
+
+
 def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[_TestRedis]:
     """Strategy for generating test redis clients."""
     from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
@@ -801,6 +842,8 @@ __all__ = [
     "text_digits",
     "text_printable",
     "timedeltas_2w",
+    "uint32s",
+    "uint64s",
     "yield_test_redis",
     "zoned_datetimes",
 ]
