@@ -68,10 +68,21 @@ from utilities.hypothesis import (
     text_digits,
     text_printable,
     timedeltas_2w,
+    uint32s,
+    uint64s,
     yield_test_redis,
     zoned_datetimes,
 )
-from utilities.math import MAX_INT32, MAX_INT64, MIN_INT32, MIN_INT64
+from utilities.math import (
+    MAX_INT32,
+    MAX_INT64,
+    MAX_UINT32,
+    MAX_UINT64,
+    MIN_INT32,
+    MIN_INT64,
+    MIN_UINT32,
+    MIN_UINT64,
+)
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import Dialect, _get_dialect
@@ -796,6 +807,22 @@ class TestTimeDeltas2W:
         ser = serialize_timedelta(timedelta)
         _ = parse_timedelta(ser)
         assert min_value <= timedelta <= max_value
+
+
+class TestUInt32s:
+    @given(data=data(), min_value=uint32s(), max_value=uint32s())
+    def test_main(self, *, data: DataObject, min_value: int, max_value: int) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(uint32s(min_value=min_value, max_value=max_value))
+        assert max(min_value, MIN_UINT32) <= x <= min(max_value, MAX_UINT32)
+
+
+class TestUInt64s:
+    @given(data=data(), min_value=uint64s(), max_value=uint64s())
+    def test_main(self, *, data: DataObject, min_value: int, max_value: int) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(uint64s(min_value=min_value, max_value=max_value))
+        assert max(min_value, MIN_UINT64) <= x <= min(max_value, MAX_UINT64)
 
 
 @SKIPIF_CI_AND_NOT_LINUX
