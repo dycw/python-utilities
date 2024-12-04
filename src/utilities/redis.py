@@ -18,6 +18,7 @@ from uuid import UUID, uuid4
 
 from redis.asyncio import Redis
 from redis.typing import EncodableT
+from tenacity import AsyncRetrying
 
 from utilities.asyncio import timeout_dur
 from utilities.datetime import (
@@ -343,6 +344,7 @@ class _RedisKey(Generic[_T]):
         ttl = (  # skipif-ci-and-not-linux
             None if self.ttl is None else round(1000 * duration_to_float(self.ttl))
         )
+        at
         async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
             result = await redis.set(self.name, value_use, px=ttl)
         return ensure_int(result)  # skipif-ci-and-not-linux
