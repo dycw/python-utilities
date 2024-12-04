@@ -1382,7 +1382,6 @@ class TestYieldRowsAsDataclasses:
         expected = []
         assert result == expected
 
-    @mark.only
     def test_no_future(self) -> None:
         child = Child()
         df = DataFrame([("true",), ("false",)], schema={"truth": Utf8}, orient="row")
