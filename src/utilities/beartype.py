@@ -7,6 +7,8 @@ from typing import Any, TypeVar, cast, overload
 
 from beartype import beartype
 
+from utilities.typing import contains_self, get_type_hints
+
 _F = TypeVar("_F", bound=Callable[..., Any])
 
 
@@ -41,7 +43,11 @@ def beartype_cond(
     if (setup is not None) and not setup():
         return func
 
-    decorated = beartype(func)
+    if any(map(contains_self, get_type_hints(func).values())):
+        decorated = func
+    else:
+        decorated = beartype(func)
+
     if runtime is None:
         return decorated
 

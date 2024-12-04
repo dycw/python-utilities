@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, NotRequired, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, NotRequired, Self, TypedDict
 
 from pytest import mark, param
 
 from utilities.typing import (
+    contains_self,
     eval_typed_dict,
     get_args,
     get_type_hints,
@@ -25,6 +26,12 @@ from utilities.typing import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+
+class TestContainsSelf:
+    @mark.parametrize("obj", [param(Self), param(Self | None)])
+    def test_main(self, *, obj: Any) -> None:
+        assert contains_self(obj)
 
 
 class TestEvalTypedDict:

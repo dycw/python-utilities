@@ -8,6 +8,7 @@ from typing import (
     Literal,
     NamedTuple,
     Protocol,
+    Self,
     TypeGuard,
     TypeVar,
     _eval_type,  # pyright: ignore[reportAttributeAccessIssue]
@@ -39,6 +40,11 @@ class SupportsDunderGT(Protocol[_T_contra]):
 
 
 SupportsRichComparison = SupportsDunderLT[Any] | SupportsDunderGT[Any]
+
+
+def contains_self(obj: Any, /) -> bool:
+    """Check if an annotation contains `Self`."""
+    return (obj is Self) or any(map(contains_self, get_args(obj)))
 
 
 def eval_typed_dict(
