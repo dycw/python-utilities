@@ -6,6 +6,7 @@ atools
 beartype
 cachetools
 click
+contextlib
 cryptography
 cvxpy
 dacite
