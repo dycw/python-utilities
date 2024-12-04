@@ -94,11 +94,14 @@ def get_type_hints(
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
 ) -> dict[str, Any]:
-    return _get_type_hints(
-        cls,
-        globalns=globals() if globalns is None else dict(globalns),
-        localns=locals() if localns is None else dict(localns),
-    )
+    try:
+        return _get_type_hints(
+            cls,
+            globalns=globals() if globalns is None else dict(globalns),
+            localns=locals() if localns is None else dict(localns),
+        )
+    except NameError:
+        return cls.__annotations__
 
 
 def is_dict_type(obj: Any, /) -> bool:
