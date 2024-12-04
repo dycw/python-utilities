@@ -12,15 +12,15 @@ TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
 
 
 @dataclass(kw_only=True, slots=True)
-class Data:
+class ChildData:
     truth: TruthLit
 
 
-class Child(Parent[Data]):
+class Child(Parent[ChildData]):
     @property
     @override
-    def _cls(self) -> type[Data]:
-        return Data
+    def _cls(self) -> type[ChildData]:
+        return ChildData
 
     @override
     def yield_rows(
@@ -30,7 +30,7 @@ class Child(Parent[Data]):
         *,
         globalns: StrMapping | None = None,
         localns: StrMapping | None = None,
-    ) -> Iterator[Data]:
+    ) -> Iterator[ChildData]:
         return super().yield_rows(
             df,
             globalns=globals() if globalns is None else globalns,
