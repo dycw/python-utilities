@@ -150,13 +150,13 @@ class _RedisHashMapKey(Generic[_K, _V]):
         raise ImpossibleCaseError(case=[f"{self=}"])  # pragma: no cover
 
     async def _set_core(self, redis: Redis, ser_key: bytes, ser_value: bytes, /) -> int:
-        result = await cast(
+        result = await cast(  # skipif-ci-and-not-linux
             Awaitable[int],
             redis.hset(self.name, key=cast(Any, ser_key), value=cast(Any, ser_value)),
         )
-        if self.ttl is not None:
+        if self.ttl is not None:  # skipif-ci-and-not-linux
             await redis.pexpire(self.name, duration_to_timedelta(self.ttl))
-        return result
+        return result  # skipif-ci-and-not-linux
 
     def _serialize_key(self, key: _K, /) -> bytes:
         """Serialize the key."""
@@ -167,7 +167,7 @@ class _RedisHashMapKey(Generic[_K, _V]):
         return self.key_serializer(key)  # skipif-ci-and-not-linux
 
     def _yield_timeout_attempts(self) -> AsyncIterator[MaybeAttemptContextManager]:
-        return yield_timeout_attempts(
+        return yield_timeout_attempts(  # skipif-ci-and-not-linux
             stop=None if self.attempts is None else stop_after_attempt(self.attempts),
             wait=None
             if self.max_wait is None
@@ -421,7 +421,7 @@ class _RedisKey(Generic[_T]):
         return ensure_int(result)  # skipif-ci-and-not-linux
 
     def _yield_timeout_attempts(self) -> AsyncIterator[MaybeAttemptContextManager]:
-        return yield_timeout_attempts(
+        return yield_timeout_attempts(  # skipif-ci-and-not-linux
             stop=None if self.attempts is None else stop_after_attempt(self.attempts),
             wait=None
             if self.max_wait is None
