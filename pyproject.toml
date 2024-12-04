@@ -451,8 +451,8 @@ select = [
 
 [tool.ruff.lint.extend-per-file-ignores]
 "src/tests/**/*.py" = ["S101"]  # assert
-"src/tests/test_beartype_funcs/no_future.py" = ["I002"] # missing-required-import
-"src/tests/test_typing_funcs/no_future.py" = ["I002"] # missing-required-import
+"src/tests/test_beartype_funcs/no_future.py" = ["I002"]  # missing-required-import
+"src/tests/test_typing_funcs/no_future.py" = ["I002"]  # missing-required-import
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
