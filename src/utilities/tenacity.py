@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, overload
 
 from tenacity import (
     AsyncRetrying,
@@ -53,7 +52,38 @@ class wait_exponential_jitter(_wait_exponential_jitter):  # noqa: N801
         )
 
 
-@asynccontextmanager
+@overload
+def yield_attempts(
+    *,
+    sleep: Sentinel = ...,
+    stop: Sentinel = ...,
+    wait: Sentinel = ...,
+    retry: Sentinel = ...,
+    before: Sentinel = ...,
+    after: Sentinel = ...,
+    before_sleep: Sentinel = ...,
+    reraise: Sentinel = ...,
+    retry_error_cls: Sentinel = ...,
+    retry_error_callback: Sentinel = ...,
+) -> AsyncIterator[NoOpContextManager]: ...
+@overload
+def yield_attempts(
+    *,
+    sleep: Callable[[int | float], MaybeAwaitable[None]] | Sentinel = ...,
+    stop: StopBaseT | Sentinel = ...,
+    wait: WaitBaseT | Sentinel = ...,
+    retry: SyncRetryBaseT | Sentinel = ...,
+    before: Callable[[RetryCallState], MaybeAwaitable[None]] | Sentinel = ...,
+    after: Callable[[RetryCallState], MaybeAwaitable[None]] | Sentinel = ...,
+    before_sleep: Callable[[RetryCallState], MaybeAwaitable[None]]
+    | None
+    | Sentinel = ...,
+    reraise: bool | Sentinel = ...,
+    retry_error_cls: type[RetryError] | Sentinel = ...,
+    retry_error_callback: Callable[[RetryCallState], MaybeAwaitable[Any]]
+    | None
+    | Sentinel = ...,
+) -> AsyncIterator[NoOpContextManager]: ...
 async def yield_attempts(
     *,
     sleep: Callable[[int | float], MaybeAwaitable[None]] | Sentinel = sentinel,
