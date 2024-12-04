@@ -16,6 +16,7 @@ from utilities.asyncio import Coroutine1
 from utilities.atomicwrites import writer
 from utilities.datetime import get_now
 from utilities.logging import LoggerOrName, get_default_logging_path, get_logger
+from utilities.pathlib import ensure_suffix
 from utilities.traceback import assemble_exception_paths
 
 if TYPE_CHECKING:
@@ -127,7 +128,8 @@ def _make_except_hook_inner(
             .replace(tzinfo=None)
             .strftime("%Y-%m-%dT%H-%M-%S")
         )
-        with writer(path.joinpath(now)) as temp, temp.open(mode="w") as fh:
+        path_use = ensure_suffix(path.joinpath(now), ".txt")
+        with writer(path_use) as temp, temp.open(mode="w") as fh:
             _ = fh.write(repr_use)
     async_callbacks: list[Callable[[], Coroutine1[None]]] = []
     if callbacks is not None:
