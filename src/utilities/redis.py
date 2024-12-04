@@ -349,6 +349,9 @@ class _RedisKey(Generic[_T]):
     type: type[_T]
     serializer: Callable[[_T], bytes] | None = None
     deserializer: Callable[[bytes], _T] | None = None
+    attempts: int | None = None
+    max_wait: Duration | None = None
+    timeout: Duration | None = None
     ttl: Duration | None = None
 
     async def delete(self, redis: Redis, /, *, timeout: Duration | None = None) -> int:
@@ -411,6 +414,9 @@ def redis_key(
     *,
     serializer: Callable[[_T], bytes] | None = ...,
     deserializer: Callable[[bytes], _T] | None = ...,
+    attempts: int | None = ...,
+    max_wait: Duration | None = ...,
+    timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisKey[_T]: ...
 @overload
@@ -421,6 +427,9 @@ def redis_key(
     *,
     serializer: Callable[[_T1 | _T2], bytes] | None = None,
     deserializer: Callable[[bytes], _T1 | _T2] | None = None,
+    attempts: int | None = ...,
+    max_wait: Duration | None = ...,
+    timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2]: ...
 @overload
@@ -431,6 +440,9 @@ def redis_key(
     *,
     serializer: Callable[[_T1 | _T2 | _T3], bytes] | None = None,
     deserializer: Callable[[bytes], _T1 | _T2 | _T3] | None = None,
+    attempts: int | None = ...,
+    max_wait: Duration | None = ...,
+    timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2 | _T3]: ...
 @overload
@@ -441,6 +453,9 @@ def redis_key(
     *,
     serializer: Callable[[_T1 | _T2 | _T3 | _T4], bytes] | None = None,
     deserializer: Callable[[bytes], _T1 | _T2 | _T3 | _T4] | None = None,
+    attempts: int | None = ...,
+    max_wait: Duration | None = ...,
+    timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2 | _T3 | _T4]: ...
 @overload
@@ -451,6 +466,9 @@ def redis_key(
     *,
     serializer: Callable[[_T1 | _T2 | _T3 | _T4 | _T5], bytes] | None = None,
     deserializer: Callable[[bytes], _T1 | _T2 | _T3 | _T4 | _T5] | None = None,
+    attempts: int | None = ...,
+    max_wait: Duration | None = ...,
+    timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2 | _T3 | _T4 | _T5]: ...
 def redis_key(
@@ -460,11 +478,21 @@ def redis_key(
     *,
     serializer: Callable[[Any], bytes] | None = None,
     deserializer: Callable[[bytes], Any] | None = None,
+    attempts: int | None = None,
+    max_wait: Duration | None = None,
+    timeout: Duration | None = None,
     ttl: Duration | None = None,
 ) -> _RedisKey[Any]:
     """Create a redis key."""
     return _RedisKey(  # skipif-ci-and-not-linux
-        name=name, type=type_, serializer=serializer, deserializer=deserializer, ttl=ttl
+        name=name,
+        type=type_,
+        serializer=serializer,
+        deserializer=deserializer,
+        attempts=attempts,
+        max_wait=max_wait,
+        timeout=timeout,
+        ttl=ttl,
     )
 
 
