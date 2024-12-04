@@ -178,6 +178,7 @@ __all__ = [
     "SupportsDunderGT",
     "SupportsDunderLT",
     "SupportsRichComparison",
+    "contains_self",
     "eval_typed_dict",
     "get_type_hints",
     "is_dict_type",
