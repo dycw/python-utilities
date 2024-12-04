@@ -146,7 +146,7 @@ class TestMakeExceptHook:
         files = list(tmp_path.iterdir())
         assert len(files) == 1
         file = one(files)
-        assert search(r"^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$", file.name)
+        assert search(r"^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.txt$", file.name)
         with file.open("r") as fh:
             assert fh.read() == expected
 

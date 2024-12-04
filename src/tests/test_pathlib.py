@@ -4,9 +4,26 @@ from pathlib import Path
 
 from hypothesis import given
 from hypothesis.strategies import integers, sets
+from pytest import mark, param
 
 from utilities.hypothesis import temp_paths
-from utilities.pathlib import list_dir, temp_cwd
+from utilities.pathlib import ensure_suffix, list_dir, temp_cwd
+
+
+class TestEnsureSuffix:
+    @mark.parametrize(
+        ("path", "suffix", "expected"),
+        [
+            param("foo", ".txt", "foo.txt"),
+            param("foo.txt", ".txt", "foo.txt"),
+            param("foo.bar.baz", ".baz", "foo.bar.baz"),
+            param("foo.bar.baz", ".quux", "foo.bar.baz.quux"),
+        ],
+        ids=str,
+    )
+    def test_main(self, *, path: Path, suffix: str, expected: str) -> None:
+        result = str(ensure_suffix(path, suffix))
+        assert result == expected
 
 
 class TestListDir:
