@@ -17,7 +17,7 @@ class Parent(ABC, Generic[_TDataclass]):
     def _cls(self) -> type[_TDataclass]:
         raise NotImplementedError
 
-    def yield_rows(
+    def yield_rows_as_dataclasses(
         self,
         df: DataFrame,
         /,

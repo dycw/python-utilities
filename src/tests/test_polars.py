@@ -1385,7 +1385,7 @@ class TestYieldRowsAsDataclasses:
     def test_no_future(self) -> None:
         child = Child()
         df = DataFrame([("true",), ("false",)], schema={"truth": Utf8}, orient="row")
-        result = list(child.yield_rows(df))
+        result = list(child.yield_rows_as_dataclasses(df))
         expected = [ChildData(truth="true"), ChildData(truth="false")]
         assert result == expected
 

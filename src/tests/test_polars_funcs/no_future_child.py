@@ -23,7 +23,7 @@ class Child(Parent[ChildData]):
         return ChildData
 
     @override
-    def yield_rows(
+    def yield_rows_as_dataclasses(
         self,
         df: DataFrame,
         /,
