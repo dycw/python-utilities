@@ -20,7 +20,6 @@ from redis.asyncio import Redis
 from redis.typing import EncodableT
 from tenacity import stop_after_attempt, wait_random
 
-from utilities.asyncio import timeout_dur
 from utilities.datetime import (
     MILLISECOND,
     SECOND,
@@ -397,22 +396,28 @@ class _RedisKey(Generic[_T]):
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{redis=}"])
 
-    async def set(
-        self, redis: Redis, value: _T, /, *, timeout: Duration | None = None
-    ) -> int:
+    async def set(self, redis: Redis, value: _T, /) -> int:
         """Set a value in `redis`."""
         if self.serializer is None:  # skipif-ci-and-not-linux
             from utilities.orjson import serialize
 
-            value_use = serialize(value)
+            ser_value = serialize(value)
         else:  # skipif-ci-and-not-linux
-            value_use = self.serializer(value)
+            ser_value = self.serializer(value)
         ttl = (  # skipif-ci-and-not-linux
             None if self.ttl is None else round(1000 * duration_to_float(self.ttl))
         )
+        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
+            async with attempt:
+                return await self._set_core(redis, ser_value, ttl=ttl)
+        raise ImpossibleCaseError(case=[f"{redis=}", f"{value=}"])  # pragma: no cover
 
-        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
-            result = await redis.set(self.name, value_use, px=ttl)
+    async def _set_core(
+        self, redis: Redis, ser_value: bytes, /, *, ttl: int | None = None
+    ) -> int:
+        result = await redis.set(  # skipif-ci-and-not-linux
+            self.name, ser_value, px=ttl
+        )
         return ensure_int(result)  # skipif-ci-and-not-linux
 
     def _yield_timeout_attempts(self) -> AsyncIterator[MaybeAttemptContextManager]:
