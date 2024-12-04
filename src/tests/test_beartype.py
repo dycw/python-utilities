@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from asyncio import sleep
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any, Self, cast
 
 from beartype.roar import (
     BeartypeCallHintParamViolation,
@@ -16,13 +16,57 @@ from utilities.beartype import beartype_cond
 
 
 class TestBeartypeCond:
-    def test_main(self) -> None:
+    def test_func(self) -> None:
         @beartype_cond
         def func(a: int, b: int, /) -> int:
             return cast(Any, str(a + b))
 
         with raises(BeartypeCallHintReturnViolation):
             _ = func(1, 2)
+
+    def test_object_method_normal(self) -> None:
+        @beartype_cond
+        class Example:
+            @beartype_cond
+            def param_is_self(self, x: int, /) -> int:
+                return x
+
+        obj = Example()
+        with raises(BeartypeCallHintParamViolation):
+            _ = obj.param_is_self(cast(Any, None))
+
+    def test_object_method_where_param_is_self(self) -> None:
+        @beartype_cond
+        class Example:
+            @beartype_cond
+            def param_is_self(self, obj: Self, /) -> int:
+                return cast(int, obj)
+
+        obj = Example()
+        with raises(BeartypeCallHintParamViolation):
+            _ = obj.param_is_self(cast(Any, None))
+
+    def test_object_method_where_return_is_self(self) -> None:
+        @beartype_cond
+        class Example:
+            @beartype_cond
+            def return_is_self(self, x: int, /) -> Self:
+                return cast(Self, x)
+
+        obj = Example()
+        with raises(BeartypeCallHintParamViolation):
+            _ = obj.return_is_self(cast(Any, None))
+
+    def test_object_method_where_return_is_optional_self(self) -> None:
+        @beartype_cond
+        class Example:
+            @beartype_cond
+            def return_is_self(self, x: int, /) -> Self | None:
+                return cast(Self, x)
+
+        obj = Example()
+        with raises(BeartypeCallHintParamViolation):
+            _ = obj.return_is_self(cast(Any, None))
 
     def test_runtime_sync(self) -> None:
         enable = True
