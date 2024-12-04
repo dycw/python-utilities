@@ -344,7 +344,7 @@ class _RedisKey(Generic[_T]):
         ttl = (  # skipif-ci-and-not-linux
             None if self.ttl is None else round(1000 * duration_to_float(self.ttl))
         )
-        at
+
         async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
             result = await redis.set(self.name, value_use, px=ttl)
         return ensure_int(result)  # skipif-ci-and-not-linux
