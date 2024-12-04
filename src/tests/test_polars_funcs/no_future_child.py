@@ -1,18 +1,12 @@
-from __future__ import annotations
-
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
+from polars.dataframe import DataFrame
 from typing_extensions import override
 
 from tests.test_polars_funcs.no_future_parent import Parent
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-    from polars.dataframe import DataFrame
-
-    from utilities.types import StrMapping
+from utilities.types import StrMapping
 
 TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
 
