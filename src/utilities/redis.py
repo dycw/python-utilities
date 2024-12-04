@@ -90,10 +90,10 @@ class _RedisHashMapKey(Generic[_K, _V]):
     value: type[_V]
     value_serializer: Callable[[_V], bytes] | None = None
     value_deserializer: Callable[[bytes], _V] | None = None
-    ttl: Duration | None = None
     attempts: int | None = None
     max_wait: Duration | None = None
     timeout: Duration | None = None
+    ttl: Duration | None = None
 
     async def delete(self, redis: Redis, key: _K, /) -> int:
         """Delete a key from a hashmap in `redis`."""
@@ -187,6 +187,9 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K], bytes] | None = ...,
     value_serializer: Callable[[_V], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V] | None = ...,
+    attempts: int | None = ...,
+    max_wait: Duration | None = ...,
+    timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K, _V]: ...
 @overload
@@ -199,6 +202,9 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
+    attempts: int | None = ...,
+    max_wait: Duration | None = ...,
+    timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K, _V1 | _V2]: ...
 @overload
@@ -211,6 +217,9 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
+    attempts: int | None = ...,
+    max_wait: Duration | None = ...,
+    timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K, _V1 | _V2 | _V3]: ...
 @overload
@@ -223,6 +232,9 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2], bytes] | None = ...,
     value_serializer: Callable[[_V], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V] | None = ...,
+    attempts: int | None = ...,
+    max_wait: Duration | None = ...,
+    timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2, _V]: ...
 @overload
@@ -235,6 +247,9 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
+    attempts: int | None = ...,
+    max_wait: Duration | None = ...,
+    timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2, _V1 | _V2]: ...
 @overload
@@ -247,6 +262,9 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
+    attempts: int | None = ...,
+    max_wait: Duration | None = ...,
+    timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2, _V1 | _V2 | _V3]: ...
 @overload
@@ -259,6 +277,9 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = ...,
     value_serializer: Callable[[_V], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V] | None = ...,
+    attempts: int | None = ...,
+    max_wait: Duration | None = ...,
+    timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V]: ...
 @overload
@@ -271,6 +292,9 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
+    attempts: int | None = ...,
+    max_wait: Duration | None = ...,
+    timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2]: ...
 @overload
@@ -283,6 +307,9 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
+    attempts: int | None = ...,
+    max_wait: Duration | None = ...,
+    timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2 | _V3]: ...
 def redis_hash_map_key(
@@ -294,6 +321,9 @@ def redis_hash_map_key(
     key_serializer: Callable[[Any], bytes] | None = None,
     value_serializer: Callable[[Any], bytes] | None = None,
     value_deserializer: Callable[[bytes], Any] | None = None,
+    attempts: int | None = None,
+    max_wait: Duration | None = None,
+    timeout: Duration | None = None,
     ttl: Duration | None = None,
 ) -> _RedisHashMapKey[Any, Any]:
     """Create a redis key."""
@@ -304,6 +334,9 @@ def redis_hash_map_key(
         value=value,
         value_serializer=value_serializer,
         value_deserializer=value_deserializer,
+        attempts=attempts,
+        max_wait=max_wait,
+        timeout=timeout,
         ttl=ttl,
     )
 
