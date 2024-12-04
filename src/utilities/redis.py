@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
-from contextlib import asynccontextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
@@ -18,6 +18,7 @@ from uuid import UUID, uuid4
 
 from redis.asyncio import Redis
 from redis.typing import EncodableT
+from tenacity import AttemptManager, stop_after_attempt, wait_random
 
 from utilities.asyncio import timeout_dur
 from utilities.datetime import (
@@ -29,6 +30,12 @@ from utilities.datetime import (
 )
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
+from utilities.tenacity import (
+    MaybeAttemptContextManager,
+    MaybeAttemptManager,
+    yield_attempts,
+    yield_timeout_attempts,
+)
 from utilities.types import Duration, ensure_int
 
 if TYPE_CHECKING:
@@ -89,30 +96,38 @@ class _RedisHashMapKey(Generic[_K, _V]):
     value_serializer: Callable[[_V], bytes] | None = None
     value_deserializer: Callable[[bytes], _V] | None = None
     ttl: Duration | None = None
+    attempts: int | None = None
+    max_wait: Duration | None = None
+    timeout: Duration | None = None
 
-    async def delete(
-        self, redis: Redis, key: _K, /, *, timeout: Duration | None = None
-    ) -> int:
+    async def delete(self, redis: Redis, key: _K, /) -> int:
         """Delete a key from a hashmap in `redis`."""
-        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
-            return await cast(Awaitable[int], redis.hdel(self.name, cast(str, key)))
+        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
+            async with attempt:
+                return await cast(Awaitable[int], redis.hdel(self.name, cast(str, key)))
+        raise ImpossibleCaseError(case=[f"{redis=}", f"{key=}"])  # pragma: no cover
 
-    async def exists(
-        self, redis: Redis, key: _K, /, *, timeout: Duration | None = None
-    ) -> bool:
+    async def exists(self, redis: Redis, key: _K, /) -> bool:
         """Check if the key exists in a hashmap in `redis`."""
-        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
-            return await cast(Awaitable[bool], redis.hexists(self.name, cast(str, key)))
+        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
+            async with attempt:
+                return await cast(
+                    Awaitable[bool], redis.hexists(self.name, cast(str, key))
+                )
+        raise ImpossibleCaseError(case=[f"{redis=}", f"{key=}"])  # pragma: no cover
 
-    async def get(
-        self, redis: Redis, key: _K, /, *, timeout: Duration | None = None
-    ) -> _V | None:
+    async def get(self, redis: Redis, key: _K, /) -> _V | None:
         """Get a value from a hashmap in `redis`."""
         ser_key = self._serialize_key(key)  # skipif-ci-and-not-linux
-        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
-            result = await cast(
-                Awaitable[Any], redis.hget(self.name, cast(Any, ser_key))
-            )
+        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
+            async with attempt:
+                result = await cast(
+                    Awaitable[Any], redis.hget(self.name, cast(Any, ser_key))
+                )
+                return self._get_post(result)
+        raise ImpossibleCaseError(case=[f"{redis=}", f"{key=}"])  # pragma: no cover
+
+    def _get_post(self, result: Any, /) -> Any:
         match result:  # skipif-ci-and-not-linux
             case None:
                 return None
@@ -123,10 +138,18 @@ class _RedisHashMapKey(Generic[_K, _V]):
                     return deserialize(data)
                 return self.value_deserializer(data)
             case _:  # pragma: no cover
-                raise ImpossibleCaseError(case=[f"{redis=}"])
+                raise ImpossibleCaseError(case=[f"{result=}"])
 
     async def set(
-        self, redis: Redis, key: _K, value: _V, /, *, timeout: Duration | None = None
+        self,
+        redis: Redis,
+        key: _K,
+        value: _V,
+        /,
+        *,
+        timeout: Duration | None = None,
+        attempts: int | None = None,
+        max_wait: Duration | None = None,
     ) -> int:
         """Set a value in a hashmap in `redis`."""
         ser_key = self._serialize_key(key)  # skipif-ci-and-not-linux
@@ -136,16 +159,26 @@ class _RedisHashMapKey(Generic[_K, _V]):
             ser_value = serialize(value)
         else:  # skipif-ci-and-not-linux
             ser_value = self.value_serializer(value)
-        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
-            result = await cast(
-                Awaitable[int],
-                redis.hset(
-                    self.name, key=cast(Any, ser_key), value=cast(Any, ser_value)
-                ),
-            )
-            if self.ttl is not None:
-                await redis.pexpire(self.name, duration_to_timedelta(self.ttl))
-            return result
+
+        it = yield_attempts(
+            stop=None if attempts is None else stop_after_attempt(attempts),
+            wait=None if max_wait is None else wait_random(max_wait / 2, max_wait),
+        )
+        async for attempt in it:
+            with attempt:
+                async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
+                    result = await cast(
+                        Awaitable[int],
+                        redis.hset(
+                            self.name,
+                            key=cast(Any, ser_key),
+                            value=cast(Any, ser_value),
+                        ),
+                    )
+                    if self.ttl is not None:
+                        await redis.pexpire(self.name, duration_to_timedelta(self.ttl))
+                    return result
+        raise ImpossibleCaseError(case=[f"{self=}"])  # pragma: no cover
 
     def _serialize_key(self, key: _K, /) -> bytes:
         """Serialize the key."""
@@ -154,6 +187,17 @@ class _RedisHashMapKey(Generic[_K, _V]):
 
             return serialize(key)
         return self.key_serializer(key)  # skipif-ci-and-not-linux
+
+    def _yield_timeout_attempts(
+        self,
+    ) -> AsyncIterator[MaybeAttemptContextManager]:
+        return yield_timeout_attempts(
+            stop=None if self.attempts is None else stop_after_attempt(self.attempts),
+            wait=None
+            if self.max_wait is None
+            else wait_random(self.max_wait / 2, self.max_wait),
+            timeout=self.timeout,
+        )
 
 
 @overload
