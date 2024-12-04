@@ -80,7 +80,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
 
     @given(x=integers())
     def test_final(self, *, x: int) -> None:
-        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        @dataclass(kw_only=True, slots=True)
         class Example:
             x: int
 
@@ -94,11 +94,11 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
 
     @given(x=integers())
     def test_nested_with_recursive(self, *, x: int) -> None:
-        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        @dataclass(kw_only=True, slots=True)
         class Inner:
             x: int
 
-        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        @dataclass(kw_only=True, slots=True)
         class Outer:
             inner: Inner
 
@@ -112,11 +112,11 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
 
     @given(x=integers())
     def test_nested_without_recursive(self, *, x: int) -> None:
-        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        @dataclass(kw_only=True, slots=True)
         class Inner:
             x: int
 
-        @dataclass(unsafe_hash=True, kw_only=True, slots=True)
+        @dataclass(kw_only=True, slots=True)
         class Outer:
             inner: Inner
 
@@ -364,6 +364,18 @@ class TestReprWithoutDefaults:
         obj = Example(x=x)
         result = repr_without_defaults(obj)
         expected = "Example()"
+        assert result == expected
+
+    @given(x=integers(), y=integers())
+    def test_ignore(self, *, x: int, y: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+            y: int
+
+        obj = Example(x=x, y=y)
+        result = repr_without_defaults(obj, ignore="x")
+        expected = f"Example(y={y})"
         assert result == expected
 
 
