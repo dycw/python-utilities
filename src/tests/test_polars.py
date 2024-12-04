@@ -37,6 +37,7 @@ from polars import (
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 
+from tests.test_polars_funcs.no_future_child import Child
 from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
 from utilities.math import is_greater_than, is_less_than, is_positive
 from utilities.polars import (
@@ -1380,6 +1381,12 @@ class TestYieldRowsAsDataclasses:
         result = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
         expected = []
         assert result == expected
+
+    @mark.only
+    def test_no_future(self) -> None:
+        child = Child()
+        df = DataFrame([("true",), ("false",)], schema={"truth": Utf8}, orient="row")
+        rows = list(child.yield_rows(df))
 
     @given(check_types=sampled_from(["none", "first", "all"]))
     def test_error_superset(
