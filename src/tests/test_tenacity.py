@@ -57,7 +57,7 @@ class TestYieldAttempts:
             with attempt:
                 async with timeout(0.05):
                     await sleep(i * 0.01)
-        assert i == 4
+        assert i in {3, 4}  # windows different
 
     async def test_timeout_fail(self) -> None:
         i = 0
@@ -80,7 +80,7 @@ class TestYieldTimeoutAttempts:
             i -= 1
             async with attempt:
                 await sleep(i * 0.01)
-        assert i == 4
+        assert i in {3, 4}  # windows different
 
     async def test_success_with_follow(self) -> None:
         i = 10
@@ -93,7 +93,7 @@ class TestYieldTimeoutAttempts:
                     _ = await sleep(i * 0.01)
         except TimeoutError as error:
             raise NotImplementedError from error
-        assert i == 4
+        assert i in {3, 4}  # windows different
 
     async def test_error(self) -> None:
         i = 0
