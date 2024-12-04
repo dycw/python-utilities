@@ -31,7 +31,7 @@ class Child(Parent[ChildData]):
         globalns: StrMapping | None = None,
         localns: StrMapping | None = None,
     ) -> Iterator[ChildData]:
-        return super().yield_rows(
+        return super().yield_rows_as_dataclasses(
             df,
             globalns=globals() if globalns is None else globalns,
             localns=locals() if localns is None else localns,
