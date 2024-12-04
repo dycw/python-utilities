@@ -18,7 +18,6 @@ from uuid import UUID, uuid4
 
 from redis.asyncio import Redis
 from redis.typing import EncodableT
-from tenacity import AsyncRetrying
 
 from utilities.asyncio import timeout_dur
 from utilities.datetime import (
