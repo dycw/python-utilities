@@ -14,12 +14,12 @@ if TYPE_CHECKING:
 
     from utilities.types import StrMapping
 
-Truth = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
+TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
 
 
 @dataclass(kw_only=True, slots=True)
 class Data:
-    truth: Truth
+    truth: TruthLit
 
 
 class Child(Parent[Data]):

@@ -1386,7 +1386,7 @@ class TestYieldRowsAsDataclasses:
     def test_no_future(self) -> None:
         child = Child()
         df = DataFrame([("true",), ("false",)], schema={"truth": Utf8}, orient="row")
-        rows = list(child.yield_rows(df))
+        list(child.yield_rows(df))
 
     @given(check_types=sampled_from(["none", "first", "all"]))
     def test_error_superset(

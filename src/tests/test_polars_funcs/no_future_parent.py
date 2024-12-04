@@ -26,8 +26,5 @@ class Parent(ABC, Generic[_TDataclass]):
         localns: StrMapping | None = None,
     ) -> Iterator[_TDataclass]:
         return yield_rows_as_dataclasses(
-            df,
-            self._cls,
-            globalns=globalns,
-            localns=localns,
+            df, self._cls, globalns=globalns, localns=localns
         )
