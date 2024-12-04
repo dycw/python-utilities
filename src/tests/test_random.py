@@ -1,15 +1,22 @@
 from __future__ import annotations
 
 from random import Random, SystemRandom
+from re import search
 from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import integers, iterables, just
 
-from utilities.random import SYSTEM_RANDOM, get_state, shuffle
+from utilities.random import SYSTEM_RANDOM, get_docker_name, get_state, shuffle
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+
+class TestGetDockerName:
+    def test_main(self) -> None:
+        name = get_docker_name()
+        assert search(r"^[a-z]+_[a-z]+\d$", name)
 
 
 class TestGetState:
