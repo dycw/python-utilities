@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Any, Optional, Self, Union
+from typing import TYPE_CHECKING, Any
 
 from tenacity import (
     AsyncRetrying,
+    AttemptManager,
     RetryCallState,
     RetryError,
     after_nothing,
@@ -18,41 +19,19 @@ from tenacity._utils import MAX_WAIT
 from tenacity.asyncio import _portable_async_sleep
 from typing_extensions import override
 
+from utilities.contextlib import NoOpContextManager
 from utilities.datetime import duration_to_float
+from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Awaitable, Callable
-    from types import TracebackType
+    from collections.abc import AsyncIterator, Callable
 
-    from tenacity.asyncio.retry import RetryBaseT
     from tenacity.retry import RetryBaseT as SyncRetryBaseT
     from tenacity.stop import StopBaseT
     from tenacity.wait import WaitBaseT
 
     from utilities.asyncio import MaybeAwaitable
     from utilities.types import Duration
-
-
-_WAIT_NONE = wait_none()
-_RETRY_IF_EXCEPTION_TYPE = retry_if_exception_type()
-
-
-@asynccontextmanager
-async def retry_cm(
-    *,
-    sleep: Callable[[int | float], MaybeAwaitable[None]] = _portable_async_sleep,
-    stop: StopBaseT = stop_never,
-    wait: WaitBaseT = _WAIT_NONE,
-    retry: SyncRetryBaseT | RetryBaseT = _RETRY_IF_EXCEPTION_TYPE,
-    before: Callable[[RetryCallState], None | Awaitable[None]] = before_nothing,
-    after: Callable[[RetryCallState], None | Awaitable[None]] = after_nothing,
-    before_sleep: Callable[[RetryCallState], None | Awaitable[None]] | None = None,
-    reraise: bool = False,
-    retry_error_cls: type[RetryError] = RetryError,
-    retry_error_callback: Callable[[RetryCallState], MaybeAwaitable[Any]] | None = None,
-) -> AsyncIterator[None]:
-    async for attempt in AsyncRetrying(stop=stop_after_attempt(3)):
-        yield attempt
 
 
 class wait_exponential_jitter(_wait_exponential_jitter):  # noqa: N801
@@ -74,4 +53,58 @@ class wait_exponential_jitter(_wait_exponential_jitter):  # noqa: N801
         )
 
 
-__all__ = ["wait_exponential_jitter"]
+@asynccontextmanager
+async def yield_attempts(
+    *,
+    sleep: Callable[[int | float], MaybeAwaitable[None]] | Sentinel = sentinel,
+    stop: StopBaseT | Sentinel = sentinel,
+    wait: WaitBaseT | Sentinel = sentinel,
+    retry: SyncRetryBaseT | Sentinel = sentinel,
+    before: Callable[[RetryCallState], MaybeAwaitable[None]] | Sentinel = sentinel,
+    after: Callable[[RetryCallState], MaybeAwaitable[None]] | Sentinel = sentinel,
+    before_sleep: Callable[[RetryCallState], MaybeAwaitable[None]]
+    | None
+    | Sentinel = sentinel,
+    reraise: bool | Sentinel = sentinel,
+    retry_error_cls: type[RetryError] | Sentinel = sentinel,
+    retry_error_callback: Callable[[RetryCallState], MaybeAwaitable[Any]]
+    | None
+    | Sentinel = sentinel,
+) -> AsyncIterator[AttemptManager | NoOpContextManager]:
+    """Yield the attempts."""
+    args = (
+        sleep,
+        stop,
+        wait,
+        retry,
+        before,
+        after,
+        before_sleep,
+        reraise,
+        retry_error_cls,
+        retry_error_callback,
+    )
+    if all(isinstance(arg, Sentinel) for arg in args):
+        yield NoOpContextManager()
+    else:
+        retrying = AsyncRetrying(
+            sleep=_portable_async_sleep if isinstance(sleep, Sentinel) else sleep,
+            stop=stop_never if isinstance(stop, Sentinel) else stop,
+            wait=wait_none() if isinstance(wait, Sentinel) else wait,
+            retry=retry_if_exception_type() if isinstance(retry, Sentinel) else retry,
+            before=before_nothing if isinstance(before, Sentinel) else before,
+            after=after_nothing if isinstance(after, Sentinel) else after,
+            before_sleep=None if isinstance(before_sleep, Sentinel) else before_sleep,
+            reraise=False if isinstance(reraise, Sentinel) else reraise,
+            retry_error_cls=RetryError
+            if isinstance(retry_error_cls, Sentinel)
+            else retry_error_cls,
+            retry_error_callback=None
+            if isinstance(retry_error_callback, Sentinel)
+            else retry_error_callback,
+        )
+        async for attempt in retrying:
+            yield attempt
+
+
+__all__ = ["wait_exponential_jitter", "yield_attempts"]
