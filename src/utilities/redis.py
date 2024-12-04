@@ -354,27 +354,37 @@ class _RedisKey(Generic[_T]):
     timeout: Duration | None = None
     ttl: Duration | None = None
 
-    async def delete(self, redis: Redis, /, *, timeout: Duration | None = None) -> int:
+    async def delete(self, redis: Redis, /) -> int:
         """Delete the key from `redis`."""
-        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
-            return ensure_int(await redis.delete(self.name))
+        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
+            async with attempt:
+                return ensure_int(await redis.delete(self.name))
+        raise ImpossibleCaseError(case=[f"{redis=}"])  # pragma: no cover
 
-    async def exists(self, redis: Redis, /, *, timeout: Duration | None = None) -> bool:
+    async def exists(self, redis: Redis, /) -> bool:
         """Check if the key exists in `redis`."""
-        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
-            result = await redis.exists(self.name)
+        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
+            async with attempt:
+                return await self._exists_core(redis)
+        raise ImpossibleCaseError(case=[f"{redis=}"])  # pragma: no cover
+
+    async def _exists_core(self, redis: Redis, /) -> bool:
+        result = await redis.exists(self.name)  # skipif-ci-and-not-linux
         match ensure_int(result):  # skipif-ci-and-not-linux
             case 0 | 1 as value:
                 return bool(value)
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{redis=}"])
 
-    async def get(
-        self, redis: Redis, /, *, timeout: Duration | None = None
-    ) -> _T | None:
+    async def get(self, redis: Redis, /) -> _T | None:
         """Get a value from `redis`."""
-        async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
-            result = await redis.get(self.name)
+        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
+            async with attempt:
+                return await self._get_core(redis)
+        raise ImpossibleCaseError(case=[f"{redis=}"])  # pragma: no cover
+
+    async def _get_core(self, redis: Redis, /) -> _T | None:
+        result = await redis.get(self.name)  # skipif-ci-and-not-linux
         match result:  # skipif-ci-and-not-linux
             case None:
                 return None
@@ -404,6 +414,15 @@ class _RedisKey(Generic[_T]):
         async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
             result = await redis.set(self.name, value_use, px=ttl)
         return ensure_int(result)  # skipif-ci-and-not-linux
+
+    def _yield_timeout_attempts(self) -> AsyncIterator[MaybeAttemptContextManager]:
+        return yield_timeout_attempts(
+            stop=None if self.attempts is None else stop_after_attempt(self.attempts),
+            wait=None
+            if self.max_wait is None
+            else wait_random(self.max_wait / 2, self.max_wait),
+            timeout=self.timeout,
+        )
 
 
 @overload
