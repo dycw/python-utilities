@@ -66,7 +66,9 @@ def load_settings(
                 elif raw_value == "1" or search("true", raw_value, flags=IGNORECASE):
                     value = True
                 else:
-                    raise _LoadSettingsInvalidBoolError(path=path, field=fld.name)
+                    raise _LoadSettingsInvalidBoolError(
+                        path=path, field=fld.name, value=raw_value
+                    )
             elif type_ is int:
                 try:
                     value = int(raw_value)

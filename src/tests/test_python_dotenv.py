@@ -14,6 +14,7 @@ from utilities.os import temp_environ
 from utilities.python_dotenv import (
     _LoadSettingsEmptyError,
     _LoadSettingsFileNotFoundError,
+    _LoadSettingsInvalidBoolError,
     _LoadSettingsInvalidEnumError,
     _LoadSettingsInvalidIntError,
     _LoadSettingsNonUniqueError,
@@ -107,6 +108,22 @@ class TestLoadSettings:
         settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)
         assert settings == expected
+
+    @given(root=git_repos())
+    @settings_with_reduced_examples()
+    def test_settings_bool_value_error(self, *, root: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: bool
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write("key = '...'\n")
+
+        with raises(
+            _LoadSettingsInvalidBoolError,
+            match=r"Field 'key' must contain a valid integer; got '...'",
+        ):
+            _ = load_settings(Settings, cwd=root)
 
     @given(root=git_repos(), value=integers())
     @settings_with_reduced_examples()
