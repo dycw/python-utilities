@@ -330,7 +330,7 @@ def _object_hook(
             if match := _TIMEDELTA_PATTERN.search(obj):
                 return parse_timedelta(match.group(1))
             if match := _UUID_PATTERN.search(obj):
-                return UUID(obj)
+                return UUID(match.group(1))
             if match := _ZONED_DATETIME_PATTERN.search(obj):
                 return parse_zoned_datetime(match.group(1))
             if match := _ZONED_DATETIME_ALTERNATIVE_PATTERN.search(obj):
