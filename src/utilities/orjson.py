@@ -24,7 +24,7 @@ from utilities.functions import get_class_name
 from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import StrMapping
-from utilities.uuid import UUID_EXACT_PATTERN
+from utilities.uuid import UUID_PATTERN
 from utilities.whenever import (
     parse_date,
     parse_local_datetime,
@@ -112,6 +112,8 @@ def _pre_process(
             return {
                 f"[{_Prefixes.enum.value}|{type(obj).__qualname__}]": pre(obj.value)
             }
+        case UUID():
+            return f"[{_Prefixes.uuid.value}]{obj}"
         case frozenset():
             return _pre_process_container(
                 obj,
@@ -217,9 +219,6 @@ def _serialize_default(obj: Any, /, *, fallback: bool = False) -> str:
     if isinstance(obj, Path):
         ser = str(obj)
         return f"[{_Prefixes.path.value}]{ser}"
-    if isinstance(obj, UUID):
-        ser = str(obj)
-        return f"[{_Prefixes.uuid.value}]{ser}"
     if fallback:
         return str(obj)
     raise TypeError
@@ -259,9 +258,7 @@ _LOCAL_DATETIME_PATTERN = re.compile(
     + _Prefixes.datetime.value
     + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?)$"
 )
-_UUID_PATTERN = re.compile(
-    r"^\[(" + _Prefixes.uuid.value + r"\]" + UUID_EXACT_PATTERN + ")$"
-)
+_UUID_PATTERN = re.compile(r"^\[" + _Prefixes.uuid.value + r"\](" + UUID_PATTERN + ")$")
 _ZONED_DATETIME_PATTERN = re.compile(
     r"^\["
     + _Prefixes.datetime.value
