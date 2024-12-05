@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, fields
 from enum import Enum
 from os import environ
+from re import IGNORECASE, search
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from dotenv import dotenv_values
@@ -59,6 +60,15 @@ def load_settings(
             raw_value = values[key]
             if type_ is str:
                 value = raw_value
+            elif type_ is bool:
+                if raw_value == "0" or search("false", raw_value, flags=IGNORECASE):
+                    value = False
+                elif raw_value == "1" or search("true", raw_value, flags=IGNORECASE):
+                    value = True
+                else:
+                    raise _LoadSettingsInvalidBoolError(
+                        path=path, field=fld.name, value=raw_value
+                    )
             elif type_ is int:
                 try:
                     value = int(raw_value)
@@ -111,6 +121,16 @@ class _LoadSettingsNonUniqueError(LoadSettingsError):
     @override
     def __str__(self) -> str:
         return f"Field {self.field!r} must exist exactly once; got {self.counts}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _LoadSettingsInvalidBoolError(LoadSettingsError):
+    field: str
+    value: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Field {self.field!r} must contain a valid boolean; got {self.value!r}"
 
 
 @dataclass(kw_only=True, slots=True)
