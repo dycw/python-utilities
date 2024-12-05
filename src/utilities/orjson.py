@@ -24,7 +24,7 @@ from utilities.functions import get_class_name
 from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import StrMapping
-from utilities.uuid import UUID_EXACT_PATTERN
+from utilities.uuid import UUID_PATTERN
 from utilities.whenever import (
     parse_date,
     parse_local_datetime,
@@ -58,6 +58,7 @@ class _Prefixes(Enum):
     timedelta = "td"
     time = "tm"
     tuple_ = "tu"
+    uuid = "u"
 
 
 def serialize(
@@ -111,6 +112,8 @@ def _pre_process(
             return {
                 f"[{_Prefixes.enum.value}|{type(obj).__qualname__}]": pre(obj.value)
             }
+        case UUID():
+            return f"[{_Prefixes.uuid.value}]{obj}"
         case frozenset():
             return _pre_process_container(
                 obj,
@@ -255,7 +258,7 @@ _LOCAL_DATETIME_PATTERN = re.compile(
     + _Prefixes.datetime.value
     + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?)$"
 )
-_UUID_PATTERN = re.compile(UUID_EXACT_PATTERN)
+_UUID_PATTERN = re.compile(r"^\[" + _Prefixes.uuid.value + r"\](" + UUID_PATTERN + ")$")
 _ZONED_DATETIME_PATTERN = re.compile(
     r"^\["
     + _Prefixes.datetime.value
@@ -324,7 +327,7 @@ def _object_hook(
             if match := _TIMEDELTA_PATTERN.search(obj):
                 return parse_timedelta(match.group(1))
             if match := _UUID_PATTERN.search(obj):
-                return UUID(obj)
+                return UUID(match.group(1))
             if match := _ZONED_DATETIME_PATTERN.search(obj):
                 return parse_zoned_datetime(match.group(1))
             if match := _ZONED_DATETIME_ALTERNATIVE_PATTERN.search(obj):
