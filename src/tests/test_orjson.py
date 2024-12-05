@@ -27,6 +27,7 @@ from hypothesis.strategies import (
     times,
     timezones,
     tuples,
+    uuids,
 )
 from pytest import mark, param, raises
 
@@ -85,6 +86,7 @@ def objects(
         | text_printable()
         | times()
         | timedeltas_2w()
+        | uuids()
     )
     if IS_CI_AND_WINDOWS:
         base |= zoned_datetimes()
