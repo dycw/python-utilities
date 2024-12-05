@@ -5,8 +5,7 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Literal
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, integers, sampled_from
-from hypothesis.strategies._internal.core import booleans
+from hypothesis.strategies import DataObject, booleans, data, integers, sampled_from
 from pytest import raises
 
 from utilities.hypothesis import git_repos, settings_with_reduced_examples, text_ascii
