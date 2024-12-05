@@ -121,7 +121,7 @@ class TestLoadSettings:
 
         with raises(
             _LoadSettingsInvalidBoolError,
-            match=r"Field 'key' must contain a valid integer; got '...'",
+            match=r"Field 'key' must contain a valid boolean; got '...'",
         ):
             _ = load_settings(Settings, cwd=root)
 

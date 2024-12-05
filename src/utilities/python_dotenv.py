@@ -130,7 +130,7 @@ class _LoadSettingsInvalidBoolError(LoadSettingsError):
 
     @override
     def __str__(self) -> str:
-        return f"Field {self.field!r} must contain a valid bool; got {self.value!r}"
+        return f"Field {self.field!r} must contain a valid boolean; got {self.value!r}"
 
 
 @dataclass(kw_only=True, slots=True)
