@@ -24,7 +24,7 @@ from utilities.functions import get_class_name
 from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import StrMapping
-from utilities.uuid import UUID_PATTERN
+from utilities.uuid import UUID_EXACT_PATTERN
 from utilities.whenever import (
     parse_date,
     parse_local_datetime,
@@ -255,6 +255,7 @@ _LOCAL_DATETIME_PATTERN = re.compile(
     + _Prefixes.datetime.value
     + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?)$"
 )
+_UUID_PATTERN = re.compile(UUID_EXACT_PATTERN)
 _ZONED_DATETIME_PATTERN = re.compile(
     r"^\["
     + _Prefixes.datetime.value
@@ -322,7 +323,7 @@ def _object_hook(
                 return parse_time(match.group(1))
             if match := _TIMEDELTA_PATTERN.search(obj):
                 return parse_timedelta(match.group(1))
-            if match := UUID_PATTERN.search(obj):
+            if match := _UUID_PATTERN.search(obj):
                 return UUID(obj)
             if match := _ZONED_DATETIME_PATTERN.search(obj):
                 return parse_zoned_datetime(match.group(1))

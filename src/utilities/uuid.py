@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import re
-
-UUID_PATTERN = re.compile(
-    "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
-)
+UUID_PATTERN = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+UUID_EXACT_PATTERN = f"^{UUID_PATTERN}$"
 
 
-__all__ = ["UUID_PATTERN"]
+__all__ = ["UUID_EXACT_PATTERN", "UUID_PATTERN"]

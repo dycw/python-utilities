@@ -60,7 +60,7 @@ dev = [
   "redis >= 5.2.0, < 5.3",
   "rich >= 13.8.1, < 13.9",  # if 13.9, twine upload fails https://github.com/dycw/python-utilities/actions/runs/11125686648/job/30913966455
   "scipy >= 1.14.1, < 1.15",
-  "slack-sdk >= 3.33.4, < 3.34",
+  "slack-sdk >= 3.33.5, < 3.34",
   "sqlalchemy >= 2.0.36, < 2.1",
   "streamlit >= 1.40.2, < 1.41",
   "tenacity >= 9.0.0, < 9.1",
@@ -226,7 +226,7 @@ zzz-test-scipy = ["scipy >= 1.14.1, < 1.15"]
 zzz-test-sentinel = []
 zzz-test-slack-sdk = [
   "aiohttp >= 3.11.7, < 3.12",  # for slack-sdk
-  "slack-sdk >= 3.33.4, < 3.34",
+  "slack-sdk >= 3.33.5, < 3.34",
 ]
 zzz-test-socket = []
 zzz-test-sqlalchemy = [
