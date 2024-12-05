@@ -8,6 +8,7 @@ from functools import partial
 from pathlib import Path
 from re import Match, Pattern
 from typing import TYPE_CHECKING, Any, Never, assert_never, cast
+from uuid import UUID
 
 from orjson import (
     OPT_PASSTHROUGH_DATACLASS,
@@ -22,6 +23,8 @@ from utilities.dataclasses import Dataclass, asdict_without_defaults
 from utilities.functions import get_class_name
 from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
+from utilities.types import StrMapping
+from utilities.uuid import UUID_PATTERN
 from utilities.whenever import (
     parse_date,
     parse_local_datetime,
@@ -319,6 +322,8 @@ def _object_hook(
                 return parse_time(match.group(1))
             if match := _TIMEDELTA_PATTERN.search(obj):
                 return parse_timedelta(match.group(1))
+            if match := UUID_PATTERN.search(obj):
+                return UUID(obj)
             if match := _ZONED_DATETIME_PATTERN.search(obj):
                 return parse_zoned_datetime(match.group(1))
             if match := _ZONED_DATETIME_ALTERNATIVE_PATTERN.search(obj):
