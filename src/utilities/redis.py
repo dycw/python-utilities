@@ -20,6 +20,7 @@ from redis.asyncio import Redis
 from redis.typing import EncodableT
 from tenacity import stop_after_attempt, wait_random
 
+from utilities.asyncio import timeout_dur
 from utilities.datetime import (
     MILLISECOND,
     SECOND,
@@ -96,26 +97,21 @@ class _RedisHashMapKey(Generic[_K, _V]):
 
     async def delete(self, redis: Redis, key: _K, /) -> int:
         """Delete a key from a hashmap in `redis`."""
-        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
-            async with attempt:
-                return await cast(Awaitable[int], redis.hdel(self.name, cast(str, key)))
+        async with timeout_dur(duration=self.timeout):
+            return await cast(Awaitable[int], redis.hdel(self.name, cast(str, key)))
         raise ImpossibleCaseError(case=[f"{redis=}", f"{key=}"])  # pragma: no cover
 
     async def exists(self, redis: Redis, key: _K, /) -> bool:
         """Check if the key exists in a hashmap in `redis`."""
-        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
-            async with attempt:
-                return await cast(
-                    Awaitable[bool], redis.hexists(self.name, cast(str, key))
-                )
+        async with timeout_dur(duration=self.timeout):
+            return await cast(Awaitable[bool], redis.hexists(self.name, cast(str, key)))
         raise ImpossibleCaseError(case=[f"{redis=}", f"{key=}"])  # pragma: no cover
 
     async def get(self, redis: Redis, key: _K, /) -> _V | None:
         """Get a value from a hashmap in `redis`."""
         ser_key = self._serialize_key(key)  # skipif-ci-and-not-linux
-        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
-            async with attempt:
-                return await self._get_core(redis, cast(Any, ser_key))
+        async with timeout_dur(duration=self.timeout):
+            return await self._get_core(redis, cast(Any, ser_key))
         raise ImpossibleCaseError(case=[f"{redis=}", f"{key=}"])  # pragma: no cover
 
     async def _get_core(self, redis: Redis, ser_key: bytes, /) -> _V | None:
@@ -143,10 +139,8 @@ class _RedisHashMapKey(Generic[_K, _V]):
             ser_value = serialize(value)
         else:  # skipif-ci-and-not-linux
             ser_value = self.value_serializer(value)
-
-        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
-            async with attempt:
-                return await self._set_core(redis, ser_key, ser_value)
+        async with timeout_dur(duration=self.timeout):
+            return await self._set_core(redis, ser_key, ser_value)
         raise ImpossibleCaseError(case=[f"{self=}"])  # pragma: no cover
 
     async def _set_core(self, redis: Redis, ser_key: bytes, ser_value: bytes, /) -> int:
@@ -355,16 +349,14 @@ class _RedisKey(Generic[_T]):
 
     async def delete(self, redis: Redis, /) -> int:
         """Delete the key from `redis`."""
-        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
-            async with attempt:
-                return ensure_int(await redis.delete(self.name))
+        async with timeout_dur(duration=self.timeout):
+            return ensure_int(await redis.delete(self.name))
         raise ImpossibleCaseError(case=[f"{redis=}"])  # pragma: no cover
 
     async def exists(self, redis: Redis, /) -> bool:
         """Check if the key exists in `redis`."""
-        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
-            async with attempt:
-                return await self._exists_core(redis)
+        async with timeout_dur(duration=self.timeout):
+            return await self._exists_core(redis)
         raise ImpossibleCaseError(case=[f"{redis=}"])  # pragma: no cover
 
     async def _exists_core(self, redis: Redis, /) -> bool:
@@ -377,9 +369,8 @@ class _RedisKey(Generic[_T]):
 
     async def get(self, redis: Redis, /) -> _T | None:
         """Get a value from `redis`."""
-        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
-            async with attempt:
-                return await self._get_core(redis)
+        async with timeout_dur(duration=self.timeout):
+            return await self._get_core(redis)
         raise ImpossibleCaseError(case=[f"{redis=}"])  # pragma: no cover
 
     async def _get_core(self, redis: Redis, /) -> _T | None:
@@ -407,9 +398,8 @@ class _RedisKey(Generic[_T]):
         ttl = (  # skipif-ci-and-not-linux
             None if self.ttl is None else round(1000 * duration_to_float(self.ttl))
         )
-        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
-            async with attempt:
-                return await self._set_core(redis, ser_value, ttl=ttl)
+        async with timeout_dur(duration=self.timeout):
+            return await self._set_core(redis, ser_value, ttl=ttl)
         raise ImpossibleCaseError(case=[f"{redis=}", f"{value=}"])  # pragma: no cover
 
     async def _set_core(
