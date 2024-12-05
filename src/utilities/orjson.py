@@ -58,6 +58,7 @@ class _Prefixes(Enum):
     timedelta = "td"
     time = "tm"
     tuple_ = "tu"
+    uuid = "u"
 
 
 def serialize(
@@ -216,6 +217,9 @@ def _serialize_default(obj: Any, /, *, fallback: bool = False) -> str:
     if isinstance(obj, Path):
         ser = str(obj)
         return f"[{_Prefixes.path.value}]{ser}"
+    if isinstance(obj, UUID):
+        ser = str(obj)
+        return f"[{_Prefixes.uuid.value}]{ser}"
     if fallback:
         return str(obj)
     raise TypeError
@@ -255,7 +259,9 @@ _LOCAL_DATETIME_PATTERN = re.compile(
     + _Prefixes.datetime.value
     + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?)$"
 )
-_UUID_PATTERN = re.compile(UUID_EXACT_PATTERN)
+_UUID_PATTERN = re.compile(
+    r"^\[(" + _Prefixes.uuid.value + r"\]" + UUID_EXACT_PATTERN + ")$"
+)
 _ZONED_DATETIME_PATTERN = re.compile(
     r"^\["
     + _Prefixes.datetime.value
