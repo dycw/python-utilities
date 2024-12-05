@@ -275,7 +275,7 @@ propcache==0.2.1
     # via
     #   aiohttp
     #   yarl
-protobuf==5.29.0
+protobuf==5.29.1
     # via streamlit
 psutil==6.1.0
     # via memory-profiler
@@ -366,11 +366,11 @@ setuptools==75.6.0
     # via dycw-utilities (pyproject.toml)
 shellingham==1.5.4
     # via hatch
-six==1.16.0
+six==1.17.0
     # via
     #   python-dateutil
     #   treelib
-slack-sdk==3.33.4
+slack-sdk==3.33.5
     # via dycw-utilities (pyproject.toml)
 smmap==5.0.1
     # via gitdb
