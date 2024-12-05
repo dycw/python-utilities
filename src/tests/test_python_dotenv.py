@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Literal
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, integers, sampled_from
+from hypothesis.strategies._internal.core import booleans
 from pytest import raises
 
 from utilities.hypothesis import git_repos, settings_with_reduced_examples, text_ascii
@@ -81,6 +82,30 @@ class TestLoadSettings:
 
         settings = load_settings(Settings, cwd=root)
         expected = Settings(key=str(value))
+        assert settings == expected
+
+    @given(data=data(), root=git_repos(), value=booleans())
+    @settings_with_reduced_examples()
+    def test_settings_bool_value(
+        self, *, data: DataObject, root: Path, value: bool
+    ) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: bool
+
+        value_write = data.draw(
+            sampled_from([
+                int(value),
+                str(value),
+                str(value).lower(),
+                str(value).upper(),
+            ])
+        )
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"key = {value_write}\n")
+
+        settings = load_settings(Settings, cwd=root)
+        expected = Settings(key=value)
         assert settings == expected
 
     @given(root=git_repos(), value=integers())
