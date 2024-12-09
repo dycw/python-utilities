@@ -70,7 +70,7 @@ class TestAddListener:
     )
     async def test_error_stdout(self, *, capsys: CaptureFixture, n: int) -> None:
         event = Event()
-        _ = add_listener(event, identity, keep_ref=True)
+        _ = add_listener(event, identity)
         event.emit(n, n)
         out = capsys.readouterr().out
         (line1, line2, line3) = out.splitlines()
@@ -83,3 +83,15 @@ class TestAddListener:
             line3
             == "exception=TypeError('identity() takes 1 positional argument but 2 were given')"
         )
+
+    @given(n=integers())
+    @settings_with_reduced_examples(
+        suppress_health_check={HealthCheck.function_scoped_fixture}
+    )
+    async def test_error_ignore(self, *, capsys: CaptureFixture, n: int) -> None:
+        event = Event()
+        _ = add_listener(event, identity, error_ignore=TypeError)
+        event.emit(n, n)
+        out = capsys.readouterr().out
+        expected = ""
+        assert out == expected
