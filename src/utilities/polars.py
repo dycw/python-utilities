@@ -906,7 +906,12 @@ class SetFirstRowAsColumnsError(Exception):
         return f"DataFrame must have at least 1 row; got {self.df}"
 
 
-def struct_data_type(
+def struct_dtype(**kwargs: PolarsDataType) -> Struct:
+    """Construct a Struct data type from a set of keyword arguments."""
+    return Struct(kwargs)
+
+
+def struct_from_dataclass(
     cls: type[Dataclass],
     /,
     *,
@@ -916,15 +921,15 @@ def struct_data_type(
 ) -> Struct:
     """Construct the Struct data type for a dataclass."""
     if not is_dataclass_class(cls):
-        raise _StructDataTypeNotADataclassError(cls=cls)
+        raise _StructFromDataClassNotADataclassError(cls=cls)
     anns = get_type_hints(cls, globalns=globalns, localns=localns)
     data_types = {
-        k: _struct_data_type_one(v, time_zone=time_zone) for k, v in anns.items()
+        k: _struct_from_dataclass_one(v, time_zone=time_zone) for k, v in anns.items()
     }
     return Struct(data_types)
 
 
-def _struct_data_type_one(
+def _struct_from_dataclass_one(
     ann: Any, /, *, time_zone: ZoneInfo | str | None = None
 ) -> PolarsDataType:
     mapping = {bool: Boolean, dt.date: Date, float: Float64, int: Int64, str: Utf8}
@@ -932,27 +937,27 @@ def _struct_data_type_one(
         return mapping[ann]
     if ann is dt.datetime:
         if time_zone is None:
-            raise _StructDataTypeTimeZoneMissingError
+            raise _StructFromDataClassTimeZoneMissingError
         return zoned_datetime(time_zone=time_zone)
     if is_dataclass_class(ann):
-        return struct_data_type(ann, time_zone=time_zone)
+        return struct_from_dataclass(ann, time_zone=time_zone)
     if (isinstance(ann, type) and issubclass(ann, Enum)) or (
         is_literal_type(ann) and all(isinstance(a, str) for a in get_args(ann))
     ):
         return Utf8
     if is_optional_type(ann):
-        return _struct_data_type_one(one(get_args(ann)), time_zone=time_zone)
+        return _struct_from_dataclass_one(one(get_args(ann)), time_zone=time_zone)
     if is_frozenset_type(ann) or is_list_type(ann) or is_set_type(ann):
-        return List(_struct_data_type_one(one(get_args(ann)), time_zone=time_zone))
-    raise _StructDataTypeTypeError(ann=ann)
+        return List(_struct_from_dataclass_one(one(get_args(ann)), time_zone=time_zone))
+    raise _StructFromDataClassTypeError(ann=ann)
 
 
 @dataclass(kw_only=True, slots=True)
-class StructDataTypeError(Exception): ...
+class StructFromDataClassError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
-class _StructDataTypeNotADataclassError(StructDataTypeError):
+class _StructFromDataClassNotADataclassError(StructFromDataClassError):
     cls: type[Dataclass]
 
     @override
@@ -961,14 +966,14 @@ class _StructDataTypeNotADataclassError(StructDataTypeError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _StructDataTypeTimeZoneMissingError(StructDataTypeError):
+class _StructFromDataClassTimeZoneMissingError(StructFromDataClassError):
     @override
     def __str__(self) -> str:
         return "Time-zone must be given"
 
 
 @dataclass(kw_only=True, slots=True)
-class _StructDataTypeTypeError(StructDataTypeError):
+class _StructFromDataClassTypeError(StructFromDataClassError):
     ann: Any
 
     @override
@@ -1200,6 +1205,7 @@ __all__ = [
     "RollingParametersExponential",
     "RollingParametersSimple",
     "SetFirstRowAsColumnsError",
+    "StructFromDataClassError",
     "YieldRowsAsDataClassesError",
     "YieldStructSeriesElementsError",
     "append_dataclass",
@@ -1222,7 +1228,8 @@ __all__ = [
     "replace_time_zone",
     "rolling_parameters",
     "set_first_row_as_columns",
-    "struct_data_type",
+    "struct_dtype",
+    "struct_from_dataclass",
     "yield_rows_as_dataclasses",
     "yield_struct_series_dataclasses",
     "yield_struct_series_elements",

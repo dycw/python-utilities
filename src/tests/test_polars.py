@@ -54,7 +54,7 @@ from utilities.polars import (
     RollingParametersExponential,
     RollingParametersSimple,
     SetFirstRowAsColumnsError,
-    StructDataTypeError,
+    StructFromDataClassError,
     YieldStructSeriesElementsError,
     _check_polars_dataframe_predicates,
     _check_polars_dataframe_schema_list,
@@ -87,7 +87,8 @@ from utilities.polars import (
     replace_time_zone,
     rolling_parameters,
     set_first_row_as_columns,
-    struct_data_type,
+    struct_dtype,
+    struct_from_dataclass,
     yield_rows_as_dataclasses,
     yield_struct_series_dataclasses,
     yield_struct_series_elements,
@@ -1111,7 +1112,14 @@ class TestSetFirstRowAsColumns:
         check_polars_dataframe(result, height=2, schema_list={"foo": Utf8})
 
 
-class TestStructDataType:
+class TestStructDType:
+    def test_main(self) -> None:
+        result = struct_dtype(start=DatetimeUTC, end=DatetimeUTC)
+        expected = Struct({"start": DatetimeUTC, "end": DatetimeUTC})
+        assert result == expected
+
+
+class TestStructFromDataClass:
     def test_simple(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -1126,7 +1134,7 @@ class TestStructDataType:
             str_: str
             str_maybe: str | None = None
 
-        result = struct_data_type(Example, globalns=globals())
+        result = struct_from_dataclass(Example, globalns=globals())
         expected = Struct({
             "bool_": Boolean,
             "bool_maybe": Boolean,
@@ -1146,7 +1154,7 @@ class TestStructDataType:
         class Example:
             field: dt.datetime
 
-        result = struct_data_type(Example, time_zone=UTC, globalns=globals())
+        result = struct_from_dataclass(Example, time_zone=UTC, globalns=globals())
         expected = Struct({"field": DatetimeUTC})
         assert result == expected
 
@@ -1159,7 +1167,7 @@ class TestStructDataType:
         class Example:
             field: Truth
 
-        result = struct_data_type(Example, localns=locals())
+        result = struct_from_dataclass(Example, localns=locals())
         expected = Struct({"field": Utf8})
         assert result == expected
 
@@ -1170,7 +1178,7 @@ class TestStructDataType:
         class Example:
             field: LowOrHigh  # pyright: ignore[reportInvalidTypeForm]
 
-        result = struct_data_type(Example, localns=locals())
+        result = struct_from_dataclass(Example, localns=locals())
         expected = Struct({"field": Utf8})
         assert result == expected
 
@@ -1181,7 +1189,7 @@ class TestStructDataType:
             list_: list[int]
             set_: set[int]
 
-        result = struct_data_type(Example, time_zone=UTC)
+        result = struct_from_dataclass(Example, time_zone=UTC)
         expected = Struct({
             "frozenset_": List(Int64),
             "list_": List(Int64),
@@ -1198,7 +1206,7 @@ class TestStructDataType:
         class Outer:
             inner: list[Inner]
 
-        result = struct_data_type(Outer, localns=locals(), time_zone=UTC)
+        result = struct_from_dataclass(Outer, localns=locals(), time_zone=UTC)
         expected = Struct({"inner": List(Struct({"field": Int64}))})
         assert result == expected
 
@@ -1211,7 +1219,7 @@ class TestStructDataType:
         class Outer:
             inner: Inner
 
-        result = struct_data_type(Outer, localns=locals(), time_zone=UTC)
+        result = struct_from_dataclass(Outer, localns=locals(), time_zone=UTC)
         expected = Struct({"inner": Struct({"field": Int64})})
         assert result == expected
 
@@ -1224,29 +1232,33 @@ class TestStructDataType:
         class Outer:
             inner: Inner
 
-        result = struct_data_type(Outer, localns=locals(), time_zone=UTC)
+        result = struct_from_dataclass(Outer, localns=locals(), time_zone=UTC)
         expected = Struct({"inner": Struct({"field": List(Int64)})})
         assert result == expected
 
     def test_not_a_dataclass_error(self) -> None:
-        with raises(StructDataTypeError, match="Object must be a dataclass; got None"):
-            _ = struct_data_type(cast(Any, None))
+        with raises(
+            StructFromDataClassError, match="Object must be a dataclass; got None"
+        ):
+            _ = struct_from_dataclass(cast(Any, None))
 
     def test_missing_time_zone_error(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             field: dt.datetime
 
-        with raises(StructDataTypeError, match="Time-zone must be given"):
-            _ = struct_data_type(Example, globalns=globals())
+        with raises(StructFromDataClassError, match="Time-zone must be given"):
+            _ = struct_from_dataclass(Example, globalns=globals())
 
     def test_missing_type_error(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             field: None
 
-        with raises(StructDataTypeError, match="Unsupported type: <class 'NoneType'>"):
-            _ = struct_data_type(Example)
+        with raises(
+            StructFromDataClassError, match="Unsupported type: <class 'NoneType'>"
+        ):
+            _ = struct_from_dataclass(Example)
 
 
 class TestYieldRowsAsDataclasses:
