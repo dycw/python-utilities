@@ -18,18 +18,18 @@ def add_listener(
     /,
     *,
     error: Callable[[Event, Exception], None] | None = None,
-    error_suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
+    error_ignore: type[Exception] | tuple[type[Exception], ...] | None = None,
     done: Callable[..., Any] | None = None,
     keep_ref: bool = False,
 ) -> Event:
     """Connect a listener to an event."""
     error_default = partial(_add_listener_error)
     if error is None:
-        error_use = partial(error_default, suppress=error_suppress)
+        error_use = partial(error_default, ignore=error_ignore)
     else:
 
         def combined(event: Event, exception: Exception, /) -> None:
-            error_default(event, exception, suppress=error_suppress)
+            error_default(event, exception, ignore=error_ignore)
             error(event, exception)
 
         error_use = combined
@@ -41,10 +41,10 @@ def _add_listener_error(
     exception: Exception,
     /,
     *,
-    suppress: type[Exception] | tuple[type[Exception], ...] | None = None,
+    ignore: type[Exception] | tuple[type[Exception], ...] | None = None,
 ) -> None:
     """Run callback in the case of an error."""
-    if (suppress is not None) and isinstance(exception, suppress):
+    if (ignore is not None) and isinstance(exception, ignore):
         return
     type_name = get_class_name(exception)
     event_name = event.name()
