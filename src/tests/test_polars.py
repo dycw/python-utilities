@@ -87,6 +87,7 @@ from utilities.polars import (
     replace_time_zone,
     rolling_parameters,
     set_first_row_as_columns,
+    struct_dtype,
     struct_from_dataclass,
     yield_rows_as_dataclasses,
     yield_struct_series_dataclasses,
@@ -1109,6 +1110,13 @@ class TestSetFirstRowAsColumns:
         check_polars_dataframe(df, height=3, schema_list={"column_0": Utf8})
         result = set_first_row_as_columns(df)
         check_polars_dataframe(result, height=2, schema_list={"foo": Utf8})
+
+
+class TestStructDType:
+    def test_main(self) -> None:
+        result = struct_dtype(start=DatetimeUTC, end=DatetimeUTC)
+        expected = Struct({"start": DatetimeUTC, "end": DatetimeUTC})
+        assert result == expected
 
 
 class TestStructFromDataClass:

@@ -906,6 +906,11 @@ class SetFirstRowAsColumnsError(Exception):
         return f"DataFrame must have at least 1 row; got {self.df}"
 
 
+def struct_dtype(**kwargs: PolarsDataType) -> Struct:
+    """Construct a Struct data type from a set of keyword arguments."""
+    return Struct(kwargs)
+
+
 def struct_from_dataclass(
     cls: type[Dataclass],
     /,
@@ -974,11 +979,6 @@ class _StructFromDataClassTypeError(StructFromDataClassError):
     @override
     def __str__(self) -> str:
         return f"Unsupported type: {self.ann}"
-
-
-def struct_dtype(**kwargs: PolarsDataType) -> Struct:
-    """Construct a Struct data type from a set of keyword arguments."""
-    return Struct(kwargs)
 
 
 def yield_rows_as_dataclasses(
@@ -1205,6 +1205,7 @@ __all__ = [
     "RollingParametersExponential",
     "RollingParametersSimple",
     "SetFirstRowAsColumnsError",
+    "StructFromDataClassError",
     "YieldRowsAsDataClassesError",
     "YieldStructSeriesElementsError",
     "append_dataclass",
