@@ -60,6 +60,8 @@ class TestEvalTypedDict:
             c: int
             d: str
 
+        _ = Inner
+
         result = eval_typed_dict(Outer, globals_=globals(), locals_=locals())
         expected = {"a": int, "b": str, "inner": {"c": int, "d": str}}
         assert result == expected

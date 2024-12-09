@@ -2,7 +2,7 @@
 #    uv pip compile --extra=test --extra=zzz-test-fpdf2 --prerelease=explicit --output-file=requirements/fpdf2.txt --python-version=3.11 pyproject.toml
 attrs==24.2.0
     # via hypothesis
-coverage==7.6.8
+coverage==7.6.9
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -12,11 +12,11 @@ defusedxml==0.7.1
     # via fpdf2
 execnet==2.1.1
     # via pytest-xdist
-fonttools==4.55.1
+fonttools==4.55.2
     # via fpdf2
 fpdf2==2.8.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.122.1
+hypothesis==6.122.3
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest

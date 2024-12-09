@@ -100,8 +100,8 @@ class _ExtFrameSummary(Generic[_T]):
     first_line_num: int
     line_num: int
     end_line_num: int
-    col_num: int
-    end_col_num: int
+    col_num: int | None = None
+    end_col_num: int | None = None
     locals: dict[str, Any] = field(default_factory=dict)
     extra: _T
 
@@ -334,8 +334,8 @@ def yield_extended_frame_summaries(
             first_line_num=frame.f_code.co_firstlineno,
             line_num=ensure_not_none(summary.lineno, desc="summary.lineno"),
             end_line_num=ensure_not_none(summary.end_lineno, desc="summary.end_lineno"),
-            col_num=ensure_not_none(summary.colno, desc="summary.colno"),
-            end_col_num=ensure_not_none(summary.end_colno, desc="summary.end_colno"),
+            col_num=summary.colno,
+            end_col_num=summary.end_colno,
             locals=frame.f_locals,
             extra=extra_use,
         )

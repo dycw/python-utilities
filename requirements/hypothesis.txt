@@ -8,7 +8,7 @@ asyncpg==0.30.0
     # via dycw-utilities (pyproject.toml)
 attrs==24.2.0
     # via hypothesis
-coverage==7.6.8
+coverage==7.6.9
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -18,7 +18,7 @@ execnet==2.1.1
     # via pytest-xdist
 greenlet==3.1.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.122.1
+hypothesis==6.122.3
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -55,7 +55,7 @@ pytest-rerunfailures==15.0
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)
-redis==5.2.0
+redis==5.2.1
     # via dycw-utilities (pyproject.toml)
 sortedcontainers==2.4.0
     # via hypothesis

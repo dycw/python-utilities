@@ -2,7 +2,7 @@
 #    uv pip compile --extra=test --extra=zzz-test-humps --prerelease=explicit --output-file=requirements/humps.txt --python-version=3.11 pyproject.toml
 attrs==24.2.0
     # via hypothesis
-coverage==7.6.8
+coverage==7.6.9
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -10,7 +10,7 @@ coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.122.1
+hypothesis==6.122.3
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
