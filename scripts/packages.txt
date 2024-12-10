@@ -15,6 +15,7 @@ datetime
 enum
 errors
 eventkit
+fastapi
 fpdf2
 functions
 functools
