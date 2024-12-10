@@ -1,16 +1,27 @@
 from __future__ import annotations
 
 import reprlib
+from asyncio import Queue, Task, create_task
 from collections import defaultdict
 from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence, Sized
 from collections.abc import Set as AbstractSet
+from contextlib import suppress
 from dataclasses import dataclass, field
 from functools import partial, reduce
 from itertools import chain
 from math import floor
 from operator import ge, le, or_
 from re import search
-from typing import Any, Literal, TypeGuard, TypeVar, assert_never, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    TypeAlias,
+    TypeGuard,
+    TypeVar,
+    assert_never,
+    cast,
+)
 
 from sqlalchemy import (
     URL,
@@ -49,7 +60,13 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 from typing_extensions import override
 
-from utilities.asyncio import timeout_dur
+from utilities.asyncio import (
+    MaybeCoroutine1,
+    get_items,
+    get_items_nowait,
+    timeout_dur,
+    try_await,
+)
 from utilities.functions import get_class_name
 from utilities.iterables import (
     CheckLengthError,
@@ -73,11 +90,17 @@ from utilities.types import (
     is_tuple_or_str_mapping,
 )
 
+if TYPE_CHECKING:
+    from types import TracebackType
+    from typing import Self
+
 _T = TypeVar("_T")
-_EngineOrConnectionOrAsync = Engine | Connection | AsyncEngine | AsyncConnection
-Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
-ORMInstOrClass = DeclarativeBase | type[DeclarativeBase]
-TableOrORMInstOrClass = Table | ORMInstOrClass
+_EngineOrConnectionOrAsync: TypeAlias = (
+    Engine | Connection | AsyncEngine | AsyncConnection
+)
+Dialect: TypeAlias = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
+ORMInstOrClass: TypeAlias = DeclarativeBase | type[DeclarativeBase]
+TableOrORMInstOrClass: TypeAlias = Table | ORMInstOrClass
 CHUNK_SIZE_FRAC = 0.95
 
 
@@ -297,13 +320,15 @@ def get_table_name(table_or_orm: TableOrORMInstOrClass, /) -> str:
     return get_table(table_or_orm).name
 
 
-_PairOfTupleAndTable = tuple[tuple[Any, ...], TableOrORMInstOrClass]
-_PairOfStrMappingAndTable = tuple[StrMapping, TableOrORMInstOrClass]
-_PairOfTupleOrStrMappingAndTable = tuple[TupleOrStrMapping, TableOrORMInstOrClass]
-_PairOfSequenceOfTupleOrStrMappingAndTable = tuple[
+_PairOfTupleAndTable: TypeAlias = tuple[tuple[Any, ...], TableOrORMInstOrClass]
+_PairOfStrMappingAndTable: TypeAlias = tuple[StrMapping, TableOrORMInstOrClass]
+_PairOfTupleOrStrMappingAndTable: TypeAlias = tuple[
+    TupleOrStrMapping, TableOrORMInstOrClass
+]
+_PairOfSequenceOfTupleOrStrMappingAndTable: TypeAlias = tuple[
     Sequence[TupleOrStrMapping], TableOrORMInstOrClass
 ]
-_InsertItem = (
+_InsertItem: TypeAlias = (
     _PairOfTupleOrStrMappingAndTable
     | _PairOfSequenceOfTupleOrStrMappingAndTable
     | DeclarativeBase
@@ -487,12 +512,81 @@ class TablenameMixin:
         return snake_case(get_class_name(cls))
 
 
+@dataclass(kw_only=True, slots=True)
+class Upserter:
+    """Upsert a set of items into a database."""
+
+    engine: AsyncEngine
+    snake: bool = False
+    selected_or_all: _SelectedOrAll = "selected"
+    chunk_size_frac: float = CHUNK_SIZE_FRAC
+    assume_tables_exist: bool = False
+    timeout_create: Duration | None = None
+    timeout_insert: Duration | None = None
+    pre_upsert: Callable[[Sequence[_InsertItem]], MaybeCoroutine1[None]] | None = None
+    post_upsert: Callable[[Sequence[_InsertItem]], MaybeCoroutine1[None]] | None = None
+    _queue: Queue[_InsertItem] = field(default_factory=Queue, repr=False)
+    _task: Task[None] = field(init=False)
+
+    async def __aenter__(self) -> Self:
+        """Start the server."""
+        self._task = create_task(self._loop())
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None = None,
+        exc_value: BaseException | None = None,
+        traceback: TracebackType | None = None,
+    ) -> None:
+        """Stop the server."""
+        _ = (exc_type, exc_value, traceback)
+        items = await get_items_nowait(self._queue)
+        await self._run(*items)
+
+    def __del__(self) -> None:
+        with suppress(RuntimeError):  # pragma: no cover
+            _ = self._task.cancel()
+
+    async def add(self, *items: _InsertItem) -> None:
+        """Add a set items to the upserter."""
+        for item in items:
+            self._queue.put_nowait(item)
+
+    async def _loop(self, /) -> None:
+        """Loop the upserter."""
+        while True:
+            items = await get_items(self._queue)
+            await self._run(*items)
+
+    async def _run(self, *items: _InsertItem) -> None:
+        """Run the upserter once."""
+        if len(items) >= 1:
+            if self.pre_upsert is not None:
+                await try_await(self.pre_upsert(items))
+            await upsert_items(
+                self.engine,
+                *items,
+                snake=self.snake,
+                selected_or_all=self.selected_or_all,
+                chunk_size_frac=self.chunk_size_frac,
+                assume_tables_exist=self.assume_tables_exist,
+                timeout_create=self.timeout_create,
+                timeout_insert=self.timeout_insert,
+            )
+            if self.post_upsert is not None:
+                await try_await(self.post_upsert(items))
+
+
+_SelectedOrAll: TypeAlias = Literal["selected", "all"]
+
+
 async def upsert_items(
     engine: AsyncEngine,
     /,
     *items: _InsertItem,
     snake: bool = False,
-    selected_or_all: Literal["selected", "all"] = "selected",
+    selected_or_all: _SelectedOrAll = "selected",
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     timeout_create: Duration | None = None,

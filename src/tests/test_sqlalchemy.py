@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from asyncio import sleep
 from itertools import chain
+from re import search
 from time import time_ns
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
-from hypothesis import Phase, assume, given, settings
+from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -19,7 +21,7 @@ from hypothesis.strategies import (
     tuples,
     uuids,
 )
-from pytest import mark, param, raises
+from pytest import CaptureFixture, mark, param, raises
 from sqlalchemy import Boolean, Column, Integer, MetaData, Table, select
 from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -36,6 +38,7 @@ from utilities.sqlalchemy import (
     InsertItemsError,
     TablenameMixin,
     TableOrORMInstOrClass,
+    Upserter,
     UpsertItemsError,
     _get_dialect,
     _get_dialect_max_params,
@@ -56,6 +59,7 @@ from utilities.sqlalchemy import (
     _prepare_insert_or_upsert_items,
     _prepare_insert_or_upsert_items_merge_items,
     _PrepareInsertOrUpsertItemsError,
+    _SelectedOrAll,
     _tuple_to_mapping,
     check_engine,
     columnwise_max,
@@ -79,7 +83,7 @@ from utilities.text import strip_and_dedent
 from utilities.typing import get_args
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterator, Sequence
     from pathlib import Path
 
     from utilities.types import StrMapping
@@ -104,7 +108,7 @@ def _upsert_triples(
     elements = booleans()
     if nullable:
         elements |= none()
-    return tuples(integers(0, 10), booleans(), elements)
+    return tuples(int32s(), booleans(), elements)
 
 
 def _upsert_lists(
@@ -1079,6 +1083,73 @@ class TestTupleToMapping:
         assert result == expected
 
 
+class TestUpserter:
+    @FLAKY
+    @given(
+        data=data(),
+        name=_table_names(),
+        triples=_upsert_lists(nullable=True, min_size=1),
+        pre_upsert=booleans(),
+        post_upsert=booleans(),
+    )
+    @settings(
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    async def test_main(
+        self,
+        *,
+        capsys: CaptureFixture,
+        data: DataObject,
+        name: str,
+        triples: list[tuple[int, bool, bool]],
+        pre_upsert: bool,
+        post_upsert: bool,
+    ) -> None:
+        table = self._make_table(name)
+        engine = await sqlalchemy_engines(data, table)
+        pairs = [(id_, init) for id_, init, _ in triples]
+        if pre_upsert:
+
+            def pre_upsert_func(items: Sequence[_InsertItem], /) -> None:
+                print(f"pre-upsert: {len(items)}")  # noqa: T201
+
+            pre_upsert_use = pre_upsert_func
+        else:
+            pre_upsert_use = None
+        if post_upsert:
+
+            def post_upsert_func(items: Sequence[_InsertItem], /) -> None:
+                print(f"post-upsert: {len(items)}")  # noqa: T201
+
+            post_upsert_use = post_upsert_func
+        else:
+            post_upsert_use = None
+
+        async with Upserter(
+            engine=engine, pre_upsert=pre_upsert_use, post_upsert=post_upsert_use
+        ) as upserter:
+            await upserter.add((pairs, table))
+            await sleep(0.1)
+        sel = select(table)
+        async with engine.begin() as conn:
+            res = (await conn.execute(sel)).all()
+        assert set(res) == set(pairs)
+        stdout = capsys.readouterr().out
+        if pre_upsert:
+            assert search(r"pre-upsert: \d+", stdout)
+        if post_upsert:
+            assert search(r"post-upsert: \d+", stdout)
+
+    def _make_table(self, name: str, /) -> Table:
+        return Table(
+            name,
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+        )
+
+
 class TestUpsertItems:
     @FLAKY
     @given(data=data(), name=_table_names(), triple=_upsert_triples(nullable=True))
@@ -1195,7 +1266,7 @@ class TestUpsertItems:
         x_init=booleans(),
         x_post=booleans(),
         y=booleans(),
-        selected_or_all=sampled_from(["selected", "all"]),
+        selected_or_all=sampled_from(get_args(_SelectedOrAll)),
     )
     @settings(phases={Phase.generate})
     async def test_sel_or_all(
@@ -1203,7 +1274,7 @@ class TestUpsertItems:
         *,
         data: DataObject,
         name: str,
-        selected_or_all: Literal["selected", "all"],
+        selected_or_all: _SelectedOrAll,
         id_: int,
         x_init: bool,
         x_post: bool,
@@ -1336,7 +1407,7 @@ class TestUpsertItems:
         table_or_orm: TableOrORMInstOrClass,
         /,
         *items: _InsertItem,
-        selected_or_all: Literal["selected", "all"] = "selected",
+        selected_or_all: _SelectedOrAll = "selected",
         expected: set[tuple[Any, ...]] | None = None,
     ) -> None:
         await upsert_items(engine, *items, selected_or_all=selected_or_all)
