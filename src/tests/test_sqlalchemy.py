@@ -1083,9 +1083,8 @@ class TestTupleToMapping:
         assert result == expected
 
 
-@mark.only
 class TestUpserter:
-    # @FLAKY
+    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
