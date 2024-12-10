@@ -17,7 +17,9 @@ altair==5.5.0
 annotated-types==0.7.0
     # via pydantic
 anyio==4.7.0
-    # via httpx
+    # via
+    #   httpx
+    #   starlette
 argcomplete==3.5.2
     # via nox
 arro3-core==0.4.2
@@ -69,6 +71,7 @@ click==8.1.7
     #   hatch
     #   streamlit
     #   userpath
+    #   uvicorn
 coloredlogs==15.0.1
     # via dycw-utilities (pyproject.toml)
 colorlog==6.9.0
@@ -101,6 +104,8 @@ eventkit==1.0.3
     #   ib-async-dataclass
 execnet==2.1.1
     # via pytest-xdist
+fastapi==0.115.6
+    # via dycw-utilities (pyproject.toml)
 filelock==3.16.1
     # via virtualenv
 fonttools==4.55.2
@@ -120,7 +125,9 @@ gitpython==3.1.43
 greenlet==3.1.1
     # via dycw-utilities (pyproject.toml)
 h11==0.14.0
-    # via httpcore
+    # via
+    #   httpcore
+    #   uvicorn
 hatch==1.13.0
     # via dycw-utilities (pyproject.toml)
 hatchling==1.26.3
@@ -288,7 +295,9 @@ pyarrow==18.1.0
 pycparser==2.22
     # via cffi
 pydantic==2.10.3
-    # via dycw-utilities (pyproject.toml)
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   fastapi
 pydantic-core==2.27.1
     # via pydantic
 pydeck==0.9.1
@@ -383,6 +392,8 @@ sqlalchemy==2.0.36
     #   dycw-utilities (pyproject.toml)
     #   alembic
     #   optuna
+starlette==0.41.3
+    # via fastapi
 streamlit==1.40.2
     # via dycw-utilities (pyproject.toml)
 tenacity==9.0.0
@@ -414,6 +425,7 @@ typing-extensions==4.12.2
     #   alembic
     #   altair
     #   anyio
+    #   fastapi
     #   pqdm
     #   pydantic
     #   pydantic-core
@@ -431,6 +443,8 @@ userpath==1.9.2
     # via hatch
 uv==0.5.7
     # via hatch
+uvicorn==0.32.1
+    # via dycw-utilities (pyproject.toml)
 vegafusion==2.0.1
     # via dycw-utilities (pyproject.toml)
 vegafusion-python-embed==1.6.9
