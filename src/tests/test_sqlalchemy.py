@@ -1111,7 +1111,7 @@ class TestUpserter:
         pairs = [(id_, init) for id_, init, _ in triples]
         if pre_upsert:
 
-            def pre_upsert_func(items: Sequence[_InsertItem], /) -> None:
+            def pre_upsert_func(_: Upserter, items: Sequence[_InsertItem], /) -> None:
                 print(f"pre-upsert: {len(items)}")  # noqa: T201
 
             pre_upsert_use = pre_upsert_func
@@ -1119,7 +1119,7 @@ class TestUpserter:
             pre_upsert_use = None
         if post_upsert:
 
-            def post_upsert_func(items: Sequence[_InsertItem], /) -> None:
+            def post_upsert_func(_: Upserter, items: Sequence[_InsertItem], /) -> None:
                 print(f"post-upsert: {len(items)}")  # noqa: T201
 
             post_upsert_use = post_upsert_func

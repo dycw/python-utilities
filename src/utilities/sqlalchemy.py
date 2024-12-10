@@ -523,8 +523,12 @@ class Upserter:
     assume_tables_exist: bool = False
     timeout_create: Duration | None = None
     timeout_insert: Duration | None = None
-    pre_upsert: Callable[[Sequence[_InsertItem]], MaybeCoroutine1[None]] | None = None
-    post_upsert: Callable[[Sequence[_InsertItem]], MaybeCoroutine1[None]] | None = None
+    pre_upsert: (
+        Callable[[Self, Sequence[_InsertItem]], MaybeCoroutine1[None]] | None
+    ) = None
+    post_upsert: (
+        Callable[[Self, Sequence[_InsertItem]], MaybeCoroutine1[None]] | None
+    ) = None
     _queue: Queue[_InsertItem] = field(default_factory=Queue, repr=False)
     _task: Task[None] = field(init=False)
 
@@ -563,7 +567,7 @@ class Upserter:
         """Run the upserter once."""
         if len(items) >= 1:
             if self.pre_upsert is not None:
-                await try_await(self.pre_upsert(items))
+                await try_await(self.pre_upsert(self, items))
             await upsert_items(
                 self.engine,
                 *items,
@@ -575,7 +579,7 @@ class Upserter:
                 timeout_insert=self.timeout_insert,
             )
             if self.post_upsert is not None:
-                await try_await(self.post_upsert(items))
+                await try_await(self.post_upsert(self, items))
 
 
 _SelectedOrAll: TypeAlias = Literal["selected", "all"]
