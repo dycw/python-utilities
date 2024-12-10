@@ -60,13 +60,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 from typing_extensions import override
 
-from utilities.asyncio import (
-    MaybeCoroutine1,
-    get_items,
-    get_items_nowait,
-    timeout_dur,
-    try_await,
-)
+from utilities.asyncio import get_items, get_items_nowait, timeout_dur
 from utilities.functions import get_class_name
 from utilities.iterables import (
     CheckLengthError,
@@ -523,8 +517,6 @@ class Upserter:
     assume_tables_exist: bool = False
     timeout_create: Duration | None = None
     timeout_insert: Duration | None = None
-    pre_upsert: Callable[[Sequence[_InsertItem]], MaybeCoroutine1[None]] | None = None
-    post_upsert: Callable[[Sequence[_InsertItem]], MaybeCoroutine1[None]] | None = None
     _queue: Queue[_InsertItem] = field(default_factory=Queue, repr=False)
     _task: Task[None] = field(init=False)
 
@@ -559,11 +551,18 @@ class Upserter:
             items = await get_items(self._queue)
             await self._run(*items)
 
+    async def _pre_upsert(self, items: Sequence[_InsertItem], /) -> None:
+        """Pre-upsert coroutine."""
+        _ = items
+
+    async def _post_upsert(self, items: Sequence[_InsertItem], /) -> None:
+        """Post-upsert coroutine."""
+        _ = items
+
     async def _run(self, *items: _InsertItem) -> None:
         """Run the upserter once."""
         if len(items) >= 1:
-            if self.pre_upsert is not None:
-                await try_await(self.pre_upsert(items))
+            await self._pre_upsert(items)
             await upsert_items(
                 self.engine,
                 *items,
@@ -574,8 +573,7 @@ class Upserter:
                 timeout_create=self.timeout_create,
                 timeout_insert=self.timeout_insert,
             )
-            if self.post_upsert is not None:
-                await try_await(self.post_upsert(items))
+            await self._post_upsert(items)
 
 
 _SelectedOrAll: TypeAlias = Literal["selected", "all"]
