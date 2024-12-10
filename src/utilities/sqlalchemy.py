@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import reprlib
-from asyncio import Lock, Queue, sleep
+from asyncio import Lock, Queue, QueueEmpty, sleep
 from collections import defaultdict
 from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence, Sized
 from collections.abc import Set as AbstractSet
