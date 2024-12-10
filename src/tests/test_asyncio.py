@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from asyncio import Queue, TaskGroup, run, sleep, timeout
+from asyncio import Lock, Queue, TaskGroup, run, sleep, timeout
 from re import search
 from typing import TYPE_CHECKING, Any
 
@@ -86,11 +86,20 @@ class TestGetItems:
 
 class TestGetItemsNoWait:
     @given(xs=lists(integers()))
-    def test_main(self, *, xs: list[int]) -> None:
+    async def test_main(self, *, xs: list[int]) -> None:
         queue: Queue[int] = Queue()
         for x in xs:
             queue.put_nowait(x)
-        result = get_items_nowait(queue)
+        result = await get_items_nowait(queue)
+        assert result == xs
+
+    @given(xs=lists(integers()))
+    async def test_lock(self, *, xs: list[int]) -> None:
+        queue: Queue[int] = Queue()
+        for x in xs:
+            queue.put_nowait(x)
+        lock = Lock()
+        result = await get_items_nowait(queue, lock=lock)
         assert result == xs
 
 
