@@ -60,7 +60,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 from typing_extensions import override
 
-from utilities.asyncio import get_items, get_items_nowait, timeout_dur, try_await
+from utilities.asyncio import get_items, get_items_nowait, timeout_dur
 from utilities.functions import get_class_name
 from utilities.iterables import (
     CheckLengthError,
@@ -562,7 +562,7 @@ class Upserter:
     async def _run(self, *items: _InsertItem) -> None:
         """Run the upserter once."""
         if len(items) >= 1:
-            await try_await(self._pre_upsert(items))
+            await self._pre_upsert(items)
             await upsert_items(
                 self.engine,
                 *items,
@@ -573,7 +573,7 @@ class Upserter:
                 timeout_create=self.timeout_create,
                 timeout_insert=self.timeout_insert,
             )
-            await try_await(self._post_upsert(items))
+            await self._post_upsert(items)
 
 
 _SelectedOrAll: TypeAlias = Literal["selected", "all"]
