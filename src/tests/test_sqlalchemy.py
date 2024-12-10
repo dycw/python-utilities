@@ -1082,26 +1082,25 @@ class TestTupleToMapping:
 
 
 class TestUpserter:
-    # @FLAKY
+    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
         triples=_upsert_lists(nullable=True, min_size=1),
     )
     @settings(phases={Phase.generate})
-    @mark.only
     async def test_main(
         self, *, data: DataObject, name: str, triples: list[tuple[int, bool, bool]]
     ) -> None:
         table = self._make_table(name)
         engine = await sqlalchemy_engines(data, table)
-        values = [(id_, init) for id_, init, _ in triples], table
+        pairs = [(id_, init) for id_, init, _ in triples]
         async with Upserter(engine=engine) as upserter:
-            await upserter.add(values)
+            await upserter.add((pairs, table))
         sel = select(table)
         async with engine.begin() as conn:
             res = (await conn.execute(sel)).all()
-        assert set(res) == set(values)
+        assert set(res) == set(pairs)
 
     def _make_table(self, name: str, /) -> Table:
         return Table(
