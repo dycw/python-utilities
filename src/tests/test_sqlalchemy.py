@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from asyncio import sleep
 from itertools import chain
+from re import search
 from time import time_ns
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
-from hypothesis import Phase, assume, given, settings
+from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -19,7 +21,7 @@ from hypothesis.strategies import (
     tuples,
     uuids,
 )
-from pytest import mark, param, raises
+from pytest import CaptureFixture, mark, param, raises
 from sqlalchemy import Boolean, Column, Integer, MetaData, Table, select
 from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -81,7 +83,7 @@ from utilities.text import strip_and_dedent
 from utilities.typing import get_args
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterator, Sequence
     from pathlib import Path
 
     from utilities.types import StrMapping
@@ -1081,26 +1083,64 @@ class TestTupleToMapping:
         assert result == expected
 
 
+@mark.only
 class TestUpserter:
-    @FLAKY
+    # @FLAKY
     @given(
         data=data(),
         name=_table_names(),
         triples=_upsert_lists(nullable=True, min_size=1),
+        pre_upsert=booleans(),
+        post_upsert=booleans(),
     )
-    @settings(phases={Phase.generate})
+    @settings(
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_main(
-        self, *, data: DataObject, name: str, triples: list[tuple[int, bool, bool]]
+        self,
+        *,
+        capsys: CaptureFixture,
+        data: DataObject,
+        name: str,
+        triples: list[tuple[int, bool, bool]],
+        pre_upsert: bool,
+        post_upsert: bool,
     ) -> None:
         table = self._make_table(name)
         engine = await sqlalchemy_engines(data, table)
         pairs = [(id_, init) for id_, init, _ in triples]
-        async with Upserter(engine=engine) as upserter:
+        if pre_upsert:
+
+            def pre_upsert_func(items: Sequence[_InsertItem], /) -> None:
+                print(f"pre-upsert: {len(items)}")  # noqa: T201
+
+            pre_upsert_use = pre_upsert_func
+        else:
+            pre_upsert_use = None
+        if post_upsert:
+
+            def post_upsert_func(items: Sequence[_InsertItem], /) -> None:
+                print(f"post-upsert: {len(items)}")  # noqa: T201
+
+            post_upsert_use = post_upsert_func
+        else:
+            post_upsert_use = None
+
+        async with Upserter(
+            engine=engine, pre_upsert=pre_upsert_use, post_upsert=post_upsert_use
+        ) as upserter:
             await upserter.add((pairs, table))
+            await sleep(0.1)
         sel = select(table)
         async with engine.begin() as conn:
             res = (await conn.execute(sel)).all()
         assert set(res) == set(pairs)
+        stdout = capsys.readouterr().out
+        if pre_upsert:
+            assert search(r"pre-upsert: \d+", stdout)
+        if post_upsert:
+            assert search(r"post-upsert: \d+", stdout)
 
     def _make_table(self, name: str, /) -> Table:
         return Table(

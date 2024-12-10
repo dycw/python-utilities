@@ -59,7 +59,13 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 from typing_extensions import override
 
-from utilities.asyncio import Coroutine1, get_items, get_items_nowait, timeout_dur
+from utilities.asyncio import (
+    MaybeCoroutine1,
+    get_items,
+    get_items_nowait,
+    timeout_dur,
+    try_await,
+)
 from utilities.functions import get_class_name
 from utilities.iterables import (
     CheckLengthError,
@@ -516,16 +522,20 @@ class Upserter:
     assume_tables_exist: bool = False
     timeout_create: Duration | None = None
     timeout_insert: Duration | None = None
-    pre_upsert: Callable[[], Coroutine1[None]] | None = None
-    post_upsert: Callable[[], Coroutine1[None]] | None = None
+    pre_upsert: Callable[[Sequence[_InsertItem]], MaybeCoroutine1[None]] | None = None
+    post_upsert: Callable[[Sequence[_InsertItem]], MaybeCoroutine1[None]] | None = None
     _running: bool = False
     _queue: Queue[_InsertItem] = field(default_factory=Queue, repr=False)
     _lock: Lock = field(default_factory=Lock, repr=False)
-    _task: Task[None] | None = None
+    _task: Task[None] = field(init=False)
+
+    def __post_init__(self) -> None:
+        self._task = create_task(self._loop())
 
     async def __aenter__(self) -> Self:
         """Start the server."""
-        self._task = create_task(self.start())
+        async with self._lock:
+            self._running = True
         return self
 
     async def __aexit__(
@@ -538,19 +548,14 @@ class Upserter:
         _ = (exc_type, exc_value, traceback)
         await self.stop()
 
+    def __del__(self) -> None:
+        _ = self._task.cancel()  # pragma: no cover
+
     async def add(self, *items: _InsertItem) -> None:
         """Add a set items to the upserter."""
         async with self._lock:
             for item in items:
                 self._queue.put_nowait(item)
-
-    async def start(self, /) -> None:
-        """Start the upserter."""
-        async with self._lock:
-            self._running = True
-        while self._running:
-            items = await get_items(self._queue, lock=self._lock)
-            await self._run(*items)
 
     async def stop(self, /) -> None:
         """Stop the upserter."""
@@ -559,11 +564,17 @@ class Upserter:
         items = await get_items_nowait(self._queue, lock=self._lock)
         await self._run(*items)
 
+    async def _loop(self, /) -> None:
+        """Loop the upserter."""
+        while self._running:
+            items = await get_items(self._queue, lock=self._lock)
+            await self._run(*items)
+
     async def _run(self, *items: _InsertItem) -> None:
         """Run the upserter once."""
         if len(items) >= 1:
             if self.pre_upsert is not None:
-                await self.pre_upsert()
+                await try_await(self.pre_upsert(items))
             await upsert_items(
                 self.engine,
                 *items,
@@ -575,7 +586,7 @@ class Upserter:
                 timeout_insert=self.timeout_insert,
             )
             if self.post_upsert is not None:
-                await self.post_upsert()
+                await try_await(self.post_upsert(items))
 
 
 _SelectedOrAll: TypeAlias = Literal["selected", "all"]
