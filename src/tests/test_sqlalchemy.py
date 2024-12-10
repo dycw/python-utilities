@@ -36,6 +36,7 @@ from utilities.sqlalchemy import (
     InsertItemsError,
     TablenameMixin,
     TableOrORMInstOrClass,
+    Upserter,
     UpsertItemsError,
     _get_dialect,
     _get_dialect_max_params,
@@ -105,7 +106,7 @@ def _upsert_triples(
     elements = booleans()
     if nullable:
         elements |= none()
-    return tuples(integers(0, 10), booleans(), elements)
+    return tuples(int32s(), booleans(), elements)
 
 
 def _upsert_lists(
@@ -1078,6 +1079,37 @@ class TestTupleToMapping:
         )
         result = _tuple_to_mapping(values, table)
         assert result == expected
+
+
+class TestUpserter:
+    # @FLAKY
+    @given(
+        data=data(),
+        name=_table_names(),
+        triples=_upsert_lists(nullable=True, min_size=1),
+    )
+    @settings(phases={Phase.generate})
+    @mark.only
+    async def test_main(
+        self, *, data: DataObject, name: str, triples: list[tuple[int, bool, bool]]
+    ) -> None:
+        table = self._make_table(name)
+        engine = await sqlalchemy_engines(data, table)
+        values = [(id_, init) for id_, init, _ in triples], table
+        async with Upserter(engine=engine) as upserter:
+            await upserter.add(values)
+        sel = select(table)
+        async with engine.begin() as conn:
+            res = (await conn.execute(sel)).all()
+        assert set(res) == set(values)
+
+    def _make_table(self, name: str, /) -> Table:
+        return Table(
+            name,
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+        )
 
 
 class TestUpsertItems:
