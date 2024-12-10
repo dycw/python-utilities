@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import reprlib
-from asyncio import Lock, Queue, Task, create_task
+from asyncio import Queue, Task, create_task
 from collections import defaultdict
 from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence, Sized
 from collections.abc import Set as AbstractSet
+from contextlib import suppress
 from dataclasses import dataclass, field
 from functools import partial, reduce
 from itertools import chain
@@ -524,18 +525,12 @@ class Upserter:
     timeout_insert: Duration | None = None
     pre_upsert: Callable[[Sequence[_InsertItem]], MaybeCoroutine1[None]] | None = None
     post_upsert: Callable[[Sequence[_InsertItem]], MaybeCoroutine1[None]] | None = None
-    _running: bool = False
     _queue: Queue[_InsertItem] = field(default_factory=Queue, repr=False)
-    _lock: Lock = field(default_factory=Lock, repr=False)
     _task: Task[None] = field(init=False)
-
-    def __post_init__(self) -> None:
-        self._task = create_task(self._loop())
 
     async def __aenter__(self) -> Self:
         """Start the server."""
-        async with self._lock:
-            self._running = True
+        self._task = create_task(self._loop())
         return self
 
     async def __aexit__(
@@ -546,28 +541,22 @@ class Upserter:
     ) -> None:
         """Stop the server."""
         _ = (exc_type, exc_value, traceback)
-        await self.stop()
+        items = await get_items_nowait(self._queue)
+        await self._run(*items)
 
     def __del__(self) -> None:
-        _ = self._task.cancel()  # pragma: no cover
+        with suppress(RuntimeError):  # pragma: no cover
+            _ = self._task.cancel()
 
     async def add(self, *items: _InsertItem) -> None:
         """Add a set items to the upserter."""
-        async with self._lock:
-            for item in items:
-                self._queue.put_nowait(item)
-
-    async def stop(self, /) -> None:
-        """Stop the upserter."""
-        async with self._lock:
-            self._running = False
-        items = await get_items_nowait(self._queue, lock=self._lock)
-        await self._run(*items)
+        for item in items:
+            self._queue.put_nowait(item)
 
     async def _loop(self, /) -> None:
         """Loop the upserter."""
-        while self._running:
-            items = await get_items(self._queue, lock=self._lock)
+        while True:
+            items = await get_items(self._queue)
             await self._run(*items)
 
     async def _run(self, *items: _InsertItem) -> None:
