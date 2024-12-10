@@ -5,11 +5,15 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Self
 
 from fastapi import FastAPI
+from httpx import ConnectError
 from typing_extensions import override
 from uvicorn import Config, Server
 
 if TYPE_CHECKING:
     from types import TracebackType
+
+
+_LOCALHOST = "localhost"
 
 
 class _PingerReceiverApp(FastAPI):
@@ -40,6 +44,20 @@ class PingReceiver:
     def __post_init__(self) -> None:
         self._config = Config(self._app, host=self.host, port=self.port)
         self._server = Server(self._config)
+
+    @classmethod
+    async def ping(cls, port: int, *, host: str = _LOCALHOST) -> bool:
+        """Ping the receiver."""
+        from httpx import AsyncClient
+
+        url = f"http://{host}:{port}/ping"
+        try:
+            async with AsyncClient() as client:
+                response = await client.get(url)
+        except ConnectError:
+            return False
+        else:
+            return response.status_code == 200
 
     async def __aenter__(self) -> Self:
         """Start the server."""
