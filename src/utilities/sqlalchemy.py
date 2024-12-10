@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import reprlib
+from asyncio import Lock, Queue, sleep
 from collections import defaultdict
 from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence, Sized
 from collections.abc import Set as AbstractSet
@@ -485,6 +486,57 @@ class TablenameMixin:
         from utilities.humps import snake_case
 
         return snake_case(get_class_name(cls))
+
+
+@dataclass(kw_only=True, slots=True)
+class Upserter:
+    """Upsert a set of items into a database."""
+
+    running: bool = False
+    queue: Queue[_InsertItem] = field(default_factory=Queue)
+    lock: Lock = field(default_factory=Lock)
+
+    async def add(self, *items: _InsertItem) -> None:
+        """Add a set items to the upserter."""
+        async with self.lock:
+            for item in items:
+                self.queue.put_nowait(item)
+
+    async def start(self, /) -> None:
+        """Start the upserter."""
+        async with self.lock:
+            self.running = True
+        while True:
+            items: list[_InsertItem] = []
+            async with self.lock:
+                while True:
+                    try:
+                        items.append(self.queue.get_nowait())
+                    except QueueEmpty:
+                        break
+            if len(items) >= 1:
+                _LOGGER.debug("Upserting {} item(s)", len(items))
+                await upsert_items(*items, database=local_or_cloud)
+            _ = await _UPSERT_SERVICE_HEARTBEAT_KEY.set(self, get_now())
+            await sleep_dur(duration=heartbeat)
+
+    async def stop(self, /) -> None:
+        """Start the upserter."""
+        async with self.lock:
+            self.running = True
+        while True:
+            items: list[Base] = []
+            async with _ADD_TO_UPSERT_QUEUE_LOCK:
+                while True:
+                    try:
+                        items.append(_UPSERT_QUEUE.get_nowait())
+                    except QueueEmpty:
+                        break
+            if len(items) >= 1:
+                _LOGGER.debug("Upserting {} item(s)", len(items))
+                await upsert_items(*items, database=local_or_cloud)
+            _ = await _UPSERT_SERVICE_HEARTBEAT_KEY.set(self, get_now())
+            await sleep_dur(duration=heartbeat)
 
 
 async def upsert_items(
