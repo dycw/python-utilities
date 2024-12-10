@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import datetime as dt
-from asyncio import run, sleep
+from asyncio import Queue, TaskGroup, run, sleep, timeout
 from re import search
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import Phase, given, settings
+from hypothesis.strategies import integers, lists
 from pytest import mark, param, raises
 
 from tests.conftest import FLAKY
 from utilities.asyncio import (
     _MaybeAwaitableMaybeAsyncIterable,
+    get_items,
+    get_items_nowait,
     is_awaitable,
     sleep_dur,
     stream_command,
@@ -47,6 +50,48 @@ async def _yield_strs_async() -> AsyncIterator[str]:
     for i in _get_strs_sync():
         yield i
         await sleep(0.01)
+
+
+class TestGetItems:
+    @given(xs=lists(integers(), min_size=1))
+    async def test_put_then_get(self, *, xs: list[int]) -> None:
+        queue: Queue[int] = Queue()
+        for x in xs:
+            queue.put_nowait(x)
+        result = await get_items(queue)
+        assert result == xs
+
+    @given(xs=lists(integers(), min_size=1))
+    async def test_get_then_put(self, *, xs: list[int]) -> None:
+        queue: Queue[int] = Queue()
+
+        async def put() -> None:
+            await sleep(0.01)
+            for x in xs:
+                queue.put_nowait(x)
+
+        async with TaskGroup() as tg:
+            task = tg.create_task(get_items(queue))
+            _ = tg.create_task(put())
+        result = task.result()
+        assert result == xs
+
+    async def test_empty(self) -> None:
+        queue: Queue[int] = Queue()
+        with raises(TimeoutError):  # noqa: PT012
+            async with timeout(0.01), TaskGroup() as tg:
+                _ = tg.create_task(get_items(queue))
+                _ = tg.create_task(sleep(0.02))
+
+
+class TestGetItemsNoWait:
+    @given(xs=lists(integers()))
+    def test_main(self, *, xs: list[int]) -> None:
+        queue: Queue[int] = Queue()
+        for x in xs:
+            queue.put_nowait(x)
+        result = get_items_nowait(queue)
+        assert result == xs
 
 
 class TestIsAwaitable:

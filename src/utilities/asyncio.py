@@ -1,13 +1,21 @@
 from __future__ import annotations
 
-from asyncio import StreamReader, TaskGroup, create_subprocess_shell, sleep, timeout
+from asyncio import (
+    Queue,
+    QueueEmpty,
+    StreamReader,
+    TaskGroup,
+    create_subprocess_shell,
+    sleep,
+    timeout,
+)
 from collections.abc import AsyncIterable, Awaitable, Coroutine, Iterable
 from dataclasses import dataclass
 from io import StringIO
 from re import search
 from subprocess import PIPE
 from sys import stderr, stdout
-from typing import TYPE_CHECKING, Any, TextIO, TypeGuard, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TextIO, TypeAlias, TypeGuard, TypeVar, cast
 
 from utilities.datetime import duration_to_float
 from utilities.functions import ensure_not_none
@@ -22,11 +30,29 @@ if TYPE_CHECKING:
     from utilities.types import Duration
 
 _T = TypeVar("_T")
-Coroutine1 = Coroutine[Any, Any, _T]
-MaybeAwaitable = _T | Awaitable[_T]
-MaybeCoroutine1 = _T | Coroutine1[_T]
-_MaybeAsyncIterable = Iterable[_T] | AsyncIterable[_T]
-_MaybeAwaitableMaybeAsyncIterable = MaybeAwaitable[_MaybeAsyncIterable[_T]]
+Coroutine1: TypeAlias = Coroutine[Any, Any, _T]
+MaybeAwaitable: TypeAlias = _T | Awaitable[_T]
+MaybeCoroutine1: TypeAlias = _T | Coroutine1[_T]
+_MaybeAsyncIterable: TypeAlias = Iterable[_T] | AsyncIterable[_T]
+_MaybeAwaitableMaybeAsyncIterable: TypeAlias = MaybeAwaitable[_MaybeAsyncIterable[_T]]
+
+
+async def get_items(queue: Queue[_T], /) -> list[_T]:
+    """Get all the items from a queue; if empty then wait."""
+    items = [await queue.get()]
+    items.extend(get_items_nowait(queue))
+    return items
+
+
+def get_items_nowait(queue: Queue[_T], /) -> list[_T]:
+    """Get all the items from a queue; no waiting."""
+    items: list[_T] = []
+    while True:
+        try:
+            items.append(queue.get_nowait())
+        except QueueEmpty:
+            break
+    return items
 
 
 async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
@@ -126,6 +152,8 @@ __all__ = [
     "MaybeAwaitable",
     "MaybeCoroutine1",
     "StreamCommandOutput",
+    "get_items",
+    "get_items_nowait",
     "is_awaitable",
     "sleep_dur",
     "stream_command",
