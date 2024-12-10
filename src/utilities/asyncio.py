@@ -152,6 +152,8 @@ __all__ = [
     "MaybeAwaitable",
     "MaybeCoroutine1",
     "StreamCommandOutput",
+    "get_items",
+    "get_items_nowait",
     "is_awaitable",
     "sleep_dur",
     "stream_command",
