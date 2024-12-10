@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from asyncio import (
+    Lock,
     Queue,
     QueueEmpty,
     StreamReader,
@@ -37,21 +38,43 @@ _MaybeAsyncIterable: TypeAlias = Iterable[_T] | AsyncIterable[_T]
 _MaybeAwaitableMaybeAsyncIterable: TypeAlias = MaybeAwaitable[_MaybeAsyncIterable[_T]]
 
 
-async def get_items(queue: Queue[_T], /) -> list[_T]:
+async def get_items(queue: Queue[_T], /, *, lock: Lock | None = None) -> list[_T]:
     """Get all the items from a queue; if empty then wait."""
     items = [await queue.get()]
-    items.extend(get_items_nowait(queue))
+    if lock is None:
+        while not queue.empty():
+            try:
+                items.append(queue.get_nowait())
+            except QueueEmpty:
+                break
+    else:
+        async with lock:
+            while not queue.empty():
+                try:
+                    items.append(queue.get_nowait())
+                except QueueEmpty:
+                    break
     return items
 
 
-def get_items_nowait(queue: Queue[_T], /) -> list[_T]:
+async def get_items_nowait(
+    queue: Queue[_T], /, *, lock: Lock | None = None
+) -> list[_T]:
     """Get all the items from a queue; no waiting."""
     items: list[_T] = []
-    while True:
-        try:
-            items.append(queue.get_nowait())
-        except QueueEmpty:
-            break
+    if lock is None:
+        while not queue.empty():
+            try:
+                items.append(queue.get_nowait())
+            except QueueEmpty:
+                break
+    else:
+        async with lock:
+            while not queue.empty():
+                try:
+                    items.append(queue.get_nowait())
+                except QueueEmpty:
+                    break
     return items
 
 

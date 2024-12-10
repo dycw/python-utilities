@@ -56,6 +56,7 @@ from utilities.sqlalchemy import (
     _prepare_insert_or_upsert_items,
     _prepare_insert_or_upsert_items_merge_items,
     _PrepareInsertOrUpsertItemsError,
+    _SelectedOrAll,
     _tuple_to_mapping,
     check_engine,
     columnwise_max,
@@ -1195,7 +1196,7 @@ class TestUpsertItems:
         x_init=booleans(),
         x_post=booleans(),
         y=booleans(),
-        selected_or_all=sampled_from(["selected", "all"]),
+        selected_or_all=sampled_from(get_args(_SelectedOrAll)),
     )
     @settings(phases={Phase.generate})
     async def test_sel_or_all(
@@ -1203,7 +1204,7 @@ class TestUpsertItems:
         *,
         data: DataObject,
         name: str,
-        selected_or_all: Literal["selected", "all"],
+        selected_or_all: _SelectedOrAll,
         id_: int,
         x_init: bool,
         x_post: bool,
@@ -1336,7 +1337,7 @@ class TestUpsertItems:
         table_or_orm: TableOrORMInstOrClass,
         /,
         *items: _InsertItem,
-        selected_or_all: Literal["selected", "all"] = "selected",
+        selected_or_all: _SelectedOrAll = "selected",
         expected: set[tuple[Any, ...]] | None = None,
     ) -> None:
         await upsert_items(engine, *items, selected_or_all=selected_or_all)

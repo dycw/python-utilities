@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import reprlib
-from asyncio import Lock, Queue, QueueEmpty, sleep
+from asyncio import Lock, Queue, Task, create_task
 from collections import defaultdict
 from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence, Sized
 from collections.abc import Set as AbstractSet
@@ -11,7 +11,16 @@ from itertools import chain
 from math import floor
 from operator import ge, le, or_
 from re import search
-from typing import Any, Literal, TypeGuard, TypeVar, assert_never, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    TypeAlias,
+    TypeGuard,
+    TypeVar,
+    assert_never,
+    cast,
+)
 
 from sqlalchemy import (
     URL,
@@ -50,7 +59,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 from typing_extensions import override
 
-from utilities.asyncio import timeout_dur
+from utilities.asyncio import Coroutine1, get_items, get_items_nowait, timeout_dur
 from utilities.functions import get_class_name
 from utilities.iterables import (
     CheckLengthError,
@@ -74,11 +83,17 @@ from utilities.types import (
     is_tuple_or_str_mapping,
 )
 
+if TYPE_CHECKING:
+    from types import TracebackType
+    from typing import Self
+
 _T = TypeVar("_T")
-_EngineOrConnectionOrAsync = Engine | Connection | AsyncEngine | AsyncConnection
-Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
-ORMInstOrClass = DeclarativeBase | type[DeclarativeBase]
-TableOrORMInstOrClass = Table | ORMInstOrClass
+_EngineOrConnectionOrAsync: TypeAlias = (
+    Engine | Connection | AsyncEngine | AsyncConnection
+)
+Dialect: TypeAlias = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
+ORMInstOrClass: TypeAlias = DeclarativeBase | type[DeclarativeBase]
+TableOrORMInstOrClass: TypeAlias = Table | ORMInstOrClass
 CHUNK_SIZE_FRAC = 0.95
 
 
@@ -298,13 +313,15 @@ def get_table_name(table_or_orm: TableOrORMInstOrClass, /) -> str:
     return get_table(table_or_orm).name
 
 
-_PairOfTupleAndTable = tuple[tuple[Any, ...], TableOrORMInstOrClass]
-_PairOfStrMappingAndTable = tuple[StrMapping, TableOrORMInstOrClass]
-_PairOfTupleOrStrMappingAndTable = tuple[TupleOrStrMapping, TableOrORMInstOrClass]
-_PairOfSequenceOfTupleOrStrMappingAndTable = tuple[
+_PairOfTupleAndTable: TypeAlias = tuple[tuple[Any, ...], TableOrORMInstOrClass]
+_PairOfStrMappingAndTable: TypeAlias = tuple[StrMapping, TableOrORMInstOrClass]
+_PairOfTupleOrStrMappingAndTable: TypeAlias = tuple[
+    TupleOrStrMapping, TableOrORMInstOrClass
+]
+_PairOfSequenceOfTupleOrStrMappingAndTable: TypeAlias = tuple[
     Sequence[TupleOrStrMapping], TableOrORMInstOrClass
 ]
-_InsertItem = (
+_InsertItem: TypeAlias = (
     _PairOfTupleOrStrMappingAndTable
     | _PairOfSequenceOfTupleOrStrMappingAndTable
     | DeclarativeBase
@@ -492,51 +509,76 @@ class TablenameMixin:
 class Upserter:
     """Upsert a set of items into a database."""
 
-    running: bool = False
-    queue: Queue[_InsertItem] = field(default_factory=Queue)
-    lock: Lock = field(default_factory=Lock)
+    engine: AsyncEngine
+    snake: bool = False
+    selected_or_all: _SelectedOrAll = "selected"
+    chunk_size_frac: float = CHUNK_SIZE_FRAC
+    assume_tables_exist: bool = False
+    timeout_create: Duration | None = None
+    timeout_insert: Duration | None = None
+    pre_upsert: Callable[[], Coroutine1[None]] | None = None
+    post_upsert: Callable[[], Coroutine1[None]] | None = None
+    _running: bool = False
+    _queue: Queue[_InsertItem] = field(default_factory=Queue, repr=False)
+    _lock: Lock = field(default_factory=Lock, repr=False)
+    _task: Task[None] | None = None
+
+    async def __aenter__(self) -> Self:
+        """Start the server."""
+        self._task = create_task(self.start())
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None = None,
+        exc_value: BaseException | None = None,
+        traceback: TracebackType | None = None,
+    ) -> None:
+        """Stop the server."""
+        _ = (exc_type, exc_value, traceback)
+        await self.stop()
 
     async def add(self, *items: _InsertItem) -> None:
         """Add a set items to the upserter."""
-        async with self.lock:
+        async with self._lock:
             for item in items:
-                self.queue.put_nowait(item)
+                self._queue.put_nowait(item)
 
     async def start(self, /) -> None:
         """Start the upserter."""
-        async with self.lock:
-            self.running = True
-        while True:
-            items: list[_InsertItem] = []
-            async with self.lock:
-                while True:
-                    try:
-                        items.append(self.queue.get_nowait())
-                    except QueueEmpty:
-                        break
-            if len(items) >= 1:
-                _LOGGER.debug("Upserting {} item(s)", len(items))
-                await upsert_items(*items, database=local_or_cloud)
-            _ = await _UPSERT_SERVICE_HEARTBEAT_KEY.set(self, get_now())
-            await sleep_dur(duration=heartbeat)
+        async with self._lock:
+            self._running = True
+        while self._running:
+            items = await get_items(self._queue, lock=self._lock)
+            await self._run(*items)
 
     async def stop(self, /) -> None:
-        """Start the upserter."""
-        async with self.lock:
-            self.running = True
-        while True:
-            items: list[Base] = []
-            async with _ADD_TO_UPSERT_QUEUE_LOCK:
-                while True:
-                    try:
-                        items.append(_UPSERT_QUEUE.get_nowait())
-                    except QueueEmpty:
-                        break
-            if len(items) >= 1:
-                _LOGGER.debug("Upserting {} item(s)", len(items))
-                await upsert_items(*items, database=local_or_cloud)
-            _ = await _UPSERT_SERVICE_HEARTBEAT_KEY.set(self, get_now())
-            await sleep_dur(duration=heartbeat)
+        """Stop the upserter."""
+        async with self._lock:
+            self._running = False
+        items = await get_items_nowait(self._queue, lock=self._lock)
+        await self._run(*items)
+
+    async def _run(self, *items: _InsertItem) -> None:
+        """Run the upserter once."""
+        if len(items) >= 1:
+            if self.pre_upsert is not None:
+                await self.pre_upsert()
+            await upsert_items(
+                self.engine,
+                *items,
+                snake=self.snake,
+                selected_or_all=self.selected_or_all,
+                chunk_size_frac=self.chunk_size_frac,
+                assume_tables_exist=self.assume_tables_exist,
+                timeout_create=self.timeout_create,
+                timeout_insert=self.timeout_insert,
+            )
+            if self.post_upsert is not None:
+                await self.post_upsert()
+
+
+_SelectedOrAll: TypeAlias = Literal["selected", "all"]
 
 
 async def upsert_items(
@@ -544,7 +586,7 @@ async def upsert_items(
     /,
     *items: _InsertItem,
     snake: bool = False,
-    selected_or_all: Literal["selected", "all"] = "selected",
+    selected_or_all: _SelectedOrAll = "selected",
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     timeout_create: Duration | None = None,
