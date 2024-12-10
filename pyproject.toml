@@ -226,7 +226,6 @@ zzz-test-redis = [
   "tzlocal >= 5.2, < 5.3",
   "whenever >= 0.6.14, < 0.7",
 ]
-zzz-test-reprlib = ["polars-lts-cpu >= 1.17.1, < 1.18"]
 zzz-test-rich = ["rich >= 13.8.1, < 13.9"]
 zzz-test-scipy = ["scipy >= 1.14.1, < 1.15"]
 zzz-test-sentinel = []
