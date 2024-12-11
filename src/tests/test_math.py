@@ -83,6 +83,7 @@ from utilities.math import (
     is_zero_or_non_micro_or_nan,
     number_of_decimals,
     order_of_magnitude,
+    round_,
     round_to_float,
     safe_round,
 )
@@ -874,6 +875,93 @@ class TestOrderOfMagnitude:
         assert res_float == approx(exp_float)
         res_int = order_of_magnitude(x_use, round_=True)
         assert res_int == exp_int
+
+
+@mark.only
+class TestRound:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-2.0, -2),
+            param(-1.75, -2),
+            param(-1.5, -2),
+            param(-1.25, -1),
+            param(-1.0, -1),
+            param(-0.75, -1),
+            param(-0.5, 0),
+            param(-0.25, 0),
+            param(0.0, 0),
+            param(0.25, 0),
+            param(0.5, 0),
+            param(0.75, 1),
+            param(1.0, 1),
+            param(1.25, 1),
+            param(1.5, 2),
+            param(1.75, 2),
+            param(2.0, 2),
+        ],
+        ids=str,
+    )
+    def test_main(self, *, x: float, expected: int) -> None:
+        result = round_(x)
+        assert isinstance(result, int)
+        assert result == expected
+
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-2.0, -2),
+            param(-1.75, -1),
+            param(-1.5, -1),
+            param(-1.25, -1),
+            param(-1.0, -1),
+            param(-0.75, 0),
+            param(-0.5, 0),
+            param(-0.25, 0),
+            param(0.0, 0),
+            param(0.25, 0),
+            param(0.5, 0),
+            param(0.75, 0),
+            param(1.0, 1),
+            param(1.25, 1),
+            param(1.5, 1),
+            param(1.75, 1),
+            param(2.0, 2),
+        ],
+        ids=str,
+    )
+    def test_toward_zero(self, *, x: float, expected: int) -> None:
+        result = round_(x, mode="toward-zero")
+        assert isinstance(result, int)
+        assert result == expected
+
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-2.0, -2),
+            param(-1.75, -2),
+            param(-1.5, -2),
+            param(-1.25, -2),
+            param(-1.0, -1),
+            param(-0.75, -1),
+            param(-0.5, -1),
+            param(-0.25, -1),
+            param(0.0, 0),
+            param(0.25, 1),
+            param(0.5, 1),
+            param(0.75, 1),
+            param(1.0, 1),
+            param(1.25, 2),
+            param(1.5, 2),
+            param(1.75, 2),
+            param(2.0, 2),
+        ],
+        ids=str,
+    )
+    def test_away_zero(self, *, x: float, expected: int) -> None:
+        result = round_(x, mode="away-zero")
+        assert isinstance(result, int)
+        assert result == expected
 
 
 class TestRoundToFloat:
