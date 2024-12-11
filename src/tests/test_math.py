@@ -911,6 +911,62 @@ class TestRound:
         ("x", "expected"),
         [
             param(-2.0, -2),
+            param(-1.75, -2),
+            param(-1.5, -2),
+            param(-1.25, -2),
+            param(-1.0, -1),
+            param(-0.75, -1),
+            param(-0.5, -1),
+            param(-0.25, -1),
+            param(0.0, 0),
+            param(0.25, 0),
+            param(0.5, 0),
+            param(0.75, 0),
+            param(1.0, 1),
+            param(1.25, 1),
+            param(1.5, 1),
+            param(1.75, 1),
+            param(2.0, 2),
+        ],
+        ids=str,
+    )
+    def test_floor(self, *, x: float, expected: int) -> None:
+        result = round_(x, mode="floor")
+        assert isinstance(result, int)
+        assert result == expected
+
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-2.0, -2),
+            param(-1.75, -1),
+            param(-1.5, -1),
+            param(-1.25, -1),
+            param(-1.0, -1),
+            param(-0.75, 0),
+            param(-0.5, 0),
+            param(-0.25, 0),
+            param(0.0, 0),
+            param(0.25, 1),
+            param(0.5, 1),
+            param(0.75, 1),
+            param(1.0, 1),
+            param(1.25, 2),
+            param(1.5, 2),
+            param(1.75, 2),
+            param(2.0, 2),
+        ],
+        ids=str,
+    )
+    def test_ceil(self, *, x: float, expected: int) -> None:
+        result = round_(x, mode="ceil")
+        assert isinstance(result, int)
+        assert result == expected
+
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-2.0, -2),
             param(-1.75, -1),
             param(-1.5, -1),
             param(-1.25, -1),

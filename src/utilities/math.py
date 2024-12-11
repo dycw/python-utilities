@@ -515,7 +515,7 @@ def order_of_magnitude(x: float, /, *, round_: bool = False) -> float:
     return round(result) if round_ else result
 
 
-_RoundMode: TypeAlias = Literal["default", "toward-zero", "away-zero"]
+_RoundMode: TypeAlias = Literal["default", "floor", "ceil", "toward-zero", "away-zero"]
 
 
 def round_(x: float, /, *, mode: _RoundMode = "default") -> int:
@@ -523,6 +523,10 @@ def round_(x: float, /, *, mode: _RoundMode = "default") -> int:
     match mode:
         case "default":
             return round(x)
+        case "floor":
+            return floor(x)
+        case "ceil":
+            return ceil(x)
         case "toward-zero":
             return int(x)
         case "away-zero":
