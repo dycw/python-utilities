@@ -63,6 +63,8 @@ rich==13.8.1
     # via dycw-utilities (pyproject.toml)
 sortedcontainers==2.4.0
     # via hypothesis
+tenacity==9.0.0
+    # via dycw-utilities (pyproject.toml)
 tomli==2.2.1
     # via coverage
 typing-extensions==4.12.2
