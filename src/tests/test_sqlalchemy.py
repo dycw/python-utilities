@@ -1098,7 +1098,7 @@ class TestUpserter:
         pairs = [(id_, init) for id_, init, _ in triples]
         async with Upserter(engine=engine) as upserter:
             await upserter.add((pairs, table))
-            await sleep(0.1)
+            await sleep(0.2)
         sel = select(table)
         async with engine.begin() as conn:
             res = (await conn.execute(sel)).all()
