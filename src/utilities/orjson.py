@@ -101,12 +101,14 @@ class OrjsonFormatter(Formatter):
         /,
         *,
         defaults: Mapping[str, Any] | None = None,
+        extra_ignore: AbstractSet[str] | None = None,
         before: Callable[[Any], Any] | None = None,
         after: Callable[[Any], Any] | None = None,
         dataclass_final_hook: _DataclassFinalHook | None = None,
         fallback: bool = False,
     ) -> None:
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
+        self._extra_ignore = extra_ignore
         self._before = before
         self._after = after
         self._dataclass_final_hook = dataclass_final_hook
@@ -116,11 +118,10 @@ class OrjsonFormatter(Formatter):
     def format(self, record: LogRecord) -> str:
         from tzlocal import get_localzone
 
-        extra = {
-            k: v
-            for k, v in record.__dict__.items()
-            if k not in _LOG_RECORD_DEFAULT_ATTRS
-        }
+        extra_ignore = _LOG_RECORD_DEFAULT_ATTRS | (
+            set() if self._extra_ignore is None else self._extra_ignore
+        )
+        extra = {k: v for k, v in record.__dict__.items() if k not in extra_ignore}
         log_record = OrjsonLogRecord(
             name=record.name,
             level=record.levelno,
