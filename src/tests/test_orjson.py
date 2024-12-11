@@ -211,7 +211,13 @@ class TestOrjsonFormatter:
         logger = getLogger(name)
         logger.setLevel(DEBUG)
         handler = StreamHandler(buffer)
-        handler.setFormatter(OrjsonFormatter())
+
+        def before(obj: Any, /) -> Any:
+            if isinstance(obj, dict):
+                return {k: v for k, v in obj.items() if not k.startswith("zoned")}
+            return obj
+
+        handler.setFormatter(OrjsonFormatter(before=before))
         handler.setLevel(DEBUG)
         logger.addHandler(handler)
         extra = {"a": 1, "b": 2}
