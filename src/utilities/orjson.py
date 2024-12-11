@@ -67,6 +67,7 @@ _LOG_RECORD_DEFAULT_ATTRS = {
     "processName",
     "relativeCreated",
     "stack_info",
+    "taskName",
     "thread",
     "threadName",
 }
