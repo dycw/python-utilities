@@ -90,6 +90,7 @@ if TYPE_CHECKING:
     from types import TracebackType
     from typing import Self
 
+    from tenacity.retry import RetryBaseT as SyncRetryBaseT
     from tenacity.stop import StopBaseT
     from tenacity.wait import WaitBaseT
 
@@ -109,6 +110,7 @@ async def check_engine(
     *,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
+    retry: SyncRetryBaseT | None = None,
     timeout: Duration | None = None,
     num_tables: int | tuple[int, float] | None = None,
 ) -> None:
@@ -127,7 +129,9 @@ async def check_engine(
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
     statement = text(query)
-    async for attempt in yield_timeout_attempts(stop=stop, wait=wait, timeout=timeout):
+    async for attempt in yield_timeout_attempts(
+        stop=stop, wait=wait, retry=retry, timeout=timeout
+    ):
         async with attempt:
             await _check_engine_core(engine, statement, num_tables=num_tables)
 
@@ -237,6 +241,7 @@ async def ensure_tables_created(
     *tables_or_orms: TableOrORMInstOrClass,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
+    retry: SyncRetryBaseT | None = None,
     timeout: Duration | None = None,
 ) -> None:
     """Ensure a table/set of tables is/are created."""
@@ -254,7 +259,9 @@ async def ensure_tables_created(
             match = "table .* already exists"
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
-    async for attempt in yield_timeout_attempts(stop=stop, wait=wait, timeout=timeout):
+    async for attempt in yield_timeout_attempts(
+        stop=stop, wait=wait, retry=retry, timeout=timeout
+    ):
         async with attempt, engine.begin() as conn:
             for table in tables:
                 try:
@@ -268,6 +275,7 @@ async def ensure_tables_dropped(
     *tables_or_orms: TableOrORMInstOrClass,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
+    retry: SyncRetryBaseT | None = None,
     timeout: Duration | None = None,
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
@@ -285,7 +293,9 @@ async def ensure_tables_dropped(
             match = "no such table"
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
-    async for attempt in yield_timeout_attempts(stop=stop, wait=wait, timeout=timeout):
+    async for attempt in yield_timeout_attempts(
+        stop=stop, wait=wait, retry=retry, timeout=timeout
+    ):
         async with attempt, engine.begin() as conn:
             for table in tables:
                 try:
@@ -364,6 +374,7 @@ async def insert_items(
     assume_tables_exist: bool = False,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
+    retry: SyncRetryBaseT | None = None,
     timeout_create: Duration | None = None,
     timeout_insert: Duration | None = None,
 ) -> None:
@@ -411,10 +422,15 @@ async def insert_items(
         raise InsertItemsError(item=error.item) from None
     if not assume_tables_exist:
         await ensure_tables_created(
-            engine, *prepared.tables, stop=stop, wait=wait, timeout=timeout_create
+            engine,
+            *prepared.tables,
+            stop=stop,
+            wait=wait,
+            retry=retry,
+            timeout=timeout_create,
         )
     async for attempt in yield_timeout_attempts(
-        stop=stop, wait=wait, timeout=timeout_insert
+        stop=stop, wait=wait, retry=retry, timeout=timeout_insert
     ):
         async with attempt:
             for ins, parameters in prepared.yield_pairs():
@@ -549,6 +565,7 @@ class Upserter:
     assume_tables_exist: bool = False
     stop: StopBaseT | None = None
     wait: WaitBaseT | None = None
+    retry: SyncRetryBaseT | None = None
     timeout_create: Duration | None = None
     timeout_insert: Duration | None = None
     _queue: Queue[_InsertItem] = field(default_factory=Queue, repr=False)
@@ -604,6 +621,7 @@ class Upserter:
                 selected_or_all=self.selected_or_all,
                 chunk_size_frac=self.chunk_size_frac,
                 assume_tables_exist=self.assume_tables_exist,
+                retry=self.retry,
                 stop=self.stop,
                 wait=self.wait,
                 timeout_create=self.timeout_create,
@@ -625,6 +643,7 @@ async def upsert_items(
     assume_tables_exist: bool = False,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
+    retry: SyncRetryBaseT | None = None,
     timeout_create: Duration | None = None,
     timeout_insert: Duration | None = None,
 ) -> None:
@@ -666,10 +685,15 @@ async def upsert_items(
         raise UpsertItemsError(item=error.item) from None
     if not assume_tables_exist:
         await ensure_tables_created(
-            engine, *prepared.tables, stop=stop, wait=wait, timeout=timeout_create
+            engine,
+            *prepared.tables,
+            stop=stop,
+            wait=wait,
+            retry=retry,
+            timeout=timeout_create,
         )
     async for attempt in yield_timeout_attempts(
-        stop=stop, wait=wait, timeout=timeout_insert
+        stop=stop, wait=wait, retry=retry, timeout=timeout_insert
     ):
         async with attempt:
             for ups, _ in prepared.yield_pairs():

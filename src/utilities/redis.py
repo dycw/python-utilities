@@ -169,7 +169,7 @@ class _RedisHashMapKey(Generic[_K, _V]):
 
     def _yield_timeout_attempts(self) -> AsyncIterator[MaybeAttemptContextManager]:
         return yield_timeout_attempts(  # skipif-ci-and-not-linux
-            stop=self.stop, wait=self.wait, timeout=self.timeout
+            stop=self.stop, wait=self.wait, retry=self.retry, timeout=self.timeout
         )
 
 
@@ -419,7 +419,7 @@ class _RedisKey(Generic[_T]):
 
     def _yield_timeout_attempts(self) -> AsyncIterator[MaybeAttemptContextManager]:
         return yield_timeout_attempts(  # skipif-ci-and-not-linux
-            stop=self.stop, wait=self.wait, timeout=self.timeout
+            stop=self.stop, wait=self.wait, retry=self.retry, timeout=self.timeout
         )
 
 
