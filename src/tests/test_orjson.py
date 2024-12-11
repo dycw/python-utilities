@@ -57,6 +57,7 @@ from utilities.orjson import (
     serialize,
 )
 from utilities.sentinel import sentinel
+from utilities.types import is_string_mapping
 from utilities.typing import get_args
 from utilities.zoneinfo import UTC
 
@@ -213,7 +214,7 @@ class TestOrjsonFormatter:
         handler = StreamHandler(buffer)
 
         def before(obj: Any, /) -> Any:
-            if isinstance(obj, dict):
+            if is_string_mapping(obj):
                 return {k: v for k, v in obj.items() if not k.startswith("zoned")}
             return obj
 
