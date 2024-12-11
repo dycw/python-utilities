@@ -65,6 +65,7 @@ if TYPE_CHECKING:
     from polars._typing import PolarsDataType, SchemaDict
     from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
+    from tenacity.retry import RetryBaseT as SyncRetryBaseT
     from tenacity.stop import StopBaseT
     from tenacity.wait import WaitBaseT
 
@@ -83,6 +84,7 @@ async def insert_dataframe(
     upsert: Literal["selected", "all"] | None = None,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
+    retry: SyncRetryBaseT | None = None,
     timeout_create: utilities.types.Duration | None = None,
     timeout_insert: utilities.types.Duration | None = None,
 ) -> None:
@@ -95,7 +97,14 @@ async def insert_dataframe(
         if not df.is_empty():
             raise InsertDataFrameError(df=df)
         if not assume_tables_exist:
-            await ensure_tables_created(engine, table_or_orm, timeout=timeout_create)
+            await ensure_tables_created(
+                engine,
+                table_or_orm,
+                stop=stop,
+                wait=wait,
+                retry=retry,
+                timeout=timeout_create,
+            )
         return
     match upsert:
         case None:
@@ -107,6 +116,7 @@ async def insert_dataframe(
                 assume_tables_exist=assume_tables_exist,
                 stop=stop,
                 wait=wait,
+                retry=retry,
                 timeout_create=timeout_create,
                 timeout_insert=timeout_insert,
             )
@@ -120,6 +130,7 @@ async def insert_dataframe(
                 assume_tables_exist=assume_tables_exist,
                 stop=stop,
                 wait=wait,
+                retry=retry,
                 timeout_create=timeout_create,
                 timeout_insert=timeout_insert,
             )
@@ -230,6 +241,7 @@ async def select_to_dataframe(
     chunk_size_frac: float = ...,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
+    retry: SyncRetryBaseT | None = ...,
     timeout: utilities.types.Duration | None = ...,
     **kwargs: Any,
 ) -> DataFrame: ...
@@ -247,6 +259,7 @@ async def select_to_dataframe(
     chunk_size_frac: float = ...,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
+    retry: SyncRetryBaseT | None = ...,
     timeout: utilities.types.Duration | None = ...,
     **kwargs: Any,
 ) -> Iterable[DataFrame]: ...
@@ -264,6 +277,7 @@ async def select_to_dataframe(
     chunk_size_frac: float = ...,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
+    retry: SyncRetryBaseT | None = ...,
     timeout: utilities.types.Duration | None = ...,
     **kwargs: Any,
 ) -> AsyncIterable[DataFrame]: ...
@@ -280,6 +294,7 @@ async def select_to_dataframe(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
+    retry: SyncRetryBaseT | None = None,
     timeout: utilities.types.Duration | None = None,
     **kwargs: Any,
 ) -> DataFrame | Iterable[DataFrame] | AsyncIterable[DataFrame]:
@@ -298,6 +313,7 @@ async def select_to_dataframe(
             chunk_size_frac=chunk_size_frac,
             stop=stop,
             wait=wait,
+            retry=retry,
             timeout=timeout,
             **kwargs,
         )
@@ -306,7 +322,7 @@ async def select_to_dataframe(
     schema = _select_to_dataframe_map_select_to_df_schema(sel, time_zone=time_zone)
     if in_clauses is None:
         async for attempt in yield_timeout_attempts(
-            stop=stop, wait=wait, timeout=timeout
+            stop=stop, wait=wait, retry=retry, timeout=timeout
         ):
             async with attempt:
                 return read_database(
@@ -328,7 +344,7 @@ async def select_to_dataframe(
     )
     if batch_size is None:
         async for attempt in yield_timeout_attempts(
-            stop=stop, wait=wait, timeout=timeout
+            stop=stop, wait=wait, retry=retry, timeout=timeout
         ):
             async with attempt:
                 dfs = [
@@ -341,6 +357,7 @@ async def select_to_dataframe(
                         in_clauses=None,
                         stop=stop,
                         wait=wait,
+                        retry=retry,
                         **kwargs,
                     )
                     for sel in sels
@@ -353,7 +370,7 @@ async def select_to_dataframe(
 
     async def yield_dfs() -> AsyncIterator[DataFrame]:
         async for attempt in yield_timeout_attempts(
-            stop=stop, wait=wait, timeout=timeout
+            stop=stop, wait=wait, retry=retry, timeout=timeout
         ):
             async with attempt:
                 for sel_i in sels:
@@ -367,6 +384,7 @@ async def select_to_dataframe(
                         chunk_size_frac=chunk_size_frac,
                         stop=stop,
                         wait=wait,
+                        retry=retry,
                         **kwargs,
                     ):
                         yield df
