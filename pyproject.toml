@@ -223,6 +223,7 @@ zzz-test-redis = [
   "polars-lts-cpu >= 1.17.1, < 1.18",
   "redis >= 5.2.1, < 5.3",
   "rich >= 13.8.1, < 13.9",
+  "tenacity >= 9.0.0, < 9.1",
   "tzlocal >= 5.2, < 5.3",
   "whenever >= 0.6.14, < 0.7",
 ]
@@ -241,6 +242,7 @@ zzz-test-sqlalchemy = [
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.36, < 2.1",
+  "tenacity >= 9.0.0, < 9.1",
 ]
 zzz-test-sqlalchemy-polars = [
   "aiosqlite >= 0.20.0, < 0.21",
@@ -250,6 +252,7 @@ zzz-test-sqlalchemy-polars = [
   "polars-lts-cpu >= 1.17.1, < 1.18",
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.36, < 2.1",
+  "tenacity >= 9.0.0, < 9.1",
 ]
 zzz-test-streamlit = ["streamlit >= 1.41.0, < 1.42"]
 zzz-test-sys = []

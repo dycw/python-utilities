@@ -64,6 +64,8 @@ if TYPE_CHECKING:
     from polars._typing import PolarsDataType, SchemaDict
     from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
+    from tenacity.stop import StopBaseT
+    from tenacity.wait import WaitBaseT
 
     import utilities.types
 
@@ -78,6 +80,8 @@ async def insert_dataframe(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     upsert: Literal["selected", "all"] | None = None,
+    stop: StopBaseT | None = None,
+    wait: WaitBaseT | None = None,
     timeout_create: utilities.types.Duration | None = None,
     timeout_insert: utilities.types.Duration | None = None,
 ) -> None:
@@ -100,6 +104,8 @@ async def insert_dataframe(
                 snake=snake,
                 chunk_size_frac=chunk_size_frac,
                 assume_tables_exist=assume_tables_exist,
+                stop=stop,
+                wait=wait,
                 timeout_create=timeout_create,
                 timeout_insert=timeout_insert,
             )
@@ -111,6 +117,8 @@ async def insert_dataframe(
                 chunk_size_frac=chunk_size_frac,
                 selected_or_all=selected_or_all,
                 assume_tables_exist=assume_tables_exist,
+                stop=stop,
+                wait=wait,
                 timeout_create=timeout_create,
                 timeout_insert=timeout_insert,
             )
