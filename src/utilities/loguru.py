@@ -174,7 +174,6 @@ __all__ = [
     "LEVEL_CONFIGS",
     "GetLoggingLevelNameError",
     "GetLoggingLevelNumberError",
-    "HandlerConfiguration",
     "InterceptHandler",
     "LogLevel",
     "get_logging_level_name",
