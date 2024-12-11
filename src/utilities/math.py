@@ -539,9 +539,9 @@ def round_(x: float, /, *, mode: _RoundMode = "default") -> int:
                     return floor(x)
 
 
-def round_to_float(x: float, y: float, /) -> float:
+def round_to_float(x: float, y: float, /, *, mode: _RoundMode = "default") -> float:
     """Round a float to the nearest multiple of another float."""
-    return y * round(x / y)
+    return y * round_(x / y, mode=mode)
 
 
 def safe_round(
