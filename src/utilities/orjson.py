@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import datetime as dt
 import re
+from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum, unique
 from functools import partial
+from logging import Formatter, LogRecord
 from pathlib import Path
 from re import Match, Pattern
-from typing import TYPE_CHECKING, Any, Never, assert_never, cast
+from typing import TYPE_CHECKING, Any, Never, TypeAlias, assert_never, cast
 from uuid import UUID
 
 from orjson import (
@@ -39,10 +42,72 @@ from utilities.whenever import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Mapping
     from collections.abc import Set as AbstractSet
+    from logging import _FormatStyle
 
-    from utilities.types import StrMapping
+
+@dataclass(kw_only=True, slots=True)
+class LogRecordDC:
+    """The log record as a dataclass."""
+
+    name: str
+    message: str
+    level: int
+    path_name: Path
+    line_num: int
+    datetime: dt.datetime
+    func_name: str | None = None
+    stack_info: str | None = None
+    extra: StrMapping | None = None
+
+
+class OrjsonFormatter(Formatter):
+    """Formatter for JSON logs."""
+
+    @override
+    def __init__(
+        self,
+        fmt: str | None = None,
+        datefmt: str | None = None,
+        style: _FormatStyle = "%",
+        validate: bool = True,
+        /,
+        *,
+        defaults: Mapping[str, Any] | None = None,
+        before: Callable[[Any], Any] | None = None,
+        after: Callable[[Any], Any] | None = None,
+        dataclass_final_hook: _DataclassFinalHook | None = None,
+        fallback: bool = False,
+    ) -> None:
+        super().__init__(fmt, datefmt, style, validate, defaults=defaults)
+        self._before = before
+        self._after = after
+        self._dataclass_final_hook = dataclass_final_hook
+        self._fallback = fallback
+
+    @override
+    def format(self, record: LogRecord) -> str:
+        from tzlocal import get_localzone
+
+        log_record = LogRecordDC(
+            name=record.name,
+            level=record.levelno,
+            path_name=Path(record.pathname),
+            line_num=record.lineno,
+            message=record.getMessage(),
+            datetime=dt.datetime.fromtimestamp(record.created, tz=get_localzone()),
+            func_name=record.funcName,
+        )
+        with suppress(AttributeError):
+            log_record.extra = cast(Any, record).extra
+        return serialize(
+            log_record,
+            before=self._before,
+            after=self._after,
+            dataclass_final_hook=self._dataclass_final_hook,
+            fallback=self._fallback,
+        ).decode()
 
 
 @unique
@@ -61,14 +126,16 @@ class _Prefixes(Enum):
     uuid = "u"
 
 
+_DataclassFinalHook: TypeAlias = Callable[[type[Dataclass], StrMapping], StrMapping]
+
+
 def serialize(
     obj: Any,
     /,
     *,
     before: Callable[[Any], Any] | None = None,
     after: Callable[[Any], Any] | None = None,
-    dataclass_final_hook: Callable[[type[Dataclass], StrMapping], StrMapping]
-    | None = None,
+    dataclass_final_hook: _DataclassFinalHook | None = None,
     fallback: bool = False,
 ) -> bytes:
     """Serialize an object."""
@@ -91,8 +158,7 @@ def _pre_process(
     *,
     before: Callable[[Any], Any] | None = None,
     after: Callable[[Any], Any] | None = None,
-    dataclass_final_hook: Callable[[type[Dataclass], StrMapping], StrMapping]
-    | None = None,
+    dataclass_final_hook: _DataclassFinalHook | None = None,
 ) -> Any:
     if before is not None:
         obj = before(obj)
@@ -168,8 +234,7 @@ def _pre_process_container(
     *,
     before: Callable[[Any], Any] | None = None,
     after: Callable[[Any], Any] | None = None,
-    dataclass_final_hook: Callable[[type[Dataclass], StrMapping], StrMapping]
-    | None = None,
+    dataclass_final_hook: _DataclassFinalHook | None = None,
 ) -> Any:
     values = [
         _pre_process(
@@ -451,4 +516,11 @@ class _DeserializeObjectNotFoundError(DeserializeError):
         )
 
 
-__all__ = ["DeserializeError", "SerializeError", "deserialize", "serialize"]
+__all__ = [
+    "DeserializeError",
+    "LogRecordDC",
+    "OrjsonFormatter",
+    "SerializeError",
+    "deserialize",
+    "serialize",
+]
