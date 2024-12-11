@@ -12,7 +12,6 @@ from pytest import CaptureFixture, fixture, mark, param, raises
 from utilities.loguru import (
     LEVEL_CONFIGS,
     GetLoggingLevelNumberError,
-    HandlerConfiguration,
     InterceptHandler,
     LogLevel,
     _GetLoggingLevelNameEmptyError,
@@ -22,7 +21,7 @@ from utilities.loguru import (
 )
 
 if TYPE_CHECKING:
-    from loguru import Record
+    from loguru import BasicHandlerConfig, Record
     from pytest import CaptureFixture
 
 
@@ -104,8 +103,8 @@ class TestHandlerConfiguration:
         out1 = capsys.readouterr().out
         assert out1 == ""
 
-        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+        handler: BasicHandlerConfig = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[handler])
 
         logger.trace("message 2")
         out2 = capsys.readouterr().out
@@ -120,12 +119,12 @@ class TestInterceptHandler:
 
 class TestLevelConfiguration:
     def test_main(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {
+        handler: BasicHandlerConfig = {
             "sink": sys.stdout,
             "format": "<level>{message}</level>",
             "colorize": True,
         }
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+        _ = logger.configure(handlers=[handler])
 
         logger.info("message 1")
         out1 = capsys.readouterr().out

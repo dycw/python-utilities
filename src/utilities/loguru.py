@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     from utilities.types import PathLike, StrMapping
 
 
-_RECORD_EXCEPTION_VALUE = "{record[exception].value!r}"
 LEVEL_CONFIGS: Sequence[LevelConfig] = [
     {"name": "TRACE", "color": "<blue><bold>"},
     {"name": "DEBUG", "color": "<cyan><bold>"},
