@@ -255,12 +255,13 @@ async def ensure_tables_created(
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
     async for attempt in yield_timeout_attempts(stop=stop, wait=wait, timeout=timeout):
-        async with attempt, engine.begin() as conn:
+        async with attempt:
             for table in tables:
-                try:
-                    await conn.run_sync(table.create)
-                except DatabaseError as error:
-                    _ensure_tables_maybe_reraise(error, match)
+                async with engine.begin() as conn:
+                    try:
+                        await conn.run_sync(table.create)
+                    except DatabaseError as error:
+                        _ensure_tables_maybe_reraise(error, match)
 
 
 async def ensure_tables_dropped(
@@ -286,12 +287,13 @@ async def ensure_tables_dropped(
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
     async for attempt in yield_timeout_attempts(stop=stop, wait=wait, timeout=timeout):
-        async with attempt, engine.begin() as conn:
+        async with attempt:
             for table in tables:
-                try:
-                    await conn.run_sync(table.drop)
-                except DatabaseError as error:
-                    _ensure_tables_maybe_reraise(error, match)
+                async with engine.begin() as conn:
+                    try:
+                        await conn.run_sync(table.drop)
+                    except DatabaseError as error:
+                        _ensure_tables_maybe_reraise(error, match)
 
 
 def get_chunk_size(
