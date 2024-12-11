@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import StrEnum, unique
 from logging import Handler, LogRecord
 from sys import _getframe
-from typing import TYPE_CHECKING, TextIO, TypedDict, cast
+from typing import TYPE_CHECKING, cast
 
 from loguru import logger
 from typing_extensions import override
@@ -13,28 +13,11 @@ from typing_extensions import override
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 
 if TYPE_CHECKING:
-    import datetime as dt
-    from asyncio import AbstractEventLoop
-    from collections.abc import Callable, Sequence
-    from multiprocessing.context import BaseContext
+    from collections.abc import Sequence
 
-    from loguru import (
-        CompressionFunction,
-        FilterDict,
-        FilterFunction,
-        FormatFunction,
-        LevelConfig,
-        Message,
-        RetentionFunction,
-        RotationFunction,
-        Writable,
-    )
-
-    from utilities.asyncio import MaybeCoroutine1
-    from utilities.types import PathLike, StrMapping
+    from loguru import LevelConfig
 
 
-_RECORD_EXCEPTION_VALUE = "{record[exception].value!r}"
 LEVEL_CONFIGS: Sequence[LevelConfig] = [
     {"name": "TRACE", "color": "<blue><bold>"},
     {"name": "DEBUG", "color": "<cyan><bold>"},
@@ -44,38 +27,6 @@ LEVEL_CONFIGS: Sequence[LevelConfig] = [
     {"name": "ERROR", "color": "<red><bold>"},
     {"name": "CRITICAL", "color": "<red><bold><blink>"},
 ]
-
-
-class HandlerConfiguration(TypedDict, total=False):
-    """A handler configuration."""
-
-    sink: (
-        TextIO
-        | Writable
-        | Callable[[Message], MaybeCoroutine1[None]]
-        | Handler
-        | PathLike
-    )
-    level: int | str
-    format: str | FormatFunction
-    filter: str | FilterFunction | FilterDict | None
-    colorize: bool | None
-    serialize: bool
-    backtrace: bool
-    diagnose: bool
-    enqueue: bool
-    context: str | BaseContext | None
-    catch: bool
-    loop: AbstractEventLoop
-    rotation: str | int | dt.time | dt.timedelta | RotationFunction | None
-    retention: str | int | dt.timedelta | RetentionFunction | None
-    compression: str | CompressionFunction | None
-    delay: bool
-    watch: bool
-    mode: str
-    buffering: int
-    encoding: str
-    kwargs: StrMapping
 
 
 class InterceptHandler(Handler):
@@ -175,7 +126,6 @@ __all__ = [
     "LEVEL_CONFIGS",
     "GetLoggingLevelNameError",
     "GetLoggingLevelNumberError",
-    "HandlerConfiguration",
     "InterceptHandler",
     "LogLevel",
     "get_logging_level_name",
