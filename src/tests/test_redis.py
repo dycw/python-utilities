@@ -7,6 +7,7 @@ from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import DataObject, booleans, data
 from pytest import raises
 from redis.asyncio import Redis
+from tenacity import stop_after_delay
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from tests.test_orjson import objects
@@ -27,6 +28,7 @@ from utilities.redis import (
     yield_redis,
 )
 from utilities.sentinel import SENTINEL_REPR, Sentinel, sentinel
+from utilities.tenacity import wait_exponential_jitter
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
@@ -250,6 +252,24 @@ class TestRedisHashMapKey:
     @given(data=data(), key=int64s(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
+    async def test_stop_and_wait(
+        self, *, data: DataObject, key: int, value: bool
+    ) -> None:
+        async with yield_test_redis(data) as test:
+            hm_key = redis_hash_map_key(
+                test.key,
+                int,
+                bool,
+                stop=stop_after_delay(1),
+                wait=wait_exponential_jitter(),
+            )
+            _ = await hm_key.set(test.redis, key, value)
+            assert await hm_key.exists(test.redis, key)
+
+    @FLAKY
+    @given(data=data(), key=int64s(), value=booleans())
+    @settings_with_reduced_examples()
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_ttl(self, *, data: DataObject, key: int, value: bool) -> None:
         async with yield_test_redis(data) as test:
             hm_key = redis_hash_map_key(test.key, int, bool, ttl=0.01)
@@ -340,6 +360,18 @@ class TestRedisKey:
         async with yield_test_redis(data) as test:
             key = redis_key(test.key, bool)
             assert not (await key.exists(test.redis))
+            _ = await key.set(test.redis, value)
+            assert await key.exists(test.redis)
+
+    @FLAKY
+    @given(data=data(), value=booleans())
+    @settings_with_reduced_examples()
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_stop_and_wait(self, *, data: DataObject, value: bool) -> None:
+        async with yield_test_redis(data) as test:
+            key = redis_key(
+                test.key, bool, stop=stop_after_delay(1), wait=wait_exponential_jitter()
+            )
             _ = await key.set(test.redis, value)
             assert await key.exists(test.redis)
 

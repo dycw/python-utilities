@@ -18,7 +18,6 @@ from uuid import UUID, uuid4
 
 from redis.asyncio import Redis
 from redis.typing import EncodableT
-from tenacity import stop_after_attempt, wait_random
 
 from utilities.datetime import (
     MILLISECOND,
@@ -39,6 +38,8 @@ if TYPE_CHECKING:
     from redis.asyncio import ConnectionPool
     from redis.asyncio.client import PubSub
     from redis.typing import ResponseT
+    from tenacity.stop import StopBaseT
+    from tenacity.wait import WaitBaseT
 
     from utilities.iterables import MaybeIterable
 
@@ -89,8 +90,8 @@ class _RedisHashMapKey(Generic[_K, _V]):
     value: type[_V]
     value_serializer: Callable[[_V], bytes] | None = None
     value_deserializer: Callable[[bytes], _V] | None = None
-    attempts: int | None = None
-    max_wait: Duration | None = None
+    stop: StopBaseT | None = None
+    wait: WaitBaseT | None = None
     timeout: Duration | None = None
     ttl: Duration | None = None
 
@@ -168,11 +169,7 @@ class _RedisHashMapKey(Generic[_K, _V]):
 
     def _yield_timeout_attempts(self) -> AsyncIterator[MaybeAttemptContextManager]:
         return yield_timeout_attempts(  # skipif-ci-and-not-linux
-            stop=None if self.attempts is None else stop_after_attempt(self.attempts),
-            wait=None
-            if self.max_wait is None
-            else wait_random(self.max_wait / 2, self.max_wait),
-            timeout=self.timeout,
+            stop=self.stop, wait=self.wait, timeout=self.timeout
         )
 
 
@@ -186,8 +183,8 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K], bytes] | None = ...,
     value_serializer: Callable[[_V], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V] | None = ...,
-    attempts: int | None = ...,
-    max_wait: Duration | None = ...,
+    stop: StopBaseT | None = ...,
+    wait: WaitBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K, _V]: ...
@@ -201,8 +198,8 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
-    attempts: int | None = ...,
-    max_wait: Duration | None = ...,
+    stop: StopBaseT | None = ...,
+    wait: WaitBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K, _V1 | _V2]: ...
@@ -216,8 +213,8 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
-    attempts: int | None = ...,
-    max_wait: Duration | None = ...,
+    stop: StopBaseT | None = ...,
+    wait: WaitBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K, _V1 | _V2 | _V3]: ...
@@ -231,8 +228,8 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2], bytes] | None = ...,
     value_serializer: Callable[[_V], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V] | None = ...,
-    attempts: int | None = ...,
-    max_wait: Duration | None = ...,
+    stop: StopBaseT | None = ...,
+    wait: WaitBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2, _V]: ...
@@ -246,8 +243,8 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
-    attempts: int | None = ...,
-    max_wait: Duration | None = ...,
+    stop: StopBaseT | None = ...,
+    wait: WaitBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2, _V1 | _V2]: ...
@@ -261,8 +258,8 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
-    attempts: int | None = ...,
-    max_wait: Duration | None = ...,
+    stop: StopBaseT | None = ...,
+    wait: WaitBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2, _V1 | _V2 | _V3]: ...
@@ -276,8 +273,8 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = ...,
     value_serializer: Callable[[_V], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V] | None = ...,
-    attempts: int | None = ...,
-    max_wait: Duration | None = ...,
+    stop: StopBaseT | None = ...,
+    wait: WaitBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V]: ...
@@ -291,8 +288,8 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
-    attempts: int | None = ...,
-    max_wait: Duration | None = ...,
+    stop: StopBaseT | None = ...,
+    wait: WaitBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2]: ...
@@ -306,8 +303,8 @@ def redis_hash_map_key(
     key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = ...,
     value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = ...,
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
-    attempts: int | None = ...,
-    max_wait: Duration | None = ...,
+    stop: StopBaseT | None = ...,
+    wait: WaitBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2 | _V3]: ...
@@ -320,8 +317,8 @@ def redis_hash_map_key(
     key_serializer: Callable[[Any], bytes] | None = None,
     value_serializer: Callable[[Any], bytes] | None = None,
     value_deserializer: Callable[[bytes], Any] | None = None,
-    attempts: int | None = None,
-    max_wait: Duration | None = None,
+    stop: StopBaseT | None = None,
+    wait: WaitBaseT | None = None,
     timeout: Duration | None = None,
     ttl: Duration | None = None,
 ) -> _RedisHashMapKey[Any, Any]:
@@ -333,8 +330,8 @@ def redis_hash_map_key(
         value=value,
         value_serializer=value_serializer,
         value_deserializer=value_deserializer,
-        attempts=attempts,
-        max_wait=max_wait,
+        stop=stop,
+        wait=wait,
         timeout=timeout,
         ttl=ttl,
     )
@@ -348,8 +345,8 @@ class _RedisKey(Generic[_T]):
     type: type[_T]
     serializer: Callable[[_T], bytes] | None = None
     deserializer: Callable[[bytes], _T] | None = None
-    attempts: int | None = None
-    max_wait: Duration | None = None
+    stop: StopBaseT | None = None
+    wait: WaitBaseT | None = None
     timeout: Duration | None = None
     ttl: Duration | None = None
 
@@ -422,11 +419,7 @@ class _RedisKey(Generic[_T]):
 
     def _yield_timeout_attempts(self) -> AsyncIterator[MaybeAttemptContextManager]:
         return yield_timeout_attempts(  # skipif-ci-and-not-linux
-            stop=None if self.attempts is None else stop_after_attempt(self.attempts),
-            wait=None
-            if self.max_wait is None
-            else wait_random(self.max_wait / 2, self.max_wait),
-            timeout=self.timeout,
+            stop=self.stop, wait=self.wait, timeout=self.timeout
         )
 
 
@@ -438,8 +431,8 @@ def redis_key(
     *,
     serializer: Callable[[_T], bytes] | None = ...,
     deserializer: Callable[[bytes], _T] | None = ...,
-    attempts: int | None = ...,
-    max_wait: Duration | None = ...,
+    stop: StopBaseT | None = ...,
+    wait: WaitBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisKey[_T]: ...
@@ -451,8 +444,8 @@ def redis_key(
     *,
     serializer: Callable[[_T1 | _T2], bytes] | None = None,
     deserializer: Callable[[bytes], _T1 | _T2] | None = None,
-    attempts: int | None = ...,
-    max_wait: Duration | None = ...,
+    stop: StopBaseT | None = ...,
+    wait: WaitBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2]: ...
@@ -464,8 +457,8 @@ def redis_key(
     *,
     serializer: Callable[[_T1 | _T2 | _T3], bytes] | None = None,
     deserializer: Callable[[bytes], _T1 | _T2 | _T3] | None = None,
-    attempts: int | None = ...,
-    max_wait: Duration | None = ...,
+    stop: StopBaseT | None = ...,
+    wait: WaitBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2 | _T3]: ...
@@ -477,8 +470,8 @@ def redis_key(
     *,
     serializer: Callable[[_T1 | _T2 | _T3 | _T4], bytes] | None = None,
     deserializer: Callable[[bytes], _T1 | _T2 | _T3 | _T4] | None = None,
-    attempts: int | None = ...,
-    max_wait: Duration | None = ...,
+    stop: StopBaseT | None = ...,
+    wait: WaitBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2 | _T3 | _T4]: ...
@@ -490,8 +483,8 @@ def redis_key(
     *,
     serializer: Callable[[_T1 | _T2 | _T3 | _T4 | _T5], bytes] | None = None,
     deserializer: Callable[[bytes], _T1 | _T2 | _T3 | _T4 | _T5] | None = None,
-    attempts: int | None = ...,
-    max_wait: Duration | None = ...,
+    stop: StopBaseT | None = ...,
+    wait: WaitBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2 | _T3 | _T4 | _T5]: ...
@@ -502,8 +495,8 @@ def redis_key(
     *,
     serializer: Callable[[Any], bytes] | None = None,
     deserializer: Callable[[bytes], Any] | None = None,
-    attempts: int | None = None,
-    max_wait: Duration | None = None,
+    stop: StopBaseT | None = None,
+    wait: WaitBaseT | None = None,
     timeout: Duration | None = None,
     ttl: Duration | None = None,
 ) -> _RedisKey[Any]:
@@ -513,8 +506,8 @@ def redis_key(
         type=type_,
         serializer=serializer,
         deserializer=deserializer,
-        attempts=attempts,
-        max_wait=max_wait,
+        stop=stop,
+        wait=wait,
         timeout=timeout,
         ttl=ttl,
     )
