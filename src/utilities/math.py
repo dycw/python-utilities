@@ -523,6 +523,8 @@ _RoundMode: TypeAlias = Literal[
     "away-zero",
     "standard-tie-floor",
     "standard-tie-ceil",
+    "standard-tie-toward-zero",
+    "standard-tie-away-zero",
 ]
 
 
@@ -553,21 +555,34 @@ def round_(
                 case -1:
                     return floor(x)
         case "standard-tie-floor":
-            frac, _ = modf(x)
-            if _is_close(abs(frac), 0.5, rel_tol=rel_tol, abs_tol=abs_tol):
-                mode_use: _RoundMode = "floor"
-            else:
-                mode_use: _RoundMode = "standard"
-            return round_(x, mode=mode_use)
+            return _round_tie_standard(x, "floor", rel_tol=rel_tol, abs_tol=abs_tol)
         case "standard-tie-ceil":
-            frac, _ = modf(x)
-            if _is_close(abs(frac), 0.5, rel_tol=rel_tol, abs_tol=abs_tol):
-                mode_use: _RoundMode = "ceil"
-            else:
-                mode_use: _RoundMode = "standard"
-            return round_(x, mode=mode_use)
+            return _round_tie_standard(x, "ceil", rel_tol=rel_tol, abs_tol=abs_tol)
+        case "standard-tie-toward-zero":
+            return _round_tie_standard(
+                x, "toward-zero", rel_tol=rel_tol, abs_tol=abs_tol
+            )
+        case "standard-tie-away-zero":
+            return _round_tie_standard(x, "away-zero", rel_tol=rel_tol, abs_tol=abs_tol)
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
+
+
+def _round_tie_standard(
+    x: float,
+    mode: _RoundMode,
+    /,
+    *,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+) -> int:
+    """Round a float to an integer using the standard method."""
+    frac, _ = modf(x)
+    if _is_close(abs(frac), 0.5, rel_tol=rel_tol, abs_tol=abs_tol):
+        mode_use: _RoundMode = mode
+    else:
+        mode_use: _RoundMode = "standard"
+    return round_(x, mode=mode_use)
 
 
 def round_to_float(x: float, y: float, /, *, mode: _RoundMode = "standard") -> float:
