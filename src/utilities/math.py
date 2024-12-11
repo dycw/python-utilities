@@ -554,6 +554,8 @@ def round_(
                     return 0
                 case -1:
                     return floor(x)
+                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                    assert_never(never)
         case "standard-tie-floor":
             return _round_tie_standard(x, "floor", rel_tol=rel_tol, abs_tol=abs_tol)
         case "standard-tie-ceil":
@@ -611,14 +613,25 @@ class SafeRoundError(Exception):
 
 
 def sign(
-    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
+    x: float,
+    /,
+    *,
+    mode: _RoundMode = "standard",
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
 ) -> Literal[-1, 0, 1]:
     """Get the sign of an integer/float."""
-    if is_positive(x, rel_tol=rel_tol, abs_tol=abs_tol):
-        return 1
-    if is_negative(x, rel_tol=rel_tol, abs_tol=abs_tol):
-        return -1
-    return 0
+    match x:
+        case int():
+            if x > 0:
+                return 1
+            if x < 0:
+                return -1
+            return 0
+        case float():
+            return sign(round_(x, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol))
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
 
 
 # checks

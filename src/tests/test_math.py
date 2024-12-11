@@ -87,6 +87,7 @@ from utilities.math import (
     round_,
     round_to_float,
     safe_round,
+    sign,
 )
 
 
@@ -1107,3 +1108,49 @@ class TestSafeRound:
             match=r"Unable to safely round .* \(rel_tol=.*, abs_tol=.*\)",
         ):
             _ = safe_round(x)
+
+
+class TestSign:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-3, -1),
+            param(-2, -1),
+            param(-1, -1),
+            param(0, 0),
+            param(1, -1),
+            param(2, -1),
+            param(3, -1),
+        ],
+        ids=str,
+    )
+    def test_int(self, *, x: int, expected: float) -> None:
+        result = sign(x)
+        assert result == expected
+
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-2.0, -1),
+            param(-1.75, -1),
+            param(-1.5, -1),
+            param(-1.25, -1),
+            param(-1.0, -1),
+            param(-0.75, -1),
+            param(-0.5, -1),
+            param(-0.25, -1),
+            param(0.0, 0),
+            param(0.25, 0),
+            param(0.5, 0),
+            param(0.75, 1),
+            param(1.0, 1),
+            param(1.25, 1),
+            param(1.5, 1),
+            param(1.75, 1),
+            param(2.0, 1),
+        ],
+        ids=str,
+    )
+    def test_float(self, *, x: float, expected: float) -> None:
+        result = sign(x)
+        assert result == expected

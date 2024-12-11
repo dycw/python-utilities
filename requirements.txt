@@ -394,7 +394,7 @@ sqlalchemy==2.0.36
     #   optuna
 starlette==0.41.3
     # via fastapi
-streamlit==1.40.2
+streamlit==1.41.0
     # via dycw-utilities (pyproject.toml)
 tenacity==9.0.0
     # via

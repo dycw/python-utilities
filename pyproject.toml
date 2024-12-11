@@ -63,7 +63,7 @@ dev = [
   "scipy >= 1.14.1, < 1.15",
   "slack-sdk >= 3.33.5, < 3.34",
   "sqlalchemy >= 2.0.36, < 2.1",
-  "streamlit >= 1.40.2, < 1.41",
+  "streamlit >= 1.41.0, < 1.42",
   "tenacity >= 9.0.0, < 9.1",
   "treelib >= 1.7.0, < 1.8",
   "tzdata >= 2024.2, < 2024.3",
@@ -251,7 +251,7 @@ zzz-test-sqlalchemy-polars = [
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.36, < 2.1",
 ]
-zzz-test-streamlit = ["streamlit >= 1.40.2, < 1.41"]
+zzz-test-streamlit = ["streamlit >= 1.41.0, < 1.42"]
 zzz-test-sys = []
 zzz-test-tempfile = []
 zzz-test-tenacity = ["tenacity >= 9.0.0, < 9.1"]
