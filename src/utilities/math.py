@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import exp, isclose, isfinite, isnan, log, log10
-from typing import Literal, overload
+from math import ceil, exp, floor, isclose, isfinite, isnan, log, log10, modf
+from typing import Literal, TypeAlias, assert_never, overload
 
 from typing_extensions import override
 
@@ -515,9 +515,81 @@ def order_of_magnitude(x: float, /, *, round_: bool = False) -> float:
     return round(result) if round_ else result
 
 
-def round_to_float(x: float, y: float, /) -> float:
+_RoundMode: TypeAlias = Literal[
+    "standard",
+    "floor",
+    "ceil",
+    "toward-zero",
+    "away-zero",
+    "standard-tie-floor",
+    "standard-tie-ceil",
+    "standard-tie-toward-zero",
+    "standard-tie-away-zero",
+]
+
+
+def round_(
+    x: float,
+    /,
+    *,
+    mode: _RoundMode = "standard",
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+) -> int:
+    """Round a float to an integer."""
+    match mode:
+        case "standard":
+            return round(x)
+        case "floor":
+            return floor(x)
+        case "ceil":
+            return ceil(x)
+        case "toward-zero":
+            return int(x)
+        case "away-zero":
+            match sign(x):
+                case 1:
+                    return ceil(x)
+                case 0:
+                    return 0
+                case -1:
+                    return floor(x)
+                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                    assert_never(never)
+        case "standard-tie-floor":
+            return _round_tie_standard(x, "floor", rel_tol=rel_tol, abs_tol=abs_tol)
+        case "standard-tie-ceil":
+            return _round_tie_standard(x, "ceil", rel_tol=rel_tol, abs_tol=abs_tol)
+        case "standard-tie-toward-zero":
+            return _round_tie_standard(
+                x, "toward-zero", rel_tol=rel_tol, abs_tol=abs_tol
+            )
+        case "standard-tie-away-zero":
+            return _round_tie_standard(x, "away-zero", rel_tol=rel_tol, abs_tol=abs_tol)
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+
+
+def _round_tie_standard(
+    x: float,
+    mode: _RoundMode,
+    /,
+    *,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+) -> int:
+    """Round a float to an integer using the standard method."""
+    frac, _ = modf(x)
+    if _is_close(abs(frac), 0.5, rel_tol=rel_tol, abs_tol=abs_tol):
+        mode_use: _RoundMode = mode
+    else:
+        mode_use: _RoundMode = "standard"
+    return round_(x, mode=mode_use)
+
+
+def round_to_float(x: float, y: float, /, *, mode: _RoundMode = "standard") -> float:
     """Round a float to the nearest multiple of another float."""
-    return y * round(x / y)
+    return y * round_(x / y, mode=mode)
 
 
 def safe_round(
@@ -538,6 +610,27 @@ class SafeRoundError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to safely round {self.x} (rel_tol={self.rel_tol}, abs_tol={self.abs_tol})"
+
+
+def sign(
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
+) -> Literal[-1, 0, 1]:
+    """Get the sign of an integer/float."""
+    match x:
+        case int():
+            if x > 0:
+                return 1
+            if x < 0:
+                return -1
+            return 0
+        case float():
+            if is_positive(x, rel_tol=rel_tol, abs_tol=abs_tol):
+                return 1
+            if is_negative(x, rel_tol=rel_tol, abs_tol=abs_tol):
+                return -1
+            return 0
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
 
 
 # checks
@@ -675,6 +768,7 @@ __all__ = [
     "is_zero_or_non_micro_or_nan",
     "number_of_decimals",
     "order_of_magnitude",
+    "round_",
     "round_to_float",
     "safe_round",
 ]

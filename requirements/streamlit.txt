@@ -123,7 +123,7 @@ smmap==5.0.1
     # via gitdb
 sortedcontainers==2.4.0
     # via hypothesis
-streamlit==1.40.2
+streamlit==1.41.0
     # via dycw-utilities (pyproject.toml)
 tenacity==9.0.0
     # via streamlit
