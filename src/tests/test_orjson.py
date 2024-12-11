@@ -5,6 +5,8 @@ from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum, auto
 from functools import partial
+from io import StringIO
+from logging import DEBUG, StreamHandler, getLogger
 from math import isinf, isnan
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
@@ -29,10 +31,11 @@ from hypothesis.strategies import (
     tuples,
     uuids,
 )
-from pytest import mark, param, raises
+from pytest import approx, mark, param, raises
 
 from tests.conftest import IS_CI_AND_WINDOWS
 from utilities.dataclasses import asdict_without_defaults, is_dataclass_instance
+from utilities.datetime import SECOND, get_now
 from utilities.hypothesis import (
     assume_does_not_raise,
     int64s,
@@ -44,6 +47,8 @@ from utilities.hypothesis import (
 )
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.orjson import (
+    OrjsonFormatter,
+    OrjsonLogRecord,
     _DeserializeNoObjectsError,
     _DeserializeObjectNotFoundError,
     _SerializeIntegerError,
@@ -194,6 +199,37 @@ class TruthEnum(Enum):
 
 
 TruthLit = Literal["true", "false"]
+
+
+# handler
+
+
+class TestOrjsonHandler:
+    def test_main(self) -> None:
+        buffer = StringIO()
+        name = TestOrjsonHandler.test_main.__qualname__
+        logger = getLogger(name)
+        logger.setLevel(DEBUG)
+        handler = StreamHandler(buffer)
+        handler.setFormatter(OrjsonFormatter())
+        handler.setLevel(DEBUG)
+        logger.addHandler(handler)
+        extra = {"a": 1, "b": 2}
+        logger.debug("message", extra=extra)
+        record = deserialize(buffer.getvalue().encode(), objects={OrjsonLogRecord})
+        assert isinstance(record, OrjsonLogRecord)
+        assert record.name == name
+        assert record.message == "message"
+        assert record.level == DEBUG
+        assert record.path_name == Path(__file__)
+        assert record.line_num == approx(218, rel=0.1)
+        assert abs(record.datetime - get_now(time_zone="local")) <= SECOND
+        assert record.func_name == TestOrjsonHandler.test_main.__name__
+        assert record.stack_info is None
+        assert record.extra == extra
+
+
+# serialize/deserialize
 
 
 class TestSerializeAndDeserialize:

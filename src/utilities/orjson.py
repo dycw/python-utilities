@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime as dt
 import re
 from collections.abc import Callable
-from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum, unique
 from functools import partial
@@ -47,8 +46,34 @@ if TYPE_CHECKING:
     from logging import _FormatStyle
 
 
+_LOG_RECORD_DEFAULT_ATTRS = {
+    "args",
+    "asctime",
+    "created",
+    "exc_info",
+    "exc_text",
+    "filename",
+    "funcName",
+    "levelname",
+    "levelno",
+    "lineno",
+    "message",
+    "module",
+    "msecs",
+    "msg",
+    "name",
+    "pathname",
+    "process",
+    "processName",
+    "relativeCreated",
+    "stack_info",
+    "thread",
+    "threadName",
+}
+
+
 @dataclass(kw_only=True, slots=True)
-class LogRecordDC:
+class OrjsonLogRecord:
     """The log record as a dataclass."""
 
     name: str
@@ -90,7 +115,12 @@ class OrjsonFormatter(Formatter):
     def format(self, record: LogRecord) -> str:
         from tzlocal import get_localzone
 
-        log_record = LogRecordDC(
+        extra = {
+            k: v
+            for k, v in record.__dict__.items()
+            if k not in _LOG_RECORD_DEFAULT_ATTRS
+        }
+        log_record = OrjsonLogRecord(
             name=record.name,
             level=record.levelno,
             path_name=Path(record.pathname),
@@ -98,9 +128,8 @@ class OrjsonFormatter(Formatter):
             message=record.getMessage(),
             datetime=dt.datetime.fromtimestamp(record.created, tz=get_localzone()),
             func_name=record.funcName,
+            extra=extra if len(extra) >= 1 else None,
         )
-        with suppress(AttributeError):
-            log_record.extra = cast(Any, record).extra
         return serialize(
             log_record,
             before=self._before,
@@ -518,8 +547,8 @@ class _DeserializeObjectNotFoundError(DeserializeError):
 
 __all__ = [
     "DeserializeError",
-    "LogRecordDC",
     "OrjsonFormatter",
+    "OrjsonLogRecord",
     "SerializeError",
     "deserialize",
     "serialize",
