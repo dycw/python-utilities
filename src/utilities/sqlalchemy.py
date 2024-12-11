@@ -32,6 +32,7 @@ from sqlalchemy import (
     PrimaryKeyConstraint,
     Selectable,
     Table,
+    TextClause,
     and_,
     case,
     insert,
@@ -60,7 +61,8 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 from typing_extensions import override
 
-from utilities.asyncio import get_items, get_items_nowait, timeout_dur
+from utilities.asyncio import get_items, get_items_nowait
+from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
 from utilities.iterables import (
     CheckLengthError,
@@ -106,6 +108,8 @@ async def check_engine(
     engine: AsyncEngine,
     /,
     *,
+    stop: StopBaseT | None = None,
+    wait: WaitBaseT | None = None,
     timeout: Duration | None = None,
     num_tables: int | tuple[int, float] | None = None,
 ) -> None:
@@ -124,7 +128,20 @@ async def check_engine(
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
     statement = text(query)
-    async with timeout_dur(duration=timeout), engine.begin() as conn:
+    async for attempt in yield_timeout_attempts(stop=stop, wait=wait, timeout=timeout):
+        async with attempt, engine.begin() as conn:
+            await _check_engine_core(engine, statement, num_tables=num_tables)
+    raise ImpossibleCaseError(case=[f"{locals()=}"])  # pragma: no cover
+
+
+async def _check_engine_core(
+    engine: AsyncEngine,
+    statement: TextClause,
+    /,
+    *,
+    num_tables: int | tuple[int, float] | None = None,
+) -> None:
+    async with engine.begin() as conn:
         rows = (await conn.execute(statement)).all()
     if num_tables is not None:
         try:
