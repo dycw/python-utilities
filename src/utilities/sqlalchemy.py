@@ -62,6 +62,7 @@ from sqlalchemy.pool import NullPool, Pool
 from typing_extensions import override
 
 from utilities.asyncio import get_items, get_items_nowait
+from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
 from utilities.iterables import (
     CheckLengthError,
@@ -128,8 +129,9 @@ async def check_engine(
             assert_never(never)
     statement = text(query)
     async for attempt in yield_timeout_attempts(stop=stop, wait=wait, timeout=timeout):
-        async with attempt:
+        async with attempt, engine.begin() as conn:
             await _check_engine_core(engine, statement, num_tables=num_tables)
+    raise ImpossibleCaseError(case=[f"{locals()=}"])  # pragma: no cover
 
 
 async def _check_engine_core(
