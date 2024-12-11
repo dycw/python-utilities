@@ -877,7 +877,6 @@ class TestOrderOfMagnitude:
         assert res_int == exp_int
 
 
-@mark.only
 class TestRound:
     @mark.parametrize(
         ("x", "expected"),
