@@ -204,10 +204,10 @@ TruthLit = Literal["true", "false"]
 # handler
 
 
-class TestOrjsonHandler:
+class TestOrjsonFormatter:
     def test_main(self) -> None:
         buffer = StringIO()
-        name = TestOrjsonHandler.test_main.__qualname__
+        name = TestOrjsonFormatter.test_main.__qualname__
         logger = getLogger(name)
         logger.setLevel(DEBUG)
         handler = StreamHandler(buffer)
@@ -224,7 +224,7 @@ class TestOrjsonHandler:
         assert record.path_name == Path(__file__)
         assert record.line_num == approx(218, rel=0.1)
         assert abs(record.datetime - get_now(time_zone="local")) <= SECOND
-        assert record.func_name == TestOrjsonHandler.test_main.__name__
+        assert record.func_name == TestOrjsonFormatter.test_main.__name__
         assert record.stack_info is None
         assert record.extra == extra
 
