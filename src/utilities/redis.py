@@ -171,9 +171,9 @@ class _RedisHashMapKey(Generic[_K, _V]):
         return self.key_serializer(key)  # skipif-ci-and-not-linux
 
     def _yield_timeout_attempts(self) -> AsyncIterator[MaybeAttemptContextManager]:
-        if self.wait is None:
+        if self.wait is None:  # skipif-ci-and-not-linux
             wait = None
-        else:
+        else:  # skipif-ci-and-not-linux
             initial, max_ = self.wait
             wait = wait_exponential_jitter(initial=initial, max=max_, jitter=initial)
         return yield_timeout_attempts(  # skipif-ci-and-not-linux
@@ -428,9 +428,9 @@ class _RedisKey(Generic[_T]):
         return ensure_int(result)  # skipif-ci-and-not-linux
 
     def _yield_timeout_attempts(self) -> AsyncIterator[MaybeAttemptContextManager]:
-        if self.wait is None:
+        if self.wait is None:  # skipif-ci-and-not-linux
             wait = None
-        else:
+        else:  # skipif-ci-and-not-linux
             initial, max_ = self.wait
             wait = wait_exponential_jitter(initial=initial, max=max_, jitter=initial)
         return yield_timeout_attempts(  # skipif-ci-and-not-linux
