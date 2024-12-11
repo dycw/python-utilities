@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import ceil, exp, floor, isclose, isfinite, isnan, log, log10
-from typing import Literal, TypeAlias, overload
+from math import ceil, exp, floor, isclose, isfinite, isnan, log, log10, modf
+from typing import Literal, TypeAlias, assert_never, overload
 
 from typing_extensions import override
 
@@ -515,13 +515,28 @@ def order_of_magnitude(x: float, /, *, round_: bool = False) -> float:
     return round(result) if round_ else result
 
 
-_RoundMode: TypeAlias = Literal["default", "floor", "ceil", "toward-zero", "away-zero"]
+_RoundMode: TypeAlias = Literal[
+    "standard",
+    "floor",
+    "ceil",
+    "toward-zero",
+    "away-zero",
+    "standard-tie-floor",
+    "standard-tie-ceil",
+]
 
 
-def round_(x: float, /, *, mode: _RoundMode = "default") -> int:
+def round_(
+    x: float,
+    /,
+    *,
+    mode: _RoundMode = "standard",
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+) -> int:
     """Round a float to an integer."""
     match mode:
-        case "default":
+        case "standard":
             return round(x)
         case "floor":
             return floor(x)
@@ -537,9 +552,25 @@ def round_(x: float, /, *, mode: _RoundMode = "default") -> int:
                     return 0
                 case -1:
                     return floor(x)
+        case "standard-tie-floor":
+            frac, _ = modf(x)
+            if _is_close(abs(frac), 0.5, rel_tol=rel_tol, abs_tol=abs_tol):
+                mode_use: _RoundMode = "floor"
+            else:
+                mode_use: _RoundMode = "standard"
+            return round_(x, mode=mode_use)
+        case "standard-tie-ceil":
+            frac, _ = modf(x)
+            if _is_close(abs(frac), 0.5, rel_tol=rel_tol, abs_tol=abs_tol):
+                mode_use: _RoundMode = "ceil"
+            else:
+                mode_use: _RoundMode = "standard"
+            return round_(x, mode=mode_use)
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
 
 
-def round_to_float(x: float, y: float, /, *, mode: _RoundMode = "default") -> float:
+def round_to_float(x: float, y: float, /, *, mode: _RoundMode = "standard") -> float:
     """Round a float to the nearest multiple of another float."""
     return y * round_(x / y, mode=mode)
 
