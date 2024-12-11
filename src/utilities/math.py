@@ -587,9 +587,17 @@ def _round_tie_standard(
     return round_(x, mode=mode_use)
 
 
-def round_to_float(x: float, y: float, /, *, mode: _RoundMode = "standard") -> float:
+def round_to_float(
+    x: float,
+    y: float,
+    /,
+    *,
+    mode: _RoundMode = "standard",
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+) -> float:
     """Round a float to the nearest multiple of another float."""
-    return y * round_(x / y, mode=mode)
+    return y * round_(x / y, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def safe_round(
