@@ -631,7 +631,6 @@ def sign(
             return 0
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
-    return None
 
 
 # checks
