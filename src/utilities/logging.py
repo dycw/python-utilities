@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from itertools import product
 from logging import (
+    ERROR,
     Formatter,
     Handler,
     Logger,
@@ -25,13 +25,15 @@ from typing_extensions import override
 
 from utilities.datetime import maybe_sub_pct_y
 from utilities.git import get_repo_root
-from utilities.pathlib import ensure_suffix
+from utilities.pathlib import ensure_suffix, resolve_path
+from utilities.traceback import TracebackHandler
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Iterator
     from logging import _FilterType
     from zoneinfo import ZoneInfo
 
-    from utilities.types import PathLike
+    from utilities.types import PathLikeOrCallable
 
 try:
     from whenever import ZonedDateTime
@@ -105,7 +107,7 @@ def setup_logging(
     console_level: LogLevel | None = "INFO",
     console_filters: Iterable[_FilterType] | None = None,
     console_fmt: str = "❯ {zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
-    files_dir: PathLike | Callable[[], Path] | None = get_default_logging_path,
+    files_dir: PathLikeOrCallable | None = get_default_logging_path,
     files_when: str = "D",
     files_interval: int = 1,
     files_backup_count: int = 10,
@@ -170,17 +172,9 @@ def setup_logging(
         console_handler.setLevel(get_logging_level_number(console_level))
         logger.addHandler(console_handler)
 
-    # files
-    match files_dir:  # skipif-ci-and-windows
-        case None:
-            directory = Path.cwd()
-        case Path() | str():
-            directory = Path(files_dir)
-        case Callable():
-            directory = files_dir()
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-            assert_never(never)
-    levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]  # skipif-ci-and-windows
+    # debug & info
+    directory = resolve_path(path=files_dir)
+    levels: list[LogLevel] = ["DEBUG", "INFO"]  # skipif-ci-and-windows
     for level, (subpath, formatter) in product(  # skipif-ci-and-windows
         levels, [(Path(), files_formatter), (Path("plain"), plain_formatter)]
     ):
@@ -208,6 +202,12 @@ def setup_logging(
         file_handler.setFormatter(formatter)
         file_handler.setLevel(level)
         logger.addHandler(file_handler)
+
+    # errors
+    traceback_handler = TracebackHandler(  # skipif-ci-and-windows
+        level=ERROR, path=directory.joinpath("errors")
+    )
+    logger.addHandler(traceback_handler)  # skipif-ci-and-windows
 
     # extra
     if extra is not None:  # skipif-ci-and-windows

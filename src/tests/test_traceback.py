@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from logging import ERROR, getLogger
-from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Literal
 
@@ -41,7 +40,6 @@ from utilities.traceback import (
     ExcPath,
     TracebackHandler,
     _CallArgsError,
-    _get_default_logging_path,
     assemble_exception_paths,
     trace,
     yield_exceptions,
@@ -50,6 +48,7 @@ from utilities.traceback import (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from traceback import FrameSummary
     from types import FrameType
 
@@ -464,11 +463,6 @@ class TestAssembleExceptionsPaths:
         assert frame5.locals["args"] == (96, 128)
         assert frame5.locals["kwargs"] == {"d": 192, "e": 224}
         assert isinstance(exc_path.error, AssertionError)
-
-
-class TestGetDefaultLoggingPath:
-    def test_main(self) -> None:
-        assert isinstance(_get_default_logging_path(), Path)
 
 
 class TestTracebackHandler:
