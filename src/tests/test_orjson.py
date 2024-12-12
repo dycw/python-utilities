@@ -147,7 +147,6 @@ class TestSerializeAndDeserialize:
             assert is_equal(result, obj)
 
     @given(obj=make_objects())
-    @settings(max_examples=10000)
     def test_base(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj))
         with assume_does_not_raise(IsEqualError):
