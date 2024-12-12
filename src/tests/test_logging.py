@@ -11,6 +11,7 @@ from tests.test_traceback_funcs.one import func_one
 from utilities.iterables import one
 from utilities.logging import (
     GetLoggingLevelNumberError,
+    LoggerOrName,
     LogLevel,
     _AdvancedLogRecord,
     add_filters,
@@ -55,13 +56,18 @@ class TestGetDefaultLoggingPath:
 class TestGetLogger:
     def test_logger(self) -> None:
         logger = getLogger(__name__)
-        result = get_logger(logger)
+        result = get_logger(logger=logger)
         assert result is logger
 
     def test_str(self) -> None:
-        result = get_logger(__name__)
+        result = get_logger(logger=__name__)
         assert isinstance(result, Logger)
         assert result.name == __name__
+
+    def test_none(self) -> None:
+        result = get_logger()
+        assert isinstance(result, Logger)
+        assert result.name == "root"
 
 
 class TestGetLoggingLevelNumber:
@@ -162,10 +168,10 @@ class TestSetupLogging:
     def test_extra(self, *, tmp_path: Path) -> None:
         name = TestSetupLogging.test_extra.__qualname__
 
-        def extra(logger: Logger, /) -> None:
+        def extra(logger: LoggerOrName | None, /) -> None:
             handler = FileHandler(tmp_path.joinpath("extra.log"))
             handler.setLevel(DEBUG)
-            logger.addHandler(handler)
+            get_logger(logger=logger).addHandler(handler)
 
         setup_logging(logger=name, files_dir=tmp_path, extra=extra)
         logger = getLogger(name)
@@ -181,7 +187,7 @@ class TestTempHandler:
         logger.addHandler(h2 := StreamHandler())
         assert len(logger.handlers) == 2
         handler = StreamHandler()
-        with temp_handler(logger, handler):
+        with temp_handler(handler, logger=logger):
             assert len(logger.handlers) == 3
         assert len(logger.handlers) == 2
         assert logger.handlers[0] is h1

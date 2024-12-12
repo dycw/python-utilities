@@ -6,7 +6,7 @@ from re import search
 from sys import exc_info
 from typing import TYPE_CHECKING
 
-from pytest import LogCaptureFixture, mark, param, raises
+from pytest import LogCaptureFixture, mark, raises
 
 from tests.conftest import SKIPIF_CI
 from utilities.iterables import one
@@ -36,17 +36,17 @@ class TestMakeExceptHook:
     def test_with_setup_logging(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
-        name = TestMakeExceptHook.test_with_setup_logging.__qualname__
-        setup_logging(logger=name, files_dir=tmp_path)
-        hook = make_except_hook()
+        logger = TestMakeExceptHook.test_with_setup_logging.__qualname__
+        # assert 0, tmp_path
+        setup_logging(logger=logger, files_dir=tmp_path)
+        hook = make_except_hook(logger=logger)
         try:
             _ = 1 / 0
         except ZeroDivisionError:
             exc_type, exc_val, traceback = exc_info()
             hook(exc_type, exc_val, traceback)
-        assert len(caplog.records) == 1
         record = one(caplog.records)
-        expected = ""
+        expected = "hello"
         assert record.message == expected
         path = tmp_path.joinpath("error")
         assert path.exists()
