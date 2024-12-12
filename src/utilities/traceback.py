@@ -83,10 +83,7 @@ class TracebackHandler(Handler):
 
     @override
     def emit(self, record: LogRecord) -> None:
-        if record.exc_info is None:
-            return
-        _, exc_value, _ = record.exc_info
-        if exc_value is None:
+        if (record.exc_info is None) or ((exc_value := record.exc_info[1]) is None):
             return
         assembled = assemble_exception_paths(exc_value)
         path = (
