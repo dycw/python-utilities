@@ -10,7 +10,12 @@ from pytest import LogCaptureFixture, raises
 
 from tests.conftest import SKIPIF_CI
 from utilities.iterables import one
-from utilities.sys import VERSION_MAJOR_MINOR, MakeExceptHookError, make_except_hook
+from utilities.sys import (
+    VERSION_MAJOR_MINOR,
+    MakeExceptHookError,
+    _get_default_logging_path,
+    make_except_hook,
+)
 from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
@@ -26,7 +31,29 @@ class TestMakeExceptHook:
         except ZeroDivisionError:
             exc_type, exc_val, traceback = exc_info()
             hook(exc_type, exc_val, traceback)
-        assert len(caplog.records) == 1
+        assert len(caplog.records) == 0
+
+    def test_log_raw(self, *, caplog: LogCaptureFixture) -> None:
+        hook = make_except_hook(log_raw=True)
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError:
+            exc_type, exc_val, traceback = exc_info()
+            hook(exc_type, exc_val, traceback)
+        record = one(caplog.records)
+        expected = "Result (56) must be divisible by 10"
+        assert record.message == expected
+
+    def test_log_assembled_path(
+        self, *, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
+        hook = make_except_hook(log_assembled=True, log_assembled_dir=tmp_path)
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError:
+            exc_type, exc_val, traceback = exc_info()
+            hook(exc_type, exc_val, traceback)
+        self._assert_assemble(tmp_path, caplog)
 
     def test_non_error(self) -> None:
         hook = make_except_hook()

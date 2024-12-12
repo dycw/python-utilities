@@ -12,14 +12,19 @@ from typing import TYPE_CHECKING, cast
 from typing_extensions import override
 
 from utilities.asyncio import Coroutine1
-from utilities.logging import LoggerOrName, get_logger
+from utilities.atomicwrites import writer
+from utilities.datetime import get_now
+from utilities.logging import LoggerOrName, get_default_logging_path, get_logger
+from utilities.pathlib import ensure_suffix, resolve_path
+from utilities.traceback import assemble_exception_paths
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+    from pathlib import Path
     from types import TracebackType
 
     from utilities.asyncio import MaybeCoroutine1
-    from utilities.types import StrMapping
+    from utilities.types import PathLikeOrCallable, StrMapping
 
 _LOGGER = getLogger(__name__)
 VERSION_MAJOR_MINOR = (version_info.major, version_info.minor)
@@ -28,8 +33,17 @@ VERSION_MAJOR_MINOR = (version_info.major, version_info.minor)
 def make_except_hook(
     *,
     logger: LoggerOrName = _LOGGER,
-    message: object = "",
-    extra: StrMapping | None = None,
+    log_raw: bool = False,
+    log_raw_extra: StrMapping | None = None,
+    max_width: int = 80,
+    indent_size: int = 4,
+    max_length: int | None = None,
+    max_string: int | None = None,
+    max_depth: int | None = None,
+    expand_all: bool = False,
+    log_assembled: bool = False,
+    log_assembled_extra: StrMapping | None = None,
+    log_assembled_dir: PathLikeOrCallable | None = _get_default_logging_path,
     callbacks: Iterable[Callable[[], MaybeCoroutine1[None]]] | None = None,
 ) -> Callable[
     [type[BaseException] | None, BaseException | None, TracebackType | None], None
@@ -50,17 +64,53 @@ def _make_except_hook_inner(
     traceback: TracebackType | None,
     /,
     *,
-    logger: LoggerOrName = _LOGGER,
-    message: object = "",
-    extra: StrMapping | None = None,
+    logger: LoggerOrName,
+    log_raw: bool = False,
+    log_raw_extra: StrMapping | None = None,
+    max_width: int = 80,
+    indent_size: int = 4,
+    max_length: int | None = None,
+    max_string: int | None = None,
+    max_depth: int | None = None,
+    expand_all: bool = False,
+    log_assembled: bool = False,
+    log_assembled_extra: StrMapping | None = None,
+    log_assembled_dir: PathLikeOrCallable | None = _get_default_logging_path,
     callbacks: Iterable[Callable[[], MaybeCoroutine1[None]]] | None = None,
 ) -> None:
     """Exception hook to log the traceback."""
     _ = (exc_type, traceback)
     if exc_val is None:
         raise MakeExceptHookError
-    logger_use = get_logger(logger)
-    logger_use.exception(message, extra=extra)
+    logger = get_logger(logger)
+    if log_raw:
+        logger.error("%s", exc_val, extra=log_raw_extra)
+    error = assemble_exception_paths(exc_val)
+    try:
+        from rich.pretty import pretty_repr
+    except ImportError:  # pragma: no cover
+        repr_use = repr(error)
+    else:
+        repr_use = pretty_repr(
+            error,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
+        )
+    if log_assembled:
+        logger.error("%s", repr_use, extra=log_assembled_extra)
+        path = resolve_path(path=log_assembled_dir)
+        now = (
+            get_now(time_zone="local")
+            .replace(tzinfo=None)
+            .strftime("%Y-%m-%dT%H-%M-%S")
+        )
+        path_use = ensure_suffix(path.joinpath(now), ".txt")
+        with writer(path_use) as temp, temp.open(mode="w") as fh:
+            _ = fh.write(repr_use)
     async_callbacks: list[Callable[[], Coroutine1[None]]] = []
     if callbacks is not None:
         for callback in callbacks:
