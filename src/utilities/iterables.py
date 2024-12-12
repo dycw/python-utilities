@@ -18,7 +18,6 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import cmp_to_key, partial
 from itertools import accumulate, chain, groupby, islice, pairwise, product
-from math import isnan
 from types import NoneType
 from typing import (
     TYPE_CHECKING,
@@ -826,59 +825,21 @@ class ResolveIncludeAndExcludeError(Exception, Generic[_T]):
 
 def sort_iterable(iterable: Iterable[_T], /) -> list[_T]:
     """Sort an iterable across types."""
-    return sorted(iterable, key=cmp_to_key(_sort_iterable_cmp))
-
-
-def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
-    """Compare two quantities."""
-    if type(x) is not type(y):
-        x_qualname = type(x).__qualname__
-        y_qualname = type(y).__qualname__
-        if x_qualname < y_qualname:
-            return -1
-        if x_qualname > y_qualname:
-            return 1
-        raise ImpossibleCaseError(  # pragma: no cover
-            case=[f"{x_qualname=}", f"{y_qualname=}"]
-        )
-
-    # singletons
-    if x is None:
-        y = cast(NoneType, y)
-        return 0
-    if isinstance(x, dt.datetime):
-        y = cast(dt.datetime, y)
-        return _sort_iterable_cmp_datetimes(x, y)
-    if isinstance(x, float):
-        y = cast(float, y)
-        return _sort_iterable_cmp_floats(x, y)
-    if isinstance(x, str):  # else Sequence
-        y = cast(str, y)
-        return cast(Literal[-1, 0, 1], (x > y) - (x < y))
-
-    # collections
-    if isinstance(x, Sized):
-        y = cast(Sized, y)
-        if (result := _sort_iterable_cmp(len(x), len(y))) != 0:
-            return result
-    if isinstance(x, Mapping):
-        y = cast(Mapping[Any, Any], y)
-        return _sort_iterable_cmp(x.items(), y.items())
-    if isinstance(x, AbstractSet):
-        y = cast(AbstractSet[Any], y)
-        return _sort_iterable_cmp(sort_iterable(x), sort_iterable(y))
-    if isinstance(x, Sequence):
-        y = cast(Sequence[Any], y)
-        it: Iterable[Literal[-1, 0, 1]] = (
-            _sort_iterable_cmp(x_i, y_i) for x_i, y_i in zip(x, y, strict=True)
-        )
-        with suppress(StopIteration):
-            return next(r for r in it if r != 0)
-
-    try:
-        return cast(Literal[-1, 0, 1], (x > y) - (x < y))
-    except TypeError:
-        raise SortIterableError(x=x, y=y) from None
+    by_class: defaultdict[type, list[_T]] = defaultdict(list)
+    for i in iterable:
+        by_class[type(i)].append(i)
+    items = sorted(by_class.items(), key=lambda x: x[0].__qualname__)
+    results: list[_T] = []
+    for cls, sublist in items:
+        if cls is NoneType:
+            sorted_sublist = sublist
+        else:
+            try:
+                sorted_sublist = sorted(sublist)
+            except ValueError:
+                raise SortIterableError(iterable=sublist) from None
+        results.extend(sorted_sublist)
+    return results
 
 
 @dataclass(kw_only=True, slots=True)
