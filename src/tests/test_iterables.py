@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from enum import Enum, auto
 from itertools import repeat
+from math import isfinite, isinf, isnan
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from hypothesis import given
@@ -11,6 +12,7 @@ from hypothesis.strategies import (
     binary,
     data,
     dictionaries,
+    floats,
     integers,
     lists,
     none,
@@ -911,6 +913,15 @@ class TestSortIterables:
         result1 = sort_iterable(x)
         result2 = sort_iterable(data.draw(permutations(result1)))
         assert result1 == result2
+
+    @given(data=data(), x=lists(floats()))
+    def test_floats(self, *, data: DataObject, x: list[float]) -> None:
+        result1 = sort_iterable(x)
+        result2 = sort_iterable(data.draw(permutations(result1)))
+        for i, j in zip(result1, result2, strict=True):
+            assert isfinite(i) is isfinite(j)
+            assert isinf(i) is isinf(j)
+            assert isnan(i) is isnan(j)
 
     @given(data=data(), x=lists(none()))
     def test_nones(self, *, data: DataObject, x: list[None]) -> None:

@@ -39,6 +39,7 @@ from utilities.math import (
     _CheckIntegerMaxError,
     _CheckIntegerMinError,
     check_integer,
+    sort_floats,
 )
 from utilities.sentinel import sentinel
 from utilities.text import ensure_str
@@ -828,9 +829,11 @@ def sort_iterable(iterable: Iterable[_T], /) -> list[_T]:
     for cls, sublist in items:
         if cls is NoneType:
             sorted_sublist = sublist
+        elif issubclass(cls, float):
+            sorted_sublist = cast(list[_T], sort_floats(cast(list[float], sublist)))
         else:
             try:
-                sorted_sublist = sorted(sublist)
+                sorted_sublist = sorted(cast(Any, sublist))
             except ValueError:
                 raise SortIterableError(iterable=sublist) from None
         results.extend(sorted_sublist)
