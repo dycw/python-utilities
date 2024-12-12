@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from logging import ERROR, getLogger
+from pathlib import Path
+from re import search
 from typing import TYPE_CHECKING, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
@@ -48,7 +50,6 @@ from utilities.traceback import (
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
     from traceback import FrameSummary
     from types import FrameType
 
@@ -465,6 +466,11 @@ class TestAssembleExceptionsPaths:
         assert isinstance(exc_path.error, AssertionError)
 
 
+class TestGetDefaultLoggingPath:
+    def test_main(self) -> None:
+        assert isinstance(_get_default_logging_path(), Path)
+
+
 class TestTracebackHandler:
     def test_main(self, *, tmp_path: Path) -> None:
         name = TestTracebackHandler.test_main.__qualname__
@@ -477,7 +483,9 @@ class TestTracebackHandler:
             logger.exception("message")
         files = list(tmp_path.iterdir())
         assert len(files) == 1
-        with one(files).open() as fh:
+        file = one(files)
+        assert search(r"^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.txt$", file.name)
+        with file.open() as fh:
             lines = fh.read()
         expected = strip_and_dedent(
             """
