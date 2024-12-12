@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from collections.abc import Set as AbstractSet
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Any, cast
 
 from typing_extensions import override
 
 import utilities.math
+from utilities.dataclasses import Dataclass, is_dataclass_instance
 
 
 def is_equal(
@@ -24,6 +25,11 @@ def is_equal(
     if isinstance(x, str):  # else Sequence
         y = cast(str, y)
         return x == y
+    if is_dataclass_instance(x):
+        y = cast(Dataclass, y)
+        x_values = asdict(x)
+        y_values = asdict(y)
+        return is_equal(x_values, y_values)
     # collections
     if isinstance(x, Mapping):  # subclass of collection
         y = cast(Mapping[Any, Any], y)

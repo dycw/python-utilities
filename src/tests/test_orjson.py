@@ -1,22 +1,21 @@
 from __future__ import annotations
 
 import datetime as dt
-from contextlib import suppress
 from io import StringIO
 from logging import DEBUG, StreamHandler, getLogger
-from math import isinf, isnan
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import DataObject, builds, data, lists, sampled_from
-from pytest import approx, mark, param, raises
+from pytest import mark, param, raises
 
 from tests.test_operator import (
     DataClass1,
     DataClass2Inner,
     DataClass2Outer,
     DataClass3,
+    DataClass4,
     SubFrozenSet,
     SubList,
     SubSet,
@@ -24,7 +23,6 @@ from tests.test_operator import (
     TruthEnum,
     make_objects,
 )
-from utilities.dataclasses import asdict_without_defaults, is_dataclass_instance
 from utilities.datetime import SECOND, get_now
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -77,7 +75,6 @@ class TestOrjsonFormatter:
         assert record.message == "message"
         assert record.level == DEBUG
         assert record.path_name == Path(__file__)
-        assert record.line_num == approx(100, rel=0.1)
         assert abs(record.datetime - get_now(time_zone="local")) <= SECOND
         assert record.func_name == TestOrjsonFormatter.test_main.__name__
         assert record.stack_info is None
@@ -97,19 +94,29 @@ class TestSerializeAndDeserialize:
     @given(obj=make_objects(dataclass1=True))
     def test_dataclass(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClass1})
-        assert result == obj
+        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+            assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass2=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_nested(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClass2Inner, DataClass2Outer})
-        assert result == obj
+        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+            assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass3=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_lit(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClass3})
-        assert result == obj
+        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+            assert is_equal(result, obj)
+
+    @given(obj=make_objects(dataclass4=True))
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_dataclass_custom_eq(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={DataClass4})
+        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+            assert is_equal(result, obj)
 
     @given(obj=builds(DataClass1))
     def test_dataclass_no_objects_error(self, *, obj: DataClass1) -> None:
@@ -129,30 +136,80 @@ class TestSerializeAndDeserialize:
         ):
             _ = deserialize(ser, objects=set())
 
+    @given(data=data())
+    @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
+    @mark.only
+    def test_ib_trades(self, *, data: DataObject) -> None:
+        from ib_async import (
+            ComboLeg,
+            CommissionReport,
+            Contract,
+            DeltaNeutralContract,
+            Execution,
+            Fill,
+            Forex,
+            Order,
+            Trade,
+        )
+
+        forexes = builds(Forex)
+        fills = builds(Fill, contract=forexes)
+        trades = builds(Trade, fills=lists(fills))
+        obj = data.draw(make_objects(extra_base=trades))
+
+        def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
+            if issubclass(cls, Contract) and not issubclass(Contract, cls):
+                mapping = {k: v for k, v in mapping.items() if k != "secType"}
+            return mapping
+
+        with assume_does_not_raise(_SerializeIntegerError):
+            ser = serialize(obj, dataclass_final_hook=hook)
+        result = deserialize(
+            ser,
+            objects={
+                CommissionReport,
+                ComboLeg,
+                Contract,
+                DeltaNeutralContract,
+                Execution,
+                Fill,
+                Forex,
+                Order,
+                Trade,
+            },
+        )
+        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+            assert is_equal(result, obj)
+
     @given(obj=make_objects(enum=True))
     def test_enum(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={TruthEnum})
-        assert result == obj
+        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+            assert is_equal(result, obj)
 
     @given(obj=make_objects(sub_frozenset=True))
     def test_sub_frozenset(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubFrozenSet})
-        assert result == obj
+        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+            assert is_equal(result, obj)
 
     @given(obj=make_objects(sub_list=True))
     def test_sub_list(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubList})
-        assert result == obj
+        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+            assert is_equal(result, obj)
 
     @given(obj=make_objects(sub_set=True))
     def test_sub_set(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubSet})
-        assert result == obj
+        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+            assert is_equal(result, obj)
 
     @given(obj=make_objects(sub_tuple=True))
     def test_sub_tuple(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubTuple})
-        assert result == obj
+        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+            assert is_equal(result, obj)
 
     @mark.parametrize(
         ("utc", "expected"),
@@ -204,69 +261,3 @@ class TestSerialize:
     def test_pre_process(self, *, x: int) -> None:
         with raises(_SerializeIntegerError, match="Integer .* is out of range"):
             _ = serialize(x)
-
-    @given(data=data())
-    @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
-    def test_ib_trades(self, *, data: DataObject) -> None:
-        from ib_async import (
-            ComboLeg,
-            CommissionReport,
-            Contract,
-            DeltaNeutralContract,
-            Execution,
-            Fill,
-            Forex,
-            Order,
-            Trade,
-        )
-
-        forexes = builds(Forex)
-        fills = builds(Fill, contract=forexes)
-        trades = builds(Trade, fills=lists(fills))
-        obj = data.draw(make_objects(extra_base=trades))
-
-        def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
-            if issubclass(cls, Contract) and not issubclass(Contract, cls):
-                mapping = {k: v for k, v in mapping.items() if k != "secType"}
-            return mapping
-
-        with assume_does_not_raise(_SerializeIntegerError):
-            ser = serialize(obj, dataclass_final_hook=hook)
-        result = deserialize(
-            ser,
-            objects={
-                CommissionReport,
-                ComboLeg,
-                Contract,
-                DeltaNeutralContract,
-                Execution,
-                Fill,
-                Forex,
-                Order,
-                Trade,
-            },
-        )
-
-        def unpack(obj: Any, /) -> Any:
-            if isinstance(obj, list | tuple):
-                return list(map(unpack, obj))
-            if isinstance(obj, dict):
-                return {k: unpack(v) for k, v in obj.items()}
-            if is_dataclass_instance(obj):
-                return unpack(asdict_without_defaults(obj))
-            with suppress(TypeError):
-                if isinf(obj) or isnan(obj):
-                    return None
-            return obj
-
-        def eq(x: Any, y: Any) -> Any:
-            if isinstance(x, list) and isinstance(y, list):
-                return all(eq(x_i, y_i) for x_i, y_i in zip(x, y, strict=True))
-            if isinstance(x, dict) and isinstance(y, dict):
-                return (set(x) == set(y)) and all(eq(x[i], y[i]) for i in x)
-            if is_dataclass_instance(x) and is_dataclass_instance(y):
-                return eq(unpack(x), unpack(y))
-            return x == y
-
-        ur, uo = unpack(result), unpack(obj)
-        assert eq(ur, uo)

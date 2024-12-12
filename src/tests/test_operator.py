@@ -16,6 +16,7 @@ from hypothesis.strategies import (
     datetimes,
     dictionaries,
     floats,
+    integers,
     just,
     lists,
     recursive,
@@ -25,6 +26,7 @@ from hypothesis.strategies import (
     tuples,
     uuids,
 )
+from typing_extensions import override
 
 from tests.conftest import IS_CI_AND_WINDOWS
 from utilities.hypothesis import (
@@ -44,7 +46,10 @@ def base_objects(
     dataclass1: bool = False,
     dataclass2: bool = False,
     dataclass3: bool = False,
+    dataclass4: bool = False,
     enum: bool = False,
+    ib_orders: bool = False,
+    ib_trades: bool = False,
 ) -> SearchStrategy[Any]:
     base = (
         booleans()
@@ -68,8 +73,21 @@ def base_objects(
         base |= builds(DataClass2Outer).filter(lambda outer: _is_int64(outer.inner.x))
     if dataclass3:
         base |= builds(DataClass3)
+    if dataclass4:
+        base |= builds(DataClass4)
     if enum:
         base |= sampled_from(TruthEnum)
+    if ib_orders:
+        from ib_async import Order
+
+        base |= builds(Order)
+    if ib_trades:
+        from ib_async import Fill, Forex, Trade
+
+        forexes = builds(Forex)
+        fills = builds(Fill, contract=forexes)
+        trades = builds(Trade, fills=lists(fills))
+        base |= trades
     return base
 
 
@@ -78,7 +96,10 @@ def make_objects(
     dataclass1: bool = False,
     dataclass2: bool = False,
     dataclass3: bool = False,
+    dataclass4: bool = False,
     enum: bool = False,
+    ib_orders: bool = False,
+    ib_trades: bool = False,
     extra_base: SearchStrategy[Any] | None = None,
     sub_frozenset: bool = False,
     sub_list: bool = False,
@@ -86,7 +107,13 @@ def make_objects(
     sub_tuple: bool = False,
 ) -> SearchStrategy[Any]:
     base = base_objects(
-        dataclass1=dataclass1, dataclass2=dataclass2, dataclass3=dataclass3, enum=enum
+        dataclass1=dataclass1,
+        dataclass2=dataclass2,
+        dataclass3=dataclass3,
+        dataclass4=dataclass4,
+        ib_orders=ib_orders,
+        ib_trades=ib_trades,
+        enum=enum,
     )
     if extra_base is not None:
         base |= extra_base
@@ -176,6 +203,19 @@ class DataClass3:
     truth: Literal["true", "false"]
 
 
+@dataclass(kw_only=True, slots=True)
+class DataClass4:
+    x: int = 0
+
+    @override
+    def __eq__(self, other: object) -> bool:
+        return self is other
+
+    @override
+    def __hash__(self) -> int:
+        return id(self)
+
+
 class TruthEnum(Enum):
     true = auto()
     false = auto()
@@ -186,6 +226,10 @@ class TestIsEqual:
         obj=make_objects(
             dataclass1=True,
             dataclass2=True,
+            dataclass3=True,
+            dataclass4=True,
+            ib_orders=True,
+            ib_trades=True,
             sub_frozenset=True,
             sub_list=True,
             sub_set=True,
@@ -195,3 +239,9 @@ class TestIsEqual:
     def test_main(self, *, obj: Any) -> None:
         with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
             assert is_equal(obj, obj)
+
+    @given(x=integers())
+    def test_dataclass_4(self, *, x: int) -> None:
+        obj1, obj2 = DataClass4(x=x), DataClass4(x=x)
+        assert obj1 != obj2
+        assert is_equal(obj1, obj2)
