@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from pytest import LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
 
+from tests.test_traceback import TestTracebackHandler
 from tests.test_traceback_funcs.one import func_one
+from tests.test_traceback_funcs.untraced import func_untraced
 from utilities.iterables import one
 from utilities.logging import (
     GetLoggingLevelNumberError,
@@ -98,27 +100,30 @@ class TestLogLevel:
 
 class TestSetupLogging:
     @skipif_windows
-    def test_main(self, *, tmp_path: Path) -> None:
-        name = TestSetupLogging.test_main.__qualname__
+    def test_decorated(self, *, tmp_path: Path) -> None:
+        name = TestSetupLogging.test_decorated.__qualname__
         setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 6
-        files = list(tmp_path.iterdir())
-        assert len(files) == 5
-        names = {f.name for f in files}
-        expected = {
-            ".__debug.txt.lock",
-            ".__info.txt.lock",
-            "debug.txt",
-            "info.txt",
-            "plain",
-        }
-        assert names == expected
+        self.assert_files(tmp_path, "init")
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             logger.exception("message")
-        assert tmp_path.joinpath("errors").is_dir()
+        self.assert_files(tmp_path, "post-decorated")
+
+    @skipif_windows
+    def test_undecorated(self, *, tmp_path: Path) -> None:
+        name = TestSetupLogging.test_undecorated.__qualname__
+        setup_logging(logger=name, files_dir=tmp_path)
+        logger = getLogger(name)
+        assert len(logger.handlers) == 6
+        self.assert_files(tmp_path, "init")
+        try:
+            _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError:
+            logger.exception("message")
+        self.assert_files(tmp_path, "post-undecorated")
 
     @skipif_windows
     def test_regular_percent_formatting(
@@ -177,6 +182,32 @@ class TestSetupLogging:
         logger = getLogger(name)
         logger.info("")
         assert len(list(tmp_path.iterdir())) == 6
+
+    @classmethod
+    def assert_files(
+        cls, path: Path, check: Literal["init", "post-undecorated", "post-decorated"]
+    ) -> None:
+        files = list(path.iterdir())
+        names = {f.name for f in files}
+        expected = {
+            ".__debug.txt.lock",
+            ".__info.txt.lock",
+            "debug.txt",
+            "info.txt",
+            "plain",
+        }
+        match check:
+            case "init":
+                assert names == expected
+            case "post-undecorated" | "post-decorated":
+                assert names == (expected | {"errors"})
+                errors = path.joinpath("errors")
+                assert errors.is_dir()
+                match check:
+                    case "post-undecorated":
+                        TestTracebackHandler.assert_file(errors, "undecorated")
+                    case "post-decorated":
+                        TestTracebackHandler.assert_file(errors, "decorated")
 
 
 class TestTempHandler:

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from pytest import LogCaptureFixture, mark, raises
 
 from tests.conftest import SKIPIF_CI
+from tests.test_logging import TestSetupLogging
 from utilities.iterables import one
 from utilities.logging import setup_logging
 from utilities.sys import VERSION_MAJOR_MINOR, MakeExceptHookError, make_except_hook
@@ -46,13 +47,9 @@ class TestMakeExceptHook:
             exc_type, exc_val, traceback = exc_info()
             hook(exc_type, exc_val, traceback)
         record = one(caplog.records)
-        expected = "hello"
+        expected = ""
         assert record.message == expected
-        path = tmp_path.joinpath("error")
-        assert path.exists()
-        files = list(path.iterdir())
-        assert 0, files
-        assert 0, len(list(tmp_path.iterdir()))
+        TestSetupLogging.assert_files(tmp_path)
 
     def test_non_error(self) -> None:
         hook = make_except_hook()
