@@ -912,7 +912,9 @@ class TestResolveIncludeAndExclude:
 
 
 class TestSortIterables:
-    @given(x=make_objects(), y=make_objects())
+    @given(
+        x=make_objects(floats_allow_nan=False), y=make_objects(floats_allow_nan=False)
+    )
     def test_main(self, *, x: Any, y: Any) -> None:
         result1 = sort_iterable([x, y])
         result2 = sort_iterable([y, x])
@@ -951,6 +953,12 @@ class TestSortIterables:
     def test_nones(self, *, data: DataObject, x: list[None]) -> None:
         result1 = sort_iterable(x)
         result2 = sort_iterable(data.draw(permutations(result1)))
+        assert result1 == result2
+
+    @given(data=data(), x=lists(none()))
+    def test_sentinel(self, *, data: DataObject, x: list[None]) -> None:
+        result1 = sort_iterable([sentinel, sentinel])
+        result2 = sort_iterable([sentinel, sentinel])
         assert result1 == result2
 
 
