@@ -4,6 +4,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
+from logging import NOTSET, Handler, LogRecord
 from pathlib import Path
 from sys import exc_info
 from traceback import FrameSummary, TracebackException
@@ -24,6 +25,8 @@ from typing import (
 
 from typing_extensions import override
 
+from utilities.atomicwrites import writer
+from utilities.datetime import get_now
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     ensure_not_none,
@@ -32,12 +35,16 @@ from utilities.functions import (
     get_func_qualname,
 )
 from utilities.iterables import one
+from utilities.logging import get_default_logging_path
+from utilities.pathlib import ensure_suffix
 from utilities.rich import yield_pretty_repr_args_and_kwargs
 from utilities.text import ensure_str
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from types import FrameType
+
+    from utilities.pathlib import PathLike
 
 
 _F = TypeVar("_F", bound=Callable[..., Any])
@@ -46,6 +53,77 @@ _TExc = TypeVar("_TExc", bound=BaseException)
 _CALL_ARGS = "_CALL_ARGS"
 ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
 OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
+
+
+def _get_default_logging_path() -> Path:
+    """Get the logging default path."""
+    return get_default_logging_path().joinpath("errors")
+
+
+class TracebackHandler(Handler):
+    """Handler for emitting tracebacks to individual files."""
+
+    @override
+    def __init__(
+        self,
+        *,
+        level: int = NOTSET,
+        path: PathLike | Callable[[], Path] | None = _get_default_logging_path,
+        max_width: int = 80,
+        indent_size: int = 4,
+        max_length: int | None = None,
+        max_string: int | None = None,
+        max_depth: int | None = None,
+        expand_all: bool = False,
+    ) -> None:
+        super().__init__(level=level)
+        self._path = path
+        self._max_width = max_width
+        self._indent_size = indent_size
+        self._max_length = max_length
+        self._max_string = max_string
+        self._max_depth = max_depth
+        self._expand_all = expand_all
+
+    @override
+    def emit(self, record: LogRecord) -> None:
+        if record.exc_info is None:
+            return
+        _, exc_value, _ = record.exc_info
+        if exc_value is None:
+            return
+        assembled = assemble_exception_paths(exc_value)
+        match self._path:
+            case None:
+                path = Path.cwd()
+            case Path() | str():
+                path = Path(self._path)
+            case _:
+                path = self._path()
+        now = ensure_suffix(
+            get_now(time_zone="local")
+            .replace(tzinfo=None)
+            .strftime("%Y-%m-%dT%H-%M-%S"),
+            ".txt",
+        )
+        path_use = ensure_suffix(path.joinpath(now), ".txt")
+        try:
+            from rich.pretty import pretty_repr
+        except ImportError:  # pragma: no cover
+            repr_use = repr(assembled)
+        else:
+            repr_use = pretty_repr(
+                assembled,
+                max_width=self._max_width,
+                indent_size=self._indent_size,
+                max_length=self._max_length,
+                max_string=self._max_string,
+                max_depth=self._max_depth,
+                expand_all=self._expand_all,
+            )
+
+        with writer(path_use) as temp, temp.open(mode="w") as fh:
+            _ = fh.write(repr_use)
 
 
 @dataclass(repr=False, kw_only=True, slots=True)
@@ -411,6 +489,7 @@ __all__ = [
     "ExcInfo",
     "ExcPath",
     "OptExcInfo",
+    "TracebackHandler",
     "assemble_exception_paths",
     "trace",
     "yield_exceptions",
