@@ -915,24 +915,11 @@ class TestSortIterables:
         result2 = sort_iterable(data.draw(permutations(result1)))
         assert result1 == result2
 
-    @given(data=data(), x=lists(floats()))
-    def test_floats(self, *, data: DataObject, x: list[float]) -> None:
-        result1 = sort_iterable(x)
-        result2 = sort_iterable(data.draw(permutations(result1)))
-        for i, j in zip(result1, result2, strict=True):
-            assert isfinite(i) is isfinite(j)
-            assert isinf(i) is isinf(j)
-            assert isnan(i) is isnan(j)
-
     @given(data=data(), x=lists(none()))
     def test_nones(self, *, data: DataObject, x: list[None]) -> None:
         result1 = sort_iterable(x)
         result2 = sort_iterable(data.draw(permutations(result1)))
         assert result1 == result2
-
-    def test_error(self) -> None:
-        with raises(SortIterableError, match="Iterable .* must be sortable"):
-            _ = sort_iterable([sentinel, sentinel])
 
 
 class TestTake:

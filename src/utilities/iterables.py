@@ -16,7 +16,6 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from itertools import accumulate, chain, groupby, islice, pairwise, product
-from math import isfinite, isinf, isnan
 from types import NoneType
 from typing import (
     TYPE_CHECKING,
@@ -829,33 +828,14 @@ def sort_iterable(iterable: Iterable[_T], /) -> list[_T]:
     results: list[_T] = []
     for cls, sublist in items:
         if cls is NoneType:
-            res = sublist
-        elif issubclass(cls, float):
-            res = cast(list[_T], _sort_iterables_floats(cast(list[float], sublist)))
+            sorted_sublist = sublist
         else:
             try:
-                res = sorted(cast(Any, sublist))
-            except TypeError:
+                sorted_sublist = sorted(sublist)
+            except ValueError:
                 raise SortIterableError(iterable=sublist) from None
-        results.extend(res)
+        results.extend(sorted_sublist)
     return results
-
-
-def _sort_iterables_floats(x: Iterable[float], /) -> list[float]:
-    """Sort an iterable of floats."""
-    finite: list[float] = []
-    infs: list[float] = []
-    nans: list[float] = []
-    for x_i in x:
-        if isfinite(x_i):
-            finite.append(x_i)
-        elif isinf(x_i):
-            infs.append(x_i)
-        elif isnan(x_i):
-            nans.append(x_i)
-        else:  # pragma: no cover
-            raise ImpossibleCaseError(case=[f"{x_i=}"])
-    return list(chain(sorted(finite), sorted(infs), nans))
 
 
 @dataclass(kw_only=True, slots=True)
