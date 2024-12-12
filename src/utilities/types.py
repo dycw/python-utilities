@@ -1,23 +1,24 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeGuard, TypeVar, overload
 
 from typing_extensions import override
 
 from utilities.functions import get_class_name
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Container, Hashable, Sized
+    from collections.abc import Container, Hashable, Sized
 
-Number = int | float
-Duration = Number | dt.timedelta
-PathLike = Path | str
-StrMapping = Mapping[str, Any]
-TupleOrStrMapping = tuple[Any, ...] | StrMapping
+Number: TypeAlias = int | float
+Duration: TypeAlias = Number | dt.timedelta
+PathLike: TypeAlias = Path | str
+PathLikeOrCallable: TypeAlias = PathLike | Callable[[], PathLike]
+StrMapping: TypeAlias = Mapping[str, Any]
+TupleOrStrMapping: TypeAlias = tuple[Any, ...] | StrMapping
 
 
 _T = TypeVar("_T")

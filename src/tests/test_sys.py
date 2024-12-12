@@ -2,32 +2,23 @@ from __future__ import annotations
 
 from asyncio import sleep
 from logging import basicConfig
-from pathlib import Path
 from re import search
 from sys import exc_info
+from typing import TYPE_CHECKING
 
 from pytest import LogCaptureFixture, raises
 
 from tests.conftest import SKIPIF_CI
-from tests.test_traceback_funcs.one import func_one
 from utilities.iterables import one
-from utilities.pathlib import temp_cwd
-from utilities.sys import (
-    VERSION_MAJOR_MINOR,
-    MakeExceptHookError,
-    _get_default_logging_path,
-    make_except_hook,
-)
+from utilities.sys import VERSION_MAJOR_MINOR, MakeExceptHookError, make_except_hook
 from utilities.text import strip_and_dedent
 
-
-class TestGetDefaultLoggingPath:
-    def test_main(self) -> None:
-        assert isinstance(_get_default_logging_path(), Path)
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestMakeExceptHook:
-    def test_none(self, *, caplog: LogCaptureFixture) -> None:
+    def test_main(self, *, caplog: LogCaptureFixture) -> None:
         basicConfig(format="{message}", style="{")
         hook = make_except_hook()
         try:
@@ -35,52 +26,7 @@ class TestMakeExceptHook:
         except ZeroDivisionError:
             exc_type, exc_val, traceback = exc_info()
             hook(exc_type, exc_val, traceback)
-        assert len(caplog.records) == 0
-
-    def test_log_raw(self, *, caplog: LogCaptureFixture) -> None:
-        hook = make_except_hook(log_raw=True)
-        try:
-            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        except AssertionError:
-            exc_type, exc_val, traceback = exc_info()
-            hook(exc_type, exc_val, traceback)
-        record = one(caplog.records)
-        expected = "Result (56) must be divisible by 10"
-        assert record.message == expected
-
-    def test_log_assembled_path_cwd(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture
-    ) -> None:
-        hook = make_except_hook(log_assembled=True, log_assembled_dir=None)
-        try:
-            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        except AssertionError:
-            exc_type, exc_val, traceback = exc_info()
-            with temp_cwd(tmp_path):
-                hook(exc_type, exc_val, traceback)
-        self._assert_assemble(tmp_path, caplog)
-
-    def test_log_assembled_path_path(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture
-    ) -> None:
-        hook = make_except_hook(log_assembled=True, log_assembled_dir=tmp_path)
-        try:
-            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        except AssertionError:
-            exc_type, exc_val, traceback = exc_info()
-            hook(exc_type, exc_val, traceback)
-        self._assert_assemble(tmp_path, caplog)
-
-    def test_log_assembled_path_callable(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture
-    ) -> None:
-        hook = make_except_hook(log_assembled=True, log_assembled_dir=lambda: tmp_path)
-        try:
-            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        except AssertionError:
-            exc_type, exc_val, traceback = exc_info()
-            hook(exc_type, exc_val, traceback)
-        self._assert_assemble(tmp_path, caplog)
+        assert len(caplog.records) == 1
 
     def test_non_error(self) -> None:
         hook = make_except_hook()
