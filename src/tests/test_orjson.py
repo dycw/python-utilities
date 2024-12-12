@@ -6,7 +6,7 @@ from logging import DEBUG, StreamHandler, getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import HealthCheck, given, reproduce_failure, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import DataObject, builds, data, lists, sampled_from
 from ib_async import (
     ComboLeg,
@@ -230,20 +230,8 @@ class TestSerializeAndDeserialize:
             assert is_equal(result, obj)
 
     @given(obj=make_objects(enum=True))
-    @mark.only
-    @reproduce_failure(
-        "6.122.3",
-        b"AXicXZE7TgNBEET7zS77MTb+CS8IG+RFmK+MLENERMQJSAkQ4ihEHAAyYkJIycwByAiJiJCIQCKD2gFZ2D3ame7q6t7qmYQQzLh4fHk62z89J7Sx3ez51PeXjzDlCHDwGWWKSD3+3n4LmDUS4+GS+LA8Ghrul+mek+b/BDHNrfjkrqiGeX1tMnPWPhCPJermf/h6XdhV4UsBC6wwJFHHTWoeq8urCNtRpkPOMts6A1L1COX3JSiFORV1RKloTxnQVLNVekICMqpFuaVeCpTFcrSYUfNGIWNs/hJsApiGingKwKI/uDuZMSLWPaNmcTCoBh+3fuqMDa0uJdbo29Qz5Bqspb0vzTG7mqxreoijsAE9K5k7xuVJnOUuXbxXzQ+ZaiUD",
-    )
     def test_enum(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={TruthEnum})
-        mn = {o for o in obj[0] if isinstance(o, float)}
-        mns = sorted(mn)
-        first, second = mns
-        feq = is_equal(first, first)
-        seq = is_equal(second, second)
-        fseq = is_equal({first, second}, {first, second})
-        bits = [is_equal(obj[i], result[i]) for i in range(8)]
         with assume_does_not_raise(_IsEqualUnsortableSetError):
             assert is_equal(result, obj)
 
