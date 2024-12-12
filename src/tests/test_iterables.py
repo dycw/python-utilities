@@ -48,6 +48,7 @@ from utilities.iterables import (
     OneNonUniqueError,
     OneStrError,
     ResolveIncludeAndExcludeError,
+    SortIterableError,
     always_iterable,
     check_bijection,
     check_duplicates,
@@ -956,7 +957,7 @@ class TestSortIterables:
         assert result1 == result2
 
     def test_error(self) -> None:
-        with raises(SortIterableError, match="asdf"):
+        with raises(SortIterableError, match="Unable to sort .* and .*"):
             _ = sort_iterable([sentinel, sentinel])
 
 
