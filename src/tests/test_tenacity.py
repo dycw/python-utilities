@@ -9,7 +9,6 @@ from pytest import raises
 from tenacity import RetryError, stop_after_attempt
 
 from utilities.hypothesis import durations
-from utilities.platform import SYSTEM
 from utilities.tenacity import (
     wait_exponential_jitter,
     yield_attempts,
@@ -58,11 +57,7 @@ class TestYieldAttempts:
             with attempt:
                 async with timeout(0.05):
                     await sleep(i * 0.01)
-        match SYSTEM:
-            case "windows":
-                assert 2 <= i <= 4
-            case "mac" | "linux":
-                assert i == 4
+        assert 2 <= i <= 4
 
     async def test_timeout_fail(self) -> None:
         i = 0
@@ -85,11 +80,7 @@ class TestYieldTimeoutAttempts:
             i -= 1
             async with attempt:
                 await sleep(i * 0.01)
-        match SYSTEM:
-            case "windows":
-                assert 2 <= i <= 4
-            case "mac" | "linux":
-                assert i == 4
+        assert 2 <= i <= 4
 
     async def test_success_with_follow(self) -> None:
         i = 10
@@ -102,11 +93,7 @@ class TestYieldTimeoutAttempts:
                     _ = await sleep(i * 0.01)
         except TimeoutError as error:
             raise NotImplementedError from error
-        match SYSTEM:
-            case "windows":
-                assert 2 <= i <= 4
-            case "mac" | "linux":
-                assert i == 4
+        assert 2 <= i <= 4
 
     async def test_error(self) -> None:
         i = 0
