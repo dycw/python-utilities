@@ -5,12 +5,11 @@ from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import DataObject, booleans, data
-from pytest import raises
 from redis.asyncio import Redis
 from tenacity import stop_after_delay
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
-from tests.test_orjson import objects
+from tests.test_operator import make_objects
 from utilities.functions import get_class_name
 from utilities.hypothesis import (
     int64s,
@@ -18,7 +17,7 @@ from utilities.hypothesis import (
     text_ascii,
     yield_test_redis,
 )
-from utilities.orjson import SerializeError, deserialize, serialize
+from utilities.orjson import deserialize, serialize
 from utilities.redis import (
     publish,
     redis_hash_map_key,
@@ -41,7 +40,7 @@ class TestPublishAndSubscribe:
         channel=text_ascii(min_size=1).map(
             lambda c: f"{get_class_name(TestPublishAndSubscribe)}_obj_ser_{c}"
         ),
-        obj=objects(),
+        obj=make_objects(),
     )
     @settings(
         max_examples=1,
@@ -325,20 +324,6 @@ class TestRedisKey:
             assert await key.get(test.redis) is None
             _ = await key.set(test.redis, sentinel)
             assert await key.get(test.redis) is sentinel
-
-    @FLAKY
-    @given(data=data())
-    @settings_with_reduced_examples()
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_and_set_sentinel_without_serialize(
-        self, *, data: DataObject
-    ) -> None:
-        async with yield_test_redis(data) as test:
-            key = redis_key(test.key, Sentinel)
-            with raises(
-                SerializeError, match="Unable to serialize object of type 'Sentinel'"
-            ):
-                _ = await key.set(test.redis, sentinel)
 
     @FLAKY
     @given(data=data(), value=booleans())

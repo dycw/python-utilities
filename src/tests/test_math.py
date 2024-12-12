@@ -295,24 +295,47 @@ class TestIsBetween:
 
 class TestIsEqual:
     @mark.parametrize(
-        ("x", "y", "expected"),
+        ("x", "expected"), [param(-1, False), param(0, True), param(1, False)], ids=str
+    )
+    def test_two_ints(self, *, x: float, expected: bool) -> None:
+        assert is_equal(x, 0) is expected
+        assert is_equal(0, x) is expected
+
+    @mark.parametrize(
+        ("x", "expected"),
         [
-            param(0.0, -inf, False),
-            param(0.0, -1.0, False),
-            param(0.0, -1e-6, False),
-            param(0.0, -1e-7, False),
-            param(0.0, -1e-8, False),
-            param(0.0, 0.0, True),
-            param(0.0, 1e-8, False),
-            param(0.0, 1e-7, False),
-            param(0.0, 1e-6, False),
-            param(0.0, 1.0, False),
-            param(0.0, inf, False),
-            param(0.0, nan, False),
+            param(-inf, False),
+            param(-1.0, False),
+            param(-1e-6, False),
+            param(-1e-7, False),
+            param(-1e-8, False),
+            param(0.0, True),
+            param(1e-8, False),
+            param(1e-7, False),
+            param(1e-6, False),
+            param(1.0, False),
+            param(inf, False),
+            param(nan, False),
         ],
         ids=str,
     )
-    def test_main(self, *, x: float, y: float, expected: bool) -> None:
+    def test_one_float(self, *, x: float, expected: bool) -> None:
+        assert is_equal(x, 0.0) is expected
+        assert is_equal(0.0, x) is expected
+
+    @mark.parametrize(
+        ("x", "y", "expected"),
+        [
+            param(nan, nan, True),
+            param(nan, inf, False),
+            param(nan, -inf, False),
+            param(inf, inf, True),
+            param(inf, -inf, False),
+            param(-inf, -inf, True),
+        ],
+        ids=str,
+    )
+    def test_special(self, *, x: float, y: float, expected: bool) -> None:
         assert is_equal(x, y) is expected
         assert is_equal(y, x) is expected
 

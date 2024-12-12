@@ -134,17 +134,26 @@ def _ewm_parameters_alpha_to_half_life(alpha: float, /) -> float:
     return -log(2) / log(1 - alpha)
 
 
-def is_equal(x: float, y: float, /) -> bool:
+def is_equal(
+    x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
+) -> bool:
     """Check if x == y."""
-    return (x == y) or (isnan(x) and isnan(y))
+    if isinstance(x, int) and isinstance(y, int):
+        return x == y
+    return _is_close(x, y, rel_tol=rel_tol, abs_tol=abs_tol) or (isnan(x) and isnan(y))
 
 
 def is_equal_or_approx(
-    x: int | tuple[int, float], y: int | tuple[int, float], /
+    x: int | tuple[int, float],
+    y: int | tuple[int, float],
+    /,
+    *,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
 ) -> bool:
     """Check if x == y, or approximately."""
     if isinstance(x, int) and isinstance(y, int):
-        return x == y
+        return is_equal(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
     if isinstance(x, int) and isinstance(y, tuple):
         return isclose(x, y[0], rel_tol=y[1])
     if isinstance(x, tuple) and isinstance(y, int):
