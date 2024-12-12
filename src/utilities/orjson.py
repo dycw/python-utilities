@@ -7,9 +7,10 @@ from dataclasses import dataclass
 from enum import Enum, unique
 from functools import partial
 from logging import Formatter, LogRecord
+from math import isinf, isnan
 from pathlib import Path
 from re import Match, Pattern
-from typing import TYPE_CHECKING, Any, Never, TypeAlias, assert_never, cast
+from typing import TYPE_CHECKING, Any, Literal, Never, TypeAlias, assert_never, cast
 from uuid import UUID
 
 from orjson import (
@@ -103,16 +104,12 @@ class OrjsonFormatter(Formatter):
         defaults: Mapping[str, Any] | None = None,
         extra_ignore: AbstractSet[str] | None = None,
         before: Callable[[Any], Any] | None = None,
-        after: Callable[[Any], Any] | None = None,
         dataclass_final_hook: _DataclassFinalHook | None = None,
-        fallback: bool = False,
     ) -> None:
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
         self._extra_ignore = extra_ignore
         self._before = before
-        self._after = after
         self._dataclass_final_hook = dataclass_final_hook
-        self._fallback = fallback
 
     @override
     def format(self, record: LogRecord) -> str:
@@ -135,9 +132,7 @@ class OrjsonFormatter(Formatter):
         return serialize(
             log_record,
             before=self._before,
-            after=self._after,
             dataclass_final_hook=self._dataclass_final_hook,
-            fallback=self._fallback,
         ).decode()
 
 
@@ -147,17 +142,32 @@ class _Prefixes(Enum):
     date = "d"
     datetime = "dt"
     enum = "e"
-    frozenset_ = "f"
+    float_ = "fl"
+    frozenset_ = "fr"
     list_ = "l"
+    nan = "nan"
     path = "p"
+    pos_inf = "pos_inf"
+    neg_inf = "neg_inf"
     set_ = "s"
     timedelta = "td"
     time = "tm"
     tuple_ = "tu"
-    uuid = "u"
+    unserializable = "un"
+    uuid = "uu"
 
 
 _DataclassFinalHook: TypeAlias = Callable[[type[Dataclass], StrMapping], StrMapping]
+_ErrorMode: TypeAlias = Literal["raise", "drop", "str"]
+
+
+@dataclass(kw_only=True, slots=True)
+class Unserializable:
+    """An unserialiable object."""
+
+    qualname: str
+    repr: str
+    str: str
 
 
 def serialize(
@@ -165,22 +175,16 @@ def serialize(
     /,
     *,
     before: Callable[[Any], Any] | None = None,
-    after: Callable[[Any], Any] | None = None,
     dataclass_final_hook: _DataclassFinalHook | None = None,
-    fallback: bool = False,
 ) -> bytes:
     """Serialize an object."""
     obj_use = _pre_process(
-        obj, before=before, after=after, dataclass_final_hook=dataclass_final_hook
+        obj, before=before, dataclass_final_hook=dataclass_final_hook
     )
-    try:
-        return dumps(
-            obj_use,
-            default=partial(_serialize_default, fallback=fallback),
-            option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
-        )
-    except TypeError:
-        raise _SerializeTypeError(obj=obj) from None
+    return dumps(
+        obj_use,
+        option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
+    )
 
 
 def _pre_process(
@@ -188,36 +192,69 @@ def _pre_process(
     /,
     *,
     before: Callable[[Any], Any] | None = None,
-    after: Callable[[Any], Any] | None = None,
     dataclass_final_hook: _DataclassFinalHook | None = None,
+    error: _ErrorMode = "raise",
 ) -> Any:
     if before is not None:
         obj = before(obj)
     pre = partial(
         _pre_process,
         before=before,
-        after=after,
         dataclass_final_hook=dataclass_final_hook,
+        error=error,
     )
     match obj:
+        # singletons
+        case dt.datetime():
+            if obj.tzinfo is None:
+                ser = serialize_local_datetime(obj)
+            elif obj.tzinfo is dt.UTC:
+                ser = serialize_zoned_datetime(obj).replace("UTC", "dt.UTC")
+            else:
+                ser = serialize_zoned_datetime(obj)
+            return f"[{_Prefixes.datetime.value}]{ser}"
+        case dt.date():  # after datetime
+            ser = serialize_date(obj)
+            return f"[{_Prefixes.date.value}]{ser}"
+        case dt.time():
+            ser = serialize_time(obj)
+            return f"[{_Prefixes.time.value}]{ser}"
+        case dt.timedelta():
+            ser = serialize_timedelta(obj)
+            return f"[{_Prefixes.timedelta.value}]{ser}"
+        case float():
+            if isinf(obj) or isnan(obj):
+                return f"[{_Prefixes.float_.value}]{obj}"
+            return obj
         case int():
-            if not (MIN_INT64 <= obj <= MAX_INT64):
-                raise _SerializeIntegerError(obj=obj)
+            if MIN_INT64 <= obj <= MAX_INT64:
+                return obj
+            raise _SerializeIntegerError(obj=obj)
+        case UUID():
+            return f"[{_Prefixes.uuid.value}]{obj}"
+        case Path():
+            ser = str(obj)
+            return f"[{_Prefixes.path.value}]{ser}"
+        case str():
+            return obj
+        # contains
+        case Dataclass():
+            obj_as_dict = asdict_without_defaults(
+                obj, final=partial(_dataclass_final, hook=dataclass_final_hook)
+            )
+            return pre(obj_as_dict)
         case dict():
             return {k: pre(v) for k, v in obj.items()}
         case Enum():
             return {
                 f"[{_Prefixes.enum.value}|{type(obj).__qualname__}]": pre(obj.value)
             }
-        case UUID():
-            return f"[{_Prefixes.uuid.value}]{obj}"
         case frozenset():
             return _pre_process_container(
                 obj,
                 frozenset,
                 _Prefixes.frozenset_,
                 before=before,
-                after=after,
                 dataclass_final_hook=dataclass_final_hook,
             )
         case list():
@@ -226,7 +263,6 @@ def _pre_process(
                 list,
                 _Prefixes.list_,
                 before=before,
-                after=after,
                 dataclass_final_hook=dataclass_final_hook,
             )
         case set():
@@ -235,7 +271,6 @@ def _pre_process(
                 set,
                 _Prefixes.set_,
                 before=before,
-                after=after,
                 dataclass_final_hook=dataclass_final_hook,
             )
         case tuple():
@@ -244,17 +279,14 @@ def _pre_process(
                 tuple,
                 _Prefixes.tuple_,
                 before=before,
-                after=after,
                 dataclass_final_hook=dataclass_final_hook,
             )
-        case Dataclass():
-            obj = asdict_without_defaults(
-                obj, final=partial(_dataclass_final, hook=dataclass_final_hook)
-            )
-            return {k: pre(v) for k, v in obj.items()}
+        # other
         case _:
-            pass
-    return obj if after is None else after(obj)
+            unserializable = Unserializable(
+                qualname=obj.__qualname__, repr=repr(obj), str=str(obj)
+            )
+            return pre(unserializable)
 
 
 def _pre_process_container(
@@ -264,13 +296,10 @@ def _pre_process_container(
     /,
     *,
     before: Callable[[Any], Any] | None = None,
-    after: Callable[[Any], Any] | None = None,
     dataclass_final_hook: _DataclassFinalHook | None = None,
 ) -> Any:
     values = [
-        _pre_process(
-            o, before=before, after=after, dataclass_final_hook=dataclass_final_hook
-        )
+        _pre_process(o, before=before, dataclass_final_hook=dataclass_final_hook)
         for o in obj
     ]
     if issubclass(cls, list) and issubclass(list, type(obj)):
@@ -294,35 +323,16 @@ def _dataclass_final(
     return {f"[{_Prefixes.dataclass.value}|{cls.__qualname__}]": mapping}
 
 
-def _serialize_default(obj: Any, /, *, fallback: bool = False) -> str:
-    if isinstance(obj, dt.datetime):
-        if obj.tzinfo is None:
-            ser = serialize_local_datetime(obj)
-        elif obj.tzinfo is dt.UTC:
-            ser = serialize_zoned_datetime(obj).replace("UTC", "dt.UTC")
-        else:
-            ser = serialize_zoned_datetime(obj)
-        return f"[{_Prefixes.datetime.value}]{ser}"
-    if isinstance(obj, dt.date):  # after datetime
-        ser = serialize_date(obj)
-        return f"[{_Prefixes.date.value}]{ser}"
-    if isinstance(obj, dt.time):
-        ser = serialize_time(obj)
-        return f"[{_Prefixes.time.value}]{ser}"
-    if isinstance(obj, dt.timedelta):
-        ser = serialize_timedelta(obj)
-        return f"[{_Prefixes.timedelta.value}]{ser}"
-    if isinstance(obj, Path):
-        ser = str(obj)
-        return f"[{_Prefixes.path.value}]{ser}"
-    if fallback:
-        return str(obj)
-    raise TypeError
-
-
 @dataclass(kw_only=True, slots=True)
 class SerializeError(Exception):
     obj: Any
+
+
+@dataclass(kw_only=True, slots=True)
+class _SerializeIntegerError(SerializeError):
+    @override
+    def __str__(self) -> str:
+        return f"Integer {self.obj} is out of range"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -335,13 +345,6 @@ class _SerializeTypeError(SerializeError):
         return f"Unable to serialize object of type {cls!r}:\n{pretty_repr(self.obj)}"
 
 
-@dataclass(kw_only=True, slots=True)
-class _SerializeIntegerError(SerializeError):
-    @override
-    def __str__(self) -> str:
-        return f"Integer {self.obj} is out of range"
-
-
 def deserialize(
     data: bytes, /, *, objects: AbstractSet[type[Any]] | None = None
 ) -> Any:
@@ -349,6 +352,7 @@ def deserialize(
     return _object_hook(loads(data), data=data, objects=objects)
 
 
+_FLOAT_PATTERN = re.compile(r"^\[" + _Prefixes.float_.value + r"\]((?:-?inf|nan))$")
 _LOCAL_DATETIME_PATTERN = re.compile(
     r"^\["
     + _Prefixes.datetime.value
@@ -414,6 +418,8 @@ def _object_hook(
         case str():
             if match := _DATE_PATTERN.search(obj):
                 return parse_date(match.group(1))
+            if match := _FLOAT_PATTERN.search(obj):
+                return float(match.group(1))
             if match := _LOCAL_DATETIME_PATTERN.search(obj):
                 return parse_local_datetime(match.group(1))
             if match := _PATH_PATTERN.search(obj):

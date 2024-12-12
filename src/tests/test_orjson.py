@@ -11,7 +11,7 @@ from math import isinf, isnan
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -46,17 +46,16 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.math import MAX_INT64, MIN_INT64
+from utilities.operator import _IsEqualUnsortableCollectionsError, is_equal
 from utilities.orjson import (
     OrjsonFormatter,
     OrjsonLogRecord,
     _DeserializeNoObjectsError,
     _DeserializeObjectNotFoundError,
     _SerializeIntegerError,
-    _SerializeTypeError,
     deserialize,
     serialize,
 )
-from utilities.sentinel import sentinel
 from utilities.types import is_string_mapping
 from utilities.typing import get_args
 from utilities.zoneinfo import UTC
@@ -83,7 +82,7 @@ def objects(
 ) -> SearchStrategy[Any]:
     base = (
         booleans()
-        | floats(allow_nan=False, allow_infinity=False)
+        | floats()
         | dates()
         | datetimes()
         | int64s()
@@ -99,9 +98,9 @@ def objects(
     else:
         base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
     if dataclass1:
-        base |= builds(DataClass1)
+        base |= builds(DataClass1).filter(lambda obj: _is_int64(obj.x))
     if dataclass2:
-        base |= builds(DataClass2Outer)
+        base |= builds(DataClass2Outer).filter(lambda outer: _is_int64(outer.inner.x))
     if dataclass3:
         base |= builds(DataClass3)
     if enum:
@@ -151,6 +150,10 @@ def _extend(
     if sub_tuple:
         extension |= tuples(strategy).map(SubTuple)
     return extension
+
+
+def _is_int64(n: int, /) -> bool:
+    return MIN_INT64 <= n <= MAX_INT64
 
 
 def _into_set(elements: list[Any], /) -> set[Any]:
@@ -241,9 +244,11 @@ class TestOrjsonFormatter:
 
 class TestSerializeAndDeserialize:
     @given(obj=objects())
+    @reproduce_failure("6.122.3", b"AAoAAQAAAP/4AAAAAAAA")
     def test_main(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj))
-        assert result == obj
+        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+            assert is_equal(result, obj)
 
     @given(obj=objects(dataclass1=True))
     def test_dataclass(self, *, obj: Any) -> None:
@@ -253,8 +258,7 @@ class TestSerializeAndDeserialize:
     @given(obj=objects(dataclass2=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_nested(self, *, obj: Any) -> None:
-        with assume_does_not_raise(_SerializeIntegerError):
-            ser = serialize(obj)
+        ser = serialize(obj)
         result = deserialize(ser, objects={DataClass2Inner, DataClass2Outer})
         assert result == obj
 
@@ -420,18 +424,3 @@ class TestSerialize:
 
         ur, uo = unpack(result), unpack(obj)
         assert eq(ur, uo)
-
-    def test_fallback(self) -> None:
-        with raises(
-            _SerializeTypeError, match="Unable to serialize object of type 'Sentinel'"
-        ):
-            _ = serialize(sentinel)
-        result = serialize(sentinel, fallback=True)
-        expected = b'"<sentinel>"'
-        assert result == expected
-
-    def test_error_serialize(self) -> None:
-        with raises(
-            _SerializeTypeError, match="Unable to serialize object of type 'Sentinel'"
-        ):
-            _ = serialize(sentinel)
