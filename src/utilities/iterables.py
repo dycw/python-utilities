@@ -839,7 +839,7 @@ def sort_iterable(iterable: Iterable[_T], /) -> list[_T]:
         else:
             try:
                 res = sorted(cast(Any, sublist))
-            except ValueError:
+            except TypeError:
                 raise SortIterableError(iterable=sublist) from None
         results.extend(res)
     return results
