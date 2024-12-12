@@ -7,7 +7,7 @@ from inspect import iscoroutinefunction, signature
 from logging import NOTSET, Handler, LogRecord
 from pathlib import Path
 from sys import exc_info
-from traceback import FrameSummary, TracebackException
+from traceback import FrameSummary, TracebackException, print_exception
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -98,23 +98,26 @@ class TracebackHandler(Handler):
             .joinpath(get_now(time_zone="local").strftime("%Y-%m-%dT%H-%M-%S"))
             .with_suffix(".txt")
         )
-        try:
-            from rich.pretty import pretty_repr
-        except ImportError:  # pragma: no cover
-            repr_use = repr(assembled)
-        else:
-            repr_use = pretty_repr(
-                assembled,
-                max_width=self._max_width,
-                indent_size=self._indent_size,
-                max_length=self._max_length,
-                max_string=self._max_string,
-                max_depth=self._max_depth,
-                expand_all=self._expand_all,
-            )
-
         with writer(path) as temp, temp.open(mode="w") as fh:
-            _ = fh.write(repr_use)
+            match assembled:
+                case ExcChain() | ExcGroup() | ExcPath():
+                    try:
+                        from rich.pretty import pretty_repr
+                    except ImportError:  # pragma: no cover
+                        repr_use = repr(assembled)
+                    else:
+                        repr_use = pretty_repr(
+                            assembled,
+                            max_width=self._max_width,
+                            indent_size=self._indent_size,
+                            max_length=self._max_length,
+                            max_string=self._max_string,
+                            max_depth=self._max_depth,
+                            expand_all=self._expand_all,
+                        )
+                    _ = fh.write(repr_use)
+                case BaseException():
+                    print_exception(assembled, file=fh)
 
 
 @dataclass(repr=False, kw_only=True, slots=True)
