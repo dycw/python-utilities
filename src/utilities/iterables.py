@@ -34,6 +34,7 @@ from typing import (
     overload,
 )
 
+from _typeshed import ExcInfo
 from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
@@ -848,10 +849,10 @@ def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
         return 0
     if isinstance(x, dt.datetime):
         y = cast(dt.datetime, y)
-        return _cmp_datetimes(x, y)
+        return _sort_iterable_cmp_datetimes(x, y)
     if isinstance(x, float):
         y = cast(float, y)
-        return _cmp_floats(x, y)
+        return _sort_iterable_cmp_floats(x, y)
     if isinstance(x, str):  # else Sequence
         y = cast(str, y)
         return cast(Literal[-1, 0, 1], (x > y) - (x < y))
@@ -874,10 +875,26 @@ def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
         )
         with suppress(StopIteration):
             return next(r for r in it if r != 0)
-    return cast(Literal[-1, 0, 1], (x > y) - (x < y))
+
+    try:
+        return cast(Literal[-1, 0, 1], (x > y) - (x < y))
+    except TypeError:
+        raise SortIterableError(x=x, y=y) from None
 
 
-def _cmp_datetimes(x: dt.datetime, y: dt.datetime, /) -> Literal[-1, 0, 1]:
+@dataclass(kw_only=True, slots=True)
+class SortIterableError(Exception):
+    x: Any
+    y: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to sort {reprlib.repr(self.x)} and {reprlib.repr(self.y)}"
+
+
+def _sort_iterable_cmp_datetimes(
+    x: dt.datetime, y: dt.datetime, /
+) -> Literal[-1, 0, 1]:
     """Compare two datetimes."""
     if (x.tzinfo is None) and (y.tzinfo is None):
         return cast(Literal[-1, 0, 1], (x > y) - (x < y))
@@ -899,7 +916,7 @@ def _cmp_datetimes(x: dt.datetime, y: dt.datetime, /) -> Literal[-1, 0, 1]:
     raise ImpossibleCaseError(case=[f"{x=}", f"{y=}"])  # pragma: no cover
 
 
-def _cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
+def _sort_iterable_cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
     """Compare two floats."""
     if isnan(x) and isnan(y):
         return 0
@@ -963,6 +980,7 @@ __all__ = [
     "OneNonUniqueError",
     "OneStrError",
     "ResolveIncludeAndExcludeError",
+    "SortIterableError",
     "always_iterable",
     "check_bijection",
     "check_duplicates",

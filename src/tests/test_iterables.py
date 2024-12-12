@@ -955,11 +955,9 @@ class TestSortIterables:
         result2 = sort_iterable(data.draw(permutations(result1)))
         assert result1 == result2
 
-    @given(data=data(), x=lists(none()))
-    def test_sentinel(self, *, data: DataObject, x: list[None]) -> None:
-        result1 = sort_iterable([sentinel, sentinel])
-        result2 = sort_iterable([sentinel, sentinel])
-        assert result1 == result2
+    def test_error(self) -> None:
+        with raises(SortIterableError, match="asdf"):
+            _ = sort_iterable([sentinel, sentinel])
 
 
 class TestTake:
