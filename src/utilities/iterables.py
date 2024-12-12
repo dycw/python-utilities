@@ -858,7 +858,13 @@ def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
         x_sorted = sort_iterable(x)
         y_sorted = sort_iterable(y)
         return _sort_iterable_cmp(x_sorted, y_sorted)
-
+    if isinstance(x, Sequence):
+        y = cast(Sequence[Any], y)
+        it: Iterable[Literal[-1, 0, 1]] = (
+            _sort_iterable_cmp(x_i, y_i) for x_i, y_i in zip(x, y, strict=True)
+        )
+        with suppress(StopIteration):
+            return next(r for r in it if r != 0)
     return cast(Literal[-1, 0, 1], (x > y) - (x < y))
 
 
