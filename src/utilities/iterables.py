@@ -44,6 +44,7 @@ from utilities.math import (
     _CheckIntegerMaxError,
     _CheckIntegerMinError,
     check_integer,
+    sort_floats,
 )
 from utilities.sentinel import sentinel
 from utilities.text import ensure_str
