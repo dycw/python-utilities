@@ -838,7 +838,9 @@ def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
             return -1
         if x_qualname > y_qualname:
             return 1
-        raise ImpossibleCaseError(case=[f"{x_qualname=}", f"{y_qualname=}"])
+        raise ImpossibleCaseError(  # pragma: no cover
+            case=[f"{x_qualname=}", f"{y_qualname=}"]
+        )
 
     # singletons
     if x is None:
