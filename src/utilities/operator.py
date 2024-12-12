@@ -22,6 +22,8 @@ def is_equal(
     if type(x) is not type(y):
         return False
 
+    breakpoint()
+
     # singletons
     if isinstance(x, int | float):
         y = cast(int | float, y)
@@ -34,6 +36,7 @@ def is_equal(
         x_values = asdict(x)
         y_values = asdict(y)
         return is_equal(x_values, y_values)
+
     # collections
     if isinstance(x, Mapping):
         y = cast(Mapping[Any, Any], y)
@@ -60,6 +63,7 @@ def is_equal(
             is_equal(x_i, y_i, rel_tol=rel_tol, abs_tol=abs_tol)
             for x_i, y_i in zip(x, y, strict=True)
         )
+
     return x == y
 
 

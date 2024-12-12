@@ -6,7 +6,7 @@ from logging import DEBUG, StreamHandler, getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, given, reproduce_failure, settings
 from hypothesis.strategies import DataObject, builds, data, lists, sampled_from
 from ib_async import (
     ComboLeg,
@@ -147,6 +147,8 @@ class TestSerializeAndDeserialize:
             assert is_equal(result, obj)
 
     @given(obj=make_objects())
+    @reproduce_failure("6.122.3", b"AXicE2RkYGSAA3ZGdkYmBgYQyciCEGZ4AsQACdsBGg==")
+    @mark.only
     def test_base(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj))
         with assume_does_not_raise(_IsEqualUnsortableSetError):
