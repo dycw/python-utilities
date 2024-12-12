@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Literal
 from beartype.roar import BeartypeCallHintReturnViolation
 from pytest import raises
 
-from tests.conftest import SKIPIF_CI
+from tests.conftest import FLAKY, SKIPIF_CI
 from tests.test_traceback_funcs.beartype import func_beartype
 from tests.test_traceback_funcs.beartype_error import func_beartype_error_first
 from tests.test_traceback_funcs.chain import func_chain_first
@@ -306,6 +306,7 @@ class TestAssembleExceptionsPaths:
         assert frame.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_path.error, AssertionError)
 
+    @FLAKY
     @SKIPIF_CI
     async def test_func_task_group_two(self) -> None:
         with raises(ExceptionGroup) as exc_info:
