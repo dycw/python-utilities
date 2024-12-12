@@ -47,7 +47,7 @@ from utilities.math import (
 )
 from utilities.sentinel import sentinel
 from utilities.text import ensure_str
-from utilities.types import ensure_hashable, ensure_not_none
+from utilities.types import ensure_hashable
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
