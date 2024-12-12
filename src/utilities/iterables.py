@@ -36,7 +36,6 @@ from typing import (
 
 from typing_extensions import override
 
-from tests.test_math import TestIsZeroOrNonMicro
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_not_none
 from utilities.math import (
@@ -48,7 +47,7 @@ from utilities.math import (
 )
 from utilities.sentinel import sentinel
 from utilities.text import ensure_str
-from utilities.types import ensure_hashable
+from utilities.types import ensure_hashable, ensure_not_none
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -884,25 +883,18 @@ def _cmp_datetimes(x: dt.datetime, y: dt.datetime, /) -> Literal[-1, 0, 1]:
         return -1
     if (x.tzinfo is not None) and (y.tzinfo is None):
         return 1
-        # Step 7.2: Compare by UTC time for non-naive datetimes
-        if not x_is_naive and not y_is_naive:
-            x_utc = x.astimezone(tz=None)
-            y_utc = y.astimezone(tz=None)
-            utc_comparison = (x_utc > y_utc) - (x_utc < y_utc)
-            if utc_comparison != 0:
-                return utc_comparison
-
-            # Step 7.3: If equal in UTC, compare alphabetically by timezone
-            x_tz_name = x.tzinfo.tzname(x)
-            y_tz_name = y.tzinfo.tzname(y)
-            return (x_tz_name > y_tz_name) - (x_tz_name < y_tz_name)
-    if isnan(x) and isnan(y):
-        return 0
-    if isnan(x) and (not isnan(y)):
-        return 1
-    if (not isnan(x)) and isnan(y):
-        return -1
-    return cast(Literal[-1, 0, 1], (x > y) - (x < y))
+    if (x.tzinfo is not None) and (y.tzinfo is not None):
+        x_utc = x.astimezone(tz=UTC)
+        y_utc = y.astimezone(tz=UTC)
+        result = cast(Literal[-1, 0, 1], (x_utc > y_utc) - (x_utc < y_utc))
+        if result != 0:
+            return result
+        x_time_zone = ensure_not_none(x.tzinfo.tzname(x))
+        y_time_zone = ensure_not_none(y.tzinfo.tzname(y))
+        return cast(
+            Literal[-1, 0, 1], (x_time_zone > y_time_zone) - (x_time_zone < y_time_zone)
+        )
+    raise ImpossibleCaseError(case=[f"{x=}", f"{y=}"])  # pragma: no cover
 
 
 def _cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
