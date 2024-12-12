@@ -97,7 +97,19 @@ class TestSetupLogging:
         setup_logging(logger_name=name, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 7
-        assert len(list(tmp_path.iterdir())) == 7
+        files = list(tmp_path.iterdir())
+        assert len(files) == 7
+        names = {f.name for f in files}
+        expected = {
+            ".__debug.txt.lock",
+            ".__error.txt.lock",
+            ".__info.txt.lock",
+            "debug.txt",
+            "error.txt",
+            "info.txt",
+            "plain",
+        }
+        assert names == expected
 
     @skipif_windows
     def test_files_dir_cwd(self, *, tmp_path: Path) -> None:

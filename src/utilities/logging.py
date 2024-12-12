@@ -25,6 +25,7 @@ from typing_extensions import override
 
 from utilities.datetime import maybe_sub_pct_y
 from utilities.git import get_repo_root
+from utilities.pathlib import ensure_suffix
 
 if TYPE_CHECKING:
     from logging import _FilterType
@@ -183,7 +184,7 @@ def setup_logging(
     for level, (subpath, formatter) in product(  # skipif-ci-and-windows
         levels, [(Path(), files_formatter), (Path("plain"), plain_formatter)]
     ):
-        path = directory.joinpath(subpath, level.lower())
+        path = ensure_suffix(directory.joinpath(subpath, level.lower()), ".txt")
         path.parent.mkdir(parents=True, exist_ok=True)
         try:
             from concurrent_log_handler import ConcurrentTimedRotatingFileHandler
