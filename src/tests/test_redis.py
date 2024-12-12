@@ -10,7 +10,7 @@ from redis.asyncio import Redis
 from tenacity import stop_after_delay
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
-from tests.test_orjson import objects
+from tests.test_operator import make_objects
 from utilities.functions import get_class_name
 from utilities.hypothesis import (
     int64s,
@@ -41,7 +41,7 @@ class TestPublishAndSubscribe:
         channel=text_ascii(min_size=1).map(
             lambda c: f"{get_class_name(TestPublishAndSubscribe)}_obj_ser_{c}"
         ),
-        obj=objects(),
+        obj=make_objects(),
     )
     @settings(
         max_examples=1,
