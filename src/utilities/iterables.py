@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import reprlib
-from collections import Counter, defaultdict
+from collections import Counter
 from collections.abc import (
     Callable,
     Hashable,
@@ -14,9 +14,9 @@ from collections.abc import (
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from enum import Enum
-from functools import partial
+from functools import cmp_to_key, partial
 from itertools import accumulate, chain, groupby, islice, pairwise, product
-from math import isfinite, isinf, isnan
+from math import isnan
 from types import NoneType
 from typing import (
     TYPE_CHECKING,
@@ -822,49 +822,51 @@ class ResolveIncludeAndExcludeError(Exception, Generic[_T]):
 
 def sort_iterable(iterable: Iterable[_T], /) -> list[_T]:
     """Sort an iterable across types."""
-    by_class: defaultdict[type, list[_T]] = defaultdict(list)
-    for i in iterable:
-        by_class[type(i)].append(i)
-    items = sorted(by_class.items(), key=lambda x: x[0].__qualname__)
-    results: list[_T] = []
-    for cls, sublist in items:
-        if cls is NoneType:
-            res = sublist
-        elif issubclass(cls, float):
-            res = cast(list[_T], _sort_iterables_floats(cast(list[float], sublist)))
-        else:
-            try:
-                res = sorted(cast(Any, sublist))
-            except TypeError:
-                raise SortIterableError(iterable=sublist) from None
-        results.extend(res)
-    return results
+    return sorted(iterable, key=cmp_to_key(_sort_iterable_cmp))
 
 
-def _sort_iterables_floats(x: Iterable[float], /) -> list[float]:
+def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
+    """Compare two quantities."""
+    if type(x) is not type(y):
+        x_qualname = type(x).__qualname__
+        y_qualname = type(y).__qualname__
+        if x_qualname < y_qualname:
+            return -1
+        if x_qualname > y_qualname:
+            return 1
+        raise ImpossibleCaseError(case=[f"{x_qualname=}", f"{y_qualname=}"])
+
+    # singletons
+    if x is None:
+        y = cast(NoneType, y)
+        return 0
+    if isinstance(x, float):
+        y = cast(float, y)
+        return _cmp_floats(x, y)
+
+    # collections
+    if isinstance(x, Sized):
+        y = cast(Sized, y)
+        if (result := _sort_iterable_cmp(len(x), len(y))) != 0:
+            return result
+    if isinstance(x, AbstractSet):
+        y = cast(AbstractSet[Any], y)
+        x_sorted = sort_iterable(x)
+        y_sorted = sort_iterable(y)
+        return _sort_iterable_cmp(x_sorted, y_sorted)
+
+    return cast(Literal[-1, 0, 1], (x > y) - (x < y))
+
+
+def _cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
     """Sort an iterable of floats."""
-    finite: list[float] = []
-    infs: list[float] = []
-    nans: list[float] = []
-    for x_i in x:
-        if isfinite(x_i):
-            finite.append(x_i)
-        elif isinf(x_i):
-            infs.append(x_i)
-        elif isnan(x_i):
-            nans.append(x_i)
-        else:  # pragma: no cover
-            raise ImpossibleCaseError(case=[f"{x_i=}"])
-    return list(chain(sorted(finite), sorted(infs), nans))
-
-
-@dataclass(kw_only=True, slots=True)
-class SortIterableError(Exception, Generic[_T]):
-    iterable: Iterable[_T]
-
-    @override
-    def __str__(self) -> str:
-        return f"Iterable {reprlib.repr(self.iterable)} must be sortable"
+    if isnan(x) and isnan(y):
+        return 0
+    if isnan(x) and (not isnan(y)):
+        return 1
+    if (not isnan(x)) and isnan(y):
+        return -1
+    return cast(Literal[-1, 0, 1], (x > y) - (x < y))
 
 
 def take(n: int, iterable: Iterable[_T], /) -> Sequence[_T]:
@@ -918,7 +920,6 @@ __all__ = [
     "OneNonUniqueError",
     "OneStrError",
     "ResolveIncludeAndExcludeError",
-    "SortIterableError",
     "always_iterable",
     "check_bijection",
     "check_duplicates",

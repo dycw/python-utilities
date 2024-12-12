@@ -229,6 +229,9 @@ class TruthEnum(Enum):
     false = auto()
 
 
+# tests
+
+
 class TestIsEqual:
     @given(
         obj=make_objects(

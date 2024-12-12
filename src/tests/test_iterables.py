@@ -13,6 +13,7 @@ from hypothesis.strategies import (
     data,
     dictionaries,
     floats,
+    frozensets,
     integers,
     lists,
     none,
@@ -45,7 +46,6 @@ from utilities.iterables import (
     OneNonUniqueError,
     OneStrError,
     ResolveIncludeAndExcludeError,
-    SortIterableError,
     always_iterable,
     check_bijection,
     check_duplicates,
@@ -924,15 +924,19 @@ class TestSortIterables:
             assert isinf(i) is isinf(j)
             assert isnan(i) is isnan(j)
 
+    @given(x=frozensets(frozensets(integers())), y=frozensets(frozensets(integers())))
+    def test_nested_frozensets(
+        self, *, x: frozenset[frozenset[int]], y: frozenset[frozenset[int]]
+    ) -> None:
+        result1 = sort_iterable([x, y])
+        result2 = sort_iterable([y, x])
+        assert result1 == result2
+
     @given(data=data(), x=lists(none()))
     def test_nones(self, *, data: DataObject, x: list[None]) -> None:
         result1 = sort_iterable(x)
         result2 = sort_iterable(data.draw(permutations(result1)))
         assert result1 == result2
-
-    def test_error(self) -> None:
-        with raises(SortIterableError, match="Iterable .* must be sortable"):
-            _ = sort_iterable([sentinel, sentinel])
 
 
 class TestTake:

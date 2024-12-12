@@ -17,14 +17,12 @@ from typing_extensions import Protocol, override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
-from utilities.iterables import always_iterable
 from utilities.sentinel import Sentinel
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Mapping
+    from collections.abc import Callable, Iterable, Iterator, Mapping
 
-    from utilities.iterables import MaybeIterable
     from utilities.types import StrMapping
 
 
@@ -134,14 +132,14 @@ def repr_without_defaults(
     obj: Dataclass,
     /,
     *,
-    ignore: MaybeIterable[str] | None = None,
+    ignore: Iterable[str] | None = None,
     comparisons: Mapping[type[Any], Callable[[Any, Any], bool]] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     recursive: bool = False,
 ) -> str:
     """Repr a dataclass, without its defaults."""
-    ignore_use: set[str] = set() if ignore is None else set(always_iterable(ignore))
+    ignore_use: set[str] = set() if ignore is None else set(ignore)
     out: dict[str, str] = {}
     for field in fields(obj):
         name = field.name
