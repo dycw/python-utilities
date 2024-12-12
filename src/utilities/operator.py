@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
+from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -14,25 +16,38 @@ def is_equal(
     """Check if two objects are equal."""
     if type(x) is not type(y):
         return False
-    if isinstance(x, dict):
-        y = cast(dict[Any, Any], y)
-        if not is_equal(set(x), set(y), rel_tol=rel_tol, abs_tol=abs_tol):
+
+    # singletons
+    if isinstance(x, int | float):
+        y = cast(int | float, y)
+        return utilities.math.is_equal(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
+    if isinstance(x, str):  # else Sequence
+        y = cast(str, y)
+        return x == y
+    # collections
+    if isinstance(x, Mapping):  # subclass of collection
+        y = cast(Mapping[Any, Any], y)
+        x_keys = set(x)
+        y_keys = set(y)
+        if not is_equal(x_keys, y_keys, rel_tol=rel_tol, abs_tol=abs_tol):
             return False
-        return all(is_equal(x[i], y[i], rel_tol=rel_tol, abs_tol=abs_tol) for i in x)
-    if isinstance(x, frozenset | set):
-        y = cast(frozenset[Any] | set[Any], y)
+        x_values = [x[i] for i in x]
+        y_values = [y[i] for i in x]
+        return is_equal(x_values, y_values, rel_tol=rel_tol, abs_tol=abs_tol)
+    if isinstance(x, AbstractSet):  # subclass of collection
+        y = cast(AbstractSet[Any], y)
         try:
             x_sorted = sorted(x)
             y_sorted = sorted(y)
         except TypeError:
             raise _IsEqualUnsortableCollectionsError(x=x, y=y) from None
+        return is_equal(x_sorted, y_sorted, rel_tol=rel_tol, abs_tol=abs_tol)
+    if isinstance(x, Sequence):
+        y = cast(Sequence[Any], y)
         return all(
-            is_equal(i, j, rel_tol=rel_tol, abs_tol=abs_tol)
-            for i, j in zip(x_sorted, y_sorted, strict=True)
+            is_equal(x_i, y_i, rel_tol=rel_tol, abs_tol=abs_tol)
+            for x_i, y_i in zip(x, y, strict=True)
         )
-    if isinstance(x, int | float):
-        y = cast(int | float, y)
-        return utilities.math.is_equal(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
     return x == y
 
 

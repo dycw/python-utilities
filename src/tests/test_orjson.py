@@ -11,7 +11,7 @@ from math import isinf, isnan
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
-from hypothesis import HealthCheck, given, reproduce_failure, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -244,7 +244,7 @@ class TestOrjsonFormatter:
 
 class TestSerializeAndDeserialize:
     @given(obj=objects())
-    @reproduce_failure("6.122.3", b"AAoAAQAAAP/4AAAAAAAA")
+    @mark.only
     def test_main(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj))
         with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
