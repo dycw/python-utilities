@@ -930,6 +930,10 @@ class TestSortIterables:
         result2 = sort_iterable(data.draw(permutations(result1)))
         assert result1 == result2
 
+    def test_error(self) -> None:
+        with raises(SortIterableError, match="Iterable .* must be sortable"):
+            _ = sort_iterable([sentinel, sentinel])
+
 
 class TestTake:
     def test_simple(self) -> None:
