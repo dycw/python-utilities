@@ -45,6 +45,7 @@ from utilities.math import MAX_INT64, MIN_INT64
 from utilities.operator import _IsEqualUnsortableCollectionsError, is_equal
 
 if TYPE_CHECKING:
+    from utilities.types import Number
     from utilities.typing import StrMapping
 
 
@@ -55,12 +56,21 @@ def base_objects(
     dataclass3: bool = False,
     dataclass4: bool = False,
     enum: bool = False,
+    floats_min_value: Number | None = None,
+    floats_max_value: Number | None = None,
+    floats_allow_nan: bool | None = None,
+    floats_allow_infinity: bool | None = None,
     ib_orders: bool = False,
     ib_trades: bool = False,
 ) -> SearchStrategy[Any]:
     base = (
         booleans()
-        | floats()
+        | floats(
+            min_value=floats_min_value,
+            max_value=floats_max_value,
+            allow_nan=floats_allow_nan,
+            allow_infinity=floats_allow_infinity,
+        )
         | dates()
         | datetimes()
         | int64s()
@@ -105,6 +115,10 @@ def make_objects(
     dataclass3: bool = False,
     dataclass4: bool = False,
     enum: bool = False,
+    floats_min_value: Number | None = None,
+    floats_max_value: Number | None = None,
+    floats_allow_nan: bool | None = None,
+    floats_allow_infinity: bool | None = None,
     ib_orders: bool = False,
     ib_trades: bool = False,
     extra_base: SearchStrategy[Any] | None = None,
@@ -118,9 +132,13 @@ def make_objects(
         dataclass2=dataclass2,
         dataclass3=dataclass3,
         dataclass4=dataclass4,
+        enum=enum,
+        floats_min_value=floats_min_value,
+        floats_max_value=floats_max_value,
+        floats_allow_nan=floats_allow_nan,
+        floats_allow_infinity=floats_allow_infinity,
         ib_orders=ib_orders,
         ib_trades=ib_trades,
-        enum=enum,
     )
     if extra_base is not None:
         base |= extra_base
@@ -227,6 +245,9 @@ class DataClass4:
 class TruthEnum(Enum):
     true = auto()
     false = auto()
+
+
+# tests
 
 
 class TestIsEqual:

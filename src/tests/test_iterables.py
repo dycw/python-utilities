@@ -11,8 +11,10 @@ from hypothesis.strategies import (
     DataObject,
     binary,
     data,
+    datetimes,
     dictionaries,
     floats,
+    frozensets,
     integers,
     lists,
     none,
@@ -24,7 +26,8 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from typing_extensions import override
 
-from utilities.hypothesis import sets_fixed_length, text_ascii
+from tests.test_operator import make_objects
+from utilities.hypothesis import sets_fixed_length, text_ascii, zoned_datetimes
 from utilities.iterables import (
     CheckBijectionError,
     CheckDuplicatesError,
@@ -81,6 +84,7 @@ from utilities.iterables import (
 from utilities.sentinel import sentinel
 
 if TYPE_CHECKING:
+    import datetime as dt
     from collections.abc import Iterable, Iterator, Sequence
 
 
@@ -909,20 +913,42 @@ class TestResolveIncludeAndExclude:
 
 
 class TestSortIterables:
-    @given(data=data(), x=lists(integers() | text_ascii() | none()))
-    def test_main(self, *, data: DataObject, x: list[int | str | None]) -> None:
-        result1 = sort_iterable(x)
-        result2 = sort_iterable(data.draw(permutations(result1)))
+    @given(
+        x=make_objects(floats_allow_nan=False), y=make_objects(floats_allow_nan=False)
+    )
+    def test_main(self, *, x: Any, y: Any) -> None:
+        result1 = sort_iterable([x, y])
+        result2 = sort_iterable([y, x])
         assert result1 == result2
 
-    @given(data=data(), x=lists(floats()))
-    def test_floats(self, *, data: DataObject, x: list[float]) -> None:
-        result1 = sort_iterable(x)
-        result2 = sort_iterable(data.draw(permutations(result1)))
+    @given(x=datetimes() | zoned_datetimes(), y=datetimes() | zoned_datetimes())
+    def test_datetimes(self, *, x: dt.datetime, y: dt.datetime) -> None:
+        result1 = sort_iterable([x, y])
+        result2 = sort_iterable([y, x])
+        assert result1 == result2
+
+    @given(x=floats(), y=floats())
+    def test_floats(self, *, x: float, y: float) -> None:
+        result1 = sort_iterable([x, y])
+        result2 = sort_iterable([y, x])
         for i, j in zip(result1, result2, strict=True):
             assert isfinite(i) is isfinite(j)
             assert isinf(i) is isinf(j)
             assert isnan(i) is isnan(j)
+
+    @given(x=text_ascii(), y=text_ascii())
+    def test_strings(self, *, x: str, y: str) -> None:
+        result1 = sort_iterable([x, y])
+        result2 = sort_iterable([y, x])
+        assert result1 == result2
+
+    @given(x=frozensets(frozensets(integers())), y=frozensets(frozensets(integers())))
+    def test_nested_frozensets(
+        self, *, x: frozenset[frozenset[int]], y: frozenset[frozenset[int]]
+    ) -> None:
+        result1 = sort_iterable([x, y])
+        result2 = sort_iterable([y, x])
+        assert result1 == result2
 
     @given(data=data(), x=lists(none()))
     def test_nones(self, *, data: DataObject, x: list[None]) -> None:
@@ -931,7 +957,7 @@ class TestSortIterables:
         assert result1 == result2
 
     def test_error(self) -> None:
-        with raises(SortIterableError, match="Iterable .* must be sortable"):
+        with raises(SortIterableError, match="Unable to sort .* and .*"):
             _ = sort_iterable([sentinel, sentinel])
 
 
