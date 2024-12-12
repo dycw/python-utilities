@@ -13,6 +13,8 @@ from hypothesis.strategies import (
     dictionaries,
     integers,
     lists,
+    none,
+    permutations,
     sampled_from,
     sets,
     text,
@@ -20,7 +22,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from typing_extensions import override
 
-from utilities.hypothesis import sets_fixed_length
+from utilities.hypothesis import sets_fixed_length, text_ascii
 from utilities.iterables import (
     CheckBijectionError,
     CheckDuplicatesError,
@@ -69,6 +71,7 @@ from utilities.iterables import (
     pairwise_tail,
     product_dicts,
     resolve_include_and_exclude,
+    sort_iterable,
     take,
     transpose,
 )
@@ -900,6 +903,20 @@ class TestResolveIncludeAndExclude:
             match="Iterables .* and .* must not overlap; got .*",
         ):
             _ = resolve_include_and_exclude(include=[1, 2, 3], exclude=[3, 4, 5])
+
+
+class TestSortIterables:
+    @given(data=data(), x=lists(integers() | text_ascii() | none()))
+    def test_main(self, *, data: DataObject, x: list[int | str | None]) -> None:
+        result1 = sort_iterable(x)
+        result2 = sort_iterable(data.draw(permutations(result1)))
+        assert result1 == result2
+
+    @given(data=data(), x=lists(none()))
+    def test_nones(self, *, data: DataObject, x: list[None]) -> None:
+        result1 = sort_iterable(x)
+        result2 = sort_iterable(data.draw(permutations(result1)))
+        assert result1 == result2
 
 
 class TestTake:
