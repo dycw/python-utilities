@@ -11,6 +11,7 @@ from hypothesis.strategies import (
     DataObject,
     binary,
     data,
+    datetimes,
     dictionaries,
     floats,
     frozensets,
@@ -26,7 +27,7 @@ from pytest import mark, param, raises
 from typing_extensions import override
 
 from tests.test_operator import make_objects
-from utilities.hypothesis import sets_fixed_length, text_ascii
+from utilities.hypothesis import sets_fixed_length, text_ascii, zoned_datetimes
 from utilities.iterables import (
     CheckBijectionError,
     CheckDuplicatesError,
@@ -82,6 +83,7 @@ from utilities.iterables import (
 from utilities.sentinel import sentinel
 
 if TYPE_CHECKING:
+    import datetime as dt
     from collections.abc import Iterable, Iterator, Sequence
 
 
@@ -912,6 +914,12 @@ class TestResolveIncludeAndExclude:
 class TestSortIterables:
     @given(x=make_objects(), y=make_objects())
     def test_main(self, *, x: Any, y: Any) -> None:
+        result1 = sort_iterable([x, y])
+        result2 = sort_iterable([y, x])
+        assert result1 == result2
+
+    @given(x=datetimes() | zoned_datetimes(), y=datetimes() | zoned_datetimes())
+    def test_datetimes(self, *, x: dt.datetime, y: dt.datetime) -> None:
         result1 = sort_iterable([x, y])
         result2 = sort_iterable([y, x])
         assert result1 == result2
