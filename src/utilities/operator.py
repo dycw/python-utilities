@@ -1,18 +1,16 @@
 from __future__ import annotations
 
 import reprlib
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from dataclasses import asdict, dataclass
-from typing import Any, Generic, TypeVar, cast
+from typing import Any, cast
 
 from typing_extensions import override
 
 import utilities.math
 from utilities.dataclasses import Dataclass, is_dataclass_instance
-from utilities.iterables import sort_iterable
-
-_T = TypeVar("_T")
+from utilities.iterables import SortIterableError, sort_iterable
 
 
 def is_equal(
@@ -51,7 +49,7 @@ def is_equal(
             x_sorted = sort_iterable(x)
             y_sorted = sort_iterable(y)
         except SortIterableError as error:
-            raise _IsEqualUnsortableSetError(iterable=error.iterable) from None
+            raise IsEqualError(x=error.x, y=error.y) from None
         return is_equal(x_sorted, y_sorted, rel_tol=rel_tol, abs_tol=abs_tol)
     if isinstance(x, Sequence):
         y = cast(Sequence[Any], y)
@@ -66,16 +64,13 @@ def is_equal(
 
 
 @dataclass(kw_only=True, slots=True)
-class IsEqualError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _IsEqualUnsortableSetError(IsEqualError, Generic[_T]):
-    iterable: Iterable[_T]
+class IsEqualError(Exception):
+    x: Any
+    y: Any
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {reprlib.repr(self.iterable)} must be sortable"
+        return f"Unable to sort {reprlib.repr(self.x)} and {reprlib.repr(self.y)}"
 
 
 __all__ = ["IsEqualError", "is_equal"]
