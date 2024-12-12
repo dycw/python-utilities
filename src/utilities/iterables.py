@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 import reprlib
 from collections import Counter
 from collections.abc import (
@@ -35,6 +36,7 @@ from typing import (
 
 from typing_extensions import override
 
+from tests.test_math import TestIsZeroOrNonMicro
 from utilities.errors import ImpossibleCaseError
 from utilities.math import (
     _CheckIntegerEqualError,
@@ -841,6 +843,9 @@ def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
     if x is None:
         y = cast(NoneType, y)
         return 0
+    if isinstance(x, dt.datetime):
+        y = cast(dt.datetime, y)
+        return _cmp_datetimes(x, y)
     if isinstance(x, float):
         y = cast(float, y)
         return _cmp_floats(x, y)
@@ -869,8 +874,26 @@ def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
     return cast(Literal[-1, 0, 1], (x > y) - (x < y))
 
 
-def _cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
-    """Sort an iterable of floats."""
+def _cmp_datetimes(x: dt.datetime, y: dt.datetime, /) -> Literal[-1, 0, 1]:
+    """Compare two datetimes."""
+    if (x.tzinfo is None) and (y.tzinfo is None):
+        return cast(Literal[-1, 0, 1], (x > y) - (x < y))
+    if (x.tzinfo is None) and (y.tzinfo is not None):
+        return -1
+    if (x.tzinfo is not None) and (y.tzinfo is None):
+        return 1
+        # Step 7.2: Compare by UTC time for non-naive datetimes
+        if not x_is_naive and not y_is_naive:
+            x_utc = x.astimezone(tz=None)
+            y_utc = y.astimezone(tz=None)
+            utc_comparison = (x_utc > y_utc) - (x_utc < y_utc)
+            if utc_comparison != 0:
+                return utc_comparison
+
+            # Step 7.3: If equal in UTC, compare alphabetically by timezone
+            x_tz_name = x.tzinfo.tzname(x)
+            y_tz_name = y.tzinfo.tzname(y)
+            return (x_tz_name > y_tz_name) - (x_tz_name < y_tz_name)
     if isnan(x) and isnan(y):
         return 0
     if isnan(x) and (not isnan(y)):
@@ -878,6 +901,19 @@ def _cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
     if (not isnan(x)) and isnan(y):
         return -1
     return cast(Literal[-1, 0, 1], (x > y) - (x < y))
+
+
+def _cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
+    """Compare two floats."""
+    if isnan(x) and isnan(y):
+        return 0
+    if isnan(x) and (not isnan(y)):
+        return 1
+    if (not isnan(x)) and isnan(y):
+        return -1
+    if (not isnan(x)) and (not isnan(y)):
+        return cast(Literal[-1, 0, 1], (x > y) - (x < y))
+    raise ImpossibleCaseError(case=[f"{x=}", f"{y=}"])  # pragma: no cover
 
 
 def take(n: int, iterable: Iterable[_T], /) -> Sequence[_T]:
