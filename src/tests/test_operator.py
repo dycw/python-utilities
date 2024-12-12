@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from functools import partial
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -19,19 +19,23 @@ from hypothesis.strategies import (
     integers,
     just,
     lists,
+    none,
     recursive,
     sampled_from,
+    sets,
     times,
     timezones,
     tuples,
     uuids,
 )
+from pytest import raises
 from typing_extensions import override
 
 from tests.conftest import IS_CI_AND_WINDOWS
 from utilities.hypothesis import (
     assume_does_not_raise,
     int64s,
+    lists_fixed_length,
     text_ascii,
     text_printable,
     timedeltas_2w,
@@ -39,6 +43,9 @@ from utilities.hypothesis import (
 )
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.operator import _IsEqualUnsortableCollectionsError, is_equal
+
+if TYPE_CHECKING:
+    from utilities.typing import StrMapping
 
 
 def base_objects(
@@ -138,12 +145,13 @@ def _extend(
     sub_set: bool = False,
     sub_tuple: bool = False,
 ) -> SearchStrategy[Any]:
-    sets = lists(strategy).map(_into_set)
+    lsts = lists(strategy)
+    sets = lsts.map(_into_set)
     frozensets = lists(strategy).map(_into_set).map(frozenset)
     extension = (
         dictionaries(text_ascii(), strategy)
         | frozensets
-        | lists(strategy)
+        | lsts
         | sets
         | tuples(strategy)
     )
@@ -236,12 +244,54 @@ class TestIsEqual:
             sub_tuple=True,
         )
     )
-    def test_main(self, *, obj: Any) -> None:
+    def test_one(self, *, obj: Any) -> None:
         with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
             assert is_equal(obj, obj)
 
+    @given(
+        objs=lists_fixed_length(
+            make_objects(
+                dataclass1=True,
+                dataclass2=True,
+                dataclass3=True,
+                dataclass4=True,
+                ib_orders=True,
+                ib_trades=True,
+                sub_frozenset=True,
+                sub_list=True,
+                sub_set=True,
+                sub_tuple=True,
+            ),
+            2,
+        ).map(tuple)
+    )
+    def test_two(self, *, objs: tuple[Any, Any]) -> None:
+        first, second = objs
+        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+            result = is_equal(first, second)
+        assert isinstance(result, bool)
+
     @given(x=integers())
     def test_dataclass_4(self, *, x: int) -> None:
-        obj1, obj2 = DataClass4(x=x), DataClass4(x=x)
-        assert obj1 != obj2
-        assert is_equal(obj1, obj2)
+        first, second = DataClass4(x=x), DataClass4(x=x)
+        assert first != second
+        assert is_equal(first, second)
+
+    @given(
+        objs=lists_fixed_length(dictionaries(text_ascii(), make_objects()), 2).map(
+            tuple
+        )
+    )
+    def test_mappings(self, *, objs: tuple[StrMapping, StrMapping]) -> None:
+        first, second = objs
+        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+            result = is_equal(first, second)
+        assert isinstance(result, bool)
+
+    @given(obj=sets(integers() | none(), min_size=2).filter(lambda x: None in x))
+    def test_error_unsortable(self, *, obj: set[int | None]) -> None:
+        with raises(
+            _IsEqualUnsortableCollectionsError,
+            match=r"Unsortable collection\(s\): .*, .*",
+        ):
+            _ = is_equal(obj, obj)

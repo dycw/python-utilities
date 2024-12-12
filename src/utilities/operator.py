@@ -50,6 +50,8 @@ def is_equal(
         return is_equal(x_sorted, y_sorted, rel_tol=rel_tol, abs_tol=abs_tol)
     if isinstance(x, Sequence):
         y = cast(Sequence[Any], y)
+        if len(x) != len(y):
+            return False
         return all(
             is_equal(x_i, y_i, rel_tol=rel_tol, abs_tol=abs_tol)
             for x_i, y_i in zip(x, y, strict=True)
