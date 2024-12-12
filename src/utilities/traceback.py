@@ -18,6 +18,7 @@ from typing import (
     TypeAlias,
     TypeGuard,
     TypeVar,
+    assert_never,
     cast,
     overload,
     runtime_checkable,
@@ -118,6 +119,8 @@ class TracebackHandler(Handler):
                     _ = fh.write(repr_use)
                 case BaseException():
                     print_exception(assembled, file=fh)
+                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                    assert_never(never)
 
 
 @dataclass(repr=False, kw_only=True, slots=True)
