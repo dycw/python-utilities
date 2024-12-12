@@ -6,8 +6,19 @@ from logging import DEBUG, StreamHandler, getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, given, reproduce_failure, settings
 from hypothesis.strategies import DataObject, builds, data, lists, sampled_from
+from ib_async import (
+    ComboLeg,
+    CommissionReport,
+    Contract,
+    DeltaNeutralContract,
+    Execution,
+    Fill,
+    Forex,
+    Order,
+    Trade,
+)
 from pytest import mark, param, raises
 
 from tests.test_operator import (
@@ -85,8 +96,56 @@ class TestOrjsonFormatter:
 
 
 class TestSerializeAndDeserialize:
+    @given(
+        obj=make_objects(
+            dataclass1=True,
+            dataclass2=True,
+            dataclass3=True,
+            dataclass4=True,
+            ib_orders=True,
+            ib_trades=True,
+            sub_frozenset=True,
+            sub_list=True,
+            sub_set=True,
+            sub_tuple=True,
+        )
+    )
+    def test_all(self, *, obj: Any) -> None:
+        def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
+            if issubclass(cls, Contract) and not issubclass(Contract, cls):
+                mapping = {k: v for k, v in mapping.items() if k != "secType"}
+            return mapping
+
+        with assume_does_not_raise(_SerializeIntegerError):
+            ser = serialize(obj, dataclass_final_hook=hook)
+        result = deserialize(
+            ser,
+            objects={
+                ComboLeg,
+                CommissionReport,
+                Contract,
+                DataClass1,
+                DataClass2Inner,
+                DataClass2Outer,
+                DataClass3,
+                DataClass4,
+                DeltaNeutralContract,
+                Execution,
+                Fill,
+                Forex,
+                Order,
+                SubFrozenSet,
+                SubList,
+                SubSet,
+                SubTuple,
+                Trade,
+            },
+        )
+        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+            assert is_equal(result, obj)
+
     @given(obj=make_objects())
-    def test_main(self, *, obj: Any) -> None:
+    def test_base(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj))
         with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
             assert is_equal(result, obj)
@@ -139,18 +198,6 @@ class TestSerializeAndDeserialize:
     @given(data=data())
     @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
     def test_ib_trades(self, *, data: DataObject) -> None:
-        from ib_async import (
-            ComboLeg,
-            CommissionReport,
-            Contract,
-            DeltaNeutralContract,
-            Execution,
-            Fill,
-            Forex,
-            Order,
-            Trade,
-        )
-
         forexes = builds(Forex)
         fills = builds(Fill, contract=forexes)
         trades = builds(Trade, fills=lists(fills))
