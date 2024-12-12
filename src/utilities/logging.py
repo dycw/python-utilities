@@ -41,7 +41,7 @@ except ModuleNotFoundError:  # pragma: no cover
     ZonedDateTime = None
 
 
-LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+LogLevel: TypeAlias = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 LoggerOrName: TypeAlias = Logger | str
 
 
