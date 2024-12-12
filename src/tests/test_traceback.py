@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from logging import DEBUG, getLogger
+from logging import ERROR, getLogger
 from typing import TYPE_CHECKING, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
@@ -469,11 +469,37 @@ class TestTracebackHandler:
     def test_main(self, *, tmp_path: Path) -> None:
         name = TestTracebackHandler.test_main.__qualname__
         logger = getLogger(name)
-        logger.setLevel(DEBUG)
+        logger.setLevel(ERROR)
         handler = TracebackHandler(path=tmp_path)
-        handler.setLevel(DEBUG)
+        handler.setLevel(ERROR)
         logger.addHandler(handler)
-        logger.debug("message")
+        try:
+            _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError:
+            logger.exception("message")
+        files = list(tmp_path.iterdir())
+        assert len(files) == 1
+        with one(files).open() as fh:
+            lines = fh.read().splitlines()
+        assert len(lines) == 8
+        assert lines[0] == "Traceback (most recent call last):"
+        tail = "\n".join(lines[5:])
+        expected = strip_and_dedent("""
+                assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
+                       ^^^^^^^^^^^^^^^^
+            AssertionError: Result (56) must be divisible by 10
+            """)
+        assert tail == expected
+
+    def test_no_logging(self, *, tmp_path: Path) -> None:
+        name = TestTracebackHandler.test_no_logging.__qualname__
+        logger = getLogger(name)
+        logger.setLevel(ERROR)
+        handler = TracebackHandler(path=tmp_path)
+        handler.setLevel(ERROR)
+        logger.addHandler(handler)
+        logger.error("message")
+        assert len(list(tmp_path.iterdir())) == 0
 
 
 class TestYieldExceptions:
