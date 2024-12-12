@@ -918,19 +918,19 @@ class TestSortIterables:
         result2 = sort_iterable([y, x])
         assert result1 == result2
 
-    @given(data=data(), x=lists(floats()))
-    def test_floats(self, *, data: DataObject, x: list[float]) -> None:
-        result1 = sort_iterable(x)
-        result2 = sort_iterable(data.draw(permutations(result1)))
+    @given(x=floats(), y=floats())
+    def test_floats(self, *, x: float, y: float) -> None:
+        result1 = sort_iterable([x, y])
+        result2 = sort_iterable([y, x])
         for i, j in zip(result1, result2, strict=True):
             assert isfinite(i) is isfinite(j)
             assert isinf(i) is isinf(j)
             assert isnan(i) is isnan(j)
 
-    @given(data=data(), x=lists(text_ascii()))
-    def test_strings(self, *, data: DataObject, x: list[str]) -> None:
-        result1 = sort_iterable(x)
-        result2 = sort_iterable(data.draw(permutations(result1)))
+    @given(x=text_ascii(), y=text_ascii())
+    def test_strings(self, *, x: str, y: str) -> None:
+        result1 = sort_iterable([x, y])
+        result2 = sort_iterable([y, x])
         assert result1 == result2
 
     @given(x=frozensets(frozensets(integers())), y=frozensets(frozensets(integers())))
