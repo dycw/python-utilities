@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import DEBUG, getLogger
 from typing import TYPE_CHECKING, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
@@ -36,6 +37,7 @@ from utilities.traceback import (
     ExcChain,
     ExcGroup,
     ExcPath,
+    TracebackHandler,
     _CallArgsError,
     assemble_exception_paths,
     trace,
@@ -45,6 +47,7 @@ from utilities.traceback import (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from traceback import FrameSummary
     from types import FrameType
 
@@ -462,8 +465,14 @@ class TestAssembleExceptionsPaths:
 
 
 class TestTracebackHandler:
-    def test_main(self) -> None:
-        pass
+    def test_main(self, *, tmp_path: Path) -> None:
+        name = TestTracebackHandler.test_main.__qualname__
+        logger = getLogger(name)
+        logger.setLevel(DEBUG)
+        handler = TracebackHandler(path=tmp_path)
+        handler.setLevel(DEBUG)
+        logger.addHandler(handler)
+        logger.debug("message")
 
 
 class TestYieldExceptions:
