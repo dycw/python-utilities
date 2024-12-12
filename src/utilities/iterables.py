@@ -853,6 +853,9 @@ def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
         y = cast(Sized, y)
         if (result := _sort_iterable_cmp(len(x), len(y))) != 0:
             return result
+    if isinstance(x, Mapping):
+        y = cast(Mapping[Any, Any], y)
+        return _sort_iterable_cmp(x.items(), y.items())
     if isinstance(x, AbstractSet):
         y = cast(AbstractSet[Any], y)
         x_sorted = sort_iterable(x)

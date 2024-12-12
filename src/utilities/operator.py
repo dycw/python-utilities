@@ -31,7 +31,7 @@ def is_equal(
         y_values = asdict(y)
         return is_equal(x_values, y_values)
     # collections
-    if isinstance(x, Mapping):  # subclass of collection
+    if isinstance(x, Mapping):
         y = cast(Mapping[Any, Any], y)
         x_keys = set(x)
         y_keys = set(y)
@@ -40,7 +40,7 @@ def is_equal(
         x_values = [x[i] for i in x]
         y_values = [y[i] for i in x]
         return is_equal(x_values, y_values, rel_tol=rel_tol, abs_tol=abs_tol)
-    if isinstance(x, AbstractSet):  # subclass of collection
+    if isinstance(x, AbstractSet):
         y = cast(AbstractSet[Any], y)
         try:
             x_sorted = sorted(x)

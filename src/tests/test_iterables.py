@@ -25,6 +25,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from typing_extensions import override
 
+from tests.test_operator import make_objects
 from utilities.hypothesis import sets_fixed_length, text_ascii
 from utilities.iterables import (
     CheckBijectionError,
@@ -909,10 +910,10 @@ class TestResolveIncludeAndExclude:
 
 
 class TestSortIterables:
-    @given(data=data(), x=lists(integers() | text_ascii() | none()))
-    def test_main(self, *, data: DataObject, x: list[int | str | None]) -> None:
-        result1 = sort_iterable(x)
-        result2 = sort_iterable(data.draw(permutations(result1)))
+    @given(x=make_objects(), y=make_objects())
+    def test_main(self, *, x: Any, y: Any) -> None:
+        result1 = sort_iterable([x, y])
+        result2 = sort_iterable([y, x])
         assert result1 == result2
 
     @given(data=data(), x=lists(floats()))
