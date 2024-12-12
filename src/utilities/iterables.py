@@ -858,9 +858,7 @@ def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
         return _sort_iterable_cmp(x.items(), y.items())
     if isinstance(x, AbstractSet):
         y = cast(AbstractSet[Any], y)
-        x_sorted = sort_iterable(x)
-        y_sorted = sort_iterable(y)
-        return _sort_iterable_cmp(x_sorted, y_sorted)
+        return _sort_iterable_cmp(sort_iterable(x), sort_iterable(y))
     if isinstance(x, Sequence):
         y = cast(Sequence[Any], y)
         it: Iterable[Literal[-1, 0, 1]] = (
