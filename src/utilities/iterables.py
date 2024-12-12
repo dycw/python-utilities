@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import reprlib
-from collections import Counter
+from collections import Counter, defaultdict
 from collections.abc import (
     Callable,
     Hashable,
