@@ -10,7 +10,7 @@ from typing_extensions import override
 
 import utilities.math
 from utilities.dataclasses import Dataclass, is_dataclass_instance
-from utilities.iterables import SortIterableError, sort_iterable
+from utilities.iterables import sort_iterable
 
 _T = TypeVar("_T")
 
@@ -21,8 +21,6 @@ def is_equal(
     """Check if two objects are equal."""
     if type(x) is not type(y):
         return False
-
-    breakpoint()
 
     # singletons
     if isinstance(x, int | float):
