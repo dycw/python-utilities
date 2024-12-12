@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import reprlib
 from collections.abc import Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from dataclasses import asdict, dataclass
@@ -9,6 +10,7 @@ from typing_extensions import override
 
 import utilities.math
 from utilities.dataclasses import Dataclass, is_dataclass_instance
+from utilities.iterables import SortIterableError, sort_iterable
 
 
 def is_equal(
@@ -30,6 +32,7 @@ def is_equal(
         x_values = asdict(x)
         y_values = asdict(y)
         return is_equal(x_values, y_values)
+
     # collections
     if isinstance(x, Mapping):
         y = cast(Mapping[Any, Any], y)
@@ -43,10 +46,10 @@ def is_equal(
     if isinstance(x, AbstractSet):
         y = cast(AbstractSet[Any], y)
         try:
-            x_sorted = sorted(x)
-            y_sorted = sorted(y)
-        except TypeError:
-            raise _IsEqualUnsortableCollectionsError(x=x, y=y) from None
+            x_sorted = sort_iterable(x)
+            y_sorted = sort_iterable(y)
+        except SortIterableError as error:
+            raise IsEqualError(x=error.x, y=error.y) from None
         return is_equal(x_sorted, y_sorted, rel_tol=rel_tol, abs_tol=abs_tol)
     if isinstance(x, Sequence):
         y = cast(Sequence[Any], y)
@@ -56,6 +59,7 @@ def is_equal(
             is_equal(x_i, y_i, rel_tol=rel_tol, abs_tol=abs_tol)
             for x_i, y_i in zip(x, y, strict=True)
         )
+
     return x == y
 
 
@@ -64,12 +68,9 @@ class IsEqualError(Exception):
     x: Any
     y: Any
 
-
-@dataclass(kw_only=True, slots=True)
-class _IsEqualUnsortableCollectionsError(IsEqualError):
     @override
     def __str__(self) -> str:
-        return f"Unsortable collection(s): {self.x}, {self.y}"
+        return f"Unable to sort {reprlib.repr(self.x)} and {reprlib.repr(self.y)}"  # pragma: no cover
 
 
 __all__ = ["IsEqualError", "is_equal"]

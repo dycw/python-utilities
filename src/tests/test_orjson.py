@@ -41,7 +41,7 @@ from utilities.hypothesis import (
     text_printable,
 )
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.operator import _IsEqualUnsortableCollectionsError, is_equal
+from utilities.operator import IsEqualError, is_equal
 from utilities.orjson import (
     OrjsonFormatter,
     OrjsonLogRecord,
@@ -143,40 +143,40 @@ class TestSerializeAndDeserialize:
                 Trade,
             },
         )
-        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+        with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
     @given(obj=make_objects())
     def test_base(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj))
-        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+        with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass1=True))
     def test_dataclass(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClass1})
-        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+        with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass2=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_nested(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClass2Inner, DataClass2Outer})
-        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+        with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass3=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_lit(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClass3})
-        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+        with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass4=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_custom_eq(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClass4})
-        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+        with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
     @given(obj=builds(DataClass1))
@@ -226,37 +226,37 @@ class TestSerializeAndDeserialize:
                 Trade,
             },
         )
-        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+        with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
     @given(obj=make_objects(enum=True))
     def test_enum(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={TruthEnum})
-        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+        with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
     @given(obj=make_objects(sub_frozenset=True))
     def test_sub_frozenset(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubFrozenSet})
-        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+        with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
     @given(obj=make_objects(sub_list=True))
     def test_sub_list(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubList})
-        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+        with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
     @given(obj=make_objects(sub_set=True))
     def test_sub_set(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubSet})
-        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+        with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
     @given(obj=make_objects(sub_tuple=True))
     def test_sub_tuple(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubTuple})
-        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+        with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
     def test_unserializable(self) -> None:
