@@ -847,6 +847,9 @@ def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
     if isinstance(x, float):
         y = cast(float, y)
         return _cmp_floats(x, y)
+    if isinstance(x, str):  # else Sequence
+        y = cast(str, y)
+        return cast(Literal[-1, 0, 1], (x > y) - (x < y))
 
     # collections
     if isinstance(x, Sized):

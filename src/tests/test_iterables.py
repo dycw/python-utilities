@@ -929,6 +929,12 @@ class TestSortIterables:
             assert isinf(i) is isinf(j)
             assert isnan(i) is isnan(j)
 
+    @given(data=data(), x=lists(text_ascii()))
+    def test_strings(self, *, data: DataObject, x: list[str]) -> None:
+        result1 = sort_iterable(x)
+        result2 = sort_iterable(data.draw(permutations(result1)))
+        assert result1 == result2
+
     @given(x=frozensets(frozensets(integers())), y=frozensets(frozensets(integers())))
     def test_nested_frozensets(
         self, *, x: frozenset[frozenset[int]], y: frozenset[frozenset[int]]
