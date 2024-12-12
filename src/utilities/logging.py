@@ -173,7 +173,7 @@ def setup_logging(
         logger.addHandler(console_handler)
 
     # debug & info
-    directory = resolve_path(path=files_dir)
+    directory = resolve_path(path=files_dir)  # skipif-ci-and-windows
     levels: list[LogLevel] = ["DEBUG", "INFO"]  # skipif-ci-and-windows
     for level, (subpath, formatter) in product(  # skipif-ci-and-windows
         levels, [(Path(), files_formatter), (Path("plain"), plain_formatter)]
