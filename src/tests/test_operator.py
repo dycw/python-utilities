@@ -27,7 +27,6 @@ from hypothesis.strategies import (
     tuples,
     uuids,
 )
-from pytest import mark, raises
 from typing_extensions import override
 
 from tests.conftest import IS_CI_AND_WINDOWS
@@ -40,7 +39,7 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.operator import _IsEqualUnsortableSetError, is_equal
+from utilities.operator import IsEqualError, is_equal
 
 if TYPE_CHECKING:
     from utilities.types import Number
@@ -264,7 +263,7 @@ class TestIsEqual:
         )
     )
     def test_one(self, *, obj: Any) -> None:
-        with assume_does_not_raise(_IsEqualUnsortableSetError):
+        with assume_does_not_raise(IsEqualError):
             assert is_equal(obj, obj)
 
     @given(
@@ -294,7 +293,7 @@ class TestIsEqual:
         ),
     )
     def test_two_objects(self, *, first: Any, second: Any) -> None:
-        with assume_does_not_raise(_IsEqualUnsortableSetError):
+        with assume_does_not_raise(IsEqualError):
             result = is_equal(first, second)
         assert isinstance(result, bool)
 
@@ -309,7 +308,7 @@ class TestIsEqual:
         second=dictionaries(text_ascii(), make_objects()),
     )
     def test_mappings(self, *, first: StrMapping, second: StrMapping) -> None:
-        with assume_does_not_raise(_IsEqualUnsortableSetError):
+        with assume_does_not_raise(IsEqualError):
             result = is_equal(first, second)
         assert isinstance(result, bool)
 
@@ -317,17 +316,3 @@ class TestIsEqual:
     @example(x=-4.233805663404397, y=nan)
     def test_sets_of_floats(self, *, x: float, y: float) -> None:
         assert is_equal({x, y}, {y, x})
-
-    @given(x=floats(), y=floats())
-    @example(x=-4.233805663404397, y=nan)
-    def test_sets_of_objects(self, *, x: float, y: float) -> None:
-        assert is_equal({x, y}, {y, x})
-
-    @mark.skip
-    def test_error_unsortable(self) -> None:
-        obj = {frozenset()}
-        # assert 0, obj
-        with raises(
-            _IsEqualUnsortableSetError, match=r"Unsortable collection\(s\): .*, .*"
-        ):
-            _ = is_equal(obj, obj)
