@@ -70,7 +70,7 @@ class IsEqualError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to sort {reprlib.repr(self.x)} and {reprlib.repr(self.y)}"
+        return f"Unable to sort {reprlib.repr(self.x)} and {reprlib.repr(self.y)}"  # pragma: no cover
 
 
 __all__ = ["IsEqualError", "is_equal"]
