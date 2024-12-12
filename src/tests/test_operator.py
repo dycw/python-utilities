@@ -4,10 +4,11 @@ import datetime as dt
 from dataclasses import dataclass
 from enum import Enum, auto
 from functools import partial
+from math import inf, nan
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
-from hypothesis import given
+from hypothesis import Phase, example, given, reproduce_failure, settings
 from hypothesis.strategies import (
     SearchStrategy,
     booleans,
@@ -28,10 +29,10 @@ from hypothesis.strategies import (
     tuples,
     uuids,
 )
-from pytest import raises
+from pytest import mark, param, raises
 from typing_extensions import override
 
-from tests.conftest import IS_CI_AND_WINDOWS
+from tests.conftest import FLAKY, IS_CI_AND_WINDOWS
 from utilities.hypothesis import (
     assume_does_not_raise,
     int64s,
@@ -42,7 +43,7 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.operator import _IsEqualUnsortableCollectionsError, is_equal
+from utilities.operator import _IsEqualUnsortableSetError, is_equal
 
 if TYPE_CHECKING:
     from utilities.types import Number
@@ -266,7 +267,7 @@ class TestIsEqual:
         )
     )
     def test_one(self, *, obj: Any) -> None:
-        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+        with assume_does_not_raise(_IsEqualUnsortableSetError):
             assert is_equal(obj, obj)
 
     @given(
@@ -286,9 +287,9 @@ class TestIsEqual:
             2,
         ).map(tuple)
     )
-    def test_two(self, *, objs: tuple[Any, Any]) -> None:
+    def test_two_objects(self, *, objs: tuple[Any, Any]) -> None:
         first, second = objs
-        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+        with assume_does_not_raise(_IsEqualUnsortableSetError):
             result = is_equal(first, second)
         assert isinstance(result, bool)
 
@@ -305,14 +306,33 @@ class TestIsEqual:
     )
     def test_mappings(self, *, objs: tuple[StrMapping, StrMapping]) -> None:
         first, second = objs
-        with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
+        with assume_does_not_raise(_IsEqualUnsortableSetError):
             result = is_equal(first, second)
         assert isinstance(result, bool)
+
+    @given(x=floats(), y=floats())
+    # @example(x=inf, y=nan)
+    @settings(max_examples=10000, phases={Phase.generate})
+    def test_sets_of_floats(self, *, x: float, y: float) -> None:
+        assert is_equal({x, y}, {y, x})
+
+    @mark.only
+    def test_weird_floats(self) -> None:
+        # ii = [-4.233805663404397e32, -423380566340439711385424152756224.0, 41012, nan]
+        # jj = [-4.233805663404397e32, -423380566340439711385424152756224.0, 41012, nan]
+        # assert is_equal(set(ii), set(jj))
+
+        # aa = {41012, -4.233805663404397e32, nan}
+        # bb = {nan, 41012, -4.233805663404397e32}
+        # assert is_equal(aa, bb)
+
+        k = -4.233805663404397e32
+        assert is_equal({k, nan}, {nan, k})
 
     @given(obj=sets(integers() | none(), min_size=2).filter(lambda x: None in x))
     def test_error_unsortable(self, *, obj: set[int | None]) -> None:
         with raises(
-            _IsEqualUnsortableCollectionsError,
+            _IsEqualUnsortableSetError,
             match=r"Unsortable collection\(s\): .*, .*",
         ):
             _ = is_equal(obj, obj)
