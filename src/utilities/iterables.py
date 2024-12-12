@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import reprlib
-from collections import Counter
+from collections import Counter, defaultdict
 from collections.abc import (
     Callable,
     Hashable,
@@ -16,6 +16,8 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from itertools import accumulate, chain, groupby, islice, pairwise, product
+from math import isfinite, isinf, isnan
+from types import NoneType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -32,6 +34,7 @@ from typing import (
 
 from typing_extensions import override
 
+from utilities.errors import ImpossibleCaseError
 from utilities.math import (
     _CheckIntegerEqualError,
     _CheckIntegerEqualOrApproxError,
@@ -817,6 +820,53 @@ class ResolveIncludeAndExcludeError(Exception, Generic[_T]):
         return f"Iterables {reprlib.repr(include)} and {reprlib.repr(exclude)} must not overlap; got {reprlib.repr(overlap)}"
 
 
+def sort_iterable(iterable: Iterable[_T], /) -> list[_T]:
+    """Sort an iterable across types."""
+    by_class: defaultdict[type, list[_T]] = defaultdict(list)
+    for i in iterable:
+        by_class[type(i)].append(i)
+    items = sorted(by_class.items(), key=lambda x: x[0].__qualname__)
+    results: list[_T] = []
+    for cls, sublist in items:
+        if cls is NoneType:
+            res = sublist
+        elif issubclass(cls, float):
+            res = cast(list[_T], _sort_iterables_floats(cast(list[float], sublist)))
+        else:
+            try:
+                res = sorted(cast(Any, sublist))
+            except TypeError:
+                raise SortIterableError(iterable=sublist) from None
+        results.extend(res)
+    return results
+
+
+def _sort_iterables_floats(x: Iterable[float], /) -> list[float]:
+    """Sort an iterable of floats."""
+    finite: list[float] = []
+    infs: list[float] = []
+    nans: list[float] = []
+    for x_i in x:
+        if isfinite(x_i):
+            finite.append(x_i)
+        elif isinf(x_i):
+            infs.append(x_i)
+        elif isnan(x_i):
+            nans.append(x_i)
+        else:  # pragma: no cover
+            raise ImpossibleCaseError(case=[f"{x_i=}"])
+    return list(chain(sorted(finite), sorted(infs), nans))
+
+
+@dataclass(kw_only=True, slots=True)
+class SortIterableError(Exception, Generic[_T]):
+    iterable: Iterable[_T]
+
+    @override
+    def __str__(self) -> str:
+        return f"Iterable {reprlib.repr(self.iterable)} must be sortable"
+
+
 def take(n: int, iterable: Iterable[_T], /) -> Sequence[_T]:
     """Return first n items of the iterable as a list."""
     return list(islice(iterable, n))
@@ -868,6 +918,7 @@ __all__ = [
     "OneNonUniqueError",
     "OneStrError",
     "ResolveIncludeAndExcludeError",
+    "SortIterableError",
     "always_iterable",
     "check_bijection",
     "check_duplicates",
@@ -895,6 +946,7 @@ __all__ = [
     "pairwise_tail",
     "product_dicts",
     "resolve_include_and_exclude",
+    "sort_iterable",
     "take",
     "transpose",
 ]

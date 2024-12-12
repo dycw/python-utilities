@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from enum import Enum, auto
 from itertools import repeat
+from math import isfinite, isinf, isnan
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from hypothesis import given
@@ -11,8 +12,11 @@ from hypothesis.strategies import (
     binary,
     data,
     dictionaries,
+    floats,
     integers,
     lists,
+    none,
+    permutations,
     sampled_from,
     sets,
     text,
@@ -20,7 +24,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from typing_extensions import override
 
-from utilities.hypothesis import sets_fixed_length
+from utilities.hypothesis import sets_fixed_length, text_ascii
 from utilities.iterables import (
     CheckBijectionError,
     CheckDuplicatesError,
@@ -41,6 +45,7 @@ from utilities.iterables import (
     OneNonUniqueError,
     OneStrError,
     ResolveIncludeAndExcludeError,
+    SortIterableError,
     always_iterable,
     check_bijection,
     check_duplicates,
@@ -69,6 +74,7 @@ from utilities.iterables import (
     pairwise_tail,
     product_dicts,
     resolve_include_and_exclude,
+    sort_iterable,
     take,
     transpose,
 )
@@ -900,6 +906,33 @@ class TestResolveIncludeAndExclude:
             match="Iterables .* and .* must not overlap; got .*",
         ):
             _ = resolve_include_and_exclude(include=[1, 2, 3], exclude=[3, 4, 5])
+
+
+class TestSortIterables:
+    @given(data=data(), x=lists(integers() | text_ascii() | none()))
+    def test_main(self, *, data: DataObject, x: list[int | str | None]) -> None:
+        result1 = sort_iterable(x)
+        result2 = sort_iterable(data.draw(permutations(result1)))
+        assert result1 == result2
+
+    @given(data=data(), x=lists(floats()))
+    def test_floats(self, *, data: DataObject, x: list[float]) -> None:
+        result1 = sort_iterable(x)
+        result2 = sort_iterable(data.draw(permutations(result1)))
+        for i, j in zip(result1, result2, strict=True):
+            assert isfinite(i) is isfinite(j)
+            assert isinf(i) is isinf(j)
+            assert isnan(i) is isnan(j)
+
+    @given(data=data(), x=lists(none()))
+    def test_nones(self, *, data: DataObject, x: list[None]) -> None:
+        result1 = sort_iterable(x)
+        result2 = sort_iterable(data.draw(permutations(result1)))
+        assert result1 == result2
+
+    def test_error(self) -> None:
+        with raises(SortIterableError, match="Iterable .* must be sortable"):
+            _ = sort_iterable([sentinel, sentinel])
 
 
 class TestTake:
