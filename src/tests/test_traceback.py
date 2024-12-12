@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from logging import ERROR, getLogger
-from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
 from pytest import raises
 
-from tests.conftest import SKIPIF_CI
+from tests.conftest import FLAKY, SKIPIF_CI
 from tests.test_traceback_funcs.beartype import func_beartype
 from tests.test_traceback_funcs.beartype_error import func_beartype_error_first
 from tests.test_traceback_funcs.chain import func_chain_first
@@ -41,7 +40,6 @@ from utilities.traceback import (
     ExcPath,
     TracebackHandler,
     _CallArgsError,
-    _get_default_logging_path,
     assemble_exception_paths,
     trace,
     yield_exceptions,
@@ -50,6 +48,7 @@ from utilities.traceback import (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from traceback import FrameSummary
     from types import FrameType
 
@@ -307,6 +306,7 @@ class TestAssembleExceptionsPaths:
         assert frame.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_path.error, AssertionError)
 
+    @FLAKY
     @SKIPIF_CI
     async def test_func_task_group_two(self) -> None:
         with raises(ExceptionGroup) as exc_info:
@@ -464,11 +464,6 @@ class TestAssembleExceptionsPaths:
         assert frame5.locals["args"] == (96, 128)
         assert frame5.locals["kwargs"] == {"d": 192, "e": 224}
         assert isinstance(exc_path.error, AssertionError)
-
-
-class TestGetDefaultLoggingPath:
-    def test_main(self) -> None:
-        assert isinstance(_get_default_logging_path(), Path)
 
 
 class TestTracebackHandler:

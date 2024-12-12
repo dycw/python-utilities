@@ -36,7 +36,6 @@ from utilities.functions import (
     get_func_qualname,
 )
 from utilities.iterables import one
-from utilities.logging import get_default_logging_path
 from utilities.pathlib import resolve_path
 from utilities.rich import yield_pretty_repr_args_and_kwargs
 from utilities.text import ensure_str
@@ -56,11 +55,6 @@ ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
 OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
 
 
-def _get_default_logging_path() -> Path:
-    """Get the logging default path."""
-    return get_default_logging_path().joinpath("errors")
-
-
 class TracebackHandler(Handler):
     """Handler for emitting tracebacks to individual files."""
 
@@ -69,7 +63,7 @@ class TracebackHandler(Handler):
         self,
         *,
         level: int = NOTSET,
-        path: PathLikeOrCallable | None = _get_default_logging_path,
+        path: PathLikeOrCallable | None = None,
         max_width: int = 80,
         indent_size: int = 4,
         max_length: int | None = None,

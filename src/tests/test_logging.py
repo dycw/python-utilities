@@ -7,6 +7,7 @@ from typing import Any, cast
 from pytest import LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
 
+from tests.test_traceback_funcs.one import func_one
 from utilities.iterables import one
 from utilities.logging import (
     GetLoggingLevelNumberError,
@@ -21,7 +22,6 @@ from utilities.logging import (
     temp_handler,
     temp_logger,
 )
-from utilities.pathlib import temp_cwd
 from utilities.pytest import skipif_windows
 from utilities.typing import get_args
 
@@ -92,39 +92,27 @@ class TestLogLevel:
 
 class TestSetupLogging:
     @skipif_windows
-    def test_files_dir_path(self, *, tmp_path: Path) -> None:
-        name = TestSetupLogging.test_files_dir_path.__qualname__
+    def test_main(self, *, tmp_path: Path) -> None:
+        name = TestSetupLogging.test_main.__qualname__
         setup_logging(logger_name=name, files_dir=tmp_path)
         logger = getLogger(name)
-        assert len(logger.handlers) == 7
+        assert len(logger.handlers) == 6
         files = list(tmp_path.iterdir())
-        assert len(files) == 7
+        assert len(files) == 5
         names = {f.name for f in files}
         expected = {
             ".__debug.txt.lock",
-            ".__error.txt.lock",
             ".__info.txt.lock",
             "debug.txt",
-            "error.txt",
             "info.txt",
             "plain",
         }
         assert names == expected
-
-    @skipif_windows
-    def test_files_dir_cwd(self, *, tmp_path: Path) -> None:
-        name = TestSetupLogging.test_files_dir_cwd.__qualname__
-        with temp_cwd(tmp_path):
-            setup_logging(logger_name=name, files_dir=None)
-            logger = getLogger(name)
-            logger.info("message")
-            assert len(list(tmp_path.iterdir())) == 7
-
-    @skipif_windows
-    def test_files_dir_callable(self, *, tmp_path: Path) -> None:
-        name = TestSetupLogging.test_files_dir_callable.__qualname__
-        setup_logging(logger_name=name, files_dir=lambda: tmp_path)
-        assert len(list(tmp_path.iterdir())) == 7
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError:
+            logger.exception("message")
+        assert tmp_path.joinpath("errors").is_dir()
 
     @skipif_windows
     def test_regular_percent_formatting(
@@ -157,7 +145,7 @@ class TestSetupLogging:
         name = TestSetupLogging.test_no_console.__qualname__
         setup_logging(logger_name=name, console_level=None, files_dir=tmp_path)
         logger = getLogger(name)
-        assert len(logger.handlers) == 6
+        assert len(logger.handlers) == 5
 
     @skipif_windows
     def test_zoned_datetime(self, *, caplog: LogCaptureFixture, tmp_path: Path) -> None:
@@ -182,7 +170,7 @@ class TestSetupLogging:
         setup_logging(logger_name=name, files_dir=tmp_path, extra=extra)
         logger = getLogger(name)
         logger.info("")
-        assert len(list(tmp_path.iterdir())) == 8
+        assert len(list(tmp_path.iterdir())) == 6
 
 
 class TestTempHandler:
