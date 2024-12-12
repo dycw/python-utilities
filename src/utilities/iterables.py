@@ -34,7 +34,6 @@ from typing import (
     overload,
 )
 
-from _typeshed import ExcInfo
 from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
