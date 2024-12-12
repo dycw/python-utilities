@@ -5,7 +5,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from inspect import iscoroutinefunction
-from logging import getLogger
 from sys import version_info
 from typing import TYPE_CHECKING, cast
 
@@ -21,13 +20,12 @@ if TYPE_CHECKING:
     from utilities.asyncio import MaybeCoroutine1
     from utilities.types import StrMapping
 
-_LOGGER = getLogger(__name__)
 VERSION_MAJOR_MINOR = (version_info.major, version_info.minor)
 
 
 def make_except_hook(
     *,
-    logger: LoggerOrName = _LOGGER,
+    logger: LoggerOrName | None = None,
     message: object = "",
     extra: StrMapping | None = None,
     callbacks: Iterable[Callable[[], MaybeCoroutine1[None]]] | None = None,
@@ -50,7 +48,7 @@ def _make_except_hook_inner(
     traceback: TracebackType | None,
     /,
     *,
-    logger: LoggerOrName = _LOGGER,
+    logger: LoggerOrName | None = None,
     message: object = "",
     extra: StrMapping | None = None,
     callbacks: Iterable[Callable[[], MaybeCoroutine1[None]]] | None = None,
@@ -59,7 +57,7 @@ def _make_except_hook_inner(
     _ = (exc_type, traceback)
     if exc_val is None:
         raise MakeExceptHookError
-    logger_use = get_logger(logger)
+    logger_use = get_logger(logger=logger)
     logger_use.exception(message, extra=extra)
     async_callbacks: list[Callable[[], Coroutine1[None]]] = []
     if callbacks is not None:

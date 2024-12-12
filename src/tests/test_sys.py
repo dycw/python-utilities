@@ -6,10 +6,11 @@ from re import search
 from sys import exc_info
 from typing import TYPE_CHECKING
 
-from pytest import LogCaptureFixture, raises
+from pytest import LogCaptureFixture, mark, param, raises
 
 from tests.conftest import SKIPIF_CI
 from utilities.iterables import one
+from utilities.logging import setup_logging
 from utilities.sys import VERSION_MAJOR_MINOR, MakeExceptHookError, make_except_hook
 from utilities.text import strip_and_dedent
 
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 
 
 class TestMakeExceptHook:
-    def test_main(self, *, caplog: LogCaptureFixture) -> None:
+    def test_logging(self, *, caplog: LogCaptureFixture) -> None:
         basicConfig(format="{message}", style="{")
         hook = make_except_hook()
         try:
@@ -27,6 +28,31 @@ class TestMakeExceptHook:
             exc_type, exc_val, traceback = exc_info()
             hook(exc_type, exc_val, traceback)
         assert len(caplog.records) == 1
+        record = one(caplog.records)
+        expected = ""
+        assert record.message == expected
+
+    @mark.only
+    def test_with_setup_logging(
+        self, *, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
+        name = TestMakeExceptHook.test_with_setup_logging.__qualname__
+        setup_logging(logger=name, files_dir=tmp_path)
+        hook = make_except_hook()
+        try:
+            _ = 1 / 0
+        except ZeroDivisionError:
+            exc_type, exc_val, traceback = exc_info()
+            hook(exc_type, exc_val, traceback)
+        assert len(caplog.records) == 1
+        record = one(caplog.records)
+        expected = ""
+        assert record.message == expected
+        path = tmp_path.joinpath("error")
+        assert path.exists()
+        files = list(path.iterdir())
+        assert 0, files
+        assert 0, len(list(tmp_path.iterdir()))
 
     def test_non_error(self) -> None:
         hook = make_except_hook()

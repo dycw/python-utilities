@@ -72,12 +72,12 @@ def get_default_logging_path() -> Path:
     return get_repo_root().joinpath(".logs")
 
 
-def get_logger(logger: LoggerOrName, /) -> Logger:
+def get_logger(*, logger: LoggerOrName | None = None) -> Logger:
     """Get a logger."""
     match logger:
         case Logger():
             return logger
-        case str():
+        case str() | None:
             return getLogger(logger)
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
@@ -103,7 +103,7 @@ class GetLoggingLevelNumberError(Exception):
 
 def setup_logging(
     *,
-    logger_name: str | None = None,
+    logger: LoggerOrName | None = None,
     console_level: LogLevel | None = "INFO",
     console_filters: Iterable[_FilterType] | None = None,
     console_fmt: str = "❯ {zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
@@ -115,7 +115,7 @@ def setup_logging(
     files_filters: Iterable[_FilterType] | None = None,
     files_fmt: str = "{zoned_datetime_str} | {name}:{funcName}:{lineno} | {levelname:8} | {message}",
     filters: Iterable[_FilterType] | None = None,
-    extra: Callable[[Logger], None] | None = None,
+    extra: Callable[[LoggerOrName | None], None] | None = None,
 ) -> None:
     """Set up logger."""
     # log record factory
@@ -133,8 +133,8 @@ def setup_logging(
     ]
 
     # logger
-    logger = getLogger(name=logger_name)  # skipif-ci-and-windows
-    logger.setLevel(get_logging_level_number("DEBUG"))  # skipif-ci-and-windows
+    logger_use = get_logger(logger=logger)  # skipif-ci-and-windows
+    logger_use.setLevel(get_logging_level_number("DEBUG"))  # skipif-ci-and-windows
 
     # filters
     console_filters = (  # skipif-ci-and-windows
@@ -170,7 +170,7 @@ def setup_logging(
         add_filters(console_handler, filters=filters)
         console_handler.setFormatter(console_formatter)
         console_handler.setLevel(get_logging_level_number(console_level))
-        logger.addHandler(console_handler)
+        logger_use.addHandler(console_handler)
 
     # debug & info
     directory = resolve_path(path=files_dir)  # skipif-ci-and-windows
@@ -201,28 +201,30 @@ def setup_logging(
         add_filters(file_handler, filters=filters)
         file_handler.setFormatter(formatter)
         file_handler.setLevel(level)
-        logger.addHandler(file_handler)
+        logger_use.addHandler(file_handler)
 
     # errors
     traceback_handler = TracebackHandler(  # skipif-ci-and-windows
         level=ERROR, path=directory.joinpath("errors")
     )
-    logger.addHandler(traceback_handler)  # skipif-ci-and-windows
+    logger_use.addHandler(traceback_handler)  # skipif-ci-and-windows
 
     # extra
     if extra is not None:  # skipif-ci-and-windows
-        extra(logger)
+        extra(logger_use)
 
 
 @contextmanager
-def temp_handler(logger: LoggerOrName, handler: Handler, /) -> Iterator[None]:
+def temp_handler(
+    handler: Handler, /, *, logger: LoggerOrName | None = None
+) -> Iterator[None]:
     """Context manager with temporary handler set."""
-    logger = get_logger(logger)
-    logger.addHandler(handler)
+    logger_use = get_logger(logger=logger)
+    logger_use.addHandler(handler)
     try:
         yield
     finally:
-        _ = logger.removeHandler(handler)
+        _ = logger_use.removeHandler(handler)
 
 
 @contextmanager
@@ -235,25 +237,25 @@ def temp_logger(
     propagate: bool | None = None,
 ) -> Iterator[Logger]:
     """Context manager with temporary logger settings."""
-    logger = get_logger(logger)
-    init_disabled = logger.disabled
-    init_level = logger.level
-    init_propagate = logger.propagate
+    logger_use = get_logger(logger=logger)
+    init_disabled = logger_use.disabled
+    init_level = logger_use.level
+    init_propagate = logger_use.propagate
     if disabled is not None:
-        logger.disabled = disabled
+        logger_use.disabled = disabled
     if level is not None:
-        logger.setLevel(level)
+        logger_use.setLevel(level)
     if propagate is not None:
-        logger.propagate = propagate
+        logger_use.propagate = propagate
     try:
-        yield logger
+        yield logger_use
     finally:
         if disabled is not None:
-            logger.disabled = init_disabled
+            logger_use.disabled = init_disabled
         if level is not None:
-            logger.setLevel(init_level)
+            logger_use.setLevel(init_level)
         if propagate is not None:
-            logger.propagate = init_propagate
+            logger_use.propagate = init_propagate
 
 
 class _AdvancedLogRecord(LogRecord):

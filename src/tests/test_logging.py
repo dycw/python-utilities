@@ -94,7 +94,7 @@ class TestSetupLogging:
     @skipif_windows
     def test_main(self, *, tmp_path: Path) -> None:
         name = TestSetupLogging.test_main.__qualname__
-        setup_logging(logger_name=name, files_dir=tmp_path)
+        setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 6
         files = list(tmp_path.iterdir())
@@ -119,7 +119,7 @@ class TestSetupLogging:
         self, *, caplog: LogCaptureFixture, tmp_path: Path
     ) -> None:
         name = TestSetupLogging.test_regular_percent_formatting.__qualname__
-        setup_logging(logger_name=name, files_dir=tmp_path)
+        setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("int: %d, float: %.2f", 1, 12.3456)
         record = one(caplog.records)
@@ -132,7 +132,7 @@ class TestSetupLogging:
         self, *, caplog: LogCaptureFixture, tmp_path: Path
     ) -> None:
         name = TestSetupLogging.test_new_brace_formatting.__qualname__
-        setup_logging(logger_name=name, files_dir=tmp_path)
+        setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("int: {:d}, float: {:.2f}, percent: {:.2%}", 1, 12.3456, 0.123456)
         record = one(caplog.records)
@@ -143,14 +143,14 @@ class TestSetupLogging:
     @skipif_windows
     def test_no_console(self, *, tmp_path: Path) -> None:
         name = TestSetupLogging.test_no_console.__qualname__
-        setup_logging(logger_name=name, console_level=None, files_dir=tmp_path)
+        setup_logging(logger=name, console_level=None, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 5
 
     @skipif_windows
     def test_zoned_datetime(self, *, caplog: LogCaptureFixture, tmp_path: Path) -> None:
         name = TestSetupLogging.test_zoned_datetime.__qualname__
-        setup_logging(logger_name=name, files_dir=tmp_path)
+        setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("")
         record = one(caplog.records)
@@ -167,7 +167,7 @@ class TestSetupLogging:
             handler.setLevel(DEBUG)
             logger.addHandler(handler)
 
-        setup_logging(logger_name=name, files_dir=tmp_path, extra=extra)
+        setup_logging(logger=name, files_dir=tmp_path, extra=extra)
         logger = getLogger(name)
         logger.info("")
         assert len(list(tmp_path.iterdir())) == 6
