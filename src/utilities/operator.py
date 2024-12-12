@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+import reprlib
 from collections.abc import Iterable, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from dataclasses import asdict, dataclass
-from typing import Any, TypeVar, cast
+from typing import Any, Generic, TypeVar, cast
 
 from typing_extensions import override
 
 import utilities.math
 from utilities.dataclasses import Dataclass, is_dataclass_instance
-from utilities.math import sort_floats
+from utilities.iterables import SortIterableError, sort_iterable
 
 _T = TypeVar("_T")
 
@@ -45,13 +46,11 @@ def is_equal(
         return is_equal(x_values, y_values, rel_tol=rel_tol, abs_tol=abs_tol)
     if isinstance(x, AbstractSet):
         y = cast(AbstractSet[Any], y)
-        if all(isinstance(x_i, float) for x_i in x):
-            x_sorted = sort_floats(x)
         try:
-            x_sorted = sorted(x)
-            y_sorted = sorted(y)
-        except TypeError:
-            raise _IsEqualUnsortableSetError(x=x, y=y) from None
+            x_sorted = sort_iterable(x)
+            y_sorted = sort_iterable(y)
+        except SortIterableError as error:
+            raise _IsEqualUnsortableSetError(iterable=error.iterable) from None
         return is_equal(x_sorted, y_sorted, rel_tol=rel_tol, abs_tol=abs_tol)
     if isinstance(x, Sequence):
         y = cast(Sequence[Any], y)
@@ -64,31 +63,17 @@ def is_equal(
     return x == y
 
 
-def _try_sort(x: Iterable[_T], /) -> list[_T]:
-    floats: list[float] = []
-    non_floats: list[Any] = []
-    for x_i in x:
-        if isinstance(x_i, float):
-            floats.append(x_i)
-        else:
-            non_floats.append(x_i)
-    try:
-        non_floats_sorted = sorted(non_floats)
-    except TypeError:
-        raise _IsEqualUnsortableSetError(x=non_floats) from None
-
-
 @dataclass(kw_only=True, slots=True)
 class IsEqualError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
-class _IsEqualUnsortableSetError(IsEqualError):
-    x: Iterable[Any]
+class _IsEqualUnsortableSetError(IsEqualError, Generic[_T]):
+    iterable: Iterable[_T]
 
     @override
     def __str__(self) -> str:
-        return f"Unsortable collection(s): {self.x}, {self.y}"
+        return f"Iterable {reprlib.repr(self.iterable)} must be sortable"
 
 
 __all__ = ["IsEqualError", "is_equal"]

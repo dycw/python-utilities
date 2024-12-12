@@ -1,17 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from itertools import chain
-from math import ceil, exp, floor, isclose, isfinite, isinf, isnan, log, log10, modf
-from typing import TYPE_CHECKING, Literal, TypeAlias, assert_never, overload
+from math import ceil, exp, floor, isclose, isfinite, isnan, log, log10, modf
+from typing import Literal, TypeAlias, assert_never, overload
 
 from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
-
 
 MIN_INT8, MAX_INT8 = -(2 ** (8 - 1)), 2 ** (8 - 1) - 1
 MIN_INT16, MAX_INT16 = -(2 ** (16 - 1)), 2 ** (16 - 1) - 1
@@ -21,7 +16,6 @@ MIN_UINT8, MAX_UINT8 = 0, 2**8 - 1
 MIN_UINT16, MAX_UINT16 = 0, 2**16 - 1
 MIN_UINT32, MAX_UINT32 = 0, 2**32 - 1
 MIN_UINT64, MAX_UINT64 = 0, 2**64 - 1
-
 
 # functions
 
@@ -146,11 +140,7 @@ def is_equal(
     """Check if x == y."""
     if isinstance(x, int) and isinstance(y, int):
         return x == y
-    if isnan(x) and isnan(y):
-        return True
-    if (isnan(x) and (not isnan(y))) or ((not isnan(x)) and isnan(y)):
-        return False
-    return _is_close(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
+    return _is_close(x, y, rel_tol=rel_tol, abs_tol=abs_tol) or (isnan(x) and isnan(y))
 
 
 def is_equal_or_approx(
@@ -660,23 +650,6 @@ def sign(
             assert_never(never)
 
 
-def sort_floats(x: Iterable[float], /) -> list[float]:
-    """Sort an iterable of floats."""
-    finite: list[float] = []
-    infs: list[float] = []
-    nans: list[float] = []
-    for x_i in x:
-        if isfinite(x_i):
-            finite.append(x_i)
-        elif isinf(x_i):
-            infs.append(x_i)
-        elif isnan(x_i):
-            nans.append(x_i)
-        else:  # pragma: no cover
-            raise ImpossibleCaseError(case=[f"{x_i=}"])
-    return list(chain(sorted(finite), sorted(infs), nans))
-
-
 # checks
 
 
@@ -815,5 +788,4 @@ __all__ = [
     "round_",
     "round_to_float",
     "safe_round",
-    "sort_floats",
 ]

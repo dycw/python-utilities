@@ -4,11 +4,11 @@ import datetime as dt
 from dataclasses import dataclass
 from enum import Enum, auto
 from functools import partial
-from math import inf, nan
+from math import nan
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
-from hypothesis import Phase, example, given, reproduce_failure, settings
+from hypothesis import Phase, example, given, settings
 from hypothesis.strategies import (
     SearchStrategy,
     booleans,
@@ -29,10 +29,10 @@ from hypothesis.strategies import (
     tuples,
     uuids,
 )
-from pytest import mark, param, raises
+from pytest import mark, raises
 from typing_extensions import override
 
-from tests.conftest import FLAKY, IS_CI_AND_WINDOWS
+from tests.conftest import IS_CI_AND_WINDOWS
 from utilities.hypothesis import (
     assume_does_not_raise,
     int64s,
@@ -311,28 +311,15 @@ class TestIsEqual:
         assert isinstance(result, bool)
 
     @given(x=floats(), y=floats())
-    # @example(x=inf, y=nan)
+    @example(x=-4.233805663404397, y=nan)
+    @mark.only
     @settings(max_examples=10000, phases={Phase.generate})
     def test_sets_of_floats(self, *, x: float, y: float) -> None:
         assert is_equal({x, y}, {y, x})
 
-    @mark.only
-    def test_weird_floats(self) -> None:
-        # ii = [-4.233805663404397e32, -423380566340439711385424152756224.0, 41012, nan]
-        # jj = [-4.233805663404397e32, -423380566340439711385424152756224.0, 41012, nan]
-        # assert is_equal(set(ii), set(jj))
-
-        # aa = {41012, -4.233805663404397e32, nan}
-        # bb = {nan, 41012, -4.233805663404397e32}
-        # assert is_equal(aa, bb)
-
-        k = -4.233805663404397e32
-        assert is_equal({k, nan}, {nan, k})
-
     @given(obj=sets(integers() | none(), min_size=2).filter(lambda x: None in x))
     def test_error_unsortable(self, *, obj: set[int | None]) -> None:
         with raises(
-            _IsEqualUnsortableSetError,
-            match=r"Unsortable collection\(s\): .*, .*",
+            _IsEqualUnsortableSetError, match=r"Unsortable collection\(s\): .*, .*"
         ):
             _ = is_equal(obj, obj)

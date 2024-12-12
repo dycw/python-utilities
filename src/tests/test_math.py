@@ -1,19 +1,11 @@
 from __future__ import annotations
 
-from math import inf, isfinite, isinf, isnan, nan
+from math import inf, nan
 from re import escape
 from typing import Any, ClassVar
 
 from hypothesis import given
-from hypothesis.strategies import (
-    DataObject,
-    data,
-    floats,
-    integers,
-    lists,
-    permutations,
-    sets,
-)
+from hypothesis.strategies import integers
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
 from pytest import approx, mark, param, raises
 
@@ -96,7 +88,6 @@ from utilities.math import (
     round_to_float,
     safe_round,
     sign,
-    sort_floats,
 )
 
 
@@ -1186,14 +1177,3 @@ class TestSign:
     def test_float(self, *, x: float, expected: float) -> None:
         result = sign(x)
         assert result == expected
-
-
-class TestSortFloats:
-    @given(data=data(), x=lists(floats()))
-    def test_main(self, *, data: DataObject, x: list[float]) -> None:
-        result1 = sort_floats(x)
-        result2 = sort_floats(data.draw(permutations(result1)))
-        for i, j in zip(result1, result2, strict=True):
-            assert isfinite(i) is isfinite(j)
-            assert isinf(i) is isinf(j)
-            assert isnan(i) is isnan(j)
