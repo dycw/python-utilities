@@ -27,7 +27,7 @@ from pytest import mark, param, raises
 from typing_extensions import override
 
 from tests.test_operator import make_objects
-from utilities.hypothesis import sets_fixed_length, text_ascii, zoned_datetimes
+from utilities.hypothesis import sets_fixed_length, text_ascii
 from utilities.iterables import (
     CheckBijectionError,
     CheckDuplicatesError,
@@ -912,9 +912,7 @@ class TestResolveIncludeAndExclude:
 
 
 class TestSortIterables:
-    @given(
-        x=make_objects(floats_allow_nan=False), y=make_objects(floats_allow_nan=False)
-    )
+    @given(x=make_objects(), y=make_objects())
     def test_main(self, *, x: Any, y: Any) -> None:
         result1 = sort_iterable([x, y])
         result2 = sort_iterable([y, x])
