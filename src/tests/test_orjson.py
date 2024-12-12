@@ -6,7 +6,7 @@ from logging import DEBUG, StreamHandler, getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import HealthCheck, given, reproduce_failure, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import DataObject, builds, data, lists, sampled_from
 from ib_async import (
     ComboLeg,
@@ -45,12 +45,14 @@ from utilities.operator import _IsEqualUnsortableCollectionsError, is_equal
 from utilities.orjson import (
     OrjsonFormatter,
     OrjsonLogRecord,
+    Unserializable,
     _DeserializeNoObjectsError,
     _DeserializeObjectNotFoundError,
     _SerializeIntegerError,
     deserialize,
     serialize,
 )
+from utilities.sentinel import sentinel
 from utilities.types import is_string_mapping
 from utilities.zoneinfo import UTC
 
@@ -256,6 +258,16 @@ class TestSerializeAndDeserialize:
         result = deserialize(serialize(obj), objects={SubTuple})
         with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
             assert is_equal(result, obj)
+
+    def test_unserializable(self) -> None:
+        ser = serialize(sentinel)
+        exp_ser = b'{"[dc|Unserializable]":{"qualname":"Sentinel","repr":"<sentinel>","str":"<sentinel>"}}'
+        assert ser == exp_ser
+        result = deserialize(ser)
+        exp_res = Unserializable(
+            qualname="Sentinel", repr="<sentinel>", str="<sentinel>"
+        )
+        assert result == exp_res
 
     @mark.parametrize(
         ("utc", "expected"),

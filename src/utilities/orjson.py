@@ -23,7 +23,6 @@ from orjson import (
 from typing_extensions import override
 
 from utilities.dataclasses import Dataclass, asdict_without_defaults
-from utilities.functions import get_class_name
 from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import StrMapping
@@ -284,7 +283,7 @@ def _pre_process(
         # other
         case _:
             unserializable = Unserializable(
-                qualname=obj.__qualname__, repr=repr(obj), str=str(obj)
+                qualname=type(obj).__qualname__, repr=repr(obj), str=str(obj)
             )
             return pre(unserializable)
 
@@ -335,16 +334,6 @@ class _SerializeIntegerError(SerializeError):
         return f"Integer {self.obj} is out of range"
 
 
-@dataclass(kw_only=True, slots=True)
-class _SerializeTypeError(SerializeError):
-    @override
-    def __str__(self) -> str:
-        from rich.pretty import pretty_repr
-
-        cls = get_class_name(self.obj)
-        return f"Unable to serialize object of type {cls!r}:\n{pretty_repr(self.obj)}"
-
-
 def deserialize(
     data: bytes, /, *, objects: AbstractSet[type[Any]] | None = None
 ) -> Any:
@@ -352,7 +341,6 @@ def deserialize(
     return _object_hook(loads(data), data=data, objects=objects)
 
 
-_FLOAT_PATTERN = re.compile(r"^\[" + _Prefixes.float_.value + r"\]((?:-?inf|nan))$")
 _LOCAL_DATETIME_PATTERN = re.compile(
     r"^\["
     + _Prefixes.datetime.value
@@ -375,9 +363,15 @@ def _make_unit_pattern(prefix: _Prefixes, /) -> Pattern[str]:
     return re.compile(r"^\[" + prefix.value + r"\](.+)$")
 
 
-_DATE_PATTERN, _PATH_PATTERN, _TIME_PATTERN, _TIMEDELTA_PATTERN = map(
+_DATE_PATTERN, _FLOAT_PATTERN, _PATH_PATTERN, _TIME_PATTERN, _TIMEDELTA_PATTERN = map(
     _make_unit_pattern,
-    [_Prefixes.date, _Prefixes.path, _Prefixes.time, _Prefixes.timedelta],
+    [
+        _Prefixes.date,
+        _Prefixes.float_,
+        _Prefixes.path,
+        _Prefixes.time,
+        _Prefixes.timedelta,
+    ],
 )
 
 
@@ -493,6 +487,8 @@ def _object_hook_get_object(
     match: Match[str], /, *, data: bytes, objects: AbstractSet[type[Any]] | None = None
 ) -> type[Any]:
     qualname = match.group(1)
+    if qualname == Unserializable.__qualname__:
+        return Unserializable
     if objects is None:
         raise _DeserializeNoObjectsError(data=data, qualname=qualname)
     try:
