@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from functools import partial
 from inspect import iscoroutinefunction
 from logging import getLogger
-from pathlib import Path
 from sys import version_info
 from typing import TYPE_CHECKING, cast
 
@@ -16,15 +15,16 @@ from utilities.asyncio import Coroutine1
 from utilities.atomicwrites import writer
 from utilities.datetime import get_now
 from utilities.logging import LoggerOrName, get_default_logging_path, get_logger
-from utilities.pathlib import ensure_suffix
+from utilities.pathlib import ensure_suffix, resolve_path
 from utilities.traceback import assemble_exception_paths
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+    from pathlib import Path
     from types import TracebackType
 
     from utilities.asyncio import MaybeCoroutine1
-    from utilities.types import PathLike, StrMapping
+    from utilities.types import PathLikeOrCallable, StrMapping
 
 _LOGGER = getLogger(__name__)
 VERSION_MAJOR_MINOR = (version_info.major, version_info.minor)
@@ -48,7 +48,7 @@ def make_except_hook(
     expand_all: bool = False,
     log_assembled: bool = False,
     log_assembled_extra: StrMapping | None = None,
-    log_assembled_dir: PathLike | Callable[[], Path] | None = _get_default_logging_path,
+    log_assembled_dir: PathLikeOrCallable | None = _get_default_logging_path,
     callbacks: Iterable[Callable[[], MaybeCoroutine1[None]]] | None = None,
 ) -> Callable[
     [type[BaseException] | None, BaseException | None, TracebackType | None], None
@@ -89,7 +89,7 @@ def _make_except_hook_inner(
     expand_all: bool = False,
     log_assembled: bool = False,
     log_assembled_extra: StrMapping | None = None,
-    log_assembled_dir: PathLike | Callable[[], Path] | None = _get_default_logging_path,
+    log_assembled_dir: PathLikeOrCallable | None = _get_default_logging_path,
     callbacks: Iterable[Callable[[], MaybeCoroutine1[None]]] | None = None,
 ) -> None:
     """Exception hook to log the traceback."""
@@ -116,13 +116,7 @@ def _make_except_hook_inner(
         )
     if log_assembled:
         logger.error("%s", repr_use, extra=log_assembled_extra)
-        match log_assembled_dir:
-            case None:
-                path = Path.cwd()
-            case Path() | str():
-                path = Path(log_assembled_dir)
-            case _:
-                path = log_assembled_dir()
+        path = resolve_path(path=log_assembled_dir)
         now = (
             get_now(time_zone="local")
             .replace(tzinfo=None)

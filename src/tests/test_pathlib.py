@@ -7,7 +7,7 @@ from hypothesis.strategies import integers, sets
 from pytest import mark, param
 
 from utilities.hypothesis import temp_paths
-from utilities.pathlib import ensure_suffix, list_dir, temp_cwd
+from utilities.pathlib import ensure_suffix, list_dir, resolve_path, temp_cwd
 
 
 class TestEnsureSuffix:
@@ -35,6 +35,21 @@ class TestListDir:
         result = list_dir(root)
         expected = sorted(Path(root, f"{n}.txt") for n in nums)
         assert result == expected
+
+
+class TestResolvePath:
+    def test_cwd(self, *, tmp_path: Path) -> None:
+        with temp_cwd(tmp_path):
+            result = resolve_path()
+        assert result == tmp_path
+
+    def test_path(self, *, tmp_path: Path) -> None:
+        result = resolve_path(path=tmp_path)
+        assert result == tmp_path
+
+    def test_callable(self, *, tmp_path: Path) -> None:
+        result = resolve_path(path=lambda: tmp_path)
+        assert result == tmp_path
 
 
 class TestTempCWD:

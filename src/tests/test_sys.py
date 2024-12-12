@@ -11,7 +11,6 @@ from pytest import LogCaptureFixture, raises
 from tests.conftest import SKIPIF_CI
 from tests.test_traceback_funcs.one import func_one
 from utilities.iterables import one
-from utilities.pathlib import temp_cwd
 from utilities.sys import (
     VERSION_MAJOR_MINOR,
     MakeExceptHookError,
@@ -48,33 +47,10 @@ class TestMakeExceptHook:
         expected = "Result (56) must be divisible by 10"
         assert record.message == expected
 
-    def test_log_assembled_path_cwd(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture
-    ) -> None:
-        hook = make_except_hook(log_assembled=True, log_assembled_dir=None)
-        try:
-            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        except AssertionError:
-            exc_type, exc_val, traceback = exc_info()
-            with temp_cwd(tmp_path):
-                hook(exc_type, exc_val, traceback)
-        self._assert_assemble(tmp_path, caplog)
-
-    def test_log_assembled_path_path(
+    def test_log_assembled_path(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
         hook = make_except_hook(log_assembled=True, log_assembled_dir=tmp_path)
-        try:
-            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        except AssertionError:
-            exc_type, exc_val, traceback = exc_info()
-            hook(exc_type, exc_val, traceback)
-        self._assert_assemble(tmp_path, caplog)
-
-    def test_log_assembled_path_callable(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture
-    ) -> None:
-        hook = make_except_hook(log_assembled=True, log_assembled_dir=lambda: tmp_path)
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:

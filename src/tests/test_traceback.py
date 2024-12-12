@@ -461,6 +461,11 @@ class TestAssembleExceptionsPaths:
         assert isinstance(exc_path.error, AssertionError)
 
 
+class TestTracebackHandler:
+    def test_main(self) -> None:
+        pass
+
+
 class TestYieldExceptions:
     def test_main(self) -> None:
         class FirstError(Exception): ...

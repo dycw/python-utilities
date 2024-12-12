@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
-    from utilities.types import PathLike
+    from utilities.types import PathLike, PathLikeOrCallable
 
 PWD = Path.cwd()
 
@@ -30,6 +30,17 @@ def list_dir(path: PathLike, /) -> Sequence[Path]:
     return sorted(Path(path).iterdir())
 
 
+def resolve_path(*, path: PathLikeOrCallable | None = None) -> Path:
+    """Resolve for a path."""
+    match path:
+        case None:
+            return Path.cwd()
+        case Path() | str():
+            return Path(path)
+        case _:
+            return Path(path())
+
+
 @contextmanager
 def temp_cwd(path: PathLike, /) -> Iterator[None]:
     """Context manager with temporary current working directory set."""
@@ -41,4 +52,4 @@ def temp_cwd(path: PathLike, /) -> Iterator[None]:
         chdir(prev)
 
 
-__all__ = ["ensure_suffix", "list_dir", "temp_cwd"]
+__all__ = ["ensure_suffix", "list_dir", "resolve_path", "temp_cwd"]
