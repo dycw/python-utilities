@@ -2,48 +2,34 @@ from __future__ import annotations
 
 import datetime as dt
 from contextlib import suppress
-from dataclasses import dataclass
-from enum import Enum, auto
-from functools import partial
 from io import StringIO
 from logging import DEBUG, StreamHandler, getLogger
 from math import isinf, isnan
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, given, settings
-from hypothesis.strategies import (
-    DataObject,
-    SearchStrategy,
-    booleans,
-    builds,
-    data,
-    dates,
-    datetimes,
-    dictionaries,
-    floats,
-    just,
-    lists,
-    recursive,
-    sampled_from,
-    times,
-    timezones,
-    tuples,
-    uuids,
-)
+from hypothesis.strategies import DataObject, builds, data, lists, sampled_from
 from pytest import approx, mark, param, raises
 
-from tests.conftest import IS_CI_AND_WINDOWS
+from tests.test_operator import (
+    DataClass1,
+    DataClass2Inner,
+    DataClass2Outer,
+    DataClass3,
+    SubFrozenSet,
+    SubList,
+    SubSet,
+    SubTuple,
+    TruthEnum,
+    make_objects,
+)
 from utilities.dataclasses import asdict_without_defaults, is_dataclass_instance
 from utilities.datetime import SECOND, get_now
 from utilities.hypothesis import (
     assume_does_not_raise,
-    int64s,
     settings_with_reduced_examples,
-    text_ascii,
     text_printable,
-    timedeltas_2w,
-    zoned_datetimes,
 )
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.operator import _IsEqualUnsortableCollectionsError, is_equal
@@ -57,152 +43,11 @@ from utilities.orjson import (
     serialize,
 )
 from utilities.types import is_string_mapping
-from utilities.typing import get_args
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from utilities.dataclasses import Dataclass
     from utilities.types import StrMapping
-
-
-# strategies
-
-
-def objects(
-    *,
-    dataclass1: bool = False,
-    dataclass2: bool = False,
-    dataclass3: bool = False,
-    enum: bool = False,
-    ib_trades: bool = False,
-    sub_frozenset: bool = False,
-    sub_list: bool = False,
-    sub_set: bool = False,
-    sub_tuple: bool = False,
-) -> SearchStrategy[Any]:
-    base = (
-        booleans()
-        | floats()
-        | dates()
-        | datetimes()
-        | int64s()
-        | sampled_from(get_args(TruthLit))
-        | text_ascii().map(Path)
-        | text_printable()
-        | times()
-        | timedeltas_2w()
-        | uuids()
-    )
-    if IS_CI_AND_WINDOWS:
-        base |= zoned_datetimes()
-    else:
-        base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
-    if dataclass1:
-        base |= builds(DataClass1).filter(lambda obj: _is_int64(obj.x))
-    if dataclass2:
-        base |= builds(DataClass2Outer).filter(lambda outer: _is_int64(outer.inner.x))
-    if dataclass3:
-        base |= builds(DataClass3)
-    if enum:
-        base |= sampled_from(TruthEnum)
-    if ib_trades:
-        from ib_async import Fill, Forex, Trade
-
-        forexes = builds(Forex)
-        fills = builds(Fill, contract=forexes)
-        base |= builds(Trade, fills=lists(fills))
-    return recursive(
-        base,
-        partial(
-            _extend,
-            sub_frozenset=sub_frozenset,
-            sub_list=sub_list,
-            sub_set=sub_set,
-            sub_tuple=sub_tuple,
-        ),
-    )
-
-
-def _extend(
-    strategy: SearchStrategy[Any],
-    /,
-    *,
-    sub_frozenset: bool = False,
-    sub_list: bool = False,
-    sub_set: bool = False,
-    sub_tuple: bool = False,
-) -> SearchStrategy[Any]:
-    sets = lists(strategy).map(_into_set)
-    frozensets = lists(strategy).map(_into_set).map(frozenset)
-    extension = (
-        dictionaries(text_ascii(), strategy)
-        | frozensets
-        | lists(strategy)
-        | sets
-        | tuples(strategy)
-    )
-    if sub_frozenset:
-        extension |= frozensets.map(SubFrozenSet)
-    if sub_list:
-        extension |= lists(strategy).map(SubList)
-    if sub_set:
-        extension |= sets.map(SubSet)
-    if sub_tuple:
-        extension |= tuples(strategy).map(SubTuple)
-    return extension
-
-
-def _is_int64(n: int, /) -> bool:
-    return MIN_INT64 <= n <= MAX_INT64
-
-
-def _into_set(elements: list[Any], /) -> set[Any]:
-    with assume_does_not_raise(TypeError, match="unhashable type"):
-        return set(elements)
-
-
-class SubFrozenSet(frozenset):
-    pass
-
-
-class SubList(list):
-    pass
-
-
-class SubSet(set):
-    pass
-
-
-class SubTuple(tuple):  # noqa: SLOT001
-    pass
-
-
-@dataclass(unsafe_hash=True, kw_only=True, slots=True)
-class DataClass1:
-    x: int = 0
-
-
-@dataclass(unsafe_hash=True, kw_only=True, slots=True)
-class DataClass2Inner:
-    x: int = 0
-
-
-@dataclass(unsafe_hash=True, kw_only=True, slots=True)
-class DataClass2Outer:
-    inner: DataClass2Inner
-
-
-@dataclass(unsafe_hash=True, kw_only=True, slots=True)
-class DataClass3:
-    truth: Literal["true", "false"]
-
-
-class TruthEnum(Enum):
-    true = auto()
-    false = auto()
-
-
-TruthLit = Literal["true", "false"]
 
 
 # handler
@@ -232,7 +77,7 @@ class TestOrjsonFormatter:
         assert record.message == "message"
         assert record.level == DEBUG
         assert record.path_name == Path(__file__)
-        assert record.line_num == approx(218, rel=0.1)
+        assert record.line_num == approx(100, rel=0.1)
         assert abs(record.datetime - get_now(time_zone="local")) <= SECOND
         assert record.func_name == TestOrjsonFormatter.test_main.__name__
         assert record.stack_info is None
@@ -243,26 +88,24 @@ class TestOrjsonFormatter:
 
 
 class TestSerializeAndDeserialize:
-    @given(obj=objects())
-    @mark.only
+    @given(obj=make_objects())
     def test_main(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj))
         with assume_does_not_raise(_IsEqualUnsortableCollectionsError):
             assert is_equal(result, obj)
 
-    @given(obj=objects(dataclass1=True))
+    @given(obj=make_objects(dataclass1=True))
     def test_dataclass(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClass1})
         assert result == obj
 
-    @given(obj=objects(dataclass2=True))
+    @given(obj=make_objects(dataclass2=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_nested(self, *, obj: Any) -> None:
-        ser = serialize(obj)
-        result = deserialize(ser, objects={DataClass2Inner, DataClass2Outer})
+        result = deserialize(serialize(obj), objects={DataClass2Inner, DataClass2Outer})
         assert result == obj
 
-    @given(obj=objects(dataclass3=True))
+    @given(obj=make_objects(dataclass3=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_lit(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClass3})
@@ -286,27 +129,27 @@ class TestSerializeAndDeserialize:
         ):
             _ = deserialize(ser, objects=set())
 
-    @given(obj=objects(enum=True))
+    @given(obj=make_objects(enum=True))
     def test_enum(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={TruthEnum})
         assert result == obj
 
-    @given(obj=objects(sub_frozenset=True))
+    @given(obj=make_objects(sub_frozenset=True))
     def test_sub_frozenset(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubFrozenSet})
         assert result == obj
 
-    @given(obj=objects(sub_list=True))
+    @given(obj=make_objects(sub_list=True))
     def test_sub_list(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubList})
         assert result == obj
 
-    @given(obj=objects(sub_set=True))
+    @given(obj=make_objects(sub_set=True))
     def test_sub_set(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubSet})
         assert result == obj
 
-    @given(obj=objects(sub_tuple=True))
+    @given(obj=make_objects(sub_tuple=True))
     def test_sub_tuple(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubTuple})
         assert result == obj
@@ -377,7 +220,10 @@ class TestSerialize:
             Trade,
         )
 
-        obj = data.draw(objects(ib_trades=True))  # put inside test, due to imports
+        forexes = builds(Forex)
+        fills = builds(Fill, contract=forexes)
+        trades = builds(Trade, fills=lists(fills))
+        obj = data.draw(make_objects(extra_base=trades))
 
         def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
             if issubclass(cls, Contract) and not issubclass(Contract, cls):
