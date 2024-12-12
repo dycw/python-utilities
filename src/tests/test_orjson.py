@@ -138,7 +138,6 @@ class TestSerializeAndDeserialize:
 
     @given(data=data())
     @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
-    @mark.only
     def test_ib_trades(self, *, data: DataObject) -> None:
         from ib_async import (
             ComboLeg,
