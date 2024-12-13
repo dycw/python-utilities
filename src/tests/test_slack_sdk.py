@@ -47,4 +47,4 @@ class TestSlackHandler:
         await handler.send(cancel=cancel)
         if cancel:
             await sleep(0.1)
-            assert handler._task.done()  # noqa: SLF001
+            assert handler._task.done()

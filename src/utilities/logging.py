@@ -106,14 +106,14 @@ def setup_logging(
     logger: LoggerOrName | None = None,
     console_level: LogLevel | None = "INFO",
     console_filters: Iterable[_FilterType] | None = None,
-    console_fmt: str = "❯ {zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
+    console_fmt: str = "❯ {_zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
     files_dir: PathLikeOrCallable | None = get_default_logging_path,
     files_when: str = "D",
     files_interval: int = 1,
     files_backup_count: int = 10,
     files_max_bytes: int = 10 * 1024**2,
     files_filters: Iterable[_FilterType] | None = None,
-    files_fmt: str = "{zoned_datetime_str} | {name}:{funcName}:{lineno} | {levelname:8} | {message}",
+    files_fmt: str = "{_zoned_datetime_str} | {name}:{funcName}:{lineno} | {levelname:8} | {message}",
     filters: Iterable[_FilterType] | None = None,
     extra: Callable[[LoggerOrName | None], None] | None = None,
 ) -> None:
@@ -128,7 +128,7 @@ def setup_logging(
     setLogRecordFactory(LogRecordNanoLocal)  # skipif-ci-and-windows
 
     console_fmt, files_fmt = [  # skipif-ci-and-windows
-        f.replace("{zoned_datetime_str}", LogRecordNanoLocal.get_zoned_datetime_fmt())
+        f.replace("{_zoned_datetime_str}", LogRecordNanoLocal.get_zoned_datetime_fmt())
         for f in [console_fmt, files_fmt]
     ]
 
@@ -153,7 +153,7 @@ def setup_logging(
         files_formatter = Formatter(fmt=files_fmt, style="{")
     else:  # skipif-ci-and-windows
         field_styles = DEFAULT_FIELD_STYLES | {
-            "zoned_datetime_str": DEFAULT_FIELD_STYLES["asctime"]
+            "_zoned_datetime_str": DEFAULT_FIELD_STYLES["asctime"]
         }
         console_formatter = ColoredFormatter(
             fmt=console_fmt, style="{", field_styles=field_styles
@@ -276,9 +276,9 @@ class _AdvancedLogRecord(LogRecord):
         func: str | None = None,
         sinfo: str | None = None,
     ) -> None:
-        self.zoned_datetime = self.get_now()  # skipif-ci-and-windows
-        self.zoned_datetime_str = (  # skipif-ci-and-windows
-            self.zoned_datetime.format_common_iso()
+        self._zoned_datetime = self.get_now()  # skipif-ci-and-windows
+        self._zoned_datetime_str = (  # skipif-ci-and-windows
+            self._zoned_datetime.format_common_iso()
         )
         super().__init__(  # skipif-ci-and-windows
             name, level, pathname, lineno, msg, args, exc_info, func, sinfo
@@ -321,7 +321,7 @@ class _AdvancedLogRecord(LogRecord):
     def get_zoned_datetime_fmt(cls) -> str:
         """Get the zoned datetime format string."""
         length = len(cls.get_now().format_common_iso())  # skipif-ci-and-windows
-        return f"{{zoned_datetime_str:{length}}}"  # skipif-ci-and-windows
+        return f"{{_zoned_datetime_str:{length}}}"  # skipif-ci-and-windows
 
 
 __all__ = [

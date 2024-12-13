@@ -43,11 +43,7 @@ class TestEvalTypedDict:
             c: NotRequired[float]
 
         result = eval_typed_dict(Example)
-        expected = {
-            "a": int,
-            "b": str,
-            "c": NotRequired[float],  # pyright: ignore[reportInvalidTypeForm]
-        }
+        expected = {"a": int, "b": str, "c": NotRequired[float]}
         assert result == expected
 
     def test_nested(self) -> None:
