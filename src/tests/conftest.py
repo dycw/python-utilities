@@ -89,25 +89,25 @@ def traceback_func_one() -> str:
     return strip_and_dedent(
         """
         Frame 1/1: func_one (tests.test_traceback_funcs.one)
-          Inputs:
-            args[0] = 1
-            args[1] = 2
-            args[2] = 3
-            args[3] = 4
-            kwargs[c] = 5
-            kwargs[d] = 6
-            kwargs[e] = 7
-          Locals:
-            a = 2
-            b = 4
-            c = 10
-            args = (6, 8)
-            kwargs = {'d': 12, 'e': 14}
-            result = 56
-          Line 16:
-            assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
-          AssertionError:
-            Result (56) must be divisible by 10
+            Inputs:
+                args[0] = 1
+                args[1] = 2
+                args[2] = 3
+                args[3] = 4
+                kwargs[c] = 5
+                kwargs[d] = 6
+                kwargs[e] = 7
+            Locals:
+                a = 2
+                b = 4
+                c = 10
+                args = (6, 8)
+                kwargs = {'d': 12, 'e': 14}
+                result = 56
+            Line 16:
+                assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
+            AssertionError:
+                Result (56) must be divisible by 10
         """
     )
 

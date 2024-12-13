@@ -62,13 +62,13 @@ class StandaloneFileHandler(Handler):
         try:
             path = (
                 resolve_path(path=self._path)
-                .joinpath(get_now(time_zone="local").strftime("%Y-%m-%dT%H-%M-%S.%f"))
+                .joinpath(get_now(time_zone="local").strftime("%Y-%m-%dT%H-%M-%S"))
                 .with_suffix(".txt")
             )
             formatted = self.format(record)
             with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
                 _ = fh.write(formatted)
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001 # pragma: no cover
             self.handleError(record)
 
 
