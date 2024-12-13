@@ -15,6 +15,7 @@ from utilities.logging import (
     GetLoggingLevelNumberError,
     LoggerOrName,
     LogLevel,
+    StandaloneFileHandler,
     _AdvancedLogRecord,
     add_filters,
     basic_config,
@@ -104,11 +105,13 @@ class TestLogLevel:
 
 class TestSetupLogging:
     @skipif_windows
-    def test_decorated(self, *, tmp_path: Path, traceback_func_one: str) -> None:
+    def test_decorated(
+        self, *, tmp_path: Path, traceback_func_one: Pattern[str]
+    ) -> None:
         name = str(tmp_path)
         setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
-        assert len(logger.handlers) == 6
+        assert len(logger.handlers) == 7
         self.assert_files(tmp_path, "init")
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
@@ -123,7 +126,7 @@ class TestSetupLogging:
         name = str(tmp_path)
         setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
-        assert len(logger.handlers) == 6
+        assert len(logger.handlers) == 7
         self.assert_files(tmp_path, "init")
         try:
             _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
@@ -193,7 +196,7 @@ class TestSetupLogging:
     def assert_files(
         cls,
         path: Path,
-        check: Literal["init"] | tuple[Literal["post"], str | Pattern[str]],
+        check: Literal["init"] | tuple[Literal["post"], Pattern[str]],
     ) -> None:
         files = list(path.iterdir())
         names = {f.name for f in files}
@@ -211,6 +214,21 @@ class TestSetupLogging:
                 errors = path.joinpath("errors")
                 assert errors.is_dir()
                 TestTracebackHandler.assert_file(errors, str_or_pattern)
+
+
+class TestStandaloneFileHandler:
+    def test_main(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
+        handler = StandaloneFileHandler(level=DEBUG, path=tmp_path)
+        logger.addHandler(handler)
+        logger.setLevel(DEBUG)
+        assert len(list(tmp_path.iterdir())) == 0
+        logger.info("test")
+        files = list(tmp_path.iterdir())
+        assert len(files) == 1
+        with one(files).open() as fh:
+            contents = fh.read()
+        assert contents == "test"
 
 
 class TestTempHandler:
