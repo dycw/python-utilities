@@ -35,7 +35,11 @@ class TestMakeExceptHook:
         assert record.message == expected
 
     def test_with_setup_logging_decorated(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture, traceback_func_one: str
+        self,
+        *,
+        tmp_path: Path,
+        caplog: LogCaptureFixture,
+        traceback_func_one: Pattern[str],
     ) -> None:
         name = str(tmp_path)
         setup_logging(logger=name, files_dir=tmp_path)
