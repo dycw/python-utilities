@@ -38,7 +38,16 @@ from utilities.functions import (
     get_func_qualname,
 )
 from utilities.iterables import one
-from utilities.rich import yield_call_args_repr, yield_mapping_repr
+from utilities.rich import (
+    EXPAND_ALL,
+    INDENT_SIZE,
+    MAX_DEPTH,
+    MAX_LENGTH,
+    MAX_STRING,
+    MAX_WIDTH,
+    yield_call_args_repr,
+    yield_mapping_repr,
+)
 from utilities.text import ensure_str
 from utilities.whenever import serialize_zoned_datetime
 
@@ -81,6 +90,7 @@ class RichTracebackFormatter(Formatter):
 
     @override
     def format(self, record: LogRecord) -> str:
+        """Format the record."""
         if record.exc_info is None:
             return f"ERROR: {record.exc_info=}"
         _, exc_value, _ = record.exc_info
@@ -197,15 +207,50 @@ class ExcChainTB(Generic[_TExc]):
 
     @override
     def __repr__(self) -> str:
+        return self.format()
+
+    def format(
+        self,
+        *,
+        max_width: int = MAX_WIDTH,
+        indent_size: int = INDENT_SIZE,
+        max_length: int | None = MAX_LENGTH,
+        max_string: int | None = MAX_STRING,
+        max_depth: int | None = MAX_DEPTH,
+        expand_all: bool = EXPAND_ALL,
+    ) -> str:
+        """Format the traceback."""
         lines: list[str] = []
         total = len(self.errors)
         for i, errors in enumerate(self.errors):
             lines.append(f"Exception chain {i + 1}/{total}:")
             match errors:
                 case ExcGroupTB():  # pragma: no cover
-                    lines.append(errors.format(index=i, total=total, depth=2))
+                    lines.append(
+                        errors.format(
+                            index=i,
+                            total=total,
+                            depth=2,
+                            max_width=max_width,
+                            indent_size=indent_size,
+                            max_length=max_length,
+                            max_string=max_string,
+                            max_depth=max_depth,
+                            expand_all=expand_all,
+                        )
+                    )
                 case ExcTB():  # pragma: no cover
-                    lines.append(errors.format(depth=2))
+                    lines.append(
+                        errors.format(
+                            depth=2,
+                            max_width=max_width,
+                            indent_size=indent_size,
+                            max_length=max_length,
+                            max_string=max_string,
+                            max_depth=max_depth,
+                            expand_all=expand_all,
+                        )
+                    )
                 case BaseException():  # pragma: no cover
                     lines.append(_format_exception(errors, depth=2))
                 case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
@@ -228,8 +273,20 @@ class ExcGroupTB(Generic[_TExc]):
         return self.format(header=True)
 
     def format(
-        self, *, index: int = 0, total: int = 1, header: bool = False, depth: int = 0
+        self,
+        *,
+        index: int = 0,
+        total: int = 1,
+        header: bool = False,
+        depth: int = 0,
+        max_width: int = MAX_WIDTH,
+        indent_size: int = INDENT_SIZE,
+        max_length: int | None = MAX_LENGTH,
+        max_string: int | None = MAX_STRING,
+        max_depth: int | None = MAX_DEPTH,
+        expand_all: bool = EXPAND_ALL,
     ) -> str:
+        """Format the traceback."""
         lines: list[str] = []
         if header:
             lines.extend(_yield_header_lines())
@@ -246,7 +303,17 @@ class ExcGroupTB(Generic[_TExc]):
             )
             match errors:
                 case ExcGroupTB() | ExcTB():  # pragma: no cover
-                    lines.append(errors.format(depth=4))
+                    lines.append(
+                        errors.format(
+                            depth=4,
+                            max_width=max_width,
+                            indent_size=indent_size,
+                            max_length=max_length,
+                            max_string=max_string,
+                            max_depth=max_depth,
+                            expand_all=expand_all,
+                        )
+                    )
                 case BaseException():  # pragma: no cover
                     lines.append(_format_exception(errors, depth=4))
                 case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
@@ -272,14 +339,33 @@ class ExcTB(Generic[_TExc]):
     def __repr__(self) -> str:
         return self.format()
 
-    def format(self, *, depth: int = 0) -> str:
+    def format(
+        self,
+        *,
+        depth: int = 0,
+        max_width: int = MAX_WIDTH,
+        indent_size: int = INDENT_SIZE,
+        max_length: int | None = MAX_LENGTH,
+        max_string: int | None = MAX_STRING,
+        max_depth: int | None = MAX_DEPTH,
+        expand_all: bool = EXPAND_ALL,
+    ) -> str:
+        """Format the traceback."""
         total = len(self)
         lines: list[str] = []
         for i, frame in enumerate(self.frames):
             is_head = i < total - 1
             lines.append(
                 frame.format(
-                    index=i, total=total, error=None if is_head else self.error
+                    index=i,
+                    total=total,
+                    error=None if is_head else self.error,
+                    max_width=max_width,
+                    indent_size=indent_size,
+                    max_length=max_length,
+                    max_string=max_string,
+                    max_depth=max_depth,
+                    expand_all=expand_all,
                 )
             )
             if is_head:
@@ -304,18 +390,43 @@ class _Frame:
         total: int = 1,
         error: BaseException | None = None,
         depth: int = 0,
+        max_width: int = MAX_WIDTH,
+        indent_size: int = INDENT_SIZE,
+        max_length: int | None = MAX_LENGTH,
+        max_string: int | None = MAX_STRING,
+        max_depth: int | None = MAX_DEPTH,
+        expand_all: bool = EXPAND_ALL,
     ) -> str:
+        """Format the traceback."""
         lines: list[str] = [
             f"Frame {index + 1}/{total}: {self.name} ({self.module})",
             indent("Inputs:", _INDENT),
         ]
         lines.extend(
             indent(line, 2 * _INDENT)
-            for line in yield_call_args_repr(*self.args, **self.kwargs)
+            for line in yield_call_args_repr(
+                *self.args,
+                _max_width=max_width,
+                _indent_size=indent_size,
+                _max_length=max_length,
+                _max_string=max_string,
+                _max_depth=max_depth,
+                _expand_all=expand_all,
+                **self.kwargs,
+            )
         )
         lines.append(indent("Locals:", _INDENT))
         lines.extend(
-            indent(line, 2 * _INDENT) for line in yield_mapping_repr(**self.locals)
+            indent(line, 2 * _INDENT)
+            for line in yield_mapping_repr(
+                _max_width=max_width,
+                _indent_size=indent_size,
+                _max_length=max_length,
+                _max_string=max_string,
+                _max_depth=max_depth,
+                _expand_all=expand_all,
+                **self.locals,
+            )
         )
         lines.append(indent(f"Line {self.line_num}:", _INDENT))
         lines.append(indent(self.code_line, 2 * _INDENT))
@@ -568,9 +679,10 @@ def _merge_frames(
 
 def _yield_header_lines() -> Iterator[str]:
     """Yield the header lines."""
-    yield f"User     | {getuser()}"
-    yield f"Host     | {gethostname()}"
-    yield f"Datetime | {serialize_zoned_datetime(get_now(time_zone='local'))}"
+    yield f"User      | {getuser()}"
+    yield f"Host      | {gethostname()}"
+    yield f"Date/time | {serialize_zoned_datetime(get_now(time_zone='local'))}"
+    yield ""
 
 
 __all__ = [
