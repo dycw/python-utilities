@@ -58,8 +58,7 @@ def _make_except_hook_inner(
     if exc_val is None:
         raise MakeExceptHookError
     logger_use = get_logger(logger=logger)
-    exc_info = (exc_type, exc_val, traceback)
-    logger_use.exception(message, exc_info=cast(Any, exc_info), extra=extra)
+    logger_use.exception(message, extra=extra)
     async_callbacks: list[Callable[[], Coroutine1[None]]] = []
     if callbacks is not None:
         for callback in callbacks:
