@@ -265,7 +265,7 @@ class ExcChainTB(Generic[_TExc]):
                 case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                     assert_never(never)
             lines.append("")
-        return "\n".join(lines).strip("\n")
+        return "\n".join(lines)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -302,15 +302,13 @@ class ExcGroupTB(Generic[_TExc]):
             lines.extend(_yield_header_lines())
         lines.extend([
             f"Exception group {index + 1}/{total}:",
-            indent("Path:", 2 * _INDENT),
-            self.path.format(depth=4),
+            indent("Path:", _INDENT),
+            self.path.format(header=False, detail=detail, depth=2),
             "",
         ])
         total_sub_errors = len(self.errors)
         for i, errors in enumerate(self.errors):
-            lines.append(
-                indent(f"Group error {i + 1}/{total_sub_errors}:", 2 * _INDENT)
-            )
+            lines.append(indent(f"Group error {i + 1}/{total_sub_errors}:", _INDENT))
             match errors:
                 case ExcGroupTB() | ExcTB():  # pragma: no cover
                     lines.append(
@@ -323,15 +321,15 @@ class ExcGroupTB(Generic[_TExc]):
                             max_string=max_string,
                             max_depth=max_depth,
                             expand_all=expand_all,
-                            depth=4,
+                            depth=2,
                         )
                     )
                 case BaseException():  # pragma: no cover
-                    lines.append(_format_exception(errors, depth=4))
+                    lines.append(_format_exception(errors, depth=2))
                 case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                     assert_never(never)
             lines.append("")
-        return indent("\n".join(lines).strip("\n"), depth * _INDENT)
+        return indent("\n".join(lines), depth * _INDENT)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -387,7 +385,7 @@ class ExcTB(Generic[_TExc]):
             )
             if is_head:
                 lines.append("")
-        return indent("\n".join(lines).strip("\n"), depth * _INDENT)
+        return indent("\n".join(lines), depth * _INDENT)
 
 
 @dataclass(kw_only=True, slots=True)
