@@ -100,7 +100,7 @@ class RichTracebackFormatter(Formatter):
         error = get_rich_traceback(exc_value)
         match error:
             case ExcChainTB() | ExcGroupTB() | ExcTB():
-                text = repr(error)
+                text = error.format(detail=self._detail)
             case BaseException():
                 text = "\n".join(format_exception(error))
             case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
@@ -420,9 +420,7 @@ class _Frame:
         expand_all: bool = EXPAND_ALL,
     ) -> str:
         """Format the traceback."""
-        lines: list[str] = [
-            f"Frame {index + 1}/{total}: {self.name} ({self.module})",
-        ]
+        lines: list[str] = [f"Frame {index + 1}/{total}: {self.name} ({self.module})"]
         if detail:
             lines.append(indent("Inputs:", _INDENT))
             lines.extend(
