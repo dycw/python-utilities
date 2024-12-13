@@ -100,7 +100,6 @@ class OrjsonFormatter(Formatter):
         /,
         *,
         defaults: StrMapping | None = None,
-        extra_ignore: AbstractSet[str] | None = None,
         before: Callable[[Any], Any] | None = None,
         dataclass_final_hook: _DataclassFinalHook | None = None,
     ) -> None:
