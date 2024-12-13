@@ -25,6 +25,7 @@ from utilities.logging import (
     temp_handler,
     temp_logger,
 )
+from utilities.platform import SYSTEM
 from utilities.pytest import skipif_windows
 from utilities.typing import get_args
 
@@ -189,13 +190,12 @@ class TestSetupLogging:
     ) -> None:
         files = list(path.iterdir())
         names = {f.name for f in files}
-        expected = {
-            ".__debug.txt.lock",
-            ".__info.txt.lock",
-            "debug.txt",
-            "info.txt",
-            "plain",
-        }
+        exp_base = {"debug.txt", "info.txt", "plain"}
+        match SYSTEM:
+            case "windows":
+                expected = exp_base
+            case "mac" | "linux":
+                expected = exp_base | {".__debug.txt.lock", ".__info.txt.lock"}
         match check:
             case "init":
                 assert names == expected
