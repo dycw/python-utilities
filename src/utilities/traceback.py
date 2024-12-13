@@ -225,7 +225,7 @@ class ExcGroupTB(Generic[_TExc]):
 
     @override
     def __repr__(self) -> str:
-        return self.format()
+        return self.format(header=True)
 
     def format(
         self, *, index: int = 0, total: int = 1, header: bool = False, depth: int = 0
