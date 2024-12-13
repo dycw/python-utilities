@@ -114,10 +114,12 @@ class TestSetupLogging:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             logger.exception("message")
-        self.assert_files(tmp_path, traceback_func_one)
+        self.assert_files(tmp_path, ("post", traceback_func_one))
 
     @skipif_windows
-    def test_undecorated(self, *, tmp_path: Path) -> None:
+    def test_undecorated(
+        self, *, tmp_path: Path, traceback_func_untraced: Pattern[str]
+    ) -> None:
         name = str(tmp_path)
         setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
@@ -127,7 +129,7 @@ class TestSetupLogging:
             _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             logger.exception("message")
-        self.assert_files(tmp_path, "post-undecorated")
+        self.assert_files(tmp_path, ("post", traceback_func_untraced))
 
     @skipif_windows
     def test_regular_percent_formatting(
