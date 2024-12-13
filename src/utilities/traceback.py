@@ -110,7 +110,6 @@ class TracebackHandler(Handler):
                     _ = fh.write(repr_use)
                 case BaseException():
                     print_exception(assembled, file=fh)
-                    # assert 0, [record.exc_info, path, str(assembled)]
                 case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                     assert_never(never)
 
