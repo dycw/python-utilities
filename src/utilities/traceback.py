@@ -226,7 +226,19 @@ class ExcPath(Generic[_TExc]):
         return len(self.frames)
 
     def format(self, *, depth: int = 0) -> str:
-        pass
+        *head, tail = self.frames
+        total = len(self)
+        lines: list[str] = []
+        for i, frame in enumerate(head):
+            lines.extend(frame.format(index=i, total=total, depth=depth).splitlines())
+            lines.append("")
+        lines.extend(
+            tail.format(
+                index=total - 1, total=total, depth=depth, error=self.error
+            ).splitlines()
+        )
+        joined = "\n".join(lines)
+        return indent(joined, depth * _INDENT)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -245,7 +257,7 @@ class _Frame:
         index: int = 0,
         total: int = 1,
         depth: int = 0,
-        error: Exception | None = None,
+        error: BaseException | None = None,
     ) -> str:
         lines: list[str] = [
             f"{index + 1}/{total}: {self.name} ({self.module})",
