@@ -62,7 +62,7 @@ class StandaloneFileHandler(Handler):
         try:
             path = (
                 resolve_path(path=self._path)
-                .joinpath(get_now(time_zone="local").strftime("%Y-%m-%dT%H-%M-%S"))
+                .joinpath(get_now(time_zone="local").strftime("%Y-%m-%dT%H-%M-%S.%f"))
                 .with_suffix(".txt")
             )
             formatted = self.format(record)
@@ -189,7 +189,7 @@ def setup_logging(
             fmt=files_fmt, style="{", field_styles=field_styles
         )
     plain_formatter = Formatter(fmt=files_fmt, style="{")  # skipif-ci-and-windows
-    rich_traceback_formatter = RichTracebackFormatter(detail=True)
+    rich_traceback_formatter = RichTracebackFormatter(detail=True, color="red")
 
     # console
     if console_level is not None:  # skipif-ci-and-windows

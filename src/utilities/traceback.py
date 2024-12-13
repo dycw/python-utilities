@@ -69,9 +69,11 @@ class RichTracebackFormatter(Formatter):
         *,
         defaults: StrMapping | None = None,
         detail: bool = False,
+        color: str | None = None,
     ) -> None:
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
         self._detail = detail
+        self._color = color
 
     @override
     def format(self, record: LogRecord) -> str:
@@ -83,11 +85,19 @@ class RichTracebackFormatter(Formatter):
         error = get_rich_traceback(exc_value)
         match error:
             case ExcChainTB() | ExcGroupTB() | ExcTB():
-                return repr(error)
+                text = repr(error)
             case BaseException():
-                return "\n".join(format_exception(error))
+                text = "\n".join(format_exception(error))
             case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                 assert_never(never)
+        if self._color is not None:
+            try:
+                from humanfriendly.terminal import ansi_wrap
+            except ModuleNotFoundError:
+                pass
+            else:
+                text = ansi_wrap(text, color=self._color)
+        return text
 
 
 @dataclass(repr=False, kw_only=True, slots=True)
