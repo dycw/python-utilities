@@ -202,7 +202,7 @@ def setup_logging(
         logger_use.addHandler(console_low_handler)
 
         console_high_handler = StreamHandler(stream=stdout)
-        add_filters(console_high_handler, filters=[lambda x: x.levelno >= ERROR])
+        add_filters(console_high_handler, filters=[lambda x: x.exc_info is not None])
         add_filters(console_high_handler, filters=console_filters)
         add_filters(console_high_handler, filters=filters)
         console_high_handler.setFormatter(rich_traceback_formatter)
