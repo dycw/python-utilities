@@ -189,7 +189,6 @@ def setup_logging(
             fmt=files_fmt, style="{", field_styles=field_styles
         )
     plain_formatter = Formatter(fmt=files_fmt, style="{")  # skipif-ci-and-windows
-    rich_traceback_formatter = RichTracebackFormatter(detail=True, color="red")
 
     # console
     if console_level is not None:  # skipif-ci-and-windows
@@ -205,7 +204,9 @@ def setup_logging(
         add_filters(console_high_handler, filters=[lambda x: x.exc_info is not None])
         add_filters(console_high_handler, filters=console_filters)
         add_filters(console_high_handler, filters=filters)
-        console_high_handler.setFormatter(rich_traceback_formatter)
+        console_high_handler.setFormatter(
+            RichTracebackFormatter(detail=True, color="red")
+        )
         console_high_handler.setLevel(get_logging_level_number(console_level))
         logger_use.addHandler(console_high_handler)
 
@@ -244,7 +245,7 @@ def setup_logging(
     standalone_file_handler = StandaloneFileHandler(  # skipif-ci-and-windows
         level=ERROR, path=directory.joinpath("errors")
     )
-    standalone_file_handler.setFormatter(rich_traceback_formatter)
+    standalone_file_handler.setFormatter(RichTracebackFormatter(detail=True))
     logger_use.addHandler(standalone_file_handler)  # skipif-ci-and-windows
 
     # extra
