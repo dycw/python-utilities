@@ -41,7 +41,6 @@ from utilities.whenever import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
     from collections.abc import Set as AbstractSet
     from logging import _FormatStyle
 
@@ -100,7 +99,7 @@ class OrjsonFormatter(Formatter):
         validate: bool = True,
         /,
         *,
-        defaults: Mapping[str, Any] | None = None,
+        defaults: StrMapping | None = None,
         before: Callable[[Any], Any] | None = None,
         dataclass_final_hook: _DataclassFinalHook | None = None,
     ) -> None:

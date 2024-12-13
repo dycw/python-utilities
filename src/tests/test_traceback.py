@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from logging import ERROR, getLogger
-from re import Pattern
-from typing import TYPE_CHECKING, Literal
+from io import StringIO
+from logging import DEBUG, ERROR, StreamHandler, getLogger
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
 from pytest import raises
@@ -35,12 +35,13 @@ from tests.test_traceback_funcs.untraced import func_untraced
 from utilities.iterables import OneNonUniqueError, one
 from utilities.text import ensure_str, strip_and_dedent
 from utilities.traceback import (
-    ExcChain,
-    ExcGroup,
-    ExcPath,
-    TracebackHandler,
+    ExcChainTB,
+    ExcGroupTB,
+    ExcTB,
+    RichTracebackFormatter,
     _CallArgsError,
-    assemble_exception_paths,
+    _Frame,
+    get_rich_traceback,
     trace,
     yield_exceptions,
     yield_extended_frame_summaries,
@@ -49,18 +50,58 @@ from utilities.traceback import (
 
 if TYPE_CHECKING:
     from pathlib import Path
+    from re import Pattern
     from traceback import FrameSummary
     from types import FrameType
 
 
-class TestAssembleExceptionsPaths:
-    def test_func_one(self, *, traceback_func_one: str) -> None:
+class TestFrame:
+    frame: ClassVar[_Frame] = _Frame(
+        module="module",
+        name="name",
+        code_line="code_line",
+        line_num=1,
+        args=(1, 2, 3, 4),
+        kwargs={"c": 5, "d": 6, "e": 7},
+        locals={"a": 2, "b": 4, "args": (6, 8), "kwargs": {"d": 12, "e": 14}},
+    )
+
+    def test_repr(self) -> None:
+        result = repr(self.frame)
+        expected = strip_and_dedent("""
+        Frame 1/1: name (module)
+            Inputs:
+                args[0] = 1
+                args[1] = 2
+                args[2] = 3
+                args[3] = 4
+                kwargs[c] = 5
+                kwargs[d] = 6
+                kwargs[e] = 7
+            Locals:
+                a = 2
+                b = 4
+                args = (6, 8)
+                kwargs = {'d': 12, 'e': 14}
+            Line 1:
+                code_line
+        """)
+        assert result == expected
+
+    def test_summary(self) -> None:
+        result = self.frame.format(detail=False)
+        expected = "Frame 1/1: name (module)"
+        assert result == expected
+
+
+class TestGetRichTraceback:
+    def test_func_one(self, *, traceback_func_one: Pattern[str]) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path = assemble_exception_paths(exc_info.value)
-        assert isinstance(exc_path, ExcPath)
-        assert len(exc_path) == 1
-        frame = one(exc_path)
+        exc_tb = get_rich_traceback(exc_info.value)
+        assert isinstance(exc_tb, ExcTB)
+        assert len(exc_tb) == 1
+        frame = one(exc_tb)
         assert frame.module == "tests.test_traceback_funcs.one"
         assert frame.name == "func_one"
         assert (
@@ -73,21 +114,17 @@ class TestAssembleExceptionsPaths:
         assert frame.locals["b"] == 4
         assert frame.locals["args"] == (6, 8)
         assert frame.locals["kwargs"] == {"d": 12, "e": 14}
-        assert isinstance(exc_path.error, AssertionError)
+        assert isinstance(exc_tb.error, AssertionError)
 
-        res_frame = frame.format(error=exc_path.error)
-        assert res_frame == traceback_func_one
+        assert traceback_func_one.search(repr(exc_tb))
 
-        res_path = repr(exc_path)
-        assert res_path == traceback_func_one
-
-    def test_func_two(self, *, traceback_func_two: str) -> None:
+    def test_func_two(self, *, traceback_func_two: Pattern[str]) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path = assemble_exception_paths(exc_info.value)
-        assert isinstance(exc_path, ExcPath)
-        assert len(exc_path) == 2
-        frame1, frame2 = exc_path
+        exc_tb = get_rich_traceback(exc_info.value)
+        assert isinstance(exc_tb, ExcTB)
+        assert len(exc_tb) == 2
+        frame1, frame2 = exc_tb
         assert frame1.module == "tests.test_traceback_funcs.two"
         assert frame1.name == "func_two_first"
         assert frame1.code_line == "return func_two_second(a, b, *args, c=c, **kwargs)"
@@ -109,18 +146,17 @@ class TestAssembleExceptionsPaths:
         assert frame2.locals["b"] == 8
         assert frame2.locals["args"] == (12, 16)
         assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
-        assert isinstance(exc_path.error, AssertionError)
+        assert isinstance(exc_tb.error, AssertionError)
 
-        res_path = repr(exc_path)
-        assert res_path == traceback_func_two
+        assert traceback_func_two.search(repr(exc_tb))
 
     def test_func_beartype(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_beartype(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path = assemble_exception_paths(exc_info.value)
-        assert isinstance(exc_path, ExcPath)
-        assert len(exc_path) == 1
-        frame = one(exc_path)
+        exc_tb = get_rich_traceback(exc_info.value)
+        assert isinstance(exc_tb, ExcTB)
+        assert len(exc_tb) == 1
+        frame = one(exc_tb)
         assert frame.module == "tests.test_traceback_funcs.beartype"
         assert frame.name == "func_beartype"
         assert (
@@ -133,15 +169,15 @@ class TestAssembleExceptionsPaths:
         assert frame.locals["b"] == 4
         assert frame.locals["args"] == (6, 8)
         assert frame.locals["kwargs"] == {"d": 12, "e": 14}
-        assert isinstance(exc_path.error, AssertionError)
+        assert isinstance(exc_tb.error, AssertionError)
 
     def test_func_beartype_error(self) -> None:
         with raises(BeartypeCallHintReturnViolation) as exc_info:
             _ = func_beartype_error_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path = assemble_exception_paths(exc_info.value)
-        assert isinstance(exc_path, ExcPath)
-        assert len(exc_path) == 2
-        frame1, frame2 = exc_path
+        exc_tb = get_rich_traceback(exc_info.value)
+        assert isinstance(exc_tb, ExcTB)
+        assert len(exc_tb) == 2
+        frame1, frame2 = exc_tb
         assert frame1.module == "tests.test_traceback_funcs.beartype_error"
         assert frame1.name == "func_beartype_error_first"
         assert (
@@ -161,17 +197,17 @@ class TestAssembleExceptionsPaths:
         assert frame2.kwargs == {"c": 10, "d": 12, "e": 14}
         assert frame2.locals["args"] == (2, 4, 6, 8)
         assert frame2.locals["kwargs"] == {"c": 10, "d": 12, "e": 14}
-        assert isinstance(exc_path.error, BeartypeCallHintReturnViolation)
+        assert isinstance(exc_tb.error, BeartypeCallHintReturnViolation)
 
-    def test_func_chain(self, *, traceback_func_chain: str) -> None:
+    def test_func_chain(self, *, traceback_func_chain: Pattern[str]) -> None:
         with raises(ValueError, match=".*") as exc_info:
             _ = func_chain_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_chain = assemble_exception_paths(exc_info.value)
-        assert isinstance(exc_chain, ExcChain)
+        exc_chain = get_rich_traceback(exc_info.value)
+        assert isinstance(exc_chain, ExcChainTB)
         assert len(exc_chain) == 2
-        path1, path2 = exc_chain
-        assert isinstance(path1, ExcPath)
-        frame1 = one(path1)
+        exc_tb1, exc_tb2 = exc_chain
+        assert isinstance(exc_tb1, ExcTB)
+        frame1 = one(exc_tb1)
         assert frame1.module == "tests.test_traceback_funcs.chain"
         assert frame1.name == "func_chain_first"
         assert frame1.code_line == "raise ValueError(msg) from error"
@@ -181,9 +217,9 @@ class TestAssembleExceptionsPaths:
         assert frame1.locals["b"] == 4
         assert frame1.locals["args"] == (6, 8)
         assert frame1.locals["kwargs"] == {"d": 12, "e": 14}
-        assert isinstance(path2, ExcPath)
-        assert len(path2) == 1
-        frame2 = one(path2)
+        assert isinstance(exc_tb2, ExcTB)
+        assert len(exc_tb2) == 1
+        frame2 = one(exc_tb2)
         assert frame2.module == "tests.test_traceback_funcs.chain"
         assert frame2.name == "func_chain_second"
         assert (
@@ -197,29 +233,28 @@ class TestAssembleExceptionsPaths:
         assert frame2.locals["args"] == (12, 16)
         assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
 
-        res_chain = repr(exc_chain)
-        assert res_chain == traceback_func_chain
+        assert traceback_func_chain.search(repr(exc_chain))
 
     def test_func_decorated_sync(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_decorated_sync_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path = assemble_exception_paths(exc_info.value)
-        assert isinstance(exc_path, ExcPath)
+        exc_path = get_rich_traceback(exc_info.value)
+        assert isinstance(exc_path, ExcTB)
         self._assert_decorated(exc_path, "sync")
         assert len(exc_path) == 5
 
     async def test_func_decorated_async(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = await func_decorated_async_first(1, 2, 3, 4, c=5, d=6, e=7)
-        error = assemble_exception_paths(exc_info.value)
-        assert isinstance(error, ExcPath)
+        error = get_rich_traceback(exc_info.value)
+        assert isinstance(error, ExcTB)
         self._assert_decorated(error, "async")
 
     def test_func_recursive(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_recursive(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path = assemble_exception_paths(exc_info.value)
-        assert isinstance(exc_path, ExcPath)
+        exc_path = get_rich_traceback(exc_info.value)
+        assert isinstance(exc_path, ExcTB)
         assert len(exc_path) == 2
         frame1, frame2 = exc_path
         assert frame1.module == "tests.test_traceback_funcs.recursive"
@@ -248,37 +283,37 @@ class TestAssembleExceptionsPaths:
     def test_func_runtime_sync(self) -> None:
         with raises(AssertionError) as exc_info1:
             _ = func_runtime_sync(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path1 = assemble_exception_paths(exc_info1.value)
-        assert isinstance(exc_path1, ExcPath)
+        exc_path1 = get_rich_traceback(exc_info1.value)
+        assert isinstance(exc_path1, ExcTB)
         with disable_trace_for_func_runtime_sync():
             with raises(AssertionError) as exc_info2:
                 _ = func_runtime_sync(1, 2, 3, 4, c=5, d=6, e=7)
-            exc_path2 = assemble_exception_paths(exc_info2.value)
+            exc_path2 = get_rich_traceback(exc_info2.value)
             assert isinstance(exc_path2, AssertionError)
         with raises(AssertionError) as exc_info3:
             _ = func_runtime_sync(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path3 = assemble_exception_paths(exc_info3.value)
-        assert isinstance(exc_path3, ExcPath)
+        exc_path3 = get_rich_traceback(exc_info3.value)
+        assert isinstance(exc_path3, ExcTB)
 
     async def test_func_runtime_async(self) -> None:
         with raises(AssertionError) as exc_info1:
             _ = await func_runtime_async(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path1 = assemble_exception_paths(exc_info1.value)
-        assert isinstance(exc_path1, ExcPath)
+        exc_path1 = get_rich_traceback(exc_info1.value)
+        assert isinstance(exc_path1, ExcTB)
         with disable_trace_for_func_runtime_async():
             with raises(AssertionError) as exc_info2:
                 _ = await func_runtime_async(1, 2, 3, 4, c=5, d=6, e=7)
-            exc_path2 = assemble_exception_paths(exc_info2.value)
+            exc_path2 = get_rich_traceback(exc_info2.value)
             assert isinstance(exc_path2, AssertionError)
         with raises(AssertionError) as exc_info3:
             _ = await func_runtime_async(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path3 = assemble_exception_paths(exc_info3.value)
-        assert isinstance(exc_path3, ExcPath)
+        exc_path3 = get_rich_traceback(exc_info3.value)
+        assert isinstance(exc_path3, ExcTB)
 
     def test_func_setup(self) -> None:
         with raises(AssertionError) as exc_info1:
             _ = func_setup(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path1 = assemble_exception_paths(exc_info1.value)
+        exc_path1 = get_rich_traceback(exc_info1.value)
         assert isinstance(exc_path1, AssertionError)
 
     async def test_func_task_group_one(
@@ -286,8 +321,8 @@ class TestAssembleExceptionsPaths:
     ) -> None:
         with raises(ExceptionGroup) as exc_info:
             await func_task_group_one_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_group = assemble_exception_paths(exc_info.value)
-        assert isinstance(exc_group, ExcGroup)
+        exc_group = get_rich_traceback(exc_info.value)
+        assert isinstance(exc_group, ExcGroupTB)
         assert exc_group.path is not None
         assert len(exc_group.path) == 1
         path_frame = one(exc_group.path)
@@ -303,7 +338,7 @@ class TestAssembleExceptionsPaths:
         assert isinstance(exc_group.path.error, ExceptionGroup)
         assert len(exc_group.errors) == 1
         exc_path = one(exc_group.errors)
-        assert isinstance(exc_path, ExcPath)
+        assert isinstance(exc_path, ExcTB)
         assert len(exc_path) == 1
         frame = one(exc_path)
         assert frame.module == "tests.test_traceback_funcs.task_group_one"
@@ -328,8 +363,8 @@ class TestAssembleExceptionsPaths:
     async def test_func_task_group_two(self) -> None:
         with raises(ExceptionGroup) as exc_info:
             await func_task_group_two_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_group = assemble_exception_paths(exc_info.value)
-        assert isinstance(exc_group, ExcGroup)
+        exc_group = get_rich_traceback(exc_info.value)
+        assert isinstance(exc_group, ExcGroupTB)
         assert exc_group.path is not None
         assert len(exc_group.path) == 1
         frame0 = one(exc_group.path)
@@ -345,7 +380,7 @@ class TestAssembleExceptionsPaths:
         assert isinstance(exc_group.path.error, ExceptionGroup)
         assert len(exc_group.errors) == 2
         exc_path1, exc_path2 = exc_group.errors
-        assert isinstance(exc_path1, ExcPath)
+        assert isinstance(exc_path1, ExcTB)
         assert len(exc_path1) == 1
         frame1 = one(exc_path1)
         assert frame1.module == "tests.test_traceback_funcs.task_group_two"
@@ -361,7 +396,7 @@ class TestAssembleExceptionsPaths:
         assert frame1.locals["args"] == (12, 16)
         assert frame1.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_path1.error, AssertionError)
-        assert isinstance(exc_path2, ExcPath)
+        assert isinstance(exc_path2, ExcTB)
         assert len(exc_path2) == 1
         frame2 = one(exc_path2)
         assert frame2.module == "tests.test_traceback_funcs.task_group_two"
@@ -381,7 +416,7 @@ class TestAssembleExceptionsPaths:
     def test_func_untraced(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
-        error = assemble_exception_paths(exc_info.value)
+        error = get_rich_traceback(exc_info.value)
         assert isinstance(error, AssertionError)
 
     def test_custom_error(self) -> None:
@@ -391,8 +426,8 @@ class TestAssembleExceptionsPaths:
 
         with raises(OneNonUniqueError) as exc_info:
             _ = raises_custom_error()
-        exc_path = assemble_exception_paths(exc_info.value)
-        assert isinstance(exc_path, ExcPath)
+        exc_path = get_rich_traceback(exc_info.value)
+        assert isinstance(exc_path, ExcTB)
         assert exc_path.error.first is True
         assert exc_path.error.second is False
 
@@ -423,7 +458,7 @@ class TestAssembleExceptionsPaths:
         assert msg == expected
 
     def _assert_decorated(
-        self, exc_path: ExcPath, sync_or_async: Literal["sync", "async"], /
+        self, exc_path: ExcTB, sync_or_async: Literal["sync", "async"], /
     ) -> None:
         assert len(exc_path) == 5
         frame1, frame2, _, frame4, frame5 = exc_path
@@ -483,49 +518,72 @@ class TestAssembleExceptionsPaths:
         assert isinstance(exc_path.error, AssertionError)
 
 
-class TestTracebackHandler:
-    def test_decorated(self, *, tmp_path: Path, traceback_func_one: str) -> None:
+class TestRichTracebackFormatter:
+    def test_decorated(
+        self, *, tmp_path: Path, traceback_func_one: Pattern[str]
+    ) -> None:
         logger = getLogger(str(tmp_path))
-        handler = TracebackHandler(path=tmp_path)
+        logger.setLevel(DEBUG)
+        handler = StreamHandler(buffer := StringIO())
+        handler.setFormatter(RichTracebackFormatter(detail=True))
+        handler.setLevel(DEBUG)
         logger.addHandler(handler)
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             logger.exception("message")
-        self.assert_file(tmp_path, traceback_func_one)
+        result = buffer.getvalue()
+        assert traceback_func_one.search(result)
 
     def test_undecorated(
         self, *, tmp_path: Path, traceback_func_untraced: Pattern[str]
     ) -> None:
         logger = getLogger(str(tmp_path))
-        handler = TracebackHandler(path=tmp_path)
+        logger.setLevel(DEBUG)
+        handler = StreamHandler(buffer := StringIO())
+        handler.setFormatter(RichTracebackFormatter(detail=True))
+        handler.setLevel(DEBUG)
         logger.addHandler(handler)
         try:
             _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             logger.exception("message")
-        self.assert_file(tmp_path, traceback_func_untraced)
+        result = buffer.getvalue()
+        assert traceback_func_untraced.search(result)
+
+    def test_create_and_set(self) -> None:
+        handler = StreamHandler()
+        assert len(handler.filters) == 0
+        _ = RichTracebackFormatter.create_and_set(handler)
+        assert len(handler.filters) == 1
 
     def test_no_logging(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.setLevel(ERROR)
-        handler = TracebackHandler(path=tmp_path)
-        handler.setLevel(ERROR)
+        handler = StreamHandler(buffer := StringIO())
+        handler.setFormatter(RichTracebackFormatter(detail=True))
+        handler.setLevel(DEBUG)
         logger.addHandler(handler)
         logger.error("message")
-        assert len(list(tmp_path.iterdir())) == 0
+        result = buffer.getvalue()
+        expected = "ERROR: record.exc_info=None\n"
+        assert result == expected
 
-    @classmethod
-    def assert_file(cls, path: Path, expected: str | Pattern[str], /) -> None:
-        files = list(path.iterdir())
-        assert len(files) == 1
-        with one(files).open() as fh:
-            contents = fh.read()
-        match expected:
-            case str():
-                assert contents == expected
-            case Pattern():
-                assert bool(expected.search(contents))
+    def test_post(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
+        logger.setLevel(DEBUG)
+        handler = StreamHandler(buffer := StringIO())
+        handler.setFormatter(
+            RichTracebackFormatter(detail=True, post=lambda x: f"> {x}")
+        )
+        handler.setLevel(DEBUG)
+        logger.addHandler(handler)
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError:
+            logger.exception("message")
+        result = buffer.getvalue()
+        assert result.startswith("> ")
 
 
 class TestYieldExceptions:

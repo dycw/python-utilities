@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from itertools import product
 from logging import (
     ERROR,
+    NOTSET,
     Formatter,
     Handler,
     Logger,
@@ -23,10 +24,11 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, assert_neve
 
 from typing_extensions import override
 
-from utilities.datetime import maybe_sub_pct_y
+from utilities.atomicwrites import writer
+from utilities.datetime import get_now, maybe_sub_pct_y
 from utilities.git import get_repo_root
 from utilities.pathlib import ensure_suffix, resolve_path
-from utilities.traceback import TracebackHandler
+from utilities.traceback import RichTracebackFormatter
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
@@ -43,6 +45,31 @@ except ModuleNotFoundError:  # pragma: no cover
 
 LogLevel: TypeAlias = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 LoggerOrName: TypeAlias = Logger | str
+
+
+class StandaloneFileHandler(Handler):
+    """Handler for emitting tracebacks to individual files."""
+
+    @override
+    def __init__(
+        self, *, level: int = NOTSET, path: PathLikeOrCallable | None = None
+    ) -> None:
+        super().__init__(level=level)
+        self._path = path
+
+    @override
+    def emit(self, record: LogRecord) -> None:
+        try:
+            path = (
+                resolve_path(path=self._path)
+                .joinpath(get_now(time_zone="local").strftime("%Y-%m-%dT%H-%M-%S"))
+                .with_suffix(".txt")
+            )
+            formatted = self.format(record)
+            with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
+                _ = fh.write(formatted)
+        except Exception:  # noqa: BLE001 # pragma: no cover
+            self.handleError(record)
 
 
 def add_filters(
@@ -145,7 +172,7 @@ def setup_logging(
     )
     filters = None if filters is None else list(filters)  # skipif-ci-and-windows
 
-    # formatter
+    # formatters
     try:  # skipif-ci-and-windows
         from coloredlogs import DEFAULT_FIELD_STYLES, ColoredFormatter
     except ModuleNotFoundError:  # pragma: no cover
@@ -165,17 +192,29 @@ def setup_logging(
 
     # console
     if console_level is not None:  # skipif-ci-and-windows
-        console_handler = StreamHandler(stream=stdout)
-        add_filters(console_handler, filters=console_filters)
-        add_filters(console_handler, filters=filters)
-        console_handler.setFormatter(console_formatter)
-        console_handler.setLevel(get_logging_level_number(console_level))
-        logger_use.addHandler(console_handler)
+        console_low_handler = StreamHandler(stream=stdout)
+        add_filters(console_low_handler, filters=[lambda x: x.levelno < ERROR])
+        add_filters(console_low_handler, filters=console_filters)
+        add_filters(console_low_handler, filters=filters)
+        console_low_handler.setFormatter(console_formatter)
+        console_low_handler.setLevel(get_logging_level_number(console_level))
+        logger_use.addHandler(console_low_handler)
+
+        console_high_handler = StreamHandler(stream=stdout)
+        add_filters(console_high_handler, filters=console_filters)
+        add_filters(console_high_handler, filters=filters)
+        _ = RichTracebackFormatter.create_and_set(
+            console_high_handler, detail=True, post=_ansi_wrap_red
+        )
+        console_high_handler.setLevel(
+            max(get_logging_level_number(console_level), ERROR)
+        )
+        logger_use.addHandler(console_high_handler)
 
     # debug & info
     directory = resolve_path(path=files_dir)  # skipif-ci-and-windows
     levels: list[LogLevel] = ["DEBUG", "INFO"]  # skipif-ci-and-windows
-    for level, (subpath, formatter) in product(  # skipif-ci-and-windows
+    for level, (subpath, files_or_plain_formatter) in product(  # skipif-ci-and-windows
         levels, [(Path(), files_formatter), (Path("plain"), plain_formatter)]
     ):
         path = ensure_suffix(directory.joinpath(subpath, level.lower()), ".txt")
@@ -199,15 +238,17 @@ def setup_logging(
             )
         add_filters(file_handler, filters=files_filters)
         add_filters(file_handler, filters=filters)
-        file_handler.setFormatter(formatter)
+        file_handler.setFormatter(files_or_plain_formatter)
         file_handler.setLevel(level)
         logger_use.addHandler(file_handler)
 
     # errors
-    traceback_handler = TracebackHandler(  # skipif-ci-and-windows
+    standalone_file_handler = StandaloneFileHandler(  # skipif-ci-and-windows
         level=ERROR, path=directory.joinpath("errors")
     )
-    logger_use.addHandler(traceback_handler)  # skipif-ci-and-windows
+    add_filters(standalone_file_handler, filters=[lambda x: x.exc_info is not None])
+    standalone_file_handler.setFormatter(RichTracebackFormatter(detail=True))
+    logger_use.addHandler(standalone_file_handler)  # skipif-ci-and-windows
 
     # extra
     if extra is not None:  # skipif-ci-and-windows
@@ -324,9 +365,18 @@ class _AdvancedLogRecord(LogRecord):
         return f"{{_zoned_datetime_str:{length}}}"  # skipif-ci-and-windows
 
 
+def _ansi_wrap_red(text: str, /) -> str:
+    try:
+        from humanfriendly.terminal import ansi_wrap
+    except ModuleNotFoundError:  # pragma: no cover
+        return text
+    return ansi_wrap(text, color="red")
+
+
 __all__ = [
     "GetLoggingLevelNumberError",
     "LogLevel",
+    "StandaloneFileHandler",
     "add_filters",
     "basic_config",
     "get_default_logging_path",

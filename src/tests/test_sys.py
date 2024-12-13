@@ -35,7 +35,11 @@ class TestMakeExceptHook:
         assert record.message == expected
 
     def test_with_setup_logging_decorated(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture, traceback_func_one: str
+        self,
+        *,
+        tmp_path: Path,
+        caplog: LogCaptureFixture,
+        traceback_func_one: Pattern[str],
     ) -> None:
         name = str(tmp_path)
         setup_logging(logger=name, files_dir=tmp_path)
@@ -110,7 +114,7 @@ class TestMakeExceptHook:
         self,
         path: Path,
         caplog: LogCaptureFixture,
-        check: Literal["init"] | tuple[Literal["post"], str | Pattern[str]],
+        check: Literal["init"] | tuple[Literal["post"], Pattern[str]],
         /,
     ) -> None:
         TestSetupLogging.assert_files(path, check)
