@@ -202,7 +202,7 @@ def setup_logging(
     # debug & info
     directory = resolve_path(path=files_dir)  # skipif-ci-and-windows
     levels: list[LogLevel] = ["DEBUG", "INFO"]  # skipif-ci-and-windows
-    for level, (subpath, formatter) in product(  # skipif-ci-and-windows
+    for level, (subpath, files_or_plain_formatter) in product(  # skipif-ci-and-windows
         levels, [(Path(), files_formatter), (Path("plain"), plain_formatter)]
     ):
         path = ensure_suffix(directory.joinpath(subpath, level.lower()), ".txt")
@@ -226,15 +226,17 @@ def setup_logging(
             )
         add_filters(file_handler, filters=files_filters)
         add_filters(file_handler, filters=filters)
-        file_handler.setFormatter(formatter)
+        file_handler.setFormatter(files_or_plain_formatter)
         file_handler.setLevel(level)
         logger_use.addHandler(file_handler)
 
     # errors
-    traceback_handler = TracebackHandler(  # skipif-ci-and-windows
+    standalone_file_handler = StandaloneFileHandler(  # skipif-ci-and-windows
         level=ERROR, path=directory.joinpath("errors")
     )
-    logger_use.addHandler(traceback_handler)  # skipif-ci-and-windows
+    rich_traceback_formatter = RichTracebackFormatter(detail=True)
+    standalone_file_handler.setFormatter(rich_traceback_formatter)
+    logger_use.addHandler(standalone_file_handler)  # skipif-ci-and-windows
 
     # extra
     if extra is not None:  # skipif-ci-and-windows
