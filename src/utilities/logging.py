@@ -245,6 +245,7 @@ def setup_logging(
     standalone_file_handler = StandaloneFileHandler(  # skipif-ci-and-windows
         level=ERROR, path=directory.joinpath("errors")
     )
+    add_filters(standalone_file_handler, filters=[lambda x: x.exc_info is not None])
     standalone_file_handler.setFormatter(RichTracebackFormatter(detail=True))
     logger_use.addHandler(standalone_file_handler)  # skipif-ci-and-windows
 
