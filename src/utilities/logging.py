@@ -66,7 +66,7 @@ class StandaloneFileHandler(Handler):
                 .with_suffix(".txt")
             )
             formatted = self.format(record)
-            with writer(path) as temp, temp.open(mode="w") as fh:
+            with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
                 _ = fh.write(formatted)
         except Exception:  # noqa: BLE001
             self.handleError(record)
