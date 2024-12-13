@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from functools import partial, wraps
-from getpass import getpass
+from getpass import getuser
 from inspect import iscoroutinefunction, signature
 from logging import Formatter, LogRecord
 from pathlib import Path
@@ -568,9 +568,9 @@ def _merge_frames(
 
 def _yield_header_lines() -> Iterator[str]:
     """Yield the header lines."""
-    yield f"User:     {getpass()}"
-    yield f"Host:     {gethostname()}"
-    yield f"Datetime: {serialize_zoned_datetime(get_now(time_zone='local'))}"
+    yield f"User     | {getuser()}"
+    yield f"Host     | {gethostname()}"
+    yield f"Datetime | {serialize_zoned_datetime(get_now(time_zone='local'))}"
 
 
 __all__ = [
