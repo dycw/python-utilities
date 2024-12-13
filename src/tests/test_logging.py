@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 from pytest import LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
 
-from tests.test_traceback import TestTracebackHandler
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.untraced import func_untraced
 from utilities.iterables import one
@@ -207,11 +206,15 @@ class TestSetupLogging:
         match check:
             case "init":
                 assert names == expected
-            case ("post", str_or_pattern):
+            case ("post", pattern):
                 assert names == (expected | {"errors"})
                 errors = path.joinpath("errors")
                 assert errors.is_dir()
-                TestTracebackHandler.assert_file(errors, str_or_pattern)
+                files = list(errors.iterdir())
+                assert len(files) == 1
+                with one(files).open() as fh:
+                    contents = fh.read()
+                assert pattern.search(contents)
 
 
 class TestStandaloneFileHandler:
@@ -221,12 +224,12 @@ class TestStandaloneFileHandler:
         logger.addHandler(handler)
         logger.setLevel(DEBUG)
         assert len(list(tmp_path.iterdir())) == 0
-        logger.info("test")
+        logger.info("message")
         files = list(tmp_path.iterdir())
         assert len(files) == 1
         with one(files).open() as fh:
             contents = fh.read()
-        assert contents == "test"
+        assert contents == "message"
 
 
 class TestTempHandler:
