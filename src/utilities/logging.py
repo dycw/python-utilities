@@ -201,13 +201,14 @@ def setup_logging(
         logger_use.addHandler(console_low_handler)
 
         console_high_handler = StreamHandler(stream=stdout)
-        add_filters(console_high_handler, filters=[lambda x: x.exc_info is not None])
         add_filters(console_high_handler, filters=console_filters)
         add_filters(console_high_handler, filters=filters)
-        console_high_handler.setFormatter(
-            RichTracebackFormatter(detail=True, post=_ansi_wrap_red)
+        _ = RichTracebackFormatter.create_and_set(
+            console_high_handler, detail=True, post=_ansi_wrap_red
         )
-        console_high_handler.setLevel(get_logging_level_number(console_level))
+        console_high_handler.setLevel(
+            max(get_logging_level_number(console_level), ERROR)
+        )
         logger_use.addHandler(console_high_handler)
 
     # debug & info

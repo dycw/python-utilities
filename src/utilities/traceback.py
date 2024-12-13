@@ -5,7 +5,7 @@ from dataclasses import dataclass, field, replace
 from functools import partial, wraps
 from getpass import getuser
 from inspect import iscoroutinefunction, signature
-from logging import Formatter, LogRecord
+from logging import Formatter, Handler, LogRecord
 from pathlib import Path
 from socket import gethostname
 from sys import exc_info
@@ -108,6 +108,28 @@ class RichTracebackFormatter(Formatter):
         if self._post is not None:
             text = self._post(text)
         return text
+
+    @classmethod
+    def create_and_set(
+        cls,
+        handler: Handler,
+        /,
+        *,
+        fmt: str | None = None,
+        datefmt: str | None = None,
+        style: _FormatStyle = "%",
+        validate: bool = True,
+        defaults: StrMapping | None = None,
+        detail: bool = False,
+        post: Callable[[str], str] | None = None,
+    ) -> Self:
+        """Create an instance and set it on a handler."""
+        formatter = cls(
+            fmt, datefmt, style, validate, defaults=defaults, detail=detail, post=post
+        )
+        handler.addFilter(lambda r: r.exc_info is not None)
+        handler.setFormatter(formatter)
+        return formatter
 
 
 @dataclass(repr=False, kw_only=True, slots=True)
@@ -442,10 +464,15 @@ class _Frame:
                     **self.locals,
                 )
             )
-            lines.append(indent(f"Line {self.line_num}:", _INDENT))
-            lines.append(indent(self.code_line, 2 * _INDENT))
+            lines.extend([
+                indent(f"Line {self.line_num}:", _INDENT),
+                indent(self.code_line, 2 * _INDENT),
+            ])
         if error is not None:
-            lines.append(_format_exception(error, depth=1))
+            lines.extend([
+                indent("Raised:", _INDENT),
+                _format_exception(error, depth=2),
+            ])
         return indent("\n".join(lines), depth * _INDENT)
 
 

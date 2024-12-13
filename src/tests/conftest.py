@@ -34,81 +34,97 @@ else:
 
 
 @fixture
-def traceback_func_chain() -> str:
-    return strip_and_dedent(
-        """
-        Exception chain 1/2:
-            Frame 1/1: func_chain_first (tests.test_traceback_funcs.chain)
-              Inputs:
-                args[0] = 1
-                args[1] = 2
-                args[2] = 3
-                args[3] = 4
-                kwargs[c] = 5
-                kwargs[d] = 6
-                kwargs[e] = 7
-              Locals:
-                a = 2
-                b = 4
-                c = 10
-                args = (6, 8)
-                kwargs = {'d': 12, 'e': 14}
-                msg = 'Assertion failed: Result (112) must be divisible by 10'
-              Line 19:
-                raise ValueError(msg) from error
-              ValueError:
-                Assertion failed: Result (112) must be divisible by 10
+def traceback_func_chain() -> Pattern[str]:
+    return re.compile(
+        strip_and_dedent(
+            r"""
+            Date/time \| .+
+            User      \| .+
+            Host      \| .+
+            Version   \| .+
 
-        Exception chain 2/2:
-            Frame 1/1: func_chain_second (tests.test_traceback_funcs.chain)
-              Inputs:
-                args[0] = 2
-                args[1] = 4
-                args[2] = 6
-                args[3] = 8
-                kwargs[c] = 10
-                kwargs[d] = 12
-                kwargs[e] = 14
-              Locals:
-                a = 4
-                b = 8
-                c = 20
-                args = (12, 16)
-                kwargs = {'d': 24, 'e': 28}
-                result = 112
-              Line 30:
-                assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
-              AssertionError:
-                Result (112) must be divisible by 10
-        """
+            Exception chain 1/2:
+                Frame 1/1: func_chain_first \(tests\.test_traceback_funcs\.chain\)
+                    Inputs:
+                        args\[0\] = 1
+                        args\[1\] = 2
+                        args\[2\] = 3
+                        args\[3\] = 4
+                        kwargs\[c\] = 5
+                        kwargs\[d\] = 6
+                        kwargs\[e\] = 7
+                    Locals:
+                        a = 2
+                        b = 4
+                        c = 10
+                        args = \(6, 8\)
+                        kwargs = {'d': 12, 'e': 14}
+                        msg = 'Assertion failed: Result \(112\) must be divisible by 10'
+                    Line 19:
+                        raise ValueError\(msg\) from error
+                    Raised:
+                        ValueError\(Assertion failed: Result \(112\) must be divisible by 10\)
+
+            Exception chain 2/2:
+                Frame 1/1: func_chain_second \(tests\.test_traceback_funcs\.chain\)
+                    Inputs:
+                        args\[0\] = 2
+                        args\[1\] = 4
+                        args\[2\] = 6
+                        args\[3\] = 8
+                        kwargs\[c\] = 10
+                        kwargs\[d\] = 12
+                        kwargs\[e\] = 14
+                    Locals:
+                        a = 4
+                        b = 8
+                        c = 20
+                        args = \(12, 16\)
+                        kwargs = {'d': 24, 'e': 28}
+                        result = 112
+                    Line 30:
+                        assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"
+                    Raised:
+                        AssertionError\(Result \(112\) must be divisible by 10\)
+            """
+        ),
+        flags=MULTILINE,
     )
 
 
 @fixture
-def traceback_func_one() -> str:
-    return strip_and_dedent(
-        """
-        Frame 1/1: func_one (tests.test_traceback_funcs.one)
-            Inputs:
-                args[0] = 1
-                args[1] = 2
-                args[2] = 3
-                args[3] = 4
-                kwargs[c] = 5
-                kwargs[d] = 6
-                kwargs[e] = 7
-            Locals:
-                a = 2
-                b = 4
-                c = 10
-                args = (6, 8)
-                kwargs = {'d': 12, 'e': 14}
-                result = 56
-            Line 16:
-                assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
-            AssertionError:
-                Result (56) must be divisible by 10
-        """
+def traceback_func_one() -> Pattern[str]:
+    return re.compile(
+        strip_and_dedent(
+            r"""
+            Date/time \| .+
+            User      \| .+
+            Host      \| .+
+            Version   \| .+
+
+            Frame 1/1: func_one \(tests\.test_traceback_funcs\.one\)
+                Inputs:
+                    args\[0\] = 1
+                    args\[1\] = 2
+                    args\[2\] = 3
+                    args\[3\] = 4
+                    kwargs\[c\] = 5
+                    kwargs\[d\] = 6
+                    kwargs\[e\] = 7
+                Locals:
+                    a = 2
+                    b = 4
+                    c = 10
+                    args = \(6, 8\)
+                    kwargs = {'d': 12, 'e': 14}
+                    result = 56
+                Line 16:
+                    assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"
+                Raised:
+                    AssertionError\(Result \(56\) must be divisible by 10\)
+            """
+        ),
+        flags=MULTILINE,
     )
 
 
@@ -168,48 +184,56 @@ def traceback_func_task_group_one() -> Pattern[str]:
 
 
 @fixture
-def traceback_func_two() -> str:
-    return strip_and_dedent(
-        """
-        Frame 1/2: func_two_first (tests.test_traceback_funcs.two)
-          Inputs:
-            args[0] = 1
-            args[1] = 2
-            args[2] = 3
-            args[3] = 4
-            kwargs[c] = 5
-            kwargs[d] = 6
-            kwargs[e] = 7
-          Locals:
-            a = 2
-            b = 4
-            c = 10
-            args = (6, 8)
-            kwargs = {'d': 12, 'e': 14}
-          Line 15:
-            return func_two_second(a, b, *args, c=c, **kwargs)
+def traceback_func_two() -> Pattern[str]:
+    return re.compile(
+        strip_and_dedent(
+            r"""
+            Date/time \| .+
+            User      \| .+
+            Host      \| .+
+            Version   \| .+
 
-        Frame 2/2: func_two_second (tests.test_traceback_funcs.two)
-          Inputs:
-            args[0] = 2
-            args[1] = 4
-            args[2] = 6
-            args[3] = 8
-            kwargs[c] = 10
-            kwargs[d] = 12
-            kwargs[e] = 14
-          Locals:
-            a = 4
-            b = 8
-            c = 20
-            args = (12, 16)
-            kwargs = {'d': 24, 'e': 28}
-            result = 112
-          Line 26:
-            assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
-          AssertionError:
-            Result (112) must be divisible by 10
-        """
+            Frame 1/2: func_two_first \(tests\.test_traceback_funcs\.two\)
+                Inputs:
+                    args\[0\] = 1
+                    args\[1\] = 2
+                    args\[2\] = 3
+                    args\[3\] = 4
+                    kwargs\[c\] = 5
+                    kwargs\[d\] = 6
+                    kwargs\[e\] = 7
+                Locals:
+                    a = 2
+                    b = 4
+                    c = 10
+                    args = \(6, 8\)
+                    kwargs = {'d': 12, 'e': 14}
+                Line 15:
+                    return func_two_second\(a, b, \*args, c=c, \*\*kwargs\)
+
+            Frame 2/2: func_two_second \(tests\.test_traceback_funcs\.two\)
+                Inputs:
+                    args\[0\] = 2
+                    args\[1\] = 4
+                    args\[2\] = 6
+                    args\[3\] = 8
+                    kwargs\[c\] = 10
+                    kwargs\[d\] = 12
+                    kwargs\[e\] = 14
+                Locals:
+                    a = 4
+                    b = 8
+                    c = 20
+                    args = \(12, 16\)
+                    kwargs = {'d': 24, 'e': 28}
+                    result = 112
+                Line 26:
+                    assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"
+                Raised:
+                    AssertionError\(Result \(112\) must be divisible by 10\)
+            """
+        ),
+        flags=MULTILINE,
     )
 
 

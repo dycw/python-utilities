@@ -5,7 +5,7 @@ from re import Pattern
 from typing import TYPE_CHECKING, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
-from pytest import mark, param, raises
+from pytest import mark, raises
 
 from tests.conftest import FLAKY, SKIPIF_CI
 from tests.test_traceback_funcs.beartype import func_beartype
@@ -53,7 +53,7 @@ if TYPE_CHECKING:
 
 
 class TestGetRichTraceback:
-    def test_func_one(self, *, traceback_func_one: str) -> None:
+    def test_func_one(self, *, traceback_func_one: Pattern[str]) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         exc_tb = get_rich_traceback(exc_info.value)
@@ -74,10 +74,9 @@ class TestGetRichTraceback:
         assert frame.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(exc_tb.error, AssertionError)
 
-        assert frame.format(detail=True, error=exc_tb.error) == traceback_func_one
-        assert repr(exc_tb) == traceback_func_one
+        assert traceback_func_one.search(repr(exc_tb))
 
-    def test_func_two(self, *, traceback_func_two: str) -> None:
+    def test_func_two(self, *, traceback_func_two: Pattern[str]) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
         exc_tb = get_rich_traceback(exc_info.value)
@@ -107,7 +106,7 @@ class TestGetRichTraceback:
         assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_tb.error, AssertionError)
 
-        assert repr(exc_tb) == traceback_func_two
+        assert traceback_func_two.search(repr(exc_tb))
 
     def test_func_beartype(self) -> None:
         with raises(AssertionError) as exc_info:
@@ -158,7 +157,7 @@ class TestGetRichTraceback:
         assert frame2.locals["kwargs"] == {"c": 10, "d": 12, "e": 14}
         assert isinstance(exc_tb.error, BeartypeCallHintReturnViolation)
 
-    def test_func_chain(self, *, traceback_func_chain: str) -> None:
+    def test_func_chain(self, *, traceback_func_chain: Pattern[str]) -> None:
         with raises(ValueError, match=".*") as exc_info:
             _ = func_chain_first(1, 2, 3, 4, c=5, d=6, e=7)
         exc_chain = get_rich_traceback(exc_info.value)
@@ -192,7 +191,7 @@ class TestGetRichTraceback:
         assert frame2.locals["args"] == (12, 16)
         assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
 
-        assert repr(exc_chain) == traceback_func_chain
+        assert traceback_func_chain.search(repr(exc_chain))
 
     def test_func_decorated_sync(self) -> None:
         with raises(AssertionError) as exc_info:
