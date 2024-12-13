@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from logging import ERROR, getLogger
+from io import StringIO
+from logging import DEBUG, ERROR, StreamHandler, getLogger
 from re import Pattern
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
-from pytest import mark, raises
+from pytest import raises
 
 from tests.conftest import FLAKY, SKIPIF_CI
 from tests.test_traceback_funcs.beartype import func_beartype
@@ -38,7 +39,9 @@ from utilities.traceback import (
     ExcChainTB,
     ExcGroupTB,
     ExcTB,
+    RichTracebackFormatter,
     _CallArgsError,
+    _Frame,
     get_rich_traceback,
     trace,
     yield_exceptions,
@@ -50,6 +53,45 @@ if TYPE_CHECKING:
     from pathlib import Path
     from traceback import FrameSummary
     from types import FrameType
+
+
+class TestFrame:
+    frame: ClassVar[_Frame] = _Frame(
+        module="module",
+        name="name",
+        code_line="code_line",
+        line_num=1,
+        args=(1, 2, 3, 4),
+        kwargs={"c": 5, "d": 6, "e": 7},
+        locals={"a": 2, "b": 4, "args": (6, 8), "kwargs": {"d": 12, "e": 14}},
+    )
+
+    def test_repr(self) -> None:
+        result = repr(self.frame)
+        expected = strip_and_dedent("""
+        Frame 1/1: name (module)
+            Inputs:
+                args[0] = 1
+                args[1] = 2
+                args[2] = 3
+                args[3] = 4
+                kwargs[c] = 5
+                kwargs[d] = 6
+                kwargs[e] = 7
+            Locals:
+                a = 2
+                b = 4
+                args = (6, 8)
+                kwargs = {'d': 12, 'e': 14}
+            Line 1:
+                code_line
+        """)
+        assert result == expected
+
+    def test_summary(self) -> None:
+        result = self.frame.format(detail=False)
+        expected = "Frame 1/1: name (module)"
+        assert result == expected
 
 
 class TestGetRichTraceback:
@@ -476,38 +518,38 @@ class TestGetRichTraceback:
         assert isinstance(exc_path.error, AssertionError)
 
 
-@mark.skip
-class TestTracebackHandler:
-    def test_decorated(self, *, tmp_path: Path, traceback_func_one: str) -> None:
+class TestRichTracebackFormatter:
+    def test_main(self, *, tmp_path: Path, traceback_func_one: Pattern[str]) -> None:
         logger = getLogger(str(tmp_path))
-        handler = TracebackHandler(path=tmp_path)
+        logger.setLevel(DEBUG)
+        handler = StreamHandler(buffer := StringIO())
+        handler.setFormatter(RichTracebackFormatter(detail=True))
+        handler.setLevel(DEBUG)
         logger.addHandler(handler)
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             logger.exception("message")
-        self.assert_file(tmp_path, traceback_func_one)
+        result = buffer.getvalue()
+        assert traceback_func_one.search(result)
 
-    def test_undecorated(
-        self, *, tmp_path: Path, traceback_func_untraced: Pattern[str]
-    ) -> None:
-        logger = getLogger(str(tmp_path))
-        handler = TracebackHandler(path=tmp_path)
-        logger.addHandler(handler)
-        try:
-            _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
-        except AssertionError:
-            logger.exception("message")
-        self.assert_file(tmp_path, traceback_func_untraced)
+    def test_create_and_set(self) -> None:
+        handler = StreamHandler()
+        assert len(handler.filters) == 0
+        _ = RichTracebackFormatter.create_and_set(handler)
+        assert len(handler.filters) == 1
 
     def test_no_logging(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.setLevel(ERROR)
-        handler = TracebackHandler(path=tmp_path)
-        handler.setLevel(ERROR)
+        handler = StreamHandler(buffer := StringIO())
+        handler.setFormatter(RichTracebackFormatter(detail=True))
+        handler.setLevel(DEBUG)
         logger.addHandler(handler)
         logger.error("message")
-        assert len(list(tmp_path.iterdir())) == 0
+        result = buffer.getvalue()
+        expected = "ERROR: record.exc_info=None\n"
+        assert result == expected
 
     @classmethod
     def assert_file(cls, path: Path, expected: str | Pattern[str], /) -> None:

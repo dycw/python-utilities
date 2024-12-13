@@ -66,11 +66,10 @@ if TYPE_CHECKING:
 
 class TestOrjsonFormatter:
     def test_main(self, *, tmp_path: Path) -> None:
-        buffer = StringIO()
         name = str(tmp_path)
         logger = getLogger(name)
         logger.setLevel(DEBUG)
-        handler = StreamHandler(buffer)
+        handler = StreamHandler(buffer := StringIO())
 
         def before(obj: Any, /) -> Any:
             if is_string_mapping(obj):

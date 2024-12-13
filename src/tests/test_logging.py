@@ -194,9 +194,7 @@ class TestSetupLogging:
 
     @classmethod
     def assert_files(
-        cls,
-        path: Path,
-        check: Literal["init"] | tuple[Literal["post"], Pattern[str]],
+        cls, path: Path, check: Literal["init"] | tuple[Literal["post"], Pattern[str]]
     ) -> None:
         files = list(path.iterdir())
         names = {f.name for f in files}

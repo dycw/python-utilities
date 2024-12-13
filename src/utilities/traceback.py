@@ -95,9 +95,7 @@ class RichTracebackFormatter(Formatter):
         if record.exc_info is None:
             return f"ERROR: {record.exc_info=}"
         _, exc_value, _ = record.exc_info
-        if exc_value is None:
-            return f"ERROR: {exc_value=}"
-        error = get_rich_traceback(exc_value)
+        error = get_rich_traceback(ensure_not_none(exc_value))
         match error:
             case ExcChainTB() | ExcGroupTB() | ExcTB():
                 text = error.format(header=True, detail=self._detail)
@@ -724,7 +722,7 @@ def _yield_header_lines() -> Iterator[str]:
     yield f"Date/time | {serialize_zoned_datetime(get_now(time_zone='local'))}"
     yield f"User      | {getuser()}"
     yield f"Host      | {gethostname()}"
-    if (version := get_version()) is not None:
+    if (version := get_version()) is not None:  # pragma: no cover
         yield f"Version   | {version}"
     yield ""
 
