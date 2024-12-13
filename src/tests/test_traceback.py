@@ -4,7 +4,7 @@ from logging import ERROR, getLogger
 from typing import TYPE_CHECKING, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
-from pytest import raises
+from pytest import mark, raises
 
 from tests.conftest import FLAKY, SKIPIF_CI
 from tests.test_traceback_funcs.beartype import func_beartype
@@ -53,6 +53,7 @@ if TYPE_CHECKING:
 
 
 class TestAssembleExceptionsPaths:
+    @mark.only
     def test_func_one(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
@@ -73,6 +74,40 @@ class TestAssembleExceptionsPaths:
         assert frame.locals["args"] == (6, 8)
         assert frame.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(exc_path.error, AssertionError)
+
+        res_frame = frame.format(error=exc_path.error)
+        exp_frame = strip_and_dedent(
+            """
+            1/1: func_one (tests.test_traceback_funcs.one)
+              Inputs:
+                args[0] = 1
+                args[1] = 2
+                args[2] = 3
+                args[3] = 4
+                kwargs[c] = 5
+                kwargs[d] = 6
+                kwargs[e] = 7
+              Locals:
+                a = 2
+                b = 4
+                c = 10
+                args = (6, 8)
+                kwargs = {'d': 12, 'e': 14}
+                result = 56
+              Line 16:
+                assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
+              AssertionError:
+                Result (56) must be divisible by 10
+            """
+        )
+        assert res_frame == exp_frame
+
+        exc_path.format()
+        strip_and_dedent(
+            """
+            asdf
+            """
+        )
 
     def test_func_two(self) -> None:
         with raises(AssertionError) as exc_info:

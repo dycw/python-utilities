@@ -7,6 +7,7 @@ from inspect import iscoroutinefunction, signature
 from logging import NOTSET, Handler, LogRecord
 from pathlib import Path
 from sys import exc_info
+from textwrap import indent
 from traceback import FrameSummary, TracebackException, print_exception
 from types import TracebackType
 from typing import (
@@ -37,7 +38,7 @@ from utilities.functions import (
 )
 from utilities.iterables import one
 from utilities.pathlib import resolve_path
-from utilities.rich import yield_pretty_repr_args_and_kwargs
+from utilities.rich import yield_pretty_repr, yield_pretty_repr_args_and_kwargs
 from utilities.text import ensure_str
 
 if TYPE_CHECKING:
@@ -51,6 +52,7 @@ _F = TypeVar("_F", bound=Callable[..., Any])
 _T = TypeVar("_T")
 _TExc = TypeVar("_TExc", bound=BaseException)
 _CALL_ARGS = "_CALL_ARGS"
+_INDENT = "  "
 ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
 OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
 
@@ -223,6 +225,9 @@ class ExcPath(Generic[_TExc]):
     def __len__(self) -> int:
         return len(self.frames)
 
+    def format(self, *, depth: int = 0) -> str:
+        pass
+
 
 @dataclass(kw_only=True, slots=True)
 class _Frame:
@@ -233,6 +238,34 @@ class _Frame:
     args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
     locals: dict[str, Any] = field(default_factory=dict)
+
+    def format(
+        self,
+        *,
+        index: int = 0,
+        total: int = 1,
+        depth: int = 0,
+        error: Exception | None = None,
+    ) -> str:
+        lines: list[str] = [
+            f"{index + 1}/{total}: {self.name} ({self.module})",
+            indent("Inputs:", _INDENT),
+        ]
+        lines.extend(
+            indent(line, 2 * _INDENT)
+            for line in yield_pretty_repr_args_and_kwargs(*self.args, **self.kwargs)
+        )
+        lines.append(indent("Locals:", _INDENT))
+        lines.extend(
+            indent(line, 2 * _INDENT) for line in yield_pretty_repr(**self.locals)
+        )
+        lines.append(indent(f"Line {self.line_num}:", _INDENT))
+        lines.append(indent(self.code_line, 2 * _INDENT))
+        if error is not None:
+            lines.append(indent(f"{get_class_name(error)}:", _INDENT))
+            lines.append(indent(str(error), 2 * _INDENT))
+        joined = "\n".join(lines)
+        return indent(joined, depth * _INDENT)
 
 
 def assemble_exception_paths(

@@ -9,11 +9,17 @@ if TYPE_CHECKING:
 
 
 def yield_pretty_repr_args_and_kwargs(*args: Any, **kwargs: Any) -> Iterator[str]:
-    """Pretty print of positional/keyword arguments."""
-    for i, arg in enumerate(args):
-        yield f"args[{i}] = {pretty_repr(arg)}"
+    """Pretty print of a set of positional/keyword arguments."""
+    mapping = {f"args[{i}]": v for i, v in enumerate(args)} | {
+        f"kwargs[{k}]": v for k, v in kwargs.items()
+    }
+    return yield_pretty_repr(**mapping)
+
+
+def yield_pretty_repr(**kwargs: Any) -> Iterator[str]:
+    """Pretty print of a set of keyword arguments."""
     for k, v in kwargs.items():
-        yield f"kwargs[{k}] = {pretty_repr(v)}"
+        yield f"{k} = {pretty_repr(v)}"
 
 
-__all__ = ["yield_pretty_repr_args_and_kwargs"]
+__all__ = ["yield_pretty_repr", "yield_pretty_repr_args_and_kwargs"]
