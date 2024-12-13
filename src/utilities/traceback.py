@@ -213,6 +213,26 @@ class ExcGroup(Generic[_TExc]):
         default_factory=list
     )
 
+    def format(self, *, index: int = 0, total: int = 1, depth: int = 0) -> str:
+        lines: list[str] = [
+            f"Exception group {index + 1}/{total}:",
+            indent("Path:", 2 * _INDENT),
+            self.path.format(depth=4),
+            "",
+        ]
+        total_sub_errors = len(self.errors)
+        for i, errors in enumerate(self.errors):
+            lines.append(
+                indent(f"Group error {i + 1}/{total_sub_errors}:", 2 * _INDENT)
+            )
+            match errors:
+                case ExcGroup() | ExcPath():
+                    lines.append(errors.format(depth=4))
+                case BaseException():
+                    lines.append(format_exception(errors, depth=4))
+            lines.append("")
+        return indent("\n".join(lines).strip("\n"), depth * _INDENT)
+
 
 @dataclass(kw_only=True, slots=True)
 class ExcPath(Generic[_TExc]):
@@ -225,20 +245,23 @@ class ExcPath(Generic[_TExc]):
     def __len__(self) -> int:
         return len(self.frames)
 
+    @override
+    def __repr__(self) -> str:
+        return self.format()
+
     def format(self, *, depth: int = 0) -> str:
-        *head, tail = self.frames
         total = len(self)
         lines: list[str] = []
-        for i, frame in enumerate(head):
-            lines.extend(frame.format(index=i, total=total, depth=depth).splitlines())
-            lines.append("")
-        lines.extend(
-            tail.format(
-                index=total - 1, total=total, depth=depth, error=self.error
-            ).splitlines()
-        )
-        joined = "\n".join(lines)
-        return indent(joined, depth * _INDENT)
+        for i, frame in enumerate(self.frames):
+            is_head = i < total - 1
+            lines.append(
+                frame.format(
+                    index=i, total=total, error=None if is_head else self.error
+                )
+            )
+            if is_head:
+                lines.append("")
+        return indent("\n".join(lines).strip("\n"), depth * _INDENT)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -251,16 +274,20 @@ class _Frame:
     kwargs: dict[str, Any] = field(default_factory=dict)
     locals: dict[str, Any] = field(default_factory=dict)
 
+    @override
+    def __repr__(self) -> str:
+        return self.format()
+
     def format(
         self,
         *,
         index: int = 0,
         total: int = 1,
-        depth: int = 0,
         error: BaseException | None = None,
+        depth: int = 0,
     ) -> str:
         lines: list[str] = [
-            f"{index + 1}/{total}: {self.name} ({self.module})",
+            f"Frame {index + 1}/{total}: {self.name} ({self.module})",
             indent("Inputs:", _INDENT),
         ]
         lines.extend(
@@ -274,10 +301,8 @@ class _Frame:
         lines.append(indent(f"Line {self.line_num}:", _INDENT))
         lines.append(indent(self.code_line, 2 * _INDENT))
         if error is not None:
-            lines.append(indent(f"{get_class_name(error)}:", _INDENT))
-            lines.append(indent(str(error), 2 * _INDENT))
-        joined = "\n".join(lines)
-        return indent(joined, depth * _INDENT)
+            lines.append(format_exception(error, depth=1))
+        return indent("\n".join(lines).strip("\n"), depth * _INDENT)
 
 
 def assemble_exception_paths(
@@ -326,6 +351,12 @@ def _assemble_exception_paths_no_chain_no_group(
         ]
         return ExcPath(frames=frames, error=cast(_TExc, error))
     return error
+
+
+def format_exception(error: BaseException, /, *, depth: int = 0) -> str:
+    """Format an exception."""
+    lines: list[str] = [f"{get_class_name(error)}:", indent(str(error), _INDENT)]
+    return indent("\n".join(lines).strip("\n"), depth * _INDENT)
 
 
 @overload
@@ -524,6 +555,7 @@ __all__ = [
     "OptExcInfo",
     "TracebackHandler",
     "assemble_exception_paths",
+    "format_exception",
     "trace",
     "yield_exceptions",
     "yield_extended_frame_summaries",
