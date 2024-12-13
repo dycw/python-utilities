@@ -143,6 +143,7 @@ zzz-test-hashlib = [
   "orjson >= 3.10.12, < 3.11",
   "whenever >= 0.6.15, < 0.7",
 ]
+zzz-test-hatch = ["hatch >= 1.13.0, < 1.14"]
 zzz-test-http = [
   "atomicwrites >= 1.4.1, < 1.5",
   "orjson >= 3.10.12, < 3.11",
