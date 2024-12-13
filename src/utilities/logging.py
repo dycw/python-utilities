@@ -368,7 +368,7 @@ class _AdvancedLogRecord(LogRecord):
 def _ansi_wrap_red(text: str, /) -> str:
     try:
         from humanfriendly.terminal import ansi_wrap
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         return text
     return ansi_wrap(text, color="red")
 
