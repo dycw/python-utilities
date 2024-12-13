@@ -211,13 +211,15 @@ class ExcChain(Generic[_TExc]):
         total = len(self.errors)
         for i, errors in enumerate(self.errors):
             lines.append(f"Exception chain {i + 1}/{total}:")
-            match errors:
+            match errors:  # pragma: no cover
                 case ExcGroup():
                     lines.append(errors.format(index=i, total=total, depth=2))
                 case ExcPath():
                     lines.append(errors.format(depth=2))
                 case BaseException():
                     lines.append(format_exception(errors, depth=2))
+                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                    assert_never(never)
             lines.append("")
         return "\n".join(lines).strip("\n")
 
@@ -228,10 +230,6 @@ class ExcGroup(Generic[_TExc]):
     errors: list[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException] = field(
         default_factory=list
     )
-
-    @override
-    def __repr__(self) -> str:
-        return self.format()
 
     def format(self, *, index: int = 0, total: int = 1, depth: int = 0) -> str:
         lines: list[str] = [
@@ -245,11 +243,13 @@ class ExcGroup(Generic[_TExc]):
             lines.append(
                 indent(f"Group error {i + 1}/{total_sub_errors}:", 2 * _INDENT)
             )
-            match errors:
+            match errors:  # pragma: no cover
                 case ExcGroup() | ExcPath():
                     lines.append(errors.format(depth=4))
                 case BaseException():
                     lines.append(format_exception(errors, depth=4))
+                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                    assert_never(never)
             lines.append("")
         return indent("\n".join(lines).strip("\n"), depth * _INDENT)
 
@@ -293,10 +293,6 @@ class _Frame:
     args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
     locals: dict[str, Any] = field(default_factory=dict)
-
-    @override
-    def __repr__(self) -> str:
-        return self.format()
 
     def format(
         self,
