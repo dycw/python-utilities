@@ -445,7 +445,7 @@ class _Frame:
             lines.append(indent(f"Line {self.line_num}:", _INDENT))
             lines.append(indent(self.code_line, 2 * _INDENT))
         if error is not None:
-            lines.append(_format_exception(error, detail=detail, depth=1))
+            lines.append(_format_exception(error, depth=1))
         return indent("\n".join(lines), depth * _INDENT)
 
 
@@ -636,17 +636,11 @@ def yield_frames(*, traceback: TracebackType | None = None) -> Iterator[FrameTyp
         traceback = traceback.tb_next
 
 
-def _format_exception(
-    error: BaseException, /, *, detail: bool = False, depth: int = 0
-) -> str:
+def _format_exception(error: BaseException, /, *, depth: int = 0) -> str:
     """Format an exception."""
-    lines: list[str] = []
     cls = get_class_name(error)
-    if detail:
-        lines.extend([f"{cls}:", indent(str(error), _INDENT)])
-    else:
-        lines.append(cls)
-    return indent("\n".join(lines), depth * _INDENT)
+    line = f"{cls}({error})"
+    return indent(line, depth * _INDENT)
 
 
 def _get_rich_traceback_internal(error: BaseException, /) -> _ExcTBInternal:
