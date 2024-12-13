@@ -237,58 +237,36 @@ class TestAssembleExceptionsPaths:
         assert len(exc_chain) == 2
         path1, path2 = exc_chain
         assert isinstance(path1, ExcPath)
-        assert len(path1) == 1
         frame1 = one(path1)
         assert frame1.module == "tests.test_traceback_funcs.chain"
-        assert frame1.name == "func_chain_second"
-        assert (
-            frame1.code_line
-            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
-        )
-        assert frame1.args == (2, 4, 6, 8)
-        assert frame1.kwargs == {"c": 10, "d": 12, "e": 14}
-        assert frame1.locals["a"] == 4
-        assert frame1.locals["b"] == 8
-        assert frame1.locals["args"] == (12, 16)
-        assert frame1.locals["kwargs"] == {"d": 24, "e": 28}
+        assert frame1.name == "func_chain_first"
+        assert frame1.code_line == "raise ValueError(msg) from error"
+        assert frame1.args == (1, 2, 3, 4)
+        assert frame1.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert frame1.locals["a"] == 2
+        assert frame1.locals["b"] == 4
+        assert frame1.locals["args"] == (6, 8)
+        assert frame1.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(path2, ExcPath)
+        assert len(path2) == 1
         frame2 = one(path2)
         assert frame2.module == "tests.test_traceback_funcs.chain"
-        assert frame2.name == "func_chain_first"
-        assert frame2.code_line == "raise ValueError(msg) from error"
-        assert frame2.args == (1, 2, 3, 4)
-        assert frame2.kwargs == {"c": 5, "d": 6, "e": 7}
-        assert frame2.locals["a"] == 2
-        assert frame2.locals["b"] == 4
-        assert frame2.locals["args"] == (6, 8)
-        assert frame2.locals["kwargs"] == {"d": 12, "e": 14}
+        assert frame2.name == "func_chain_second"
+        assert (
+            frame2.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert frame2.args == (2, 4, 6, 8)
+        assert frame2.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert frame2.locals["a"] == 4
+        assert frame2.locals["b"] == 8
+        assert frame2.locals["args"] == (12, 16)
+        assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
 
         res_chain = repr(exc_chain)
         exp_chain = strip_and_dedent(
             """
             Exception chain 1/2:
-                Frame 1/1: func_chain_second (tests.test_traceback_funcs.chain)
-                  Inputs:
-                    args[0] = 2
-                    args[1] = 4
-                    args[2] = 6
-                    args[3] = 8
-                    kwargs[c] = 10
-                    kwargs[d] = 12
-                    kwargs[e] = 14
-                  Locals:
-                    a = 4
-                    b = 8
-                    c = 20
-                    args = (12, 16)
-                    kwargs = {'d': 24, 'e': 28}
-                    result = 112
-                  Line 30:
-                    assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
-                  AssertionError:
-                    Result (112) must be divisible by 10
-
-            Exception chain 2/2:
                 Frame 1/1: func_chain_first (tests.test_traceback_funcs.chain)
                   Inputs:
                     args[0] = 1
@@ -309,6 +287,28 @@ class TestAssembleExceptionsPaths:
                     raise ValueError(msg) from error
                   ValueError:
                     Assertion failed: Result (112) must be divisible by 10
+
+            Exception chain 2/2:
+                Frame 1/1: func_chain_second (tests.test_traceback_funcs.chain)
+                  Inputs:
+                    args[0] = 2
+                    args[1] = 4
+                    args[2] = 6
+                    args[3] = 8
+                    kwargs[c] = 10
+                    kwargs[d] = 12
+                    kwargs[e] = 14
+                  Locals:
+                    a = 4
+                    b = 8
+                    c = 20
+                    args = (12, 16)
+                    kwargs = {'d': 24, 'e': 28}
+                    result = 112
+                  Line 30:
+                    assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
+                  AssertionError:
+                    Result (112) must be divisible by 10
             """
         )
         assert exp_chain == res_chain
