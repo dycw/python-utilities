@@ -94,22 +94,10 @@ class TracebackHandler(Handler):
         )
         with writer(path) as temp, temp.open(mode="w") as fh:
             match assembled:
-                case ExcChain() | ExcGroup() | ExcPath():
-                    try:
-                        from rich.pretty import pretty_repr
-                    except ImportError:  # pragma: no cover
-                        repr_use = repr(assembled)
-                    else:
-                        repr_use = pretty_repr(
-                            assembled,
-                            max_width=self._max_width,
-                            indent_size=self._indent_size,
-                            max_length=self._max_length,
-                            max_string=self._max_string,
-                            max_depth=self._max_depth,
-                            expand_all=self._expand_all,
-                        )
-                    _ = fh.write(repr_use)
+                case ExcChain():
+                    _ = fh.write(repr(assembled))
+                case ExcGroup() | ExcPath():
+                    _ = fh.write(assembled.format())
                 case BaseException():
                     print_exception(assembled, file=fh)
                 case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
@@ -230,6 +218,10 @@ class ExcGroup(Generic[_TExc]):
     errors: list[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException] = field(
         default_factory=list
     )
+
+    @override
+    def __repr__(self) -> str:
+        return self.format()
 
     def format(self, *, index: int = 0, total: int = 1, depth: int = 0) -> str:
         lines: list[str] = [
