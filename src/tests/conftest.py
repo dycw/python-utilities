@@ -135,7 +135,7 @@ def traceback_func_task_group_one() -> Pattern[str]:
                         args = \(6, 8\)
                         kwargs = {'d': 12, 'e': 14}
                         tg = <TaskGroup cancelling>
-                        _ = <Task finished name='Task-\d+' coro=<func_task_group_one_second\(\) done, defined at .+/src/utilities/traceback\.py:\d+> exception=AssertionError\('Result \(112\) must be divisible by 10'\)>
+                        _ = <Task finished name='Task-\d+' coro=<func_task_group_one_second\(\) done, defined at .+src.+utilities.+traceback\.py:\d+> exception=AssertionError\('Result \(112\) must be divisible by 10'\)>
                       Line 18:
                         async with TaskGroup\(\) as tg:
                       ExceptionGroup:
@@ -219,10 +219,10 @@ def traceback_func_untraced() -> Pattern[str]:
         strip_and_dedent(
             r"""
             Traceback \(most recent call last\):
-              File ".*/src/tests/test_(sys|traceback)\.py", line \d+, in test_.+
+              File ".+src.+tests.+test_(sys|traceback)\.py", line \d+, in test_.+
                 _ = func_untraced\(1, 2, 3, 4, c=5, d=6, e=7\)
                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-              File ".*/src/tests/test_traceback_funcs/untraced\.py", line 13, in func_untraced
+              File ".+src.+tests.+test_traceback_funcs.+untraced\.py", line 13, in func_untraced
                 assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"
                        ^^^^^^^^^^^^^^^^
             AssertionError: Result \(56\) must be divisible by 10
