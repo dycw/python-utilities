@@ -5,7 +5,7 @@ from logging import DEBUG, ERROR, StreamHandler, getLogger
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
-from pytest import mark, raises
+from pytest import raises
 
 from tests.conftest import FLAKY, SKIPIF_CI
 from tests.test_traceback_funcs.beartype import func_beartype
@@ -551,7 +551,6 @@ class TestRichTracebackFormatter:
         expected = "ERROR: record.exc_info=None\n"
         assert result == expected
 
-    @mark.only
     def test_post(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.setLevel(DEBUG)
