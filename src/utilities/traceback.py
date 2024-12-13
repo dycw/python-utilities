@@ -276,7 +276,7 @@ class ExcChainTB(Generic[_TExc]):
                         )
                     )
                 case BaseException():  # pragma: no cover
-                    lines.append(_format_exception(errors, depth=2))
+                    lines.append(_format_exception(errors, depth=1))
                 case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                     assert_never(never)
             lines.append("")
@@ -398,7 +398,7 @@ class ExcTB(Generic[_TExc]):
                     expand_all=expand_all,
                 )
             )
-            if is_head:
+            if detail and is_head:
                 lines.append("")
         return indent("\n".join(lines), depth * _INDENT)
 
