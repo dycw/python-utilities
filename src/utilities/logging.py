@@ -172,7 +172,7 @@ def setup_logging(
     )
     filters = None if filters is None else list(filters)  # skipif-ci-and-windows
 
-    # formatter
+    # formatters
     try:  # skipif-ci-and-windows
         from coloredlogs import DEFAULT_FIELD_STYLES, ColoredFormatter
     except ModuleNotFoundError:  # pragma: no cover
@@ -189,15 +189,25 @@ def setup_logging(
             fmt=files_fmt, style="{", field_styles=field_styles
         )
     plain_formatter = Formatter(fmt=files_fmt, style="{")  # skipif-ci-and-windows
+    rich_traceback_formatter = RichTracebackFormatter(detail=True)
 
     # console
     if console_level is not None:  # skipif-ci-and-windows
-        console_handler = StreamHandler(stream=stdout)
-        add_filters(console_handler, filters=console_filters)
-        add_filters(console_handler, filters=filters)
-        console_handler.setFormatter(console_formatter)
-        console_handler.setLevel(get_logging_level_number(console_level))
-        logger_use.addHandler(console_handler)
+        console_low_handler = StreamHandler(stream=stdout)
+        add_filters(console_low_handler, filters=[lambda x: x.levelno < ERROR])
+        add_filters(console_low_handler, filters=console_filters)
+        add_filters(console_low_handler, filters=filters)
+        console_low_handler.setFormatter(console_formatter)
+        console_low_handler.setLevel(get_logging_level_number(console_level))
+        logger_use.addHandler(console_low_handler)
+
+        console_high_handler = StreamHandler(stream=stdout)
+        add_filters(console_high_handler, filters=[lambda x: x.levelno >= ERROR])
+        add_filters(console_high_handler, filters=console_filters)
+        add_filters(console_high_handler, filters=filters)
+        console_high_handler.setFormatter(rich_traceback_formatter)
+        console_high_handler.setLevel(get_logging_level_number(console_level))
+        logger_use.addHandler(console_high_handler)
 
     # debug & info
     directory = resolve_path(path=files_dir)  # skipif-ci-and-windows
@@ -234,7 +244,6 @@ def setup_logging(
     standalone_file_handler = StandaloneFileHandler(  # skipif-ci-and-windows
         level=ERROR, path=directory.joinpath("errors")
     )
-    rich_traceback_formatter = RichTracebackFormatter(detail=True)
     standalone_file_handler.setFormatter(rich_traceback_formatter)
     logger_use.addHandler(standalone_file_handler)  # skipif-ci-and-windows
 
