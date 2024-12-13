@@ -100,7 +100,7 @@ class RichTracebackFormatter(Formatter):
         error = get_rich_traceback(exc_value)
         match error:
             case ExcChainTB() | ExcGroupTB() | ExcTB():
-                text = error.format(detail=self._detail)
+                text = error.format(header=True, detail=self._detail)
             case BaseException():
                 text = "\n".join(format_exception(error))
             case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
