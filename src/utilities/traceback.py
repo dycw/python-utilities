@@ -3,9 +3,11 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from functools import partial, wraps
+from getpass import getpass
 from inspect import iscoroutinefunction, signature
 from logging import Formatter, LogRecord
 from pathlib import Path
+from socket import gethostname
 from sys import exc_info
 from textwrap import indent
 from traceback import FrameSummary, TracebackException, format_exception
@@ -27,6 +29,7 @@ from typing import (
 
 from typing_extensions import override
 
+from utilities.datetime import get_now
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     ensure_not_none,
@@ -37,6 +40,7 @@ from utilities.functions import (
 from utilities.iterables import one
 from utilities.rich import yield_call_args_repr, yield_mapping_repr
 from utilities.text import ensure_str
+from utilities.whenever import serialize_zoned_datetime
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -223,13 +227,18 @@ class ExcGroupTB(Generic[_TExc]):
     def __repr__(self) -> str:
         return self.format()
 
-    def format(self, *, index: int = 0, total: int = 1, depth: int = 0) -> str:
-        lines: list[str] = [
+    def format(
+        self, *, index: int = 0, total: int = 1, header: bool = False, depth: int = 0
+    ) -> str:
+        lines: list[str] = []
+        if header:
+            lines.extend(_yield_header_lines())
+        lines.extend([
             f"Exception group {index + 1}/{total}:",
             indent("Path:", 2 * _INDENT),
             self.path.format(depth=4),
             "",
-        ]
+        ])
         total_sub_errors = len(self.errors)
         for i, errors in enumerate(self.errors):
             lines.append(
@@ -555,6 +564,13 @@ def _merge_frames(
         new = cast(_ExtFrameSummaryCA, replace(curr, extra=next_.extra))
         values.append(new)
     return values[::-1]
+
+
+def _yield_header_lines() -> Iterator[str]:
+    """Yield the header lines."""
+    yield f"User:     {getpass()}"
+    yield f"Host:     {gethostname()}"
+    yield f"Datetime: {serialize_zoned_datetime(get_now(time_zone='local'))}"
 
 
 __all__ = [
