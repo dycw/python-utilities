@@ -80,8 +80,7 @@ class TestOrjsonFormatter:
         handler.setFormatter(OrjsonFormatter(before=before))
         handler.setLevel(DEBUG)
         logger.addHandler(handler)
-        extra = {"a": 1, "b": 2}
-        logger.debug("message", extra=extra)
+        logger.debug("message", extra={"a": 1, "b": 2, "_ignored": 3})
         record = deserialize(buffer.getvalue().encode(), objects={OrjsonLogRecord})
         assert isinstance(record, OrjsonLogRecord)
         assert record.name == name
@@ -91,7 +90,7 @@ class TestOrjsonFormatter:
         assert abs(record.datetime - get_now(time_zone="local")) <= SECOND
         assert record.func_name == TestOrjsonFormatter.test_main.__name__
         assert record.stack_info is None
-        assert record.extra == extra
+        assert record.extra == {"a": 1, "b": 2}
 
 
 # serialize/deserialize
