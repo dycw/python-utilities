@@ -37,6 +37,7 @@ from utilities.functions import (
     get_func_name,
     get_func_qualname,
 )
+from utilities.hatch import get_version
 from utilities.iterables import one
 from utilities.rich import (
     EXPAND_ALL,
@@ -679,9 +680,11 @@ def _merge_frames(
 
 def _yield_header_lines() -> Iterator[str]:
     """Yield the header lines."""
+    yield f"Date/time | {serialize_zoned_datetime(get_now(time_zone='local'))}"
     yield f"User      | {getuser()}"
     yield f"Host      | {gethostname()}"
-    yield f"Date/time | {serialize_zoned_datetime(get_now(time_zone='local'))}"
+    if (version := get_version()) is not None:
+        yield f"Version   | {version}"
     yield ""
 
 
