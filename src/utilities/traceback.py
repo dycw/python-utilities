@@ -83,11 +83,11 @@ class RichTracebackFormatter(Formatter):
         *,
         defaults: StrMapping | None = None,
         detail: bool = False,
-        color: str | None = None,
+        post: Callable[[str], str] | None = None,
     ) -> None:
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
         self._detail = detail
-        self._color = color
+        self._post = post
 
     @override
     def format(self, record: LogRecord) -> str:
@@ -105,13 +105,8 @@ class RichTracebackFormatter(Formatter):
                 text = "\n".join(format_exception(error))
             case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                 assert_never(never)
-        if self._color is not None:
-            try:
-                from humanfriendly.terminal import ansi_wrap
-            except ModuleNotFoundError:
-                pass
-            else:
-                text = ansi_wrap(text, color=self._color)
+        if self._post is not None:
+            text = self._post(text)
         return text
 
 

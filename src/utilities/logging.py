@@ -205,7 +205,7 @@ def setup_logging(
         add_filters(console_high_handler, filters=console_filters)
         add_filters(console_high_handler, filters=filters)
         console_high_handler.setFormatter(
-            RichTracebackFormatter(detail=True, color="red")
+            RichTracebackFormatter(detail=True, post=_ansi_wrap_red)
         )
         console_high_handler.setLevel(get_logging_level_number(console_level))
         logger_use.addHandler(console_high_handler)
@@ -362,6 +362,14 @@ class _AdvancedLogRecord(LogRecord):
         """Get the zoned datetime format string."""
         length = len(cls.get_now().format_common_iso())  # skipif-ci-and-windows
         return f"{{_zoned_datetime_str:{length}}}"  # skipif-ci-and-windows
+
+
+def _ansi_wrap_red(text: str, /) -> str:
+    try:
+        from humanfriendly.terminal import ansi_wrap
+    except ModuleNotFoundError:
+        return text
+    return ansi_wrap(text, color="red")
 
 
 __all__ = [
