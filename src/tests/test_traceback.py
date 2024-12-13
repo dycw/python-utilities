@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from logging import ERROR, getLogger
-from re import search
+from re import MULTILINE, Pattern, search
 from typing import TYPE_CHECKING, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
 from pytest import raises
 
-from tests.conftest import FLAKY, SKIPIF_CI
+from tests.conftest import FLAKY, SKIPIF_CI, traceback_func_two
 from tests.test_traceback_funcs.beartype import func_beartype
 from tests.test_traceback_funcs.beartype_error import func_beartype_error_first
 from tests.test_traceback_funcs.chain import func_chain_first
@@ -54,7 +54,7 @@ if TYPE_CHECKING:
 
 
 class TestAssembleExceptionsPaths:
-    def test_func_one(self) -> None:
+    def test_func_one(self, *, traceback_func_one: str) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         exc_path = assemble_exception_paths(exc_info.value)
@@ -76,36 +76,12 @@ class TestAssembleExceptionsPaths:
         assert isinstance(exc_path.error, AssertionError)
 
         res_frame = frame.format(error=exc_path.error)
-        exp_frame = strip_and_dedent(
-            """
-            Frame 1/1: func_one (tests.test_traceback_funcs.one)
-              Inputs:
-                args[0] = 1
-                args[1] = 2
-                args[2] = 3
-                args[3] = 4
-                kwargs[c] = 5
-                kwargs[d] = 6
-                kwargs[e] = 7
-              Locals:
-                a = 2
-                b = 4
-                c = 10
-                args = (6, 8)
-                kwargs = {'d': 12, 'e': 14}
-                result = 56
-              Line 16:
-                assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
-              AssertionError:
-                Result (56) must be divisible by 10
-            """
-        )
-        assert res_frame == exp_frame
+        assert res_frame == traceback_func_one
 
         res_path = exc_path.format()
-        assert res_path == exp_frame
+        assert res_path == traceback_func_one
 
-    def test_func_two(self) -> None:
+    def test_func_two(self, *, traceback_func_two: str) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
         exc_path = assemble_exception_paths(exc_info.value)
@@ -136,49 +112,7 @@ class TestAssembleExceptionsPaths:
         assert isinstance(exc_path.error, AssertionError)
 
         res_path = exc_path.format()
-        exp_path = strip_and_dedent(
-            """
-            Frame 1/2: func_two_first (tests.test_traceback_funcs.two)
-              Inputs:
-                args[0] = 1
-                args[1] = 2
-                args[2] = 3
-                args[3] = 4
-                kwargs[c] = 5
-                kwargs[d] = 6
-                kwargs[e] = 7
-              Locals:
-                a = 2
-                b = 4
-                c = 10
-                args = (6, 8)
-                kwargs = {'d': 12, 'e': 14}
-              Line 15:
-                return func_two_second(a, b, *args, c=c, **kwargs)
-
-            Frame 2/2: func_two_second (tests.test_traceback_funcs.two)
-              Inputs:
-                args[0] = 2
-                args[1] = 4
-                args[2] = 6
-                args[3] = 8
-                kwargs[c] = 10
-                kwargs[d] = 12
-                kwargs[e] = 14
-              Locals:
-                a = 4
-                b = 8
-                c = 20
-                args = (12, 16)
-                kwargs = {'d': 24, 'e': 28}
-                result = 112
-              Line 26:
-                assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
-              AssertionError:
-                Result (112) must be divisible by 10
-            """
-        )
-        assert res_path == exp_path
+        assert res_path == traceback_func_two
 
     def test_func_beartype(self) -> None:
         with raises(AssertionError) as exc_info:
@@ -487,7 +421,7 @@ class TestAssembleExceptionsPaths:
             if not search(r"Task finished name='Task-\d+'", line_res):
                 assert line_res == line_exp
 
-    @FLAKY
+    # @FLAKY
     @SKIPIF_CI
     async def test_func_task_group_two(self) -> None:
         with raises(ExceptionGroup) as exc_info:
@@ -647,8 +581,11 @@ class TestAssembleExceptionsPaths:
         assert isinstance(exc_path.error, AssertionError)
 
 
+from pytest import mark, param
+
+
 class TestTracebackHandler:
-    def test_decorated(self, *, tmp_path: Path) -> None:
+    def test_decorated(self, *, tmp_path: Path, traceback_func_one: str) -> None:
         logger = getLogger(str(tmp_path))
         handler = TracebackHandler(path=tmp_path)
         logger.addHandler(handler)
@@ -656,9 +593,10 @@ class TestTracebackHandler:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             logger.exception("message")
-        self.assert_file(tmp_path, "decorated")
+        self.assert_file(tmp_path, traceback_func_one)
 
-    def test_undecorated(self, *, tmp_path: Path) -> None:
+    @mark.only
+    def test_undecorated(self, *, tmp_path: Path, traceback_func_untraced: str) -> None:
         logger = getLogger(str(tmp_path))
         handler = TracebackHandler(path=tmp_path)
         logger.addHandler(handler)
@@ -666,7 +604,7 @@ class TestTracebackHandler:
             _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             logger.exception("message")
-        self.assert_file(tmp_path, "undecorated")
+        self.assert_file(tmp_path, traceback_func_untraced)
 
     def test_no_logging(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
@@ -678,60 +616,16 @@ class TestTracebackHandler:
         assert len(list(tmp_path.iterdir())) == 0
 
     @classmethod
-    def assert_file(
-        cls, path: Path, check: Literal["decorated", "undecorated"], /
-    ) -> None:
+    def assert_file(cls, path: Path, expected: str | Pattern[str], /) -> None:
         files = list(path.iterdir())
         assert len(files) == 1
         with one(files).open() as fh:
-            contents = fh.read()
-        match check:
-            case "decorated":
-                cls._check_decorated(contents)
-            case "undecorated":
-                cls._check_undecorated(contents)
-
-    @classmethod
-    def _check_decorated(cls, text: str, /) -> None:
-        expected = strip_and_dedent(
-            """
-                ExcPath(
-                    frames=[
-                        _Frame(
-                            module='tests.test_traceback_funcs.one',
-                            name='func_one',
-                            code_line='assert result % 10 == 0, f"Result ({result}) must be divisible by 10"',
-                            line_num=16,
-                            args=(1, 2, 3, 4),
-                            kwargs={'c': 5, 'd': 6, 'e': 7},
-                            locals={
-                                'a': 2,
-                                'b': 4,
-                                'c': 10,
-                                'args': (6, 8),
-                                'kwargs': {'d': 12, 'e': 14},
-                                'result': 56
-                            }
-                        )
-                    ],
-                    error=AssertionError('Result (56) must be divisible by 10')
-                )
-                """
-        )
-        assert text == expected
-
-    @classmethod
-    def _check_undecorated(cls, text: str, /) -> None:
-        lines = text.splitlines()
-        assert len(lines) == 8
-        assert lines[0] == "Traceback (most recent call last):"
-        tail = "\n".join(lines[5:])
-        expected = strip_and_dedent("""
-                    assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
-                           ^^^^^^^^^^^^^^^^
-                AssertionError: Result (56) must be divisible by 10
-                """)
-        assert tail == expected
+            contents = fh.read().strip("\n")
+        match expected:
+            case str():
+                assert contents == expected
+            case Pattern():
+                assert expected.search(contents)
 
 
 class TestYieldExceptions:
