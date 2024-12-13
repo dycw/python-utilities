@@ -97,7 +97,7 @@ class RichTracebackFormatter(Formatter):
         _, exc_value, _ = record.exc_info
         error = get_rich_traceback(ensure_not_none(exc_value))
         match error:
-            case ExcChainTB() | ExcGroupTB() | ExcTB():  # pragma: no cover
+            case ExcChainTB() | ExcGroupTB() | ExcTB():
                 text = error.format(header=True, detail=self._detail)
             case BaseException():
                 text = "\n".join(format_exception(error))
@@ -239,7 +239,7 @@ class ExcChainTB(Generic[_TExc]):
     ) -> str:
         """Format the traceback."""
         lines: list[str] = []
-        if header:
+        if header:  # pragma: no cover
             lines.extend(_yield_header_lines())
         total = len(self.errors)
         for i, errors in enumerate(self.errors):
@@ -313,7 +313,7 @@ class ExcGroupTB(Generic[_TExc]):
     ) -> str:
         """Format the traceback."""
         lines: list[str] = []
-        if header:
+        if header:  # pragma: no cover
             lines.extend(_yield_header_lines())
         lines.extend([
             f"Exception group {index + 1}/{total}:",
@@ -380,7 +380,7 @@ class ExcTB(Generic[_TExc]):
         """Format the traceback."""
         total = len(self)
         lines: list[str] = []
-        if header:
+        if header:  # pragma: no cover
             lines.extend(_yield_header_lines())
         for i, frame in enumerate(self.frames):
             is_head = i < total - 1

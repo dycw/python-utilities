@@ -519,7 +519,9 @@ class TestGetRichTraceback:
 
 
 class TestRichTracebackFormatter:
-    def test_main(self, *, tmp_path: Path, traceback_func_one: Pattern[str]) -> None:
+    def test_decorated(
+        self, *, tmp_path: Path, traceback_func_one: Pattern[str]
+    ) -> None:
         logger = getLogger(str(tmp_path))
         logger.setLevel(DEBUG)
         handler = StreamHandler(buffer := StringIO())
@@ -532,6 +534,22 @@ class TestRichTracebackFormatter:
             logger.exception("message")
         result = buffer.getvalue()
         assert traceback_func_one.search(result)
+
+    def test_undecorated(
+        self, *, tmp_path: Path, traceback_func_untraced: Pattern[str]
+    ) -> None:
+        logger = getLogger(str(tmp_path))
+        logger.setLevel(DEBUG)
+        handler = StreamHandler(buffer := StringIO())
+        handler.setFormatter(RichTracebackFormatter(detail=True))
+        handler.setLevel(DEBUG)
+        logger.addHandler(handler)
+        try:
+            _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError:
+            logger.exception("message")
+        result = buffer.getvalue()
+        assert traceback_func_untraced.search(result)
 
     def test_create_and_set(self) -> None:
         handler = StreamHandler()
