@@ -38,7 +38,7 @@ from utilities.functions import (
 )
 from utilities.iterables import one
 from utilities.pathlib import resolve_path
-from utilities.rich import yield_pretty_repr, yield_pretty_repr_args_and_kwargs
+from utilities.rich import yield_call_args_repr, yield_mapping_repr
 from utilities.text import ensure_str
 
 if TYPE_CHECKING:
@@ -134,7 +134,7 @@ class _CallArgs:
             lines: list[str] = [
                 f"Unable to bind arguments for {get_func_name(func)!r}; {orig}"
             ]
-            lines.extend(yield_pretty_repr_args_and_kwargs(*args, **kwargs))
+            lines.extend(yield_call_args_repr(*args, **kwargs))
             new = "\n".join(lines)
             raise _CallArgsError(new) from None
         return cls(func=func, args=bound_args.args, kwargs=bound_args.kwargs)
@@ -300,11 +300,11 @@ class _Frame:
         ]
         lines.extend(
             indent(line, 2 * _INDENT)
-            for line in yield_pretty_repr_args_and_kwargs(*self.args, **self.kwargs)
+            for line in yield_call_args_repr(*self.args, **self.kwargs)
         )
         lines.append(indent("Locals:", _INDENT))
         lines.extend(
-            indent(line, 2 * _INDENT) for line in yield_pretty_repr(**self.locals)
+            indent(line, 2 * _INDENT) for line in yield_mapping_repr(**self.locals)
         )
         lines.append(indent(f"Line {self.line_num}:", _INDENT))
         lines.append(indent(self.code_line, 2 * _INDENT))
