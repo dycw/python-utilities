@@ -97,7 +97,7 @@ class RichTracebackFormatter(Formatter):
         _, exc_value, _ = record.exc_info
         error = get_rich_traceback(ensure_not_none(exc_value))
         match error:
-            case ExcChainTB() | ExcGroupTB() | ExcTB():
+            case ExcChainTB() | ExcGroupTB() | ExcTB():  # pragma: no cover
                 text = error.format(header=True, detail=self._detail)
             case BaseException():
                 text = "\n".join(format_exception(error))

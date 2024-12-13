@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from io import StringIO
 from logging import DEBUG, ERROR, StreamHandler, getLogger
-from re import Pattern
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
-from pytest import raises
+from pytest import mark, raises
 
 from tests.conftest import FLAKY, SKIPIF_CI
 from tests.test_traceback_funcs.beartype import func_beartype
@@ -51,6 +50,7 @@ from utilities.traceback import (
 
 if TYPE_CHECKING:
     from pathlib import Path
+    from re import Pattern
     from traceback import FrameSummary
     from types import FrameType
 
@@ -551,17 +551,22 @@ class TestRichTracebackFormatter:
         expected = "ERROR: record.exc_info=None\n"
         assert result == expected
 
-    @classmethod
-    def assert_file(cls, path: Path, expected: str | Pattern[str], /) -> None:
-        files = list(path.iterdir())
-        assert len(files) == 1
-        with one(files).open() as fh:
-            contents = fh.read()
-        match expected:
-            case str():
-                assert contents == expected
-            case Pattern():
-                assert bool(expected.search(contents))
+    @mark.only
+    def test_post(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
+        logger.setLevel(DEBUG)
+        handler = StreamHandler(buffer := StringIO())
+        handler.setFormatter(
+            RichTracebackFormatter(detail=True, post=lambda x: f"> {x}")
+        )
+        handler.setLevel(DEBUG)
+        logger.addHandler(handler)
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError:
+            logger.exception("message")
+        result = buffer.getvalue()
+        assert result.startswith("> ")
 
 
 class TestYieldExceptions:
