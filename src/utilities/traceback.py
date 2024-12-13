@@ -52,7 +52,7 @@ _F = TypeVar("_F", bound=Callable[..., Any])
 _T = TypeVar("_T")
 _TExc = TypeVar("_TExc", bound=BaseException)
 _CALL_ARGS = "_CALL_ARGS"
-_INDENT = "  "
+_INDENT = 2 * " "
 ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
 OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
 
@@ -205,6 +205,22 @@ class ExcChain(Generic[_TExc]):
     def __len__(self) -> int:
         return len(self.errors)
 
+    @override
+    def __repr__(self) -> str:
+        lines: list[str] = []
+        total = len(self.errors)
+        for i, errors in enumerate(self.errors):
+            lines.append(f"Exception chain {i + 1}/{total}:")
+            match errors:
+                case ExcGroup():
+                    lines.append(errors.format(index=i, total=total, depth=2))
+                case ExcPath():
+                    lines.append(errors.format(depth=2))
+                case BaseException():
+                    lines.append(format_exception(errors, depth=2))
+            lines.append("")
+        return "\n".join(lines).strip("\n")
+
 
 @dataclass(kw_only=True, slots=True)
 class ExcGroup(Generic[_TExc]):
@@ -212,6 +228,10 @@ class ExcGroup(Generic[_TExc]):
     errors: list[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException] = field(
         default_factory=list
     )
+
+    @override
+    def __repr__(self) -> str:
+        return self.format()
 
     def format(self, *, index: int = 0, total: int = 1, depth: int = 0) -> str:
         lines: list[str] = [

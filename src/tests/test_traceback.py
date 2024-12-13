@@ -263,6 +263,56 @@ class TestAssembleExceptionsPaths:
         assert frame2.locals["args"] == (6, 8)
         assert frame2.locals["kwargs"] == {"d": 12, "e": 14}
 
+        res_chain = repr(exc_chain)
+        exp_chain = strip_and_dedent(
+            """
+            Exception chain 1/2:
+                Frame 1/1: func_chain_second (tests.test_traceback_funcs.chain)
+                  Inputs:
+                    args[0] = 2
+                    args[1] = 4
+                    args[2] = 6
+                    args[3] = 8
+                    kwargs[c] = 10
+                    kwargs[d] = 12
+                    kwargs[e] = 14
+                  Locals:
+                    a = 4
+                    b = 8
+                    c = 20
+                    args = (12, 16)
+                    kwargs = {'d': 24, 'e': 28}
+                    result = 112
+                  Line 30:
+                    assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
+                  AssertionError:
+                    Result (112) must be divisible by 10
+
+            Exception chain 2/2:
+                Frame 1/1: func_chain_first (tests.test_traceback_funcs.chain)
+                  Inputs:
+                    args[0] = 1
+                    args[1] = 2
+                    args[2] = 3
+                    args[3] = 4
+                    kwargs[c] = 5
+                    kwargs[d] = 6
+                    kwargs[e] = 7
+                  Locals:
+                    a = 2
+                    b = 4
+                    c = 10
+                    args = (6, 8)
+                    kwargs = {'d': 12, 'e': 14}
+                    msg = 'Assertion failed: Result (112) must be divisible by 10'
+                  Line 19:
+                    raise ValueError(msg) from error
+                  ValueError:
+                    Assertion failed: Result (112) must be divisible by 10
+            """
+        )
+        assert exp_chain == res_chain
+
     def test_func_decorated_sync(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_decorated_sync_first(1, 2, 3, 4, c=5, d=6, e=7)
