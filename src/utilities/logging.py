@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from itertools import product
 from logging import (
     ERROR,
+    NOTSET,
     Formatter,
     Handler,
     Logger,
@@ -23,7 +24,8 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, assert_neve
 
 from typing_extensions import override
 
-from utilities.datetime import maybe_sub_pct_y
+from utilities.atomicwrites import writer
+from utilities.datetime import get_now, maybe_sub_pct_y
 from utilities.git import get_repo_root
 from utilities.pathlib import ensure_suffix, resolve_path
 from utilities.traceback import TracebackHandler
@@ -43,6 +45,31 @@ except ModuleNotFoundError:  # pragma: no cover
 
 LogLevel: TypeAlias = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 LoggerOrName: TypeAlias = Logger | str
+
+
+class StandaloneFileHandler(Handler):
+    """Handler for emitting tracebacks to individual files."""
+
+    @override
+    def __init__(
+        self, *, level: int = NOTSET, path: PathLikeOrCallable | None = None
+    ) -> None:
+        super().__init__(level=level)
+        self._path = path
+
+    @override
+    def emit(self, record: LogRecord) -> None:
+        try:
+            path = (
+                resolve_path(path=self._path)
+                .joinpath(get_now(time_zone="local").strftime("%Y-%m-%dT%H-%M-%S"))
+                .with_suffix(".txt")
+            )
+            formatted = self.format(record)
+            with writer(path) as temp, temp.open(mode="w") as fh:
+                _ = fh.write(formatted)
+        except Exception:  # noqa: BLE001
+            self.handleError(record)
 
 
 def add_filters(
@@ -327,6 +354,7 @@ class _AdvancedLogRecord(LogRecord):
 __all__ = [
     "GetLoggingLevelNumberError",
     "LogLevel",
+    "StandaloneFileHandler",
     "add_filters",
     "basic_config",
     "get_default_logging_path",

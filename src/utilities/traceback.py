@@ -4,7 +4,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
-from logging import NOTSET, Handler, LogRecord
+from logging import NOTSET, Formatter, Handler, LogRecord
 from pathlib import Path
 from sys import exc_info
 from textwrap import indent
@@ -43,9 +43,10 @@ from utilities.text import ensure_str
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+    from logging import _FormatStyle
     from types import FrameType
 
-    from utilities.types import PathLikeOrCallable
+    from utilities.types import PathLikeOrCallable, StrMapping
 
 
 _F = TypeVar("_F", bound=Callable[..., Any])
@@ -55,6 +56,49 @@ _CALL_ARGS = "_CALL_ARGS"
 _INDENT = 2 * " "
 ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
 OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
+
+
+class RichTracebackFormatter(Formatter):
+    """Formatter for rich tracebacks."""
+
+    @override
+    def __init__(
+        self,
+        fmt: str | None = None,
+        datefmt: str | None = None,
+        style: _FormatStyle = "%",
+        validate: bool = True,
+        /,
+        *,
+        defaults: StrMapping | None = None,
+        detail: bool = False,
+    ) -> None:
+        super().__init__(fmt, datefmt, style, validate, defaults=defaults)
+        self._detail = detail
+
+    @override
+    def format(self, record: LogRecord) -> str:
+        from tzlocal import get_localzone
+
+        extra_ignore = _LOG_RECORD_DEFAULT_ATTRS | (
+            set() if self._extra_ignore is None else self._extra_ignore
+        )
+        extra = {k: v for k, v in record.__dict__.items() if k not in extra_ignore}
+        log_record = OrjsonLogRecord(
+            name=record.name,
+            level=record.levelno,
+            path_name=Path(record.pathname),
+            line_num=record.lineno,
+            message=record.getMessage(),
+            datetime=dt.datetime.fromtimestamp(record.created, tz=get_localzone()),
+            func_name=record.funcName,
+            extra=extra if len(extra) >= 1 else None,
+        )
+        return serialize(
+            log_record,
+            before=self._before,
+            dataclass_final_hook=self._dataclass_final_hook,
+        ).decode()
 
 
 class TracebackHandler(Handler):
@@ -86,7 +130,7 @@ class TracebackHandler(Handler):
     def emit(self, record: LogRecord) -> None:
         if (record.exc_info is None) or ((exc_value := record.exc_info[1]) is None):
             return
-        assembled = assemble_exception_paths(exc_value)
+        assembled = get_rich_traceback(exc_value)
         path = (
             resolve_path(path=self._path)
             .joinpath(get_now(time_zone="local").strftime("%Y-%m-%dT%H-%M-%S"))
@@ -94,7 +138,7 @@ class TracebackHandler(Handler):
         )
         with writer(path) as temp, temp.open(mode="w") as fh:
             match assembled:
-                case ExcChain() | ExcGroup() | ExcPath():
+                case ExcChainTB() | ExcGroupTB() | ExcTB():
                     _ = fh.write(repr(assembled))
                 case BaseException():
                     print_exception(assembled, file=fh)
@@ -165,8 +209,8 @@ _ExtFrameSummaryCA: TypeAlias = _ExtFrameSummary[_CallArgs]
 
 
 @dataclass(repr=False, kw_only=True, slots=True)
-class _ExceptionPathInternal:
-    """An (internal) exception path."""
+class _ExcTBInternal:
+    """A rich traceback for an exception; internal use only."""
 
     raw: list[_ExtFrameSummaryCAOpt] = field(default_factory=list)
     frames: list[_ExtFrameSummaryCA] = field(default_factory=list)
@@ -176,16 +220,18 @@ class _ExceptionPathInternal:
 @runtime_checkable
 class _HasExceptionPath(Protocol):
     @property
-    def exc_path(self) -> _ExceptionPathInternal: ...  # pragma: no cover
+    def exc_tb(self) -> _ExcTBInternal: ...  # pragma: no cover
 
 
 @dataclass(kw_only=True, slots=True)
-class ExcChain(Generic[_TExc]):
-    errors: list[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException] = field(
+class ExcChainTB(Generic[_TExc]):
+    """A rich traceback for an exception chain."""
+
+    errors: list[ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException] = field(
         default_factory=list
     )
 
-    def __iter__(self) -> Iterator[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException]:
+    def __iter__(self) -> Iterator[ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException]:
         yield from self.errors
 
     def __len__(self) -> int:
@@ -198,12 +244,12 @@ class ExcChain(Generic[_TExc]):
         for i, errors in enumerate(self.errors):
             lines.append(f"Exception chain {i + 1}/{total}:")
             match errors:
-                case ExcGroup():  # pragma: no cover
+                case ExcGroupTB():  # pragma: no cover
                     lines.append(errors.format(index=i, total=total, depth=2))
-                case ExcPath():  # pragma: no cover
+                case ExcTB():  # pragma: no cover
                     lines.append(errors.format(depth=2))
                 case BaseException():  # pragma: no cover
-                    lines.append(format_exception(errors, depth=2))
+                    lines.append(_format_exception(errors, depth=2))
                 case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                     assert_never(never)
             lines.append("")
@@ -211,9 +257,11 @@ class ExcChain(Generic[_TExc]):
 
 
 @dataclass(kw_only=True, slots=True)
-class ExcGroup(Generic[_TExc]):
-    path: ExcPath[_TExc]
-    errors: list[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException] = field(
+class ExcGroupTB(Generic[_TExc]):
+    """A rich traceback for an exception group."""
+
+    path: ExcTB[_TExc]
+    errors: list[ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException] = field(
         default_factory=list
     )
 
@@ -234,10 +282,10 @@ class ExcGroup(Generic[_TExc]):
                 indent(f"Group error {i + 1}/{total_sub_errors}:", 2 * _INDENT)
             )
             match errors:
-                case ExcGroup() | ExcPath():  # pragma: no cover
+                case ExcGroupTB() | ExcTB():  # pragma: no cover
                     lines.append(errors.format(depth=4))
                 case BaseException():  # pragma: no cover
-                    lines.append(format_exception(errors, depth=4))
+                    lines.append(_format_exception(errors, depth=4))
                 case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                     assert_never(never)
             lines.append("")
@@ -245,7 +293,9 @@ class ExcGroup(Generic[_TExc]):
 
 
 @dataclass(kw_only=True, slots=True)
-class ExcPath(Generic[_TExc]):
+class ExcTB(Generic[_TExc]):
+    """A rich traceback for a single exception."""
+
     frames: list[_Frame] = field(default_factory=list)
     error: _TExc
 
@@ -307,41 +357,41 @@ class _Frame:
         lines.append(indent(f"Line {self.line_num}:", _INDENT))
         lines.append(indent(self.code_line, 2 * _INDENT))
         if error is not None:
-            lines.append(format_exception(error, depth=1))
+            lines.append(_format_exception(error, depth=1))
         return indent("\n".join(lines).strip("\n"), depth * _INDENT)
 
 
-def assemble_exception_paths(
+def get_rich_traceback(
     error: _TExc, /
-) -> ExcChain[_TExc] | ExcGroup[_TExc] | ExcPath[_TExc] | BaseException:
-    """Assemble a set of extended tracebacks."""
+) -> ExcChainTB[_TExc] | ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException:
+    """Get a rich traceback."""
     match list(yield_exceptions(error)):
         case []:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{error}"])
         case [err]:
             err = cast(_TExc, err)
-            return _assemble_exception_paths_no_chain(err)
+            return _get_rich_traceback_non_chain(err)
         case errors:
             errors = cast(list[_TExc], errors)
-            return ExcChain(
-                errors=[_assemble_exception_paths_no_chain(e) for e in errors]
-            )
+            return ExcChainTB(errors=[_get_rich_traceback_non_chain(e) for e in errors])
 
 
-def _assemble_exception_paths_no_chain(
+def _get_rich_traceback_non_chain(
     error: _TExc, /
-) -> ExcPath[_TExc] | ExcGroup[_TExc] | BaseException:
+) -> ExcTB[_TExc] | ExcGroupTB[_TExc] | BaseException:
+    """Get a rich traceback, for a non-chained error."""
     if not isinstance(error, ExceptionGroup):
-        return _assemble_exception_paths_no_chain_no_group(error)
-    path = cast(ExcPath[_TExc], _assemble_exception_paths_no_chain_no_group(error))
+        return _get_rich_traceback_non_chain_non_group(error)
+    path = cast(ExcTB[_TExc], _get_rich_traceback_non_chain_non_group(error))
     errors = cast(list[_TExc], error.exceptions)
-    errors = list(map(_assemble_exception_paths_no_chain, errors))
-    return ExcGroup(path=path, errors=errors)
+    errors = list(map(_get_rich_traceback_non_chain, errors))
+    return ExcGroupTB(path=path, errors=errors)
 
 
-def _assemble_exception_paths_no_chain_no_group(
+def _get_rich_traceback_non_chain_non_group(
     error: _TExc, /
-) -> ExcPath[_TExc] | BaseException:
+) -> ExcTB[_TExc] | BaseException:
+    """Get a rich traceback, for a non-chained, non-grouped error."""
     if isinstance(error, _HasExceptionPath):
         frames = [
             _Frame(
@@ -353,16 +403,10 @@ def _assemble_exception_paths_no_chain_no_group(
                 kwargs=f.extra.kwargs,
                 locals=f.locals,
             )
-            for f in error.exc_path.frames
+            for f in error.exc_tb.frames
         ]
-        return ExcPath(frames=frames, error=cast(_TExc, error))
+        return ExcTB(frames=frames, error=cast(_TExc, error))
     return error
-
-
-def format_exception(error: BaseException, /, *, depth: int = 0) -> str:
-    """Format an exception."""
-    lines: list[str] = [f"{get_class_name(error)}:", indent(str(error), _INDENT)]
-    return indent("\n".join(lines).strip("\n"), depth * _INDENT)
 
 
 @overload
@@ -405,7 +449,7 @@ def trace(
                 try:
                     return func(*args, **kwargs)
                 except Exception as error:
-                    cast(Any, error).exc_path = _get_call_frame_summaries(error)
+                    cast(Any, error).exc_tb = _get_rich_traceback_internal(error)
                     raise
 
             return cast(_F, trace_sync)
@@ -416,7 +460,7 @@ def trace(
             try:
                 return await func(*args, **kwargs)
             except Exception as error:
-                cast(Any, error).exc_path = _get_call_frame_summaries(error)
+                cast(Any, error).exc_tb = _get_rich_traceback_internal(error)
                 raise
 
         return cast(_F, trace_async)
@@ -431,7 +475,7 @@ def trace(
                 return func(*args, **kwargs)
             except Exception as error:
                 if en:
-                    cast(Any, error).exc_path = _get_call_frame_summaries(error)
+                    cast(Any, error).exc_tb = _get_rich_traceback_internal(error)
                 raise
 
         return cast(_F, trace_sync)
@@ -444,7 +488,7 @@ def trace(
             return await func(*args, **kwargs)
         except Exception as error:
             if en:
-                cast(Any, error).exc_path = _get_call_frame_summaries(error)
+                cast(Any, error).exc_tb = _get_rich_traceback_internal(error)
             raise
 
     return cast(_F, trace_async)
@@ -504,14 +548,20 @@ def yield_frames(*, traceback: TracebackType | None = None) -> Iterator[FrameTyp
         traceback = traceback.tb_next
 
 
-def _get_call_frame_summaries(error: BaseException, /) -> _ExceptionPathInternal:
-    """Get an extended traceback."""
+def _format_exception(error: BaseException, /, *, depth: int = 0) -> str:
+    """Format an exception."""
+    lines: list[str] = [f"{get_class_name(error)}:", indent(str(error), _INDENT)]
+    return indent("\n".join(lines).strip("\n"), depth * _INDENT)
+
+
+def _get_rich_traceback_internal(error: BaseException, /) -> _ExcTBInternal:
+    """Get a rich traceback; for internal use only."""
 
     def extra(_: FrameSummary, frame: FrameType) -> _CallArgs | None:
         return frame.f_locals.get(_CALL_ARGS)
 
     raw = list(yield_extended_frame_summaries(error, extra=extra))
-    return _ExceptionPathInternal(raw=raw, frames=_merge_frames(raw), error=error)
+    return _ExcTBInternal(raw=raw, frames=_merge_frames(raw), error=error)
 
 
 def _merge_frames(
@@ -554,14 +604,13 @@ def _merge_frames(
 
 
 __all__ = [
-    "ExcChain",
-    "ExcGroup",
+    "ExcChainTB",
+    "ExcGroupTB",
     "ExcInfo",
-    "ExcPath",
+    "ExcTB",
     "OptExcInfo",
     "TracebackHandler",
-    "assemble_exception_paths",
-    "format_exception",
+    "get_rich_traceback",
     "trace",
     "yield_exceptions",
     "yield_extended_frame_summaries",
