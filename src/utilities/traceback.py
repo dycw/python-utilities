@@ -7,6 +7,7 @@ from inspect import iscoroutinefunction, signature
 from logging import NOTSET, Handler, LogRecord
 from pathlib import Path
 from sys import exc_info
+from textwrap import indent
 from traceback import FrameSummary, TracebackException, print_exception
 from types import TracebackType
 from typing import (
@@ -37,7 +38,7 @@ from utilities.functions import (
 )
 from utilities.iterables import one
 from utilities.pathlib import resolve_path
-from utilities.rich import yield_pretty_repr_args_and_kwargs
+from utilities.rich import yield_call_args_repr, yield_mapping_repr
 from utilities.text import ensure_str
 
 if TYPE_CHECKING:
@@ -51,6 +52,7 @@ _F = TypeVar("_F", bound=Callable[..., Any])
 _T = TypeVar("_T")
 _TExc = TypeVar("_TExc", bound=BaseException)
 _CALL_ARGS = "_CALL_ARGS"
+_INDENT = 2 * " "
 ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
 OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
 
@@ -93,21 +95,7 @@ class TracebackHandler(Handler):
         with writer(path) as temp, temp.open(mode="w") as fh:
             match assembled:
                 case ExcChain() | ExcGroup() | ExcPath():
-                    try:
-                        from rich.pretty import pretty_repr
-                    except ImportError:  # pragma: no cover
-                        repr_use = repr(assembled)
-                    else:
-                        repr_use = pretty_repr(
-                            assembled,
-                            max_width=self._max_width,
-                            indent_size=self._indent_size,
-                            max_length=self._max_length,
-                            max_string=self._max_string,
-                            max_depth=self._max_depth,
-                            expand_all=self._expand_all,
-                        )
-                    _ = fh.write(repr_use)
+                    _ = fh.write(repr(assembled))
                 case BaseException():
                     print_exception(assembled, file=fh)
                 case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
@@ -144,7 +132,7 @@ class _CallArgs:
             lines: list[str] = [
                 f"Unable to bind arguments for {get_func_name(func)!r}; {orig}"
             ]
-            lines.extend(yield_pretty_repr_args_and_kwargs(*args, **kwargs))
+            lines.extend(yield_call_args_repr(*args, **kwargs))
             new = "\n".join(lines)
             raise _CallArgsError(new) from None
         return cls(func=func, args=bound_args.args, kwargs=bound_args.kwargs)
@@ -203,6 +191,24 @@ class ExcChain(Generic[_TExc]):
     def __len__(self) -> int:
         return len(self.errors)
 
+    @override
+    def __repr__(self) -> str:
+        lines: list[str] = []
+        total = len(self.errors)
+        for i, errors in enumerate(self.errors):
+            lines.append(f"Exception chain {i + 1}/{total}:")
+            match errors:
+                case ExcGroup():  # pragma: no cover
+                    lines.append(errors.format(index=i, total=total, depth=2))
+                case ExcPath():  # pragma: no cover
+                    lines.append(errors.format(depth=2))
+                case BaseException():  # pragma: no cover
+                    lines.append(format_exception(errors, depth=2))
+                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                    assert_never(never)
+            lines.append("")
+        return "\n".join(lines).strip("\n")
+
 
 @dataclass(kw_only=True, slots=True)
 class ExcGroup(Generic[_TExc]):
@@ -210,6 +216,32 @@ class ExcGroup(Generic[_TExc]):
     errors: list[ExcGroup[_TExc] | ExcPath[_TExc] | BaseException] = field(
         default_factory=list
     )
+
+    @override
+    def __repr__(self) -> str:
+        return self.format()
+
+    def format(self, *, index: int = 0, total: int = 1, depth: int = 0) -> str:
+        lines: list[str] = [
+            f"Exception group {index + 1}/{total}:",
+            indent("Path:", 2 * _INDENT),
+            self.path.format(depth=4),
+            "",
+        ]
+        total_sub_errors = len(self.errors)
+        for i, errors in enumerate(self.errors):
+            lines.append(
+                indent(f"Group error {i + 1}/{total_sub_errors}:", 2 * _INDENT)
+            )
+            match errors:
+                case ExcGroup() | ExcPath():  # pragma: no cover
+                    lines.append(errors.format(depth=4))
+                case BaseException():  # pragma: no cover
+                    lines.append(format_exception(errors, depth=4))
+                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                    assert_never(never)
+            lines.append("")
+        return indent("\n".join(lines).strip("\n"), depth * _INDENT)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -223,6 +255,24 @@ class ExcPath(Generic[_TExc]):
     def __len__(self) -> int:
         return len(self.frames)
 
+    @override
+    def __repr__(self) -> str:
+        return self.format()
+
+    def format(self, *, depth: int = 0) -> str:
+        total = len(self)
+        lines: list[str] = []
+        for i, frame in enumerate(self.frames):
+            is_head = i < total - 1
+            lines.append(
+                frame.format(
+                    index=i, total=total, error=None if is_head else self.error
+                )
+            )
+            if is_head:
+                lines.append("")
+        return indent("\n".join(lines).strip("\n"), depth * _INDENT)
+
 
 @dataclass(kw_only=True, slots=True)
 class _Frame:
@@ -233,6 +283,32 @@ class _Frame:
     args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
     locals: dict[str, Any] = field(default_factory=dict)
+
+    def format(
+        self,
+        *,
+        index: int = 0,
+        total: int = 1,
+        error: BaseException | None = None,
+        depth: int = 0,
+    ) -> str:
+        lines: list[str] = [
+            f"Frame {index + 1}/{total}: {self.name} ({self.module})",
+            indent("Inputs:", _INDENT),
+        ]
+        lines.extend(
+            indent(line, 2 * _INDENT)
+            for line in yield_call_args_repr(*self.args, **self.kwargs)
+        )
+        lines.append(indent("Locals:", _INDENT))
+        lines.extend(
+            indent(line, 2 * _INDENT) for line in yield_mapping_repr(**self.locals)
+        )
+        lines.append(indent(f"Line {self.line_num}:", _INDENT))
+        lines.append(indent(self.code_line, 2 * _INDENT))
+        if error is not None:
+            lines.append(format_exception(error, depth=1))
+        return indent("\n".join(lines).strip("\n"), depth * _INDENT)
 
 
 def assemble_exception_paths(
@@ -246,9 +322,9 @@ def assemble_exception_paths(
             err = cast(_TExc, err)
             return _assemble_exception_paths_no_chain(err)
         case errors:
-            errs = cast(list[_TExc], errors[::-1])
+            errors = cast(list[_TExc], errors)
             return ExcChain(
-                errors=[_assemble_exception_paths_no_chain(e) for e in errs]
+                errors=[_assemble_exception_paths_no_chain(e) for e in errors]
             )
 
 
@@ -281,6 +357,12 @@ def _assemble_exception_paths_no_chain_no_group(
         ]
         return ExcPath(frames=frames, error=cast(_TExc, error))
     return error
+
+
+def format_exception(error: BaseException, /, *, depth: int = 0) -> str:
+    """Format an exception."""
+    lines: list[str] = [f"{get_class_name(error)}:", indent(str(error), _INDENT)]
+    return indent("\n".join(lines).strip("\n"), depth * _INDENT)
 
 
 @overload
@@ -479,6 +561,7 @@ __all__ = [
     "OptExcInfo",
     "TracebackHandler",
     "assemble_exception_paths",
+    "format_exception",
     "trace",
     "yield_exceptions",
     "yield_extended_frame_summaries",

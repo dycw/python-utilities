@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from logging import ERROR, getLogger
+from re import Pattern
 from typing import TYPE_CHECKING, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
@@ -53,7 +54,7 @@ if TYPE_CHECKING:
 
 
 class TestAssembleExceptionsPaths:
-    def test_func_one(self) -> None:
+    def test_func_one(self, *, traceback_func_one: str) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         exc_path = assemble_exception_paths(exc_info.value)
@@ -74,7 +75,13 @@ class TestAssembleExceptionsPaths:
         assert frame.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(exc_path.error, AssertionError)
 
-    def test_func_two(self) -> None:
+        res_frame = frame.format(error=exc_path.error)
+        assert res_frame == traceback_func_one
+
+        res_path = repr(exc_path)
+        assert res_path == traceback_func_one
+
+    def test_func_two(self, *, traceback_func_two: str) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
         exc_path = assemble_exception_paths(exc_info.value)
@@ -103,6 +110,9 @@ class TestAssembleExceptionsPaths:
         assert frame2.locals["args"] == (12, 16)
         assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_path.error, AssertionError)
+
+        res_path = repr(exc_path)
+        assert res_path == traceback_func_two
 
     def test_func_beartype(self) -> None:
         with raises(AssertionError) as exc_info:
@@ -153,7 +163,7 @@ class TestAssembleExceptionsPaths:
         assert frame2.locals["kwargs"] == {"c": 10, "d": 12, "e": 14}
         assert isinstance(exc_path.error, BeartypeCallHintReturnViolation)
 
-    def test_func_chain(self) -> None:
+    def test_func_chain(self, *, traceback_func_chain: str) -> None:
         with raises(ValueError, match=".*") as exc_info:
             _ = func_chain_first(1, 2, 3, 4, c=5, d=6, e=7)
         exc_chain = assemble_exception_paths(exc_info.value)
@@ -161,31 +171,34 @@ class TestAssembleExceptionsPaths:
         assert len(exc_chain) == 2
         path1, path2 = exc_chain
         assert isinstance(path1, ExcPath)
-        assert len(path1) == 1
         frame1 = one(path1)
         assert frame1.module == "tests.test_traceback_funcs.chain"
-        assert frame1.name == "func_chain_second"
-        assert (
-            frame1.code_line
-            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
-        )
-        assert frame1.args == (2, 4, 6, 8)
-        assert frame1.kwargs == {"c": 10, "d": 12, "e": 14}
-        assert frame1.locals["a"] == 4
-        assert frame1.locals["b"] == 8
-        assert frame1.locals["args"] == (12, 16)
-        assert frame1.locals["kwargs"] == {"d": 24, "e": 28}
+        assert frame1.name == "func_chain_first"
+        assert frame1.code_line == "raise ValueError(msg) from error"
+        assert frame1.args == (1, 2, 3, 4)
+        assert frame1.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert frame1.locals["a"] == 2
+        assert frame1.locals["b"] == 4
+        assert frame1.locals["args"] == (6, 8)
+        assert frame1.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(path2, ExcPath)
+        assert len(path2) == 1
         frame2 = one(path2)
         assert frame2.module == "tests.test_traceback_funcs.chain"
-        assert frame2.name == "func_chain_first"
-        assert frame2.code_line == "raise ValueError(msg) from error"
-        assert frame2.args == (1, 2, 3, 4)
-        assert frame2.kwargs == {"c": 5, "d": 6, "e": 7}
-        assert frame2.locals["a"] == 2
-        assert frame2.locals["b"] == 4
-        assert frame2.locals["args"] == (6, 8)
-        assert frame2.locals["kwargs"] == {"d": 12, "e": 14}
+        assert frame2.name == "func_chain_second"
+        assert (
+            frame2.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert frame2.args == (2, 4, 6, 8)
+        assert frame2.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert frame2.locals["a"] == 4
+        assert frame2.locals["b"] == 8
+        assert frame2.locals["args"] == (12, 16)
+        assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
+
+        res_chain = repr(exc_chain)
+        assert res_chain == traceback_func_chain
 
     def test_func_decorated_sync(self) -> None:
         with raises(AssertionError) as exc_info:
@@ -268,7 +281,9 @@ class TestAssembleExceptionsPaths:
         exc_path1 = assemble_exception_paths(exc_info1.value)
         assert isinstance(exc_path1, AssertionError)
 
-    async def test_func_task_group_one(self) -> None:
+    async def test_func_task_group_one(
+        self, *, traceback_func_task_group_one: Pattern[str]
+    ) -> None:
         with raises(ExceptionGroup) as exc_info:
             await func_task_group_one_first(1, 2, 3, 4, c=5, d=6, e=7)
         exc_group = assemble_exception_paths(exc_info.value)
@@ -304,6 +319,9 @@ class TestAssembleExceptionsPaths:
         assert frame.locals["args"] == (12, 16)
         assert frame.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_path.error, AssertionError)
+
+        res_group = repr(exc_group)
+        assert traceback_func_task_group_one.search(res_group)
 
     @FLAKY
     @SKIPIF_CI
@@ -466,7 +484,7 @@ class TestAssembleExceptionsPaths:
 
 
 class TestTracebackHandler:
-    def test_decorated(self, *, tmp_path: Path) -> None:
+    def test_decorated(self, *, tmp_path: Path, traceback_func_one: str) -> None:
         logger = getLogger(str(tmp_path))
         handler = TracebackHandler(path=tmp_path)
         logger.addHandler(handler)
@@ -474,9 +492,11 @@ class TestTracebackHandler:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             logger.exception("message")
-        self.assert_file(tmp_path, "decorated")
+        self.assert_file(tmp_path, traceback_func_one)
 
-    def test_undecorated(self, *, tmp_path: Path) -> None:
+    def test_undecorated(
+        self, *, tmp_path: Path, traceback_func_untraced: Pattern[str]
+    ) -> None:
         logger = getLogger(str(tmp_path))
         handler = TracebackHandler(path=tmp_path)
         logger.addHandler(handler)
@@ -484,7 +504,7 @@ class TestTracebackHandler:
             _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             logger.exception("message")
-        self.assert_file(tmp_path, "undecorated")
+        self.assert_file(tmp_path, traceback_func_untraced)
 
     def test_no_logging(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
@@ -496,60 +516,16 @@ class TestTracebackHandler:
         assert len(list(tmp_path.iterdir())) == 0
 
     @classmethod
-    def assert_file(
-        cls, path: Path, check: Literal["decorated", "undecorated"], /
-    ) -> None:
+    def assert_file(cls, path: Path, expected: str | Pattern[str], /) -> None:
         files = list(path.iterdir())
         assert len(files) == 1
         with one(files).open() as fh:
             contents = fh.read()
-        match check:
-            case "decorated":
-                cls._check_decorated(contents)
-            case "undecorated":
-                cls._check_undecorated(contents)
-
-    @classmethod
-    def _check_decorated(cls, text: str, /) -> None:
-        expected = strip_and_dedent(
-            """
-                ExcPath(
-                    frames=[
-                        _Frame(
-                            module='tests.test_traceback_funcs.one',
-                            name='func_one',
-                            code_line='assert result % 10 == 0, f"Result ({result}) must be divisible by 10"',
-                            line_num=16,
-                            args=(1, 2, 3, 4),
-                            kwargs={'c': 5, 'd': 6, 'e': 7},
-                            locals={
-                                'a': 2,
-                                'b': 4,
-                                'c': 10,
-                                'args': (6, 8),
-                                'kwargs': {'d': 12, 'e': 14},
-                                'result': 56
-                            }
-                        )
-                    ],
-                    error=AssertionError('Result (56) must be divisible by 10')
-                )
-                """
-        )
-        assert text == expected
-
-    @classmethod
-    def _check_undecorated(cls, text: str, /) -> None:
-        lines = text.splitlines()
-        assert len(lines) == 8
-        assert lines[0] == "Traceback (most recent call last):"
-        tail = "\n".join(lines[5:])
-        expected = strip_and_dedent("""
-                    assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
-                           ^^^^^^^^^^^^^^^^
-                AssertionError: Result (56) must be divisible by 10
-                """)
-        assert tail == expected
+        match expected:
+            case str():
+                assert contents == expected
+            case Pattern():
+                assert bool(expected.search(contents))
 
 
 class TestYieldExceptions:
