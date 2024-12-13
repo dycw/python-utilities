@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from logging import ERROR, getLogger
-from re import search
 from typing import TYPE_CHECKING, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
@@ -48,7 +47,6 @@ from utilities.traceback import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from pathlib import Path
     from traceback import FrameSummary
     from types import FrameType
