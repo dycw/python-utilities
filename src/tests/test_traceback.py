@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from logging import ERROR, getLogger
-from re import MULTILINE, Pattern, search
+from re import Pattern, search
 from typing import TYPE_CHECKING, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
 from pytest import raises
 
-from tests.conftest import FLAKY, SKIPIF_CI, traceback_func_two
+from tests.conftest import SKIPIF_CI
 from tests.test_traceback_funcs.beartype import func_beartype
 from tests.test_traceback_funcs.beartype_error import func_beartype_error_first
 from tests.test_traceback_funcs.chain import func_chain_first
@@ -581,9 +581,6 @@ class TestAssembleExceptionsPaths:
         assert isinstance(exc_path.error, AssertionError)
 
 
-from pytest import mark, param
-
-
 class TestTracebackHandler:
     def test_decorated(self, *, tmp_path: Path, traceback_func_one: str) -> None:
         logger = getLogger(str(tmp_path))
@@ -595,8 +592,9 @@ class TestTracebackHandler:
             logger.exception("message")
         self.assert_file(tmp_path, traceback_func_one)
 
-    @mark.only
-    def test_undecorated(self, *, tmp_path: Path, traceback_func_untraced: str) -> None:
+    def test_undecorated(
+        self, *, tmp_path: Path, traceback_func_untraced: Pattern[str]
+    ) -> None:
         logger = getLogger(str(tmp_path))
         handler = TracebackHandler(path=tmp_path)
         logger.addHandler(handler)
@@ -620,12 +618,12 @@ class TestTracebackHandler:
         files = list(path.iterdir())
         assert len(files) == 1
         with one(files).open() as fh:
-            contents = fh.read().strip("\n")
+            contents = fh.read()
         match expected:
             case str():
                 assert contents == expected
             case Pattern():
-                assert expected.search(contents)
+                assert bool(expected.search(contents))
 
 
 class TestYieldExceptions:

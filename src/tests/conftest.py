@@ -113,12 +113,10 @@ def traceback_func_untraced() -> Pattern[str]:
         strip_and_dedent(
             r"""
             Traceback (most recent call last):
-              File ".*/src/tests/test_traceback\.py", line \d+, in
-            test_undecorated
+              File ".*/src/tests/test_traceback\.py", line \d+, in test_undecorated
                 _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-              File ".*/src/tests/test_traceback_funcs/untraced\.py",
-            line 13, in func_untraced
+              File ".*/src/tests/test_traceback_funcs/untraced\.py", line 13, in func_untraced
                 assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
                        ^^^^^^^^^^^^^^^^
             AssertionError: Result (56) must be divisible by 10
