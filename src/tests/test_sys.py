@@ -110,7 +110,7 @@ class TestMakeExceptHook:
         self,
         path: Path,
         caplog: LogCaptureFixture,
-        check: Literal["init"] | tuple[Literal["post"], str | Pattern[str]],
+        check: Literal["init"] | tuple[Literal["post"], Pattern[str]],
         /,
     ) -> None:
         TestSetupLogging.assert_files(path, check)
