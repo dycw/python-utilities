@@ -2,15 +2,18 @@ from __future__ import annotations
 
 from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from pytest import LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
 
+from tests.test_traceback import TestTracebackHandler
 from tests.test_traceback_funcs.one import func_one
+from tests.test_traceback_funcs.untraced import func_untraced
 from utilities.iterables import one
 from utilities.logging import (
     GetLoggingLevelNumberError,
+    LoggerOrName,
     LogLevel,
     _AdvancedLogRecord,
     add_filters,
@@ -22,6 +25,7 @@ from utilities.logging import (
     temp_handler,
     temp_logger,
 )
+from utilities.platform import SYSTEM
 from utilities.pytest import skipif_windows
 from utilities.typing import get_args
 
@@ -55,13 +59,18 @@ class TestGetDefaultLoggingPath:
 class TestGetLogger:
     def test_logger(self) -> None:
         logger = getLogger(__name__)
-        result = get_logger(logger)
+        result = get_logger(logger=logger)
         assert result is logger
 
     def test_str(self) -> None:
-        result = get_logger(__name__)
+        result = get_logger(logger=__name__)
         assert isinstance(result, Logger)
         assert result.name == __name__
+
+    def test_none(self) -> None:
+        result = get_logger()
+        assert isinstance(result, Logger)
+        assert result.name == "root"
 
 
 class TestGetLoggingLevelNumber:
@@ -92,34 +101,37 @@ class TestLogLevel:
 
 class TestSetupLogging:
     @skipif_windows
-    def test_main(self, *, tmp_path: Path) -> None:
-        name = TestSetupLogging.test_main.__qualname__
-        setup_logging(logger_name=name, files_dir=tmp_path)
+    def test_decorated(self, *, tmp_path: Path) -> None:
+        name = str(tmp_path)
+        setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 6
-        files = list(tmp_path.iterdir())
-        assert len(files) == 5
-        names = {f.name for f in files}
-        expected = {
-            ".__debug.txt.lock",
-            ".__info.txt.lock",
-            "debug.txt",
-            "info.txt",
-            "plain",
-        }
-        assert names == expected
+        self.assert_files(tmp_path, "init")
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             logger.exception("message")
-        assert tmp_path.joinpath("errors").is_dir()
+        self.assert_files(tmp_path, "post-decorated")
+
+    @skipif_windows
+    def test_undecorated(self, *, tmp_path: Path) -> None:
+        name = str(tmp_path)
+        setup_logging(logger=name, files_dir=tmp_path)
+        logger = getLogger(name)
+        assert len(logger.handlers) == 6
+        self.assert_files(tmp_path, "init")
+        try:
+            _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError:
+            logger.exception("message")
+        self.assert_files(tmp_path, "post-undecorated")
 
     @skipif_windows
     def test_regular_percent_formatting(
         self, *, caplog: LogCaptureFixture, tmp_path: Path
     ) -> None:
-        name = TestSetupLogging.test_regular_percent_formatting.__qualname__
-        setup_logging(logger_name=name, files_dir=tmp_path)
+        name = str(tmp_path)
+        setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("int: %d, float: %.2f", 1, 12.3456)
         record = one(caplog.records)
@@ -131,8 +143,8 @@ class TestSetupLogging:
     def test_new_brace_formatting(
         self, *, caplog: LogCaptureFixture, tmp_path: Path
     ) -> None:
-        name = TestSetupLogging.test_new_brace_formatting.__qualname__
-        setup_logging(logger_name=name, files_dir=tmp_path)
+        name = str(tmp_path)
+        setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("int: {:d}, float: {:.2f}, percent: {:.2%}", 1, 12.3456, 0.123456)
         record = one(caplog.records)
@@ -142,15 +154,15 @@ class TestSetupLogging:
 
     @skipif_windows
     def test_no_console(self, *, tmp_path: Path) -> None:
-        name = TestSetupLogging.test_no_console.__qualname__
-        setup_logging(logger_name=name, console_level=None, files_dir=tmp_path)
+        name = str(tmp_path)
+        setup_logging(logger=name, console_level=None, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 5
 
     @skipif_windows
     def test_zoned_datetime(self, *, caplog: LogCaptureFixture, tmp_path: Path) -> None:
-        name = TestSetupLogging.test_zoned_datetime.__qualname__
-        setup_logging(logger_name=name, files_dir=tmp_path)
+        name = str(tmp_path)
+        setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("")
         record = one(caplog.records)
@@ -160,28 +172,52 @@ class TestSetupLogging:
 
     @skipif_windows
     def test_extra(self, *, tmp_path: Path) -> None:
-        name = TestSetupLogging.test_extra.__qualname__
+        name = str(tmp_path)
 
-        def extra(logger: Logger, /) -> None:
+        def extra(logger: LoggerOrName | None, /) -> None:
             handler = FileHandler(tmp_path.joinpath("extra.log"))
             handler.setLevel(DEBUG)
-            logger.addHandler(handler)
+            get_logger(logger=logger).addHandler(handler)
 
-        setup_logging(logger_name=name, files_dir=tmp_path, extra=extra)
+        setup_logging(logger=name, files_dir=tmp_path, extra=extra)
         logger = getLogger(name)
         logger.info("")
         assert len(list(tmp_path.iterdir())) == 6
 
+    @classmethod
+    def assert_files(
+        cls, path: Path, check: Literal["init", "post-undecorated", "post-decorated"]
+    ) -> None:
+        files = list(path.iterdir())
+        names = {f.name for f in files}
+        exp_base = {"debug.txt", "info.txt", "plain"}
+        match SYSTEM:
+            case "windows":
+                expected = exp_base
+            case "mac" | "linux":
+                expected = exp_base | {".__debug.txt.lock", ".__info.txt.lock"}
+        match check:
+            case "init":
+                assert names == expected
+            case "post-undecorated" | "post-decorated":
+                assert names == (expected | {"errors"})
+                errors = path.joinpath("errors")
+                assert errors.is_dir()
+                match check:
+                    case "post-undecorated":
+                        TestTracebackHandler.assert_file(errors, "undecorated")
+                    case "post-decorated":
+                        TestTracebackHandler.assert_file(errors, "decorated")
+
 
 class TestTempHandler:
-    def test_main(self) -> None:
-        name = TestTempHandler.test_main.__qualname__
-        logger = getLogger(name)
+    def test_main(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
         logger.addHandler(h1 := StreamHandler())
         logger.addHandler(h2 := StreamHandler())
         assert len(logger.handlers) == 2
         handler = StreamHandler()
-        with temp_handler(logger, handler):
+        with temp_handler(handler, logger=logger):
             assert len(logger.handlers) == 3
         assert len(logger.handlers) == 2
         assert logger.handlers[0] is h1
@@ -189,25 +225,22 @@ class TestTempHandler:
 
 
 class TestTempLogger:
-    def test_disabled(self) -> None:
-        name = TestTempLogger.test_disabled.__qualname__
-        logger = getLogger(name)
+    def test_disabled(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
         assert not logger.disabled
         with temp_logger(logger, disabled=True):
             assert logger.disabled
         assert not logger.disabled
 
-    def test_level(self) -> None:
-        name = TestTempLogger.test_level.__qualname__
-        logger = getLogger(name)
+    def test_level(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
         assert logger.level == NOTSET
         with temp_logger(logger, level="DEBUG"):
             assert logger.level == DEBUG
         assert logger.level == NOTSET
 
-    def test_propagate(self) -> None:
-        name = TestTempLogger.test_propagate.__qualname__
-        logger = getLogger(name)
+    def test_propagate(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
         assert logger.propagate
         with temp_logger(logger, propagate=False):
             assert not logger.propagate

@@ -2,23 +2,25 @@ from __future__ import annotations
 
 from asyncio import sleep
 from logging import basicConfig
-from re import search
 from sys import exc_info
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pytest import LogCaptureFixture, raises
 
 from tests.conftest import SKIPIF_CI
+from tests.test_logging import TestSetupLogging
+from tests.test_traceback_funcs.one import func_one
+from tests.test_traceback_funcs.untraced import func_untraced
 from utilities.iterables import one
+from utilities.logging import setup_logging
 from utilities.sys import VERSION_MAJOR_MINOR, MakeExceptHookError, make_except_hook
-from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 
 class TestMakeExceptHook:
-    def test_main(self, *, caplog: LogCaptureFixture) -> None:
+    def test_logging(self, *, caplog: LogCaptureFixture) -> None:
         basicConfig(format="{message}", style="{")
         hook = make_except_hook()
         try:
@@ -27,6 +29,37 @@ class TestMakeExceptHook:
             exc_type, exc_val, traceback = exc_info()
             hook(exc_type, exc_val, traceback)
         assert len(caplog.records) == 1
+        record = one(caplog.records)
+        expected = ""
+        assert record.message == expected
+
+    def test_with_setup_logging_decorated(
+        self, *, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
+        name = str(tmp_path)
+        setup_logging(logger=name, files_dir=tmp_path)
+        hook = make_except_hook(logger=name)
+        self._assert_files_and_caplog(tmp_path, caplog, "init")
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError:
+            exc_type, exc_val, traceback = exc_info()
+            hook(exc_type, exc_val, traceback)
+        self._assert_files_and_caplog(tmp_path, caplog, "post-decorated")
+
+    def test_with_setup_logging_undecorated(
+        self, *, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
+        name = str(tmp_path)
+        setup_logging(logger=name, files_dir=tmp_path)
+        hook = make_except_hook(logger=name)
+        self._assert_files_and_caplog(tmp_path, caplog, "init")
+        try:
+            _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError:
+            exc_type, exc_val, traceback = exc_info()
+            hook(exc_type, exc_val, traceback)
+        self._assert_files_and_caplog(tmp_path, caplog, "post-undecorated")
 
     def test_non_error(self) -> None:
         hook = make_except_hook()
@@ -66,38 +99,21 @@ class TestMakeExceptHook:
             hook(exc_type, exc_val, traceback)
         assert flag
 
-    def _assert_assemble(self, tmp_path: Path, caplog: LogCaptureFixture, /) -> None:
-        expected = strip_and_dedent("""
-            ExcPath(
-                frames=[
-                    _Frame(
-                        module='tests.test_traceback_funcs.one',
-                        name='func_one',
-                        code_line='assert result % 10 == 0, f"Result ({result}) must be divisible by 10"',
-                        line_num=16,
-                        args=(1, 2, 3, 4),
-                        kwargs={'c': 5, 'd': 6, 'e': 7},
-                        locals={
-                            'a': 2,
-                            'b': 4,
-                            'c': 10,
-                            'args': (6, 8),
-                            'kwargs': {'d': 12, 'e': 14},
-                            'result': 56
-                        }
-                    )
-                ],
-                error=AssertionError('Result (56) must be divisible by 10')
-            )""")
-        files = list(tmp_path.iterdir())
-        assert len(files) == 1
-        file = one(files)
-        assert search(r"^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.txt$", file.name)
-        with file.open("r") as fh:
-            assert fh.read() == expected
-
-        record = one(caplog.records)
-        assert record.message == expected
+    def _assert_files_and_caplog(
+        self,
+        path: Path,
+        caplog: LogCaptureFixture,
+        check: Literal["init", "post-undecorated", "post-decorated"],
+        /,
+    ) -> None:
+        TestSetupLogging.assert_files(path, check)
+        match check:
+            case "init":
+                assert len(caplog.records) == 0
+            case "post-undecorated" | "post-decorated":
+                assert len(caplog.records) == 1
+                record = one(caplog.records)
+                assert record.message == ""
 
 
 class TestVersionMajorMinor:
