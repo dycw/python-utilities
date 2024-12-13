@@ -17,6 +17,7 @@ from utilities.sys import VERSION_MAJOR_MINOR, MakeExceptHookError, make_except_
 
 if TYPE_CHECKING:
     from pathlib import Path
+    from re import Pattern
 
 
 class TestMakeExceptHook:
@@ -34,7 +35,7 @@ class TestMakeExceptHook:
         assert record.message == expected
 
     def test_with_setup_logging_decorated(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture
+        self, *, tmp_path: Path, caplog: LogCaptureFixture, traceback_func_one: str
     ) -> None:
         name = str(tmp_path)
         setup_logging(logger=name, files_dir=tmp_path)
@@ -45,10 +46,14 @@ class TestMakeExceptHook:
         except AssertionError:
             exc_type, exc_val, traceback = exc_info()
             hook(exc_type, exc_val, traceback)
-        self._assert_files_and_caplog(tmp_path, caplog, "post-decorated")
+        self._assert_files_and_caplog(tmp_path, caplog, ("post", traceback_func_one))
 
     def test_with_setup_logging_undecorated(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture
+        self,
+        *,
+        tmp_path: Path,
+        caplog: LogCaptureFixture,
+        traceback_func_untraced: Pattern[str],
     ) -> None:
         name = str(tmp_path)
         setup_logging(logger=name, files_dir=tmp_path)
@@ -59,7 +64,9 @@ class TestMakeExceptHook:
         except AssertionError:
             exc_type, exc_val, traceback = exc_info()
             hook(exc_type, exc_val, traceback)
-        self._assert_files_and_caplog(tmp_path, caplog, "post-undecorated")
+        self._assert_files_and_caplog(
+            tmp_path, caplog, ("post", traceback_func_untraced)
+        )
 
     def test_non_error(self) -> None:
         hook = make_except_hook()
@@ -103,14 +110,14 @@ class TestMakeExceptHook:
         self,
         path: Path,
         caplog: LogCaptureFixture,
-        check: Literal["init", "post-undecorated", "post-decorated"],
+        check: Literal["init"] | tuple[Literal["post"], str | Pattern[str]],
         /,
     ) -> None:
         TestSetupLogging.assert_files(path, check)
         match check:
             case "init":
                 assert len(caplog.records) == 0
-            case "post-undecorated" | "post-decorated":
+            case ("post", _):
                 assert len(caplog.records) == 1
                 record = one(caplog.records)
                 assert record.message == ""

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pytest import LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
@@ -28,6 +28,9 @@ from utilities.logging import (
 from utilities.platform import SYSTEM
 from utilities.pytest import skipif_windows
 from utilities.typing import get_args
+
+if TYPE_CHECKING:
+    from re import Pattern
 
 
 class TestAddFilters:
@@ -101,7 +104,7 @@ class TestLogLevel:
 
 class TestSetupLogging:
     @skipif_windows
-    def test_decorated(self, *, tmp_path: Path) -> None:
+    def test_decorated(self, *, tmp_path: Path, traceback_func_one: str) -> None:
         name = str(tmp_path)
         setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
@@ -111,7 +114,7 @@ class TestSetupLogging:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
             logger.exception("message")
-        self.assert_files(tmp_path, "post-decorated")
+        self.assert_files(tmp_path, traceback_func_one)
 
     @skipif_windows
     def test_undecorated(self, *, tmp_path: Path) -> None:
@@ -186,7 +189,9 @@ class TestSetupLogging:
 
     @classmethod
     def assert_files(
-        cls, path: Path, check: Literal["init", "post-undecorated", "post-decorated"]
+        cls,
+        path: Path,
+        check: Literal["init"] | tuple[Literal["post"], str | Pattern[str]],
     ) -> None:
         files = list(path.iterdir())
         names = {f.name for f in files}
@@ -199,15 +204,11 @@ class TestSetupLogging:
         match check:
             case "init":
                 assert names == expected
-            case "post-undecorated" | "post-decorated":
+            case ("post", str_or_pattern):
                 assert names == (expected | {"errors"})
                 errors = path.joinpath("errors")
                 assert errors.is_dir()
-                match check:
-                    case "post-undecorated":
-                        TestTracebackHandler.assert_file(errors, "undecorated")
-                    case "post-decorated":
-                        TestTracebackHandler.assert_file(errors, "decorated")
+                TestTracebackHandler.assert_file(errors, str_or_pattern)
 
 
 class TestTempHandler:
