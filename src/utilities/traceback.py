@@ -4,11 +4,11 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
-from logging import NOTSET, Formatter, Handler, LogRecord
+from logging import Formatter, LogRecord
 from pathlib import Path
 from sys import exc_info
 from textwrap import indent
-from traceback import FrameSummary, TracebackException, print_exception
+from traceback import FrameSummary, TracebackException, format_exception
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -27,8 +27,6 @@ from typing import (
 
 from typing_extensions import override
 
-from utilities.atomicwrites import writer
-from utilities.datetime import get_now
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     ensure_not_none,
@@ -37,7 +35,6 @@ from utilities.functions import (
     get_func_qualname,
 )
 from utilities.iterables import one
-from utilities.pathlib import resolve_path
 from utilities.rich import yield_call_args_repr, yield_mapping_repr
 from utilities.text import ensure_str
 
@@ -46,7 +43,7 @@ if TYPE_CHECKING:
     from logging import _FormatStyle
     from types import FrameType
 
-    from utilities.types import PathLikeOrCallable, StrMapping
+    from utilities.types import StrMapping
 
 
 _F = TypeVar("_F", bound=Callable[..., Any])
@@ -78,72 +75,19 @@ class RichTracebackFormatter(Formatter):
 
     @override
     def format(self, record: LogRecord) -> str:
-        from tzlocal import get_localzone
-
-        extra_ignore = _LOG_RECORD_DEFAULT_ATTRS | (
-            set() if self._extra_ignore is None else self._extra_ignore
-        )
-        extra = {k: v for k, v in record.__dict__.items() if k not in extra_ignore}
-        log_record = OrjsonLogRecord(
-            name=record.name,
-            level=record.levelno,
-            path_name=Path(record.pathname),
-            line_num=record.lineno,
-            message=record.getMessage(),
-            datetime=dt.datetime.fromtimestamp(record.created, tz=get_localzone()),
-            func_name=record.funcName,
-            extra=extra if len(extra) >= 1 else None,
-        )
-        return serialize(
-            log_record,
-            before=self._before,
-            dataclass_final_hook=self._dataclass_final_hook,
-        ).decode()
-
-
-class TracebackHandler(Handler):
-    """Handler for emitting tracebacks to individual files."""
-
-    @override
-    def __init__(
-        self,
-        *,
-        level: int = NOTSET,
-        path: PathLikeOrCallable | None = None,
-        max_width: int = 80,
-        indent_size: int = 4,
-        max_length: int | None = None,
-        max_string: int | None = None,
-        max_depth: int | None = None,
-        expand_all: bool = False,
-    ) -> None:
-        super().__init__(level=level)
-        self._path = path
-        self._max_width = max_width
-        self._indent_size = indent_size
-        self._max_length = max_length
-        self._max_string = max_string
-        self._max_depth = max_depth
-        self._expand_all = expand_all
-
-    @override
-    def emit(self, record: LogRecord) -> None:
-        if (record.exc_info is None) or ((exc_value := record.exc_info[1]) is None):
-            return
-        assembled = get_rich_traceback(exc_value)
-        path = (
-            resolve_path(path=self._path)
-            .joinpath(get_now(time_zone="local").strftime("%Y-%m-%dT%H-%M-%S"))
-            .with_suffix(".txt")
-        )
-        with writer(path) as temp, temp.open(mode="w") as fh:
-            match assembled:
-                case ExcChainTB() | ExcGroupTB() | ExcTB():
-                    _ = fh.write(repr(assembled))
-                case BaseException():
-                    print_exception(assembled, file=fh)
-                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-                    assert_never(never)
+        if record.exc_info is None:
+            return f"ERROR: {record.exc_info=}"
+        _, exc_value, _ = record.exc_info
+        if exc_value is None:
+            return f"ERROR: {exc_value=}"
+        error = get_rich_traceback(exc_value)
+        match error:
+            case ExcChainTB() | ExcGroupTB() | ExcTB():
+                return repr(error)
+            case BaseException():
+                return "\n".join(format_exception(error))
+            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                assert_never(never)
 
 
 @dataclass(repr=False, kw_only=True, slots=True)
@@ -609,7 +553,7 @@ __all__ = [
     "ExcInfo",
     "ExcTB",
     "OptExcInfo",
-    "TracebackHandler",
+    "RichTracebackFormatter",
     "get_rich_traceback",
     "trace",
     "yield_exceptions",

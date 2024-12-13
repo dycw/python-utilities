@@ -28,7 +28,7 @@ from utilities.atomicwrites import writer
 from utilities.datetime import get_now, maybe_sub_pct_y
 from utilities.git import get_repo_root
 from utilities.pathlib import ensure_suffix, resolve_path
-from utilities.traceback import TracebackHandler
+from utilities.traceback import RichTracebackFormatter
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
