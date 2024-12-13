@@ -22,6 +22,7 @@ functools
 getpass
 git
 hashlib
+hatch
 http
 humps
 hypothesis

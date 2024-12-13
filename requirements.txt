@@ -200,7 +200,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.17.0
+narwhals==1.18.1
     # via
     #   altair
     #   vegafusion
