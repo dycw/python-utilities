@@ -101,7 +101,7 @@ class TestLogLevel:
 class TestSetupLogging:
     @skipif_windows
     def test_decorated(self, *, tmp_path: Path) -> None:
-        name = TestSetupLogging.test_decorated.__qualname__
+        name = str(tmp_path)
         setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 6
@@ -114,7 +114,7 @@ class TestSetupLogging:
 
     @skipif_windows
     def test_undecorated(self, *, tmp_path: Path) -> None:
-        name = TestSetupLogging.test_undecorated.__qualname__
+        name = str(tmp_path)
         setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 6
@@ -129,7 +129,7 @@ class TestSetupLogging:
     def test_regular_percent_formatting(
         self, *, caplog: LogCaptureFixture, tmp_path: Path
     ) -> None:
-        name = TestSetupLogging.test_regular_percent_formatting.__qualname__
+        name = str(tmp_path)
         setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("int: %d, float: %.2f", 1, 12.3456)
@@ -142,7 +142,7 @@ class TestSetupLogging:
     def test_new_brace_formatting(
         self, *, caplog: LogCaptureFixture, tmp_path: Path
     ) -> None:
-        name = TestSetupLogging.test_new_brace_formatting.__qualname__
+        name = str(tmp_path)
         setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("int: {:d}, float: {:.2f}, percent: {:.2%}", 1, 12.3456, 0.123456)
@@ -153,14 +153,14 @@ class TestSetupLogging:
 
     @skipif_windows
     def test_no_console(self, *, tmp_path: Path) -> None:
-        name = TestSetupLogging.test_no_console.__qualname__
+        name = str(tmp_path)
         setup_logging(logger=name, console_level=None, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 5
 
     @skipif_windows
     def test_zoned_datetime(self, *, caplog: LogCaptureFixture, tmp_path: Path) -> None:
-        name = TestSetupLogging.test_zoned_datetime.__qualname__
+        name = str(tmp_path)
         setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("")
@@ -171,7 +171,7 @@ class TestSetupLogging:
 
     @skipif_windows
     def test_extra(self, *, tmp_path: Path) -> None:
-        name = TestSetupLogging.test_extra.__qualname__
+        name = str(tmp_path)
 
         def extra(logger: LoggerOrName | None, /) -> None:
             handler = FileHandler(tmp_path.joinpath("extra.log"))
@@ -211,9 +211,8 @@ class TestSetupLogging:
 
 
 class TestTempHandler:
-    def test_main(self) -> None:
-        name = TestTempHandler.test_main.__qualname__
-        logger = getLogger(name)
+    def test_main(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
         logger.addHandler(h1 := StreamHandler())
         logger.addHandler(h2 := StreamHandler())
         assert len(logger.handlers) == 2
@@ -226,25 +225,22 @@ class TestTempHandler:
 
 
 class TestTempLogger:
-    def test_disabled(self) -> None:
-        name = TestTempLogger.test_disabled.__qualname__
-        logger = getLogger(name)
+    def test_disabled(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
         assert not logger.disabled
         with temp_logger(logger, disabled=True):
             assert logger.disabled
         assert not logger.disabled
 
-    def test_level(self) -> None:
-        name = TestTempLogger.test_level.__qualname__
-        logger = getLogger(name)
+    def test_level(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
         assert logger.level == NOTSET
         with temp_logger(logger, level="DEBUG"):
             assert logger.level == DEBUG
         assert logger.level == NOTSET
 
-    def test_propagate(self) -> None:
-        name = TestTempLogger.test_propagate.__qualname__
-        logger = getLogger(name)
+    def test_propagate(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
         assert logger.propagate
         with temp_logger(logger, propagate=False):
             assert not logger.propagate

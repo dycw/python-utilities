@@ -36,9 +36,9 @@ class TestMakeExceptHook:
     def test_with_setup_logging_decorated(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
-        logger = TestMakeExceptHook.test_with_setup_logging_decorated.__qualname__
-        setup_logging(logger=logger, files_dir=tmp_path)
-        hook = make_except_hook(logger=logger)
+        name = str(tmp_path)
+        setup_logging(logger=name, files_dir=tmp_path)
+        hook = make_except_hook(logger=name)
         self._assert_files_and_caplog(tmp_path, caplog, "init")
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
@@ -50,9 +50,9 @@ class TestMakeExceptHook:
     def test_with_setup_logging_undecorated(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
-        logger = TestMakeExceptHook.test_with_setup_logging_undecorated.__qualname__
-        setup_logging(logger=logger, files_dir=tmp_path)
-        hook = make_except_hook(logger=logger)
+        name = str(tmp_path)
+        setup_logging(logger=name, files_dir=tmp_path)
+        hook = make_except_hook(logger=name)
         self._assert_files_and_caplog(tmp_path, caplog, "init")
         try:
             _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)

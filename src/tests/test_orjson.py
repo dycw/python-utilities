@@ -65,9 +65,9 @@ if TYPE_CHECKING:
 
 
 class TestOrjsonFormatter:
-    def test_main(self) -> None:
+    def test_main(self, *, tmp_path: Path) -> None:
         buffer = StringIO()
-        name = TestOrjsonFormatter.test_main.__qualname__
+        name = str(tmp_path)
         logger = getLogger(name)
         logger.setLevel(DEBUG)
         handler = StreamHandler(buffer)

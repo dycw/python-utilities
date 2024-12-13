@@ -467,8 +467,7 @@ class TestAssembleExceptionsPaths:
 
 class TestTracebackHandler:
     def test_decorated(self, *, tmp_path: Path) -> None:
-        name = TestTracebackHandler.test_decorated.__qualname__
-        logger = getLogger(name)
+        logger = getLogger(str(tmp_path))
         handler = TracebackHandler(path=tmp_path)
         logger.addHandler(handler)
         try:
@@ -478,8 +477,7 @@ class TestTracebackHandler:
         self.assert_file(tmp_path, "decorated")
 
     def test_undecorated(self, *, tmp_path: Path) -> None:
-        name = TestTracebackHandler.test_undecorated.__qualname__
-        logger = getLogger(name)
+        logger = getLogger(str(tmp_path))
         handler = TracebackHandler(path=tmp_path)
         logger.addHandler(handler)
         try:
@@ -489,8 +487,7 @@ class TestTracebackHandler:
         self.assert_file(tmp_path, "undecorated")
 
     def test_no_logging(self, *, tmp_path: Path) -> None:
-        name = TestTracebackHandler.test_no_logging.__qualname__
-        logger = getLogger(name)
+        logger = getLogger(str(tmp_path))
         logger.setLevel(ERROR)
         handler = TracebackHandler(path=tmp_path)
         handler.setLevel(ERROR)

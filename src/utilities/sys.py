@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import partial
 from inspect import iscoroutinefunction
 from sys import version_info
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import override
 
@@ -58,10 +58,8 @@ def _make_except_hook_inner(
     if exc_val is None:
         raise MakeExceptHookError
     logger_use = get_logger(logger=logger)
-    # assert 0, logger_use.handlers
     exc_info = (exc_type, exc_val, traceback)
-    logger_use.exception(message, exc_info=exc_info, extra=extra)
-    # logger_use.error("hello", exc_info=exc_info)
+    logger_use.exception(message, exc_info=cast(Any, exc_info), extra=extra)
     async_callbacks: list[Callable[[], Coroutine1[None]]] = []
     if callbacks is not None:
         for callback in callbacks:
