@@ -94,10 +94,8 @@ class TracebackHandler(Handler):
         )
         with writer(path) as temp, temp.open(mode="w") as fh:
             match assembled:
-                case ExcChain():
+                case ExcChain() | ExcGroup() | ExcPath():
                     _ = fh.write(repr(assembled))
-                case ExcGroup() | ExcPath():
-                    _ = fh.write(assembled.format())
                 case BaseException():
                     print_exception(assembled, file=fh)
                 case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
@@ -199,12 +197,12 @@ class ExcChain(Generic[_TExc]):
         total = len(self.errors)
         for i, errors in enumerate(self.errors):
             lines.append(f"Exception chain {i + 1}/{total}:")
-            match errors:  # pragma: no cover
-                case ExcGroup():
+            match errors:
+                case ExcGroup():  # pragma: no cover
                     lines.append(errors.format(index=i, total=total, depth=2))
-                case ExcPath():
+                case ExcPath():  # pragma: no cover
                     lines.append(errors.format(depth=2))
-                case BaseException():
+                case BaseException():  # pragma: no cover
                     lines.append(format_exception(errors, depth=2))
                 case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                     assert_never(never)
@@ -235,10 +233,10 @@ class ExcGroup(Generic[_TExc]):
             lines.append(
                 indent(f"Group error {i + 1}/{total_sub_errors}:", 2 * _INDENT)
             )
-            match errors:  # pragma: no cover
-                case ExcGroup() | ExcPath():
+            match errors:
+                case ExcGroup() | ExcPath():  # pragma: no cover
                     lines.append(errors.format(depth=4))
-                case BaseException():
+                case BaseException():  # pragma: no cover
                     lines.append(format_exception(errors, depth=4))
                 case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                     assert_never(never)

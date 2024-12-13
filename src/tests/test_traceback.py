@@ -78,7 +78,7 @@ class TestAssembleExceptionsPaths:
         res_frame = frame.format(error=exc_path.error)
         assert res_frame == traceback_func_one
 
-        res_path = exc_path.format()
+        res_path = repr(exc_path)
         assert res_path == traceback_func_one
 
     def test_func_two(self, *, traceback_func_two: str) -> None:
@@ -111,7 +111,7 @@ class TestAssembleExceptionsPaths:
         assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_path.error, AssertionError)
 
-        res_path = exc_path.format()
+        res_path = repr(exc_path)
         assert res_path == traceback_func_two
 
     def test_func_beartype(self) -> None:
@@ -365,7 +365,7 @@ class TestAssembleExceptionsPaths:
         assert frame.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_path.error, AssertionError)
 
-        res_group = exc_group.format()
+        res_group = repr(exc_group)
         exp_group = strip_and_dedent(
             """
             Exception group 1/1:
