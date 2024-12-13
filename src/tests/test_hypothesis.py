@@ -510,7 +510,7 @@ class TestReducedExamples:
         def test() -> None:
             pass
 
-        result = cast(Any, test)._hypothesis_internal_use_settings.max_examples  # noqa: SLF001
+        result = cast(Any, test)._hypothesis_internal_use_settings.max_examples
         expected = max(round(frac * settings().max_examples), 1)
         assert result == expected
 

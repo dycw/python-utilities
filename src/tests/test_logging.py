@@ -172,8 +172,8 @@ class TestSetupLogging:
         logger.info("")
         record = one(caplog.records)
         assert isinstance(record, _AdvancedLogRecord)
-        assert isinstance(record.zoned_datetime, ZonedDateTime)
-        assert isinstance(record.zoned_datetime_str, str)
+        assert isinstance(record._zoned_datetime, ZonedDateTime)
+        assert isinstance(record._zoned_datetime_str, str)
 
     @skipif_windows
     def test_extra(self, *, tmp_path: Path) -> None:
