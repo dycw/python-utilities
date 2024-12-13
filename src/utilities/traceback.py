@@ -336,9 +336,9 @@ def assemble_exception_paths(
             err = cast(_TExc, err)
             return _assemble_exception_paths_no_chain(err)
         case errors:
-            errs = cast(list[_TExc], errors[::-1])
+            errors = cast(list[_TExc], errors)
             return ExcChain(
-                errors=[_assemble_exception_paths_no_chain(e) for e in errs]
+                errors=[_assemble_exception_paths_no_chain(e) for e in errors]
             )
 
 
