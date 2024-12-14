@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from re import sub
 from typing import (
     TYPE_CHECKING,
@@ -10,6 +10,7 @@ from typing import (
     Literal,
     Self,
     TypeAlias,
+    TypedDict,
     TypeGuard,
     TypeVar,
     assert_never,
@@ -481,15 +482,20 @@ _DateOrDatetime: TypeAlias = Literal["date", "datetime"]
 _TPeriod = TypeVar("_TPeriod", dt.date, dt.datetime)
 
 
+class _PeriodAsDict(TypedDict, Generic[_TPeriod]):
+    start: _TPeriod
+    end: _TPeriod
+
+
 @dataclass(repr=False, order=True, unsafe_hash=True, slots=True)
 class Period(Generic[_TPeriod]):
     """A period of time."""
 
     start: _TPeriod
     end: _TPeriod
-    req_duration: MaybeIterable[dt.timedelta] | None = None
-    min_duration: dt.timedelta | None = None
-    max_duration: dt.timedelta | None = None
+    req_duration: MaybeIterable[dt.timedelta] | None = field(default=None, kw_only=True)
+    min_duration: dt.timedelta | None = field(default=None, kw_only=True)
+    max_duration: dt.timedelta | None = field(default=None, kw_only=True)
 
     def __post_init__(self) -> None:
         start_date_not_datetime, end_date_not_datetime = map(
@@ -632,6 +638,10 @@ class Period(Generic[_TPeriod]):
                     ) from None
             case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                 assert_never(never)
+
+    def to_dict(self) -> _PeriodAsDict:
+        """Convert the period to a dictionary."""
+        return {"start": self.start, "end": self.end}
 
 
 @dataclass(kw_only=True, slots=True)

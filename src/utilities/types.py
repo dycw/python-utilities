@@ -13,6 +13,7 @@ from utilities.functions import get_class_name
 if TYPE_CHECKING:
     from collections.abc import Container, Hashable, Sized
 
+
 Number: TypeAlias = int | float
 Duration: TypeAlias = Number | dt.timedelta
 PathLike: TypeAlias = Path | str
