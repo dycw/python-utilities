@@ -5,9 +5,11 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, unique
-from functools import partial
+from functools import partial, reduce
+from itertools import chain
 from logging import Formatter, LogRecord
 from math import isinf, isnan
+from operator import or_
 from pathlib import Path
 from re import Match, Pattern
 from typing import TYPE_CHECKING, Any, Literal, Never, TypeAlias, assert_never, cast
@@ -22,6 +24,7 @@ from orjson import (
 )
 from typing_extensions import override
 
+from utilities.concurrent import concurrent_map
 from utilities.dataclasses import Dataclass, asdict_without_defaults
 from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
@@ -44,7 +47,7 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from logging import _FormatStyle
 
-    from utilities.pqdm import _PARALLELISM
+    from utilities.concurrent import Parallelism
 
 
 # serialize
@@ -557,50 +560,66 @@ class OrjsonLogRecord:
     extra: StrMapping | None = None
 
 
+@dataclass(kw_only=True, slots=True)
+class _GetLogRecordsOutput:
+    path: Path
+    files: list[Path] = field(default_factory=list)
+    num_lines: int = 0
+    log_records: list[OrjsonLogRecord] = field(default_factory=list)
+    num_errors: int = 0
+    missing: set[str] = field(default_factory=set)
+    first_errors: list[Exception] = field(default_factory=list)
+
+    @property
+    def frac_success(self) -> float:
+        return self.num_success / self.num_lines
+
+    @property
+    def frac_error(self) -> float:
+        return self.num_errors / self.num_lines
+
+    @property
+    def num_files(self) -> int:
+        return len(self.files)
+
+    @property
+    def num_success(self) -> int:
+        return len(self.log_records)
+
+
 def get_log_records(
     path: PathLike,
     /,
     *,
-    parallelism: _PARALLELISM | None = None,
+    parallelism: Parallelism = "processes",
     objects: AbstractSet[type[Any]] | None = None,
-) -> list[OrjsonLogRecord]:
+) -> _GetLogRecordsOutput:
     """Get the log records under a directory."""
-    # init
-    records: list[OrjsonLogRecord] = []
-    num_lines = num_errors = 0
-    first_error: Exception | None = None
-
-    # iterator
     path = Path(path)
     files = list(path.iterdir())
-    it_files = tqdm(files)
-    for file in it_files:
-        it_files.set_description(f"File = {file}")
-        with file.open() as fh:
-            lines = fh.readlines()
-        num_lines += len(lines)
-        it_lines = tqdm(lines, leave=False)
-        for line in it_lines:
-            try:
-                record = deserialize(line.encode(), objects=objects)
-            except Exception as error:  # noqa: BLE001
-                num_errors += 1
-                if first_error is None:
-                    first_error = error
-            else:
-                records.append(record)
-
-    # report
-    _LOGGER.info(
-        "Processed {} file(s)/{} line(s) into {} {.1%} records",
-        len(files),
-        num_lines,
-        len(records),
-        len(records) / num_lines,
+    func = partial(_get_log_records_one, objects=objects)
+    try:
+        from utilities.pqdm import pqdm_map
+    except ModuleNotFoundError:
+        outputs = concurrent_map(func, files, parallelism=parallelism)
+    else:
+        outputs = pqdm_map(func, files, parallelism=parallelism)
+    return _GetLogRecordsOutput(
+        path=path,
+        files=files,
+        num_lines=sum(o.num_lines for o in outputs),
+        log_records=sorted(
+            chain.from_iterable(o.log_records for o in outputs),
+            key=lambda lr: lr.datetime,
+        ),
+        num_errors=sum(o.num_errors for o in outputs),
+        missing=set(reduce(or_, (o.missing for o in outputs))),
+        first_errors=list(
+            chain.from_iterable(
+                [] if o.first_error is None else [o.first_error] for o in outputs
+            )
+        ),
     )
-    if first_error is not None:
-        _LOGGER.info("First error: {}", first_error)
-    return sorted(records, key=lambda r: r.datetime)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -611,6 +630,18 @@ class _GetLogRecordsOneOutput:
     num_errors: int = 0
     missing: set[str] = field(default_factory=set)
     first_error: Exception | None = None
+
+    @property
+    def frac_success(self) -> float:
+        return self.num_success / self.num_lines
+
+    @property
+    def frac_error(self) -> float:
+        return self.num_errors / self.num_lines
+
+    @property
+    def num_success(self) -> int:
+        return len(self.log_records)
 
 
 def _get_log_records_one(
@@ -642,7 +673,7 @@ def _get_log_records_one(
     return _GetLogRecordsOneOutput(
         path=path,
         num_lines=len(lines),
-        log_records=log_records,
+        log_records=sorted(log_records, key=lambda lr: lr.datetime),
         num_errors=num_errors,
         missing=missing,
         first_error=first_error,
@@ -655,5 +686,6 @@ __all__ = [
     "OrjsonLogRecord",
     "SerializeError",
     "deserialize",
+    "get_log_records",
     "serialize",
 ]

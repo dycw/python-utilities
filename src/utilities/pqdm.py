@@ -24,7 +24,7 @@ _T = TypeVar("_T")
 _ExceptionBehaviour: TypeAlias = Literal["ignore", "immediate", "deferred"]
 
 
-def pmap(
+def pqdm_map(
     func: Callable[..., _T],
     /,
     *iterables: Iterable[Any],
@@ -37,7 +37,7 @@ def pmap(
     **kwargs: Any,
 ) -> list[_T]:
     """Parallel map, powered by `pqdm`."""
-    return pstarmap(
+    return pqdm_starmap(
         func,
         zip(*iterables, strict=True),
         parallelism=parallelism,
@@ -50,7 +50,7 @@ def pmap(
     )
 
 
-def pstarmap(
+def pqdm_starmap(
     func: Callable[..., _T],
     iterable: Iterable[tuple[Any, ...]],
     /,
@@ -103,4 +103,4 @@ def _get_desc(
     return {} if desc_use is None else {"desc": desc_use}
 
 
-__all__ = ["pmap", "pstarmap"]
+__all__ = ["pqdm_map", "pqdm_starmap"]
