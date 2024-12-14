@@ -25,7 +25,6 @@ from typing import (
     Any,
     Generic,
     Literal,
-    Never,
     Self,
     TypeGuard,
     TypeVar,
@@ -159,13 +158,14 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
 
     @override
     def __str__(self) -> str:
-        match list(self._yield_parts()):
+        parts = list(self._yield_parts())
+        match parts:
             case (desc,):
                 pass
             case first, second:
                 desc = f"{first} and {second}"
-            case _ as never:  # pragma: no cover
-                assert_never(cast(Never, never))
+            case _:  # pragma: no cover
+                raise ImpossibleCaseError(case=[f"{parts=}"])
         return f"Iterables {reprlib.repr(self.left)} and {reprlib.repr(self.right)} must be equal; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
@@ -304,15 +304,16 @@ class CheckMappingsEqualError(Exception, Generic[_K, _V]):
 
     @override
     def __str__(self) -> str:
-        match list(self._yield_parts()):
+        parts = list(self._yield_parts())
+        match parts:
             case (desc,):
                 pass
             case first, second:
                 desc = f"{first} and {second}"
             case first, second, third:
                 desc = f"{first}, {second} and {third}"
-            case _ as never:  # pragma: no cover
-                assert_never(cast(Never, never))
+            case _:  # pragma: no cover
+                raise ImpossibleCaseError(case=[f"{parts=}"])
         return f"Mappings {reprlib.repr(self.left)} and {reprlib.repr(self.right)} must be equal; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
@@ -349,13 +350,14 @@ class CheckSetsEqualError(Exception, Generic[_T]):
 
     @override
     def __str__(self) -> str:
-        match list(self._yield_parts()):
+        parts = list(self._yield_parts())
+        match parts:
             case (desc,):
                 pass
             case first, second:
                 desc = f"{first} and {second}"
-            case _ as never:  # pragma: no cover
-                assert_never(cast(Never, never))
+            case _:  # pragma: no cover
+                raise ImpossibleCaseError(case=[f"{parts=}"])
         return f"Sets {reprlib.repr(self.left)} and {reprlib.repr(self.right)} must be equal; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
@@ -392,13 +394,14 @@ class CheckSubMappingError(Exception, Generic[_K, _V]):
 
     @override
     def __str__(self) -> str:
-        match list(self._yield_parts()):
+        parts = list(self._yield_parts())
+        match parts:
             case (desc,):
                 pass
             case first, second:
                 desc = f"{first} and {second}"
-            case _ as never:  # pragma: no cover
-                assert_never(cast(Never, never))
+            case _:  # pragma: no cover
+                raise ImpossibleCaseError(case=[f"{parts=}"])
         return f"Mapping {reprlib.repr(self.left)} must be a submapping of {reprlib.repr(self.right)}; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
@@ -456,13 +459,14 @@ class CheckSuperMappingError(Exception, Generic[_K, _V]):
 
     @override
     def __str__(self) -> str:
-        match list(self._yield_parts()):
+        parts = list(self._yield_parts())
+        match parts:
             case (desc,):
                 pass
             case first, second:
                 desc = f"{first} and {second}"
-            case _ as never:  # pragma: no cover
-                assert_never(cast(Never, never))
+            case _:  # pragma: no cover
+                raise ImpossibleCaseError(case=[f"{parts=}"])
         return f"Mapping {reprlib.repr(self.left)} must be a supermapping of {reprlib.repr(self.right)}; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:

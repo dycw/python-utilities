@@ -4,10 +4,18 @@ from os import getenv
 from typing import Literal
 
 from hypothesis import given
-from hypothesis.strategies import booleans, sampled_from
+from hypothesis.strategies import booleans, integers, sampled_from
+from pytest import raises
 
 from utilities.hypothesis import text_ascii
-from utilities.os import CPU_COUNT, get_cpu_count, get_env_var, temp_environ
+from utilities.os import (
+    CPU_COUNT,
+    GetCPUUseError,
+    get_cpu_count,
+    get_cpu_use,
+    get_env_var,
+    temp_environ,
+)
 from utilities.pytest import skipif_windows
 
 text = text_ascii(min_size=1, max_size=10)
@@ -17,12 +25,29 @@ def _prefix(text: str, /) -> str:
     return f"_TEST_OS_{text}"
 
 
-class TestCPUCount:
+class TestGetCPUCount:
     def test_function(self) -> None:
         assert isinstance(get_cpu_count(), int)
 
     def test_constant(self) -> None:
         assert isinstance(CPU_COUNT, int)
+
+
+class TestGetCPUUse:
+    @given(n=integers(min_value=1))
+    def test_int(self, *, n: int) -> None:
+        result = get_cpu_use(n=n)
+        assert result == n
+
+    def test_all(self) -> None:
+        result = get_cpu_use(n="all")
+        assert isinstance(result, int)
+        assert result >= 1
+
+    @given(n=integers(max_value=0))
+    def test_error(self, *, n: int) -> None:
+        with raises(GetCPUUseError, match=r"Invalid number of CPUs to use: -?\d+"):
+            _ = get_cpu_use(n=n)
 
 
 class TestGetEnvVar:

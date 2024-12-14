@@ -63,12 +63,13 @@ def pstarmap(
     **kwargs: Any,
 ) -> list[_T]:
     """Parallel starmap, powered by `pqdm`."""
+    apply = partial(apply_starmap, func)
     n_jobs = _get_n_jobs(n_jobs)
     match parallelism:
         case "processes":
             result = processes.pqdm(
                 iterable,
-                partial(apply_starmap, func),
+                apply,
                 n_jobs=n_jobs,
                 argument_type="args",
                 bounded=bounded,
