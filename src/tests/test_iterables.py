@@ -51,8 +51,7 @@ from utilities.iterables import (
     ResolveIncludeAndExcludeError,
     SortIterableError,
     always_iterable,
-    apply_to_tuple,
-    apply_to_varargs,
+    apply_starmap,
     check_bijection,
     check_duplicates,
     check_iterables_equal,
@@ -128,18 +127,10 @@ class TestAlwaysIterable:
         assert list(always_iterable(yield_ints())) == [0, 1]
 
 
-class TestApplyToTuple:
+class TestApplyStarMap:
     @given(x=integers(), y=integers())
     def test_main(self, *, x: int, y: int) -> None:
-        result = apply_to_tuple(sub, (x, y))
-        expected = x - y
-        assert result == expected
-
-
-class TestApplyToVarArgs:
-    @given(x=integers(), y=integers())
-    def test_main(self, *, x: int, y: int) -> None:
-        result = apply_to_varargs(sub, x, y)
+        result = apply_starmap(sub, x, y)
         expected = x - y
         assert result == expected
 

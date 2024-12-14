@@ -6,10 +6,10 @@ from operator import neg, sub
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import given
-from hypothesis.strategies import integers, lists, sampled_from, tuples
+from hypothesis.strategies import integers, sampled_from
 from pytest import mark, param
 
-from utilities.concurrent import Parallelism
+from utilities.concurrent import _Parallelism
 from utilities.functions import get_class_name
 from utilities.hypothesis import int32s, settings_with_reduced_examples
 from utilities.iterables import transpose
@@ -49,12 +49,7 @@ class TestGetDesc:
 
 
 class TestPMap:
-    @given(
-        xs=lists(int32s(), max_size=10),
-        parallelism=sampled_from(get_args(Parallelism)),
-        n_jobs=integers(1, 2),
-    )
-    @settings_with_reduced_examples()
+    @given(parallelism=sampled_from(get_args(_Parallelism)), n_jobs=integers(1, 3))
     def test_unary(
         self, *, xs: list[int], parallelism: Parallelism, n_jobs: int
     ) -> None:
@@ -62,12 +57,7 @@ class TestPMap:
         expected = list(map(neg, xs))
         assert result == expected
 
-    @given(
-        iterable=lists(tuples(int32s(), int32s()), min_size=1, max_size=10),
-        parallelism=sampled_from(get_args(Parallelism)),
-        n_jobs=integers(1, 2),
-    )
-    @settings_with_reduced_examples()
+    @given(parallelism=sampled_from(get_args(_Parallelism)), n_jobs=integers(1, 3))
     def test_binary(
         self, *, iterable: list[tuple[int, int]], parallelism: Parallelism, n_jobs: int
     ) -> None:
