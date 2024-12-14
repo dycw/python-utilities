@@ -77,12 +77,12 @@ def concurrent_starmap(
     chunksize: int = 1,
 ) -> list[_T]:
     """Concurrent map."""
-    get_cpu_use(n=max_workers)
+    max_workers_use = get_cpu_use(n=max_workers)
     apply = partial(apply_starmap, func)
     match parallelism:
         case "processes":
             with ProcessPoolExecutor(
-                max_workers=max_workers,
+                max_workers=max_workers_use,
                 mp_context=mp_context,
                 initializer=initializer,
                 initargs=initargs,
@@ -91,7 +91,7 @@ def concurrent_starmap(
                 result = pool.map(apply, iterable, timeout=timeout, chunksize=chunksize)
         case "threads":
             with ThreadPoolExecutor(
-                max_workers=max_workers,
+                max_workers=max_workers_use,
                 thread_name_prefix=thread_name_prefix,
                 initializer=initializer,
                 initargs=initargs,
