@@ -21,6 +21,7 @@ from hypothesis.strategies import (
     sampled_from,
     timedeltas,
     timezones,
+    tuples,
 )
 from pytest import mark, param, raises
 
@@ -60,7 +61,10 @@ from utilities.datetime import (
     YieldDaysError,
     YieldWeekdaysError,
     _PeriodDateAndDatetimeMixedError,
+    _PeriodMaxDurationError,
+    _PeriodMinDurationError,
     _PeriodNaiveDatetimeError,
+    _PeriodReqDurationError,
     add_weekdays,
     check_date_not_datetime,
     check_zoned_datetime,
@@ -570,14 +574,11 @@ class TestPeriod:
         _ = assume(start <= end)
         _ = Period(start, end)
 
-    @given(start=dates(), days=integers(min_value=0))
-    def test_duration(self, *, start: dt.date, days: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            duration = dt.timedelta(days=days)
-        with assume_does_not_raise(OverflowError):
-            end = start + duration
+    @given(dates=tuples(dates(), dates()))
+    def test_duration(self, *, dates: tuple[dt.date, dt.date]) -> None:
+        start, end = sorted(dates)
         period = Period(start, end)
-        assert period.duration == duration
+        assert period.duration == (end - start)
 
     @given(start=dates(), end=dates())
     def test_hashable(self, *, start: dt.date, end: dt.date) -> None:
@@ -631,18 +632,32 @@ class TestPeriod:
         with raises(PeriodError, match="Invalid period; got .* > .*"):
             _ = Period(start, end)
 
-    @given(
-        start=dates(),
-        days=integers(min_value=0),
-        duration=timedeltas(min_value=ZERO_TIME),
-    )
-    def test_error_invalid_duration(self, *, start: dt.date, days: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            duration = dt.timedelta(days=days)
-        with assume_does_not_raise(OverflowError):
-            end = start + duration
-        period = Period(start, end, duration)
-        assert period.duration == duration
+    @given(dates=tuples(dates(), dates()), duration=timedeltas(min_value=ZERO_TIME))
+    def test_error_req_duration(
+        self, *, dates: tuple[dt.date, dt.date], duration: dt.timedelta
+    ) -> None:
+        start, end = sorted(dates)
+        _ = assume(end - start != duration)
+        with raises(_PeriodReqDurationError):
+            _ = Period(start, end, req_duration=duration)
+
+    @given(dates=tuples(dates(), dates()), min_duration=timedeltas(min_value=ZERO_TIME))
+    def test_error_req_min_duration(
+        self, *, dates: tuple[dt.date, dt.date], min_duration: dt.timedelta
+    ) -> None:
+        start, end = sorted(dates)
+        _ = assume(end - start < min_duration)
+        with raises(_PeriodMinDurationError):
+            _ = Period(start, end, min_duration=min_duration)
+
+    @given(dates=tuples(dates(), dates()), max_duration=timedeltas(max_value=ZERO_TIME))
+    def test_error_req_max_duration(
+        self, *, dates: tuple[dt.date, dt.date], max_duration: dt.timedelta
+    ) -> None:
+        start, end = sorted(dates)
+        _ = assume(end - start < max_duration)
+        with raises(_PeriodMaxDurationError):
+            _ = Period(start, end, max_duration=max_duration)
 
 
 class TestRoundToWeekday:
