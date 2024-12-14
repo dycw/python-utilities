@@ -61,7 +61,7 @@ from utilities.click import (
     Timedelta,
     ZonedDateTime,
 )
-from utilities.datetime import serialize_month
+from utilities.datetime import ZERO_TIME, serialize_month
 from utilities.hypothesis import durations, months, text_ascii, timedeltas_2w
 from utilities.text import join_strs, strip_and_dedent
 from utilities.whenever import (
@@ -197,7 +197,7 @@ class TestParameters:
             utilities.click.Duration(),
             "DURATION",
             utilities.types.Duration,
-            durations(min_number=0, min_timedelta=dt.timedelta(0), two_way=True),
+            durations(min_number=0, min_timedelta=ZERO_TIME, two_way=True),
             serialize_duration,
             True,
         ),
@@ -358,7 +358,7 @@ class TestParameters:
             Timedelta(),
             "TIMEDELTA",
             dt.timedelta,
-            timedeltas_2w(min_value=dt.timedelta(0)),
+            timedeltas_2w(min_value=ZERO_TIME),
             serialize_timedelta,
             True,
         ),

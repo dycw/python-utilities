@@ -45,6 +45,7 @@ from utilities.datetime import (
     TODAY_UTC,
     WEEK,
     YEAR,
+    ZERO_TIME,
     AddWeekdaysError,
     CheckDateNotDatetimeError,
     CheckZonedDatetimeError,
@@ -630,7 +631,11 @@ class TestPeriod:
         with raises(PeriodError, match="Invalid period; got .* > .*"):
             _ = Period(start, end)
 
-    @given(start=dates(), days=integers(min_value=0))
+    @given(
+        start=dates(),
+        days=integers(min_value=0),
+        duration=timedeltas(min_value=ZERO_TIME),
+    )
     def test_error_invalid_duration(self, *, start: dt.date, days: int) -> None:
         with assume_does_not_raise(OverflowError):
             duration = dt.timedelta(days=days)

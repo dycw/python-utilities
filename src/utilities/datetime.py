@@ -41,6 +41,7 @@ _MICROSECONDS_PER_MILLISECOND = int(1e3)
 _MICROSECONDS_PER_SECOND = int(1e6)
 _SECONDS_PER_DAY = 24 * 60 * 60
 _MICROSECONDS_PER_DAY = _MICROSECONDS_PER_SECOND * _SECONDS_PER_DAY
+ZERO_TIME = dt.timedelta(0)
 MICROSECOND = dt.timedelta(microseconds=1)
 MILLISECOND = dt.timedelta(milliseconds=1)
 SECOND = dt.timedelta(seconds=1)
@@ -334,7 +335,7 @@ def microseconds_since_epoch(datetime: dt.datetime, /) -> int:
 def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
     """Compute a timedelta given a number of microseconds."""
     if microseconds == 0:
-        return dt.timedelta(0)
+        return ZERO_TIME
     if microseconds >= 1:
         days, remainder = divmod(microseconds, _MICROSECONDS_PER_DAY)
         seconds, micros = divmod(remainder, _MICROSECONDS_PER_SECOND)
@@ -502,7 +503,7 @@ class Period(Generic[_TPeriod]):
                         start=self.start, end=self.end
                     ) from None
         duration = self.end - self.start
-        if duration < dt.timedelta(0):
+        if duration < ZERO_TIME:
             raise _PeriodInvalidError(start=self.start, end=self.end)
         if self.req_duration is not None:
             req_durations = set(always_iterable(self.req_duration))
@@ -787,6 +788,7 @@ __all__ = [
     "TODAY_UTC",
     "WEEK",
     "YEAR",
+    "ZERO_TIME",
     "AddWeekdaysError",
     "CheckDateNotDatetimeError",
     "CheckZonedDatetimeError",
