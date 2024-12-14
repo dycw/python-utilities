@@ -10,6 +10,7 @@ from typing import (
     Literal,
     Self,
     TypeAlias,
+    TypedDict,
     TypeGuard,
     TypeVar,
     assert_never,
@@ -481,6 +482,11 @@ _DateOrDatetime: TypeAlias = Literal["date", "datetime"]
 _TPeriod = TypeVar("_TPeriod", dt.date, dt.datetime)
 
 
+class _PeriodAsDict(TypedDict, Generic[_TPeriod]):
+    start: _TPeriod
+    end: _TPeriod
+
+
 @dataclass(repr=False, order=True, unsafe_hash=True, slots=True)
 class Period(Generic[_TPeriod]):
     """A period of time."""
@@ -632,6 +638,10 @@ class Period(Generic[_TPeriod]):
                     ) from None
             case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                 assert_never(never)
+
+    def to_dict(self) -> _PeriodAsDict:
+        """Convert the period to a dictionary."""
+        return {"start": self.start, "end": self.end}
 
 
 @dataclass(kw_only=True, slots=True)

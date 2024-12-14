@@ -18,6 +18,7 @@ from typing_extensions import ParamSpec, override
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+
 _P = ParamSpec("_P")
 _T = TypeVar("_T")
 _U = TypeVar("_U")
