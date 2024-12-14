@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, unique
 from functools import partial
 from logging import Formatter, LogRecord
@@ -25,7 +25,7 @@ from typing_extensions import override
 from utilities.dataclasses import Dataclass, asdict_without_defaults
 from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.types import PathLike, StrMapping
+from utilities.types import PathLike, StrMapping, ensure_class
 from utilities.uuid import UUID_PATTERN
 from utilities.whenever import (
     parse_date,
@@ -562,11 +562,9 @@ def get_log_records(
     /,
     *,
     parallelism: _PARALLELISM | None = None,
-    objects: AbstractSet[Any] | None = None,
+    objects: AbstractSet[type[Any]] | None = None,
 ) -> list[OrjsonLogRecord]:
     """Get the log records under a directory."""
-    from tqdm import tqdm
-
     # init
     records: list[OrjsonLogRecord] = []
     num_lines = num_errors = 0
@@ -584,7 +582,7 @@ def get_log_records(
         it_lines = tqdm(lines, leave=False)
         for line in it_lines:
             try:
-                record = deserialize_dts(line.encode(), objects=objects)
+                record = deserialize(line.encode(), objects=objects)
             except Exception as error:  # noqa: BLE001
                 num_errors += 1
                 if first_error is None:
@@ -603,6 +601,52 @@ def get_log_records(
     if first_error is not None:
         _LOGGER.info("First error: {}", first_error)
     return sorted(records, key=lambda r: r.datetime)
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetLogRecordsOneOutput:
+    path: Path
+    num_lines: int = 0
+    log_records: list[OrjsonLogRecord] = field(default_factory=list)
+    num_errors: int = 0
+    missing: set[str] = field(default_factory=set)
+    first_error: Exception | None = None
+
+
+def _get_log_records_one(
+    path: Path, /, *, objects: AbstractSet[type[Any]] | None = None
+) -> _GetLogRecordsOneOutput:
+    from tqdm import tqdm
+
+    path = Path(path)
+    with path.open() as fh:
+        lines = fh.readlines()
+    log_records: list[OrjsonLogRecord] = []
+    num_errors = 0
+    missing: set[str] = set()
+    first_error: Exception | None = None
+    for line in tqdm(lines, desc=f"Path={str(path)!r}"):
+        try:
+            record = ensure_class(
+                deserialize(line.encode(), objects=objects), OrjsonLogRecord
+            )
+        except (_DeserializeNoObjectsError, _DeserializeObjectNotFoundError) as error:
+            num_errors += 1
+            missing.add(error.qualname)
+        except Exception as error:  # noqa: BLE001
+            num_errors += 1
+            if first_error is not None:
+                first_error = error
+        else:
+            log_records.append(record)
+    return _GetLogRecordsOneOutput(
+        path=path,
+        num_lines=len(lines),
+        log_records=log_records,
+        num_errors=num_errors,
+        missing=missing,
+        first_error=first_error,
+    )
 
 
 __all__ = [
