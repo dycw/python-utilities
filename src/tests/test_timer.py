@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 from pytest import mark, param, raises
 
+from utilities.datetime import SECOND, ZERO_TIME
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
@@ -20,15 +21,15 @@ class TestTimer:
         [
             param(add, 0, dt.timedelta),
             param(add, 0.0, dt.timedelta),
-            param(add, dt.timedelta(0.0), dt.timedelta),
+            param(add, ZERO_TIME, dt.timedelta),
             param(sub, 0, dt.timedelta),
             param(sub, 0.0, dt.timedelta),
-            param(sub, dt.timedelta(0.0), dt.timedelta),
+            param(sub, ZERO_TIME, dt.timedelta),
             param(mul, 1, dt.timedelta),
             param(mul, 1.0, dt.timedelta),
             param(truediv, 1, dt.timedelta),
             param(truediv, 1.0, dt.timedelta),
-            param(truediv, dt.timedelta(1.0), float),
+            param(truediv, SECOND, float),
         ],
         ids=str,
     )
@@ -56,7 +57,7 @@ class TestTimer:
         [
             param(add, ""),
             param(sub, ""),
-            param(mul, dt.timedelta(1.0)),
+            param(mul, SECOND),
             param(mul, ""),
             param(truediv, ""),
         ],

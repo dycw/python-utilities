@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from asyncio import Lock, Queue, TaskGroup, run, sleep, timeout
 from re import search
 from typing import TYPE_CHECKING, Any
@@ -21,7 +20,7 @@ from utilities.asyncio import (
     to_list,
     try_await,
 )
-from utilities.datetime import MILLISECOND, duration_to_timedelta
+from utilities.datetime import MILLISECOND, ZERO_TIME, duration_to_timedelta
 from utilities.hypothesis import durations
 from utilities.pytest import skipif_windows
 from utilities.timer import Timer
@@ -118,7 +117,7 @@ class TestSleepDur:
         duration=durations(
             min_number=0.0,
             max_number=0.01,
-            min_timedelta=dt.timedelta(0),
+            min_timedelta=ZERO_TIME,
             max_timedelta=10 * MILLISECOND,
         )
     )
@@ -162,7 +161,7 @@ class TestTimeoutDur:
         duration=durations(
             min_number=0.0,
             max_number=0.01,
-            min_timedelta=dt.timedelta(0),
+            min_timedelta=ZERO_TIME,
             max_timedelta=10 * MILLISECOND,
         )
     )

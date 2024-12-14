@@ -9,15 +9,19 @@ from typing import (
     Generic,
     Literal,
     Self,
+    TypeAlias,
     TypeGuard,
     TypeVar,
     assert_never,
+    cast,
     overload,
 )
+from zoneinfo import ZoneInfo
 
 from typing_extensions import override
 
 from utilities.functions import ensure_not_none
+from utilities.iterables import OneNonUniqueError, always_iterable, one
 from utilities.platform import SYSTEM
 from utilities.zoneinfo import (
     UTC,
@@ -29,8 +33,8 @@ from utilities.zoneinfo import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from zoneinfo import ZoneInfo
 
+    from utilities.iterables import MaybeIterable
     from utilities.types import Duration
 
 
@@ -39,6 +43,7 @@ _MICROSECONDS_PER_MILLISECOND = int(1e3)
 _MICROSECONDS_PER_SECOND = int(1e6)
 _SECONDS_PER_DAY = 24 * 60 * 60
 _MICROSECONDS_PER_DAY = _MICROSECONDS_PER_SECOND * _SECONDS_PER_DAY
+ZERO_TIME = dt.timedelta(0)
 MICROSECOND = dt.timedelta(microseconds=1)
 MILLISECOND = dt.timedelta(milliseconds=1)
 SECOND = dt.timedelta(seconds=1)
@@ -332,7 +337,7 @@ def microseconds_since_epoch(datetime: dt.datetime, /) -> int:
 def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
     """Compute a timedelta given a number of microseconds."""
     if microseconds == 0:
-        return dt.timedelta(0)
+        return ZERO_TIME
     if microseconds >= 1:
         days, remainder = divmod(microseconds, _MICROSECONDS_PER_DAY)
         seconds, micros = divmod(remainder, _MICROSECONDS_PER_SECOND)
@@ -472,20 +477,25 @@ class ParseMonthError(Exception):
         return f"Unable to parse month; got {self.month!r}"
 
 
+_DateOrDatetime: TypeAlias = Literal["date", "datetime"]
 _TPeriod = TypeVar("_TPeriod", dt.date, dt.datetime)
 
 
-@dataclass(unsafe_hash=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, slots=True)
 class Period(Generic[_TPeriod]):
     """A period of time."""
 
     start: _TPeriod
     end: _TPeriod
+    req_duration: MaybeIterable[dt.timedelta] | None = None
+    min_duration: dt.timedelta | None = None
+    max_duration: dt.timedelta | None = None
 
     def __post_init__(self) -> None:
-        if is_instance_date_not_datetime(
-            self.start
-        ) is not is_instance_date_not_datetime(self.end):
+        start_date_not_datetime, end_date_not_datetime = map(
+            is_instance_date_not_datetime, [self.start, self.end]
+        )
+        if start_date_not_datetime is not end_date_not_datetime:
             raise _PeriodDateAndDatetimeMixedError(start=self.start, end=self.end)
         for date in [self.start, self.end]:
             if isinstance(date, dt.datetime):
@@ -495,13 +505,101 @@ class Period(Generic[_TPeriod]):
                     raise _PeriodNaiveDatetimeError(
                         start=self.start, end=self.end
                     ) from None
-        if self.start > self.end:
+        duration = self.end - self.start
+        if duration < ZERO_TIME:
             raise _PeriodInvalidError(start=self.start, end=self.end)
+        if (self.req_duration is not None) and (
+            duration not in always_iterable(self.req_duration)
+        ):
+            raise _PeriodReqDurationError(
+                start=self.start,
+                end=self.end,
+                duration=duration,
+                req_duration=self.req_duration,
+            )
+        if (self.min_duration is not None) and (duration < self.min_duration):
+            raise _PeriodMinDurationError(
+                start=self.start,
+                end=self.end,
+                duration=duration,
+                min_duration=self.min_duration,
+            )
+        if (self.max_duration is not None) and (duration > self.max_duration):
+            raise _PeriodMaxDurationError(
+                start=self.start,
+                end=self.end,
+                duration=duration,
+                max_duration=self.max_duration,
+            )
+
+    def __add__(self, other: dt.timedelta, /) -> Self:
+        """Offset the period."""
+        return self.replace(start=self.start + other, end=self.end + other)
+
+    def __sub__(self, other: dt.timedelta, /) -> Self:
+        """Offset the period."""
+        return self.replace(start=self.start - other, end=self.end - other)
+
+    def astimezone(self, time_zone: ZoneInfo, /) -> Self:
+        """Convert the timezone of the period, if it is a datetime period."""
+        match self.kind:
+            case "date":
+                raise _PeriodAsTimeZoneInapplicableError(start=self.start, end=self.end)
+            case "datetime":
+                result = cast(Period[dt.datetime], self)
+                result = result.replace(
+                    start=result.start.astimezone(time_zone),
+                    end=result.end.astimezone(time_zone),
+                )
+                return cast(Self, result)
+            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                assert_never(never)
 
     @property
     def duration(self) -> dt.timedelta:
-        """The duration of a period time."""
+        """The duration of the period."""
         return self.end - self.start
+
+    @property
+    def kind(self) -> _DateOrDatetime:
+        """The kind of the period."""
+        return "date" if is_instance_date_not_datetime(self.start) else "datetime"
+
+    def replace(
+        self, *, start: _TPeriod | None = None, end: _TPeriod | None = None
+    ) -> Self:
+        """Replace elements of the period."""
+        return type(self)(
+            start=self.start if start is None else start,
+            end=self.end if end is None else end,
+        )
+
+    @property
+    def time_zone(self) -> ZoneInfo:
+        """The time zone of the period."""
+        match self.kind:
+            case "date":
+                raise _PeriodTimeZoneInapplicableError(
+                    start=self.start, end=self.end
+                ) from None
+            case "datetime":
+                result = cast(Period[dt.datetime], self)
+                time_zones = {
+                    t
+                    for t in (result.start.tzinfo, result.end.tzinfo)
+                    if isinstance(t, ZoneInfo)
+                }
+                try:
+                    return one(time_zones)
+                except OneNonUniqueError as error:
+                    raise _PeriodTimeZoneNonUniqueError(
+                        start=self.start,
+                        end=self.end,
+                        first=error.first,
+                        second=error.second,
+                    ) from None
+            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                assert_never(never)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -529,6 +627,62 @@ class _PeriodInvalidError(PeriodError[_TPeriod]):
     @override
     def __str__(self) -> str:
         return f"Invalid period; got {self.start} > {self.end}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PeriodReqDurationError(PeriodError[_TPeriod]):
+    duration: dt.timedelta
+    req_duration: MaybeIterable[dt.timedelta]
+
+    @override
+    def __str__(self) -> str:
+        return f"Period must have duration {self.req_duration}; got {self.duration})"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PeriodMinDurationError(PeriodError[_TPeriod]):
+    duration: dt.timedelta
+    min_duration: dt.timedelta
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Period must have min duration {self.min_duration}; got {self.duration})"
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class _PeriodMaxDurationError(PeriodError[_TPeriod]):
+    duration: dt.timedelta
+    max_duration: dt.timedelta
+
+    @override
+    def __str__(self) -> str:
+        return f"Period must have duration at most {self.max_duration}; got {self.duration})"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PeriodAsTimeZoneInapplicableError(PeriodError[_TPeriod]):
+    @override
+    def __str__(self) -> str:
+        return "Period of dates does not have a timezone attribute"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PeriodTimeZoneInapplicableError(PeriodError[_TPeriod]):
+    @override
+    def __str__(self) -> str:
+        return "Period of dates does not have a timezone attribute"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PeriodTimeZoneNonUniqueError(PeriodError[_TPeriod]):
+    first: ZoneInfo
+    second: ZoneInfo
+
+    @override
+    def __str__(self) -> str:
+        return f"Period must contain exactly one time zone; got {self.first} and {self.second}"
 
 
 def round_to_next_weekday(date: dt.date, /) -> dt.date:
@@ -714,6 +868,7 @@ __all__ = [
     "TODAY_UTC",
     "WEEK",
     "YEAR",
+    "ZERO_TIME",
     "AddWeekdaysError",
     "CheckDateNotDatetimeError",
     "CheckZonedDatetimeError",

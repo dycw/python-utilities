@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import datetime as dt
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pytest import mark, param, raises
 
-from utilities.datetime import get_now, get_today
+from utilities.datetime import ZERO_TIME, get_now, get_today
 from utilities.sentinel import sentinel
 from utilities.types import (
     Duration,
@@ -47,9 +46,12 @@ from utilities.types import (
     make_isinstance,
 )
 
+if TYPE_CHECKING:
+    import datetime as dt
+
 
 class TestDuration:
-    @mark.parametrize("x", [param(0), param(0.0), param(dt.timedelta(0))])
+    @mark.parametrize("x", [param(0), param(0.0), param(ZERO_TIME)])
     def test_success(self, *, x: Duration) -> None:
         assert isinstance(x, Duration)
 
