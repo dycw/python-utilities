@@ -79,8 +79,13 @@ def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
         return cast(list[_T], [obj])
 
 
-def apply_starmap(func: Callable[..., _T], *args: Any) -> _T:
-    """Apply a function as a `starmap`."""
+def apply_to_tuple(func: Callable[..., _T], args: tuple[Any, ...], /) -> _T:
+    """Apply a function to a tuple of args."""
+    return apply_to_varargs(func, *args)
+
+
+def apply_to_varargs(func: Callable[..., _T], *args: Any) -> _T:
+    """Apply a function to a variable number of arguments."""
     return func(*args)
 
 
@@ -990,7 +995,8 @@ __all__ = [
     "ResolveIncludeAndExcludeError",
     "SortIterableError",
     "always_iterable",
-    "apply_starmap",
+    "apply_to_tuple",
+    "apply_to_varargs",
     "check_bijection",
     "check_duplicates",
     "check_iterables_equal",
