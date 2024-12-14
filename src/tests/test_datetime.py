@@ -742,7 +742,9 @@ class TestPeriod:
     ) -> None:
         start, end = sorted(dates)
         _ = assume(end - start != duration)
-        with raises(_PeriodReqDurationError):
+        with raises(
+            _PeriodReqDurationError, match="Period must have duration .*; got .*"
+        ):
             _ = Period(start, end, req_duration=duration)
 
     @given(dates=tuples(dates(), dates()), min_duration=timedeltas(min_value=ZERO_TIME))
@@ -751,7 +753,9 @@ class TestPeriod:
     ) -> None:
         start, end = sorted(dates)
         _ = assume(end - start < min_duration)
-        with raises(_PeriodMinDurationError):
+        with raises(
+            _PeriodMinDurationError, match="Period must have min duration .*; got .*"
+        ):
             _ = Period(start, end, min_duration=min_duration)
 
     @given(dates=tuples(dates(), dates()), max_duration=timedeltas(max_value=ZERO_TIME))
@@ -760,7 +764,10 @@ class TestPeriod:
     ) -> None:
         start, end = sorted(dates)
         _ = assume(end - start > max_duration)
-        with raises(_PeriodMaxDurationError):
+        with raises(
+            _PeriodMaxDurationError,
+            match="Period must have duration at most .*; got .*",
+        ):
             _ = Period(start, end, max_duration=max_duration)
 
     @given(dates=tuples(dates(), dates()))
@@ -769,7 +776,10 @@ class TestPeriod:
     ) -> None:
         start, end = sorted(dates)
         period = Period(start, end)
-        with raises(_PeriodTimeZoneInapplicableError):
+        with raises(
+            _PeriodTimeZoneInapplicableError,
+            match="Period of dates does not have a timezone attribute",
+        ):
             _ = period.time_zone
 
     @given(
@@ -785,7 +795,10 @@ class TestPeriod:
         start, end = sorted(datetimes)
         time_zone1, time_zone2 = time_zones
         period = Period(start.astimezone(time_zone1), end.astimezone(time_zone2))
-        with raises(_PeriodTimeZoneNonUniqueError):
+        with raises(
+            _PeriodTimeZoneNonUniqueError,
+            match="Period must contain exactly one time zone; got .* and .*",
+        ):
             _ = period.time_zone
 
 

@@ -658,9 +658,7 @@ class _PeriodMaxDurationError(PeriodError[_TPeriod]):
 
     @override
     def __str__(self) -> str:
-        return (
-            f"Period must have max duration {self.max_duration}; got {self.duration})"
-        )
+        return f"Period must have duration at most {self.max_duration}; got {self.duration})"
 
 
 @dataclass(kw_only=True, slots=True)
