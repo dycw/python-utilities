@@ -725,6 +725,14 @@ class TestPeriod:
         period = Period(start, end)
         assert period.time_zone is time_zone
 
+    @given(dates=tuples(dates(), dates()))
+    def test_to_dict(self, *, dates: tuple[dt.date, dt.date]) -> None:
+        start, end = sorted(dates)
+        period = Period(start, end)
+        result = period.to_dict()
+        expected = {"start": start, "end": end}
+        assert result == expected
+
     @given(dates=tuples(dates(), dates()), time_zone=timezones())
     def test_error_as_time_zone_inapplicable(
         self, *, dates: tuple[dt.date, dt.date], time_zone: ZoneInfo
