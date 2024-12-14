@@ -8,6 +8,7 @@ from hypothesis.strategies import integers, lists, sampled_from, tuples
 
 from utilities.concurrent import Parallelism, concurrent_map, concurrent_starmap
 from utilities.hypothesis import int32s, settings_with_reduced_examples
+from utilities.iterables import transpose
 from utilities.typing import get_args
 
 
@@ -28,8 +29,7 @@ class TestConcurrentMap:
         assert result == expected
 
     @given(
-        xs=lists(int32s(), max_size=10),
-        ys=lists(int32s(), max_size=10),
+        iterable=lists(tuples(int32s(), int32s()), min_size=1, max_size=10),
         parallelism=sampled_from(get_args(Parallelism)),
         max_workers=integers(1, 2),
     )
@@ -37,15 +37,15 @@ class TestConcurrentMap:
     def test_binary(
         self,
         *,
-        xs: list[int],
-        ys: list[int],
+        iterable: list[tuple[int, int]],
         parallelism: Parallelism,
         max_workers: int,
     ) -> None:
+        xs, ys = transpose(iterable)
         result = concurrent_map(
-            pow, xs, ys, parallelism=parallelism, max_workers=max_workers
+            sub, xs, ys, parallelism=parallelism, max_workers=max_workers
         )
-        expected = list(starmap(sub, zip(xs, ys, strict=False)))
+        expected = list(starmap(sub, iterable))
         assert result == expected
 
 

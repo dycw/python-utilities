@@ -4,7 +4,7 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, assert_never
 
-from utilities.iterables import apply_starmap
+from utilities.iterables import apply_to_tuple
 from utilities.os import get_cpu_use
 
 if TYPE_CHECKING:
@@ -78,7 +78,7 @@ def concurrent_starmap(
 ) -> list[_T]:
     """Concurrent map."""
     max_workers_use = get_cpu_use(n=max_workers)
-    apply = partial(apply_starmap, func)
+    apply = partial(apply_to_tuple, func)
     match parallelism:
         case "processes":
             with ProcessPoolExecutor(

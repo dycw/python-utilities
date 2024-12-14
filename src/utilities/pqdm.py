@@ -7,7 +7,7 @@ from pqdm import processes, threads
 from tqdm.auto import tqdm as tqdm_auto
 
 from utilities.functions import get_func_name
-from utilities.iterables import apply_starmap
+from utilities.iterables import apply_to_varargs
 from utilities.os import get_cpu_use
 from utilities.sentinel import Sentinel, sentinel
 
@@ -64,7 +64,7 @@ def pstarmap(
     **kwargs: Any,
 ) -> list[_T]:
     """Parallel starmap, powered by `pqdm`."""
-    apply = partial(apply_starmap, func)
+    apply = partial(apply_to_varargs, func)
     n_jobs_use = get_cpu_use(n=n_jobs)
     match parallelism:
         case "processes":
@@ -82,7 +82,7 @@ def pstarmap(
         case "threads":
             result = threads.pqdm(
                 iterable,
-                partial(apply_starmap, func),
+                apply,
                 n_jobs=n_jobs_use,
                 argument_type="args",
                 bounded=bounded,
