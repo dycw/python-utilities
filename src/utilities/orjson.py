@@ -565,7 +565,7 @@ class _GetLogRecordsOutput:
     path: Path
     files: list[Path] = field(default_factory=list)
     num_lines: int = 0
-    log_records: list[OrjsonLogRecord] = field(default_factory=list)
+    log_records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
     num_errors: int = 0
     missing: set[str] = field(default_factory=set)
     first_errors: list[Exception] = field(default_factory=list)
@@ -626,7 +626,7 @@ def get_log_records(
 class _GetLogRecordsOneOutput:
     path: Path
     num_lines: int = 0
-    log_records: list[OrjsonLogRecord] = field(default_factory=list)
+    log_records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
     num_errors: int = 0
     missing: set[str] = field(default_factory=set)
     first_error: Exception | None = None
@@ -647,8 +647,6 @@ class _GetLogRecordsOneOutput:
 def _get_log_records_one(
     path: Path, /, *, objects: AbstractSet[type[Any]] | None = None
 ) -> _GetLogRecordsOneOutput:
-    from tqdm import tqdm
-
     path = Path(path)
     with path.open() as fh:
         lines = fh.readlines()
@@ -656,11 +654,11 @@ def _get_log_records_one(
     num_errors = 0
     missing: set[str] = set()
     first_error: Exception | None = None
-    for line in tqdm(lines, desc=f"Path={str(path)!r}"):
+    objects_use = {OrjsonLogRecord} | (set() if objects is None else objects)
+    for line in lines:
         try:
-            record = ensure_class(
-                deserialize(line.encode(), objects=objects), OrjsonLogRecord
-            )
+            result = deserialize(line.encode(), objects=objects_use)
+            record = ensure_class(result, OrjsonLogRecord)
         except (_DeserializeNoObjectsError, _DeserializeObjectNotFoundError) as error:
             num_errors += 1
             missing.add(error.qualname)
