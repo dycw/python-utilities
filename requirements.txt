@@ -54,7 +54,7 @@ cachetools==5.5.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   streamlit
-certifi==2024.8.30
+certifi==2024.12.14
     # via
     #   httpcore
     #   httpx

@@ -15,7 +15,6 @@ from typing import (
     Any,
     Generic,
     Literal,
-    Never,
     TypeGuard,
     TypeVar,
     assert_never,
@@ -58,6 +57,7 @@ from polars.testing import assert_frame_equal
 from typing_extensions import override
 
 from utilities.dataclasses import Dataclass, asdict_without_defaults, is_dataclass_class
+from utilities.errors import ImpossibleCaseError
 from utilities.iterables import (
     CheckIterablesEqualError,
     CheckMappingsEqualError,
@@ -311,13 +311,14 @@ class _CheckPolarsDataFramePredicatesError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        match list(self._yield_parts()):
+        parts = list(self._yield_parts())
+        match parts:
             case (desc,):
                 pass
             case first, second:
                 desc = f"{first} and {second}"
-            case _ as never:  # pragma: no cover
-                assert_never(cast(Never, never))
+            case _:  # pragma: no cover
+                raise ImpossibleCaseError(case=[f"{parts=}"])
         return f"DataFrame must satisfy the predicates; {desc}\n\n"
 
     def _yield_parts(self) -> Iterator[str]:

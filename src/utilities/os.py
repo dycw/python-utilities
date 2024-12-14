@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from os import cpu_count, environ, getenv
-from typing import TYPE_CHECKING, assert_never
+from typing import TYPE_CHECKING, Literal, TypeAlias, assert_never
 
 from typing_extensions import override
 
@@ -15,6 +15,9 @@ from utilities.iterables import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
+
+
+IntOrAll: TypeAlias = int | Literal["all"]
 
 
 def get_cpu_count() -> int:
@@ -33,6 +36,28 @@ class GetCPUCountError(Exception):
 
 
 CPU_COUNT = get_cpu_count()
+
+
+def get_cpu_use(*, n: IntOrAll = "all") -> int:
+    """Resolve for the number of CPUs to use."""
+    match n:
+        case int():
+            if n >= 1:
+                return n
+            raise GetCPUUseError(n=n)
+        case "all":
+            return CPU_COUNT
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class GetCPUUseError(Exception):
+    n: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid number of CPUs to use: {self.n}"
 
 
 def get_env_var(key: str, /, *, case_sensitive: bool = True) -> str | None:
@@ -77,7 +102,10 @@ def temp_environ(
 __all__ = [
     "CPU_COUNT",
     "GetCPUCountError",
+    "GetCPUUseError",
+    "IntOrAll",
     "get_cpu_count",
+    "get_cpu_use",
     "get_env_var",
     "temp_environ",
 ]

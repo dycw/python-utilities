@@ -4,6 +4,7 @@ from dataclasses import dataclass, replace
 from enum import Enum, auto
 from itertools import repeat
 from math import isfinite, isinf, isnan
+from operator import sub
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from hypothesis import given
@@ -50,6 +51,8 @@ from utilities.iterables import (
     ResolveIncludeAndExcludeError,
     SortIterableError,
     always_iterable,
+    apply_to_tuple,
+    apply_to_varargs,
     check_bijection,
     check_duplicates,
     check_iterables_equal,
@@ -123,6 +126,22 @@ class TestAlwaysIterable:
             yield 1
 
         assert list(always_iterable(yield_ints())) == [0, 1]
+
+
+class TestApplyToTuple:
+    @given(x=integers(), y=integers())
+    def test_main(self, *, x: int, y: int) -> None:
+        result = apply_to_tuple(sub, (x, y))
+        expected = x - y
+        assert result == expected
+
+
+class TestApplyToVarArgs:
+    @given(x=integers(), y=integers())
+    def test_main(self, *, x: int, y: int) -> None:
+        result = apply_to_varargs(sub, x, y)
+        expected = x - y
+        assert result == expected
 
 
 class TestCheckBijection:

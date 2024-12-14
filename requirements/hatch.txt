@@ -6,7 +6,7 @@ attrs==24.2.0
     # via hypothesis
 backports-tarfile==1.2.0
     # via jaraco-context
-certifi==2024.8.30
+certifi==2024.12.14
     # via
     #   httpcore
     #   httpx
