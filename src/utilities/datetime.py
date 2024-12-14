@@ -35,7 +35,6 @@ from utilities.zoneinfo import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.iterables import MaybeIterable
     from utilities.types import Duration
 
 
@@ -642,38 +641,6 @@ class _PeriodInvalidError(PeriodError[_TPeriod]):
     @override
     def __str__(self) -> str:
         return f"Invalid period; got {self.start} > {self.end}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _PeriodReqDurationError(PeriodError[_TPeriod]):
-    duration: dt.timedelta
-    req_duration: MaybeIterable[dt.timedelta]
-
-    @override
-    def __str__(self) -> str:
-        return f"Period must have duration {self.req_duration}; got {self.duration})"
-
-
-@dataclass(kw_only=True, slots=True)
-class _PeriodMinDurationError(PeriodError[_TPeriod]):
-    duration: dt.timedelta
-    min_duration: dt.timedelta
-
-    @override
-    def __str__(self) -> str:
-        return (
-            f"Period must have min duration {self.min_duration}; got {self.duration})"
-        )
-
-
-@dataclass(kw_only=True, slots=True)
-class _PeriodMaxDurationError(PeriodError[_TPeriod]):
-    duration: dt.timedelta
-    max_duration: dt.timedelta
-
-    @override
-    def __str__(self) -> str:
-        return f"Period must have duration at most {self.max_duration}; got {self.duration})"
 
 
 @dataclass(kw_only=True, slots=True)
