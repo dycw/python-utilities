@@ -17,6 +17,7 @@ from hypothesis.strategies import (
     integers,
     just,
     none,
+    permutations,
     sampled_from,
     timedeltas,
     timezones,
@@ -57,6 +58,9 @@ from utilities.datetime import (
     TimedeltaToMillisecondsError,
     YieldDaysError,
     YieldWeekdaysError,
+    _PeriodDateAndDatetimeMixedError,
+    _PeriodInvalidError,
+    _PeriodNaiveDatetimeError,
     add_weekdays,
     check_date_not_datetime,
     check_zoned_datetime,
@@ -582,14 +586,17 @@ class TestPeriod:
         assert period.duration == duration
 
     @given(
-        start=dates(),
-        end=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC]) | none()),
+        data=data(),
+        date=dates(),
+        datetime=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC]) | none()),
     )
     def test_error_date_and_datetime_mix(
-        self, *, start: dt.date, end: dt.datetime
+        self, *, data: DataObject, date: dt.date, datetime: dt.datetime
     ) -> None:
+        start, end = data.draw(permutations([date, datetime]))
         with raises(
-            PeriodError, match=r"Invalid period; got date and datetime mix \(.*, .*\)"
+            _PeriodDateAndDatetimeMixedError,
+            match=r"Invalid period; got date and datetime mix \(.*, .*\)",
         ):
             _ = Period(start, end)
 
@@ -602,7 +609,8 @@ class TestPeriod:
     ) -> None:
         _ = assume((start.tzinfo is None) or (end.tzinfo is None))
         with raises(
-            PeriodError, match=r"Invalid period; got naive datetime\(s\) \(.*, .*\)"
+            _PeriodNaiveDatetimeError,
+            match=r"Invalid period; got naive datetime\(s\) \(.*, .*\)",
         ):
             _ = Period(start, end)
 

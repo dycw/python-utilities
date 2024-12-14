@@ -483,9 +483,10 @@ class Period(Generic[_TPeriod]):
     end: _TPeriod
 
     def __post_init__(self) -> None:
-        if is_instance_date_not_datetime(
-            self.start
-        ) is not is_instance_date_not_datetime(self.end):
+        start_date_not_datetime, end_date_not_datetime = map(
+            is_instance_date_not_datetime, [self.start, self.end]
+        )
+        if start_date_not_datetime is not end_date_not_datetime:
             raise _PeriodDateAndDatetimeMixedError(start=self.start, end=self.end)
         for date in [self.start, self.end]:
             if isinstance(date, dt.datetime):
