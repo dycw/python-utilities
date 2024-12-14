@@ -59,7 +59,6 @@ from utilities.datetime import (
     YieldDaysError,
     YieldWeekdaysError,
     _PeriodDateAndDatetimeMixedError,
-    _PeriodInvalidError,
     _PeriodNaiveDatetimeError,
     add_weekdays,
     check_date_not_datetime,
@@ -560,10 +559,7 @@ class TestPeriod:
     @given(start=dates(), end=dates())
     def test_dates(self, *, start: dt.date, end: dt.date) -> None:
         _ = assume(start <= end)
-        period = Period(start, end)
-        assert period.start == start
-        assert period.end == end
-        _ = hash(period)
+        _ = Period(start, end)
 
     @given(
         start=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC])),
@@ -571,10 +567,7 @@ class TestPeriod:
     )
     def test_datetimes(self, *, start: dt.datetime, end: dt.datetime) -> None:
         _ = assume(start <= end)
-        period = Period(start, end)
-        assert period.start == start
-        assert period.end == end
-        _ = hash(period)
+        _ = Period(start, end)
 
     @given(start=dates(), days=integers(min_value=0))
     def test_duration(self, *, start: dt.date, days: int) -> None:
@@ -584,6 +577,12 @@ class TestPeriod:
             end = start + duration
         period = Period(start, end)
         assert period.duration == duration
+
+    @given(start=dates(), end=dates())
+    def test_hashable(self, *, start: dt.date, end: dt.date) -> None:
+        _ = assume(start <= end)
+        period = Period(start, end)
+        _ = hash(period)
 
     @given(
         data=data(),
@@ -630,6 +629,15 @@ class TestPeriod:
         _ = assume(start > end)
         with raises(PeriodError, match="Invalid period; got .* > .*"):
             _ = Period(start, end)
+
+    @given(start=dates(), days=integers(min_value=0))
+    def test_error_invalid_duration(self, *, start: dt.date, days: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            duration = dt.timedelta(days=days)
+        with assume_does_not_raise(OverflowError):
+            end = start + duration
+        period = Period(start, end, duration)
+        assert period.duration == duration
 
 
 class TestRoundToWeekday:

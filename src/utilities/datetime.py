@@ -18,6 +18,7 @@ from typing import (
 from typing_extensions import override
 
 from utilities.functions import ensure_not_none
+from utilities.iterables import always_iterable
 from utilities.platform import SYSTEM
 from utilities.zoneinfo import (
     UTC,
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from zoneinfo import ZoneInfo
 
+    from utilities.iterables import MaybeIterable
     from utilities.types import Duration
 
 
@@ -481,6 +483,9 @@ class Period(Generic[_TPeriod]):
 
     start: _TPeriod
     end: _TPeriod
+    req_duration: MaybeIterable[dt.timedelta] | None = None
+    min_duration: dt.timedelta | None = None
+    max_duration: dt.timedelta | None = None
 
     def __post_init__(self) -> None:
         start_date_not_datetime, end_date_not_datetime = map(
@@ -496,13 +501,46 @@ class Period(Generic[_TPeriod]):
                     raise _PeriodNaiveDatetimeError(
                         start=self.start, end=self.end
                     ) from None
-        if self.start > self.end:
+        duration = self.end - self.start
+        if duration < dt.timedelta(0):
             raise _PeriodInvalidError(start=self.start, end=self.end)
+        if self.req_duration is not None:
+            req_durations = set(always_iterable(self.req_duration))
+            if duration not in req_durations:
+                raise _PeriodReqDurationError(
+                    start=self.start,
+                    end=self.end,
+                    duration=duration,
+                    req_duration=self.req_duration,
+                )
+        if (self.min_duration is not None) and (duration < self.min_duration):
+            raise _PeriodMinDurationError(
+                start=self.start,
+                end=self.end,
+                duration=duration,
+                min_duration=self.min_duration,
+            )
+        if (self.max_duration is not None) and (duration > self.max_duration):
+            raise _PeriodMaxDurationError(
+                start=self.start,
+                end=self.end,
+                duration=duration,
+                max_duration=self.max_duration,
+            )
 
     @property
     def duration(self) -> dt.timedelta:
         """The duration of a period time."""
         return self.end - self.start
+
+    def replace(
+        self, *, start: _TPeriod | None = None, end: _TPeriod | None = None
+    ) -> Self:
+        """Replace elements of the period."""
+        return type(self)(
+            start=self.start if start is None else start,
+            end=self.end if end is None else end,
+        )
 
 
 @dataclass(kw_only=True, slots=True)
@@ -530,6 +568,40 @@ class _PeriodInvalidError(PeriodError[_TPeriod]):
     @override
     def __str__(self) -> str:
         return f"Invalid period; got {self.start} > {self.end}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PeriodReqDurationError(PeriodError[_TPeriod]):
+    duration: dt.timedelta
+    req_duration: MaybeIterable[dt.timedelta]
+
+    @override
+    def __str__(self) -> str:
+        return f"Period must have duration {self.req_duration}; got {self.duration})"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PeriodMinDurationError(PeriodError[_TPeriod]):
+    duration: dt.timedelta
+    min_duration: dt.timedelta
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Period must have min duration {self.min_duration}; got {self.duration})"
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class _PeriodMaxDurationError(PeriodError[_TPeriod]):
+    duration: dt.timedelta
+    max_duration: dt.timedelta
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Period must have max duration {self.max_duration}; got {self.duration})"
+        )
 
 
 def round_to_next_weekday(date: dt.date, /) -> dt.date:
