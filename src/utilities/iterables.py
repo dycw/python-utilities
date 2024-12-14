@@ -80,6 +80,11 @@ def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
         return cast(list[_T], [obj])
 
 
+def apply_starmap(func: Callable[..., _T], *args: Any) -> _T:
+    """Apply a function as a `starmap`."""
+    return func(*args)
+
+
 def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
     """Check if a mapping is a bijection."""
     try:
@@ -981,6 +986,7 @@ __all__ = [
     "ResolveIncludeAndExcludeError",
     "SortIterableError",
     "always_iterable",
+    "apply_starmap",
     "check_bijection",
     "check_duplicates",
     "check_iterables_equal",

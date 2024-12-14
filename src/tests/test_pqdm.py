@@ -4,11 +4,15 @@ from functools import partial
 from operator import neg
 from typing import TYPE_CHECKING, Any, Literal
 
+from hypothesis import given
+from hypothesis.strategies import integers, sampled_from
 from pytest import mark, param
 
+from utilities.concurrent import _Parallelism
 from utilities.functions import get_class_name
 from utilities.pqdm import _get_desc, pmap, pstarmap
 from utilities.sentinel import Sentinel, sentinel
+from utilities.typing import get_args
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
@@ -42,8 +46,7 @@ class TestGetDesc:
 
 
 class TestPMap:
-    @mark.parametrize("parallelism", [param("processes"), param("threads")])
-    @mark.parametrize("n_jobs", [param(1), param(2)])
+    @given(parallelism=sampled_from(get_args(_Parallelism)), n_jobs=integers(1, 3))
     def test_unary(
         self, *, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:
@@ -51,8 +54,7 @@ class TestPMap:
         expected = [-1, -2, -3]
         assert result == expected
 
-    @mark.parametrize("parallelism", [param("processes"), param("threads")])
-    @mark.parametrize("n_jobs", [param(1), param(2)])
+    @given(parallelism=sampled_from(get_args(_Parallelism)), n_jobs=integers(1, 3))
     def test_binary(
         self, *, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:

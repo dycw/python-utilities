@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from functools import partial
 from multiprocessing import cpu_count
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, assert_never
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, assert_never
 
 from pqdm import processes, threads
 from tqdm.auto import tqdm as tqdm_auto
 
 from utilities.functions import get_func_name
+from utilities.iterables import apply_starmap
 from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
@@ -15,17 +16,21 @@ if TYPE_CHECKING:
 
     from tqdm import tqdm as tqdm_type
 
+    from utilities.concurrent import _Parallelism
+
+
 _T = TypeVar("_T")
+_ExceptionBehaviour: TypeAlias = Literal["ignore", "immediate", "deferred"]
 
 
 def pmap(
     func: Callable[..., _T],
     /,
     *iterables: Iterable[Any],
-    parallelism: Literal["processes", "threads"] = "processes",
+    parallelism: _Parallelism = "processes",
     n_jobs: int | None = None,
     bounded: bool = False,
-    exception_behaviour: Literal["ignore", "immediate", "deferred"] = "immediate",
+    exception_behaviour: _ExceptionBehaviour = "immediate",
     tqdm_class: tqdm_type = tqdm_auto,  # pyright: ignore[reportArgumentType]
     desc: str | None | Sentinel = sentinel,
     **kwargs: Any,
@@ -49,10 +54,10 @@ def pstarmap(
     iterable: Iterable[tuple[Any, ...]],
     /,
     *,
-    parallelism: Literal["processes", "threads"] = "processes",
+    parallelism: _Parallelism = "processes",
     n_jobs: int | None = None,
     bounded: bool = False,
-    exception_behaviour: Literal["ignore", "immediate", "deferred"] = "immediate",
+    exception_behaviour: _ExceptionBehaviour = "immediate",
     tqdm_class: tqdm_type = tqdm_auto,  # pyright: ignore[reportArgumentType]
     desc: str | None | Sentinel = sentinel,
     **kwargs: Any,
@@ -63,7 +68,7 @@ def pstarmap(
         case "processes":
             result = processes.pqdm(
                 iterable,
-                partial(_starmap_helper, func),
+                partial(apply_starmap, func),
                 n_jobs=n_jobs,
                 argument_type="args",
                 bounded=bounded,
@@ -75,7 +80,7 @@ def pstarmap(
         case "threads":
             result = threads.pqdm(
                 iterable,
-                partial(_starmap_helper, func),
+                partial(apply_starmap, func),
                 n_jobs=n_jobs,
                 argument_type="args",
                 bounded=bounded,
@@ -100,10 +105,6 @@ def _get_desc(
 ) -> dict[str, str]:
     desc_use = get_func_name(func) if isinstance(desc, Sentinel) else desc
     return {} if desc_use is None else {"desc": desc_use}
-
-
-def _starmap_helper(func: Callable[..., _T], *args: Any) -> _T:
-    return func(*args)
 
 
 __all__ = ["pmap", "pstarmap"]

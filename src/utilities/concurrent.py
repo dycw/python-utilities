@@ -9,14 +9,14 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
-_PARALLELISM: TypeAlias = Literal["processes", "threads"]
+_Parallelism: TypeAlias = Literal["processes", "threads"]
 
 
 def concurrent_map(
     func: Callable[..., _T],
     /,
     *iterables: Iterable[Any],
-    parallelism: _PARALLELISM = "processes",
+    parallelism: _Parallelism = "processes",
     max_workers: int | None = None,
     mp_context: BaseContext | None = None,
     initializer: Callable[[], object] | None = None,
