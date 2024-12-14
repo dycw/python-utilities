@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from os import cpu_count, environ, getenv
-from typing import TYPE_CHECKING, Literal, assert_never
+from typing import TYPE_CHECKING, Literal, TypeAlias, assert_never
 
 from typing_extensions import override
 
@@ -15,6 +15,9 @@ from utilities.iterables import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
+
+
+IntOrAll: TypeAlias = int | Literal["all"]
 
 
 def get_cpu_count() -> int:
@@ -35,7 +38,7 @@ class GetCPUCountError(Exception):
 CPU_COUNT = get_cpu_count()
 
 
-def get_cpu_use(*, n: int | Literal["all"]) -> all:
+def get_cpu_use(*, n: IntOrAll = "all") -> int:
     """Resolve for the number of CPUs to use."""
     match n:
         case int():
@@ -100,6 +103,7 @@ __all__ = [
     "CPU_COUNT",
     "GetCPUCountError",
     "GetCPUUseError",
+    "IntOrAll",
     "get_cpu_count",
     "get_cpu_use",
     "get_env_var",
