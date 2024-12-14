@@ -33,32 +33,19 @@ def concurrent_map(
     chunksize: int = 1,
 ) -> list[_T]:
     """Concurrent map."""
-    max_workers_use = get_cpu_use(n=max_workers)
-    match parallelism:
-        case "processes":
-            with ProcessPoolExecutor(
-                max_workers=max_workers_use,
-                mp_context=mp_context,
-                initializer=initializer,
-                initargs=initargs,
-                max_tasks_per_child=max_tasks_per_child,
-            ) as pool:
-                result = pool.map(
-                    func, *iterables, timeout=timeout, chunksize=chunksize
-                )
-        case "threads":
-            with ThreadPoolExecutor(
-                max_workers=max_workers_use,
-                thread_name_prefix=thread_name_prefix,
-                initializer=initializer,
-                initargs=initargs,
-            ) as pool:
-                result = pool.map(
-                    func, *iterables, timeout=timeout, chunksize=chunksize
-                )
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-            assert_never(never)
-    return list(result)
+    return concurrent_starmap(
+        func,
+        zip(*iterables, strict=True),
+        parallelism=parallelism,
+        max_workers=max_workers,
+        mp_context=mp_context,
+        initializer=initializer,
+        initargs=initargs,
+        max_tasks_per_child=max_tasks_per_child,
+        thread_name_prefix=thread_name_prefix,
+        timeout=timeout,
+        chunksize=chunksize,
+    )
 
 
 def concurrent_starmap(
