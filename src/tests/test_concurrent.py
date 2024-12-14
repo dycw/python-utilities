@@ -45,11 +45,11 @@ class TestConcurrentMap:
         result = concurrent_map(
             pow, xs, ys, parallelism=parallelism, max_workers=max_workers
         )
-        expected = [x - y for x, y in zip(xs, ys, strict=False)]
+        expected = list(starmap(sub, zip(xs, ys, strict=False)))
         assert result == expected
 
 
-class TestPStarMap:
+class TestConcurrentStarMap:
     @given(
         iterable=lists(tuples(int64s()), max_size=10),
         parallelism=sampled_from(get_args(Parallelism)),
@@ -62,7 +62,7 @@ class TestPStarMap:
         result = concurrent_starmap(
             neg, iterable, parallelism=parallelism, max_workers=max_workers
         )
-        expected = [-1, -2, -3]
+        expected = list(starmap(neg, iterable))
         assert result == expected
 
     @given(
