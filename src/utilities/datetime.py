@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from re import sub
 from typing import (
     TYPE_CHECKING,
@@ -22,8 +22,9 @@ from zoneinfo import ZoneInfo
 from typing_extensions import override
 
 from utilities.functions import ensure_not_none, get_class_name
-from utilities.iterables import OneNonUniqueError, one
+from utilities.iterables import OneNonUniqueError, always_iterable, one
 from utilities.platform import SYSTEM
+from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import (
     UTC,
     HongKong,
@@ -493,6 +494,9 @@ class Period(Generic[_TPeriod]):
 
     start: _TPeriod
     end: _TPeriod
+    req_duration: MaybeIterable[dt.timedelta] | None = field(default=None, kw_only=True)
+    min_duration: dt.timedelta | None = field(default=None, kw_only=True)
+    max_duration: dt.timedelta | None = field(default=None, kw_only=True)
 
     def __post_init__(self) -> None:
         start_date_not_datetime, end_date_not_datetime = map(
@@ -511,6 +515,29 @@ class Period(Generic[_TPeriod]):
         duration = self.end - self.start
         if duration < ZERO_TIME:
             raise _PeriodInvalidError(start=self.start, end=self.end)
+        if (self.req_duration is not None) and (
+            duration not in always_iterable(self.req_duration)
+        ):
+            raise _PeriodReqDurationError(
+                start=self.start,
+                end=self.end,
+                duration=duration,
+                req_duration=self.req_duration,
+            )
+        if (self.min_duration is not None) and (duration < self.min_duration):
+            raise _PeriodMinDurationError(
+                start=self.start,
+                end=self.end,
+                duration=duration,
+                min_duration=self.min_duration,
+            )
+        if (self.max_duration is not None) and (duration > self.max_duration):
+            raise _PeriodMaxDurationError(
+                start=self.start,
+                end=self.end,
+                duration=duration,
+                max_duration=self.max_duration,
+            )
 
     def __add__(self, other: dt.timedelta, /) -> Self:
         """Offset the period."""
@@ -578,11 +605,27 @@ class Period(Generic[_TPeriod]):
         return "date" if is_instance_date_not_datetime(self.start) else "datetime"
 
     def replace(
-        self, *, start: _TPeriod | None = None, end: _TPeriod | None = None
+        self,
+        *,
+        start: _TPeriod | None = None,
+        end: _TPeriod | None = None,
+        req_duration: MaybeIterable[dt.timedelta] | None | Sentinel = sentinel,
+        min_duration: dt.timedelta | None | Sentinel = sentinel,
+        max_duration: dt.timedelta | None | Sentinel = sentinel,
     ) -> Self:
         """Replace elements of the period."""
         return type(self)(
-            self.start if start is None else start, self.end if end is None else end
+            self.start if start is None else start,
+            self.end if end is None else end,
+            req_duration=self.req_duration
+            if isinstance(req_duration, Sentinel)
+            else req_duration,
+            min_duration=self.min_duration
+            if isinstance(min_duration, Sentinel)
+            else min_duration,
+            max_duration=self.max_duration
+            if isinstance(max_duration, Sentinel)
+            else max_duration,
         )
 
     @property
