@@ -25,7 +25,7 @@ from typing_extensions import override
 from utilities.dataclasses import Dataclass, asdict_without_defaults
 from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.types import StrMapping
+from utilities.types import PathLike, StrMapping
 from utilities.uuid import UUID_PATTERN
 from utilities.whenever import (
     parse_date,
@@ -44,93 +44,10 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from logging import _FormatStyle
 
-
-_LOG_RECORD_DEFAULT_ATTRS = {
-    "args",
-    "asctime",
-    "created",
-    "exc_info",
-    "exc_text",
-    "filename",
-    "funcName",
-    "levelname",
-    "levelno",
-    "lineno",
-    "message",
-    "module",
-    "msecs",
-    "msg",
-    "name",
-    "pathname",
-    "process",
-    "processName",
-    "relativeCreated",
-    "stack_info",
-    "taskName",
-    "thread",
-    "threadName",
-}
+    from utilities.pqdm import _PARALLELISM
 
 
-@dataclass(kw_only=True, slots=True)
-class OrjsonLogRecord:
-    """The log record as a dataclass."""
-
-    name: str
-    message: str
-    level: int
-    path_name: Path
-    line_num: int
-    datetime: dt.datetime
-    func_name: str | None = None
-    stack_info: str | None = None
-    extra: StrMapping | None = None
-
-
-class OrjsonFormatter(Formatter):
-    """Formatter for JSON logs."""
-
-    @override
-    def __init__(
-        self,
-        fmt: str | None = None,
-        datefmt: str | None = None,
-        style: _FormatStyle = "%",
-        validate: bool = True,
-        /,
-        *,
-        defaults: StrMapping | None = None,
-        before: Callable[[Any], Any] | None = None,
-        dataclass_final_hook: _DataclassFinalHook | None = None,
-    ) -> None:
-        super().__init__(fmt, datefmt, style, validate, defaults=defaults)
-        self._before = before
-        self._dataclass_final_hook = dataclass_final_hook
-
-    @override
-    def format(self, record: LogRecord) -> str:
-        from tzlocal import get_localzone
-
-        extra = {
-            k: v
-            for k, v in record.__dict__.items()
-            if (k not in _LOG_RECORD_DEFAULT_ATTRS) and (not k.startswith("_"))
-        }
-        log_record = OrjsonLogRecord(
-            name=record.name,
-            level=record.levelno,
-            path_name=Path(record.pathname),
-            line_num=record.lineno,
-            message=record.getMessage(),
-            datetime=dt.datetime.fromtimestamp(record.created, tz=get_localzone()),
-            func_name=record.funcName,
-            extra=extra if len(extra) >= 1 else None,
-        )
-        return serialize(
-            log_record,
-            before=self._before,
-            dataclass_final_hook=self._dataclass_final_hook,
-        ).decode()
+# serialize
 
 
 @unique
@@ -330,6 +247,9 @@ class _SerializeIntegerError(SerializeError):
     @override
     def __str__(self) -> str:
         return f"Integer {self.obj} is out of range"
+
+
+# deserialize
 
 
 def deserialize(
@@ -545,6 +465,144 @@ class _DeserializeObjectNotFoundError(DeserializeError):
         return (
             f"Unable to find object to deserialize {self.qualname!r} from {self.data!r}"
         )
+
+
+# logging
+
+_LOG_RECORD_DEFAULT_ATTRS = {
+    "args",
+    "asctime",
+    "created",
+    "exc_info",
+    "exc_text",
+    "filename",
+    "funcName",
+    "levelname",
+    "levelno",
+    "lineno",
+    "message",
+    "module",
+    "msecs",
+    "msg",
+    "name",
+    "pathname",
+    "process",
+    "processName",
+    "relativeCreated",
+    "stack_info",
+    "taskName",
+    "thread",
+    "threadName",
+}
+
+
+class OrjsonFormatter(Formatter):
+    """Formatter for JSON logs."""
+
+    @override
+    def __init__(
+        self,
+        fmt: str | None = None,
+        datefmt: str | None = None,
+        style: _FormatStyle = "%",
+        validate: bool = True,
+        /,
+        *,
+        defaults: StrMapping | None = None,
+        before: Callable[[Any], Any] | None = None,
+        dataclass_final_hook: _DataclassFinalHook | None = None,
+    ) -> None:
+        super().__init__(fmt, datefmt, style, validate, defaults=defaults)
+        self._before = before
+        self._dataclass_final_hook = dataclass_final_hook
+
+    @override
+    def format(self, record: LogRecord) -> str:
+        from tzlocal import get_localzone
+
+        extra = {
+            k: v
+            for k, v in record.__dict__.items()
+            if (k not in _LOG_RECORD_DEFAULT_ATTRS) and (not k.startswith("_"))
+        }
+        log_record = OrjsonLogRecord(
+            name=record.name,
+            level=record.levelno,
+            path_name=Path(record.pathname),
+            line_num=record.lineno,
+            message=record.getMessage(),
+            datetime=dt.datetime.fromtimestamp(record.created, tz=get_localzone()),
+            func_name=record.funcName,
+            extra=extra if len(extra) >= 1 else None,
+        )
+        return serialize(
+            log_record,
+            before=self._before,
+            dataclass_final_hook=self._dataclass_final_hook,
+        ).decode()
+
+
+@dataclass(kw_only=True, slots=True)
+class OrjsonLogRecord:
+    """The log record as a dataclass."""
+
+    name: str
+    message: str
+    level: int
+    path_name: Path
+    line_num: int
+    datetime: dt.datetime
+    func_name: str | None = None
+    stack_info: str | None = None
+    extra: StrMapping | None = None
+
+
+def get_log_records(
+    path: PathLike,
+    /,
+    *,
+    parallelism: _PARALLELISM | None = None,
+    objects: AbstractSet[Any] | None = None,
+) -> list[OrjsonLogRecord]:
+    """Get the log records under a directory."""
+    from tqdm import tqdm
+
+    # init
+    records: list[OrjsonLogRecord] = []
+    num_lines = num_errors = 0
+    first_error: Exception | None = None
+
+    # iterator
+    path = Path(path)
+    files = list(path.iterdir())
+    it_files = tqdm(files)
+    for file in it_files:
+        it_files.set_description(f"File = {file}")
+        with file.open() as fh:
+            lines = fh.readlines()
+        num_lines += len(lines)
+        it_lines = tqdm(lines, leave=False)
+        for line in it_lines:
+            try:
+                record = deserialize_dts(line.encode(), objects=objects)
+            except Exception as error:  # noqa: BLE001
+                num_errors += 1
+                if first_error is None:
+                    first_error = error
+            else:
+                records.append(record)
+
+    # report
+    _LOGGER.info(
+        "Processed {} file(s)/{} line(s) into {} {.1%} records",
+        len(files),
+        num_lines,
+        len(records),
+        len(records) / num_lines,
+    )
+    if first_error is not None:
+        _LOGGER.info("First error: {}", first_error)
+    return sorted(records, key=lambda r: r.datetime)
 
 
 __all__ = [
