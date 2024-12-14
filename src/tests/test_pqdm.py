@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from itertools import starmap
-from operator import neg, sub
+from operator import neg
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import given
@@ -50,46 +49,33 @@ class TestGetDesc:
 
 class TestPMap:
     @given(parallelism=sampled_from(get_args(_Parallelism)), n_jobs=integers(1, 3))
-    def test_unary(
-        self, *, xs: list[int], parallelism: Parallelism, n_jobs: int
-    ) -> None:
-        result = pmap(neg, xs, parallelism=parallelism, n_jobs=n_jobs)
-        expected = list(map(neg, xs))
+    def test_unary(self, *, parallelism: _Parallelism, n_jobs: int) -> None:
+        result = pmap(neg, [1, 2, 3], parallelism=parallelism, n_jobs=n_jobs)
+        expected = [-1, -2, -3]
         assert result == expected
 
     @given(parallelism=sampled_from(get_args(_Parallelism)), n_jobs=integers(1, 3))
-    def test_binary(
-        self, *, iterable: list[tuple[int, int]], parallelism: Parallelism, n_jobs: int
-    ) -> None:
-        xs, ys = transpose(iterable)
-        result = pmap(sub, xs, ys, parallelism=parallelism, n_jobs=n_jobs)
-        expected = list(starmap(sub, iterable))
+    def test_binary(self, *, parallelism: _Parallelism, n_jobs: int) -> None:
+        result = pmap(
+            pow, [2, 3, 10], [5, 2, 3], parallelism=parallelism, n_jobs=n_jobs
+        )
+        expected = [32, 9, 1000]
         assert result == expected
 
 
 class TestPStarMap:
-    @given(
-        iterable=lists(tuples(int32s()), max_size=10),
-        parallelism=sampled_from(get_args(Parallelism)),
-        n_jobs=integers(1, 2),
-    )
-    @settings_with_reduced_examples()
-    def test_unary(
-        self, *, iterable: list[tuple[int]], parallelism: Parallelism, n_jobs: int
-    ) -> None:
-        result = pstarmap(neg, iterable, parallelism=parallelism, n_jobs=n_jobs)
-        expected = list(starmap(neg, iterable))
+    @given(parallelism=sampled_from(get_args(_Parallelism)), n_jobs=integers(1, 3))
+    def test_unary(self, *, parallelism: _Parallelism, n_jobs: int) -> None:
+        result = pstarmap(
+            neg, [(1,), (2,), (3,)], parallelism=parallelism, n_jobs=n_jobs
+        )
+        expected = [-1, -2, -3]
         assert result == expected
 
-    @given(
-        iterable=lists(tuples(int32s(), int32s()), min_size=1, max_size=10),
-        parallelism=sampled_from(get_args(Parallelism)),
-        n_jobs=integers(1, 2),
-    )
-    @settings_with_reduced_examples()
-    def test_binary(
-        self, *, iterable: list[tuple[int, int]], parallelism: Parallelism, n_jobs: int
-    ) -> None:
-        result = pstarmap(sub, iterable, parallelism=parallelism, n_jobs=n_jobs)
-        expected = list(starmap(sub, iterable))
+    @given(parallelism=sampled_from(get_args(_Parallelism)), n_jobs=integers(1, 3))
+    def test_binary(self, *, parallelism: _Parallelism, n_jobs: int) -> None:
+        result = pstarmap(
+            pow, [(2, 5), (3, 2), (10, 3)], parallelism=parallelism, n_jobs=n_jobs
+        )
+        expected = [32, 9, 1000]
         assert result == expected

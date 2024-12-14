@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, assert_never
+
+from utilities.iterables import apply_starmap
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -54,4 +57,48 @@ def concurrent_map(
     return list(result)
 
 
-__all__ = ["concurrent_map"]
+def concurrent_starmap(
+    func: Callable[..., _T],
+    iterable: Iterable[tuple[Any, ...]],
+    /,
+    *,
+    parallelism: _Parallelism = "processes",
+    max_workers: int | None = None,
+    mp_context: BaseContext | None = None,
+    initializer: Callable[[], object] | None = None,
+    initargs: tuple[Any, ...] = (),
+    max_tasks_per_child: int | None = None,
+    thread_name_prefix: str = "",
+    timeout: float | None = None,
+    chunksize: int = 1,
+) -> list[_T]:
+    """Concurrent map."""
+    partial(apply_starmap, func)
+    match parallelism:
+        case "processes":
+            with ProcessPoolExecutor(
+                max_workers=max_workers,
+                mp_context=mp_context,
+                initializer=initializer,
+                initargs=initargs,
+                max_tasks_per_child=max_tasks_per_child,
+            ) as pool:
+                result = pool.map(
+                    apply_starmap, iterable, timeout=timeout, chunksize=chunksize
+                )
+        case "threads":
+            with ThreadPoolExecutor(
+                max_workers=max_workers,
+                thread_name_prefix=thread_name_prefix,
+                initializer=initializer,
+                initargs=initargs,
+            ) as pool:
+                result = pool.map(
+                    apply_starmap, iterable, timeout=timeout, chunksize=chunksize
+                )
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+    return list(result)
+
+
+__all__ = ["concurrent_map", "concurrent_starmap"]
