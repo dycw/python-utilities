@@ -8,7 +8,7 @@ from hypothesis import given
 from hypothesis.strategies import integers, sampled_from
 from pytest import mark, param
 
-from utilities.concurrent import _Parallelism
+from utilities.concurrent import Parallelism
 from utilities.functions import get_class_name
 from utilities.hypothesis import int32s, settings_with_reduced_examples
 from utilities.iterables import transpose
@@ -48,14 +48,14 @@ class TestGetDesc:
 
 
 class TestPMap:
-    @given(parallelism=sampled_from(get_args(_Parallelism)), n_jobs=integers(1, 3))
-    def test_unary(self, *, parallelism: _Parallelism, n_jobs: int) -> None:
+    @given(parallelism=sampled_from(get_args(Parallelism)), n_jobs=integers(1, 3))
+    def test_unary(self, *, parallelism: Parallelism, n_jobs: int) -> None:
         result = pmap(neg, [1, 2, 3], parallelism=parallelism, n_jobs=n_jobs)
         expected = [-1, -2, -3]
         assert result == expected
 
-    @given(parallelism=sampled_from(get_args(_Parallelism)), n_jobs=integers(1, 3))
-    def test_binary(self, *, parallelism: _Parallelism, n_jobs: int) -> None:
+    @given(parallelism=sampled_from(get_args(Parallelism)), n_jobs=integers(1, 3))
+    def test_binary(self, *, parallelism: Parallelism, n_jobs: int) -> None:
         result = pmap(
             pow, [2, 3, 10], [5, 2, 3], parallelism=parallelism, n_jobs=n_jobs
         )
@@ -64,16 +64,16 @@ class TestPMap:
 
 
 class TestPStarMap:
-    @given(parallelism=sampled_from(get_args(_Parallelism)), n_jobs=integers(1, 3))
-    def test_unary(self, *, parallelism: _Parallelism, n_jobs: int) -> None:
+    @given(parallelism=sampled_from(get_args(Parallelism)), n_jobs=integers(1, 3))
+    def test_unary(self, *, parallelism: Parallelism, n_jobs: int) -> None:
         result = pstarmap(
             neg, [(1,), (2,), (3,)], parallelism=parallelism, n_jobs=n_jobs
         )
         expected = [-1, -2, -3]
         assert result == expected
 
-    @given(parallelism=sampled_from(get_args(_Parallelism)), n_jobs=integers(1, 3))
-    def test_binary(self, *, parallelism: _Parallelism, n_jobs: int) -> None:
+    @given(parallelism=sampled_from(get_args(Parallelism)), n_jobs=integers(1, 3))
+    def test_binary(self, *, parallelism: Parallelism, n_jobs: int) -> None:
         result = pstarmap(
             pow, [(2, 5), (3, 2), (10, 3)], parallelism=parallelism, n_jobs=n_jobs
         )
