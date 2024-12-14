@@ -11,7 +11,7 @@ from logging import Formatter, LogRecord
 from math import isinf, isnan
 from pathlib import Path
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, assert_never
 from uuid import UUID
 
 from orjson import (
@@ -24,7 +24,6 @@ from orjson import (
 from typing_extensions import override
 
 from utilities.dataclasses import Dataclass, asdict_without_defaults
-from utilities.errors import ImpossibleCaseError
 from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import StrMapping
@@ -479,8 +478,8 @@ def _object_hook(
                 k: _object_hook(v, data=data, objects=objects, redirects=redirects)
                 for k, v in obj.items()
             }
-        case _:  # pyright: ignore[reportUnnecessaryComparison]
-            raise ImpossibleCaseError(case=[f"{obj=}"])
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
 
 
 def _object_hook_container(
