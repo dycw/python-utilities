@@ -20,7 +20,7 @@ from zoneinfo import ZoneInfo
 
 from typing_extensions import override
 
-from utilities.functions import ensure_not_none
+from utilities.functions import ensure_not_none, get_class_name
 from utilities.iterables import OneNonUniqueError, always_iterable, one
 from utilities.platform import SYSTEM
 from utilities.zoneinfo import (
@@ -481,7 +481,7 @@ _DateOrDatetime: TypeAlias = Literal["date", "datetime"]
 _TPeriod = TypeVar("_TPeriod", dt.date, dt.datetime)
 
 
-@dataclass(order=True, unsafe_hash=True, slots=True)
+@dataclass(repr=False, order=True, unsafe_hash=True, slots=True)
 class Period(Generic[_TPeriod]):
     """A period of time."""
 
@@ -535,6 +535,38 @@ class Period(Generic[_TPeriod]):
     def __add__(self, other: dt.timedelta, /) -> Self:
         """Offset the period."""
         return self.replace(start=self.start + other, end=self.end + other)
+
+    @override
+    def __repr__(self) -> str:
+        cls = get_class_name(self)
+        match self.kind:
+            case "date":
+                from utilities.whenever import serialize_date
+
+                result = cast(Period[dt.date], self)
+                start, end = map(serialize_date, [result.start, result.end])
+                return f"{cls}({start}, {end})"
+            case "datetime":
+                from utilities.whenever import (
+                    serialize_local_datetime,
+                    serialize_zoned_datetime,
+                )
+
+                result = cast(Period[dt.datetime], self)
+                try:
+                    time_zone = result.time_zone
+                except _PeriodTimeZoneNonUniqueError:
+                    start, end = map(
+                        serialize_zoned_datetime, [result.start, result.end]
+                    )
+                    return f"{cls}({start}, {end})"
+                start, end = (
+                    serialize_local_datetime(t.replace(tzinfo=None))
+                    for t in [result.start, result.end]
+                )
+                return f"{cls}({start}, {end}, {time_zone})"
+            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                assert_never(never)
 
     def __sub__(self, other: dt.timedelta, /) -> Self:
         """Offset the period."""

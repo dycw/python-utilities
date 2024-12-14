@@ -640,6 +640,57 @@ class TestPeriod:
         period = Period(date_or_datetime, date_or_datetime)
         assert period.kind == kind
 
+    @given(dates=tuples(dates(), dates()), func=sampled_from([repr, str]))
+    def test_repr_date(
+        self, *, dates: tuple[dt.date, dt.date], func: Callable[..., str]
+    ) -> None:
+        start, end = sorted(dates)
+        period = Period(start, end)
+        result = func(period)
+        assert search(r"^Period\(\d{4}-\d{2}-\d{2}, \d{4}-\d{2}-\d{2}\)", result)
+
+    @given(data=data(), time_zone=timezones(), func=sampled_from([repr, str]))
+    def test_repr_datetime_same_time_zone(
+        self, *, data: DataObject, time_zone: ZoneInfo, func: Callable[..., str]
+    ) -> None:
+        datetimes = data.draw(
+            tuples(
+                zoned_datetimes(time_zone=time_zone),
+                zoned_datetimes(time_zone=time_zone),
+            )
+        )
+        start, end = sorted(datetimes)
+        period = Period(start, end)
+        result = func(period)
+        assert search(
+            r"^Period\(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?, \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?, .+\)",
+            result,
+        )
+
+    @given(
+        datetimes=tuples(
+            zoned_datetimes(time_zone=timezones()),
+            zoned_datetimes(time_zone=timezones()),
+        ),
+        time_zones=sets(timezones(), min_size=2, max_size=2),
+        func=sampled_from([repr, str]),
+    )
+    def test_repr_datetime_different_time_zone(
+        self,
+        *,
+        datetimes: tuple[dt.datetime, dt.datetime],
+        time_zones: set[ZoneInfo],
+        func: Callable[..., str],
+    ) -> None:
+        start, end = sorted(datetimes)
+        time_zone1, time_zone2 = time_zones
+        period = Period(start.astimezone(time_zone1), end.astimezone(time_zone2))
+        result = func(period)
+        assert search(
+            r"^Period\(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?[\+-]\d{2}:\d{2}(:\d{2})?\[.+\], \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?[\+-]\d{2}:\d{2}(:\d{2})?\[.+\]\)",
+            result,
+        )
+
     @given(dates1=tuples(dates(), dates()), dates2=tuples(dates(), dates()))
     def test_sortable(
         self, *, dates1: tuple[dt.date, dt.date], dates2: tuple[dt.date, dt.date]
