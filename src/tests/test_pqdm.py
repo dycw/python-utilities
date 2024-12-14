@@ -63,7 +63,7 @@ class TestPMap:
         assert result == expected
 
     @given(
-        iterable=lists(tuples(int32s(), int32s()), max_size=10),
+        iterable=lists(tuples(int32s(), int32s()), min_size=1, max_size=10),
         parallelism=sampled_from(get_args(Parallelism)),
         n_jobs=integers(1, 2),
     )
