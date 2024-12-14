@@ -47,7 +47,6 @@ from utilities.datetime import (
     TODAY_UTC,
     WEEK,
     YEAR,
-    ZERO_TIME,
     AddWeekdaysError,
     CheckDateNotDatetimeError,
     CheckZonedDatetimeError,
@@ -64,10 +63,7 @@ from utilities.datetime import (
     _PeriodAsTimeZoneInapplicableError,
     _PeriodDateAndDatetimeMixedError,
     _PeriodInvalidError,
-    _PeriodMaxDurationError,
-    _PeriodMinDurationError,
     _PeriodNaiveDatetimeError,
-    _PeriodReqDurationError,
     _PeriodTimeZoneInapplicableError,
     _PeriodTimeZoneNonUniqueError,
     add_weekdays,
@@ -794,40 +790,6 @@ class TestPeriod:
         _ = assume(start != end)
         with raises(_PeriodInvalidError, match="Invalid period; got .* > .*"):
             _ = Period(end, start)
-
-    @given(dates=tuples(dates(), dates()), duration=timedeltas(min_value=ZERO_TIME))
-    def test_error_req_duration(
-        self, *, dates: tuple[dt.date, dt.date], duration: dt.timedelta
-    ) -> None:
-        start, end = sorted(dates)
-        _ = assume(end - start != duration)
-        with raises(
-            _PeriodReqDurationError, match="Period must have duration .*; got .*"
-        ):
-            _ = Period(start, end, req_duration=duration)
-
-    @given(dates=tuples(dates(), dates()), min_duration=timedeltas(min_value=ZERO_TIME))
-    def test_error_min_duration(
-        self, *, dates: tuple[dt.date, dt.date], min_duration: dt.timedelta
-    ) -> None:
-        start, end = sorted(dates)
-        _ = assume(end - start < min_duration)
-        with raises(
-            _PeriodMinDurationError, match="Period must have min duration .*; got .*"
-        ):
-            _ = Period(start, end, min_duration=min_duration)
-
-    @given(dates=tuples(dates(), dates()), max_duration=timedeltas(max_value=ZERO_TIME))
-    def test_error_max_duration(
-        self, *, dates: tuple[dt.date, dt.date], max_duration: dt.timedelta
-    ) -> None:
-        start, end = sorted(dates)
-        _ = assume(end - start > max_duration)
-        with raises(
-            _PeriodMaxDurationError,
-            match="Period must have duration at most .*; got .*",
-        ):
-            _ = Period(start, end, max_duration=max_duration)
 
     @given(dates=tuples(dates(), dates()))
     def test_error_time_zone_inapplicable(
