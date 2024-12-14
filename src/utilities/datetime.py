@@ -24,6 +24,7 @@ from typing_extensions import override
 from utilities.functions import ensure_not_none, get_class_name
 from utilities.iterables import OneNonUniqueError, always_iterable, one
 from utilities.platform import SYSTEM
+from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import (
     UTC,
     HongKong,
@@ -604,12 +605,27 @@ class Period(Generic[_TPeriod]):
         return "date" if is_instance_date_not_datetime(self.start) else "datetime"
 
     def replace(
-        self, *, start: _TPeriod | None = None, end: _TPeriod | None = None
+        self,
+        *,
+        start: _TPeriod | None = None,
+        end: _TPeriod | None = None,
+        req_duration: MaybeIterable[dt.timedelta] | None | Sentinel = sentinel,
+        min_duration: dt.timedelta | None | Sentinel = sentinel,
+        max_duration: dt.timedelta | None | Sentinel = sentinel,
     ) -> Self:
         """Replace elements of the period."""
         return type(self)(
-            start=self.start if start is None else start,
-            end=self.end if end is None else end,
+            self.start if start is None else start,
+            self.end if end is None else end,
+            req_duration=self.req_duration
+            if isinstance(req_duration, Sentinel)
+            else req_duration,
+            min_duration=self.min_duration
+            if isinstance(min_duration, Sentinel)
+            else min_duration,
+            max_duration=self.max_duration
+            if isinstance(max_duration, Sentinel)
+            else max_duration,
         )
 
     @property
