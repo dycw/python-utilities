@@ -641,7 +641,7 @@ def get_log_records(
     func = partial(_get_log_records_one, objects=objects, redirects=redirects)
     try:
         from utilities.pqdm import pqdm_map
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         outputs = concurrent_map(func, files, parallelism=parallelism)
     else:
         outputs = pqdm_map(func, files, parallelism=parallelism)
