@@ -2,15 +2,16 @@ from __future__ import annotations
 
 import datetime as dt
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
+from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum, unique
 from functools import partial
 from logging import Formatter, LogRecord
 from math import isinf, isnan
 from pathlib import Path
-from re import Match, Pattern
-from typing import TYPE_CHECKING, Any, Literal, Never, TypeAlias, assert_never, cast
+from re import Pattern
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, assert_never
 from uuid import UUID
 
 from orjson import (
@@ -333,10 +334,14 @@ class _SerializeIntegerError(SerializeError):
 
 
 def deserialize(
-    data: bytes, /, *, objects: AbstractSet[type[Any]] | None = None
+    data: bytes,
+    /,
+    *,
+    objects: AbstractSet[type[Any]] | None = None,
+    redirects: Mapping[str, type[Any]] | None = None,
 ) -> Any:
     """Deserialize an object."""
-    return _object_hook(loads(data), data=data, objects=objects)
+    return _object_hook(loads(data), data=data, objects=objects, redirects=redirects)
 
 
 _LOCAL_DATETIME_PATTERN = re.compile(
@@ -403,6 +408,7 @@ def _object_hook(
     *,
     data: bytes,
     objects: AbstractSet[type[Any]] | None = None,
+    redirects: Mapping[str, type[Any]] | None = None,
 ) -> Any:
     match obj:
         case bool() | int() | float() | Dataclass() | None:
@@ -430,7 +436,10 @@ def _object_hook(
                 ).replace(tzinfo=dt.UTC)
             return obj
         case list():
-            return [_object_hook(o, data=data, objects=objects) for o in obj]
+            return [
+                _object_hook(o, data=data, objects=objects, redirects=redirects)
+                for o in obj
+            ]
         case dict():
             if len(obj) == 1:
                 key, value = one(obj.items())
@@ -441,25 +450,36 @@ def _object_hook(
                     (tuple, _TUPLE_PATTERN),
                 ]:
                     result = _object_hook_container(
-                        key, value, cls, pattern, data=data, objects=objects
+                        key,
+                        value,
+                        cls,
+                        pattern,
+                        data=data,
+                        objects=objects,
+                        redirects=redirects,
                     )
                     if result is not None:
                         return result
-                result = _object_hook_dataclass(key, value, data=data, objects=objects)
+                result = _object_hook_dataclass(
+                    key, value, data=data, objects=objects, redirects=redirects
+                )
                 if result is not None:
                     return result
-                result = _object_hook_enum(key, value, data=data, objects=objects)
+                result = _object_hook_enum(
+                    key, value, data=data, objects=objects, redirects=redirects
+                )
                 if result is not None:
                     return result
                 return {
-                    k: _object_hook(v, data=data, objects=objects)
+                    k: _object_hook(v, data=data, objects=objects, redirects=redirects)
                     for k, v in obj.items()
                 }
             return {
-                k: _object_hook(v, data=data, objects=objects) for k, v in obj.items()
+                k: _object_hook(v, data=data, objects=objects, redirects=redirects)
+                for k, v in obj.items()
             }
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-            assert_never(cast(Never, never))
+            assert_never(never)
 
 
 def _object_hook_container(
@@ -471,28 +491,40 @@ def _object_hook_container(
     *,
     data: bytes,
     objects: AbstractSet[type[Any]] | None = None,
+    redirects: Mapping[str, type[Any]] | None = None,
 ) -> Any:
     if not (match := pattern.search(key)):
         return None
-    if match.group(1) is None:
+    if (qualname := match.group(1)) is None:
         cls_use = cls
     else:
-        cls_use = _object_hook_get_object(match, data=data, objects=objects)
-    return cls_use(_object_hook(v, data=data, objects=objects) for v in value)
+        cls_use = _object_hook_get_object(
+            qualname, data=data, objects=objects, redirects=redirects
+        )
+    return cls_use(
+        _object_hook(v, data=data, objects=objects, redirects=redirects) for v in value
+    )
 
 
 def _object_hook_get_object(
-    match: Match[str], /, *, data: bytes, objects: AbstractSet[type[Any]] | None = None
+    qualname: str,
+    /,
+    *,
+    data: bytes = b"",
+    objects: AbstractSet[type[Any]] | None = None,
+    redirects: Mapping[str, type[Any]] | None = None,
 ) -> type[Any]:
-    qualname = match.group(1)
     if qualname == Unserializable.__qualname__:
         return Unserializable
-    if objects is None:
+    if (objects is None) and (redirects is None):
         raise _DeserializeNoObjectsError(data=data, qualname=qualname)
-    try:
-        return one(o for o in objects if o.__qualname__ == qualname)
-    except OneEmptyError:
-        raise _DeserializeObjectNotFoundError(data=data, qualname=qualname) from None
+    if objects is not None:
+        with suppress(OneEmptyError):
+            return one(o for o in objects if o.__qualname__ == qualname)
+    if redirects:
+        with suppress(KeyError):
+            return redirects[qualname]
+    raise _DeserializeObjectNotFoundError(data=data, qualname=qualname)
 
 
 def _object_hook_dataclass(
@@ -502,11 +534,17 @@ def _object_hook_dataclass(
     *,
     data: bytes,
     objects: AbstractSet[type[Any]] | None = None,
+    redirects: Mapping[str, type[Any]] | None = None,
 ) -> Any:
     if not (match := _DATACLASS_PATTERN.search(key)):
         return None
-    cls = _object_hook_get_object(match, data=data, objects=objects)
-    items = {k: _object_hook(v, data=data, objects=objects) for k, v in value.items()}
+    cls = _object_hook_get_object(
+        match.group(1), data=data, objects=objects, redirects=redirects
+    )
+    items = {
+        k: _object_hook(v, data=data, objects=objects, redirects=redirects)
+        for k, v in value.items()
+    }
     return cls(**items)
 
 
@@ -517,11 +555,14 @@ def _object_hook_enum(
     *,
     data: bytes,
     objects: AbstractSet[type[Any]] | None = None,
+    redirects: Mapping[str, type[Any]] | None = None,
 ) -> Any:
     if not (match := _ENUM_PATTERN.search(key)):
         return None
-    cls: type[Enum] = _object_hook_get_object(match, data=data, objects=objects)
-    value_use = _object_hook(value, data=data, objects=objects)
+    cls: type[Enum] = _object_hook_get_object(
+        match.group(1), data=data, objects=objects, redirects=redirects
+    )
+    value_use = _object_hook(value, data=data, objects=objects, redirects=redirects)
     return one(i for i in cls if i.value == value_use)
 
 

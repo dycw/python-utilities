@@ -48,11 +48,12 @@ from utilities.orjson import (
     Unserializable,
     _DeserializeNoObjectsError,
     _DeserializeObjectNotFoundError,
+    _object_hook_get_object,
     _SerializeIntegerError,
     deserialize,
     serialize,
 )
-from utilities.sentinel import sentinel
+from utilities.sentinel import Sentinel, sentinel
 from utilities.types import is_string_mapping
 from utilities.zoneinfo import UTC
 
@@ -61,7 +62,7 @@ if TYPE_CHECKING:
     from utilities.types import StrMapping
 
 
-# handler
+# formatter
 
 
 class TestOrjsonFormatter:
@@ -317,3 +318,32 @@ class TestSerialize:
     def test_pre_process(self, *, x: int) -> None:
         with raises(_SerializeIntegerError, match="Integer .* is out of range"):
             _ = serialize(x)
+
+
+class TestObjectHookGetObject:
+    def test_main(self) -> None:
+        result = _object_hook_get_object(Sentinel.__qualname__, objects={Sentinel})
+        assert result is Sentinel
+
+    def test_redirect(self) -> None:
+        qualname = f"old_{Sentinel.__qualname__}"
+        result = _object_hook_get_object(qualname, redirects={qualname: Sentinel})
+        assert result is Sentinel
+
+    def test_unserializable(self) -> None:
+        result = _object_hook_get_object(Unserializable.__qualname__)
+        assert result is Unserializable
+
+    def test_error_no_objects(self) -> None:
+        with raises(
+            _DeserializeNoObjectsError,
+            match="Objects required to deserialize 'qualname' from .*",
+        ):
+            _ = _object_hook_get_object("qualname")
+
+    def test_error_object_not_found(self) -> None:
+        with raises(
+            _DeserializeObjectNotFoundError,
+            match=r"Unable to find object to deserialize 'qualname' from .*",
+        ):
+            _ = _object_hook_get_object("qualname", objects=set())
