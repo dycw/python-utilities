@@ -70,8 +70,7 @@ if TYPE_CHECKING:
 
 class TestGetLogRecords:
     def test_main(self, *, tmp_path: Path) -> None:
-        name = str(tmp_path)
-        logger = getLogger(name)
+        logger = getLogger(str(tmp_path))
         logger.setLevel(DEBUG)
         handler = FileHandler(file := tmp_path.joinpath("log"))
         handler.setFormatter(OrjsonFormatter())
@@ -91,8 +90,7 @@ class TestGetLogRecords:
         assert result.num_files == 1
 
     def test_deserialize_error(self, *, tmp_path: Path) -> None:
-        name = str(tmp_path)
-        logger = getLogger(name)
+        logger = getLogger(str(tmp_path))
         logger.setLevel(DEBUG)
         handler = FileHandler(file := tmp_path.joinpath("log"))
         handler.setFormatter(OrjsonFormatter())
