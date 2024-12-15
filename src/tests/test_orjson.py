@@ -85,6 +85,7 @@ class TestGetLogRecords:
         assert result.num_errors == 0
         assert result.missing == set()
         assert result.first_errors == []
+        assert all(r.log_file == file for r in result.records)
         assert result.frac_success == 1.0
         assert result.frac_error == 0.0
         assert result.num_files == 1
