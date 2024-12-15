@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import datetime as dt
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
+from contextlib import suppress
 from dataclasses import dataclass, field
 from enum import Enum, unique
 from functools import partial, reduce
@@ -633,11 +634,12 @@ def get_log_records(
     *,
     parallelism: Parallelism = "processes",
     objects: AbstractSet[type[Any]] | None = None,
+    redirects: Mapping[str, type[Any]] | None = None,
 ) -> _GetLogRecordsOutput:
     """Get the log records under a directory."""
     path = Path(path)
     files = list(path.iterdir())
-    func = partial(_get_log_records_one, objects=objects)
+    func = partial(_get_log_records_one, objects=objects, redirects=redirects)
     try:
         from utilities.pqdm import pqdm_map
     except ModuleNotFoundError:
@@ -685,7 +687,11 @@ class _GetLogRecordsOneOutput:
 
 
 def _get_log_records_one(
-    path: Path, /, *, objects: AbstractSet[type[Any]] | None = None
+    path: Path,
+    /,
+    *,
+    objects: AbstractSet[type[Any]] | None = None,
+    redirects: Mapping[str, type[Any]] | None = None,
 ) -> _GetLogRecordsOneOutput:
     path = Path(path)
     with path.open() as fh:
@@ -697,7 +703,9 @@ def _get_log_records_one(
     objects_use = {OrjsonLogRecord} | (set() if objects is None else objects)
     for line in lines:
         try:
-            result = deserialize(line.encode(), objects=objects_use)
+            result = deserialize(
+                line.encode(), objects=objects_use, redirects=redirects
+            )
             record = ensure_class(result, OrjsonLogRecord)
         except (_DeserializeNoObjectsError, _DeserializeObjectNotFoundError) as error:
             num_errors += 1
