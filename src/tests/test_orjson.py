@@ -86,6 +86,9 @@ class TestGetLogRecords:
         assert result.num_errors == 0
         assert result.missing == set()
         assert result.first_errors == []
+        assert result.frac_success == 1.0
+        assert result.frac_error == 0.0
+        assert result.num_files == 1
 
     def test_deserialize_error(self, *, tmp_path: Path) -> None:
         name = str(tmp_path)
@@ -114,12 +117,13 @@ class TestGetLogRecords:
         file = tmp_path.joinpath("log")
         with file.open(mode="w") as fh:
             _ = fh.write("message")
+            _ = fh.write("message")
         result = get_log_records(tmp_path, parallelism="threads")
         assert result.path == tmp_path
         assert result.files == [file]
-        assert result.num_lines == 1
+        assert result.num_lines == 2
         assert result.num_records == 0
-        assert result.num_errors == 1
+        assert result.num_errors == 2
         assert result.missing == set()
         assert len(result.first_errors) == 1
         assert isinstance(one(result.first_errors), JSONDecodeError)

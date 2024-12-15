@@ -673,14 +673,6 @@ class _GetLogRecordsOneOutput:
     missing: set[str] = field(default_factory=set)
     first_error: Exception | None = None
 
-    @property
-    def frac_success(self) -> float:
-        return self.num_records / self.num_lines
-
-    @property
-    def frac_error(self) -> float:
-        return self.num_errors / self.num_lines
-
 
 def _get_log_records_one(
     path: Path,
