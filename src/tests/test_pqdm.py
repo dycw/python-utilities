@@ -13,7 +13,7 @@ from utilities.concurrent import Parallelism
 from utilities.functions import get_class_name
 from utilities.hypothesis import int32s, settings_with_reduced_examples
 from utilities.iterables import transpose
-from utilities.pqdm import _get_desc, pmap, pstarmap
+from utilities.pqdm import _get_desc, pqdm_map, pqdm_starmap
 from utilities.sentinel import Sentinel, sentinel
 from utilities.typing import get_args
 
@@ -48,7 +48,7 @@ class TestGetDesc:
         assert _get_desc(sentinel, Example()) == {"desc": get_class_name(Example)}
 
 
-class TestPMap:
+class TestPqdmMap:
     @given(
         xs=lists(int32s(), max_size=10),
         parallelism=sampled_from(get_args(Parallelism)),
@@ -58,7 +58,7 @@ class TestPMap:
     def test_unary(
         self, *, xs: list[int], parallelism: Parallelism, n_jobs: int
     ) -> None:
-        result = pmap(neg, xs, parallelism=parallelism, n_jobs=n_jobs)
+        result = pqdm_map(neg, xs, parallelism=parallelism, n_jobs=n_jobs)
         expected = list(map(neg, xs))
         assert result == expected
 
@@ -72,12 +72,12 @@ class TestPMap:
         self, *, iterable: list[tuple[int, int]], parallelism: Parallelism, n_jobs: int
     ) -> None:
         xs, ys = transpose(iterable)
-        result = pmap(sub, xs, ys, parallelism=parallelism, n_jobs=n_jobs)
+        result = pqdm_map(sub, xs, ys, parallelism=parallelism, n_jobs=n_jobs)
         expected = list(starmap(sub, iterable))
         assert result == expected
 
 
-class TestPStarMap:
+class TestPqdmStarMap:
     @given(
         iterable=lists(tuples(int32s()), max_size=10),
         parallelism=sampled_from(get_args(Parallelism)),
@@ -87,7 +87,7 @@ class TestPStarMap:
     def test_unary(
         self, *, iterable: list[tuple[int]], parallelism: Parallelism, n_jobs: int
     ) -> None:
-        result = pstarmap(neg, iterable, parallelism=parallelism, n_jobs=n_jobs)
+        result = pqdm_starmap(neg, iterable, parallelism=parallelism, n_jobs=n_jobs)
         expected = list(starmap(neg, iterable))
         assert result == expected
 
@@ -100,6 +100,6 @@ class TestPStarMap:
     def test_binary(
         self, *, iterable: list[tuple[int, int]], parallelism: Parallelism, n_jobs: int
     ) -> None:
-        result = pstarmap(sub, iterable, parallelism=parallelism, n_jobs=n_jobs)
+        result = pqdm_starmap(sub, iterable, parallelism=parallelism, n_jobs=n_jobs)
         expected = list(starmap(sub, iterable))
         assert result == expected
