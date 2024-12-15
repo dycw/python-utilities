@@ -44,10 +44,11 @@ from utilities.math import MAX_INT64, MIN_INT64
 from utilities.operator import IsEqualError, is_equal
 from utilities.orjson import (
     OrjsonFormatter,
+    OrjsonLogRecord,
     Unserializable,
     _DeserializeNoObjectsError,
     _DeserializeObjectNotFoundError,
-    _LogRecord,
+    _object_hook_get_object,
     _SerializeIntegerError,
     deserialize,
     serialize,
@@ -80,8 +81,8 @@ class TestOrjsonFormatter:
         handler.setLevel(DEBUG)
         logger.addHandler(handler)
         logger.debug("message", extra={"a": 1, "b": 2, "_ignored": 3})
-        record = deserialize(buffer.getvalue().encode(), objects={_LogRecord})
-        assert isinstance(record, _LogRecord)
+        record = deserialize(buffer.getvalue().encode(), objects={OrjsonLogRecord})
+        assert isinstance(record, OrjsonLogRecord)
         assert record.name == name
         assert record.message == "message"
         assert record.level == DEBUG

@@ -708,7 +708,7 @@ def _get_log_records_one(
             missing.add(error.qualname)
         except Exception as error:  # noqa: BLE001
             num_errors += 1
-            if first_error is not None:
+            if first_error is None:
                 first_error = error
         else:
             records.append(record)
