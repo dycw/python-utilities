@@ -608,12 +608,12 @@ class GetLogRecordsOutput:
 
     path: Path
     files: list[Path] = field(default_factory=list)
-    records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
     num_lines: int = 0
     num_records: int = 0
     num_errors: int = 0
+    records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
     missing: set[str] = field(default_factory=set)
-    first_errors: list[Exception] = field(default_factory=list)
+    other_errors: list[Exception] = field(default_factory=list)
 
     @property
     def frac_success(self) -> float:
@@ -656,23 +656,19 @@ def get_log_records(
         num_records=sum(o.num_records for o in outputs),
         num_errors=sum(o.num_errors for o in outputs),
         missing=set(reduce(or_, (o.missing for o in outputs))),
-        first_errors=list(
-            chain.from_iterable(
-                [] if o.first_error is None else [o.first_error] for o in outputs
-            )
-        ),
+        other_errors=list(chain.from_iterable(o.other_errors for o in outputs)),
     )
 
 
 @dataclass(kw_only=True, slots=True)
 class _GetLogRecordsOneOutput:
     path: Path
-    records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
     num_lines: int = 0
     num_records: int = 0
     num_errors: int = 0
+    records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
     missing: set[str] = field(default_factory=set)
-    first_error: Exception | None = None
+    other_errors: list[Exception] = field(default_factory=list, repr=False)
 
 
 def _get_log_records_one(
@@ -685,10 +681,10 @@ def _get_log_records_one(
     path = Path(path)
     with path.open() as fh:
         lines = fh.readlines()
-    records: list[OrjsonLogRecord] = []
     num_errors = 0
     missing: set[str] = set()
-    first_error: Exception | None = None
+    records: list[OrjsonLogRecord] = []
+    errors: list[Exception] = []
     objects_use = {OrjsonLogRecord} | (set() if objects is None else objects)
     for line in lines:
         try:
@@ -701,8 +697,7 @@ def _get_log_records_one(
             missing.add(error.qualname)
         except Exception as error:  # noqa: BLE001
             num_errors += 1
-            if first_error is None:
-                first_error = error
+            errors.append(error)
         else:
             record.log_file = path
             records.append(record)
@@ -713,7 +708,7 @@ def _get_log_records_one(
         num_records=len(records),
         num_errors=num_errors,
         missing=missing,
-        first_error=first_error,
+        other_errors=errors,
     )
 
 
