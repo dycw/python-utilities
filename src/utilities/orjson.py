@@ -599,6 +599,7 @@ class OrjsonLogRecord:
     func_name: str | None = None
     stack_info: str | None = None
     extra: StrMapping | None = None
+    log_file: Path | None = None
 
 
 @dataclass(kw_only=True, slots=True)
@@ -703,6 +704,7 @@ def _get_log_records_one(
             if first_error is None:
                 first_error = error
         else:
+            record.log_file = path
             records.append(record)
     return _GetLogRecordsOneOutput(
         path=path,
