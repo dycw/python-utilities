@@ -114,7 +114,7 @@ class TestGetLogRecords:
     def test_other_error(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("log")
         with file.open(mode="w") as fh:
-            _ = fh.writelines(["message", "message"])
+            _ = fh.writelines(["message\n", "message\n"])
         result = get_log_records(tmp_path, parallelism="threads")
         assert result.path == tmp_path
         assert result.files == [file]
