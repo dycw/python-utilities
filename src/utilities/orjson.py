@@ -600,6 +600,7 @@ class OrjsonLogRecord:
     stack_info: str | None = None
     extra: StrMapping | None = None
     log_file: Path | None = None
+    log_file_line_num: int | None = None
 
 
 @dataclass(kw_only=True, slots=True)
@@ -686,7 +687,7 @@ def _get_log_records_one(
     records: list[OrjsonLogRecord] = []
     errors: list[Exception] = []
     objects_use = {OrjsonLogRecord} | (set() if objects is None else objects)
-    for line in lines:
+    for i, line in enumerate(lines, start=1):
         try:
             result = deserialize(
                 line.encode(), objects=objects_use, redirects=redirects
@@ -700,6 +701,7 @@ def _get_log_records_one(
             errors.append(error)
         else:
             record.log_file = path
+            record.log_file_line_num = i
             records.append(record)
     return _GetLogRecordsOneOutput(
         path=path,
