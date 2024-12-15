@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import datetime as dt
+from dataclasses import dataclass
 from io import StringIO
-from logging import DEBUG, StreamHandler, getLogger
+from logging import DEBUG, FileHandler, StreamHandler, getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -19,6 +20,7 @@ from ib_async import (
     Order,
     Trade,
 )
+from orjson import JSONDecodeError
 from pytest import mark, param, raises
 
 from tests.test_operator import (
@@ -40,6 +42,7 @@ from utilities.hypothesis import (
     settings_with_reduced_examples,
     text_printable,
 )
+from utilities.iterables import one
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.operator import IsEqualError, is_equal
 from utilities.orjson import (
@@ -51,10 +54,10 @@ from utilities.orjson import (
     _object_hook_get_object,
     _SerializeIntegerError,
     deserialize,
+    get_log_records,
     serialize,
 )
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import is_string_mapping
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -65,19 +68,71 @@ if TYPE_CHECKING:
 # formatter
 
 
+class TestGetLogRecords:
+    def test_main(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
+        logger.setLevel(DEBUG)
+        handler = FileHandler(file := tmp_path.joinpath("log"))
+        handler.setFormatter(OrjsonFormatter())
+        handler.setLevel(DEBUG)
+        logger.addHandler(handler)
+        logger.debug("message", extra={"a": 1, "b": 2, "_ignored": 3})
+        result = get_log_records(tmp_path, parallelism="threads")
+        assert result.path == tmp_path
+        assert result.files == [file]
+        assert result.num_lines == 1
+        assert result.num_records == 1
+        assert result.num_errors == 0
+        assert result.missing == set()
+        assert result.first_errors == []
+        assert result.frac_success == 1.0
+        assert result.frac_error == 0.0
+        assert result.num_files == 1
+
+    def test_deserialize_error(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
+        logger.setLevel(DEBUG)
+        handler = FileHandler(file := tmp_path.joinpath("log"))
+        handler.setFormatter(OrjsonFormatter())
+        handler.setLevel(DEBUG)
+        logger.addHandler(handler)
+
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+        logger.debug("message", extra={"example": Example()})
+        result = get_log_records(tmp_path, parallelism="threads")
+        assert result.path == tmp_path
+        assert result.files == [file]
+        assert result.num_lines == 1
+        assert result.num_records == 0
+        assert result.num_errors == 1
+        assert result.missing == {Example.__qualname__}
+        assert result.first_errors == []
+
+    def test_other_error(self, *, tmp_path: Path) -> None:
+        file = tmp_path.joinpath("log")
+        with file.open(mode="w") as fh:
+            _ = fh.writelines(["message\n", "message\n"])
+        result = get_log_records(tmp_path, parallelism="threads")
+        assert result.path == tmp_path
+        assert result.files == [file]
+        assert result.num_lines == 2
+        assert result.num_records == 0
+        assert result.num_errors == 2
+        assert result.missing == set()
+        assert len(result.first_errors) == 1
+        assert isinstance(one(result.first_errors), JSONDecodeError)
+
+
 class TestOrjsonFormatter:
     def test_main(self, *, tmp_path: Path) -> None:
         name = str(tmp_path)
         logger = getLogger(name)
         logger.setLevel(DEBUG)
         handler = StreamHandler(buffer := StringIO())
-
-        def before(obj: Any, /) -> Any:
-            if is_string_mapping(obj):
-                return {k: v for k, v in obj.items() if not k.startswith("zoned")}
-            return obj
-
-        handler.setFormatter(OrjsonFormatter(before=before))
+        handler.setFormatter(OrjsonFormatter())
         handler.setLevel(DEBUG)
         logger.addHandler(handler)
         logger.debug("message", extra={"a": 1, "b": 2, "_ignored": 3})
