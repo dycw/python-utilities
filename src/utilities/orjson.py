@@ -602,18 +602,21 @@ class OrjsonLogRecord:
 
 
 @dataclass(kw_only=True, slots=True)
-class _GetLogRecordsOutput:
+class GetLogRecordsOutput:
+    """A collection of outputs."""
+
     path: Path
     files: list[Path] = field(default_factory=list)
+    records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
     num_lines: int = 0
-    log_records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
+    num_records: int = 0
     num_errors: int = 0
     missing: set[str] = field(default_factory=set)
     first_errors: list[Exception] = field(default_factory=list)
 
     @property
     def frac_success(self) -> float:
-        return self.num_success / self.num_lines
+        return self.num_records / self.num_lines
 
     @property
     def frac_error(self) -> float:
@@ -623,10 +626,6 @@ class _GetLogRecordsOutput:
     def num_files(self) -> int:
         return len(self.files)
 
-    @property
-    def num_success(self) -> int:
-        return len(self.log_records)
-
 
 def get_log_records(
     path: PathLike,
@@ -635,7 +634,7 @@ def get_log_records(
     parallelism: Parallelism = "processes",
     objects: AbstractSet[type[Any]] | None = None,
     redirects: Mapping[str, type[Any]] | None = None,
-) -> _GetLogRecordsOutput:
+) -> GetLogRecordsOutput:
     """Get the log records under a directory."""
     path = Path(path)
     files = list(path.iterdir())
@@ -646,14 +645,14 @@ def get_log_records(
         outputs = concurrent_map(func, files, parallelism=parallelism)
     else:
         outputs = pqdm_map(func, files, parallelism=parallelism)
-    return _GetLogRecordsOutput(
+    return GetLogRecordsOutput(
         path=path,
         files=files,
-        num_lines=sum(o.num_lines for o in outputs),
-        log_records=sorted(
-            chain.from_iterable(o.log_records for o in outputs),
-            key=lambda lr: lr.datetime,
+        records=sorted(
+            chain.from_iterable(o.records for o in outputs), key=lambda r: r.datetime
         ),
+        num_lines=sum(o.num_lines for o in outputs),
+        num_records=sum(o.num_records for o in outputs),
         num_errors=sum(o.num_errors for o in outputs),
         missing=set(reduce(or_, (o.missing for o in outputs))),
         first_errors=list(
@@ -667,23 +666,20 @@ def get_log_records(
 @dataclass(kw_only=True, slots=True)
 class _GetLogRecordsOneOutput:
     path: Path
+    records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
     num_lines: int = 0
-    log_records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
+    num_records: int = 0
     num_errors: int = 0
     missing: set[str] = field(default_factory=set)
     first_error: Exception | None = None
 
     @property
     def frac_success(self) -> float:
-        return self.num_success / self.num_lines
+        return self.num_records / self.num_lines
 
     @property
     def frac_error(self) -> float:
         return self.num_errors / self.num_lines
-
-    @property
-    def num_success(self) -> int:
-        return len(self.log_records)
 
 
 def _get_log_records_one(
@@ -696,7 +692,7 @@ def _get_log_records_one(
     path = Path(path)
     with path.open() as fh:
         lines = fh.readlines()
-    log_records: list[OrjsonLogRecord] = []
+    records: list[OrjsonLogRecord] = []
     num_errors = 0
     missing: set[str] = set()
     first_error: Exception | None = None
@@ -715,11 +711,12 @@ def _get_log_records_one(
             if first_error is not None:
                 first_error = error
         else:
-            log_records.append(record)
+            records.append(record)
     return _GetLogRecordsOneOutput(
         path=path,
+        records=sorted(records, key=lambda r: r.datetime),
         num_lines=len(lines),
-        log_records=sorted(log_records, key=lambda lr: lr.datetime),
+        num_records=len(records),
         num_errors=num_errors,
         missing=missing,
         first_error=first_error,
@@ -728,6 +725,7 @@ def _get_log_records_one(
 
 __all__ = [
     "DeserializeError",
+    "GetLogRecordsOutput",
     "OrjsonFormatter",
     "OrjsonLogRecord",
     "SerializeError",
