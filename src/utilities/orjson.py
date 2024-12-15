@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import datetime as dt
 import re
-from collections.abc import Callable, Mapping
-from contextlib import suppress
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from enum import Enum, unique
-from functools import partial
+from functools import partial, reduce
+from itertools import chain
 from logging import Formatter, LogRecord
 from math import isinf, isnan
+from operator import or_
 from pathlib import Path
 from re import Pattern
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, assert_never
@@ -23,10 +24,11 @@ from orjson import (
 )
 from typing_extensions import override
 
+from utilities.concurrent import concurrent_map
 from utilities.dataclasses import Dataclass, asdict_without_defaults
 from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.types import StrMapping
+from utilities.types import PathLike, StrMapping, ensure_class
 from utilities.uuid import UUID_PATTERN
 from utilities.whenever import (
     parse_date,
@@ -45,93 +47,10 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from logging import _FormatStyle
 
-
-_LOG_RECORD_DEFAULT_ATTRS = {
-    "args",
-    "asctime",
-    "created",
-    "exc_info",
-    "exc_text",
-    "filename",
-    "funcName",
-    "levelname",
-    "levelno",
-    "lineno",
-    "message",
-    "module",
-    "msecs",
-    "msg",
-    "name",
-    "pathname",
-    "process",
-    "processName",
-    "relativeCreated",
-    "stack_info",
-    "taskName",
-    "thread",
-    "threadName",
-}
+    from utilities.concurrent import Parallelism
 
 
-@dataclass(kw_only=True, slots=True)
-class OrjsonLogRecord:
-    """The log record as a dataclass."""
-
-    name: str
-    message: str
-    level: int
-    path_name: Path
-    line_num: int
-    datetime: dt.datetime
-    func_name: str | None = None
-    stack_info: str | None = None
-    extra: StrMapping | None = None
-
-
-class OrjsonFormatter(Formatter):
-    """Formatter for JSON logs."""
-
-    @override
-    def __init__(
-        self,
-        fmt: str | None = None,
-        datefmt: str | None = None,
-        style: _FormatStyle = "%",
-        validate: bool = True,
-        /,
-        *,
-        defaults: StrMapping | None = None,
-        before: Callable[[Any], Any] | None = None,
-        dataclass_final_hook: _DataclassFinalHook | None = None,
-    ) -> None:
-        super().__init__(fmt, datefmt, style, validate, defaults=defaults)
-        self._before = before
-        self._dataclass_final_hook = dataclass_final_hook
-
-    @override
-    def format(self, record: LogRecord) -> str:
-        from tzlocal import get_localzone
-
-        extra = {
-            k: v
-            for k, v in record.__dict__.items()
-            if (k not in _LOG_RECORD_DEFAULT_ATTRS) and (not k.startswith("_"))
-        }
-        log_record = OrjsonLogRecord(
-            name=record.name,
-            level=record.levelno,
-            path_name=Path(record.pathname),
-            line_num=record.lineno,
-            message=record.getMessage(),
-            datetime=dt.datetime.fromtimestamp(record.created, tz=get_localzone()),
-            func_name=record.funcName,
-            extra=extra if len(extra) >= 1 else None,
-        )
-        return serialize(
-            log_record,
-            before=self._before,
-            dataclass_final_hook=self._dataclass_final_hook,
-        ).decode()
+# serialize
 
 
 @unique
@@ -331,6 +250,9 @@ class _SerializeIntegerError(SerializeError):
     @override
     def __str__(self) -> str:
         return f"Integer {self.obj} is out of range"
+
+
+# deserialize
 
 
 def deserialize(
@@ -588,11 +510,220 @@ class _DeserializeObjectNotFoundError(DeserializeError):
         )
 
 
+# logging
+
+_LOG_RECORD_DEFAULT_ATTRS = {
+    "args",
+    "asctime",
+    "created",
+    "exc_info",
+    "exc_text",
+    "filename",
+    "funcName",
+    "levelname",
+    "levelno",
+    "lineno",
+    "message",
+    "module",
+    "msecs",
+    "msg",
+    "name",
+    "pathname",
+    "process",
+    "processName",
+    "relativeCreated",
+    "stack_info",
+    "taskName",
+    "thread",
+    "threadName",
+}
+
+
+class OrjsonFormatter(Formatter):
+    """Formatter for JSON logs."""
+
+    @override
+    def __init__(
+        self,
+        fmt: str | None = None,
+        datefmt: str | None = None,
+        style: _FormatStyle = "%",
+        validate: bool = True,
+        /,
+        *,
+        defaults: StrMapping | None = None,
+        before: Callable[[Any], Any] | None = None,
+        dataclass_final_hook: _DataclassFinalHook | None = None,
+    ) -> None:
+        super().__init__(fmt, datefmt, style, validate, defaults=defaults)
+        self._before = before
+        self._dataclass_final_hook = dataclass_final_hook
+
+    @override
+    def format(self, record: LogRecord) -> str:
+        from tzlocal import get_localzone
+
+        extra = {
+            k: v
+            for k, v in record.__dict__.items()
+            if (k not in _LOG_RECORD_DEFAULT_ATTRS) and (not k.startswith("_"))
+        }
+        log_record = OrjsonLogRecord(
+            name=record.name,
+            level=record.levelno,
+            path_name=Path(record.pathname),
+            line_num=record.lineno,
+            message=record.getMessage(),
+            datetime=dt.datetime.fromtimestamp(record.created, tz=get_localzone()),
+            func_name=record.funcName,
+            extra=extra if len(extra) >= 1 else None,
+        )
+        return serialize(
+            log_record,
+            before=self._before,
+            dataclass_final_hook=self._dataclass_final_hook,
+        ).decode()
+
+
+@dataclass(kw_only=True, slots=True)
+class OrjsonLogRecord:
+    """The log record as a dataclass."""
+
+    name: str
+    message: str
+    level: int
+    path_name: Path
+    line_num: int
+    datetime: dt.datetime
+    func_name: str | None = None
+    stack_info: str | None = None
+    extra: StrMapping | None = None
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetLogRecordsOutput:
+    path: Path
+    files: list[Path] = field(default_factory=list)
+    num_lines: int = 0
+    log_records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
+    num_errors: int = 0
+    missing: set[str] = field(default_factory=set)
+    first_errors: list[Exception] = field(default_factory=list)
+
+    @property
+    def frac_success(self) -> float:
+        return self.num_success / self.num_lines
+
+    @property
+    def frac_error(self) -> float:
+        return self.num_errors / self.num_lines
+
+    @property
+    def num_files(self) -> int:
+        return len(self.files)
+
+    @property
+    def num_success(self) -> int:
+        return len(self.log_records)
+
+
+def get_log_records(
+    path: PathLike,
+    /,
+    *,
+    parallelism: Parallelism = "processes",
+    objects: AbstractSet[type[Any]] | None = None,
+) -> _GetLogRecordsOutput:
+    """Get the log records under a directory."""
+    path = Path(path)
+    files = list(path.iterdir())
+    func = partial(_get_log_records_one, objects=objects)
+    try:
+        from utilities.pqdm import pqdm_map
+    except ModuleNotFoundError:
+        outputs = concurrent_map(func, files, parallelism=parallelism)
+    else:
+        outputs = pqdm_map(func, files, parallelism=parallelism)
+    return _GetLogRecordsOutput(
+        path=path,
+        files=files,
+        num_lines=sum(o.num_lines for o in outputs),
+        log_records=sorted(
+            chain.from_iterable(o.log_records for o in outputs),
+            key=lambda lr: lr.datetime,
+        ),
+        num_errors=sum(o.num_errors for o in outputs),
+        missing=set(reduce(or_, (o.missing for o in outputs))),
+        first_errors=list(
+            chain.from_iterable(
+                [] if o.first_error is None else [o.first_error] for o in outputs
+            )
+        ),
+    )
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetLogRecordsOneOutput:
+    path: Path
+    num_lines: int = 0
+    log_records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
+    num_errors: int = 0
+    missing: set[str] = field(default_factory=set)
+    first_error: Exception | None = None
+
+    @property
+    def frac_success(self) -> float:
+        return self.num_success / self.num_lines
+
+    @property
+    def frac_error(self) -> float:
+        return self.num_errors / self.num_lines
+
+    @property
+    def num_success(self) -> int:
+        return len(self.log_records)
+
+
+def _get_log_records_one(
+    path: Path, /, *, objects: AbstractSet[type[Any]] | None = None
+) -> _GetLogRecordsOneOutput:
+    path = Path(path)
+    with path.open() as fh:
+        lines = fh.readlines()
+    log_records: list[OrjsonLogRecord] = []
+    num_errors = 0
+    missing: set[str] = set()
+    first_error: Exception | None = None
+    objects_use = {OrjsonLogRecord} | (set() if objects is None else objects)
+    for line in lines:
+        try:
+            result = deserialize(line.encode(), objects=objects_use)
+            record = ensure_class(result, OrjsonLogRecord)
+        except (_DeserializeNoObjectsError, _DeserializeObjectNotFoundError) as error:
+            num_errors += 1
+            missing.add(error.qualname)
+        except Exception as error:  # noqa: BLE001
+            num_errors += 1
+            if first_error is not None:
+                first_error = error
+        else:
+            log_records.append(record)
+    return _GetLogRecordsOneOutput(
+        path=path,
+        num_lines=len(lines),
+        log_records=sorted(log_records, key=lambda lr: lr.datetime),
+        num_errors=num_errors,
+        missing=missing,
+        first_error=first_error,
+    )
+
+
 __all__ = [
     "DeserializeError",
     "OrjsonFormatter",
     "OrjsonLogRecord",
     "SerializeError",
     "deserialize",
+    "get_log_records",
     "serialize",
 ]

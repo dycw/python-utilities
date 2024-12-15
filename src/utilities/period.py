@@ -123,6 +123,7 @@ class Period(Generic[_TPeriod]):
                 return f"{cls}({start}, {end}, {time_zone})"
             case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                 assert_never(never)
+        return None
 
     def __sub__(self, other: dt.timedelta, /) -> Self:
         """Offset the period."""
@@ -142,6 +143,7 @@ class Period(Generic[_TPeriod]):
                 return cast(Self, result)
             case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                 assert_never(never)
+        return None
 
     @property
     def duration(self) -> dt.timedelta:
@@ -203,6 +205,7 @@ class Period(Generic[_TPeriod]):
                     ) from None
             case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                 assert_never(never)
+        return None
 
     def to_dict(self) -> _PeriodAsDict:
         """Convert the period to a dictionary."""
