@@ -10,7 +10,6 @@ from polars import DataFrame
 from typing_extensions import override
 
 from utilities.dataclasses import (
-    Dataclass,
     _is_not_default_value,
     asdict_without_defaults,
     replace_non_sentinel,
