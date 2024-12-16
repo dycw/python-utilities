@@ -249,10 +249,17 @@ def yield_fields(
             )
     elif is_dataclass_class(obj):
         for field in fields(obj):
+            hints = get_type_hints(obj)
+            try:
+                type_ = hints[field.name]
+            except KeyError:
+                type_ = field.type
+            # breakpoint()
+
             yield (
                 _YieldFieldsClass(
                     name=field.name,
-                    type_=field.type,
+                    type_=type_,
                     default=sentinel if field.default is MISSING else field.default,
                     default_factory=sentinel
                     if field.default_factory is MISSING
@@ -261,7 +268,7 @@ def yield_fields(
                     repr=field.repr,
                     hash_=field.hash,
                     compare=field.compare,
-                    metadata=field.metadata,
+                    metadata=dict(field.metadata),
                     kw_only=sentinel if field.kw_only is MISSING else field.kw_only,
                 )
             )

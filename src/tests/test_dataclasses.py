@@ -18,6 +18,7 @@ from utilities.dataclasses import (
     GetDataClassClassError,
     _AsDictWithTypesElement,
     _is_not_default_value,
+    _YieldFieldsClass,
     asdict_with_types,
     asdict_without_defaults,
     replace_non_sentinel,
@@ -36,7 +37,6 @@ if TYPE_CHECKING:
     from utilities.types import StrMapping
 
 
-@mark.only
 class TestAsDictWithTypes:
     @given(x=integers())
     def test_field_without_defaults(self, *, x: int) -> None:
@@ -258,19 +258,13 @@ class TestReprWithoutDefaults:
 
 
 class TestYieldFields:
-    def test_class_with_none_type_no_default(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: None
-
-        result = one(yield_fields(Example))
-        expected = _YieldFieldsClass(name="x", type_=NoneType, kw_only=True)
-        assert result == expected
-
-    def test_class_with_none_type_and_default(self) -> None:
+    def test_class(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: None = None
 
-        for obj in [Example(), Example]:
-            assert list(yield_fields(obj)) == ["x"]
+        result = list(yield_fields(Example))
+        expected = [
+            _YieldFieldsClass(name="x", type_=NoneType, default=None, kw_only=True)
+        ]
+        assert result == expected
