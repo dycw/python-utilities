@@ -6,7 +6,7 @@ import reprlib
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import timezone
 from functools import partial, reduce
 from itertools import chain
@@ -583,63 +583,67 @@ def dataclass_to_schema(
     out: dict[str, Any] = {}
     for field in yield_fields(obj, globalns=globalns, localns=localns):
         if is_dataclass_instance(field.value):
-            dtype = _dataclass_to_schema_dict_one(
-                field.value, globalns=globalns, localns=localns
+            dtypes = dataclass_to_schema(
+                field.value,
+                globalns=globalns,
+                localns=localns,
             )
+            dtype = struct_dtype(**dtypes)
+        elif field.type_ is dt.datetime:
+            field_use = cast(_YieldFieldsInstance[dt.datetime], field)
+            if field_use.value.tzinfo is None:
+                dtype = Datetime
+            else:
+                dtype = zoned_datetime(time_zone=field_use.value.tzinfo)
         else:
-            dtype = _dataclass_to_schema_dict_type_to_dtype(field)
+            dtype = _dataclass_to_schema_one(
+                field.type_, globalns=globalns, localns=localns
+            )
         out[field.name] = dtype
     return out
 
 
-def _dataclass_to_schema_dict_one(
-    obj: Dataclass,
+def _dataclass_to_schema_one(
+    obj: Any,
     /,
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-) -> Struct:
-    """Cast a dataclass as a struct data type."""
-    out: dict[str, Any] = {}
-    for field in yield_fields(obj, globalns=globalns, localns=localns):
-        if is_dataclass_instance(field.value):
-            dtype = _dataclass_to_schema_dict_one(
-                field.value, globalns=globalns, localns=localns
-            )
-        else:
-            dtype = _dataclass_to_schema_dict_type_to_dtype(field)
-        out[field.name] = dtype
-    return struct_dtype(**out)
-
-
-def _dataclass_to_schema_dict_type_to_dtype(
-    field: _YieldFieldsInstance[Any], /, *, type_: type[Any] | None = None
 ) -> PolarsDataType:
-    type_use = field.type_ if type_ is None else type_
-    if type_use is int:
+    if obj is bool:
+        return Boolean
+    if obj is int:
         return Int64
-    if type_use is float:
+    if obj is float:
         return Float64
-    if type_use is str:
+    if obj is str:
         return Utf8
-    if type_use is dt.date:
+    if obj is dt.date:
         return Date
-    if type_use is dt.datetime:
-        field_use = cast(_YieldFieldsInstance[dt.datetime], field)
-        if field_use.value.tzinfo is None:
-            return Datetime
-        return zoned_datetime(time_zone=field_use.value.tzinfo)
-    if isinstance(type_use, type) and issubclass(type_use, enum.Enum):
-        return pl.Enum([e.name for e in type_use])
-    if is_frozenset_type(type_use) or is_list_type(type_use) or is_set_type(type_use):
-        arg = one(get_args(type_use))
-        return List(_dataclass_to_schema_dict_type_to_dtype(field, type_=arg))
-    if is_literal_type(type_use):
-        return pl.Enum(get_args(type_use))
-    if is_optional_type(type_use):
-        arg = one(get_args(type_use))
-        return _dataclass_to_schema_dict_type_to_dtype(field, type_=arg)
-    msg = f"{type_use=}"  # pragma: no cover
+    if isinstance(obj, type) and issubclass(obj, enum.Enum):
+        return pl.Enum([e.name for e in obj])
+    if is_dataclass_class(obj):
+        out: dict[str, Any] = {}
+        for field in yield_fields(obj, globalns=globalns, localns=localns):
+            out[field.name] = _dataclass_to_schema_one(
+                field.type_, globalns=globalns, localns=localns
+            )
+        return struct_dtype(**out)
+    if is_dataclass_instance(obj):
+        dtypes = dataclass_to_schema(obj, globalns=globalns, localns=localns)
+        return struct_dtype(**dtypes)
+    if is_frozenset_type(obj) or is_list_type(obj) or is_set_type(obj):
+        inner_type = one(get_args(obj))
+        inner_dtype = _dataclass_to_schema_one(
+            inner_type, globalns=globalns, localns=localns
+        )
+        return List(inner_dtype)
+    if is_literal_type(obj):
+        return pl.Enum(get_args(obj))
+    if is_optional_type(obj):
+        inner_type = one(get_args(obj))
+        return _dataclass_to_schema_one(inner_type, globalns=globalns, localns=localns)
+    msg = f"{obj=}"  # pragma: no cover
     raise NotImplementedError(msg)
 
 

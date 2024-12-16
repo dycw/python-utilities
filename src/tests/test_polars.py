@@ -695,6 +695,7 @@ class TestDataClassToSchema:
 
         @dataclass(kw_only=True, slots=True)
         class Example:
+            bool_field: bool = False
             int_field: int = 0
             float_field: float = 0.0
             str_field: str = ""
@@ -703,6 +704,7 @@ class TestDataClassToSchema:
         obj = Example()
         result = dataclass_to_schema(obj)
         expected = {
+            "bool_field": Boolean,
             "int_field": Int64,
             "float_field": Float64,
             "str_field": Utf8,
@@ -744,6 +746,18 @@ class TestDataClassToSchema:
         expected = {"x": pl.Enum(["true", "false"])}
         assert result == expected
 
+    def test_local_datetime(self) -> None:
+        now = get_now().replace(tzinfo=None)
+
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: dt.datetime = now
+
+        obj = Example()
+        result = dataclass_to_schema(obj)
+        expected = {"x": Datetime()}
+        assert result == expected
+
     def test_nested_once(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Inner:
@@ -776,16 +790,18 @@ class TestDataClassToSchema:
         expected = {"middle": struct_dtype(inner=struct_dtype(x=Int64))}
         assert result == expected
 
-    def test_local_datetime(self) -> None:
-        now = get_now().replace(tzinfo=None)
+    def test_nested_outer_list_basic_types(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Inner:
+            x: int = 0
 
         @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: dt.datetime = now
+        class Outer:
+            inner: list[Inner] = field(default_factory=list)
 
-        obj = Example()
-        result = dataclass_to_schema(obj)
-        expected = {"x": Datetime()}
+        obj = Outer()
+        result = dataclass_to_schema(obj, localns=locals())
+        expected = {"inner": List(Struct({"x": Int64}))}
         assert result == expected
 
     @given(time_zone=timezones())
