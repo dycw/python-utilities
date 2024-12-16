@@ -54,9 +54,14 @@ from polars._typing import (
 from polars.datatypes import DataType
 from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
+from pyarrow import Schema
 from typing_extensions import override
 
-from utilities.dataclasses import asdict_without_defaults, yield_fields
+from utilities.dataclasses import (
+    _YieldFieldsInstance,
+    asdict_without_defaults,
+    yield_fields,
+)
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import (
     CheckIterablesEqualError,
@@ -80,7 +85,13 @@ from utilities.math import (
     ewm_parameters,
 )
 from utilities.sentinel import Sentinel
-from utilities.types import Dataclass, StrMapping, ensure_datetime, is_dataclass_class
+from utilities.types import (
+    Dataclass,
+    StrMapping,
+    ensure_datetime,
+    is_dataclass_class,
+    is_dataclass_instance,
+)
 from utilities.typing import (
     get_args,
     get_type_hints,
@@ -553,6 +564,66 @@ def _dataclass_to_row_reducer(
         inner = dataclass_to_row(getattr(obj, column))
         return df.with_columns(**{column: inner.select(all=struct("*"))["all"]})
     return df
+
+
+@dataclass(kw_only=True, slots=True)
+class _AsDictWithTypesElement(Generic[_T]):
+    value: _T
+    type_: type[_T]
+
+
+def dataclass_to_schema_dict(
+    obj: Dataclass,
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+) -> SchemaDict:
+    """Cast a dataclass as a schema dict."""
+    out: dict[str, Any] = {}
+    for field in yield_fields(obj, globalns=globalns, localns=localns):
+        if is_dataclass_instance(field.value):
+            dtype = _dataclass_to_schema_dict_one(field.value)
+        else:
+            dtype = _dataclass_to_schema_dict_type_to_dtype(field)
+        out[field.name] = dtype
+    return out
+
+
+def _dataclass_to_schema_dict_one(
+    obj: Dataclass,
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+) -> Struct:
+    """Cast a dataclass as a struct data type."""
+    out: dict[str, Any] = {}
+    for field in yield_fields(obj, globalns=globalns, localns=localns):
+        if is_dataclass_instance(field.value):
+            dtype = _dataclass_to_schema_dict_one(field)
+        else:
+            dtype = _dataclass_to_schema_dict_type_to_dtype(field)
+        out[field.name] = dtype
+    return struct_dtype(**out)
+
+
+def _dataclass_to_schema_dict_type_to_dtype(
+    field: _YieldFieldsInstance[Any], /
+) -> PolarsDataType:
+    if field.type_ is int:
+        return Int64
+    if field.type_ is float:
+        return Float64
+    if field.type_ is str:
+        return Float64
+    if field.type_ is dt.date:
+        return Date
+    if field.type_ is dt.datetime:
+        field_use = cast(_YieldFieldsInstance[dt.datetime], field)
+        return Datetime(time_zone=field_use.value.tzinfo)
+    msg = f"{field.type_=}"  # pragma: no cover
+    raise NotImplementedError(msg)
 
 
 def drop_null_struct_series(series: Series, /) -> Series:
@@ -1217,6 +1288,7 @@ __all__ = [
     "columns_to_dict",
     "convert_time_zone",
     "dataclass_to_row",
+    "dataclass_to_schema_dict",
     "drop_null_struct_series",
     "ensure_expr_or_series",
     "floor_datetime",

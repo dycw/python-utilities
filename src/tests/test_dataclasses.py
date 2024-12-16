@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 from types import NoneType
 from typing import Any, Literal, TypeVar, cast
 
@@ -8,15 +8,14 @@ from hypothesis import given
 from hypothesis.strategies import integers, lists
 from ib_async import Future
 from polars import DataFrame
-from pytest import raises
+from pytest import mark, param, raises
 from typing_extensions import override
 
 from tests.test_operator import DataClass3
 from utilities.dataclasses import (
-    _AsDictWithTypesElement,
-    _is_not_default_value,
+    YieldFieldsError,
     _YieldFieldsClass,
-    asdict_with_types,
+    _YieldFieldsInstance,
     asdict_without_defaults,
     replace_non_sentinel,
     repr_without_defaults,
@@ -37,17 +36,18 @@ if TYPE_CHECKING:
 TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
 
 
-# class TestAsDictWithTypes:
-#     @given(x=integers())
-#     def test_field_without_defaults(self, *, x: int) -> None:
-#         @dataclass(kw_only=True, slots=True)
-#         class Example:
-#             x: int
-#
-#         obj = Example(x=x)
-#         result = asdict_with_types(obj)
-#         expected = {"x": _AsDictWithTypesElement(value=1, type_=int)}
-#         assert result == expected
+@mark.only
+class TestAsDictWithTypes:
+    @given(x=integers())
+    def test_field_without_defaults(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        obj = Example(x=x)
+        result = asdict_with_types(obj)
+        expected = {"x": _AsDictWithTypesElement(value=1, type_=int)}
+        assert result == expected
 
 
 class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
@@ -263,8 +263,8 @@ class TestYieldFields:
         class Example:
             x: None
 
-        result = list(yield_fields(Example))
-        expected = [_YieldFieldsClass(name="x", type_=NoneType, kw_only=True)]
+        result = one(yield_fields(Example))
+        expected = _YieldFieldsClass(name="x", type_=NoneType, kw_only=True)
         assert result == expected
 
     def test_class_with_none_type_and_default(self) -> None:
@@ -272,10 +272,10 @@ class TestYieldFields:
         class Example:
             x: None = None
 
-        result = list(yield_fields(Example))
-        expected = [
-            _YieldFieldsClass(name="x", type_=NoneType, default=None, kw_only=True)
-        ]
+        result = one(yield_fields(Example))
+        expected = _YieldFieldsClass(
+            name="x", type_=NoneType, default=None, kw_only=True
+        )
         assert result == expected
 
     def test_class_with_int_type(self) -> None:
@@ -283,8 +283,8 @@ class TestYieldFields:
         class Example:
             x: int
 
-        result = list(yield_fields(Example))
-        expected = [_YieldFieldsClass(name="x", type_=int, kw_only=True)]
+        result = one(yield_fields(Example))
+        expected = _YieldFieldsClass(name="x", type_=int, kw_only=True)
         assert result == expected
 
     def test_class_with_list_int_type(self) -> None:
@@ -292,14 +292,11 @@ class TestYieldFields:
         class Example:
             x: list[int] = field(default_factory=list)
 
-        results = list(yield_fields(Example))
-        expected = [
-            _YieldFieldsClass(
-                name="x", type_=list[int], default_factory=list, kw_only=True
-            )
-        ]
-        assert results == expected
-        result = one(results)
+        result = one(yield_fields(Example))
+        expected = _YieldFieldsClass(
+            name="x", type_=list[int], default_factory=list, kw_only=True
+        )
+        assert result == expected
         assert is_list_type(result.type_)
         assert get_args(result.type_) == (int,)
 
@@ -312,10 +309,9 @@ class TestYieldFields:
         class Outer:
             inner: Inner
 
-        results = list(yield_fields(Outer, localns=locals()))
-        expected = [_YieldFieldsClass(name="inner", type_=Inner, kw_only=True)]
-        assert results == expected
-        result = one(results)
+        result = one(yield_fields(Outer, localns=locals()))
+        expected = _YieldFieldsClass(name="inner", type_=Inner, kw_only=True)
+        assert result == expected
         assert result.type_ is Inner
 
     def test_class_literal(self) -> None:
@@ -323,14 +319,12 @@ class TestYieldFields:
         class Example:
             truth: TruthLit
 
-        results = list(yield_fields(Example, globalns=globals()))
-        expected = [
-            _YieldFieldsClass(
-                name="truth", type_=cast(type[Any], TruthLit), kw_only=True
-            )
-        ]
-        assert results == expected
-        result = one(results)
+        result = one(yield_fields(Example, globalns=globals()))
+        expected = _YieldFieldsClass(
+            name="truth", type_=cast(type[Any], TruthLit), kw_only=True
+        )
+
+        assert result == expected
         assert is_literal_type(result.type_)
         assert get_args(result.type_) == ("true", "false")
 
@@ -339,19 +333,71 @@ class TestYieldFields:
         class Example:
             truth: TruthLit | None = None
 
-        results = list(yield_fields(Example, globalns=globals()))
-        expected = [
-            _YieldFieldsClass(
-                name="truth",
-                type_=cast(type[Any], TruthLit | None),
-                default=None,
-                kw_only=True,
-            )
-        ]
-        assert results == expected
-        result = one(results)
+        result = one(yield_fields(Example, globalns=globals()))
+        expected = _YieldFieldsClass(
+            name="truth",
+            type_=cast(type[Any], TruthLit | None),
+            default=None,
+            kw_only=True,
+        )
+        assert result == expected
         assert is_optional_type(result.type_)
         args = get_args(result.type_)
         assert args == (Literal["true", "false"],)
         arg = one(args)
         assert get_args(arg) == ("true", "false")
+
+    def test_instance(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: None = None
+
+        obj = Example()
+        result = one(yield_fields(obj, globalns=globals()))
+        expected = _YieldFieldsInstance(
+            name="x", value=None, type_=NoneType, default=None, kw_only=True
+        )
+        assert result == expected
+
+    @given(x=integers())
+    def test_instance_is_default_value_with_no_default(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        obj = Example(x=x)
+        field = one(yield_fields(obj))
+        assert not field.equals_default()
+
+    @given(x=integers())
+    def test_instance_is_default_value_with_default(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+        obj = Example(x=x)
+        field = one(yield_fields(obj))
+        result = field.equals_default()
+        expected = x == 0
+        assert result is expected
+
+    @given(x=lists(integers()))
+    def test_instance_is_default_value_with_default_factory(
+        self, *, x: list[int]
+    ) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: list[int] = field(default_factory=list)
+
+        obj = Example(x=x)
+        fld = one(yield_fields(obj))
+        result = fld.equals_default()
+        expected = x == []
+        assert result is expected
+
+    def test_error(self) -> None:
+        with raises(
+            YieldFieldsError,
+            match="Object must be a dataclass instance or class; got None",
+        ):
+            _ = list(yield_fields(cast(Any, None)))
