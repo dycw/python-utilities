@@ -1,24 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field, fields
-from types import NoneType
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar
 
 from hypothesis import given
 from hypothesis.strategies import integers, lists
 from ib_async import Future
 from polars import DataFrame
-from pytest import mark, param, raises
 from typing_extensions import override
 
 from utilities.dataclasses import (
     Dataclass,
-    GetDataClassClassError,
     _is_not_default_value,
     asdict_without_defaults,
-    get_dataclass_class,
-    is_dataclass_class,
-    is_dataclass_instance,
     replace_non_sentinel,
     repr_without_defaults,
     yield_field_names,
@@ -176,51 +170,6 @@ class TestDataClassProtocol:
             x: None = None
 
         _ = identity(Example())
-
-
-class TestGetDataClassClass:
-    def test_main(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: None = None
-
-        for obj in [Example(), Example]:
-            assert get_dataclass_class(obj) is Example
-
-    def test_error(self) -> None:
-        with raises(
-            GetDataClassClassError,
-            match="Object must be a dataclass instance or class; got None",
-        ):
-            _ = get_dataclass_class(cast(Any, None))
-
-
-class TestIsDataClassClass:
-    def test_main(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: None = None
-
-        assert is_dataclass_class(Example)
-        assert not is_dataclass_class(Example())
-
-    @mark.parametrize("obj", [param(None), param(NoneType)])
-    def test_others(self, *, obj: Any) -> None:
-        assert not is_dataclass_class(obj)
-
-
-class TestIsDataClassInstance:
-    def test_main(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: None = None
-
-        assert not is_dataclass_instance(Example)
-        assert is_dataclass_instance(Example())
-
-    @mark.parametrize("obj", [param(None), param(NoneType)])
-    def test_others(self, *, obj: Any) -> None:
-        assert not is_dataclass_instance(obj)
 
 
 class TestIsNotDefaultValue:

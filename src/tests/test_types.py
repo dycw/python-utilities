@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from hypothesis import given
+from hypothesis.strategies import sampled_from
 from pytest import mark, param, raises
 
 from utilities.datetime import ZERO_TIME, get_now, get_today
@@ -35,6 +38,8 @@ from utilities.types import (
     ensure_sized,
     ensure_sized_not_str,
     ensure_time,
+    is_dataclass_class,
+    is_dataclass_instance,
     is_hashable,
     is_sequence_of_tuple_or_str_mapping,
     is_sized,
@@ -283,6 +288,34 @@ class TestEnsureTime:
     def test_error(self, *, nullable: bool, match: str) -> None:
         with raises(EnsureTimeError, match=f"{match}; got .* instead"):
             _ = ensure_time(sentinel, nullable=nullable)
+
+
+class TestIsDataClassClass:
+    def test_main(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: None = None
+
+        assert is_dataclass_class(Example)
+        assert not is_dataclass_class(Example())
+
+    @given(obj=sampled_from([None, type(None)]))
+    def test_others(self, *, obj: Any) -> None:
+        assert not is_dataclass_class(obj)
+
+
+class TestIsDataClassInstance:
+    def test_main(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: None = None
+
+        assert not is_dataclass_instance(Example)
+        assert is_dataclass_instance(Example())
+
+    @given(obj=sampled_from([None, type(None)]))
+    def test_others(self, *, obj: Any) -> None:
+        assert not is_dataclass_instance(obj)
 
 
 class TestIsHashable:
