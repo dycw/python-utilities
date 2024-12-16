@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import datetime as dt
 from dataclasses import MISSING, dataclass, field, fields, replace
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
 
 from typing_extensions import override
@@ -184,13 +182,6 @@ class _YieldFieldsClass(Generic[_T]):
     kw_only: bool | Sentinel = sentinel
 
 
-_OBJECTS = {Literal, Path, dt.date, dt.datetime, float, int, str}
-_OBJECT_MAPPINGS = {o.__qualname__: o for o in _OBJECTS} | {
-    "dt.date": dt.date,
-    "dt.datetime": dt.datetime,
-}
-
-
 @overload
 def yield_fields(
     obj: Dataclass,
@@ -231,16 +222,13 @@ def yield_fields(
                 kw_only=field.kw_only,
             )
     elif is_dataclass_class(obj):
-        globals_use = (
-            _OBJECT_MAPPINGS | globals() | ({} if globalns is None else dict(globalns))
-        )
-        hints = get_type_hints(obj, globalns=globals_use, localns=localns)
+        hints = get_type_hints(obj, globalns=globalns, localns=localns)
         for field in fields(obj):
-            type_ = hints.get(field.name, field.type)
-            if isinstance(type_, str):
-                raise _YieldFieldsUnresolvedFieldTypeError(
-                    obj=obj, name=field.name, type_=type_
-                )
+            if isinstance(field.type, type):
+                type_ = field.type
+            else:
+                hints = get_type_hints(obj, globalns=globalns, localns=localns)
+                type_ = hints.get(field.name, field.type)
             yield (
                 _YieldFieldsClass(
                     name=field.name,
@@ -258,26 +246,11 @@ def yield_fields(
                 )
             )
     else:
-        raise _YieldFieldsNotADataClassError(obj=obj)
+        raise YieldFieldsError(obj=obj)
 
 
 @dataclass(kw_only=True, slots=True)
-class YieldFieldsError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _YieldFieldsUnresolvedFieldTypeError(YieldFieldsError):
-    obj: type[Dataclass]
-    name: str
-    type_: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Field '{self.obj.__name__}.{self.name}' must resolve to a type; got {self.type_!r}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _YieldFieldsNotADataClassError(YieldFieldsError):
+class YieldFieldsError(Exception):
     obj: Any
 
     @override
