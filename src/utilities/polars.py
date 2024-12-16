@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import datetime as dt
+import enum
 import reprlib
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import asdict, dataclass
 from datetime import timezone
-from enum import Enum
 from functools import partial, reduce
 from itertools import chain
 from typing import (
@@ -23,6 +23,7 @@ from typing import (
 )
 from zoneinfo import ZoneInfo
 
+import polars as pl
 from polars import (
     Boolean,
     DataFrame,
@@ -624,6 +625,13 @@ def _dataclass_to_schema_dict_type_to_dtype(
         if field_use.value.tzinfo is None:
             return Datetime
         return zoned_datetime(time_zone=field_use.value.tzinfo)
+    if isinstance(type_use, type) and issubclass(type_use, enum.Enum):
+        return pl.Enum([e.name for e in type_use])
+    if is_frozenset_type(type_use) or is_list_type(type_use) or is_set_type(type_use):
+        arg = one(get_args(type_use))
+        return List(_dataclass_to_schema_dict_type_to_dtype(field, type_=arg))
+    if is_literal_type(type_use):
+        return pl.Enum(get_args(type_use))
     if is_optional_type(type_use):
         arg = one(get_args(type_use))
         return _dataclass_to_schema_dict_type_to_dtype(field, type_=arg)
@@ -1032,7 +1040,7 @@ def _struct_from_dataclass_one(
         return zoned_datetime(time_zone=time_zone)
     if is_dataclass_class(ann):
         return struct_from_dataclass(ann, time_zone=time_zone)
-    if (isinstance(ann, type) and issubclass(ann, Enum)) or (
+    if (isinstance(ann, type) and issubclass(ann, enum.Enum)) or (
         is_literal_type(ann) and all(isinstance(a, str) for a in get_args(ann))
     ):
         return Utf8

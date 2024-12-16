@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import datetime as dt
-from dataclasses import dataclass
-from enum import Enum, auto
+import enum
+from dataclasses import dataclass, field
+from enum import auto
 from math import isfinite, nan
 from re import escape
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
+import polars as pl
 from hypothesis import assume, given
 from hypothesis.strategies import (
     DataObject,
@@ -41,7 +43,7 @@ from polars import (
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 
-from utilities.datetime import get_today
+from utilities.datetime import get_now, get_today
 from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
 from utilities.math import is_greater_than, is_less_than, is_positive
 from utilities.polars import (
@@ -714,33 +716,74 @@ class TestDataClassToSchema:
     def test_basic_nullable(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            int_field: int | None = None
+            x: int | None = None
 
         obj = Example()
         result = dataclass_to_schema(obj)
-        expected = {"int_field": Int64}
+        expected = {"x": Int64}
         assert result == expected
 
-    @given(data=data())
-    def test_local_datetime(self, *, data: DataObject) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            datetime: dt.datetime
+    def test_enum(self) -> None:
+        class Truth(enum.Enum):
+            true = auto()
+            false = auto()
 
-        obj = data.draw(builds(Row, datetime=datetimes()))
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: Truth = Truth.true
+
+        obj = Example()
+        result = dataclass_to_schema(obj, localns=locals())
+        expected = {"x": pl.Enum(["true", "false"])}
+        assert result == expected
+
+    def test_literal(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: Literal["true", "false"] = "true"
+
+        obj = Example()
         result = dataclass_to_schema(obj)
-        expected = {"datetime": Datetime()}
+        expected = {"x": pl.Enum(["true", "false"])}
+        assert result == expected
+
+    def test_local_datetime(self) -> None:
+        now = get_now().replace(tzinfo=None)
+
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: dt.datetime = now
+
+        obj = data.draw(builds(Example, x=datetimes()))
+        result = dataclass_to_schema(obj)
+        expected = {"x": Datetime()}
         assert result == expected
 
     @given(data=data(), time_zone=timezones())
     def test_zoned_datetime(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
         @dataclass(kw_only=True, slots=True)
-        class Row:
-            datetime: dt.datetime
+        class Example:
+            x: dt.datetime
 
-        obj = data.draw(builds(Row, datetime=zoned_datetimes(time_zone=time_zone)))
+        obj = data.draw(builds(Example, x=zoned_datetimes(time_zone=time_zone)))
         result = dataclass_to_schema(obj)
-        expected = {"datetime": zoned_datetime(time_zone=time_zone)}
+        expected = {"x": zoned_datetime(time_zone=time_zone)}
+        assert result == expected
+
+    def test_containers(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            frozenset_field: frozenset[int] = field(default_factory=frozenset)
+            list_field: list[int] = field(default_factory=list)
+            set_field: set[int] = field(default_factory=set)
+
+        obj = Example()
+        result = dataclass_to_schema(obj)
+        expected = {
+            "frozenset_field": List(Int64),
+            "list_field": List(Int64),
+            "set_field": List(Int64),
+        }
         assert result == expected
 
 
@@ -1219,7 +1262,7 @@ class TestStructFromDataClass:
         assert result == expected
 
     def test_enum(self) -> None:
-        class Truth(Enum):
+        class Truth(enum.Enum):
             true = auto()
             false = auto()
 
