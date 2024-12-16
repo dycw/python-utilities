@@ -4,7 +4,7 @@ aiosqlite==0.20.0
     # via dycw-utilities (pyproject.toml)
 asyncpg==0.30.0
     # via dycw-utilities (pyproject.toml)
-attrs==24.2.0
+attrs==24.3.0
     # via hypothesis
 coverage==7.6.9
     # via

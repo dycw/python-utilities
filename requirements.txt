@@ -34,7 +34,7 @@ atomicwrites==1.4.1
     # via dycw-utilities (pyproject.toml)
 atools==0.14.2
     # via dycw-utilities (pyproject.toml)
-attrs==24.2.0
+attrs==24.3.0
     # via
     #   aiohttp
     #   hypothesis
@@ -130,7 +130,7 @@ h11==0.14.0
     #   uvicorn
 hatch==1.13.0
     # via dycw-utilities (pyproject.toml)
-hatchling==1.26.3
+hatchling==1.27.0
     # via hatch
 httpcore==1.0.7
     # via httpx
@@ -200,7 +200,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.18.3
+narwhals==1.18.4
     # via
     #   altair
     #   vegafusion

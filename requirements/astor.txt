@@ -2,7 +2,7 @@
 #    uv pip compile --extra=test --extra=zzz-test-astor --prerelease=explicit --output-file=requirements/astor.txt --python-version=3.11 pyproject.toml
 astor==0.8.1
     # via dycw-utilities (pyproject.toml)
-attrs==24.2.0
+attrs==24.3.0
     # via hypothesis
 coverage==7.6.9
     # via
