@@ -222,12 +222,13 @@ def yield_fields(
                 kw_only=field.kw_only,
             )
     elif is_dataclass_class(obj):
+        hints = get_type_hints(obj, globalns=globalns, localns=localns)
         for field in fields(obj):
-            if isinstance(field.type, type):
-                type_ = field.type
-            else:
-                hints = get_type_hints(obj, globalns=globalns, localns=localns)
-                type_ = hints.get(field.name, field.type)
+            type_ = hints.get(field.name, field.type)
+            if isinstance(type_, str):
+                raise _YieldFieldsUnresolvedFieldTypeError(
+                    obj=obj, name=field.name, type_=type_
+                )
             yield (
                 _YieldFieldsClass(
                     name=field.name,
@@ -245,13 +246,26 @@ def yield_fields(
                 )
             )
     else:
-        raise YieldFieldsError(obj=obj)
+        raise _YieldFieldsNotADataClassError(obj=obj)
 
 
 @dataclass(kw_only=True, slots=True)
 class YieldFieldsError(Exception):
     obj: Any
 
+
+@dataclass(kw_only=True, slots=True)
+class _YieldFieldsUnresolvedFieldTypeError(YieldFieldsError):
+    name: str
+    type_: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Field {self.name!r} must resolve to a type; got {self.type_!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _YieldFieldsNotADataClassError(YieldFieldsError):
     @override
     def __str__(self) -> str:
         return f"Object must be a dataclass instance or class; got {self.obj}"

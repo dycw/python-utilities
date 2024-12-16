@@ -12,9 +12,10 @@ from pytest import raises
 from typing_extensions import override
 
 from utilities.dataclasses import (
-    YieldFieldsError,
     _YieldFieldsClass,
     _YieldFieldsInstance,
+    _YieldFieldsNotADataClassError,
+    _YieldFieldsUnresolvedFieldTypeError,
     asdict_without_defaults,
     replace_non_sentinel,
     repr_without_defaults,
@@ -379,9 +380,24 @@ class TestYieldFields:
         expected = x == []
         assert result is expected
 
-    def test_error(self) -> None:
+    def test_error_unresolved_field_type(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Inner:
+            x: int
+
+        @dataclass(kw_only=True, slots=True)
+        class Outer:
+            inner: Inner
+
         with raises(
-            YieldFieldsError,
+            _YieldFieldsUnresolvedFieldTypeError,
+            match="Field 'inner' must resolve to a type; got 'Inner'",
+        ):
+            _ = list(yield_fields(Outer))
+
+    def test_error_not_a_dataclass(self) -> None:
+        with raises(
+            _YieldFieldsNotADataClassError,
             match="Object must be a dataclass instance or class; got None",
         ):
             _ = list(yield_fields(cast(Any, None)))
