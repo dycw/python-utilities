@@ -7,10 +7,10 @@ from hypothesis import given
 from hypothesis.strategies import integers, lists
 from ib_async import Future
 from polars import DataFrame
-from pytest import raises
 from typing_extensions import override
 
 from utilities.dataclasses import (
+    Dataclass,
     _is_not_default_value,
     asdict_without_defaults,
     replace_non_sentinel,

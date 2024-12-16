@@ -1,20 +1,21 @@
 from __future__ import annotations
 
 from dataclasses import MISSING, Field, fields, replace
+from operator import eq
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
 from utilities.operator import is_equal
 from utilities.sentinel import Sentinel
-from utilities.types import Dataclass, StrMapping, is_dataclass_instance
+from utilities.types import Dataclass, is_dataclass_instance
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping
 
 
-_T = TypeVar("_T")
+
 _TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 
 
@@ -147,21 +148,22 @@ def _is_not_default_value(
     if (field.default is not MISSING) and (field.default_factory is MISSING):
         expected = field.default
     elif (field.default is MISSING) and (field.default_factory is not MISSING):
-        expected = field.default_factory()
+        expected = field.default_factory
+        if comparisons is None:
+            cmp = eq
+        else:
+            hints = get_type_hints(cls, globalns=globalns, localns=localns)
+            type_ = hints[field.name]
+            cmp = comparisons.get(type_, eq)
+        try:
+            return not cmp(value, field.default_factory())
+        except TypeError:
+            return True
     else:  # pragma: no cover
         raise ImpossibleCaseError(
             case=[f"{field.default_factory=}", f"{field.default_factory=}"]
         )
-    if comparisons is None:
-        extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None
-    else:
-        hints = get_type_hints(cls, globalns=globalns, localns=localns)
-        type_ = hints[field.name]
-        try:
-            extra = {type_: comparisons[type_]}
-        except KeyError:
-            extra = None
-    return not is_equal(value, expected, extra=extra)
+    return not is_equal(value, expected, extra=comparisons)
 
 
 __all__ = [
