@@ -572,7 +572,7 @@ class _AsDictWithTypesElement(Generic[_T]):
     type_: type[_T]
 
 
-def dataclass_to_schema_dict(
+def dataclass_to_schema(
     obj: Dataclass,
     /,
     *,
@@ -1288,7 +1288,7 @@ __all__ = [
     "columns_to_dict",
     "convert_time_zone",
     "dataclass_to_row",
-    "dataclass_to_schema_dict",
+    "dataclass_to_schema",
     "drop_null_struct_series",
     "ensure_expr_or_series",
     "floor_datetime",

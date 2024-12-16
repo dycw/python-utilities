@@ -37,6 +37,7 @@ from polars import (
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 
+from utilities.datetime import get_today
 from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
 from utilities.math import is_greater_than, is_less_than, is_positive
 from utilities.polars import (
@@ -75,6 +76,7 @@ from utilities.polars import (
     columns_to_dict,
     convert_time_zone,
     dataclass_to_row,
+    dataclass_to_schema,
     drop_null_struct_series,
     ensure_expr_or_series,
     floor_datetime,
@@ -681,6 +683,27 @@ class TestDataClassToRow:
                 "inner": Struct({"start": DatetimeUTC, "end": DatetimeUTC}),
             },
         )
+
+
+@mark.only
+class TestDataClassToSchema:
+    def test_basic(self) -> None:
+        today = get_today()
+
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            int_field: int = 0
+            float_field: float = 0.0
+            str_field: str = ""
+            date_field: dt.date = today
+
+        obj = Example()
+        result = dataclass_to_schema(obj)
+        expected = {
+            "int_field": Int64,
+            "float_field": Float64,
+        }
+        assert result == expected
 
 
 class TestDatetimeUTC:

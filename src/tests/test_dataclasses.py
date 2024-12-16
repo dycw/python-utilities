@@ -36,20 +36,6 @@ if TYPE_CHECKING:
 TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
 
 
-@mark.only
-class TestAsDictWithTypes:
-    @given(x=integers())
-    def test_field_without_defaults(self, *, x: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
-
-        obj = Example(x=x)
-        result = asdict_with_types(obj)
-        expected = {"x": _AsDictWithTypesElement(value=1, type_=int)}
-        assert result == expected
-
-
 class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
     @given(x=integers())
     def test_field_without_defaults(self, *, x: int) -> None:
