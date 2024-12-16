@@ -1352,11 +1352,7 @@ class TestYieldRowsAsDataclasses:
         class Row:
             x: TruthLit
 
-        result = list(
-            yield_rows_as_dataclasses(
-                df, Row, check_types=check_types, globalns=globals()
-            )
-        )
+        result = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
         expected = [Row(x="true"), Row(x="false"), Row(x="true")]
         assert result == expected
 
@@ -1372,11 +1368,7 @@ class TestYieldRowsAsDataclasses:
         class Row:
             x: TruthLit | None = None
 
-        result = list(
-            yield_rows_as_dataclasses(
-                df, Row, check_types=check_types, globalns=globals()
-            )
-        )
+        result = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
         expected = [Row(x="true"), Row(x="false"), Row()]
         assert result == expected
 

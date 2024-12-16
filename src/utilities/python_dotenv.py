@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from enum import Enum
 from os import environ
 from re import IGNORECASE, search
@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 from dotenv import dotenv_values
 from typing_extensions import override
 
+from utilities.dataclasses import yield_fields
 from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import get_class_name
 from utilities.git import get_repo_root
@@ -47,7 +48,7 @@ def load_settings(
     values = {k: v for k, v in maybe_values.items() if v is not None}
 
     def yield_items() -> Iterator[tuple[str, Any]]:
-        for fld in fields(cls):
+        for fld in yield_fields(cls, globalns=globalns, localns=localns):
             type_ = hints[fld.name]
             try:
                 key = one_str(values, fld.name, case_sensitive=False)
