@@ -174,8 +174,8 @@ class _YieldFieldsInstance(Generic[_T]):
 class _YieldFieldsClass(Generic[_T]):
     name: str
     type_: Any
-    default: _T = sentinel
-    default_factory: Callable[[], _T] = sentinel
+    default: _T | Sentinel = sentinel
+    default_factory: Callable[[], _T] | Sentinel = sentinel
     repr: bool = True
     hash_: bool | None = None
     init: bool = True
