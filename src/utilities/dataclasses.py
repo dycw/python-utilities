@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import MISSING, Field, dataclass, fields, is_dataclass, replace
+from dataclasses import MISSING, Field, dataclass, field, fields, is_dataclass, replace
 from operator import eq
 from typing import (
     TYPE_CHECKING,
@@ -10,22 +10,17 @@ from typing import (
     Literal,
     TypeGuard,
     TypeVar,
+    cast,
     overload,
     runtime_checkable,
 )
 
+from pandas._config.config import is_instance_factory
 from typing_extensions import Protocol, override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
-from utilities.operator import is_equal
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import (
-    Dataclass,
-    StrMapping,
-    is_dataclass_class,
-    is_dataclass_instance,
-)
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
@@ -73,6 +68,7 @@ def asdict_without_defaults(
     obj: Dataclass,
     /,
     *,
+    comparisons: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     rel_tol: float | None = None,
@@ -100,6 +96,37 @@ def asdict_without_defaults(
                 value_as_dict = fld.value
             out[fld.name] = value_as_dict
     return out if final is None else final(type(obj), out)
+
+
+def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
+    """Get the underlying dataclass, if possible."""
+    if is_dataclass_class(obj):
+        return obj
+    if is_dataclass_instance(obj):
+        return type(obj)
+    raise GetDataClassClassError(obj=obj)
+
+
+@dataclass(kw_only=True, slots=True)
+class GetDataClassClassError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Object must be a dataclass instance or class; got {self.obj}"
+
+
+def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:
+    """Check if an object is a dataclass."""
+    return isinstance(obj, type) and is_dataclass(obj)
+
+
+def is_dataclass_instance(obj: Any, /) -> TypeGuard[Dataclass]:
+    """Check if an object is an instance of a dataclass."""
+    return (not isinstance(obj, type)) and is_dataclass(obj)
+
+
+_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 
 
 @overload
@@ -172,15 +199,83 @@ def repr_without_defaults(
 class _YieldFieldsInstance(Generic[_T]):
     name: str
     value: _T
-    type_: Any
-    default: _T | Sentinel = sentinel
-    default_factory: Callable[[], _T] | Sentinel = sentinel
+    type_: type[_T]
+    default: _T = sentinel
+    default_factory: Callable[[], _T] = sentinel
     repr: bool = True
     hash_: bool | None = None
     init: bool = True
     compare: bool = True
     metadata: StrMapping = field(default_factory=dict)
     kw_only: bool | Sentinel = sentinel
+
+
+@dataclass(kw_only=True, slots=True)
+class _YieldFieldsClass(Generic[_T]):
+    name: str
+    type_: type[_T]
+    default: _T = sentinel
+    default_factory: Callable[[], _T] = sentinel
+    repr: bool = True
+    hash_: bool | None = None
+    init: bool = True
+    compare: bool = True
+    metadata: StrMapping = field(default_factory=dict)
+    kw_only: bool | Sentinel = sentinel
+
+
+@overload
+def yield_fields(obj: Dataclass, /) -> Iterator[_YieldFieldsInstance]: ...
+@overload
+def yield_fields(obj: type[Dataclass], /) -> Iterator[_YieldFieldsClass]: ...
+def yield_fields(
+    obj: Dataclass | type[Dataclass], /
+) -> Iterator[_YieldFieldsInstance] | Iterator[_YieldFieldsClass]:
+    """Yield the fields of a dataclass."""
+    if is_dataclass_instance(obj):
+        for field in yield_fields(type(obj)):
+            yield _YieldFieldsInstance(
+                name=field.name,
+                value=getattr(obj, field.name),
+                type_=field.type_,
+                default=field.default,
+                default_factory=field.default_factory,
+                init=field.init,
+                repr=field.repr,
+                hash_=field.hash_,
+                compare=field.compare,
+                metadata=field.metadata,
+                kw_only=field.kw_only,
+            )
+    elif is_dataclass_class(obj):
+        for field in fields(obj):
+            yield (
+                _YieldFieldsClass(
+                    name=field.name,
+                    type_=field.type,
+                    default=sentinel if field.default is MISSING else field.default,
+                    default_factory=sentinel
+                    if field.default_factory is MISSING
+                    else field.default_factory,
+                    init=field.init,
+                    repr=field.repr,
+                    hash_=field.hash,
+                    compare=field.compare,
+                    metadata=field.metadata,
+                    kw_only=sentinel if field.kw_only is MISSING else field.kw_only,
+                )
+            )
+    else:
+        raise YieldFieldsError(obj=obj)
+
+
+@dataclass(kw_only=True, slots=True)
+class YieldFieldsError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Object must be a dataclass instance or class; got {self.obj}"
 
     def equals_default(
         self,
@@ -301,6 +396,8 @@ class YieldFieldsError(Exception):
 
 
 __all__ = [
+    "Dataclass",
+    "GetDataClassClassError",
     "YieldFieldsError",
     "asdict_without_defaults",
     "replace_non_sentinel",
