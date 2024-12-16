@@ -10,7 +10,6 @@ from polars import DataFrame
 from typing_extensions import override
 
 from utilities.dataclasses import (
-    Dataclass,
     _is_not_default_value,
     asdict_without_defaults,
     replace_non_sentinel,
@@ -21,6 +20,7 @@ from utilities.functions import get_class_name
 from utilities.iterables import one
 from utilities.polars import are_frames_equal
 from utilities.sentinel import sentinel
+from utilities.types import Dataclass
 
 if TYPE_CHECKING:
     from utilities.types import StrMapping

@@ -2,23 +2,26 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, TypeVar
 
-from utilities.dataclasses import Dataclass
+from utilities.types import Dataclass
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from optuna import Study, Trial
 
-_T = TypeVar("_T", bound=Dataclass)
+
+_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 
 
-def get_best_params(study: Study, cls: type[_T], /) -> _T:
+def get_best_params(study: Study, cls: type[_TDataclass], /) -> _TDataclass:
     """Get the best params as a dataclass."""
     return cls(**study.best_params)
 
 
 def make_objective(
-    suggest_params: Callable[[Trial], _T], objective: Callable[[_T], float], /
+    suggest_params: Callable[[Trial], _TDataclass],
+    objective: Callable[[_TDataclass], float],
+    /,
 ) -> Callable[[Trial], float]:
     """Make an objective given separate trialling & evaluating functions."""
 

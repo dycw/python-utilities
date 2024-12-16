@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, TypeVar
 from dotenv import dotenv_values
 from typing_extensions import override
 
-from utilities.dataclasses import Dataclass
 from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import get_class_name
 from utilities.git import get_repo_root
@@ -19,6 +18,7 @@ from utilities.iterables import (
     one_str,
 )
 from utilities.pathlib import PWD
+from utilities.types import Dataclass
 from utilities.typing import get_args, get_type_hints, is_literal_type
 
 if TYPE_CHECKING:

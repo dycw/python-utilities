@@ -56,7 +56,7 @@ from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
 from typing_extensions import override
 
-from utilities.dataclasses import Dataclass, asdict_without_defaults, is_dataclass_class
+from utilities.dataclasses import asdict_without_defaults
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import (
     CheckIterablesEqualError,
@@ -79,7 +79,7 @@ from utilities.math import (
     check_integer,
     ewm_parameters,
 )
-from utilities.types import StrMapping, ensure_datetime
+from utilities.types import Dataclass, StrMapping, ensure_datetime, is_dataclass_class
 from utilities.typing import (
     get_args,
     get_type_hints,
