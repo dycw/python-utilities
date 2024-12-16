@@ -1,22 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import MISSING, Field, fields, replace
-from operator import eq
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
 from utilities.operator import is_equal
 from utilities.sentinel import Sentinel
-from utilities.types import Dataclass, is_dataclass_instance
+from utilities.types import Dataclass, StrMapping, is_dataclass_instance
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping
 
-    from utilities.types import StrMapping
 
-
+_T = TypeVar("_T")
 _TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 
 
@@ -140,7 +138,7 @@ def _is_not_default_value(
     value: Any,
     /,
     *,
-    comparisons: Mapping[type[Any], Callable[[Any, Any], bool]] | None = None,
+    comparisons: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
 ) -> bool:
@@ -150,21 +148,20 @@ def _is_not_default_value(
         expected = field.default
     elif (field.default is MISSING) and (field.default_factory is not MISSING):
         expected = field.default_factory()
-        # if comparisons is None:
-        #     cmp = eq
-        # else:
-        #     hints = get_type_hints(cls, globalns=globalns, localns=localns)
-        #     type_ = hints[field.name]
-        #     cmp = comparisons.get(type_, eq)
-        # try:
-        #     return not cmp(value, field.default_factory())
-        # except TypeError:
-        #     return True
     else:  # pragma: no cover
         raise ImpossibleCaseError(
             case=[f"{field.default_factory=}", f"{field.default_factory=}"]
         )
-    return not is_equal(value, expected, extra=comparisons)
+    if comparisons is None:
+        extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None
+    else:
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        type_ = hints[field.name]
+        try:
+            extra = {type_: comparisons[type_]}
+        except KeyError:
+            extra = None
+    return not is_equal(value, expected, extra=extra)
 
 
 __all__ = [

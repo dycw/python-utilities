@@ -7,6 +7,7 @@ from hypothesis import given
 from hypothesis.strategies import integers, lists
 from ib_async import Future
 from polars import DataFrame
+from pytest import raises
 from typing_extensions import override
 
 from utilities.dataclasses import (
@@ -222,7 +223,8 @@ class TestIsNotDefaultValue:
             x: DataFrame = field(default_factory=DataFrame)
 
         fld = one(fields(Example))
-        assert _is_not_default_value(Example, fld, DataFrame())
+        with raises(TypeError, match="the truth value of a DataFrame is ambiguous"):
+            _ = _is_not_default_value(Example, fld, DataFrame())
 
     def test_default_factory_with_comparison_without_type(self) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -230,9 +232,8 @@ class TestIsNotDefaultValue:
             x: DataFrame = field(default_factory=DataFrame)
 
         fld = one(fields(Example))
-        assert _is_not_default_value(
-            Example, fld, DataFrame(), comparisons={}, globalns=globals()
-        )
+        with raises(TypeError, match="the truth value of a DataFrame is ambiguous"):
+            _ = _is_not_default_value(Example, fld, DataFrame(), comparisons={})
 
     def test_default_factory_with_comparison_with_type_and_equal(self) -> None:
         @dataclass(kw_only=True, slots=True)
