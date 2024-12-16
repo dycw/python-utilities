@@ -612,13 +612,10 @@ class OrjsonFormatter(Formatter):
             func_name=record.funcName,
             extra=extra if len(extra) >= 1 else None,
         )
-        globals_use = {OrjsonLogRecord.__qualname__: OrjsonLogRecord} | (
-            {} if self._globalns is None else dict(self._globalns)
-        )
         return serialize(
             log_record,
             before=self._before,
-            globalns=globals_use,
+            globalns=self._globalns,
             localns=self._localns,
             dataclass_final_hook=self._dataclass_final_hook,
         ).decode()
