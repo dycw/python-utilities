@@ -437,6 +437,7 @@ def make_isinstance(cls: type[_T], /) -> Callable[[Any], TypeGuard[_T]]:
 
 
 __all__ = [
+    "Dataclass",
     "Duration",
     "EnsureBoolError",
     "EnsureClassError",
