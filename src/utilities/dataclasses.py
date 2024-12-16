@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
 _T = TypeVar("_T")
 _U = TypeVar("_U")
+_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 
 
 def asdict_without_defaults(
@@ -56,27 +57,6 @@ def asdict_without_defaults(
                 value_as_dict = fld.value
             out[fld.name] = value_as_dict
     return out if final is None else final(type(obj), out)
-
-
-def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
-    """Get the underlying dataclass, if possible."""
-    if is_dataclass_class(obj):
-        return obj
-    if is_dataclass_instance(obj):
-        return type(obj)
-    raise GetDataClassClassError(obj=obj)
-
-
-@dataclass(kw_only=True, slots=True)
-class GetDataClassClassError(Exception):
-    obj: Any
-
-    @override
-    def __str__(self) -> str:
-        return f"Object must be a dataclass instance or class; got {self.obj}"
-
-
-_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 
 
 @overload
@@ -278,8 +258,6 @@ class YieldFieldsError(Exception):
 
 
 __all__ = [
-    "Dataclass",
-    "GetDataClassClassError",
     "YieldFieldsError",
     "asdict_without_defaults",
     "replace_non_sentinel",
