@@ -699,10 +699,7 @@ class TestDataClassToSchema:
 
         obj = Example()
         result = dataclass_to_schema(obj)
-        expected = {
-            "int_field": Int64,
-            "float_field": Float64,
-        }
+        expected = {"int_field": Int64, "float_field": Float64}
         assert result == expected
 
 
