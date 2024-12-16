@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import datetime as dt
 from dataclasses import MISSING, dataclass, field, fields, replace
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
 
 from typing_extensions import override
@@ -171,7 +173,7 @@ class _YieldFieldsInstance(Generic[_T]):
 @dataclass(kw_only=True, slots=True)
 class _YieldFieldsClass(Generic[_T]):
     name: str
-    type_: type[_T]
+    type_: Any
     default: _T = sentinel
     default_factory: Callable[[], _T] = sentinel
     repr: bool = True
@@ -180,6 +182,13 @@ class _YieldFieldsClass(Generic[_T]):
     compare: bool = True
     metadata: StrMapping = field(default_factory=dict)
     kw_only: bool | Sentinel = sentinel
+
+
+_OBJECTS = {Literal, Path, dt.date, dt.datetime, float, int, str}
+_OBJECT_MAPPINGS = {o.__qualname__: o for o in _OBJECTS} | {
+    "dt.date": dt.date,
+    "dt.datetime": dt.datetime,
+}
 
 
 @overload
@@ -222,7 +231,10 @@ def yield_fields(
                 kw_only=field.kw_only,
             )
     elif is_dataclass_class(obj):
-        hints = get_type_hints(obj, globalns=globalns, localns=localns)
+        globals_use = (
+            _OBJECT_MAPPINGS | globals() | ({} if globalns is None else dict(globalns))
+        )
+        hints = get_type_hints(obj, globalns=globals_use, localns=localns)
         for field in fields(obj):
             type_ = hints.get(field.name, field.type)
             if isinstance(type_, str):
@@ -250,22 +262,24 @@ def yield_fields(
 
 
 @dataclass(kw_only=True, slots=True)
-class YieldFieldsError(Exception):
-    obj: Any
+class YieldFieldsError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
 class _YieldFieldsUnresolvedFieldTypeError(YieldFieldsError):
+    obj: type[Dataclass]
     name: str
     type_: str
 
     @override
     def __str__(self) -> str:
-        return f"Field {self.name!r} must resolve to a type; got {self.type_!r}"
+        return f"Field '{self.obj.__name__}.{self.name}' must resolve to a type; got {self.type_!r}"
 
 
 @dataclass(kw_only=True, slots=True)
 class _YieldFieldsNotADataClassError(YieldFieldsError):
+    obj: Any
+
     @override
     def __str__(self) -> str:
         return f"Object must be a dataclass instance or class; got {self.obj}"

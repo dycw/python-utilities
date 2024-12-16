@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, cast
 
 from hypothesis import given
 from hypothesis.strategies import integers, lists
@@ -11,6 +12,7 @@ from polars import DataFrame
 from pytest import raises
 from typing_extensions import override
 
+from tests.test_operator import DataClass3
 from utilities.dataclasses import (
     _YieldFieldsClass,
     _YieldFieldsInstance,
@@ -23,14 +25,11 @@ from utilities.dataclasses import (
 )
 from utilities.functions import get_class_name
 from utilities.iterables import one
+from utilities.orjson import OrjsonLogRecord
 from utilities.polars import are_frames_equal
 from utilities.sentinel import sentinel
-from utilities.types import Dataclass
+from utilities.types import Dataclass, StrMapping
 from utilities.typing import get_args, is_list_type, is_literal_type, is_optional_type
-
-if TYPE_CHECKING:
-    from utilities.types import StrMapping
-
 
 TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
 
@@ -305,9 +304,7 @@ class TestYieldFields:
             truth: TruthLit
 
         result = one(yield_fields(Example, globalns=globals()))
-        expected = _YieldFieldsClass(
-            name="truth", type_=cast(type[Any], TruthLit), kw_only=True
-        )
+        expected = _YieldFieldsClass(name="truth", type_=TruthLit, kw_only=True)
 
         assert result == expected
         assert is_literal_type(result.type_)
@@ -320,10 +317,7 @@ class TestYieldFields:
 
         result = one(yield_fields(Example, globalns=globals()))
         expected = _YieldFieldsClass(
-            name="truth",
-            type_=cast(type[Any], TruthLit | None),
-            default=None,
-            kw_only=True,
+            name="truth", type_=TruthLit | None, default=None, kw_only=True
         )
         assert result == expected
         assert is_optional_type(result.type_)
@@ -332,13 +326,41 @@ class TestYieldFields:
         arg = one(args)
         assert get_args(arg) == ("true", "false")
 
+    def test_class_literal_defined_elsewhere(self) -> None:
+        result = one(yield_fields(DataClass3))
+        expected = _YieldFieldsClass(
+            name="truth", type_=Literal["true", "false"], kw_only=True
+        )
+        assert result == expected
+
+    def test_class_orjson_log_record(self) -> None:
+        result = list(yield_fields(OrjsonLogRecord))
+        exp_head = [
+            _YieldFieldsClass(name="name", type_=str, kw_only=True),
+            _YieldFieldsClass(name="message", type_=str, kw_only=True),
+            _YieldFieldsClass(name="level", type_=int, kw_only=True),
+        ]
+        assert result[:3] == exp_head
+        exp_tail = [
+            _YieldFieldsClass(
+                name="extra", type_=StrMapping | None, default=None, kw_only=True
+            ),
+            _YieldFieldsClass(
+                name="log_file", type_=Path | None, default=None, kw_only=True
+            ),
+            _YieldFieldsClass(
+                name="log_file_line_num", type_=int | None, default=None, kw_only=True
+            ),
+        ]
+        assert result[-3:] == exp_tail
+
     def test_instance(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: None = None
 
         obj = Example()
-        result = one(yield_fields(obj, globalns=globals()))
+        result = one(yield_fields(obj))
         expected = _YieldFieldsInstance(
             name="x", value=None, type_=NoneType, default=None, kw_only=True
         )
@@ -391,7 +413,7 @@ class TestYieldFields:
 
         with raises(
             _YieldFieldsUnresolvedFieldTypeError,
-            match="Field 'inner' must resolve to a type; got 'Inner'",
+            match="Field 'Outer.inner' must resolve to a type; got 'Inner'",
         ):
             _ = list(yield_fields(Outer))
 

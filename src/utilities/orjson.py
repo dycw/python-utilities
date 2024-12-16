@@ -93,11 +93,17 @@ def serialize(
     /,
     *,
     before: Callable[[Any], Any] | None = None,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
     dataclass_final_hook: _DataclassFinalHook | None = None,
 ) -> bytes:
     """Serialize an object."""
     obj_use = _pre_process(
-        obj, before=before, dataclass_final_hook=dataclass_final_hook
+        obj,
+        before=before,
+        globalns=globalns,
+        localns=localns,
+        dataclass_final_hook=dataclass_final_hook,
     )
     return dumps(
         obj_use,
@@ -110,6 +116,8 @@ def _pre_process(
     /,
     *,
     before: Callable[[Any], Any] | None = None,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
     dataclass_final_hook: _DataclassFinalHook | None = None,
     error: _ErrorMode = "raise",
 ) -> Any:
@@ -118,6 +126,8 @@ def _pre_process(
     pre = partial(
         _pre_process,
         before=before,
+        globalns=globalns,
+        localns=localns,
         dataclass_final_hook=dataclass_final_hook,
         error=error,
     )
@@ -158,7 +168,10 @@ def _pre_process(
         # contains
         case Dataclass():
             obj_as_dict = asdict_without_defaults(
-                obj, final=partial(_dataclass_final, hook=dataclass_final_hook)
+                obj,
+                globalns=globalns,
+                localns=localns,
+                final=partial(_dataclass_final, hook=dataclass_final_hook),
             )
             return pre(obj_as_dict)
         case dict():
@@ -173,6 +186,8 @@ def _pre_process(
                 frozenset,
                 _Prefixes.frozenset_,
                 before=before,
+                globalns=globalns,
+                localns=localns,
                 dataclass_final_hook=dataclass_final_hook,
             )
         case list():
@@ -181,6 +196,8 @@ def _pre_process(
                 list,
                 _Prefixes.list_,
                 before=before,
+                globalns=globalns,
+                localns=localns,
                 dataclass_final_hook=dataclass_final_hook,
             )
         case set():
@@ -189,6 +206,8 @@ def _pre_process(
                 set,
                 _Prefixes.set_,
                 before=before,
+                globalns=globalns,
+                localns=localns,
                 dataclass_final_hook=dataclass_final_hook,
             )
         case tuple():
@@ -197,6 +216,8 @@ def _pre_process(
                 tuple,
                 _Prefixes.tuple_,
                 before=before,
+                globalns=globalns,
+                localns=localns,
                 dataclass_final_hook=dataclass_final_hook,
             )
         # other
@@ -214,10 +235,18 @@ def _pre_process_container(
     /,
     *,
     before: Callable[[Any], Any] | None = None,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
     dataclass_final_hook: _DataclassFinalHook | None = None,
 ) -> Any:
     values = [
-        _pre_process(o, before=before, dataclass_final_hook=dataclass_final_hook)
+        _pre_process(
+            o,
+            before=before,
+            globalns=globalns,
+            localns=localns,
+            dataclass_final_hook=dataclass_final_hook,
+        )
         for o in obj
     ]
     if issubclass(cls, list) and issubclass(list, type(obj)):
@@ -554,10 +583,14 @@ class OrjsonFormatter(Formatter):
         *,
         defaults: StrMapping | None = None,
         before: Callable[[Any], Any] | None = None,
+        globalns: StrMapping | None = None,
+        localns: StrMapping | None = None,
         dataclass_final_hook: _DataclassFinalHook | None = None,
     ) -> None:
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
         self._before = before
+        self._globalns = globalns
+        self._localns = localns
         self._dataclass_final_hook = dataclass_final_hook
 
     @override
@@ -579,9 +612,14 @@ class OrjsonFormatter(Formatter):
             func_name=record.funcName,
             extra=extra if len(extra) >= 1 else None,
         )
+        globals_use = {OrjsonLogRecord.__qualname__: OrjsonLogRecord} | (
+            {} if self._globalns is None else dict(self._globalns)
+        )
         return serialize(
             log_record,
             before=self._before,
+            globalns=globals_use,
+            localns=self._localns,
             dataclass_final_hook=self._dataclass_final_hook,
         ).decode()
 
