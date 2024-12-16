@@ -671,7 +671,7 @@ class TestDataClassToRow:
 
         data = dict(data) | {"inner": inner}
         outer = Outer(**data)
-        df = dataclass_to_row(outer)
+        df = dataclass_to_row(outer, globalns=globals(), localns=locals())
         check_polars_dataframe(
             df,
             height=1,
@@ -1352,7 +1352,11 @@ class TestYieldRowsAsDataclasses:
         class Row:
             x: TruthLit
 
-        result = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
+        result = list(
+            yield_rows_as_dataclasses(
+                df, Row, check_types=check_types, globalns=globals()
+            )
+        )
         expected = [Row(x="true"), Row(x="false"), Row(x="true")]
         assert result == expected
 
@@ -1368,7 +1372,11 @@ class TestYieldRowsAsDataclasses:
         class Row:
             x: TruthLit | None = None
 
-        result = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
+        result = list(
+            yield_rows_as_dataclasses(
+                df, Row, globalns=globals(), check_types=check_types
+            )
+        )
         expected = [Row(x="true"), Row(x="false"), Row()]
         assert result == expected
 

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import datetime as dt
 from dataclasses import MISSING, dataclass, field, fields, replace
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
 
 from typing_extensions import override
@@ -100,7 +102,7 @@ def repr_without_defaults(
     """Repr a dataclass, without its defaults."""
     ignore_use: set[str] = set() if ignore is None else set(ignore)
     out: dict[str, str] = {}
-    for fld in yield_fields(obj):
+    for fld in yield_fields(obj, globalns=globalns, localns=localns):
         if (
             (fld.name not in ignore_use)
             and fld.repr
@@ -129,7 +131,7 @@ def repr_without_defaults(
 class _YieldFieldsInstance(Generic[_T]):
     name: str
     value: _T
-    type_: type[_T]
+    type_: Any
     default: _T | Sentinel = sentinel
     default_factory: Callable[[], _T] | Sentinel = sentinel
     repr: bool = True
@@ -171,15 +173,22 @@ class _YieldFieldsInstance(Generic[_T]):
 @dataclass(kw_only=True, slots=True)
 class _YieldFieldsClass(Generic[_T]):
     name: str
-    type_: type[_T]
-    default: _T = sentinel
-    default_factory: Callable[[], _T] = sentinel
+    type_: Any
+    default: _T | Sentinel = sentinel
+    default_factory: Callable[[], _T] | Sentinel = sentinel
     repr: bool = True
     hash_: bool | None = None
     init: bool = True
     compare: bool = True
     metadata: StrMapping = field(default_factory=dict)
     kw_only: bool | Sentinel = sentinel
+
+
+_OBJECTS = {Literal, Path, dt.date, dt.datetime, float, int, str}
+_OBJECT_MAPPINGS = {o.__qualname__: o for o in _OBJECTS} | {
+    "dt.date": dt.date,
+    "dt.datetime": dt.datetime,
+}
 
 
 @overload
@@ -207,7 +216,7 @@ def yield_fields(
 ) -> Iterator[_YieldFieldsInstance[Any]] | Iterator[_YieldFieldsClass[Any]]:
     """Yield the fields of a dataclass."""
     if is_dataclass_instance(obj):
-        for field in yield_fields(type(obj)):
+        for field in yield_fields(type(obj), globalns=globalns, localns=localns):
             yield _YieldFieldsInstance(
                 name=field.name,
                 value=getattr(obj, field.name),
@@ -222,12 +231,16 @@ def yield_fields(
                 kw_only=field.kw_only,
             )
     elif is_dataclass_class(obj):
+        globals_use = (
+            _OBJECT_MAPPINGS | globals() | ({} if globalns is None else dict(globalns))
+        )
+        hints = get_type_hints(obj, globalns=globals_use, localns=localns)
         for field in fields(obj):
-            if isinstance(field.type, type):
-                type_ = field.type
-            else:
-                hints = get_type_hints(obj, globalns=globalns, localns=localns)
-                type_ = hints.get(field.name, field.type)
+            type_ = hints.get(field.name, field.type)
+            if isinstance(type_, str):
+                raise _YieldFieldsUnresolvedFieldTypeError(
+                    obj=obj, name=field.name, type_=type_
+                )
             yield (
                 _YieldFieldsClass(
                     name=field.name,
@@ -245,11 +258,26 @@ def yield_fields(
                 )
             )
     else:
-        raise YieldFieldsError(obj=obj)
+        raise _YieldFieldsNotADataClassError(obj=obj)
 
 
 @dataclass(kw_only=True, slots=True)
-class YieldFieldsError(Exception):
+class YieldFieldsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _YieldFieldsUnresolvedFieldTypeError(YieldFieldsError):
+    obj: type[Dataclass]
+    name: str
+    type_: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Field '{self.obj.__name__}.{self.name}' must resolve to a type; got {self.type_!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _YieldFieldsNotADataClassError(YieldFieldsError):
     obj: Any
 
     @override
