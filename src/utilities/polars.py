@@ -96,8 +96,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
     from collections.abc import Set as AbstractSet
 
-    from utilities.dacite import yield_literal_forward_references
-
 
 _T = TypeVar("_T")
 _TDataclass = TypeVar("_TDataclass", bound=Dataclass)
@@ -991,11 +989,9 @@ def yield_rows_as_dataclasses(
     /,
     *,
     check_types: Literal["none", "first", "all"] = "first",
-    globalns: StrMapping | None = None,
-    localns: StrMapping | None = None,
 ) -> Iterator[_TDataclass]:
     """Yield the rows of a DataFrame as dataclasses."""
-    from dacite import Config, from_dict
+    from dacite import from_dict
     from dacite.exceptions import WrongTypeError
 
     columns = df.columns
@@ -1020,35 +1016,17 @@ def yield_rows_as_dataclasses(
                 first = next(rows)
             except StopIteration:
                 return
-            if 0:
-                fwd_refs = dict(
-                    yield_literal_forward_references(
-                        cls, globalns=globalns, localns=localns
-                    )
-                )
-                config = Config(forward_references=fwd_refs)
-            if 1:
-                config = Config()
             try:
-                yield from_dict(cls, first, config=config)
+                yield from_dict(cls, first)
             except WrongTypeError as error:
                 raise _YieldRowsAsDataClassesWrongTypeError(
                     df=df, cls=cls, msg=str(error)
                 ) from None
             yield from _yield_rows_as_dataclasses_no_check_types(rows, cls)
         case "all":
-            if 0:
-                fwd_refs = dict(
-                    yield_literal_forward_references(
-                        cls, globalns=globalns, localns=localns
-                    )
-                )
-                config = Config(forward_references=fwd_refs)
-            if 1:
-                config = Config()
             try:
                 for row in rows:
-                    yield from_dict(cls, row, config=config)
+                    yield from_dict(cls, row)
             except WrongTypeError as error:
                 raise _YieldRowsAsDataClassesWrongTypeError(
                     df=df, cls=cls, msg=str(error)
