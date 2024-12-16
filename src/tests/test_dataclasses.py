@@ -333,7 +333,7 @@ class TestYieldFields:
         assert result == expected
 
     def test_class_orjson_log_record(self) -> None:
-        result = list(yield_fields(OrjsonLogRecord))
+        result = list(yield_fields(OrjsonLogRecord, globalns=globals()))
         exp_head = [
             _YieldFieldsClass(name="name", type_=str, kw_only=True),
             _YieldFieldsClass(name="message", type_=str, kw_only=True),

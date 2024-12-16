@@ -95,7 +95,7 @@ class TestGetTypeHints:
 
     def test_no_future(self) -> None:
         hints = get_type_hints(Outer)
-        expected = {"inner": "Inner"}
+        expected = {"inner": Inner}
         assert hints == expected
 
 

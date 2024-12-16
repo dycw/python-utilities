@@ -20,6 +20,8 @@ from typing import (
 from typing import get_args as _get_args
 from typing import get_type_hints as _get_type_hints
 
+from utilities.iterables import check_sets_equal
+
 if TYPE_CHECKING:
     from utilities.types import StrMapping
 
@@ -96,14 +98,18 @@ def get_type_hints(
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
 ) -> dict[str, Any]:
+    """Get the type hints of an object."""
+    first = _get_type_hints(cls)
     try:
-        return _get_type_hints(
+        second = _get_type_hints(
             cls,
             globalns=globals() if globalns is None else dict(globalns),
             localns=locals() if localns is None else dict(localns),
         )
     except NameError:
-        return cls.__annotations__
+        return first
+    check_sets_equal(first, second)
+    return {k: second[k] if isinstance(first[k], str) else first[k] for k in first}
 
 
 def is_dict_type(obj: Any, /) -> bool:

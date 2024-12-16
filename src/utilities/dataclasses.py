@@ -227,7 +227,6 @@ def yield_fields(
             if isinstance(field.type, type):
                 type_ = field.type
             else:
-                hints = get_type_hints(obj, globalns=globalns, localns=localns)
                 type_ = hints.get(field.name, field.type)
             yield (
                 _YieldFieldsClass(
