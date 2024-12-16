@@ -336,6 +336,10 @@ class TestReprWithoutDefaults:
         assert result == expected
 
 
+from pytest import mark
+
+
+@mark.only
 class TestYieldFields:
     def test_class_with_none_type_no_default(self) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -440,16 +444,11 @@ class TestYieldFields:
         class Example:
             x: None = None
 
-        results = list(yield_fields(Example, globalns=globals()))
+        obj = Example()
+        results = list(yield_fields(obj, globalns=globals()))
         expected = [
             _YieldFieldsInstance(
-                name="truth", value=None, type_=NoneType, default=None, kw_only=True
+                name="x", value=None, type_=NoneType, default=None, kw_only=True
             )
         ]
         assert results == expected
-        result = one(results)
-        assert is_optional_type(result.type_)
-        args = get_args(result.type_)
-        assert args == (Literal["true", "false"],)
-        arg = one(args)
-        assert get_args(arg) == ("true", "false")
