@@ -14,9 +14,11 @@ from typing_extensions import override
 
 from tests.test_operator import DataClass3
 from utilities.dataclasses import (
-    YieldFieldsError,
-    _YieldFieldsClass,
-    _YieldFieldsInstance,
+    Dataclass,
+    GetDataClassClassError,
+    _AsDictWithTypesElement,
+    _is_not_default_value,
+    asdict_with_types,
     asdict_without_defaults,
     replace_non_sentinel,
     repr_without_defaults,
@@ -30,7 +32,22 @@ from utilities.sentinel import sentinel
 from utilities.types import Dataclass, StrMapping
 from utilities.typing import get_args, is_list_type, is_literal_type, is_optional_type
 
-TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
+if TYPE_CHECKING:
+    from utilities.types import StrMapping
+
+
+@mark.only
+class TestAsDictWithTypes:
+    @given(x=integers())
+    def test_field_without_defaults(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        obj = Example(x=x)
+        result = asdict_with_types(obj)
+        expected = {"x": _AsDictWithTypesElement(value=1, type_=int)}
+        assert result == expected
 
 
 class TestAsDictWithoutDefaultsAndReprWithoutDefaults:

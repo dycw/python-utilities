@@ -1,9 +1,20 @@
 from __future__ import annotations
 
-from dataclasses import MISSING, dataclass, field, fields, replace
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
+from dataclasses import MISSING, Field, dataclass, fields, is_dataclass, replace
+from operator import eq
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Generic,
+    Literal,
+    TypeGuard,
+    TypeVar,
+    overload,
+    runtime_checkable,
+)
 
-from typing_extensions import override
+from typing_extensions import Protocol, override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
@@ -21,9 +32,41 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping
 
 
+
 _T = TypeVar("_T")
-_U = TypeVar("_U")
-_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
+
+
+@runtime_checkable
+class Dataclass(Protocol):
+    """Protocol for `dataclass` classes."""
+
+    __dataclass_fields__: ClassVar[dict[str, Any]]
+
+
+@dataclass(kw_only=True, slots=True)
+class _AsDictWithTypesElement(Generic[_T]):
+    value: _T
+    type_: type[_T]
+
+
+def asdict_with_types(
+    obj: Dataclass,
+    /,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    recursive: bool = False,
+) -> StrMapping:
+    """Cast a dataclass as a dictionary, with values & types."""
+    out: dict[str, Any] = {}
+    for field in fields(obj):
+        name = field.name
+        value = getattr(obj, name)
+        if recursive and is_dataclass_instance(value):
+            breakpoint()
+        else:
+            value_as_dict = _AsDictWithTypesElement(value=value, type_=type_)
+        out[name] = value_as_dict
+    return out
 
 
 def asdict_without_defaults(
