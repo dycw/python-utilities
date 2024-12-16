@@ -2,7 +2,7 @@
 #    uv pip compile --extra=test --extra=zzz-test-redis --prerelease=explicit --output-file=requirements/redis.txt --python-version=3.11 pyproject.toml
 async-timeout==5.0.1
     # via redis
-attrs==24.2.0
+attrs==24.3.0
     # via hypothesis
 coverage==7.6.9
     # via

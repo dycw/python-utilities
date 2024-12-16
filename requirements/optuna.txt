@@ -2,7 +2,7 @@
 #    uv pip compile --extra=test --extra=zzz-test-optuna --prerelease=explicit --output-file=requirements/optuna.txt --python-version=3.11 pyproject.toml
 alembic==1.14.0
     # via optuna
-attrs==24.2.0
+attrs==24.3.0
     # via hypothesis
 colorlog==6.9.0
     # via optuna

@@ -7,10 +7,12 @@ from typing import (
     Any,
     Literal,
     NamedTuple,
+    Optional,  # pyright: ignore[reportDeprecated]
     Protocol,
     Self,
     TypeGuard,
     TypeVar,
+    Union,  # pyright: ignore[reportDeprecated]
     _eval_type,  # pyright: ignore[reportAttributeAccessIssue]
     _TypedDictMeta,  # pyright: ignore[reportAttributeAccessIssue]
     get_origin,
@@ -150,7 +152,10 @@ def _is_namedtuple_core(obj: Any, /) -> bool:
 
 def is_optional_type(obj: Any, /) -> bool:
     """Check if an object is an optional type annotation."""
-    return is_union_type(obj) and any(a is NoneType for a in _get_args(obj))
+    is_optional = _is_annotation_of_type(obj, Optional)  # pyright: ignore[reportDeprecated]
+    return is_optional or (
+        is_union_type(obj) and any(a is NoneType for a in _get_args(obj))
+    )
 
 
 def is_sequence_type(obj: Any, /) -> bool:
@@ -165,7 +170,8 @@ def is_set_type(obj: Any, /) -> bool:
 
 def is_union_type(obj: Any, /) -> bool:
     """Check if an object is a union type annotation."""
-    return _is_annotation_of_type(obj, UnionType)
+    is_old_union = _is_annotation_of_type(obj, Union)  # pyright: ignore[reportDeprecated]
+    return is_old_union or _is_annotation_of_type(obj, UnionType)
 
 
 def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:

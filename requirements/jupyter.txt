@@ -16,7 +16,7 @@ asttokens==3.0.0
     # via stack-data
 async-lru==2.0.4
     # via jupyterlab
-attrs==24.2.0
+attrs==24.3.0
     # via
     #   hypothesis
     #   jsonschema
@@ -229,7 +229,7 @@ python-dateutil==2.9.0.post0
     #   arrow
     #   jupyter-client
     #   pandas
-python-json-logger==3.2.0
+python-json-logger==3.2.1
     # via jupyter-events
 pytz==2024.2
     # via pandas
