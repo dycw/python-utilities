@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import MISSING, Field, dataclass, field, fields, replace
+from dataclasses import MISSING, dataclass, field, fields, replace
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
 
 from typing_extensions import override
@@ -150,8 +150,8 @@ class _YieldFieldsInstance(Generic[_T]):
     name: str
     value: _T
     type_: type[_T]
-    default: _T = sentinel
-    default_factory: Callable[[], _T] = sentinel
+    default: _T | Sentinel = sentinel
+    default_factory: Callable[[], _T] | Sentinel = sentinel
     repr: bool = True
     hash_: bool | None = None
     init: bool = True
@@ -275,38 +275,6 @@ class YieldFieldsError(Exception):
     @override
     def __str__(self) -> str:
         return f"Object must be a dataclass instance or class; got {self.obj}"
-
-
-def _is_not_default_value(
-    cls: Dataclass | type[Dataclass],
-    field: Field,
-    value: Any,
-    /,
-    *,
-    comparisons: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
-    globalns: StrMapping | None = None,
-    localns: StrMapping | None = None,
-) -> bool:
-    if (field.default is MISSING) and (field.default_factory is MISSING):
-        return True
-    if (field.default is not MISSING) and (field.default_factory is MISSING):
-        expected = field.default
-    elif (field.default is MISSING) and (field.default_factory is not MISSING):
-        expected = field.default_factory()
-    else:  # pragma: no cover
-        raise ImpossibleCaseError(
-            case=[f"{field.default_factory=}", f"{field.default_factory=}"]
-        )
-    if comparisons is None:
-        extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None
-    else:
-        hints = get_type_hints(cls, globalns=globalns, localns=localns)
-        type_ = hints[field.name]
-        try:
-            extra = {type_: comparisons[type_]}
-        except KeyError:
-            extra = None
-    return not is_equal(value, expected, extra=extra)
 
 
 __all__ = [

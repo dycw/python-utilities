@@ -8,9 +8,11 @@ from hypothesis import given
 from hypothesis.strategies import integers, lists
 from ib_async import Future
 from polars import DataFrame
+from pytest import raises
 from typing_extensions import override
 
 from utilities.dataclasses import (
+    YieldFieldsError,
     _YieldFieldsClass,
     _YieldFieldsInstance,
     asdict_without_defaults,
@@ -376,3 +378,10 @@ class TestYieldFields:
         result = fld.equals_default()
         expected = x == []
         assert result is expected
+
+    def test_error(self) -> None:
+        with raises(
+            YieldFieldsError,
+            match="Object must be a dataclass instance or class; got None",
+        ):
+            _ = list(yield_fields(cast(Any, None)))
