@@ -9,6 +9,9 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 from hypothesis import assume, given
 from hypothesis.strategies import (
+    DataObject,
+    builds,
+    data,
     dates,
     datetimes,
     fixed_dictionaries,
@@ -16,6 +19,7 @@ from hypothesis.strategies import (
     integers,
     none,
     sampled_from,
+    timezones,
 )
 from polars import (
     Boolean,
@@ -699,7 +703,44 @@ class TestDataClassToSchema:
 
         obj = Example()
         result = dataclass_to_schema(obj)
-        expected = {"int_field": Int64, "float_field": Float64}
+        expected = {
+            "int_field": Int64,
+            "float_field": Float64,
+            "str_field": Utf8,
+            "date_field": Date,
+        }
+        assert result == expected
+
+    def test_basic_nullable(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            int_field: int | None = None
+
+        obj = Example()
+        result = dataclass_to_schema(obj)
+        expected = {"int_field": Int64}
+        assert result == expected
+
+    @given(data=data())
+    def test_local_datetime(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Row:
+            datetime: dt.datetime
+
+        obj = data.draw(builds(Row, datetime=datetimes()))
+        result = dataclass_to_schema(obj)
+        expected = {"datetime": Datetime()}
+        assert result == expected
+
+    @given(data=data(), time_zone=timezones())
+    def test_zoned_datetime(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Row:
+            datetime: dt.datetime
+
+        obj = data.draw(builds(Row, datetime=zoned_datetimes(time_zone=time_zone)))
+        result = dataclass_to_schema(obj)
+        expected = {"datetime": zoned_datetime(time_zone=time_zone)}
         assert result == expected
 
 

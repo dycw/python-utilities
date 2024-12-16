@@ -54,7 +54,6 @@ from polars._typing import (
 from polars.datatypes import DataType
 from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
-from pyarrow import Schema
 from typing_extensions import override
 
 from utilities.dataclasses import (
@@ -609,20 +608,26 @@ def _dataclass_to_schema_dict_one(
 
 
 def _dataclass_to_schema_dict_type_to_dtype(
-    field: _YieldFieldsInstance[Any], /
+    field: _YieldFieldsInstance[Any], /, *, type_: type[Any] | None = None
 ) -> PolarsDataType:
-    if field.type_ is int:
+    type_use = field.type_ if type_ is None else type_
+    if type_use is int:
         return Int64
-    if field.type_ is float:
+    if type_use is float:
         return Float64
-    if field.type_ is str:
-        return Float64
-    if field.type_ is dt.date:
+    if type_use is str:
+        return Utf8
+    if type_use is dt.date:
         return Date
-    if field.type_ is dt.datetime:
+    if type_use is dt.datetime:
         field_use = cast(_YieldFieldsInstance[dt.datetime], field)
-        return Datetime(time_zone=field_use.value.tzinfo)
-    msg = f"{field.type_=}"  # pragma: no cover
+        if field_use.value.tzinfo is None:
+            return Datetime
+        return zoned_datetime(time_zone=field_use.value.tzinfo)
+    if is_optional_type(type_use):
+        arg = one(get_args(type_use))
+        return _dataclass_to_schema_dict_type_to_dtype(field, type_=arg)
+    msg = f"{type_use=}"  # pragma: no cover
     raise NotImplementedError(msg)
 
 
