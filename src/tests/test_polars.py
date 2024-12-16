@@ -11,11 +11,13 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 import polars as pl
 from hypothesis import assume, given
 from hypothesis.strategies import (
-    dates,
-    datetimes,
+    DataObject,
+    builds,
+    data,
     fixed_dictionaries,
     floats,
     integers,
+    lists,
     none,
     sampled_from,
     timezones,
@@ -64,6 +66,8 @@ from utilities.polars import (
     _check_polars_dataframe_schema_list,
     _check_polars_dataframe_schema_set,
     _check_polars_dataframe_schema_subset,
+    _DataClassToDataFrameEmptyError,
+    _DataClassToDataFrameNonUniqueError,
     _GetDataTypeOrSeriesTimeZoneNotDatetimeError,
     _GetDataTypeOrSeriesTimeZoneNotZonedError,
     _RollingParametersArgumentsError,
@@ -78,7 +82,7 @@ from utilities.polars import (
     collect_series,
     columns_to_dict,
     convert_time_zone,
-    dataclass_to_row,
+    dataclass_to_dataframe,
     dataclass_to_schema,
     drop_null_struct_series,
     ensure_expr_or_series,
@@ -99,6 +103,7 @@ from utilities.polars import (
     yield_struct_series_elements,
     zoned_datetime,
 )
+from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import (
     UTC,
     HongKong,
@@ -616,79 +621,84 @@ class TestConvertTimeZone:
         assert_frame_equal(result, expected)
 
 
-class TestDataClassToRow:
-    @given(
-        data=fixed_dictionaries({
-            "a": int64s() | none(),
-            "b": floats() | none(),
-            "c": dates() | none(),
-            "d": datetimes() | none(),
-        })
-    )
-    def test_basic_types(self, *, data: StrMapping) -> None:
+class TestDataClassToDataFrame:
+    @given(data=data())
+    def test_basic_type(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
-        class Row:
-            a: int | None = None
-            b: float | None = None
-            c: dt.date | None = None
-            d: dt.datetime | None = None
+        class Example:
+            bool_field: bool
+            int_field: int
+            float_field: float
+            str_field: str
+            date_field: dt.date
 
-        df = dataclass_to_row(Row(**data))
+        objs = data.draw(lists(builds(Example, int_field=int64s()), min_size=1))
+        df = dataclass_to_dataframe(objs)
         check_polars_dataframe(
             df,
-            height=1,
-            schema_list={"a": Int64, "b": Float64, "c": Date, "d": Datetime},
-        )
-
-    @given(data=fixed_dictionaries({"datetime": zoned_datetimes()}))
-    def test_zoned_datetime(self, *, data: StrMapping) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            datetime: dt.datetime
-
-        row = Row(**data)
-        df = dataclass_to_row(row)
-        check_polars_dataframe(df, height=1, schema_list={"datetime": DatetimeUTC})
-
-    @given(
-        data=fixed_dictionaries({
-            "a": int64s(),
-            "b": int64s(),
-            "inner": fixed_dictionaries({
-                "start": zoned_datetimes(),
-                "end": zoned_datetimes(),
-            }),
-        })
-    )
-    def test_zoned_datetime_nested(self, *, data: StrMapping) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Inner:
-            start: dt.datetime
-            end: dt.datetime
-
-        inner = Inner(**data["inner"])
-
-        @dataclass(kw_only=True, slots=True)
-        class Outer:
-            a: int | None = None
-            b: int | None = None
-            inner: Inner | None = None
-
-        data = dict(data) | {"inner": inner}
-        outer = Outer(**data)
-        df = dataclass_to_row(outer, globalns=globals(), localns=locals())
-        check_polars_dataframe(
-            df,
-            height=1,
+            height=len(objs),
             schema_list={
-                "a": Int64,
-                "b": Int64,
-                "inner": Struct({"start": DatetimeUTC, "end": DatetimeUTC}),
+                "bool_field": Boolean,
+                "int_field": Int64,
+                "float_field": Float64,
+                "str_field": Utf8,
+                "date_field": Date,
             },
         )
 
+    @given(data=data())
+    def test_nested(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Inner:
+            x: int = 0
 
-@mark.only
+        @dataclass(kw_only=True, slots=True)
+        class Outer:
+            inner: Inner = field(default_factory=Inner)
+
+        objs = data.draw(lists(builds(Outer), min_size=1))
+        df = dataclass_to_dataframe(objs, localns=locals())
+        check_polars_dataframe(
+            df, height=len(objs), schema_list={"inner": struct_dtype(x=Int64)}
+        )
+
+    @given(data=data(), time_zone=timezones())
+    def test_zoned_datetime(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: dt.datetime
+
+        objs = data.draw(
+            lists(builds(Example, x=zoned_datetimes(time_zone=time_zone)), min_size=1)
+        )
+        df = dataclass_to_dataframe(objs, localns=locals())
+        check_polars_dataframe(
+            df, height=len(objs), schema_list={"x": zoned_datetime(time_zone=time_zone)}
+        )
+
+    def test_error_empty(self) -> None:
+        with raises(
+            _DataClassToDataFrameEmptyError,
+            match="At least 1 dataclass must be given; got 0",
+        ):
+            _ = dataclass_to_dataframe([])
+
+    def test_error_non_unique(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example1:
+            x: int = 0
+
+        @dataclass(kw_only=True, slots=True)
+        class Example2:
+            x: int = 0
+
+        with raises(
+            _DataClassToDataFrameNonUniqueError,
+            match="Iterable .* must contain exactly one class; got .*, .* and perhaps more",
+        ):
+            _ = dataclass_to_dataframe([Example1(), Example2()])
+
+
 class TestDataClassToSchema:
     def test_basic(self) -> None:
         today = get_today()
@@ -790,7 +800,21 @@ class TestDataClassToSchema:
         expected = {"middle": struct_dtype(inner=struct_dtype(x=Int64))}
         assert result == expected
 
-    def test_nested_outer_list_basic_types(self) -> None:
+    def test_nested_inner_list(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Inner:
+            x: list[int] = field(default_factory=list)
+
+        @dataclass(kw_only=True, slots=True)
+        class Outer:
+            inner: Inner = field(default_factory=Inner)
+
+        obj = Outer()
+        result = dataclass_to_schema(obj, localns=locals())
+        expected = {"inner": Struct({"x": List(Int64)})}
+        assert result == expected
+
+    def test_nested_outer_list(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Inner:
             x: int = 0
@@ -817,6 +841,30 @@ class TestDataClassToSchema:
         expected = {"x": zoned_datetime(time_zone=time_zone)}
         assert result == expected
 
+    @given(start=timezones(), end=timezones())
+    def test_zoned_datetime_nested(self, *, start: ZoneInfo, end: ZoneInfo) -> None:
+        now_start = get_now(time_zone=start)
+        now_end = get_now(time_zone=end)
+
+        @dataclass(kw_only=True, slots=True)
+        class Inner:
+            start: dt.datetime = now_start
+            end: dt.datetime = now_end
+
+        @dataclass(kw_only=True, slots=True)
+        class Outer:
+            inner: Inner = field(default_factory=Inner)
+
+        obj = Outer()
+        result = dataclass_to_schema(obj, localns=locals())
+        expected = {
+            "inner": Struct({
+                "start": zoned_datetime(time_zone=start),
+                "end": zoned_datetime(time_zone=end),
+            })
+        }
+        assert result == expected
+
     def test_containers(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -832,6 +880,15 @@ class TestDataClassToSchema:
             "set_field": List(Int64),
         }
         assert result == expected
+
+    def test_error(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: Sentinel = sentinel
+
+        obj = Example()
+        with raises(NotImplementedError):
+            _ = dataclass_to_schema(obj)
 
 
 class TestDatetimeUTC:
