@@ -167,13 +167,14 @@ class _YieldFieldsInstance(Generic[_T]):
     metadata: StrMapping = field(default_factory=dict)
     kw_only: bool | Sentinel = sentinel
 
-    def is_equal_to_default(
+    def equals_default(
         self,
         *,
         rel_tol: float | None = None,
         abs_tol: float | None = None,
         extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
     ) -> bool:
+        """Check if the field value equals its default."""
         if isinstance(self.default, Sentinel) and isinstance(
             self.default_factory, Sentinel
         ):

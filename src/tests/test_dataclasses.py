@@ -336,18 +336,14 @@ class TestReprWithoutDefaults:
         assert result == expected
 
 
-from pytest import mark
-
-
-@mark.only
 class TestYieldFields:
     def test_class_with_none_type_no_default(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: None
 
-        result = list(yield_fields(Example))
-        expected = [_YieldFieldsClass(name="x", type_=NoneType, kw_only=True)]
+        result = one(yield_fields(Example))
+        expected = _YieldFieldsClass(name="x", type_=NoneType, kw_only=True)
         assert result == expected
 
     def test_class_with_none_type_and_default(self) -> None:
@@ -355,10 +351,10 @@ class TestYieldFields:
         class Example:
             x: None = None
 
-        result = list(yield_fields(Example))
-        expected = [
-            _YieldFieldsClass(name="x", type_=NoneType, default=None, kw_only=True)
-        ]
+        result = one(yield_fields(Example))
+        expected = _YieldFieldsClass(
+            name="x", type_=NoneType, default=None, kw_only=True
+        )
         assert result == expected
 
     def test_class_with_int_type(self) -> None:
@@ -366,8 +362,8 @@ class TestYieldFields:
         class Example:
             x: int
 
-        result = list(yield_fields(Example))
-        expected = [_YieldFieldsClass(name="x", type_=int, kw_only=True)]
+        result = one(yield_fields(Example))
+        expected = _YieldFieldsClass(name="x", type_=int, kw_only=True)
         assert result == expected
 
     def test_class_with_list_int_type(self) -> None:
@@ -375,14 +371,11 @@ class TestYieldFields:
         class Example:
             x: list[int] = field(default_factory=list)
 
-        results = list(yield_fields(Example))
-        expected = [
-            _YieldFieldsClass(
-                name="x", type_=list[int], default_factory=list, kw_only=True
-            )
-        ]
-        assert results == expected
-        result = one(results)
+        result = one(yield_fields(Example))
+        expected = _YieldFieldsClass(
+            name="x", type_=list[int], default_factory=list, kw_only=True
+        )
+        assert result == expected
         assert is_list_type(result.type_)
         assert get_args(result.type_) == (int,)
 
@@ -395,10 +388,9 @@ class TestYieldFields:
         class Outer:
             inner: Inner
 
-        results = list(yield_fields(Outer, localns=locals()))
-        expected = [_YieldFieldsClass(name="inner", type_=Inner, kw_only=True)]
-        assert results == expected
-        result = one(results)
+        result = one(yield_fields(Outer, localns=locals()))
+        expected = _YieldFieldsClass(name="inner", type_=Inner, kw_only=True)
+        assert result == expected
         assert result.type_ is Inner
 
     def test_class_literal(self) -> None:
@@ -406,14 +398,12 @@ class TestYieldFields:
         class Example:
             truth: TruthLit
 
-        results = list(yield_fields(Example, globalns=globals()))
-        expected = [
-            _YieldFieldsClass(
-                name="truth", type_=cast(type[Any], TruthLit), kw_only=True
-            )
-        ]
-        assert results == expected
-        result = one(results)
+        result = one(yield_fields(Example, globalns=globals()))
+        expected = _YieldFieldsClass(
+            name="truth", type_=cast(type[Any], TruthLit), kw_only=True
+        )
+
+        assert result == expected
         assert is_literal_type(result.type_)
         assert get_args(result.type_) == ("true", "false")
 
@@ -422,17 +412,14 @@ class TestYieldFields:
         class Example:
             truth: TruthLit | None = None
 
-        results = list(yield_fields(Example, globalns=globals()))
-        expected = [
-            _YieldFieldsClass(
-                name="truth",
-                type_=cast(type[Any], TruthLit | None),
-                default=None,
-                kw_only=True,
-            )
-        ]
-        assert results == expected
-        result = one(results)
+        result = one(yield_fields(Example, globalns=globals()))
+        expected = _YieldFieldsClass(
+            name="truth",
+            type_=cast(type[Any], TruthLit | None),
+            default=None,
+            kw_only=True,
+        )
+        assert result == expected
         assert is_optional_type(result.type_)
         args = get_args(result.type_)
         assert args == (Literal["true", "false"],)
@@ -445,10 +432,44 @@ class TestYieldFields:
             x: None = None
 
         obj = Example()
-        results = list(yield_fields(obj, globalns=globals()))
-        expected = [
-            _YieldFieldsInstance(
-                name="x", value=None, type_=NoneType, default=None, kw_only=True
-            )
-        ]
-        assert results == expected
+        result = one(yield_fields(obj, globalns=globals()))
+        expected = _YieldFieldsInstance(
+            name="x", value=None, type_=NoneType, default=None, kw_only=True
+        )
+        assert result == expected
+
+    @given(x=integers())
+    def test_instance_is_default_value_with_no_default(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        obj = Example(x=x)
+        field = one(yield_fields(obj))
+        assert not field.equals_default()
+
+    @given(x=integers())
+    def test_instance_is_default_value_with_default(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+        obj = Example(x=x)
+        field = one(yield_fields(obj))
+        result = field.equals_default()
+        expected = x == 0
+        assert result is expected
+
+    @given(x=lists(integers()))
+    def test_instance_is_default_value_with_default_factory(
+        self, *, x: list[int]
+    ) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: list[int] = field(default_factory=list)
+
+        obj = Example(x=x)
+        fld = one(yield_fields(obj))
+        result = fld.equals_default()
+        expected = x == []
+        assert result is expected
