@@ -20,6 +20,9 @@ from typing import (
 from typing import get_args as _get_args
 from typing import get_type_hints as _get_type_hints
 
+from utilities.errors import ImpossibleCaseError
+from utilities.iterables import check_sets_equal
+
 if TYPE_CHECKING:
     from utilities.types import StrMapping
 
@@ -96,14 +99,29 @@ def get_type_hints(
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
 ) -> dict[str, Any]:
+    """Get the type hints of an object."""
     try:
-        return _get_type_hints(
+        first = _get_type_hints(cls)
+    except NameError:
+        first = None
+    try:
+        second = _get_type_hints(
             cls,
             globalns=globals() if globalns is None else dict(globalns),
             localns=locals() if localns is None else dict(localns),
         )
     except NameError:
+        second = None
+    if (first is None) and (second is None):
         return cls.__annotations__
+    if (first is not None) and (second is None):
+        return first
+    if (first is None) and (second is not None):
+        return second
+    if (first is not None) and (second is not None):
+        check_sets_equal(first, second)
+        return {k: second[k] if isinstance(first[k], str) else second[k] for k in first}
+    raise ImpossibleCaseError(case=[f"{first=}", f"{second=}"])  # pragma: no cover
 
 
 def is_dict_type(obj: Any, /) -> bool:

@@ -18,6 +18,7 @@ from ib_async import (
     Fill,
     Forex,
     Order,
+    OrderStatus,
     Trade,
 )
 from orjson import JSONDecodeError
@@ -176,7 +177,7 @@ class TestSerializeAndDeserialize:
             return mapping
 
         with assume_does_not_raise(_SerializeIntegerError):
-            ser = serialize(obj, dataclass_final_hook=hook)
+            ser = serialize(obj, globalns=globals(), dataclass_final_hook=hook)
         result = deserialize(
             ser,
             objects={
@@ -193,6 +194,7 @@ class TestSerializeAndDeserialize:
                 Fill,
                 Forex,
                 Order,
+                OrderStatus,
                 SubFrozenSet,
                 SubList,
                 SubSet,
@@ -218,7 +220,8 @@ class TestSerializeAndDeserialize:
     @given(obj=make_objects(dataclass2=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_nested(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={DataClass2Inner, DataClass2Outer})
+        ser = serialize(obj, globalns=globals())
+        result = deserialize(ser, objects={DataClass2Inner, DataClass2Outer})
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
@@ -268,7 +271,7 @@ class TestSerializeAndDeserialize:
             return mapping
 
         with assume_does_not_raise(_SerializeIntegerError):
-            ser = serialize(obj, dataclass_final_hook=hook)
+            ser = serialize(obj, globalns=globals(), dataclass_final_hook=hook)
         result = deserialize(
             ser,
             objects={
@@ -358,7 +361,7 @@ class TestSerialize:
 
     def test_dataclass_nested(self) -> None:
         obj = DataClass2Outer(inner=DataClass2Inner(x=0))
-        result = serialize(obj)
+        result = serialize(obj, globalns=globals())
         expected = b'{"[dc|DataClass2Outer]":{"inner":{"[dc|DataClass2Inner]":{}}}}'
         assert result == expected
 

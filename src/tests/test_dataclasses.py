@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, cast
 
 from hypothesis import given
 from hypothesis.strategies import integers, lists
@@ -11,6 +12,7 @@ from polars import DataFrame
 from pytest import raises
 from typing_extensions import override
 
+from tests.test_operator import DataClass3
 from utilities.dataclasses import (
     YieldFieldsError,
     _YieldFieldsClass,
@@ -22,14 +24,11 @@ from utilities.dataclasses import (
 )
 from utilities.functions import get_class_name
 from utilities.iterables import one
+from utilities.orjson import OrjsonLogRecord
 from utilities.polars import are_frames_equal
 from utilities.sentinel import sentinel
-from utilities.types import Dataclass
+from utilities.types import Dataclass, StrMapping
 from utilities.typing import get_args, is_list_type, is_literal_type, is_optional_type
-
-if TYPE_CHECKING:
-    from utilities.types import StrMapping
-
 
 TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
 
@@ -101,10 +100,10 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             inner: Inner
 
         obj = Outer(inner=Inner(x=x))
-        asdict_res = asdict_without_defaults(obj, recursive=True)
+        asdict_res = asdict_without_defaults(obj, localns=locals(), recursive=True)
         asdict_exp = {"inner": {"x": x}}
         assert asdict_res == asdict_exp
-        repr_res = repr_without_defaults(obj, recursive=True)
+        repr_res = repr_without_defaults(obj, localns=locals(), recursive=True)
         repr_exp = f"Outer(inner=Inner(x={x}))"
         assert repr_res == repr_exp
 
@@ -119,10 +118,10 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             inner: Inner
 
         obj = Outer(inner=Inner(x=x))
-        asdict_res = asdict_without_defaults(obj)
+        asdict_res = asdict_without_defaults(obj, localns=locals())
         asdict_exp = {"inner": Inner(x=x)}
         assert asdict_res == asdict_exp
-        repr_res = repr_without_defaults(obj)
+        repr_res = repr_without_defaults(obj, localns=locals())
         repr_exp = f"Outer(inner=TestAsDictWithoutDefaultsAndReprWithoutDefaults.test_nested_without_recursive.<locals>.Inner(x={x}))"
         assert repr_res == repr_exp
 
@@ -304,9 +303,7 @@ class TestYieldFields:
             truth: TruthLit
 
         result = one(yield_fields(Example, globalns=globals()))
-        expected = _YieldFieldsClass(
-            name="truth", type_=cast(type[Any], TruthLit), kw_only=True
-        )
+        expected = _YieldFieldsClass(name="truth", type_=TruthLit, kw_only=True)
 
         assert result == expected
         assert is_literal_type(result.type_)
@@ -319,10 +316,7 @@ class TestYieldFields:
 
         result = one(yield_fields(Example, globalns=globals()))
         expected = _YieldFieldsClass(
-            name="truth",
-            type_=cast(type[Any], TruthLit | None),
-            default=None,
-            kw_only=True,
+            name="truth", type_=TruthLit | None, default=None, kw_only=True
         )
         assert result == expected
         assert is_optional_type(result.type_)
@@ -331,13 +325,41 @@ class TestYieldFields:
         arg = one(args)
         assert get_args(arg) == ("true", "false")
 
+    def test_class_literal_defined_elsewhere(self) -> None:
+        result = one(yield_fields(DataClass3))
+        expected = _YieldFieldsClass(
+            name="truth", type_=Literal["true", "false"], kw_only=True
+        )
+        assert result == expected
+
+    def test_class_orjson_log_record(self) -> None:
+        result = list(yield_fields(OrjsonLogRecord, globalns=globals()))
+        exp_head = [
+            _YieldFieldsClass(name="name", type_=str, kw_only=True),
+            _YieldFieldsClass(name="message", type_=str, kw_only=True),
+            _YieldFieldsClass(name="level", type_=int, kw_only=True),
+        ]
+        assert result[:3] == exp_head
+        exp_tail = [
+            _YieldFieldsClass(
+                name="extra", type_=StrMapping | None, default=None, kw_only=True
+            ),
+            _YieldFieldsClass(
+                name="log_file", type_=Path | None, default=None, kw_only=True
+            ),
+            _YieldFieldsClass(
+                name="log_file_line_num", type_=int | None, default=None, kw_only=True
+            ),
+        ]
+        assert result[-3:] == exp_tail
+
     def test_instance(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: None = None
 
         obj = Example()
-        result = one(yield_fields(obj, globalns=globals()))
+        result = one(yield_fields(obj))
         expected = _YieldFieldsInstance(
             name="x", value=None, type_=NoneType, default=None, kw_only=True
         )

@@ -100,7 +100,7 @@ def repr_without_defaults(
     """Repr a dataclass, without its defaults."""
     ignore_use: set[str] = set() if ignore is None else set(ignore)
     out: dict[str, str] = {}
-    for fld in yield_fields(obj):
+    for fld in yield_fields(obj, globalns=globalns, localns=localns):
         if (
             (fld.name not in ignore_use)
             and fld.repr
@@ -129,7 +129,7 @@ def repr_without_defaults(
 class _YieldFieldsInstance(Generic[_T]):
     name: str
     value: _T
-    type_: type[_T]
+    type_: Any
     default: _T | Sentinel = sentinel
     default_factory: Callable[[], _T] | Sentinel = sentinel
     repr: bool = True
@@ -171,9 +171,9 @@ class _YieldFieldsInstance(Generic[_T]):
 @dataclass(kw_only=True, slots=True)
 class _YieldFieldsClass(Generic[_T]):
     name: str
-    type_: type[_T]
-    default: _T = sentinel
-    default_factory: Callable[[], _T] = sentinel
+    type_: Any
+    default: _T | Sentinel = sentinel
+    default_factory: Callable[[], _T] | Sentinel = sentinel
     repr: bool = True
     hash_: bool | None = None
     init: bool = True
@@ -207,7 +207,7 @@ def yield_fields(
 ) -> Iterator[_YieldFieldsInstance[Any]] | Iterator[_YieldFieldsClass[Any]]:
     """Yield the fields of a dataclass."""
     if is_dataclass_instance(obj):
-        for field in yield_fields(type(obj)):
+        for field in yield_fields(type(obj), globalns=globalns, localns=localns):
             yield _YieldFieldsInstance(
                 name=field.name,
                 value=getattr(obj, field.name),
@@ -222,11 +222,11 @@ def yield_fields(
                 kw_only=field.kw_only,
             )
     elif is_dataclass_class(obj):
+        hints = get_type_hints(obj, globalns=globalns, localns=localns)
         for field in fields(obj):
             if isinstance(field.type, type):
                 type_ = field.type
             else:
-                hints = get_type_hints(obj, globalns=globalns, localns=localns)
                 type_ = hints.get(field.name, field.type)
             yield (
                 _YieldFieldsClass(
