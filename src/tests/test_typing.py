@@ -196,9 +196,7 @@ class TestIsAnnotationOfType:
             param(is_optional_type, list[int], False),
             param(is_optional_type, list[int] | None, True),
             param(is_optional_type, Literal["a", "b", "c"], False),
-            param(
-                is_optional_type, Literal["a", "b", "c"] | None, True, marks=mark.only
-            ),
+            param(is_optional_type, Literal["a", "b", "c"] | None, True),
             param(is_sequence_type, Sequence[int], True),
             param(is_sequence_type, list[int], False),
             param(is_set_type, list[int], False),
