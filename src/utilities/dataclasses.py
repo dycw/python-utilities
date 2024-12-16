@@ -149,17 +149,17 @@ def _is_not_default_value(
     if (field.default is not MISSING) and (field.default_factory is MISSING):
         expected = field.default
     elif (field.default is MISSING) and (field.default_factory is not MISSING):
-        expected = field.default_factory
-        if comparisons is None:
-            cmp = eq
-        else:
-            hints = get_type_hints(cls, globalns=globalns, localns=localns)
-            type_ = hints[field.name]
-            cmp = comparisons.get(type_, eq)
-        try:
-            return not cmp(value, field.default_factory())
-        except TypeError:
-            return True
+        expected = field.default_factory()
+        # if comparisons is None:
+        #     cmp = eq
+        # else:
+        #     hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        #     type_ = hints[field.name]
+        #     cmp = comparisons.get(type_, eq)
+        # try:
+        #     return not cmp(value, field.default_factory())
+        # except TypeError:
+        #     return True
     else:  # pragma: no cover
         raise ImpossibleCaseError(
             case=[f"{field.default_factory=}", f"{field.default_factory=}"]
