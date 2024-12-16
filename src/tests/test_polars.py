@@ -11,9 +11,6 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 import polars as pl
 from hypothesis import assume, given
 from hypothesis.strategies import (
-    DataObject,
-    builds,
-    data,
     dates,
     datetimes,
     fixed_dictionaries,
@@ -747,6 +744,38 @@ class TestDataClassToSchema:
         expected = {"x": pl.Enum(["true", "false"])}
         assert result == expected
 
+    def test_nested_once(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Inner:
+            x: int = 0
+
+        @dataclass(kw_only=True, slots=True)
+        class Outer:
+            inner: Inner = field(default_factory=Inner)
+
+        obj = Outer()
+        result = dataclass_to_schema(obj, localns=locals())
+        expected = {"inner": struct_dtype(x=Int64)}
+        assert result == expected
+
+    def test_nested_twice(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Inner:
+            x: int = 0
+
+        @dataclass(kw_only=True, slots=True)
+        class Middle:
+            inner: Inner = field(default_factory=Inner)
+
+        @dataclass(kw_only=True, slots=True)
+        class Outer:
+            middle: Middle = field(default_factory=Middle)
+
+        obj = Outer()
+        result = dataclass_to_schema(obj, localns=locals())
+        expected = {"middle": struct_dtype(inner=struct_dtype(x=Int64))}
+        assert result == expected
+
     def test_local_datetime(self) -> None:
         now = get_now().replace(tzinfo=None)
 
@@ -754,18 +783,20 @@ class TestDataClassToSchema:
         class Example:
             x: dt.datetime = now
 
-        obj = data.draw(builds(Example, x=datetimes()))
+        obj = Example()
         result = dataclass_to_schema(obj)
         expected = {"x": Datetime()}
         assert result == expected
 
-    @given(data=data(), time_zone=timezones())
-    def test_zoned_datetime(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+    @given(time_zone=timezones())
+    def test_zoned_datetime(self, *, time_zone: ZoneInfo) -> None:
+        now = get_now(time_zone=time_zone)
+
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: dt.datetime
+            x: dt.datetime = now
 
-        obj = data.draw(builds(Example, x=zoned_datetimes(time_zone=time_zone)))
+        obj = Example()
         result = dataclass_to_schema(obj)
         expected = {"x": zoned_datetime(time_zone=time_zone)}
         assert result == expected

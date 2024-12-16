@@ -583,7 +583,9 @@ def dataclass_to_schema(
     out: dict[str, Any] = {}
     for field in yield_fields(obj, globalns=globalns, localns=localns):
         if is_dataclass_instance(field.value):
-            dtype = _dataclass_to_schema_dict_one(field.value)
+            dtype = _dataclass_to_schema_dict_one(
+                field.value, globalns=globalns, localns=localns
+            )
         else:
             dtype = _dataclass_to_schema_dict_type_to_dtype(field)
         out[field.name] = dtype
@@ -601,7 +603,9 @@ def _dataclass_to_schema_dict_one(
     out: dict[str, Any] = {}
     for field in yield_fields(obj, globalns=globalns, localns=localns):
         if is_dataclass_instance(field.value):
-            dtype = _dataclass_to_schema_dict_one(field)
+            dtype = _dataclass_to_schema_dict_one(
+                field.value, globalns=globalns, localns=localns
+            )
         else:
             dtype = _dataclass_to_schema_dict_type_to_dtype(field)
         out[field.name] = dtype
