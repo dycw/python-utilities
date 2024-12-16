@@ -10,12 +10,10 @@ from typing import (
     Literal,
     TypeGuard,
     TypeVar,
-    cast,
     overload,
     runtime_checkable,
 )
 
-from pandas._config.config import is_instance_factory
 from typing_extensions import Protocol, override
 
 from utilities.errors import ImpossibleCaseError
@@ -225,11 +223,27 @@ class _YieldFieldsClass(Generic[_T]):
 
 
 @overload
-def yield_fields(obj: Dataclass, /) -> Iterator[_YieldFieldsInstance]: ...
-@overload
-def yield_fields(obj: type[Dataclass], /) -> Iterator[_YieldFieldsClass]: ...
 def yield_fields(
-    obj: Dataclass | type[Dataclass], /
+    obj: Dataclass,
+    /,
+    *,
+    globalns: StrMapping | None = ...,
+    localns: StrMapping | None = ...,
+) -> Iterator[_YieldFieldsInstance]: ...
+@overload
+def yield_fields(
+    obj: type[Dataclass],
+    /,
+    *,
+    globalns: StrMapping | None = ...,
+    localns: StrMapping | None = ...,
+) -> Iterator[_YieldFieldsClass]: ...
+def yield_fields(
+    obj: Dataclass | type[Dataclass],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
 ) -> Iterator[_YieldFieldsInstance] | Iterator[_YieldFieldsClass]:
     """Yield the fields of a dataclass."""
     if is_dataclass_instance(obj):
@@ -249,13 +263,11 @@ def yield_fields(
             )
     elif is_dataclass_class(obj):
         for field in fields(obj):
-            hints = get_type_hints(obj)
+            hints = get_type_hints(obj, globalns=globalns, localns=localns)
             try:
                 type_ = hints[field.name]
             except KeyError:
                 type_ = field.type
-            # breakpoint()
-
             yield (
                 _YieldFieldsClass(
                     name=field.name,

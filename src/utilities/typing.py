@@ -171,6 +171,9 @@ def _is_namedtuple_core(obj: Any, /) -> bool:
 def is_optional_type(obj: Any, /) -> bool:
     """Check if an object is an optional type annotation."""
     is_optional = _is_annotation_of_type(obj, Optional)  # pyright: ignore[reportDeprecated]
+    is_optional or (is_union_type(obj) and any(a is NoneType for a in _get_args(obj)))
+    breakpoint()
+
     return is_optional or (
         is_union_type(obj) and any(a is NoneType for a in _get_args(obj))
     )
