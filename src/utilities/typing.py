@@ -112,6 +112,8 @@ def get_type_hints(
         )
     except NameError:
         second = None
+    if (first is None) and (second is None):
+        return cls.__annotations__
     if (first is not None) and (second is None):
         return first
     if (first is None) and (second is not None):

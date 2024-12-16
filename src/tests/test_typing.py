@@ -4,6 +4,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, NotRequired, Self, TypedDict
 
+from beartype import beartype
 from pytest import mark, param
 
 from tests.test_operator import (
@@ -13,7 +14,12 @@ from tests.test_operator import (
     DataClass3,
     DataClass4,
 )
-from tests.test_typing_funcs.no_future import Inner, Outer
+from tests.test_typing_funcs.no_future import (
+    Example_TestTypingFuncs_BeartypeCondOnMethod,
+    Example_TestTypingFuncs_Inner,
+    Example_TestTypingFuncs_Outer,
+)
+from utilities.beartype import beartype_cond
 from utilities.typing import (
     contains_self,
     eval_typed_dict,
@@ -100,6 +106,33 @@ class TestGetTypeHints:
         expected = {"x": int}
         assert result == expected
 
+    def test_beartype(self) -> None:
+        @beartype
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+            def identity(self) -> Self:
+                return self
+
+        hints = get_type_hints(Example)
+        expected = {"x": int}
+        assert hints == expected
+
+    def test_beartype_cond(self) -> None:
+        @beartype_cond
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+            @beartype_cond
+            def identity(self) -> Self:
+                return self
+
+        hints = get_type_hints(Example)
+        expected = {"x": int}
+        assert hints == expected
+
     def test_nested(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Inner:
@@ -114,8 +147,13 @@ class TestGetTypeHints:
         assert hints == expected
 
     def test_no_future(self) -> None:
-        hints = get_type_hints(Outer)
-        expected = {"inner": Inner}
+        hints = get_type_hints(Example_TestTypingFuncs_Outer)
+        expected = {"inner": Example_TestTypingFuncs_Inner}
+        assert hints == expected
+
+    def test_no_future2(self) -> None:
+        hints = get_type_hints(Example_TestTypingFuncs_BeartypeCondOnMethod)
+        expected = {}
         assert hints == expected
 
     def test_dataclass1(self) -> None:
