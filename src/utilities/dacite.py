@@ -9,8 +9,7 @@ from utilities.typing import get_args, get_type_hints, is_optional_type
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.dataclasses import Dataclass
-    from utilities.types import StrMapping
+    from utilities.types import Dataclass, StrMapping
 
 
 try:  # skipif-version-ge-312

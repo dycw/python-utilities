@@ -2,9 +2,20 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, is_dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeGuard, TypeVar, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Literal,
+    Protocol,
+    TypeAlias,
+    TypeGuard,
+    TypeVar,
+    overload,
+    runtime_checkable,
+)
 
 from typing_extensions import override
 
@@ -20,6 +31,13 @@ PathLike: TypeAlias = Path | str
 PathLikeOrCallable: TypeAlias = PathLike | Callable[[], PathLike]
 StrMapping: TypeAlias = Mapping[str, Any]
 TupleOrStrMapping: TypeAlias = tuple[Any, ...] | StrMapping
+
+
+@runtime_checkable
+class Dataclass(Protocol):
+    """Protocol for `dataclass` classes."""
+
+    __dataclass_fields__: ClassVar[dict[str, Any]]
 
 
 _T = TypeVar("_T")
@@ -349,6 +367,16 @@ class EnsureTimeError(Exception):
         return f"Object {self.obj} must be a time{desc}; got {get_class_name(self.obj)} instead"
 
 
+def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:
+    """Check if an object is a dataclass."""
+    return isinstance(obj, type) and is_dataclass(obj)
+
+
+def is_dataclass_instance(obj: Any, /) -> TypeGuard[Dataclass]:
+    """Check if an object is an instance of a dataclass."""
+    return (not isinstance(obj, type)) and is_dataclass(obj)
+
+
 def is_hashable(obj: Any, /) -> TypeGuard[Hashable]:
     """Check if an object is hashable."""
     try:
@@ -409,6 +437,7 @@ def make_isinstance(cls: type[_T], /) -> Callable[[Any], TypeGuard[_T]]:
 
 
 __all__ = [
+    "Dataclass",
     "Duration",
     "EnsureBoolError",
     "EnsureClassError",
@@ -436,6 +465,8 @@ __all__ = [
     "ensure_sized",
     "ensure_sized_not_str",
     "ensure_time",
+    "is_dataclass_class",
+    "is_dataclass_instance",
     "is_hashable",
     "is_sequence_of_tuple_or_str_mapping",
     "is_sized",

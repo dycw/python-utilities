@@ -9,8 +9,8 @@ from typing import Any, TypeVar, cast
 from typing_extensions import override
 
 import utilities.math
-from utilities.dataclasses import Dataclass, is_dataclass_instance
 from utilities.iterables import SortIterableError, sort_iterable
+from utilities.types import Dataclass, is_dataclass_instance
 
 _T = TypeVar("_T")
 

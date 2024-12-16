@@ -1,36 +1,21 @@
 from __future__ import annotations
 
-from dataclasses import MISSING, Field, dataclass, fields, is_dataclass, replace
-from operator import eq
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Literal,
-    TypeGuard,
-    TypeVar,
-    overload,
-    runtime_checkable,
-)
-
-from typing_extensions import Protocol, override
+from dataclasses import MISSING, Field, fields, replace
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
+from utilities.operator import is_equal
 from utilities.sentinel import Sentinel
+from utilities.types import Dataclass, StrMapping, is_dataclass_instance
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping
 
-    from utilities.types import StrMapping
 
-
-@runtime_checkable
-class Dataclass(Protocol):
-    """Protocol for `dataclass` classes."""
-
-    __dataclass_fields__: ClassVar[dict[str, Any]]
+_T = TypeVar("_T")
+_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 
 
 def asdict_without_defaults(
@@ -71,52 +56,21 @@ def asdict_without_defaults(
     return out if final is None else final(type(obj), out)
 
 
-def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
-    """Get the underlying dataclass, if possible."""
-    if is_dataclass_class(obj):
-        return obj
-    if is_dataclass_instance(obj):
-        return type(obj)
-    raise GetDataClassClassError(obj=obj)
-
-
-@dataclass(kw_only=True, slots=True)
-class GetDataClassClassError(Exception):
-    obj: Any
-
-    @override
-    def __str__(self) -> str:
-        return f"Object must be a dataclass instance or class; got {self.obj}"
-
-
-def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:
-    """Check if an object is a dataclass."""
-    return isinstance(obj, type) and is_dataclass(obj)
-
-
-def is_dataclass_instance(obj: Any, /) -> TypeGuard[Dataclass]:
-    """Check if an object is an instance of a dataclass."""
-    return (not isinstance(obj, type)) and is_dataclass(obj)
-
-
-_T = TypeVar("_T", bound=Dataclass)
-
-
 @overload
 def replace_non_sentinel(
     obj: Any, /, *, in_place: Literal[True], **kwargs: Any
 ) -> None: ...
 @overload
 def replace_non_sentinel(
-    obj: _T, /, *, in_place: Literal[False] = False, **kwargs: Any
-) -> _T: ...
+    obj: _TDataclass, /, *, in_place: Literal[False] = False, **kwargs: Any
+) -> _TDataclass: ...
 @overload
 def replace_non_sentinel(
-    obj: _T, /, *, in_place: bool = False, **kwargs: Any
-) -> _T | None: ...
+    obj: _TDataclass, /, *, in_place: bool = False, **kwargs: Any
+) -> _TDataclass | None: ...
 def replace_non_sentinel(
-    obj: _T, /, *, in_place: bool = False, **kwargs: Any
-) -> _T | None:
+    obj: _TDataclass, /, *, in_place: bool = False, **kwargs: Any
+) -> _TDataclass | None:
     """Replace attributes on a dataclass, filtering out sentinel values."""
     if in_place:
         for k, v in kwargs.items():
@@ -184,37 +138,35 @@ def _is_not_default_value(
     value: Any,
     /,
     *,
-    comparisons: Mapping[type[Any], Callable[[Any, Any], bool]] | None = None,
+    comparisons: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
 ) -> bool:
     if (field.default is MISSING) and (field.default_factory is MISSING):
         return True
     if (field.default is not MISSING) and (field.default_factory is MISSING):
-        return bool(value != field.default)
-    if (field.default is MISSING) and (field.default_factory is not MISSING):
-        if comparisons is None:
-            cmp = eq
-        else:
-            hints = get_type_hints(cls, globalns=globalns, localns=localns)
-            type_ = hints[field.name]
-            cmp = comparisons.get(type_, eq)
+        expected = field.default
+    elif (field.default is MISSING) and (field.default_factory is not MISSING):
+        expected = field.default_factory()
+    else:  # pragma: no cover
+        raise ImpossibleCaseError(
+            case=[f"{field.default_factory=}", f"{field.default_factory=}"]
+        )
+    if comparisons is None:
+        extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None
+    else:
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        type_ = hints[field.name]
         try:
-            return not cmp(value, field.default_factory())
-        except TypeError:
-            return True
-    raise ImpossibleCaseError(  # pragma: no cover
-        case=[f"{field.default_factory=}", f"{field.default_factory=}"]
-    )
+            extra = {type_: comparisons[type_]}
+        except KeyError:
+            extra = None
+    return not is_equal(value, expected, extra=extra)
 
 
 __all__ = [
     "Dataclass",
-    "GetDataClassClassError",
     "asdict_without_defaults",
-    "get_dataclass_class",
-    "is_dataclass_class",
-    "is_dataclass_instance",
     "replace_non_sentinel",
     "repr_without_defaults",
     "yield_field_names",

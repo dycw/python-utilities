@@ -61,8 +61,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from utilities.dataclasses import Dataclass
-    from utilities.types import StrMapping
+    from utilities.types import Dataclass, StrMapping
 
 
 # formatter

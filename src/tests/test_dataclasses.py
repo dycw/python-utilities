@@ -1,24 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field, fields
-from types import NoneType
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar
 
 from hypothesis import given
 from hypothesis.strategies import integers, lists
 from ib_async import Future
 from polars import DataFrame
-from pytest import mark, param, raises
+from pytest import raises
 from typing_extensions import override
 
 from utilities.dataclasses import (
-    Dataclass,
-    GetDataClassClassError,
     _is_not_default_value,
     asdict_without_defaults,
-    get_dataclass_class,
-    is_dataclass_class,
-    is_dataclass_instance,
     replace_non_sentinel,
     repr_without_defaults,
     yield_field_names,
@@ -27,6 +21,7 @@ from utilities.functions import get_class_name
 from utilities.iterables import one
 from utilities.polars import are_frames_equal
 from utilities.sentinel import sentinel
+from utilities.types import Dataclass
 
 if TYPE_CHECKING:
     from utilities.types import StrMapping
@@ -178,51 +173,6 @@ class TestDataClassProtocol:
         _ = identity(Example())
 
 
-class TestGetDataClassClass:
-    def test_main(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: None = None
-
-        for obj in [Example(), Example]:
-            assert get_dataclass_class(obj) is Example
-
-    def test_error(self) -> None:
-        with raises(
-            GetDataClassClassError,
-            match="Object must be a dataclass instance or class; got None",
-        ):
-            _ = get_dataclass_class(cast(Any, None))
-
-
-class TestIsDataClassClass:
-    def test_main(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: None = None
-
-        assert is_dataclass_class(Example)
-        assert not is_dataclass_class(Example())
-
-    @mark.parametrize("obj", [param(None), param(NoneType)])
-    def test_others(self, *, obj: Any) -> None:
-        assert not is_dataclass_class(obj)
-
-
-class TestIsDataClassInstance:
-    def test_main(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: None = None
-
-        assert not is_dataclass_instance(Example)
-        assert is_dataclass_instance(Example())
-
-    @mark.parametrize("obj", [param(None), param(NoneType)])
-    def test_others(self, *, obj: Any) -> None:
-        assert not is_dataclass_instance(obj)
-
-
 class TestIsNotDefaultValue:
     @given(x=integers())
     def test_no_defaults(self, *, x: int) -> None:
@@ -273,7 +223,8 @@ class TestIsNotDefaultValue:
             x: DataFrame = field(default_factory=DataFrame)
 
         fld = one(fields(Example))
-        assert _is_not_default_value(Example, fld, DataFrame())
+        with raises(TypeError, match="the truth value of a DataFrame is ambiguous"):
+            _ = _is_not_default_value(Example, fld, DataFrame())
 
     def test_default_factory_with_comparison_without_type(self) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -281,9 +232,8 @@ class TestIsNotDefaultValue:
             x: DataFrame = field(default_factory=DataFrame)
 
         fld = one(fields(Example))
-        assert _is_not_default_value(
-            Example, fld, DataFrame(), comparisons={}, globalns=globals()
-        )
+        with raises(TypeError, match="the truth value of a DataFrame is ambiguous"):
+            _ = _is_not_default_value(Example, fld, DataFrame(), comparisons={})
 
     def test_default_factory_with_comparison_with_type_and_equal(self) -> None:
         @dataclass(kw_only=True, slots=True)
