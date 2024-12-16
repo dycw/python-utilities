@@ -131,13 +131,12 @@ class TestGetLogRecords:
 
 
 class TestOrjsonFormatter:
-    @mark.only
     def test_main(self, *, tmp_path: Path) -> None:
         name = str(tmp_path)
         logger = getLogger(name)
         logger.setLevel(DEBUG)
         handler = StreamHandler(buffer := StringIO())
-        handler.setFormatter(OrjsonFormatter(localns=locals()))
+        handler.setFormatter(OrjsonFormatter())
         handler.setLevel(DEBUG)
         logger.addHandler(handler)
         logger.debug("message", extra={"a": 1, "b": 2, "_ignored": 3})
