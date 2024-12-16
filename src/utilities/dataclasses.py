@@ -1,13 +1,20 @@
 from __future__ import annotations
 
-from dataclasses import MISSING, Field, fields, replace
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+from dataclasses import MISSING, Field, dataclass, field, fields, replace
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
+
+from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
 from utilities.operator import is_equal
-from utilities.sentinel import Sentinel
-from utilities.types import Dataclass, StrMapping, is_dataclass_instance
+from utilities.sentinel import Sentinel, sentinel
+from utilities.types import (
+    Dataclass,
+    StrMapping,
+    is_dataclass_class,
+    is_dataclass_instance,
+)
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
@@ -15,14 +22,13 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
-_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 
 
 def asdict_without_defaults(
     obj: Dataclass,
     /,
     *,
-    comparisons: Mapping[type[Any], Callable[[Any, Any], bool]] | None = None,
+    comparisons: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     final: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
@@ -30,8 +36,8 @@ def asdict_without_defaults(
 ) -> StrMapping:
     """Cast a dataclass as a dictionary, without its defaults."""
     out: dict[str, Any] = {}
-    for field in fields(obj):
-        name = field.name
+    for fld in yield_fields(obj, globalns=globalns, localns=localns):
+        name = fld.name
         value = getattr(obj, name)
         if _is_not_default_value(
             obj,
@@ -54,6 +60,27 @@ def asdict_without_defaults(
                 value_as_dict = value
             out[name] = value_as_dict
     return out if final is None else final(type(obj), out)
+
+
+def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
+    """Get the underlying dataclass, if possible."""
+    if is_dataclass_class(obj):
+        return obj
+    if is_dataclass_instance(obj):
+        return type(obj)
+    raise GetDataClassClassError(obj=obj)
+
+
+@dataclass(kw_only=True, slots=True)
+class GetDataClassClassError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Object must be a dataclass instance or class; got {self.obj}"
+
+
+_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 
 
 @overload
@@ -95,19 +122,19 @@ def repr_without_defaults(
     """Repr a dataclass, without its defaults."""
     ignore_use: set[str] = set() if ignore is None else set(ignore)
     out: dict[str, str] = {}
-    for field in fields(obj):
-        name = field.name
+    for fld in yield_fields(obj):
+        name = fld.name
         value = getattr(obj, name)
         if (name not in ignore_use) and (
             _is_not_default_value(
                 obj,
-                field,
+                fld,
                 value,
                 comparisons=comparisons,
                 globalns=globalns,
                 localns=localns,
             )
-            and field.repr
+            and fld.repr
         ):
             if recursive and is_dataclass_instance(value):
                 repr_as_dict = repr_without_defaults(
@@ -126,10 +153,135 @@ def repr_without_defaults(
     return f"{cls}({joined})"
 
 
-def yield_field_names(obj: Dataclass | type[Dataclass], /) -> Iterator[str]:
-    """Yield the field names of a dataclass."""
-    for field in fields(obj):
-        yield field.name
+@dataclass(kw_only=True, slots=True)
+class _YieldFieldsInstance(Generic[_T]):
+    name: str
+    value: _T
+    type_: type[_T]
+    default: _T = sentinel
+    default_factory: Callable[[], _T] = sentinel
+    repr: bool = True
+    hash_: bool | None = None
+    init: bool = True
+    compare: bool = True
+    metadata: StrMapping = field(default_factory=dict)
+    kw_only: bool | Sentinel = sentinel
+
+    def is_equal_to_default(
+        self,
+        *,
+        rel_tol: float | None = None,
+        abs_tol: float | None = None,
+        extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
+    ) -> bool:
+        if isinstance(self.default, Sentinel) and isinstance(
+            self.default_factory, Sentinel
+        ):
+            return False
+        if (not isinstance(self.default, Sentinel)) and isinstance(
+            self.default_factory, Sentinel
+        ):
+            expected = self.default
+        elif isinstance(self.default, Sentinel) and (
+            not isinstance(self.default_factory, Sentinel)
+        ):
+            expected = self.default_factory()
+        else:  # pragma: no cover
+            raise ImpossibleCaseError(
+                case=[f"{self.default=}", f"{self.default_factory=}"]
+            )
+        return is_equal(
+            self.value, expected, rel_tol=rel_tol, abs_tol=abs_tol, extra=extra
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class _YieldFieldsClass(Generic[_T]):
+    name: str
+    type_: type[_T]
+    default: _T = sentinel
+    default_factory: Callable[[], _T] = sentinel
+    repr: bool = True
+    hash_: bool | None = None
+    init: bool = True
+    compare: bool = True
+    metadata: StrMapping = field(default_factory=dict)
+    kw_only: bool | Sentinel = sentinel
+
+
+@overload
+def yield_fields(
+    obj: Dataclass,
+    /,
+    *,
+    globalns: StrMapping | None = ...,
+    localns: StrMapping | None = ...,
+) -> Iterator[_YieldFieldsInstance[Any]]: ...
+@overload
+def yield_fields(
+    obj: type[Dataclass],
+    /,
+    *,
+    globalns: StrMapping | None = ...,
+    localns: StrMapping | None = ...,
+) -> Iterator[_YieldFieldsClass[Any]]: ...
+def yield_fields(
+    obj: Dataclass | type[Dataclass],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+) -> Iterator[_YieldFieldsInstance[Any]] | Iterator[_YieldFieldsClass[Any]]:
+    """Yield the fields of a dataclass."""
+    if is_dataclass_instance(obj):
+        for field in yield_fields(type(obj)):
+            yield _YieldFieldsInstance(
+                name=field.name,
+                value=getattr(obj, field.name),
+                type_=field.type_,
+                default=field.default,
+                default_factory=field.default_factory,
+                init=field.init,
+                repr=field.repr,
+                hash_=field.hash_,
+                compare=field.compare,
+                metadata=field.metadata,
+                kw_only=field.kw_only,
+            )
+    elif is_dataclass_class(obj):
+        for field in fields(obj):
+            if isinstance(field.type, type):
+                type_ = field.type
+            else:
+                hints = get_type_hints(obj, globalns=globalns, localns=localns)
+                type_ = hints.get(field.name, field.type)
+            yield (
+                _YieldFieldsClass(
+                    name=field.name,
+                    type_=type_,
+                    default=sentinel if field.default is MISSING else field.default,
+                    default_factory=sentinel
+                    if field.default_factory is MISSING
+                    else field.default_factory,
+                    init=field.init,
+                    repr=field.repr,
+                    hash_=field.hash,
+                    compare=field.compare,
+                    metadata=dict(field.metadata),
+                    kw_only=sentinel if field.kw_only is MISSING else field.kw_only,
+                )
+            )
+    else:
+        raise YieldFieldsError(obj=obj)
+
+
+@dataclass(kw_only=True, slots=True)
+class YieldFieldsError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Object must be a dataclass instance or class; got {self.obj}"
 
 
 def _is_not_default_value(
@@ -166,8 +318,10 @@ def _is_not_default_value(
 
 __all__ = [
     "Dataclass",
+    "GetDataClassClassError",
+    "YieldFieldsError",
     "asdict_without_defaults",
     "replace_non_sentinel",
     "repr_without_defaults",
-    "yield_field_names",
+    "yield_fields",
 ]
