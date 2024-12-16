@@ -120,10 +120,10 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             inner: Inner
 
         obj = Outer(inner=Inner(x=x))
-        asdict_res = asdict_without_defaults(obj)
+        asdict_res = asdict_without_defaults(obj, localns=locals())
         asdict_exp = {"inner": Inner(x=x)}
         assert asdict_res == asdict_exp
-        repr_res = repr_without_defaults(obj)
+        repr_res = repr_without_defaults(obj, localns=locals())
         repr_exp = f"Outer(inner=TestAsDictWithoutDefaultsAndReprWithoutDefaults.test_nested_without_recursive.<locals>.Inner(x={x}))"
         assert repr_res == repr_exp
 
