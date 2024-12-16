@@ -1,39 +1,27 @@
 from __future__ import annotations
 
-from dataclasses import MISSING, Field, dataclass, field, fields, is_dataclass, replace
-from operator import eq
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Generic,
-    Literal,
-    TypeGuard,
-    TypeVar,
-    overload,
-    runtime_checkable,
-)
+from dataclasses import MISSING, Field, dataclass, field, fields, replace
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
 
-from typing_extensions import Protocol, override
+from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
+from utilities.operator import is_equal
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import (
+    Dataclass,
+    StrMapping,
+    is_dataclass_class,
+    is_dataclass_instance,
+)
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping
 
 
-
 _T = TypeVar("_T")
-
-
-@runtime_checkable
-class Dataclass(Protocol):
-    """Protocol for `dataclass` classes."""
-
-    __dataclass_fields__: ClassVar[dict[str, Any]]
 
 
 @dataclass(kw_only=True, slots=True)
@@ -112,16 +100,6 @@ class GetDataClassClassError(Exception):
     @override
     def __str__(self) -> str:
         return f"Object must be a dataclass instance or class; got {self.obj}"
-
-
-def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:
-    """Check if an object is a dataclass."""
-    return isinstance(obj, type) and is_dataclass(obj)
-
-
-def is_dataclass_instance(obj: Any, /) -> TypeGuard[Dataclass]:
-    """Check if an object is an instance of a dataclass."""
-    return (not isinstance(obj, type)) and is_dataclass(obj)
 
 
 _TDataclass = TypeVar("_TDataclass", bound=Dataclass)
@@ -263,11 +241,11 @@ def yield_fields(
             )
     elif is_dataclass_class(obj):
         for field in fields(obj):
-            hints = get_type_hints(obj, globalns=globalns, localns=localns)
-            try:
-                type_ = hints[field.name]
-            except KeyError:
+            if isinstance(field.type, type):
                 type_ = field.type
+            else:
+                hints = get_type_hints(obj, globalns=globalns, localns=localns)
+                type_ = hints.get(field.name, field.type)
             yield (
                 _YieldFieldsClass(
                     name=field.name,

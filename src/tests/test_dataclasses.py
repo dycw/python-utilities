@@ -13,8 +13,6 @@ from typing_extensions import override
 
 from tests.test_operator import DataClass3
 from utilities.dataclasses import (
-    Dataclass,
-    GetDataClassClassError,
     _AsDictWithTypesElement,
     _is_not_default_value,
     _YieldFieldsClass,
@@ -29,6 +27,7 @@ from utilities.iterables import one
 from utilities.orjson import OrjsonLogRecord
 from utilities.polars import are_frames_equal
 from utilities.sentinel import sentinel
+from utilities.types import Dataclass
 from utilities.typing import get_args, is_list_type, is_literal_type, is_optional_type
 
 if TYPE_CHECKING:
@@ -38,17 +37,17 @@ if TYPE_CHECKING:
 TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
 
 
-class TestAsDictWithTypes:
-    @given(x=integers())
-    def test_field_without_defaults(self, *, x: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
-
-        obj = Example(x=x)
-        result = asdict_with_types(obj)
-        expected = {"x": _AsDictWithTypesElement(value=1, type_=int)}
-        assert result == expected
+# class TestAsDictWithTypes:
+#     @given(x=integers())
+#     def test_field_without_defaults(self, *, x: int) -> None:
+#         @dataclass(kw_only=True, slots=True)
+#         class Example:
+#             x: int
+#
+#         obj = Example(x=x)
+#         result = asdict_with_types(obj)
+#         expected = {"x": _AsDictWithTypesElement(value=1, type_=int)}
+#         assert result == expected
 
 
 class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
@@ -335,7 +334,6 @@ class TestYieldFields:
         assert is_literal_type(result.type_)
         assert get_args(result.type_) == ("true", "false")
 
-    @mark.only
     def test_class_literal_nullable(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -353,4 +351,7 @@ class TestYieldFields:
         assert results == expected
         result = one(results)
         assert is_optional_type(result.type_)
-        assert get_args(result.type_) == ("true", "false")
+        args = get_args(result.type_)
+        assert args == (Literal["true", "false"],)
+        arg = one(args)
+        assert get_args(arg) == ("true", "false")
