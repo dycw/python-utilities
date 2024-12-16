@@ -517,12 +517,25 @@ def _convert_time_zone_series(
     return sr
 
 
-def dataclass_to_row(obj: Dataclass, /) -> DataFrame:
+def dataclass_to_row(
+    obj: Dataclass,
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+) -> DataFrame:
     """Convert a dataclass into a 1-row DataFrame."""
     try:
         df = DataFrame([obj], orient="row")
     except NameError:
-        df = DataFrame([asdict_without_defaults(obj, recursive=True)], orient="row")
+        df = DataFrame(
+            [
+                asdict_without_defaults(
+                    obj, globalns=globalns, localns=localns, recursive=True
+                )
+            ],
+            orient="row",
+        )
     return reduce(partial(_dataclass_to_row_reducer, obj=obj), df.columns, df)
 
 
@@ -988,6 +1001,8 @@ def yield_rows_as_dataclasses(
     cls: type[_TDataclass],
     /,
     *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
     check_types: Literal["none", "first", "all"] = "first",
 ) -> Iterator[_TDataclass]:
     """Yield the rows of a DataFrame as dataclasses."""
@@ -996,7 +1011,7 @@ def yield_rows_as_dataclasses(
 
     columns = df.columns
     required: set[str] = set()
-    for field in yield_fields(cls):
+    for field in yield_fields(cls, globalns=globalns, localns=localns):
         if isinstance(field.default, Sentinel) and isinstance(
             field.default_factory, Sentinel
         ):
