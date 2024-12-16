@@ -7,6 +7,7 @@ from hypothesis import given
 from hypothesis.strategies import integers, lists
 from ib_async import Future
 from polars import DataFrame
+from pytest import raises
 from typing_extensions import override
 
 from utilities.dataclasses import (
