@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import fields
 from typing import TYPE_CHECKING, Any, Literal
 
+from utilities.dataclasses import yield_fields
 from utilities.iterables import one
 from utilities.typing import get_args, get_type_hints, is_optional_type
 
@@ -27,7 +27,9 @@ def yield_literal_forward_references(
 ) -> Iterator[tuple[str, Any]]:
     """Yield forward references."""
     hints = get_type_hints(cls, globalns=globalns, localns=localns)
-    for fld in filter(lambda f: isinstance(f.type, str), fields(cls)):
+    for fld in yield_fields(cls):
+        fld
+    for fld in filter(lambda f: isinstance(f.type, str), yield_fields(cls)):
         type_ = hints[fld.name]
         result = _yield_literal_forward_references_core(type_)
         if result is not None:  # pragma: no cover

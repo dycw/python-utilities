@@ -5,7 +5,7 @@ import reprlib
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
-from dataclasses import _MISSING_TYPE, asdict, dataclass, fields
+from dataclasses import asdict, dataclass
 from datetime import timezone
 from enum import Enum
 from functools import partial, reduce
@@ -56,7 +56,7 @@ from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
 from typing_extensions import override
 
-from utilities.dataclasses import asdict_without_defaults
+from utilities.dataclasses import asdict_without_defaults, yield_fields
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import (
     CheckIterablesEqualError,
@@ -79,6 +79,7 @@ from utilities.math import (
     check_integer,
     ewm_parameters,
 )
+from utilities.sentinel import Sentinel
 from utilities.types import Dataclass, StrMapping, ensure_datetime, is_dataclass_class
 from utilities.typing import (
     get_args,
@@ -94,6 +95,8 @@ from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
     from collections.abc import Set as AbstractSet
+
+    from utilities.dacite import yield_literal_forward_references
 
 
 _T = TypeVar("_T")
@@ -995,13 +998,11 @@ def yield_rows_as_dataclasses(
     from dacite import Config, from_dict
     from dacite.exceptions import WrongTypeError
 
-    from utilities.dacite import yield_literal_forward_references
-
     columns = df.columns
     required: set[str] = set()
-    for field in fields(cls):
-        if isinstance(field.default, _MISSING_TYPE) and isinstance(
-            field.default_factory, _MISSING_TYPE
+    for field in yield_fields(cls):
+        if isinstance(field.default, Sentinel) and isinstance(
+            field.default_factory, Sentinel
         ):
             required.add(field.name)
     try:
@@ -1019,12 +1020,15 @@ def yield_rows_as_dataclasses(
                 first = next(rows)
             except StopIteration:
                 return
-            fwd_refs = dict(
-                yield_literal_forward_references(
-                    cls, globalns=globalns, localns=localns
+            if 0:
+                fwd_refs = dict(
+                    yield_literal_forward_references(
+                        cls, globalns=globalns, localns=localns
+                    )
                 )
-            )
-            config = Config(forward_references=fwd_refs)
+                config = Config(forward_references=fwd_refs)
+            if 1:
+                config = Config()
             try:
                 yield from_dict(cls, first, config=config)
             except WrongTypeError as error:
@@ -1033,12 +1037,15 @@ def yield_rows_as_dataclasses(
                 ) from None
             yield from _yield_rows_as_dataclasses_no_check_types(rows, cls)
         case "all":
-            fwd_refs = dict(
-                yield_literal_forward_references(
-                    cls, globalns=globalns, localns=localns
+            if 0:
+                fwd_refs = dict(
+                    yield_literal_forward_references(
+                        cls, globalns=globalns, localns=localns
+                    )
                 )
-            )
-            config = Config(forward_references=fwd_refs)
+                config = Config(forward_references=fwd_refs)
+            if 1:
+                config = Config()
             try:
                 for row in rows:
                     yield from_dict(cls, row, config=config)
