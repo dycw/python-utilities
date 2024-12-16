@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import datetime as dt
+import enum
 import reprlib
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import asdict, dataclass
 from datetime import timezone
-from enum import Enum
-from functools import partial, reduce
+from functools import reduce
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -23,6 +23,7 @@ from typing import (
 )
 from zoneinfo import ZoneInfo
 
+import polars as pl
 from polars import (
     Boolean,
     DataFrame,
@@ -56,7 +57,7 @@ from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
 from typing_extensions import override
 
-from utilities.dataclasses import asdict_without_defaults, yield_fields
+from utilities.dataclasses import _YieldFieldsInstance, yield_fields
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import (
     CheckIterablesEqualError,
@@ -65,6 +66,9 @@ from utilities.iterables import (
     CheckSuperMappingError,
     CheckSuperSetError,
     MaybeIterable,
+    OneEmptyError,
+    OneNonUniqueError,
+    always_iterable,
     check_iterables_equal,
     check_mappings_equal,
     check_subset,
@@ -80,7 +84,12 @@ from utilities.math import (
     ewm_parameters,
 )
 from utilities.sentinel import Sentinel
-from utilities.types import Dataclass, StrMapping, ensure_datetime, is_dataclass_class
+from utilities.types import (
+    Dataclass,
+    StrMapping,
+    is_dataclass_class,
+    is_dataclass_instance,
+)
 from utilities.typing import (
     get_args,
     get_type_hints,
@@ -116,7 +125,7 @@ def append_dataclass(df: DataFrame, obj: Dataclass, /) -> DataFrame:
             left=error.left, right=error.right, extra=error.extra
         ) from None
     row_cols = set(df.columns) & set(non_null_fields)
-    row = dataclass_to_row(obj).select(*row_cols)
+    row = dataclass_to_dataframe(obj).select(*row_cols)
     return concat([df, row], how="diagonal")
 
 
@@ -517,42 +526,121 @@ def _convert_time_zone_series(
     return sr
 
 
-def dataclass_to_row(
-    obj: Dataclass,
+def dataclass_to_dataframe(
+    objs: MaybeIterable[Dataclass],
     /,
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
 ) -> DataFrame:
-    """Convert a dataclass into a 1-row DataFrame."""
+    """Convert a dataclass/es into a DataFrame."""
+    objs = list(always_iterable(objs))
     try:
-        df = DataFrame([obj], orient="row")
-    except NameError:
-        df = DataFrame(
-            [
-                asdict_without_defaults(
-                    obj, globalns=globalns, localns=localns, recursive=True
+        _ = one(set(map(type, objs)))
+    except OneEmptyError:
+        raise _DataClassToDataFrameEmptyError from None
+    except OneNonUniqueError as error:
+        raise _DataClassToDataFrameNonUniqueError(
+            objs=objs, first=error.first, second=error.second
+        ) from None
+    data = list(map(asdict, objs))
+    first, *_ = objs
+    schema = dataclass_to_schema(first, globalns=globalns, localns=localns)
+    return DataFrame(data, schema=schema, orient="row")
+
+
+@dataclass(kw_only=True, slots=True)
+class DataClassToDataFrameError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _DataClassToDataFrameEmptyError(DataClassToDataFrameError):
+    @override
+    def __str__(self) -> str:
+        return "At least 1 dataclass must be given; got 0"
+
+
+@dataclass(kw_only=True, slots=True)
+class _DataClassToDataFrameNonUniqueError(DataClassToDataFrameError):
+    objs: list[Dataclass]
+    first: Any
+    second: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Iterable {reprlib.repr(self.objs)} must contain exactly one class; got {self.first}, {self.second} and perhaps more"
+
+
+def dataclass_to_schema(
+    obj: Dataclass,
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+) -> SchemaDict:
+    """Cast a dataclass as a schema dict."""
+    out: dict[str, Any] = {}
+    for field in yield_fields(obj, globalns=globalns, localns=localns):
+        if is_dataclass_instance(field.value):
+            dtypes = dataclass_to_schema(
+                field.value, globalns=globalns, localns=localns
+            )
+            dtype = struct_dtype(**dtypes)
+        elif field.type_ is dt.datetime:
+            field_use = cast(_YieldFieldsInstance[dt.datetime], field)
+            if field_use.value.tzinfo is None:
+                dtype = Datetime
+            else:
+                dtype = zoned_datetime(
+                    time_zone=ensure_time_zone(field_use.value.tzinfo)
                 )
-            ],
-            orient="row",
+        else:
+            dtype = _dataclass_to_schema_one(
+                field.type_, globalns=globalns, localns=localns
+            )
+        out[field.name] = dtype
+    return out
+
+
+def _dataclass_to_schema_one(
+    obj: Any,
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+) -> PolarsDataType:
+    if obj is bool:
+        return Boolean
+    if obj is int:
+        return Int64
+    if obj is float:
+        return Float64
+    if obj is str:
+        return Utf8
+    if obj is dt.date:
+        return Date
+    if isinstance(obj, type) and issubclass(obj, enum.Enum):
+        return pl.Enum([e.name for e in obj])
+    if is_dataclass_class(obj):
+        out: dict[str, Any] = {}
+        for field in yield_fields(obj, globalns=globalns, localns=localns):
+            out[field.name] = _dataclass_to_schema_one(
+                field.type_, globalns=globalns, localns=localns
+            )
+        return struct_dtype(**out)
+    if is_frozenset_type(obj) or is_list_type(obj) or is_set_type(obj):
+        inner_type = one(get_args(obj))
+        inner_dtype = _dataclass_to_schema_one(
+            inner_type, globalns=globalns, localns=localns
         )
-    return reduce(partial(_dataclass_to_row_reducer, obj=obj), df.columns, df)
-
-
-def _dataclass_to_row_reducer(
-    df: DataFrame, column: str, /, *, obj: Dataclass
-) -> DataFrame:
-    dtype = df[column].dtype
-    if isinstance(dtype, Datetime):
-        datetime = ensure_datetime(getattr(obj, column), nullable=True)
-        if (datetime is None) or (datetime.tzinfo is None):
-            return df
-        time_zone = ensure_time_zone(datetime.tzinfo)
-        return df.with_columns(col(column).cast(zoned_datetime(time_zone=time_zone)))
-    if isinstance(dtype, Struct):
-        inner = dataclass_to_row(getattr(obj, column))
-        return df.with_columns(**{column: inner.select(all=struct("*"))["all"]})
-    return df
+        return List(inner_dtype)
+    if is_literal_type(obj):
+        return pl.Enum(get_args(obj))
+    if is_optional_type(obj):
+        inner_type = one(get_args(obj))
+        return _dataclass_to_schema_one(inner_type, globalns=globalns, localns=localns)
+    msg = f"{obj=}"
+    raise NotImplementedError(msg)
 
 
 def drop_null_struct_series(series: Series, /) -> Series:
@@ -956,7 +1044,7 @@ def _struct_from_dataclass_one(
         return zoned_datetime(time_zone=time_zone)
     if is_dataclass_class(ann):
         return struct_from_dataclass(ann, time_zone=time_zone)
-    if (isinstance(ann, type) and issubclass(ann, Enum)) or (
+    if (isinstance(ann, type) and issubclass(ann, enum.Enum)) or (
         is_literal_type(ann) and all(isinstance(a, str) for a in get_args(ann))
     ):
         return Utf8
@@ -1194,6 +1282,7 @@ def zoned_datetime(
 __all__ = [
     "CheckPolarsDataFrameError",
     "ColumnsToDictError",
+    "DataClassToDataFrameError",
     "DatetimeHongKong",
     "DatetimeTokyo",
     "DatetimeUSCentral",
@@ -1216,7 +1305,8 @@ __all__ = [
     "collect_series",
     "columns_to_dict",
     "convert_time_zone",
-    "dataclass_to_row",
+    "dataclass_to_dataframe",
+    "dataclass_to_schema",
     "drop_null_struct_series",
     "ensure_expr_or_series",
     "floor_datetime",
