@@ -202,16 +202,15 @@ class TestAppendDataClass:
 
 
 class TestAreFramesEqual:
-    @mark.parametrize(
-        ("left", "right", "expected"),
-        [
-            param(DataFrame(), DataFrame(), True),
-            param(DataFrame(), DataFrame(schema={"value": Int64}), False),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (DataFrame(), DataFrame(), True),
+            (DataFrame(), DataFrame(schema={"value": Int64}), False),
+        ])
     )
-    def test_main(self, *, left: DataFrame, right: DataFrame, expected: bool) -> None:
-        result = are_frames_equal(left, right)
+    def test_main(self, *, case: tuple[DataFrame, DataFrame, bool]) -> None:
+        x, y, expected = case
+        result = are_frames_equal(x, y)
         assert result is expected
 
 

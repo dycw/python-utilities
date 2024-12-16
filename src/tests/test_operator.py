@@ -27,6 +27,8 @@ from hypothesis.strategies import (
     tuples,
     uuids,
 )
+from polars import DataFrame, Int64
+from pytest import raises
 from typing_extensions import override
 
 from tests.conftest import IS_CI_AND_WINDOWS
@@ -40,6 +42,7 @@ from utilities.hypothesis import (
 )
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.operator import IsEqualError, is_equal
+from utilities.polars import are_frames_equal
 
 if TYPE_CHECKING:
     from utilities.types import Number
@@ -316,3 +319,20 @@ class TestIsEqual:
     @example(x=-4.233805663404397, y=nan)
     def test_sets_of_floats(self, *, x: float, y: float) -> None:
         assert is_equal({x, y}, {y, x})
+
+    @given(
+        case=sampled_from([
+            (DataFrame(), DataFrame(), True),
+            (DataFrame([()]), DataFrame([()]), True),
+            (DataFrame(), DataFrame(schema={"value": Int64}), False),
+            (DataFrame([()]), DataFrame([(0,)], schema={"value": Int64}), False),
+        ])
+    )
+    def test_extra(self, *, case: tuple[DataFrame, DataFrame, bool]) -> None:
+        x, y, expected = case
+        result = is_equal(x, y, extra={DataFrame: are_frames_equal})
+        assert result is expected
+
+    def test_extra_but_no_match(self) -> None:
+        with raises(ValueError, match="DataFrame columns do not match"):
+            _ = is_equal(DataFrame(), DataFrame(schema={"value": Int64}), extra={})

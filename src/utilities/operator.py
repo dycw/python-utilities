@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import reprlib
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from dataclasses import asdict, dataclass
-from typing import Any, cast
+from typing import Any, TypeVar, cast
 
 from typing_extensions import override
 
@@ -12,13 +12,32 @@ import utilities.math
 from utilities.dataclasses import Dataclass, is_dataclass_instance
 from utilities.iterables import SortIterableError, sort_iterable
 
+_T = TypeVar("_T")
+
 
 def is_equal(
-    x: Any, y: Any, /, *, rel_tol: float | None = None, abs_tol: float | None = None
+    x: Any,
+    y: Any,
+    /,
+    *,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+    extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
 ) -> bool:
     """Check if two objects are equal."""
     if type(x) is not type(y):
         return False
+
+    # extra
+    if extra is not None:
+        try:
+            cmp = next(cmp for cls, cmp in extra.items() if isinstance(x, cls))
+        except StopIteration:
+            pass
+        else:
+            x = cast(_T, x)
+            y = cast(_T, y)
+            return cmp(x, y)
 
     # singletons
     if isinstance(x, int | float):
