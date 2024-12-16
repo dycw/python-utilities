@@ -129,7 +129,7 @@ def repr_without_defaults(
 class _YieldFieldsInstance(Generic[_T]):
     name: str
     value: _T
-    type_: type[_T]
+    type_: Any
     default: _T | Sentinel = sentinel
     default_factory: Callable[[], _T] | Sentinel = sentinel
     repr: bool = True
