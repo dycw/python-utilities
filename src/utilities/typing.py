@@ -101,7 +101,7 @@ def get_type_hints(
 ) -> dict[str, Any]:
     """Get the type hints of an object."""
     try:
-        first: dict[str, Any] | None = _get_type_hints(cls)
+        first = _get_type_hints(cls)
     except NameError:
         first = None
     try:
