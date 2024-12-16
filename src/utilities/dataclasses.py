@@ -22,43 +22,39 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
+_U = TypeVar("_U")
 
 
 def asdict_without_defaults(
     obj: Dataclass,
     /,
     *,
-    comparisons: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+    extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
     final: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
     recursive: bool = False,
 ) -> StrMapping:
     """Cast a dataclass as a dictionary, without its defaults."""
     out: dict[str, Any] = {}
     for fld in yield_fields(obj, globalns=globalns, localns=localns):
-        name = fld.name
-        value = getattr(obj, name)
-        if _is_not_default_value(
-            obj,
-            field,
-            value,
-            comparisons=comparisons,
-            globalns=globalns,
-            localns=localns,
-        ):
-            if recursive and is_dataclass_instance(value):
+        if not fld.equals_default(rel_tol=rel_tol, abs_tol=abs_tol, extra=extra):
+            if recursive and is_dataclass_instance(fld.value):
                 value_as_dict = asdict_without_defaults(
-                    value,
-                    comparisons=comparisons,
-                    final=final,
-                    recursive=recursive,
+                    fld.value,
                     globalns=globalns,
                     localns=localns,
+                    rel_tol=rel_tol,
+                    abs_tol=abs_tol,
+                    extra=extra,
+                    final=final,
+                    recursive=recursive,
                 )
             else:
-                value_as_dict = value
-            out[name] = value_as_dict
+                value_as_dict = fld.value
+            out[fld.name] = value_as_dict
     return out if final is None else final(type(obj), out)
 
 
@@ -114,40 +110,36 @@ def repr_without_defaults(
     /,
     *,
     ignore: Iterable[str] | None = None,
-    comparisons: Mapping[type[Any], Callable[[Any, Any], bool]] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+    extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
     recursive: bool = False,
 ) -> str:
     """Repr a dataclass, without its defaults."""
     ignore_use: set[str] = set() if ignore is None else set(ignore)
     out: dict[str, str] = {}
     for fld in yield_fields(obj):
-        name = fld.name
-        value = getattr(obj, name)
-        if (name not in ignore_use) and (
-            _is_not_default_value(
-                obj,
-                fld,
-                value,
-                comparisons=comparisons,
-                globalns=globalns,
-                localns=localns,
-            )
+        if (
+            (fld.name not in ignore_use)
             and fld.repr
+            and not fld.equals_default(rel_tol=rel_tol, abs_tol=abs_tol, extra=extra)
         ):
-            if recursive and is_dataclass_instance(value):
+            if recursive and is_dataclass_instance(fld.value):
                 repr_as_dict = repr_without_defaults(
-                    value,
+                    fld.value,
                     ignore=ignore,
-                    comparisons=comparisons,
                     globalns=globalns,
                     localns=localns,
+                    rel_tol=rel_tol,
+                    abs_tol=abs_tol,
+                    extra=extra,
                     recursive=recursive,
                 )
             else:
-                repr_as_dict = repr(value)
-            out[name] = repr_as_dict
+                repr_as_dict = repr(fld.value)
+            out[fld.name] = repr_as_dict
     cls = get_class_name(obj)
     joined = ", ".join(f"{k}={v}" for k, v in out.items())
     return f"{cls}({joined})"
@@ -172,7 +164,7 @@ class _YieldFieldsInstance(Generic[_T]):
         *,
         rel_tol: float | None = None,
         abs_tol: float | None = None,
-        extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
+        extra: Mapping[type[_U], Callable[[_U, _U], bool]] | None = None,
     ) -> bool:
         """Check if the field value equals its default."""
         if isinstance(self.default, Sentinel) and isinstance(

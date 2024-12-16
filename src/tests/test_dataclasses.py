@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 from types import NoneType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
@@ -8,11 +8,9 @@ from hypothesis import given
 from hypothesis.strategies import integers, lists
 from ib_async import Future
 from polars import DataFrame
-from pytest import raises
 from typing_extensions import override
 
 from utilities.dataclasses import (
-    _is_not_default_value,
     _YieldFieldsClass,
     _YieldFieldsInstance,
     asdict_without_defaults,
@@ -68,15 +66,11 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             x: DataFrame = field(default_factory=DataFrame)
 
         obj = Example()
-        comparisons = {DataFrame: are_frames_equal}
-        asdict_res = asdict_without_defaults(
-            obj, comparisons=comparisons, globalns=globals()
-        )
+        extra = {DataFrame: are_frames_equal}
+        asdict_res = asdict_without_defaults(obj, globalns=globals(), extra=extra)
         asdict_exp = {}
         assert set(asdict_res) == set(asdict_exp)
-        repr_res = repr_without_defaults(
-            obj, comparisons=comparisons, globalns=globals()
-        )
+        repr_res = repr_without_defaults(obj, globalns=globals(), extra=extra)
         repr_exp = "Example()"
         assert repr_res == repr_exp
 
@@ -178,97 +172,6 @@ class TestDataClassProtocol:
             x: None = None
 
         _ = identity(Example())
-
-
-class TestIsNotDefaultValue:
-    @given(x=integers())
-    def test_no_defaults(self, *, x: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
-
-        fld = one(fields(Example))
-        assert _is_not_default_value(Example, fld, x)
-
-    def test_default_and_value_equal(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int = 0
-
-        fld = one(fields(Example))
-        assert not _is_not_default_value(Example, fld, 0)
-
-    @given(x=integers().filter(lambda x: x != 0))
-    def test_default_and_value_not_equal(self, *, x: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int = 0
-
-        fld = one(fields(Example))
-        assert _is_not_default_value(Example, fld, x)
-
-    def test_default_factory_and_value_equal(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: list[int] = field(default_factory=list)
-
-        fld = one(fields(Example))
-        assert not _is_not_default_value(Example, fld, [])
-
-    @given(x=lists(integers(), min_size=1))
-    def test_default_factory_and_value_not_equal(self, *, x: list[int]) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: list[int] = field(default_factory=list)
-
-        fld = one(fields(Example))
-        assert _is_not_default_value(Example, fld, x)
-
-    def test_default_factory_without_comparison(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: DataFrame = field(default_factory=DataFrame)
-
-        fld = one(fields(Example))
-        with raises(TypeError, match="the truth value of a DataFrame is ambiguous"):
-            _ = _is_not_default_value(Example, fld, DataFrame())
-
-    def test_default_factory_with_comparison_without_type(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: DataFrame = field(default_factory=DataFrame)
-
-        fld = one(fields(Example))
-        with raises(TypeError, match="the truth value of a DataFrame is ambiguous"):
-            _ = _is_not_default_value(Example, fld, DataFrame(), comparisons={})
-
-    def test_default_factory_with_comparison_with_type_and_equal(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: DataFrame = field(default_factory=DataFrame)
-
-        fld = one(fields(Example))
-        assert not _is_not_default_value(
-            Example,
-            fld,
-            DataFrame(),
-            comparisons={DataFrame: are_frames_equal},
-            globalns=globals(),
-        )
-
-    def test_default_factory_with_comparison_with_type_and_not_equal(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: DataFrame = field(default_factory=DataFrame)
-
-        fld = one(fields(Example))
-        assert not _is_not_default_value(
-            Example,
-            fld,
-            DataFrame(),
-            comparisons={DataFrame: are_frames_equal},
-            globalns=globals(),
-        )
 
 
 class TestReplaceNonSentinel:
