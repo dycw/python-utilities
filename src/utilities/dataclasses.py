@@ -100,7 +100,7 @@ def repr_without_defaults(
     """Repr a dataclass, without its defaults."""
     ignore_use: set[str] = set() if ignore is None else set(ignore)
     out: dict[str, str] = {}
-    for fld in yield_fields(obj):
+    for fld in yield_fields(obj, globalns=globalns, localns=localns):
         if (
             (fld.name not in ignore_use)
             and fld.repr
@@ -207,7 +207,7 @@ def yield_fields(
 ) -> Iterator[_YieldFieldsInstance[Any]] | Iterator[_YieldFieldsClass[Any]]:
     """Yield the fields of a dataclass."""
     if is_dataclass_instance(obj):
-        for field in yield_fields(type(obj)):
+        for field in yield_fields(type(obj), globalns=globalns, localns=localns):
             yield _YieldFieldsInstance(
                 name=field.name,
                 value=getattr(obj, field.name),
