@@ -24,6 +24,7 @@ from ib_async import (
 from orjson import JSONDecodeError
 from pytest import mark, param, raises
 
+from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from tests.test_operator import (
     DataClass1,
     DataClass2Inner,
@@ -98,6 +99,7 @@ class TestGetLogRecords:
         assert result.frac_lines_ok == 1.0
         assert result.frac_lines_error == 0.0
 
+    @SKIPIF_CI_AND_WINDOWS
     def test_error_file(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("log")
         with file.open(mode="wb") as fh:
