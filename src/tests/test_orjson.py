@@ -24,6 +24,7 @@ from ib_async import (
 from orjson import JSONDecodeError
 from pytest import mark, param, raises
 
+from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from tests.test_operator import (
     DataClass1,
     DataClass2Inner,
@@ -76,24 +77,43 @@ class TestGetLogRecords:
         handler.setFormatter(OrjsonFormatter())
         handler.setLevel(DEBUG)
         logger.addHandler(handler)
-        logger.debug("message", extra={"a": 1, "b": 2, "_ignored": 3})
+        logger.debug("", extra={"a": 1, "b": 2, "_ignored": 3})
         result = get_log_records(tmp_path, parallelism="threads")
         assert result.path == tmp_path
         assert result.files == [file]
+        assert result.num_files == 1
+        assert result.num_files_ok == 1
+        assert result.num_files_error == 0
         assert result.num_lines == 1
-        assert result.num_records == 1
-        assert result.num_errors == 0
-        assert result.missing == set()
-        assert result.other_errors == []
+        assert result.num_lines_ok == 1
+        assert result.num_lines_error == 0
         assert len(result.records) == 1
         record = one(result.records)
         assert record.log_file == file
         assert record.log_file_line_num == 1
-        assert result.frac_success == 1.0
-        assert result.frac_error == 0.0
-        assert result.num_files == 1
+        assert result.missing == set()
+        assert result.other_errors == []
+        # properties
+        assert result.frac_files_ok == 1.0
+        assert result.frac_files_error == 0.0
+        assert result.frac_lines_ok == 1.0
+        assert result.frac_lines_error == 0.0
 
-    def test_deserialize_error(self, *, tmp_path: Path) -> None:
+    @SKIPIF_CI_AND_WINDOWS
+    def test_error_file(self, *, tmp_path: Path) -> None:
+        file = tmp_path.joinpath("log")
+        with file.open(mode="wb") as fh:
+            _ = fh.write(b"\x80")
+        result = get_log_records(tmp_path, parallelism="threads")
+        assert result.path == tmp_path
+        assert result.files == [file]
+        assert result.num_files == 1
+        assert result.num_files_ok == 0
+        assert result.num_files_error == 1
+        assert len(result.other_errors) == 1
+        assert isinstance(one(result.other_errors), UnicodeDecodeError)
+
+    def test_error_deserialize_due_to_missing(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.setLevel(DEBUG)
         handler = FileHandler(file := tmp_path.joinpath("log"))
@@ -105,17 +125,17 @@ class TestGetLogRecords:
         class Example:
             x: int = 0
 
-        logger.debug("message", extra={"example": Example()})
+        logger.debug("", extra={"example": Example()})
         result = get_log_records(tmp_path, parallelism="threads")
         assert result.path == tmp_path
         assert result.files == [file]
         assert result.num_lines == 1
-        assert result.num_records == 0
-        assert result.num_errors == 1
+        assert result.num_lines_ok == 0
+        assert result.num_lines_error == 1
         assert result.missing == {Example.__qualname__}
         assert result.other_errors == []
 
-    def test_other_error(self, *, tmp_path: Path) -> None:
+    def test_error_deserialize_due_to_decode(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("log")
         with file.open(mode="w") as fh:
             _ = fh.write("message")
@@ -123,8 +143,8 @@ class TestGetLogRecords:
         assert result.path == tmp_path
         assert result.files == [file]
         assert result.num_lines == 1
-        assert result.num_records == 0
-        assert result.num_errors == 1
+        assert result.num_lines_ok == 0
+        assert result.num_lines_error == 1
         assert result.missing == set()
         assert len(result.other_errors) == 1
         assert isinstance(one(result.other_errors), JSONDecodeError)
