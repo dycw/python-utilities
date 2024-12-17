@@ -644,24 +644,31 @@ class GetLogRecordsOutput:
 
     path: Path
     files: list[Path] = field(default_factory=list)
+    num_files: int = 0
+    num_files_ok: int = 0
+    num_files_error: int = 0
     num_lines: int = 0
-    num_records: int = 0
-    num_errors: int = 0
+    num_lines_ok: int = 0
+    num_lines_error: int = 0
     records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
     missing: set[str] = field(default_factory=set)
     other_errors: list[Exception] = field(default_factory=list)
 
     @property
-    def frac_success(self) -> float:
-        return self.num_records / self.num_lines
+    def frac_files_ok(self) -> float:
+        return self.num_files_ok / self.num_files
 
     @property
-    def frac_error(self) -> float:
-        return self.num_errors / self.num_lines
+    def frac_files_error(self) -> float:
+        return self.num_files_error / self.num_files
 
     @property
-    def num_files(self) -> int:
-        return len(self.files)
+    def frac_lines_ok(self) -> float:
+        return self.num_lines_ok / self.num_lines
+
+    @property
+    def frac_lines_error(self) -> float:
+        return self.num_lines_error / self.num_lines
 
 
 def get_log_records(
@@ -685,12 +692,15 @@ def get_log_records(
     return GetLogRecordsOutput(
         path=path,
         files=files,
+        num_files=sum(o.num_files for o in outputs),
+        num_files_ok=sum(o.num_files_ok for o in outputs),
+        num_files_error=sum(o.num_files_error for o in outputs),
+        num_lines=sum(o.num_lines for o in outputs),
+        num_lines_ok=sum(o.num_lines_ok for o in outputs),
+        num_lines_error=sum(o.num_lines_error for o in outputs),
         records=sorted(
             chain.from_iterable(o.records for o in outputs), key=lambda r: r.datetime
         ),
-        num_lines=sum(o.num_lines for o in outputs),
-        num_records=sum(o.num_records for o in outputs),
-        num_errors=sum(o.num_errors for o in outputs),
         missing=set(reduce(or_, (o.missing for o in outputs))),
         other_errors=list(chain.from_iterable(o.other_errors for o in outputs)),
     )
@@ -699,9 +709,12 @@ def get_log_records(
 @dataclass(kw_only=True, slots=True)
 class _GetLogRecordsOneOutput:
     path: Path
+    num_files: int = 0
+    num_files_ok: int = 0
+    num_files_error: int = 0
     num_lines: int = 0
-    num_records: int = 0
-    num_errors: int = 0
+    num_lines_ok: int = 0
+    num_lines_error: int = 0
     records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
     missing: set[str] = field(default_factory=set)
     other_errors: list[Exception] = field(default_factory=list, repr=False)
@@ -715,9 +728,14 @@ def _get_log_records_one(
     redirects: Mapping[str, type[Any]] | None = None,
 ) -> _GetLogRecordsOneOutput:
     path = Path(path)
-    with path.open() as fh:
-        lines = fh.readlines()
-    num_errors = 0
+    try:
+        with path.open() as fh:
+            lines = fh.readlines()
+    except UnicodeDecodeError as error:
+        return _GetLogRecordsOneOutput(
+            path=path, num_files=1, num_files_error=1, other_errors=[error]
+        )
+    num_lines_error = 0
     missing: set[str] = set()
     records: list[OrjsonLogRecord] = []
     errors: list[Exception] = []
@@ -729,10 +747,10 @@ def _get_log_records_one(
             )
             record = ensure_class(result, OrjsonLogRecord)
         except (_DeserializeNoObjectsError, _DeserializeObjectNotFoundError) as error:
-            num_errors += 1
+            num_lines_error += 1
             missing.add(error.qualname)
         except Exception as error:  # noqa: BLE001
-            num_errors += 1
+            num_lines_error += 1
             errors.append(error)
         else:
             record.log_file = path
@@ -740,10 +758,13 @@ def _get_log_records_one(
             records.append(record)
     return _GetLogRecordsOneOutput(
         path=path,
-        records=sorted(records, key=lambda r: r.datetime),
+        num_files=1,
+        num_files_ok=1,
+        num_files_error=0,
         num_lines=len(lines),
-        num_records=len(records),
-        num_errors=num_errors,
+        num_lines_ok=len(records),
+        num_lines_error=num_lines_error,
+        records=sorted(records, key=lambda r: r.datetime),
         missing=missing,
         other_errors=errors,
     )
