@@ -99,6 +99,15 @@ class TestGetLogRecords:
         assert result.frac_lines_ok == 1.0
         assert result.frac_lines_error == 0.0
 
+    def test_skip_dir(self, *, tmp_path: Path) -> None:
+        tmp_path.joinpath("dir").mkdir()
+        result = get_log_records(tmp_path, parallelism="threads")
+        assert result.path == tmp_path
+        assert result.num_files == 0
+        assert result.num_files_ok == 0
+        assert result.num_files_error == 0
+        assert len(result.other_errors) == 0
+
     @SKIPIF_CI_AND_WINDOWS
     def test_error_file(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("log")
