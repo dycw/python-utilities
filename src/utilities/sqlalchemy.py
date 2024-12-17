@@ -588,7 +588,7 @@ class Upserter:
         await self._run(*items)
 
     def __del__(self) -> None:
-        with suppress(RuntimeError):  # pragma: no cover
+        with suppress(AttributeError, RuntimeError):  # pragma: no cover
             _ = self._task.cancel()
 
     async def add(self, *items: _InsertItem) -> None:
