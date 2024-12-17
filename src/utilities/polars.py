@@ -21,6 +21,7 @@ from typing import (
     cast,
     overload,
 )
+from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import polars as pl
@@ -596,6 +597,8 @@ def _dataclass_to_schema_one(
         return Utf8
     if obj is dt.date:
         return Date
+    if obj is UUID:
+        return Utf8
     if isinstance(obj, type) and issubclass(obj, enum.Enum):
         return pl.Enum([e.name for e in obj])
     if is_dataclass_class(obj):
