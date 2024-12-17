@@ -681,7 +681,7 @@ def get_log_records(
 ) -> GetLogRecordsOutput:
     """Get the log records under a directory."""
     path = Path(path)
-    files = list(path.iterdir())
+    files = [p for p in path.iterdir() if p.is_file()]
     func = partial(_get_log_records_one, objects=objects, redirects=redirects)
     try:
         from utilities.pqdm import pqdm_map
@@ -701,7 +701,7 @@ def get_log_records(
         records=sorted(
             chain.from_iterable(o.records for o in outputs), key=lambda r: r.datetime
         ),
-        missing=set(reduce(or_, (o.missing for o in outputs))),
+        missing=set(reduce(or_, (o.missing for o in outputs), set())),
         other_errors=list(chain.from_iterable(o.other_errors for o in outputs)),
     )
 
