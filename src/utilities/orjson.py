@@ -731,7 +731,7 @@ def _get_log_records_one(
     try:
         with path.open() as fh:
             lines = fh.readlines()
-    except UnicodeDecodeError as error:
+    except UnicodeDecodeError as error:  # skipif-ci-and-windows
         return _GetLogRecordsOneOutput(
             path=path, num_files=1, num_files_error=1, other_errors=[error]
         )
