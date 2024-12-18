@@ -11,11 +11,11 @@ if TYPE_CHECKING:
 
 def get_public_ip(*, timeout: float | None = None) -> IPv4Address:
     """Get your public IP address."""
-    with yield_connection("api.ipify.org", timeout=timeout) as conn:
+    with yield_connection("api.ipify.org", timeout=timeout) as conn:  # pragma: no cover
         conn.request("GET", "/?format=text")
         response = conn.getresponse()
         address = response.read().decode("utf8")
-    return IPv4Address(address)
+    return IPv4Address(address)  # pragma: no cover
 
 
 @contextmanager
