@@ -522,75 +522,76 @@ class TestIsDataClassInstance:
 
 
 class TestIsHashable:
-    @given(("obj", "expected"), [(0, True), ((1, 2, 3), True), ([1, 2, 3], False)])
-    def test_main(self, *, obj: Any, expected: bool) -> None:
+    @given(case=sampled_from([(0, True), ((1, 2, 3), True), ([1, 2, 3], False)]))
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
         assert is_hashable(obj) is expected
 
 
 class TestIsNoneAndIsNotNone:
     @given(
-        ("func", "obj", "expected"),
-        [
+        case=sampled_from([
             (is_none, None, True),
             (is_none, 0, False),
             (is_not_none, None, False),
             (is_not_none, 0, True),
-        ],
+        ])
     )
-    def test_main(
-        self, *, func: Callable[[Any], bool], obj: Any, expected: bool
-    ) -> None:
+    def test_main(self, *, case: tuple[Callable[[Any], bool], Any, bool]) -> None:
+        func, obj, expected = case
         result = func(obj)
         assert result is expected
 
 
 class TestIsSequenceOfTupleOrStrgMapping:
     @given(
-        ("obj", "expected"),
-        [
+        case=sampled_from([
             (None, False),
             ([(1, 2, 3)], True),
             ([{"a": 1, "b": 2, "c": 3}], True),
             ([(1, 2, 3), {"a": 1, "b": 2, "c": 3}], True),
-        ],
+        ])
     )
-    def test_main(self, *, obj: Any, expected: bool) -> None:
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
         result = is_sequence_of_tuple_or_str_mapping(obj)
         assert result is expected
 
 
 class TestIsSized:
-    @given(("obj", "expected"), [(None, False), ([], True), ((), True), ("", True)])
-    def test_main(self, *, obj: Any, expected: bool) -> None:
+    @given(case=sampled_from([(None, False), ([], True), ((), True), ("", True)]))
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
         assert is_sized(obj) is expected
 
 
 class TestIsSizedNotStr:
-    @given(("obj", "expected"), [(None, False), ([], True), ((), True), ("", False)])
-    def test_main(self, *, obj: Any, expected: bool) -> None:
+    @given(case=sampled_from([(None, False), ([], True), ((), True), ("", False)]))
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
         assert is_sized_not_str(obj) is expected
 
 
 class TestIsStringMapping:
     @given(
-        ("obj", "expected"),
-        [
+        case=sampled_from([
             (None, False),
             ({"a": 1, "b": 2, "c": 3}, True),
             ({1: "a", 2: "b", 3: "c"}, False),
-        ],
+        ])
     )
-    def test_main(self, *, obj: Any, expected: bool) -> None:
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
         result = is_string_mapping(obj)
         assert result is expected
 
 
 class TestIsSubclassExceptBoolInt:
     @given(
-        ("x", "y", "expected"),
-        [(bool, bool, True), (bool, int, False), (int, int, True)],
+        case=sampled_from([(bool, bool, True), (bool, int, False), (int, int, True)])
     )
-    def test_main(self, *, x: type[Any], y: type[Any], expected: bool) -> None:
+    def test_main(self, *, case: tuple[type[Any], type[Any], bool]) -> None:
+        x, y, expected = case
         assert is_subclass_except_bool_int(x, y) is expected
 
     def test_subclass_of_int(self) -> None:
@@ -601,7 +602,8 @@ class TestIsSubclassExceptBoolInt:
 
 class TestIsTuple:
     @given(("obj", "expected"), [(None, False), ((1, 2, 3), True), ([1, 2, 3], False)])
-    def test_main(self, *, obj: Any, expected: bool) -> None:
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
         result = is_tuple(obj)
         assert result is expected
 
@@ -616,7 +618,8 @@ class TestIsTupleOrStringMapping:
             ({1: "a", 2: "b", 3: "c"}, False),
         ],
     )
-    def test_main(self, *, obj: Any, expected: bool) -> None:
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
         result = is_tuple_or_str_mapping(obj)
         assert result is expected
 
