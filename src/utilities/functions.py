@@ -507,9 +507,29 @@ def is_not_none(obj: Any, /) -> bool:
     return obj is not None
 
 
-def is_sequence_of(obj: Any, /) -> TypeGuard[Sequence[TupleOrStrMapping]]:
+@overload
+def is_sequence_of(obj: Any, cls: type[_T], /) -> TypeGuard[Sequence[_T]]: ...
+@overload
+def is_sequence_of(obj: Any, cls: tuple[type[_T1]], /) -> TypeGuard[Sequence[_T1]]: ...
+@overload
+def is_sequence_of(
+    obj: Any, cls: tuple[type[_T1], type[_T2]], /
+) -> TypeGuard[Sequence[_T1 | _T2]]: ...
+@overload
+def is_sequence_of(
+    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3]], /
+) -> TypeGuard[Sequence[_T1 | _T2 | _T3]]: ...
+@overload
+def is_sequence_of(
+    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4]], /
+) -> TypeGuard[Sequence[_T1 | _T2 | _T3 | _T4]]: ...
+@overload
+def is_sequence_of(
+    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]], /
+) -> TypeGuard[Sequence[_T1 | _T2 | _T3 | _T4 | _T5]]: ...
+def is_sequence_of(obj: Any, cls: Any, /) -> TypeGuard[Sequence[Any]]:
     """Check if an object is a sequence of tuple or string mappings."""
-    return isinstance(obj, Sequence) and all(map(make_isinstance(tuple), obj))
+    return isinstance(obj, Sequence) and all(map(make_isinstance(cls), obj))
 
 
 def is_sequence_of_tuple_or_str_mapping(
@@ -576,12 +596,14 @@ def make_isinstance(
 def make_isinstance(
     cls: type[_T] | tuple[type[_T], ...], /
 ) -> Callable[[Any], TypeGuard[Any]]:
-    """Check if an object is hashable."""
+    """Make a curried `isinstance` function."""
+    return partial(_make_instance_core, cls=cls)
 
-    def inner(obj: Any, /) -> TypeGuard[_T]:
-        return isinstance(obj, cls)
 
-    return inner
+def _make_instance_core(
+    obj: Any, /, *, cls: type[_T] | tuple[type[_T], ...]
+) -> TypeGuard[_T]:
+    return isinstance(obj, cls)
 
 
 def map_object(
