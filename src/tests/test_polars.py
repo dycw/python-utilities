@@ -101,6 +101,7 @@ from utilities.polars import (
     is_not_null_struct_series,
     is_null_struct_series,
     join,
+    map_over_dataframe,
     nan_sum_agg,
     nan_sum_cols,
     replace_time_zone,
@@ -1099,6 +1100,37 @@ class TestJoin:
         result = join(df1, df2, on="a")
         expected = DataFrame(
             [{"a": 1, "b": 2, "c": 3}], schema={"a": Int64, "b": Int64, "c": Int64}
+        )
+        assert_frame_equal(result, expected)
+
+
+class TestMapOverDataFrame:
+    def test_main(self) -> None:
+        df = DataFrame(data=[(1,), (2,), (3,)], schema={"value": Int64}, orient="row")
+        result = map_over_dataframe(lambda x: 2 * x, df)
+        expected = 2 * df
+        assert_frame_equal(result, expected)
+
+    @mark.only
+    def test_dataframe_nested(self) -> None:
+        df = DataFrame(
+            data=[
+                {"outer": 1, "inner": {"i1": 2, "i2": 3}},
+                {"outer": 4, "inner": {"i1": 5, "i2": 6}},
+                {"outer": 7, "inner": {"i1": 8, "i2": 9}},
+            ],
+            schema={"outer": Int64, "inner": struct_dtype(i1=Int64, i2=Int64)},
+            orient="row",
+        )
+        result = map_over_dataframe(lambda x: 2 * x, df)
+        expected = DataFrame(
+            data=[
+                {"outer": 2, "inner": {"i1": 4, "i2": 6}},
+                {"outer": 8, "inner": {"i1": 10, "i2": 12}},
+                {"outer": 14, "inner": {"i1": 16, "i2": 18}},
+            ],
+            schema={"outer": Int64, "inner": struct_dtype(i1=Int64, i2=Int64)},
+            orient="row",
         )
         assert_frame_equal(result, expected)
 
