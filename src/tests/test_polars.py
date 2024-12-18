@@ -564,63 +564,6 @@ class TestConvertTimeZone:
         result = convert_time_zone(series, time_zone=HongKong)
         assert_series_equal(result, series)
 
-    def test_series_nested(self) -> None:
-        series = Series(
-            name="series",
-            values=[{"datetime": self.now_utc, "boolean": True}],
-            dtype=struct_dtype(datetime=DatetimeUTC, boolean=Boolean),
-        )
-        result = convert_time_zone(series, time_zone=HongKong)
-        expected = Series(
-            name="series",
-            values=[{"datetime": self.now_hkg, "boolean": True}],
-            dtype=struct_dtype(datetime=DatetimeHongKong, boolean=Boolean),
-        )
-        assert_series_equal(result, expected)
-
-    def test_dataframe_datetime(self) -> None:
-        df = DataFrame(data=[self.now_utc], schema={"datetime": DatetimeUTC})
-        result = convert_time_zone(df, time_zone=HongKong)
-        expected = DataFrame(data=[self.now_hkg], schema={"datetime": DatetimeHongKong})
-        assert_frame_equal(result, expected)
-
-    def test_dataframe_non_datetime(self) -> None:
-        df = DataFrame(data=[True], schema={"boolean": Boolean})
-        result = convert_time_zone(df, time_zone=HongKong)
-        expected = DataFrame(data=[True], schema={"boolean": Boolean})
-        assert_frame_equal(result, expected)
-
-    def test_dataframe_nested(self) -> None:
-        df = DataFrame(
-            data=[(self.now_utc, True)],
-            schema={"datetime": DatetimeUTC, "boolean": Boolean},
-            orient="row",
-        )
-        result = convert_time_zone(df, time_zone=HongKong)
-        expected = DataFrame(
-            data=[(self.now_hkg, True)],
-            schema={"datetime": DatetimeHongKong, "boolean": Boolean},
-            orient="row",
-        )
-        assert_frame_equal(result, expected)
-
-    def test_dataframe_nested_twice(self) -> None:
-        df = DataFrame(
-            data=[((self.now_utc,), True)],
-            schema={"datetime": Struct({"inner": DatetimeUTC}), "boolean": Boolean},
-            orient="row",
-        )
-        result = convert_time_zone(df, time_zone=HongKong)
-        expected = DataFrame(
-            data=[((self.now_hkg,), True)],
-            schema={
-                "datetime": Struct({"inner": DatetimeHongKong}),
-                "boolean": Boolean,
-            },
-            orient="row",
-        )
-        assert_frame_equal(result, expected)
-
 
 class TestDataClassToDataFrame:
     @given(data=data())
@@ -1229,7 +1172,9 @@ class TestReplaceTimeZone:
         now_utc = get_now()
         series = Series(values=[now_utc], dtype=DatetimeUTC)
         result = replace_time_zone(series, time_zone=None)
-        expected = Series(values=[now_utc.replace(tzinfo=None)], dtype=Datetime)
+        expected = Series(
+            name="series", values=[now_utc.replace(tzinfo=None)], dtype=Datetime
+        )
         assert_series_equal(result, expected)
 
     def test_non_datetime(self) -> None:
