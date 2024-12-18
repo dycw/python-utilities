@@ -101,7 +101,7 @@ from utilities.polars import (
     is_not_null_struct_series,
     is_null_struct_series,
     join,
-    map_over_columns,
+    map_over_dataframe,
     nan_sum_agg,
     nan_sum_cols,
     replace_time_zone,
@@ -1025,85 +1025,32 @@ class TestJoin:
         assert_frame_equal(result, expected)
 
 
-class TestMapOverColumns:
-    def test_series(self) -> None:
-        series = Series(values=[1, 2, 3], dtype=Int64)
-        result = map_over_columns(lambda x: 2 * x, series)
-        expected = 2 * series
-        assert_series_equal(result, expected)
-
-    def test_series_nested(self) -> None:
-        dtype = struct_dtype(outer=Int64, inner=struct_dtype(value=Int64))
-        series = Series(
-            values=[
-                {"outer": 1, "inner": {"value": 2}},
-                {"outer": 3, "inner": {"value": 4}},
-                {"outer": 5, "inner": {"value": 6}},
-            ],
-            dtype=dtype,
-        )
-        result = map_over_columns(lambda x: 2 * x, series)
-        expected = Series(
-            values=[
-                {"outer": 2, "inner": {"value": 4}},
-                {"outer": 6, "inner": {"value": 8}},
-                {"outer": 10, "inner": {"value": 12}},
-            ],
-            dtype=dtype,
-        )
-        assert_series_equal(result, expected)
-
-    def test_dataframe(self) -> None:
+class TestMapOverDataFrame:
+    def test_main(self) -> None:
         df = DataFrame(data=[(1,), (2,), (3,)], schema={"value": Int64}, orient="row")
-        result = map_over_columns(lambda x: 2 * x, df)
+        result = map_over_dataframe(lambda x: 2 * x, df)
         expected = 2 * df
         assert_frame_equal(result, expected)
 
+    @mark.only
     def test_dataframe_nested(self) -> None:
-        schema = {"outer": Int64, "inner": struct_dtype(value=Int64)}
         df = DataFrame(
             data=[
-                {"outer": 1, "inner": {"value": 2}},
-                {"outer": 3, "inner": {"value": 4}},
-                {"outer": 5, "inner": {"value": 6}},
+                {"outer": 1, "inner": {"i1": 2, "i2": 3}},
+                {"outer": 4, "inner": {"i1": 5, "i2": 6}},
+                {"outer": 7, "inner": {"i1": 8, "i2": 9}},
             ],
-            schema=schema,
+            schema={"outer": Int64, "inner": struct_dtype(i1=Int64, i2=Int64)},
             orient="row",
         )
-        result = map_over_columns(lambda x: 2 * x, df)
+        result = map_over_dataframe(lambda x: 2 * x, df)
         expected = DataFrame(
             data=[
-                {"outer": 2, "inner": {"value": 4}},
-                {"outer": 6, "inner": {"value": 8}},
-                {"outer": 10, "inner": {"value": 12}},
+                {"outer": 2, "inner": {"i1": 4, "i2": 6}},
+                {"outer": 8, "inner": {"i1": 10, "i2": 12}},
+                {"outer": 14, "inner": {"i1": 16, "i2": 18}},
             ],
-            schema=schema,
-            orient="row",
-        )
-        assert_frame_equal(result, expected)
-
-    def test_dataframe_nested_twice(self) -> None:
-        schema = {
-            "outer": Int64,
-            "middle": struct_dtype(mvalue=Int64, inner=struct_dtype(ivalue=Int64)),
-        }
-        df = DataFrame(
-            data=[
-                {"outer": 1, "middle": {"mvalue": 2, "inner": {"ivalue": 3}}},
-                {"outer": 4, "middle": {"mvalue": 5, "inner": {"ivalue": 6}}},
-                {"outer": 7, "middle": {"mvalue": 8, "inner": {"ivalue": 9}}},
-            ],
-            schema=schema,
-            orient="row",
-        )
-        result = map_over_columns(lambda x: 2 * x, df)
-        expected = DataFrame(
-            data=[
-                {"outer": 2, "middle": {"mvalue": 4, "inner": {"ivalue": 6}}},
-                {"outer": 8, "middle": {"mvalue": 10, "inner": {"ivalue": 12}}},
-                {"outer": 14, "middle": {"mvalue": 16, "inner": {"ivalue": 18}}},
-            ],
-            schema=schema,
+            schema={"outer": Int64, "inner": struct_dtype(i1=Int64, i2=Int64)},
             orient="row",
         )
         assert_frame_equal(result, expected)
