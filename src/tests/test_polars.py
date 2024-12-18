@@ -1085,7 +1085,34 @@ class TestJoin:
 
 
 class TestMapOverColumns:
-    def test_main(self) -> None:
+    def test_series(self) -> None:
+        series = Series(values=[1, 2, 3], dtype=Int64)
+        result = map_over_columns(lambda x: 2 * x, series)
+        expected = 2 * series
+        assert_series_equal(result, expected)
+
+    def test_series_nested(self) -> None:
+        dtype = struct_dtype(outer=Int64, inner=struct_dtype(value=Int64))
+        series = Series(
+            values=[
+                {"outer": 1, "inner": {"value": 2}},
+                {"outer": 3, "inner": {"value": 4}},
+                {"outer": 5, "inner": {"value": 6}},
+            ],
+            dtype=dtype,
+        )
+        result = map_over_columns(lambda x: 2 * x, series)
+        expected = Series(
+            values=[
+                {"outer": 2, "inner": {"value": 4}},
+                {"outer": 6, "inner": {"value": 8}},
+                {"outer": 10, "inner": {"value": 12}},
+            ],
+            dtype=dtype,
+        )
+        assert_series_equal(result, expected)
+
+    def test_dataframe(self) -> None:
         df = DataFrame(data=[(1,), (2,), (3,)], schema={"value": Int64}, orient="row")
         result = map_over_columns(lambda x: 2 * x, df)
         expected = 2 * df
@@ -1128,7 +1155,6 @@ class TestMapOverColumns:
             schema=schema,
             orient="row",
         )
-        result = convert_time_zone(df, time_zone=HongKong)
         result = map_over_columns(lambda x: 2 * x, df)
         expected = DataFrame(
             data=[
