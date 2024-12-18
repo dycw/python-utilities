@@ -60,7 +60,6 @@ if TYPE_CHECKING:
         Iterator,
         Mapping,
     )
-    from zoneinfo import ZoneInfo
 
     from polars._typing import PolarsDataType, SchemaDict
     from sqlalchemy.sql import ColumnCollection
@@ -70,6 +69,7 @@ if TYPE_CHECKING:
     from tenacity.wait import WaitBaseT
 
     import utilities.types
+    from utilities.types import ZoneInfoLike
 
 
 async def insert_dataframe(
@@ -234,7 +234,7 @@ async def select_to_dataframe(
     /,
     *,
     snake: bool = ...,
-    time_zone: ZoneInfo | str = ...,
+    time_zone: ZoneInfoLike = ...,
     batch_size: None = ...,
     in_clauses: tuple[Column[Any], Iterable[Any]] | None = ...,
     in_clauses_chunk_size: int | None = ...,
@@ -252,7 +252,7 @@ async def select_to_dataframe(
     /,
     *,
     snake: bool = ...,
-    time_zone: ZoneInfo | str = ...,
+    time_zone: ZoneInfoLike = ...,
     batch_size: int = ...,
     in_clauses: None = ...,
     in_clauses_chunk_size: int | None = ...,
@@ -270,7 +270,7 @@ async def select_to_dataframe(
     /,
     *,
     snake: bool = ...,
-    time_zone: ZoneInfo | str = ...,
+    time_zone: ZoneInfoLike = ...,
     batch_size: int = ...,
     in_clauses: tuple[Column[Any], Iterable[Any]] = ...,
     in_clauses_chunk_size: int | None = ...,
@@ -287,7 +287,7 @@ async def select_to_dataframe(
     /,
     *,
     snake: bool = False,
-    time_zone: ZoneInfo | str = UTC,
+    time_zone: ZoneInfoLike = UTC,
     batch_size: int | None = None,
     in_clauses: tuple[Column[Any], Iterable[Any]] | None = None,
     in_clauses_chunk_size: int | None = None,
@@ -402,7 +402,7 @@ def _select_to_dataframe_apply_snake(sel: Select[Any], /) -> Select[Any]:
 
 
 def _select_to_dataframe_map_select_to_df_schema(
-    sel: Select[Any], /, *, time_zone: ZoneInfo | str = UTC
+    sel: Select[Any], /, *, time_zone: ZoneInfoLike = UTC
 ) -> SchemaDict:
     """Map a select to a DataFrame schema."""
     columns: ReadOnlyColumnCollection = cast(Any, sel).selected_columns
@@ -416,7 +416,7 @@ def _select_to_dataframe_map_select_to_df_schema(
 
 
 def _select_to_dataframe_map_table_column_type_to_dtype(
-    type_: Any, /, *, time_zone: ZoneInfo | str = UTC
+    type_: Any, /, *, time_zone: ZoneInfoLike = UTC
 ) -> PolarsDataType:
     """Map a table column type to a polars type."""
     type_use = type_() if isinstance(type_, type) else type_

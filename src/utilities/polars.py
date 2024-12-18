@@ -85,7 +85,7 @@ from utilities.math import (
     ewm_parameters,
 )
 from utilities.sentinel import Sentinel
-from utilities.types import Dataclass, StrMapping
+from utilities.types import Dataclass, StrMapping, ZoneInfoLike
 from utilities.typing import (
     get_args,
     get_type_hints,
@@ -485,13 +485,13 @@ class ColumnsToDictError(Exception):
 
 
 @overload
-def convert_time_zone(obj: Series, /, *, time_zone: ZoneInfo | str = ...) -> Series: ...
+def convert_time_zone(obj: Series, /, *, time_zone: ZoneInfoLike = ...) -> Series: ...
 @overload
 def convert_time_zone(
-    obj: DataFrame, /, *, time_zone: ZoneInfo | str = ...
+    obj: DataFrame, /, *, time_zone: ZoneInfoLike = ...
 ) -> DataFrame: ...
 def convert_time_zone(
-    obj: Series | DataFrame, /, *, time_zone: ZoneInfo | str = UTC
+    obj: Series | DataFrame, /, *, time_zone: ZoneInfoLike = UTC
 ) -> Series | DataFrame:
     """Convert the time zone(s) of a Series or Dataframe."""
     match obj:
@@ -509,7 +509,7 @@ def convert_time_zone(
 
 
 def _convert_time_zone_series(
-    sr: Series, /, *, time_zone: ZoneInfo | str = UTC
+    sr: Series, /, *, time_zone: ZoneInfoLike = UTC
 ) -> Series:
     if isinstance(sr.dtype, Struct):
         df = sr.struct.unnest()
@@ -830,14 +830,14 @@ def nan_sum_cols(
 
 @overload
 def replace_time_zone(
-    obj: Series, /, *, time_zone: ZoneInfo | str | None = ...
+    obj: Series, /, *, time_zone: ZoneInfoLike | None = ...
 ) -> Series: ...
 @overload
 def replace_time_zone(
-    obj: DataFrame, /, *, time_zone: ZoneInfo | str | None = ...
+    obj: DataFrame, /, *, time_zone: ZoneInfoLike | None = ...
 ) -> DataFrame: ...
 def replace_time_zone(
-    obj: Series | DataFrame, /, *, time_zone: ZoneInfo | str | None = UTC
+    obj: Series | DataFrame, /, *, time_zone: ZoneInfoLike | None = UTC
 ) -> Series | DataFrame:
     """Replace the time zone(s) of a Series or Dataframe."""
     match obj:
@@ -855,7 +855,7 @@ def replace_time_zone(
 
 
 def _replace_time_zone_series(
-    sr: Series, /, *, time_zone: ZoneInfo | str | None = UTC
+    sr: Series, /, *, time_zone: ZoneInfoLike | None = UTC
 ) -> Series:
     if isinstance(sr.dtype, Struct):
         df = sr.struct.unnest()
@@ -1016,7 +1016,7 @@ def struct_from_dataclass(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-    time_zone: ZoneInfo | str | None = None,
+    time_zone: ZoneInfoLike | None = None,
 ) -> Struct:
     """Construct the Struct data type for a dataclass."""
     if not is_dataclass_class(cls):
@@ -1029,7 +1029,7 @@ def struct_from_dataclass(
 
 
 def _struct_from_dataclass_one(
-    ann: Any, /, *, time_zone: ZoneInfo | str | None = None
+    ann: Any, /, *, time_zone: ZoneInfoLike | None = None
 ) -> PolarsDataType:
     mapping = {bool: Boolean, dt.date: Date, float: Float64, int: Int64, str: Utf8}
     with suppress(KeyError):
@@ -1269,7 +1269,7 @@ def yield_struct_series_dataclasses(
 
 
 def zoned_datetime(
-    *, time_unit: TimeUnit = "us", time_zone: ZoneInfo | str | timezone = UTC
+    *, time_unit: TimeUnit = "us", time_zone: ZoneInfoLike | timezone = UTC
 ) -> Datetime:
     """Create a zoned datetime data type."""
     return Datetime(time_unit=time_unit, time_zone=get_time_zone_name(time_zone))
