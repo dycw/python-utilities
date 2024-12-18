@@ -101,6 +101,7 @@ from utilities.polars import (
     is_not_null_struct_series,
     is_null_struct_series,
     join,
+    map_over_columns,
     nan_sum_agg,
     nan_sum_cols,
     replace_time_zone,
@@ -551,96 +552,17 @@ class TestColumnsToDict:
 
 
 class TestConvertTimeZone:
-    now_utc: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 12, tzinfo=UTC)
-    now_hkg: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 20, tzinfo=HongKong)
-
-    def test_series_datetime(self) -> None:
-        series = Series(name="series", values=[self.now_utc], dtype=DatetimeUTC)
+    def test_datetime(self) -> None:
+        now_utc = get_now()
+        series = Series(values=[now_utc], dtype=DatetimeUTC)
         result = convert_time_zone(series, time_zone=HongKong)
-        expected = Series(name="series", values=[self.now_hkg], dtype=DatetimeHongKong)
+        expected = Series(values=[now_utc.astimezone(HongKong)], dtype=DatetimeHongKong)
         assert_series_equal(result, expected)
 
-    def test_series_non_datetime(self) -> None:
-        series = Series(name="series", values=[True], dtype=Boolean)
+    def test_non_datetime(self) -> None:
+        series = Series(values=[True], dtype=Boolean)
         result = convert_time_zone(series, time_zone=HongKong)
         assert_series_equal(result, series)
-
-    def test_series_nested(self) -> None:
-        series = Series(
-            name="series",
-            values=[{"datetime": self.now_utc, "boolean": True}],
-            dtype=Struct({"datetime": DatetimeUTC, "boolean": Boolean}),
-        )
-        result = convert_time_zone(series, time_zone=HongKong)
-        expected = Series(
-            name="series",
-            values=[{"datetime": self.now_hkg, "boolean": True}],
-            dtype=Struct({"datetime": DatetimeHongKong, "boolean": Boolean}),
-        )
-        assert_series_equal(result, expected)
-
-    def test_series_nested_twice(self) -> None:
-        series = Series(
-            name="series",
-            values=[{"datetime": {"inner": self.now_utc}, "boolean": True}],
-            dtype=Struct({
-                "datetime": Struct({"inner": DatetimeUTC}),
-                "boolean": Boolean,
-            }),
-        )
-        result = convert_time_zone(series, time_zone=HongKong)
-        expected = Series(
-            name="series",
-            values=[{"datetime": {"inner": self.now_hkg}, "boolean": True}],
-            dtype=Struct({
-                "datetime": Struct({"inner": DatetimeHongKong}),
-                "boolean": Boolean,
-            }),
-        )
-        assert_series_equal(result, expected)
-
-    def test_dataframe_datetime(self) -> None:
-        df = DataFrame(data=[self.now_utc], schema={"datetime": DatetimeUTC})
-        result = convert_time_zone(df, time_zone=HongKong)
-        expected = DataFrame(data=[self.now_hkg], schema={"datetime": DatetimeHongKong})
-        assert_frame_equal(result, expected)
-
-    def test_dataframe_non_datetime(self) -> None:
-        df = DataFrame(data=[True], schema={"boolean": Boolean})
-        result = convert_time_zone(df, time_zone=HongKong)
-        expected = DataFrame(data=[True], schema={"boolean": Boolean})
-        assert_frame_equal(result, expected)
-
-    def test_dataframe_nested(self) -> None:
-        df = DataFrame(
-            data=[(self.now_utc, True)],
-            schema={"datetime": DatetimeUTC, "boolean": Boolean},
-            orient="row",
-        )
-        result = convert_time_zone(df, time_zone=HongKong)
-        expected = DataFrame(
-            data=[(self.now_hkg, True)],
-            schema={"datetime": DatetimeHongKong, "boolean": Boolean},
-            orient="row",
-        )
-        assert_frame_equal(result, expected)
-
-    def test_dataframe_nested_twice(self) -> None:
-        df = DataFrame(
-            data=[((self.now_utc,), True)],
-            schema={"datetime": Struct({"inner": DatetimeUTC}), "boolean": Boolean},
-            orient="row",
-        )
-        result = convert_time_zone(df, time_zone=HongKong)
-        expected = DataFrame(
-            data=[((self.now_hkg,), True)],
-            schema={
-                "datetime": Struct({"inner": DatetimeHongKong}),
-                "boolean": Boolean,
-            },
-            orient="row",
-        )
-        assert_frame_equal(result, expected)
 
 
 class TestDataClassToDataFrame:
@@ -1103,6 +1025,90 @@ class TestJoin:
         assert_frame_equal(result, expected)
 
 
+class TestMapOverColumns:
+    def test_series(self) -> None:
+        series = Series(values=[1, 2, 3], dtype=Int64)
+        result = map_over_columns(lambda x: 2 * x, series)
+        expected = 2 * series
+        assert_series_equal(result, expected)
+
+    def test_series_nested(self) -> None:
+        dtype = struct_dtype(outer=Int64, inner=struct_dtype(value=Int64))
+        series = Series(
+            values=[
+                {"outer": 1, "inner": {"value": 2}},
+                {"outer": 3, "inner": {"value": 4}},
+                {"outer": 5, "inner": {"value": 6}},
+            ],
+            dtype=dtype,
+        )
+        result = map_over_columns(lambda x: 2 * x, series)
+        expected = Series(
+            values=[
+                {"outer": 2, "inner": {"value": 4}},
+                {"outer": 6, "inner": {"value": 8}},
+                {"outer": 10, "inner": {"value": 12}},
+            ],
+            dtype=dtype,
+        )
+        assert_series_equal(result, expected)
+
+    def test_dataframe(self) -> None:
+        df = DataFrame(data=[(1,), (2,), (3,)], schema={"value": Int64}, orient="row")
+        result = map_over_columns(lambda x: 2 * x, df)
+        expected = 2 * df
+        assert_frame_equal(result, expected)
+
+    def test_dataframe_nested(self) -> None:
+        schema = {"outer": Int64, "inner": struct_dtype(value=Int64)}
+        df = DataFrame(
+            data=[
+                {"outer": 1, "inner": {"value": 2}},
+                {"outer": 3, "inner": {"value": 4}},
+                {"outer": 5, "inner": {"value": 6}},
+            ],
+            schema=schema,
+            orient="row",
+        )
+        result = map_over_columns(lambda x: 2 * x, df)
+        expected = DataFrame(
+            data=[
+                {"outer": 2, "inner": {"value": 4}},
+                {"outer": 6, "inner": {"value": 8}},
+                {"outer": 10, "inner": {"value": 12}},
+            ],
+            schema=schema,
+            orient="row",
+        )
+        assert_frame_equal(result, expected)
+
+    def test_dataframe_nested_twice(self) -> None:
+        schema = {
+            "outer": Int64,
+            "middle": struct_dtype(mvalue=Int64, inner=struct_dtype(ivalue=Int64)),
+        }
+        df = DataFrame(
+            data=[
+                {"outer": 1, "middle": {"mvalue": 2, "inner": {"ivalue": 3}}},
+                {"outer": 4, "middle": {"mvalue": 5, "inner": {"ivalue": 6}}},
+                {"outer": 7, "middle": {"mvalue": 8, "inner": {"ivalue": 9}}},
+            ],
+            schema=schema,
+            orient="row",
+        )
+        result = map_over_columns(lambda x: 2 * x, df)
+        expected = DataFrame(
+            data=[
+                {"outer": 2, "middle": {"mvalue": 4, "inner": {"ivalue": 6}}},
+                {"outer": 8, "middle": {"mvalue": 10, "inner": {"ivalue": 12}}},
+                {"outer": 14, "middle": {"mvalue": 16, "inner": {"ivalue": 18}}},
+            ],
+            schema=schema,
+            orient="row",
+        )
+        assert_frame_equal(result, expected)
+
+
 class TestNanSumAgg:
     @mark.parametrize(
         ("values", "expected"),
@@ -1162,90 +1168,17 @@ class TestNanSumCols:
 
 
 class TestReplaceTimeZone:
-    now_utc: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 12, tzinfo=UTC)
-    now_naive: ClassVar[dt.datetime] = now_utc.replace(tzinfo=None)
-
-    def test_series_datetime(self) -> None:
-        series = Series(name="series", values=[self.now_utc], dtype=DatetimeUTC)
+    def test_datetime(self) -> None:
+        now_utc = get_now()
+        series = Series(values=[now_utc], dtype=DatetimeUTC)
         result = replace_time_zone(series, time_zone=None)
-        expected = Series(name="series", values=[self.now_naive], dtype=Datetime)
+        expected = Series(values=[now_utc.replace(tzinfo=None)], dtype=Datetime)
         assert_series_equal(result, expected)
 
-    def test_series_non_datetime(self) -> None:
+    def test_non_datetime(self) -> None:
         series = Series(name="series", values=[True], dtype=Boolean)
         result = replace_time_zone(series, time_zone=None)
         assert_series_equal(result, series)
-
-    def test_series_nested(self) -> None:
-        series = Series(
-            name="series",
-            values=[{"datetime": self.now_utc, "boolean": True}],
-            dtype=Struct({"datetime": DatetimeUTC, "boolean": Boolean}),
-        )
-        result = replace_time_zone(series, time_zone=None)
-        expected = Series(
-            name="series",
-            values=[{"datetime": self.now_naive, "boolean": True}],
-            dtype=Struct({"datetime": Datetime, "boolean": Boolean}),
-        )
-        assert_series_equal(result, expected)
-
-    def test_series_nested_twice(self) -> None:
-        series = Series(
-            name="series",
-            values=[{"datetime": {"inner": self.now_utc}, "boolean": True}],
-            dtype=Struct({
-                "datetime": Struct({"inner": DatetimeUTC}),
-                "boolean": Boolean,
-            }),
-        )
-        result = replace_time_zone(series, time_zone=None)
-        expected = Series(
-            name="series",
-            values=[{"datetime": {"inner": self.now_naive}, "boolean": True}],
-            dtype=Struct({"datetime": Struct({"inner": Datetime}), "boolean": Boolean}),
-        )
-        assert_series_equal(result, expected)
-
-    def test_dataframe_datetime(self) -> None:
-        df = DataFrame(data=[self.now_utc], schema={"datetime": DatetimeUTC})
-        result = replace_time_zone(df, time_zone=None)
-        expected = DataFrame(data=[self.now_naive], schema={"datetime": Datetime})
-        assert_frame_equal(result, expected)
-
-    def test_dataframe_non_datetime(self) -> None:
-        df = DataFrame(data=[True], schema={"boolean": Boolean})
-        result = replace_time_zone(df, time_zone=None)
-        expected = DataFrame(data=[True], schema={"boolean": Boolean})
-        assert_frame_equal(result, expected)
-
-    def test_dataframe_nested(self) -> None:
-        df = DataFrame(
-            data=[(self.now_utc, True)],
-            schema={"datetime": DatetimeUTC, "boolean": Boolean},
-            orient="row",
-        )
-        result = replace_time_zone(df, time_zone=None)
-        expected = DataFrame(
-            data=[(self.now_naive, True)],
-            schema={"datetime": Datetime, "boolean": Boolean},
-            orient="row",
-        )
-        assert_frame_equal(result, expected)
-
-    def test_dataframe_nested_twice(self) -> None:
-        df = DataFrame(
-            data=[((self.now_utc,), True)],
-            schema={"datetime": Struct({"inner": DatetimeUTC}), "boolean": Boolean},
-            orient="row",
-        )
-        result = replace_time_zone(df, time_zone=None)
-        expected = DataFrame(
-            data=[((self.now_naive,), True)],
-            schema={"datetime": Struct({"inner": Datetime}), "boolean": Boolean},
-            orient="row",
-        )
-        assert_frame_equal(result, expected)
 
 
 class TestRollingParameters:
