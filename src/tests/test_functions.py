@@ -631,9 +631,16 @@ class TestIsTupleOrStringMapping:
 
 class TestMakeIsInstance:
     @given(case=sampled_from([(True, True), (False, True), (None, False)]))
-    def test_main(self, *, case: tuple[bool | None, bool]) -> None:
+    def test_single(self, *, case: tuple[bool | None, bool]) -> None:
         obj, expected = case
         func = make_isinstance(bool)
+        result = func(obj)
+        assert result is expected
+
+    @given(case=sampled_from([(0, True), ("0", True), (None, False)]))
+    def test_multiple(self, *, case: tuple[bool | None, bool]) -> None:
+        obj, expected = case
+        func = make_isinstance((int, str))
         result = func(obj)
         assert result is expected
 

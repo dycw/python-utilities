@@ -137,9 +137,9 @@ def ensure_class(
     *,
     nullable: Literal[False] = False,
 ) -> _T1 | _T2 | _T3 | _T4 | _T5: ...
-def ensure_class(  # pyright: ignore[reportInconsistentOverload]
+def ensure_class(
     obj: Any, cls: type[_T] | tuple[type[_T], ...], /, *, nullable: bool = False
-) -> _T:
+) -> Any:
     """Ensure an object is of the required class."""
     if isinstance(obj, cls) or ((obj is None) and nullable):
         return obj
@@ -507,6 +507,11 @@ def is_not_none(obj: Any, /) -> bool:
     return obj is not None
 
 
+def is_sequence_of(obj: Any, /) -> TypeGuard[Sequence[TupleOrStrMapping]]:
+    """Check if an object is a sequence of tuple or string mappings."""
+    return isinstance(obj, Sequence) and all(map(make_isinstance(tuple), obj))
+
+
 def is_sequence_of_tuple_or_str_mapping(
     obj: Any, /
 ) -> TypeGuard[Sequence[TupleOrStrMapping]]:
@@ -548,7 +553,29 @@ def is_tuple_or_str_mapping(obj: Any, /) -> TypeGuard[TupleOrStrMapping]:
     return is_tuple(obj) or is_string_mapping(obj)
 
 
-def make_isinstance(cls: type[_T], /) -> Callable[[Any], TypeGuard[_T]]:
+@overload
+def make_isinstance(cls: type[_T], /) -> Callable[[Any], TypeGuard[_T]]: ...
+@overload
+def make_isinstance(cls: tuple[type[_T1]], /) -> Callable[[Any], TypeGuard[_T1]]: ...
+@overload
+def make_isinstance(
+    cls: tuple[type[_T1], type[_T2]], /
+) -> Callable[[Any], TypeGuard[_T1 | _T2]]: ...
+@overload
+def make_isinstance(
+    cls: tuple[type[_T1], type[_T2], type[_T3]], /
+) -> Callable[[Any], TypeGuard[_T1 | _T2 | _T3]]: ...
+@overload
+def make_isinstance(
+    cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4]], /
+) -> Callable[[Any], TypeGuard[_T1 | _T2 | _T3 | _T4]]: ...
+@overload
+def make_isinstance(
+    cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]], /
+) -> Callable[[Any], TypeGuard[_T1 | _T2 | _T3 | _T4 | _T5]]: ...
+def make_isinstance(
+    cls: type[_T] | tuple[type[_T], ...], /
+) -> Callable[[Any], TypeGuard[Any]]:
     """Check if an object is hashable."""
 
     def inner(obj: Any, /) -> TypeGuard[_T]:
