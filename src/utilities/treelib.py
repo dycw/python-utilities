@@ -5,13 +5,12 @@ from typing import TYPE_CHECKING, Generic, Literal, TypeVar, cast, overload
 import treelib
 from typing_extensions import override
 
-from utilities.functions import ensure_not_none
-from utilities.text import ensure_str
+from utilities.functions import ensure_not_none, ensure_str
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from utilities.typing import SupportsRichComparison
+    from utilities.types import SupportsRichComparison
 
 _T = TypeVar("_T")
 _LineType = Literal[

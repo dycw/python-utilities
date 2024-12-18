@@ -20,7 +20,7 @@ from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from re import search
 from sys import stdout
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, assert_never, cast
+from typing import TYPE_CHECKING, Any, ClassVar, assert_never, cast
 
 from typing_extensions import override
 
@@ -29,22 +29,19 @@ from utilities.datetime import get_now, maybe_sub_pct_y
 from utilities.git import get_repo_root
 from utilities.pathlib import ensure_suffix, resolve_path
 from utilities.traceback import RichTracebackFormatter
+from utilities.types import LogLevel
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
     from logging import _FilterType
     from zoneinfo import ZoneInfo
 
-    from utilities.types import PathLikeOrCallable
+    from utilities.types import LoggerOrName, PathLikeOrCallable
 
 try:
     from whenever import ZonedDateTime
 except ModuleNotFoundError:  # pragma: no cover
     ZonedDateTime = None
-
-
-LogLevel: TypeAlias = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-LoggerOrName: TypeAlias = Logger | str
 
 
 class StandaloneFileHandler(Handler):

@@ -11,7 +11,6 @@ from socket import gethostname
 from sys import exc_info
 from textwrap import indent
 from traceback import FrameSummary, TracebackException, format_exception
-from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -33,6 +32,7 @@ from utilities.datetime import get_now
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     ensure_not_none,
+    ensure_str,
     get_class_name,
     get_func_name,
     get_func_qualname,
@@ -49,13 +49,12 @@ from utilities.rich import (
     yield_call_args_repr,
     yield_mapping_repr,
 )
-from utilities.text import ensure_str
 from utilities.whenever import serialize_zoned_datetime
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from logging import _FormatStyle
-    from types import FrameType
+    from types import FrameType, TracebackType
 
     from utilities.types import StrMapping
 
@@ -65,8 +64,6 @@ _T = TypeVar("_T")
 _TExc = TypeVar("_TExc", bound=BaseException)
 _CALL_ARGS = "_CALL_ARGS"
 _INDENT = 4 * " "
-ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
-OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
 
 
 class RichTracebackFormatter(Formatter):
@@ -730,9 +727,7 @@ def _yield_header_lines() -> Iterator[str]:
 __all__ = [
     "ExcChainTB",
     "ExcGroupTB",
-    "ExcInfo",
     "ExcTB",
-    "OptExcInfo",
     "RichTracebackFormatter",
     "get_rich_traceback",
     "trace",

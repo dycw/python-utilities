@@ -27,9 +27,9 @@ from utilities.datetime import (
     get_now,
 )
 from utilities.errors import ImpossibleCaseError
+from utilities.functions import ensure_int
 from utilities.iterables import always_iterable
 from utilities.tenacity import MaybeAttemptContextManager, yield_timeout_attempts
-from utilities.types import Duration, ensure_int
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -43,6 +43,7 @@ if TYPE_CHECKING:
     from tenacity.wait import WaitBaseT
 
     from utilities.iterables import MaybeIterable
+    from utilities.types import Duration
 
 
 _K = TypeVar("_K")
