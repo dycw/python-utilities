@@ -315,38 +315,43 @@ class TestEnsureSizedNotStr:
 
 
 class TestEnsureStr:
-    @given(("obj", "nullable"), [("", False), ("", True), (None, True)])
-    def test_main(self, *, obj: bool | None, nullable: bool) -> None:
+    @given(case=sampled_from([("", False), ("", True), (None, True)]))
+    def test_main(self, *, case: tuple[bool | None, bool]) -> None:
+        obj, nullable = case
         _ = ensure_str(obj, nullable=nullable)
 
     @given(
-        ("nullable", "match"),
-        [
+        case=sampled_from([
             (False, "Object .* must be a string"),
             (True, "Object .* must be a string or None"),
-        ],
+        ])
     )
-    def test_error(self, *, nullable: bool, match: str) -> None:
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
         with raises(EnsureStrError, match=f"{match}; got .* instead"):
             _ = ensure_str(sentinel, nullable=nullable)
 
 
 class TestEnsureTime:
     @given(
-        ("obj", "nullable"),
-        [(get_now().time(), False), (get_now().time(), True), (None, True)],
+        case=sampled_from([
+            (get_now().time(), False),
+            (get_now().time(), True),
+            (None, True),
+        ])
     )
-    def test_main(self, *, obj: dt.time | None, nullable: bool) -> None:
+    def test_main(self, *, case: tuple[dt.time | None, bool]) -> None:
+        obj, nullable = case
         _ = ensure_time(obj, nullable=nullable)
 
     @given(
-        ("nullable", "match"),
-        [
+        case=sampled_from([
             (False, "Object .* must be a time"),
             (True, "Object .* must be a time or None"),
-        ],
+        ])
     )
-    def test_error(self, *, nullable: bool, match: str) -> None:
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
         with raises(EnsureTimeError, match=f"{match}; got .* instead"):
             _ = ensure_time(sentinel, nullable=nullable)
 
@@ -359,7 +364,7 @@ class TestFirst:
 
 
 class TestGetClass:
-    @given(("obj", "expected"), [(None, NoneType), (NoneType, NoneType)])
+    @given(case=sampled_from([(None, NoneType), (NoneType, NoneType)]))
     def test_main(self, *, obj: Any, expected: type[Any]) -> None:
         assert get_class(obj) is expected
 
@@ -378,8 +383,7 @@ class TestGetClassName:
 
 class TestGetFuncNameAndGetFuncQualName:
     @given(
-        ("func", "exp_name", "exp_qual_name"),
-        [
+        case=sampled_from([
             (identity, "identity", "utilities.functions.identity"),
             (
                 lambda x: x,  # pyright: ignore[reportUnknownLambdaType]
@@ -395,11 +399,10 @@ class TestGetFuncNameAndGetFuncQualName:
             (try_await, "try_await", "utilities.asyncio.try_await"),
             (str.join, "str.join", "builtins.str.join"),
             (sys.exit, "exit", "sys.exit"),
-        ],
+        ])
     )
-    def test_main(
-        self, *, func: Callable[..., Any], exp_name: str, exp_qual_name: str
-    ) -> None:
+    def test_main(self, *, case: tuple[Callable[..., Any], str, str]) -> None:
+        func, exp_name, exp_qual_name = case
         assert get_func_name(func) == exp_name
         assert get_func_qualname(func) == exp_qual_name
 
