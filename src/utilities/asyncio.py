@@ -19,10 +19,8 @@ from sys import stderr, stdout
 from typing import TYPE_CHECKING, Any, TextIO, TypeAlias, TypeGuard, TypeVar, cast
 
 from utilities.datetime import duration_to_float
-from utilities.functions import ensure_not_none
+from utilities.functions import EnsureStrError, ensure_int, ensure_not_none, ensure_str
 from utilities.iterables import OneError, one
-from utilities.text import EnsureStrError, ensure_str
-from utilities.types import ensure_int
 
 if TYPE_CHECKING:
     from asyncio import Timeout

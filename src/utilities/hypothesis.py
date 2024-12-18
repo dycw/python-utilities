@@ -45,6 +45,7 @@ from hypothesis.strategies import (
 from hypothesis.utils.conventions import not_set
 
 from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month, get_now
+from utilities.functions import ensure_str
 from utilities.math import (
     MAX_INT32,
     MAX_INT64,
@@ -58,7 +59,6 @@ from utilities.math import (
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
-from utilities.text import ensure_str
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
