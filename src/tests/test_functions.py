@@ -18,7 +18,7 @@ from hypothesis.strategies import (
     lists,
     sampled_from,
 )
-from pytest import mark, param, raises
+from pytest import raises
 
 from utilities.asyncio import try_await
 from utilities.datetime import get_now, get_today
@@ -187,26 +187,25 @@ class TestEnsureDatetime:
 
 
 class TestEnsureFloat:
-    @mark.parametrize(
-        ("obj", "nullable"), [param(0.0, False), param(0.0, True), param(None, True)]
-    )
-    def test_main(self, *, obj: float | None, nullable: bool) -> None:
+    @given(case=sampled_from([(0.0, False), (0.0, True), (None, True)]))
+    def test_main(self, *, case: tuple[float | None, bool]) -> None:
+        obj, nullable = case
         _ = ensure_float(obj, nullable=nullable)
 
-    @mark.parametrize(
-        ("nullable", "match"),
-        [
-            param(False, "Object .* must be a float"),
-            param(True, "Object .* must be a float or None"),
-        ],
+    @given(
+        case=sampled_from([
+            (False, "Object .* must be a float"),
+            (True, "Object .* must be a float or None"),
+        ])
     )
-    def test_error(self, *, nullable: bool, match: str) -> None:
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
         with raises(EnsureFloatError, match=f"{match}; got .* instead"):
             _ = ensure_float(sentinel, nullable=nullable)
 
 
 class TestEnsureHashable:
-    @mark.parametrize("obj", [param(0), param((1, 2, 3))])
+    @given(obj=sampled_from([0, (1, 2, 3)]))
     def test_main(self, *, obj: Any) -> None:
         assert ensure_hashable(obj) == obj
 
@@ -216,46 +215,45 @@ class TestEnsureHashable:
 
 
 class TestEnsureInt:
-    @mark.parametrize(
-        ("obj", "nullable"), [param(0, False), param(0, True), param(None, True)]
-    )
-    def test_main(self, *, obj: int | None, nullable: bool) -> None:
+    @given(case=sampled_from([(0, False), (0, True), (None, True)]))
+    def test_main(self, *, case: tuple[int | None, bool]) -> None:
+        obj, nullable = case
         _ = ensure_int(obj, nullable=nullable)
 
-    @mark.parametrize(
-        ("nullable", "match"),
-        [
-            param(False, "Object .* must be an integer"),
-            param(True, "Object .* must be an integer or None"),
-        ],
+    @given(
+        case=sampled_from([
+            (False, "Object .* must be an integer"),
+            (True, "Object .* must be an integer or None"),
+        ])
     )
-    def test_error(self, *, nullable: bool, match: str) -> None:
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
         with raises(EnsureIntError, match=f"{match}; got .* instead"):
             _ = ensure_int(sentinel, nullable=nullable)
 
 
 class TestEnsureMember:
-    @mark.parametrize(
-        ("obj", "nullable"),
-        [
-            param(True, True),
-            param(True, False),
-            param(False, True),
-            param(False, False),
-            param(None, True),
-        ],
+    @given(
+        case=sampled_from([
+            (True, True),
+            (True, False),
+            (False, True),
+            (False, False),
+            (None, True),
+        ])
     )
-    def test_main(self, *, obj: Any, nullable: bool) -> None:
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, nullable = case
         _ = ensure_member(obj, {True, False}, nullable=nullable)
 
-    @mark.parametrize(
-        ("nullable", "match"),
-        [
-            param(False, "Object .* must be a member of .*"),
-            param(True, "Object .* must be a member of .* or None"),
-        ],
+    @given(
+        case=sampled_from([
+            (False, "Object .* must be a member of .*"),
+            (True, "Object .* must be a member of .* or None"),
+        ])
     )
-    def test_error(self, *, nullable: bool, match: str) -> None:
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
         with raises(EnsureMemberError, match=match):
             _ = ensure_member(sentinel, {True, False}, nullable=nullable)
 
@@ -276,27 +274,25 @@ class TestEnsureNotNone:
 
 
 class TestEnsureNumber:
-    @mark.parametrize(
-        ("obj", "nullable"),
-        [param(0, False), param(0.0, False), param(0.0, True), param(None, True)],
-    )
-    def test_main(self, *, obj: Number, nullable: bool) -> None:
+    @given(case=sampled_from([(0, False), (0.0, False), (0.0, True), (None, True)]))
+    def test_main(self, *, case: tuple[Number, bool]) -> None:
+        obj, nullable = case
         _ = ensure_number(obj, nullable=nullable)
 
-    @mark.parametrize(
-        ("nullable", "match"),
-        [
-            param(False, "Object .* must be a number"),
-            param(True, "Object .* must be a number or None"),
-        ],
+    @given(
+        case=sampled_from([
+            (False, "Object .* must be a number"),
+            (True, "Object .* must be a number or None"),
+        ])
     )
-    def test_error(self, *, nullable: bool, match: str) -> None:
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
         with raises(EnsureNumberError, match=f"{match}; got .* instead"):
             _ = ensure_number(sentinel, nullable=nullable)
 
 
 class TestEnsureSized:
-    @mark.parametrize("obj", [param([]), param(()), param("")])
+    @given(case=sampled_from([[], (), ""]))
     def test_main(self, *, obj: Any) -> None:
         _ = ensure_sized(obj)
 
@@ -306,11 +302,11 @@ class TestEnsureSized:
 
 
 class TestEnsureSizedNotStr:
-    @mark.parametrize("obj", [param([]), param(())])
+    @given(case=sampled_from([[], ()]))
     def test_main(self, *, obj: Any) -> None:
         _ = ensure_sized_not_str(obj)
 
-    @mark.parametrize("obj", [param(None), param("")])
+    @given(case=sampled_from([None, ""]))
     def test_error(self, *, obj: Any) -> None:
         with raises(
             EnsureSizedNotStrError, match="Object .* must be sized, but not a string"
@@ -319,17 +315,15 @@ class TestEnsureSizedNotStr:
 
 
 class TestEnsureStr:
-    @mark.parametrize(
-        ("obj", "nullable"), [param("", False), param("", True), param(None, True)]
-    )
+    @given(("obj", "nullable"), [("", False), ("", True), (None, True)])
     def test_main(self, *, obj: bool | None, nullable: bool) -> None:
         _ = ensure_str(obj, nullable=nullable)
 
-    @mark.parametrize(
+    @given(
         ("nullable", "match"),
         [
-            param(False, "Object .* must be a string"),
-            param(True, "Object .* must be a string or None"),
+            (False, "Object .* must be a string"),
+            (True, "Object .* must be a string or None"),
         ],
     )
     def test_error(self, *, nullable: bool, match: str) -> None:
@@ -338,22 +332,18 @@ class TestEnsureStr:
 
 
 class TestEnsureTime:
-    @mark.parametrize(
+    @given(
         ("obj", "nullable"),
-        [
-            param(get_now().time(), False),
-            param(get_now().time(), True),
-            param(None, True),
-        ],
+        [(get_now().time(), False), (get_now().time(), True), (None, True)],
     )
     def test_main(self, *, obj: dt.time | None, nullable: bool) -> None:
         _ = ensure_time(obj, nullable=nullable)
 
-    @mark.parametrize(
+    @given(
         ("nullable", "match"),
         [
-            param(False, "Object .* must be a time"),
-            param(True, "Object .* must be a time or None"),
+            (False, "Object .* must be a time"),
+            (True, "Object .* must be a time or None"),
         ],
     )
     def test_error(self, *, nullable: bool, match: str) -> None:
@@ -369,9 +359,7 @@ class TestFirst:
 
 
 class TestGetClass:
-    @mark.parametrize(
-        ("obj", "expected"), [param(None, NoneType), param(NoneType, NoneType)]
-    )
+    @given(("obj", "expected"), [(None, NoneType), (NoneType, NoneType)])
     def test_main(self, *, obj: Any, expected: type[Any]) -> None:
         assert get_class(obj) is expected
 
@@ -389,24 +377,24 @@ class TestGetClassName:
 
 
 class TestGetFuncNameAndGetFuncQualName:
-    @mark.parametrize(
+    @given(
         ("func", "exp_name", "exp_qual_name"),
         [
-            param(identity, "identity", "utilities.functions.identity"),
-            param(
+            (identity, "identity", "utilities.functions.identity"),
+            (
                 lambda x: x,  # pyright: ignore[reportUnknownLambdaType]
                 "<lambda>",
                 "tests.test_functions.TestGetFuncNameAndGetFuncQualName.<lambda>",
             ),
-            param(len, "len", "builtins.len"),
-            param(neg, "neg", "_operator.neg"),
-            param(object.__init__, "object.__init__", "builtins.object.__init__"),
-            param(object.__str__, "object.__str__", "builtins.object.__str__"),
-            param(repr, "repr", "builtins.repr"),
-            param(str, "str", "builtins.str"),
-            param(try_await, "try_await", "utilities.asyncio.try_await"),
-            param(str.join, "str.join", "builtins.str.join"),
-            param(sys.exit, "exit", "sys.exit"),
+            (len, "len", "builtins.len"),
+            (neg, "neg", "_operator.neg"),
+            (object.__init__, "object.__init__", "builtins.object.__init__"),
+            (object.__str__, "object.__str__", "builtins.object.__str__"),
+            (repr, "repr", "builtins.repr"),
+            (str, "str", "builtins.str"),
+            (try_await, "try_await", "utilities.asyncio.try_await"),
+            (str.join, "str.join", "builtins.str.join"),
+            (sys.exit, "exit", "sys.exit"),
         ],
     )
     def test_main(
@@ -531,22 +519,19 @@ class TestIsDataClassInstance:
 
 
 class TestIsHashable:
-    @mark.parametrize(
-        ("obj", "expected"),
-        [param(0, True), param((1, 2, 3), True), param([1, 2, 3], False)],
-    )
+    @given(("obj", "expected"), [(0, True), ((1, 2, 3), True), ([1, 2, 3], False)])
     def test_main(self, *, obj: Any, expected: bool) -> None:
         assert is_hashable(obj) is expected
 
 
 class TestIsNoneAndIsNotNone:
-    @mark.parametrize(
+    @given(
         ("func", "obj", "expected"),
         [
-            param(is_none, None, True),
-            param(is_none, 0, False),
-            param(is_not_none, None, False),
-            param(is_not_none, 0, True),
+            (is_none, None, True),
+            (is_none, 0, False),
+            (is_not_none, None, False),
+            (is_not_none, 0, True),
         ],
     )
     def test_main(
@@ -557,13 +542,13 @@ class TestIsNoneAndIsNotNone:
 
 
 class TestIsSequenceOfTupleOrStrgMapping:
-    @mark.parametrize(
+    @given(
         ("obj", "expected"),
         [
-            param(None, False),
-            param([(1, 2, 3)], True),
-            param([{"a": 1, "b": 2, "c": 3}], True),
-            param([(1, 2, 3), {"a": 1, "b": 2, "c": 3}], True),
+            (None, False),
+            ([(1, 2, 3)], True),
+            ([{"a": 1, "b": 2, "c": 3}], True),
+            ([(1, 2, 3), {"a": 1, "b": 2, "c": 3}], True),
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
@@ -572,30 +557,24 @@ class TestIsSequenceOfTupleOrStrgMapping:
 
 
 class TestIsSized:
-    @mark.parametrize(
-        ("obj", "expected"),
-        [param(None, False), param([], True), param((), True), param("", True)],
-    )
+    @given(("obj", "expected"), [(None, False), ([], True), ((), True), ("", True)])
     def test_main(self, *, obj: Any, expected: bool) -> None:
         assert is_sized(obj) is expected
 
 
 class TestIsSizedNotStr:
-    @mark.parametrize(
-        ("obj", "expected"),
-        [param(None, False), param([], True), param((), True), param("", False)],
-    )
+    @given(("obj", "expected"), [(None, False), ([], True), ((), True), ("", False)])
     def test_main(self, *, obj: Any, expected: bool) -> None:
         assert is_sized_not_str(obj) is expected
 
 
 class TestIsStringMapping:
-    @mark.parametrize(
+    @given(
         ("obj", "expected"),
         [
-            param(None, False),
-            param({"a": 1, "b": 2, "c": 3}, True),
-            param({1: "a", 2: "b", 3: "c"}, False),
+            (None, False),
+            ({"a": 1, "b": 2, "c": 3}, True),
+            ({1: "a", 2: "b", 3: "c"}, False),
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
@@ -604,9 +583,9 @@ class TestIsStringMapping:
 
 
 class TestIsSubclassExceptBoolInt:
-    @mark.parametrize(
+    @given(
         ("x", "y", "expected"),
-        [param(bool, bool, True), param(bool, int, False), param(int, int, True)],
+        [(bool, bool, True), (bool, int, False), (int, int, True)],
     )
     def test_main(self, *, x: type[Any], y: type[Any], expected: bool) -> None:
         assert is_subclass_except_bool_int(x, y) is expected
@@ -618,23 +597,20 @@ class TestIsSubclassExceptBoolInt:
 
 
 class TestIsTuple:
-    @mark.parametrize(
-        ("obj", "expected"),
-        [param(None, False), param((1, 2, 3), True), param([1, 2, 3], False)],
-    )
+    @given(("obj", "expected"), [(None, False), ((1, 2, 3), True), ([1, 2, 3], False)])
     def test_main(self, *, obj: Any, expected: bool) -> None:
         result = is_tuple(obj)
         assert result is expected
 
 
 class TestIsTupleOrStringMapping:
-    @mark.parametrize(
+    @given(
         ("obj", "expected"),
         [
-            param(None, False),
-            param((1, 2, 3), True),
-            param({"a": 1, "b": 2, "c": 3}, True),
-            param({1: "a", 2: "b", 3: "c"}, False),
+            (None, False),
+            ((1, 2, 3), True),
+            ({"a": 1, "b": 2, "c": 3}, True),
+            ({1: "a", 2: "b", 3: "c"}, False),
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
@@ -643,10 +619,9 @@ class TestIsTupleOrStringMapping:
 
 
 class TestMakeIsInstance:
-    @mark.parametrize(
-        ("obj", "expected"), [param(True, True), param(False, True), param(None, False)]
-    )
-    def test_main(self, *, obj: bool | None, expected: bool) -> None:
+    @given(case=sampled_from([(True, True), (False, True), (None, False)]))
+    def test_main(self, *, case: tuple[bool | None, bool]) -> None:
+        obj, expected = case
         func = make_isinstance(bool)
         result = func(obj)
         assert result is expected

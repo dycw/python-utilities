@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import reprlib
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass, is_dataclass
 from functools import _lru_cache_wrapper, partial, wraps
@@ -17,6 +18,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, cast, overlo
 
 from typing_extensions import ParamSpec, override
 
+from utilities.reprlib import get_repr_and_class
 from utilities.types import Dataclass, Number, StrMapping, TupleOrStrMapping
 
 if TYPE_CHECKING:
@@ -52,8 +54,7 @@ class EnsureBoolError(Exception):
 
     @override
     def __str__(self) -> str:
-        desc = " or None" if self.nullable else ""
-        return f"Object {self.obj} must be a boolean{desc}; got {get_class_name(self.obj)} instead"
+        return _make_error_msg(self.obj, "a boolean", nullable=self.nullable)
 
 
 @overload
@@ -75,8 +76,7 @@ class EnsureBytesError(Exception):
 
     @override
     def __str__(self) -> str:
-        desc = " or None" if self.nullable else ""
-        return f"Object {self.obj} must be a byte string{desc}; got {get_class_name(self.obj)} instead"
+        return _make_error_msg(self.obj, "a byte string", nullable=self.nullable)
 
 
 @overload
@@ -154,8 +154,11 @@ class EnsureClassError(Exception):
 
     @override
     def __str__(self) -> str:
-        desc = " or None" if self.nullable else ""
-        return f"Object {self.obj} must be an instance of {self.cls}{desc}; got {type(self.obj)} instead"
+        return _make_error_msg(
+            self.obj,
+            f"an instance of {get_class_name(self.cls)}",
+            nullable=self.nullable,
+        )
 
 
 @overload
@@ -177,8 +180,7 @@ class EnsureDateError(Exception):
 
     @override
     def __str__(self) -> str:
-        desc = " or None" if self.nullable else ""
-        return f"Object {self.obj} must be a date{desc}; got {get_class_name(self.obj)} instead"
+        return _make_error_msg(self.obj, "a date", nullable=self.nullable)
 
 
 @overload
@@ -202,8 +204,7 @@ class EnsureDatetimeError(Exception):
 
     @override
     def __str__(self) -> str:
-        desc = " or None" if self.nullable else ""
-        return f"Object {self.obj} must be a datetime{desc}; got {get_class_name(self.obj)} instead"
+        return _make_error_msg(self.obj, "a datetime", nullable=self.nullable)
 
 
 @overload
@@ -225,8 +226,7 @@ class EnsureFloatError(Exception):
 
     @override
     def __str__(self) -> str:
-        desc = " or None" if self.nullable else ""
-        return f"Object {self.obj} must be a float{desc}; got {get_class_name(self.obj)} instead"
+        return _make_error_msg(self.obj, "a float", nullable=self.nullable)
 
 
 def ensure_hashable(obj: Any, /) -> Hashable:
@@ -242,7 +242,7 @@ class EnsureHashableError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Object {self.obj} must be hashable."
+        return _make_error_msg(self.obj, "hashable")
 
 
 @overload
@@ -264,8 +264,7 @@ class EnsureIntError(Exception):
 
     @override
     def __str__(self) -> str:
-        desc = " or None" if self.nullable else ""
-        return f"Object {self.obj} must be an integer{desc}; got {get_class_name(self.obj)} instead"
+        return _make_error_msg(self.obj, "an integer", nullable=self.nullable)
 
 
 @overload
@@ -293,8 +292,11 @@ class EnsureMemberError(Exception):
 
     @override
     def __str__(self) -> str:
-        desc = " or None" if self.nullable else ""
-        return f"Object {self.obj} must be a member of {self.container}{desc}"
+        return _make_error_msg(
+            self.obj,
+            f"a member of {reprlib.repr(self.container)}",
+            nullable=self.nullable,
+        )
 
 
 def ensure_not_none(obj: _T | None, /, *, desc: str = "Object") -> _T:
@@ -332,8 +334,7 @@ class EnsureNumberError(Exception):
 
     @override
     def __str__(self) -> str:
-        desc = " or None" if self.nullable else ""
-        return f"Object {self.obj} must be a number{desc}; got {get_class_name(self.obj)} instead"
+        return _make_error_msg(self.obj, "a number", nullable=self.nullable)
 
 
 def ensure_sized(obj: Any, /) -> Sized:
@@ -349,7 +350,7 @@ class EnsureSizedError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Object {self.obj} must be sized"
+        return _make_error_msg(self.obj, "sized")
 
 
 def ensure_sized_not_str(obj: Any, /) -> Sized:
@@ -365,7 +366,7 @@ class EnsureSizedNotStrError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Object {self.obj} must be sized, but not a string"
+        return _make_error_msg(self.obj, "sized and not a string")
 
 
 @overload
@@ -387,8 +388,7 @@ class EnsureStrError(Exception):
 
     @override
     def __str__(self) -> str:
-        desc = " or None" if self.nullable else ""
-        return f"Object {self.obj} must be a string{desc}; got {get_class_name(self.obj)} instead"
+        return _make_error_msg(self.obj, "a string", nullable=self.nullable)
 
 
 @overload
@@ -410,8 +410,7 @@ class EnsureTimeError(Exception):
 
     @override
     def __str__(self) -> str:
-        desc = " or None" if self.nullable else ""
-        return f"Object {self.obj} must be a time{desc}; got {get_class_name(self.obj)} instead"
+        return _make_error_msg(self.obj, "a time", nullable=self.nullable)
 
 
 def first(pair: tuple[_T, Any], /) -> _T:
@@ -594,6 +593,13 @@ def not_func(func: Callable[_P, bool], /) -> Callable[_P, bool]:
 def second(pair: tuple[Any, _U], /) -> _U:
     """Get the second element in a pair."""
     return pair[1]
+
+
+def _make_error_msg(obj: Any, desc: str, /, *, nullable: bool = False) -> str:
+    msg = f"{get_repr_and_class(obj)} must be {desc}"
+    if nullable:
+        msg += " or None"
+    return msg
 
 
 __all__ = [
