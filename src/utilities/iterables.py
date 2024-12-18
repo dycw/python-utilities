@@ -726,6 +726,44 @@ class OneNonUniqueError(OneError[_T]):
         return f"Iterable {reprlib.repr(self.iterable)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
 
 
+def one_modal_value(iterable: Iterable[_T], /, *, min_frac: float = 0.5) -> _T:
+    """Return the unique modal value in an iterable."""
+    counts = Counter(iterable)
+    fracs = {k: v / counts.total() for k, v in counts.items()}
+    enoughs = {k for k, v in fracs.items() if v >= min_frac}
+    try:
+        return one(enoughs)
+    except OneEmptyError as error:
+        raise _OneModalValueEmptyError(iterable=error.iterable, fracs=fracs) from None
+    except OneNonUniqueError as error:
+        raise _OneModalValueNonUniqueError(
+            iterable=error.iterable, fracs=fracs, first=error.first, second=error.second
+        ) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class OneModalValueError(Exception, Generic[_T]):
+    iterable: Iterable[_T]
+    fracs: dict[_T, float]
+
+
+@dataclass(kw_only=True, slots=True)
+class _OneModalValueEmptyError(OneModalValueError[_T]):
+    @override
+    def __str__(self) -> str:
+        return f"Iterable {reprlib.repr(self.iterable)} with fractions {reprlib.repr(self.fracs)} must have a modal value"
+
+
+@dataclass(kw_only=True, slots=True)
+class _OneModalValueNonUniqueError(OneModalValueError[_T]):
+    first: _T
+    second: _T
+
+    @override
+    def __str__(self) -> str:
+        return f"Iterable {reprlib.repr(self.iterable)} with fractions {reprlib.repr(self.fracs)} must contain exactly one modal value; got {self.first}, {self.second} and perhaps more"
+
+
 def one_str(
     iterable: Iterable[str], text: str, /, *, case_sensitive: bool = True
 ) -> str:
@@ -988,6 +1026,7 @@ __all__ = [
     "MaybeIterableHashable",
     "OneEmptyError",
     "OneError",
+    "OneModalValueError",
     "OneNonUniqueError",
     "OneStrError",
     "ResolveIncludeAndExcludeError",
@@ -1017,6 +1056,7 @@ __all__ = [
     "is_iterable_not_enum",
     "is_iterable_not_str",
     "one",
+    "one_modal_value",
     "one_str",
     "pairwise_tail",
     "product_dicts",

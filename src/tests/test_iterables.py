@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from enum import Enum, auto
-from itertools import repeat
+from itertools import chain, repeat
 from math import isfinite, isinf, isnan
 from operator import sub
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
@@ -50,6 +50,8 @@ from utilities.iterables import (
     OneStrError,
     ResolveIncludeAndExcludeError,
     SortIterableError,
+    _OneModalValueEmptyError,
+    _OneModalValueNonUniqueError,
     always_iterable,
     apply_to_tuple,
     apply_to_varargs,
@@ -76,6 +78,7 @@ from utilities.iterables import (
     is_iterable_not_enum,
     is_iterable_not_str,
     one,
+    one_modal_value,
     one_str,
     pairwise_tail,
     product_dicts,
@@ -825,6 +828,32 @@ class TestOne:
             match="Iterable .* must contain exactly one item; got .*, .* and perhaps more",
         ):
             _ = one([1, 2])
+
+
+class TestOneModalTime:
+    @given(data=data(), init=lists(integers(), min_size=1))
+    def test_main(self, *, data: DataObject, init: list[int]) -> None:
+        modal_value = data.draw(sampled_from(init))
+        all_ints = list(chain(init, repeat(modal_value, times=len(init))))
+        all_ints = data.draw(permutations(all_ints))
+        result = one_modal_value(all_ints, min_frac=0.51)
+        assert result == modal_value
+
+    @given(x=sets(integers(), min_size=2))
+    def test_error_empty(self, *, x: set[int]) -> None:
+        with raises(
+            _OneModalValueEmptyError,
+            match="Iterable .* with fractions .* must have a modal value",
+        ):
+            _ = one_modal_value(x, min_frac=0.51)
+
+    @given(x=sets(integers(), min_size=2, max_size=2))
+    def test_error_non_unique(self, *, x: set[int]) -> None:
+        with raises(
+            _OneModalValueNonUniqueError,
+            match="Iterable .* with fractions .* must contain exactly one modal value; got .*, .* and perhaps more",
+        ):
+            _ = one_modal_value(x, min_frac=0.5)
 
 
 class TestOneStr:
