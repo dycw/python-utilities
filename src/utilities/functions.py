@@ -116,11 +116,11 @@ def is_not_none(obj: Any, /) -> bool:
 
 
 def map_object(
-    func: Callable[..., Any],
+    func: Callable[[Any], Any],
     obj: _T,
     /,
+    *,
     before: Callable[[Any], Any] | None = None,
-    **kwargs: Any,
 ) -> _T:
     """Map a function over an object, across a variety of structures."""
     if before is not None:
@@ -128,12 +128,12 @@ def map_object(
     match obj:
         case dict():
             return type(obj)({
-                k: map_object(func, v, before=before, **kwargs) for k, v in obj.items()
+                k: map_object(func, v, before=before) for k, v in obj.items()
             })
         case frozenset() | list() | set() | tuple():
-            return type(obj)(map_object(func, i, before=before, **kwargs) for i in obj)
+            return type(obj)(map_object(func, i, before=before) for i in obj)
         case _:
-            return func(obj, **kwargs)
+            return func(obj)
 
 
 def not_func(func: Callable[_P, bool], /) -> Callable[_P, bool]:
