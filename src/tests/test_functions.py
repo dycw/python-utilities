@@ -89,105 +89,99 @@ _T = TypeVar("_T")
 
 
 class TestEnsureBytes:
-    @mark.parametrize(
-        ("obj", "nullable"), [param(b"", False), param(b"", True), param(None, True)]
-    )
-    def test_main(self, *, obj: bytes | None, nullable: bool) -> None:
+    @given(case=sampled_from([(b"", False), (b"", True), (None, True)]))
+    def test_main(self, *, case: tuple[bytes | None, bool]) -> None:
+        obj, nullable = case
         _ = ensure_bytes(obj, nullable=nullable)
 
-    @mark.parametrize(
-        ("nullable", "match"),
-        [
-            param(False, "Object .* must be a byte string"),
-            param(True, "Object .* must be a byte string or None"),
-        ],
+    @given(
+        case=sampled_from([
+            (False, "Object .* must be a byte string"),
+            (True, "Object .* must be a byte string or None"),
+        ])
     )
-    def test_error(self, *, nullable: bool, match: str) -> None:
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
         with raises(EnsureBytesError, match=f"{match}; got .* instead"):
             _ = ensure_bytes(sentinel, nullable=nullable)
 
 
 class TestEnsureBool:
-    @mark.parametrize(
-        ("obj", "nullable"), [param(True, False), param(True, True), param(None, True)]
-    )
-    def test_main(self, *, obj: bool | None, nullable: bool) -> None:
+    @given(case=sampled_from([(True, False), (True, True), (None, True)]))
+    def test_main(self, *, case: tuple[bool | None, bool]) -> None:
+        obj, nullable = case
         _ = ensure_bool(obj, nullable=nullable)
 
-    @mark.parametrize(
-        ("nullable", "match"),
-        [
-            param(False, "Object .* must be a boolean"),
-            param(True, "Object .* must be a boolean or None"),
-        ],
+    @given(
+        case=sampled_from([
+            (False, "Object .* must be a boolean"),
+            (True, "Object .* must be a boolean or None"),
+        ])
     )
-    def test_error(self, *, nullable: bool, match: str) -> None:
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
         with raises(EnsureBoolError, match=f"{match}; got .* instead"):
             _ = ensure_bool(sentinel, nullable=nullable)
 
 
 class TestEnsureClass:
-    @mark.parametrize(
-        ("obj", "cls", "nullable"),
-        [
-            param(True, bool, False),
-            param(True, bool, True),
-            param(True, (bool,), False),
-            param(True, (bool,), True),
-            param(None, bool, True),
-        ],
+    @given(
+        case=sampled_from([
+            (True, bool, False),
+            (True, bool, True),
+            (True, (bool,), False),
+            (True, (bool,), True),
+            (None, bool, True),
+        ])
     )
-    def test_main(self, *, obj: Any, cls: Any, nullable: bool) -> None:
+    def test_main(self, *, case: tuple[Any, Any, bool]) -> None:
+        obj, cls, nullable = case
         _ = ensure_class(obj, cls, nullable=nullable)
 
-    @mark.parametrize(
-        ("nullable", "match"),
-        [
-            param(False, "Object .* must be an instance of .*"),
-            param(True, "Object .* must be an instance of .* or None"),
-        ],
+    @given(
+        case=sampled_from([
+            (False, "Object .* must be an instance of .*"),
+            (True, "Object .* must be an instance of .* or None"),
+        ])
     )
-    def test_error(self, *, nullable: bool, match: str) -> None:
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
         with raises(EnsureClassError, match=f"{match}; got .* instead"):
             _ = ensure_class(sentinel, bool, nullable=nullable)
 
 
 class TestEnsureDate:
-    @mark.parametrize(
-        ("obj", "nullable"),
-        [param(get_today(), False), param(get_today(), True), param(None, True)],
-    )
-    def test_main(self, *, obj: dt.date | None, nullable: bool) -> None:
+    @given(case=sampled_from([(get_today(), False), (get_today(), True), (None, True)]))
+    def test_main(self, *, case: tuple[dt.date | None, bool]) -> None:
+        obj, nullable = case
         _ = ensure_date(obj, nullable=nullable)
 
-    @mark.parametrize(
-        ("nullable", "match"),
-        [
-            param(False, "Object .* must be a date"),
-            param(True, "Object .* must be a date or None"),
-        ],
+    @given(
+        case=sampled_from([
+            (False, "Object .* must be a date"),
+            (True, "Object .* must be a date or None"),
+        ])
     )
-    def test_error(self, *, nullable: bool, match: str) -> None:
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
         with raises(EnsureDateError, match=f"{match}; got .* instead"):
             _ = ensure_date(sentinel, nullable=nullable)
 
 
 class TestEnsureDatetime:
-    @mark.parametrize(
-        ("obj", "nullable"),
-        [param(get_now(), False), param(get_now(), True), param(None, True)],
-    )
-    def test_main(self, *, obj: dt.datetime | None, nullable: bool) -> None:
+    @given(case=sampled_from([(get_now(), False), (get_now(), True), (None, True)]))
+    def test_main(self, *, case: tuple[dt.datetime | None, bool]) -> None:
+        obj, nullable = case
         _ = ensure_datetime(obj, nullable=nullable)
 
-    @mark.parametrize(
-        ("nullable", "match"),
-        [
-            param(False, "Object .* must be a datetime"),
-            param(True, "Object .* must be a datetime or None"),
-        ],
+    @given(
+        case=sampled_from([
+            (False, "Object .* must be a datetime"),
+            (True, "Object .* must be a datetime or None"),
+        ])
     )
-    def test_error(self, *, nullable: bool, match: str) -> None:
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
         with raises(EnsureDatetimeError, match=f"{match}; got .* instead"):
             _ = ensure_datetime(sentinel, nullable=nullable)
 
