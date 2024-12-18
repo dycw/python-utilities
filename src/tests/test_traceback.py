@@ -32,8 +32,9 @@ from tests.test_traceback_funcs.task_group_one import func_task_group_one_first
 from tests.test_traceback_funcs.task_group_two import func_task_group_two_first
 from tests.test_traceback_funcs.two import func_two_first
 from tests.test_traceback_funcs.untraced import func_untraced
+from utilities.functions import ensure_str
 from utilities.iterables import OneNonUniqueError, one
-from utilities.text import ensure_str, strip_and_dedent
+from utilities.text import strip_and_dedent
 from utilities.traceback import (
     ExcChainTB,
     ExcGroupTB,
