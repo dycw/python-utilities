@@ -776,31 +776,8 @@ def join(
     return reduce(inner, chain([df], dfs))
 
 
-@overload
-def map_over_columns(func: Callable[[Series], Series], obj: Series, /) -> Series: ...
-@overload
-def map_over_columns(
-    func: Callable[[Series], Series], obj: DataFrame, /
-) -> DataFrame: ...
-def map_over_columns(
-    func: Callable[[Series], Series], obj: Series | DataFrame, /
-) -> Series | DataFrame:
-    """Map a function over the columns of a Struct-Series/DataFrame."""
-    match obj:
-        case Series() as series:
-            return _map_over_series_one(func, series)
-        case DataFrame() as df:
-            return df.select(*(_map_over_series_one(func, df[c]) for c in df.columns))
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-            assert_never(never)
-
-
-def _map_over_series_one(func: Callable[[Series], Series], series: Series, /) -> Series:
-    if isinstance(series.dtype, Struct):
-        unnested = series.struct.unnest()
-        name = series.name
-        return map_over_columns(func, unnested).select(struct("*").alias(name))[name]
-    return func(series)
+def map_dataframe_columns(func: Callable[[Any], Any], df: DataFrame, /) -> DataFrame:
+    """Map a function over the columns of a DataFrame."""
 
 
 def nan_sum_agg(column: str | Expr, /, *, dtype: PolarsDataType | None = None) -> Expr:
@@ -1301,7 +1278,7 @@ __all__ = [
     "is_not_null_struct_series",
     "is_null_struct_series",
     "join",
-    "map_over_columns",
+    "map_dataframe_columns",
     "nan_sum_agg",
     "nan_sum_cols",
     "replace_time_zone",
