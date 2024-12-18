@@ -494,14 +494,10 @@ def convert_time_zone(
     obj: Series | DataFrame, /, *, time_zone: ZoneInfoLike = UTC
 ) -> Series | DataFrame:
     """Convert the time zone(s) of a Series or Dataframe."""
-    return map_over_columns(
-        partial(_convert_time_zone_series, time_zone=time_zone), obj
-    )
+    return map_over_columns(partial(_convert_time_zone_one, time_zone=time_zone), obj)
 
 
-def _convert_time_zone_series(
-    sr: Series, /, *, time_zone: ZoneInfoLike = UTC
-) -> Series:
+def _convert_time_zone_one(sr: Series, /, *, time_zone: ZoneInfoLike = UTC) -> Series:
     if isinstance(sr.dtype, Datetime):
         return sr.dt.convert_time_zone(get_time_zone_name(time_zone))
     return sr
@@ -856,7 +852,7 @@ def replace_time_zone(
 
 
 def _replace_time_zone_one(
-    sr: Series, /, *, time_zone: ZoneInfo | str | None = UTC
+    sr: Series, /, *, time_zone: ZoneInfoLike | None = UTC
 ) -> Series:
     if isinstance(sr.dtype, Datetime):
         time_zone_use = None if time_zone is None else get_time_zone_name(time_zone)
