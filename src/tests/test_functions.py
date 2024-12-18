@@ -7,7 +7,7 @@ from types import NoneType
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from hypothesis import given
-from hypothesis.strategies import booleans, integers
+from hypothesis.strategies import booleans, dictionaries, integers, lists
 from pytest import mark, param, raises
 
 from utilities.asyncio import try_await
@@ -22,6 +22,7 @@ from utilities.functions import (
     identity,
     is_none,
     is_not_none,
+    map_object,
     not_func,
     second,
 )
@@ -204,6 +205,33 @@ class TestIsNoneAndIsNotNone:
     ) -> None:
         result = func(obj)
         assert result is expected
+
+
+@mark.only
+class TestMapObject:
+    @given(x=integers())
+    def test_int(self, *, x: int) -> None:
+        result = map_object(neg, x)
+        expected = -x
+        assert result == expected
+
+    @given(x=dictionaries(integers(), integers()))
+    def test_dict(self, *, x: dict[int, int]) -> None:
+        result = map_object(neg, x)
+        expected = {k: -v for k, v in x.items()}
+        assert result == expected
+
+    @given(x=lists(dictionaries(integers(), integers())))
+    def test_nested(self, *, x: list[dict[int, int]]) -> None:
+        result = map_object(neg, x)
+        expected = [{k: -v for k, v in x_i.items()} for x_i in x]
+        assert result == expected
+
+    @given(x=lists(integers()))
+    def test_sequences(self, *, x: list[int]) -> None:
+        result = map_object(neg, x)
+        expected = list(map(neg, x))
+        assert result == expected
 
 
 class TestNotFunc:

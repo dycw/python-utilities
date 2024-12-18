@@ -115,6 +115,17 @@ def is_not_none(obj: Any, /) -> bool:
     return obj is not None
 
 
+def map_object(func: Callable[..., Any], obj: _T, /, **kwargs: Any) -> _T:
+    """Map a function over an object, across a variety of structures."""
+    match obj:
+        case dict():
+            return type(obj)({k: map_object(func, v, **kwargs) for k, v in obj.items()})
+        case frozenset() | list() | set() | tuple():
+            return type(obj)(map_object(func, i, **kwargs) for i in obj)
+        case _:
+            return func(obj, **kwargs)
+
+
 def not_func(func: Callable[_P, bool], /) -> Callable[_P, bool]:
     """Lift a boolean-valued function to return its conjugation."""
 
@@ -141,6 +152,7 @@ __all__ = [
     "identity",
     "is_none",
     "is_not_none",
+    "map_object",
     "not_func",
     "second",
 ]
