@@ -795,6 +795,10 @@ def join(
     return reduce(inner, chain([df], dfs))
 
 
+def map_dataframe_columns(func: Callable[[Any], Any], df: DataFrame, /) -> DataFrame:
+    """Map a function over the columns of a DataFrame."""
+
+
 def nan_sum_agg(column: str | Expr, /, *, dtype: PolarsDataType | None = None) -> Expr:
     """Nan sum aggregation."""
     col_use = col(column) if isinstance(column, str) else column
@@ -1310,6 +1314,7 @@ __all__ = [
     "is_not_null_struct_series",
     "is_null_struct_series",
     "join",
+    "map_dataframe_columns",
     "nan_sum_agg",
     "nan_sum_cols",
     "replace_time_zone",
