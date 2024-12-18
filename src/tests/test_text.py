@@ -2,59 +2,17 @@ from __future__ import annotations
 
 from hypothesis import given
 from hypothesis.strategies import integers, lists
-from pytest import mark, param, raises
+from pytest import mark, param
 
 from utilities.hypothesis import text_ascii
 from utilities.sentinel import sentinel
 from utilities.text import (
-    EnsureBytesError,
-    EnsureStrError,
-    ensure_bytes,
-    ensure_str,
     join_strs,
     repr_encode,
     split_str,
     str_encode,
     strip_and_dedent,
 )
-
-
-class TestEnsureBytes:
-    @mark.parametrize(
-        ("obj", "nullable"), [param(b"", False), param(b"", True), param(None, True)]
-    )
-    def test_main(self, *, obj: bytes | None, nullable: bool) -> None:
-        _ = ensure_bytes(obj, nullable=nullable)
-
-    @mark.parametrize(
-        ("nullable", "match"),
-        [
-            param(False, "Object .* must be a byte string"),
-            param(True, "Object .* must be a byte string or None"),
-        ],
-    )
-    def test_error(self, *, nullable: bool, match: str) -> None:
-        with raises(EnsureBytesError, match=f"{match}; got .* instead"):
-            _ = ensure_bytes(sentinel, nullable=nullable)
-
-
-class TestEnsureStr:
-    @mark.parametrize(
-        ("obj", "nullable"), [param("", False), param("", True), param(None, True)]
-    )
-    def test_main(self, *, obj: bool | None, nullable: bool) -> None:
-        _ = ensure_str(obj, nullable=nullable)
-
-    @mark.parametrize(
-        ("nullable", "match"),
-        [
-            param(False, "Object .* must be a string"),
-            param(True, "Object .* must be a string or None"),
-        ],
-    )
-    def test_error(self, *, nullable: bool, match: str) -> None:
-        with raises(EnsureStrError, match=f"{match}; got .* instead"):
-            _ = ensure_str(sentinel, nullable=nullable)
 
 
 class TestReprEncode:
