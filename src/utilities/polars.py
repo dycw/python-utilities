@@ -124,6 +124,9 @@ DatetimeUSEastern = Datetime(time_zone="US/Eastern")
 DatetimeUTC = Datetime(time_zone="UTC")
 
 
+##
+
+
 def append_dataclass(df: DataFrame, obj: Dataclass, /) -> DataFrame:
     """Append a dataclass object to a DataFrame."""
     non_null_fields = {k: v for k, v in asdict(obj).items() if v is not None}
@@ -147,6 +150,9 @@ class AppendDataClassError(Exception, Generic[_T]):
     @override
     def __str__(self) -> str:
         return f"Dataclass fields {reprlib.repr(self.left)} must be a subset of DataFrame columns {reprlib.repr(self.right)}; dataclass had extra items {reprlib.repr(self.extra)}"
+
+
+##
 
 
 def are_frames_equal(
@@ -180,6 +186,9 @@ def are_frames_equal(
     return True
 
 
+##
+
+
 @overload
 def ceil_datetime(column: Expr | str, every: Expr | str, /) -> Expr: ...
 @overload
@@ -196,6 +205,9 @@ def ceil_datetime(column: IntoExprColumn, every: Expr | str, /) -> Expr | Series
     if isinstance(column, Expr):
         return ceil
     return DataFrame().with_columns(ceil.alias(column.name))[column.name]
+
+
+##
 
 
 def check_polars_dataframe(
@@ -472,10 +484,16 @@ class _CheckPolarsDataFrameWidthError(CheckPolarsDataFrameError):
         )
 
 
+##
+
+
 def collect_series(expr: Expr, /) -> Series:
     """Collect a column expression into a Series."""
     data = DataFrame().with_columns(expr)
     return data[one(data.columns)]
+
+
+##
 
 
 def columns_to_dict(df: DataFrame, key: str, value: str, /) -> dict[Any, Any]:
@@ -497,6 +515,9 @@ class ColumnsToDictError(Exception):
         return f"DataFrame must be unique on {self.key!r}:\n\n{self.df}"
 
 
+##
+
+
 @overload
 def convert_time_zone(obj: Series, /, *, time_zone: ZoneInfoLike = ...) -> Series: ...
 @overload
@@ -514,6 +535,9 @@ def _convert_time_zone_one(sr: Series, /, *, time_zone: ZoneInfoLike = UTC) -> S
     if isinstance(sr.dtype, Datetime):
         return sr.dt.convert_time_zone(get_time_zone_name(time_zone))
     return sr
+
+
+##
 
 
 def dataclass_to_dataframe(
@@ -540,6 +564,19 @@ def dataclass_to_dataframe(
     return map_over_columns(_dataclass_to_dataframe_uuid, df)
 
 
+def _dataclass_to_dataframe_uuid(series: Series, /) -> Series:
+    if series.dtype == Object:
+        is_path = series.map_elements(make_isinstance(Path), return_dtype=Boolean).all()
+        is_uuid = series.map_elements(make_isinstance(UUID), return_dtype=Boolean).all()
+        if is_path or is_uuid:
+            with suppress_warnings(category=PolarsInefficientMapWarning):
+                return series.map_elements(str, return_dtype=Utf8)
+        else:  # pragma: no cover
+            msg = f"{is_path=}, f{is_uuid=}"
+            raise NotImplementedError(msg)
+    return series
+
+
 @dataclass(kw_only=True, slots=True)
 class DataClassToDataFrameError(Exception): ...
 
@@ -562,17 +599,7 @@ class _DataClassToDataFrameNonUniqueError(DataClassToDataFrameError):
         return f"Iterable {reprlib.repr(self.objs)} must contain exactly one class; got {self.first}, {self.second} and perhaps more"
 
 
-def _dataclass_to_dataframe_uuid(series: Series, /) -> Series:
-    if series.dtype == Object:
-        is_path = series.map_elements(make_isinstance(Path), return_dtype=Boolean).all()
-        is_uuid = series.map_elements(make_isinstance(UUID), return_dtype=Boolean).all()
-        if is_path or is_uuid:
-            with suppress_warnings(category=PolarsInefficientMapWarning):
-                return series.map_elements(str, return_dtype=Utf8)
-        else:  # pragma: no cover
-            msg = f"{is_path=}, f{is_uuid=}"
-            raise NotImplementedError(msg)
-    return series
+##
 
 
 def dataclass_to_schema(
@@ -649,6 +676,9 @@ def _dataclass_to_schema_one(
     raise NotImplementedError(msg)
 
 
+##
+
+
 def drop_null_struct_series(series: Series, /) -> Series:
     """Drop nulls in a struct-dtype Series as per the <= 1.1 definition."""
     try:
@@ -667,6 +697,9 @@ class DropNullStructSeriesError(Exception):
         return f"Series must have Struct-dtype; got {self.series.dtype}"
 
 
+##
+
+
 @overload
 def ensure_expr_or_series(column: Expr | str, /) -> Expr: ...
 @overload
@@ -674,6 +707,9 @@ def ensure_expr_or_series(column: Series, /) -> Series: ...
 def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
     """Ensure a column expression or Series is returned."""
     return col(column) if isinstance(column, str) else column
+
+
+##
 
 
 @overload
@@ -692,6 +728,9 @@ def floor_datetime(column: IntoExprColumn, every: Expr | str, /) -> Expr | Serie
     if isinstance(column, Expr):
         return floor
     return DataFrame().with_columns(floor.alias(column.name))[column.name]
+
+
+##
 
 
 def get_data_type_or_series_time_zone(
@@ -728,6 +767,9 @@ class _GetDataTypeOrSeriesTimeZoneNotZonedError(GetDataTypeOrSeriesTimeZoneError
         return f"Data type must be zoned; got {self.dtype}"
 
 
+##
+
+
 def is_not_null_struct_series(series: Series, /) -> Series:
     """Check if a struct-dtype Series is not null as per the <= 1.1 definition."""
     try:
@@ -743,6 +785,9 @@ class IsNotNullStructSeriesError(Exception):
     @override
     def __str__(self) -> str:
         return f"Series must have Struct-dtype; got {self.series.dtype}"
+
+
+##
 
 
 def is_null_struct_series(series: Series, /) -> Series:
@@ -789,6 +834,9 @@ class IsNullStructSeriesError(Exception):
         return f"Series must have Struct-dtype; got {self.series.dtype}"
 
 
+##
+
+
 def join(
     df: DataFrame,
     *dfs: DataFrame,
@@ -803,6 +851,9 @@ def join(
         return left.join(right, on=on_use, how=how, validate=validate)
 
     return reduce(inner, chain([df], dfs))
+
+
+##
 
 
 @overload
@@ -832,6 +883,9 @@ def _map_over_series_one(func: Callable[[Series], Series], series: Series, /) ->
     return func(series)
 
 
+##
+
+
 def nan_sum_agg(column: str | Expr, /, *, dtype: PolarsDataType | None = None) -> Expr:
     """Nan sum aggregation."""
     col_use = col(column) if isinstance(column, str) else column
@@ -840,6 +894,9 @@ def nan_sum_agg(column: str | Expr, /, *, dtype: PolarsDataType | None = None) -
         .then(col_use.sum())
         .otherwise(lit(None, dtype=dtype))
     )
+
+
+##
 
 
 def nan_sum_cols(
@@ -865,6 +922,9 @@ def nan_sum_cols(
     return reduce(func, all_exprs)
 
 
+##
+
+
 @overload
 def replace_time_zone(
     obj: Series, /, *, time_zone: ZoneInfoLike | None = ...
@@ -887,6 +947,9 @@ def _replace_time_zone_one(
         time_zone_use = None if time_zone is None else get_time_zone_name(time_zone)
         return sr.dt.replace_time_zone(time_zone_use)
     return sr
+
+
+##
 
 
 @overload
@@ -971,6 +1034,17 @@ def rolling_parameters(
 
 
 @dataclass(kw_only=True, slots=True)
+class RollingParametersSimple:
+    window: int
+    min_periods: int | None = None
+
+
+@dataclass(kw_only=True, slots=True)
+class RollingParametersExponential(_EWMParameters):
+    min_periods: int
+
+
+@dataclass(kw_only=True, slots=True)
 class RollingParametersError(Exception):
     s_window: int | None = None
     e_com: float | None = None
@@ -995,15 +1069,7 @@ class _RollingParametersMinPeriodsError(RollingParametersError):
         return f"Exponential rolling requires 'min_periods' to be set; got {self.min_periods}"
 
 
-@dataclass(kw_only=True, slots=True)
-class RollingParametersSimple:
-    window: int
-    min_periods: int | None = None
-
-
-@dataclass(kw_only=True, slots=True)
-class RollingParametersExponential(_EWMParameters):
-    min_periods: int
+##
 
 
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
@@ -1025,9 +1091,15 @@ class SetFirstRowAsColumnsError(Exception):
         return f"DataFrame must have at least 1 row; got {self.df}"
 
 
+##
+
+
 def struct_dtype(**kwargs: PolarsDataType) -> Struct:
     """Construct a Struct data type from a set of keyword arguments."""
     return Struct(kwargs)
+
+
+##
 
 
 def struct_from_dataclass(
@@ -1098,6 +1170,18 @@ class _StructFromDataClassTypeError(StructFromDataClassError):
     @override
     def __str__(self) -> str:
         return f"Unsupported type: {self.ann}"
+
+
+##
+
+
+def unique_element(column: str, /) -> Expr:
+    """Get the unique element in a list."""
+    c = col(column)
+    return when(c.list.len() == 1).then(c.list.first())
+
+
+##
 
 
 def yield_rows_as_dataclasses(
@@ -1191,6 +1275,9 @@ class _YieldRowsAsDataClassesWrongTypeError(YieldRowsAsDataClassesError):
         return self.msg
 
 
+##
+
+
 @overload
 def yield_struct_series_elements(
     series: Series, /, *, strict: Literal[True]
@@ -1249,6 +1336,9 @@ class _YieldStructSeriesElementsNullElementsError(YieldStructSeriesElementsError
         return f"Series must not have nulls; got {self.series}"
 
 
+##
+
+
 @overload
 def yield_struct_series_dataclasses(
     series: Series,
@@ -1286,6 +1376,9 @@ def yield_struct_series_dataclasses(
     )
     for value in yield_struct_series_elements(series, strict=strict):
         yield None if value is None else from_dict(cls, value, config=config)
+
+
+##
 
 
 def zoned_datetime(
