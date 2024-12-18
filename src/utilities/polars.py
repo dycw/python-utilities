@@ -8,7 +8,7 @@ from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import asdict, dataclass
 from datetime import timezone
-from functools import reduce
+from functools import partial, reduce
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -494,29 +494,14 @@ def convert_time_zone(
     obj: Series | DataFrame, /, *, time_zone: ZoneInfoLike = UTC
 ) -> Series | DataFrame:
     """Convert the time zone(s) of a Series or Dataframe."""
-    match obj:
-        case Series() as series:
-            return _convert_time_zone_series(series, time_zone=time_zone)
-        case DataFrame() as df:
-            return df.select(
-                *(
-                    _convert_time_zone_series(df[c], time_zone=time_zone)
-                    for c in df.columns
-                )
-            )
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-            assert_never(never)
+    return map_over_columns(
+        partial(_convert_time_zone_series, time_zone=time_zone), obj
+    )
 
 
 def _convert_time_zone_series(
     sr: Series, /, *, time_zone: ZoneInfoLike = UTC
 ) -> Series:
-    if isinstance(sr.dtype, Struct):
-        df = sr.struct.unnest()
-        df = convert_time_zone(df, time_zone=time_zone).select(
-            struct("*").alias(sr.name)
-        )
-        return df[sr.name]
     if isinstance(sr.dtype, Datetime):
         return sr.dt.convert_time_zone(get_time_zone_name(time_zone))
     return sr
@@ -795,18 +780,30 @@ def join(
     return reduce(inner, chain([df], dfs))
 
 
-def map_over_dataframe(func: Callable[[Series], Series], df: DataFrame, /) -> DataFrame:
-    """Map a function over the columns of a DataFrame."""
-    return df.select(*(_map_over_dataframe_one(func, df[c]) for c in df.columns))
+@overload
+def map_over_columns(func: Callable[[Series], Series], obj: Series, /) -> Series: ...
+@overload
+def map_over_columns(
+    func: Callable[[Series], Series], obj: DataFrame, /
+) -> DataFrame: ...
+def map_over_columns(
+    func: Callable[[Series], Series], obj: Series | DataFrame, /
+) -> Series | DataFrame:
+    """Map a function over the columns of a Struct-Series/DataFrame."""
+    match obj:
+        case Series() as series:
+            return _map_over_series_one(func, series)
+        case DataFrame() as df:
+            return df.select(*(_map_over_series_one(func, df[c]) for c in df.columns))
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
 
 
-def _map_over_dataframe_one(
-    func: Callable[[Series], Series], series: Series, /
-) -> Series:
+def _map_over_series_one(func: Callable[[Series], Series], series: Series, /) -> Series:
     if isinstance(series.dtype, Struct):
         unnested = series.struct.unnest()
         name = series.name
-        return map_over_dataframe(func, unnested).select(struct("*").alias(name))[name]
+        return map_over_columns(func, unnested).select(struct("*").alias(name))[name]
     return func(series)
 
 
@@ -855,29 +852,12 @@ def replace_time_zone(
     obj: Series | DataFrame, /, *, time_zone: ZoneInfoLike | None = UTC
 ) -> Series | DataFrame:
     """Replace the time zone(s) of a Series or Dataframe."""
-    match obj:
-        case Series() as series:
-            return _replace_time_zone_series(series, time_zone=time_zone)
-        case DataFrame() as df:
-            return df.select(
-                *(
-                    _replace_time_zone_series(df[c], time_zone=time_zone)
-                    for c in df.columns
-                )
-            )
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-            assert_never(never)
+    return map_over_columns(partial(_replace_time_zone_one, time_zone=time_zone), obj)
 
 
-def _replace_time_zone_series(
-    sr: Series, /, *, time_zone: ZoneInfoLike | None = UTC
+def _replace_time_zone_one(
+    sr: Series, /, *, time_zone: ZoneInfo | str | None = UTC
 ) -> Series:
-    if isinstance(sr.dtype, Struct):
-        df = sr.struct.unnest()
-        df = replace_time_zone(df, time_zone=time_zone).select(
-            struct("*").alias(sr.name)
-        )
-        return df[sr.name]
     if isinstance(sr.dtype, Datetime):
         time_zone_use = None if time_zone is None else get_time_zone_name(time_zone)
         return sr.dt.replace_time_zone(time_zone_use)
@@ -1325,7 +1305,7 @@ __all__ = [
     "is_not_null_struct_series",
     "is_null_struct_series",
     "join",
-    "map_over_dataframe",
+    "map_over_columns",
     "nan_sum_agg",
     "nan_sum_cols",
     "replace_time_zone",
