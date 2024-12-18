@@ -156,7 +156,7 @@ class EnsureClassError(Exception):
     def __str__(self) -> str:
         return _make_error_msg(
             self.obj,
-            f"an instance of {get_class_name(self.cls)}",
+            f"an instance of {get_class_name(self.cls)!r}",
             nullable=self.nullable,
         )
 

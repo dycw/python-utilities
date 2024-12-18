@@ -96,13 +96,13 @@ class TestEnsureBytes:
 
     @given(
         case=sampled_from([
-            (False, "Object .* must be a byte string"),
-            (True, "Object .* must be a byte string or None"),
+            (False, "Object '.*' of type '.*' must be a byte string"),
+            (True, "Object '.*' of type '.*' must be a byte string or None"),
         ])
     )
     def test_error(self, *, case: tuple[bool, str]) -> None:
         nullable, match = case
-        with raises(EnsureBytesError, match=f"{match}; got .* instead"):
+        with raises(EnsureBytesError, match=match):
             _ = ensure_bytes(sentinel, nullable=nullable)
 
 
@@ -114,13 +114,13 @@ class TestEnsureBool:
 
     @given(
         case=sampled_from([
-            (False, "Object .* must be a boolean"),
-            (True, "Object .* must be a boolean or None"),
+            (False, "Object '.*' of type '.*' must be a boolean"),
+            (True, "Object '.*' of type '.*' must be a boolean or None"),
         ])
     )
     def test_error(self, *, case: tuple[bool, str]) -> None:
         nullable, match = case
-        with raises(EnsureBoolError, match=f"{match}; got .* instead"):
+        with raises(EnsureBoolError, match=match):
             _ = ensure_bool(sentinel, nullable=nullable)
 
 
@@ -140,13 +140,13 @@ class TestEnsureClass:
 
     @given(
         case=sampled_from([
-            (False, "Object .* must be an instance of .*"),
-            (True, "Object .* must be an instance of .* or None"),
+            (False, "Object '.*' of type '.*' must be an instance of '.*'"),
+            (True, "Object '.*' of type '.*' must be an instance of '.*' or None"),
         ])
     )
     def test_error(self, *, case: tuple[bool, str]) -> None:
         nullable, match = case
-        with raises(EnsureClassError, match=f"{match}; got .* instead"):
+        with raises(EnsureClassError, match=match):
             _ = ensure_class(sentinel, bool, nullable=nullable)
 
 
@@ -158,13 +158,13 @@ class TestEnsureDate:
 
     @given(
         case=sampled_from([
-            (False, "Object .* must be a date"),
-            (True, "Object .* must be a date or None"),
+            (False, "Object '.*' of type '.*' must be a date"),
+            (True, "Object '.*' of type '.*' must be a date or None"),
         ])
     )
     def test_error(self, *, case: tuple[bool, str]) -> None:
         nullable, match = case
-        with raises(EnsureDateError, match=f"{match}; got .* instead"):
+        with raises(EnsureDateError, match=match):
             _ = ensure_date(sentinel, nullable=nullable)
 
 
@@ -176,13 +176,13 @@ class TestEnsureDatetime:
 
     @given(
         case=sampled_from([
-            (False, "Object .* must be a datetime"),
-            (True, "Object .* must be a datetime or None"),
+            (False, "Object '.*' of type '.*' must be a datetime"),
+            (True, "Object '.*' of type '.*' must be a datetime or None"),
         ])
     )
     def test_error(self, *, case: tuple[bool, str]) -> None:
         nullable, match = case
-        with raises(EnsureDatetimeError, match=f"{match}; got .* instead"):
+        with raises(EnsureDatetimeError, match=match):
             _ = ensure_datetime(sentinel, nullable=nullable)
 
 
@@ -194,13 +194,13 @@ class TestEnsureFloat:
 
     @given(
         case=sampled_from([
-            (False, "Object .* must be a float"),
-            (True, "Object .* must be a float or None"),
+            (False, "Object '.*' of type '.*' must be a float"),
+            (True, "Object '.*' of type '.*' must be a float or None"),
         ])
     )
     def test_error(self, *, case: tuple[bool, str]) -> None:
         nullable, match = case
-        with raises(EnsureFloatError, match=f"{match}; got .* instead"):
+        with raises(EnsureFloatError, match=match):
             _ = ensure_float(sentinel, nullable=nullable)
 
 
@@ -210,7 +210,9 @@ class TestEnsureHashable:
         assert ensure_hashable(obj) == obj
 
     def test_error(self) -> None:
-        with raises(EnsureHashableError, match=r"Object .* must be hashable\."):
+        with raises(
+            EnsureHashableError, match=r"Object '.*' of type '.*' must be hashable"
+        ):
             _ = ensure_hashable([1, 2, 3])
 
 
@@ -222,13 +224,13 @@ class TestEnsureInt:
 
     @given(
         case=sampled_from([
-            (False, "Object .* must be an integer"),
-            (True, "Object .* must be an integer or None"),
+            (False, "Object '.*' of type '.*' must be an integer"),
+            (True, "Object '.*' of type '.*' must be an integer or None"),
         ])
     )
     def test_error(self, *, case: tuple[bool, str]) -> None:
         nullable, match = case
-        with raises(EnsureIntError, match=f"{match}; got .* instead"):
+        with raises(EnsureIntError, match=match):
             _ = ensure_int(sentinel, nullable=nullable)
 
 
@@ -281,35 +283,36 @@ class TestEnsureNumber:
 
     @given(
         case=sampled_from([
-            (False, "Object .* must be a number"),
-            (True, "Object .* must be a number or None"),
+            (False, "Object '.*' of type '.*' must be a number"),
+            (True, "Object '.*' of type '.*' must be a number or None"),
         ])
     )
     def test_error(self, *, case: tuple[bool, str]) -> None:
         nullable, match = case
-        with raises(EnsureNumberError, match=f"{match}; got .* instead"):
+        with raises(EnsureNumberError, match=match):
             _ = ensure_number(sentinel, nullable=nullable)
 
 
 class TestEnsureSized:
-    @given(case=sampled_from([[], (), ""]))
+    @given(obj=sampled_from([[], (), ""]))
     def test_main(self, *, obj: Any) -> None:
         _ = ensure_sized(obj)
 
     def test_error(self) -> None:
-        with raises(EnsureSizedError, match=r"Object .* must be sized"):
+        with raises(EnsureSizedError, match=r"Object '.*' of type '.*' must be sized"):
             _ = ensure_sized(None)
 
 
 class TestEnsureSizedNotStr:
-    @given(case=sampled_from([[], ()]))
+    @given(obj=sampled_from([[], ()]))
     def test_main(self, *, obj: Any) -> None:
         _ = ensure_sized_not_str(obj)
 
-    @given(case=sampled_from([None, ""]))
+    @given(obj=sampled_from([None, '""']))
     def test_error(self, *, obj: Any) -> None:
         with raises(
-            EnsureSizedNotStrError, match="Object .* must be sized, but not a string"
+            EnsureSizedNotStrError,
+            match="Object '.*' of type '.*' must be sized and not a string",
         ):
             _ = ensure_sized_not_str(obj)
 
@@ -322,13 +325,13 @@ class TestEnsureStr:
 
     @given(
         case=sampled_from([
-            (False, "Object .* must be a string"),
-            (True, "Object .* must be a string or None"),
+            (False, "Object '.*' of type '.*' must be a string"),
+            (True, "Object '.*' of type '.*' must be a string or None"),
         ])
     )
     def test_error(self, *, case: tuple[bool, str]) -> None:
         nullable, match = case
-        with raises(EnsureStrError, match=f"{match}; got .* instead"):
+        with raises(EnsureStrError, match=match):
             _ = ensure_str(sentinel, nullable=nullable)
 
 
@@ -346,13 +349,13 @@ class TestEnsureTime:
 
     @given(
         case=sampled_from([
-            (False, "Object .* must be a time"),
-            (True, "Object .* must be a time or None"),
+            (False, "Object '.*' of type '.*' must be a time"),
+            (True, "Object '.*' of type '.*' must be a time or None"),
         ])
     )
     def test_error(self, *, case: tuple[bool, str]) -> None:
         nullable, match = case
-        with raises(EnsureTimeError, match=f"{match}; got .* instead"):
+        with raises(EnsureTimeError, match=match):
             _ = ensure_time(sentinel, nullable=nullable)
 
 
@@ -360,13 +363,16 @@ class TestFirst:
     @given(x=integers(), y=integers())
     def test_main(self, *, x: int, y: int) -> None:
         pair = x, y
-        assert first(pair) == x
+        result = first(pair)
+        assert result == x
 
 
 class TestGetClass:
     @given(case=sampled_from([(None, NoneType), (NoneType, NoneType)]))
-    def test_main(self, *, obj: Any, expected: type[Any]) -> None:
-        assert get_class(obj) is expected
+    def test_main(self, *, case: tuple[Any, type[Any]]) -> None:
+        obj, expected = case
+        result = get_class(obj)
+        assert result is expected
 
 
 class TestGetClassName:
@@ -601,7 +607,7 @@ class TestIsSubclassExceptBoolInt:
 
 
 class TestIsTuple:
-    @given(("obj", "expected"), [(None, False), ((1, 2, 3), True), ([1, 2, 3], False)])
+    @given(case=sampled_from([(None, False), ((1, 2, 3), True), ([1, 2, 3], False)]))
     def test_main(self, *, case: tuple[Any, bool]) -> None:
         obj, expected = case
         result = is_tuple(obj)
@@ -610,13 +616,12 @@ class TestIsTuple:
 
 class TestIsTupleOrStringMapping:
     @given(
-        ("obj", "expected"),
-        [
+        case=sampled_from([
             (None, False),
             ((1, 2, 3), True),
             ({"a": 1, "b": 2, "c": 3}, True),
             ({1: "a", 2: "b", 3: "c"}, False),
-        ],
+        ])
     )
     def test_main(self, *, case: tuple[Any, bool]) -> None:
         obj, expected = case
