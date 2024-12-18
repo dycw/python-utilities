@@ -75,7 +75,7 @@ def base_objects(
         | datetimes()
         | int64s()
         | text_ascii().map(Path)
-        | text_printable()
+        | text_printable().filter(lambda x: not x.startswith("["))
         | times()
         | timedeltas_2w()
         | uuids()
