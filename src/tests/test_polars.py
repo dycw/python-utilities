@@ -617,7 +617,6 @@ class TestDataClassToDataFrame:
         class Example:
             x: UUID = field(default_factory=uuid4)
 
-        # _ = UUID  # add to locals
         obj = data.draw(builds(Example))
         df = dataclass_to_dataframe(obj, localns=locals())
         check_polars_dataframe(df, height=len(df), schema_list={"x": Utf8})
