@@ -611,8 +611,8 @@ class TestDataClassToDataFrame:
         )
 
     @mark.only
-    @given(data=data(), uuid=uuids())
-    def test_uuid(self, *, data: DataObject, uuid: UUID) -> None:
+    @given(data=data())
+    def test_uuid(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: UUID = field(default_factory=uuid4)

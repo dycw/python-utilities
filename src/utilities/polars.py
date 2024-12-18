@@ -61,7 +61,11 @@ from typing_extensions import override
 
 from utilities.dataclasses import _YieldFieldsInstance, yield_fields
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import is_dataclass_class, is_dataclass_instance
+from utilities.functions import (
+    is_dataclass_class,
+    is_dataclass_instance,
+    make_isinstance,
+)
 from utilities.iterables import (
     CheckIterablesEqualError,
     CheckMappingsEqualError,
@@ -525,7 +529,8 @@ def dataclass_to_dataframe(
     data = list(map(asdict, objs))
     first, *_ = objs
     schema = dataclass_to_schema(first, globalns=globalns, localns=localns)
-    return DataFrame(data, schema=schema, orient="row")
+    df = DataFrame(data, schema=schema, orient="row")
+    return map_over_columns(_dataclass_to_dataframe_uuid, df)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -548,6 +553,14 @@ class _DataClassToDataFrameNonUniqueError(DataClassToDataFrameError):
     @override
     def __str__(self) -> str:
         return f"Iterable {reprlib.repr(self.objs)} must contain exactly one class; got {self.first}, {self.second} and perhaps more"
+
+
+def _dataclass_to_dataframe_uuid(series: Series, /) -> Series:
+    if (series.dtype == Object) and series.map_elements(
+        make_isinstance(UUID), return_dtype=Boolean
+    ).all():
+        return series.map_elements(str, return_dtype=Utf8)
+    return series
 
 
 def dataclass_to_schema(
