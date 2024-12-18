@@ -15,6 +15,7 @@ from typing import (
     TypeVar,
     runtime_checkable,
 )
+from zoneinfo import ZoneInfo
 
 _T = TypeVar("_T")
 _TEnum = TypeVar("_TEnum", bound=Enum)
@@ -34,6 +35,14 @@ MaybeAwaitable: TypeAlias = _T | Awaitable[_T]
 MaybeCoroutine1: TypeAlias = _T | Coroutine1[_T]
 
 
+# dataclasses
+@runtime_checkable
+class Dataclass(Protocol):
+    """Protocol for `dataclass` classes."""
+
+    __dataclass_fields__: ClassVar[dict[str, Any]]
+
+
 # enum
 EnumOrStr: TypeAlias = _TEnum | str
 
@@ -43,25 +52,7 @@ LogLevel: TypeAlias = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 LoggerOrName: TypeAlias = Logger | str
 
 
-# pathlib
-PathLike: TypeAlias = Path | str
-PathLikeOrCallable: TypeAlias = PathLike | Callable[[], PathLike]
-
-
-# traceback
-ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
-OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
-
-
-# dataclasses
-@runtime_checkable
-class Dataclass(Protocol):
-    """Protocol for `dataclass` classes."""
-
-    __dataclass_fields__: ClassVar[dict[str, Any]]
-
-
-# math
+# operator
 
 
 class SupportsDunderLT(Protocol[_T_contra]):
@@ -73,6 +64,19 @@ class SupportsDunderGT(Protocol[_T_contra]):
 
 
 SupportsRichComparison = SupportsDunderLT[Any] | SupportsDunderGT[Any]
+
+# pathlib
+PathLike: TypeAlias = Path | str
+PathLikeOrCallable: TypeAlias = PathLike | Callable[[], PathLike]
+
+
+# traceback
+ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
+OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
+
+
+# zoneinfo
+ZoneInfoLike: TypeAlias = ZoneInfo | str
 
 
 __all__ = [
@@ -94,4 +98,5 @@ __all__ = [
     "SupportsDunderLT",
     "SupportsRichComparison",
     "TupleOrStrMapping",
+    "ZoneInfoLike",
 ]

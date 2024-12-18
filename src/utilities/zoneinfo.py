@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 from typing_extensions import override
+
+if TYPE_CHECKING:
+    from utilities.types import ZoneInfoLike
 
 HongKong = ZoneInfo("Asia/Hong_Kong")
 Tokyo = ZoneInfo("Asia/Tokyo")
@@ -13,7 +17,7 @@ USEastern = ZoneInfo("US/Eastern")
 UTC = ZoneInfo("UTC")
 
 
-def ensure_time_zone(time_zone: ZoneInfo | dt.tzinfo | str, /) -> ZoneInfo:
+def ensure_time_zone(time_zone: ZoneInfoLike | dt.tzinfo, /) -> ZoneInfo:
     """Ensure the object is a time zone."""
     if isinstance(time_zone, ZoneInfo):
         return time_zone
@@ -33,7 +37,7 @@ class EnsureTimeZoneError(Exception):
         return f"Unsupported time zone: {self.time_zone}"
 
 
-def get_time_zone_name(time_zone: ZoneInfo | dt.timezone | str, /) -> str:
+def get_time_zone_name(time_zone: ZoneInfoLike | dt.timezone, /) -> str:
     """Get the name of a time zone."""
     return ensure_time_zone(time_zone).key
 

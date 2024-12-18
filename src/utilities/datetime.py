@@ -19,9 +19,8 @@ from utilities.zoneinfo import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from zoneinfo import ZoneInfo
 
-    from utilities.types import Duration
+    from utilities.types import Duration, ZoneInfoLike
 
 
 _DAYS_PER_YEAR = 365.25
@@ -93,7 +92,7 @@ class CheckZonedDatetimeError(Exception):
 
 
 def date_to_datetime(
-    date: dt.date, /, *, time: dt.time | None = None, time_zone: ZoneInfo | str = UTC
+    date: dt.date, /, *, time: dt.time | None = None, time_zone: ZoneInfoLike = UTC
 ) -> dt.datetime:
     """Expand a date into a datetime."""
     check_date_not_datetime(date)
@@ -192,7 +191,7 @@ def get_months(*, n: int = 1) -> dt.timedelta:
 MONTH = get_months(n=1)
 
 
-def get_now(*, time_zone: ZoneInfo | str = UTC) -> dt.datetime:
+def get_now(*, time_zone: ZoneInfoLike = UTC) -> dt.datetime:
     """Get the current, timezone-aware time."""
     if time_zone == "local":
         from tzlocal import get_localzone
@@ -231,7 +230,7 @@ def get_quarters(*, n: int = 1) -> dt.timedelta:
 QUARTER = get_quarters(n=1)
 
 
-def get_today(*, time_zone: ZoneInfo | str = UTC) -> dt.date:
+def get_today(*, time_zone: ZoneInfoLike = UTC) -> dt.date:
     """Get the current, timezone-aware date."""
     return get_now(time_zone=time_zone).date()
 
