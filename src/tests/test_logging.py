@@ -12,7 +12,6 @@ from tests.test_traceback_funcs.untraced import func_untraced
 from utilities.iterables import one
 from utilities.logging import (
     GetLoggingLevelNumberError,
-    LoggerOrName,
     LogLevel,
     StandaloneFileHandler,
     _AdvancedLogRecord,
@@ -31,6 +30,8 @@ from utilities.typing import get_args
 
 if TYPE_CHECKING:
     from re import Pattern
+
+    from utilities.types import LoggerOrName
 
 
 class TestAddFilters:
