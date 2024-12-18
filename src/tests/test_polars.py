@@ -1127,6 +1127,7 @@ class TestMapOverColumns:
             orient="row",
         )
         result = convert_time_zone(df, time_zone=HongKong)
+        result = map_over_columns(lambda x: 2 * x, df)
         expected = DataFrame(
             data=[
                 {"outer": 2, "middle": {"mvalue": 4, "inner": {"ivalue": 6}}},
