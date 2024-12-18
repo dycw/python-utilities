@@ -5,8 +5,10 @@ import enum
 from dataclasses import dataclass, field
 from enum import auto
 from math import isfinite, nan
+from pathlib import Path
 from re import escape
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
+from uuid import UUID, uuid4
 
 import polars as pl
 from hypothesis import assume, given
@@ -31,6 +33,7 @@ from polars import (
     Float64,
     Int64,
     List,
+    Object,
     Series,
     Struct,
     Utf8,
@@ -45,6 +48,7 @@ from pytest import mark, param, raises
 from utilities.datetime import get_now, get_today
 from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
 from utilities.math import is_greater_than, is_less_than, is_positive
+from utilities.pathlib import PWD
 from utilities.polars import (
     AppendDataClassError,
     ColumnsToDictError,
@@ -131,6 +135,7 @@ if TYPE_CHECKING:
     from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
 
     from utilities.types import StrMapping
+
 
 TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
 
@@ -606,6 +611,26 @@ class TestDataClassToDataFrame:
             df, height=len(objs), schema_list={"inner": struct_dtype(x=Int64)}
         )
 
+    @given(data=data())
+    def test_path(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: Path = PWD
+
+        obj = data.draw(builds(Example))
+        df = dataclass_to_dataframe(obj, localns=locals())
+        check_polars_dataframe(df, height=len(df), schema_list={"x": Utf8})
+
+    @given(data=data())
+    def test_uuid(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: UUID = field(default_factory=uuid4)
+
+        obj = data.draw(builds(Example))
+        df = dataclass_to_dataframe(obj, localns=locals())
+        check_polars_dataframe(df, height=len(df), schema_list={"x": Utf8})
+
     @given(data=data(), time_zone=timezones())
     def test_zoned_datetime(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -770,6 +795,28 @@ class TestDataClassToSchema:
         obj = Outer()
         result = dataclass_to_schema(obj, localns=locals())
         expected = {"inner": List(Struct({"x": Int64}))}
+        assert result == expected
+
+    def test_path(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: Path = PWD
+
+        _ = Path  # add to locals
+        obj = Example()
+        result = dataclass_to_schema(obj, localns=locals())
+        expected = {"x": Object}
+        assert result == expected
+
+    def test_uuid(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: UUID = field(default_factory=uuid4)
+
+        _ = UUID  # add to locals
+        obj = Example()
+        result = dataclass_to_schema(obj, localns=locals())
+        expected = {"x": Object}
         assert result == expected
 
     @given(time_zone=timezones())

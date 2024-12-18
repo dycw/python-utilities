@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass
 from datetime import timezone
 from functools import partial, reduce
 from itertools import chain
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -21,6 +22,7 @@ from typing import (
     cast,
     overload,
 )
+from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import polars as pl
@@ -33,6 +35,7 @@ from polars import (
     Float64,
     Int64,
     List,
+    Object,
     Series,
     Struct,
     Utf8,
@@ -53,13 +56,21 @@ from polars._typing import (
     TimeUnit,
 )
 from polars.datatypes import DataType
-from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
+from polars.exceptions import (
+    ColumnNotFoundError,
+    OutOfBoundsError,
+    PolarsInefficientMapWarning,
+)
 from polars.testing import assert_frame_equal
 from typing_extensions import override
 
 from utilities.dataclasses import _YieldFieldsInstance, yield_fields
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import is_dataclass_class, is_dataclass_instance
+from utilities.functions import (
+    is_dataclass_class,
+    is_dataclass_instance,
+    make_isinstance,
+)
 from utilities.iterables import (
     CheckIterablesEqualError,
     CheckMappingsEqualError,
@@ -95,6 +106,7 @@ from utilities.typing import (
     is_optional_type,
     is_set_type,
 )
+from utilities.warnings import suppress_warnings
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
@@ -523,7 +535,8 @@ def dataclass_to_dataframe(
     data = list(map(asdict, objs))
     first, *_ = objs
     schema = dataclass_to_schema(first, globalns=globalns, localns=localns)
-    return DataFrame(data, schema=schema, orient="row")
+    df = DataFrame(data, schema=schema, orient="row")
+    return map_over_columns(_dataclass_to_dataframe_uuid, df)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -546,6 +559,19 @@ class _DataClassToDataFrameNonUniqueError(DataClassToDataFrameError):
     @override
     def __str__(self) -> str:
         return f"Iterable {reprlib.repr(self.objs)} must contain exactly one class; got {self.first}, {self.second} and perhaps more"
+
+
+def _dataclass_to_dataframe_uuid(series: Series, /) -> Series:
+    if series.dtype == Object:
+        is_path = series.map_elements(make_isinstance(Path), return_dtype=Boolean).all()
+        is_uuid = series.map_elements(make_isinstance(UUID), return_dtype=Boolean).all()
+        if is_path or is_uuid:
+            with suppress_warnings(category=PolarsInefficientMapWarning):
+                return series.map_elements(str, return_dtype=Utf8)
+        else:  # pragma: no cover
+            msg = f"{is_path=}, f{is_uuid=}"
+            raise NotImplementedError(msg)
+    return series
 
 
 def dataclass_to_schema(
@@ -596,6 +622,8 @@ def _dataclass_to_schema_one(
         return Utf8
     if obj is dt.date:
         return Date
+    if obj in {Path, UUID}:
+        return Object
     if isinstance(obj, type) and issubclass(obj, enum.Enum):
         return pl.Enum([e.name for e in obj])
     if is_dataclass_class(obj):
