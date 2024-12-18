@@ -64,6 +64,7 @@ from utilities.functions import (
     is_hashable,
     is_none,
     is_not_none,
+    is_sequence_of,
     is_sequence_of_tuple_or_str_mapping,
     is_sized,
     is_sized_not_str,
@@ -546,6 +547,30 @@ class TestIsNoneAndIsNotNone:
     def test_main(self, *, case: tuple[Callable[[Any], bool], Any, bool]) -> None:
         func, obj, expected = case
         result = func(obj)
+        assert result is expected
+
+
+class TestIsSequenceOf:
+    @given(
+        case=sampled_from([([0], True), (["0"], False), (None, False), ([None], False)])
+    )
+    def test_single(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
+        result = is_sequence_of(obj, int)
+        assert result is expected
+
+    @given(
+        case=sampled_from([
+            ([0], True),
+            (["0"], True),
+            ([0, "0"], True),
+            (None, False),
+            ([None], False),
+        ])
+    )
+    def test_multiple(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
+        result = is_sequence_of(obj, (int, str))
         assert result is expected
 
 
