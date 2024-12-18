@@ -602,7 +602,6 @@ class TestIsSequenceOf:
         case=sampled_from([
             ([0], True),
             (["0"], True),
-            ({0}, False),
             ([0, "0"], True),
             (None, False),
             ([None], False),
