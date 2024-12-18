@@ -795,8 +795,19 @@ def join(
     return reduce(inner, chain([df], dfs))
 
 
-def map_dataframe_columns(func: Callable[[Any], Any], df: DataFrame, /) -> DataFrame:
+def map_over_dataframe(func: Callable[[Series], Series], df: DataFrame, /) -> DataFrame:
     """Map a function over the columns of a DataFrame."""
+    return df.select(*(_map_over_dataframe_one(func, df[c]) for c in df.columns))
+
+
+def _map_over_dataframe_one(
+    func: Callable[[Series], Series], series: Series, /
+) -> Series:
+    if isinstance(series.dtype, Struct):
+        unnested = series.struct.unnest()
+        name = series.name
+        return map_over_dataframe(func, unnested).select(struct("*").alias(name))[name]
+    return func(series)
 
 
 def nan_sum_agg(column: str | Expr, /, *, dtype: PolarsDataType | None = None) -> Expr:
@@ -1314,7 +1325,7 @@ __all__ = [
     "is_not_null_struct_series",
     "is_null_struct_series",
     "join",
-    "map_dataframe_columns",
+    "map_over_dataframe",
     "nan_sum_agg",
     "nan_sum_cols",
     "replace_time_zone",
