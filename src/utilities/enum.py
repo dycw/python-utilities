@@ -15,20 +15,20 @@ from typing import (
 from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
+from utilities.functions import ensure_str
 from utilities.iterables import (
     _OneStrCaseInsensitiveBijectionError,
     _OneStrCaseInsensitiveEmptyError,
     _OneStrCaseSensitiveEmptyError,
     one_str,
 )
-from utilities.text import ensure_str
+from utilities.types import EnumOrStr
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
 
 _E = TypeVar("_E", bound=Enum)
-MaybeStr = _E | str
 
 
 @overload
@@ -37,10 +37,10 @@ def ensure_enum(
 ) -> None: ...
 @overload
 def ensure_enum(
-    value: MaybeStr[_E], enum: type[_E], /, *, case_sensitive: bool = ...
+    value: EnumOrStr[_E], enum: type[_E], /, *, case_sensitive: bool = ...
 ) -> _E: ...
 def ensure_enum(
-    value: MaybeStr[_E] | None, enum: type[_E], /, *, case_sensitive: bool = False
+    value: EnumOrStr[_E] | None, enum: type[_E], /, *, case_sensitive: bool = False
 ) -> _E | None:
     """Ensure the object is a member of the enum."""
     if value is None:
@@ -57,7 +57,7 @@ def ensure_enum(
 
 @dataclass(kw_only=True, slots=True)
 class EnsureEnumError(Exception, Generic[_E]):
-    value: MaybeStr[_E]
+    value: EnumOrStr[_E]
     enum: type[_E]
 
 
@@ -180,4 +180,10 @@ class _ParseEnumStrEnumCaseInsensitiveAmbiguousError(ParseEnumError):
         return f"StrEnum {self.enum} contains {self.value!r} in both its keys and values (case insensitive)"
 
 
-__all__ = ["EnsureEnumError", "MaybeStr", "ParseEnumError", "ensure_enum", "parse_enum"]
+__all__ = [
+    "EnsureEnumError",
+    "EnumOrStr",
+    "ParseEnumError",
+    "ensure_enum",
+    "parse_enum",
+]

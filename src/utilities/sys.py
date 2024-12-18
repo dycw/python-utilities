@@ -10,15 +10,15 @@ from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import override
 
-from utilities.asyncio import Coroutine1
-from utilities.logging import LoggerOrName, get_logger
+from utilities.logging import get_logger
+from utilities.types import Coroutine1, LoggerOrName
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from types import TracebackType
 
-    from utilities.asyncio import MaybeCoroutine1
-    from utilities.types import StrMapping
+    from utilities.types import MaybeCoroutine1, StrMapping
+
 
 VERSION_MAJOR_MINOR = (version_info.major, version_info.minor)
 

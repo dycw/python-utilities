@@ -6,15 +6,14 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
 from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import get_class_name
-from utilities.operator import is_equal
-from utilities.sentinel import Sentinel, sentinel
-from utilities.types import (
-    Dataclass,
-    StrMapping,
+from utilities.functions import (
+    get_class_name,
     is_dataclass_class,
     is_dataclass_instance,
 )
+from utilities.operator import is_equal
+from utilities.sentinel import Sentinel, sentinel
+from utilities.types import Dataclass, StrMapping
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:

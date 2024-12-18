@@ -19,8 +19,8 @@ from atools import memoize as _memoize
 from atools._memoize_decorator import Pickler, _AsyncMemoize
 from typing_extensions import override
 
-from utilities.asyncio import Coroutine1
-from utilities.types import ensure_class
+from utilities.functions import ensure_class
+from utilities.types import Coroutine1
 from utilities.typing import get_args
 
 if TYPE_CHECKING:

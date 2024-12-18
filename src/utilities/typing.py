@@ -8,10 +8,8 @@ from typing import (
     Literal,
     NamedTuple,
     Optional,  # pyright: ignore[reportDeprecated]
-    Protocol,
     Self,
     TypeGuard,
-    TypeVar,
     Union,  # pyright: ignore[reportDeprecated]
     _eval_type,  # pyright: ignore[reportAttributeAccessIssue]
     _TypedDictMeta,  # pyright: ignore[reportAttributeAccessIssue]
@@ -31,20 +29,6 @@ try:  # skipif-version-ge-312
     from typing import TypeAliasType  # pyright: ignore[reportAttributeAccessIssue]
 except ImportError:  # pragma: no cover
     TypeAliasType = None
-
-
-_T_contra = TypeVar("_T_contra", contravariant=True)
-
-
-class SupportsDunderLT(Protocol[_T_contra]):
-    def __lt__(self, other: _T_contra, /) -> bool: ...  # pragma: no cover
-
-
-class SupportsDunderGT(Protocol[_T_contra]):
-    def __gt__(self, other: _T_contra, /) -> bool: ...  # pragma: no cover
-
-
-SupportsRichComparison = SupportsDunderLT[Any] | SupportsDunderGT[Any]
 
 
 def contains_self(obj: Any, /) -> bool:
@@ -202,9 +186,6 @@ def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:
 
 
 __all__ = [
-    "SupportsDunderGT",
-    "SupportsDunderLT",
-    "SupportsRichComparison",
     "contains_self",
     "eval_typed_dict",
     "get_type_hints",

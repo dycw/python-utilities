@@ -27,9 +27,10 @@ from typing_extensions import override
 
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import asdict_without_defaults
+from utilities.functions import ensure_class
 from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.types import Dataclass, PathLike, StrMapping, ensure_class
+from utilities.types import Dataclass, PathLike, StrMapping
 from utilities.uuid import UUID_PATTERN
 from utilities.whenever import (
     parse_date,

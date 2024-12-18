@@ -1,19 +1,22 @@
 from __future__ import annotations
 
 from enum import Enum, StrEnum, auto
+from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, sampled_from
 from pytest import mark, param, raises
 
 from utilities.enum import (
-    MaybeStr,
     ParseEnumError,
     _EnsureEnumParseError,
     _EnsureEnumTypeEnumError,
     ensure_enum,
     parse_enum,
 )
+
+if TYPE_CHECKING:
+    from utilities.types import EnumOrStr
 
 
 class TestParseEnum:
@@ -128,7 +131,7 @@ class TestParseEnum:
             false = auto()
 
         truth: Truth = data.draw(sampled_from(Truth))
-        input_: MaybeStr[Truth] = data.draw(sampled_from([truth, truth.name]))
+        input_: EnumOrStr[Truth] = data.draw(sampled_from([truth, truth.name]))
         result = ensure_enum(input_, Truth)
         assert result is truth
 

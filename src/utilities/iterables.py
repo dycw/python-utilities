@@ -36,7 +36,7 @@ from typing import (
 from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import ensure_not_none
+from utilities.functions import ensure_hashable, ensure_not_none, ensure_str
 from utilities.math import (
     _CheckIntegerEqualError,
     _CheckIntegerEqualOrApproxError,
@@ -45,8 +45,6 @@ from utilities.math import (
     check_integer,
 )
 from utilities.sentinel import sentinel
-from utilities.text import ensure_str
-from utilities.types import ensure_hashable
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:

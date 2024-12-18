@@ -59,6 +59,7 @@ from typing_extensions import override
 
 from utilities.dataclasses import _YieldFieldsInstance, yield_fields
 from utilities.errors import ImpossibleCaseError
+from utilities.functions import is_dataclass_class, is_dataclass_instance
 from utilities.iterables import (
     CheckIterablesEqualError,
     CheckMappingsEqualError,
@@ -84,12 +85,7 @@ from utilities.math import (
     ewm_parameters,
 )
 from utilities.sentinel import Sentinel
-from utilities.types import (
-    Dataclass,
-    StrMapping,
-    is_dataclass_class,
-    is_dataclass_instance,
-)
+from utilities.types import Dataclass, StrMapping
 from utilities.typing import (
     get_args,
     get_type_hints,

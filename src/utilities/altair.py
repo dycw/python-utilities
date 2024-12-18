@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import isfinite
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, TypeAlias, cast
 
 from altair import (
     X2,
@@ -24,17 +24,19 @@ from altair import (
 from altair.utils.schemapi import Undefined
 from polars import Date, Datetime
 
+from utilities.functions import ensure_bytes, ensure_number
 from utilities.iterables import always_iterable
 from utilities.tempfile import TemporaryDirectory
-from utilities.text import ensure_bytes
-from utilities.types import PathLike, ensure_number
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from polars import DataFrame
 
-_ChartLike = Chart | HConcatChart | LayerChart | VConcatChart
+    from utilities.types import PathLike
+
+
+_ChartLike: TypeAlias = Chart | HConcatChart | LayerChart | VConcatChart
 _HEIGHT = 400
 _WIDTH = 800
 

@@ -10,7 +10,7 @@ from asyncio import (
     sleep,
     timeout,
 )
-from collections.abc import AsyncIterable, Awaitable, Coroutine, Iterable
+from collections.abc import AsyncIterable, Awaitable, Iterable
 from dataclasses import dataclass
 from io import StringIO
 from re import search
@@ -19,10 +19,9 @@ from sys import stderr, stdout
 from typing import TYPE_CHECKING, Any, TextIO, TypeAlias, TypeGuard, TypeVar, cast
 
 from utilities.datetime import duration_to_float
-from utilities.functions import ensure_not_none
+from utilities.functions import EnsureStrError, ensure_int, ensure_not_none, ensure_str
 from utilities.iterables import OneError, one
-from utilities.text import EnsureStrError, ensure_str
-from utilities.types import ensure_int
+from utilities.types import MaybeAwaitable
 
 if TYPE_CHECKING:
     from asyncio import Timeout
@@ -31,9 +30,6 @@ if TYPE_CHECKING:
     from utilities.types import Duration
 
 _T = TypeVar("_T")
-Coroutine1: TypeAlias = Coroutine[Any, Any, _T]
-MaybeAwaitable: TypeAlias = _T | Awaitable[_T]
-MaybeCoroutine1: TypeAlias = _T | Coroutine1[_T]
 _MaybeAsyncIterable: TypeAlias = Iterable[_T] | AsyncIterable[_T]
 _MaybeAwaitableMaybeAsyncIterable: TypeAlias = MaybeAwaitable[_MaybeAsyncIterable[_T]]
 
@@ -159,9 +155,6 @@ async def try_await(obj: MaybeAwaitable[_T], /) -> _T:
 
 
 __all__ = [
-    "Coroutine1",
-    "MaybeAwaitable",
-    "MaybeCoroutine1",
     "StreamCommandOutput",
     "get_items",
     "get_items_nowait",

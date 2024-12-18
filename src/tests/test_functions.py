@@ -1,36 +1,263 @@
 from __future__ import annotations
 
 import sys
+from dataclasses import dataclass
 from functools import cache, lru_cache, partial, wraps
 from operator import neg
 from types import NoneType
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from hypothesis import given
-from hypothesis.strategies import booleans, integers
-from pytest import mark, param, raises
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    builds,
+    data,
+    dictionaries,
+    integers,
+    lists,
+    sampled_from,
+)
+from pytest import raises
 
 from utilities.asyncio import try_await
+from utilities.datetime import get_now, get_today
 from utilities.functions import (
+    EnsureBoolError,
+    EnsureBytesError,
+    EnsureClassError,
+    EnsureDateError,
+    EnsureDatetimeError,
+    EnsureFloatError,
+    EnsureHashableError,
+    EnsureIntError,
+    EnsureMemberError,
     EnsureNotNoneError,
+    EnsureNumberError,
+    EnsureSizedError,
+    EnsureSizedNotStrError,
+    EnsureStrError,
+    EnsureTimeError,
+    ensure_bool,
+    ensure_bytes,
+    ensure_class,
+    ensure_date,
+    ensure_datetime,
+    ensure_float,
+    ensure_hashable,
+    ensure_int,
+    ensure_member,
     ensure_not_none,
+    ensure_number,
+    ensure_sized,
+    ensure_sized_not_str,
+    ensure_str,
+    ensure_time,
     first,
     get_class,
     get_class_name,
     get_func_name,
     get_func_qualname,
     identity,
+    is_dataclass_class,
+    is_dataclass_instance,
+    is_hashable,
     is_none,
     is_not_none,
+    is_sequence_of_tuple_or_str_mapping,
+    is_sized,
+    is_sized_not_str,
+    is_string_mapping,
+    is_subclass_except_bool_int,
+    is_tuple,
+    is_tuple_or_str_mapping,
+    make_isinstance,
+    map_object,
     not_func,
     second,
 )
+from utilities.sentinel import sentinel
 
 if TYPE_CHECKING:
+    import datetime as dt
     from collections.abc import Callable
+
+    from utilities.types import Number
 
 
 _T = TypeVar("_T")
+
+
+class TestEnsureBytes:
+    @given(case=sampled_from([(b"", False), (b"", True), (None, True)]))
+    def test_main(self, *, case: tuple[bytes | None, bool]) -> None:
+        obj, nullable = case
+        _ = ensure_bytes(obj, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object '.*' of type '.*' must be a byte string"),
+            (True, "Object '.*' of type '.*' must be a byte string or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsureBytesError, match=match):
+            _ = ensure_bytes(sentinel, nullable=nullable)
+
+
+class TestEnsureBool:
+    @given(case=sampled_from([(True, False), (True, True), (None, True)]))
+    def test_main(self, *, case: tuple[bool | None, bool]) -> None:
+        obj, nullable = case
+        _ = ensure_bool(obj, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object '.*' of type '.*' must be a boolean"),
+            (True, "Object '.*' of type '.*' must be a boolean or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsureBoolError, match=match):
+            _ = ensure_bool(sentinel, nullable=nullable)
+
+
+class TestEnsureClass:
+    @given(
+        case=sampled_from([
+            (True, bool, False),
+            (True, bool, True),
+            (True, (bool,), False),
+            (True, (bool,), True),
+            (None, bool, True),
+        ])
+    )
+    def test_main(self, *, case: tuple[Any, Any, bool]) -> None:
+        obj, cls, nullable = case
+        _ = ensure_class(obj, cls, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object '.*' of type '.*' must be an instance of '.*'"),
+            (True, "Object '.*' of type '.*' must be an instance of '.*' or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsureClassError, match=match):
+            _ = ensure_class(sentinel, bool, nullable=nullable)
+
+
+class TestEnsureDate:
+    @given(case=sampled_from([(get_today(), False), (get_today(), True), (None, True)]))
+    def test_main(self, *, case: tuple[dt.date | None, bool]) -> None:
+        obj, nullable = case
+        _ = ensure_date(obj, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object '.*' of type '.*' must be a date"),
+            (True, "Object '.*' of type '.*' must be a date or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsureDateError, match=match):
+            _ = ensure_date(sentinel, nullable=nullable)
+
+
+class TestEnsureDatetime:
+    @given(case=sampled_from([(get_now(), False), (get_now(), True), (None, True)]))
+    def test_main(self, *, case: tuple[dt.datetime | None, bool]) -> None:
+        obj, nullable = case
+        _ = ensure_datetime(obj, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object '.*' of type '.*' must be a datetime"),
+            (True, "Object '.*' of type '.*' must be a datetime or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsureDatetimeError, match=match):
+            _ = ensure_datetime(sentinel, nullable=nullable)
+
+
+class TestEnsureFloat:
+    @given(case=sampled_from([(0.0, False), (0.0, True), (None, True)]))
+    def test_main(self, *, case: tuple[float | None, bool]) -> None:
+        obj, nullable = case
+        _ = ensure_float(obj, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object '.*' of type '.*' must be a float"),
+            (True, "Object '.*' of type '.*' must be a float or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsureFloatError, match=match):
+            _ = ensure_float(sentinel, nullable=nullable)
+
+
+class TestEnsureHashable:
+    @given(obj=sampled_from([0, (1, 2, 3)]))
+    def test_main(self, *, obj: Any) -> None:
+        assert ensure_hashable(obj) == obj
+
+    def test_error(self) -> None:
+        with raises(
+            EnsureHashableError, match=r"Object '.*' of type '.*' must be hashable"
+        ):
+            _ = ensure_hashable([1, 2, 3])
+
+
+class TestEnsureInt:
+    @given(case=sampled_from([(0, False), (0, True), (None, True)]))
+    def test_main(self, *, case: tuple[int | None, bool]) -> None:
+        obj, nullable = case
+        _ = ensure_int(obj, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object '.*' of type '.*' must be an integer"),
+            (True, "Object '.*' of type '.*' must be an integer or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsureIntError, match=match):
+            _ = ensure_int(sentinel, nullable=nullable)
+
+
+class TestEnsureMember:
+    @given(
+        case=sampled_from([
+            (True, True),
+            (True, False),
+            (False, True),
+            (False, False),
+            (None, True),
+        ])
+    )
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, nullable = case
+        _ = ensure_member(obj, {True, False}, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object .* must be a member of .*"),
+            (True, "Object .* must be a member of .* or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsureMemberError, match=match):
+            _ = ensure_member(sentinel, {True, False}, nullable=nullable)
 
 
 class TestEnsureNotNone:
@@ -48,19 +275,104 @@ class TestEnsureNotNone:
             _ = ensure_not_none(None, desc="Name")
 
 
+class TestEnsureNumber:
+    @given(case=sampled_from([(0, False), (0.0, False), (0.0, True), (None, True)]))
+    def test_main(self, *, case: tuple[Number, bool]) -> None:
+        obj, nullable = case
+        _ = ensure_number(obj, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object '.*' of type '.*' must be a number"),
+            (True, "Object '.*' of type '.*' must be a number or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsureNumberError, match=match):
+            _ = ensure_number(sentinel, nullable=nullable)
+
+
+class TestEnsureSized:
+    @given(obj=sampled_from([[], (), ""]))
+    def test_main(self, *, obj: Any) -> None:
+        _ = ensure_sized(obj)
+
+    def test_error(self) -> None:
+        with raises(EnsureSizedError, match=r"Object '.*' of type '.*' must be sized"):
+            _ = ensure_sized(None)
+
+
+class TestEnsureSizedNotStr:
+    @given(obj=sampled_from([[], ()]))
+    def test_main(self, *, obj: Any) -> None:
+        _ = ensure_sized_not_str(obj)
+
+    @given(obj=sampled_from([None, '""']))
+    def test_error(self, *, obj: Any) -> None:
+        with raises(
+            EnsureSizedNotStrError,
+            match="Object '.*' of type '.*' must be sized and not a string",
+        ):
+            _ = ensure_sized_not_str(obj)
+
+
+class TestEnsureStr:
+    @given(case=sampled_from([("", False), ("", True), (None, True)]))
+    def test_main(self, *, case: tuple[bool | None, bool]) -> None:
+        obj, nullable = case
+        _ = ensure_str(obj, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object '.*' of type '.*' must be a string"),
+            (True, "Object '.*' of type '.*' must be a string or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsureStrError, match=match):
+            _ = ensure_str(sentinel, nullable=nullable)
+
+
+class TestEnsureTime:
+    @given(
+        case=sampled_from([
+            (get_now().time(), False),
+            (get_now().time(), True),
+            (None, True),
+        ])
+    )
+    def test_main(self, *, case: tuple[dt.time | None, bool]) -> None:
+        obj, nullable = case
+        _ = ensure_time(obj, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object '.*' of type '.*' must be a time"),
+            (True, "Object '.*' of type '.*' must be a time or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsureTimeError, match=match):
+            _ = ensure_time(sentinel, nullable=nullable)
+
+
 class TestFirst:
     @given(x=integers(), y=integers())
     def test_main(self, *, x: int, y: int) -> None:
         pair = x, y
-        assert first(pair) == x
+        result = first(pair)
+        assert result == x
 
 
 class TestGetClass:
-    @mark.parametrize(
-        ("obj", "expected"), [param(None, NoneType), param(NoneType, NoneType)]
-    )
-    def test_main(self, *, obj: Any, expected: type[Any]) -> None:
-        assert get_class(obj) is expected
+    @given(case=sampled_from([(None, NoneType), (NoneType, NoneType)]))
+    def test_main(self, *, case: tuple[Any, type[Any]]) -> None:
+        obj, expected = case
+        result = get_class(obj)
+        assert result is expected
 
 
 class TestGetClassName:
@@ -76,29 +388,27 @@ class TestGetClassName:
 
 
 class TestGetFuncNameAndGetFuncQualName:
-    @mark.parametrize(
-        ("func", "exp_name", "exp_qual_name"),
-        [
-            param(identity, "identity", "utilities.functions.identity"),
-            param(
+    @given(
+        case=sampled_from([
+            (identity, "identity", "utilities.functions.identity"),
+            (
                 lambda x: x,  # pyright: ignore[reportUnknownLambdaType]
                 "<lambda>",
                 "tests.test_functions.TestGetFuncNameAndGetFuncQualName.<lambda>",
             ),
-            param(len, "len", "builtins.len"),
-            param(neg, "neg", "_operator.neg"),
-            param(object.__init__, "object.__init__", "builtins.object.__init__"),
-            param(object.__str__, "object.__str__", "builtins.object.__str__"),
-            param(repr, "repr", "builtins.repr"),
-            param(str, "str", "builtins.str"),
-            param(try_await, "try_await", "utilities.asyncio.try_await"),
-            param(str.join, "str.join", "builtins.str.join"),
-            param(sys.exit, "exit", "sys.exit"),
-        ],
+            (len, "len", "builtins.len"),
+            (neg, "neg", "_operator.neg"),
+            (object.__init__, "object.__init__", "builtins.object.__init__"),
+            (object.__str__, "object.__str__", "builtins.object.__str__"),
+            (repr, "repr", "builtins.repr"),
+            (str, "str", "builtins.str"),
+            (try_await, "try_await", "utilities.asyncio.try_await"),
+            (str.join, "str.join", "builtins.str.join"),
+            (sys.exit, "exit", "sys.exit"),
+        ])
     )
-    def test_main(
-        self, *, func: Callable[..., Any], exp_name: str, exp_qual_name: str
-    ) -> None:
+    def test_main(self, *, case: tuple[Callable[..., Any], str, str]) -> None:
+        func, exp_name, exp_qual_name = case
         assert get_func_name(func) == exp_name
         assert get_func_qualname(func) == exp_qual_name
 
@@ -189,21 +499,189 @@ class TestIdentity:
         assert identity(x) == x
 
 
+class TestIsDataClassClass:
+    def test_main(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: None = None
+
+        assert is_dataclass_class(Example)
+        assert not is_dataclass_class(Example())
+
+    @given(obj=sampled_from([None, type(None)]))
+    def test_others(self, *, obj: Any) -> None:
+        assert not is_dataclass_class(obj)
+
+
+class TestIsDataClassInstance:
+    def test_main(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: None = None
+
+        assert not is_dataclass_instance(Example)
+        assert is_dataclass_instance(Example())
+
+    @given(obj=sampled_from([None, type(None)]))
+    def test_others(self, *, obj: Any) -> None:
+        assert not is_dataclass_instance(obj)
+
+
+class TestIsHashable:
+    @given(case=sampled_from([(0, True), ((1, 2, 3), True), ([1, 2, 3], False)]))
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
+        assert is_hashable(obj) is expected
+
+
 class TestIsNoneAndIsNotNone:
-    @mark.parametrize(
-        ("func", "obj", "expected"),
-        [
-            param(is_none, None, True),
-            param(is_none, 0, False),
-            param(is_not_none, None, False),
-            param(is_not_none, 0, True),
-        ],
+    @given(
+        case=sampled_from([
+            (is_none, None, True),
+            (is_none, 0, False),
+            (is_not_none, None, False),
+            (is_not_none, 0, True),
+        ])
     )
-    def test_main(
-        self, *, func: Callable[[Any], bool], obj: Any, expected: bool
-    ) -> None:
+    def test_main(self, *, case: tuple[Callable[[Any], bool], Any, bool]) -> None:
+        func, obj, expected = case
         result = func(obj)
         assert result is expected
+
+
+class TestIsSequenceOfTupleOrStrgMapping:
+    @given(
+        case=sampled_from([
+            (None, False),
+            ([(1, 2, 3)], True),
+            ([{"a": 1, "b": 2, "c": 3}], True),
+            ([(1, 2, 3), {"a": 1, "b": 2, "c": 3}], True),
+        ])
+    )
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
+        result = is_sequence_of_tuple_or_str_mapping(obj)
+        assert result is expected
+
+
+class TestIsSized:
+    @given(case=sampled_from([(None, False), ([], True), ((), True), ("", True)]))
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
+        assert is_sized(obj) is expected
+
+
+class TestIsSizedNotStr:
+    @given(case=sampled_from([(None, False), ([], True), ((), True), ("", False)]))
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
+        assert is_sized_not_str(obj) is expected
+
+
+class TestIsStringMapping:
+    @given(
+        case=sampled_from([
+            (None, False),
+            ({"a": 1, "b": 2, "c": 3}, True),
+            ({1: "a", 2: "b", 3: "c"}, False),
+        ])
+    )
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
+        result = is_string_mapping(obj)
+        assert result is expected
+
+
+class TestIsSubclassExceptBoolInt:
+    @given(
+        case=sampled_from([(bool, bool, True), (bool, int, False), (int, int, True)])
+    )
+    def test_main(self, *, case: tuple[type[Any], type[Any], bool]) -> None:
+        x, y, expected = case
+        assert is_subclass_except_bool_int(x, y) is expected
+
+    def test_subclass_of_int(self) -> None:
+        class MyInt(int): ...
+
+        assert not is_subclass_except_bool_int(bool, MyInt)
+
+
+class TestIsTuple:
+    @given(case=sampled_from([(None, False), ((1, 2, 3), True), ([1, 2, 3], False)]))
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
+        result = is_tuple(obj)
+        assert result is expected
+
+
+class TestIsTupleOrStringMapping:
+    @given(
+        case=sampled_from([
+            (None, False),
+            ((1, 2, 3), True),
+            ({"a": 1, "b": 2, "c": 3}, True),
+            ({1: "a", 2: "b", 3: "c"}, False),
+        ])
+    )
+    def test_main(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
+        result = is_tuple_or_str_mapping(obj)
+        assert result is expected
+
+
+class TestMakeIsInstance:
+    @given(case=sampled_from([(True, True), (False, True), (None, False)]))
+    def test_main(self, *, case: tuple[bool | None, bool]) -> None:
+        obj, expected = case
+        func = make_isinstance(bool)
+        result = func(obj)
+        assert result is expected
+
+
+class TestMapObject:
+    @given(x=integers())
+    def test_int(self, *, x: int) -> None:
+        result = map_object(neg, x)
+        expected = -x
+        assert result == expected
+
+    @given(x=dictionaries(integers(), integers()))
+    def test_dict(self, *, x: dict[int, int]) -> None:
+        result = map_object(neg, x)
+        expected = {k: -v for k, v in x.items()}
+        assert result == expected
+
+    @given(x=lists(integers()))
+    def test_sequences(self, *, x: list[int]) -> None:
+        result = map_object(neg, x)
+        expected = list(map(neg, x))
+        assert result == expected
+
+    @given(data=data())
+    def test_dataclasses(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+        obj = data.draw(builds(Example))
+        result = map_object(neg, obj)
+        expected = {"x": -obj.x}
+        assert result == expected
+
+    @given(x=lists(dictionaries(integers(), integers())))
+    def test_nested(self, *, x: list[dict[int, int]]) -> None:
+        result = map_object(neg, x)
+        expected = [{k: -v for k, v in x_i.items()} for x_i in x]
+        assert result == expected
+
+    @given(x=lists(integers()))
+    def test_before(self, *, x: list[int]) -> None:
+        def before(x: Any, /) -> Any:
+            return x + 1 if isinstance(x, int) else x
+
+        result = map_object(neg, x, before=before)
+        expected = [-(i + 1) for i in x]
+        assert result == expected
 
 
 class TestNotFunc:
