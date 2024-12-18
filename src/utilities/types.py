@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Awaitable, Callable, Coroutine, Mapping
+from enum import Enum
 from logging import Logger
 from pathlib import Path
 from types import TracebackType
@@ -16,6 +17,7 @@ from typing import (
 )
 
 _T = TypeVar("_T")
+_TEnum = TypeVar("_TEnum", bound=Enum)
 _T_contra = TypeVar("_T_contra", contravariant=True)
 
 
@@ -30,6 +32,10 @@ TupleOrStrMapping: TypeAlias = tuple[Any, ...] | StrMapping
 Coroutine1: TypeAlias = Coroutine[Any, Any, _T]
 MaybeAwaitable: TypeAlias = _T | Awaitable[_T]
 MaybeCoroutine1: TypeAlias = _T | Coroutine1[_T]
+
+
+# enum
+EnumOrStr: TypeAlias = _TEnum | str
 
 
 # logging
@@ -73,6 +79,7 @@ __all__ = [
     "Coroutine1",
     "Dataclass",
     "Duration",
+    "EnumOrStr",
     "ExcInfo",
     "LogLevel",
     "LoggerOrName",

@@ -34,6 +34,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX, SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import duration_to_float, is_local_datetime, is_zoned_datetime
+from utilities.functions import make_isinstance
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
     _SQLALCHEMY_ENGINE_DIALECTS,
@@ -86,7 +87,7 @@ from utilities.math import (
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import Dialect, _get_dialect
-from utilities.types import Duration, Number, make_isinstance
+from utilities.types import Duration, Number
 from utilities.whenever import (
     MAX_TWO_WAY_TIMEDELTA,
     MIN_TWO_WAY_TIMEDELTA,
