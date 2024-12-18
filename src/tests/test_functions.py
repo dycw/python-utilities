@@ -207,7 +207,6 @@ class TestIsNoneAndIsNotNone:
         assert result is expected
 
 
-@mark.only
 class TestMapObject:
     @given(x=integers())
     def test_int(self, *, x: int) -> None:
@@ -221,6 +220,12 @@ class TestMapObject:
         expected = {k: -v for k, v in x.items()}
         assert result == expected
 
+    @given(x=lists(integers()))
+    def test_sequences(self, *, x: list[int]) -> None:
+        result = map_object(neg, x)
+        expected = list(map(neg, x))
+        assert result == expected
+
     @given(x=lists(dictionaries(integers(), integers())))
     def test_nested(self, *, x: list[dict[int, int]]) -> None:
         result = map_object(neg, x)
@@ -228,9 +233,12 @@ class TestMapObject:
         assert result == expected
 
     @given(x=lists(integers()))
-    def test_sequences(self, *, x: list[int]) -> None:
-        result = map_object(neg, x)
-        expected = list(map(neg, x))
+    def test_before(self, *, x: list[int]) -> None:
+        def before(x: Any, /) -> Any:
+            return x + 1 if isinstance(x, int) else x
+
+        result = map_object(neg, x, before=before)
+        expected = [-(i + 1) for i in x]
         assert result == expected
 
 
