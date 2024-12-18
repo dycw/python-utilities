@@ -611,7 +611,6 @@ class TestDataClassToDataFrame:
             df, height=len(objs), schema_list={"inner": struct_dtype(x=Int64)}
         )
 
-    @mark.only
     @given(data=data())
     def test_path(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
