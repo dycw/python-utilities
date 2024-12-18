@@ -34,6 +34,7 @@ from polars import (
     Float64,
     Int64,
     List,
+    Object,
     Series,
     Struct,
     Utf8,
@@ -598,7 +599,7 @@ def _dataclass_to_schema_one(
     if obj is dt.date:
         return Date
     if obj is UUID:
-        return Utf8
+        return Object
     if isinstance(obj, type) and issubclass(obj, enum.Enum):
         return pl.Enum([e.name for e in obj])
     if is_dataclass_class(obj):
