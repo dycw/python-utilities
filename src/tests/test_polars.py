@@ -1172,9 +1172,7 @@ class TestReplaceTimeZone:
         now_utc = get_now()
         series = Series(values=[now_utc], dtype=DatetimeUTC)
         result = replace_time_zone(series, time_zone=None)
-        expected = Series(
-            name="series", values=[now_utc.replace(tzinfo=None)], dtype=Datetime
-        )
+        expected = Series(values=[now_utc.replace(tzinfo=None)], dtype=Datetime)
         assert_series_equal(result, expected)
 
     def test_non_datetime(self) -> None:
