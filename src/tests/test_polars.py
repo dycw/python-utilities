@@ -1032,7 +1032,6 @@ class TestMapOverDataFrame:
         expected = 2 * df
         assert_frame_equal(result, expected)
 
-    @mark.only
     def test_dataframe_nested(self) -> None:
         df = DataFrame(
             data=[
