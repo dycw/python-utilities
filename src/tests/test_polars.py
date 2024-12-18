@@ -5,6 +5,7 @@ import enum
 from dataclasses import dataclass, field
 from enum import auto
 from math import isfinite, nan
+from pathlib import Path
 from re import escape
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 from uuid import UUID, uuid4
@@ -22,7 +23,6 @@ from hypothesis.strategies import (
     none,
     sampled_from,
     timezones,
-    uuids,
 )
 from polars import (
     Boolean,
@@ -48,6 +48,7 @@ from pytest import mark, param, raises
 from utilities.datetime import get_now, get_today
 from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
 from utilities.math import is_greater_than, is_less_than, is_positive
+from utilities.pathlib import PWD
 from utilities.polars import (
     AppendDataClassError,
     ColumnsToDictError,
@@ -612,6 +613,16 @@ class TestDataClassToDataFrame:
 
     @mark.only
     @given(data=data())
+    def test_path(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: Path = PWD
+
+        obj = data.draw(builds(Example))
+        df = dataclass_to_dataframe(obj, localns=locals())
+        check_polars_dataframe(df, height=len(df), schema_list={"x": Utf8})
+
+    @given(data=data())
     def test_uuid(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -787,7 +798,17 @@ class TestDataClassToSchema:
         expected = {"inner": List(Struct({"x": Int64}))}
         assert result == expected
 
-    @mark.only
+    def test_path(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: Path = PWD
+
+        _ = Path  # add to locals
+        obj = Example()
+        result = dataclass_to_schema(obj, localns=locals())
+        expected = {"x": Object}
+        assert result == expected
+
     def test_uuid(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:

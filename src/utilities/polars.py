@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass
 from datetime import timezone
 from functools import partial, reduce
 from itertools import chain
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -562,8 +563,10 @@ class _DataClassToDataFrameNonUniqueError(DataClassToDataFrameError):
 
 def _dataclass_to_dataframe_uuid(series: Series, /) -> Series:
     if series.dtype == Object:
-        with suppress_warnings(category=PolarsInefficientMapWarning):
-            if series.map_elements(make_isinstance(UUID), return_dtype=Boolean).all():
+        is_path = series.map_elements(make_isinstance(Path), return_dtype=Boolean).all()
+        is_uuid = series.map_elements(make_isinstance(UUID), return_dtype=Boolean).all()
+        if is_path or is_uuid:
+            with suppress_warnings(category=PolarsInefficientMapWarning):
                 return series.map_elements(str, return_dtype=Utf8)
     return series
 
@@ -616,7 +619,7 @@ def _dataclass_to_schema_one(
         return Utf8
     if obj is dt.date:
         return Date
-    if obj is UUID:
+    if obj in {Path, UUID}:
         return Object
     if isinstance(obj, type) and issubclass(obj, enum.Enum):
         return pl.Enum([e.name for e in obj])
