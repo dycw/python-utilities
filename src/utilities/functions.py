@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import reprlib
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass, is_dataclass
 from functools import _lru_cache_wrapper, partial, wraps
 from re import findall
@@ -497,6 +497,31 @@ def is_hashable(obj: Any, /) -> TypeGuard[Hashable]:
     return True
 
 
+@overload
+def is_iterable_of(obj: Any, cls: type[_T], /) -> TypeGuard[Iterable[_T]]: ...
+@overload
+def is_iterable_of(obj: Any, cls: tuple[type[_T1]], /) -> TypeGuard[Iterable[_T1]]: ...
+@overload
+def is_iterable_of(
+    obj: Any, cls: tuple[type[_T1], type[_T2]], /
+) -> TypeGuard[Iterable[_T1 | _T2]]: ...
+@overload
+def is_iterable_of(
+    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3]], /
+) -> TypeGuard[Iterable[_T1 | _T2 | _T3]]: ...
+@overload
+def is_iterable_of(
+    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4]], /
+) -> TypeGuard[Iterable[_T1 | _T2 | _T3 | _T4]]: ...
+@overload
+def is_iterable_of(
+    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]], /
+) -> TypeGuard[Iterable[_T1 | _T2 | _T3 | _T4 | _T5]]: ...
+def is_iterable_of(obj: Any, cls: Any, /) -> TypeGuard[Iterable[Any]]:
+    """Check if an object is a iterable of tuple or string mappings."""
+    return isinstance(obj, Iterable) and all(map(make_isinstance(cls), obj))
+
+
 def is_none(obj: Any, /) -> bool:
     """Check if an object is `None`."""
     return obj is None
@@ -529,7 +554,7 @@ def is_sequence_of(
 ) -> TypeGuard[Sequence[_T1 | _T2 | _T3 | _T4 | _T5]]: ...
 def is_sequence_of(obj: Any, cls: Any, /) -> TypeGuard[Sequence[Any]]:
     """Check if an object is a sequence of tuple or string mappings."""
-    return isinstance(obj, Sequence) and all(map(make_isinstance(cls), obj))
+    return isinstance(obj, Sequence) and is_iterable_of(obj, cls)
 
 
 def is_sequence_of_tuple_or_str_mapping(
@@ -555,7 +580,7 @@ def is_sized_not_str(obj: Any, /) -> TypeGuard[Sized]:
 
 def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
     """Check if an object is a string mapping."""
-    return isinstance(obj, dict) and all(isinstance(key, str) for key in obj)
+    return isinstance(obj, dict) and is_iterable_of(obj, str)
 
 
 def is_subclass_except_bool_int(x: type[Any], y: type[Any], /) -> bool:
@@ -691,6 +716,7 @@ __all__ = [
     "is_dataclass_class",
     "is_dataclass_instance",
     "is_hashable",
+    "is_iterable_of",
     "is_none",
     "is_not_none",
     "is_sequence_of_tuple_or_str_mapping",

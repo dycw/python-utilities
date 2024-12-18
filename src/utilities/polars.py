@@ -69,6 +69,7 @@ from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     is_dataclass_class,
     is_dataclass_instance,
+    is_iterable_of,
     make_isinstance,
 )
 from utilities.iterables import (
@@ -1060,7 +1061,7 @@ def _struct_from_dataclass_one(
     if is_dataclass_class(ann):
         return struct_from_dataclass(ann, time_zone=time_zone)
     if (isinstance(ann, type) and issubclass(ann, enum.Enum)) or (
-        is_literal_type(ann) and all(isinstance(a, str) for a in get_args(ann))
+        is_literal_type(ann) and is_iterable_of(get_args(ann), str)
     ):
         return Utf8
     if is_optional_type(ann):
@@ -1226,7 +1227,7 @@ def _yield_struct_series_element_remove_nulls(obj: Any, /) -> Any:
 def _yield_struct_series_element_is_mapping_of_str(
     obj: Any, /
 ) -> TypeGuard[Mapping[str, Any]]:
-    return isinstance(obj, Mapping) and all(isinstance(k, str) for k in obj)
+    return isinstance(obj, Mapping) and is_iterable_of(obj, str)
 
 
 @dataclass(kw_only=True, slots=True)

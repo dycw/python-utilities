@@ -62,6 +62,7 @@ from utilities.functions import (
     is_dataclass_class,
     is_dataclass_instance,
     is_hashable,
+    is_iterable_of,
     is_none,
     is_not_none,
     is_sequence_of,
@@ -535,6 +536,37 @@ class TestIsHashable:
         assert is_hashable(obj) is expected
 
 
+class TestIsIterableOf:
+    @given(
+        case=sampled_from([
+            ([0], True),
+            (["0"], False),
+            ({0}, True),
+            ({0: 0}, True),
+            (None, False),
+            ([None], False),
+        ])
+    )
+    def test_single(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
+        result = is_iterable_of(obj, int)
+        assert result is expected
+
+    @given(
+        case=sampled_from([
+            ([0], True),
+            (["0"], True),
+            ([0, "0"], True),
+            (None, False),
+            ([None], False),
+        ])
+    )
+    def test_multiple(self, *, case: tuple[Any, bool]) -> None:
+        obj, expected = case
+        result = is_iterable_of(obj, (int, str))
+        assert result is expected
+
+
 class TestIsNoneAndIsNotNone:
     @given(
         case=sampled_from([
@@ -552,7 +584,14 @@ class TestIsNoneAndIsNotNone:
 
 class TestIsSequenceOf:
     @given(
-        case=sampled_from([([0], True), (["0"], False), (None, False), ([None], False)])
+        case=sampled_from([
+            ([0], True),
+            (["0"], False),
+            ({0}, False),
+            ({0: 0}, False),
+            (None, False),
+            ([None], False),
+        ])
     )
     def test_single(self, *, case: tuple[Any, bool]) -> None:
         obj, expected = case
@@ -563,6 +602,7 @@ class TestIsSequenceOf:
         case=sampled_from([
             ([0], True),
             (["0"], True),
+            ({0}, False),
             ([0, "0"], True),
             (None, False),
             ([None], False),
