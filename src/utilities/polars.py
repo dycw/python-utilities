@@ -55,7 +55,11 @@ from polars._typing import (
     TimeUnit,
 )
 from polars.datatypes import DataType
-from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
+from polars.exceptions import (
+    ColumnNotFoundError,
+    OutOfBoundsError,
+    PolarsInefficientMapWarning,
+)
 from polars.testing import assert_frame_equal
 from typing_extensions import override
 
@@ -101,6 +105,7 @@ from utilities.typing import (
     is_optional_type,
     is_set_type,
 )
+from utilities.warnings import suppress_warnings
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
@@ -556,10 +561,10 @@ class _DataClassToDataFrameNonUniqueError(DataClassToDataFrameError):
 
 
 def _dataclass_to_dataframe_uuid(series: Series, /) -> Series:
-    if (series.dtype == Object) and series.map_elements(
-        make_isinstance(UUID), return_dtype=Boolean
-    ).all():
-        return series.map_elements(str, return_dtype=Utf8)
+    if series.dtype == Object:
+        with suppress_warnings(category=PolarsInefficientMapWarning):
+            if series.map_elements(make_isinstance(UUID), return_dtype=Boolean).all():
+                return series.map_elements(str, return_dtype=Utf8)
     return series
 
 
