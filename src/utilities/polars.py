@@ -568,6 +568,9 @@ def _dataclass_to_dataframe_uuid(series: Series, /) -> Series:
         if is_path or is_uuid:
             with suppress_warnings(category=PolarsInefficientMapWarning):
                 return series.map_elements(str, return_dtype=Utf8)
+        else:  # pragma: no cover
+            msg = f"{is_path=}, f{is_uuid=}"
+            raise NotImplementedError(msg)
     return series
 
 
