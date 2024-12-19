@@ -81,9 +81,7 @@ def parse_enum(
     by_value = _parse_enum_one(value, enum, "values", case_sensitive=case_sensitive)
     if (by_name is None) and (by_value is None):
         raise _ParseEnumStrEnumEmptyError(
-            value=value,
-            enum=enum,
-            case_sensitive=case_sensitive,
+            value=value, enum=enum, case_sensitive=case_sensitive
         )
     if (by_name is not None) and (by_value is None):
         return by_name

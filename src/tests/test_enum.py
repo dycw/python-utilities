@@ -3,9 +3,9 @@ from __future__ import annotations
 from enum import Enum, StrEnum, auto
 from typing import TYPE_CHECKING, Literal
 
-from hypothesis import given, reproduce_failure
+from hypothesis import given
 from hypothesis.strategies import DataObject, data, sampled_from
-from pytest import mark, param, raises
+from pytest import raises
 
 from utilities.enum import (
     _EnsureEnumParseError,
@@ -47,10 +47,7 @@ class TestParseEnum:
             false = auto()
 
         input_, expected = data.draw(
-            sampled_from([
-                ("true", Truth.true),
-                ("false", Truth.false),
-            ])
+            sampled_from([("true", Truth.true), ("false", Truth.false)])
         )
         result = parse_enum(input_, Truth, case_sensitive=True)
         assert result is expected
@@ -105,20 +102,19 @@ class TestParseEnum:
         ):
             _ = parse_enum("invalid", Truth)
 
-    @given(data=data())
+    @given(input_=sampled_from(["x", "X"]))
     def test_error_generic_enum_case_insensitive_non_unique(
-        self, *, data: DataObject
+        self, *, input_: Literal["x", "X"]
     ) -> None:
         class Example(Enum):
             x = auto()
             X = auto()
 
-        member = data.draw(sampled_from(Example))
         with raises(
             _ParseEnumByKindNonUniqueError,
             match=r"^Enum 'Example' member names must contain '[xX]' exactly once \(modulo case\); got 'x', 'X' and perhaps more",
         ):
-            _ = parse_enum(member.name, Example)
+            _ = parse_enum(input_, Example)
 
     def test_error_generic_enum_case_sensitive_empty(self) -> None:
         class Truth(Enum):
@@ -143,8 +139,6 @@ class TestParseEnum:
             _ = parse_enum("invalid", Truth)
 
     @given(data=data(), input_=sampled_from(["true", "false"]))
-    @reproduce_failure("6.122.3", b"AAAB")
-    @mark.only
     def test_error_str_enum_case_insensitive_non_unique(
         self, *, data: DataObject, input_: Literal["true", "false"]
     ) -> None:
@@ -155,7 +149,7 @@ class TestParseEnum:
         input_use = data.draw(sampled_from([input_, input_.upper()]))
         with raises(
             _ParseEnumStrEnumNonUniqueError,
-            match=r"^StrEnum 'Truth' member names and values must contain '(true|false)' exactly once \(modulo case\); got '(true|false)' by name and '(true|false)' by value",
+            match=r"^StrEnum 'Truth' member names and values must contain '(true|false|TRUE|FALSE)' exactly once \(modulo case\); got '(true|false)' by name and '(true|false)' by value",
         ):
             _ = parse_enum(input_use, Truth)
 
@@ -170,42 +164,19 @@ class TestParseEnum:
         ):
             _ = parse_enum("invalid", Truth, case_sensitive=True)
 
-    @given(data=data())
+    @given(input_=sampled_from(["true", "false"]))
     def test_error_str_enum_case_sensitive_non_unique(
-        self, *, data: DataObject
+        self, *, input_: Literal["true", "false"]
     ) -> None:
         class Truth(StrEnum):
             true = "false"
             false = "true"
 
-        member = data.draw(sampled_from(Truth))
         with raises(
             _ParseEnumStrEnumNonUniqueError,
-            match=r"^StrEnum 'Truth' member names and values must contain '.*' exactly once; got '.*' by name and '.*' by value",
+            match=r"^StrEnum 'Truth' member names and values must contain '(true|false)' exactly once; got '(true|false)' by name and '(true|false)' by value",
         ):
-            _ = parse_enum(member.name, Truth, case_sensitive=True)
-
-    def test_str_enum_error_ambiguous(self) -> None:
-        class Truth(StrEnum):
-            true_or_false = "true"
-            false = "TRUE_OR_FALSE"
-
-        with raises(
-            ParseEnumError,
-            match=r"StrEnum .* contains 'true_or_false' in both its keys and values \(case insensitive\)",
-        ):
-            _ = parse_enum("true_or_false", Truth)
-
-    def test_str_enum_error_case_sensitive_ambiguous(self) -> None:
-        class Truth(StrEnum):
-            true_or_false = "true"
-            false = "true_or_false"
-
-        with raises(
-            ParseEnumError,
-            match=r"StrEnum .* contains 'true_or_false' in both its keys and values \(case sensitive\)",
-        ):
-            _ = parse_enum("true_or_false", Truth, case_sensitive=True)
+            _ = parse_enum(input_, Truth, case_sensitive=True)
 
     @given(data=data())
     def test_ensure(self, *, data: DataObject) -> None:
