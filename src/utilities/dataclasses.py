@@ -11,12 +11,7 @@ from utilities.functions import (
     is_dataclass_class,
     is_dataclass_instance,
 )
-from utilities.iterables import (
-    _OneStrCaseInsensitiveBijectionError,
-    _OneStrCaseInsensitiveEmptyError,
-    _OneStrCaseSensitiveEmptyError,
-    one_str,
-)
+from utilities.iterables import _OneStrEmptyError, _OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
@@ -102,17 +97,13 @@ def _mapping_to_dataclass_one(
 ) -> Any:
     try:
         key = one_str(mapping, field.name, case_sensitive=case_sensitive)
-    except _OneStrCaseSensitiveEmptyError:
-        raise _MappingToDataclassCaseSensitiveEmptyError(
-            mapping=mapping, field=field.name
+    except _OneStrEmptyError:
+        raise _MappingToDataclassEmptyError(
+            mapping=mapping, field=field.name, case_sensitive=case_sensitive
         ) from None
-    except _OneStrCaseInsensitiveBijectionError as error:
-        raise _MappingToDataclassCaseInsensitiveBijectionError(
-            mapping=mapping, field=field.name, counts=error.counts
-        ) from None
-    except _OneStrCaseInsensitiveEmptyError:
-        raise _MappingToDataclassCaseInsensitiveEmptyError(
-            mapping=mapping, field=field.name
+    except _OneStrNonUniqueError as error:
+        raise _MappingToDataclassCaseInsensitiveNonUniqueError(
+            mapping=mapping, field=field.name, first=error.first, second=error.second
         ) from None
     value = mapping[key]
     if post is not None:
@@ -127,26 +118,25 @@ class MappingToDataclassError(Exception):
 
 
 @dataclass(kw_only=True, slots=True)
-class _MappingToDataclassCaseSensitiveEmptyError(MappingToDataclassError):
+class _MappingToDataclassEmptyError(MappingToDataclassError):
+    case_sensitive: bool = True
+
     @override
     def __str__(self) -> str:
-        return f"Mapping {get_repr(self.mapping)} does not contain {self.field!r}"
+        desc = f"Mapping {get_repr(self.mapping)} does not contain {self.field!r}"
+        if not self.case_sensitive:
+            desc += " (modulo case)"
+        return desc
 
 
 @dataclass(kw_only=True, slots=True)
-class _MappingToDataclassCaseInsensitiveBijectionError(MappingToDataclassError):
-    counts: Mapping[str, int]
+class _MappingToDataclassCaseInsensitiveNonUniqueError(MappingToDataclassError):
+    first: str
+    second: str
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {get_repr(self.mapping)} must not contain duplicates of {self.field!r} (case insensitive); got {get_repr(self.counts)}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _MappingToDataclassCaseInsensitiveEmptyError(MappingToDataclassError):
-    @override
-    def __str__(self) -> str:
-        return f"Mapping {get_repr(self.mapping)} does not contain {self.field!r} (case insensitive)"
+        return f"Mapping {get_repr(self.mapping)} must contain {self.field!r} exactly once (modulo case); got {self.first!r}, {self.second!r} and perhaps more"
 
 
 ##

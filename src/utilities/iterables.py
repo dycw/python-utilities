@@ -878,7 +878,7 @@ def _merge_str_mappings_one(
     for key_add, value in el.items():
         try:
             key_del = one_str(out, key_add, case_sensitive=False)
-        except _OneStrCaseInsensitiveEmptyError:
+        except _OneStrEmptyError:
             pass
         else:
             del out[key_del]
@@ -984,67 +984,58 @@ def one_str(
 ) -> str:
     """Find the unique string in an iterable."""
     as_list = list(iterable)
-    try:
-        check_duplicates(as_list)
-    except CheckDuplicatesError as error:
-        raise _OneStrDuplicatesError(
-            iterable=iterable, text=text, counts=error.counts
-        ) from None
     if case_sensitive:
-        try:
-            return one(t for t in as_list if t == text)
-        except OneEmptyError:
-            raise _OneStrCaseSensitiveEmptyError(iterable=iterable, text=text) from None
-    mapping = {t: t.casefold() for t in as_list}
+        it = (t for t in as_list if t == text)
+    else:
+        it = (t for t in as_list if t.lower() == text.lower())
     try:
-        check_bijection(mapping)
-    except CheckBijectionError as error:
-        error = cast(CheckBijectionError[str], error)
-        raise _OneStrCaseInsensitiveBijectionError(
-            iterable=iterable, text=text, counts=error.counts
-        ) from None
-    try:
-        return one(k for k, v in mapping.items() if v == text.casefold())
+        return one(it)
     except OneEmptyError:
-        raise _OneStrCaseInsensitiveEmptyError(iterable=iterable, text=text) from None
+        raise _OneStrEmptyError(
+            iterable=as_list, text=text, case_sensitive=case_sensitive
+        ) from None
+    except OneNonUniqueError as error:
+        raise _OneStrNonUniqueError(
+            iterable=as_list,
+            text=text,
+            case_sensitive=case_sensitive,
+            first=error.first,
+            second=error.second,
+        ) from None
 
 
 @dataclass(kw_only=True, slots=True)
 class OneStrError(Exception):
     iterable: Iterable[str]
     text: str
+    case_sensitive: bool = True
 
 
 @dataclass(kw_only=True, slots=True)
-class _OneStrDuplicatesError(OneStrError):
-    counts: Mapping[str, int]
-
+class _OneStrEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} must not contain duplicates; got {get_repr(self.counts)}"
+        desc = f"Iterable {get_repr(self.iterable)} does not contain {self.text!r}"
+        if not self.case_sensitive:
+            desc += " (modulo case)"
+        return desc
 
 
 @dataclass(kw_only=True, slots=True)
-class _OneStrCaseSensitiveEmptyError(OneStrError):
-    @override
-    def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} does not contain {self.text!r}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _OneStrCaseInsensitiveBijectionError(OneStrError):
-    counts: Mapping[str, int]
+class _OneStrNonUniqueError(OneStrError):
+    first: str
+    second: str
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} must not contain duplicates (modulo case); got {get_repr(self.counts)}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _OneStrCaseInsensitiveEmptyError(OneStrError):
-    @override
-    def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} does not contain {self.text!r} (modulo case)"
+        desc = f"Iterable {get_repr(self.iterable)} must contain {self.text!r} exactly once"
+        match self.case_sensitive:
+            case True:
+                return f"{desc}; got at least 2 instances"
+            case False:
+                return f"{desc} (modulo case); got {self.first!r}, {self.second!r} and perhaps more"
+            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                assert_never(never)
 
 
 def pairwise_tail(iterable: Iterable[_T], /) -> Iterator[tuple[_T, _T | Sentinel]]:

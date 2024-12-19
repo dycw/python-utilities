@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from enum import Enum, auto
+from re import DOTALL
 from typing import TYPE_CHECKING, Literal
 
 from hypothesis import given
@@ -250,7 +252,10 @@ class TestLoadSettings:
 
         with raises(
             _LoadSettingsDuplicateKeysError,
-            match=r"Mapping .* keys must not contain duplicates \(modulo case\); got .*",
+            match=re.compile(
+                r"Mapping .* keys must not contain duplicates \(modulo case\); got .*",
+                flags=DOTALL,
+            ),
         ):
             _ = load_settings(Settings, cwd=root)
 
