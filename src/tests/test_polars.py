@@ -113,6 +113,7 @@ from utilities.polars import (
     set_first_row_as_columns,
     struct_dtype,
     struct_from_dataclass,
+    unique_element,
     yield_rows_as_dataclasses,
     yield_struct_series_dataclasses,
     yield_struct_series_elements,
@@ -243,27 +244,29 @@ class TestAreFramesEqual:
 class TestCeilDatetime:
     start: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC)
     end: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC)
-    expected: ClassVar[Series] = Series([
-        dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-    ])
+    expected: ClassVar[Series] = Series(
+        values=[
+            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+        ]
+    )
 
     def test_expr(self) -> None:
         data = datetime_range(self.start, self.end, interval="10s")
@@ -306,11 +309,11 @@ class TestCheckPolarsDataFrame:
             check_polars_dataframe(df, dtypes=[Float64])
 
     def test_height_pass(self) -> None:
-        df = DataFrame({"value": [0.0]})
+        df = DataFrame(data={"value": [0.0]})
         check_polars_dataframe(df, height=1)
 
     def test_height_error(self) -> None:
-        df = DataFrame({"value": [0.0]})
+        df = DataFrame(data={"value": [0.0]})
         with raises(
             _CheckPolarsDataFrameHeightError,
             match="DataFrame must satisfy the height requirements; got .*:\n\n.*",
@@ -318,7 +321,7 @@ class TestCheckPolarsDataFrame:
             check_polars_dataframe(df, height=2)
 
     def test_min_height_pass(self) -> None:
-        df = DataFrame({"value": [0.0, 1.0]})
+        df = DataFrame(data={"value": [0.0, 1.0]})
         check_polars_dataframe(df, min_height=1)
 
     def test_min_height_error(self) -> None:
@@ -334,7 +337,7 @@ class TestCheckPolarsDataFrame:
         check_polars_dataframe(df, max_height=1)
 
     def test_max_height_error(self) -> None:
-        df = DataFrame({"value": [0.0, 1.0]})
+        df = DataFrame(data={"value": [0.0, 1.0]})
         with raises(
             _CheckPolarsDataFrameHeightError,
             match="DataFrame must satisfy the height requirements; got .*:\n\n.*",
@@ -342,11 +345,11 @@ class TestCheckPolarsDataFrame:
             check_polars_dataframe(df, max_height=1)
 
     def test_predicates_pass(self) -> None:
-        df = DataFrame({"value": [0.0, 1.0]})
+        df = DataFrame(data={"value": [0.0, 1.0]})
         check_polars_dataframe(df, predicates={"value": isfinite})
 
     def test_predicates_error_missing_columns_and_failed(self) -> None:
-        df = DataFrame({"a": [0.0, nan], "b": [0.0, nan]})
+        df = DataFrame(data={"a": [0.0, nan], "b": [0.0, nan]})
         with raises(
             _CheckPolarsDataFramePredicatesError,
             match="DataFrame must satisfy the predicates; missing columns were .* and failed predicates were .*:\n\n.*",
@@ -362,7 +365,7 @@ class TestCheckPolarsDataFrame:
             check_polars_dataframe(df, predicates={"a": isfinite})
 
     def test_predicates_error_failed_only(self) -> None:
-        df = DataFrame({"a": [0.0, nan]})
+        df = DataFrame(data={"a": [0.0, nan]})
         with raises(
             _CheckPolarsDataFramePredicatesError,
             match="DataFrame must satisfy the predicates; failed predicates were .*:\n\n.*",
@@ -402,11 +405,11 @@ class TestCheckPolarsDataFrame:
             check_polars_dataframe(df, schema_set={"value": Float64})
 
     def test_schema_subset_pass(self) -> None:
-        df = DataFrame({"foo": [0.0], "bar": [0.0]})
+        df = DataFrame(data={"foo": [0.0], "bar": [0.0]})
         check_polars_dataframe(df, schema_subset={"foo": Float64})
 
     def test_schema_subset_error(self) -> None:
-        df = DataFrame({"foo": [0.0]})
+        df = DataFrame(data={"foo": [0.0]})
         with raises(
             _CheckPolarsDataFrameSchemaSubsetError,
             match=r"DataFrame schema must include .* \(unordered\); got .*:\n\n.*",
@@ -426,11 +429,11 @@ class TestCheckPolarsDataFrame:
             check_polars_dataframe(df, shape=(1, 1))
 
     def test_sorted_pass(self) -> None:
-        df = DataFrame({"value": [0.0, 1.0]})
+        df = DataFrame(data={"value": [0.0, 1.0]})
         check_polars_dataframe(df, sorted="value")
 
     def test_sorted_error(self) -> None:
-        df = DataFrame({"value": [1.0, 0.0]})
+        df = DataFrame(data={"value": [1.0, 0.0]})
         with raises(
             _CheckPolarsDataFrameSortedError,
             match="DataFrame must be sorted on .*:\n\n.*",
@@ -438,11 +441,11 @@ class TestCheckPolarsDataFrame:
             check_polars_dataframe(df, sorted="value")
 
     def test_unique_pass(self) -> None:
-        df = DataFrame({"value": [0.0, 1.0]})
+        df = DataFrame(data={"value": [0.0, 1.0]})
         check_polars_dataframe(df, unique="value")
 
     def test_unique_error(self) -> None:
-        df = DataFrame({"value": [0.0, 0.0]})
+        df = DataFrame(data={"value": [0.0, 0.0]})
         with raises(
             _CheckPolarsDataFrameUniqueError,
             match="DataFrame must be unique on .*:\n\n.*",
@@ -464,7 +467,7 @@ class TestCheckPolarsDataFrame:
 
 class TestCheckPolarsDataFramePredicates:
     def test_pass(self) -> None:
-        df = DataFrame({"value": [0.0, 1.0]})
+        df = DataFrame(data={"value": [0.0, 1.0]})
         _check_polars_dataframe_predicates(df, {"value": isfinite})
 
     @given(
@@ -474,7 +477,7 @@ class TestCheckPolarsDataFramePredicates:
         ])
     )
     def test_error(self, *, predicates: Mapping[str, Callable[[Any], bool]]) -> None:
-        df = DataFrame({"value": [0.0, nan]})
+        df = DataFrame(data={"value": [0.0, nan]})
         with raises(
             _CheckPolarsDataFramePredicatesError,
             match="DataFrame must satisfy the predicates; (missing columns|failed predicates) were .*:\n\n.*",
@@ -484,7 +487,7 @@ class TestCheckPolarsDataFramePredicates:
 
 class TestCheckPolarsDataFrameSchemaList:
     def test_pass(self) -> None:
-        df = DataFrame({"value": [0.0]})
+        df = DataFrame(data={"value": [0.0]})
         _check_polars_dataframe_schema_list(df, {"value": Float64})
 
     def test_error(self) -> None:
@@ -498,7 +501,7 @@ class TestCheckPolarsDataFrameSchemaList:
 
 class TestCheckPolarsDataFrameSchemaSet:
     def test_pass(self) -> None:
-        df = DataFrame({"foo": [0.0], "bar": [0.0]})
+        df = DataFrame(data={"foo": [0.0], "bar": [0.0]})
         _check_polars_dataframe_schema_set(df, {"bar": Float64, "foo": Float64})
 
     def test_error(self) -> None:
@@ -512,7 +515,7 @@ class TestCheckPolarsDataFrameSchemaSet:
 
 class TestCheckPolarsDataFrameSchemaSubset:
     def test_pass(self) -> None:
-        df = DataFrame({"foo": [0.0], "bar": [0.0]})
+        df = DataFrame(data={"foo": [0.0], "bar": [0.0]})
         _check_polars_dataframe_schema_subset(df, {"foo": Float64})
 
     @given(
@@ -522,7 +525,7 @@ class TestCheckPolarsDataFrameSchemaSubset:
         ])
     )
     def test_error(self, *, schema_inc: SchemaDict) -> None:
-        df = DataFrame({"foo": [0.0]})
+        df = DataFrame(data={"foo": [0.0]})
         with raises(
             _CheckPolarsDataFrameSchemaSubsetError,
             match=r"DataFrame schema must include .* \(unordered\); got .*:\n\n.*",
@@ -541,7 +544,7 @@ class TestCollectSeries:
 class TestColumnsToDict:
     def test_main(self) -> None:
         df = DataFrame(
-            [{"a": 1, "b": 11}, {"a": 2, "b": 12}, {"a": 3, "b": 13}],
+            data=[{"a": 1, "b": 11}, {"a": 2, "b": 12}, {"a": 3, "b": 13}],
             schema={"a": Int64, "b": Int64},
         )
         mapping = columns_to_dict(df, "a", "b")
@@ -549,7 +552,7 @@ class TestColumnsToDict:
 
     def test_error(self) -> None:
         df = DataFrame(
-            [{"a": 1, "b": 11}, {"a": 2, "b": 12}, {"a": 1, "b": 13}],
+            data=[{"a": 1, "b": 11}, {"a": 2, "b": 12}, {"a": 1, "b": 13}],
             schema={"a": Int64, "b": Int64},
         )
         with raises(ColumnsToDictError, match="DataFrame must be unique on 'a':\n\n.*"):
@@ -932,27 +935,29 @@ class TestEnsureExprOrSeries:
 class TestFloorDatetime:
     start: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC)
     end: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC)
-    expected: ClassVar[Series] = Series([
-        dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-        dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-    ])
+    expected: ClassVar[Series] = Series(
+        values=[
+            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+        ]
+    )
 
     def test_expr(self) -> None:
         data = datetime_range(self.start, self.end, interval="10s")
@@ -1016,7 +1021,7 @@ class TestIsNullAndIsNotNullStructSeries:
             dtype=Struct({"a": Boolean, "b": Boolean}),
         )
         result = func(series)
-        expected = Series(exp_values, dtype=Boolean)
+        expected = Series(values=exp_values, dtype=Boolean)
         assert_series_equal(result, expected)
 
     @mark.parametrize(
@@ -1043,7 +1048,7 @@ class TestIsNullAndIsNotNullStructSeries:
             }),
         )
         result = func(series)
-        expected = Series(exp_values, dtype=Boolean)
+        expected = Series(values=exp_values, dtype=Boolean)
         assert_series_equal(result, expected)
 
     @mark.parametrize(
@@ -1063,11 +1068,11 @@ class TestIsNullAndIsNotNullStructSeries:
 
 class TestJoin:
     def test_main(self) -> None:
-        df1 = DataFrame([{"a": 1, "b": 2}], schema={"a": Int64, "b": Int64})
-        df2 = DataFrame([{"a": 1, "c": 3}], schema={"a": Int64, "c": Int64})
+        df1 = DataFrame(data=[{"a": 1, "b": 2}], schema={"a": Int64, "b": Int64})
+        df2 = DataFrame(data=[{"a": 1, "c": 3}], schema={"a": Int64, "c": Int64})
         result = join(df1, df2, on="a")
         expected = DataFrame(
-            [{"a": 1, "b": 2, "c": 3}], schema={"a": Int64, "b": Int64, "c": Int64}
+            data=[{"a": 1, "b": 2, "c": 3}], schema={"a": Int64, "b": Int64, "c": Int64}
         )
         assert_frame_equal(result, expected)
 
@@ -1209,7 +1214,7 @@ class TestNanSumCols:
         x_use = "x" if x_kind == "str" else col("x")
         y_use = "y" if y_kind == "str" else col("y")
         df = DataFrame(
-            [(x, y)], schema={"x": Int64, "y": Int64}, orient="row"
+            data=[(x, y)], schema={"x": Int64, "y": Int64}, orient="row"
         ).with_columns(z=nan_sum_cols(x_use, y_use))
         assert df["z"].item() == expected
 
@@ -1309,13 +1314,13 @@ class TestSetFirstRowAsColumns:
             _ = set_first_row_as_columns(df)
 
     def test_one_row(self) -> None:
-        df = DataFrame(["value"])
+        df = DataFrame(data=["value"])
         check_polars_dataframe(df, height=1, schema_list={"column_0": Utf8})
         result = set_first_row_as_columns(df)
         check_polars_dataframe(result, height=0, schema_list={"value": Utf8})
 
     def test_multiple_rows(self) -> None:
-        df = DataFrame(["foo", "bar", "baz"])
+        df = DataFrame(data=["foo", "bar", "baz"])
         check_polars_dataframe(df, height=3, schema_list={"column_0": Utf8})
         result = set_first_row_as_columns(df)
         check_polars_dataframe(result, height=2, schema_list={"foo": Utf8})
@@ -1470,10 +1475,21 @@ class TestStructFromDataClass:
             _ = struct_from_dataclass(Example)
 
 
+class TestUniqueElement:
+    def test_main(self) -> None:
+        df = DataFrame(
+            data=[([],), ([1],), ([1, 2],), ([1, 2, 3],)],
+            schema={"x": List(Int64)},
+            orient="row",
+        ).with_columns(y=unique_element("x"))
+        expected = Series(name="y", values=[None, 1, None, None], dtype=Int64)
+        assert_series_equal(df["y"], expected)
+
+
 class TestYieldRowsAsDataclasses:
     @given(check_types=sampled_from(["none", "first", "all"]))
     def test_main(self, *, check_types: Literal["none", "first", "all"]) -> None:
-        df = DataFrame([(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
+        df = DataFrame(data=[(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
 
         @dataclass(kw_only=True, slots=True)
         class Row:
@@ -1484,7 +1500,7 @@ class TestYieldRowsAsDataclasses:
         assert result == expected
 
     def test_none(self) -> None:
-        df = DataFrame([(1,), (2,), (3,)], schema={"x": int}, orient="row")
+        df = DataFrame(data=[(1,), (2,), (3,)], schema={"x": int}, orient="row")
 
         @dataclass(kw_only=True, slots=True)
         class Row:
@@ -1495,7 +1511,7 @@ class TestYieldRowsAsDataclasses:
         assert result == expected
 
     def test_first(self) -> None:
-        df = DataFrame([(1,), (None,), (None,)], schema={"x": int}, orient="row")
+        df = DataFrame(data=[(1,), (None,), (None,)], schema={"x": int}, orient="row")
 
         @dataclass(kw_only=True, slots=True)
         class Row:
@@ -1509,7 +1525,7 @@ class TestYieldRowsAsDataclasses:
     def test_missing_columns_for_fields_with_defaults(
         self, *, check_types: Literal["none", "first", "all"]
     ) -> None:
-        df = DataFrame([(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
+        df = DataFrame(data=[(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
 
         @dataclass(kw_only=True, slots=True)
         class Row:
@@ -1523,7 +1539,7 @@ class TestYieldRowsAsDataclasses:
     @given(check_types=sampled_from(["none", "first", "all"]))
     def test_literal(self, *, check_types: Literal["none", "first", "all"]) -> None:
         df = DataFrame(
-            [("true",), ("false",), ("true",)], schema={"x": Utf8}, orient="row"
+            data=[("true",), ("false",), ("true",)], schema={"x": Utf8}, orient="row"
         )
 
         @dataclass(kw_only=True, slots=True)
@@ -1539,7 +1555,7 @@ class TestYieldRowsAsDataclasses:
         self, *, check_types: Literal["none", "first", "all"]
     ) -> None:
         df = DataFrame(
-            [("true",), ("false",), (None,)], schema={"x": Utf8}, orient="row"
+            data=[("true",), ("false",), (None,)], schema={"x": Utf8}, orient="row"
         )
 
         @dataclass(kw_only=True, slots=True)
@@ -1555,7 +1571,7 @@ class TestYieldRowsAsDataclasses:
         self, *, check_types: Literal["none", "first", "all"]
     ) -> None:
         df = DataFrame(
-            [("true",), ("false",), ("true",)], schema={"x": Utf8}, orient="row"
+            data=[("true",), ("false",), ("true",)], schema={"x": Utf8}, orient="row"
         )
 
         @dataclass(kw_only=True, slots=True)
@@ -1575,7 +1591,7 @@ class TestYieldRowsAsDataclasses:
         self, *, check_types: Literal["none", "first", "all"]
     ) -> None:
         df = DataFrame(
-            [("true",), ("false",), (None,)], schema={"x": Utf8}, orient="row"
+            data=[("true",), ("false",), (None,)], schema={"x": Utf8}, orient="row"
         )
 
         @dataclass(kw_only=True, slots=True)
@@ -1592,7 +1608,7 @@ class TestYieldRowsAsDataclasses:
 
     @given(check_types=sampled_from(["none", "first", "all"]))
     def test_empty(self, *, check_types: Literal["none", "first", "all"]) -> None:
-        df = DataFrame([], schema={"x": Int64}, orient="row")
+        df = DataFrame(data=[], schema={"x": Int64}, orient="row")
 
         @dataclass(kw_only=True, slots=True)
         class Row:
@@ -1606,7 +1622,7 @@ class TestYieldRowsAsDataclasses:
     def test_error_superset(
         self, *, check_types: Literal["none", "first", "all"]
     ) -> None:
-        df = DataFrame([(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
+        df = DataFrame(data=[(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
 
         @dataclass(kw_only=True, slots=True)
         class Row:
@@ -1622,7 +1638,7 @@ class TestYieldRowsAsDataclasses:
     def test_error_first_or_all_wrong_type(
         self, *, check_types: Literal["first", "all"]
     ) -> None:
-        df = DataFrame([(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
+        df = DataFrame(data=[(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
 
         @dataclass(kw_only=True, slots=True)
         class Row:
@@ -1635,7 +1651,7 @@ class TestYieldRowsAsDataclasses:
             _ = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
 
     def test_error_all_wrong_type(self) -> None:
-        df = DataFrame([(1,), (None,), (3,)], schema={"x": Int64}, orient="row")
+        df = DataFrame(data=[(1,), (None,), (3,)], schema={"x": Int64}, orient="row")
 
         @dataclass(kw_only=True, slots=True)
         class Row:

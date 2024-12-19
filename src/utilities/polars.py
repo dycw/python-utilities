@@ -16,6 +16,7 @@ from typing import (
     Any,
     Generic,
     Literal,
+    TypeAlias,
     TypeGuard,
     TypeVar,
     assert_never,
@@ -122,6 +123,7 @@ DatetimeTokyo = Datetime(time_zone="Asia/Tokyo")
 DatetimeUSCentral = Datetime(time_zone="US/Central")
 DatetimeUSEastern = Datetime(time_zone="US/Eastern")
 DatetimeUTC = Datetime(time_zone="UTC")
+ExprLike: TypeAlias = Expr | str
 
 
 ##
@@ -190,10 +192,10 @@ def are_frames_equal(
 
 
 @overload
-def ceil_datetime(column: Expr | str, every: Expr | str, /) -> Expr: ...
+def ceil_datetime(column: ExprLike, every: ExprLike, /) -> Expr: ...
 @overload
-def ceil_datetime(column: Series, every: Expr | str, /) -> Series: ...
-def ceil_datetime(column: IntoExprColumn, every: Expr | str, /) -> Expr | Series:
+def ceil_datetime(column: Series, every: ExprLike, /) -> Series: ...
+def ceil_datetime(column: IntoExprColumn, every: ExprLike, /) -> Expr | Series:
     """Compute the `ceil` of a datetime column."""
     column = ensure_expr_or_series(column)
     rounded = column.dt.round(every)
@@ -701,7 +703,7 @@ class DropNullStructSeriesError(Exception):
 
 
 @overload
-def ensure_expr_or_series(column: Expr | str, /) -> Expr: ...
+def ensure_expr_or_series(column: ExprLike, /) -> Expr: ...
 @overload
 def ensure_expr_or_series(column: Series, /) -> Series: ...
 def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
@@ -713,10 +715,10 @@ def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
 
 
 @overload
-def floor_datetime(column: Expr | str, every: Expr | str, /) -> Expr: ...
+def floor_datetime(column: ExprLike, every: ExprLike, /) -> Expr: ...
 @overload
-def floor_datetime(column: Series, every: Expr | str, /) -> Series: ...
-def floor_datetime(column: IntoExprColumn, every: Expr | str, /) -> Expr | Series:
+def floor_datetime(column: Series, every: ExprLike, /) -> Series: ...
+def floor_datetime(column: IntoExprColumn, every: ExprLike, /) -> Expr | Series:
     """Compute the `floor` of a datetime column."""
     column = ensure_expr_or_series(column)
     rounded = column.dt.round(every)
@@ -1175,10 +1177,10 @@ class _StructFromDataClassTypeError(StructFromDataClassError):
 ##
 
 
-def unique_element(column: str, /) -> Expr:
+def unique_element(column: ExprLike, /) -> Expr:
     """Get the unique element in a list."""
-    c = col(column)
-    return when(c.list.len() == 1).then(c.list.first())
+    column = ensure_expr_or_series(column)
+    return when(column.list.len() == 1).then(column.list.first())
 
 
 ##
@@ -1431,6 +1433,7 @@ __all__ = [
     "set_first_row_as_columns",
     "struct_dtype",
     "struct_from_dataclass",
+    "unique_element",
     "yield_rows_as_dataclasses",
     "yield_struct_series_dataclasses",
     "yield_struct_series_elements",
