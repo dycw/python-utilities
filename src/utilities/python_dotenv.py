@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from functools import partial
 from os import environ
 from re import IGNORECASE, search
 from typing import TYPE_CHECKING, Any, TypeVar
@@ -9,21 +10,23 @@ from typing import TYPE_CHECKING, Any, TypeVar
 from dotenv import dotenv_values
 from typing_extensions import override
 
-from utilities.dataclasses import yield_fields
+from utilities.dataclasses import (
+    _MappingToDataclassCaseInsensitiveBijectionError,
+    _MappingToDataclassCaseSensitiveEmptyError,
+    _YieldFieldsClass,
+    mapping_to_dataclass,
+)
 from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import get_class_name
 from utilities.git import get_repo_root
-from utilities.iterables import (
-    _OneStrCaseInsensitiveBijectionError,
-    _OneStrCaseInsensitiveEmptyError,
-    one_str,
-)
+from utilities.iterables import merge_str_mappings, one_str
 from utilities.pathlib import PWD
+from utilities.reprlib import get_repr
 from utilities.types import Dataclass
-from utilities.typing import get_args, get_type_hints, is_literal_type
+from utilities.typing import get_args, is_literal_type
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping
+    from collections.abc import Mapping
     from pathlib import Path
 
     from utilities.types import PathLike, StrMapping
@@ -43,53 +46,60 @@ def load_settings(
     path = get_repo_root(cwd=cwd).joinpath(".env")
     if not path.exists():
         raise _LoadSettingsFileNotFoundError(path=path) from None
-    maybe_values = {**dotenv_values(path), **environ}
+    maybe_values = merge_str_mappings(
+        dotenv_values(path), environ, case_sensitive=False
+    )
     values = {k: v for k, v in maybe_values.items() if v is not None}
-    return cls(**dict(yield_items()))
+    try:
+        return mapping_to_dataclass(
+            cls,
+            values,
+            globalns=globalns,
+            localns=localns,
+            case_sensitive=False,
+            post=partial(_load_settings_post, path=path, values=values),
+        )
+    except _MappingToDataclassCaseSensitiveEmptyError as error:
+        raise _LoadSettingsEmptyError(
+            path=path, values=error.mapping, field=error.field
+        ) from None
+    except _MappingToDataclassCaseInsensitiveBijectionError as error:
+        raise _LoadSettingsNonUniqueError(
+            path=path, values=error.mapping, field=error.field, counts=error.counts
+        ) from None
 
 
-def _load_settings_yield_items() -> Iterator[tuple[str, Any]]:
-    for field in yield_fields(cls, globalns=globalns, localns=localns):
-        field.type_
+def _load_settings_post(
+    field: _YieldFieldsClass[Any], value: Any, /, *, path: Path, values: StrMapping
+) -> Any:
+    type_ = field.type_
+    if type_ is str:
+        return value
+    if type_ is bool:
+        if value == "0" or search("false", value, flags=IGNORECASE):
+            return False
+        if value == "1" or search("true", value, flags=IGNORECASE):
+            return True
+        raise _LoadSettingsInvalidBoolError(
+            path=path, values=values, field=field.name, value=value
+        )
+    if type_ is int:
         try:
-            key = one_str(values, field.name, case_sensitive=False)
-        except _OneStrCaseInsensitiveEmptyError:
-            raise _LoadSettingsEmptyError(path=path, field=field.name) from None
-        except _OneStrCaseInsensitiveBijectionError as error:
-            raise _LoadSettingsNonUniqueError(
-                path=path, field=field.name, counts=error.counts
+            return int(value)
+        except ValueError:
+            raise _LoadSettingsInvalidIntError(
+                path=path, values=values, field=field.name, value=value
             ) from None
-        raw_value = values[key]
-        if field.type_ is str:
-            value = raw_value
-        elif field.type_ is bool:
-            if raw_value == "0" or search("false", raw_value, flags=IGNORECASE):
-                value = False
-            elif raw_value == "1" or search("true", raw_value, flags=IGNORECASE):
-                value = True
-            else:
-                raise _LoadSettingsInvalidBoolError(
-                    path=path, field=field.name, value=raw_value
-                )
-        elif field.type_ is int:
-            try:
-                value = int(raw_value)
-            except ValueError:
-                raise _LoadSettingsInvalidIntError(
-                    path=path, field=field.name, value=raw_value
-                ) from None
-        elif isinstance(field.type_, type) and issubclass(field.type_, Enum):
-            try:
-                value = ensure_enum(raw_value, field.type_)
-            except EnsureEnumError:
-                raise _LoadSettingsInvalidEnumError(
-                    path=path, field=field.name, type_=field.type_, value=raw_value
-                ) from None
-        elif is_literal_type(field.type_):
-            value = one_str(get_args(field.type_), raw_value, case_sensitive=False)
-        else:
-            raise _LoadSettingsTypeError(path=path, field=field.name, type=field.type_)
-        yield field.name, value
+    if isinstance(type_, type) and issubclass(type_, Enum):
+        try:
+            return ensure_enum(value, type_)
+        except EnsureEnumError:
+            raise _LoadSettingsInvalidEnumError(
+                path=path, values=values, field=field.name, type_=type_, value=value
+            ) from None
+    if is_literal_type(type_):
+        return one_str(get_args(type_), value, case_sensitive=False)
+    raise _LoadSettingsTypeError(path=path, field=field.name, type=type_)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -106,25 +116,28 @@ class _LoadSettingsFileNotFoundError(LoadSettingsError):
 
 @dataclass(kw_only=True, slots=True)
 class _LoadSettingsEmptyError(LoadSettingsError):
+    values: StrMapping
     field: str
 
     @override
     def __str__(self) -> str:
-        return f"Field {self.field!r} must exist"
+        return f"Mapping {get_repr(self.values)} does not contain {self.field!r} (case insensitive)"
 
 
 @dataclass(kw_only=True, slots=True)
 class _LoadSettingsNonUniqueError(LoadSettingsError):
+    values: StrMapping
     field: str
     counts: Mapping[str, int]
 
     @override
     def __str__(self) -> str:
-        return f"Field {self.field!r} must exist exactly once; got {self.counts}"
+        return f"Mapping {get_repr(self.values)} must not contain duplicates (case insensitive); got {get_repr(self.counts)}"
 
 
 @dataclass(kw_only=True, slots=True)
 class _LoadSettingsInvalidBoolError(LoadSettingsError):
+    values: StrMapping
     field: str
     value: str
 
@@ -135,6 +148,7 @@ class _LoadSettingsInvalidBoolError(LoadSettingsError):
 
 @dataclass(kw_only=True, slots=True)
 class _LoadSettingsInvalidIntError(LoadSettingsError):
+    values: StrMapping
     field: str
     value: str
 
@@ -145,6 +159,7 @@ class _LoadSettingsInvalidIntError(LoadSettingsError):
 
 @dataclass(kw_only=True, slots=True)
 class _LoadSettingsInvalidEnumError(LoadSettingsError):
+    values: StrMapping
     field: str
     type_: type[Enum]
     value: str

@@ -195,7 +195,7 @@ class TestMappingToDataclass:
         class Example:
             x: str
 
-        obj = mapping_to_dataclass(Example, {"x": value}, post=str.upper)
+        obj = mapping_to_dataclass(Example, {"x": value}, post=lambda _, x: x.upper())
         expected = Example(x=value.upper())
         assert obj == expected
 

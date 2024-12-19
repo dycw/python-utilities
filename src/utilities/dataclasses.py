@@ -79,7 +79,7 @@ def mapping_to_dataclass(
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     case_sensitive: bool = True,
-    post: Callable[[Any], Any] | None = None,
+    post: Callable[[_YieldFieldsClass[Any], Any], Any] | None = None,
 ) -> _TDataclass:
     """Construct a dataclass from a mapping."""
     fields = yield_fields(cls, globalns=globalns, localns=localns)
@@ -93,12 +93,12 @@ def mapping_to_dataclass(
 
 
 def _mapping_to_dataclass_one(
-    field: _YieldFieldsClass,
+    field: _YieldFieldsClass[Any],
     mapping: StrMapping,
     /,
     *,
     case_sensitive: bool = True,
-    post: Callable[[Any], Any] | None = None,
+    post: Callable[[_YieldFieldsClass[Any], Any], Any] | None = None,
 ) -> Any:
     try:
         key = one_str(mapping, field.name, case_sensitive=case_sensitive)
@@ -116,7 +116,7 @@ def _mapping_to_dataclass_one(
         ) from None
     value = mapping[key]
     if post is not None:
-        value = post(value)
+        value = post(field, value)
     return value
 
 
@@ -139,7 +139,7 @@ class _MappingToDataclassCaseInsensitiveBijectionError(MappingToDataclassError):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {get_repr(self.mapping)} must not contain duplicates (case insensitive); got {get_repr(self.counts)}"
+        return f"Mapping {get_repr(self.mapping)} must not contain duplicates of {self.field!r} (case insensitive); got {get_repr(self.counts)}"
 
 
 @dataclass(kw_only=True, slots=True)
