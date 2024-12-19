@@ -15,7 +15,7 @@ from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
-from functools import cmp_to_key, partial
+from functools import cmp_to_key, partial, reduce
 from itertools import accumulate, chain, groupby, islice, pairwise, product
 from math import isnan
 from types import NoneType
@@ -49,6 +49,7 @@ from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
+    from utilities.types import StrMapping
 
 _K = TypeVar("_K")
 _T = TypeVar("_T")
@@ -771,6 +772,35 @@ def is_iterable_not_str(obj: Any, /) -> TypeGuard[Iterable[Any]]:
 ##
 
 
+def merge_str_mappings(
+    *mappings: StrMapping, case_sensitive: bool = True
+) -> StrMapping:
+    """Merge a set of string mappings."""
+    return reduce(
+        partial(_merge_str_mappings_one, case_sensitive=case_sensitive), mappings, {}
+    )
+
+
+def _merge_str_mappings_one(
+    acc: StrMapping, el: StrMapping, /, *, case_sensitive: bool = True
+) -> StrMapping:
+    out = dict(acc)
+    if case_sensitive:
+        return out | dict(el)
+    for key_add, value in el.items():
+        try:
+            key_del = one_str(out, key_add, case_sensitive=False)
+        except _OneStrCaseInsensitiveEmptyError:
+            pass
+        else:
+            del out[key_del]
+        out[key_add] = value
+    return out
+
+
+##
+
+
 def one(iterable: Iterable[_T], /) -> _T:
     """Return the unique value in an iterable."""
     it = iter(iterable)
@@ -1142,6 +1172,7 @@ __all__ = [
     "is_iterable",
     "is_iterable_not_enum",
     "is_iterable_not_str",
+    "merge_str_mappings",
     "one",
     "one_modal_value",
     "one_str",

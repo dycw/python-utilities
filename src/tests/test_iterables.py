@@ -13,6 +13,7 @@ from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     binary,
+    booleans,
     data,
     datetimes,
     dictionaries,
@@ -84,6 +85,7 @@ from utilities.iterables import (
     is_iterable,
     is_iterable_not_enum,
     is_iterable_not_str,
+    merge_str_mappings,
     one,
     one_modal_value,
     one_str,
@@ -99,6 +101,8 @@ from utilities.sentinel import sentinel
 if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import Iterable, Iterator, Mapping, Sequence
+
+    from utilities.types import StrMapping
 
 
 class TestAlwaysIterable:
@@ -809,7 +813,8 @@ class TestIsIterableNotEnum:
         [param(None, False), param([], True), param((), True), param("", True)],
     )
     def test_others(self, *, obj: Any, expected: bool) -> None:
-        assert is_iterable_not_enum(obj) is expected
+        result = is_iterable_not_enum(obj)
+        assert result is expected
 
 
 class TestIsIterableNotStr:
@@ -818,7 +823,29 @@ class TestIsIterableNotStr:
         [param(None, False), param([], True), param((), True), param("", False)],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
-        assert is_iterable_not_str(obj) is expected
+        result = is_iterable_not_str(obj)
+        assert result is expected
+
+
+class TestMergeStrMappings:
+    @given(
+        case=sampled_from([
+            (True, {"x": 1, "y": 2, "X": 3, "z": 4}),
+            (False, {"y": 2, "X": 3, "z": 4}),
+        ])
+    )
+    def test_main(self, *, case: tuple[bool, StrMapping]) -> None:
+        mapping1 = {"x": 1, "y": 2}
+        mapping2 = {"X": 3, "z": 4}
+        case_sensitive, expected = case
+        result = merge_str_mappings(mapping1, mapping2, case_sensitive=case_sensitive)
+        assert result == expected
+
+    @given(case_sensitive=booleans())
+    def test_empty(self, *, case_sensitive: bool) -> None:
+        result = merge_str_mappings(case_sensitive=case_sensitive)
+        expected = {}
+        assert result == expected
 
 
 class TestOne:
@@ -829,12 +856,16 @@ class TestOne:
         with raises(OneEmptyError, match="Iterable .* must not be empty"):
             _ = one([])
 
-    def test_error_non_unique(self) -> None:
+    @given(iterable=sets(integers(), min_size=2))
+    def test_error_non_unique(self, *, iterable: set[int]) -> None:
         with raises(
             OneNonUniqueError,
-            match="Iterable .* must contain exactly one item; got .*, .* and perhaps more",
+            match=re.compile(
+                "Iterable .* must contain exactly one item; got .*, .* and perhaps more",
+                flags=DOTALL,
+            ),
         ):
-            _ = one([1, 2])
+            _ = one(iterable)
 
 
 class TestOneModalValue:
