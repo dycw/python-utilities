@@ -57,6 +57,8 @@ from utilities.iterables import (
     _OneStrCaseInsensitiveEmptyError,
     _OneStrCaseSensitiveEmptyError,
     _OneStrDuplicatesError,
+    _sort_iterable_cmp_datetimes,
+    _sort_iterable_cmp_floats,
     always_iterable,
     apply_to_tuple,
     apply_to_varargs,
@@ -96,7 +98,7 @@ from utilities.sentinel import sentinel
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import Iterable, Iterator, Sequence
+    from collections.abc import Iterable, Iterator, Mapping, Sequence
 
 
 class TestAlwaysIterable:
@@ -983,12 +985,6 @@ class TestSortIterables:
         result2 = sort_iterable([y, x])
         assert result1 == result2
 
-    @given(x=datetimes() | zoned_datetimes(), y=datetimes() | zoned_datetimes())
-    def test_datetimes(self, *, x: dt.datetime, y: dt.datetime) -> None:
-        result1 = sort_iterable([x, y])
-        result2 = sort_iterable([y, x])
-        assert result1 == result2
-
     @given(x=floats(), y=floats())
     def test_floats(self, *, x: float, y: float) -> None:
         result1 = sort_iterable([x, y])
@@ -997,6 +993,14 @@ class TestSortIterables:
             assert isfinite(i) is isfinite(j)
             assert isinf(i) is isinf(j)
             assert isnan(i) is isnan(j)
+
+    @given(
+        x=dictionaries(integers(), integers()), y=dictionaries(integers(), integers())
+    )
+    def test_mappings(self, *, x: Mapping[int, int], y: Mapping[int, int]) -> None:
+        result1 = sort_iterable([x, y])
+        result2 = sort_iterable([y, x])
+        assert result1 == result2
 
     @given(x=text_ascii(), y=text_ascii())
     def test_strings(self, *, x: str, y: str) -> None:
@@ -1021,6 +1025,28 @@ class TestSortIterables:
     def test_error(self) -> None:
         with raises(SortIterableError, match="Unable to sort .* and .*"):
             _ = sort_iterable([sentinel, sentinel])
+
+
+class TestSortIterablesCmpDateTimes:
+    @given(x=datetimes() | zoned_datetimes(), y=datetimes() | zoned_datetimes())
+    def test_main(self, *, x: dt.datetime, y: dt.datetime) -> None:
+        result1 = _sort_iterable_cmp_datetimes(x, y)
+        result2 = _sort_iterable_cmp_datetimes(y, x)
+        assert result1 == -result2
+
+
+class TestSortIterablesCmpFloats:
+    @given(x=floats(), y=floats())
+    def test_main(self, *, x: float, y: float) -> None:
+        result1 = _sort_iterable_cmp_floats(x, y)
+        result2 = _sort_iterable_cmp_floats(y, x)
+        assert result1 == -result2
+        if isfinite(x) is not isfinite(y):
+            assert result1 != result2
+        if isinf(x) is not isinf(y):
+            assert result1 != result2
+        if isnan(x) is not isnan(y):
+            assert result1 != result2
 
 
 class TestTake:
