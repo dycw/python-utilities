@@ -29,6 +29,7 @@ from utilities.dataclasses import (
     yield_fields,
 )
 from utilities.functions import get_class_name
+from utilities.hypothesis import text_ascii
 from utilities.iterables import one
 from utilities.orjson import OrjsonLogRecord
 from utilities.polars import are_frames_equal
@@ -186,6 +187,16 @@ class TestMappingToDataclass:
 
         obj = mapping_to_dataclass(Example, {key: value}, case_sensitive=False)
         expected = Example(x=value)
+        assert obj == expected
+
+    @given(value=text_ascii())
+    def test_post(self, *, value: str) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: str
+
+        obj = mapping_to_dataclass(Example, {"x": value}, post=str.upper)
+        expected = Example(x=value.upper())
         assert obj == expected
 
     def test_error_case_sensitive_empty_error(self) -> None:
