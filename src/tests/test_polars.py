@@ -1477,13 +1477,12 @@ class TestStructFromDataClass:
 
 class TestUniqueElement:
     def test_main(self) -> None:
-        df = DataFrame(
-            data=[([],), ([1],), ([1, 2],), ([1, 2, 3],)],
-            schema={"x": List(Int64)},
-            orient="row",
-        ).with_columns(y=unique_element("x"))
+        series = Series(
+            name="x", values=[[], [1], [1, 2], [1, 2, 3]], dtype=List(Int64)
+        )
+        result = series.to_frame().with_columns(y=unique_element("x"))["y"]
         expected = Series(name="y", values=[None, 1, None, None], dtype=Int64)
-        assert_series_equal(df["y"], expected)
+        assert_series_equal(result, expected)
 
 
 class TestYieldRowsAsDataclasses:
