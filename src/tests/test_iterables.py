@@ -856,12 +856,16 @@ class TestOne:
         with raises(OneEmptyError, match="Iterable .* must not be empty"):
             _ = one([])
 
-    def test_error_non_unique(self) -> None:
+    @given(iterable=sets(integers(), min_size=2))
+    def test_error_non_unique(self, *, iterable: set[int]) -> None:
         with raises(
             OneNonUniqueError,
-            match="Iterable .* must contain exactly one item; got .*, .* and perhaps more",
+            match=re.compile(
+                "Iterable .* must contain exactly one item; got .*, .* and perhaps more",
+                flags=DOTALL,
+            ),
         ):
-            _ = one([1, 2])
+            _ = one(iterable)
 
 
 class TestOneModalValue:
