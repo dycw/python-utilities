@@ -813,9 +813,7 @@ class _OneStrDuplicatesError(OneStrError):
 class _OneStrCaseSensitiveEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
-        return (
-            f"Iterable {get_repr(self.iterable)} does not contain {get_repr(self.text)}"
-        )
+        return f"Iterable {get_repr(self.iterable)} does not contain {self.text!r}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -831,7 +829,7 @@ class _OneStrCaseInsensitiveBijectionError(OneStrError):
 class _OneStrCaseInsensitiveEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} does not contain {get_repr(self.text)} (case insensitive)"
+        return f"Iterable {get_repr(self.iterable)} does not contain {self.text!r} (case insensitive)"
 
 
 def pairwise_tail(iterable: Iterable[_T], /) -> Iterator[tuple[_T, _T | Sentinel]]:

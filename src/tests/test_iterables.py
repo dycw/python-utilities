@@ -49,11 +49,14 @@ from utilities.iterables import (
     MaybeIterable,
     OneEmptyError,
     OneNonUniqueError,
-    OneStrError,
     ResolveIncludeAndExcludeError,
     SortIterableError,
     _OneModalValueEmptyError,
     _OneModalValueNonUniqueError,
+    _OneStrCaseInsensitiveBijectionError,
+    _OneStrCaseInsensitiveEmptyError,
+    _OneStrCaseSensitiveEmptyError,
+    _OneStrDuplicatesError,
     always_iterable,
     apply_to_tuple,
     apply_to_varargs,
@@ -878,24 +881,28 @@ class TestOneStr:
 
     def test_error_duplicates(self) -> None:
         with raises(
-            OneStrError, match=r"Iterable .* must not contain duplicates; got {'a': 2}"
+            _OneStrDuplicatesError,
+            match=r"Iterable .* must not contain duplicates; got {'a': 2}",
         ):
             _ = one_str(["a", "a"], "a")
 
     def test_error_case_sensitive_empty_error(self) -> None:
-        with raises(OneStrError, match=r"Iterable .* does not contain 'd'"):
+        with raises(
+            _OneStrCaseSensitiveEmptyError, match=r"Iterable .* does not contain 'd'"
+        ):
             _ = one_str(["a", "b", "c"], "d")
 
     def test_error_bijection_error(self) -> None:
         with raises(
-            OneStrError,
+            _OneStrCaseInsensitiveBijectionError,
             match=r"Iterable .* must not contain duplicates \(case insensitive\); got .*",
         ):
             _ = one_str(["a", "A"], "a", case_sensitive=False)
 
     def test_error_case_insensitive_empty_error(self) -> None:
         with raises(
-            OneStrError, match=r"Iterable .* does not contain 'd' \(case insensitive\)"
+            _OneStrCaseInsensitiveEmptyError,
+            match=r"Iterable .* does not contain 'd' \(case insensitive\)",
         ):
             _ = one_str(["a", "b", "c"], "d", case_sensitive=False)
 

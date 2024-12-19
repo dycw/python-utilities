@@ -1,11 +1,27 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
+from typing import TypeVar
 
 from pytest import mark, param
 
 from utilities.datetime import ZERO_TIME
-from utilities.types import Duration, Number, PathLike
+from utilities.types import Dataclass, Duration, Number, PathLike
+
+
+class TestDataClassProtocol:
+    def test_main(self) -> None:
+        TDataclass = TypeVar("TDataclass", bound=Dataclass)
+
+        def identity(x: TDataclass, /) -> TDataclass:
+            return x
+
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: None = None
+
+        _ = identity(Example())
 
 
 class TestDuration:
