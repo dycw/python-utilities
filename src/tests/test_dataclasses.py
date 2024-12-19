@@ -17,9 +17,8 @@ from typing_extensions import override
 from tests.test_operator import DataClass3
 from utilities.dataclasses import (
     YieldFieldsError,
-    _MappingToDataclassCaseInsensitiveBijectionError,
-    _MappingToDataclassCaseInsensitiveEmptyError,
-    _MappingToDataclassCaseSensitiveEmptyError,
+    _MappingToDataclassCaseInsensitiveNonUniqueError,
+    _MappingToDataclassEmptyError,
     _YieldFieldsClass,
     _YieldFieldsInstance,
     asdict_without_defaults,
@@ -195,48 +194,51 @@ class TestMappingToDataclass:
         class Example:
             x: str
 
-        obj = mapping_to_dataclass(Example, {"x": value}, post=str.upper)
+        obj = mapping_to_dataclass(Example, {"x": value}, post=lambda _, x: x.upper())
         expected = Example(x=value.upper())
         assert obj == expected
 
-    def test_error_case_sensitive_empty_error(self) -> None:
+    @given(value=integers())
+    def test_error_case_sensitive_empty_error(self, *, value: int) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: int
 
         with raises(
-            _MappingToDataclassCaseSensitiveEmptyError,
-            match=r"Mapping .* does not contain 'x'",
+            _MappingToDataclassEmptyError, match=r"Mapping .* does not contain 'x'"
         ):
-            _ = mapping_to_dataclass(Example, {})
+            _ = mapping_to_dataclass(Example, {"X": value})
+
+    @given(value=integers())
+    def test_error_case_insensitive_empty_error(self, *, value: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        with raises(
+            _MappingToDataclassEmptyError,
+            match=r"Mapping .* does not contain 'x' \(modulo case\)",
+        ):
+            _ = mapping_to_dataclass(Example, {"y": value}, case_sensitive=False)
 
     @given(value1=integers(), value2=integers())
-    def test_error_bijection_error(self, *, value1: int, value2: int) -> None:
+    def test_error_case_insensitive_non_unique_error(
+        self, *, value1: int, value2: int
+    ) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: int
 
         with raises(
-            _MappingToDataclassCaseInsensitiveBijectionError,
+            _MappingToDataclassCaseInsensitiveNonUniqueError,
             match=re.compile(
-                r"Mapping .* must not contain duplicates \(case insensitive\); got .*",
+                r"Mapping .* must contain 'x' exactly once \(modulo case\); got 'x', 'X' and perhaps more",
                 flags=DOTALL,
             ),
         ):
             _ = mapping_to_dataclass(
                 Example, {"x": value1, "X": value2}, case_sensitive=False
             )
-
-    def test_error_case_insensitive_empty_error(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
-
-        with raises(
-            _MappingToDataclassCaseInsensitiveEmptyError,
-            match=r"Mapping .* does not contain 'x' \(case insensitive\)",
-        ):
-            _ = mapping_to_dataclass(Example, {}, case_sensitive=False)
 
 
 class TestReplaceNonSentinel:

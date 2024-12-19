@@ -78,7 +78,6 @@ from utilities.iterables import (
     CheckSubSetError,
     CheckSuperMappingError,
     CheckSuperSetError,
-    MaybeIterable,
     OneEmptyError,
     OneNonUniqueError,
     always_iterable,
@@ -98,7 +97,7 @@ from utilities.math import (
 )
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel
-from utilities.types import Dataclass, StrMapping, ZoneInfoLike
+from utilities.types import Dataclass, MaybeIterable, StrMapping, ZoneInfoLike
 from utilities.typing import (
     get_args,
     get_type_hints,

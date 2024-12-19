@@ -2,33 +2,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, StrEnum
-from typing import (
-    TYPE_CHECKING,
-    Generic,
-    Literal,
-    NoReturn,
-    TypeVar,
-    assert_never,
-    overload,
-)
+from typing import Generic, Literal, TypeAlias, TypeVar, assert_never, overload
 
 from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_str
-from utilities.iterables import (
-    _OneStrCaseInsensitiveBijectionError,
-    _OneStrCaseInsensitiveEmptyError,
-    _OneStrCaseSensitiveEmptyError,
-    one_str,
-)
+from utilities.iterables import _OneStrEmptyError, _OneStrNonUniqueError, one_str
 from utilities.types import EnumOrStr
 
-if TYPE_CHECKING:
-    from collections.abc import Mapping
-
-
 _E = TypeVar("_E", bound=Enum)
+
+
+##
 
 
 @overload
@@ -75,18 +61,28 @@ class _EnsureEnumParseError(EnsureEnumError):
         return f"Unable to ensure enum; got {self.value!r}"
 
 
+##
+
+
 def parse_enum(
     value: str, enum: type[_E], /, *, case_sensitive: bool = False
 ) -> _E | None:
     """Parse a string into the enum."""
-    by_name = _parse_enum_by_kind(value, enum, "name", case_sensitive=case_sensitive)
+    by_name = _parse_enum_one(value, enum, "names", case_sensitive=case_sensitive)
     if not issubclass(enum, StrEnum):
         if by_name is not None:
             return by_name
-        _parse_enum_raise_empty_error(value, enum, case_sensitive=case_sensitive)
-    by_value = _parse_enum_by_kind(value, enum, "value", case_sensitive=case_sensitive)
+        raise _ParseEnumGenericEnumEmptyError(
+            value=value,
+            enum=enum,
+            case_sensitive=case_sensitive,
+            names_or_values="names",
+        )
+    by_value = _parse_enum_one(value, enum, "values", case_sensitive=case_sensitive)
     if (by_name is None) and (by_value is None):
-        _parse_enum_raise_empty_error(value, enum, case_sensitive=case_sensitive)
+        raise _ParseEnumStrEnumEmptyError(
+            value=value, enum=enum, case_sensitive=case_sensitive
+        )
     if (by_name is not None) and (by_value is None):
         return by_name
     if (by_name is None) and (by_value is not None):
@@ -94,47 +90,49 @@ def parse_enum(
     if (by_name is not None) and (by_value is not None):
         if by_name is by_value:
             return by_name
-        if case_sensitive:
-            raise _ParseEnumStrEnumCaseSensitiveAmbiguousError(value=value, enum=enum)
-        raise _ParseEnumStrEnumCaseInsensitiveAmbiguousError(value=value, enum=enum)
+        raise _ParseEnumStrEnumNonUniqueError(
+            value=value,
+            enum=enum,
+            case_sensitive=case_sensitive,
+            by_name=by_name.name,
+            by_value=by_value.name,
+        )
     raise ImpossibleCaseError(case=[f"{by_name=}", f"{by_value=}"])  # pragma: no cover
 
 
-def _parse_enum_by_kind(
+_NamesOrValues: TypeAlias = Literal["names", "values"]
+
+
+def _parse_enum_one(
     value: str,
     enum: type[_E],
-    kind: Literal["name", "value"],
+    names_or_values: _NamesOrValues,
     /,
     *,
     case_sensitive: bool = False,
 ) -> _E | None:
     """Pair one aspect of the enums."""
-    match kind:
-        case "name":
+    match names_or_values:
+        case "names":
             names = [e.name for e in enum]
-        case "value":
+        case "values":
             names = [ensure_str(e.value) for e in enum]
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
     try:
         name = one_str(names, value, case_sensitive=case_sensitive)
-    except (_OneStrCaseSensitiveEmptyError, _OneStrCaseInsensitiveEmptyError):
+    except _OneStrEmptyError:
         return None
-    except _OneStrCaseInsensitiveBijectionError as error:
-        raise _ParseEnumCaseInsensitiveBijectionError(
-            value=value, enum=enum, counts=error.counts
+    except _OneStrNonUniqueError as error:
+        raise _ParseEnumByKindNonUniqueError(
+            value=value,
+            enum=enum,
+            names_or_values=names_or_values,
+            first=error.first,
+            second=error.second,
         ) from None
     index = names.index(name)
     return list(enum)[index]
-
-
-def _parse_enum_raise_empty_error(
-    value: str, enum: type[_E], /, *, case_sensitive: bool = False
-) -> NoReturn:
-    """Raise the empty error."""
-    if case_sensitive:
-        raise _ParseEnumCaseSensitiveEmptyError(value=value, enum=enum)
-    raise _ParseEnumCaseInsensitiveEmptyError(value=value, enum=enum)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -144,40 +142,54 @@ class ParseEnumError(Exception, Generic[_E]):
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseEnumCaseInsensitiveBijectionError(ParseEnumError):
-    counts: Mapping[str, int]
+class _ParseEnumByKindNonUniqueError(ParseEnumError):
+    names_or_values: _NamesOrValues
+    first: str
+    second: str
 
     @override
     def __str__(self) -> str:
-        return f"Enum {self.enum} must not contain duplicates (case insensitive); got {self.counts}"
+        desc = "StrEnum" if issubclass(self.enum, StrEnum) else "Enum"
+        return f"{desc} {self.enum.__name__!r} member {self.names_or_values} must contain {self.value!r} exactly once (modulo case); got {self.first!r}, {self.second!r} and perhaps more"
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseEnumCaseSensitiveEmptyError(ParseEnumError):
+class _ParseEnumGenericEnumEmptyError(ParseEnumError):
+    names_or_values: _NamesOrValues
+    case_sensitive: bool = False
+
     @override
     def __str__(self) -> str:
-        return f"Enum {self.enum} does not contain {self.value!r} (case sensitive)"
+        desc = f"Enum {self.enum.__name__!r} member {self.names_or_values} do not contain {self.value!r}"
+        if not self.case_sensitive:
+            desc += " (modulo case)"
+        return desc
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseEnumCaseInsensitiveEmptyError(ParseEnumError):
+class _ParseEnumStrEnumEmptyError(ParseEnumError):
+    case_sensitive: bool = False
+
     @override
     def __str__(self) -> str:
-        return f"Enum {self.enum} does not contain {self.value!r} (case insensitive)"
+        desc = f"StrEnum {self.enum.__name__!r} member names and values do not contain {self.value!r}"
+        if not self.case_sensitive:
+            desc += " (modulo case)"
+        return desc
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseEnumStrEnumCaseSensitiveAmbiguousError(ParseEnumError):
+class _ParseEnumStrEnumNonUniqueError(ParseEnumError):
+    case_sensitive: bool = False
+    by_name: str
+    by_value: str
+
     @override
     def __str__(self) -> str:
-        return f"StrEnum {self.enum} contains {self.value!r} in both its keys and values (case sensitive)"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ParseEnumStrEnumCaseInsensitiveAmbiguousError(ParseEnumError):
-    @override
-    def __str__(self) -> str:
-        return f"StrEnum {self.enum} contains {self.value!r} in both its keys and values (case insensitive)"
+        desc = f"StrEnum {self.enum.__name__!r} member names and values must contain {self.value!r} exactly once"
+        if not self.case_sensitive:
+            desc += " (modulo case)"
+        return f"{desc}; got {self.by_name!r} by name and {self.by_value!r} by value"
 
 
 __all__ = [

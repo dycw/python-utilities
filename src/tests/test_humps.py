@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from hypothesis import given
-from pytest import mark, param, raises
+from pytest import mark, param
 
-from utilities.humps import SnakeCaseMappingsError, snake_case, snake_case_mappings
-from utilities.hypothesis import text_ascii
+from utilities.humps import snake_case
 
 
 class TestSnakeCase:
@@ -37,27 +35,3 @@ class TestSnakeCase:
     def test_main(self, *, text: str, expected: str) -> None:
         result = snake_case(text)
         assert result == expected
-
-
-class TestSnakeCaseMappings:
-    @given(text=text_ascii())
-    def test_main(self, *, text: str) -> None:
-        result = snake_case_mappings([text])
-        expected = {text: snake_case(text)}
-        assert result == expected
-
-    @given(text=text_ascii(min_size=1))
-    def test_error_keys(self, *, text: str) -> None:
-        with raises(
-            SnakeCaseMappingsError,
-            match="Strings .* must not contain duplicates; got .*",
-        ):
-            _ = snake_case_mappings([text, text])
-
-    @given(text=text_ascii(min_size=1))
-    def test_error_values(self, *, text: str) -> None:
-        with raises(
-            SnakeCaseMappingsError,
-            match="Snake-cased strings .* must not contain duplicates; got .*",
-        ):
-            _ = snake_case_mappings([text.lower(), text.upper()])

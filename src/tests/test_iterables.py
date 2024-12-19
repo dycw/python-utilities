@@ -47,20 +47,23 @@ from utilities.iterables import (
     Collection,
     EnsureIterableError,
     EnsureIterableNotStrError,
-    MaybeIterable,
+    MergeStrMappingsError,
     OneEmptyError,
     OneNonUniqueError,
     ResolveIncludeAndExcludeError,
     SortIterableError,
+    _ApplyBijectionDuplicateKeysError,
+    _ApplyBijectionDuplicateValuesError,
+    _CheckUniqueModuloCaseDuplicateLowerCaseStringsError,
+    _CheckUniqueModuloCaseDuplicateStringsError,
     _OneModalValueEmptyError,
     _OneModalValueNonUniqueError,
-    _OneStrCaseInsensitiveBijectionError,
-    _OneStrCaseInsensitiveEmptyError,
-    _OneStrCaseSensitiveEmptyError,
-    _OneStrDuplicatesError,
+    _OneStrEmptyError,
+    _OneStrNonUniqueError,
     _sort_iterable_cmp_datetimes,
     _sort_iterable_cmp_floats,
     always_iterable,
+    apply_bijection,
     apply_to_tuple,
     apply_to_varargs,
     check_bijection,
@@ -74,6 +77,7 @@ from utilities.iterables import (
     check_subset,
     check_supermapping,
     check_superset,
+    check_unique_modulo_case,
     chunked,
     ensure_hashables,
     ensure_iterable,
@@ -102,7 +106,7 @@ if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import Iterable, Iterator, Mapping, Sequence
 
-    from utilities.types import StrMapping
+    from utilities.types import MaybeIterable, StrMapping
 
 
 class TestAlwaysIterable:
@@ -140,6 +144,34 @@ class TestAlwaysIterable:
             yield 1
 
         assert list(always_iterable(yield_ints())) == [0, 1]
+
+
+class TestApplyBijection:
+    @given(text=text_ascii())
+    def test_main(self, *, text: str) -> None:
+        result = apply_bijection(str.upper, [text])
+        expected = {text: text.upper()}
+        assert result == expected
+
+    @given(text=text_ascii(min_size=1))
+    def test_error_duplicate_keys(self, *, text: str) -> None:
+        with raises(
+            _ApplyBijectionDuplicateKeysError,
+            match=re.compile(
+                "Keys .* must not contain duplicates; got .*", flags=DOTALL
+            ),
+        ):
+            _ = apply_bijection(str.upper, [text, text])
+
+    @given(text=text_ascii(min_size=1))
+    def test_error_duplicate_values(self, *, text: str) -> None:
+        with raises(
+            _ApplyBijectionDuplicateValuesError,
+            match=re.compile(
+                "Values .* must not contain duplicates; got .*", flags=DOTALL
+            ),
+        ):
+            _ = apply_bijection(str.upper, [text.lower(), text.upper()])
 
 
 class TestApplyToTuple:
@@ -451,6 +483,33 @@ class TestCheckSuperSet:
             match=r"Set .* must be a superset of .*; right had extra items .*\.",
         ):
             check_superset({1}, {1, 2, 3})
+
+
+class TestCheckUniqueModuloCase:
+    @given(text=text_ascii())
+    def test_main(self, *, text: str) -> None:
+        _ = check_unique_modulo_case([text])
+
+    @given(text=text_ascii(min_size=1))
+    def test_error_duplicate_keys(self, *, text: str) -> None:
+        with raises(
+            _CheckUniqueModuloCaseDuplicateStringsError,
+            match=re.compile(
+                "Strings .* must not contain duplicates; got .*", flags=DOTALL
+            ),
+        ):
+            _ = check_unique_modulo_case([text, text])
+
+    @given(text=text_ascii(min_size=1))
+    def test_error_duplicate_values(self, *, text: str) -> None:
+        with raises(
+            _CheckUniqueModuloCaseDuplicateLowerCaseStringsError,
+            match=re.compile(
+                r"Strings .* must not contain duplicates \(modulo case\); got .*",
+                flags=DOTALL,
+            ),
+        ):
+            _ = check_unique_modulo_case([text.lower(), text.upper()])
 
 
 class TestChunked:
@@ -847,6 +906,13 @@ class TestMergeStrMappings:
         expected = {}
         assert result == expected
 
+    def test_error(self) -> None:
+        with raises(
+            MergeStrMappingsError,
+            match=r"Mapping .* keys must not contain duplicates \(modulo case\); got .*",
+        ):
+            _ = merge_str_mappings({"x": 1, "X": 2}, case_sensitive=False)
+
 
 class TestOne:
     def test_main(self) -> None:
@@ -915,32 +981,29 @@ class TestOneStr:
                 text_use = text.upper()
         assert one_str(["a", "b", "c"], text_use, case_sensitive=False) == text
 
-    def test_error_duplicates(self) -> None:
+    def test_error_case_sensitive_empty_error(self) -> None:
+        with raises(_OneStrEmptyError, match=r"Iterable .* does not contain 'A'"):
+            _ = one_str(["a", "b", "c"], "A")
+
+    def test_error_case_sensitive_non_unique(self) -> None:
         with raises(
-            _OneStrDuplicatesError,
-            match=r"Iterable .* must not contain duplicates; got {'a': 2}",
+            _OneStrNonUniqueError,
+            match=r"Iterable .* must contain 'a' exactly once; got at least 2 instances",
         ):
             _ = one_str(["a", "a"], "a")
 
-    def test_error_case_sensitive_empty_error(self) -> None:
-        with raises(
-            _OneStrCaseSensitiveEmptyError, match=r"Iterable .* does not contain 'd'"
-        ):
-            _ = one_str(["a", "b", "c"], "d")
-
-    def test_error_bijection_error(self) -> None:
-        with raises(
-            _OneStrCaseInsensitiveBijectionError,
-            match=r"Iterable .* must not contain duplicates \(case insensitive\); got .*",
-        ):
-            _ = one_str(["a", "A"], "a", case_sensitive=False)
-
     def test_error_case_insensitive_empty_error(self) -> None:
         with raises(
-            _OneStrCaseInsensitiveEmptyError,
-            match=r"Iterable .* does not contain 'd' \(case insensitive\)",
+            _OneStrEmptyError, match=r"Iterable .* does not contain 'd' \(modulo case\)"
         ):
             _ = one_str(["a", "b", "c"], "d", case_sensitive=False)
+
+    def test_error_case_insensitive_non_unique_error(self) -> None:
+        with raises(
+            _OneStrNonUniqueError,
+            match=r"Iterable .* must contain 'a' exactly once \(modulo case\); got 'a', 'A' and perhaps more",
+        ):
+            _ = one_str(["a", "A"], "a", case_sensitive=False)
 
 
 class TestPairwiseTail:

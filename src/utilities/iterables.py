@@ -25,6 +25,7 @@ from typing import (
     Generic,
     Literal,
     Self,
+    TypeAlias,
     TypeGuard,
     TypeVar,
     assert_never,
@@ -49,7 +50,8 @@ from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
-    from utilities.types import StrMapping
+    from utilities.types import MaybeIterable, StrMapping
+
 
 _K = TypeVar("_K")
 _T = TypeVar("_T")
@@ -62,9 +64,6 @@ _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
 _THashable = TypeVar("_THashable", bound=Hashable)
 _UHashable = TypeVar("_UHashable", bound=Hashable)
-MaybeIterable = _T | Iterable[_T]
-IterableHashable = tuple[_THashable, ...] | frozenset[_THashable]
-MaybeIterableHashable = _THashable | IterableHashable[_THashable]
 
 
 ##
@@ -79,6 +78,52 @@ def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
         return iter(cast(Iterable[_T], obj))
     except TypeError:
         return cast(list[_T], [obj])
+
+
+##
+
+
+def apply_bijection(
+    func: Callable[[_T], _U], iterable: Iterable[_T], /
+) -> Mapping[_T, _U]:
+    """Apply a function bijectively."""
+    keys = list(iterable)
+    try:
+        check_duplicates(keys)
+    except CheckDuplicatesError as error:
+        raise _ApplyBijectionDuplicateKeysError(
+            keys=keys, counts=error.counts
+        ) from None
+    values = list(map(func, keys))
+    try:
+        check_duplicates(values)
+    except CheckDuplicatesError as error:
+        raise _ApplyBijectionDuplicateValuesError(
+            keys=keys, values=values, counts=error.counts
+        ) from None
+    return dict(zip(keys, values, strict=True))
+
+
+@dataclass(kw_only=True, slots=True)
+class ApplyBijectionError(Exception, Generic[_T]):
+    keys: list[_T]
+    counts: Mapping[_T, int]
+
+
+@dataclass(kw_only=True, slots=True)
+class _ApplyBijectionDuplicateKeysError(ApplyBijectionError[_T]):
+    @override
+    def __str__(self) -> str:
+        return f"Keys {get_repr(self.keys)} must not contain duplicates; got {get_repr(self.counts)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ApplyBijectionDuplicateValuesError(ApplyBijectionError[_T], Generic[_T, _U]):
+    values: list[_U]
+
+    @override
+    def __str__(self) -> str:
+        return f"Values {get_repr(self.values)} must not contain duplicates; got {get_repr(self.counts)}"
 
 
 ##
@@ -168,7 +213,7 @@ def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
         )
 
 
-_CheckIterablesEqualState = Literal["left_longer", "right_longer"]
+_CheckIterablesEqualState: TypeAlias = Literal["left_longer", "right_longer"]
 
 
 @dataclass(kw_only=True, slots=True)
@@ -546,6 +591,45 @@ class CheckSuperSetError(Exception, Generic[_T]):
 ##
 
 
+def check_unique_modulo_case(iterable: Iterable[str], /) -> None:
+    """Check that an iterable of strings is unique modulo case."""
+    try:
+        _ = apply_bijection(str.lower, iterable)
+    except _ApplyBijectionDuplicateKeysError as error:
+        raise _CheckUniqueModuloCaseDuplicateStringsError(
+            keys=error.keys, counts=error.counts
+        ) from None
+    except _ApplyBijectionDuplicateValuesError as error:
+        raise _CheckUniqueModuloCaseDuplicateLowerCaseStringsError(
+            keys=error.keys, values=error.values, counts=error.counts
+        ) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class CheckUniqueModuloCaseError(Exception):
+    keys: Iterable[str]
+    counts: Mapping[str, int]
+
+
+@dataclass(kw_only=True, slots=True)
+class _CheckUniqueModuloCaseDuplicateStringsError(CheckUniqueModuloCaseError):
+    @override
+    def __str__(self) -> str:
+        return f"Strings {get_repr(self.keys)} must not contain duplicates; got {get_repr(self.counts)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _CheckUniqueModuloCaseDuplicateLowerCaseStringsError(CheckUniqueModuloCaseError):
+    values: Iterable[str]
+
+    @override
+    def __str__(self) -> str:
+        return f"Strings {get_repr(self.values)} must not contain duplicates (modulo case); got {get_repr(self.counts)}"
+
+
+##
+
+
 def chunked(iterable: Iterable[_T], n: int, /) -> Iterator[Sequence[_T]]:
     """Break an iterable into lists of length n."""
     return iter(partial(take, n, iter(iterable)), [])
@@ -787,15 +871,29 @@ def _merge_str_mappings_one(
     out = dict(acc)
     if case_sensitive:
         return out | dict(el)
+    try:
+        check_unique_modulo_case(el)
+    except _CheckUniqueModuloCaseDuplicateLowerCaseStringsError as error:
+        raise MergeStrMappingsError(mapping=el, counts=error.counts) from None
     for key_add, value in el.items():
         try:
             key_del = one_str(out, key_add, case_sensitive=False)
-        except _OneStrCaseInsensitiveEmptyError:
+        except _OneStrEmptyError:
             pass
         else:
             del out[key_del]
         out[key_add] = value
     return out
+
+
+@dataclass(kw_only=True, slots=True)
+class MergeStrMappingsError(Exception):
+    mapping: StrMapping
+    counts: Mapping[str, int]
+
+    @override
+    def __str__(self) -> str:
+        return f"Mapping {get_repr(self.mapping)} keys must not contain duplicates (modulo case); got {get_repr(self.counts)}"
 
 
 ##
@@ -886,67 +984,58 @@ def one_str(
 ) -> str:
     """Find the unique string in an iterable."""
     as_list = list(iterable)
-    try:
-        check_duplicates(as_list)
-    except CheckDuplicatesError as error:
-        raise _OneStrDuplicatesError(
-            iterable=iterable, text=text, counts=error.counts
-        ) from None
     if case_sensitive:
-        try:
-            return one(t for t in as_list if t == text)
-        except OneEmptyError:
-            raise _OneStrCaseSensitiveEmptyError(iterable=iterable, text=text) from None
-    mapping = {t: t.casefold() for t in as_list}
+        it = (t for t in as_list if t == text)
+    else:
+        it = (t for t in as_list if t.lower() == text.lower())
     try:
-        check_bijection(mapping)
-    except CheckBijectionError as error:
-        error = cast(CheckBijectionError[str], error)
-        raise _OneStrCaseInsensitiveBijectionError(
-            iterable=iterable, text=text, counts=error.counts
-        ) from None
-    try:
-        return one(k for k, v in mapping.items() if v == text.casefold())
+        return one(it)
     except OneEmptyError:
-        raise _OneStrCaseInsensitiveEmptyError(iterable=iterable, text=text) from None
+        raise _OneStrEmptyError(
+            iterable=as_list, text=text, case_sensitive=case_sensitive
+        ) from None
+    except OneNonUniqueError as error:
+        raise _OneStrNonUniqueError(
+            iterable=as_list,
+            text=text,
+            case_sensitive=case_sensitive,
+            first=error.first,
+            second=error.second,
+        ) from None
 
 
 @dataclass(kw_only=True, slots=True)
 class OneStrError(Exception):
     iterable: Iterable[str]
     text: str
+    case_sensitive: bool = True
 
 
 @dataclass(kw_only=True, slots=True)
-class _OneStrDuplicatesError(OneStrError):
-    counts: Mapping[str, int]
-
+class _OneStrEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} must not contain duplicates; got {get_repr(self.counts)}"
+        desc = f"Iterable {get_repr(self.iterable)} does not contain {self.text!r}"
+        if not self.case_sensitive:
+            desc += " (modulo case)"
+        return desc
 
 
 @dataclass(kw_only=True, slots=True)
-class _OneStrCaseSensitiveEmptyError(OneStrError):
-    @override
-    def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} does not contain {self.text!r}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _OneStrCaseInsensitiveBijectionError(OneStrError):
-    counts: Mapping[str, int]
+class _OneStrNonUniqueError(OneStrError):
+    first: str
+    second: str
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} must not contain duplicates (case insensitive); got {get_repr(self.counts)}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _OneStrCaseInsensitiveEmptyError(OneStrError):
-    @override
-    def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} does not contain {self.text!r} (case insensitive)"
+        desc = f"Iterable {get_repr(self.iterable)} must contain {self.text!r} exactly once"
+        match self.case_sensitive:
+            case True:
+                return f"{desc}; got at least 2 instances"
+            case False:
+                return f"{desc} (modulo case); got {self.first!r}, {self.second!r} and perhaps more"
+            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                assert_never(never)
 
 
 def pairwise_tail(iterable: Iterable[_T], /) -> Iterator[tuple[_T, _T | Sentinel]]:
@@ -1126,6 +1215,7 @@ def transpose(iterable: Iterable[tuple[Any, ...]]) -> tuple[tuple[Any, ...], ...
 
 
 __all__ = [
+    "ApplyBijectionError",
     "CheckBijectionError",
     "CheckDuplicatesError",
     "CheckIterablesEqualError",
@@ -1136,11 +1226,10 @@ __all__ = [
     "CheckSubSetError",
     "CheckSuperMappingError",
     "CheckSuperSetError",
+    "CheckUniqueModuloCaseError",
     "EnsureIterableError",
     "EnsureIterableNotStrError",
-    "IterableHashable",
-    "MaybeIterable",
-    "MaybeIterableHashable",
+    "MergeStrMappingsError",
     "OneEmptyError",
     "OneError",
     "OneModalValueError",
@@ -1149,6 +1238,7 @@ __all__ = [
     "ResolveIncludeAndExcludeError",
     "SortIterableError",
     "always_iterable",
+    "apply_bijection",
     "apply_to_tuple",
     "apply_to_varargs",
     "check_bijection",
@@ -1161,6 +1251,7 @@ __all__ = [
     "check_subset",
     "check_supermapping",
     "check_superset",
+    "check_unique_modulo_case",
     "chunked",
     "ensure_hashables",
     "ensure_iterable",

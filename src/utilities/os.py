@@ -7,11 +7,7 @@ from typing import TYPE_CHECKING, Literal, TypeAlias, assert_never
 
 from typing_extensions import override
 
-from utilities.iterables import (
-    _OneStrCaseInsensitiveEmptyError,
-    _OneStrCaseSensitiveEmptyError,
-    one_str,
-)
+from utilities.iterables import _OneStrEmptyError, one_str
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
@@ -62,16 +58,9 @@ class GetCPUUseError(Exception):
 
 def get_env_var(key: str, /, *, case_sensitive: bool = True) -> str | None:
     """Get an environment variable."""
-    match case_sensitive:
-        case True:
-            error = _OneStrCaseSensitiveEmptyError
-        case False:
-            error = _OneStrCaseInsensitiveEmptyError
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-            assert_never(never)
     try:
         key_use = one_str(environ, key, case_sensitive=case_sensitive)
-    except error:
+    except _OneStrEmptyError:
         return None
     return environ[key_use]
 
