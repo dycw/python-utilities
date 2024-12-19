@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import datetime as dt
+import re
 from operator import eq
+from re import DOTALL
 from typing import TYPE_CHECKING, Any
 
 import polars as pl
@@ -321,7 +323,10 @@ class TestInsertDataFrameMapDFColumnToTableColumnAndType:
         schema = {"a": int, "b": float, "B": float, "c": str}
         with raises(
             _InsertDataFrameMapDFColumnToTableColumnAndTypeError,
-            match=r"Unable to map DataFrame column 'b' into table schema \{.*\} with snake=True",
+            match=re.compile(
+                r"Unable to map DataFrame column 'b' into table schema \{.*\} with snake=True",
+                flags=DOTALL,
+            ),
         ):
             _ = _insert_dataframe_map_df_column_to_table_column_and_type(
                 "b", schema, snake=True
