@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Awaitable, Callable, Coroutine, Mapping
+from collections.abc import Awaitable, Callable, Coroutine, Hashable, Iterable, Mapping
 from enum import Enum
 from logging import Logger
 from pathlib import Path
@@ -19,6 +19,7 @@ from zoneinfo import ZoneInfo
 
 _T = TypeVar("_T")
 _TEnum = TypeVar("_TEnum", bound=Enum)
+_THashable = TypeVar("_THashable", bound=Hashable)
 _T_contra = TypeVar("_T_contra", contravariant=True)
 
 
@@ -45,6 +46,12 @@ class Dataclass(Protocol):
 
 # enum
 EnumOrStr: TypeAlias = _TEnum | str
+
+
+# iterables
+MaybeIterable: TypeAlias = _T | Iterable[_T]
+IterableHashable: TypeAlias = tuple[_THashable, ...] | frozenset[_THashable]
+MaybeIterableHashable: TypeAlias = _THashable | IterableHashable[_THashable]
 
 
 # logging
@@ -85,10 +92,13 @@ __all__ = [
     "Duration",
     "EnumOrStr",
     "ExcInfo",
+    "IterableHashable",
     "LogLevel",
     "LoggerOrName",
     "MaybeAwaitable",
     "MaybeCoroutine1",
+    "MaybeIterable",
+    "MaybeIterableHashable",
     "Number",
     "OptExcInfo",
     "PathLike",

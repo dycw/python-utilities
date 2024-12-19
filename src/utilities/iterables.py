@@ -25,6 +25,7 @@ from typing import (
     Generic,
     Literal,
     Self,
+    TypeAlias,
     TypeGuard,
     TypeVar,
     assert_never,
@@ -49,7 +50,8 @@ from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
-    from utilities.types import StrMapping
+    from utilities.types import MaybeIterable, StrMapping
+
 
 _K = TypeVar("_K")
 _T = TypeVar("_T")
@@ -62,9 +64,6 @@ _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
 _THashable = TypeVar("_THashable", bound=Hashable)
 _UHashable = TypeVar("_UHashable", bound=Hashable)
-MaybeIterable = _T | Iterable[_T]
-IterableHashable = tuple[_THashable, ...] | frozenset[_THashable]
-MaybeIterableHashable = _THashable | IterableHashable[_THashable]
 
 
 ##
@@ -85,8 +84,8 @@ def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
 
 
 def apply_bijection(
-    func: Callable[[_THashable], _UHashable], iterable: Iterable[_THashable], /
-) -> Mapping[_THashable, _UHashable]:
+    func: Callable[[_T], _U], iterable: Iterable[_T], /
+) -> Mapping[_T, _U]:
     """Apply a function bijectively."""
     keys = list(iterable)
     try:
@@ -106,23 +105,21 @@ def apply_bijection(
 
 
 @dataclass(kw_only=True, slots=True)
-class ApplyBijectionError(Exception, Generic[_THashable]):
-    keys: list[_THashable]
-    counts: Mapping[_THashable, int]
+class ApplyBijectionError(Exception, Generic[_T]):
+    keys: list[_T]
+    counts: Mapping[_T, int]
 
 
 @dataclass(kw_only=True, slots=True)
-class _ApplyBijectionDuplicateKeysError(ApplyBijectionError[_THashable]):
+class _ApplyBijectionDuplicateKeysError(ApplyBijectionError[_T]):
     @override
     def __str__(self) -> str:
         return f"Keys {get_repr(self.keys)} must not contain duplicates; got {get_repr(self.counts)}"
 
 
 @dataclass(kw_only=True, slots=True)
-class _ApplyBijectionDuplicateValuesError(
-    ApplyBijectionError[_THashable], Generic[_THashable, _UHashable]
-):
-    values: list[_UHashable]
+class _ApplyBijectionDuplicateValuesError(ApplyBijectionError[_T], Generic[_T, _U]):
+    values: list[_U]
 
     @override
     def __str__(self) -> str:
@@ -216,7 +213,7 @@ def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
         )
 
 
-_CheckIterablesEqualState = Literal["left_longer", "right_longer"]
+_CheckIterablesEqualState: TypeAlias = Literal["left_longer", "right_longer"]
 
 
 @dataclass(kw_only=True, slots=True)
@@ -589,6 +586,45 @@ class CheckSuperSetError(Exception, Generic[_T]):
     @override
     def __str__(self) -> str:
         return f"Set {get_repr(self.left)} must be a superset of {get_repr(self.right)}; right had extra items {get_repr(self.extra)}."
+
+
+##
+
+
+def check_unique_modulo_case(iterable: Iterable[str], /) -> None:
+    """Check that an iterable of strings is unique modulo case."""
+    try:
+        _ = apply_bijection(str.lower, iterable)
+    except _ApplyBijectionDuplicateKeysError as error:
+        raise _CheckUniqueModuloCaseDuplicateStringsError(
+            keys=error.keys, counts=error.counts
+        ) from None
+    except _ApplyBijectionDuplicateValuesError as error:
+        raise _CheckUniqueModuloCaseDuplicateLowerCaseStringsError(
+            keys=error.keys, values=error.values, counts=error.counts
+        ) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class CheckUniqueModuloCaseError(Exception):
+    keys: Iterable[str]
+    counts: Mapping[str, int]
+
+
+@dataclass(kw_only=True, slots=True)
+class _CheckUniqueModuloCaseDuplicateStringsError(CheckUniqueModuloCaseError):
+    @override
+    def __str__(self) -> str:
+        return f"Strings {get_repr(self.keys)} must not contain duplicates; got {get_repr(self.counts)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _CheckUniqueModuloCaseDuplicateLowerCaseStringsError(CheckUniqueModuloCaseError):
+    values: Iterable[str]
+
+    @override
+    def __str__(self) -> str:
+        return f"Lower-cased strings {get_repr(self.values)} must not contain duplicates; got {get_repr(self.counts)}"
 
 
 ##
@@ -1185,11 +1221,9 @@ __all__ = [
     "CheckSubSetError",
     "CheckSuperMappingError",
     "CheckSuperSetError",
+    "CheckUniqueModuloCaseError",
     "EnsureIterableError",
     "EnsureIterableNotStrError",
-    "IterableHashable",
-    "MaybeIterable",
-    "MaybeIterableHashable",
     "OneEmptyError",
     "OneError",
     "OneModalValueError",
@@ -1211,6 +1245,7 @@ __all__ = [
     "check_subset",
     "check_supermapping",
     "check_superset",
+    "check_unique_modulo_case",
     "chunked",
     "ensure_hashables",
     "ensure_iterable",

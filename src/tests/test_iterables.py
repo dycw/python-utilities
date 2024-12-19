@@ -47,13 +47,14 @@ from utilities.iterables import (
     Collection,
     EnsureIterableError,
     EnsureIterableNotStrError,
-    MaybeIterable,
     OneEmptyError,
     OneNonUniqueError,
     ResolveIncludeAndExcludeError,
     SortIterableError,
     _ApplyBijectionDuplicateKeysError,
     _ApplyBijectionDuplicateValuesError,
+    _CheckUniqueModuloCaseDuplicateLowerCaseStringsError,
+    _CheckUniqueModuloCaseDuplicateStringsError,
     _OneModalValueEmptyError,
     _OneModalValueNonUniqueError,
     _OneStrCaseInsensitiveBijectionError,
@@ -77,6 +78,7 @@ from utilities.iterables import (
     check_subset,
     check_supermapping,
     check_superset,
+    check_unique_modulo_case,
     chunked,
     ensure_hashables,
     ensure_iterable,
@@ -105,7 +107,7 @@ if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import Iterable, Iterator, Mapping, Sequence
 
-    from utilities.types import StrMapping
+    from utilities.types import MaybeIterable, StrMapping
 
 
 class TestAlwaysIterable:
@@ -156,7 +158,9 @@ class TestApplyBijection:
     def test_error_duplicate_keys(self, *, text: str) -> None:
         with raises(
             _ApplyBijectionDuplicateKeysError,
-            match="Keys .* must not contain duplicates; got .*",
+            match=re.compile(
+                "Keys .* must not contain duplicates; got .*", flags=DOTALL
+            ),
         ):
             _ = apply_bijection(str.upper, [text, text])
 
@@ -164,7 +168,9 @@ class TestApplyBijection:
     def test_error_duplicate_values(self, *, text: str) -> None:
         with raises(
             _ApplyBijectionDuplicateValuesError,
-            match="Values .* must not contain duplicates; got .*",
+            match=re.compile(
+                "Values .* must not contain duplicates; got .*", flags=DOTALL
+            ),
         ):
             _ = apply_bijection(str.upper, [text.lower(), text.upper()])
 
@@ -478,6 +484,33 @@ class TestCheckSuperSet:
             match=r"Set .* must be a superset of .*; right had extra items .*\.",
         ):
             check_superset({1}, {1, 2, 3})
+
+
+class TestCheckUniqueModuloCase:
+    @given(text=text_ascii())
+    def test_main(self, *, text: str) -> None:
+        _ = check_unique_modulo_case([text])
+
+    @given(text=text_ascii(min_size=1))
+    def test_error_duplicate_keys(self, *, text: str) -> None:
+        with raises(
+            _CheckUniqueModuloCaseDuplicateStringsError,
+            match=re.compile(
+                "Strings .* must not contain duplicates; got .*", flags=DOTALL
+            ),
+        ):
+            _ = check_unique_modulo_case([text, text])
+
+    @given(text=text_ascii(min_size=1))
+    def test_error_duplicate_values(self, *, text: str) -> None:
+        with raises(
+            _CheckUniqueModuloCaseDuplicateLowerCaseStringsError,
+            match=re.compile(
+                "Lower-cased strings .* must not contain duplicates; got .*",
+                flags=DOTALL,
+            ),
+        ):
+            _ = check_unique_modulo_case([text.lower(), text.upper()])
 
 
 class TestChunked:
