@@ -12,7 +12,7 @@ from typing_extensions import override
 
 from utilities.dataclasses import (
     _MappingToDataclassCaseInsensitiveBijectionError,
-    _MappingToDataclassCaseSensitiveEmptyError,
+    _MappingToDataclassCaseInsensitiveEmptyError,
     _YieldFieldsClass,
     mapping_to_dataclass,
 )
@@ -46,9 +46,12 @@ def load_settings(
     path = get_repo_root(cwd=cwd).joinpath(".env")
     if not path.exists():
         raise _LoadSettingsFileNotFoundError(path=path) from None
+    maybe_values_dotenv = dotenv_values(path)
+    assert 0, maybe_values_dotenv
     maybe_values = merge_str_mappings(
-        dotenv_values(path), environ, case_sensitive=False
+        maybe_values_dotenv, environ, case_sensitive=False
     )
+    assert 0
     values = {k: v for k, v in maybe_values.items() if v is not None}
     try:
         return mapping_to_dataclass(
@@ -59,7 +62,7 @@ def load_settings(
             case_sensitive=False,
             post=partial(_load_settings_post, path=path, values=values),
         )
-    except _MappingToDataclassCaseSensitiveEmptyError as error:
+    except _MappingToDataclassCaseInsensitiveEmptyError as error:
         raise _LoadSettingsEmptyError(
             path=path, values=error.mapping, field=error.field
         ) from None
@@ -121,7 +124,7 @@ class _LoadSettingsEmptyError(LoadSettingsError):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {get_repr(self.values)} does not contain {self.field!r} (case insensitive)"
+        return f"Field {self.field!r} must exist (case insensitive)"
 
 
 @dataclass(kw_only=True, slots=True)

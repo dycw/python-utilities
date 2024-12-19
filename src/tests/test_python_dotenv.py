@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Literal
 
-from hypothesis import given
+from hypothesis import given, reproduce_failure
 from hypothesis.strategies import DataObject, booleans, data, integers, sampled_from
 from pytest import mark, raises
 
@@ -27,7 +27,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-@mark.only
 class TestLoadSettings:
     @given(
         data=data(),
@@ -233,9 +232,14 @@ class TestLoadSettings:
 
         root.joinpath(".env").touch()
 
-        with raises(_LoadSettingsEmptyError, match=r"Field 'key' must exist"):
+        with raises(
+            _LoadSettingsEmptyError,
+            match=r"Field 'key' must exist \(case insensitive\)",
+        ):
             _ = load_settings(Settings, cwd=root)
 
+    @mark.only
+    @reproduce_failure("6.122.3", b"AXicY2BAAAAADAAB")
     @given(root=git_repos(), value=integers())
     @settings_with_reduced_examples()
     def test_error_field_duplicated(self, *, root: Path, value: int) -> None:
@@ -249,7 +253,7 @@ class TestLoadSettings:
 
         with raises(
             _LoadSettingsNonUniqueError,
-            match=r"Field 'key' must exist exactly once; got .*",
+            match=r"Field 'key' must exist exactly once \(case sensitive\); got .*",
         ):
             _ = load_settings(Settings, cwd=root)
 

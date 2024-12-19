@@ -52,6 +52,8 @@ from utilities.iterables import (
     OneNonUniqueError,
     ResolveIncludeAndExcludeError,
     SortIterableError,
+    _ApplyBijectionDuplicateKeysError,
+    _ApplyBijectionDuplicateValuesError,
     _OneModalValueEmptyError,
     _OneModalValueNonUniqueError,
     _OneStrCaseInsensitiveBijectionError,
@@ -61,6 +63,7 @@ from utilities.iterables import (
     _sort_iterable_cmp_datetimes,
     _sort_iterable_cmp_floats,
     always_iterable,
+    apply_bijection,
     apply_to_tuple,
     apply_to_varargs,
     check_bijection,
@@ -140,6 +143,30 @@ class TestAlwaysIterable:
             yield 1
 
         assert list(always_iterable(yield_ints())) == [0, 1]
+
+
+class TestApplyBijection:
+    @given(text=text_ascii())
+    def test_main(self, *, text: str) -> None:
+        result = apply_bijection(str.upper, [text])
+        expected = {text: text.upper()}
+        assert result == expected
+
+    @given(text=text_ascii(min_size=1))
+    def test_error_duplicate_keys(self, *, text: str) -> None:
+        with raises(
+            _ApplyBijectionDuplicateKeysError,
+            match="Keys .* must not contain duplicates; got .*",
+        ):
+            _ = apply_bijection(str.upper, [text, text])
+
+    @given(text=text_ascii(min_size=1))
+    def test_error_duplicate_values(self, *, text: str) -> None:
+        with raises(
+            _ApplyBijectionDuplicateValuesError,
+            match="Values .* must not contain duplicates; got .*",
+        ):
+            _ = apply_bijection(str.upper, [text.lower(), text.upper()])
 
 
 class TestApplyToTuple:
@@ -843,6 +870,11 @@ class TestMergeStrMappings:
 
     @given(case_sensitive=booleans())
     def test_empty(self, *, case_sensitive: bool) -> None:
+        result = merge_str_mappings(case_sensitive=case_sensitive)
+        expected = {}
+        assert result == expected
+
+    def test_error(self) -> None:
         result = merge_str_mappings(case_sensitive=case_sensitive)
         expected = {}
         assert result == expected

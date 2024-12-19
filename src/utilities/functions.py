@@ -34,6 +34,9 @@ _T5 = TypeVar("_T5")
 _U = TypeVar("_U")
 
 
+##
+
+
 @overload
 def ensure_bool(obj: Any, /, *, nullable: bool) -> bool | None: ...
 @overload
@@ -56,6 +59,9 @@ class EnsureBoolError(Exception):
         return _make_error_msg(self.obj, "a boolean", nullable=self.nullable)
 
 
+##
+
+
 @overload
 def ensure_bytes(obj: Any, /, *, nullable: bool) -> bytes | None: ...
 @overload
@@ -76,6 +82,9 @@ class EnsureBytesError(Exception):
     @override
     def __str__(self) -> str:
         return _make_error_msg(self.obj, "a byte string", nullable=self.nullable)
+
+
+##
 
 
 @overload
@@ -160,6 +169,9 @@ class EnsureClassError(Exception):
         )
 
 
+##
+
+
 @overload
 def ensure_date(obj: Any, /, *, nullable: bool) -> dt.date | None: ...
 @overload
@@ -180,6 +192,9 @@ class EnsureDateError(Exception):
     @override
     def __str__(self) -> str:
         return _make_error_msg(self.obj, "a date", nullable=self.nullable)
+
+
+##
 
 
 @overload
@@ -206,6 +221,9 @@ class EnsureDatetimeError(Exception):
         return _make_error_msg(self.obj, "a datetime", nullable=self.nullable)
 
 
+##
+
+
 @overload
 def ensure_float(obj: Any, /, *, nullable: bool) -> float | None: ...
 @overload
@@ -228,6 +246,9 @@ class EnsureFloatError(Exception):
         return _make_error_msg(self.obj, "a float", nullable=self.nullable)
 
 
+##
+
+
 def ensure_hashable(obj: Any, /) -> Hashable:
     """Ensure an object is hashable."""
     if is_hashable(obj):
@@ -242,6 +263,9 @@ class EnsureHashableError(Exception):
     @override
     def __str__(self) -> str:
         return _make_error_msg(self.obj, "hashable")
+
+
+##
 
 
 @overload
@@ -264,6 +288,9 @@ class EnsureIntError(Exception):
     @override
     def __str__(self) -> str:
         return _make_error_msg(self.obj, "an integer", nullable=self.nullable)
+
+
+##
 
 
 @overload
@@ -296,6 +323,9 @@ class EnsureMemberError(Exception):
         )
 
 
+##
+
+
 def ensure_not_none(obj: _T | None, /, *, desc: str = "Object") -> _T:
     """Ensure an object is not None."""
     if obj is None:
@@ -310,6 +340,9 @@ class EnsureNotNoneError(Exception):
     @override
     def __str__(self) -> str:
         return f"{self.desc} must not be None"
+
+
+##
 
 
 @overload
@@ -334,6 +367,9 @@ class EnsureNumberError(Exception):
         return _make_error_msg(self.obj, "a number", nullable=self.nullable)
 
 
+##
+
+
 def ensure_sized(obj: Any, /) -> Sized:
     """Ensure an object is sized."""
     if is_sized(obj):
@@ -350,6 +386,9 @@ class EnsureSizedError(Exception):
         return _make_error_msg(self.obj, "sized")
 
 
+##
+
+
 def ensure_sized_not_str(obj: Any, /) -> Sized:
     """Ensure an object is sized, but not a string."""
     if is_sized_not_str(obj):
@@ -364,6 +403,9 @@ class EnsureSizedNotStrError(Exception):
     @override
     def __str__(self) -> str:
         return _make_error_msg(self.obj, "sized and not a string")
+
+
+##
 
 
 @overload
@@ -388,6 +430,9 @@ class EnsureStrError(Exception):
         return _make_error_msg(self.obj, "a string", nullable=self.nullable)
 
 
+##
+
+
 @overload
 def ensure_time(obj: Any, /, *, nullable: bool) -> dt.time | None: ...
 @overload
@@ -410,9 +455,15 @@ class EnsureTimeError(Exception):
         return _make_error_msg(self.obj, "a time", nullable=self.nullable)
 
 
+##
+
+
 def first(pair: tuple[_T, Any], /) -> _T:
     """Get the first element in a pair."""
     return pair[0]
+
+
+##
 
 
 @overload
@@ -424,9 +475,15 @@ def get_class(obj: _T | type[_T], /) -> type[_T]:
     return obj if isinstance(obj, type) else type(obj)
 
 
+##
+
+
 def get_class_name(obj: Any, /) -> str:
     """Get the name of the class of an object, unless it is already a class."""
     return get_class(obj).__name__
+
+
+##
 
 
 def get_func_name(obj: Callable[..., Any], /) -> str:
@@ -455,6 +512,9 @@ def get_func_name(obj: Callable[..., Any], /) -> str:
     return get_class_name(obj)
 
 
+##
+
+
 def get_func_qualname(obj: Callable[..., Any], /) -> str:
     """Get the qualified name of a callable."""
     if isinstance(
@@ -470,9 +530,15 @@ def get_func_qualname(obj: Callable[..., Any], /) -> str:
     return f"{obj.__module__}.{get_class_name(obj)}"
 
 
+##
+
+
 def identity(obj: _T, /) -> _T:
     """Return the object itself."""
     return obj
+
+
+##
 
 
 def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:
@@ -480,9 +546,15 @@ def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:
     return isinstance(obj, type) and is_dataclass(obj)
 
 
+##
+
+
 def is_dataclass_instance(obj: Any, /) -> TypeGuard[Dataclass]:
     """Check if an object is an instance of a dataclass."""
     return (not isinstance(obj, type)) and is_dataclass(obj)
+
+
+##
 
 
 def is_hashable(obj: Any, /) -> TypeGuard[Hashable]:
@@ -492,6 +564,9 @@ def is_hashable(obj: Any, /) -> TypeGuard[Hashable]:
     except TypeError:
         return False
     return True
+
+
+##
 
 
 @overload
@@ -519,14 +594,23 @@ def is_iterable_of(obj: Any, cls: Any, /) -> TypeGuard[Iterable[Any]]:
     return isinstance(obj, Iterable) and all(map(make_isinstance(cls), obj))
 
 
+##
+
+
 def is_none(obj: Any, /) -> bool:
     """Check if an object is `None`."""
     return obj is None
 
 
+##
+
+
 def is_not_none(obj: Any, /) -> bool:
     """Check if an object is not `None`."""
     return obj is not None
+
+
+##
 
 
 @overload
@@ -554,11 +638,17 @@ def is_sequence_of(obj: Any, cls: Any, /) -> TypeGuard[Sequence[Any]]:
     return isinstance(obj, Sequence) and is_iterable_of(obj, cls)
 
 
+##
+
+
 def is_sequence_of_tuple_or_str_mapping(
     obj: Any, /
 ) -> TypeGuard[Sequence[TupleOrStrMapping]]:
     """Check if an object is a sequence of tuple or string mappings."""
     return isinstance(obj, Sequence) and all(map(is_tuple_or_str_mapping, obj))
+
+
+##
 
 
 def is_sized(obj: Any, /) -> TypeGuard[Sized]:
@@ -570,14 +660,29 @@ def is_sized(obj: Any, /) -> TypeGuard[Sized]:
     return True
 
 
+##
+
+
 def is_sized_not_str(obj: Any, /) -> TypeGuard[Sized]:
     """Check if an object is sized, but not a string."""
     return is_sized(obj) and not isinstance(obj, str)
 
 
-def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
+##
+
+
+def is_string_mapping(
+    obj: Any, /, *, unique_modulo_case: bool = False
+) -> TypeGuard[StrMapping]:
     """Check if an object is a string mapping."""
-    return isinstance(obj, dict) and is_iterable_of(obj, str)
+    if not (isinstance(obj, dict) and is_iterable_of(obj, str)):
+        return False
+    if unique_modulo_case:
+        return True
+    return None
+
+
+##
 
 
 def is_subclass_except_bool_int(x: type[Any], y: type[Any], /) -> bool:
@@ -585,14 +690,23 @@ def is_subclass_except_bool_int(x: type[Any], y: type[Any], /) -> bool:
     return issubclass(x, y) and not (issubclass(x, bool) and issubclass(int, y))
 
 
+##
+
+
 def is_tuple(obj: Any, /) -> TypeGuard[tuple[Any, ...]]:
     """Check if an object is a tuple or string mapping."""
     return make_isinstance(tuple)(obj)
 
 
+##
+
+
 def is_tuple_or_str_mapping(obj: Any, /) -> TypeGuard[TupleOrStrMapping]:
     """Check if an object is a tuple or string mapping."""
     return is_tuple(obj) or is_string_mapping(obj)
+
+
+##
 
 
 @overload
@@ -622,10 +736,16 @@ def make_isinstance(
     return partial(_make_instance_core, cls=cls)
 
 
+##
+
+
 def _make_instance_core(
     obj: Any, /, *, cls: type[_T] | tuple[type[_T], ...]
 ) -> TypeGuard[_T]:
     return isinstance(obj, cls)
+
+
+##
 
 
 def map_object(
@@ -651,6 +771,9 @@ def map_object(
             return func(obj)
 
 
+##
+
+
 def not_func(func: Callable[_P, bool], /) -> Callable[_P, bool]:
     """Lift a boolean-valued function to return its conjugation."""
 
@@ -661,9 +784,15 @@ def not_func(func: Callable[_P, bool], /) -> Callable[_P, bool]:
     return wrapped
 
 
+##
+
+
 def second(pair: tuple[Any, _U], /) -> _U:
     """Get the second element in a pair."""
     return pair[1]
+
+
+##
 
 
 def _make_error_msg(obj: Any, desc: str, /, *, nullable: bool = False) -> str:

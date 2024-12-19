@@ -84,6 +84,54 @@ def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
 ##
 
 
+def apply_bijection(
+    func: Callable[[_THashable], _UHashable], iterable: Iterable[_THashable], /
+) -> Mapping[_THashable, _UHashable]:
+    """Apply a function bijectively."""
+    keys = list(iterable)
+    try:
+        check_duplicates(keys)
+    except CheckDuplicatesError as error:
+        raise _ApplyBijectionDuplicateKeysError(
+            keys=keys, counts=error.counts
+        ) from None
+    values = list(map(func, keys))
+    try:
+        check_duplicates(values)
+    except CheckDuplicatesError as error:
+        raise _ApplyBijectionDuplicateValuesError(
+            keys=keys, values=values, counts=error.counts
+        ) from None
+    return dict(zip(keys, values, strict=True))
+
+
+@dataclass(kw_only=True, slots=True)
+class ApplyBijectionError(Exception, Generic[_THashable]):
+    keys: list[_THashable]
+    counts: Mapping[_THashable, int]
+
+
+@dataclass(kw_only=True, slots=True)
+class _ApplyBijectionDuplicateKeysError(ApplyBijectionError[_THashable]):
+    @override
+    def __str__(self) -> str:
+        return f"Keys {get_repr(self.keys)} must not contain duplicates; got {get_repr(self.counts)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ApplyBijectionDuplicateValuesError(
+    ApplyBijectionError[_THashable], Generic[_THashable, _UHashable]
+):
+    values: list[_UHashable]
+
+    @override
+    def __str__(self) -> str:
+        return f"Values {get_repr(self.values)} must not contain duplicates; got {get_repr(self.counts)}"
+
+
+##
+
+
 def apply_to_tuple(func: Callable[..., _T], args: tuple[Any, ...], /) -> _T:
     """Apply a function to a tuple of args."""
     return apply_to_varargs(func, *args)
@@ -1126,6 +1174,7 @@ def transpose(iterable: Iterable[tuple[Any, ...]]) -> tuple[tuple[Any, ...], ...
 
 
 __all__ = [
+    "ApplyBijectionError",
     "CheckBijectionError",
     "CheckDuplicatesError",
     "CheckIterablesEqualError",
@@ -1149,6 +1198,7 @@ __all__ = [
     "ResolveIncludeAndExcludeError",
     "SortIterableError",
     "always_iterable",
+    "apply_bijection",
     "apply_to_tuple",
     "apply_to_varargs",
     "check_bijection",

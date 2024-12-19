@@ -84,7 +84,7 @@ if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import Callable
 
-    from utilities.types import Number
+    from utilities.types import Number, StrMapping
 
 
 _T = TypeVar("_T")
@@ -653,6 +653,17 @@ class TestIsStringMapping:
     def test_main(self, *, case: tuple[Any, bool]) -> None:
         obj, expected = case
         result = is_string_mapping(obj)
+        assert result is expected
+
+    @given(
+        case=sampled_from([
+            ({"a": 1, "b": 2, "c": 3}, True),
+            ({"a": 1, "A": 2, "c": 3}, False),
+        ])
+    )
+    def test_unique_modulo_case(self, *, case: tuple[StrMapping, bool]) -> None:
+        _mapping, expected = case
+        result = is_string_mapping(obj, unique_modulo_case=True)
         assert result is expected
 
 
