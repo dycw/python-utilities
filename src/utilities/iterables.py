@@ -66,6 +66,9 @@ IterableHashable = tuple[_THashable, ...] | frozenset[_THashable]
 MaybeIterableHashable = _THashable | IterableHashable[_THashable]
 
 
+##
+
+
 def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
     """Typed version of `always_iterable`."""
     obj = cast(Any, obj)
@@ -77,14 +80,23 @@ def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
         return cast(list[_T], [obj])
 
 
+##
+
+
 def apply_to_tuple(func: Callable[..., _T], args: tuple[Any, ...], /) -> _T:
     """Apply a function to a tuple of args."""
     return apply_to_varargs(func, *args)
 
 
+##
+
+
 def apply_to_varargs(func: Callable[..., _T], *args: Any) -> _T:
     """Apply a function to a variable number of arguments."""
     return func(*args)
+
+
+##
 
 
 def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
@@ -105,6 +117,9 @@ class CheckBijectionError(Exception, Generic[_THashable]):
         return f"Mapping {get_repr(self.mapping)} must be a bijection; got duplicates {get_repr(self.counts)}"
 
 
+##
+
+
 def check_duplicates(iterable: Iterable[Hashable], /) -> None:
     """Check if an iterable contains any duplicates."""
     counts = {k: v for k, v in Counter(iterable).items() if v > 1}
@@ -120,6 +135,9 @@ class CheckDuplicatesError(Exception, Generic[_THashable]):
     @override
     def __str__(self) -> str:
         return f"Iterable {get_repr(self.iterable)} must not contain duplicates; got {get_repr(self.counts)}"
+
+
+##
 
 
 def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
@@ -184,6 +202,9 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
                 pass
             case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                 assert_never(never)
+
+
+##
 
 
 def check_length(
@@ -257,6 +278,9 @@ class _CheckLengthMaxError(CheckLengthError):
         return f"Object {get_repr(self.obj)} must have maximum length {self.max_}; got {len(self.obj)}"
 
 
+##
+
+
 def check_lengths_equal(left: Sized, right: Sized, /) -> None:
     """Check that a pair of sizes objects have equal length."""
     if len(left) != len(right):
@@ -271,6 +295,9 @@ class CheckLengthsEqualError(Exception):
     @override
     def __str__(self) -> str:
         return f"Sized objects {get_repr(self.left)} and {get_repr(self.right)} must have the same length; got {len(self.left)} and {len(self.right)}"
+
+
+##
 
 
 def check_mappings_equal(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> None:
@@ -329,6 +356,9 @@ class CheckMappingsEqualError(Exception, Generic[_K, _V]):
             yield f"differing values were {get_repr(errors)}"
 
 
+##
+
+
 def check_sets_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
     """Check that a pair of sets are equal."""
     left_as_set = set(left)
@@ -368,6 +398,9 @@ class CheckSetsEqualError(Exception, Generic[_T]):
             yield f"left had extra items {get_repr(self.left_extra)}"
         if len(self.right_extra) >= 1:
             yield f"right had extra items {get_repr(self.right_extra)}"
+
+
+##
 
 
 def check_submapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> None:
@@ -415,6 +448,9 @@ class CheckSubMappingError(Exception, Generic[_K, _V]):
             yield f"differing values were {get_repr(errors)}"
 
 
+##
+
+
 def check_subset(left: Iterable[Any], right: Iterable[Any], /) -> None:
     """Check that a set is a subset of another set."""
     left_as_set = set(left)
@@ -433,6 +469,9 @@ class CheckSubSetError(Exception, Generic[_T]):
     @override
     def __str__(self) -> str:
         return f"Set {get_repr(self.left)} must be a subset of {get_repr(self.right)}; left had extra items {get_repr(self.extra)}"
+
+
+##
 
 
 def check_supermapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> None:
@@ -480,6 +519,9 @@ class CheckSuperMappingError(Exception, Generic[_K, _V]):
             yield f"differing values were {get_repr(errors)}"
 
 
+##
+
+
 def check_superset(left: Iterable[Any], right: Iterable[Any], /) -> None:
     """Check that a set is a superset of another set."""
     left_as_set = set(left)
@@ -500,9 +542,15 @@ class CheckSuperSetError(Exception, Generic[_T]):
         return f"Set {get_repr(self.left)} must be a superset of {get_repr(self.right)}; right had extra items {get_repr(self.extra)}."
 
 
+##
+
+
 def chunked(iterable: Iterable[_T], n: int, /) -> Iterator[Sequence[_T]]:
     """Break an iterable into lists of length n."""
     return iter(partial(take, n, iter(iterable)), [])
+
+
+##
 
 
 class Collection(frozenset[_THashable]):
@@ -555,6 +603,9 @@ class Collection(frozenset[_THashable]):
         return type(self)(is_false), type(self)(is_true)
 
 
+##
+
+
 def ensure_hashables(
     *args: Any, **kwargs: Any
 ) -> tuple[list[Hashable], dict[str, Hashable]]:
@@ -562,6 +613,9 @@ def ensure_hashables(
     hash_args = list(map(ensure_hashable, args))
     hash_kwargs = {k: ensure_hashable(v) for k, v in kwargs.items()}
     return hash_args, hash_kwargs
+
+
+##
 
 
 def ensure_iterable(obj: Any, /) -> Iterable[Any]:
@@ -580,6 +634,9 @@ class EnsureIterableError(Exception):
         return f"Object {get_repr(self.obj)} must be iterable"
 
 
+##
+
+
 def ensure_iterable_not_str(obj: Any, /) -> Iterable[Any]:
     """Ensure an object is iterable, but not a string."""
     if is_iterable_not_str(obj):
@@ -596,6 +653,9 @@ class EnsureIterableNotStrError(Exception):
         return f"Object {get_repr(self.obj)} must be iterable, but not a string"
 
 
+##
+
+
 def expanding_window(iterable: Iterable[_T], /) -> islice[list[_T]]:
     """Yield an expanding window over an iterable."""
 
@@ -605,9 +665,7 @@ def expanding_window(iterable: Iterable[_T], /) -> islice[list[_T]]:
     return islice(accumulate(iterable, func=func, initial=[]), 1, None)
 
 
-def hashable_to_iterable(obj: _THashable | None, /) -> tuple[_THashable, ...] | None:
-    """Lift a hashable singleton to an iterable of hashables."""
-    return None if obj is None else (obj,)
+##
 
 
 @overload
@@ -651,6 +709,9 @@ def filter_include_and_exclude(
     return iterable
 
 
+##
+
+
 @overload
 def groupby_lists(
     iterable: Iterable[_T], /, *, key: None = None
@@ -671,6 +732,17 @@ def groupby_lists(
             yield k, list(group)
 
 
+##
+
+
+def hashable_to_iterable(obj: _THashable | None, /) -> tuple[_THashable, ...] | None:
+    """Lift a hashable singleton to an iterable of hashables."""
+    return None if obj is None else (obj,)
+
+
+##
+
+
 def is_iterable(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     """Check if an object is iterable."""
     try:
@@ -680,14 +752,23 @@ def is_iterable(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     return True
 
 
+##
+
+
 def is_iterable_not_enum(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     """Check if an object is iterable, but not an Enum."""
     return is_iterable(obj) and not (isinstance(obj, type) and issubclass(obj, Enum))
 
 
+##
+
+
 def is_iterable_not_str(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     """Check if an object is iterable, but not a string."""
     return is_iterable(obj) and not isinstance(obj, str)
+
+
+##
 
 
 def one(iterable: Iterable[_T], /) -> _T:
@@ -726,6 +807,9 @@ class OneNonUniqueError(OneError[_T]):
         return f"Iterable {get_repr(self.iterable)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
 
 
+##
+
+
 def one_modal_value(iterable: Iterable[_T], /, *, min_frac: float = 0.5) -> _T:
     """Return the unique modal value in an iterable."""
     counts = Counter(iterable)
@@ -762,6 +846,9 @@ class _OneModalValueNonUniqueError(OneModalValueError[_T]):
     @override
     def __str__(self) -> str:
         return f"Iterable {get_repr(self.iterable)} with fractions {get_repr(self.fracs)} must contain exactly one modal value; got {self.first}, {self.second} and perhaps more"
+
+
+##
 
 
 def one_str(
