@@ -11,7 +11,6 @@ from dotenv import dotenv_values
 from typing_extensions import override
 
 from utilities.dataclasses import (
-    _MappingToDataclassCaseInsensitiveNonUniqueError,
     _MappingToDataclassEmptyError,
     _YieldFieldsClass,
     mapping_to_dataclass,
@@ -68,10 +67,6 @@ def load_settings(
     except _MappingToDataclassEmptyError as error:
         raise _LoadSettingsEmptyError(
             path=path, values=error.mapping, field=error.field
-        ) from None
-    except _MappingToDataclassCaseInsensitiveNonUniqueError as error:
-        raise _LoadSettingsDuplicateKeysError(
-            path=path, values=error.mapping, field=error.field, counts=error.counts
         ) from None
 
 

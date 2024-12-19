@@ -671,15 +671,9 @@ def is_sized_not_str(obj: Any, /) -> TypeGuard[Sized]:
 ##
 
 
-def is_string_mapping(
-    obj: Any, /, *, unique_modulo_case: bool = False
-) -> TypeGuard[StrMapping]:
+def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
     """Check if an object is a string mapping."""
-    if not (isinstance(obj, dict) and is_iterable_of(obj, str)):
-        return False
-    if unique_modulo_case:
-        return True
-    return None
+    return isinstance(obj, dict) and is_iterable_of(obj, str)
 
 
 ##

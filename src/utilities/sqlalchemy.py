@@ -72,7 +72,6 @@ from utilities.functions import (
 from utilities.iterables import (
     CheckLengthError,
     CheckSubSetError,
-    MaybeIterable,
     OneEmptyError,
     OneNonUniqueError,
     check_length,
@@ -82,7 +81,7 @@ from utilities.iterables import (
 )
 from utilities.reprlib import get_repr
 from utilities.tenacity import yield_timeout_attempts
-from utilities.types import Duration, StrMapping, TupleOrStrMapping
+from utilities.types import Duration, MaybeIterable, StrMapping, TupleOrStrMapping
 
 if TYPE_CHECKING:
     from types import TracebackType
