@@ -505,7 +505,7 @@ class TestCheckUniqueModuloCase:
         with raises(
             _CheckUniqueModuloCaseDuplicateLowerCaseStringsError,
             match=re.compile(
-                "Lower-cased strings .* must not contain duplicates; got .*",
+                r"Strings .* must not contain duplicates \(modulo case\); got .*",
                 flags=DOTALL,
             ),
         ):

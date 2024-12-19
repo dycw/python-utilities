@@ -624,7 +624,7 @@ class _CheckUniqueModuloCaseDuplicateLowerCaseStringsError(CheckUniqueModuloCase
 
     @override
     def __str__(self) -> str:
-        return f"Lower-cased strings {get_repr(self.values)} must not contain duplicates; got {get_repr(self.counts)}"
+        return f"Strings {get_repr(self.values)} must not contain duplicates (modulo case); got {get_repr(self.counts)}"
 
 
 ##
