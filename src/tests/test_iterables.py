@@ -911,7 +911,7 @@ class TestMergeStrMappings:
     def test_error(self) -> None:
         with raises(
             MergeStrMappingsError,
-            match="Lower-cased mapping keys .* must not contain duplicates; got .*",
+            match=r"Mapping .* keys must not contain duplicates \(modulo case\); got .*",
         ):
             _ = merge_str_mappings({"x": 1, "X": 2}, case_sensitive=False)
 
@@ -999,14 +999,14 @@ class TestOneStr:
     def test_error_bijection_error(self) -> None:
         with raises(
             _OneStrCaseInsensitiveBijectionError,
-            match=r"Iterable .* must not contain duplicates \(case insensitive\); got .*",
+            match=r"Iterable .* must not contain duplicates \(modulo case\); got .*",
         ):
             _ = one_str(["a", "A"], "a", case_sensitive=False)
 
     def test_error_case_insensitive_empty_error(self) -> None:
         with raises(
             _OneStrCaseInsensitiveEmptyError,
-            match=r"Iterable .* does not contain 'd' \(case insensitive\)",
+            match=r"Iterable .* does not contain 'd' \(modulo case\)",
         ):
             _ = one_str(["a", "b", "c"], "d", case_sensitive=False)
 

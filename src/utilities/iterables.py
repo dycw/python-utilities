@@ -893,7 +893,7 @@ class MergeStrMappingsError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping keys {get_repr(self.mapping)} must not contain duplicates (case insensitive); got {get_repr(self.counts)}"
+        return f"Mapping {get_repr(self.mapping)} keys must not contain duplicates (modulo case); got {get_repr(self.counts)}"
 
 
 ##
@@ -1037,14 +1037,14 @@ class _OneStrCaseInsensitiveBijectionError(OneStrError):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} must not contain duplicates (case insensitive); got {get_repr(self.counts)}"
+        return f"Iterable {get_repr(self.iterable)} must not contain duplicates (modulo case); got {get_repr(self.counts)}"
 
 
 @dataclass(kw_only=True, slots=True)
 class _OneStrCaseInsensitiveEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} does not contain {self.text!r} (case insensitive)"
+        return f"Iterable {get_repr(self.iterable)} does not contain {self.text!r} (modulo case)"
 
 
 def pairwise_tail(iterable: Iterable[_T], /) -> Iterator[tuple[_T, _T | Sentinel]]:
