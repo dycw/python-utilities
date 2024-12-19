@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from re import DOTALL
 from types import NoneType
 from typing import Any, Literal, cast
 
@@ -205,7 +207,10 @@ class TestMappingToDataclass:
 
         with raises(
             _MappingToDataclassCaseInsensitiveBijectionError,
-            match=r"Mapping .* must not contain duplicates \(case insensitive\); got .*",
+            match=re.compile(
+                r"Mapping .* must not contain duplicates \(case insensitive\); got .*",
+                flags=DOTALL,
+            ),
         ):
             _ = mapping_to_dataclass(
                 Example, {"x": value1, "X": value2}, case_sensitive=False
