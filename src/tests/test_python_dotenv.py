@@ -4,11 +4,17 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Literal
 
-from hypothesis import given
+from hypothesis import given, reproduce_failure
 from hypothesis.strategies import DataObject, booleans, data, integers, sampled_from
-from pytest import raises
+from pytest import mark, param, raises
 
-from utilities.hypothesis import git_repos, settings_with_reduced_examples, text_ascii
+from utilities.errors import ImpossibleCaseError
+from utilities.hypothesis import (
+    git_repos,
+    lists_fixed_length,
+    settings_with_reduced_examples,
+    text_ascii,
+)
 from utilities.os import temp_environ
 from utilities.python_dotenv import (
     _LoadSettingsEmptyError,
@@ -209,18 +215,39 @@ class TestLoadSettings:
         expected = Settings(key=value)
         assert settings == expected
 
-    @given(root=git_repos(), value=text_ascii())
+    @given(
+        data=data(), root=git_repos(), value_file=text_ascii(), value_env=text_ascii()
+    )
     @settings_with_reduced_examples()
-    def test_env_var_main(self, *, root: Path, value: str) -> None:
+    @mark.only
+    @reproduce_failure("6.122.3", b"AXicY2BAAEYGAAAQAAI=")
+    def test_file_and_env_var(
+        self, *, data: DataObject, root: Path, value_file: str, value_env: str
+    ) -> None:
+        key_file, key_env = data.draw(
+            lists_fixed_length(sampled_from(["key", "KEY"]), 2)
+        )
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"{key_file} = {value_file}\n")
+
         @dataclass(kw_only=True, slots=True)
-        class Settings:
+        class SettingsLower:
             key: str
 
-        root.joinpath(".env").touch()
-        with temp_environ(key=value):
-            settings = load_settings(Settings, cwd=root)
+        @dataclass(kw_only=True, slots=True)
+        class SettingsUpper:
+            KEY: str
 
-        expected = Settings(key=value)
+        SettingsUse = data.draw(sampled_from([SettingsLower, SettingsUpper]))  # noqa: N806
+        with temp_environ({key_env: value_env}):
+            settings = load_settings(SettingsUse, cwd=root)
+
+        if SettingsUse is SettingsLower:
+            expected = SettingsLower(key=value_env)
+        elif SettingsUse is SettingsUpper:
+            expected = SettingsUpper(KEY=value_env)
+        else:
+            raise ImpossibleCaseError(case=[f"{SettingsUse=}"])
         assert settings == expected
 
     @given(root=git_repos())

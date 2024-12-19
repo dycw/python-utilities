@@ -40,57 +40,56 @@ def load_settings(
     localns: StrMapping | None = None,
 ) -> _TDataclass:
     """Load a set of settings from the `.env` file."""
-    hints = get_type_hints(cls, globalns=globalns, localns=localns)
     path = get_repo_root(cwd=cwd).joinpath(".env")
     if not path.exists():
         raise _LoadSettingsFileNotFoundError(path=path) from None
     maybe_values = {**dotenv_values(path), **environ}
     values = {k: v for k, v in maybe_values.items() if v is not None}
-
-    def yield_items() -> Iterator[tuple[str, Any]]:
-        for fld in yield_fields(cls, globalns=globalns, localns=localns):
-            type_ = hints[fld.name]
-            try:
-                key = one_str(values, fld.name, case_sensitive=False)
-            except _OneStrCaseInsensitiveEmptyError:
-                raise _LoadSettingsEmptyError(path=path, field=fld.name) from None
-            except _OneStrCaseInsensitiveBijectionError as error:
-                raise _LoadSettingsNonUniqueError(
-                    path=path, field=fld.name, counts=error.counts
-                ) from None
-            raw_value = values[key]
-            if type_ is str:
-                value = raw_value
-            elif type_ is bool:
-                if raw_value == "0" or search("false", raw_value, flags=IGNORECASE):
-                    value = False
-                elif raw_value == "1" or search("true", raw_value, flags=IGNORECASE):
-                    value = True
-                else:
-                    raise _LoadSettingsInvalidBoolError(
-                        path=path, field=fld.name, value=raw_value
-                    )
-            elif type_ is int:
-                try:
-                    value = int(raw_value)
-                except ValueError:
-                    raise _LoadSettingsInvalidIntError(
-                        path=path, field=fld.name, value=raw_value
-                    ) from None
-            elif isinstance(type_, type) and issubclass(type_, Enum):
-                try:
-                    value = ensure_enum(raw_value, type_)
-                except EnsureEnumError:
-                    raise _LoadSettingsInvalidEnumError(
-                        path=path, field=fld.name, type_=type_, value=raw_value
-                    ) from None
-            elif is_literal_type(type_):
-                value = one_str(get_args(type_), raw_value, case_sensitive=False)
-            else:
-                raise _LoadSettingsTypeError(path=path, field=fld.name, type=type_)
-            yield fld.name, value
-
     return cls(**dict(yield_items()))
+
+
+def _load_settings_yield_items() -> Iterator[tuple[str, Any]]:
+    for field in yield_fields(cls, globalns=globalns, localns=localns):
+        field.type_
+        try:
+            key = one_str(values, field.name, case_sensitive=False)
+        except _OneStrCaseInsensitiveEmptyError:
+            raise _LoadSettingsEmptyError(path=path, field=field.name) from None
+        except _OneStrCaseInsensitiveBijectionError as error:
+            raise _LoadSettingsNonUniqueError(
+                path=path, field=field.name, counts=error.counts
+            ) from None
+        raw_value = values[key]
+        if field.type_ is str:
+            value = raw_value
+        elif field.type_ is bool:
+            if raw_value == "0" or search("false", raw_value, flags=IGNORECASE):
+                value = False
+            elif raw_value == "1" or search("true", raw_value, flags=IGNORECASE):
+                value = True
+            else:
+                raise _LoadSettingsInvalidBoolError(
+                    path=path, field=field.name, value=raw_value
+                )
+        elif field.type_ is int:
+            try:
+                value = int(raw_value)
+            except ValueError:
+                raise _LoadSettingsInvalidIntError(
+                    path=path, field=field.name, value=raw_value
+                ) from None
+        elif isinstance(field.type_, type) and issubclass(field.type_, Enum):
+            try:
+                value = ensure_enum(raw_value, field.type_)
+            except EnsureEnumError:
+                raise _LoadSettingsInvalidEnumError(
+                    path=path, field=field.name, type_=field.type_, value=raw_value
+                ) from None
+        elif is_literal_type(field.type_):
+            value = one_str(get_args(field.type_), raw_value, case_sensitive=False)
+        else:
+            raise _LoadSettingsTypeError(path=path, field=field.name, type=field.type_)
+        yield field.name, value
 
 
 @dataclass(kw_only=True, slots=True)
