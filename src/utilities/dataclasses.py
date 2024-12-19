@@ -100,8 +100,6 @@ def _mapping_to_dataclass_one(
     case_sensitive: bool = True,
     post: Callable[[_YieldFieldsClass[Any], Any], Any] | None = None,
 ) -> Any:
-    assert 0, [field, mapping]
-
     try:
         key = one_str(mapping, field.name, case_sensitive=case_sensitive)
     except _OneStrCaseSensitiveEmptyError:

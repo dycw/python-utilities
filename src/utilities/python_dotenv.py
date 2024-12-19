@@ -19,7 +19,7 @@ from utilities.dataclasses import (
 from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import get_class_name
 from utilities.git import get_repo_root
-from utilities.iterables import merge_str_mappings, one_str
+from utilities.iterables import MergeStrMappingsError, merge_str_mappings, one_str
 from utilities.pathlib import PWD
 from utilities.reprlib import get_repr
 from utilities.types import Dataclass
@@ -47,11 +47,14 @@ def load_settings(
     if not path.exists():
         raise _LoadSettingsFileNotFoundError(path=path) from None
     maybe_values_dotenv = dotenv_values(path)
-    assert 0, maybe_values_dotenv
-    maybe_values = merge_str_mappings(
-        maybe_values_dotenv, environ, case_sensitive=False
-    )
-    assert 0
+    try:
+        maybe_values = merge_str_mappings(
+            maybe_values_dotenv, environ, case_sensitive=False
+        )
+    except MergeStrMappingsError as error:
+        raise _LoadSettingsDuplicateKeysError(
+            path=path, values=error.mapping, counts=error.counts
+        ) from None
     values = {k: v for k, v in maybe_values.items() if v is not None}
     try:
         return mapping_to_dataclass(
@@ -67,7 +70,7 @@ def load_settings(
             path=path, values=error.mapping, field=error.field
         ) from None
     except _MappingToDataclassCaseInsensitiveBijectionError as error:
-        raise _LoadSettingsNonUniqueError(
+        raise _LoadSettingsDuplicateKeysError(
             path=path, values=error.mapping, field=error.field, counts=error.counts
         ) from None
 
@@ -118,24 +121,23 @@ class _LoadSettingsFileNotFoundError(LoadSettingsError):
 
 
 @dataclass(kw_only=True, slots=True)
+class _LoadSettingsDuplicateKeysError(LoadSettingsError):
+    values: StrMapping
+    counts: Mapping[str, int]
+
+    @override
+    def __str__(self) -> str:
+        return f"Mapping {get_repr(dict(self.values))} keys must not contain duplicates (modulo case); got {get_repr(self.counts)}"
+
+
+@dataclass(kw_only=True, slots=True)
 class _LoadSettingsEmptyError(LoadSettingsError):
     values: StrMapping
     field: str
 
     @override
     def __str__(self) -> str:
-        return f"Field {self.field!r} must exist (case insensitive)"
-
-
-@dataclass(kw_only=True, slots=True)
-class _LoadSettingsNonUniqueError(LoadSettingsError):
-    values: StrMapping
-    field: str
-    counts: Mapping[str, int]
-
-    @override
-    def __str__(self) -> str:
-        return f"Mapping {get_repr(self.values)} must not contain duplicates (case insensitive); got {get_repr(self.counts)}"
+        return f"Field {self.field!r} must exist (modulo case)"
 
 
 @dataclass(kw_only=True, slots=True)

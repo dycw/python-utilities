@@ -4,20 +4,20 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Literal
 
-from hypothesis import given, reproduce_failure
+from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data, integers, sampled_from
-from pytest import mark, raises
+from pytest import raises
 
 from utilities.errors import ImpossibleCaseError
 from utilities.hypothesis import git_repos, settings_with_reduced_examples, text_ascii
 from utilities.os import temp_environ
 from utilities.python_dotenv import (
+    _LoadSettingsDuplicateKeysError,
     _LoadSettingsEmptyError,
     _LoadSettingsFileNotFoundError,
     _LoadSettingsInvalidBoolError,
     _LoadSettingsInvalidEnumError,
     _LoadSettingsInvalidIntError,
-    _LoadSettingsNonUniqueError,
     _LoadSettingsTypeError,
     load_settings,
 )
@@ -233,16 +233,13 @@ class TestLoadSettings:
         root.joinpath(".env").touch()
 
         with raises(
-            _LoadSettingsEmptyError,
-            match=r"Field 'key' must exist \(case insensitive\)",
+            _LoadSettingsEmptyError, match=r"Field 'key' must exist \(modulo case\)"
         ):
             _ = load_settings(Settings, cwd=root)
 
-    @mark.only
-    @reproduce_failure("6.122.3", b"AXicY2BAAAAADAAB")
     @given(root=git_repos(), value=integers())
     @settings_with_reduced_examples()
-    def test_error_field_duplicated(self, *, root: Path, value: int) -> None:
+    def test_error_duplicate_keys(self, *, root: Path, value: int) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
             key: str
@@ -252,8 +249,8 @@ class TestLoadSettings:
             _ = fh.write(f"KEY = {value}\n")
 
         with raises(
-            _LoadSettingsNonUniqueError,
-            match=r"Field 'key' must exist exactly once \(case sensitive\); got .*",
+            _LoadSettingsDuplicateKeysError,
+            match=r"Mapping .* keys must not contain duplicates \(modulo case\); got .*",
         ):
             _ = load_settings(Settings, cwd=root)
 
