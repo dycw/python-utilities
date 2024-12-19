@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 import decimal
-import reprlib
 from contextlib import suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload
@@ -40,6 +39,7 @@ from utilities.iterables import (
     one,
 )
 from utilities.polars import zoned_datetime
+from utilities.reprlib import get_repr
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
     TableOrORMInstOrClass,
@@ -202,7 +202,7 @@ class _InsertDataFrameMapDFColumnToTableColumnAndTypeError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to map DataFrame column {self.df_col_name!r} into table schema {reprlib.repr(self.table_schema)} with snake={self.snake}"
+        return f"Unable to map DataFrame column {self.df_col_name!r} into table schema {get_repr(self.table_schema)} with snake={self.snake}"
 
 
 def _insert_dataframe_check_df_and_db_types(

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import reprlib
 from asyncio import Queue, Task, create_task
 from collections import defaultdict
 from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence, Sized
@@ -81,6 +80,7 @@ from utilities.iterables import (
     chunked,
     one,
 )
+from utilities.reprlib import get_repr
 from utilities.tenacity import yield_timeout_attempts
 from utilities.types import Duration, StrMapping, TupleOrStrMapping
 
@@ -160,7 +160,7 @@ class CheckEngineError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"{reprlib.repr(self.engine)} must have {self.expected} table(s); got {len(self.rows)}"
+        return f"{get_repr(self.engine)} must have {self.expected} table(s); got {len(self.rows)}"
 
 
 def columnwise_max(*columns: Any) -> Any:
@@ -913,7 +913,7 @@ class _MapMappingToTableExtraColumnsError(_MapMappingToTableError):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {reprlib.repr(self.mapping)} must be a subset of table columns {reprlib.repr(self.columns)}; got extra {self.extra}"
+        return f"Mapping {get_repr(self.mapping)} must be a subset of table columns {get_repr(self.columns)}; got extra {self.extra}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -922,7 +922,7 @@ class _MapMappingToTableSnakeMapEmptyError(_MapMappingToTableError):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {reprlib.repr(self.mapping)} must be a subset of table columns {reprlib.repr(self.columns)}; cannot find column to map to {self.key!r} modulo snake casing"
+        return f"Mapping {get_repr(self.mapping)} must be a subset of table columns {get_repr(self.columns)}; cannot find column to map to {self.key!r} modulo snake casing"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -933,7 +933,7 @@ class _MapMappingToTableSnakeMapNonUniqueError(_MapMappingToTableError):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {reprlib.repr(self.mapping)} must be a subset of table columns {reprlib.repr(self.columns)}; found columns {self.first!r}, {self.second!r} and perhaps more to map to {self.key!r} modulo snake casing"
+        return f"Mapping {get_repr(self.mapping)} must be a subset of table columns {get_repr(self.columns)}; found columns {self.first!r}, {self.second!r} and perhaps more to map to {self.key!r} modulo snake casing"
 
 
 def _orm_inst_to_dict(obj: DeclarativeBase, /) -> StrMapping:

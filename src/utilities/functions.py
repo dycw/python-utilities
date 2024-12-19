@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-import reprlib
 from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass, is_dataclass
 from functools import _lru_cache_wrapper, partial, wraps
@@ -18,7 +17,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, cast, overlo
 
 from typing_extensions import ParamSpec, override
 
-from utilities.reprlib import get_repr_and_class
+from utilities.reprlib import get_repr, get_repr_and_class
 from utilities.types import Dataclass, Number, StrMapping, TupleOrStrMapping
 
 if TYPE_CHECKING:
@@ -293,9 +292,7 @@ class EnsureMemberError(Exception):
     @override
     def __str__(self) -> str:
         return _make_error_msg(
-            self.obj,
-            f"a member of {reprlib.repr(self.container)}",
-            nullable=self.nullable,
+            self.obj, f"a member of {get_repr(self.container)}", nullable=self.nullable
         )
 
 
