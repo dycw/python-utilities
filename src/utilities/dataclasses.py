@@ -11,7 +11,14 @@ from utilities.functions import (
     is_dataclass_class,
     is_dataclass_instance,
 )
+from utilities.iterables import (
+    _OneStrCaseInsensitiveBijectionError,
+    _OneStrCaseInsensitiveEmptyError,
+    _OneStrCaseSensitiveEmptyError,
+    one_str,
+)
 from utilities.operator import is_equal
+from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import Dataclass, StrMapping
 from utilities.typing import get_type_hints
@@ -23,6 +30,9 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 _U = TypeVar("_U")
 _TDataclass = TypeVar("_TDataclass", bound=Dataclass)
+
+
+##
 
 
 def asdict_without_defaults(
@@ -58,6 +68,90 @@ def asdict_without_defaults(
     return out if final is None else final(type(obj), out)
 
 
+##
+
+
+def mapping_to_dataclass(
+    cls: type[_TDataclass],
+    mapping: StrMapping,
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    case_sensitive: bool = True,
+    post: Callable[[Any], Any] | None = None,
+) -> _TDataclass:
+    """Construct a dataclass from a mapping."""
+    fields = yield_fields(cls, globalns=globalns, localns=localns)
+    mapping_use = {
+        f.name: _mapping_to_dataclass_one(
+            f, mapping, case_sensitive=case_sensitive, post=post
+        )
+        for f in fields
+    }
+    return cls(**mapping_use)
+
+
+def _mapping_to_dataclass_one(
+    field: _YieldFieldsClass,
+    mapping: StrMapping,
+    /,
+    *,
+    case_sensitive: bool = True,
+    post: Callable[[Any], Any] | None = None,
+) -> Any:
+    try:
+        key = one_str(mapping, field.name, case_sensitive=case_sensitive)
+    except _OneStrCaseSensitiveEmptyError:
+        raise _MappingToDataclassCaseSensitiveEmptyError(
+            mapping=mapping, field=field.name
+        ) from None
+    except _OneStrCaseInsensitiveBijectionError as error:
+        raise _MappingToDataclassCaseInsensitiveBijectionError(
+            mapping=mapping, field=field.name, counts=error.counts
+        ) from None
+    except _OneStrCaseInsensitiveEmptyError:
+        raise _MappingToDataclassCaseInsensitiveEmptyError(
+            mapping=mapping, field=field.name
+        ) from None
+    value = mapping[key]
+    if post is not None:
+        value = post(value)
+    return value
+
+
+@dataclass(kw_only=True, slots=True)
+class MappingToDataclassError(Exception):
+    mapping: StrMapping
+    field: str
+
+
+@dataclass(kw_only=True, slots=True)
+class _MappingToDataclassCaseSensitiveEmptyError(MappingToDataclassError):
+    @override
+    def __str__(self) -> str:
+        return f"Mapping {get_repr(self.mapping)} does not contain {self.field!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _MappingToDataclassCaseInsensitiveBijectionError(MappingToDataclassError):
+    counts: Mapping[str, int]
+
+    @override
+    def __str__(self) -> str:
+        return f"Mapping {get_repr(self.mapping)} must not contain duplicates (case insensitive); got {get_repr(self.counts)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _MappingToDataclassCaseInsensitiveEmptyError(MappingToDataclassError):
+    @override
+    def __str__(self) -> str:
+        return f"Mapping {get_repr(self.mapping)} does not contain {self.field!r} (case insensitive)"
+
+
+##
+
+
 @overload
 def replace_non_sentinel(
     obj: Any, /, *, in_place: Literal[True], **kwargs: Any
@@ -82,6 +176,9 @@ def replace_non_sentinel(
     return replace(
         obj, **{k: v for k, v in kwargs.items() if not isinstance(v, Sentinel)}
     )
+
+
+##
 
 
 def repr_without_defaults(
@@ -124,61 +221,7 @@ def repr_without_defaults(
     return f"{cls}({joined})"
 
 
-@dataclass(kw_only=True, slots=True)
-class _YieldFieldsInstance(Generic[_T]):
-    name: str
-    value: _T
-    type_: Any
-    default: _T | Sentinel = sentinel
-    default_factory: Callable[[], _T] | Sentinel = sentinel
-    repr: bool = True
-    hash_: bool | None = None
-    init: bool = True
-    compare: bool = True
-    metadata: StrMapping = field(default_factory=dict)
-    kw_only: bool | Sentinel = sentinel
-
-    def equals_default(
-        self,
-        *,
-        rel_tol: float | None = None,
-        abs_tol: float | None = None,
-        extra: Mapping[type[_U], Callable[[_U, _U], bool]] | None = None,
-    ) -> bool:
-        """Check if the field value equals its default."""
-        if isinstance(self.default, Sentinel) and isinstance(
-            self.default_factory, Sentinel
-        ):
-            return False
-        if (not isinstance(self.default, Sentinel)) and isinstance(
-            self.default_factory, Sentinel
-        ):
-            expected = self.default
-        elif isinstance(self.default, Sentinel) and (
-            not isinstance(self.default_factory, Sentinel)
-        ):
-            expected = self.default_factory()
-        else:  # pragma: no cover
-            raise ImpossibleCaseError(
-                case=[f"{self.default=}", f"{self.default_factory=}"]
-            )
-        return is_equal(
-            self.value, expected, rel_tol=rel_tol, abs_tol=abs_tol, extra=extra
-        )
-
-
-@dataclass(kw_only=True, slots=True)
-class _YieldFieldsClass(Generic[_T]):
-    name: str
-    type_: Any
-    default: _T | Sentinel = sentinel
-    default_factory: Callable[[], _T] | Sentinel = sentinel
-    repr: bool = True
-    hash_: bool | None = None
-    init: bool = True
-    compare: bool = True
-    metadata: StrMapping = field(default_factory=dict)
-    kw_only: bool | Sentinel = sentinel
+##
 
 
 @overload
@@ -248,6 +291,63 @@ def yield_fields(
 
 
 @dataclass(kw_only=True, slots=True)
+class _YieldFieldsInstance(Generic[_T]):
+    name: str
+    value: _T
+    type_: Any
+    default: _T | Sentinel = sentinel
+    default_factory: Callable[[], _T] | Sentinel = sentinel
+    repr: bool = True
+    hash_: bool | None = None
+    init: bool = True
+    compare: bool = True
+    metadata: StrMapping = field(default_factory=dict)
+    kw_only: bool | Sentinel = sentinel
+
+    def equals_default(
+        self,
+        *,
+        rel_tol: float | None = None,
+        abs_tol: float | None = None,
+        extra: Mapping[type[_U], Callable[[_U, _U], bool]] | None = None,
+    ) -> bool:
+        """Check if the field value equals its default."""
+        if isinstance(self.default, Sentinel) and isinstance(
+            self.default_factory, Sentinel
+        ):
+            return False
+        if (not isinstance(self.default, Sentinel)) and isinstance(
+            self.default_factory, Sentinel
+        ):
+            expected = self.default
+        elif isinstance(self.default, Sentinel) and (
+            not isinstance(self.default_factory, Sentinel)
+        ):
+            expected = self.default_factory()
+        else:  # pragma: no cover
+            raise ImpossibleCaseError(
+                case=[f"{self.default=}", f"{self.default_factory=}"]
+            )
+        return is_equal(
+            self.value, expected, rel_tol=rel_tol, abs_tol=abs_tol, extra=extra
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class _YieldFieldsClass(Generic[_T]):
+    name: str
+    type_: Any
+    default: _T | Sentinel = sentinel
+    default_factory: Callable[[], _T] | Sentinel = sentinel
+    repr: bool = True
+    hash_: bool | None = None
+    init: bool = True
+    compare: bool = True
+    metadata: StrMapping = field(default_factory=dict)
+    kw_only: bool | Sentinel = sentinel
+
+
+@dataclass(kw_only=True, slots=True)
 class YieldFieldsError(Exception):
     obj: Any
 
@@ -256,9 +356,13 @@ class YieldFieldsError(Exception):
         return f"Object must be a dataclass instance or class; got {self.obj}"
 
 
+##
+
 __all__ = [
+    "MappingToDataclassError",
     "YieldFieldsError",
     "asdict_without_defaults",
+    "mapping_to_dataclass",
     "replace_non_sentinel",
     "repr_without_defaults",
     "yield_fields",

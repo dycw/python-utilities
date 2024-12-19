@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from re import DOTALL
 from types import NoneType
-from typing import Any, Literal, TypeVar, cast
+from typing import Any, Literal, cast
 
 from hypothesis import given
-from hypothesis.strategies import integers, lists
+from hypothesis.strategies import integers, lists, sampled_from
 from ib_async import Future
 from polars import DataFrame
 from pytest import raises
@@ -15,14 +17,19 @@ from typing_extensions import override
 from tests.test_operator import DataClass3
 from utilities.dataclasses import (
     YieldFieldsError,
+    _MappingToDataclassCaseInsensitiveBijectionError,
+    _MappingToDataclassCaseInsensitiveEmptyError,
+    _MappingToDataclassCaseSensitiveEmptyError,
     _YieldFieldsClass,
     _YieldFieldsInstance,
     asdict_without_defaults,
+    mapping_to_dataclass,
     replace_non_sentinel,
     repr_without_defaults,
     yield_fields,
 )
 from utilities.functions import get_class_name
+from utilities.hypothesis import text_ascii
 from utilities.iterables import one
 from utilities.orjson import OrjsonLogRecord
 from utilities.polars import are_frames_equal
@@ -161,18 +168,75 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
         assert result == expected
 
 
-class TestDataClassProtocol:
-    def test_main(self) -> None:
-        T = TypeVar("T", bound=Dataclass)
-
-        def identity(x: T, /) -> T:
-            return x
-
+class TestMappingToDataclass:
+    @given(value=integers())
+    def test_case_sensitive(self, *, value: int) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: None = None
+            x: int
 
-        _ = identity(Example())
+        obj = mapping_to_dataclass(Example, {"x": value})
+        expected = Example(x=value)
+        assert obj == expected
+
+    @given(key=sampled_from(["x", "X"]), value=integers())
+    def test_case_insensitive(self, *, key: str, value: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        obj = mapping_to_dataclass(Example, {key: value}, case_sensitive=False)
+        expected = Example(x=value)
+        assert obj == expected
+
+    @given(value=text_ascii())
+    def test_post(self, *, value: str) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: str
+
+        obj = mapping_to_dataclass(Example, {"x": value}, post=str.upper)
+        expected = Example(x=value.upper())
+        assert obj == expected
+
+    def test_error_case_sensitive_empty_error(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        with raises(
+            _MappingToDataclassCaseSensitiveEmptyError,
+            match=r"Mapping .* does not contain 'x'",
+        ):
+            _ = mapping_to_dataclass(Example, {})
+
+    @given(value1=integers(), value2=integers())
+    def test_error_bijection_error(self, *, value1: int, value2: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        with raises(
+            _MappingToDataclassCaseInsensitiveBijectionError,
+            match=re.compile(
+                r"Mapping .* must not contain duplicates \(case insensitive\); got .*",
+                flags=DOTALL,
+            ),
+        ):
+            _ = mapping_to_dataclass(
+                Example, {"x": value1, "X": value2}, case_sensitive=False
+            )
+
+    def test_error_case_insensitive_empty_error(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        with raises(
+            _MappingToDataclassCaseInsensitiveEmptyError,
+            match=r"Mapping .* does not contain 'x' \(case insensitive\)",
+        ):
+            _ = mapping_to_dataclass(Example, {}, case_sensitive=False)
 
 
 class TestReplaceNonSentinel:
