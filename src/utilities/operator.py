@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import reprlib
 from collections.abc import Callable, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from dataclasses import asdict, dataclass
@@ -11,6 +10,7 @@ from typing_extensions import override
 import utilities.math
 from utilities.functions import is_dataclass_instance
 from utilities.iterables import SortIterableError, sort_iterable
+from utilities.reprlib import get_repr
 from utilities.types import Dataclass
 
 _T = TypeVar("_T")
@@ -90,7 +90,7 @@ class IsEqualError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to sort {reprlib.repr(self.x)} and {reprlib.repr(self.y)}"  # pragma: no cover
+        return f"Unable to sort {get_repr(self.x)} and {get_repr(self.y)}"  # pragma: no cover
 
 
 __all__ = ["IsEqualError", "is_equal"]

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, replace
 from enum import Enum, auto
 from itertools import chain, repeat
 from math import isfinite, isinf, isnan
 from operator import sub
+from re import DOTALL
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from hypothesis import given
@@ -830,7 +832,7 @@ class TestOne:
             _ = one([1, 2])
 
 
-class TestOneModalTime:
+class TestOneModalValue:
     @given(data=data(), init=lists(integers(), min_size=1))
     def test_main(self, *, data: DataObject, init: list[int]) -> None:
         modal_value = data.draw(sampled_from(init))
@@ -843,7 +845,9 @@ class TestOneModalTime:
     def test_error_empty(self, *, x: set[int]) -> None:
         with raises(
             _OneModalValueEmptyError,
-            match="Iterable .* with fractions .* must have a modal value",
+            match=re.compile(
+                "Iterable .* with fractions .* must have a modal value", flags=DOTALL
+            ),
         ):
             _ = one_modal_value(x, min_frac=0.51)
 

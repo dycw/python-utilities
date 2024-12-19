@@ -4,15 +4,24 @@ from typing import TYPE_CHECKING, Any
 
 from rich.pretty import pretty_repr
 
+from utilities.reprlib import (
+    RICH_EXPAND_ALL,
+    RICH_INDENT_SIZE,
+    RICH_MAX_DEPTH,
+    RICH_MAX_LENGTH,
+    RICH_MAX_STRING,
+    RICH_MAX_WIDTH,
+)
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-MAX_WIDTH: int = 80
-INDENT_SIZE: int = 4
-MAX_LENGTH: int | None = None
-MAX_STRING: int | None = None
-MAX_DEPTH: int | None = None
-EXPAND_ALL: bool = False
+MAX_WIDTH: int = RICH_MAX_WIDTH
+INDENT_SIZE: int = RICH_INDENT_SIZE
+MAX_LENGTH: int | None = RICH_MAX_LENGTH
+MAX_STRING: int | None = RICH_MAX_STRING
+MAX_DEPTH: int | None = RICH_MAX_DEPTH
+EXPAND_ALL: bool = RICH_EXPAND_ALL
 
 
 def yield_call_args_repr(

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 import enum
-import reprlib
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
@@ -97,6 +96,7 @@ from utilities.math import (
     check_integer,
     ewm_parameters,
 )
+from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel
 from utilities.types import Dataclass, StrMapping, ZoneInfoLike
 from utilities.typing import (
@@ -151,7 +151,7 @@ class AppendDataClassError(Exception, Generic[_T]):
 
     @override
     def __str__(self) -> str:
-        return f"Dataclass fields {reprlib.repr(self.left)} must be a subset of DataFrame columns {reprlib.repr(self.right)}; dataclass had extra items {reprlib.repr(self.extra)}"
+        return f"Dataclass fields {get_repr(self.left)} must be a subset of DataFrame columns {get_repr(self.right)}; dataclass had extra items {get_repr(self.extra)}"
 
 
 ##
@@ -275,7 +275,7 @@ class _CheckPolarsDataFrameColumnsError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must have columns {reprlib.repr(self.columns)}; got {reprlib.repr(self.df.columns)}:\n\n{self.df}"
+        return f"DataFrame must have columns {get_repr(self.columns)}; got {get_repr(self.df.columns)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_dtypes(
@@ -293,7 +293,7 @@ class _CheckPolarsDataFrameDTypesError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must have dtypes {reprlib.repr(self.dtypes)}; got {reprlib.repr(self.df.dtypes)}:\n\n{self.df}"
+        return f"DataFrame must have dtypes {get_repr(self.dtypes)}; got {get_repr(self.df.dtypes)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_height(
@@ -356,9 +356,9 @@ class _CheckPolarsDataFramePredicatesError(CheckPolarsDataFrameError):
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.missing) >= 1:
-            yield f"missing columns were {reprlib.repr(self.missing)}"
+            yield f"missing columns were {get_repr(self.missing)}"
         if len(self.failed) >= 1:
-            yield f"failed predicates were {reprlib.repr(self.failed)}"
+            yield f"failed predicates were {get_repr(self.failed)}"
 
 
 def _check_polars_dataframe_schema_list(df: DataFrame, schema: SchemaDict, /) -> None:
@@ -378,7 +378,7 @@ class _CheckPolarsDataFrameSchemaListError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must have schema {reprlib.repr(self.schema)} (ordered); got {reprlib.repr(self.df.schema)}:\n\n{self.df}"
+        return f"DataFrame must have schema {get_repr(self.schema)} (ordered); got {get_repr(self.df.schema)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_schema_set(df: DataFrame, schema: SchemaDict, /) -> None:
@@ -394,7 +394,7 @@ class _CheckPolarsDataFrameSchemaSetError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must have schema {reprlib.repr(self.schema)} (unordered); got {reprlib.repr(self.df.schema)}:\n\n{self.df}"
+        return f"DataFrame must have schema {get_repr(self.schema)} (unordered); got {get_repr(self.df.schema)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_schema_subset(df: DataFrame, schema: SchemaDict, /) -> None:
@@ -410,7 +410,7 @@ class _CheckPolarsDataFrameSchemaSubsetError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame schema must include {reprlib.repr(self.schema)} (unordered); got {reprlib.repr(self.df.schema)}:\n\n{self.df}"
+        return f"DataFrame schema must include {get_repr(self.schema)} (unordered); got {get_repr(self.df.schema)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_shape(df: DataFrame, shape: tuple[int, int], /) -> None:
@@ -448,7 +448,7 @@ class _CheckPolarsDataFrameSortedError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must be sorted on {reprlib.repr(self.by)}:\n\n{self.df}"
+        return f"DataFrame must be sorted on {get_repr(self.by)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_unique(
@@ -467,7 +467,7 @@ class _CheckPolarsDataFrameUniqueError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must be unique on {reprlib.repr(self.by)}:\n\n{self.df}"
+        return f"DataFrame must be unique on {get_repr(self.by)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_width(df: DataFrame, width: int, /) -> None:
@@ -598,7 +598,7 @@ class _DataClassToDataFrameNonUniqueError(DataClassToDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {reprlib.repr(self.objs)} must contain exactly one class; got {self.first}, {self.second} and perhaps more"
+        return f"Iterable {get_repr(self.objs)} must contain exactly one class; got {self.first}, {self.second} and perhaps more"
 
 
 ##
@@ -1265,7 +1265,7 @@ class _YieldRowsAsDataClassesColumnsSuperSetError(YieldRowsAsDataClassesError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame columns {reprlib.repr(self.left)} must be a superset of dataclass fields {reprlib.repr(self.right)}; dataclass had extra fields {reprlib.repr(self.extra)}."
+        return f"DataFrame columns {get_repr(self.left)} must be a superset of dataclass fields {get_repr(self.right)}; dataclass had extra fields {get_repr(self.extra)}."
 
 
 @dataclass(kw_only=True, slots=True)

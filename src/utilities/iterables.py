@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-import reprlib
 from collections import Counter
 from collections.abc import (
     Callable,
@@ -44,6 +43,7 @@ from utilities.math import (
     _CheckIntegerMinError,
     check_integer,
 )
+from utilities.reprlib import get_repr
 from utilities.sentinel import sentinel
 from utilities.zoneinfo import UTC
 
@@ -102,7 +102,7 @@ class CheckBijectionError(Exception, Generic[_THashable]):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {reprlib.repr(self.mapping)} must be a bijection; got duplicates {reprlib.repr(self.counts)}"
+        return f"Mapping {get_repr(self.mapping)} must be a bijection; got duplicates {get_repr(self.counts)}"
 
 
 def check_duplicates(iterable: Iterable[Hashable], /) -> None:
@@ -119,7 +119,7 @@ class CheckDuplicatesError(Exception, Generic[_THashable]):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {reprlib.repr(self.iterable)} must not contain duplicates; got {reprlib.repr(self.counts)}"
+        return f"Iterable {get_repr(self.iterable)} must not contain duplicates; got {get_repr(self.counts)}"
 
 
 def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
@@ -169,12 +169,12 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{parts=}"])
-        return f"Iterables {reprlib.repr(self.left)} and {reprlib.repr(self.right)} must be equal; {desc}"
+        return f"Iterables {get_repr(self.left)} and {get_repr(self.right)} must be equal; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.errors) >= 1:
             errors = [(f"{i=}", lv, rv) for i, lv, rv in self.errors]
-            yield f"differing items were {reprlib.repr(errors)}"
+            yield f"differing items were {get_repr(errors)}"
         match self.state:
             case "left_longer":
                 yield "left was longer"
@@ -222,7 +222,7 @@ class _CheckLengthEqualError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return f"Object {reprlib.repr(self.obj)} must have length {self.equal}; got {len(self.obj)}"
+        return f"Object {get_repr(self.obj)} must have length {self.equal}; got {len(self.obj)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -236,7 +236,7 @@ class _CheckLengthEqualOrApproxError(CheckLengthError):
                 desc = f"approximate length {target} (error {error:%})"
             case target:
                 desc = f"length {target}"
-        return f"Object {reprlib.repr(self.obj)} must have {desc}; got {len(self.obj)}"
+        return f"Object {get_repr(self.obj)} must have {desc}; got {len(self.obj)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -245,7 +245,7 @@ class _CheckLengthMinError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return f"Object {reprlib.repr(self.obj)} must have minimum length {self.min_}; got {len(self.obj)}"
+        return f"Object {get_repr(self.obj)} must have minimum length {self.min_}; got {len(self.obj)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -254,7 +254,7 @@ class _CheckLengthMaxError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return f"Object {reprlib.repr(self.obj)} must have maximum length {self.max_}; got {len(self.obj)}"
+        return f"Object {get_repr(self.obj)} must have maximum length {self.max_}; got {len(self.obj)}"
 
 
 def check_lengths_equal(left: Sized, right: Sized, /) -> None:
@@ -270,7 +270,7 @@ class CheckLengthsEqualError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Sized objects {reprlib.repr(self.left)} and {reprlib.repr(self.right)} must have the same length; got {len(self.left)} and {len(self.right)}"
+        return f"Sized objects {get_repr(self.left)} and {get_repr(self.right)} must have the same length; got {len(self.left)} and {len(self.right)}"
 
 
 def check_mappings_equal(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> None:
@@ -317,16 +317,16 @@ class CheckMappingsEqualError(Exception, Generic[_K, _V]):
                 desc = f"{first}, {second} and {third}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{parts=}"])
-        return f"Mappings {reprlib.repr(self.left)} and {reprlib.repr(self.right)} must be equal; {desc}"
+        return f"Mappings {get_repr(self.left)} and {get_repr(self.right)} must be equal; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.left_extra) >= 1:
-            yield f"left had extra keys {reprlib.repr(self.left_extra)}"
+            yield f"left had extra keys {get_repr(self.left_extra)}"
         if len(self.right_extra) >= 1:
-            yield f"right had extra keys {reprlib.repr(self.right_extra)}"
+            yield f"right had extra keys {get_repr(self.right_extra)}"
         if len(self.errors) >= 1:
             errors = [(f"{k=}", lv, rv) for k, lv, rv in self.errors]
-            yield f"differing values were {reprlib.repr(errors)}"
+            yield f"differing values were {get_repr(errors)}"
 
 
 def check_sets_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
@@ -361,13 +361,13 @@ class CheckSetsEqualError(Exception, Generic[_T]):
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{parts=}"])
-        return f"Sets {reprlib.repr(self.left)} and {reprlib.repr(self.right)} must be equal; {desc}"
+        return f"Sets {get_repr(self.left)} and {get_repr(self.right)} must be equal; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.left_extra) >= 1:
-            yield f"left had extra items {reprlib.repr(self.left_extra)}"
+            yield f"left had extra items {get_repr(self.left_extra)}"
         if len(self.right_extra) >= 1:
-            yield f"right had extra items {reprlib.repr(self.right_extra)}"
+            yield f"right had extra items {get_repr(self.right_extra)}"
 
 
 def check_submapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> None:
@@ -405,14 +405,14 @@ class CheckSubMappingError(Exception, Generic[_K, _V]):
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{parts=}"])
-        return f"Mapping {reprlib.repr(self.left)} must be a submapping of {reprlib.repr(self.right)}; {desc}"
+        return f"Mapping {get_repr(self.left)} must be a submapping of {get_repr(self.right)}; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.extra) >= 1:
-            yield f"left had extra keys {reprlib.repr(self.extra)}"
+            yield f"left had extra keys {get_repr(self.extra)}"
         if len(self.errors) >= 1:
             errors = [(f"{k=}", lv, rv) for k, lv, rv in self.errors]
-            yield f"differing values were {reprlib.repr(errors)}"
+            yield f"differing values were {get_repr(errors)}"
 
 
 def check_subset(left: Iterable[Any], right: Iterable[Any], /) -> None:
@@ -432,7 +432,7 @@ class CheckSubSetError(Exception, Generic[_T]):
 
     @override
     def __str__(self) -> str:
-        return f"Set {reprlib.repr(self.left)} must be a subset of {reprlib.repr(self.right)}; left had extra items {reprlib.repr(self.extra)}"
+        return f"Set {get_repr(self.left)} must be a subset of {get_repr(self.right)}; left had extra items {get_repr(self.extra)}"
 
 
 def check_supermapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> None:
@@ -470,14 +470,14 @@ class CheckSuperMappingError(Exception, Generic[_K, _V]):
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{parts=}"])
-        return f"Mapping {reprlib.repr(self.left)} must be a supermapping of {reprlib.repr(self.right)}; {desc}"
+        return f"Mapping {get_repr(self.left)} must be a supermapping of {get_repr(self.right)}; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.extra) >= 1:
-            yield f"right had extra keys {reprlib.repr(self.extra)}"
+            yield f"right had extra keys {get_repr(self.extra)}"
         if len(self.errors) >= 1:
             errors = [(f"{k=}", lv, rv) for k, lv, rv in self.errors]
-            yield f"differing values were {reprlib.repr(errors)}"
+            yield f"differing values were {get_repr(errors)}"
 
 
 def check_superset(left: Iterable[Any], right: Iterable[Any], /) -> None:
@@ -497,7 +497,7 @@ class CheckSuperSetError(Exception, Generic[_T]):
 
     @override
     def __str__(self) -> str:
-        return f"Set {reprlib.repr(self.left)} must be a superset of {reprlib.repr(self.right)}; right had extra items {reprlib.repr(self.extra)}."
+        return f"Set {get_repr(self.left)} must be a superset of {get_repr(self.right)}; right had extra items {get_repr(self.extra)}."
 
 
 def chunked(iterable: Iterable[_T], n: int, /) -> Iterator[Sequence[_T]]:
@@ -577,7 +577,7 @@ class EnsureIterableError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Object {reprlib.repr(self.obj)} must be iterable"
+        return f"Object {get_repr(self.obj)} must be iterable"
 
 
 def ensure_iterable_not_str(obj: Any, /) -> Iterable[Any]:
@@ -593,7 +593,7 @@ class EnsureIterableNotStrError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Object {reprlib.repr(self.obj)} must be iterable, but not a string"
+        return f"Object {get_repr(self.obj)} must be iterable, but not a string"
 
 
 def expanding_window(iterable: Iterable[_T], /) -> islice[list[_T]]:
@@ -713,7 +713,7 @@ class OneError(Exception, Generic[_T]):
 class OneEmptyError(OneError[_T]):
     @override
     def __str__(self) -> str:
-        return f"Iterable {reprlib.repr(self.iterable)} must not be empty"
+        return f"Iterable {get_repr(self.iterable)} must not be empty"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -723,7 +723,7 @@ class OneNonUniqueError(OneError[_T]):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {reprlib.repr(self.iterable)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
+        return f"Iterable {get_repr(self.iterable)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
 
 
 def one_modal_value(iterable: Iterable[_T], /, *, min_frac: float = 0.5) -> _T:
@@ -751,7 +751,7 @@ class OneModalValueError(Exception, Generic[_T]):
 class _OneModalValueEmptyError(OneModalValueError[_T]):
     @override
     def __str__(self) -> str:
-        return f"Iterable {reprlib.repr(self.iterable)} with fractions {reprlib.repr(self.fracs)} must have a modal value"
+        return f"Iterable {get_repr(self.iterable)} with fractions {get_repr(self.fracs)} must have a modal value"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -761,7 +761,7 @@ class _OneModalValueNonUniqueError(OneModalValueError[_T]):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {reprlib.repr(self.iterable)} with fractions {reprlib.repr(self.fracs)} must contain exactly one modal value; got {self.first}, {self.second} and perhaps more"
+        return f"Iterable {get_repr(self.iterable)} with fractions {get_repr(self.fracs)} must contain exactly one modal value; got {self.first}, {self.second} and perhaps more"
 
 
 def one_str(
@@ -806,14 +806,16 @@ class _OneStrDuplicatesError(OneStrError):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {reprlib.repr(self.iterable)} must not contain duplicates; got {reprlib.repr(self.counts)}"
+        return f"Iterable {get_repr(self.iterable)} must not contain duplicates; got {get_repr(self.counts)}"
 
 
 @dataclass(kw_only=True, slots=True)
 class _OneStrCaseSensitiveEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
-        return f"Iterable {reprlib.repr(self.iterable)} does not contain {reprlib.repr(self.text)}"
+        return (
+            f"Iterable {get_repr(self.iterable)} does not contain {get_repr(self.text)}"
+        )
 
 
 @dataclass(kw_only=True, slots=True)
@@ -822,14 +824,14 @@ class _OneStrCaseInsensitiveBijectionError(OneStrError):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {reprlib.repr(self.iterable)} must not contain duplicates (case insensitive); got {reprlib.repr(self.counts)}"
+        return f"Iterable {get_repr(self.iterable)} must not contain duplicates (case insensitive); got {get_repr(self.counts)}"
 
 
 @dataclass(kw_only=True, slots=True)
 class _OneStrCaseInsensitiveEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
-        return f"Iterable {reprlib.repr(self.iterable)} does not contain {reprlib.repr(self.text)} (case insensitive)"
+        return f"Iterable {get_repr(self.iterable)} does not contain {get_repr(self.text)} (case insensitive)"
 
 
 def pairwise_tail(iterable: Iterable[_T], /) -> Iterator[tuple[_T, _T | Sentinel]]:
@@ -871,7 +873,7 @@ class ResolveIncludeAndExcludeError(Exception, Generic[_T]):
         include = list(self.include)
         exclude = list(self.exclude)
         overlap = set(include) & set(exclude)
-        return f"Iterables {reprlib.repr(include)} and {reprlib.repr(exclude)} must not overlap; got {reprlib.repr(overlap)}"
+        return f"Iterables {get_repr(include)} and {get_repr(exclude)} must not overlap; got {get_repr(overlap)}"
 
 
 def sort_iterable(iterable: Iterable[_T], /) -> list[_T]:
@@ -938,7 +940,7 @@ class SortIterableError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to sort {reprlib.repr(self.x)} and {reprlib.repr(self.y)}"
+        return f"Unable to sort {get_repr(self.x)} and {get_repr(self.y)}"
 
 
 def _sort_iterable_cmp_datetimes(
