@@ -127,7 +127,6 @@ def _parse_enum_one(
         raise _ParseEnumByKindNonUniqueError(
             value=value,
             enum=enum,
-            case_sensitive=case_sensitive,
             names_or_values=names_or_values,
             first=error.first,
             second=error.second,
@@ -140,7 +139,6 @@ def _parse_enum_one(
 class ParseEnumError(Exception, Generic[_E]):
     value: str
     enum: type[_E]
-    case_sensitive: bool = False
 
 
 @dataclass(kw_only=True, slots=True)
@@ -152,19 +150,13 @@ class _ParseEnumByKindNonUniqueError(ParseEnumError):
     @override
     def __str__(self) -> str:
         desc = "StrEnum" if issubclass(self.enum, StrEnum) else "Enum"
-        desc += f" {self.enum.__name__!r} member {self.names_or_values} must contain {self.value!r} exactly once"
-        match self.case_sensitive:
-            case True:
-                return f"{desc}; got at least 2 instances"
-            case False:
-                return f"{desc} (modulo case); got {self.first!r}, {self.second!r} and perhaps more"
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-                assert_never(never)
+        return f"{desc} {self.enum.__name__!r} member {self.names_or_values} must contain {self.value!r} exactly once (modulo case); got {self.first!r}, {self.second!r} and perhaps more"
 
 
 @dataclass(kw_only=True, slots=True)
 class _ParseEnumGenericEnumEmptyError(ParseEnumError):
     names_or_values: _NamesOrValues
+    case_sensitive: bool = False
 
     @override
     def __str__(self) -> str:
@@ -176,6 +168,8 @@ class _ParseEnumGenericEnumEmptyError(ParseEnumError):
 
 @dataclass(kw_only=True, slots=True)
 class _ParseEnumStrEnumEmptyError(ParseEnumError):
+    case_sensitive: bool = False
+
     @override
     def __str__(self) -> str:
         desc = f"StrEnum {self.enum.__name__!r} member names and values do not contain {self.value!r}"
@@ -186,6 +180,7 @@ class _ParseEnumStrEnumEmptyError(ParseEnumError):
 
 @dataclass(kw_only=True, slots=True)
 class _ParseEnumStrEnumNonUniqueError(ParseEnumError):
+    case_sensitive: bool = False
     by_name: str
     by_value: str
 
