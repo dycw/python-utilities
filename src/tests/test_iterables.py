@@ -858,7 +858,10 @@ class TestOneModalValue:
     def test_error_non_unique(self, *, x: set[int]) -> None:
         with raises(
             _OneModalValueNonUniqueError,
-            match="Iterable .* with fractions .* must contain exactly one modal value; got .*, .* and perhaps more",
+            match=re.compile(
+                "Iterable .* with fractions .* must contain exactly one modal value; got .*, .* and perhaps more",
+                flags=DOTALL,
+            ),
         ):
             _ = one_modal_value(x, min_frac=0.5)
 

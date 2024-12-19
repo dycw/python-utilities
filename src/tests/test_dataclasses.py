@@ -205,7 +205,7 @@ class TestMappingToDataclass:
 
         with raises(
             _MappingToDataclassCaseInsensitiveBijectionError,
-            match=r"Iterable .* must not contain duplicates \(case insensitive\); got .*",
+            match=r"Mapping .* must not contain duplicates \(case insensitive\); got .*",
         ):
             _ = mapping_to_dataclass(
                 Example, {"x": value1, "X": value2}, case_sensitive=False
@@ -218,7 +218,7 @@ class TestMappingToDataclass:
 
         with raises(
             _MappingToDataclassCaseInsensitiveEmptyError,
-            match=r"Iterable .* does not contain 'x' \(case insensitive\)",
+            match=r"Mapping .* does not contain 'x' \(case insensitive\)",
         ):
             _ = mapping_to_dataclass(Example, {}, case_sensitive=False)
 
