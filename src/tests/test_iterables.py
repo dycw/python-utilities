@@ -47,6 +47,7 @@ from utilities.iterables import (
     Collection,
     EnsureIterableError,
     EnsureIterableNotStrError,
+    MergeStrMappingsError,
     OneEmptyError,
     OneNonUniqueError,
     ResolveIncludeAndExcludeError,
@@ -908,9 +909,11 @@ class TestMergeStrMappings:
         assert result == expected
 
     def test_error(self) -> None:
-        result = merge_str_mappings(case_sensitive=case_sensitive)
-        expected = {}
-        assert result == expected
+        with raises(
+            MergeStrMappingsError,
+            match="Lower-cased mapping keys .* must not contain duplicates; got .*",
+        ):
+            _ = merge_str_mappings({"x": 1, "X": 2}, case_sensitive=False)
 
 
 class TestOne:

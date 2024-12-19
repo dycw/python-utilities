@@ -871,6 +871,10 @@ def _merge_str_mappings_one(
     out = dict(acc)
     if case_sensitive:
         return out | dict(el)
+    try:
+        check_unique_modulo_case(el)
+    except _CheckUniqueModuloCaseDuplicateLowerCaseStringsError as error:
+        raise MergeStrMappingsError(keys=error.values, counts=error.counts) from None
     for key_add, value in el.items():
         try:
             key_del = one_str(out, key_add, case_sensitive=False)
@@ -880,6 +884,16 @@ def _merge_str_mappings_one(
             del out[key_del]
         out[key_add] = value
     return out
+
+
+@dataclass(kw_only=True, slots=True)
+class MergeStrMappingsError(Exception):
+    keys: Iterable[str]
+    counts: Mapping[str, int]
+
+    @override
+    def __str__(self) -> str:
+        return f"Lower-cased mapping keys {get_repr(self.keys)} must not contain duplicates; got {get_repr(self.counts)}"
 
 
 ##
@@ -1224,6 +1238,7 @@ __all__ = [
     "CheckUniqueModuloCaseError",
     "EnsureIterableError",
     "EnsureIterableNotStrError",
+    "MergeStrMappingsError",
     "OneEmptyError",
     "OneError",
     "OneModalValueError",
