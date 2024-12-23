@@ -458,6 +458,33 @@ class EnsureTimeError(Exception):
 ##
 
 
+@overload
+def ensure_timedelta(obj: Any, /, *, nullable: bool) -> dt.timedelta | None: ...
+@overload
+def ensure_timedelta(
+    obj: Any, /, *, nullable: Literal[False] = False
+) -> dt.timedelta: ...
+def ensure_timedelta(obj: Any, /, *, nullable: bool = False) -> dt.timedelta | None:
+    """Ensure an object is a timedelta."""
+    try:
+        return ensure_class(obj, dt.timedelta, nullable=nullable)
+    except EnsureClassError as error:
+        raise EnsureTimeDeltaError(obj=error.obj, nullable=nullable) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class EnsureTimeDeltaError(Exception):
+    obj: Any
+    nullable: bool
+
+    @override
+    def __str__(self) -> str:
+        return _make_error_msg(self.obj, "a timedelta", nullable=self.nullable)
+
+
+##
+
+
 def first(pair: tuple[_T, Any], /) -> _T:
     """Get the first element in a pair."""
     return pair[0]
@@ -811,6 +838,7 @@ __all__ = [
     "EnsureSizedError",
     "EnsureSizedNotStrError",
     "EnsureStrError",
+    "EnsureTimeDeltaError",
     "EnsureTimeError",
     "ensure_bool",
     "ensure_bytes",
@@ -827,6 +855,7 @@ __all__ = [
     "ensure_sized_not_str",
     "ensure_str",
     "ensure_time",
+    "ensure_timedelta",
     "first",
     "get_class",
     "get_class_name",
