@@ -22,7 +22,7 @@ frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
-hypothesis==6.122.7
+hypothesis==6.123.0
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via yarl
@@ -67,7 +67,7 @@ pytest-rerunfailures==15.0
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)
-slack-sdk==3.33.5
+slack-sdk==3.34.0
     # via dycw-utilities (pyproject.toml)
 sortedcontainers==2.4.0
     # via hypothesis

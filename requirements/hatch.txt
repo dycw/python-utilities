@@ -28,7 +28,7 @@ filelock==3.16.1
     # via virtualenv
 h11==0.14.0
     # via httpcore
-hatch==1.13.0
+hatch==1.14.0
     # via dycw-utilities (pyproject.toml)
 hatchling==1.27.0
     # via hatch
@@ -38,7 +38,7 @@ httpx==0.28.1
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.122.7
+hypothesis==6.123.0
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via

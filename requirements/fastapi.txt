@@ -20,7 +20,7 @@ fastapi==0.115.6
     # via dycw-utilities (pyproject.toml)
 h11==0.14.0
     # via uvicorn
-hypothesis==6.122.7
+hypothesis==6.123.0
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via anyio
@@ -76,5 +76,5 @@ typing-extensions==4.12.2
     #   fastapi
     #   pydantic
     #   pydantic-core
-uvicorn==0.32.1
+uvicorn==0.34.0
     # via dycw-utilities (pyproject.toml)

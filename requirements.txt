@@ -128,7 +128,7 @@ h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
-hatch==1.13.0
+hatch==1.14.0
     # via dycw-utilities (pyproject.toml)
 hatchling==1.27.0
     # via hatch
@@ -140,7 +140,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.122.7
+hypothesis==6.123.0
     # via dycw-utilities (pyproject.toml)
 ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
@@ -379,7 +379,7 @@ six==1.17.0
     # via
     #   python-dateutil
     #   treelib
-slack-sdk==3.33.5
+slack-sdk==3.34.0
     # via dycw-utilities (pyproject.toml)
 smmap==5.0.1
     # via gitdb
@@ -443,7 +443,7 @@ userpath==1.9.2
     # via hatch
 uv==0.5.11
     # via hatch
-uvicorn==0.32.1
+uvicorn==0.34.0
     # via dycw-utilities (pyproject.toml)
 vegafusion==2.0.1
     # via dycw-utilities (pyproject.toml)
