@@ -21,7 +21,7 @@ from hypothesis.strategies import (
 from pytest import raises
 
 from utilities.asyncio import try_await
-from utilities.datetime import get_now, get_today
+from utilities.datetime import ZERO_TIME, get_now, get_today
 from utilities.functions import (
     EnsureBoolError,
     EnsureBytesError,
@@ -37,6 +37,7 @@ from utilities.functions import (
     EnsureSizedError,
     EnsureSizedNotStrError,
     EnsureStrError,
+    EnsureTimeDeltaError,
     EnsureTimeError,
     ensure_bool,
     ensure_bytes,
@@ -53,6 +54,7 @@ from utilities.functions import (
     ensure_sized_not_str,
     ensure_str,
     ensure_time,
+    ensure_timedelta,
     first,
     get_class,
     get_class_name,
@@ -359,6 +361,24 @@ class TestEnsureTime:
         nullable, match = case
         with raises(EnsureTimeError, match=match):
             _ = ensure_time(sentinel, nullable=nullable)
+
+
+class TestEnsureTimeDelta:
+    @given(case=sampled_from([(ZERO_TIME, False), (ZERO_TIME, True), (None, True)]))
+    def test_main(self, *, case: tuple[dt.timedelta | None, bool]) -> None:
+        obj, nullable = case
+        _ = ensure_timedelta(obj, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object '.*' of type '.*' must be a timedelta"),
+            (True, "Object '.*' of type '.*' must be a timedelta or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsureTimeDeltaError, match=match):
+            _ = ensure_timedelta(sentinel, nullable=nullable)
 
 
 class TestFirst:
