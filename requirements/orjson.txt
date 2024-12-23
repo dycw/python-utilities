@@ -12,7 +12,7 @@ eventkit==1.0.3
     # via ib-async-dataclass
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.122.3
+hypothesis==6.122.7
     # via dycw-utilities (pyproject.toml)
 ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
@@ -24,7 +24,7 @@ mdurl==0.1.2
     # via markdown-it-py
 nest-asyncio==1.6.0
     # via ib-async-dataclass
-numpy==2.2.0
+numpy==2.2.1
     # via eventkit
 orjson==3.10.12
     # via dycw-utilities (pyproject.toml)
@@ -69,5 +69,5 @@ tomli==2.2.1
     # via coverage
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
-whenever==0.6.15
+whenever==0.6.16
     # via dycw-utilities (pyproject.toml)

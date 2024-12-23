@@ -10,11 +10,11 @@ coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.122.3
+hypothesis==6.122.7
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
-numpy==2.2.0
+numpy==2.2.1
     # via scipy
 packaging==24.2
     # via
