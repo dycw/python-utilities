@@ -10,7 +10,7 @@ coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.122.3
+hypothesis==6.123.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -23,7 +23,7 @@ packaging==24.2
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-psutil==6.1.0
+psutil==6.1.1
     # via memory-profiler
 pytest==8.3.4
     # via
@@ -35,7 +35,7 @@ pytest==8.3.4
     #   pytest-randomly
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.24.0
+pytest-asyncio==0.25.0
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)

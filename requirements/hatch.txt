@@ -10,7 +10,7 @@ certifi==2024.12.14
     # via
     #   httpcore
     #   httpx
-click==8.1.7
+click==8.1.8
     # via
     #   hatch
     #   userpath
@@ -28,7 +28,7 @@ filelock==3.16.1
     # via virtualenv
 h11==0.14.0
     # via httpcore
-hatch==1.13.0
+hatch==1.14.0
     # via dycw-utilities (pyproject.toml)
 hatchling==1.27.0
     # via hatch
@@ -38,7 +38,7 @@ httpx==0.28.1
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.122.3
+hypothesis==6.123.0
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -98,7 +98,7 @@ pytest==8.3.4
     #   pytest-randomly
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.24.0
+pytest-asyncio==0.25.0
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
@@ -134,7 +134,7 @@ typing-extensions==4.12.2
     #   anyio
 userpath==1.9.2
     # via hatch
-uv==0.5.9
+uv==0.5.11
     # via hatch
 virtualenv==20.28.0
     # via hatch

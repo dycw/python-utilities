@@ -14,9 +14,9 @@ execnet==2.1.1
     # via pytest-xdist
 fonttools==4.55.3
     # via fpdf2
-fpdf2==2.8.1
+fpdf2==2.8.2
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.122.3
+hypothesis==6.123.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -39,7 +39,7 @@ pytest==8.3.4
     #   pytest-randomly
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.24.0
+pytest-asyncio==0.25.0
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)

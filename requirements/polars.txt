@@ -12,7 +12,7 @@ dacite==1.8.1
     # via dycw-utilities (pyproject.toml)
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.122.3
+hypothesis==6.123.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -35,7 +35,7 @@ pytest==8.3.4
     #   pytest-randomly
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.24.0
+pytest-asyncio==0.25.0
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
@@ -55,5 +55,5 @@ tomli==2.2.1
     # via coverage
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
-whenever==0.6.15
+whenever==0.6.16
     # via dycw-utilities (pyproject.toml)

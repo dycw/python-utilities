@@ -16,7 +16,7 @@ execnet==2.1.1
     # via pytest-xdist
 greenlet==3.1.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.122.3
+hypothesis==6.123.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -43,7 +43,7 @@ pytest==8.3.4
     #   pytest-randomly
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.24.0
+pytest-asyncio==0.25.0
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
