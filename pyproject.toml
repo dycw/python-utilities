@@ -122,7 +122,10 @@ zzz-test-click = [
 zzz-test-contextlib = []
 zzz-test-cryptography = ["cryptography >= 44.0.0, < 44.1"]
 zzz-test-cvxpy = ["cvxpy >= 1.6.0, < 1.7"]
-zzz-test-dataclasses = ["ib-async-dataclass >= 1.0.3rc5, < 1.1"]
+zzz-test-dataclasses = [
+  "ib-async-dataclass >= 1.0.3rc5, < 1.1",
+  "polars-lts-cpu >= 1.17.1, < 1.18",
+]
 zzz-test-datetime = ["tzlocal >= 5.2, < 5.3"]
 zzz-test-enum = []
 zzz-test-errors = []
