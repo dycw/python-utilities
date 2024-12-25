@@ -22,7 +22,6 @@ functools
 getpass
 git
 hashlib
-hatch
 http
 humps
 hypothesis
@@ -71,6 +70,7 @@ treelib
 types
 typing
 uuid
+version
 warnings
 whenever
 zipfile
