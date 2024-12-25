@@ -27,6 +27,7 @@ from hypothesis.strategies import (
     DrawFn,
     SearchStrategy,
     booleans,
+    builds,
     characters,
     composite,
     dates,
@@ -59,6 +60,7 @@ from utilities.math import (
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
+from utilities.version import Version
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -715,6 +717,17 @@ def uint64s(
     return draw(integers(min_value_, max_value_))
 
 
+def versions() -> SearchStrategy[Version]:
+    """Strategy for generating versions."""
+    return builds(
+        Version,
+        major=integers(min_value=0),
+        minor=integers(min_value=0),
+        patch=integers(min_value=0),
+        suffix=text_ascii(min_size=1) | none(),
+    )
+
+
 def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[_TestRedis]:
     """Strategy for generating test redis clients."""
     from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
@@ -844,6 +857,7 @@ __all__ = [
     "timedeltas_2w",
     "uint32s",
     "uint64s",
+    "versions",
     "yield_test_redis",
     "zoned_datetimes",
 ]

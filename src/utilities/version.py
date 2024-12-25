@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Self
 
 from typing_extensions import override
 
+from utilities.git import get_ref_tags
+from utilities.iterables import one
 from utilities.pathlib import PWD
 
 if TYPE_CHECKING:
@@ -16,7 +18,7 @@ if TYPE_CHECKING:
 _PATTERN = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-(\w+))?")
 
 
-@dataclass(repr=False, kw_only=True, slots=True)
+@dataclass(repr=False, order=True, kw_only=True, slots=True)
 class Version:
     """A version identifier."""
 
@@ -92,8 +94,11 @@ class _VersionEmptySuffixError(VersionError):
         return f"Suffix must be non-empty; got {self.suffix!r}"
 
 
-def get_git_origin_master_version() -> Version:
+def get_git_origin_master_version(*, cwd: PathLike = PWD) -> Version:
     """Get the version according to the `git` `origin/master` tag."""
+    tags = get_ref_tags("origin/master", cwd=cwd)
+    tag = one(tags)
+    return parse_version(tag)
 
 
 def get_hatch_version() -> Version:

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from hypothesis import given
-from hypothesis.strategies import integers, none
+from hypothesis.strategies import integers
 from pytest import raises
 
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import versions
 from utilities.version import (
     Version,
     _VersionEmptySuffixError,
@@ -23,18 +23,39 @@ class TestGetHatchVersion:
 
 
 class TestParseVersion:
-    @given(
-        major=integers(min_value=0),
-        minor=integers(min_value=0),
-        patch=integers(min_value=0),
-        suffix=text_ascii(min_size=1) | none(),
-    )
-    def test_main(
-        self, *, major: int, minor: int, patch: int, suffix: str | None
-    ) -> None:
-        version = Version(major=major, minor=minor, patch=patch, suffix=suffix)
+    @given(version=versions())
+    def test_main(self, *, version: Version) -> None:
         parsed = parse_version(str(version))
         assert parsed == version
+
+
+class TestVersion:
+    @given(version=versions())
+    def test_bump_major(self, *, version: Version) -> None:
+        bumped = version.bump_major()
+        assert version < bumped
+        assert bumped.major == version.major + 1
+        assert bumped.minor == 0
+        assert bumped.patch == 0
+        assert bumped.suffix is None
+
+    @given(version=versions())
+    def test_bump_minor(self, *, version: Version) -> None:
+        bumped = version.bump_minor()
+        assert version < bumped
+        assert bumped.major == version.major
+        assert bumped.minor == version.minor + 1
+        assert bumped.patch == 0
+        assert bumped.suffix is None
+
+    @given(version=versions())
+    def test_bump_patch(self, *, version: Version) -> None:
+        bumped = version.bump_patch()
+        assert version < bumped
+        assert bumped.major == version.major
+        assert bumped.minor == version.minor
+        assert bumped.patch == version.patch + 1
+        assert bumped.suffix is None
 
     @given(major=integers(max_value=-1))
     def test_error_negative_major_version(self, *, major: int) -> None:
