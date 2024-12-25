@@ -6,6 +6,7 @@ from pytest import raises
 
 from utilities.hypothesis import text_ascii, versions
 from utilities.version import (
+    ParseVersionError,
     Version,
     _VersionEmptySuffixError,
     _VersionNegativeMajorVersionError,
@@ -41,6 +42,10 @@ class TestParseVersion:
     def test_main(self, *, version: Version) -> None:
         parsed = parse_version(str(version))
         assert parsed == version
+
+    def test_error(self) -> None:
+        with raises(ParseVersionError, match="Invalid version string: 'invalid'"):
+            _ = parse_version("invalid")
 
 
 class TestVersion:

@@ -132,7 +132,7 @@ class GetVersionError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"`git` and `hatch` versions are incompatible; got {self.git} and {self.hatch}"
+        return f"`git` and `hatch` versions are incompatible; got {self.git} and {self.hatch}"  # pragma: no cover
 
 
 def parse_version(version: str, /) -> Version:
