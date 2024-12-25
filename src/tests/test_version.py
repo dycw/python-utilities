@@ -1,24 +1,38 @@
 from __future__ import annotations
 
 from hypothesis import given
-from hypothesis.strategies import integers
+from hypothesis.strategies import integers, none
 from pytest import raises
 
-from utilities.hypothesis import versions
+from utilities.hypothesis import text_ascii, versions
 from utilities.version import (
     Version,
     _VersionEmptySuffixError,
     _VersionNegativeMajorVersionError,
     _VersionNegativeMinorVersionError,
     _VersionNegativePatchVersionError,
+    get_git_version,
     get_hatch_version,
+    get_version,
     parse_version,
 )
+
+
+class TestGetGitVersion:
+    def test_main(self) -> None:
+        version = get_git_version()
+        assert isinstance(version, Version)
 
 
 class TestGetHatchVersion:
     def test_main(self) -> None:
         version = get_hatch_version()
+        assert isinstance(version, Version)
+
+
+class TestGetVersion:
+    def test_main(self) -> None:
+        version = get_version()
         assert isinstance(version, Version)
 
 
@@ -30,6 +44,14 @@ class TestParseVersion:
 
 
 class TestVersion:
+    @given(version=versions())
+    def test_hashable(self, *, version: Version) -> None:
+        _ = hash(version)
+
+    @given(version1=versions(), version2=versions())
+    def test_orderable(self, *, version1: Version, version2: Version) -> None:
+        assert (version1 <= version2) or (version1 >= version2)
+
     @given(version=versions())
     def test_bump_major(self, *, version: Version) -> None:
         bumped = version.bump_major()
@@ -56,6 +78,14 @@ class TestVersion:
         assert bumped.minor == version.minor
         assert bumped.patch == version.patch + 1
         assert bumped.suffix is None
+
+    @given(version=versions(), suffix=text_ascii(min_size=1) | none())
+    def test_with_suffix(self, *, version: Version, suffix: str | None) -> None:
+        new = version.with_suffix(suffix=suffix)
+        assert new.major == version.major
+        assert new.minor == version.minor
+        assert new.patch == version.patch
+        assert new.suffix == suffix
 
     @given(major=integers(max_value=-1))
     def test_error_negative_major_version(self, *, major: int) -> None:

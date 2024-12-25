@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
-from subprocess import CalledProcessError, check_output
+from dataclasses import dataclass, replace
+from subprocess import check_output
 from typing import TYPE_CHECKING, Self
 
 from typing_extensions import override
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 _PATTERN = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-(\w+))?")
 
 
-@dataclass(repr=False, order=True, kw_only=True, slots=True)
+@dataclass(repr=False, order=True, frozen=True, kw_only=True, slots=True)
 class Version:
     """A version identifier."""
 
@@ -52,6 +52,9 @@ class Version:
 
     def bump_patch(self) -> Self:
         return type(self)(major=self.major, minor=self.minor, patch=self.patch + 1)
+
+    def with_suffix(self, *, suffix: str | None = None) -> Self:
+        return replace(self, suffix=suffix)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -94,27 +97,42 @@ class _VersionEmptySuffixError(VersionError):
         return f"Suffix must be non-empty; got {self.suffix!r}"
 
 
-def get_git_origin_master_version(*, cwd: PathLike = PWD) -> Version:
-    """Get the version according to the `git` `origin/master` tag."""
+def get_git_version(*, cwd: PathLike = PWD) -> Version:
+    """Get the version according to the `git`."""
     tags = get_ref_tags("origin/master", cwd=cwd)
     tag = one(tags)
     return parse_version(tag)
 
 
-def get_hatch_version() -> Version:
-    """Get the version."""
-    output = check_output(["hatch", "version"], text=True)
+def get_hatch_version(*, cwd: PathLike = PWD) -> Version:
+    """Get the version according to `hatch`."""
+    output = check_output(["hatch", "version"], cwd=cwd, text=True)
     return parse_version(output.strip("\n"))
 
 
-def get_version(*, cwd: PathLike = PWD) -> str:
+def get_version(*, cwd: PathLike = PWD) -> Version:
     """Get the version."""
-    get_hatch_version()
-    try:
-        output = check_output(["hatch", "version"], text=True)
-    except CalledProcessError:  # pragma: no cover
-        return None
-    return output.strip("\n")
+    git = get_git_version(cwd=cwd)
+    hatch = get_hatch_version(cwd=cwd)
+    if hatch == git:  # pragma: no cover
+        return hatch
+    if hatch in {  # pragma: no cover
+        git.bump_major(),
+        git.bump_minor(),
+        git.bump_patch(),
+    }:
+        return hatch.with_suffix(suffix="dirty")
+    raise GetVersionError(git=git, hatch=hatch)  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class GetVersionError(Exception):
+    git: Version
+    hatch: Version
+
+    @override
+    def __str__(self) -> str:
+        return f"`git` and `hatch` versions are incompatible; got {self.git} and {self.hatch}"
 
 
 def parse_version(version: str, /) -> Version:
@@ -138,10 +156,11 @@ class ParseVersionError(Exception):
 
 
 __all__ = [
+    "GetVersionError",
     "ParseVersionError",
     "Version",
     "VersionError",
-    "get_git_origin_master_version",
+    "get_git_version",
     "get_hatch_version",
     "get_version",
     "parse_version",
