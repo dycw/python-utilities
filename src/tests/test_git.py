@@ -23,7 +23,7 @@ class TestGetBranchName:
 
 class TestGetRefTags:
     def test_main(self) -> None:
-        tag = one(get_ref_tags("master"))
+        tag = one(get_ref_tags("origin/master"))
         assert search(r"^\d+\.\d+\.\d+$", tag)
 
 
