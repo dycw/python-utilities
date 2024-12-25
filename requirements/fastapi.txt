@@ -20,7 +20,7 @@ fastapi==0.115.6
     # via dycw-utilities (pyproject.toml)
 h11==0.14.0
     # via uvicorn
-hypothesis==6.123.0
+hypothesis==6.123.1
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via anyio

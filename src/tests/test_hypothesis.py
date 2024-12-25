@@ -71,6 +71,7 @@ from utilities.hypothesis import (
     timedeltas_2w,
     uint32s,
     uint64s,
+    versions,
     yield_test_redis,
     zoned_datetimes,
 )
@@ -88,6 +89,7 @@ from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import Dialect, _get_dialect
 from utilities.types import Duration, Number
+from utilities.version import Version
 from utilities.whenever import (
     MAX_TWO_WAY_TIMEDELTA,
     MIN_TWO_WAY_TIMEDELTA,
@@ -824,6 +826,13 @@ class TestUInt64s:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(uint64s(min_value=min_value, max_value=max_value))
         assert max(min_value, MIN_UINT64) <= x <= min(max_value, MAX_UINT64)
+
+
+class TestVersions:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        version = data.draw(versions())
+        assert isinstance(version, Version)
 
 
 @SKIPIF_CI_AND_NOT_LINUX

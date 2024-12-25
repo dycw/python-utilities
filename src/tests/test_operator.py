@@ -38,6 +38,7 @@ from utilities.hypothesis import (
     text_ascii,
     text_printable,
     timedeltas_2w,
+    versions,
     zoned_datetimes,
 )
 from utilities.math import MAX_INT64, MIN_INT64
@@ -79,6 +80,7 @@ def base_objects(
         | times()
         | timedeltas_2w()
         | uuids()
+        | versions()
     )
     if IS_CI_AND_WINDOWS:
         base |= zoned_datetimes()
