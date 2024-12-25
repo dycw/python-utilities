@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from re import IGNORECASE, search
-from subprocess import PIPE, CalledProcessError, check_output
+from subprocess import PIPE, CalledProcessError, check_call, check_output
 from typing import TYPE_CHECKING
 
 from typing_extensions import override
@@ -54,6 +54,11 @@ def get_repo_root(*, cwd: PathLike = PWD) -> Path:
         return Path(output.strip("\n"))
 
 
+def fetch_tags(*, cwd: PathLike = PWD) -> None:
+    """Fetch the tags."""
+    _ = check_call(["git", "fetch", "--tags"], cwd=cwd)
+
+
 @dataclass(kw_only=True, slots=True)
 class GetRepoRootError(Exception):
     cwd: PathLike
@@ -65,6 +70,7 @@ class GetRepoRootError(Exception):
 
 __all__ = [
     "GetRepoRootError",
+    "fetch_tags",
     "get_branch_name",
     "get_ref_tags",
     "get_repo_name",
