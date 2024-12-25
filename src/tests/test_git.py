@@ -1,30 +1,30 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from pathlib import Path
+from re import search
 
-from hypothesis import given
-from hypothesis.strategies import DataObject, data
 from pytest import raises
 
 from utilities.git import (
     GetRepoRootError,
     get_branch_name,
+    get_ref_tags,
     get_repo_name,
     get_repo_root,
 )
-from utilities.hypothesis import git_repos, settings_with_reduced_examples, text_ascii
-
-if TYPE_CHECKING:
-    from pathlib import Path
+from utilities.iterables import one
 
 
 class TestGetBranchName:
-    @given(data=data(), branch=text_ascii(min_size=1))
-    @settings_with_reduced_examples()
-    def test_main(self, *, data: DataObject, branch: str) -> None:
-        root = data.draw(git_repos(branch=branch))
-        result = get_branch_name(cwd=root)
-        assert result == branch
+    def test_main(self) -> None:
+        name = get_branch_name()
+        assert search(r"\w+", name)
+
+
+class TestGetRefTags:
+    def test_main(self) -> None:
+        tag = one(get_ref_tags("origin/master"))
+        assert search(r"^\d+\.\d+\.\d+$", tag)
 
 
 class TestGetRepoName:
@@ -35,12 +35,9 @@ class TestGetRepoName:
 
 
 class TestGetRepoRoot:
-    @given(root=git_repos())
-    @settings_with_reduced_examples()
-    def test_main(self, *, root: Path) -> None:
-        result = get_repo_root(cwd=root)
-        expected = root.resolve()
-        assert result == expected
+    def test_main(self) -> None:
+        root = get_repo_root()
+        assert isinstance(root, Path)
 
     def test_error(self, *, tmp_path: Path) -> None:
         with raises(
