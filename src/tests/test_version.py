@@ -116,6 +116,6 @@ class TestVersion:
         ):
             _ = Version(patch=patch)
 
-    def test_error_empy_suffix(self) -> None:
+    def test_error_empty_suffix(self) -> None:
         with raises(_VersionEmptySuffixError, match="Suffix must be non-empty; got .*"):
             _ = Version(suffix="")
