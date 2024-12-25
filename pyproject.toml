@@ -151,6 +151,7 @@ zzz-test-getpass = []
 zzz-test-git = []
 zzz-test-hashlib = [
   "polars-lts-cpu >= 1.17.1, < 1.18",
+  "ib-async-dataclass >= 1.0.3rc5, < 1.1",
   "orjson >= 3.10.12, < 3.11",
   "whenever >= 0.6.16, < 0.7",
 ]
@@ -194,6 +195,7 @@ zzz-test-numpy = [
   "numbagg >= 0.8.2, < 0.9",
   "numpy >= 2.0.2, < 2.1",
 ]
+zzz-test-operator = []
 zzz-test-optuna = ["optuna >= 3.6.1, < 3.7"]
 zzz-test-orjson = [
   "ib-async-dataclass >= 1.0.3rc5, < 1.1",

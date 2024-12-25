@@ -12,6 +12,7 @@ memory-profiler
 modules
 more-itertools
 numpy
+operator
 optuna
 orjson
 os
