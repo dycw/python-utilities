@@ -1,6 +1,3 @@
-hashlib
-http
-humps
 hypothesis
 ipython
 iterables
@@ -75,3 +72,6 @@ functions
 functools
 getpass
 git
+hashlib
+http
+humps
