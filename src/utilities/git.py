@@ -18,16 +18,22 @@ _GET_BRANCH_NAME = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
 
 def get_branch_name(*, cwd: PathLike = PWD) -> str:
     """Get the current branch name."""
-    root = get_repo_root(cwd=cwd)
-    output = check_output(_GET_BRANCH_NAME, stderr=PIPE, cwd=root, text=True)
+    output = check_output(_GET_BRANCH_NAME, stderr=PIPE, cwd=cwd, text=True)
     return output.strip("\n")
+
+
+def get_ref_tags(ref: str, /, *, cwd: PathLike = PWD) -> list[str]:
+    """Get the tags of a reference."""
+    output = check_output(
+        ["git", "tag", "--points-at", ref], stderr=PIPE, cwd=cwd, text=True
+    )
+    return output.strip("\n").splitlines()
 
 
 def get_repo_name(*, cwd: PathLike = PWD) -> str:
     """Get the repo name."""
-    root = get_repo_root(cwd=cwd)
     output = check_output(
-        ["git", "remote", "get-url", "origin"], stderr=PIPE, cwd=root, text=True
+        ["git", "remote", "get-url", "origin"], stderr=PIPE, cwd=cwd, text=True
     )
     return Path(output.strip("\n")).stem  # not valid_path
 
@@ -57,4 +63,10 @@ class GetRepoRootError(Exception):
         return f"Path is not part of a `git` repository: {self.cwd}"
 
 
-__all__ = ["GetRepoRootError", "get_branch_name", "get_repo_name", "get_repo_root"]
+__all__ = [
+    "GetRepoRootError",
+    "get_branch_name",
+    "get_ref_tags",
+    "get_repo_name",
+    "get_repo_root",
+]
