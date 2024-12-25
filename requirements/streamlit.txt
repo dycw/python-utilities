@@ -13,7 +13,7 @@ cachetools==5.5.0
     # via streamlit
 certifi==2024.12.14
     # via requests
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via requests
 click==8.1.8
     # via streamlit
@@ -29,7 +29,7 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via streamlit
-hypothesis==6.123.0
+hypothesis==6.123.1
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via requests
@@ -142,3 +142,5 @@ tzdata==2024.2
     # via pandas
 urllib3==2.3.0
     # via requests
+watchdog==6.0.0
+    # via streamlit
