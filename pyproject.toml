@@ -126,6 +126,7 @@ zzz-test-dataclasses = [
   "ib-async-dataclass >= 1.0.3rc5, < 1.1",
   "orjson >= 3.10.12, < 3.11",
   "polars-lts-cpu >= 1.17.1, < 1.18",
+  "whenever >= 0.6.16, < 0.7",
 ]
 zzz-test-datetime = ["tzlocal >= 5.2, < 5.3"]
 zzz-test-enum = []
