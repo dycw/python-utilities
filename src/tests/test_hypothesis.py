@@ -373,7 +373,7 @@ class TestGitRepos:
             output = check_output(
                 _GIT_REMOTE_GET_URL_ORIGIN, stderr=PIPE, cwd=root, text=True
             )
-            assert output.strip("\n") == branch
+            assert output.strip("\n") == remote
 
 
 class TestHashables:
