@@ -22,6 +22,8 @@ nest-asyncio==1.6.0
     # via ib-async-dataclass
 numpy==2.2.1
     # via eventkit
+orjson==3.10.12
+    # via dycw-utilities (pyproject.toml)
 packaging==24.2
     # via
     #   coverage-conditional-plugin
