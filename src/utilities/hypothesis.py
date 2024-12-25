@@ -16,7 +16,7 @@ from os import environ
 from pathlib import Path
 from re import search
 from string import ascii_letters, digits, printable
-from subprocess import run
+from subprocess import check_call
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
 from zoneinfo import ZoneInfo
 
@@ -237,23 +237,29 @@ def floats_extra(
 
 @composite
 def git_repos(
-    _draw: DrawFn, /, *, branch: MaybeSearchStrategy[str | None] = None
+    _draw: DrawFn,
+    /,
+    *,
+    branch: MaybeSearchStrategy[str | None] = None,
+    remote: MaybeSearchStrategy[str | None] = None,
 ) -> Path:
     draw = lift_draw(_draw)
     path = draw(temp_paths())
     with temp_cwd(path):
-        _ = run(["git", "init"], check=True)
-        _ = run(["git", "config", "user.name", "User"], check=True)
-        _ = run(["git", "config", "user.email", "a@z.com"], check=True)
+        _ = check_call(["git", "init"])
+        _ = check_call(["git", "config", "user.name", "User"])
+        _ = check_call(["git", "config", "user.email", "a@z.com"])
         file = Path(path, "file")
         file.touch()
         file_str = str(file)
-        _ = run(["git", "add", file_str], check=True)
-        _ = run(["git", "commit", "-m", "add"], check=True)
-        _ = run(["git", "rm", file_str], check=True)
-        _ = run(["git", "commit", "-m", "rm"], check=True)
+        _ = check_call(["git", "add", file_str])
+        _ = check_call(["git", "commit", "-m", "add"])
+        _ = check_call(["git", "rm", file_str])
+        _ = check_call(["git", "commit", "-m", "rm"])
         if (branch := draw(branch)) is not None:
-            _ = run(["git", "checkout", "-b", branch], check=True)
+            _ = check_call(["git", "checkout", "-b", branch])
+        if (remote := draw(remote)) is not None:
+            _ = check_call(["git", "remote", "add", "origin", remote])
     return path
 
 

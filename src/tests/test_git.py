@@ -1,43 +1,68 @@
 from __future__ import annotations
 
-from pathlib import Path
-from re import search
+from typing import TYPE_CHECKING
 
+from hypothesis import given, settings
+from hypothesis.strategies import DataObject, data
 from pytest import raises
 
 from utilities.git import (
     GetRepoRootError,
+    fetch_tags,
     get_branch_name,
     get_ref_tags,
     get_repo_name,
     get_repo_root,
 )
-from utilities.iterables import one
+from utilities.hypothesis import git_repos, text_ascii
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from hypothesis.strategies import DataObject
+
+
+class TestFetchTags:
+    @given(repo=git_repos())
+    @settings(max_examples=1)
+    def test_main(self, *, repo: Path) -> None:
+        fetch_tags(cwd=repo)
 
 
 class TestGetBranchName:
-    def test_main(self) -> None:
-        name = get_branch_name()
-        assert search(r"\w+", name)
+    @given(data=data(), branch=text_ascii(min_size=1))
+    @settings(max_examples=1)
+    def test_main(self, *, data: DataObject, branch: str) -> None:
+        repo = data.draw(git_repos(branch=branch))
+        result = get_branch_name(cwd=repo)
+        assert result == branch
 
 
 class TestGetRefTags:
-    def test_main(self) -> None:
-        tag = one(get_ref_tags("origin/master"))
-        assert search(r"^\d+\.\d+\.\d+$", tag)
+    @given(repo=git_repos())
+    @settings(max_examples=1)
+    def test_main(self, *, repo: Path) -> None:
+        tags = get_ref_tags("HEAD", cwd=repo)
+        assert len(tags) == 0
 
 
 class TestGetRepoName:
-    def test_main(self) -> None:
-        result = get_repo_name()
-        expected = "python-utilities"
-        assert result == expected
+    @given(data=data(), name=text_ascii(min_size=1))
+    @settings(max_examples=1)
+    def test_main(self, *, data: DataObject, name: str) -> None:
+        remote = f"https://localhost/{name}.git"
+        repo = data.draw(git_repos(remote=remote))
+        result = get_repo_name(cwd=repo)
+        assert result == name
 
 
 class TestGetRepoRoot:
-    def test_main(self) -> None:
-        root = get_repo_root()
-        assert isinstance(root, Path)
+    @given(repo=git_repos())
+    @settings(max_examples=1)
+    def test_main(self, *, repo: Path) -> None:
+        root = get_repo_root(cwd=repo)
+        expected = repo.resolve()
+        assert root == expected
 
     def test_error(self, *, tmp_path: Path) -> None:
         with raises(

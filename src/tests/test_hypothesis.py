@@ -35,7 +35,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX, SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import duration_to_float, is_local_datetime, is_zoned_datetime
 from utilities.functions import make_isinstance
-from utilities.git import _GET_BRANCH_NAME
+from utilities.git import _GIT_REMOTE_GET_URL_ORIGIN, _GIT_REV_PARSE_ABBREV_REV_HEAD
 from utilities.hypothesis import (
     _SQLALCHEMY_ENGINE_DIALECTS,
     _ZONED_DATETIMES_LEFT_MOST,
@@ -361,11 +361,19 @@ class TestGitRepos:
     @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(self, *, data: DataObject) -> None:
         branch = data.draw(text_ascii(min_size=1) | none())
-        path = data.draw(git_repos(branch=branch))
-        assert set(path.iterdir()) == {Path(path, ".git")}
+        remote = data.draw(text_ascii(min_size=1) | none())
+        root = data.draw(git_repos(branch=branch, remote=remote))
+        assert set(root.iterdir()) == {Path(root, ".git")}
         if branch is not None:
-            output = check_output(_GET_BRANCH_NAME, stderr=PIPE, cwd=path, text=True)
+            output = check_output(
+                _GIT_REV_PARSE_ABBREV_REV_HEAD, stderr=PIPE, cwd=root, text=True
+            )
             assert output.strip("\n") == branch
+        if remote is not None:
+            output = check_output(
+                _GIT_REMOTE_GET_URL_ORIGIN, stderr=PIPE, cwd=root, text=True
+            )
+            assert output.strip("\n") == remote
 
 
 class TestHashables:
