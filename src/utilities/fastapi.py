@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Self
 
 from fastapi import FastAPI
-from httpx import ConnectError
 from typing_extensions import override
 from uvicorn import Config, Server
 
@@ -48,7 +47,7 @@ class PingReceiver:
     @classmethod
     async def ping(cls, port: int, *, host: str = _LOCALHOST) -> bool:
         """Ping the receiver."""
-        from httpx import AsyncClient
+        from httpx import AsyncClient, ConnectError
 
         url = f"http://{host}:{port}/ping"
         try:
