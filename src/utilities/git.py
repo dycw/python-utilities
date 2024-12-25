@@ -13,12 +13,15 @@ from utilities.pathlib import PWD
 if TYPE_CHECKING:
     from utilities.types import PathLike
 
-_GET_BRANCH_NAME = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+_GIT_REV_PARSE_ABBREV_REV_HEAD = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+_GIT_REMOTE_GET_URL_ORIGIN = ["git", "remote", "get-url", "origin"]
 
 
 def get_branch_name(*, cwd: PathLike = PWD) -> str:
     """Get the current branch name."""
-    output = check_output(_GET_BRANCH_NAME, stderr=PIPE, cwd=cwd, text=True)
+    output = check_output(
+        _GIT_REV_PARSE_ABBREV_REV_HEAD, stderr=PIPE, cwd=cwd, text=True
+    )
     return output.strip("\n")
 
 
@@ -32,9 +35,7 @@ def get_ref_tags(ref: str, /, *, cwd: PathLike = PWD) -> list[str]:
 
 def get_repo_name(*, cwd: PathLike = PWD) -> str:
     """Get the repo name."""
-    output = check_output(
-        ["git", "remote", "get-url", "origin"], stderr=PIPE, cwd=cwd, text=True
-    )
+    output = check_output(_GIT_REMOTE_GET_URL_ORIGIN, stderr=PIPE, cwd=cwd, text=True)
     return Path(output.strip("\n")).stem  # not valid_path
 
 
