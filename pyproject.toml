@@ -104,6 +104,7 @@ zzz-test-altair = [
   "img2pdf >= 0.5.1, < 0.6",
   "polars-lts-cpu >= 1.18.0, < 1.19",
   "vl-convert-python >= 1.6.1, < 1.7",
+  "whenever >= 0.6.16, < 0.7",
 ]
 zzz-test-astor = ["astor >= 0.8.1, < 0.9"]
 zzz-test-asyncio = []
