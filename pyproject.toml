@@ -150,7 +150,8 @@ zzz-test-functools = []
 zzz-test-getpass = []
 zzz-test-git = []
 zzz-test-hashlib = [
-  "orjson >= 3.10.13, < 3.11",
+  "polars-lts-cpu >= 1.17.1, < 1.18",
+  "orjson >= 3.10.12, < 3.11",
   "whenever >= 0.6.16, < 0.7",
 ]
 zzz-test-http = [
