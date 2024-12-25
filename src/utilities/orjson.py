@@ -32,6 +32,7 @@ from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import Dataclass, PathLike, StrMapping
 from utilities.uuid import UUID_PATTERN
+from utilities.version import Version, parse_version
 from utilities.whenever import (
     parse_date,
     parse_local_datetime,
@@ -74,6 +75,7 @@ class _Prefixes(Enum):
     tuple_ = "tu"
     unserializable = "un"
     uuid = "uu"
+    version = "v"
 
 
 _DataclassFinalHook: TypeAlias = Callable[[type[Dataclass], StrMapping], StrMapping]
@@ -166,6 +168,9 @@ def _pre_process(
             return f"[{_Prefixes.path.value}]{ser}"
         case str():
             return obj
+        case Version():
+            ser = str(obj)
+            return f"[{_Prefixes.version.value}]{ser}"
         # contains
         case Dataclass():
             obj_as_dict = asdict_without_defaults(
@@ -319,7 +324,14 @@ def _make_unit_pattern(prefix: _Prefixes, /) -> Pattern[str]:
     return re.compile(r"^\[" + prefix.value + r"\](.+)$")
 
 
-_DATE_PATTERN, _FLOAT_PATTERN, _PATH_PATTERN, _TIME_PATTERN, _TIMEDELTA_PATTERN = map(
+(
+    _DATE_PATTERN,
+    _FLOAT_PATTERN,
+    _PATH_PATTERN,
+    _TIME_PATTERN,
+    _TIMEDELTA_PATTERN,
+    _VERSION_PATTERN,
+) = map(
     _make_unit_pattern,
     [
         _Prefixes.date,
@@ -327,6 +339,7 @@ _DATE_PATTERN, _FLOAT_PATTERN, _PATH_PATTERN, _TIME_PATTERN, _TIMEDELTA_PATTERN 
         _Prefixes.path,
         _Prefixes.time,
         _Prefixes.timedelta,
+        _Prefixes.version,
     ],
 )
 
@@ -381,6 +394,8 @@ def _object_hook(
                 return parse_timedelta(match.group(1))
             if match := _UUID_PATTERN.search(obj):
                 return UUID(match.group(1))
+            if match := _VERSION_PATTERN.search(obj):
+                return parse_version(match.group(1))
             if match := _ZONED_DATETIME_PATTERN.search(obj):
                 return parse_zoned_datetime(match.group(1))
             if match := _ZONED_DATETIME_ALTERNATIVE_PATTERN.search(obj):
