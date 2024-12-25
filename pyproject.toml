@@ -128,7 +128,10 @@ zzz-test-dataclasses = [
   "polars-lts-cpu >= 1.17.1, < 1.18",
   "whenever >= 0.6.16, < 0.7",
 ]
-zzz-test-datetime = ["tzlocal >= 5.2, < 5.3"]
+zzz-test-datetime = [
+  "tzlocal >= 5.2, < 5.3",
+  "whenever >= 0.6.16, < 0.7",
+]
 zzz-test-enum = []
 zzz-test-errors = []
 zzz-test-eventkit = ["eventkit >= 1.0.3, < 1.1"]
