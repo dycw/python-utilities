@@ -298,7 +298,7 @@ zzz-test-traceback = [
 ]
 zzz-test-treelib = ["treelib >= 1.7.0, < 1.8"]
 zzz-test-types = []
-zzz-test-typing = []
+zzz-test-typing = ["beartype >= 0.19.0, < 0.20"]
 zzz-test-uuid = []
 zzz-test-version = ["hatch >= 1.14.0, < 1.15"]
 zzz-test-warnings = []
