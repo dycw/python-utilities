@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Self
 
 from typing_extensions import override
 
-from utilities.git import fetch_tags, get_ref_tags
+from utilities.git import fetch_all_tags, get_ref_tags
 from utilities.iterables import one
 from utilities.pathlib import PWD
 
@@ -99,7 +99,7 @@ class _VersionEmptySuffixError(VersionError):
 
 def get_git_version(*, cwd: PathLike = PWD) -> Version:
     """Get the version according to the `git`."""
-    fetch_tags(cwd=cwd)
+    fetch_all_tags(cwd=cwd)
     tags = get_ref_tags("origin/master", cwd=cwd)
     tag = one(tags)
     return parse_version(tag)
