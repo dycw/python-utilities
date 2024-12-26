@@ -8,7 +8,7 @@ from pytest import raises
 
 from utilities.git import (
     GetRepoRootError,
-    fetch_tags,
+    fetch_all_tags,
     get_branch_name,
     get_ref_tags,
     get_repo_name,
@@ -22,11 +22,11 @@ if TYPE_CHECKING:
     from hypothesis.strategies import DataObject
 
 
-class TestFetchTags:
+class TestFetchAllTags:
     @given(repo=git_repos())
     @settings(max_examples=1)
     def test_main(self, *, repo: Path) -> None:
-        fetch_tags(cwd=repo)
+        fetch_all_tags(cwd=repo)
 
 
 class TestGetBranchName:

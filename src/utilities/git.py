@@ -55,9 +55,9 @@ def get_repo_root(*, cwd: PathLike = PWD) -> Path:
         return Path(output.strip("\n"))
 
 
-def fetch_tags(*, cwd: PathLike = PWD) -> None:
+def fetch_all_tags(*, cwd: PathLike = PWD) -> None:
     """Fetch the tags."""
-    _ = check_call(["git", "fetch", "--tags"], cwd=cwd)
+    _ = check_call(["git", "fetch", "--all", "--tags"], cwd=cwd)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -71,7 +71,7 @@ class GetRepoRootError(Exception):
 
 __all__ = [
     "GetRepoRootError",
-    "fetch_tags",
+    "fetch_all_tags",
     "get_branch_name",
     "get_ref_tags",
     "get_repo_name",
