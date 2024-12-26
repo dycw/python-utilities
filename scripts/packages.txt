@@ -1,13 +1,3 @@
-re
-redis
-rich
-scipy
-sentinel
-slack-sdk
-socket
-sqlalchemy
-sqlalchemy-polars
-streamlit
 sys
 tempfile
 tenacity
@@ -75,3 +65,13 @@ pyrsistent
 pytest
 python-dotenv
 random
+re
+redis
+rich
+scipy
+sentinel
+slack-sdk
+socket
+sqlalchemy
+sqlalchemy-polars
+streamlit

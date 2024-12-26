@@ -276,7 +276,7 @@ zzz-test-sqlalchemy-polars = [
   "tenacity >= 9.0.0, < 9.1",
 ]
 zzz-test-streamlit = ["streamlit >= 1.41.1, < 1.42"]
-zzz-test-sys = []
+zzz-test-sys = ["whenever >= 0.6.16, < 0.7"]
 zzz-test-tempfile = []
 zzz-test-tenacity = ["tenacity >= 9.0.0, < 9.1"]
 zzz-test-text = []
