@@ -298,7 +298,12 @@ zzz-test-traceback = [
 ]
 zzz-test-treelib = ["treelib >= 1.7.0, < 1.8"]
 zzz-test-types = []
-zzz-test-typing = ["beartype >= 0.19.0, < 0.20"]
+zzz-test-typing = [
+  "beartype >= 0.19.0, < 0.20",
+  "ib-async-dataclass >= 1.0.3rc5, < 1.1",
+  "polars-lts-cpu >= 1.17.1, < 1.18",
+  "whenever >= 0.6.16, < 0.7",
+]
 zzz-test-uuid = []
 zzz-test-version = ["hatch >= 1.14.0, < 1.15"]
 zzz-test-warnings = []
