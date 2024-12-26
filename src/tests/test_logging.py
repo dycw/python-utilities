@@ -190,7 +190,9 @@ class TestSetupLogging:
         setup_logging(logger=name, files_dir=tmp_path, extra=extra)
         logger = getLogger(name)
         logger.info("")
-        assert len(list(tmp_path.iterdir())) == 6
+        files = list(tmp_path.iterdir())
+        names = {f.name for f in files if not search(r"\.lock", f.name)}
+        assert len(names) == 4
 
     @classmethod
     def assert_files(
