@@ -277,6 +277,7 @@ zzz-test-sqlalchemy-polars = [
 ]
 zzz-test-streamlit = ["streamlit >= 1.41.1, < 1.42"]
 zzz-test-sys = [
+  "atomicwrites >= 1.4.1, < 1.5",
   "rich >= 13.8.1, < 13.9",
   "whenever >= 0.6.16, < 0.7",
 ]
