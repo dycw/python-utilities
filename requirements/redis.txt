@@ -10,9 +10,13 @@ coverage==7.6.10
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
+eventkit==1.0.3
+    # via ib-async-dataclass
 execnet==2.1.1
     # via pytest-xdist
 hypothesis==6.123.2
+    # via dycw-utilities (pyproject.toml)
+ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -20,7 +24,11 @@ markdown-it-py==3.0.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-orjson==3.10.13
+nest-asyncio==1.6.0
+    # via ib-async-dataclass
+numpy==2.2.1
+    # via eventkit
+orjson==3.10.12
     # via dycw-utilities (pyproject.toml)
 packaging==24.2
     # via
