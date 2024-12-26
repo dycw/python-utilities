@@ -200,7 +200,7 @@ class TestSetupLogging:
     ) -> None:
         files = list(path.iterdir())
         names = {f.name for f in files if not search(r"\.lock", f.name)}
-        expected = {"debug.txt", "info.txt", "plain"}
+        expected = {"debug.txt", "errors", "info.txt", "plain"}
         match check:
             case "init":
                 assert names == expected
