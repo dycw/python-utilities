@@ -25,6 +25,7 @@ from sqlalchemy import Boolean, Column, Integer, MetaData, Table, select
 from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+from typing_extensions import override
 
 from tests.conftest import FLAKY
 from utilities.hypothesis import (
@@ -76,6 +77,7 @@ from utilities.sqlalchemy import (
     get_columns,
     get_table,
     get_table_name,
+    hash_primary_key_columns,
     insert_items,
     is_orm,
     is_table_or_orm,
@@ -460,6 +462,28 @@ class TestGetTableName:
 
         result = get_table_name(Example)
         expected = "example"
+        assert result == expected
+
+
+class TestHashPrimaryKeyColumns:
+    @given(id1=integers(), id2=integers(), value=booleans())
+    def test_main(self, *, id1: int, id2: int, value: bool) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
+            __tablename__ = "example"
+
+            id1: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            id2: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
+
+            @override
+            def __hash__(self) -> int:
+                return hash_primary_key_columns(self)
+
+        obj = Example(id1=id1, id2=id2, value=value)
+        result = hash(obj)
+        expected = hash((id1, id2))
         assert result == expected
 
 

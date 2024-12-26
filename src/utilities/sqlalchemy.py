@@ -346,6 +346,12 @@ def get_table_name(table_or_orm: TableOrORMInstOrClass, /) -> str:
     return get_table(table_or_orm).name
 
 
+def hash_primary_key_columns(orm: DeclarativeBase, /) -> int:
+    """Compute a hash of the primary key columns."""
+    values = tuple(getattr(orm, c.name) for c in yield_primary_key_columns(orm))
+    return hash(values)
+
+
 _PairOfTupleAndTable: TypeAlias = tuple[tuple[Any, ...], TableOrORMInstOrClass]
 _PairOfStrMappingAndTable: TypeAlias = tuple[StrMapping, TableOrORMInstOrClass]
 _PairOfTupleOrStrMappingAndTable: TypeAlias = tuple[
@@ -1058,6 +1064,7 @@ __all__ = [
     "get_columns",
     "get_table",
     "get_table_name",
+    "hash_primary_key_columns",
     "insert_items",
     "is_orm",
     "is_table_or_orm",
