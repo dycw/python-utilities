@@ -1,11 +1,3 @@
-types
-typing
-uuid
-version
-warnings
-whenever
-zipfile
-zoneinfo
 altair
 astor
 asyncio
@@ -17,6 +9,7 @@ click
 contextlib
 cryptography
 cvxpy
+dacite
 dataclasses
 datetime
 enum
@@ -42,7 +35,6 @@ memory-profiler
 modules
 more-itertools
 numpy
-operator
 optuna
 orjson
 os
@@ -75,3 +67,11 @@ threading
 timer
 traceback
 treelib
+types
+typing
+uuid
+version
+warnings
+whenever
+zipfile
+zoneinfo
