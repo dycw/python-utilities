@@ -9,7 +9,6 @@ click
 contextlib
 cryptography
 cvxpy
-dacite
 dataclasses
 datetime
 enum
