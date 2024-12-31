@@ -188,6 +188,7 @@ zzz-test-logging = [
   "atomicwrites >= 1.4.1, < 1.5",
   "coloredlogs >= 15.0.1, < 15.1",
   "concurrent-log-handler >= 0.9.25, < 0.10",
+  "hatch >= 1.14.0, < 1.15",
   "rich >= 13.8.1, < 13.9",
   "tzlocal >= 5.2, < 5.3",
   "whenever >= 0.6.16, < 0.7",
