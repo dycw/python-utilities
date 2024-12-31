@@ -14,7 +14,7 @@ click==8.1.8
     # via
     #   hatch
     #   userpath
-coverage==7.6.9
+coverage==7.6.10
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -38,7 +38,7 @@ httpx==0.28.1
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.123.1
+hypothesis==6.123.2
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -134,7 +134,7 @@ typing-extensions==4.12.2
     #   anyio
 userpath==1.9.2
     # via hatch
-uv==0.5.11
+uv==0.5.13
     # via hatch
 virtualenv==20.28.0
     # via hatch

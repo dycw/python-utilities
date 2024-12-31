@@ -38,7 +38,7 @@ charset-normalizer==3.4.1
     # via requests
 comm==0.2.2
     # via ipykernel
-coverage==7.6.9
+coverage==7.6.10
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -64,7 +64,7 @@ httpcore==1.0.7
     # via httpx
 httpx==0.28.1
     # via jupyterlab
-hypothesis==6.123.1
+hypothesis==6.123.2
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -139,7 +139,7 @@ matplotlib-inline==0.1.7
     # via
     #   ipykernel
     #   ipython
-mistune==3.0.2
+mistune==3.1.0
     # via nbconvert
 nbclient==0.10.2
     # via nbconvert
@@ -180,7 +180,7 @@ platformdirs==4.3.6
     # via jupyter-core
 pluggy==1.5.0
     # via pytest
-polars-lts-cpu==1.17.1
+polars-lts-cpu==1.18.0
     # via dycw-utilities (pyproject.toml)
 prometheus-client==0.21.1
     # via jupyter-server

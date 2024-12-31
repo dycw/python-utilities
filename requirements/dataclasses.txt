@@ -2,7 +2,7 @@
 #    uv pip compile --extra=test --extra=zzz-test-dataclasses --prerelease=explicit --output-file=requirements/dataclasses.txt --python-version=3.11 pyproject.toml
 attrs==24.3.0
     # via hypothesis
-coverage==7.6.9
+coverage==7.6.10
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -12,7 +12,7 @@ eventkit==1.0.3
     # via ib-async-dataclass
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.123.1
+hypothesis==6.123.2
     # via dycw-utilities (pyproject.toml)
 ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
