@@ -177,6 +177,7 @@ zzz-test-ipython = ["ipython >= 8.24.0, < 8.25"]
 zzz-test-iterables = [
   "ib-async-dataclass >= 1.0.3rc5, < 1.1",
   "polars-lts-cpu >= 1.17.1, < 1.18",
+  "whenever >= 0.6.16, < 0.7",
 ]
 zzz-test-jupyter = [
   "jupyterlab >= 4.2.0, < 4.3",
