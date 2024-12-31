@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from pathlib import Path
+from re import search
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pytest import LogCaptureFixture, mark, param, raises
@@ -24,7 +25,6 @@ from utilities.logging import (
     temp_handler,
     temp_logger,
 )
-from utilities.platform import SYSTEM
 from utilities.pytest import skipif_windows
 from utilities.typing import get_args
 
@@ -190,20 +190,17 @@ class TestSetupLogging:
         setup_logging(logger=name, files_dir=tmp_path, extra=extra)
         logger = getLogger(name)
         logger.info("")
-        assert len(list(tmp_path.iterdir())) == 6
+        files = list(tmp_path.iterdir())
+        names = {f.name for f in files if not search(r"\.lock", f.name)}
+        assert len(names) == 4
 
     @classmethod
     def assert_files(
         cls, path: Path, check: Literal["init"] | tuple[Literal["post"], Pattern[str]]
     ) -> None:
         files = list(path.iterdir())
-        names = {f.name for f in files}
-        exp_base = {"debug.txt", "info.txt", "plain"}
-        match SYSTEM:
-            case "windows":
-                expected = exp_base
-            case "mac" | "linux":
-                expected = exp_base | {".__debug.txt.lock", ".__info.txt.lock"}
+        names = {f.name for f in files if not search(r"\.lock", f.name)}
+        expected = {"debug.txt", "info.txt", "plain"}
         match check:
             case "init":
                 assert names == expected

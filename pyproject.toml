@@ -37,6 +37,7 @@ dev = [
   "fpdf2 >= 2.8.2, < 2.9",
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
   "hatch >= 1.14.0, < 1.15",
+  "httpx >= 0.28.1, < 0.29",  # for fastapi
   "hypothesis >= 6.123.2, < 6.124",
   "ib-async-dataclass >= 1.0.3rc5, < 1.1",
   "img2pdf >= 0.5.1, < 0.6",
@@ -104,6 +105,7 @@ zzz-test-altair = [
   "img2pdf >= 0.5.1, < 0.6",
   "polars-lts-cpu >= 1.18.0, < 1.19",
   "vl-convert-python >= 1.6.1, < 1.7",
+  "whenever >= 0.6.16, < 0.7",
 ]
 zzz-test-astor = ["astor >= 0.8.1, < 0.9"]
 zzz-test-asyncio = []
@@ -121,14 +123,22 @@ zzz-test-click = [
 zzz-test-contextlib = []
 zzz-test-cryptography = ["cryptography >= 44.0.0, < 44.1"]
 zzz-test-cvxpy = ["cvxpy >= 1.6.0, < 1.7"]
-zzz-test-dacite = ["dacite >= 1.8.1, < 1.9"]
-zzz-test-dataclasses = ["ib-async-dataclass >= 1.0.3rc5, < 1.1"]
-zzz-test-datetime = ["tzlocal >= 5.2, < 5.3"]
+zzz-test-dataclasses = [
+  "ib-async-dataclass >= 1.0.3rc5, < 1.1",
+  "orjson >= 3.10.12, < 3.11",
+  "polars-lts-cpu >= 1.17.1, < 1.18",
+  "whenever >= 0.6.16, < 0.7",
+]
+zzz-test-datetime = [
+  "tzlocal >= 5.2, < 5.3",
+  "whenever >= 0.6.16, < 0.7",
+]
 zzz-test-enum = []
 zzz-test-errors = []
 zzz-test-eventkit = ["eventkit >= 1.0.3, < 1.1"]
 zzz-test-fastapi = [
   "fastapi >= 0.115.6, < 0.116",
+  "httpx >= 0.28.1, < 0.29",
   "uvicorn >= 0.34.0, < 0.35",
 ]
 zzz-test-fpdf2 = [
@@ -140,7 +150,9 @@ zzz-test-functools = []
 zzz-test-getpass = []
 zzz-test-git = []
 zzz-test-hashlib = [
-  "orjson >= 3.10.13, < 3.11",
+  "polars-lts-cpu >= 1.17.1, < 1.18",
+  "ib-async-dataclass >= 1.0.3rc5, < 1.1",
+  "orjson >= 3.10.12, < 3.11",
   "whenever >= 0.6.16, < 0.7",
 ]
 zzz-test-http = [
@@ -157,19 +169,27 @@ zzz-test-hypothesis = [
   "numpy >= 2.0.2, < 2.1",
   "redis >= 5.2.1, < 5.3",
   "sqlalchemy >= 2.0.36, < 2.1",
+  "tenacity >= 9.0.0, < 9.1",
   "tzlocal >= 5.2, < 5.3",
   "whenever >= 0.6.16, < 0.7",
 ]
 zzz-test-ipython = ["ipython >= 8.24.0, < 8.25"]
-zzz-test-iterables = []
+zzz-test-iterables = [
+  "ib-async-dataclass >= 1.0.3rc5, < 1.1",
+  "polars-lts-cpu >= 1.17.1, < 1.18",
+  "whenever >= 0.6.16, < 0.7",
+]
 zzz-test-jupyter = [
   "jupyterlab >= 4.2.0, < 4.3",
   "pandas >= 2.2.2, < 2.3",
   "polars-lts-cpu >= 1.18.0, < 1.19",
 ]
 zzz-test-logging = [
+  "atomicwrites >= 1.4.1, < 1.5",
   "coloredlogs >= 15.0.1, < 15.1",
   "concurrent-log-handler >= 0.9.25, < 0.10",
+  "hatch >= 1.14.0, < 1.15",
+  "rich >= 13.8.1, < 13.9",
   "tzlocal >= 5.2, < 5.3",
   "whenever >= 0.6.16, < 0.7",
 ]
@@ -183,11 +203,18 @@ zzz-test-numpy = [
   "numbagg >= 0.8.2, < 0.9",
   "numpy >= 2.0.2, < 2.1",
 ]
+zzz-test-operator = [
+  "ib-async-dataclass >= 1.0.3rc5, < 1.1",
+  "polars-lts-cpu >= 1.17.1, < 1.18",
+  "whenever >= 0.6.16, < 0.7",
+]
 zzz-test-optuna = ["optuna >= 3.6.1, < 3.7"]
 zzz-test-orjson = [
   "ib-async-dataclass >= 1.0.3rc5, < 1.1",
-  "orjson >= 3.10.13, < 3.11",
+  "orjson >= 3.10.12, < 3.11",
+  "polars-lts-cpu >= 1.17.1, < 1.18",
   "rich >= 13.8.1, < 13.9",
+  "tzlocal >= 5.2, < 5.3",
   "whenever >= 0.6.16, < 0.7",
 ]
 zzz-test-os = []
@@ -219,8 +246,9 @@ zzz-test-python-dotenv = ["python-dotenv >= 1.0.1, < 1.1"]
 zzz-test-random = []
 zzz-test-re = []
 zzz-test-redis = [
-  "orjson >= 3.10.13, < 3.11",
-  "polars-lts-cpu >= 1.18.0, < 1.19",
+  "ib-async-dataclass >= 1.0.3rc5, < 1.1",
+  "orjson >= 3.10.12, < 3.11",
+  "polars-lts-cpu >= 1.17.1, < 1.18",
   "redis >= 5.2.1, < 5.3",
   "rich >= 13.8.1, < 13.9",
   "tenacity >= 9.0.0, < 9.1",
@@ -255,7 +283,13 @@ zzz-test-sqlalchemy-polars = [
   "tenacity >= 9.0.0, < 9.1",
 ]
 zzz-test-streamlit = ["streamlit >= 1.41.1, < 1.42"]
-zzz-test-sys = []
+zzz-test-sys = [
+  "atomicwrites >= 1.4.1, < 1.5",
+  "hatch >= 1.14.0, < 1.15",
+  "rich >= 13.8.1, < 13.9",
+  "tzlocal >= 5.2, < 5.3",
+  "whenever >= 0.6.16, < 0.7",
+]
 zzz-test-tempfile = []
 zzz-test-tenacity = ["tenacity >= 9.0.0, < 9.1"]
 zzz-test-text = []
@@ -263,11 +297,19 @@ zzz-test-threading = []
 zzz-test-timer = []
 zzz-test-traceback = [
   "beartype >= 0.19.0, < 0.20",
+  "hatch >= 1.14.0, < 1.15",
   "rich >= 13.8.1, < 13.9",
+  "tzlocal >= 5.2, < 5.3",
+  "whenever >= 0.6.16, < 0.7",
 ]
 zzz-test-treelib = ["treelib >= 1.7.0, < 1.8"]
 zzz-test-types = []
-zzz-test-typing = []
+zzz-test-typing = [
+  "beartype >= 0.19.0, < 0.20",
+  "ib-async-dataclass >= 1.0.3rc5, < 1.1",
+  "polars-lts-cpu >= 1.17.1, < 1.18",
+  "whenever >= 0.6.16, < 0.7",
+]
 zzz-test-uuid = []
 zzz-test-version = ["hatch >= 1.14.0, < 1.15"]
 zzz-test-warnings = []

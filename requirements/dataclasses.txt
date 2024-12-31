@@ -22,6 +22,8 @@ nest-asyncio==1.6.0
     # via ib-async-dataclass
 numpy==2.2.1
     # via eventkit
+orjson==3.10.13
+    # via dycw-utilities (pyproject.toml)
 packaging==24.2
     # via
     #   coverage-conditional-plugin
@@ -29,6 +31,8 @@ packaging==24.2
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
+polars-lts-cpu==1.17.1
+    # via dycw-utilities (pyproject.toml)
 pytest==8.3.4
     # via
     #   dycw-utilities (pyproject.toml)
@@ -58,4 +62,6 @@ sortedcontainers==2.4.0
 tomli==2.2.1
     # via coverage
 typing-extensions==4.12.2
+    # via dycw-utilities (pyproject.toml)
+whenever==0.6.16
     # via dycw-utilities (pyproject.toml)
