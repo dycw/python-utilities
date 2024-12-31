@@ -272,7 +272,7 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==1.17.1
+polars-lts-cpu==1.18.0
     # via dycw-utilities (pyproject.toml)
 portalocker==3.0.0
     # via concurrent-log-handler
