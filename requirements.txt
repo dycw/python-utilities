@@ -80,7 +80,7 @@ colorlog==6.9.0
     #   optuna
 concurrent-log-handler==0.9.25
     # via dycw-utilities (pyproject.toml)
-coverage==7.6.9
+coverage==7.6.10
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -140,7 +140,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.123.1
+hypothesis==6.123.2
     # via dycw-utilities (pyproject.toml)
 ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
@@ -200,7 +200,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.19.1
+narwhals==1.20.1
     # via
     #   altair
     #   vegafusion
@@ -233,7 +233,7 @@ numpy==2.0.2
     #   streamlit
 optuna==4.1.0
     # via dycw-utilities (pyproject.toml)
-orjson==3.10.12
+orjson==3.10.13
     # via dycw-utilities (pyproject.toml)
 osqp==0.6.7.post3
     # via cvxpy
@@ -441,7 +441,7 @@ urllib3==2.3.0
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.5.11
+uv==0.5.13
     # via hatch
 uvicorn==0.34.0
     # via dycw-utilities (pyproject.toml)
