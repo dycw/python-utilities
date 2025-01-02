@@ -16,6 +16,7 @@ from hypothesis.strategies import (
     floats,
     integers,
     just,
+    permutations,
     sampled_from,
     timedeltas,
     timezones,
@@ -75,6 +76,7 @@ from utilities.datetime import (
     get_today_hk,
     get_today_tokyo,
     get_years,
+    is_equal_as_months,
     is_equal_mod_tz,
     is_instance_date_not_datetime,
     is_local_datetime,
@@ -344,22 +346,49 @@ class TestIsInstanceDateNotDatetime:
         assert not is_instance_date_not_datetime(datetime)
 
 
+class TestIsEqualAsMonths:
+    @given(x=dates(), y=dates())
+    def test_dates(self, *, x: dt.date, y: dt.date) -> None:
+        result = is_equal_as_months(x, y)
+        expected = (x.year == y.year) and (x.month == y.month)
+        assert result is expected
+
+    @given(x=months(), y=months())
+    def test_months(self, *, x: Month, y: Month) -> None:
+        result = is_equal_as_months(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(data=data(), x=dates(), y=months())
+    def test_date_vs_month(self, *, data: DataObject, x: dt.date, y: Month) -> None:
+        left, right = data.draw(permutations([x, y]))
+        result = is_equal_as_months(left, right)
+        expected = (x.year == y.year) and (x.month == y.month)
+        assert result is expected
+
+
 class TestIsEqualModTz:
     @given(x=datetimes(), y=datetimes())
-    def test_naive(self, *, x: dt.datetime, y: dt.datetime) -> None:
-        assert is_equal_mod_tz(x, y) == (x == y)
-
-    @given(x=datetimes(timezones=just(UTC)), y=datetimes(timezones=just(UTC)))
-    def test_utc(self, *, x: dt.datetime, y: dt.datetime) -> None:
-        assert is_equal_mod_tz(x, y) == (x == y)
-
-    @given(x=datetimes(), y=datetimes())
-    def test_naive_vs_utc(self, *, x: dt.datetime, y: dt.datetime) -> None:
+    def test_local(self, *, x: dt.datetime, y: dt.datetime) -> None:
+        result = is_equal_mod_tz(x, y)
         expected = x == y
-        naive = x
-        aware = y.replace(tzinfo=UTC)
-        assert is_equal_mod_tz(naive, aware) == expected
-        assert is_equal_mod_tz(aware, naive) == expected
+        assert result is expected
+
+    @given(x=zoned_datetimes(), y=zoned_datetimes())
+    def test_zoned(self, *, x: dt.datetime, y: dt.datetime) -> None:
+        result = is_equal_mod_tz(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(data=data(), x=datetimes(), y=datetimes(), time_zone=timezones())
+    def test_local_vs_zoned(
+        self, *, data: DataObject, x: dt.datetime, y: dt.datetime, time_zone: ZoneInfo
+    ) -> None:
+        y_zoned = y.replace(tzinfo=UTC).astimezone(time_zone)
+        left, right = data.draw(permutations([x, y_zoned]))
+        result = is_equal_mod_tz(left, right)
+        expected = x == y
+        assert result is expected
 
 
 class TestIsLocalDateTime:
