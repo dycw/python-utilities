@@ -65,6 +65,7 @@ from polars.testing import assert_frame_equal
 from typing_extensions import override
 
 from utilities.dataclasses import _YieldFieldsInstance, yield_fields
+from utilities.datetime import is_instance_date_not_datetime
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     is_dataclass_class,
@@ -106,6 +107,7 @@ from utilities.typing import (
     is_literal_type,
     is_optional_type,
     is_set_type,
+    is_union_type,
 )
 from utilities.warnings import suppress_warnings
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
@@ -619,19 +621,29 @@ def dataclass_to_schema(
             )
             dtype = struct_dtype(**dtypes)
         elif field.type_ is dt.datetime:
-            field_use = cast(_YieldFieldsInstance[dt.datetime], field)
-            if field_use.value.tzinfo is None:
-                dtype = Datetime
+            dtype = _dataclass_to_schema_datetime(field)
+        elif is_union_type(field.type_) and set(get_args(field.type_)) == {
+            dt.date,
+            dt.datetime,
+        }:
+            if is_instance_date_not_datetime(field.value):
+                dtype = Date
             else:
-                dtype = zoned_datetime(
-                    time_zone=ensure_time_zone(field_use.value.tzinfo)
-                )
+                dtype = _dataclass_to_schema_datetime(field)
         else:
             dtype = _dataclass_to_schema_one(
                 field.type_, globalns=globalns, localns=localns
             )
         out[field.name] = dtype
     return out
+
+
+def _dataclass_to_schema_datetime(
+    field: _YieldFieldsInstance[dt.datetime], /
+) -> PolarsDataType:
+    if field.value.tzinfo is None:
+        return Datetime
+    return zoned_datetime(time_zone=ensure_time_zone(field.value.tzinfo))
 
 
 def _dataclass_to_schema_one(
