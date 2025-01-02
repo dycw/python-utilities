@@ -3,7 +3,16 @@ from __future__ import annotations
 import datetime as dt
 from dataclasses import dataclass, replace
 from re import sub
-from typing import TYPE_CHECKING, Any, Literal, Self, TypeGuard, assert_never, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    Self,
+    TypeAlias,
+    TypeGuard,
+    assert_never,
+    overload,
+)
 
 from typing_extensions import override
 
@@ -22,7 +31,7 @@ if TYPE_CHECKING:
 
     from utilities.types import Duration, ZoneInfoLike
 
-
+DateOrMonth: TypeAlias = "dt.date | Month"
 _DAYS_PER_YEAR = 365.25
 _MICROSECONDS_PER_MILLISECOND = int(1e3)
 _MICROSECONDS_PER_SECOND = int(1e6)
@@ -262,12 +271,19 @@ def get_years(*, n: int = 1) -> dt.timedelta:
 YEAR = get_years(n=1)
 
 
+def is_equal_as_months(x: DateOrMonth, y: DateOrMonth, /) -> bool:
+    """Check if x == y as months."""
+    x_month = Month.from_date(x) if isinstance(x, dt.date) else x
+    y_month = Month.from_date(y) if isinstance(y, dt.date) else y
+    return x_month == y_month
+
+
 def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
     """Check if x == y, modulo timezone."""
     x_aware, y_aware = x.tzinfo is not None, y.tzinfo is not None
-    if x_aware and not y_aware:
+    if x_aware and (not y_aware):
         return x.astimezone(UTC).replace(tzinfo=None) == y
-    if not x_aware and y_aware:
+    if (not x_aware) and y_aware:
         return x == y.astimezone(UTC).replace(tzinfo=None)
     return x == y
 
@@ -649,6 +665,7 @@ __all__ = [
     "AddWeekdaysError",
     "CheckDateNotDatetimeError",
     "CheckZonedDatetimeError",
+    "DateOrMonth",
     "EnsureMonthError",
     "MillisecondsSinceEpochError",
     "Month",
@@ -678,6 +695,7 @@ __all__ = [
     "get_today_hk",
     "get_today_tokyo",
     "get_years",
+    "is_equal_as_months",
     "is_instance_date_not_datetime",
     "is_local_datetime",
     "is_subclass_date_not_datetime",
