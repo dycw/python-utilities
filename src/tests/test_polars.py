@@ -704,6 +704,43 @@ class TestDataClassToSchema:
         expected = {"x": Int64}
         assert result == expected
 
+    def test_date_or_datetime_as_date(self) -> None:
+        today = get_today()
+
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: dt.date | dt.datetime = today
+
+        obj = Example()
+        result = dataclass_to_schema(obj)
+        expected = {"x": Date}
+        assert result == expected
+
+    def test_date_or_datetime_as_local_datetime(self) -> None:
+        now = get_now().replace(tzinfo=None)
+
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: dt.date | dt.datetime = now
+
+        obj = Example()
+        result = dataclass_to_schema(obj)
+        expected = {"x": Datetime()}
+        assert result == expected
+
+    @given(time_zone=timezones())
+    def test_date_or_datetime_as_zoned_datetime(self, *, time_zone: ZoneInfo) -> None:
+        now = get_now(time_zone=time_zone)
+
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: dt.date | dt.datetime = now
+
+        obj = Example()
+        result = dataclass_to_schema(obj)
+        expected = {"x": zoned_datetime(time_zone=time_zone)}
+        assert result == expected
+
     def test_enum(self) -> None:
         class Truth(enum.Enum):
             true = auto()

@@ -44,9 +44,9 @@ packaging==24.2
     #   pikepdf
     #   pytest
     #   pytest-rerunfailures
-pikepdf==9.4.2
+pikepdf==9.5.0
     # via img2pdf
-pillow==11.0.0
+pillow==11.1.0
     # via
     #   img2pdf
     #   pikepdf
@@ -64,7 +64,7 @@ pytest==8.3.4
     #   pytest-randomly
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.25.0
+pytest-asyncio==0.25.1
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
