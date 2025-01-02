@@ -671,7 +671,6 @@ class TestDataClassToDataFrame:
             _ = dataclass_to_dataframe([Example1(), Example2()])
 
 
-@mark.only
 class TestDataClassToSchema:
     def test_basic(self) -> None:
         today = get_today()
