@@ -101,6 +101,9 @@ TableOrORMInstOrClass: TypeAlias = Table | ORMInstOrClass
 CHUNK_SIZE_FRAC = 0.95
 
 
+##
+
+
 async def check_engine(
     engine: AsyncEngine,
     /,
@@ -162,6 +165,9 @@ class CheckEngineError(Exception):
         return f"{get_repr(self.engine)} must have {self.expected} table(s); got {len(self.rows)}"
 
 
+##
+
+
 def columnwise_max(*columns: Any) -> Any:
     """Compute the columnwise max of a number of columns."""
     return _columnwise_minmax(*columns, op=ge)
@@ -199,6 +205,9 @@ def _columnwise_minmax(*columns: Any, op: Callable[[Any, Any], Any]) -> Any:
     return reduce(func, columns)
 
 
+##
+
+
 def create_async_engine(
     drivername: str,
     /,
@@ -230,6 +239,9 @@ def create_async_engine(
         **kwargs,
     )
     return _create_async_engine(url, poolclass=poolclass)
+
+
+##
 
 
 async def ensure_tables_created(
@@ -301,6 +313,9 @@ async def ensure_tables_dropped(
                     _ensure_tables_maybe_reraise(error, match)
 
 
+##
+
+
 def get_chunk_size(
     engine_or_conn: _EngineOrConnectionOrAsync,
     /,
@@ -313,14 +328,23 @@ def get_chunk_size(
     return max(floor(chunk_size_frac * max_params / scaling), 1)
 
 
+##
+
+
 def get_column_names(table_or_orm: TableOrORMInstOrClass, /) -> list[str]:
     """Get the column names from a table or ORM instance/class."""
     return [col.name for col in get_columns(table_or_orm)]
 
 
+##
+
+
 def get_columns(table_or_orm: TableOrORMInstOrClass, /) -> list[Column[Any]]:
     """Get the columns from a table or ORM instance/class."""
     return list(get_table(table_or_orm).columns)
+
+
+##
 
 
 def get_table(table_or_orm: TableOrORMInstOrClass, /) -> Table:
@@ -341,15 +365,24 @@ class GetTableError(Exception):
         return f"Object {self.obj} must be a Table or mapped class; got {get_class_name(self.obj)!r}"
 
 
+##
+
+
 def get_table_name(table_or_orm: TableOrORMInstOrClass, /) -> str:
     """Get the table name from a Table or mapped class."""
     return get_table(table_or_orm).name
+
+
+##
 
 
 def hash_primary_key_columns(orm: DeclarativeBase, /) -> int:
     """Compute a hash of the primary key columns."""
     values = tuple(getattr(orm, c.name) for c in yield_primary_key_columns(orm))
     return hash(values)
+
+
+##
 
 
 _PairOfTupleAndTable: TypeAlias = tuple[tuple[Any, ...], TableOrORMInstOrClass]
@@ -450,6 +483,9 @@ class InsertItemsError(Exception):
         return f"Item must be valid; got {self.item}"
 
 
+##
+
+
 def is_orm(obj: Any, /) -> TypeGuard[ORMInstOrClass]:
     """Check if an object is an ORM instance/class."""
     if isinstance(obj, type):
@@ -461,9 +497,15 @@ def is_orm(obj: Any, /) -> TypeGuard[ORMInstOrClass]:
     return is_orm(type(obj))
 
 
+##
+
+
 def is_table_or_orm(obj: Any, /) -> TypeGuard[TableOrORMInstOrClass]:
     """Check if an object is a Table or an ORM instance/class."""
     return isinstance(obj, Table) or is_orm(obj)
+
+
+##
 
 
 def _normalize_insert_item(
@@ -537,6 +579,9 @@ def _normalize_upsert_item(
             assert_never(never)
 
 
+##
+
+
 def selectable_to_string(
     selectable: Selectable[Any], engine_or_conn: _EngineOrConnectionOrAsync, /
 ) -> str:
@@ -547,6 +592,9 @@ def selectable_to_string(
     return str(com)
 
 
+##
+
+
 class TablenameMixin:
     """Mix-in for an auto-generated tablename."""
 
@@ -555,6 +603,9 @@ class TablenameMixin:
         from utilities.humps import snake_case
 
         return snake_case(get_class_name(cls))
+
+
+##
 
 
 @dataclass(kw_only=True, slots=True)
@@ -631,6 +682,9 @@ class Upserter:
                 timeout_insert=self.timeout_insert,
             )
             await self._post_upsert(items)
+
+
+##
 
 
 _SelectedOrAll: TypeAlias = Literal["selected", "all"]
@@ -766,6 +820,9 @@ class UpsertItemsError(Exception):
         return f"Item must be valid; got {self.item}"
 
 
+##
+
+
 def yield_primary_key_columns(
     obj: TableOrORMInstOrClass,
     /,
@@ -779,10 +836,16 @@ def yield_primary_key_columns(
             yield column
 
 
+##
+
+
 def _ensure_tables_maybe_reraise(error: DatabaseError, match: str, /) -> None:
     """Re-raise the error if it does not match the required statement."""
     if not search(match, ensure_str(one(error.args))):
         raise error  # pragma: no cover
+
+
+##
 
 
 def _get_dialect(engine_or_conn: _EngineOrConnectionOrAsync, /) -> Dialect:
@@ -831,6 +894,9 @@ def _get_dialect_max_params(
             assert_never(never)
 
 
+##
+
+
 def _is_pair_of_sequence_of_tuple_or_string_mapping_and_table(
     obj: Any, /
 ) -> TypeGuard[_PairOfSequenceOfTupleOrStrMappingAndTable]:
@@ -867,6 +933,9 @@ def _is_pair_with_predicate_and_table(
         and predicate(obj[0])
         and is_table_or_orm(obj[1])
     )
+
+
+##
 
 
 def _map_mapping_to_table(
@@ -941,6 +1010,9 @@ class _MapMappingToTableSnakeMapNonUniqueError(_MapMappingToTableError):
         return f"Mapping {get_repr(self.mapping)} must be a subset of table columns {get_repr(self.columns)}; found columns {self.first!r}, {self.second!r} and perhaps more to map to {self.key!r} modulo snake casing"
 
 
+##
+
+
 def _orm_inst_to_dict(obj: DeclarativeBase, /) -> StrMapping:
     """Map an ORM instance to a dictionary."""
     cls = type(obj)
@@ -958,6 +1030,9 @@ def _orm_inst_to_dict(obj: DeclarativeBase, /) -> StrMapping:
             yield key, getattr(obj, attr)
 
     return dict(yield_items())
+
+
+##
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1036,6 +1111,9 @@ def _prepare_insert_or_upsert_items_merge_items(
     return [
         dict(zip(col_names, k, strict=True)) | dict(v) for k, v in merged.items()
     ] + unchanged
+
+
+##
 
 
 def _tuple_to_mapping(
