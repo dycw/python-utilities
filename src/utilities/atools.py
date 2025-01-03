@@ -20,11 +20,10 @@ from atools._memoize_decorator import Pickler, _AsyncMemoize
 from typing_extensions import override
 
 from utilities.functions import ensure_class
-from utilities.types import Coroutine1
+from utilities.types import Coroutine1, Duration
 from utilities.typing import get_args
 
 if TYPE_CHECKING:
-    import datetime as dt
     from pathlib import Path
 
 _P = ParamSpec("_P")
@@ -45,7 +44,7 @@ def memoize(
     /,
     *,
     db_path: Path | None = ...,
-    duration: float | dt.timedelta | None = ...,
+    duration: Duration | None = ...,
     pickler: Pickler | None = ...,
     size: int | None = ...,
 ) -> _AsyncFunc[_P, _R]: ...
@@ -55,7 +54,7 @@ def memoize(
     /,
     *,
     db_path: Path | None = ...,
-    duration: float | dt.timedelta | None = ...,
+    duration: Duration | None = ...,
     pickler: Pickler | None = ...,
     size: int | None = ...,
 ) -> Callable[[_AsyncFunc[_P, _R]], _AsyncFunc[_P, _R]]: ...
@@ -64,7 +63,7 @@ def memoize(
     /,
     *,
     db_path: Path | None = None,
-    duration: float | dt.timedelta | None = None,
+    duration: Duration | None = None,
     pickler: Pickler | None = None,
     size: int | None = None,
 ) -> _AsyncFunc[_P, _R] | Callable[[_AsyncFunc[_P, _R]], _AsyncFunc[_P, _R]]:
