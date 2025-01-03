@@ -1172,6 +1172,7 @@ __all__ = [
     "insert_items",
     "is_orm",
     "is_table_or_orm",
+    "migrate_data",
     "selectable_to_string",
     "upsert_items",
     "yield_primary_key_columns",
