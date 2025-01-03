@@ -35,6 +35,7 @@ from sqlalchemy import (
     and_,
     case,
     insert,
+    select,
     text,
 )
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
@@ -503,6 +504,28 @@ def is_orm(obj: Any, /) -> TypeGuard[ORMInstOrClass]:
 def is_table_or_orm(obj: Any, /) -> TypeGuard[TableOrORMInstOrClass]:
     """Check if an object is a Table or an ORM instance/class."""
     return isinstance(obj, Table) or is_orm(obj)
+
+
+##
+
+
+async def migrate_data(
+    table_or_orm_from: TableOrORMInstOrClass,
+    engine_from: AsyncEngine,
+    engine_to: AsyncEngine,
+    /,
+    *,
+    table_or_orm_to: TableOrORMInstOrClass | None = None,
+) -> None:
+    """Migrate the contents of a table from one database to another."""
+    table_from = get_table(table_or_orm_from)
+    async with engine_from.begin() as conn:
+        rows = (await conn.execute(select(table_from))).all()
+    table_to = table_from if table_or_orm_to is None else get_table(table_or_orm_to)
+    await ensure_tables_created(engine_to, table_to)
+    mappings = [dict(r._mapping) for r in rows]  # noqa: SLF001
+    async with engine_to.begin() as conn:
+        _ = await conn.execute(insert(table_to).values(mappings))
 
 
 ##
