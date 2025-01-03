@@ -19,11 +19,13 @@ from atools import memoize as _memoize
 from atools._memoize_decorator import Pickler, _AsyncMemoize
 from typing_extensions import override
 
+from utilities.datetime import duration_to_timedelta
 from utilities.functions import ensure_class
 from utilities.types import Coroutine1, Duration
 from utilities.typing import get_args
 
 if TYPE_CHECKING:
+    import datetime as dt
     from pathlib import Path
 
 _P = ParamSpec("_P")
@@ -31,11 +33,17 @@ _R = TypeVar("_R")
 _AsyncFunc = Callable[_P, Coroutine1[_R]]
 
 
+##
+
+
 class _NoMemoize:
     """Base class for the no-memoize sentinel object."""
 
 
 no_memoize = _NoMemoize()
+
+
+##
 
 
 @overload
@@ -112,6 +120,33 @@ def _memoize_auto_keygen_is_param(ann: Any, /) -> bool:
     return True
 
 
+##
+
+
+_MEMOIZED_FUNCS: dict[tuple[_AsyncFunc, dt.timedelta], _AsyncFunc] = {}
+
+
+async def call_memoized(
+    func: _AsyncFunc[_P, _R],
+    refresh: Duration | None = None,
+    /,
+    *args: _P.args,
+    **kwargs: _P.kwargs,
+) -> _R:
+    """Call an asynchronous function, with possible memoization."""
+    if refresh is None:
+        return await func(*args, **kwargs)
+    timedelta = duration_to_timedelta(refresh)
+    try:
+        memoized = _MEMOIZED_FUNCS[(func, timedelta)]
+    except KeyError:
+        memoized = _MEMOIZED_FUNCS[(func, timedelta)] = memoize(duration=refresh)(func)
+    return await memoized(*args, **kwargs)
+
+
+##
+
+
 async def refresh_memoized(
     func: _AsyncFunc[_P, _R], /, *args: _P.args, **kwargs: _P.kwargs
 ) -> _R:
@@ -135,4 +170,10 @@ class RefreshMemoizedError(Exception):
         return f"Asynchronous function {self.func} must be memoized"
 
 
-__all__ = ["RefreshMemoizedError", "memoize", "no_memoize", "refresh_memoized"]
+__all__ = [
+    "RefreshMemoizedError",
+    "call_memoized",
+    "memoize",
+    "no_memoize",
+    "refresh_memoized",
+]
