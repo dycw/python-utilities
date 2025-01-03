@@ -61,7 +61,7 @@ pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)
 qdldl==0.1.7.post5
     # via osqp
-scipy==1.14.1
+scipy==1.15.0
     # via
     #   clarabel
     #   cvxpy

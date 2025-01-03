@@ -81,6 +81,7 @@ from utilities.sqlalchemy import (
     insert_items,
     is_orm,
     is_table_or_orm,
+    migrate_data,
     selectable_to_string,
     upsert_items,
     yield_primary_key_columns,
@@ -837,6 +838,47 @@ class TestMapMappingToTable:
             match=r"Mapping .* must be a subset of table columns .*; found columns 'value', 'Value' and perhaps more to map to 'value' modulo snake casing",
         ):
             _ = _map_mapping_to_table(mapping, table, snake=True)
+
+
+class TestMigrateData:
+    @FLAKY
+    @given(
+        data=data(),
+        names=sets(_table_names(), min_size=2, max_size=2),
+        values=lists(
+            tuples(integers(0, 10), booleans() | none()),
+            min_size=1,
+            unique_by=lambda x: x[0],
+        ),
+    )
+    @settings_with_reduced_examples(phases={Phase.generate})
+    async def test_main(
+        self, *, data: DataObject, names: set[str], values: list[tuple[int, bool]]
+    ) -> None:
+        engine1 = await sqlalchemy_engines(data)
+        name1, name2 = names
+        table1 = self._make_table(name1)
+        await insert_items(
+            engine1, [({"id_": id_, "value": v}, table1) for id_, v in values]
+        )
+        async with engine1.begin() as conn:
+            result1 = (await conn.execute(select(table1))).all()
+        assert len(result1) == len(values)
+
+        engine2 = await sqlalchemy_engines(data)
+        table2 = self._make_table(name2)
+        await migrate_data(table1, engine1, engine2, table_or_orm_to=table2)
+        async with engine2.begin() as conn:
+            result2 = (await conn.execute(select(table2))).all()
+        assert len(result2) == len(values)
+
+    def _make_table(self, name: str, /) -> Table:
+        return Table(
+            name,
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+        )
 
 
 class TestNormalizeInsertItem:
