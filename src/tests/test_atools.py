@@ -10,10 +10,32 @@ from tests.conftest import FLAKY
 from utilities.atools import (
     RefreshMemoizedError,
     _memoize_auto_keygen_is_param,
+    call_memoized,
     memoize,
     no_memoize,
     refresh_memoized,
 )
+
+
+class TestCallMemoized:
+    @FLAKY
+    async def test_main(self) -> None:
+        i = 0
+
+        async def increment() -> int:
+            nonlocal i
+            i += 1
+            return i
+
+        assert (await call_memoized(increment)) == 1
+        assert (await call_memoized(increment)) == 2
+        for _ in range(2):
+            assert (await call_memoized(increment, 0.01)) == 3
+        await sleep(0.01)
+        assert (await call_memoized(increment)) == 4
+        assert (await call_memoized(increment)) == 5
+        for _ in range(2):
+            assert (await call_memoized(increment, 0.01)) == 6
 
 
 class TestMemoize:
