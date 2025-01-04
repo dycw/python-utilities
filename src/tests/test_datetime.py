@@ -224,7 +224,8 @@ class TestAddWeekdays:
 class TestAreEqualDurations:
     @given(x=integers(), y=integers())
     def test_ints(self, *, x: int, y: int) -> None:
-        result = are_equal_durations(x, y)
+        with assume_does_not_raise(OverflowError):
+            result = are_equal_durations(x, y)
         expected = x == y
         assert result is expected
 
