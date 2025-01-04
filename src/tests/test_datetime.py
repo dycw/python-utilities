@@ -320,20 +320,6 @@ class TestDateDurationToTimeDelta:
             _ = date_duration_to_timedelta(timedelta)
 
 
-class TestDateToDatetime:
-    @given(date=dates())
-    def test_main(self, *, date: dt.date) -> None:
-        result = date_to_datetime(date).date()
-        assert result == date
-
-
-class TestDateToMonth:
-    @given(date=dates())
-    def test_main(self, *, date: dt.date) -> None:
-        result = date_to_month(date).to_date(day=date.day)
-        assert result == date
-
-
 class TestDateTimeDurationToFloat:
     @given(n=int32s())
     def test_int(self, *, n: int) -> None:
@@ -368,6 +354,20 @@ class TestDateTimeDurationToTimeDelta:
     def test_timedelta(self, *, duration: dt.timedelta) -> None:
         result = datetime_duration_to_timedelta(duration)
         assert result == duration
+
+
+class TestDateToDatetime:
+    @given(date=dates())
+    def test_main(self, *, date: dt.date) -> None:
+        result = date_to_datetime(date).date()
+        assert result == date
+
+
+class TestDateToMonth:
+    @given(date=dates())
+    def test_main(self, *, date: dt.date) -> None:
+        result = date_to_month(date).to_date(day=date.day)
+        assert result == date
 
 
 class TestDaysSinceEpoch:
