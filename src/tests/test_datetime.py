@@ -55,6 +55,7 @@ from utilities.datetime import (
     Month,
     MonthError,
     ParseMonthError,
+    SubDurationError,
     TimedeltaToMillisecondsError,
     YieldDaysError,
     YieldWeekdaysError,
@@ -107,6 +108,7 @@ from utilities.datetime import (
     round_to_next_weekday,
     round_to_prev_weekday,
     serialize_month,
+    sub_duration,
     timedelta_since_epoch,
     timedelta_to_microseconds,
     timedelta_to_milliseconds,
@@ -804,6 +806,43 @@ class TestRoundToWeekday:
         with assume_does_not_raise(OverflowError):
             result = func(date)
         assert operator(result, date)
+
+
+class TestSubDuration:
+    @given(date=dates(), n=integers())
+    def test_date(self, *, date: dt.date, n: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            result = sub_duration(date, duration=n)
+        expected = date - dt.timedelta(days=n)
+        assert result == expected
+
+    @given(datetime=zoned_datetimes(), n=integers())
+    def test_datetime(self, *, datetime: dt.datetime, n: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            result = sub_duration(datetime, duration=n)
+        expected = datetime - dt.timedelta(seconds=n)
+        assert result == expected
+
+    @given(date=dates() | zoned_datetimes())
+    def test_none(self, *, date: dt.date | dt.datetime) -> None:
+        result = sub_duration(date)
+        assert result == date
+
+    @given(
+        date=dates(),
+        n=integers(),
+        frac=timedeltas(
+            min_value=-(DAY - MICROSECOND), max_value=DAY - MICROSECOND
+        ).filter(lambda x: x != ZERO_TIME),
+    )
+    def test_error(self, *, date: dt.date, n: int, frac: dt.timedelta) -> None:
+        with assume_does_not_raise(OverflowError):
+            timedelta = dt.timedelta(days=n) + frac
+        with raises(
+            SubDurationError,
+            match="Date .* must be paired with an integral duration; got .*",
+        ):
+            _ = sub_duration(date, duration=timedelta)
 
 
 class TestTimedeltaSinceEpoch:

@@ -744,6 +744,37 @@ def serialize_month(month: Month, /) -> str:
 ##
 
 
+@overload
+def sub_duration(
+    date: dt.datetime, /, *, duration: Duration | None = ...
+) -> dt.datetime: ...
+@overload
+def sub_duration(date: dt.date, /, *, duration: Duration | None = ...) -> dt.date: ...
+def sub_duration(
+    date: dt.date | dt.datetime, /, *, duration: Duration | None = None
+) -> dt.date:
+    """Subtract a duration from a date/datetime."""
+    if duration is None:
+        return date
+    try:
+        return add_duration(date, duration=-duration)
+    except AddDurationError:
+        raise SubDurationError(date=date, duration=duration) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class SubDurationError(Exception):
+    date: dt.date
+    duration: Duration
+
+    @override
+    def __str__(self) -> str:
+        return f"Date {self.date} must be paired with an integral duration; got {self.duration}"
+
+
+##
+
+
 def timedelta_since_epoch(date: dt.date | dt.datetime, /) -> dt.timedelta:
     """Compute the timedelta since the epoch."""
     if isinstance(date, dt.datetime):
@@ -905,6 +936,7 @@ __all__ = [
     "WEEK",
     "YEAR",
     "ZERO_TIME",
+    "AddDurationError",
     "AddWeekdaysError",
     "CheckDateNotDatetimeError",
     "CheckZonedDatetimeError",
@@ -914,6 +946,7 @@ __all__ = [
     "Month",
     "MonthError",
     "ParseMonthError",
+    "SubDurationError",
     "TimedeltaToMillisecondsError",
     "YieldDaysError",
     "YieldWeekdaysError",
@@ -961,6 +994,7 @@ __all__ = [
     "round_to_next_weekday",
     "round_to_prev_weekday",
     "serialize_month",
+    "sub_duration",
     "timedelta_since_epoch",
     "timedelta_to_microseconds",
     "timedelta_to_milliseconds",
