@@ -65,7 +65,8 @@ from utilities.datetime import (
     _DateDurationToTimeDeltaTimeDeltaError,
     add_duration,
     add_weekdays,
-    are_equal_durations,
+    are_equal_date_durations,
+    are_equal_datetime_durations,
     are_equal_months,
     check_date_not_datetime,
     check_zoned_datetime,
@@ -221,25 +222,54 @@ class TestAddWeekdays:
         assert result is expected
 
 
-class TestAreEqualDurations:
+class TestAreEqualDateDurations:
     @given(x=integers(), y=integers())
     def test_ints(self, *, x: int, y: int) -> None:
         with assume_does_not_raise(OverflowError):
-            result = are_equal_durations(x, y)
+            result = are_equal_date_durations(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(x=integers(), y=integers())
+    def test_timedeltas(self, *, x: int, y: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            x_timedelta, y_timedelta = dt.timedelta(days=x), dt.timedelta(days=y)
+        result = are_equal_date_durations(x_timedelta, y_timedelta)
+        expected = x == y
+        assert result is expected
+
+    @given(data=data(), x=integers(), y=integers())
+    def test_int_vs_timedelta(self, *, data: DataObject, x: int, y: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            y_timedelta = dt.timedelta(days=y)
+        left, right = data.draw(permutations([x, y_timedelta]))
+        with assume_does_not_raise(OverflowError):
+            result = are_equal_date_durations(left, right)
+        expected = x == y
+        assert result is expected
+
+
+class TestAreEqualDateTimeDurations:
+    @given(x=integers(), y=integers())
+    def test_ints(self, *, x: int, y: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            result = are_equal_datetime_durations(x, y)
         expected = x == y
         assert result is expected
 
     @given(x=timedeltas(), y=timedeltas())
     def test_timedeltas(self, *, x: dt.timedelta, y: dt.timedelta) -> None:
-        result = are_equal_durations(x, y)
+        result = are_equal_datetime_durations(x, y)
         expected = x == y
         assert result is expected
 
     @given(data=data(), x=integers(), y=timedeltas())
-    def test_date_vs_month(self, *, data: DataObject, x: int, y: dt.timedelta) -> None:
+    def test_int_vs_timedelta(
+        self, *, data: DataObject, x: int, y: dt.timedelta
+    ) -> None:
         left, right = data.draw(permutations([x, y]))
         with assume_does_not_raise(OverflowError):
-            result = are_equal_durations(left, right)
+            result = are_equal_datetime_durations(left, right)
         expected = x == datetime_duration_to_float(y)
         assert result is expected
 
