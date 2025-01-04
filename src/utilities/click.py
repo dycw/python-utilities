@@ -262,16 +262,6 @@ class FrozenSetParameter(ParamType, Generic[_TParam, _T]):
             return frozenset(self._param.convert(v, param, ctx) for v in values)
         return self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
 
-    @override
-    def get_metavar(self, param: Parameter) -> str | None:
-        if (metavar := self._param.get_metavar(param)) is None:
-            name = self.name.upper()
-        else:
-            name = f"FROZENSET{metavar}"
-        sep = f"SEP={self._separator}"
-        desc = f"{name} {sep}"
-        return _make_metavar(param, desc)
-
 
 class FrozenSetBools(FrozenSetParameter[BoolParamType, str]):
     """A frozenset-of-bools-valued parameter."""

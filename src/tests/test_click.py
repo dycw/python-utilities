@@ -23,6 +23,7 @@ from hypothesis.strategies import (
     lists,
     sampled_from,
     times,
+    tuples,
     uuids,
 )
 from pytest import mark, param
@@ -184,7 +185,7 @@ def _lift_serializer(
 
 
 class TestParameters:
-    @given(data=data())
+    @given(data=data(), use_value=booleans())
     @mark.parametrize(
         ("param", "exp_repr", "strategy", "serialize", "failable"),
         [
@@ -351,22 +352,27 @@ class TestParameters:
         exp_repr: str,
         strategy: SearchStrategy[Any],
         serialize: Callable[[Any], str],
+        use_value: bool,
         failable: bool,
     ) -> None:
         assert repr(param) == exp_repr
 
-        value = data.draw(strategy)
+        default, value = data.draw(tuples(strategy, strategy))
 
         @command()
-        @option("--value", type=param, default=value)
+        @option("--value", type=param, default=default)
         def cli(*, value: Any) -> None:
             echo(f"value = {serialize(value)}")
 
-        result = CliRunner().invoke(cli)
+        args = [f"--value={serialize(value)}"] if use_value else None
+        result = CliRunner().invoke(cli, args=args)
         assert result.exit_code == 0
-        assert result.stdout == f"value = {serialize(value)}\n"
+        expected_str = serialize(value if use_value else default)
+        assert result.stdout == f"value = {expected_str}\n"
 
-        _ = failable
+        result = CliRunner().invoke(cli, ["--value=error"])
+        expected = 2 if failable else 0
+        assert result.exit_code == expected
 
     @mark.parametrize(
         "param",
