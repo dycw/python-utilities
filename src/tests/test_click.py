@@ -205,7 +205,9 @@ class TestParameters:
             FrozenSetBools(),
             "FROZENSET[BOOL]",
             frozenset[bool],
-            frozensets(booleans(), max_size=1),
+            frozensets(
+                booleans(),
+            ),
             _lift_serializer(str),
             True,
         ),
@@ -213,7 +215,9 @@ class TestParameters:
             FrozenSetDates(),
             "FROZENSET[DATE]",
             frozenset[dt.date],
-            frozensets(dates(), max_size=1),
+            frozensets(
+                dates(),
+            ),
             _lift_serializer(serialize_date),
             True,
         ),
@@ -221,7 +225,9 @@ class TestParameters:
             FrozenSetChoices(["a", "b", "c"]),
             "FROZENSET[Choice(['a', 'b', 'c'])]",
             frozenset[str],
-            frozensets(sampled_from(["a", "b", "c"]), max_size=1),
+            frozensets(
+                sampled_from(["a", "b", "c"]),
+            ),
             _lift_serializer(str),
             True,
         ),
@@ -229,7 +235,9 @@ class TestParameters:
             FrozenSetEnums(_Truth),
             "FROZENSET[ENUM[_Truth]]",
             frozenset[_Truth],
-            frozensets(sampled_from(_Truth), max_size=1),
+            frozensets(
+                sampled_from(_Truth),
+            ),
             _lift_serializer(attrgetter("name")),
             True,
         ),
@@ -237,7 +245,9 @@ class TestParameters:
             FrozenSetFloats(),
             "FROZENSET[FLOAT]",
             frozenset[float],
-            frozensets(floats(0, 10), max_size=1),
+            frozensets(
+                floats(0, 10),
+            ),
             _lift_serializer(str),
             True,
         ),
@@ -245,7 +255,9 @@ class TestParameters:
             FrozenSetInts(),
             "FROZENSET[INT]",
             frozenset[int],
-            frozensets(integers(0, 10), max_size=1),
+            frozensets(
+                integers(0, 10),
+            ),
             _lift_serializer(str),
             True,
         ),
@@ -253,7 +265,9 @@ class TestParameters:
             FrozenSetMonths(),
             "FROZENSET[MONTH]",
             frozenset[utilities.datetime.Month],
-            frozensets(months(), max_size=1),
+            frozensets(
+                months(),
+            ),
             _lift_serializer(serialize_month),
             True,
         ),
@@ -261,7 +275,9 @@ class TestParameters:
             FrozenSetStrs(),
             "FROZENSET[STRING]",
             frozenset[str],
-            frozensets(text_ascii(), max_size=1),
+            frozensets(
+                text_ascii(),
+            ),
             _lift_serializer(str),
             False,
         ),
@@ -269,7 +285,9 @@ class TestParameters:
             FrozenSetUUIDs(),
             "FROZENSET[UUID]",
             frozenset[UUID],
-            frozensets(uuids(), max_size=1),
+            frozensets(
+                uuids(),
+            ),
             _lift_serializer(str),
             True,
         ),
@@ -374,42 +392,11 @@ class TestParameters:
 
     @given(data=data())
     @mark.parametrize(
-        ("param", "exp_repr", "cls", "strategy", "serialize", "failable"), cases
+        ("param", "exp_repr", "cls", "strategy", "serialize", "failable"),
+        cases,
+        ids=str,
     )
-    def test_argument(
-        self,
-        *,
-        data: DataObject,
-        param: ParamType,
-        exp_repr: str,
-        cls: Any,
-        strategy: SearchStrategy[Any],
-        serialize: Callable[[Any], str],
-        failable: bool,
-    ) -> None:
-        assert repr(param) == exp_repr
-
-        runner = CliRunner()
-
-        @command()
-        @argument("value", type=param)
-        def cli(*, value: cls) -> None:
-            echo(f"value = {serialize(value)}")
-
-        value_str = serialize(data.draw(strategy))
-        result = CliRunner().invoke(cli, [value_str])
-        assert result.exit_code == 0
-        assert result.stdout == f"value = {value_str}\n"
-
-        result = runner.invoke(cli, ["error"])
-        expected = 2 if failable else 0
-        assert result.exit_code == expected
-
-    @given(data=data())
-    @mark.parametrize(
-        ("param", "exp_repr", "cls", "strategy", "serialize", "failable"), cases
-    )
-    def test_option(
+    def test_main(
         self,
         *,
         data: DataObject,
