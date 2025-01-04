@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import datetime as dt
 import enum
 from enum import auto
 from operator import attrgetter
 from re import search
 from typing import TYPE_CHECKING, Any, TypeVar
-from uuid import UUID
 
 from click import ParamType, argument, command, echo, option
 from click.testing import CliRunner
@@ -185,11 +183,10 @@ def _lift_serializer(serializer: Callable[[_T], str]) -> Callable[[Iterable[_T]]
 
 class TestParameters:
     cases = (
-        param(Date(), "DATE", dt.date, dates(), serialize_date, True),
+        param(Date(), "DATE", dates(), serialize_date, True),
         param(
             Enum(_ExampleEnum),
             "ENUM[_ExampleEnum]",
-            _ExampleEnum,
             sampled_from(_ExampleEnum),
             attrgetter("name"),
             True,
@@ -197,7 +194,6 @@ class TestParameters:
         param(
             utilities.click.Duration(),
             "DURATION",
-            utilities.types.Duration,
             durations(min_number=0, min_timedelta=ZERO_TIME, two_way=True),
             serialize_duration,
             True,
@@ -205,7 +201,6 @@ class TestParameters:
         param(
             FrozenSetBools(),
             "FROZENSET[BOOL]",
-            frozenset[bool],
             frozensets(booleans()),
             _lift_serializer(str),
             True,
@@ -213,7 +208,6 @@ class TestParameters:
         param(
             FrozenSetDates(),
             "FROZENSET[DATE]",
-            frozenset[dt.date],
             frozensets(dates()),
             _lift_serializer(serialize_date),
             True,
@@ -221,7 +215,6 @@ class TestParameters:
         param(
             FrozenSetChoices(["a", "b", "c"]),
             "FROZENSET[Choice(['a', 'b', 'c'])]",
-            frozenset[str],
             frozensets(sampled_from(["a", "b", "c"])),
             _lift_serializer(str),
             True,
@@ -229,7 +222,6 @@ class TestParameters:
         param(
             FrozenSetEnums(_ExampleEnum),
             "FROZENSET[ENUM[_ExampleEnum]]",
-            frozenset[_ExampleEnum],
             frozensets(sampled_from(_ExampleEnum)),
             _lift_serializer(attrgetter("name")),
             True,
@@ -237,7 +229,6 @@ class TestParameters:
         param(
             FrozenSetFloats(),
             "FROZENSET[FLOAT]",
-            frozenset[float],
             frozensets(floats(0, 10)),
             _lift_serializer(str),
             True,
@@ -245,7 +236,6 @@ class TestParameters:
         param(
             FrozenSetInts(),
             "FROZENSET[INT]",
-            frozenset[int],
             frozensets(integers(0, 10)),
             _lift_serializer(str),
             True,
@@ -253,7 +243,6 @@ class TestParameters:
         param(
             FrozenSetMonths(),
             "FROZENSET[MONTH]",
-            frozenset[utilities.datetime.Month],
             frozensets(months()),
             _lift_serializer(serialize_month),
             True,
@@ -261,7 +250,6 @@ class TestParameters:
         param(
             FrozenSetStrs(),
             "FROZENSET[STRING]",
-            frozenset[str],
             frozensets(text_ascii()),
             _lift_serializer(str),
             False,
@@ -269,23 +257,16 @@ class TestParameters:
         param(
             FrozenSetUUIDs(),
             "FROZENSET[UUID]",
-            frozenset[UUID],
             frozensets(uuids()),
             _lift_serializer(str),
             True,
         ),
         param(
-            ListBools(),
-            "LIST[BOOL]",
-            list[bool],
-            lists(booleans()),
-            _lift_serializer(str),
-            True,
+            ListBools(), "LIST[BOOL]", lists(booleans()), _lift_serializer(str), True
         ),
         param(
             ListDates(),
             "LIST[DATE]",
-            list[dt.date],
             lists(dates()),
             _lift_serializer(serialize_date),
             True,
@@ -293,7 +274,6 @@ class TestParameters:
         param(
             ListEnums(_ExampleEnum),
             "LIST[ENUM[_ExampleEnum]]",
-            list[_ExampleEnum],
             lists(sampled_from(_ExampleEnum)),
             _lift_serializer(attrgetter("name")),
             True,
@@ -301,23 +281,16 @@ class TestParameters:
         param(
             ListFloats(),
             "LIST[FLOAT]",
-            list[float],
             lists(floats(0, 10)),
             _lift_serializer(str),
             True,
         ),
         param(
-            ListInts(),
-            "LIST[INT]",
-            list[int],
-            lists(integers(0, 10)),
-            _lift_serializer(str),
-            True,
+            ListInts(), "LIST[INT]", lists(integers(0, 10)), _lift_serializer(str), True
         ),
         param(
             ListMonths(),
             "LIST[MONTH]",
-            list[utilities.datetime.Month],
             lists(months()),
             _lift_serializer(serialize_month),
             True,
@@ -325,40 +298,23 @@ class TestParameters:
         param(
             ListStrs(),
             "LIST[STRING]",
-            list[str],
             lists(text_ascii()),
             _lift_serializer(str),
             False,
         ),
-        param(
-            ListUUIDs(),
-            "LIST[UUID]",
-            list[UUID],
-            lists(uuids()),
-            _lift_serializer(str),
-            True,
-        ),
+        param(ListUUIDs(), "LIST[UUID]", lists(uuids()), _lift_serializer(str), True),
         param(
             LocalDateTime(),
             "LOCAL DATETIME",
-            dt.datetime,
             datetimes(),
             serialize_local_datetime,
             True,
         ),
-        param(
-            utilities.click.Month(),
-            "MONTH",
-            utilities.datetime.Month,
-            months(),
-            serialize_month,
-            True,
-        ),
-        param(Time(), "TIME", dt.time, times(), serialize_time, True),
+        param(utilities.click.Month(), "MONTH", months(), serialize_month, True),
+        param(Time(), "TIME", times(), serialize_time, True),
         param(
             Timedelta(),
             "TIMEDELTA",
-            dt.timedelta,
             timedeltas_2w(min_value=ZERO_TIME),
             serialize_timedelta,
             True,
@@ -366,7 +322,6 @@ class TestParameters:
         param(
             ZonedDateTime(),
             "ZONED DATETIME",
-            dt.datetime,
             datetimes(timezones=just(UTC)),
             serialize_zoned_datetime,
             True,
@@ -375,9 +330,7 @@ class TestParameters:
 
     @given(data=data())
     @mark.parametrize(
-        ("param", "exp_repr", "cls", "strategy", "serialize", "failable"),
-        cases,
-        ids=str,
+        ("param", "exp_repr", "strategy", "serialize", "failable"), cases, ids=str
     )
     def test_main(
         self,
@@ -385,7 +338,6 @@ class TestParameters:
         data: DataObject,
         param: ParamType,
         exp_repr: str,
-        cls: Any,
         strategy: SearchStrategy[Any],
         serialize: Callable[[Any], str],
         failable: bool,
@@ -396,7 +348,7 @@ class TestParameters:
 
         @command()
         @option("--value", type=param, default=value)
-        def cli(*, value: cls) -> None:
+        def cli(*, value: Any) -> None:
             echo(f"value = {serialize(value)}")
 
         result = CliRunner().invoke(cli)
