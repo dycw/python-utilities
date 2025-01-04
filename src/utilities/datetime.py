@@ -112,9 +112,13 @@ class CheckZonedDatetimeError(Exception):
 ##
 
 
-def date_add_timedelta(date: dt.date, timedelta: dt.timedelta, /) -> dt.date:
+def date_add_timedelta(
+    date: dt.date, /, *, timedelta: dt.timedelta | None = None
+) -> dt.date:
     """Add a timedelta to a date, checking that it remains a date."""
     check_date_not_datetime(date)
+    if timedelta is None:
+        return date
     if (timedelta.seconds != 0) or (timedelta.microseconds != 0):
         raise DateAddTimeDeltaError(timedelta=timedelta)
     return date + timedelta

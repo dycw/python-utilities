@@ -184,13 +184,18 @@ class TestDateAddTimedelta:
         with assume_does_not_raise(OverflowError):
             timedelta = days * DAY
         with assume_does_not_raise(OverflowError):
-            result = date_add_timedelta(date, timedelta)
+            result = date_add_timedelta(date, timedelta=timedelta)
         assert is_instance_date_not_datetime(result)
+
+    @given(date=dates())
+    def test_none(self, *, date: dt.date) -> None:
+        result = date_add_timedelta(date)
+        assert result == date
 
     @given(date=dates())
     def test_error(self, *, date: dt.date) -> None:
         with raises(DateAddTimeDeltaError, match="Timedelta must be day-only; got .*"):
-            _ = date_add_timedelta(date, SECOND)
+            _ = date_add_timedelta(date, timedelta=SECOND)
 
 
 class TestDateToDatetime:
