@@ -26,6 +26,7 @@ from pytest import mark, param, raises
 from utilities.datetime import (
     _MICROSECONDS_PER_MILLISECOND,
     DAY,
+    EPOCH_DATE,
     EPOCH_NAIVE,
     EPOCH_UTC,
     HALF_YEAR,
@@ -47,6 +48,7 @@ from utilities.datetime import (
     AddWeekdaysError,
     CheckDateNotDatetimeError,
     CheckZonedDatetimeError,
+    DateAddTimeDeltaError,
     EnsureMonthError,
     MillisecondsSinceEpochError,
     Month,
@@ -58,8 +60,11 @@ from utilities.datetime import (
     add_weekdays,
     check_date_not_datetime,
     check_zoned_datetime,
+    date_add_timedelta,
     date_to_datetime,
     date_to_month,
+    days_since_epoch,
+    days_since_epoch_to_date,
     drop_microseconds,
     drop_milli_and_microseconds,
     duration_to_float,
@@ -173,6 +178,21 @@ class TestCheckZonedDatetime:
             check_zoned_datetime(datetime)
 
 
+class TestDateAddTimedelta:
+    @given(date=dates(), days=integers())
+    def test_main(self, *, date: dt.date, days: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            timedelta = days * DAY
+        with assume_does_not_raise(OverflowError):
+            result = date_add_timedelta(date, timedelta)
+        assert is_instance_date_not_datetime(result)
+
+    @given(date=dates())
+    def test_error(self, *, date: dt.date) -> None:
+        with raises(DateAddTimeDeltaError, match="Timedelta must be day-only; got .*"):
+            _ = date_add_timedelta(date, SECOND)
+
+
 class TestDateToDatetime:
     @given(date=dates())
     def test_main(self, *, date: dt.date) -> None:
@@ -184,6 +204,14 @@ class TestDateToMonth:
     @given(date=dates())
     def test_main(self, *, date: dt.date) -> None:
         result = date_to_month(date).to_date(day=date.day)
+        assert result == date
+
+
+class TestDaysSinceEpoch:
+    @given(date=dates())
+    def test_datetime_to_microseconds(self, *, date: dt.date) -> None:
+        days = days_since_epoch(date)
+        result = days_since_epoch_to_date(days)
         assert result == date
 
 
@@ -233,10 +261,14 @@ class TestDurationToTimedelta:
 
 
 class TestEpoch:
+    def test_date(self) -> None:
+        assert isinstance(EPOCH_DATE, dt.date)
+        assert not isinstance(EPOCH_DATE, dt.datetime)
+
     @mark.parametrize(
         ("epoch", "time_zone"), [param(EPOCH_NAIVE, None), param(EPOCH_UTC, UTC)]
     )
-    def test_main(self, *, epoch: dt.datetime, time_zone: ZoneInfo | None) -> None:
+    def test_datetime(self, *, epoch: dt.datetime, time_zone: ZoneInfo | None) -> None:
         assert isinstance(EPOCH_UTC, dt.datetime)
         assert epoch.tzinfo is time_zone
 
@@ -611,9 +643,9 @@ class TestRoundToWeekday:
 
 
 class TestTimedeltaSinceEpoch:
-    @given(datetime=zoned_datetimes(time_zone=timezones()))
-    def test_main(self, *, datetime: dt.datetime) -> None:
-        result = timedelta_since_epoch(datetime)
+    @given(date=dates() | zoned_datetimes(time_zone=timezones()))
+    def test_main(self, *, date: dt.date | dt.datetime) -> None:
+        result = timedelta_since_epoch(date)
         assert isinstance(result, dt.timedelta)
 
     @given(datetime=zoned_datetimes(), time_zone1=timezones(), time_zone2=timezones())

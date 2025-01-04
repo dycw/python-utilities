@@ -31,7 +31,6 @@ if TYPE_CHECKING:
 
     from utilities.types import Duration, ZoneInfoLike
 
-DateOrMonth: TypeAlias = "dt.date | Month"
 _DAYS_PER_YEAR = 365.25
 _MICROSECONDS_PER_MILLISECOND = int(1e3)
 _MICROSECONDS_PER_SECOND = int(1e6)
@@ -46,6 +45,7 @@ HOUR = dt.timedelta(hours=1)
 DAY = dt.timedelta(days=1)
 WEEK = dt.timedelta(weeks=1)
 EPOCH_UTC = dt.datetime.fromtimestamp(0, tz=UTC)
+EPOCH_DATE = EPOCH_UTC.date()
 EPOCH_NAIVE = EPOCH_UTC.replace(tzinfo=None)
 
 
@@ -112,6 +112,26 @@ class CheckZonedDatetimeError(Exception):
 ##
 
 
+def date_add_timedelta(date: dt.date, timedelta: dt.timedelta, /) -> dt.date:
+    """Add a timedelta to a date, checking that it remains a date."""
+    check_date_not_datetime(date)
+    if (timedelta.seconds != 0) or (timedelta.microseconds != 0):
+        raise DateAddTimeDeltaError(timedelta=timedelta)
+    return date + timedelta
+
+
+@dataclass(kw_only=True, slots=True)
+class DateAddTimeDeltaError(Exception):
+    timedelta: dt.timedelta
+
+    @override
+    def __str__(self) -> str:
+        return f"Timedelta must be day-only; got {self.timedelta}"
+
+
+##
+
+
 def date_to_datetime(
     date: dt.date, /, *, time: dt.time | None = None, time_zone: ZoneInfoLike = UTC
 ) -> dt.datetime:
@@ -129,6 +149,20 @@ def date_to_month(date: dt.date, /) -> Month:
     """Collapse a date into a month."""
     check_date_not_datetime(date)
     return Month(year=date.year, month=date.month)
+
+
+##
+
+
+def days_since_epoch(date: dt.date, /) -> int:
+    """Compute the number of days since the epoch."""
+    check_date_not_datetime(date)
+    return timedelta_since_epoch(date).days
+
+
+def days_since_epoch_to_date(days: int, /) -> dt.date:
+    """Convert a number of days since the epoch to a date."""
+    return EPOCH_DATE + days * DAY
 
 
 ##
@@ -531,6 +565,7 @@ class MonthError(Exception):
         return f"Invalid year and month: {self.year}, {self.month}"
 
 
+DateOrMonth: TypeAlias = dt.date | Month
 MIN_MONTH = Month(dt.date.min.year, dt.date.min.month)
 MAX_MONTH = Month(dt.date.max.year, dt.date.max.month)
 
@@ -600,10 +635,12 @@ def serialize_month(month: Month, /) -> str:
 ##
 
 
-def timedelta_since_epoch(datetime: dt.datetime, /) -> dt.timedelta:
+def timedelta_since_epoch(date: dt.date | dt.datetime, /) -> dt.timedelta:
     """Compute the timedelta since the epoch."""
-    check_zoned_datetime(datetime)
-    return datetime.astimezone(UTC) - EPOCH_UTC
+    if isinstance(date, dt.datetime):
+        check_zoned_datetime(date)
+        return date.astimezone(UTC) - EPOCH_UTC
+    return date - EPOCH_DATE
 
 
 def timedelta_to_microseconds(timedelta: dt.timedelta, /) -> int:
@@ -738,6 +775,7 @@ class YieldWeekdaysError(Exception):
 
 __all__ = [
     "DAY",
+    "EPOCH_DATE",
     "EPOCH_NAIVE",
     "EPOCH_UTC",
     "HALF_YEAR",
@@ -773,8 +811,11 @@ __all__ = [
     "add_weekdays",
     "check_date_not_datetime",
     "check_zoned_datetime",
+    "date_add_timedelta",
     "date_to_datetime",
     "date_to_month",
+    "days_since_epoch",
+    "days_since_epoch_to_date",
     "drop_microseconds",
     "drop_milli_and_microseconds",
     "duration_to_float",
