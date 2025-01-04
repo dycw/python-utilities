@@ -657,7 +657,7 @@ class Collection(frozenset[_THashable]):
         return self.__and__(type(self)(other))
 
     @override
-    def __or__(self, other: MaybeIterable[_THashable], /) -> Self:
+    def __or__(self, other: MaybeIterable[_THashable], /) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(other, type(self)):
             return type(self)(super().__or__(other))
         return self.__or__(type(self)(other))
