@@ -263,7 +263,10 @@ class TestDateDurationToInt:
     @given(n=floats(allow_nan=False, allow_infinity=False))
     def test_error_float(self, *, n: float) -> None:
         _ = assume(not is_integral(n))
-        with raises(_DateDurationToIntFloatError):
+        with raises(
+            _DateDurationToIntFloatError,
+            match="Float duration must be integral; got .*",
+        ):
             _ = date_duration_to_int(n)
 
     @given(
@@ -275,7 +278,10 @@ class TestDateDurationToInt:
     def test_error_timedelta(self, *, n: int, frac: dt.timedelta) -> None:
         with assume_does_not_raise(OverflowError):
             timedelta = dt.timedelta(days=n) + frac
-        with raises(_DateDurationToIntTimeDeltaError):
+        with raises(
+            _DateDurationToIntTimeDeltaError,
+            match="Timedelta duration must be integral; got .*",
+        ):
             _ = date_duration_to_int(timedelta)
 
 
@@ -304,7 +310,10 @@ class TestDateDurationToTimeDelta:
     @given(n=floats(allow_nan=False, allow_infinity=False))
     def test_error_float(self, *, n: float) -> None:
         _ = assume(not is_integral(n))
-        with raises(_DateDurationToTimeDeltaFloatError):
+        with raises(
+            _DateDurationToTimeDeltaFloatError,
+            match="Float duration must be integral; got .*",
+        ):
             _ = date_duration_to_timedelta(n)
 
     @given(
@@ -316,7 +325,10 @@ class TestDateDurationToTimeDelta:
     def test_error_timedelta(self, *, n: int, frac: dt.timedelta) -> None:
         with assume_does_not_raise(OverflowError):
             timedelta = dt.timedelta(days=n) + frac
-        with raises(_DateDurationToTimeDeltaTimeDeltaError):
+        with raises(
+            _DateDurationToTimeDeltaTimeDeltaError,
+            match="Timedelta duration must be integral; got .*",
+        ):
             _ = date_duration_to_timedelta(timedelta)
 
 
