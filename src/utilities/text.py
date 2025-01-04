@@ -10,10 +10,15 @@ if TYPE_CHECKING:
 
 
 def join_strs(
-    texts: Iterable[str], /, *, separator: str = ",", empty: str = SENTINEL_REPR
+    texts: Iterable[str],
+    /,
+    *,
+    sort: bool = False,
+    separator: str = ",",
+    empty: str = SENTINEL_REPR,
 ) -> str:
     """Join a collection of strings, with a special provision for the empty list."""
-    texts = list(texts)
+    texts = sorted(texts) if sort else list(texts)
     if len(texts) >= 1:
         return separator.join(texts)
     return empty

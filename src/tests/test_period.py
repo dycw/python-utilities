@@ -4,7 +4,7 @@ import datetime as dt
 from re import search
 from typing import TYPE_CHECKING
 
-from hypothesis import assume, given
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
     data,
@@ -279,6 +279,7 @@ class TestPeriod:
             _ = Period(start, end, req_duration=duration)
 
     @given(dates=tuples(dates(), dates()), min_duration=timedeltas(min_value=ZERO_TIME))
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_error_min_duration(
         self, *, dates: tuple[dt.date, dt.date], min_duration: dt.timedelta
     ) -> None:

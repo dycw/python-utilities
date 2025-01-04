@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from hypothesis import given
-from hypothesis.strategies import integers, lists
+from hypothesis.strategies import integers, lists, sets
 from pytest import mark, param
 
 from utilities.hypothesis import text_ascii
@@ -41,6 +41,10 @@ class TestSplitStrAndJoinStr:
     @given(texts=lists(text_ascii()))
     def test_generic(self, *, texts: list[str]) -> None:
         assert split_str(join_strs(texts)) == texts
+
+    @given(texts=sets(text_ascii()))
+    def test_sort(self, *, texts: set[str]) -> None:
+        assert split_str(join_strs(texts, sort=True)) == sorted(texts)
 
 
 class TestStrEncode:
