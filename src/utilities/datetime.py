@@ -242,18 +242,26 @@ class _DateDurationToTimeDeltaTimeDeltaError(DateDurationToTimeDeltaError):
 
 def datetime_duration_to_float(duration: Duration, /) -> float:
     """Ensure a datetime duration is a float."""
-    if isinstance(duration, int):
-        return float(duration)
-    if isinstance(duration, float):
-        return duration
-    return duration.total_seconds()
+    match duration:
+        case int():
+            return float(duration)
+        case float():
+            return duration
+        case dt.timedelta():
+            return duration.total_seconds()
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
 
 
 def datetime_duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
     """Ensure a datetime duration is a timedelta."""
-    if isinstance(duration, int | float):
-        return dt.timedelta(seconds=duration)
-    return duration
+    match duration:
+        case int() | float():
+            return dt.timedelta(seconds=duration)
+        case dt.timedelta():
+            return duration
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
 
 
 ##
