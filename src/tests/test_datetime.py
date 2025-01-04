@@ -129,7 +129,6 @@ if TYPE_CHECKING:
     from utilities.types import Number
 
 
-@mark.only
 class TestAddDuration:
     @given(date=dates(), n=integers())
     def test_date_with_int(self, *, date: dt.date, n: int) -> None:
