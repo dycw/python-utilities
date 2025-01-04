@@ -17,6 +17,7 @@ from typing import (
 from typing_extensions import override
 
 from utilities.functions import ensure_not_none
+from utilities.math import SafeRoundError, safe_round
 from utilities.platform import SYSTEM
 from utilities.zoneinfo import (
     UTC,
@@ -47,6 +48,33 @@ WEEK = dt.timedelta(weeks=1)
 EPOCH_UTC = dt.datetime.fromtimestamp(0, tz=UTC)
 EPOCH_DATE = EPOCH_UTC.date()
 EPOCH_NAIVE = EPOCH_UTC.replace(tzinfo=None)
+
+
+##
+
+
+def add_duration(
+    date: dt.date | dt.datetime, /, *, duration: Duration | None = None
+) -> dt.date:
+    """Add a duration to a date/datetime."""
+    if duration is None:
+        return date
+    timedelta = datetime_duration_to_timedelta(duration)
+    if is_instance_date_not_datetime(date) and (
+        (timedelta.seconds != 0) or (timedelta.microseconds != 0)
+    ):
+        raise AddDurationError(date=date, timedelta=timedelta)
+    return date + timedelta
+
+
+@dataclass(kw_only=True, slots=True)
+class AddDurationError(Exception):
+    date: dt.date
+    timedelta: dt.timedelta
+
+    @override
+    def __str__(self) -> str:
+        return f"Date {self.date} must be paired with a day-only timedelta; got {self.timedelta}"
 
 
 ##
@@ -112,30 +140,6 @@ class CheckZonedDatetimeError(Exception):
 ##
 
 
-def date_add_timedelta(
-    date: dt.date, /, *, timedelta: dt.timedelta | None = None
-) -> dt.date:
-    """Add a timedelta to a date, checking that it remains a date."""
-    check_date_not_datetime(date)
-    if timedelta is None:
-        return date
-    if (timedelta.seconds != 0) or (timedelta.microseconds != 0):
-        raise DateAddTimeDeltaError(timedelta=timedelta)
-    return date + timedelta
-
-
-@dataclass(kw_only=True, slots=True)
-class DateAddTimeDeltaError(Exception):
-    timedelta: dt.timedelta
-
-    @override
-    def __str__(self) -> str:
-        return f"Timedelta must be day-only; got {self.timedelta}"
-
-
-##
-
-
 def date_to_datetime(
     date: dt.date, /, *, time: dt.time | None = None, time_zone: ZoneInfoLike = UTC
 ) -> dt.datetime:
@@ -153,6 +157,106 @@ def date_to_month(date: dt.date, /) -> Month:
     """Collapse a date into a month."""
     check_date_not_datetime(date)
     return Month(year=date.year, month=date.month)
+
+
+##
+
+
+def date_duration_to_int(duration: Duration, /) -> int:
+    """Ensure a date duration is a float."""
+    match duration:
+        case int():
+            return duration
+        case float():
+            try:
+                return safe_round(duration)
+            except SafeRoundError:
+                raise _DateDurationToIntFloatError(duration=duration) from None
+        case dt.timedelta():
+            if (duration.seconds == 0) and (duration.microseconds == 0):
+                return duration.days
+            raise _DateDurationToIntTimeDeltaError(duration=duration) from None
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class DateDurationToIntError(Exception):
+    duration: Duration
+
+
+@dataclass(kw_only=True, slots=True)
+class _DateDurationToIntFloatError(DateDurationToIntError):
+    @override
+    def __str__(self) -> str:
+        return f"Float duration must be integral; got {self.duration}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _DateDurationToIntTimeDeltaError(DateDurationToIntError):
+    @override
+    def __str__(self) -> str:
+        return f"Timedelta duration must be day-only; got {self.duration}"
+
+
+def date_duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
+    """Ensure a date duration is a timedelta."""
+    match duration:
+        case int():
+            return dt.timedelta(days=duration)
+        case float():
+            try:
+                as_int = safe_round(duration)
+            except SafeRoundError:
+                raise _DateDurationToTimeDeltaFloatError(duration=duration) from None
+            return dt.timedelta(days=as_int)
+        case dt.timedelta():
+            if (duration.seconds == 0) and (duration.microseconds == 0):
+                return duration.days
+            raise _DateDurationToDateTimeTimeDeltaError(duration=duration) from None
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+    if isinstance(duration, int | float):
+        return dt.timedelta(seconds=duration)
+    return duration
+
+
+@dataclass(kw_only=True, slots=True)
+class DateDurationToTimeDeltaError(Exception):
+    duration: Duration
+
+
+@dataclass(kw_only=True, slots=True)
+class _DateDurationToTimeDeltaFloatError(DateDurationToTimeDeltaError):
+    @override
+    def __str__(self) -> str:
+        return f"Float duration must be integral; got {self.duration}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _DateDurationToTimeDeltaTimeDeltaError(DateDurationToTimeDeltaError):
+    @override
+    def __str__(self) -> str:
+        return f"Timedelta duration must be day-only; got {self.duration}"
+
+
+##
+
+
+def datetime_duration_to_float(duration: Duration, /) -> float:
+    """Ensure a datetime duration is a float."""
+    if isinstance(duration, int):
+        return float(duration)
+    if isinstance(duration, float):
+        return duration
+    return duration.total_seconds()
+
+
+def datetime_duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
+    """Ensure a datetime duration is a timedelta."""
+    if isinstance(duration, int | float):
+        return dt.timedelta(seconds=duration)
+    return duration
 
 
 ##
@@ -182,25 +286,6 @@ def drop_microseconds(datetime: dt.datetime, /) -> dt.datetime:
 def drop_milli_and_microseconds(datetime: dt.datetime, /) -> dt.datetime:
     """Drop the milliseconds & microseconds of a datetime object."""
     return datetime.replace(microsecond=0)
-
-
-##
-
-
-def duration_to_float(duration: Duration, /) -> float:
-    """Ensure the duration is a float."""
-    if isinstance(duration, int):
-        return float(duration)
-    if isinstance(duration, float):
-        return duration
-    return duration.total_seconds()
-
-
-def duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
-    """Ensure the duration is a timedelta."""
-    if isinstance(duration, int | float):
-        return dt.timedelta(seconds=duration)
-    return duration
 
 
 ##
@@ -383,6 +468,14 @@ def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
 def is_instance_date_not_datetime(obj: Any, /) -> TypeGuard[dt.date]:
     """Check if an object is a date, and not a datetime."""
     return isinstance(obj, dt.date) and not isinstance(obj, dt.datetime)
+
+
+##
+
+
+def is_integral_timedelta(timedelta: dt.timedelta, /) -> bool:
+    """Check if a timedelta is integral."""
+    return (timedelta.seconds == 0) and (timedelta.microseconds == 0)
 
 
 ##
@@ -812,18 +905,20 @@ __all__ = [
     "TimedeltaToMillisecondsError",
     "YieldDaysError",
     "YieldWeekdaysError",
+    "add_duration",
     "add_weekdays",
     "check_date_not_datetime",
     "check_zoned_datetime",
-    "date_add_timedelta",
+    "date_duration_to_int",
+    "date_duration_to_timedelta",
     "date_to_datetime",
     "date_to_month",
+    "datetime_duration_to_float",
+    "datetime_duration_to_timedelta",
     "days_since_epoch",
     "days_since_epoch_to_date",
     "drop_microseconds",
     "drop_milli_and_microseconds",
-    "duration_to_float",
-    "duration_to_timedelta",
     "ensure_month",
     "format_datetime_local_and_utc",
     "get_half_years",
@@ -838,6 +933,7 @@ __all__ = [
     "get_years",
     "is_equal_as_months",
     "is_instance_date_not_datetime",
+    "is_integral_timedelta",
     "is_local_datetime",
     "is_subclass_date_not_datetime",
     "is_weekday",

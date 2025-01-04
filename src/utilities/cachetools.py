@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from cachetools.func import ttl_cache
 
-from utilities.datetime import duration_to_float
+from utilities.datetime import datetime_duration_to_float
 from utilities.functions import identity
 from utilities.functools import lru_cache
 
@@ -20,7 +20,7 @@ def cache(
 ) -> Callable[[_F], _F]:
     """Decorate a function with `max_size` and/or `ttl` settings."""
     if max_duration is not None:
-        return ttl_cache(maxsize=max_size, ttl=duration_to_float(max_duration))
+        return ttl_cache(maxsize=max_size, ttl=datetime_duration_to_float(max_duration))
     if max_size is not None:
         return cast(Any, lru_cache(max_size=max_size))
     return identity

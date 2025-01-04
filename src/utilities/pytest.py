@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
-from utilities.datetime import duration_to_float, get_now
+from utilities.datetime import datetime_duration_to_float, get_now
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
 from utilities.platform import (
@@ -185,7 +185,7 @@ def _throttle_path_and_now(
     if (
         (skip is not None)
         and (prev is not None)
-        and ((now - prev) < duration_to_float(duration))
+        and ((now - prev) < datetime_duration_to_float(duration))
     ):
         _ = skip(reason=f"{test} throttled")
     return path, now

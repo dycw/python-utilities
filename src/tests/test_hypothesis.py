@@ -33,7 +33,11 @@ from sqlalchemy import Column, Integer, MetaData, Table, insert, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX, SKIPIF_CI_AND_WINDOWS
-from utilities.datetime import duration_to_float, is_local_datetime, is_zoned_datetime
+from utilities.datetime import (
+    datetime_duration_to_float,
+    is_local_datetime,
+    is_zoned_datetime,
+)
 from utilities.functions import make_isinstance
 from utilities.git import _GIT_REMOTE_GET_URL_ORIGIN, _GIT_REV_PARSE_ABBREV_REV_HEAD
 from utilities.hypothesis import (
@@ -200,7 +204,7 @@ class TestDurations:
         max_number = data.draw(floats(0.0, 10.0))
         duration = data.draw(durations(min_number=min_number, max_number=max_number))
         _ = assume(isinstance(duration, int | float))
-        as_float = duration_to_float(duration)
+        as_float = datetime_duration_to_float(duration)
         assert min_number <= as_float <= max_number
 
     @given(
