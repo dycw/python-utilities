@@ -111,6 +111,26 @@ class AddWeekdaysError(Exception): ...
 ##
 
 
+def are_equal_durations(x: Duration, y: Duration, /) -> bool:
+    """Check if x == y for durations."""
+    x_timedelta = datetime_duration_to_timedelta(x)
+    y_timedelta = datetime_duration_to_timedelta(y)
+    return x_timedelta == y_timedelta
+
+
+##
+
+
+def are_equal_months(x: DateOrMonth, y: DateOrMonth, /) -> bool:
+    """Check if x == y as months."""
+    x_month = Month.from_date(x) if isinstance(x, dt.date) else x
+    y_month = Month.from_date(y) if isinstance(y, dt.date) else y
+    return x_month == y_month
+
+
+##
+
+
 def check_date_not_datetime(date: dt.date, /) -> None:
     """Check if a date is not a datetime."""
     if not is_instance_date_not_datetime(date):
@@ -449,16 +469,6 @@ def get_years(*, n: int = 1) -> dt.timedelta:
 
 
 YEAR = get_years(n=1)
-
-
-##
-
-
-def is_equal_as_months(x: DateOrMonth, y: DateOrMonth, /) -> bool:
-    """Check if x == y as months."""
-    x_month = Month.from_date(x) if isinstance(x, dt.date) else x
-    y_month = Month.from_date(y) if isinstance(y, dt.date) else y
-    return x_month == y_month
 
 
 ##
@@ -952,6 +962,8 @@ __all__ = [
     "YieldWeekdaysError",
     "add_duration",
     "add_weekdays",
+    "are_equal_durations",
+    "are_equal_months",
     "check_date_not_datetime",
     "check_zoned_datetime",
     "date_duration_to_int",
@@ -976,7 +988,6 @@ __all__ = [
     "get_today_hk",
     "get_today_tokyo",
     "get_years",
-    "is_equal_as_months",
     "is_instance_date_not_datetime",
     "is_integral_timedelta",
     "is_local_datetime",

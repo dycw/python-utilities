@@ -65,6 +65,8 @@ from utilities.datetime import (
     _DateDurationToTimeDeltaTimeDeltaError,
     add_duration,
     add_weekdays,
+    are_equal_durations,
+    are_equal_months,
     check_date_not_datetime,
     check_zoned_datetime,
     date_duration_to_int,
@@ -89,7 +91,6 @@ from utilities.datetime import (
     get_today_hk,
     get_today_tokyo,
     get_years,
-    is_equal_as_months,
     is_equal_mod_tz,
     is_instance_date_not_datetime,
     is_integral_timedelta,
@@ -217,6 +218,49 @@ class TestAddWeekdays:
             weekday1, weekday2 = (add_weekdays(date, n=n) for n in [n1, n2])
         result = weekday1 <= weekday2
         expected = n1 <= n2
+        assert result is expected
+
+
+class TestAreEqualDurations:
+    @given(x=integers(), y=integers())
+    def test_ints(self, *, x: int, y: int) -> None:
+        result = are_equal_durations(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(x=timedeltas(), y=timedeltas())
+    def test_timedeltas(self, *, x: dt.timedelta, y: dt.timedelta) -> None:
+        result = are_equal_durations(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(data=data(), x=integers(), y=timedeltas())
+    def test_date_vs_month(self, *, data: DataObject, x: int, y: dt.timedelta) -> None:
+        left, right = data.draw(permutations([x, y]))
+        with assume_does_not_raise(OverflowError):
+            result = are_equal_durations(left, right)
+        expected = x == datetime_duration_to_float(y)
+        assert result is expected
+
+
+class TestAreEqualMonths:
+    @given(x=dates(), y=dates())
+    def test_dates(self, *, x: dt.date, y: dt.date) -> None:
+        result = are_equal_months(x, y)
+        expected = (x.year == y.year) and (x.month == y.month)
+        assert result is expected
+
+    @given(x=months(), y=months())
+    def test_months(self, *, x: Month, y: Month) -> None:
+        result = are_equal_months(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(data=data(), x=dates(), y=months())
+    def test_date_vs_month(self, *, data: DataObject, x: dt.date, y: Month) -> None:
+        left, right = data.draw(permutations([x, y]))
+        result = are_equal_months(left, right)
+        expected = (x.year == y.year) and (x.month == y.month)
         assert result is expected
 
 
@@ -523,27 +567,6 @@ class TestIsInstanceDateNotDatetime:
     @given(datetime=datetimes())
     def test_datetime(self, *, datetime: dt.datetime) -> None:
         assert not is_instance_date_not_datetime(datetime)
-
-
-class TestIsEqualAsMonths:
-    @given(x=dates(), y=dates())
-    def test_dates(self, *, x: dt.date, y: dt.date) -> None:
-        result = is_equal_as_months(x, y)
-        expected = (x.year == y.year) and (x.month == y.month)
-        assert result is expected
-
-    @given(x=months(), y=months())
-    def test_months(self, *, x: Month, y: Month) -> None:
-        result = is_equal_as_months(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(data=data(), x=dates(), y=months())
-    def test_date_vs_month(self, *, data: DataObject, x: dt.date, y: Month) -> None:
-        left, right = data.draw(permutations([x, y]))
-        result = is_equal_as_months(left, right)
-        expected = (x.year == y.year) and (x.month == y.month)
-        assert result is expected
 
 
 class TestIsEqualModTz:
