@@ -174,9 +174,11 @@ class _ExampleEnum(enum.Enum):
     c = auto()
 
 
-def _lift_serializer(serializer: Callable[[_T], str]) -> Callable[[Iterable[_T]], str]:
+def _lift_serializer(
+    serializer: Callable[[_T], str], /, *, sort: bool = False
+) -> Callable[[Iterable[_T]], str]:
     def wrapped(values: Iterable[_T], /) -> str:
-        return join_strs(map(serializer, values))
+        return join_strs(map(serializer, values), sort=sort)
 
     return wrapped
 
@@ -205,63 +207,63 @@ class TestParameters:
                 FrozenSetBools(),
                 "FROZENSET[BOOL]",
                 frozensets(booleans()),
-                _lift_serializer(str),
+                _lift_serializer(str, sort=True),
                 True,
             ),
             param(
                 FrozenSetDates(),
                 "FROZENSET[DATE]",
                 frozensets(dates()),
-                _lift_serializer(serialize_date),
+                _lift_serializer(serialize_date, sort=True),
                 True,
             ),
             param(
                 FrozenSetChoices(["a", "b", "c"]),
                 "FROZENSET[Choice(['a', 'b', 'c'])]",
                 frozensets(sampled_from(["a", "b", "c"])),
-                _lift_serializer(str),
+                _lift_serializer(str, sort=True),
                 True,
             ),
             param(
                 FrozenSetEnums(_ExampleEnum),
                 "FROZENSET[ENUM[_ExampleEnum]]",
                 frozensets(sampled_from(_ExampleEnum)),
-                _lift_serializer(attrgetter("name")),
+                _lift_serializer(attrgetter("name"), sort=True),
                 True,
             ),
             param(
                 FrozenSetFloats(),
                 "FROZENSET[FLOAT]",
                 frozensets(floats(0, 10)),
-                _lift_serializer(str),
+                _lift_serializer(str, sort=True),
                 True,
             ),
             param(
                 FrozenSetInts(),
                 "FROZENSET[INT]",
                 frozensets(integers(0, 10)),
-                _lift_serializer(str),
+                _lift_serializer(str, sort=True),
                 True,
             ),
             param(
                 FrozenSetMonths(),
                 "FROZENSET[MONTH]",
                 frozensets(months()),
-                _lift_serializer(serialize_month),
+                _lift_serializer(serialize_month, sort=True),
                 True,
             ),
             param(
                 FrozenSetStrs(),
                 "FROZENSET[STRING]",
                 frozensets(text_ascii()),
-                _lift_serializer(str),
+                _lift_serializer(str, sort=True),
                 False,
             ),
             param(
                 FrozenSetUUIDs(),
                 "FROZENSET[UUID]",
                 frozensets(uuids()),
-                _lift_serializer(str),
+                _lift_serializer(str, sort=True),
                 True,
             ),
             param(
