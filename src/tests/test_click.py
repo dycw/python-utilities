@@ -342,7 +342,6 @@ class TestParameters:
                 True,
             ),
         ],
-        ids=str,
     )
     def test_main(
         self,
