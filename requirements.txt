@@ -258,7 +258,7 @@ pathspec==0.12.1
     # via hatchling
 pexpect==4.9.0
     # via hatch
-pikepdf==9.5.0
+pikepdf==9.5.1
     # via img2pdf
 pillow==11.1.0
     # via

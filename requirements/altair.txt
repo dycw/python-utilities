@@ -44,7 +44,7 @@ packaging==24.2
     #   pikepdf
     #   pytest
     #   pytest-rerunfailures
-pikepdf==9.5.0
+pikepdf==9.5.1
     # via img2pdf
 pillow==11.1.0
     # via
