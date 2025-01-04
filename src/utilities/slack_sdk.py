@@ -10,7 +10,7 @@ from slack_sdk.webhook.async_client import AsyncWebhookClient
 from typing_extensions import override
 
 from utilities.asyncio import sleep_dur
-from utilities.datetime import MINUTE, SECOND, duration_to_float
+from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float
 from utilities.functools import cache
 from utilities.math import safe_round
 
@@ -125,7 +125,7 @@ class SendToSlackError(Exception):
 @cache
 def _get_client(url: str, /, *, timeout: Duration = _TIMEOUT) -> AsyncWebhookClient:
     """Get the Slack client."""
-    timeout_use = safe_round(duration_to_float(timeout))
+    timeout_use = safe_round(datetime_duration_to_float(timeout))
     return AsyncWebhookClient(url, timeout=timeout_use)
 
 

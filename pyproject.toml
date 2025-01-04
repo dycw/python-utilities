@@ -50,7 +50,7 @@ dev = [
   "numpy >= 2.0.2, < 2.1",  # if 2.1, llvmite: RuntimeError: Cannot install on Python version 3.11.9; only versions >=3.6,<3.10 are supported.
   "optuna >= 4.1.0, < 4.2",
   "orjson >= 3.10.13, < 3.11",
-  "polars-lts-cpu >= 1.18.0, < 1.19",
+  "polars-lts-cpu >= 1.19.0, < 1.20",
   "pqdm >= 0.2.0, < 0.3",
   "psycopg2-binary >= 2.9.10, < 2.10",  # for sqlalchemy
   "pydantic >= 2.10.4, < 2.11",
@@ -103,7 +103,7 @@ zzz-test-altair = [
   "altair >= 5.5.0, < 5.6",
   "atomicwrites >= 1.4.1, < 1.5",
   "img2pdf >= 0.5.1, < 0.6",
-  "polars-lts-cpu >= 1.18.0, < 1.19",
+  "polars-lts-cpu >= 1.19.0, < 1.20",
   "vl-convert-python >= 1.6.1, < 1.7",
   "whenever >= 0.6.16, < 0.7",
 ]
@@ -182,7 +182,7 @@ zzz-test-iterables = [
 zzz-test-jupyter = [
   "jupyterlab >= 4.2.0, < 4.3",
   "pandas >= 2.2.2, < 2.3",
-  "polars-lts-cpu >= 1.18.0, < 1.19",
+  "polars-lts-cpu >= 1.19.0, < 1.20",
 ]
 zzz-test-logging = [
   "atomicwrites >= 1.4.1, < 1.5",
@@ -223,7 +223,7 @@ zzz-test-pickle = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-platform = []
 zzz-test-polars = [
   "dacite >= 1.8.1, < 1.9",
-  "polars-lts-cpu >= 1.18.0, < 1.19",
+  "polars-lts-cpu >= 1.19.0, < 1.20",
   "whenever >= 0.6.16, < 0.7",
 ]
 zzz-test-pqdm = ["pqdm >= 0.2.0, < 0.3"]
@@ -277,7 +277,7 @@ zzz-test-sqlalchemy-polars = [
   "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
-  "polars-lts-cpu >= 1.18.0, < 1.19",
+  "polars-lts-cpu >= 1.19.0, < 1.20",
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.36, < 2.1",
   "tenacity >= 9.0.0, < 9.1",

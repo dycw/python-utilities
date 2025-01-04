@@ -21,7 +21,7 @@ from typing_extensions import override
 
 from utilities.asyncio import timeout_dur
 from utilities.contextlib import NoOpContextManager
-from utilities.datetime import duration_to_float
+from utilities.datetime import datetime_duration_to_float
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable
@@ -50,10 +50,10 @@ class wait_exponential_jitter(_wait_exponential_jitter):  # noqa: N801
         jitter: Duration = 1,
     ) -> None:
         super().__init__(
-            initial=duration_to_float(initial),
-            max=duration_to_float(max),
+            initial=datetime_duration_to_float(initial),
+            max=datetime_duration_to_float(max),
             exp_base=exp_base,
-            jitter=duration_to_float(jitter),
+            jitter=datetime_duration_to_float(jitter),
         )
 
 

@@ -20,7 +20,7 @@ from utilities.asyncio import (
     to_list,
     try_await,
 )
-from utilities.datetime import MILLISECOND, ZERO_TIME, duration_to_timedelta
+from utilities.datetime import MILLISECOND, ZERO_TIME, datetime_duration_to_timedelta
 from utilities.hypothesis import durations
 from utilities.pytest import skipif_windows
 from utilities.timer import Timer
@@ -125,7 +125,7 @@ class TestSleepDur:
     async def test_main(self, *, duration: Duration) -> None:
         with Timer() as timer:
             await sleep_dur(duration=duration)
-        assert timer >= duration_to_timedelta(duration / 2)
+        assert timer >= datetime_duration_to_timedelta(duration / 2)
 
     async def test_none(self) -> None:
         with Timer() as timer:

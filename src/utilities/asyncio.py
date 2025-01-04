@@ -18,7 +18,7 @@ from subprocess import PIPE
 from sys import stderr, stdout
 from typing import TYPE_CHECKING, Any, TextIO, TypeAlias, TypeGuard, TypeVar, cast
 
-from utilities.datetime import duration_to_float
+from utilities.datetime import datetime_duration_to_float
 from utilities.functions import EnsureStrError, ensure_int, ensure_not_none, ensure_str
 from utilities.iterables import OneError, one
 from utilities.types import MaybeAwaitable
@@ -75,7 +75,7 @@ async def sleep_dur(*, duration: Duration | None = None) -> None:
     """Sleep which accepts durations."""
     if duration is None:
         return
-    await sleep(duration_to_float(duration))
+    await sleep(datetime_duration_to_float(duration))
 
 
 @dataclass(kw_only=True, slots=True)
@@ -127,7 +127,7 @@ async def _stream_one(
 
 def timeout_dur(*, duration: Duration | None = None) -> Timeout:
     """Timeout context manager which accepts durations."""
-    delay = None if duration is None else duration_to_float(duration)
+    delay = None if duration is None else datetime_duration_to_float(duration)
     return timeout(delay)
 
 

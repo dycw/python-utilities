@@ -22,8 +22,8 @@ from redis.typing import EncodableT
 from utilities.datetime import (
     MILLISECOND,
     SECOND,
-    duration_to_float,
-    duration_to_timedelta,
+    datetime_duration_to_float,
+    datetime_duration_to_timedelta,
     get_now,
 )
 from utilities.errors import ImpossibleCaseError
@@ -159,7 +159,7 @@ class _RedisHashMapKey(Generic[_K, _V]):
             redis.hset(self.name, key=cast(Any, ser_key), value=cast(Any, ser_value)),
         )
         if self.ttl is not None:  # skipif-ci-and-not-linux
-            await redis.pexpire(self.name, duration_to_timedelta(self.ttl))
+            await redis.pexpire(self.name, datetime_duration_to_timedelta(self.ttl))
         return result  # skipif-ci-and-not-linux
 
     def _serialize_key(self, key: _K, /) -> bytes:
@@ -417,7 +417,9 @@ class _RedisKey(Generic[_T]):
         else:  # skipif-ci-and-not-linux
             ser_value = self.serializer(value)
         ttl = (  # skipif-ci-and-not-linux
-            None if self.ttl is None else round(1000 * duration_to_float(self.ttl))
+            None
+            if self.ttl is None
+            else round(1000 * datetime_duration_to_float(self.ttl))
         )
         async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
             async with attempt:
@@ -619,9 +621,9 @@ async def subscribe_messages(
         await pubsub.subscribe(channel)
     channels_bytes = [c.encode() for c in channels]  # skipif-ci-and-not-linux
     timeout_use = (  # skipif-ci-and-not-linux
-        None if timeout is None else duration_to_float(timeout)
+        None if timeout is None else datetime_duration_to_float(timeout)
     )
-    sleep_use = duration_to_float(sleep)  # skipif-ci-and-not-linux
+    sleep_use = datetime_duration_to_float(sleep)  # skipif-ci-and-not-linux
     while True:  # skipif-ci-and-not-linux
         message = cast(
             _RedisMessageSubscribe | _RedisMessageUnsubscribe | None,

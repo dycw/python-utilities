@@ -44,7 +44,7 @@ packaging==24.2
     #   pikepdf
     #   pytest
     #   pytest-rerunfailures
-pikepdf==9.5.0
+pikepdf==9.5.1
     # via img2pdf
 pillow==11.1.0
     # via
@@ -52,7 +52,7 @@ pillow==11.1.0
     #   pikepdf
 pluggy==1.5.0
     # via pytest
-polars-lts-cpu==1.18.0
+polars-lts-cpu==1.19.0
     # via dycw-utilities (pyproject.toml)
 pytest==8.3.4
     # via

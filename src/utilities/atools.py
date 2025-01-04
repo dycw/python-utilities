@@ -19,7 +19,7 @@ from atools import memoize as _memoize
 from atools._memoize_decorator import Pickler, _AsyncMemoize
 from typing_extensions import override
 
-from utilities.datetime import duration_to_timedelta
+from utilities.datetime import datetime_duration_to_timedelta
 from utilities.functions import ensure_class
 from utilities.types import Coroutine1, Duration
 from utilities.typing import get_args
@@ -136,7 +136,7 @@ async def call_memoized(
     """Call an asynchronous function, with possible memoization."""
     if refresh is None:
         return await func(*args, **kwargs)
-    timedelta = duration_to_timedelta(refresh)
+    timedelta = datetime_duration_to_timedelta(refresh)
     try:
         memoized = _MEMOIZED_FUNCS[(func, timedelta)]
     except KeyError:
