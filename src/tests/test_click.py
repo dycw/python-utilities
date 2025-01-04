@@ -170,9 +170,10 @@ class TestFileAndDirPaths:
         assert result.exit_code == 0
 
 
-class _Truth(enum.Enum):
-    true = auto()
-    false = auto()
+class _ExampleEnum(enum.Enum):
+    a = auto()
+    b = auto()
+    c = auto()
 
 
 def _lift_serializer(serializer: Callable[[_T], str]) -> Callable[[Iterable[_T]], str]:
@@ -186,10 +187,10 @@ class TestParameters:
     cases = (
         param(Date(), "DATE", dt.date, dates(), serialize_date, True),
         param(
-            Enum(_Truth),
-            "ENUM[_Truth]",
-            _Truth,
-            sampled_from(_Truth),
+            Enum(_ExampleEnum),
+            "ENUM[_ExampleEnum]",
+            _ExampleEnum,
+            sampled_from(_ExampleEnum),
             attrgetter("name"),
             True,
         ),
@@ -205,9 +206,7 @@ class TestParameters:
             FrozenSetBools(),
             "FROZENSET[BOOL]",
             frozenset[bool],
-            frozensets(
-                booleans(),
-            ),
+            frozensets(booleans()),
             _lift_serializer(str),
             True,
         ),
@@ -215,9 +214,7 @@ class TestParameters:
             FrozenSetDates(),
             "FROZENSET[DATE]",
             frozenset[dt.date],
-            frozensets(
-                dates(),
-            ),
+            frozensets(dates()),
             _lift_serializer(serialize_date),
             True,
         ),
@@ -225,19 +222,15 @@ class TestParameters:
             FrozenSetChoices(["a", "b", "c"]),
             "FROZENSET[Choice(['a', 'b', 'c'])]",
             frozenset[str],
-            frozensets(
-                sampled_from(["a", "b", "c"]),
-            ),
+            frozensets(sampled_from(["a", "b", "c"])),
             _lift_serializer(str),
             True,
         ),
         param(
-            FrozenSetEnums(_Truth),
-            "FROZENSET[ENUM[_Truth]]",
-            frozenset[_Truth],
-            frozensets(
-                sampled_from(_Truth),
-            ),
+            FrozenSetEnums(_ExampleEnum),
+            "FROZENSET[ENUM[_ExampleEnum]]",
+            frozenset[_ExampleEnum],
+            frozensets(sampled_from(_ExampleEnum)),
             _lift_serializer(attrgetter("name")),
             True,
         ),
@@ -245,9 +238,7 @@ class TestParameters:
             FrozenSetFloats(),
             "FROZENSET[FLOAT]",
             frozenset[float],
-            frozensets(
-                floats(0, 10),
-            ),
+            frozensets(floats(0, 10)),
             _lift_serializer(str),
             True,
         ),
@@ -255,9 +246,7 @@ class TestParameters:
             FrozenSetInts(),
             "FROZENSET[INT]",
             frozenset[int],
-            frozensets(
-                integers(0, 10),
-            ),
+            frozensets(integers(0, 10)),
             _lift_serializer(str),
             True,
         ),
@@ -265,9 +254,7 @@ class TestParameters:
             FrozenSetMonths(),
             "FROZENSET[MONTH]",
             frozenset[utilities.datetime.Month],
-            frozensets(
-                months(),
-            ),
+            frozensets(months()),
             _lift_serializer(serialize_month),
             True,
         ),
@@ -275,9 +262,7 @@ class TestParameters:
             FrozenSetStrs(),
             "FROZENSET[STRING]",
             frozenset[str],
-            frozensets(
-                text_ascii(),
-            ),
+            frozensets(text_ascii()),
             _lift_serializer(str),
             False,
         ),
@@ -285,9 +270,7 @@ class TestParameters:
             FrozenSetUUIDs(),
             "FROZENSET[UUID]",
             frozenset[UUID],
-            frozensets(
-                uuids(),
-            ),
+            frozensets(uuids()),
             _lift_serializer(str),
             True,
         ),
@@ -308,10 +291,10 @@ class TestParameters:
             True,
         ),
         param(
-            ListEnums(_Truth),
-            "LIST[ENUM[_Truth]]",
-            list[_Truth],
-            lists(sampled_from(_Truth)),
+            ListEnums(_ExampleEnum),
+            "LIST[ENUM[_ExampleEnum]]",
+            list[_ExampleEnum],
+            lists(sampled_from(_ExampleEnum)),
             _lift_serializer(attrgetter("name")),
             True,
         ),
@@ -423,12 +406,14 @@ class TestParameters:
         _ = failable
 
     @mark.parametrize(
-        "param", [param(ListEnums(_Truth)), param(FrozenSetEnums(_Truth))], ids=str
+        "param",
+        [param(ListEnums(_ExampleEnum)), param(FrozenSetEnums(_ExampleEnum))],
+        ids=str,
     )
     def test_error_list_and_frozensets_parse(self, *, param: ParamType) -> None:
         @command()
         @option("--value", type=param, default=0)
-        def cli(*, value: list[_Truth] | frozenset[_Truth]) -> None:
+        def cli(*, value: list[_ExampleEnum] | frozenset[_ExampleEnum]) -> None:
             echo(f"value = {value}")
 
         result = CliRunner().invoke(cli)
@@ -464,23 +449,23 @@ class TestCLIHelp:
 """,
             ),
             param(
-                Enum(_Truth),
+                Enum(_ExampleEnum),
                 """
     Usage: cli [OPTIONS]
 
     Options:
-      --value [true,false]
-      --help                Show this message and exit.
+      --value [a,b,c]
+      --help           Show this message and exit.
 """,
             ),
             param(
-                ListEnums(_Truth),
+                ListEnums(_ExampleEnum),
                 """
     Usage: cli [OPTIONS]
 
     Options:
-      --value [LIST[true,false] SEP=,]
-      --help                          Show this message and exit.
+      --value [LIST[a,b,c] SEP=,]
+      --help                       Show this message and exit.
 """,
             ),
         ],
