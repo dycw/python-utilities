@@ -53,6 +53,12 @@ EPOCH_NAIVE = EPOCH_UTC.replace(tzinfo=None)
 ##
 
 
+@overload
+def add_duration(
+    date: dt.datetime, /, *, duration: Duration | None = ...
+) -> dt.datetime: ...
+@overload
+def add_duration(date: dt.date, /, *, duration: Duration | None = ...) -> dt.date: ...
 def add_duration(
     date: dt.date | dt.datetime, /, *, duration: Duration | None = None
 ) -> dt.date:
