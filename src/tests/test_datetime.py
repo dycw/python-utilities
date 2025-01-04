@@ -58,10 +58,16 @@ from utilities.datetime import (
     TimedeltaToMillisecondsError,
     YieldDaysError,
     YieldWeekdaysError,
+    _DateDurationToIntFloatError,
+    _DateDurationToIntTimeDeltaError,
+    _DateDurationToTimeDeltaFloatError,
+    _DateDurationToTimeDeltaTimeDeltaError,
     add_duration,
     add_weekdays,
     check_date_not_datetime,
     check_zoned_datetime,
+    date_duration_to_int,
+    date_duration_to_timedelta,
     date_to_datetime,
     date_to_month,
     datetime_duration_to_float,
@@ -114,6 +120,7 @@ from utilities.hypothesis import (
     text_clean,
     zoned_datetimes,
 )
+from utilities.math import is_integral
 from utilities.zoneinfo import UTC, HongKong, Tokyo
 
 if TYPE_CHECKING:
@@ -208,6 +215,86 @@ class TestCheckZonedDatetime:
             check_zoned_datetime(datetime)
 
 
+@mark.only
+class TestDateDurationToInt:
+    @given(n=integers())
+    def test_int(self, *, n: int) -> None:
+        result = date_duration_to_int(n)
+        assert result == n
+
+    @given(n=integers().map(float))
+    def test_float_integral(self, *, n: float) -> None:
+        result = date_duration_to_int(n)
+        assert result == round(n)
+
+    @given(n=integers())
+    def test_timedelta(self, *, n: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            timedelta = dt.timedelta(days=n)
+        result = date_duration_to_int(timedelta)
+        assert result == n
+
+    @given(n=floats(allow_nan=False, allow_infinity=False))
+    def test_error_float(self, *, n: float) -> None:
+        _ = assume(not is_integral(n))
+        with raises(_DateDurationToIntFloatError):
+            _ = date_duration_to_int(n)
+
+    @given(
+        n=integers(),
+        frac=timedeltas(
+            min_value=-(DAY - MICROSECOND), max_value=DAY - MICROSECOND
+        ).filter(lambda x: x != ZERO_TIME),
+    )
+    def test_error_timedelta(self, *, n: int, frac: dt.timedelta) -> None:
+        with assume_does_not_raise(OverflowError):
+            timedelta = dt.timedelta(days=n) + frac
+        with raises(_DateDurationToIntTimeDeltaError):
+            _ = date_duration_to_int(timedelta)
+
+
+@mark.only
+class TestDateDurationToTimeDelta:
+    @given(n=integers())
+    def test_int(self, *, n: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            result = date_duration_to_timedelta(n)
+        expected = dt.timedelta(days=n)
+        assert result == expected
+
+    @given(n=integers().map(float))
+    def test_float_integral(self, *, n: float) -> None:
+        with assume_does_not_raise(OverflowError):
+            result = date_duration_to_timedelta(n)
+        expected = dt.timedelta(days=round(n))
+        assert result == expected
+
+    @given(n=integers())
+    def test_timedelta(self, *, n: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            timedelta = dt.timedelta(days=n)
+        result = date_duration_to_timedelta(timedelta)
+        assert result == timedelta
+
+    @given(n=floats(allow_nan=False, allow_infinity=False))
+    def test_error_float(self, *, n: float) -> None:
+        _ = assume(not is_integral(n))
+        with raises(_DateDurationToTimeDeltaFloatError):
+            _ = date_duration_to_timedelta(n)
+
+    @given(
+        n=integers(),
+        frac=timedeltas(
+            min_value=-(DAY - MICROSECOND), max_value=DAY - MICROSECOND
+        ).filter(lambda x: x != ZERO_TIME),
+    )
+    def test_error_timedelta(self, *, n: int, frac: dt.timedelta) -> None:
+        with assume_does_not_raise(OverflowError):
+            timedelta = dt.timedelta(days=n) + frac
+        with raises(_DateDurationToTimeDeltaTimeDeltaError):
+            _ = date_duration_to_timedelta(timedelta)
+
+
 class TestDateToDatetime:
     @given(date=dates())
     def test_main(self, *, date: dt.date) -> None:
@@ -234,6 +321,24 @@ class TestDateTimeDurationToFloat:
         assert result == duration.total_seconds()
 
 
+class TestDateTimeDurationToTimedelta:
+    @given(duration=integers(0, 10))
+    def test_int(self, *, duration: int) -> None:
+        result = datetime_duration_to_timedelta(duration)
+        assert result.total_seconds() == duration
+
+    @given(duration=floats(0.0, 10.0))
+    def test_float(self, *, duration: float) -> None:
+        duration = round(10 * duration) / 10
+        result = datetime_duration_to_timedelta(duration)
+        assert isclose(result.total_seconds(), duration)
+
+    @given(duration=timedeltas())
+    def test_timedelta(self, *, duration: dt.timedelta) -> None:
+        result = datetime_duration_to_timedelta(duration)
+        assert result == duration
+
+
 class TestDaysSinceEpoch:
     @given(date=dates())
     def test_datetime_to_microseconds(self, *, date: dt.date) -> None:
@@ -255,24 +360,6 @@ class TestDropMilliAndMicroseconds:
     def test_main(self, *, datetime: dt.datetime) -> None:
         result = drop_milli_and_microseconds(datetime)
         assert result.microsecond == 0
-
-
-class TestDurationToTimedelta:
-    @given(duration=integers(0, 10))
-    def test_int(self, *, duration: int) -> None:
-        result = datetime_duration_to_timedelta(duration)
-        assert result.total_seconds() == duration
-
-    @given(duration=floats(0.0, 10.0))
-    def test_float(self, *, duration: float) -> None:
-        duration = round(10 * duration) / 10
-        result = datetime_duration_to_timedelta(duration)
-        assert isclose(result.total_seconds(), duration)
-
-    @given(duration=timedeltas())
-    def test_timedelta(self, *, duration: dt.timedelta) -> None:
-        result = datetime_duration_to_timedelta(duration)
-        assert result == duration
 
 
 class TestEpoch:

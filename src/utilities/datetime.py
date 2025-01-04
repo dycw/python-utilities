@@ -173,7 +173,7 @@ def date_duration_to_int(duration: Duration, /) -> int:
             except SafeRoundError:
                 raise _DateDurationToIntFloatError(duration=duration) from None
         case dt.timedelta():
-            if (duration.seconds == 0) and (duration.microseconds == 0):
+            if is_integral_timedelta(duration):
                 return duration.days
             raise _DateDurationToIntTimeDeltaError(duration=duration) from None
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
@@ -196,7 +196,7 @@ class _DateDurationToIntFloatError(DateDurationToIntError):
 class _DateDurationToIntTimeDeltaError(DateDurationToIntError):
     @override
     def __str__(self) -> str:
-        return f"Timedelta duration must be day-only; got {self.duration}"
+        return f"Timedelta duration must be integral; got {self.duration}"
 
 
 def date_duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
@@ -211,14 +211,11 @@ def date_duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
                 raise _DateDurationToTimeDeltaFloatError(duration=duration) from None
             return dt.timedelta(days=as_int)
         case dt.timedelta():
-            if (duration.seconds == 0) and (duration.microseconds == 0):
-                return duration.days
-            raise _DateDurationToDateTimeTimeDeltaError(duration=duration) from None
+            if is_integral_timedelta(duration):
+                return duration
+            raise _DateDurationToTimeDeltaTimeDeltaError(duration=duration) from None
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
-    if isinstance(duration, int | float):
-        return dt.timedelta(seconds=duration)
-    return duration
 
 
 @dataclass(kw_only=True, slots=True)
@@ -237,7 +234,7 @@ class _DateDurationToTimeDeltaFloatError(DateDurationToTimeDeltaError):
 class _DateDurationToTimeDeltaTimeDeltaError(DateDurationToTimeDeltaError):
     @override
     def __str__(self) -> str:
-        return f"Timedelta duration must be day-only; got {self.duration}"
+        return f"Timedelta duration must be integral; got {self.duration}"
 
 
 ##
