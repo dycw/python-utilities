@@ -59,22 +59,23 @@ def add_duration(
     """Add a duration to a date/datetime."""
     if duration is None:
         return date
-    timedelta = datetime_duration_to_timedelta(duration)
-    if is_instance_date_not_datetime(date) and (
-        (timedelta.seconds != 0) or (timedelta.microseconds != 0)
-    ):
-        raise AddDurationError(date=date, timedelta=timedelta)
+    if isinstance(date, dt.datetime):
+        return date + datetime_duration_to_timedelta(duration)
+    try:
+        timedelta = date_duration_to_timedelta(duration)
+    except DateDurationToTimeDeltaError:
+        raise AddDurationError(date=date, duration=duration) from None
     return date + timedelta
 
 
 @dataclass(kw_only=True, slots=True)
 class AddDurationError(Exception):
     date: dt.date
-    timedelta: dt.timedelta
+    duration: Duration
 
     @override
     def __str__(self) -> str:
-        return f"Date {self.date} must be paired with a day-only timedelta; got {self.timedelta}"
+        return f"Date {self.date} must be paired with an integral duration; got {self.duration}"
 
 
 ##

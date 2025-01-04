@@ -129,33 +129,60 @@ if TYPE_CHECKING:
     from utilities.types import Number
 
 
-@mark.skip
+@mark.only
 class TestAddDuration:
-    @given(date=dates(), days=integers())
-    def test_date(self, *, date: dt.date, days: int) -> None:
+    @given(date=dates(), n=integers())
+    def test_date_with_int(self, *, date: dt.date, n: int) -> None:
         with assume_does_not_raise(OverflowError):
-            timedelta = days * DAY
-        with assume_does_not_raise(OverflowError):
-            result = add_duration(date, timedelta=timedelta)
-        assert is_instance_date_not_datetime(result)
+            result = add_duration(date, duration=n)
+        expected = date + dt.timedelta(days=n)
+        assert result == expected
 
-    @given(date=dates(), timedelta=timedeltas())
-    def test_datetime(self, *, date: dt.date, days: int) -> None:
+    @given(date=dates(), n=integers())
+    def test_date_with_timedelta(self, *, date: dt.date, n: int) -> None:
         with assume_does_not_raise(OverflowError):
-            timedelta = days * DAY
+            timedelta = dt.timedelta(days=n)
         with assume_does_not_raise(OverflowError):
-            result = add_duration(date, timedelta=timedelta)
-        assert is_instance_date_not_datetime(result)
+            result = add_duration(date, duration=timedelta)
+        expected = date + timedelta
+        assert result == expected
 
-    @given(date=dates())
-    def test_none(self, *, date: dt.date) -> None:
+    @given(datetime=zoned_datetimes(), n=integers())
+    def test_datetime_with_int(self, *, datetime: dt.datetime, n: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            result = add_duration(datetime, duration=n)
+        expected = datetime + dt.timedelta(seconds=n)
+        assert result == expected
+
+    @given(datetime=zoned_datetimes(), n=integers())
+    def test_datetime_with_timedelta(self, *, datetime: dt.datetime, n: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            timedelta = dt.timedelta(seconds=n)
+        with assume_does_not_raise(OverflowError):
+            result = add_duration(datetime, duration=timedelta)
+        expected = datetime + timedelta
+        assert result == expected
+
+    @given(date=dates() | zoned_datetimes())
+    def test_none(self, *, date: dt.date | dt.datetime) -> None:
         result = add_duration(date)
         assert result == date
 
-    @given(date=dates())
-    def test_error(self, *, date: dt.date) -> None:
-        with raises(AddDurationError, match="Timedelta must be day-only; got .*"):
-            _ = add_duration(date, timedelta=SECOND)
+    @given(
+        date=dates(),
+        n=integers(),
+        frac=timedeltas(
+            min_value=-(DAY - MICROSECOND), max_value=DAY - MICROSECOND
+        ).filter(lambda x: x != ZERO_TIME),
+    )
+    def test_error(self, *, date: dt.date, n: int, frac: dt.timedelta) -> None:
+        with assume_does_not_raise(OverflowError):
+            timedelta = dt.timedelta(days=n) + frac
+        with raises(
+            AddDurationError,
+            match="Date .* must be paired with an integral duration; got .*",
+        ):
+            _ = add_duration(date, duration=timedelta)
 
 
 class TestAddWeekdays:
@@ -325,7 +352,7 @@ class TestDateTimeDurationToFloat:
         assert result == timedelta.total_seconds()
 
 
-class TestDateTimeDurationToTimedelta:
+class TestDateTimeDurationToTimeDelta:
     @given(n=int32s())
     def test_int(self, *, n: int) -> None:
         result = datetime_duration_to_timedelta(n)
