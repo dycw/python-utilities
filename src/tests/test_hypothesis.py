@@ -34,11 +34,13 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX, SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
+    date_duration_to_timedelta,
     datetime_duration_to_float,
+    datetime_duration_to_timedelta,
+    is_integral_timedelta,
     is_local_datetime,
     is_zoned_datetime,
 )
-from utilities.functions import make_isinstance
 from utilities.git import _GIT_REMOTE_GET_URL_ORIGIN, _GIT_REV_PARSE_ABBREV_REV_HEAD
 from utilities.hypothesis import (
     _SQLALCHEMY_ENGINE_DIALECTS,
@@ -47,7 +49,8 @@ from utilities.hypothesis import (
     Shape,
     assume_does_not_raise,
     bool_arrays,
-    durations,
+    date_durations,
+    datetime_durations,
     float_arrays,
     floats_extra,
     git_repos,
@@ -59,6 +62,7 @@ from utilities.hypothesis import (
     lift_draw,
     lists_fixed_length,
     months,
+    numbers,
     random_states,
     sets_fixed_length,
     settings_with_reduced_examples,
@@ -88,6 +92,8 @@ from utilities.math import (
     MIN_INT64,
     MIN_UINT32,
     MIN_UINT64,
+    is_at_least,
+    is_at_most,
 )
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
@@ -156,68 +162,123 @@ class TestBoolArrays:
         assert array.shape == shape
 
 
-class TestDurations:
+class TestDateDurations:
     @given(
         data=data(),
-        min_number=integers() | floats() | none(),
-        max_number=integers() | floats() | none(),
-        min_timedelta=timedeltas(),
-        max_timedelta=timedeltas(),
+        min_int=integers() | none(),
+        max_int=integers() | none(),
+        min_timedelta=timedeltas() | none(),
+        max_timedelta=timedeltas() | none(),
     )
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_main(
+        self,
+        *,
+        data: DataObject,
+        min_int: int | None,
+        max_int: int | None,
+        min_timedelta: dt.timedelta | None,
+        max_timedelta: dt.timedelta | None,
+    ) -> None:
+        duration = data.draw(
+            date_durations(
+                min_int=min_int,
+                max_int=max_int,
+                min_timedelta=min_timedelta,
+                max_timedelta=max_timedelta,
+            )
+        )
+        assert isinstance(duration, Duration)
+        match duration:
+            case int():
+                if min_int is not None:
+                    assert duration >= min_int
+                if max_int is not None:
+                    assert duration <= max_int
+                if min_timedelta is not None:
+                    assert date_duration_to_timedelta(duration) >= min_timedelta
+                if max_timedelta is not None:
+                    assert date_duration_to_timedelta(duration) <= max_timedelta
+            case float():
+                assert duration == round(duration)
+                if min_int is not None:
+                    assert duration >= min_int
+                if max_int is not None:
+                    assert duration <= max_int
+                if min_timedelta is not None:
+                    assert date_duration_to_timedelta(duration) >= min_timedelta
+                if max_timedelta is not None:
+                    assert date_duration_to_timedelta(duration) <= max_timedelta
+            case dt.timedelta():
+                assert is_integral_timedelta(duration)
+                if min_int is not None:
+                    assert duration >= date_duration_to_timedelta(min_int)
+                if max_int is not None:
+                    assert duration <= date_duration_to_timedelta(max_int)
+                if min_timedelta is not None:
+                    assert duration >= min_timedelta
+                if max_timedelta is not None:
+                    assert duration <= max_timedelta
+
+    @given(data=data())
+    def test_two_way(self, *, data: DataObject) -> None:
+        duration = data.draw(date_durations(two_way=True))
+        ser = serialize_duration(duration)
+        _ = parse_duration(ser)
+
+
+class TestDateTimeDurations:
+    @given(
+        data=data(),
+        min_number=numbers() | none(),
+        max_number=numbers() | none(),
+        min_timedelta=timedeltas() | none(),
+        max_timedelta=timedeltas() | none(),
+    )
     def test_main(
         self,
         *,
         data: DataObject,
         min_number: Number | None,
         max_number: Number | None,
-        min_timedelta: dt.timedelta,
-        max_timedelta: dt.timedelta,
+        min_timedelta: dt.timedelta | None,
+        max_timedelta: dt.timedelta | None,
     ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            x = data.draw(
-                durations(
-                    min_number=min_number,
-                    max_number=max_number,
-                    min_timedelta=min_timedelta,
-                    max_timedelta=max_timedelta,
-                )
+        duration = data.draw(
+            datetime_durations(
+                min_number=min_number,
+                max_number=max_number,
+                min_timedelta=min_timedelta,
+                max_timedelta=max_timedelta,
             )
-        assert isinstance(x, Duration)
-        if isinstance(x, int):
-            if isinstance(min_number, int):
-                assert x >= min_number
-            if isinstance(max_number, int):
-                assert x <= max_number
-        elif isinstance(x, float):
-            if min_number is not None:
-                assert x >= min_number
-            if max_number is not None:
-                assert x <= max_number
-        else:
-            assert min_timedelta <= x <= max_timedelta
+        )
+        assert isinstance(duration, Duration)
+        match duration:
+            case int() | float():
+                if min_number is not None:
+                    assert is_at_least(duration, min_number, abs_tol=1e-6)
+                if max_number is not None:
+                    assert is_at_most(duration, max_number, abs_tol=1e-6)
+                if min_timedelta is not None:
+                    assert is_at_least(
+                        duration, datetime_duration_to_float(min_timedelta)
+                    )
+                if max_timedelta is not None:
+                    assert is_at_most(
+                        duration, datetime_duration_to_float(max_timedelta)
+                    )
+            case dt.timedelta():
+                if min_number is not None:
+                    assert duration >= datetime_duration_to_timedelta(min_number)
+                if max_number is not None:
+                    assert duration <= datetime_duration_to_timedelta(max_number)
+                if min_timedelta is not None:
+                    assert duration >= min_timedelta
+                if max_timedelta is not None:
+                    assert duration <= max_timedelta
 
     @given(data=data())
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_int_and_float_bounds(self, *, data: DataObject) -> None:
-        min_number = data.draw(integers(-10, 0))
-        max_number = data.draw(floats(0.0, 10.0))
-        duration = data.draw(durations(min_number=min_number, max_number=max_number))
-        _ = assume(isinstance(duration, int | float))
-        as_float = datetime_duration_to_float(duration)
-        assert min_number <= as_float <= max_number
-
-    @given(
-        data=data(),
-        min_value=durations(two_way=True).filter(make_isinstance(dt.timedelta)),
-        max_value=durations(two_way=True).filter(make_isinstance(dt.timedelta)),
-    )
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_two_way(
-        self, *, data: DataObject, min_value: dt.timedelta, max_value: dt.timedelta
-    ) -> None:
-        _ = assume(min_value <= max_value)
-        duration = data.draw(durations(two_way=True))
+    def test_two_way(self, *, data: DataObject) -> None:
+        duration = data.draw(datetime_durations(two_way=True))
         ser = serialize_duration(duration)
         _ = parse_duration(ser)
 
@@ -510,6 +571,24 @@ class TestMonths:
         _ = assume(min_value <= max_value)
         month = data.draw(months(min_value=min_value, max_value=max_value))
         assert min_value <= month <= max_value
+
+
+class TestNumbers:
+    @given(data=data(), min_value=numbers() | none(), max_value=numbers() | none())
+    def test_main(
+        self, *, data: DataObject, min_value: Number | None, max_value: Number | None
+    ) -> None:
+        if min_value is not None:
+            _ = assume(min_value == float(min_value))
+        if max_value is not None:
+            _ = assume(max_value == float(max_value))
+        if (min_value is not None) and (max_value is not None):
+            _ = assume(min_value <= max_value)
+        x = data.draw(numbers(min_value=min_value, max_value=max_value))
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
 
 
 class TestRandomStates:

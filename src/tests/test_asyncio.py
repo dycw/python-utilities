@@ -21,7 +21,7 @@ from utilities.asyncio import (
     try_await,
 )
 from utilities.datetime import MILLISECOND, ZERO_TIME, datetime_duration_to_timedelta
-from utilities.hypothesis import durations
+from utilities.hypothesis import datetime_durations
 from utilities.pytest import skipif_windows
 from utilities.timer import Timer
 
@@ -114,7 +114,7 @@ class TestIsAwaitable:
 class TestSleepDur:
     @FLAKY
     @given(
-        duration=durations(
+        duration=datetime_durations(
             min_number=0.0,
             max_number=0.01,
             min_timedelta=ZERO_TIME,
@@ -158,7 +158,7 @@ class TestStreamCommand:
 class TestTimeoutDur:
     @FLAKY
     @given(
-        duration=durations(
+        duration=datetime_durations(
             min_number=0.0,
             max_number=0.01,
             min_timedelta=ZERO_TIME,
