@@ -408,16 +408,6 @@ class TestCLIHelp:
 """,
             ),
             param(
-                ListStrs(),
-                """
-    Usage: cli [OPTIONS]
-
-    Options:
-      --value [LIST[TEXT] SEP=,]
-      --help                      Show this message and exit.
-""",
-            ),
-            param(
                 Enum(_ExampleEnum),
                 """
     Usage: cli [OPTIONS]
@@ -428,6 +418,26 @@ class TestCLIHelp:
 """,
             ),
             param(
+                FrozenSetEnums(_ExampleEnum),
+                """
+    Usage: cli [OPTIONS]
+
+    Options:
+      --value [FROZENSET[a,b,c] SEP=,]
+      --help                          Show this message and exit.
+""",
+            ),
+            param(
+                FrozenSetStrs(),
+                """
+    Usage: cli [OPTIONS]
+
+    Options:
+      --value [FROZENSET[TEXT] SEP=,]
+      --help                          Show this message and exit.
+""",
+            ),
+            param(
                 ListEnums(_ExampleEnum),
                 """
     Usage: cli [OPTIONS]
@@ -435,6 +445,16 @@ class TestCLIHelp:
     Options:
       --value [LIST[a,b,c] SEP=,]
       --help                       Show this message and exit.
+""",
+            ),
+            param(
+                ListStrs(),
+                """
+    Usage: cli [OPTIONS]
+
+    Options:
+      --value [LIST[TEXT] SEP=,]
+      --help                      Show this message and exit.
 """,
             ),
         ],
