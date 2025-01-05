@@ -11,6 +11,7 @@ from contextlib import (
 )
 from datetime import timezone
 from enum import Enum, auto
+from itertools import chain
 from math import ceil, floor, inf, isfinite, nan
 from os import environ
 from pathlib import Path
@@ -45,7 +46,15 @@ from hypothesis.strategies import (
 )
 from hypothesis.utils.conventions import not_set
 
-from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month, get_now
+from utilities.datetime import (
+    MAX_MONTH,
+    MIN_MONTH,
+    Month,
+    date_duration_to_int,
+    date_duration_to_timedelta,
+    date_to_month,
+    get_now,
+)
 from utilities.functions import ensure_str
 from utilities.math import (
     MAX_INT32,
@@ -56,6 +65,7 @@ from utilities.math import (
     MIN_INT64,
     MIN_UINT32,
     MIN_UINT64,
+    round_,
 )
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
@@ -79,6 +89,9 @@ MaybeSearchStrategy = _T | SearchStrategy[_T]
 Shape = int | tuple[int, ...]
 
 
+##
+
+
 @contextmanager
 def assume_does_not_raise(
     *exceptions: type[Exception], match: str | None = None
@@ -98,6 +111,9 @@ def assume_does_not_raise(
                 _ = assume(condition=False)
             else:
                 raise
+
+
+##
 
 
 @composite
@@ -120,8 +136,63 @@ def bool_arrays(
     return draw(strategy)
 
 
+##
+
+
 @composite
-def durations(
+def date_durations(
+    _draw: DrawFn,
+    /,
+    *,
+    min_int: MaybeSearchStrategy[int] | None = None,
+    max_int: MaybeSearchStrategy[int] | None = None,
+    min_timedelta: MaybeSearchStrategy[dt.timedelta] | None = None,
+    max_timedelta: MaybeSearchStrategy[dt.timedelta] | None = None,
+    two_way: bool = False,
+) -> Duration:
+    """Strategy for generating datetime durations."""
+    draw = lift_draw(_draw)
+    min_int_, max_int_, min_timedelta_, max_timedelta_ = (
+        draw(min_int),
+        draw(max_int),
+        draw(min_timedelta),
+        draw(max_timedelta),
+    )
+    min_parts: list[int] = []
+    if min_int_ is not None:
+        min_parts.append(min_int_)
+    if min_timedelta_ is not None:
+        min_parts.append(date_duration_to_int(min_timedelta_))
+    if two_way:
+        from utilities.whenever import MIN_TWO_WAY_TIMEDELTA
+
+        min_parts.append(date_duration_to_int(MIN_TWO_WAY_TIMEDELTA))
+    min_int_use = max(min_parts, default=None)
+    max_parts: list[int] = []
+    if max_int_ is not None:
+        max_parts.append(max_int_)
+    if max_timedelta_ is not None:
+        max_parts.append(date_duration_to_int(max_timedelta_))
+    if two_way:
+        from utilities.whenever import MAX_TWO_WAY_TIMEDELTA
+
+        max_parts.append(date_duration_to_int(MAX_TWO_WAY_TIMEDELTA))
+    max_int_use = min(max_parts, default=None)
+    if (min_int_use is not None) and (max_int_use is not None):
+        _ = assume(min_int_use <= max_int_use)
+    st_int
+
+    st_timedeltas = integers(
+        min_value=min_timedelta_days, max_value=max_timedelta_days
+    ).map(lambda n: dt.timedelta(days=n))
+    return _draw(st_numbers | st_timedeltas)
+
+
+##
+
+
+@composite
+def datetime_durations(
     _draw: DrawFn,
     /,
     *,
@@ -131,7 +202,7 @@ def durations(
     max_timedelta: MaybeSearchStrategy[dt.timedelta] = dt.timedelta.max,
     two_way: bool = False,
 ) -> Duration:
-    """Strategy for generating durations."""
+    """Strategy for generating datetime durations."""
     draw = lift_draw(_draw)
     min_number_, max_number_ = draw(min_number), draw(max_number)
     min_timedelta_, max_timedelta_ = draw(min_timedelta), draw(max_timedelta)
@@ -143,10 +214,7 @@ def durations(
             allow_infinity=False,
         )
     else:
-        st_numbers = integers(
-            min_value=min_number_ if isinstance(min_number_, int) else None,
-            max_value=max_number_ if isinstance(max_number_, int) else None,
-        )
+        st_numbers = integers(min_value=min_number_, max_value=max_number_)
     if two_way:
         from utilities.whenever import MAX_TWO_WAY_TIMEDELTA, MIN_TWO_WAY_TIMEDELTA
 
@@ -154,6 +222,9 @@ def durations(
         max_timedelta_ = min(max_timedelta_, MAX_TWO_WAY_TIMEDELTA)
     st_timedeltas = timedeltas(min_value=min_timedelta_, max_value=max_timedelta_)
     return _draw(st_numbers | st_timedeltas)
+
+
+##
 
 
 @composite
@@ -190,6 +261,9 @@ def float_arrays(
         float, draw(shape_use), elements=elements, fill=fill, unique=draw(unique)
     )
     return draw(strategy)
+
+
+##
 
 
 @composite
@@ -235,6 +309,9 @@ def floats_extra(
     return element
 
 
+##
+
+
 @composite
 def git_repos(
     _draw: DrawFn,
@@ -263,9 +340,15 @@ def git_repos(
     return path
 
 
+##
+
+
 def hashables() -> SearchStrategy[Hashable]:
     """Strategy for generating hashable elements."""
     return booleans() | integers() | none() | text_ascii()
+
+
+##
 
 
 @composite
@@ -290,6 +373,9 @@ def int_arrays(
         int64, draw(shape_use), elements=elements, fill=fill, unique=draw(unique)
     )
     return draw(strategy)
+
+
+##
 
 
 @composite
@@ -324,6 +410,9 @@ def int64s(
     return draw(integers(min_value_, max_value_))
 
 
+##
+
+
 _MDF = TypeVar("_MDF")
 
 
@@ -354,6 +443,9 @@ def lift_draw(draw: DrawFn, /) -> _MaybeDrawFn:
     return cast(_MaybeDrawFn, func)
 
 
+##
+
+
 @composite
 def lists_fixed_length(
     _draw: DrawFn,
@@ -375,6 +467,9 @@ def lists_fixed_length(
     return elements
 
 
+##
+
+
 @composite
 def months(
     _draw: DrawFn,
@@ -391,6 +486,42 @@ def months(
     return date_to_month(date)
 
 
+##
+
+
+@composite
+def numbers(
+    _draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[Number] | None = None,
+    max_value: MaybeSearchStrategy[Number] | None = None,
+) -> int | float:
+    """Strategy for generating numbers."""
+    draw = lift_draw(_draw)
+    min_value_, max_value_ = draw(min_value), draw(max_value)
+    if (min_value_ is None) or isinstance(min_value_, int):
+        min_value_ints = min_value_
+    else:
+        min_value_ints = ceil(min_value_)
+    if (max_value_ is None) or isinstance(max_value_, int):
+        max_value_ints = max_value_
+    else:
+        max_value_ints = floor(max_value_)
+    return draw(
+        integers(min_value_ints, max_value_ints)
+        | floats(
+            min_value=min_value_,
+            max_value=max_value_,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
+
+
+##
+
+
 @composite
 def random_states(
     _draw: DrawFn, /, *, seed: MaybeSearchStrategy[int | None] = None
@@ -404,6 +535,9 @@ def random_states(
     return RandomState(seed=seed_use)
 
 
+##
+
+
 @composite
 def sets_fixed_length(
     _draw: DrawFn, strategy: SearchStrategy[_T], size: MaybeSearchStrategy[int], /
@@ -412,6 +546,9 @@ def sets_fixed_length(
     draw = lift_draw(_draw)
     size_ = draw(size)
     return draw(sets(strategy, min_size=size_, max_size=size_))
+
+
+##
 
 
 def setup_hypothesis_profiles(
@@ -468,6 +605,9 @@ def setup_hypothesis_profiles(
     settings.load_profile(Profile.default.name)
 
 
+##
+
+
 def settings_with_reduced_examples(
     frac: float = 0.1,
     /,
@@ -501,6 +641,9 @@ def settings_with_reduced_examples(
     )
 
 
+##
+
+
 @composite
 def slices(
     _draw: DrawFn,
@@ -520,6 +663,9 @@ def slices(
     start = draw(integers(0, iter_len_ - slice_len_))
     stop = start + slice_len_
     return slice(start, stop)
+
+
+##
 
 
 _STRATEGY_DIALECTS: list[Dialect] = ["sqlite", "postgresql"]
@@ -562,6 +708,9 @@ async def sqlalchemy_engines(
             raise NotImplementedError(dialect)
 
 
+##
+
+
 @composite
 def str_arrays(
     _draw: DrawFn,
@@ -588,6 +737,9 @@ def str_arrays(
     return draw(strategy)
 
 
+##
+
+
 _TEMP_DIR_HYPOTHESIS = Path(TEMP_DIR, "hypothesis")
 
 
@@ -601,6 +753,9 @@ def temp_dirs(_draw: DrawFn, /) -> TemporaryDirectory:
     )
 
 
+##
+
+
 @composite
 def temp_paths(_draw: DrawFn, /) -> Path:
     """Search strategy for paths to temporary directories."""
@@ -612,6 +767,9 @@ def temp_paths(_draw: DrawFn, /) -> Path:
         _temp_dir = temp_dir
 
     return SubPath(root)
+
+
+##
 
 
 def text_ascii(
@@ -675,6 +833,27 @@ def text_printable(
 
 
 @composite
+def _draw_text(
+    _draw: DrawFn,
+    alphabet: MaybeSearchStrategy[str],
+    /,
+    *,
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[int | None] = None,
+    disallow_na: MaybeSearchStrategy[bool] = False,
+) -> str:
+    """Draw from a text-generating strategy."""
+    draw = lift_draw(_draw)
+    drawn = draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+    if draw(disallow_na):
+        _ = assume(drawn != "NA")
+    return drawn
+
+
+##
+
+
+@composite
 def timedeltas_2w(
     _draw: DrawFn,
     /,
@@ -689,6 +868,9 @@ def timedeltas_2w(
     min_value_ = max(draw(min_value), MIN_TWO_WAY_TIMEDELTA)
     max_value_ = min(draw(max_value), MAX_TWO_WAY_TIMEDELTA)
     return draw(timedeltas(min_value=min_value_, max_value=max_value_))
+
+
+##
 
 
 @composite
@@ -723,6 +905,9 @@ def uint64s(
     return draw(integers(min_value_, max_value_))
 
 
+##
+
+
 def versions() -> SearchStrategy[Version]:
     """Strategy for generating versions."""
     return builds(
@@ -732,6 +917,9 @@ def versions() -> SearchStrategy[Version]:
         patch=integers(min_value=0),
         suffix=text_ascii(min_size=1) | none(),
     )
+
+
+##
 
 
 def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[_TestRedis]:
@@ -758,6 +946,9 @@ def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[_TestRe
                 _ = await redis.delete(*keys)
 
     return func()  # skipif-ci-and-not-linux
+
+
+##
 
 
 _ZONED_DATETIMES_LEFT_MOST = ZoneInfo("Asia/Manila")
@@ -813,30 +1004,12 @@ def zoned_datetimes(
     return result
 
 
-@composite
-def _draw_text(
-    _draw: DrawFn,
-    alphabet: MaybeSearchStrategy[str],
-    /,
-    *,
-    min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[int | None] = None,
-    disallow_na: MaybeSearchStrategy[bool] = False,
-) -> str:
-    """Draw from a text-generating strategy."""
-    draw = lift_draw(_draw)
-    drawn = draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
-    if draw(disallow_na):
-        _ = assume(drawn != "NA")
-    return drawn
-
-
 __all__ = [
     "MaybeSearchStrategy",
     "Shape",
     "assume_does_not_raise",
     "bool_arrays",
-    "durations",
+    "datetime_durations",
     "float_arrays",
     "floats_extra",
     "git_repos",
@@ -848,6 +1021,7 @@ __all__ = [
     "lift_draw",
     "lists_fixed_length",
     "months",
+    "numbers",
     "random_states",
     "sets_fixed_length",
     "setup_hypothesis_profiles",

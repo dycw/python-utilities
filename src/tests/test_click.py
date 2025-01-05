@@ -61,7 +61,7 @@ from utilities.click import (
     ZonedDateTime,
 )
 from utilities.datetime import ZERO_TIME, serialize_month
-from utilities.hypothesis import durations, months, text_ascii, timedeltas_2w
+from utilities.hypothesis import datetime_durations, months, text_ascii, timedeltas_2w
 from utilities.text import join_strs, strip_and_dedent
 from utilities.whenever import (
     serialize_date,
@@ -200,7 +200,7 @@ class TestParameters:
             param(
                 utilities.click.Duration(),
                 "DURATION",
-                durations(min_number=0, min_timedelta=ZERO_TIME, two_way=True),
+                datetime_durations(min_number=0, min_timedelta=ZERO_TIME, two_way=True),
                 serialize_duration,
                 True,
             ),

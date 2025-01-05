@@ -31,7 +31,7 @@ from utilities.datetime import (
 )
 from utilities.hypothesis import (
     assume_does_not_raise,
-    durations,
+    datetime_durations,
     timedeltas_2w,
     zoned_datetimes,
 )
@@ -140,7 +140,7 @@ class TestParseAndSerializeDate:
 
 
 class TestParseAndSerializeDuration:
-    @given(duration=durations())
+    @given(duration=datetime_durations())
     def test_main(self, *, duration: Duration) -> None:
         with assume_does_not_raise(SerializeDurationError):
             serialized = serialize_duration(duration)
@@ -163,7 +163,7 @@ class TestParseAndSerializeDuration:
         ):
             _ = serialize_duration(duration)
 
-    @given(data=data(), duration=durations(two_way=True))
+    @given(data=data(), duration=datetime_durations(two_way=True))
     def test_ensure(self, *, data: DataObject, duration: Duration) -> None:
         str_or_value = data.draw(sampled_from([duration, serialize_duration(duration)]))
         result = ensure_duration(str_or_value)
