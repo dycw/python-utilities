@@ -68,7 +68,7 @@ scipy==1.15.0
     #   osqp
     #   qdldl
     #   scs
-scs==3.2.7
+scs==3.2.7.post2
     # via cvxpy
 sortedcontainers==2.4.0
     # via hypothesis

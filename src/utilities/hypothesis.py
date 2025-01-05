@@ -11,7 +11,7 @@ from contextlib import (
 )
 from datetime import timezone
 from enum import Enum, auto
-from itertools import chain
+from functools import partial
 from math import ceil, floor, inf, isfinite, nan
 from os import environ
 from pathlib import Path
@@ -53,6 +53,8 @@ from utilities.datetime import (
     date_duration_to_int,
     date_duration_to_timedelta,
     date_to_month,
+    datetime_duration_to_float,
+    datetime_duration_to_timedelta,
     get_now,
 )
 from utilities.functions import ensure_str
@@ -65,7 +67,6 @@ from utilities.math import (
     MIN_INT64,
     MIN_UINT32,
     MIN_UINT64,
-    round_,
 )
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
@@ -158,34 +159,51 @@ def date_durations(
         draw(min_timedelta),
         draw(max_timedelta),
     )
-    min_parts: list[int] = []
+    min_parts: list[dt.timedelta] = [dt.timedelta.min]
     if min_int_ is not None:
-        min_parts.append(min_int_)
+        with assume_does_not_raise(OverflowError):
+            min_parts.append(date_duration_to_timedelta(min_int_))
     if min_timedelta_ is not None:
-        min_parts.append(date_duration_to_int(min_timedelta_))
+        min_parts.append(min_timedelta_)
     if two_way:
         from utilities.whenever import MIN_TWO_WAY_TIMEDELTA
 
-        min_parts.append(date_duration_to_int(MIN_TWO_WAY_TIMEDELTA))
-    min_int_use = max(min_parts, default=None)
-    max_parts: list[int] = []
+        min_parts.append(MIN_TWO_WAY_TIMEDELTA)
+    min_timedelta_use = max(min_parts)
+    max_parts: list[dt.timedelta] = [dt.timedelta.max]
     if max_int_ is not None:
-        max_parts.append(max_int_)
+        with assume_does_not_raise(OverflowError):
+            max_parts.append(date_duration_to_timedelta(max_int_))
     if max_timedelta_ is not None:
-        max_parts.append(date_duration_to_int(max_timedelta_))
+        max_parts.append(max_timedelta_)
     if two_way:
         from utilities.whenever import MAX_TWO_WAY_TIMEDELTA
 
-        max_parts.append(date_duration_to_int(MAX_TWO_WAY_TIMEDELTA))
-    max_int_use = min(max_parts, default=None)
-    if (min_int_use is not None) and (max_int_use is not None):
-        _ = assume(min_int_use <= max_int_use)
-    st_int
+        max_parts.append(MAX_TWO_WAY_TIMEDELTA)
+    max_timedelta_use = min(max_parts)
+    _ = assume(min_timedelta_use <= max_timedelta_use)
+    st_timedeltas = (
+        timedeltas(min_value=min_timedelta_use, max_value=max_timedelta_use)
+        .map(_round_timedelta)
+        .filter(
+            partial(
+                _is_between_timedelta, min_=min_timedelta_use, max_=max_timedelta_use
+            )
+        )
+    )
+    st_integers = st_timedeltas.map(date_duration_to_int)
+    st_floats = st_integers.map(float)
+    return _draw(st_integers | st_floats | st_timedeltas)
 
-    st_timedeltas = integers(
-        min_value=min_timedelta_days, max_value=max_timedelta_days
-    ).map(lambda n: dt.timedelta(days=n))
-    return _draw(st_numbers | st_timedeltas)
+
+def _round_timedelta(timedelta: dt.timedelta, /) -> dt.timedelta:
+    return dt.timedelta(days=timedelta.days)
+
+
+def _is_between_timedelta(
+    timedelta: dt.timedelta, /, *, min_: dt.timedelta, max_: dt.timedelta
+) -> bool:
+    return min_ <= timedelta <= max_
 
 
 ##
@@ -198,29 +216,47 @@ def datetime_durations(
     *,
     min_number: MaybeSearchStrategy[Number] | None = None,
     max_number: MaybeSearchStrategy[Number] | None = None,
-    min_timedelta: MaybeSearchStrategy[dt.timedelta] = dt.timedelta.min,
-    max_timedelta: MaybeSearchStrategy[dt.timedelta] = dt.timedelta.max,
+    min_timedelta: MaybeSearchStrategy[dt.timedelta] | None = None,
+    max_timedelta: MaybeSearchStrategy[dt.timedelta] | None = None,
     two_way: bool = False,
 ) -> Duration:
     """Strategy for generating datetime durations."""
     draw = lift_draw(_draw)
-    min_number_, max_number_ = draw(min_number), draw(max_number)
-    min_timedelta_, max_timedelta_ = draw(min_timedelta), draw(max_timedelta)
-    if isinstance(min_number_, float) or isinstance(max_number_, float):
-        st_numbers = floats(
-            min_value=min_number_,
-            max_value=max_number_,
-            allow_nan=False,
-            allow_infinity=False,
-        )
-    else:
-        st_numbers = integers(min_value=min_number_, max_value=max_number_)
+    min_number_, max_number_, min_timedelta_, max_timedelta_ = (
+        draw(min_number),
+        draw(max_number),
+        draw(min_timedelta),
+        draw(max_timedelta),
+    )
+    min_parts: list[dt.timedelta] = [dt.timedelta.min]
+    if min_number_ is not None:
+        with assume_does_not_raise(OverflowError):
+            min_parts.append(datetime_duration_to_timedelta(min_number_))
+    if min_timedelta_ is not None:
+        min_parts.append(min_timedelta_)
     if two_way:
-        from utilities.whenever import MAX_TWO_WAY_TIMEDELTA, MIN_TWO_WAY_TIMEDELTA
+        from utilities.whenever import MIN_TWO_WAY_TIMEDELTA
 
-        min_timedelta_ = max(min_timedelta_, MIN_TWO_WAY_TIMEDELTA)
-        max_timedelta_ = min(max_timedelta_, MAX_TWO_WAY_TIMEDELTA)
-    st_timedeltas = timedeltas(min_value=min_timedelta_, max_value=max_timedelta_)
+        min_parts.append(MIN_TWO_WAY_TIMEDELTA)
+    min_timedelta_use = max(min_parts)
+    max_parts: list[dt.timedelta] = [dt.timedelta.max]
+    if max_number_ is not None:
+        with assume_does_not_raise(OverflowError):
+            max_parts.append(datetime_duration_to_timedelta(max_number_))
+    if max_timedelta_ is not None:
+        max_parts.append(max_timedelta_)
+    if two_way:
+        from utilities.whenever import MAX_TWO_WAY_TIMEDELTA
+
+        max_parts.append(MAX_TWO_WAY_TIMEDELTA)
+    max_timedelta_use = min(max_parts)
+    _ = assume(min_timedelta_use <= max_timedelta_use)
+    min_float_use, max_float_use = map(
+        datetime_duration_to_float, [min_timedelta_use, max_timedelta_use]
+    )
+    _ = assume(min_float_use <= max_float_use)
+    st_numbers = numbers(min_value=min_float_use, max_value=max_float_use)
+    st_timedeltas = timedeltas(min_value=min_timedelta_use, max_value=max_timedelta_use)
     return _draw(st_numbers | st_timedeltas)
 
 
@@ -501,22 +537,23 @@ def numbers(
     draw = lift_draw(_draw)
     min_value_, max_value_ = draw(min_value), draw(max_value)
     if (min_value_ is None) or isinstance(min_value_, int):
-        min_value_ints = min_value_
+        min_int = min_value_
     else:
-        min_value_ints = ceil(min_value_)
+        min_int = ceil(min_value_)
     if (max_value_ is None) or isinstance(max_value_, int):
-        max_value_ints = max_value_
+        max_int = max_value_
     else:
-        max_value_ints = floor(max_value_)
-    return draw(
-        integers(min_value_ints, max_value_ints)
-        | floats(
-            min_value=min_value_,
-            max_value=max_value_,
-            allow_nan=False,
-            allow_infinity=False,
-        )
+        max_int = floor(max_value_)
+    if (min_int is not None) and (max_int is not None):
+        _ = assume(min_int <= max_int)
+    st_integers = integers(min_int, max_int)
+    st_floats = floats(
+        min_value=min_value_,
+        max_value=max_value_,
+        allow_nan=False,
+        allow_infinity=False,
     )
+    return draw(st_integers | st_floats)
 
 
 ##
