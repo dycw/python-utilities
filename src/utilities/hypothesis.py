@@ -1046,6 +1046,7 @@ __all__ = [
     "Shape",
     "assume_does_not_raise",
     "bool_arrays",
+    "date_durations",
     "datetime_durations",
     "float_arrays",
     "floats_extra",
