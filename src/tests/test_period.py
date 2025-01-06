@@ -277,34 +277,38 @@ class TestPeriod:
         with raises(_PeriodInvalidError, match="Invalid period; got .* > .*"):
             _ = Period(end, start)
 
-    @given(dates=tuples(dates(), dates()), duration=timedeltas(min_value=ZERO_TIME))
+    @given(dates=pairs(dates(), sorted=True), duration=timedeltas(min_value=ZERO_TIME))
     def test_error_req_duration(
         self, *, dates: tuple[dt.date, dt.date], duration: dt.timedelta
     ) -> None:
-        start, end = sorted(dates)
+        start, end = dates
         _ = assume(end - start != duration)
         with raises(
             _PeriodReqDurationError, match="Period must have duration .*; got .*"
         ):
             _ = Period(start, end, req_duration=duration)
 
-    @given(dates=tuples(dates(), dates()), min_duration=timedeltas(min_value=ZERO_TIME))
+    @given(
+        dates=pairs(dates(), sorted=True), min_duration=timedeltas(min_value=ZERO_TIME)
+    )
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_error_min_duration(
         self, *, dates: tuple[dt.date, dt.date], min_duration: dt.timedelta
     ) -> None:
-        start, end = sorted(dates)
+        start, end = dates
         _ = assume(end - start < min_duration)
         with raises(
             _PeriodMinDurationError, match="Period must have min duration .*; got .*"
         ):
             _ = Period(start, end, min_duration=min_duration)
 
-    @given(dates=tuples(dates(), dates()), max_duration=timedeltas(max_value=ZERO_TIME))
+    @given(
+        dates=pairs(dates(), sorted=True), max_duration=timedeltas(max_value=ZERO_TIME)
+    )
     def test_error_max_duration(
         self, *, dates: tuple[dt.date, dt.date], max_duration: dt.timedelta
     ) -> None:
-        start, end = sorted(dates)
+        start, end = dates
         _ = assume(end - start > max_duration)
         with raises(
             _PeriodMaxDurationError,
@@ -312,11 +316,11 @@ class TestPeriod:
         ):
             _ = Period(start, end, max_duration=max_duration)
 
-    @given(dates=tuples(dates(), dates()))
+    @given(dates=pairs(dates(), sorted=True))
     def test_error_time_zone_inapplicable(
         self, *, dates: tuple[dt.date, dt.date]
     ) -> None:
-        start, end = sorted(dates)
+        start, end = dates
         period = Period(start, end)
         with raises(
             _PeriodTimeZoneInapplicableError,
@@ -325,16 +329,13 @@ class TestPeriod:
             _ = period.time_zone
 
     @given(
-        datetimes=tuples(
-            zoned_datetimes(time_zone=timezones()),
-            zoned_datetimes(time_zone=timezones()),
-        ),
+        datetimes=pairs(zoned_datetimes(time_zone=timezones()), sorted=True),
         time_zones=sets(timezones(), min_size=2, max_size=2),
     )
     def test_error_time_zone_non_unique(
         self, *, datetimes: tuple[dt.datetime, dt.datetime], time_zones: set[ZoneInfo]
     ) -> None:
-        start, end = sorted(datetimes)
+        start, end = datetimes
         time_zone1, time_zone2 = time_zones
         period = Period(start.astimezone(time_zone1), end.astimezone(time_zone2))
         with raises(
