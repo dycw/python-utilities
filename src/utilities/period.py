@@ -113,6 +113,8 @@ class Period(Generic[_TPeriod]):
                     raise _PeriodDateTimeContainsDateError(
                         start=self.start, end=self.end
                     )
+            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                assert_never(never)
         return self.start <= other <= self.end
 
     @override
