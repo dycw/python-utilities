@@ -28,7 +28,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
-from pytest import mark, param, raises
+from pytest import raises
 from sqlalchemy import Column, Integer, MetaData, Table, insert, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -63,6 +63,7 @@ from utilities.hypothesis import (
     lists_fixed_length,
     months,
     numbers,
+    pairs,
     random_states,
     sets_fixed_length,
     settings_with_reduced_examples,
@@ -537,13 +538,7 @@ class TestLiftDraw:
 
 
 class TestListsFixedLength:
-    @given(data=data(), size=integers(1, 10))
-    @mark.parametrize(
-        "unique", [param(True, id="unique"), param(False, id="no unique")]
-    )
-    @mark.parametrize(
-        "sorted_", [param(True, id="sorted"), param(False, id="no sorted")]
-    )
+    @given(data=data(), size=integers(1, 10), unique=booleans(), sorted_=booleans())
     def test_main(
         self, *, data: DataObject, size: int, unique: bool, sorted_: bool
     ) -> None:
@@ -589,6 +584,19 @@ class TestNumbers:
             assert x >= min_value
         if max_value is not None:
             assert x <= max_value
+
+
+class TestPairs:
+    @given(data=data(), unique=booleans(), sorted_=booleans())
+    def test_main(self, *, data: DataObject, unique: bool, sorted_: bool) -> None:
+        result = data.draw(pairs(integers(), unique=unique, sorted=sorted_))
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        first, second = result
+        if unique:
+            assert first != second
+        if sorted_:
+            assert first <= second
 
 
 class TestRandomStates:

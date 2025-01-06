@@ -57,10 +57,9 @@ class Period(Generic[_TPeriod]):
     max_duration: dt.timedelta | None = field(default=None, repr=False, kw_only=True)
 
     def __post_init__(self) -> None:
-        start_date_not_datetime, end_date_not_datetime = map(
-            is_instance_date_not_datetime, [self.start, self.end]
-        )
-        if start_date_not_datetime is not end_date_not_datetime:
+        if is_instance_date_not_datetime(
+            self.start
+        ) is not is_instance_date_not_datetime(self.end):
             raise _PeriodDateAndDatetimeMixedError(start=self.start, end=self.end)
         for date in [self.start, self.end]:
             if isinstance(date, dt.datetime):
@@ -100,6 +99,23 @@ class Period(Generic[_TPeriod]):
     def __add__(self, other: dt.timedelta, /) -> Self:
         """Offset the period."""
         return self.replace(start=self.start + other, end=self.end + other)
+
+    def __contains__(self, other: dt.date | dt.datetime, /) -> bool:
+        """Check if a date/datetime lies in the period."""
+        match self.kind:
+            case "date":
+                if isinstance(other, dt.datetime):
+                    raise _PeriodDateContainsDateTimeError(
+                        start=self.start, end=self.end
+                    )
+            case "datetime":
+                if not isinstance(other, dt.datetime):
+                    raise _PeriodDateTimeContainsDateError(
+                        start=self.start, end=self.end
+                    )
+            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                assert_never(never)
+        return self.start <= other <= self.end
 
     @override
     def __repr__(self) -> str:
@@ -275,6 +291,20 @@ class _PeriodAsTimeZoneInapplicableError(PeriodError[_TPeriod]):
     @override
     def __str__(self) -> str:
         return "Period of dates does not have a timezone attribute"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PeriodDateContainsDateTimeError(PeriodError[_TPeriod]):
+    @override
+    def __str__(self) -> str:
+        return "Period of dates cannot contain datetimes"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PeriodDateTimeContainsDateError(PeriodError[_TPeriod]):
+    @override
+    def __str__(self) -> str:
+        return "Period of datetimes cannot contain dates"
 
 
 @dataclass(kw_only=True, slots=True)
