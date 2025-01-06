@@ -28,6 +28,8 @@ from utilities.period import (
     _DateOrDatetime,
     _PeriodAsTimeZoneInapplicableError,
     _PeriodDateAndDatetimeMixedError,
+    _PeriodDateContainsDateTimeError,
+    _PeriodDateTimeContainsDateError,
     _PeriodInvalidError,
     _PeriodMaxDurationError,
     _PeriodMinDurationError,
@@ -315,6 +317,36 @@ class TestPeriod:
             match="Period must have duration at most .*; got .*",
         ):
             _ = Period(start, end, max_duration=max_duration)
+
+    @given(
+        datetime=zoned_datetimes(time_zone=timezones()),
+        dates=pairs(dates(), sorted=True),
+    )
+    def test_error_date_contains_datetime(
+        self, *, datetime: dt.datetime, dates: tuple[dt.date, dt.date]
+    ) -> None:
+        start, end = dates
+        period = Period(start, end)
+        with raises(
+            _PeriodDateContainsDateTimeError,
+            match="Period of dates cannot contain datetimes",
+        ):
+            _ = datetime in period
+
+    @given(
+        date=dates(),
+        datetimes=pairs(zoned_datetimes(time_zone=timezones()), sorted=True),
+    )
+    def test_error_datetime_contains_date(
+        self, *, date: dt.datetime, datetimes: tuple[dt.date, dt.date]
+    ) -> None:
+        start, end = datetimes
+        period = Period(start, end)
+        with raises(
+            _PeriodDateTimeContainsDateError,
+            match="Period of datetimes cannot contain dates",
+        ):
+            _ = date in period
 
     @given(dates=pairs(dates(), sorted=True))
     def test_error_time_zone_inapplicable(
