@@ -101,6 +101,20 @@ class Period(Generic[_TPeriod]):
         """Offset the period."""
         return self.replace(start=self.start + other, end=self.end + other)
 
+    def __contains__(self, other: dt.date | dt.datetime, /) -> bool:
+        """Check if a date/datetime lies in the period."""
+        match self.kind:
+            case "date":
+                if isinstance(other, dt.datetime):
+                    raise _PeriodDateContainsDateTimeError(
+                        start=self.start, end=self.end
+                    )
+                return self.start <= other <= self.end
+            case "datetime":
+                if isinstance(other, dt.datetime):
+                    return self.start <= other <= self.end
+                raise _PeriodDateTimeContainsDateError(start=self.start, end=self.end)
+
     @override
     def __repr__(self) -> str:
         cls = get_class_name(self)
@@ -275,6 +289,20 @@ class _PeriodAsTimeZoneInapplicableError(PeriodError[_TPeriod]):
     @override
     def __str__(self) -> str:
         return "Period of dates does not have a timezone attribute"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PeriodDateContainsDateTimeError(PeriodError[_TPeriod]):
+    @override
+    def __str__(self) -> str:
+        return "Period of dates cannot contain datetimes"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PeriodDateTimeContainsDateError(PeriodError[_TPeriod]):
+    @override
+    def __str__(self) -> str:
+        return "Period of datetimes cannot contain dates"
 
 
 @dataclass(kw_only=True, slots=True)

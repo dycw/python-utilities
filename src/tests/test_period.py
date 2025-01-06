@@ -24,7 +24,11 @@ from hypothesis.strategies import (
 from pytest import raises
 
 from utilities.datetime import ZERO_TIME
-from utilities.hypothesis import assume_does_not_raise, zoned_datetimes
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    lists_fixed_length,
+    zoned_datetimes,
+)
 from utilities.period import (
     Period,
     _DateOrDatetime,
@@ -59,26 +63,48 @@ class TestPeriod:
         expected = Period(adj_start, adj_end)
         assert result == expected
 
-    @given(
-        datetimes=tuples(
-            zoned_datetimes(time_zone=timezones()),
-            zoned_datetimes(time_zone=timezones()),
-        ),
-        time_zone=timezones(),
-    )
+    @given(data=data(), time_zone1=timezones(), time_zone2=timezones())
     def test_astimezone(
-        self, *, datetimes: tuple[dt.datetime, dt.datetime], time_zone: ZoneInfo
+        self,
+        *,
+        data: DataObject,
+        datetimes: tuple[dt.datetime, dt.datetime],
+        time_zone1: ZoneInfo,
+        time_zone2: ZoneInfo,
     ) -> None:
+        start, end = data.draw(
+            lists_fixed_length(zoned_datetimes(time_zone=time_zone1), 2).map(sorted)
+        )
         start, end = sorted(datetimes)
         with assume_does_not_raise(OverflowError):
             adj_start, adj_end = (
-                start.astimezone(time_zone),
-                end.astimezone(time_zone),
+                start.astimezone(time_zone2),
+                end.astimezone(time_zone2),
             )
         period = Period(start, end)
-        result = period.astimezone(time_zone)
+        result = period.astimezone(time_zone2)
         expected = Period(adj_start, adj_end)
         assert result == expected
+
+    @given(date=dates(), dates=tuples(dates(), dates()))
+    def test_contain_date(
+        self, *, date: dt.date, dates: tuple[dt.date, dt.date]
+    ) -> None:
+        start, end = sorted(dates)
+        period = Period(start, end)
+        result = date in period
+        expected = start <= date <= end
+        assert result is expected
+
+    @given(date=dates(), dates=tuples(dates(), dates()))
+    def test_contain_datetime(
+        self, *, date: dt.date, dates: tuple[dt.date, dt.date]
+    ) -> None:
+        start, end = sorted(dates)
+        period = Period(start, end)
+        result = date in period
+        expected = start <= date <= end
+        assert result is expected
 
     @given(dates=tuples(dates(), dates()))
     def test_dates(self, *, dates: tuple[dt.date, dt.date]) -> None:
