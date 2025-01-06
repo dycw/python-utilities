@@ -7,7 +7,7 @@ from hypothesis import given
 from hypothesis.strategies import integers, lists, sampled_from, tuples
 
 from utilities.concurrent import Parallelism, concurrent_map, concurrent_starmap
-from utilities.hypothesis import int32s, settings_with_reduced_examples
+from utilities.hypothesis import int32s, pairs, settings_with_reduced_examples
 from utilities.iterables import transpose
 from utilities.typing import get_args
 
@@ -29,7 +29,7 @@ class TestConcurrentMap:
         assert result == expected
 
     @given(
-        iterable=lists(tuples(int32s(), int32s()), min_size=1, max_size=10),
+        iterable=lists(pairs(int32s()), min_size=1, max_size=10),
         parallelism=sampled_from(get_args(Parallelism)),
         max_workers=integers(1, 2),
     )
@@ -66,7 +66,7 @@ class TestConcurrentStarMap:
         assert result == expected
 
     @given(
-        iterable=lists(tuples(int32s(), int32s()), max_size=10),
+        iterable=lists(pairs(int32s()), max_size=10),
         parallelism=sampled_from(get_args(Parallelism)),
         max_workers=integers(1, 2),
     )

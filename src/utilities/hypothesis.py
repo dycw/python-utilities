@@ -559,6 +559,25 @@ def numbers(
 ##
 
 
+def pairs(
+    strategy: SearchStrategy[_T],
+    /,
+    *,
+    unique: MaybeSearchStrategy[bool] = False,
+    sorted: MaybeSearchStrategy[bool] = False,  # noqa: A002
+) -> SearchStrategy[tuple[_T, _T]]:
+    """Strategy for generating pairs of elements."""
+    return lists_fixed_length(strategy, 2, unique=unique, sorted=sorted).map(_pairs_map)
+
+
+def _pairs_map(elements: list[_T], /) -> tuple[_T, _T]:
+    first, second = elements
+    return first, second
+
+
+##
+
+
 @composite
 def random_states(
     _draw: DrawFn, /, *, seed: MaybeSearchStrategy[int | None] = None
@@ -1060,6 +1079,7 @@ __all__ = [
     "lists_fixed_length",
     "months",
     "numbers",
+    "pairs",
     "random_states",
     "sets_fixed_length",
     "setup_hypothesis_profiles",

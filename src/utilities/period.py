@@ -57,10 +57,9 @@ class Period(Generic[_TPeriod]):
     max_duration: dt.timedelta | None = field(default=None, repr=False, kw_only=True)
 
     def __post_init__(self) -> None:
-        start_date_not_datetime, end_date_not_datetime = map(
-            is_instance_date_not_datetime, [self.start, self.end]
-        )
-        if start_date_not_datetime is not end_date_not_datetime:
+        if is_instance_date_not_datetime(
+            self.start
+        ) is not is_instance_date_not_datetime(self.end):
             raise _PeriodDateAndDatetimeMixedError(start=self.start, end=self.end)
         for date in [self.start, self.end]:
             if isinstance(date, dt.datetime):
@@ -109,11 +108,12 @@ class Period(Generic[_TPeriod]):
                     raise _PeriodDateContainsDateTimeError(
                         start=self.start, end=self.end
                     )
-                return self.start <= other <= self.end
             case "datetime":
-                if isinstance(other, dt.datetime):
-                    return self.start <= other <= self.end
-                raise _PeriodDateTimeContainsDateError(start=self.start, end=self.end)
+                if not isinstance(other, dt.datetime):
+                    raise _PeriodDateTimeContainsDateError(
+                        start=self.start, end=self.end
+                    )
+        return self.start <= other <= self.end
 
     @override
     def __repr__(self) -> str:

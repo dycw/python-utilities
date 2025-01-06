@@ -23,7 +23,6 @@ from hypothesis.strategies import (
     lists,
     sampled_from,
     times,
-    tuples,
     uuids,
 )
 from pytest import mark, param
@@ -61,7 +60,13 @@ from utilities.click import (
     ZonedDateTime,
 )
 from utilities.datetime import ZERO_TIME, serialize_month
-from utilities.hypothesis import datetime_durations, months, text_ascii, timedeltas_2w
+from utilities.hypothesis import (
+    datetime_durations,
+    months,
+    pairs,
+    text_ascii,
+    timedeltas_2w,
+)
 from utilities.text import join_strs, strip_and_dedent
 from utilities.whenever import (
     serialize_date,
@@ -357,7 +362,7 @@ class TestParameters:
     ) -> None:
         assert repr(param) == exp_repr
 
-        default, value = data.draw(tuples(strategy, strategy))
+        default, value = data.draw(pairs(strategy))
 
         @command()
         @option("--value", type=param, default=default)
