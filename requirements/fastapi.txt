@@ -2,7 +2,7 @@
 #    uv pip compile --extra=test --extra=zzz-test-fastapi --prerelease=explicit --output-file=requirements/fastapi.txt --python-version=3.11 pyproject.toml
 annotated-types==0.7.0
     # via pydantic
-anyio==4.7.0
+anyio==4.8.0
     # via
     #   httpx
     #   starlette
@@ -32,7 +32,7 @@ httpcore==1.0.7
     # via httpx
 httpx==0.28.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.123.2
+hypothesis==6.123.4
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via

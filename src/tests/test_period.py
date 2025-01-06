@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import datetime as dt
+from dataclasses import dataclass
 from re import search
 from typing import TYPE_CHECKING
 
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
+    booleans,
     data,
     dates,
     datetimes,
@@ -35,6 +37,7 @@ from utilities.period import (
     _PeriodReqDurationError,
     _PeriodTimeZoneInapplicableError,
     _PeriodTimeZoneNonUniqueError,
+    _TPeriod,
 )
 from utilities.zoneinfo import UTC, HongKong
 
@@ -119,7 +122,7 @@ class TestPeriod:
         start, end = sorted(dates)
         period = Period(start, end)
         result = func(period)
-        assert search(r"^Period\(\d{4}-\d{2}-\d{2}, \d{4}-\d{2}-\d{2}\)", result)
+        assert search(r"^Period\(\d{4}-\d{2}-\d{2}, \d{4}-\d{2}-\d{2}\)$", result)
 
     @given(data=data(), time_zone=timezones(), func=sampled_from([repr, str]))
     def test_repr_datetime_same_time_zone(
@@ -135,7 +138,7 @@ class TestPeriod:
         period = Period(start, end)
         result = func(period)
         assert search(
-            r"^Period\(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?, \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?, .+\)",
+            r"^Period\(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?, \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?, .+\)$",
             result,
         )
 
@@ -159,7 +162,24 @@ class TestPeriod:
         period = Period(start.astimezone(time_zone1), end.astimezone(time_zone2))
         result = func(period)
         assert search(
-            r"^Period\(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?[\+-]\d{2}:\d{2}(:\d{2})?\[.+\], \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?[\+-]\d{2}:\d{2}(:\d{2})?\[.+\]\)",
+            r"^Period\(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?[\+-]\d{2}:\d{2}(:\d{2})?\[.+\], \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?[\+-]\d{2}:\d{2}(:\d{2})?\[.+\]\)$",
+            result,
+        )
+
+    @given(dates=tuples(dates(), dates()), extra=booleans())
+    def test_repr_sub_classes(
+        self, *, dates: tuple[dt.date, dt.date], extra: bool
+    ) -> None:
+        start, end = sorted(dates)
+
+        @dataclass
+        class SubPeriod(Period[_TPeriod]):
+            extra: bool
+
+        period = SubPeriod(start, end, extra)
+        result = repr(period)
+        assert search(
+            r"SubPeriod\(start=datetime\.date\(\d{1,4}, \d{1,2}, \d{1,2}\), end=datetime\.date\(\d{1,4}, \d{1,2}, \d{1,2}\), extra=(?:True|False)\)$",
             result,
         )
 

@@ -16,7 +16,7 @@ execnet==2.1.1
     # via pytest-xdist
 executing==2.1.0
     # via stack-data
-hypothesis==6.123.2
+hypothesis==6.123.4
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -43,7 +43,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
     # via stack-data
-pygments==2.18.0
+pygments==2.19.0
     # via ipython
 pytest==8.3.4
     # via

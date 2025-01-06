@@ -50,9 +50,11 @@ class Period(Generic[_TPeriod]):
 
     start: _TPeriod
     end: _TPeriod
-    req_duration: MaybeIterable[dt.timedelta] | None = field(default=None, kw_only=True)
-    min_duration: dt.timedelta | None = field(default=None, kw_only=True)
-    max_duration: dt.timedelta | None = field(default=None, kw_only=True)
+    req_duration: MaybeIterable[dt.timedelta] | None = field(
+        default=None, repr=False, kw_only=True
+    )
+    min_duration: dt.timedelta | None = field(default=None, repr=False, kw_only=True)
+    max_duration: dt.timedelta | None = field(default=None, repr=False, kw_only=True)
 
     def __post_init__(self) -> None:
         start_date_not_datetime, end_date_not_datetime = map(
