@@ -30,6 +30,7 @@ from typing_extensions import override
 from tests.conftest import FLAKY
 from utilities.hypothesis import (
     int32s,
+    pairs,
     settings_with_reduced_examples,
     sqlalchemy_engines,
     temp_paths,
@@ -167,9 +168,7 @@ class TestColumnwiseMinMax:
     @given(
         data=data(),
         name=_table_names(),
-        values=sets(
-            tuples(integers(0, 10) | none(), integers(0, 10) | none()), min_size=1
-        ),
+        values=sets(pairs(integers(0, 10) | none()), min_size=1),
     )
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_main(
