@@ -72,6 +72,7 @@ class SupportsDunderGT(Protocol[_T_contra]):
 
 SupportsRichComparison = SupportsDunderLT[Any] | SupportsDunderGT[Any]
 
+
 # pathlib
 PathLike: TypeAlias = Path | str
 PathLikeOrCallable: TypeAlias = PathLike | Callable[[], PathLike]

@@ -2,7 +2,14 @@ from __future__ import annotations
 
 import builtins
 import datetime as dt
-from collections.abc import AsyncIterator, Collection, Hashable, Iterable, Iterator
+from collections.abc import (
+    AsyncIterator,
+    Collection,
+    Hashable,
+    Iterable,
+    Iterator,
+    Sequence,
+)
 from contextlib import (
     AbstractAsyncContextManager,
     asynccontextmanager,
@@ -57,7 +64,7 @@ from utilities.datetime import (
     datetime_duration_to_timedelta,
     get_now,
 )
-from utilities.functions import ensure_str
+from utilities.functions import ensure_str, max_nullable, min_nullable
 from utilities.math import (
     MAX_INT32,
     MAX_INT64,
@@ -159,28 +166,24 @@ def date_durations(
         draw(min_timedelta),
         draw(max_timedelta),
     )
-    min_parts: list[dt.timedelta] = [dt.timedelta.min]
+    min_parts: Sequence[dt.timedelta | None] = [dt.timedelta.min, min_timedelta_]
     if min_int_ is not None:
         with assume_does_not_raise(OverflowError):
             min_parts.append(date_duration_to_timedelta(min_int_))
-    if min_timedelta_ is not None:
-        min_parts.append(min_timedelta_)
     if two_way:
         from utilities.whenever import MIN_TWO_WAY_TIMEDELTA
 
         min_parts.append(MIN_TWO_WAY_TIMEDELTA)
-    min_timedelta_use = max(min_parts)
-    max_parts: list[dt.timedelta] = [dt.timedelta.max]
+    min_timedelta_use = max_nullable(min_parts)
+    max_parts: Sequence[dt.timedelta | None] = [dt.timedelta.max, max_timedelta_]
     if max_int_ is not None:
         with assume_does_not_raise(OverflowError):
             max_parts.append(date_duration_to_timedelta(max_int_))
-    if max_timedelta_ is not None:
-        max_parts.append(max_timedelta_)
     if two_way:
         from utilities.whenever import MAX_TWO_WAY_TIMEDELTA
 
         max_parts.append(MAX_TWO_WAY_TIMEDELTA)
-    max_timedelta_use = min(max_parts)
+    max_timedelta_use = min_nullable(max_parts)
     _ = assume(min_timedelta_use <= max_timedelta_use)
     st_timedeltas = (
         timedeltas(min_value=min_timedelta_use, max_value=max_timedelta_use)
