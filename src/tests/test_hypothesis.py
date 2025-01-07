@@ -431,7 +431,7 @@ class TestFloatsExtra:
 
 class TestGitRepos:
     @given(data=data())
-    @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
+    @settings_with_reduced_examples()
     def test_main(self, *, data: DataObject) -> None:
         branch = data.draw(text_ascii(min_size=1) | none())
         remote = data.draw(text_ascii(min_size=1) | none())
@@ -474,6 +474,13 @@ class TestGitRepos:
                 ["hatch", "version"], stderr=PIPE, cwd=root, text=True
             )
             assert output.strip("\n") == str(hatch_version)
+
+    @given(data=data())
+    @settings(max_examples=1)
+    def test_hatch_version_001(self, *, data: DataObject) -> None:
+        root = data.draw(git_repos(hatch_version=Version(0, 0, 1)))
+        output = check_output(["hatch", "version"], stderr=PIPE, cwd=root, text=True)
+        assert output.strip("\n") == "0.0.1"
 
 
 class TestHashables:
