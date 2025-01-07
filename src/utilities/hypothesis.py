@@ -16,7 +16,7 @@ from math import ceil, floor, inf, isfinite, nan
 from os import environ
 from pathlib import Path
 from re import search
-from string import ascii_letters, digits, printable
+from string import ascii_letters, ascii_lowercase, ascii_uppercase, digits, printable
 from subprocess import check_call
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
 from zoneinfo import ZoneInfo
@@ -828,82 +828,88 @@ def temp_paths(_draw: DrawFn, /) -> Path:
 ##
 
 
-def text_ascii(
-    *,
-    min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[int | None] = None,
-    disallow_na: MaybeSearchStrategy[bool] = False,
-) -> SearchStrategy[str]:
-    """Strategy for generating ASCII text."""
-    return _draw_text(
-        characters(whitelist_categories=[], whitelist_characters=ascii_letters),
-        min_size=min_size,
-        max_size=max_size,
-        disallow_na=disallow_na,
-    )
-
-
-def text_clean(
-    *,
-    min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[int | None] = None,
-    disallow_na: MaybeSearchStrategy[bool] = False,
-) -> SearchStrategy[str]:
-    """Strategy for generating clean text."""
-    return _draw_text(
-        characters(blacklist_categories=["Z", "C"]),
-        min_size=min_size,
-        max_size=max_size,
-        disallow_na=disallow_na,
-    )
-
-
-def text_digits(
-    *,
-    min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[int | None] = None,
-    disallow_na: MaybeSearchStrategy[bool] = False,
-) -> SearchStrategy[str]:
-    """Strategy for generating ASCII text."""
-    return _draw_text(
-        characters(whitelist_categories=[], whitelist_characters=digits),
-        min_size=min_size,
-        max_size=max_size,
-        disallow_na=disallow_na,
-    )
-
-
-def text_printable(
-    *,
-    min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[int | None] = None,
-    disallow_na: MaybeSearchStrategy[bool] = False,
-) -> SearchStrategy[str]:
-    """Strategy for generating printable text."""
-    return _draw_text(
-        characters(whitelist_categories=[], whitelist_characters=printable),
-        min_size=min_size,
-        max_size=max_size,
-        disallow_na=disallow_na,
-    )
-
-
 @composite
-def _draw_text(
+def text_ascii(
     _draw: DrawFn,
-    alphabet: MaybeSearchStrategy[str],
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
     max_size: MaybeSearchStrategy[int | None] = None,
-    disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> str:
-    """Draw from a text-generating strategy."""
+    """Strategy for generating ASCII text."""
     draw = lift_draw(_draw)
-    drawn = draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
-    if draw(disallow_na):
-        _ = assume(drawn != "NA")
-    return drawn
+    alphabet = characters(whitelist_categories=[], whitelist_characters=ascii_letters)
+    return draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+
+
+@composite
+def text_ascii_lower(
+    _draw: DrawFn,
+    /,
+    *,
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[int | None] = None,
+) -> str:
+    """Strategy for generating ASCII lower-case text."""
+    draw = lift_draw(_draw)
+    alphabet = characters(whitelist_categories=[], whitelist_characters=ascii_lowercase)
+    return draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+
+
+@composite
+def text_ascii_upper(
+    _draw: DrawFn,
+    /,
+    *,
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[int | None] = None,
+) -> str:
+    """Strategy for generating ASCII upper-case text."""
+    draw = lift_draw(_draw)
+    alphabet = characters(whitelist_categories=[], whitelist_characters=ascii_uppercase)
+    return draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+
+
+@composite
+def text_clean(
+    _draw: DrawFn,
+    /,
+    *,
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[int | None] = None,
+) -> str:
+    """Strategy for generating clean text."""
+    draw = lift_draw(_draw)
+    alphabet = characters(blacklist_categories=["Z", "C"])
+    return draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+
+
+@composite
+def text_digits(
+    _draw: DrawFn,
+    /,
+    *,
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[int | None] = None,
+) -> str:
+    """Strategy for generating ASCII text."""
+    draw = lift_draw(_draw)
+    alphabet = characters(whitelist_categories=[], whitelist_characters=digits)
+    return draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+
+
+@composite
+def text_printable(
+    _draw: DrawFn,
+    /,
+    *,
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[int | None] = None,
+) -> str:
+    """Strategy for generating printable text."""
+    draw = lift_draw(_draw)
+    alphabet = characters(whitelist_categories=[], whitelist_characters=printable)
+    return draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
 
 
 ##
@@ -1089,6 +1095,8 @@ __all__ = [
     "temp_dirs",
     "temp_paths",
     "text_ascii",
+    "text_ascii_lower",
+    "text_ascii_upper",
     "text_clean",
     "text_digits",
     "text_printable",
