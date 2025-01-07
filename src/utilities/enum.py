@@ -117,7 +117,7 @@ def _parse_enum_one(
             names = [e.name for e in enum]
         case "values":
             names = [ensure_str(e.value) for e in enum]
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
     try:
         name = one_str(names, value, case_sensitive=case_sensitive)

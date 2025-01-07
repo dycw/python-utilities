@@ -246,7 +246,7 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
                 yield "right was longer"
             case None:
                 pass
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            case _ as never:
                 assert_never(never)
 
 
@@ -657,7 +657,7 @@ class Collection(frozenset[_THashable]):
         return self.__and__(type(self)(other))
 
     @override
-    def __or__(self, other: MaybeIterable[_THashable], /) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __or__(self, other: MaybeIterable[_THashable], /) -> Self:
         if isinstance(other, type(self)):
             return type(self)(super().__or__(other))
         return self.__or__(type(self)(other))
@@ -1034,7 +1034,7 @@ class _OneStrNonUniqueError(OneStrError):
                 return f"{desc}; got at least 2 instances"
             case False:
                 return f"{desc} (modulo case); got {self.first!r}, {self.second!r} and perhaps more"
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            case _ as never:
                 assert_never(never)
 
 

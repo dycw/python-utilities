@@ -446,7 +446,7 @@ def _object_hook(
                 k: _object_hook(v, data=data, objects=objects, redirects=redirects)
                 for k, v in obj.items()
             }
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 

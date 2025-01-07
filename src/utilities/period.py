@@ -113,7 +113,7 @@ class Period(Generic[_TPeriod]):
                     raise _PeriodDateTimeContainsDateError(
                         start=self.start, end=self.end
                     )
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            case _ as never:
                 assert_never(never)
         return self.start <= other <= self.end
 
@@ -139,7 +139,7 @@ class Period(Generic[_TPeriod]):
                     for t in [result.start, result.end]
                 )
                 return f"{cls}({start}, {end}, {time_zone})"
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            case _ as never:
                 assert_never(never)
 
     def __sub__(self, other: dt.timedelta, /) -> Self:
@@ -158,7 +158,7 @@ class Period(Generic[_TPeriod]):
                     end=result.end.astimezone(time_zone),
                 )
                 return cast(Self, result)
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            case _ as never:
                 assert_never(never)
 
     @property
@@ -219,7 +219,7 @@ class Period(Generic[_TPeriod]):
                         first=error.first,
                         second=error.second,
                     ) from None
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            case _ as never:
                 assert_never(never)
 
     def to_dict(self) -> _PeriodAsDict:

@@ -53,7 +53,7 @@ def maybe_yield_lower_case(text: Iterable[str], /) -> Iterator[str]:
             yield from (t.lower() for t in text)
         case "linux":  # skipif-not-linux
             yield from text
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 

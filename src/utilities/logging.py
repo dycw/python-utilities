@@ -103,7 +103,7 @@ def get_logger(*, logger: LoggerOrName | None = None) -> Logger:
             return logger
         case str() | None:
             return getLogger(logger)
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 

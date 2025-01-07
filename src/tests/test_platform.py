@@ -36,7 +36,7 @@ class TestMaybeYieldLowerCase:
                 assert all(text == text.lower() for text in result)
             case "linux":  # skipif-not-linux
                 assert result == text
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            case _ as never:
                 assert_never(never)
 
 

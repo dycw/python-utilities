@@ -43,7 +43,7 @@ def get_cpu_use(*, n: IntOrAll = "all") -> int:
             raise GetCPUUseError(n=n)
         case "all":
             return CPU_COUNT
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 

@@ -884,7 +884,7 @@ def map_over_columns(
             return _map_over_series_one(func, series)
         case DataFrame() as df:
             return df.select(*(_map_over_series_one(func, df[c]) for c in df.columns))
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 
@@ -1247,7 +1247,7 @@ def yield_rows_as_dataclasses(
                 raise _YieldRowsAsDataClassesWrongTypeError(
                     df=df, cls=cls, msg=str(error)
                 ) from None
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 

@@ -127,7 +127,7 @@ async def check_engine(
             query = "select * from all_objects"
         case "sqlite":
             query = "select * from sqlite_master where type='table'"
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
     statement = text(query)
     async for attempt in yield_timeout_attempts(
@@ -267,7 +267,7 @@ async def ensure_tables_created(
             match = "ORA-00955: name is already used by an existing object"
         case "sqlite":
             match = "table .* already exists"
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
     async for attempt in yield_timeout_attempts(
         stop=stop, wait=wait, retry=retry, timeout=timeout
@@ -301,7 +301,7 @@ async def ensure_tables_dropped(
             match = "ORA-00942: table or view does not exist"
         case "sqlite":
             match = "no such table"
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
     async for attempt in yield_timeout_attempts(
         stop=stop, wait=wait, retry=retry, timeout=timeout
@@ -598,7 +598,7 @@ def _normalize_upsert_item(
                 yield _NormalizedItem(mapping=values, table=norm.table)
         case "all":
             yield from normalized
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 
@@ -800,7 +800,7 @@ def _upsert_items_build(
             insert = sqlite_insert
         case "mssql" | "mysql" | "oracle" as dialect:  # pragma: no cover
             raise NotImplementedError(dialect)
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
     ins = insert(table).values(values)
     primary_key = cast(Any, table.primary_key)
@@ -822,7 +822,7 @@ def _upsert_items_apply_on_conflict_do_update(
             columns = set(reduce(or_, values))
         case "all":
             columns = {c.name for c in insert.excluded}
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
     set_ = {c: getattr(insert.excluded, c) for c in columns}
     match insert:
@@ -830,7 +830,7 @@ def _upsert_items_apply_on_conflict_do_update(
             return insert.on_conflict_do_update(constraint=primary_key, set_=set_)
         case sqlite_Insert():
             return insert.on_conflict_do_update(index_elements=primary_key, set_=set_)
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 
@@ -916,7 +916,7 @@ def _get_dialect_max_params(
         ):
             dialect = _get_dialect(engine_or_conn)
             return _get_dialect_max_params(dialect)
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 

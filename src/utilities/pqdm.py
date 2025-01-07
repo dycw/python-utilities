@@ -91,7 +91,7 @@ def pqdm_starmap(
                 **_get_desc(desc, func),
                 **kwargs,
             )
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
     return list(result)
 

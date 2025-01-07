@@ -101,7 +101,7 @@ class RichTracebackFormatter(Formatter):
                 text = error.format(header=True, detail=self._detail)
             case BaseException():
                 text = "\n".join(format_exception(error))
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            case _ as never:
                 assert_never(never)
         if self._post is not None:
             text = self._post(text)
@@ -286,7 +286,7 @@ class ExcChainTB(Generic[_TExc]):
                     )
                 case BaseException():  # pragma: no cover
                     lines.append(_format_exception(errors, depth=1))
-                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                case _ as never:
                     assert_never(never)
             lines.append("")
         return "\n".join(lines)
@@ -351,7 +351,7 @@ class ExcGroupTB(Generic[_TExc]):
                     )
                 case BaseException():  # pragma: no cover
                     lines.append(_format_exception(errors, depth=2))
-                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                case _ as never:
                     assert_never(never)
             lines.append("")
         return indent("\n".join(lines), depth * _INDENT)
