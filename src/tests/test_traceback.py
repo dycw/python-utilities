@@ -96,10 +96,12 @@ class TestFrame:
 
 
 class TestGetRichTraceback:
-    def test_func_one(self, *, traceback_func_one: Pattern[str]) -> None:
+    def test_func_one(
+        self, *, git_version_ref: str, traceback_func_one: Pattern[str]
+    ) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_tb = get_rich_traceback(exc_info.value)
+        exc_tb = get_rich_traceback(exc_info.value, git_version_ref=git_version_ref)
         assert isinstance(exc_tb, ExcTB)
         assert len(exc_tb) == 1
         frame = one(exc_tb)
@@ -119,10 +121,12 @@ class TestGetRichTraceback:
 
         assert traceback_func_one.search(repr(exc_tb))
 
-    def test_func_two(self, *, traceback_func_two: Pattern[str]) -> None:
+    def test_func_two(
+        self, *, git_version_ref: str, traceback_func_two: Pattern[str]
+    ) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_tb = get_rich_traceback(exc_info.value)
+        exc_tb = get_rich_traceback(exc_info.value, git_version_ref=git_version_ref)
         assert isinstance(exc_tb, ExcTB)
         assert len(exc_tb) == 2
         frame1, frame2 = exc_tb
@@ -151,10 +155,10 @@ class TestGetRichTraceback:
 
         assert traceback_func_two.search(repr(exc_tb))
 
-    def test_func_beartype(self) -> None:
+    def test_func_beartype(self, *, git_version_ref: str) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_beartype(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_tb = get_rich_traceback(exc_info.value)
+        exc_tb = get_rich_traceback(exc_info.value, git_version_ref=git_version_ref)
         assert isinstance(exc_tb, ExcTB)
         assert len(exc_tb) == 1
         frame = one(exc_tb)
@@ -172,10 +176,10 @@ class TestGetRichTraceback:
         assert frame.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(exc_tb.error, AssertionError)
 
-    def test_func_beartype_error(self) -> None:
+    def test_func_beartype_error(self, *, git_version_ref: str) -> None:
         with raises(BeartypeCallHintReturnViolation) as exc_info:
             _ = func_beartype_error_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_tb = get_rich_traceback(exc_info.value)
+        exc_tb = get_rich_traceback(exc_info.value, git_version_ref=git_version_ref)
         assert isinstance(exc_tb, ExcTB)
         assert len(exc_tb) == 2
         frame1, frame2 = exc_tb
@@ -200,10 +204,12 @@ class TestGetRichTraceback:
         assert frame2.locals["kwargs"] == {"c": 10, "d": 12, "e": 14}
         assert isinstance(exc_tb.error, BeartypeCallHintReturnViolation)
 
-    def test_func_chain(self, *, traceback_func_chain: Pattern[str]) -> None:
+    def test_func_chain(
+        self, *, git_version_ref: str, traceback_func_chain: Pattern[str]
+    ) -> None:
         with raises(ValueError, match=".*") as exc_info:
             _ = func_chain_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_chain = get_rich_traceback(exc_info.value)
+        exc_chain = get_rich_traceback(exc_info.value, git_version_ref=git_version_ref)
         assert isinstance(exc_chain, ExcChainTB)
         assert len(exc_chain) == 2
         exc_tb1, exc_tb2 = exc_chain
@@ -236,25 +242,25 @@ class TestGetRichTraceback:
 
         assert traceback_func_chain.search(repr(exc_chain))
 
-    def test_func_decorated_sync(self) -> None:
+    def test_func_decorated_sync(self, *, git_version_ref: str) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_decorated_sync_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path = get_rich_traceback(exc_info.value)
+        exc_path = get_rich_traceback(exc_info.value, git_version_ref=git_version_ref)
         assert isinstance(exc_path, ExcTB)
         self._assert_decorated(exc_path, "sync")
         assert len(exc_path) == 5
 
-    async def test_func_decorated_async(self) -> None:
+    async def test_func_decorated_async(self, *, git_version_ref: str) -> None:
         with raises(AssertionError) as exc_info:
             _ = await func_decorated_async_first(1, 2, 3, 4, c=5, d=6, e=7)
-        error = get_rich_traceback(exc_info.value)
+        error = get_rich_traceback(exc_info.value, git_version_ref=git_version_ref)
         assert isinstance(error, ExcTB)
         self._assert_decorated(error, "async")
 
-    def test_func_recursive(self) -> None:
+    def test_func_recursive(self, *, git_version_ref: str) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_recursive(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path = get_rich_traceback(exc_info.value)
+        exc_path = get_rich_traceback(exc_info.value, git_version_ref=git_version_ref)
         assert isinstance(exc_path, ExcTB)
         assert len(exc_path) == 2
         frame1, frame2 = exc_path
@@ -281,48 +287,52 @@ class TestGetRichTraceback:
         assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_path.error, AssertionError)
 
-    def test_func_runtime_sync(self) -> None:
+    def test_func_runtime_sync(self, *, git_version_ref: str) -> None:
         with raises(AssertionError) as exc_info1:
             _ = func_runtime_sync(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path1 = get_rich_traceback(exc_info1.value)
+        exc_path1 = get_rich_traceback(exc_info1.value, git_version_ref=git_version_ref)
         assert isinstance(exc_path1, ExcTB)
         with disable_trace_for_func_runtime_sync():
             with raises(AssertionError) as exc_info2:
                 _ = func_runtime_sync(1, 2, 3, 4, c=5, d=6, e=7)
-            exc_path2 = get_rich_traceback(exc_info2.value)
+            exc_path2 = get_rich_traceback(
+                exc_info2.value, git_version_ref=git_version_ref
+            )
             assert isinstance(exc_path2, AssertionError)
         with raises(AssertionError) as exc_info3:
             _ = func_runtime_sync(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path3 = get_rich_traceback(exc_info3.value)
+        exc_path3 = get_rich_traceback(exc_info3.value, git_version_ref=git_version_ref)
         assert isinstance(exc_path3, ExcTB)
 
-    async def test_func_runtime_async(self) -> None:
+    async def test_func_runtime_async(self, *, git_version_ref: str) -> None:
         with raises(AssertionError) as exc_info1:
             _ = await func_runtime_async(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path1 = get_rich_traceback(exc_info1.value)
+        exc_path1 = get_rich_traceback(exc_info1.value, git_version_ref=git_version_ref)
         assert isinstance(exc_path1, ExcTB)
         with disable_trace_for_func_runtime_async():
             with raises(AssertionError) as exc_info2:
                 _ = await func_runtime_async(1, 2, 3, 4, c=5, d=6, e=7)
-            exc_path2 = get_rich_traceback(exc_info2.value)
+            exc_path2 = get_rich_traceback(
+                exc_info2.value, git_version_ref=git_version_ref
+            )
             assert isinstance(exc_path2, AssertionError)
         with raises(AssertionError) as exc_info3:
             _ = await func_runtime_async(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path3 = get_rich_traceback(exc_info3.value)
+        exc_path3 = get_rich_traceback(exc_info3.value, git_version_ref=git_version_ref)
         assert isinstance(exc_path3, ExcTB)
 
-    def test_func_setup(self) -> None:
+    def test_func_setup(self, *, git_version_ref: str) -> None:
         with raises(AssertionError) as exc_info1:
             _ = func_setup(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path1 = get_rich_traceback(exc_info1.value)
+        exc_path1 = get_rich_traceback(exc_info1.value, git_version_ref=git_version_ref)
         assert isinstance(exc_path1, AssertionError)
 
     async def test_func_task_group_one(
-        self, *, traceback_func_task_group_one: Pattern[str]
+        self, *, git_version_ref: str, traceback_func_task_group_one: Pattern[str]
     ) -> None:
         with raises(ExceptionGroup) as exc_info:
             await func_task_group_one_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_group = get_rich_traceback(exc_info.value)
+        exc_group = get_rich_traceback(exc_info.value, git_version_ref=git_version_ref)
         assert isinstance(exc_group, ExcGroupTB)
         assert exc_group.path is not None
         assert len(exc_group.path) == 1
@@ -361,10 +371,10 @@ class TestGetRichTraceback:
 
     @FLAKY
     @SKIPIF_CI
-    async def test_func_task_group_two(self) -> None:
+    async def test_func_task_group_two(self, *, git_version_ref: str) -> None:
         with raises(ExceptionGroup) as exc_info:
             await func_task_group_two_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_group = get_rich_traceback(exc_info.value)
+        exc_group = get_rich_traceback(exc_info.value, git_version_ref=git_version_ref)
         assert isinstance(exc_group, ExcGroupTB)
         assert exc_group.path is not None
         assert len(exc_group.path) == 1
@@ -414,20 +424,20 @@ class TestGetRichTraceback:
         assert frame2.locals["kwargs"] == {"d": 26, "e": 30}
         assert isinstance(exc_path2.error, AssertionError)
 
-    def test_func_untraced(self) -> None:
+    def test_func_untraced(self, *, git_version_ref: str) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
-        error = get_rich_traceback(exc_info.value)
+        error = get_rich_traceback(exc_info.value, git_version_ref=git_version_ref)
         assert isinstance(error, AssertionError)
 
-    def test_custom_error(self) -> None:
+    def test_custom_error(self, *, git_version_ref: str) -> None:
         @trace
         def raises_custom_error() -> bool:
             return one([True, False])
 
         with raises(OneNonUniqueError) as exc_info:
             _ = raises_custom_error()
-        exc_path = get_rich_traceback(exc_info.value)
+        exc_path = get_rich_traceback(exc_info.value, git_version_ref=git_version_ref)
         assert isinstance(exc_path, ExcTB)
         assert exc_path.error.first is True
         assert exc_path.error.second is False
@@ -521,12 +531,14 @@ class TestGetRichTraceback:
 
 class TestRichTracebackFormatter:
     def test_decorated(
-        self, *, tmp_path: Path, traceback_func_one: Pattern[str]
+        self, *, tmp_path: Path, git_version_ref: str, traceback_func_one: Pattern[str]
     ) -> None:
         logger = getLogger(str(tmp_path))
         logger.setLevel(DEBUG)
         handler = StreamHandler(buffer := StringIO())
-        handler.setFormatter(RichTracebackFormatter(detail=True))
+        handler.setFormatter(
+            RichTracebackFormatter(git_version_ref=git_version_ref, detail=True)
+        )
         handler.setLevel(DEBUG)
         logger.addHandler(handler)
         try:
@@ -537,12 +549,18 @@ class TestRichTracebackFormatter:
         assert traceback_func_one.search(result)
 
     def test_undecorated(
-        self, *, tmp_path: Path, traceback_func_untraced: Pattern[str]
+        self,
+        *,
+        tmp_path: Path,
+        git_version_ref: str,
+        traceback_func_untraced: Pattern[str],
     ) -> None:
         logger = getLogger(str(tmp_path))
         logger.setLevel(DEBUG)
         handler = StreamHandler(buffer := StringIO())
-        handler.setFormatter(RichTracebackFormatter(detail=True))
+        handler.setFormatter(
+            RichTracebackFormatter(git_version_ref=git_version_ref, detail=True)
+        )
         handler.setLevel(DEBUG)
         logger.addHandler(handler)
         try:
@@ -552,17 +570,21 @@ class TestRichTracebackFormatter:
         result = buffer.getvalue()
         assert traceback_func_untraced.search(result)
 
-    def test_create_and_set(self) -> None:
+    def test_create_and_set(self, *, git_version_ref: str) -> None:
         handler = StreamHandler()
         assert len(handler.filters) == 0
-        _ = RichTracebackFormatter.create_and_set(handler)
+        _ = RichTracebackFormatter.create_and_set(
+            handler, git_version_ref=git_version_ref
+        )
         assert len(handler.filters) == 1
 
-    def test_no_logging(self, *, tmp_path: Path) -> None:
+    def test_no_logging(self, *, tmp_path: Path, git_version_ref: str) -> None:
         logger = getLogger(str(tmp_path))
         logger.setLevel(ERROR)
         handler = StreamHandler(buffer := StringIO())
-        handler.setFormatter(RichTracebackFormatter(detail=True))
+        handler.setFormatter(
+            RichTracebackFormatter(git_version_ref=git_version_ref, detail=True)
+        )
         handler.setLevel(DEBUG)
         logger.addHandler(handler)
         logger.error("message")
@@ -570,12 +592,14 @@ class TestRichTracebackFormatter:
         expected = "ERROR: record.exc_info=None\n"
         assert result == expected
 
-    def test_post(self, *, tmp_path: Path) -> None:
+    def test_post(self, *, tmp_path: Path, git_version_ref: str) -> None:
         logger = getLogger(str(tmp_path))
         logger.setLevel(DEBUG)
         handler = StreamHandler(buffer := StringIO())
         handler.setFormatter(
-            RichTracebackFormatter(detail=True, post=lambda x: f"> {x}")
+            RichTracebackFormatter(
+                git_version_ref=git_version_ref, detail=True, post=lambda x: f"> {x}"
+            )
         )
         handler.setLevel(DEBUG)
         logger.addHandler(handler)

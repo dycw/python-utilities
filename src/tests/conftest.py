@@ -34,6 +34,11 @@ else:
 
 
 @fixture
+def git_version_ref() -> str:
+    return "origin/master" if IS_CI else "master"
+
+
+@fixture
 def traceback_func_chain() -> Pattern[str]:
     return re.compile(
         strip_and_dedent(

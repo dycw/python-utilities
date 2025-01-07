@@ -106,10 +106,10 @@ class TestLogLevel:
 class TestSetupLogging:
     @skipif_windows
     def test_decorated(
-        self, *, tmp_path: Path, traceback_func_one: Pattern[str]
+        self, *, tmp_path: Path, git_version_ref: str, traceback_func_one: Pattern[str]
     ) -> None:
         name = str(tmp_path)
-        setup_logging(logger=name, files_dir=tmp_path)
+        setup_logging(logger=name, git_version_ref=git_version_ref, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 7
         self.assert_files(tmp_path, "init")
@@ -121,10 +121,14 @@ class TestSetupLogging:
 
     @skipif_windows
     def test_undecorated(
-        self, *, tmp_path: Path, traceback_func_untraced: Pattern[str]
+        self,
+        *,
+        tmp_path: Path,
+        git_version_ref: str,
+        traceback_func_untraced: Pattern[str],
     ) -> None:
         name = str(tmp_path)
-        setup_logging(logger=name, files_dir=tmp_path)
+        setup_logging(logger=name, git_version_ref=git_version_ref, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 7
         self.assert_files(tmp_path, "init")
@@ -136,10 +140,10 @@ class TestSetupLogging:
 
     @skipif_windows
     def test_regular_percent_formatting(
-        self, *, caplog: LogCaptureFixture, tmp_path: Path
+        self, *, tmp_path: Path, git_version_ref: str, caplog: LogCaptureFixture
     ) -> None:
         name = str(tmp_path)
-        setup_logging(logger=name, files_dir=tmp_path)
+        setup_logging(logger=name, git_version_ref=git_version_ref, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("int: %d, float: %.2f", 1, 12.3456)
         record = one(caplog.records)
@@ -149,10 +153,10 @@ class TestSetupLogging:
 
     @skipif_windows
     def test_new_brace_formatting(
-        self, *, caplog: LogCaptureFixture, tmp_path: Path
+        self, *, tmp_path: Path, git_version_ref: str, caplog: LogCaptureFixture
     ) -> None:
         name = str(tmp_path)
-        setup_logging(logger=name, files_dir=tmp_path)
+        setup_logging(logger=name, git_version_ref=git_version_ref, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("int: {:d}, float: {:.2f}, percent: {:.2%}", 1, 12.3456, 0.123456)
         record = one(caplog.records)
@@ -161,16 +165,23 @@ class TestSetupLogging:
         assert record.message == expected
 
     @skipif_windows
-    def test_no_console(self, *, tmp_path: Path) -> None:
+    def test_no_console(self, *, tmp_path: Path, git_version_ref: str) -> None:
         name = str(tmp_path)
-        setup_logging(logger=name, console_level=None, files_dir=tmp_path)
+        setup_logging(
+            logger=name,
+            console_level=None,
+            git_version_ref=git_version_ref,
+            files_dir=tmp_path,
+        )
         logger = getLogger(name)
         assert len(logger.handlers) == 5
 
     @skipif_windows
-    def test_zoned_datetime(self, *, caplog: LogCaptureFixture, tmp_path: Path) -> None:
+    def test_zoned_datetime(
+        self, *, tmp_path: Path, git_version_ref: str, caplog: LogCaptureFixture
+    ) -> None:
         name = str(tmp_path)
-        setup_logging(logger=name, files_dir=tmp_path)
+        setup_logging(logger=name, git_version_ref=git_version_ref, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("")
         record = one(caplog.records)
@@ -179,7 +190,7 @@ class TestSetupLogging:
         assert isinstance(record._zoned_datetime_str, str)
 
     @skipif_windows
-    def test_extra(self, *, tmp_path: Path) -> None:
+    def test_extra(self, *, tmp_path: Path, git_version_ref: str) -> None:
         name = str(tmp_path)
 
         def extra(logger: LoggerOrName | None, /) -> None:
@@ -187,7 +198,12 @@ class TestSetupLogging:
             handler.setLevel(DEBUG)
             get_logger(logger=logger).addHandler(handler)
 
-        setup_logging(logger=name, files_dir=tmp_path, extra=extra)
+        setup_logging(
+            logger=name,
+            git_version_ref=git_version_ref,
+            files_dir=tmp_path,
+            extra=extra,
+        )
         logger = getLogger(name)
         logger.info("")
         files = list(tmp_path.iterdir())
