@@ -15,7 +15,11 @@ if TYPE_CHECKING:
     from utilities.types import PathLike
 
 
+_ORIGIN_MASTER = "origin/master"
 _PATTERN = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-(\w+))?")
+
+
+##
 
 
 @dataclass(repr=False, order=True, frozen=True, kw_only=True, slots=True)
@@ -97,10 +101,10 @@ class _VersionEmptySuffixError(VersionError):
         return f"Suffix must be non-empty; got {self.suffix!r}"
 
 
-def get_git_version(*, cwd: PathLike = PWD) -> Version:
+def get_git_version(*, cwd: PathLike = PWD, ref: str = _ORIGIN_MASTER) -> Version:
     """Get the version according to the `git`."""
     fetch_all_tags(cwd=cwd)
-    tags = get_ref_tags("origin/master", cwd=cwd)
+    tags = get_ref_tags(ref, cwd=cwd)
     tag = one(tags)
     return parse_version(tag)
 
@@ -111,9 +115,9 @@ def get_hatch_version(*, cwd: PathLike = PWD) -> Version:
     return parse_version(output.strip("\n"))
 
 
-def get_version(*, cwd: PathLike = PWD) -> Version:
+def get_version(*, cwd: PathLike = PWD, ref: str = _ORIGIN_MASTER) -> Version:
     """Get the version."""
-    git = get_git_version(cwd=cwd)
+    git = get_git_version(cwd=cwd, ref=ref)
     hatch = get_hatch_version(cwd=cwd)
     if hatch == git:  # pragma: no cover
         return hatch

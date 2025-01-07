@@ -75,7 +75,7 @@ from utilities.math import (
     MIN_UINT32,
     MIN_UINT64,
 )
-from utilities.pathlib import temp_cwd
+from utilities.pathlib import list_dir, temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.version import Version
@@ -358,6 +358,8 @@ def git_repos(
     *,
     branch: MaybeSearchStrategy[str | None] = None,
     remote: MaybeSearchStrategy[str | None] = None,
+    git_version: MaybeSearchStrategy[Version | None] = None,
+    hatch_version: MaybeSearchStrategy[Version | None] = None,
 ) -> Path:
     draw = lift_draw(_draw)
     path = draw(temp_paths())
@@ -372,10 +374,20 @@ def git_repos(
         _ = check_call(["git", "commit", "-m", "add"])
         _ = check_call(["git", "rm", file_str])
         _ = check_call(["git", "commit", "-m", "rm"])
-        if (branch := draw(branch)) is not None:
-            _ = check_call(["git", "checkout", "-b", branch])
-        if (remote := draw(remote)) is not None:
-            _ = check_call(["git", "remote", "add", "origin", remote])
+        if (branch_ := draw(branch)) is not None:
+            _ = check_call(["git", "checkout", "-b", branch_])
+        if (remote_ := draw(remote)) is not None:
+            _ = check_call(["git", "remote", "add", "origin", remote_])
+        if (git_version_ := draw(git_version)) is not None:
+            _ = check_call(["git", "tag", str(git_version_), "master"])
+        if (hatch_version_ := draw(hatch_version)) is not None:
+            _ = check_call(["hatch", "new", "dummy"], cwd=path)
+            foo = list_dir(path)
+            with (path / "pyproject.toml").open() as fh:
+                lines = fh.readlines()
+            breakpoint()
+
+            _ = check_call(["hatch", "version", str(hatch_version_)])
     return path
 
 

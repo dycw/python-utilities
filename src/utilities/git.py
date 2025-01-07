@@ -13,8 +13,9 @@ from utilities.pathlib import PWD
 if TYPE_CHECKING:
     from utilities.types import PathLike
 
-_GIT_REV_PARSE_ABBREV_REV_HEAD = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
 _GIT_REMOTE_GET_URL_ORIGIN = ["git", "remote", "get-url", "origin"]
+_GIT_REV_PARSE_ABBREV_REV_HEAD = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+_GIT_TAG_POINTS_AT = ["git", "tag", "--points-at"]
 
 
 def get_branch_name(*, cwd: PathLike = PWD) -> str:
@@ -27,9 +28,7 @@ def get_branch_name(*, cwd: PathLike = PWD) -> str:
 
 def get_ref_tags(ref: str, /, *, cwd: PathLike = PWD) -> list[str]:
     """Get the tags of a reference."""
-    output = check_output(
-        ["git", "tag", "--points-at", ref], stderr=PIPE, cwd=cwd, text=True
-    )
+    output = check_output([*_GIT_TAG_POINTS_AT, ref], stderr=PIPE, cwd=cwd, text=True)
     return output.strip("\n").splitlines()
 
 

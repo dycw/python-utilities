@@ -41,7 +41,11 @@ from utilities.datetime import (
     is_local_datetime,
     is_zoned_datetime,
 )
-from utilities.git import _GIT_REMOTE_GET_URL_ORIGIN, _GIT_REV_PARSE_ABBREV_REV_HEAD
+from utilities.git import (
+    _GIT_REMOTE_GET_URL_ORIGIN,
+    _GIT_REV_PARSE_ABBREV_REV_HEAD,
+    _GIT_TAG_POINTS_AT,
+)
 from utilities.hypothesis import (
     _SQLALCHEMY_ENGINE_DIALECTS,
     _ZONED_DATETIMES_LEFT_MOST,
@@ -99,6 +103,7 @@ from utilities.math import (
     is_at_most,
 )
 from utilities.os import temp_environ
+from utilities.pathlib import temp_cwd
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import Dialect, _get_dialect
 from utilities.types import Duration, Number
@@ -430,18 +435,37 @@ class TestGitRepos:
     def test_main(self, *, data: DataObject) -> None:
         branch = data.draw(text_ascii(min_size=1) | none())
         remote = data.draw(text_ascii(min_size=1) | none())
-        root = data.draw(git_repos(branch=branch, remote=remote))
+        git_version = data.draw(versions() | none())
+        hatch_version = data.draw(versions() | none())
+        root = data.draw(
+            git_repos(
+                branch=branch,
+                remote=remote,
+                git_version=git_version,
+                hatch_version=hatch_version,
+            )
+        )
         assert set(root.iterdir()) == {Path(root, ".git")}
-        if branch is not None:
-            output = check_output(
-                _GIT_REV_PARSE_ABBREV_REV_HEAD, stderr=PIPE, cwd=root, text=True
-            )
-            assert output.strip("\n") == branch
-        if remote is not None:
-            output = check_output(
-                _GIT_REMOTE_GET_URL_ORIGIN, stderr=PIPE, cwd=root, text=True
-            )
-            assert output.strip("\n") == remote
+        with temp_cwd(root):
+            if branch is not None:
+                output = check_output(
+                    _GIT_REV_PARSE_ABBREV_REV_HEAD, stderr=PIPE, text=True
+                )
+                assert output.strip("\n") == branch
+            if remote is not None:
+                output = check_output(
+                    _GIT_REMOTE_GET_URL_ORIGIN, stderr=PIPE, text=True
+                )
+                assert output.strip("\n") == remote
+            if git_version is not None:
+                output = check_output(
+                    [*_GIT_TAG_POINTS_AT, "master"], stderr=PIPE, text=True
+                )
+                assert output.strip("\n") == str(git_version)
+            if hatch_version is not None:
+                output = check_output(["hatch", "version"], stderr=PIPE, text=True)
+                assert output.strip("\n") == str(git_version)
+                assert 0
 
 
 class TestHashables:
