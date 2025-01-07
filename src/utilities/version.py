@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
+from functools import total_ordering
 from subprocess import check_output
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from typing_extensions import override
 
-from utilities.git import fetch_all_tags, get_ref_tags
+from utilities.git import MASTER, fetch_all_tags, get_ref_tags
 from utilities.iterables import one
 from utilities.pathlib import PWD
 
@@ -18,16 +19,24 @@ if TYPE_CHECKING:
 _PATTERN = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-(\w+))?")
 
 
-@dataclass(repr=False, order=True, frozen=True, kw_only=True, slots=True)
+##
+
+
+@dataclass(repr=False, frozen=True, slots=True)
+@total_ordering
 class Version:
     """A version identifier."""
 
     major: int = 0
-    minor: int = 1
-    patch: int = 0
-    suffix: str | None = None
+    minor: int = 0
+    patch: int = 1
+    suffix: str | None = field(default=None, kw_only=True)
 
     def __post_init__(self) -> None:
+        if (self.major == 0) and (self.minor == 0) and (self.patch == 0):
+            raise _VersionZeroError(
+                major=self.major, minor=self.minor, patch=self.patch
+            )
         if self.major < 0:
             raise _VersionNegativeMajorVersionError(major=self.major)
         if self.minor < 0:
@@ -37,6 +46,23 @@ class Version:
         if (self.suffix is not None) and (len(self.suffix) == 0):
             raise _VersionEmptySuffixError(suffix=self.suffix)
 
+    def __le__(self, other: Any, /) -> bool:
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        self_as_tuple = (
+            self.major,
+            self.minor,
+            self.patch,
+            "" if self.suffix is None else self.suffix,
+        )
+        other_as_tuple = (
+            other.major,
+            other.minor,
+            other.patch,
+            "" if other.suffix is None else other.suffix,
+        )
+        return self_as_tuple <= other_as_tuple
+
     @override
     def __repr__(self) -> str:
         version = f"{self.major}.{self.minor}.{self.patch}"
@@ -45,13 +71,13 @@ class Version:
         return version
 
     def bump_major(self) -> Self:
-        return type(self)(major=self.major + 1, minor=0, patch=0)
+        return type(self)(self.major + 1, 0, 0)
 
     def bump_minor(self) -> Self:
-        return type(self)(major=self.major, minor=self.minor + 1, patch=0)
+        return type(self)(self.major, self.minor + 1, 0)
 
     def bump_patch(self) -> Self:
-        return type(self)(major=self.major, minor=self.minor, patch=self.patch + 1)
+        return type(self)(self.major, self.minor, self.patch + 1)
 
     def with_suffix(self, *, suffix: str | None = None) -> Self:
         return replace(self, suffix=suffix)
@@ -59,6 +85,17 @@ class Version:
 
 @dataclass(kw_only=True, slots=True)
 class VersionError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _VersionZeroError(VersionError):
+    major: int
+    minor: int
+    patch: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Version must be greater than zero; got {self.major}.{self.minor}.{self.patch}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -97,12 +134,18 @@ class _VersionEmptySuffixError(VersionError):
         return f"Suffix must be non-empty; got {self.suffix!r}"
 
 
-def get_git_version(*, cwd: PathLike = PWD) -> Version:
+##
+
+
+def get_git_version(*, cwd: PathLike = PWD, ref: str = MASTER) -> Version:
     """Get the version according to the `git`."""
     fetch_all_tags(cwd=cwd)
-    tags = get_ref_tags("origin/master", cwd=cwd)
+    tags = get_ref_tags(ref, cwd=cwd)
     tag = one(tags)
     return parse_version(tag)
+
+
+##
 
 
 def get_hatch_version(*, cwd: PathLike = PWD) -> Version:
@@ -111,19 +154,20 @@ def get_hatch_version(*, cwd: PathLike = PWD) -> Version:
     return parse_version(output.strip("\n"))
 
 
-def get_version(*, cwd: PathLike = PWD) -> Version:
+##
+
+
+def get_version(*, cwd: PathLike = PWD, ref: str = MASTER) -> Version:
     """Get the version."""
-    git = get_git_version(cwd=cwd)
+    git = get_git_version(cwd=cwd, ref=ref)
     hatch = get_hatch_version(cwd=cwd)
-    if hatch == git:  # pragma: no cover
+    if hatch < git:
+        return hatch.with_suffix(suffix="behind")
+    if hatch == git:
         return hatch
-    if hatch in {  # pragma: no cover
-        git.bump_major(),
-        git.bump_minor(),
-        git.bump_patch(),
-    }:
+    if hatch in {git.bump_major(), git.bump_minor(), git.bump_patch()}:
         return hatch.with_suffix(suffix="dirty")
-    raise GetVersionError(git=git, hatch=hatch)  # pragma: no cover
+    raise GetVersionError(git=git, hatch=hatch)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -133,7 +177,10 @@ class GetVersionError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"`git` and `hatch` versions are incompatible; got {self.git} and {self.hatch}"  # pragma: no cover
+        return f"`hatch` version is ahead of `git` version in an incompatible way; got {self.hatch} and {self.git}"
+
+
+##
 
 
 def parse_version(version: str, /) -> Version:
@@ -142,9 +189,7 @@ def parse_version(version: str, /) -> Version:
     if not result:
         raise ParseVersionError(version=version)
     major_str, minor_str, patch_str, suffix = result.groups()
-    return Version(
-        major=int(major_str), minor=int(minor_str), patch=int(patch_str), suffix=suffix
-    )
+    return Version(int(major_str), int(minor_str), int(patch_str), suffix=suffix)
 
 
 @dataclass(kw_only=True, slots=True)

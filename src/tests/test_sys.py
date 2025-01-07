@@ -38,11 +38,12 @@ class TestMakeExceptHook:
         self,
         *,
         tmp_path: Path,
+        git_ref: str,
         caplog: LogCaptureFixture,
         traceback_func_one: Pattern[str],
     ) -> None:
         name = str(tmp_path)
-        setup_logging(logger=name, files_dir=tmp_path)
+        setup_logging(logger=name, git_ref=git_ref, files_dir=tmp_path)
         hook = make_except_hook(logger=name)
         self._assert_files_and_caplog(tmp_path, caplog, "init")
         try:
@@ -56,11 +57,12 @@ class TestMakeExceptHook:
         self,
         *,
         tmp_path: Path,
+        git_ref: str,
         caplog: LogCaptureFixture,
         traceback_func_untraced: Pattern[str],
     ) -> None:
         name = str(tmp_path)
-        setup_logging(logger=name, files_dir=tmp_path)
+        setup_logging(logger=name, git_ref=git_ref, files_dir=tmp_path)
         hook = make_except_hook(logger=name)
         self._assert_files_and_caplog(tmp_path, caplog, "init")
         try:

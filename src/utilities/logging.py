@@ -26,7 +26,7 @@ from typing_extensions import override
 
 from utilities.atomicwrites import writer
 from utilities.datetime import get_now, maybe_sub_pct_y
-from utilities.git import get_repo_root
+from utilities.git import MASTER, get_repo_root
 from utilities.pathlib import ensure_suffix, resolve_path
 from utilities.traceback import RichTracebackFormatter
 from utilities.types import LogLevel
@@ -131,6 +131,7 @@ def setup_logging(
     console_level: LogLevel | None = "INFO",
     console_filters: Iterable[_FilterType] | None = None,
     console_fmt: str = "❯ {_zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
+    git_ref: str = MASTER,
     files_dir: PathLikeOrCallable | None = get_default_logging_path,
     files_when: str = "D",
     files_interval: int = 1,
@@ -201,7 +202,7 @@ def setup_logging(
         add_filters(console_high_handler, filters=console_filters)
         add_filters(console_high_handler, filters=filters)
         _ = RichTracebackFormatter.create_and_set(
-            console_high_handler, detail=True, post=_ansi_wrap_red
+            console_high_handler, git_ref=git_ref, detail=True, post=_ansi_wrap_red
         )
         console_high_handler.setLevel(
             max(get_logging_level_number(console_level), ERROR)
@@ -244,7 +245,9 @@ def setup_logging(
         level=ERROR, path=directory.joinpath("errors")
     )
     add_filters(standalone_file_handler, filters=[lambda x: x.exc_info is not None])
-    standalone_file_handler.setFormatter(RichTracebackFormatter(detail=True))
+    standalone_file_handler.setFormatter(
+        RichTracebackFormatter(git_ref=git_ref, detail=True)
+    )
     logger_use.addHandler(standalone_file_handler)  # skipif-ci-and-windows
 
     # extra

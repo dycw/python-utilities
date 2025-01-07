@@ -37,6 +37,7 @@ from utilities.functions import (
     get_func_name,
     get_func_qualname,
 )
+from utilities.git import MASTER
 from utilities.iterables import one
 from utilities.rich import (
     EXPAND_ALL,
@@ -79,10 +80,12 @@ class RichTracebackFormatter(Formatter):
         /,
         *,
         defaults: StrMapping | None = None,
+        git_ref: str = MASTER,
         detail: bool = False,
         post: Callable[[str], str] | None = None,
     ) -> None:
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
+        self._git_ref = git_ref
         self._detail = detail
         self._post = post
 
@@ -92,7 +95,7 @@ class RichTracebackFormatter(Formatter):
         if record.exc_info is None:
             return f"ERROR: {record.exc_info=}"
         _, exc_value, _ = record.exc_info
-        error = get_rich_traceback(ensure_not_none(exc_value))
+        error = get_rich_traceback(ensure_not_none(exc_value), git_ref=self._git_ref)
         match error:
             case ExcChainTB() | ExcGroupTB() | ExcTB():
                 text = error.format(header=True, detail=self._detail)
@@ -115,12 +118,20 @@ class RichTracebackFormatter(Formatter):
         style: _FormatStyle = "%",
         validate: bool = True,
         defaults: StrMapping | None = None,
+        git_ref: str,
         detail: bool = False,
         post: Callable[[str], str] | None = None,
     ) -> Self:
         """Create an instance and set it on a handler."""
         formatter = cls(
-            fmt, datefmt, style, validate, defaults=defaults, detail=detail, post=post
+            fmt,
+            datefmt,
+            style,
+            validate,
+            defaults=defaults,
+            git_ref=git_ref,
+            detail=detail,
+            post=post,
         )
         handler.addFilter(lambda r: r.exc_info is not None)
         handler.setFormatter(formatter)
@@ -211,6 +222,7 @@ class ExcChainTB(Generic[_TExc]):
     errors: list[ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException] = field(
         default_factory=list
     )
+    git_ref: str = field(default=MASTER, repr=False)
 
     def __iter__(self) -> Iterator[ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException]:
         yield from self.errors
@@ -237,7 +249,7 @@ class ExcChainTB(Generic[_TExc]):
         """Format the traceback."""
         lines: list[str] = []
         if header:  # pragma: no cover
-            lines.extend(_yield_header_lines())
+            lines.extend(_yield_header_lines(git_ref=self.git_ref))
         total = len(self.errors)
         for i, errors in enumerate(self.errors):
             lines.append(f"Exception chain {i + 1}/{total}:")
@@ -288,6 +300,7 @@ class ExcGroupTB(Generic[_TExc]):
     errors: list[ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException] = field(
         default_factory=list
     )
+    git_ref: str = field(default=MASTER, repr=False)
 
     @override
     def __repr__(self) -> str:
@@ -311,7 +324,7 @@ class ExcGroupTB(Generic[_TExc]):
         """Format the traceback."""
         lines: list[str] = []
         if header:  # pragma: no cover
-            lines.extend(_yield_header_lines())
+            lines.extend(_yield_header_lines(git_ref=self.git_ref))
         lines.extend([
             f"Exception group {index + 1}/{total}:",
             indent("Path:", _INDENT),
@@ -350,6 +363,7 @@ class ExcTB(Generic[_TExc]):
 
     frames: list[_Frame] = field(default_factory=list)
     error: _TExc
+    git_ref: str = field(default=MASTER, repr=False)
 
     def __iter__(self) -> Iterator[_Frame]:
         yield from self.frames
@@ -378,7 +392,7 @@ class ExcTB(Generic[_TExc]):
         total = len(self)
         lines: list[str] = []
         if header:  # pragma: no cover
-            lines.extend(_yield_header_lines())
+            lines.extend(_yield_header_lines(git_ref=self.git_ref))
         for i, frame in enumerate(self.frames):
             is_head = i < total - 1
             lines.append(
@@ -472,7 +486,7 @@ class _Frame:
 
 
 def get_rich_traceback(
-    error: _TExc, /
+    error: _TExc, /, *, git_ref: str = MASTER
 ) -> ExcChainTB[_TExc] | ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException:
     """Get a rich traceback."""
     match list(yield_exceptions(error)):
@@ -480,26 +494,33 @@ def get_rich_traceback(
             raise ImpossibleCaseError(case=[f"{error}"])
         case [err]:
             err = cast(_TExc, err)
-            return _get_rich_traceback_non_chain(err)
+            return _get_rich_traceback_non_chain(err, git_ref=git_ref)
         case errors:
             errors = cast(list[_TExc], errors)
-            return ExcChainTB(errors=[_get_rich_traceback_non_chain(e) for e in errors])
+            return ExcChainTB(
+                errors=[
+                    _get_rich_traceback_non_chain(e, git_ref=git_ref) for e in errors
+                ],
+                git_ref=git_ref,
+            )
 
 
 def _get_rich_traceback_non_chain(
-    error: _TExc, /
+    error: _TExc, /, *, git_ref: str = MASTER
 ) -> ExcTB[_TExc] | ExcGroupTB[_TExc] | BaseException:
     """Get a rich traceback, for a non-chained error."""
     if not isinstance(error, ExceptionGroup):
-        return _get_rich_traceback_non_chain_non_group(error)
-    path = cast(ExcTB[_TExc], _get_rich_traceback_non_chain_non_group(error))
+        return _get_rich_traceback_non_chain_non_group(error, git_ref=git_ref)
+    path = cast(
+        ExcTB[_TExc], _get_rich_traceback_non_chain_non_group(error, git_ref=git_ref)
+    )
     errors = cast(list[_TExc], error.exceptions)
-    errors = list(map(_get_rich_traceback_non_chain, errors))
-    return ExcGroupTB(path=path, errors=errors)
+    errors = [_get_rich_traceback_non_chain(e, git_ref=git_ref) for e in errors]
+    return ExcGroupTB(path=path, errors=errors, git_ref=git_ref)
 
 
 def _get_rich_traceback_non_chain_non_group(
-    error: _TExc, /
+    error: _TExc, /, *, git_ref: str = MASTER
 ) -> ExcTB[_TExc] | BaseException:
     """Get a rich traceback, for a non-chained, non-grouped error."""
     if isinstance(error, _HasExceptionPath):
@@ -515,7 +536,7 @@ def _get_rich_traceback_non_chain_non_group(
             )
             for f in error.exc_tb.frames
         ]
-        return ExcTB(frames=frames, error=cast(_TExc, error))
+        return ExcTB(frames=frames, error=cast(_TExc, error), git_ref=git_ref)
     return error
 
 
@@ -714,12 +735,12 @@ def _merge_frames(
     return values[::-1]
 
 
-def _yield_header_lines() -> Iterator[str]:
+def _yield_header_lines(*, git_ref: str = MASTER) -> Iterator[str]:
     """Yield the header lines."""
     yield f"Date/time | {serialize_zoned_datetime(get_now(time_zone='local'))}"
     yield f"User      | {getuser()}"
     yield f"Host      | {gethostname()}"
-    yield f"Version   | {get_version()}"
+    yield f"Version   | {get_version(ref=git_ref)}"
     yield ""
 
 

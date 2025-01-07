@@ -19,10 +19,11 @@ from contextlib import (
 from datetime import timezone
 from enum import Enum, auto
 from functools import partial
-from math import ceil, floor, inf, isfinite, nan
+from math import ceil, floor, inf, isclose, isfinite, nan
 from os import environ
 from pathlib import Path
 from re import search
+from shutil import move, rmtree
 from string import ascii_letters, ascii_lowercase, ascii_uppercase, digits, printable
 from subprocess import check_call
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
@@ -35,7 +36,6 @@ from hypothesis.strategies import (
     DrawFn,
     SearchStrategy,
     booleans,
-    builds,
     characters,
     composite,
     dates,
@@ -358,11 +358,13 @@ def git_repos(
     *,
     branch: MaybeSearchStrategy[str | None] = None,
     remote: MaybeSearchStrategy[str | None] = None,
+    git_version: MaybeSearchStrategy[Version | None] = None,
+    hatch_version: MaybeSearchStrategy[Version | None] = None,
 ) -> Path:
     draw = lift_draw(_draw)
     path = draw(temp_paths())
     with temp_cwd(path):
-        _ = check_call(["git", "init"])
+        _ = check_call(["git", "init", "-b", "master"])
         _ = check_call(["git", "config", "user.name", "User"])
         _ = check_call(["git", "config", "user.email", "a@z.com"])
         file = Path(path, "file")
@@ -372,10 +374,20 @@ def git_repos(
         _ = check_call(["git", "commit", "-m", "add"])
         _ = check_call(["git", "rm", file_str])
         _ = check_call(["git", "commit", "-m", "rm"])
-        if (branch := draw(branch)) is not None:
-            _ = check_call(["git", "checkout", "-b", branch])
-        if (remote := draw(remote)) is not None:
-            _ = check_call(["git", "remote", "add", "origin", remote])
+        if (branch_ := draw(branch)) is not None:
+            _ = check_call(["git", "checkout", "-b", branch_])
+        if (remote_ := draw(remote)) is not None:
+            _ = check_call(["git", "remote", "add", "origin", remote_])
+        if (git_version_ := draw(git_version)) is not None:
+            _ = check_call(["git", "tag", str(git_version_), "master"])
+        if (hatch_version_ := draw(hatch_version)) is not None:
+            _ = check_call(["hatch", "new", "package"])
+            package = path.joinpath("package")
+            for p in package.iterdir():
+                move(p, p.parent.with_name(p.name))
+            rmtree(package)
+            if (hatch_version_ > Version(0, 0, 1)) and (hatch_version_.suffix is None):
+                _ = check_call(["hatch", "version", str(hatch_version_)])
     return path
 
 
@@ -550,6 +562,13 @@ def numbers(
     if (min_int is not None) and (max_int is not None):
         _ = assume(min_int <= max_int)
     st_integers = integers(min_int, max_int)
+    if (
+        (min_value_ is not None)
+        and isclose(min_value_, 0.0)
+        and (max_value_ is not None)
+        and isclose(max_value_, 0.0)
+    ):
+        min_value_ = max_value_ = 0.0
     st_floats = floats(
         min_value=min_value_,
         max_value=max_value_,
@@ -938,6 +957,27 @@ def timedeltas_2w(
 ##
 
 
+def triples(
+    strategy: SearchStrategy[_T],
+    /,
+    *,
+    unique: MaybeSearchStrategy[bool] = False,
+    sorted: MaybeSearchStrategy[bool] = False,  # noqa: A002
+) -> SearchStrategy[tuple[_T, _T, _T]]:
+    """Strategy for generating triples of elements."""
+    return lists_fixed_length(strategy, 3, unique=unique, sorted=sorted).map(
+        _triples_map
+    )
+
+
+def _triples_map(elements: list[_T], /) -> tuple[_T, _T, _T]:
+    first, second, third = elements
+    return first, second, third
+
+
+##
+
+
 @composite
 def uint32s(
     _draw: DrawFn,
@@ -973,15 +1013,14 @@ def uint64s(
 ##
 
 
-def versions() -> SearchStrategy[Version]:
+@composite
+def versions(_draw: DrawFn, /, *, suffix: MaybeSearchStrategy[bool] = False) -> Version:
     """Strategy for generating versions."""
-    return builds(
-        Version,
-        major=integers(min_value=0),
-        minor=integers(min_value=0),
-        patch=integers(min_value=0),
-        suffix=text_ascii(min_size=1) | none(),
-    )
+    draw = lift_draw(_draw)
+    major, minor, patch = draw(triples(integers(min_value=0)))
+    _ = assume((major >= 1) or (minor >= 1) or (patch >= 1))
+    suffix_use = draw(text_ascii(min_size=1)) if draw(suffix) else None
+    return Version(major=major, minor=minor, patch=patch, suffix=suffix_use)
 
 
 ##
@@ -1104,6 +1143,7 @@ __all__ = [
     "text_digits",
     "text_printable",
     "timedeltas_2w",
+    "triples",
     "uint32s",
     "uint64s",
     "versions",
