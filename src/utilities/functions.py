@@ -867,7 +867,7 @@ def max_nullable(
         try:
             return max(values)
         except ValueError:
-            raise MinNullableError(values=values) from None
+            raise MaxNullableError(values=values) from None
     return max(values, default=default)
 
 
