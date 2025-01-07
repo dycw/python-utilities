@@ -364,7 +364,7 @@ def git_repos(
     draw = lift_draw(_draw)
     path = draw(temp_paths())
     with temp_cwd(path):
-        _ = check_call(["git", "init"])
+        _ = check_call(["git", "init", "-b", "master"])
         _ = check_call(["git", "config", "user.name", "User"])
         _ = check_call(["git", "config", "user.email", "a@z.com"])
         file = Path(path, "file")
