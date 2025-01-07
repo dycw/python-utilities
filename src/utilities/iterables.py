@@ -246,7 +246,7 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
                 yield "right was longer"
             case None:
                 pass
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            case _ as never:
                 assert_never(never)
 
 
@@ -1034,7 +1034,7 @@ class _OneStrNonUniqueError(OneStrError):
                 return f"{desc}; got at least 2 instances"
             case False:
                 return f"{desc} (modulo case); got {self.first!r}, {self.second!r} and perhaps more"
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            case _ as never:
                 assert_never(never)
 
 

@@ -213,7 +213,7 @@ def date_duration_to_int(duration: Duration, /) -> int:
             if is_integral_timedelta(duration):
                 return duration.days
             raise _DateDurationToIntTimeDeltaError(duration=duration) from None
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 
@@ -251,7 +251,7 @@ def date_duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
             if is_integral_timedelta(duration):
                 return duration
             raise _DateDurationToTimeDeltaTimeDeltaError(duration=duration) from None
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 
@@ -286,7 +286,7 @@ def datetime_duration_to_float(duration: Duration, /) -> float:
             return duration
         case dt.timedelta():
             return duration.total_seconds()
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 
@@ -297,7 +297,7 @@ def datetime_duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
             return dt.timedelta(seconds=duration)
         case dt.timedelta():
             return duration
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 
@@ -558,7 +558,7 @@ def maybe_sub_pct_y(text: str, /) -> str:
             return text
         case "linux":  # skipif-not-linux
             return sub("%Y", "%4Y", text)
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 
@@ -739,7 +739,7 @@ def parse_two_digit_year(year: int | str, /) -> int:
             if search(r"^\d{1,2}$", year):
                 return parse_two_digit_year(int(year))
             raise _ParseTwoDigitYearInvalidStringError(year=year)
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 
@@ -789,7 +789,7 @@ def _round_to_weekday(
             n = -1
         case "next":
             n = 1
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
     while not is_weekday(date):
         date = add_weekdays(date, n=n)

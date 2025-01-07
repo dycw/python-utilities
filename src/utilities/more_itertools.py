@@ -166,7 +166,7 @@ def _yield_splits2(
                 len_tail = max(len_win - head, 0)
                 if len_tail >= 1:
                     yield window, head, len_tail
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            case _ as never:
                 assert_never(never)
 
 

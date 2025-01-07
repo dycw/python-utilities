@@ -134,7 +134,7 @@ async def insert_dataframe(
                 timeout_create=timeout_create,
                 timeout_insert=timeout_insert,
             )
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as never:
             assert_never(never)
 
 

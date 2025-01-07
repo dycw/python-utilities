@@ -649,7 +649,7 @@ def setup_hypothesis_profiles(
                     return 100
                 case Profile.ci:
                     return 1000
-                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                case _ as never:
                     assert_never(never)
 
         @property
@@ -659,7 +659,7 @@ def setup_hypothesis_profiles(
                     return Verbosity.normal
                 case Profile.debug:
                     return Verbosity.debug
-                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                case _ as never:
                     assert_never(never)
 
     phases = {Phase.explicit, Phase.reuse, Phase.generate, Phase.target}
