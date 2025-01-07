@@ -736,7 +736,7 @@ def parse_two_digit_year(year: int | str, /) -> int:
                 return 1900 + year
             raise _ParseTwoDigitYearInvalidIntegerError(year=year)
         case str():
-            if search(r"^\d{2}$", year):
+            if search(r"^\d{1,2}$", year):
                 return parse_two_digit_year(int(year))
             raise _ParseTwoDigitYearInvalidStringError(year=year)
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
