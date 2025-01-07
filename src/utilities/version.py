@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Self
 
 from typing_extensions import override
 
-from utilities.git import fetch_all_tags, get_ref_tags
+from utilities.git import MASTER, fetch_all_tags, get_ref_tags
 from utilities.iterables import one
 from utilities.pathlib import PWD
 
@@ -16,8 +16,6 @@ if TYPE_CHECKING:
     from utilities.types import PathLike
 
 
-_MASTER = "master"
-_ORIGIN_MASTER = "origin/master"
 _PATTERN = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-(\w+))?")
 
 
@@ -139,7 +137,7 @@ class _VersionEmptySuffixError(VersionError):
 ##
 
 
-def get_git_version(*, cwd: PathLike = PWD, ref: str = _ORIGIN_MASTER) -> Version:
+def get_git_version(*, cwd: PathLike = PWD, ref: str = MASTER) -> Version:
     """Get the version according to the `git`."""
     fetch_all_tags(cwd=cwd)
     tags = get_ref_tags(ref, cwd=cwd)
@@ -159,7 +157,7 @@ def get_hatch_version(*, cwd: PathLike = PWD) -> Version:
 ##
 
 
-def get_version(*, cwd: PathLike = PWD, ref: str = _ORIGIN_MASTER) -> Version:
+def get_version(*, cwd: PathLike = PWD, ref: str = MASTER) -> Version:
     """Get the version."""
     git = get_git_version(cwd=cwd, ref=ref)
     hatch = get_hatch_version(cwd=cwd)

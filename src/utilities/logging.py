@@ -26,7 +26,7 @@ from typing_extensions import override
 
 from utilities.atomicwrites import writer
 from utilities.datetime import get_now, maybe_sub_pct_y
-from utilities.git import get_repo_root
+from utilities.git import MASTER, get_repo_root
 from utilities.pathlib import ensure_suffix, resolve_path
 from utilities.traceback import RichTracebackFormatter
 from utilities.types import LogLevel
@@ -131,7 +131,7 @@ def setup_logging(
     console_level: LogLevel | None = "INFO",
     console_filters: Iterable[_FilterType] | None = None,
     console_fmt: str = "❯ {_zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
-    git_version_ref: str = "master",
+    git_version_ref: str = MASTER,
     files_dir: PathLikeOrCallable | None = get_default_logging_path,
     files_when: str = "D",
     files_interval: int = 1,

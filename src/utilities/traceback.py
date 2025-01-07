@@ -37,6 +37,7 @@ from utilities.functions import (
     get_func_name,
     get_func_qualname,
 )
+from utilities.git import MASTER
 from utilities.iterables import one
 from utilities.rich import (
     EXPAND_ALL,
@@ -64,7 +65,6 @@ _T = TypeVar("_T")
 _TExc = TypeVar("_TExc", bound=BaseException)
 _CALL_ARGS = "_CALL_ARGS"
 _INDENT = 4 * " "
-_MASTER = "master"
 
 
 class RichTracebackFormatter(Formatter):
@@ -80,7 +80,7 @@ class RichTracebackFormatter(Formatter):
         /,
         *,
         defaults: StrMapping | None = None,
-        git_version_ref: str = _MASTER,
+        git_version_ref: str = MASTER,
         detail: bool = False,
         post: Callable[[str], str] | None = None,
     ) -> None:
@@ -224,7 +224,7 @@ class ExcChainTB(Generic[_TExc]):
     errors: list[ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException] = field(
         default_factory=list
     )
-    git_version_ref: str = field(repr=False)
+    git_version_ref: str = field(default=MASTER, repr=False)
 
     def __iter__(self) -> Iterator[ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException]:
         yield from self.errors
@@ -486,7 +486,7 @@ class _Frame:
 
 
 def get_rich_traceback(
-    error: _TExc, /, *, git_version_ref: str = _MASTER
+    error: _TExc, /, *, git_version_ref: str = MASTER
 ) -> ExcChainTB[_TExc] | ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException:
     """Get a rich traceback."""
     match list(yield_exceptions(error)):
@@ -731,7 +731,7 @@ def _merge_frames(
     return values[::-1]
 
 
-def _yield_header_lines(*, ref: str = _MASTER) -> Iterator[str]:
+def _yield_header_lines(*, ref: str = MASTER) -> Iterator[str]:
     """Yield the header lines."""
     yield f"Date/time | {serialize_zoned_datetime(get_now(time_zone='local'))}"
     yield f"User      | {getuser()}"

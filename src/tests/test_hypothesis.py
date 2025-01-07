@@ -45,6 +45,7 @@ from utilities.git import (
     _GIT_REMOTE_GET_URL_ORIGIN,
     _GIT_REV_PARSE_ABBREV_REV_HEAD,
     _GIT_TAG_POINTS_AT,
+    MASTER,
 )
 from utilities.hypothesis import (
     _SQLALCHEMY_ENGINE_DIALECTS,
@@ -459,7 +460,7 @@ class TestGitRepos:
             assert output.strip("\n") == remote
         if git_version is not None:
             output = check_output(
-                [*_GIT_TAG_POINTS_AT, "master"], stderr=PIPE, cwd=root, text=True
+                [*_GIT_TAG_POINTS_AT, MASTER], stderr=PIPE, cwd=root, text=True
             )
             assert output.strip("\n") == str(git_version)
         if hatch_version is not None:

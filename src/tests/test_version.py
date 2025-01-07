@@ -13,6 +13,7 @@ from hypothesis.strategies import (
 )
 from pytest import raises
 
+from utilities.git import MASTER
 from utilities.hypothesis import git_repos, pairs, text_ascii, versions
 from utilities.version import (
     GetVersionError,
@@ -35,7 +36,7 @@ class TestGetGitVersion:
     @settings(max_examples=1)
     def test_main(self, *, data: DataObject, version: Version) -> None:
         repo = data.draw(git_repos(git_version=version))
-        result = get_git_version(cwd=repo, ref="master")
+        result = get_git_version(cwd=repo, ref=MASTER)
         assert result == version
 
 
@@ -53,7 +54,7 @@ class TestGetVersion:
     @settings(max_examples=1)
     def test_equal(self, *, data: DataObject, version: Version) -> None:
         repo = data.draw(git_repos(git_version=version, hatch_version=version))
-        result = get_version(cwd=repo, ref="master")
+        result = get_version(cwd=repo, ref=MASTER)
         assert result == version
 
     @given(data=data(), versions=pairs(versions(), unique=True, sorted=True))
@@ -63,7 +64,7 @@ class TestGetVersion:
     ) -> None:
         hatch, git = versions
         repo = data.draw(git_repos(git_version=git, hatch_version=hatch))
-        result = get_version(cwd=repo, ref="master")
+        result = get_version(cwd=repo, ref=MASTER)
         expected = hatch.with_suffix(suffix="behind")
         assert result == expected
 
@@ -74,7 +75,7 @@ class TestGetVersion:
             sampled_from([git.bump_major(), git.bump_minor(), git.bump_patch()])
         )
         repo = data.draw(git_repos(git_version=git, hatch_version=hatch))
-        result = get_version(cwd=repo, ref="master")
+        result = get_version(cwd=repo, ref=MASTER)
         expected = hatch.with_suffix(suffix="dirty")
         assert result == expected
 
@@ -90,7 +91,7 @@ class TestGetVersion:
             GetVersionError,
             match="`hatch` version is ahead of `git` version in an incompatible way; got .* and .*",
         ):
-            _ = get_version(cwd=repo, ref="master")
+            _ = get_version(cwd=repo, ref=MASTER)
 
 
 class TestParseVersion:
