@@ -23,6 +23,7 @@ from math import ceil, floor, inf, isfinite, nan
 from os import environ
 from pathlib import Path
 from re import search
+from shutil import move, rmtree
 from string import ascii_letters, ascii_lowercase, ascii_uppercase, digits, printable
 from subprocess import check_call
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
@@ -381,7 +382,23 @@ def git_repos(
         if (git_version_ := draw(git_version)) is not None:
             _ = check_call(["git", "tag", str(git_version_), "master"])
         if (hatch_version_ := draw(hatch_version)) is not None:
-            _ = check_call(["hatch", "new", "dummy"], cwd=path)
+            _ = check_call(["hatch", "new", "package"])
+            package = path.joinpath("package")
+            # _ = check_call(["hatch", "new", "package"], cwd=path)
+            for p in package.iterdir():
+                move(p, p.parent.with_name(p.name))
+            rmtree(package)
+
+            foo = list_dir(path)
+            from rich.pretty import pretty_repr
+
+            assert 0, pretty_repr(locals(), max_length=5)
+            _ = check_call(["mv", "package/*", "."], cwd=path)
+            _ = check_call(["mv", "package/*", "."], cwd=path)
+            foo2 = list_dir(path)
+            _ = check_call(["rm", "-r", "package"])
+            _ = check_call(["git", "all", "."])
+            _ = check_call(["git", "commit", "-m", "add"])
             foo = list_dir(path)
             with (path / "pyproject.toml").open() as fh:
                 lines = fh.readlines()

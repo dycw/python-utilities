@@ -7,7 +7,7 @@ from re import search
 from subprocess import PIPE, check_output
 from typing import TYPE_CHECKING, Any, cast
 
-from hypothesis import HealthCheck, Phase, assume, given, settings
+from hypothesis import HealthCheck, Phase, assume, given, reproduce_failure, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.strategies import (
@@ -432,6 +432,7 @@ class TestFloatsExtra:
 class TestGitRepos:
     @given(data=data())
     @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
+    @reproduce_failure("6.123.4", b"AXicY2RkZIADBBMAAGMABQ==")
     def test_main(self, *, data: DataObject) -> None:
         branch = data.draw(text_ascii(min_size=1) | none())
         remote = data.draw(text_ascii(min_size=1) | none())
