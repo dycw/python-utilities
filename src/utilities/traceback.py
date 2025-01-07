@@ -118,7 +118,7 @@ class RichTracebackFormatter(Formatter):
         style: _FormatStyle = "%",
         validate: bool = True,
         defaults: StrMapping | None = None,
-        git_ref: str,
+        git_ref: str = MASTER,
         detail: bool = False,
         post: Callable[[str], str] | None = None,
     ) -> Self:
