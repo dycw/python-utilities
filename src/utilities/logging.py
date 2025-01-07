@@ -131,7 +131,7 @@ def setup_logging(
     console_level: LogLevel | None = "INFO",
     console_filters: Iterable[_FilterType] | None = None,
     console_fmt: str = "❯ {_zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
-    git_version_ref: str,  # = "master",
+    git_version_ref: str = "master",
     files_dir: PathLikeOrCallable | None = get_default_logging_path,
     files_when: str = "D",
     files_interval: int = 1,

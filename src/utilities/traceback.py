@@ -80,7 +80,7 @@ class RichTracebackFormatter(Formatter):
         /,
         *,
         defaults: StrMapping | None = None,
-        git_version_ref: str,
+        git_version_ref: str = _MASTER,
         detail: bool = False,
         post: Callable[[str], str] | None = None,
     ) -> None:
@@ -486,10 +486,7 @@ class _Frame:
 
 
 def get_rich_traceback(
-    error: _TExc,
-    /,
-    *,
-    git_version_ref: str,  # = _MASTER,
+    error: _TExc, /, *, git_version_ref: str = _MASTER
 ) -> ExcChainTB[_TExc] | ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException:
     """Get a rich traceback."""
     match list(yield_exceptions(error)):
