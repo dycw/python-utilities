@@ -84,6 +84,7 @@ from utilities.hypothesis import (
     text_digits,
     text_printable,
     timedeltas_2w,
+    triples,
     uint32s,
     uint64s,
     versions,
@@ -432,7 +433,6 @@ class TestFloatsExtra:
 class TestGitRepos:
     @given(data=data())
     @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
-    @reproduce_failure("6.123.4", b"AXicY2RkZIADBBMAAGMABQ==")
     def test_main(self, *, data: DataObject) -> None:
         branch = data.draw(text_ascii(min_size=1) | none())
         remote = data.draw(text_ascii(min_size=1) | none())
@@ -446,27 +446,35 @@ class TestGitRepos:
                 hatch_version=hatch_version,
             )
         )
-        assert set(root.iterdir()) == {Path(root, ".git")}
-        with temp_cwd(root):
-            if branch is not None:
-                output = check_output(
-                    _GIT_REV_PARSE_ABBREV_REV_HEAD, stderr=PIPE, text=True
-                )
-                assert output.strip("\n") == branch
-            if remote is not None:
-                output = check_output(
-                    _GIT_REMOTE_GET_URL_ORIGIN, stderr=PIPE, text=True
-                )
-                assert output.strip("\n") == remote
-            if git_version is not None:
-                output = check_output(
-                    [*_GIT_TAG_POINTS_AT, "master"], stderr=PIPE, text=True
-                )
-                assert output.strip("\n") == str(git_version)
-            if hatch_version is not None:
-                output = check_output(["hatch", "version"], stderr=PIPE, text=True)
-                assert output.strip("\n") == str(git_version)
-                assert 0
+        files = set(root.iterdir())
+        assert Path(root, ".git") in files
+        if branch is not None:
+            output = check_output(
+                _GIT_REV_PARSE_ABBREV_REV_HEAD, stderr=PIPE, cwd=root, text=True
+            )
+            assert output.strip("\n") == branch
+        if remote is not None:
+            output = check_output(
+                _GIT_REMOTE_GET_URL_ORIGIN, stderr=PIPE, cwd=root, text=True
+            )
+            assert output.strip("\n") == remote
+        if git_version is not None:
+            output = check_output(
+                [*_GIT_TAG_POINTS_AT, "master"], stderr=PIPE, cwd=root, text=True
+            )
+            assert output.strip("\n") == str(git_version)
+        if hatch_version is not None:
+            assert {
+                Path(root, "LICENSE.txt"),
+                Path(root, "README.md"),
+                Path(root, "pyproject.toml"),
+                Path(root, "src"),
+                Path(root, "tests"),
+            }.issubset(files)
+            output = check_output(
+                ["hatch", "version"], stderr=PIPE, cwd=root, text=True
+            )
+            assert output.strip("\n") == str(hatch_version)
 
 
 class TestHashables:
@@ -900,6 +908,20 @@ class TestTimeDeltas2W:
         assert min_value <= timedelta <= max_value
 
 
+class TestTriples:
+    @given(data=data(), unique=booleans(), sorted_=booleans())
+    def test_main(self, *, data: DataObject, unique: bool, sorted_: bool) -> None:
+        result = data.draw(triples(integers(), unique=unique, sorted=sorted_))
+        assert isinstance(result, tuple)
+        assert len(result) == 3
+        first, second, third = result
+        if unique:
+            assert first != second
+            assert second != third
+        if sorted_:
+            assert first <= second <= third
+
+
 class TestUInt32s:
     @given(data=data(), min_value=uint32s(), max_value=uint32s())
     def test_main(self, *, data: DataObject, min_value: int, max_value: int) -> None:
@@ -917,10 +939,14 @@ class TestUInt64s:
 
 
 class TestVersions:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        version = data.draw(versions())
+    @given(data=data(), suffix=booleans())
+    def test_main(self, *, data: DataObject, suffix: bool) -> None:
+        version = data.draw(versions(suffix=suffix))
         assert isinstance(version, Version)
+        if suffix:
+            assert version.suffix is not None
+        else:
+            assert version.suffix is None
 
 
 @SKIPIF_CI_AND_NOT_LINUX

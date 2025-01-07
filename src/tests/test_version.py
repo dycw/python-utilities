@@ -12,6 +12,7 @@ from utilities.version import (
     _VersionNegativeMajorVersionError,
     _VersionNegativeMinorVersionError,
     _VersionNegativePatchVersionError,
+    _VersionZeroError,
     get_git_version,
     get_hatch_version,
     get_version,
@@ -91,6 +92,18 @@ class TestVersion:
         assert new.minor == version.minor
         assert new.patch == version.patch
         assert new.suffix == suffix
+
+    @given(version=versions())
+    def test_error_order(self, *, version: Version) -> None:
+        with raises(TypeError):
+            _ = version <= None
+
+    def test_error_zero(self) -> None:
+        with raises(
+            _VersionZeroError,
+            match="Version must be greater than zero; got 0.0.0",
+        ):
+            _ = Version(0, 0, 0)
 
     @given(major=integers(max_value=-1))
     def test_error_negative_major_version(self, *, major: int) -> None:
