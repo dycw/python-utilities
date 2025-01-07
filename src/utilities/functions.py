@@ -814,6 +814,14 @@ def map_object(
 ##
 
 
+@overload
+def min_nullable(
+    *values: _TSupportsRichComparison | None, default: Sentinel = ...
+) -> _TSupportsRichComparison: ...
+@overload
+def min_nullable(
+    *values: _TSupportsRichComparison | None, default: _U = ...
+) -> _TSupportsRichComparison | _U: ...
 def min_nullable(
     *values: _TSupportsRichComparison | None, default: _U | Sentinel = sentinel
 ) -> _TSupportsRichComparison | _U:
@@ -836,6 +844,14 @@ class MinNullableError(Exception, Generic[_TSupportsRichComparison]):
         return "Minimum of an empty iterable is undefined"
 
 
+@overload
+def max_nullable(
+    *values: _TSupportsRichComparison | None, default: Sentinel = ...
+) -> _TSupportsRichComparison: ...
+@overload
+def max_nullable(
+    *values: _TSupportsRichComparison | None, default: _U = ...
+) -> _TSupportsRichComparison | _U: ...
 def max_nullable(
     *values: _TSupportsRichComparison | None, default: _U | Sentinel = sentinel
 ) -> _TSupportsRichComparison | _U:
