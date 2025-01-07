@@ -34,7 +34,7 @@ else:
 
 
 @fixture
-def git_version_ref() -> str:
+def git_ref() -> str:
     return "origin/master" if IS_CI else "master"
 
 
