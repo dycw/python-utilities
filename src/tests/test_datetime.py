@@ -839,6 +839,7 @@ class TestParseAndSerializeMonth:
             _ = ensure_month("invalid")
 
 
+@mark.only
 class TestParseTwoDigitYear:
     @given(data=data(), year=integers(0, 99))
     def test_main(self, *, data: DataObject, year: int) -> None:
