@@ -63,6 +63,8 @@ from utilities.datetime import (
     _DateDurationToIntTimeDeltaError,
     _DateDurationToTimeDeltaFloatError,
     _DateDurationToTimeDeltaTimeDeltaError,
+    _ParseTwoDigitYearInvalidIntegerError,
+    _ParseTwoDigitYearInvalidStringError,
     add_duration,
     add_weekdays,
     are_equal_date_durations,
@@ -107,6 +109,7 @@ from utilities.datetime import (
     milliseconds_since_epoch_to_datetime,
     milliseconds_to_timedelta,
     parse_month,
+    parse_two_digit_year,
     round_to_next_weekday,
     round_to_prev_weekday,
     serialize_month,
@@ -834,6 +837,32 @@ class TestParseAndSerializeMonth:
     def test_error_ensure(self) -> None:
         with raises(EnsureMonthError, match="Unable to ensure month; got 'invalid'"):
             _ = ensure_month("invalid")
+
+
+@mark.only
+class TestParseTwoDigitYear:
+    @given(data=data(), year=integers(0, 99))
+    def test_main(self, *, data: DataObject, year: int) -> None:
+        input_ = data.draw(sampled_from([year, str(year)]))
+        result = parse_two_digit_year(input_)
+        expected = (
+            dt.datetime.strptime(format(year, "02d"), "%y").replace(tzinfo=UTC).year
+        )
+        assert result == expected
+
+    @given(year=integers(max_value=-1) | integers(min_value=100))
+    def test_error_int(self, *, year: int) -> None:
+        with raises(
+            _ParseTwoDigitYearInvalidIntegerError, match="Unable to parse year; got .*"
+        ):
+            _ = parse_two_digit_year(year)
+
+    @given(year=(integers(max_value=-1) | integers(min_value=100)).map(str))
+    def test_error_str(self, *, year: str) -> None:
+        with raises(
+            _ParseTwoDigitYearInvalidStringError, match="Unable to parse year; got .*"
+        ):
+            _ = parse_two_digit_year(year)
 
 
 class TestRoundToWeekday:

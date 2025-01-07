@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass, replace
-from re import sub
+from re import search, sub
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -726,6 +726,49 @@ class ParseMonthError(Exception):
 ##
 
 
+def parse_two_digit_year(year: int | str, /) -> int:
+    """Parse a 2-digit year into a year."""
+    match year:
+        case int():
+            if 0 <= year <= 68:
+                return 2000 + year
+            if 69 <= year <= 99:
+                return 1900 + year
+            raise _ParseTwoDigitYearInvalidIntegerError(year=year)
+        case str():
+            if search(r"^\d{2}$", year):
+                return parse_two_digit_year(int(year))
+            raise _ParseTwoDigitYearInvalidStringError(year=year)
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseTwoDigitYearError(Exception):
+    year: int | str
+
+
+@dataclass(kw_only=True, slots=True)
+class _ParseTwoDigitYearInvalidIntegerError(Exception):
+    year: int | str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse year; got {self.year!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ParseTwoDigitYearInvalidStringError(Exception):
+    year: int | str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse year; got {self.year!r}"
+
+
+##
+
+
 def round_to_next_weekday(date: dt.date, /) -> dt.date:
     """Round a date to the next weekday."""
     return _round_to_weekday(date, prev_or_next="next")
@@ -1013,6 +1056,7 @@ __all__ = [
     "milliseconds_since_epoch_to_datetime",
     "milliseconds_to_timedelta",
     "parse_month",
+    "parse_two_digit_year",
     "round_to_next_weekday",
     "round_to_prev_weekday",
     "serialize_month",

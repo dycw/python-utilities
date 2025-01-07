@@ -96,7 +96,7 @@ portalocker==3.1.1
     # via concurrent-log-handler
 ptyprocess==0.7.0
     # via pexpect
-pygments==2.19.0
+pygments==2.19.1
     # via rich
 pytest==8.3.4
     # via
@@ -138,7 +138,7 @@ tomli-w==1.1.0
     # via hatch
 tomlkit==0.13.2
     # via hatch
-trove-classifiers==2024.10.21.16
+trove-classifiers==2025.1.6.15
     # via hatchling
 typing-extensions==4.12.2
     # via
