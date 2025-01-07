@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from utilities.types import PathLike
 
 
-_ORIGIN_MASTER = "origin/master"
+_MASTER = "master"
 _PATTERN = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-(\w+))?")
 
 
@@ -138,10 +138,10 @@ class _VersionEmptySuffixError(VersionError):
 ##
 
 
-def get_git_version(*, cwd: PathLike = PWD, ref: str = _ORIGIN_MASTER) -> Version:
+def get_git_version(*, cwd: PathLike = PWD) -> Version:
     """Get the version according to the `git`."""
     fetch_all_tags(cwd=cwd)
-    tags = get_ref_tags(ref, cwd=cwd)
+    tags = get_ref_tags(_MASTER, cwd=cwd)
     tag = one(tags)
     return parse_version(tag)
 
@@ -158,9 +158,9 @@ def get_hatch_version(*, cwd: PathLike = PWD) -> Version:
 ##
 
 
-def get_version(*, cwd: PathLike = PWD, ref: str = _ORIGIN_MASTER) -> Version:
+def get_version(*, cwd: PathLike = PWD) -> Version:
     """Get the version."""
-    git = get_git_version(cwd=cwd, ref=ref)
+    git = get_git_version(cwd=cwd)
     hatch = get_hatch_version(cwd=cwd)
     if hatch < git:
         return hatch.with_suffix(suffix="behind")

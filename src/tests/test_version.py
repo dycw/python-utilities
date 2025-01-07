@@ -35,7 +35,7 @@ class TestGetGitVersion:
     @settings(max_examples=1)
     def test_main(self, *, data: DataObject, version: Version) -> None:
         repo = data.draw(git_repos(git_version=version))
-        result = get_git_version(cwd=repo, ref="master")
+        result = get_git_version(cwd=repo)
         assert result == version
 
 
