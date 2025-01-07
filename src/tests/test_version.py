@@ -53,7 +53,7 @@ class TestGetVersion:
     @settings(max_examples=1)
     def test_equal(self, *, data: DataObject, version: Version) -> None:
         repo = data.draw(git_repos(git_version=version, hatch_version=version))
-        result = get_version(cwd=repo, ref="master")
+        result = get_version(cwd=repo)
         assert result == version
 
     @given(data=data(), versions=pairs(versions(), unique=True, sorted=True))
@@ -63,7 +63,7 @@ class TestGetVersion:
     ) -> None:
         hatch, git = versions
         repo = data.draw(git_repos(git_version=git, hatch_version=hatch))
-        result = get_version(cwd=repo, ref="master")
+        result = get_version(cwd=repo)
         expected = hatch.with_suffix(suffix="behind")
         assert result == expected
 
@@ -74,7 +74,7 @@ class TestGetVersion:
             sampled_from([git.bump_major(), git.bump_minor(), git.bump_patch()])
         )
         repo = data.draw(git_repos(git_version=git, hatch_version=hatch))
-        result = get_version(cwd=repo, ref="master")
+        result = get_version(cwd=repo)
         expected = hatch.with_suffix(suffix="dirty")
         assert result == expected
 
@@ -90,7 +90,7 @@ class TestGetVersion:
             GetVersionError,
             match="`hatch` version is ahead of `git` version in an incompatible way; got .* and .*",
         ):
-            _ = get_version(cwd=repo, ref="master")
+            _ = get_version(cwd=repo)
 
 
 class TestParseVersion:
