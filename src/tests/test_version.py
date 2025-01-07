@@ -1,11 +1,21 @@
 from __future__ import annotations
 
-from hypothesis import given
-from hypothesis.strategies import integers, none
+from re import search
+
+from hypothesis import assume, given, settings
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    integers,
+    none,
+    sampled_from,
+)
 from pytest import raises
 
-from utilities.hypothesis import text_ascii, versions
+from utilities.hypothesis import git_repos, pairs, text_ascii, versions
 from utilities.version import (
+    GetVersionError,
     ParseVersionError,
     Version,
     _VersionEmptySuffixError,
@@ -21,21 +31,66 @@ from utilities.version import (
 
 
 class TestGetGitVersion:
-    def test_main(self) -> None:
-        version = get_git_version()
-        assert isinstance(version, Version)
+    @given(data=data(), version=versions())
+    @settings(max_examples=1)
+    def test_main(self, *, data: DataObject, version: Version) -> None:
+        repo = data.draw(git_repos(git_version=version))
+        result = get_git_version(cwd=repo, ref="master")
+        assert result == version
 
 
 class TestGetHatchVersion:
-    def test_main(self) -> None:
-        version = get_hatch_version()
-        assert isinstance(version, Version)
+    @given(data=data(), version=versions())
+    @settings(max_examples=1)
+    def test_main(self, *, data: DataObject, version: Version) -> None:
+        repo = data.draw(git_repos(hatch_version=version))
+        result = get_hatch_version(cwd=repo)
+        assert result == version
 
 
 class TestGetVersion:
-    def test_main(self) -> None:
-        version = get_version()
-        assert isinstance(version, Version)
+    @given(data=data(), version=versions())
+    @settings(max_examples=1)
+    def test_equal(self, *, data: DataObject, version: Version) -> None:
+        repo = data.draw(git_repos(git_version=version, hatch_version=version))
+        result = get_version(cwd=repo, ref="master")
+        assert result == version
+
+    @given(data=data(), versions=pairs(versions(), unique=True, sorted=True))
+    @settings(max_examples=1)
+    def test_behind(
+        self, *, data: DataObject, versions: tuple[Version, Version]
+    ) -> None:
+        hatch, git = versions
+        repo = data.draw(git_repos(git_version=git, hatch_version=hatch))
+        result = get_version(cwd=repo, ref="master")
+        expected = hatch.with_suffix(suffix="behind")
+        assert result == expected
+
+    @given(data=data(), git=versions())
+    @settings(max_examples=1)
+    def test_dirty(self, *, data: DataObject, git: Version) -> None:
+        hatch = data.draw(
+            sampled_from([git.bump_major(), git.bump_minor(), git.bump_patch()])
+        )
+        repo = data.draw(git_repos(git_version=git, hatch_version=hatch))
+        result = get_version(cwd=repo, ref="master")
+        expected = hatch.with_suffix(suffix="dirty")
+        assert result == expected
+
+    @given(data=data(), versions=pairs(versions(), unique=True, sorted=True))
+    @settings(max_examples=1)
+    def test_error(
+        self, *, data: DataObject, versions: tuple[Version, Version]
+    ) -> None:
+        git, hatch = versions
+        _ = assume(hatch not in [git.bump_major(), git.bump_minor(), git.bump_patch()])
+        repo = data.draw(git_repos(git_version=git, hatch_version=hatch))
+        with raises(
+            GetVersionError,
+            match="`hatch` version is ahead of `git` version in an incompatible way; got .* and .*",
+        ):
+            _ = get_version(cwd=repo, ref="master")
 
 
 class TestParseVersion:
@@ -57,6 +112,11 @@ class TestVersion:
     @given(version1=versions(), version2=versions())
     def test_orderable(self, *, version1: Version, version2: Version) -> None:
         assert (version1 <= version2) or (version1 >= version2)
+
+    @given(version=versions(suffix=booleans()))
+    def test_repr(self, *, version: Version) -> None:
+        result = repr(version)
+        assert search(r"^\d+\.\d+\.\d+", result)
 
     @given(version=versions())
     def test_bump_major(self, *, version: Version) -> None:
@@ -100,8 +160,7 @@ class TestVersion:
 
     def test_error_zero(self) -> None:
         with raises(
-            _VersionZeroError,
-            match="Version must be greater than zero; got 0.0.0",
+            _VersionZeroError, match="Version must be greater than zero; got 0.0.0"
         ):
             _ = Version(0, 0, 0)
 

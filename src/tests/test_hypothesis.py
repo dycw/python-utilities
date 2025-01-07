@@ -7,7 +7,7 @@ from re import search
 from subprocess import PIPE, check_output
 from typing import TYPE_CHECKING, Any, cast
 
-from hypothesis import HealthCheck, Phase, assume, given, reproduce_failure, settings
+from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.strategies import (
@@ -104,7 +104,6 @@ from utilities.math import (
     is_at_most,
 )
 from utilities.os import temp_environ
-from utilities.pathlib import temp_cwd
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import Dialect, _get_dialect
 from utilities.types import Duration, Number

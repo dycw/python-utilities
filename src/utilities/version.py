@@ -135,6 +135,9 @@ class _VersionEmptySuffixError(VersionError):
         return f"Suffix must be non-empty; got {self.suffix!r}"
 
 
+##
+
+
 def get_git_version(*, cwd: PathLike = PWD, ref: str = _ORIGIN_MASTER) -> Version:
     """Get the version according to the `git`."""
     fetch_all_tags(cwd=cwd)
@@ -143,25 +146,29 @@ def get_git_version(*, cwd: PathLike = PWD, ref: str = _ORIGIN_MASTER) -> Versio
     return parse_version(tag)
 
 
+##
+
+
 def get_hatch_version(*, cwd: PathLike = PWD) -> Version:
     """Get the version according to `hatch`."""
     output = check_output(["hatch", "version"], cwd=cwd, text=True)
     return parse_version(output.strip("\n"))
 
 
+##
+
+
 def get_version(*, cwd: PathLike = PWD, ref: str = _ORIGIN_MASTER) -> Version:
     """Get the version."""
     git = get_git_version(cwd=cwd, ref=ref)
     hatch = get_hatch_version(cwd=cwd)
-    if hatch == git:  # pragma: no cover
+    if hatch < git:
+        return hatch.with_suffix(suffix="behind")
+    if hatch == git:
         return hatch
-    if hatch in {  # pragma: no cover
-        git.bump_major(),
-        git.bump_minor(),
-        git.bump_patch(),
-    }:
+    if hatch in {git.bump_major(), git.bump_minor(), git.bump_patch()}:
         return hatch.with_suffix(suffix="dirty")
-    raise GetVersionError(git=git, hatch=hatch)  # pragma: no cover
+    raise GetVersionError(git=git, hatch=hatch)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -171,7 +178,10 @@ class GetVersionError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"`git` and `hatch` versions are incompatible; got {self.git} and {self.hatch}"  # pragma: no cover
+        return f"`hatch` version is ahead of `git` version in an incompatible way; got {self.hatch} and {self.git}"
+
+
+##
 
 
 def parse_version(version: str, /) -> Version:

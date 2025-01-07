@@ -19,13 +19,13 @@ from contextlib import (
 from datetime import timezone
 from enum import Enum, auto
 from functools import partial
-from math import ceil, floor, inf, isfinite, nan
+from math import ceil, floor, inf, isclose, isfinite, nan
 from os import environ
 from pathlib import Path
 from re import search
 from shutil import move, rmtree
 from string import ascii_letters, ascii_lowercase, ascii_uppercase, digits, printable
-from subprocess import check_call, check_output
+from subprocess import check_call
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
 from zoneinfo import ZoneInfo
 
@@ -36,7 +36,6 @@ from hypothesis.strategies import (
     DrawFn,
     SearchStrategy,
     booleans,
-    builds,
     characters,
     composite,
     dates,
@@ -76,7 +75,7 @@ from utilities.math import (
     MIN_UINT32,
     MIN_UINT64,
 )
-from utilities.pathlib import list_dir, temp_cwd
+from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.version import Version
@@ -563,6 +562,13 @@ def numbers(
     if (min_int is not None) and (max_int is not None):
         _ = assume(min_int <= max_int)
     st_integers = integers(min_int, max_int)
+    if (
+        (min_value_ is not None)
+        and isclose(min_value_, 0.0)
+        and (max_value_ is not None)
+        and isclose(max_value_, 0.0)
+    ):
+        min_value_ = max_value_ = 0.0
     st_floats = floats(
         min_value=min_value_,
         max_value=max_value_,
