@@ -816,23 +816,26 @@ def map_object(
 
 @overload
 def min_nullable(
-    *values: _TSupportsRichComparison | None, default: Sentinel = ...
+    iterable: Iterable[_TSupportsRichComparison | None], /, *, default: Sentinel = ...
 ) -> _TSupportsRichComparison: ...
 @overload
 def min_nullable(
-    *values: _TSupportsRichComparison | None, default: _U = ...
+    iterable: Iterable[_TSupportsRichComparison | None], /, *, default: _U = ...
 ) -> _TSupportsRichComparison | _U: ...
 def min_nullable(
-    *values: _TSupportsRichComparison | None, default: _U | Sentinel = sentinel
+    iterable: Iterable[_TSupportsRichComparison | None],
+    /,
+    *,
+    default: _U | Sentinel = sentinel,
 ) -> _TSupportsRichComparison | _U:
     """Compute the minimum of a set of values; ignoring nulls."""
-    non_null_values = (v for v in values if v is not None)
+    values = (i for i in iterable if i is not None)
     if isinstance(default, Sentinel):
         try:
-            return min(non_null_values)
+            return min(values)
         except ValueError:
-            raise MinNullableError(values=non_null_values) from None
-    return min(non_null_values, default=default)
+            raise MinNullableError(values=values) from None
+    return min(values, default=default)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -841,28 +844,31 @@ class MinNullableError(Exception, Generic[_TSupportsRichComparison]):
 
     @override
     def __str__(self) -> str:
-        return "Minimum of an empty iterable is undefined"
+        return "Minimum of an all-None iterable is undefined"
 
 
 @overload
 def max_nullable(
-    *values: _TSupportsRichComparison | None, default: Sentinel = ...
+    iterable: Iterable[_TSupportsRichComparison | None], /, *, default: Sentinel = ...
 ) -> _TSupportsRichComparison: ...
 @overload
 def max_nullable(
-    *values: _TSupportsRichComparison | None, default: _U = ...
+    iterable: Iterable[_TSupportsRichComparison | None], /, *, default: _U = ...
 ) -> _TSupportsRichComparison | _U: ...
 def max_nullable(
-    *values: _TSupportsRichComparison | None, default: _U | Sentinel = sentinel
+    iterable: Iterable[_TSupportsRichComparison | None],
+    /,
+    *,
+    default: _U | Sentinel = sentinel,
 ) -> _TSupportsRichComparison | _U:
     """Compute the maximum of a set of values; ignoring nulls."""
-    non_null_values = (v for v in values if v is not None)
+    values = (i for i in iterable if i is not None)
     if isinstance(default, Sentinel):
         try:
-            return max(non_null_values)
+            return max(values)
         except ValueError:
-            raise MinNullableError(values=non_null_values) from None
-    return max(non_null_values, default=default)
+            raise MinNullableError(values=values) from None
+    return max(values, default=default)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -871,7 +877,7 @@ class MaxNullableError(Exception, Generic[_TSupportsRichComparison]):
 
     @override
     def __str__(self) -> str:
-        return "Maximum of an empty iterable is undefined"
+        return "Maximum of an all-None iterable is undefined"
 
 
 ##

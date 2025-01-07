@@ -174,7 +174,7 @@ def date_durations(
         from utilities.whenever import MIN_TWO_WAY_TIMEDELTA
 
         min_parts.append(MIN_TWO_WAY_TIMEDELTA)
-    min_timedelta_use = max_nullable(*min_parts)
+    min_timedelta_use = max_nullable(min_parts)
     max_parts: Sequence[dt.timedelta | None] = [dt.timedelta.max, max_timedelta_]
     if max_int_ is not None:
         with assume_does_not_raise(OverflowError):
@@ -183,7 +183,7 @@ def date_durations(
         from utilities.whenever import MAX_TWO_WAY_TIMEDELTA
 
         max_parts.append(MAX_TWO_WAY_TIMEDELTA)
-    max_timedelta_use = min_nullable(*max_parts)
+    max_timedelta_use = min_nullable(max_parts)
     _ = assume(min_timedelta_use <= max_timedelta_use)
     st_timedeltas = (
         timedeltas(min_value=min_timedelta_use, max_value=max_timedelta_use)

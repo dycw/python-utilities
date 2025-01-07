@@ -42,6 +42,8 @@ from utilities.functions import (
     EnsureStrError,
     EnsureTimeDeltaError,
     EnsureTimeError,
+    MaxNullableError,
+    MinNullableError,
     ensure_bool,
     ensure_bytes,
     ensure_class,
@@ -785,7 +787,7 @@ class TestMinMaxNullable:
         data=data(),
         values=lists(integers(), min_size=1),
         nones=lists(none()),
-        func=sampled_from([min_nullable, max_nullable]),
+        case=sampled_from([(min_nullable, min), (max_nullable, max)]),
     )
     def test_main(
         self,
@@ -793,11 +795,14 @@ class TestMinMaxNullable:
         data: DataObject,
         values: list[int],
         nones: list[None],
-        func: Callable[[Iterable[int | None]], int],
+        case: tuple[
+            Callable[[Iterable[int | None]], int], Callable[[Iterable[int]], int]
+        ],
     ) -> None:
+        func_nullable, func_builtin = case
         values_use = data.draw(permutations(list(chain(values, nones))))
-        result = func(values_use)
-        expected = func(values)
+        result = func_nullable(values_use)
+        expected = func_builtin(values)
         assert result == expected
 
     @given(
@@ -810,6 +815,20 @@ class TestMinMaxNullable:
     ) -> None:
         result = func(nones, default=value)
         assert result == value
+
+    @given(nones=lists(none()))
+    def test_error_min_nullable(self, *, nones: list[None]) -> None:
+        with raises(
+            MinNullableError, match="Minimum of an all-None iterable is undefined"
+        ):
+            _ = min_nullable(nones)
+
+    @given(nones=lists(none()))
+    def test_error_max_nullable(self, *, nones: list[None]) -> None:
+        with raises(
+            MaxNullableError, match="Maximum of an all-None iterable is undefined"
+        ):
+            max_nullable(nones)
 
 
 class TestNotFunc:
