@@ -13,12 +13,28 @@ from types import (
     MethodWrapperType,
     WrapperDescriptorType,
 )
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Literal,
+    TypeGuard,
+    TypeVar,
+    cast,
+    overload,
+)
 
 from typing_extensions import ParamSpec, override
 
 from utilities.reprlib import get_repr, get_repr_and_class
-from utilities.types import Dataclass, Number, StrMapping, TupleOrStrMapping
+from utilities.sentinel import Sentinel, sentinel
+from utilities.types import (
+    Dataclass,
+    Number,
+    StrMapping,
+    SupportsRichComparison,
+    TupleOrStrMapping,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Container, Hashable, Sized
@@ -31,6 +47,9 @@ _T2 = TypeVar("_T2")
 _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
+_TSupportsRichComparison = TypeVar(
+    "_TSupportsRichComparison", bound=SupportsRichComparison
+)
 _U = TypeVar("_U")
 
 
@@ -795,6 +814,53 @@ def map_object(
 ##
 
 
+def min_nullable(
+    *values: _TSupportsRichComparison | None, default: _U | Sentinel = sentinel
+) -> _TSupportsRichComparison | _U:
+    """Compute the minimum of a set of values; ignoring nulls."""
+    non_null_values = (v for v in values if v is not None)
+    if isinstance(default, Sentinel):
+        try:
+            return min(non_null_values)
+        except ValueError:
+            raise MinNullableError(values=non_null_values) from None
+    return min(non_null_values, default=default)
+
+
+@dataclass(kw_only=True, slots=True)
+class MinNullableError(Exception, Generic[_TSupportsRichComparison]):
+    values: Iterable[_TSupportsRichComparison]
+
+    @override
+    def __str__(self) -> str:
+        return "Minimum of an empty iterable is undefined"
+
+
+def max_nullable(
+    *values: _TSupportsRichComparison | None, default: _U | Sentinel = sentinel
+) -> _TSupportsRichComparison | _U:
+    """Compute the maximum of a set of values; ignoring nulls."""
+    non_null_values = (v for v in values if v is not None)
+    if isinstance(default, Sentinel):
+        try:
+            return max(non_null_values)
+        except ValueError:
+            raise MinNullableError(values=non_null_values) from None
+    return max(non_null_values, default=default)
+
+
+@dataclass(kw_only=True, slots=True)
+class MaxNullableError(Exception, Generic[_TSupportsRichComparison]):
+    values: Iterable[_TSupportsRichComparison]
+
+    @override
+    def __str__(self) -> str:
+        return "Maximum of an empty iterable is undefined"
+
+
+##
+
+
 def not_func(func: Callable[_P, bool], /) -> Callable[_P, bool]:
     """Lift a boolean-valued function to return its conjugation."""
 
@@ -840,6 +906,8 @@ __all__ = [
     "EnsureStrError",
     "EnsureTimeDeltaError",
     "EnsureTimeError",
+    "MaxNullableError",
+    "MinNullableError",
     "ensure_bool",
     "ensure_bytes",
     "ensure_class",
@@ -877,6 +945,8 @@ __all__ = [
     "is_tuple_or_str_mapping",
     "make_isinstance",
     "map_object",
+    "max_nullable",
+    "min_nullable",
     "not_func",
     "second",
 ]
