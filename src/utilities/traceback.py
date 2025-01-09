@@ -491,11 +491,12 @@ def get_rich_traceback(
         case [err]:
             err_recast = cast(_TBaseExc, err)
             return _get_rich_traceback_non_chain(err_recast, git_ref=git_ref)
-        case errors:
-            errors = cast(list[_TBaseExc], errors)
+        case errs:
+            errs_recast = cast(list[_TBaseExc], errs)
             return ExcChainTB(
                 errors=[
-                    _get_rich_traceback_non_chain(e, git_ref=git_ref) for e in errors
+                    _get_rich_traceback_non_chain(e, git_ref=git_ref)
+                    for e in errs_recast
                 ],
                 git_ref=git_ref,
             )
