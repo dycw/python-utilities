@@ -95,7 +95,8 @@ class RichTracebackFormatter(Formatter):
         if record.exc_info is None:
             return f"ERROR: {record.exc_info=}"
         _, exc_value, _ = record.exc_info
-        error = get_rich_traceback(ensure_not_none(exc_value), git_ref=self._git_ref)
+        exc_value = ensure_not_none(exc_value, desc="exc_value")
+        error = get_rich_traceback(exc_value, git_ref=self._git_ref)
         match error:
             case ExcChainTB() | ExcGroupTB() | ExcTB():
                 text = error.format(header=True, detail=self._detail)
