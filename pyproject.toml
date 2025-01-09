@@ -38,7 +38,7 @@ dev = [
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
   "hatch >= 1.14.0, < 1.15",
   "httpx >= 0.28.1, < 0.29",  # for fastapi
-  "hypothesis >= 6.123.7, < 6.124",
+  "hypothesis >= 6.123.11, < 6.124",
   "ib-async-dataclass >= 1.0.3rc5, < 1.1",
   "img2pdf >= 0.5.1, < 0.6",
   "loguru >= 0.7.3, < 0.8",
@@ -49,7 +49,7 @@ dev = [
   "numbagg >= 0.8.2, < 0.9",
   "numpy >= 2.0.2, < 2.1",  # if 2.1, llvmite: RuntimeError: Cannot install on Python version 3.11.9; only versions >=3.6,<3.10 are supported.
   "optuna >= 4.1.0, < 4.2",
-  "orjson >= 3.10.13, < 3.11",
+  "orjson >= 3.10.14, < 3.11",
   "polars-lts-cpu >= 1.19.0, < 1.20",
   "pqdm >= 0.2.0, < 0.3",
   "psycopg2-binary >= 2.9.10, < 2.10",  # for sqlalchemy
@@ -76,7 +76,7 @@ dev = [
   "whenever >= 0.6.16, < 0.7",
   # test
   "coverage-conditional-plugin >= 0.9.0, < 0.10",
-  "pytest-asyncio >= 0.25.1, < 0.26",
+  "pytest-asyncio >= 0.25.2, < 0.26",
   "pytest-cov >= 6.0.0, < 6.1",
   "pytest-instafail >= 0.5.0, < 0.6",
   "pytest-only >= 2.1.2, < 2.2",
@@ -89,9 +89,9 @@ dev = [
 ]
 test = [
   "coverage-conditional-plugin >= 0.9.0, < 0.10",
-  "hypothesis >= 6.123.7, < 6.124",
+  "hypothesis >= 6.123.11, < 6.124",
   "pytest >= 8.3.4, < 8.4",
-  "pytest-asyncio >= 0.25.1, < 0.26",
+  "pytest-asyncio >= 0.25.2, < 0.26",
   "pytest-cov >= 6.0.0, < 6.1",
   "pytest-instafail >= 0.5.0, < 0.6",
   "pytest-only >= 2.1.2, < 2.2",
@@ -157,7 +157,7 @@ zzz-test-hashlib = [
 ]
 zzz-test-http = [
   "atomicwrites >= 1.4.1, < 1.5",
-  "orjson >= 3.10.13, < 3.11",
+  "orjson >= 3.10.14, < 3.11",
   "whenever >= 0.6.16, < 0.7",
 ]
 zzz-test-humps = ["pyhumps >= 3.8.0, < 3.9"]
@@ -165,7 +165,7 @@ zzz-test-hypothesis = [
   "aiosqlite >= 0.20.0, < 0.21",
   "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
-  "hypothesis >= 6.123.7, < 6.124",
+  "hypothesis >= 6.123.11, < 6.124",
   "numpy >= 2.0.2, < 2.1",
   "redis >= 5.2.1, < 5.3",
   "sqlalchemy >= 2.0.36, < 2.1",
@@ -239,7 +239,7 @@ zzz-test-pyinstrument = [
 zzz-test-pyrsistent = ["pyrsistent >= 0.20.0, < 0.21"]
 zzz-test-pytest = [
   "atomicwrites >= 1.4.1, < 1.5",
-  "orjson >= 3.10.13, < 3.11",
+  "orjson >= 3.10.14, < 3.11",
   "whenever >= 0.6.16, < 0.7",
 ]
 zzz-test-python-dotenv = ["python-dotenv >= 1.0.1, < 1.1"]

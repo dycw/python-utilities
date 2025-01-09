@@ -64,7 +64,7 @@ httpcore==1.0.7
     # via httpx
 httpx==0.28.1
     # via jupyterlab
-hypothesis==6.123.7
+hypothesis==6.123.11
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -125,7 +125,7 @@ jupyter-server==2.15.0
     #   notebook-shim
 jupyter-server-terminals==0.5.3
     # via jupyter-server
-jupyterlab==4.2.6
+jupyterlab==4.2.7
     # via dycw-utilities (pyproject.toml)
 jupyterlab-pygments==0.3.0
     # via nbconvert
@@ -210,7 +210,7 @@ pytest==8.3.4
     #   pytest-randomly
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.25.1
+pytest-asyncio==0.25.2
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
@@ -261,7 +261,7 @@ rpds-py==0.22.3
     #   referencing
 send2trash==1.8.3
     # via jupyter-server
-setuptools==75.7.0
+setuptools==75.8.0
     # via jupyterlab
 six==1.17.0
     # via
