@@ -5,7 +5,7 @@ from logging import DEBUG, ERROR, StreamHandler, getLogger
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
-from pytest import raises
+from pytest import mark, param, raises
 
 from tests.conftest import FLAKY, SKIPIF_CI
 from tests.test_traceback_funcs.beartype import func_beartype
@@ -205,10 +205,10 @@ class TestGetRichTraceback:
     ) -> None:
         with raises(ValueError, match=".*") as exc_info:
             _ = func_chain_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_chain = get_rich_traceback(exc_info.value, git_ref=git_ref)
-        assert isinstance(exc_chain, ExcChainTB)
-        assert len(exc_chain) == 2
-        exc_tb1, exc_tb2 = exc_chain
+        exc_chain_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        assert isinstance(exc_chain_tb, ExcChainTB)
+        assert len(exc_chain_tb) == 2
+        exc_tb1, exc_tb2 = exc_chain_tb
         assert isinstance(exc_tb1, ExcTB)
         frame1 = one(exc_tb1)
         assert frame1.module == "tests.test_traceback_funcs.chain"
@@ -236,30 +236,30 @@ class TestGetRichTraceback:
         assert frame2.locals["args"] == (12, 16)
         assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
 
-        assert traceback_func_chain.search(repr(exc_chain))
+        assert traceback_func_chain.search(repr(exc_chain_tb))
 
     def test_func_decorated_sync(self, *, git_ref: str) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_decorated_sync_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path = get_rich_traceback(exc_info.value, git_ref=git_ref)
-        assert isinstance(exc_path, ExcTB)
-        self._assert_decorated(exc_path, "sync")
-        assert len(exc_path) == 5
+        exc_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        assert isinstance(exc_tb, ExcTB)
+        self._assert_decorated(exc_tb, "sync")
+        assert len(exc_tb) == 5
 
     async def test_func_decorated_async(self, *, git_ref: str) -> None:
         with raises(AssertionError) as exc_info:
             _ = await func_decorated_async_first(1, 2, 3, 4, c=5, d=6, e=7)
-        error = get_rich_traceback(exc_info.value, git_ref=git_ref)
-        assert isinstance(error, ExcTB)
-        self._assert_decorated(error, "async")
+        exc_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        assert isinstance(exc_tb, ExcTB)
+        self._assert_decorated(exc_tb, "async")
 
     def test_func_recursive(self, *, git_ref: str) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_recursive(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path = get_rich_traceback(exc_info.value, git_ref=git_ref)
-        assert isinstance(exc_path, ExcTB)
-        assert len(exc_path) == 2
-        frame1, frame2 = exc_path
+        exc_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        assert isinstance(exc_tb, ExcTB)
+        assert len(exc_tb) == 2
+        frame1, frame2 = exc_tb
         assert frame1.module == "tests.test_traceback_funcs.recursive"
         assert frame1.name == "func_recursive"
         assert frame1.code_line == "return func_recursive(a, b, *args, c=c, **kwargs)"
@@ -281,22 +281,23 @@ class TestGetRichTraceback:
         assert frame2.locals["b"] == 8
         assert frame2.locals["args"] == (12, 16)
         assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
-        assert isinstance(exc_path.error, AssertionError)
+        assert isinstance(exc_tb.error, AssertionError)
 
+    @mark.only
     def test_func_runtime_sync(self, *, git_ref: str) -> None:
         with raises(AssertionError) as exc_info1:
             _ = func_runtime_sync(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path1 = get_rich_traceback(exc_info1.value, git_ref=git_ref)
-        assert isinstance(exc_path1, ExcTB)
+        exc_tb1 = get_rich_traceback(exc_info1.value, git_ref=git_ref)
+        assert isinstance(exc_tb1, ExcTB)
         with disable_trace_for_func_runtime_sync():
             with raises(AssertionError) as exc_info2:
                 _ = func_runtime_sync(1, 2, 3, 4, c=5, d=6, e=7)
-            exc_path2 = get_rich_traceback(exc_info2.value, git_ref=git_ref)
-            assert isinstance(exc_path2, AssertionError)
+            exc_tb2 = get_rich_traceback(exc_info2.value, git_ref=git_ref)
+            assert isinstance(exc_tb2, AssertionError)
         with raises(AssertionError) as exc_info3:
             _ = func_runtime_sync(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_path3 = get_rich_traceback(exc_info3.value, git_ref=git_ref)
-        assert isinstance(exc_path3, ExcTB)
+        exc_tb3 = get_rich_traceback(exc_info3.value, git_ref=git_ref)
+        assert isinstance(exc_tb3, ExcTB)
 
     async def test_func_runtime_async(self, *, git_ref: str) -> None:
         with raises(AssertionError) as exc_info1:
@@ -324,11 +325,12 @@ class TestGetRichTraceback:
     ) -> None:
         with raises(ExceptionGroup) as exc_info:
             await func_task_group_one_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_group = get_rich_traceback(exc_info.value, git_ref=git_ref)
-        assert isinstance(exc_group, ExcGroupTB)
-        assert exc_group.path is not None
-        assert len(exc_group.path) == 1
-        path_frame = one(exc_group.path)
+        exc_group_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        assert isinstance(exc_group_tb, ExcGroupTB)
+        exc_tb = exc_group_tb.exc_group
+        assert isinstance(exc_tb, ExcTB)
+        assert len(exc_tb) == 1
+        path_frame = one(exc_tb)
         assert path_frame.module == "tests.test_traceback_funcs.task_group_one"
         assert path_frame.name == "func_task_group_one_first"
         assert path_frame.code_line == "async with TaskGroup() as tg:"
@@ -338,9 +340,9 @@ class TestGetRichTraceback:
         assert path_frame.locals["b"] == 4
         assert path_frame.locals["args"] == (6, 8)
         assert path_frame.locals["kwargs"] == {"d": 12, "e": 14}
-        assert isinstance(exc_group.path.error, ExceptionGroup)
-        assert len(exc_group.errors) == 1
-        exc_path = one(exc_group.errors)
+        assert isinstance(exc_tb.error, ExceptionGroup)
+        assert len(exc_tb.error.exceptions) == 1
+        exc_path = one(exc_tb.error.exceptions)
         assert isinstance(exc_path, ExcTB)
         assert len(exc_path) == 1
         frame = one(exc_path)
@@ -358,7 +360,7 @@ class TestGetRichTraceback:
         assert frame.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_path.error, AssertionError)
 
-        res_group = repr(exc_group)
+        res_group = repr(exc_group_tb)
         assert traceback_func_task_group_one.search(res_group)
 
     @FLAKY

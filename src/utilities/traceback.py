@@ -283,6 +283,7 @@ class ExcChainTB(Generic[_TBaseExc]):
 class ExcGroupTB(Generic[_TBaseExc]):
     """A rich traceback for an exception group."""
 
+    exc_group: ExcTB[ExceptionGroup[Any]] | ExceptionGroup[Any]
     errors: list[ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc] = field(
         default_factory=list
     )
@@ -309,6 +310,15 @@ class ExcGroupTB(Generic[_TBaseExc]):
         lines: list[str] = []
         if header:  # pragma: no cover
             lines.extend(_yield_header_lines(git_ref=self.git_ref))
+        lines.append("Exception group:")
+        match self.exc_group:
+            case ExcTB() as exc_tb:
+                lines.append(exc_tb.format(header=False, detail=detail, depth=1))
+            case ExceptionGroup() as exc_group:
+                lines.append(_format_exception(exc_group, depth=1))
+            case _ as never:
+                assert_never(never)
+        lines.append("")
         total = len(self.errors)
         for i, errors in enumerate(self.errors, start=1):
             lines.append(indent(f"Exception group {i}/{total}:", _INDENT))
@@ -487,17 +497,40 @@ def _get_rich_traceback_non_chain(
     error: ExceptionGroup[Any] | _TBaseExc, /, *, git_ref: str = MASTER
 ) -> ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc:
     """Get a rich traceback, for a non-chained error."""
-    if isinstance(error, ExceptionGroup) and isinstance(  # pragma: no cover
-        error, _HasExceptionPath
-    ):
-        raise ImpossibleCaseError(case=[f"{error=}"])
-    if isinstance(error, ExceptionGroup) and not isinstance(error, _HasExceptionPath):
-        errors = [
-            _get_rich_traceback_non_chain(e, git_ref=git_ref)
-            for e in always_iterable(error.exceptions)
-        ]
-        return ExcGroupTB(errors=errors, git_ref=git_ref)
-    if (not isinstance(error, ExceptionGroup)) and isinstance(error, _HasExceptionPath):
+    match error:
+        case ExceptionGroup() as exc_group:
+            exc_group_or_exc_tb = _get_rich_traceback_base_exception(exc_group)
+            errors = [
+                _get_rich_traceback_non_chain(e, git_ref=git_ref)
+                for e in always_iterable(exc_group.exceptions)
+            ]
+            return ExcGroupTB(
+                exc_group=exc_group_or_exc_tb, errors=errors, git_ref=git_ref
+            )
+        case BaseException() as base_exc:
+            if isinstance(base_exc, _HasExceptionPath):
+                frames = [
+                    _Frame(
+                        module=f.module,
+                        name=f.name,
+                        code_line=f.code_line,
+                        line_num=f.line_num,
+                        args=f.extra.args,
+                        kwargs=f.extra.kwargs,
+                        locals=f.locals,
+                    )
+                    for f in base_exc.exc_tb.frames
+                ]
+                return ExcTB(frames=frames, error=base_exc, git_ref=git_ref)
+            return error
+        case _ as never:
+            assert_never(never)
+
+
+def _get_rich_traceback_base_exception(
+    error: _TBaseExc, /, *, git_ref: str = MASTER
+) -> ExcTB[_TBaseExc] | _TBaseExc:
+    if isinstance(error, _HasExceptionPath):
         frames = [
             _Frame(
                 module=f.module,
@@ -510,13 +543,8 @@ def _get_rich_traceback_non_chain(
             )
             for f in error.exc_tb.frames
         ]
-        error_recast = cast(_TBaseExc, error)
-        return ExcTB(frames=frames, error=error_recast, git_ref=git_ref)
-    if (not isinstance(error, ExceptionGroup)) and (
-        not isinstance(error, _HasExceptionPath)
-    ):
-        return error
-    raise ImpossibleCaseError(case=[f"{error=}"])  # pragma: no cover
+        return ExcTB(frames=frames, error=error, git_ref=git_ref)
+    return error
 
 
 @overload
