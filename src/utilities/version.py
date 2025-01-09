@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Self
 from typing_extensions import override
 
 from utilities.git import MASTER, fetch_all_tags, get_ref_tags
-from utilities.iterables import one
+from utilities.iterables import OneEmptyError, one
 from utilities.pathlib import PWD
 
 if TYPE_CHECKING:
@@ -141,8 +141,21 @@ def get_git_version(*, cwd: PathLike = PWD, ref: str = MASTER) -> Version:
     """Get the version according to the `git`."""
     fetch_all_tags(cwd=cwd)
     tags = get_ref_tags(ref, cwd=cwd)
-    tag = one(tags)
+    try:
+        tag = one(tags)
+    except OneEmptyError:
+        raise GetGitVersionError(cwd=cwd) from None
     return parse_version(tag)
+
+
+@dataclass(kw_only=True, slots=True)
+class GetGitVersionError(Exception):
+    cwd: PathLike
+    ref: str = MASTER
+
+    @override
+    def __str__(self) -> str:
+        return f"Reference {self.ref!r} at {str(self.cwd)!r} has no tags"
 
 
 ##
@@ -202,6 +215,7 @@ class ParseVersionError(Exception):
 
 
 __all__ = [
+    "GetGitVersionError",
     "GetVersionError",
     "ParseVersionError",
     "Version",

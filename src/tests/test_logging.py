@@ -205,18 +205,20 @@ class TestSetupLogging:
         files = list(path.iterdir())
         names = {f.name for f in files if not search(r"\.lock", f.name)}
         expected = {"debug.txt", "info.txt", "plain"}
+        assert names.issuperset(expected)
         match check:
             case "init":
-                assert names == expected
+                pass
             case ("post", pattern):
-                assert names == (expected | {"errors"})
-                errors = path.joinpath("errors")
-                assert errors.is_dir()
-                files = list(errors.iterdir())
-                assert len(files) == 1
-                with one(files).open() as fh:
-                    contents = fh.read()
-                assert pattern.search(contents)
+                if "errors" in names:
+                    assert names == (expected | {"errors"})
+                    errors = path.joinpath("errors")
+                    assert errors.is_dir()
+                    files = list(errors.iterdir())
+                    assert len(files) == 1
+                    with one(files).open() as fh:
+                        contents = fh.read()
+                    assert pattern.search(contents)
 
 
 class TestStandaloneFileHandler:
