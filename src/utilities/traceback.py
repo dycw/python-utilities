@@ -490,19 +490,18 @@ def get_rich_traceback(
             raise ImpossibleCaseError(case=[f"{error}"])
         case [err]:
             err_recast = cast(_TBaseExc, err)
-            return _get_rich_traceback_non_chain(err_recast, git_ref=git_ref)
+            return _get_rich_traceback_one(err_recast, git_ref=git_ref)
         case errs:
             errs_recast = cast(list[_TBaseExc], errs)
             return ExcChainTB(
                 errors=[
-                    _get_rich_traceback_non_chain(e, git_ref=git_ref)
-                    for e in errs_recast
+                    _get_rich_traceback_one(e, git_ref=git_ref) for e in errs_recast
                 ],
                 git_ref=git_ref,
             )
 
 
-def _get_rich_traceback_non_chain(
+def _get_rich_traceback_one(
     error: ExceptionGroup[Any] | _TBaseExc, /, *, git_ref: str = MASTER
 ) -> ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc:
     """Get a rich traceback, for a non-chained error."""
@@ -510,7 +509,7 @@ def _get_rich_traceback_non_chain(
         case ExceptionGroup() as exc_group:
             exc_group_or_exc_tb = _get_rich_traceback_base_exception(exc_group)
             errors = [
-                _get_rich_traceback_non_chain(e, git_ref=git_ref)
+                _get_rich_traceback_one(e, git_ref=git_ref)
                 for e in always_iterable(exc_group.exceptions)
             ]
             return ExcGroupTB(
