@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from re import search
+from typing import TYPE_CHECKING
 
 from hypothesis import assume, given, settings
 from hypothesis.strategies import (
@@ -16,6 +17,7 @@ from pytest import raises
 from utilities.git import MASTER
 from utilities.hypothesis import git_repos, pairs, text_ascii, versions
 from utilities.version import (
+    GetGitVersionError,
     GetVersionError,
     ParseVersionError,
     Version,
@@ -30,6 +32,9 @@ from utilities.version import (
     parse_version,
 )
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
 
 class TestGetGitVersion:
     @given(data=data(), version=versions())
@@ -38,6 +43,12 @@ class TestGetGitVersion:
         repo = data.draw(git_repos(git_version=version))
         result = get_git_version(cwd=repo, ref=MASTER)
         assert result == version
+
+    @given(repo=git_repos())
+    @settings(max_examples=1)
+    def test_error(self, *, repo: Path) -> None:
+        with raises(GetGitVersionError, match="Reference '.*' at '.*' has no tags"):
+            _ = get_git_version(cwd=repo, ref=MASTER)
 
 
 class TestGetHatchVersion:
