@@ -319,7 +319,7 @@ class ExcGroupTB(Generic[_TBaseExc]):
         match self.exc_group:
             case ExcTB() as exc_tb:
                 lines.append(exc_tb.format(header=False, detail=detail, depth=1))
-            case ExceptionGroup() as exc_group:
+            case ExceptionGroup() as exc_group:  # pragma: no cover
                 lines.append(_format_exception(exc_group, depth=1))
             case _ as never:
                 assert_never(never)
@@ -552,7 +552,7 @@ def _get_rich_traceback_base_exception(
             for f in error.exc_tb.frames
         ]
         return ExcTB(frames=frames, error=error, git_ref=git_ref)
-    return error
+    return error  # pragma: no cover
 
 
 @overload

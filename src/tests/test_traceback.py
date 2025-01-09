@@ -102,7 +102,7 @@ class TestGetRichTraceback:
         exc_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
         assert isinstance(exc_tb, ExcTB)
         assert len(exc_tb) == 1
-        frame = one(exc_tb)
+        frame = exc_tb[0]  # to hit coverage
         assert frame.module == "tests.test_traceback_funcs.one"
         assert frame.name == "func_one"
         assert (
@@ -208,10 +208,12 @@ class TestGetRichTraceback:
         exc_chain_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
         assert isinstance(exc_chain_tb, ExcChainTB)
         assert len(exc_chain_tb) == 2
+        for i in range(2):
+            _ = exc_chain_tb[i]  # to hit coverage
         exc_chain_tb1, exc_chain_tb2 = exc_chain_tb
         assert isinstance(exc_chain_tb1, ExcTB)
         assert len(exc_chain_tb1) == 1
-        frame1 = one(exc_chain_tb1)
+        frame1 = exc_chain_tb1[0]
         assert frame1.module == "tests.test_traceback_funcs.chain"
         assert frame1.name == "func_chain_first"
         assert frame1.code_line == "raise ValueError(msg) from error"
