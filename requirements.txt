@@ -142,7 +142,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.123.7
+hypothesis==6.123.11
     # via dycw-utilities (pyproject.toml)
 ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
@@ -202,7 +202,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.21.0
+narwhals==1.21.1
     # via
     #   altair
     #   vegafusion
@@ -235,7 +235,7 @@ numpy==2.0.2
     #   streamlit
 optuna==4.1.0
     # via dycw-utilities (pyproject.toml)
-orjson==3.10.13
+orjson==3.10.14
     # via dycw-utilities (pyproject.toml)
 osqp==0.6.7.post3
     # via cvxpy
@@ -284,7 +284,7 @@ propcache==0.2.1
     # via
     #   aiohttp
     #   yarl
-protobuf==5.29.2
+protobuf==5.29.3
     # via streamlit
 psutil==6.1.1
     # via memory-profiler
@@ -322,7 +322,7 @@ pytest==8.3.4
     #   pytest-randomly
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.25.1
+pytest-asyncio==0.25.2
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
@@ -418,7 +418,7 @@ tqdm==4.67.1
     #   pqdm
 treelib==1.7.0
     # via dycw-utilities (pyproject.toml)
-trove-classifiers==2025.1.6.15
+trove-classifiers==2025.1.7.14
     # via hatchling
 typing-extensions==4.12.2
     # via
@@ -443,7 +443,7 @@ urllib3==2.3.0
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.5.15
+uv==0.5.16
     # via hatch
 uvicorn==0.34.0
     # via dycw-utilities (pyproject.toml)

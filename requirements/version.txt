@@ -38,7 +38,7 @@ httpx==0.28.1
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.123.7
+hypothesis==6.123.11
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -98,7 +98,7 @@ pytest==8.3.4
     #   pytest-randomly
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.25.1
+pytest-asyncio==0.25.2
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
@@ -126,7 +126,7 @@ tomli-w==1.1.0
     # via hatch
 tomlkit==0.13.2
     # via hatch
-trove-classifiers==2025.1.6.15
+trove-classifiers==2025.1.7.14
     # via hatchling
 typing-extensions==4.12.2
     # via
@@ -134,7 +134,7 @@ typing-extensions==4.12.2
     #   anyio
 userpath==1.9.2
     # via hatch
-uv==0.5.15
+uv==0.5.16
     # via hatch
 virtualenv==20.28.1
     # via hatch

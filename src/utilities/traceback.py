@@ -38,7 +38,7 @@ from utilities.functions import (
     get_func_qualname,
 )
 from utilities.git import MASTER
-from utilities.iterables import one
+from utilities.iterables import always_iterable, one
 from utilities.rich import (
     EXPAND_ALL,
     INDENT_SIZE,
@@ -62,7 +62,7 @@ if TYPE_CHECKING:
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 _T = TypeVar("_T")
-_TExc = TypeVar("_TExc", bound=BaseException)
+_TBaseExc = TypeVar("_TBaseExc", bound=BaseException)
 _CALL_ARGS = "_CALL_ARGS"
 _INDENT = 4 * " "
 
@@ -217,15 +217,22 @@ class _HasExceptionPath(Protocol):
 
 
 @dataclass(kw_only=True, slots=True)
-class ExcChainTB(Generic[_TExc]):
+class ExcChainTB(Generic[_TBaseExc]):
     """A rich traceback for an exception chain."""
 
-    errors: list[ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException] = field(
+    errors: list[ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc] = field(
         default_factory=list
     )
     git_ref: str = field(default=MASTER, repr=False)
 
-    def __iter__(self) -> Iterator[ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException]:
+    def __getitem__(
+        self, i: int, /
+    ) -> ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc:
+        return self.errors[i]
+
+    def __iter__(
+        self,
+    ) -> Iterator[ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc]:
         yield from self.errors
 
     def __len__(self) -> int:
@@ -252,26 +259,10 @@ class ExcChainTB(Generic[_TExc]):
         if header:  # pragma: no cover
             lines.extend(_yield_header_lines(git_ref=self.git_ref))
         total = len(self.errors)
-        for i, errors in enumerate(self.errors):
-            lines.append(f"Exception chain {i + 1}/{total}:")
+        for i, errors in enumerate(self.errors, start=1):
+            lines.append(f"Exception chain {i}/{total}:")
             match errors:
-                case ExcGroupTB():  # pragma: no cover
-                    lines.append(
-                        errors.format(
-                            index=i,
-                            total=total,
-                            header=False,
-                            detail=detail,
-                            max_width=max_width,
-                            indent_size=indent_size,
-                            max_length=max_length,
-                            max_string=max_string,
-                            max_depth=max_depth,
-                            expand_all=expand_all,
-                            depth=1,
-                        )
-                    )
-                case ExcTB():  # pragma: no cover
+                case ExcGroupTB() | ExcTB():
                     lines.append(
                         errors.format(
                             header=False,
@@ -294,11 +285,11 @@ class ExcChainTB(Generic[_TExc]):
 
 
 @dataclass(kw_only=True, slots=True)
-class ExcGroupTB(Generic[_TExc]):
+class ExcGroupTB(Generic[_TBaseExc]):
     """A rich traceback for an exception group."""
 
-    path: ExcTB[_TExc]
-    errors: list[ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException] = field(
+    exc_group: ExcTB[ExceptionGroup[Any]] | ExceptionGroup[Any]
+    errors: list[ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc] = field(
         default_factory=list
     )
     git_ref: str = field(default=MASTER, repr=False)
@@ -310,8 +301,6 @@ class ExcGroupTB(Generic[_TExc]):
     def format(
         self,
         *,
-        index: int = 0,
-        total: int = 1,
         header: bool = False,
         detail: bool = False,
         max_width: int = MAX_WIDTH,
@@ -326,15 +315,18 @@ class ExcGroupTB(Generic[_TExc]):
         lines: list[str] = []
         if header:  # pragma: no cover
             lines.extend(_yield_header_lines(git_ref=self.git_ref))
-        lines.extend([
-            f"Exception group {index + 1}/{total}:",
-            indent("Path:", _INDENT),
-            self.path.format(header=False, detail=detail, depth=2),
-            "",
-        ])
-        total_sub_errors = len(self.errors)
-        for i, errors in enumerate(self.errors):
-            lines.append(indent(f"Group error {i + 1}/{total_sub_errors}:", _INDENT))
+        lines.append("Exception group:")
+        match self.exc_group:
+            case ExcTB() as exc_tb:
+                lines.append(exc_tb.format(header=False, detail=detail, depth=1))
+            case ExceptionGroup() as exc_group:  # pragma: no cover
+                lines.append(_format_exception(exc_group, depth=1))
+            case _ as never:
+                assert_never(never)
+        lines.append("")
+        total = len(self.errors)
+        for i, errors in enumerate(self.errors, start=1):
+            lines.append(indent(f"Exception group error {i}/{total}:", _INDENT))
             match errors:
                 case ExcGroupTB() | ExcTB():  # pragma: no cover
                     lines.append(
@@ -359,12 +351,15 @@ class ExcGroupTB(Generic[_TExc]):
 
 
 @dataclass(kw_only=True, slots=True)
-class ExcTB(Generic[_TExc]):
+class ExcTB(Generic[_TBaseExc]):
     """A rich traceback for a single exception."""
 
     frames: list[_Frame] = field(default_factory=list)
-    error: _TExc
+    error: _TBaseExc
     git_ref: str = field(default=MASTER, repr=False)
+
+    def __getitem__(self, i: int, /) -> _Frame:
+        return self.frames[i]
 
     def __iter__(self) -> Iterator[_Frame]:
         yield from self.frames
@@ -487,43 +482,50 @@ class _Frame:
 
 
 def get_rich_traceback(
-    error: _TExc, /, *, git_ref: str = MASTER
-) -> ExcChainTB[_TExc] | ExcGroupTB[_TExc] | ExcTB[_TExc] | BaseException:
+    error: _TBaseExc, /, *, git_ref: str = MASTER
+) -> ExcChainTB[_TBaseExc] | ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc:
     """Get a rich traceback."""
     match list(yield_exceptions(error)):
         case []:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{error}"])
         case [err]:
-            err = cast(_TExc, err)
-            return _get_rich_traceback_non_chain(err, git_ref=git_ref)
-        case errors:
-            errors = cast(list[_TExc], errors)
+            err_recast = cast(_TBaseExc, err)
+            return _get_rich_traceback_non_chain(err_recast, git_ref=git_ref)
+        case errs:
+            errs_recast = cast(list[_TBaseExc], errs)
             return ExcChainTB(
                 errors=[
-                    _get_rich_traceback_non_chain(e, git_ref=git_ref) for e in errors
+                    _get_rich_traceback_non_chain(e, git_ref=git_ref)
+                    for e in errs_recast
                 ],
                 git_ref=git_ref,
             )
 
 
 def _get_rich_traceback_non_chain(
-    error: _TExc, /, *, git_ref: str = MASTER
-) -> ExcTB[_TExc] | ExcGroupTB[_TExc] | BaseException:
+    error: ExceptionGroup[Any] | _TBaseExc, /, *, git_ref: str = MASTER
+) -> ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc:
     """Get a rich traceback, for a non-chained error."""
-    if not isinstance(error, ExceptionGroup):
-        return _get_rich_traceback_non_chain_non_group(error, git_ref=git_ref)
-    path = cast(
-        ExcTB[_TExc], _get_rich_traceback_non_chain_non_group(error, git_ref=git_ref)
-    )
-    errors = cast(list[_TExc], error.exceptions)
-    errors = [_get_rich_traceback_non_chain(e, git_ref=git_ref) for e in errors]
-    return ExcGroupTB(path=path, errors=errors, git_ref=git_ref)
+    match error:
+        case ExceptionGroup() as exc_group:
+            exc_group_or_exc_tb = _get_rich_traceback_base_one(exc_group)
+            errors = [
+                _get_rich_traceback_non_chain(e, git_ref=git_ref)
+                for e in always_iterable(exc_group.exceptions)
+            ]
+            return ExcGroupTB(
+                exc_group=exc_group_or_exc_tb, errors=errors, git_ref=git_ref
+            )
+        case BaseException() as base_exc:
+            return _get_rich_traceback_base_one(base_exc, git_ref=git_ref)
+        case _ as never:
+            assert_never(never)
 
 
-def _get_rich_traceback_non_chain_non_group(
-    error: _TExc, /, *, git_ref: str = MASTER
-) -> ExcTB[_TExc] | BaseException:
-    """Get a rich traceback, for a non-chained, non-grouped error."""
+def _get_rich_traceback_base_one(
+    error: _TBaseExc, /, *, git_ref: str = MASTER
+) -> ExcTB[_TBaseExc] | _TBaseExc:
+    """Get a rich traceback, for a single exception."""
     if isinstance(error, _HasExceptionPath):
         frames = [
             _Frame(
@@ -537,7 +539,7 @@ def _get_rich_traceback_non_chain_non_group(
             )
             for f in error.exc_tb.frames
         ]
-        return ExcTB(frames=frames, error=cast(_TExc, error), git_ref=git_ref)
+        return ExcTB(frames=frames, error=error, git_ref=git_ref)
     return error
 
 
