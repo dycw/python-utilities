@@ -5,7 +5,7 @@ from logging import DEBUG, ERROR, StreamHandler, getLogger
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 from beartype.roar import BeartypeCallHintReturnViolation
-from pytest import mark, param, raises
+from pytest import raises
 
 from tests.conftest import FLAKY, SKIPIF_CI
 from tests.test_traceback_funcs.beartype import func_beartype
@@ -345,19 +345,19 @@ class TestGetRichTraceback:
         assert len(exc_group_tb.errors) == 1
         assert is_sequence_of(exc_group_tb.errors, ExcTB)
         assert len(one(exc_group_tb.errors)) == 1
-        frame = one(one(exc_group_tb.errors))
-        assert frame.module == "tests.test_traceback_funcs.task_group_one"
-        assert frame.name == "func_task_group_one_second"
+        frame_inner = one(one(exc_group_tb.errors))
+        assert frame_inner.module == "tests.test_traceback_funcs.task_group_one"
+        assert frame_inner.name == "func_task_group_one_second"
         assert (
-            frame.code_line
+            frame_inner.code_line
             == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
         )
-        assert frame.args == (2, 4, 6, 8)
-        assert frame.kwargs == {"c": 10, "d": 12, "e": 14}
-        assert frame.locals["a"] == 4
-        assert frame.locals["b"] == 8
-        assert frame.locals["args"] == (12, 16)
-        assert frame.locals["kwargs"] == {"d": 24, "e": 28}
+        assert frame_inner.args == (2, 4, 6, 8)
+        assert frame_inner.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert frame_inner.locals["a"] == 4
+        assert frame_inner.locals["b"] == 8
+        assert frame_inner.locals["args"] == (12, 16)
+        assert frame_inner.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(one(exc_group_tb.errors).error, AssertionError)
 
         res_group = repr(exc_group_tb)
@@ -365,59 +365,58 @@ class TestGetRichTraceback:
 
     @FLAKY
     @SKIPIF_CI
-    @mark.only
     async def test_func_task_group_two(self, *, git_ref: str) -> None:
         with raises(ExceptionGroup) as exc_info:
             await func_task_group_two_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_group = get_rich_traceback(exc_info.value, git_ref=git_ref)
-        assert isinstance(exc_group, ExcGroupTB)
-        assert exc_group.path is not None
-        assert len(exc_group.path) == 1
-        frame0 = one(exc_group.path)
-        assert frame0.module == "tests.test_traceback_funcs.task_group_two"
-        assert frame0.name == "func_task_group_two_first"
-        assert frame0.code_line == "async with TaskGroup() as tg:"
-        assert frame0.args == (1, 2, 3, 4)
-        assert frame0.kwargs == {"c": 5, "d": 6, "e": 7}
-        assert frame0.locals["a"] == 2
-        assert frame0.locals["b"] == 4
-        assert frame0.locals["args"] == (6, 8)
-        assert frame0.locals["kwargs"] == {"d": 12, "e": 14}
-        assert isinstance(exc_group.path.error, ExceptionGroup)
-        assert len(exc_group.errors) == 2
-        exc_path1, exc_path2 = exc_group.errors
-        assert isinstance(exc_path1, ExcTB)
-        assert len(exc_path1) == 1
-        frame1 = one(exc_path1)
-        assert frame1.module == "tests.test_traceback_funcs.task_group_two"
-        assert frame1.name == "func_task_group_two_second"
+        exc_group_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        assert isinstance(exc_group_tb, ExcGroupTB)
+        assert isinstance(exc_group_tb.exc_group, ExcTB)
+        assert len(exc_group_tb.exc_group) == 1
+        frame_outer = one(exc_group_tb.exc_group)
+        assert frame_outer.module == "tests.test_traceback_funcs.task_group_two"
+        assert frame_outer.name == "func_task_group_two_first"
+        assert frame_outer.code_line == "async with TaskGroup() as tg:"
+        assert frame_outer.args == (1, 2, 3, 4)
+        assert frame_outer.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert frame_outer.locals["a"] == 2
+        assert frame_outer.locals["b"] == 4
+        assert frame_outer.locals["args"] == (6, 8)
+        assert frame_outer.locals["kwargs"] == {"d": 12, "e": 14}
+        assert isinstance(exc_group_tb.exc_group.error, ExceptionGroup)
+        assert len(exc_group_tb.errors) == 2
+        assert is_sequence_of(exc_group_tb.exc_group.error.exceptions, AssertionError)
+        assert is_sequence_of(exc_group_tb.errors, ExcTB)
+        assert len(exc_group_tb.errors) == 2
+        assert len(exc_group_tb.errors[0]) == 1
+        frame_inner1 = one(exc_group_tb.errors[0])
+        assert frame_inner1.module == "tests.test_traceback_funcs.task_group_two"
+        assert frame_inner1.name == "func_task_group_two_second"
         assert (
-            frame1.code_line
+            frame_inner1.code_line
             == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
         )
-        assert frame1.args == (2, 4, 6, 8)
-        assert frame1.kwargs == {"c": 10, "d": 12, "e": 14}
-        assert frame1.locals["a"] == 4
-        assert frame1.locals["b"] == 8
-        assert frame1.locals["args"] == (12, 16)
-        assert frame1.locals["kwargs"] == {"d": 24, "e": 28}
-        assert isinstance(exc_path1.error, AssertionError)
-        assert isinstance(exc_path2, ExcTB)
-        assert len(exc_path2) == 1
-        frame2 = one(exc_path2)
-        assert frame2.module == "tests.test_traceback_funcs.task_group_two"
-        assert frame2.name == "func_task_group_two_second"
+        assert frame_inner1.args == (2, 4, 6, 8)
+        assert frame_inner1.kwargs == {"c": 10, "d": 12, "e": 14}
+        assert frame_inner1.locals["a"] == 4
+        assert frame_inner1.locals["b"] == 8
+        assert frame_inner1.locals["args"] == (12, 16)
+        assert frame_inner1.locals["kwargs"] == {"d": 24, "e": 28}
+        assert isinstance(exc_group_tb.errors[0].error, AssertionError)
+        assert len(exc_group_tb.errors[1]) == 1
+        frame_inner2 = one(exc_group_tb.errors[1])
+        assert frame_inner2.module == "tests.test_traceback_funcs.task_group_two"
+        assert frame_inner2.name == "func_task_group_two_second"
         assert (
-            frame2.code_line
+            frame_inner2.code_line
             == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
         )
-        assert frame2.args == (3, 5, 7, 9)
-        assert frame2.kwargs == {"c": 11, "d": 13, "e": 15}
-        assert frame2.locals["a"] == 6
-        assert frame2.locals["b"] == 10
-        assert frame2.locals["args"] == (14, 18)
-        assert frame2.locals["kwargs"] == {"d": 26, "e": 30}
-        assert isinstance(exc_path2.error, AssertionError)
+        assert frame_inner2.args == (3, 5, 7, 9)
+        assert frame_inner2.kwargs == {"c": 11, "d": 13, "e": 15}
+        assert frame_inner2.locals["a"] == 6
+        assert frame_inner2.locals["b"] == 10
+        assert frame_inner2.locals["args"] == (14, 18)
+        assert frame_inner2.locals["kwargs"] == {"d": 26, "e": 30}
+        assert isinstance(exc_group_tb.errors[1].error, AssertionError)
 
     def test_func_untraced(self, *, git_ref: str) -> None:
         with raises(AssertionError) as exc_info:
