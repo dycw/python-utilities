@@ -35,7 +35,6 @@ from polars import (
     Int64,
     UInt32,
     UInt64,
-    Utf8,
     col,
     when,
 )
@@ -78,7 +77,6 @@ from sqlalchemy import (
     Numeric,
     Select,
     SmallInteger,
-    String,
     Table,
     Text,
     Unicode,
@@ -135,7 +133,7 @@ _CASES_SELECT: list[
     ),
     (floats(allow_nan=False) | none(), Float64, Float, is_equal),
     (integers(-10, 10) | none(), Int64, Integer, eq),
-    (text_ascii() | none(), Utf8, String, eq),
+    (text_ascii() | none(), pl.String, sqlalchemy.String, eq),
 ]
 _CASES_INSERT: list[
     tuple[SearchStrategy[Any], PolarsDataType, Any, Callable[[Any, Any], bool]]
@@ -282,7 +280,7 @@ class TestInsertDataFrameCheckDFAndDBTypes:
             param(UInt32, float, False),
             param(UInt64, int, True),
             param(UInt64, float, False),
-            param(Utf8, str, True),
+            param(pl.String, str, True),
         ],
     )
     def test_main(
@@ -377,7 +375,7 @@ class TestInsertDataFrameMapDFSchemaToTable:
         assert result == expected
 
     def test_df_schema_has_extra_columns(self) -> None:
-        df_schema = {"a": Int64, "b": Float64, "c": Utf8}
+        df_schema = {"a": Int64, "b": Float64, "c": pl.String}
         table = Table(
             "example",
             MetaData(),
@@ -397,7 +395,7 @@ class TestInsertDataFrameMapDFSchemaToTable:
             Column("id", Integer, primary_key=True),
             Column("a", Integer),
             Column("b", Float),
-            Column("c", String),
+            Column("c", sqlalchemy.String),
         )
         result = _insert_dataframe_map_df_schema_to_table(df_schema, table)
         expected = {"a": "a", "b": "b"}
@@ -614,8 +612,8 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
             param(BINARY, Binary),
             param(sqlalchemy.Boolean, pl.Boolean),
             param(BOOLEAN, pl.Boolean),
-            param(CHAR, Utf8),
-            param(CLOB, Utf8),
+            param(CHAR, pl.String),
+            param(CLOB, pl.String),
             param(sqlalchemy.Date, pl.Date),
             param(DATE, pl.Date),
             param(DECIMAL, Decimal),
@@ -629,24 +627,24 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
             param(INTEGER, Int64),
             param(Interval, Duration),
             param(LargeBinary, Binary),
-            param(NCHAR, Utf8),
+            param(NCHAR, pl.String),
             param(Numeric, Decimal),
             param(NUMERIC, Decimal),
-            param(NVARCHAR, Utf8),
+            param(NVARCHAR, pl.String),
             param(REAL, Float64),
             param(SMALLINT, Int64),
             param(SmallInteger, Int64),
-            param(String, Utf8),
-            param(TEXT, Utf8),
-            param(Text, Utf8),
+            param(sqlalchemy.String, pl.String),
+            param(TEXT, pl.String),
+            param(Text, pl.String),
             param(TIME, pl.Time),
             param(sqlalchemy.Time, pl.Time),
-            param(Unicode, Utf8),
-            param(UnicodeText, Utf8),
-            param(Uuid, pl.Utf8),
-            param(UUID, pl.Utf8),
+            param(Unicode, pl.String),
+            param(UnicodeText, pl.String),
+            param(Uuid, pl.pl.String),
+            param(UUID, pl.pl.String),
             param(VARBINARY, Binary),
-            param(VARCHAR, Utf8),
+            param(VARCHAR, pl.String),
         ],
     )
     @mark.parametrize("use_inst", [param(True), param(False)])

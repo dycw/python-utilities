@@ -16,10 +16,10 @@ from polars import (
     Float64,
     Int32,
     Int64,
+    String,
     Time,
     UInt32,
     UInt64,
-    Utf8,
     concat,
     read_database,
 )
@@ -214,7 +214,7 @@ def _insert_dataframe_check_df_and_db_types(
         or (dtype == Datetime and issubclass(db_col_type, dt.datetime))
         or (dtype == Float64 and issubclass(db_col_type, float))
         or (dtype in {Int32, Int64, UInt32, UInt64} and issubclass(db_col_type, int))
-        or (dtype == Utf8 and issubclass(db_col_type, str))
+        or (dtype == String and issubclass(db_col_type, str))
     )
 
 
@@ -441,7 +441,7 @@ def _select_to_dataframe_map_table_column_type_to_dtype(
     if issubclass(py_type, int):
         return Int64
     if issubclass(py_type, UUID | str):
-        return Utf8
+        return String
     msg = f"{type_=}, {py_type=}"  # pragma: no cover
     raise _SelectToDataFrameMapTableColumnToDTypeError(msg)  # pragma: no cover
 

@@ -37,8 +37,8 @@ from polars import (
     List,
     Object,
     Series,
+    String,
     Struct,
-    Utf8,
     all_horizontal,
     col,
     concat,
@@ -573,7 +573,7 @@ def _dataclass_to_dataframe_uuid(series: Series, /) -> Series:
         is_uuid = series.map_elements(make_isinstance(UUID), return_dtype=Boolean).all()
         if is_path or is_uuid:
             with suppress_warnings(category=PolarsInefficientMapWarning):
-                return series.map_elements(str, return_dtype=Utf8)
+                return series.map_elements(str, return_dtype=String)
         else:  # pragma: no cover
             msg = f"{is_path=}, f{is_uuid=}"
             raise NotImplementedError(msg)
@@ -660,7 +660,7 @@ def _dataclass_to_schema_one(
     if obj is float:
         return Float64
     if obj is str:
-        return Utf8
+        return String
     if obj is dt.date:
         return Date
     if obj in {Path, UUID}:
@@ -1136,7 +1136,7 @@ def struct_from_dataclass(
 def _struct_from_dataclass_one(
     ann: Any, /, *, time_zone: ZoneInfoLike | None = None
 ) -> PolarsDataType:
-    mapping = {bool: Boolean, dt.date: Date, float: Float64, int: Int64, str: Utf8}
+    mapping = {bool: Boolean, dt.date: Date, float: Float64, int: Int64, str: String}
     with suppress(KeyError):
         return mapping[ann]
     if ann is dt.datetime:
@@ -1148,7 +1148,7 @@ def _struct_from_dataclass_one(
     if (isinstance(ann, type) and issubclass(ann, enum.Enum)) or (
         is_literal_type(ann) and is_iterable_of(get_args(ann), str)
     ):
-        return Utf8
+        return String
     if is_optional_type(ann):
         return _struct_from_dataclass_one(one(get_args(ann)), time_zone=time_zone)
     if is_frozenset_type(ann) or is_list_type(ann) or is_set_type(ann):

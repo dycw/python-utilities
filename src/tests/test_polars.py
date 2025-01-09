@@ -35,8 +35,8 @@ from polars import (
     List,
     Object,
     Series,
+    String,
     Struct,
-    Utf8,
     col,
     datetime_range,
     int_range,
@@ -150,7 +150,7 @@ class TestAppendDataClass:
         })
     )
     def test_columns_and_fields_equal(self, *, data: StrMapping) -> None:
-        df = DataFrame(schema={"a": Int64, "b": Float64, "c": Utf8})
+        df = DataFrame(schema={"a": Int64, "b": Float64, "c": String})
 
         @dataclass(kw_only=True, slots=True)
         class Row:
@@ -165,7 +165,7 @@ class TestAppendDataClass:
 
     @given(data=fixed_dictionaries({"a": int64s() | none(), "b": floats() | none()}))
     def test_extra_column(self, *, data: StrMapping) -> None:
-        df = DataFrame(schema={"a": Int64, "b": Float64, "c": Utf8})
+        df = DataFrame(schema={"a": Int64, "b": Float64, "c": String})
 
         @dataclass(kw_only=True, slots=True)
         class Row:
@@ -593,7 +593,7 @@ class TestDataClassToDataFrame:
                 "bool_field": Boolean,
                 "int_field": Int64,
                 "float_field": Float64,
-                "str_field": Utf8,
+                "str_field": String,
                 "date_field": Date,
             },
         )
@@ -622,7 +622,7 @@ class TestDataClassToDataFrame:
 
         obj = data.draw(builds(Example))
         df = dataclass_to_dataframe(obj, localns=locals())
-        check_polars_dataframe(df, height=len(df), schema_list={"x": Utf8})
+        check_polars_dataframe(df, height=len(df), schema_list={"x": String})
 
     @given(data=data())
     def test_uuid(self, *, data: DataObject) -> None:
@@ -632,7 +632,7 @@ class TestDataClassToDataFrame:
 
         obj = data.draw(builds(Example))
         df = dataclass_to_dataframe(obj, localns=locals())
-        check_polars_dataframe(df, height=len(df), schema_list={"x": Utf8})
+        check_polars_dataframe(df, height=len(df), schema_list={"x": String})
 
     @given(data=data(), time_zone=timezones())
     def test_zoned_datetime(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
@@ -689,7 +689,7 @@ class TestDataClassToSchema:
             "bool_field": Boolean,
             "int_field": Int64,
             "float_field": Float64,
-            "str_field": Utf8,
+            "str_field": String,
             "date_field": Date,
         }
         assert result == expected
@@ -1352,15 +1352,15 @@ class TestSetFirstRowAsColumns:
 
     def test_one_row(self) -> None:
         df = DataFrame(data=["value"])
-        check_polars_dataframe(df, height=1, schema_list={"column_0": Utf8})
+        check_polars_dataframe(df, height=1, schema_list={"column_0": String})
         result = set_first_row_as_columns(df)
-        check_polars_dataframe(result, height=0, schema_list={"value": Utf8})
+        check_polars_dataframe(result, height=0, schema_list={"value": String})
 
     def test_multiple_rows(self) -> None:
         df = DataFrame(data=["foo", "bar", "baz"])
-        check_polars_dataframe(df, height=3, schema_list={"column_0": Utf8})
+        check_polars_dataframe(df, height=3, schema_list={"column_0": String})
         result = set_first_row_as_columns(df)
-        check_polars_dataframe(result, height=2, schema_list={"foo": Utf8})
+        check_polars_dataframe(result, height=2, schema_list={"foo": String})
 
 
 class TestStructDType:
@@ -1395,8 +1395,8 @@ class TestStructFromDataClass:
             "float_maybe": Float64,
             "int_": Int64,
             "int_maybe": Int64,
-            "str_": Utf8,
-            "str_maybe": Utf8,
+            "str_": String,
+            "str_maybe": String,
         })
         assert result == expected
 
@@ -1419,7 +1419,7 @@ class TestStructFromDataClass:
             field: Truth
 
         result = struct_from_dataclass(Example, localns=locals())
-        expected = Struct({"field": Utf8})
+        expected = Struct({"field": String})
         assert result == expected
 
     def test_literal(self) -> None:
@@ -1430,7 +1430,7 @@ class TestStructFromDataClass:
             field: LowOrHigh  # pyright: ignore[reportInvalidTypeForm]
 
         result = struct_from_dataclass(Example, localns=locals())
-        expected = Struct({"field": Utf8})
+        expected = Struct({"field": String})
         assert result == expected
 
     def test_containers(self) -> None:
@@ -1575,7 +1575,7 @@ class TestYieldRowsAsDataclasses:
     @given(check_types=sampled_from(["none", "first", "all"]))
     def test_literal(self, *, check_types: Literal["none", "first", "all"]) -> None:
         df = DataFrame(
-            data=[("true",), ("false",), ("true",)], schema={"x": Utf8}, orient="row"
+            data=[("true",), ("false",), ("true",)], schema={"x": String}, orient="row"
         )
 
         @dataclass(kw_only=True, slots=True)
@@ -1591,7 +1591,7 @@ class TestYieldRowsAsDataclasses:
         self, *, check_types: Literal["none", "first", "all"]
     ) -> None:
         df = DataFrame(
-            data=[("true",), ("false",), (None,)], schema={"x": Utf8}, orient="row"
+            data=[("true",), ("false",), (None,)], schema={"x": String}, orient="row"
         )
 
         @dataclass(kw_only=True, slots=True)
@@ -1607,7 +1607,7 @@ class TestYieldRowsAsDataclasses:
         self, *, check_types: Literal["none", "first", "all"]
     ) -> None:
         df = DataFrame(
-            data=[("true",), ("false",), ("true",)], schema={"x": Utf8}, orient="row"
+            data=[("true",), ("false",), ("true",)], schema={"x": String}, orient="row"
         )
 
         @dataclass(kw_only=True, slots=True)
@@ -1627,7 +1627,7 @@ class TestYieldRowsAsDataclasses:
         self, *, check_types: Literal["none", "first", "all"]
     ) -> None:
         df = DataFrame(
-            data=[("true",), ("false",), (None,)], schema={"x": Utf8}, orient="row"
+            data=[("true",), ("false",), (None,)], schema={"x": String}, orient="row"
         )
 
         @dataclass(kw_only=True, slots=True)
