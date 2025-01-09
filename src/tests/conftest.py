@@ -143,31 +143,30 @@ def traceback_func_task_group_one() -> Pattern[str]:
             Host      \| .+
             Version   \| .+
 
-            Exception group 1/1:
-                Path:
-                    Frame 1/1: func_task_group_one_first \(tests\.test_traceback_funcs\.task_group_one\)
-                        Inputs:
-                            args\[0\] = 1
-                            args\[1\] = 2
-                            args\[2\] = 3
-                            args\[3\] = 4
-                            kwargs\[c\] = 5
-                            kwargs\[d\] = 6
-                            kwargs\[e\] = 7
-                        Locals:
-                            a = 2
-                            b = 4
-                            c = 10
-                            args = \(6, 8\)
-                            kwargs = {'d': 12, 'e': 14}
-                            tg = <TaskGroup cancelling>
-                            _ = <Task finished name='Task-\d+' coro=<func_task_group_one_second\(\) done, defined at .+src.+utilities.+traceback\.py:\d+> exception=AssertionError\('Result \(112\) must be divisible by 10'\)>
-                        Line 18:
-                            async with TaskGroup\(\) as tg:
-                        Raised:
-                            ExceptionGroup\(unhandled errors in a TaskGroup \(1 sub-exception\)\)
+            Exception group:
+                Frame 1/1: func_task_group_one_first \(tests\.test_traceback_funcs\.task_group_one\)
+                    Inputs:
+                        args\[0\] = 1
+                        args\[1\] = 2
+                        args\[2\] = 3
+                        args\[3\] = 4
+                        kwargs\[c\] = 5
+                        kwargs\[d\] = 6
+                        kwargs\[e\] = 7
+                    Locals:
+                        a = 2
+                        b = 4
+                        c = 10
+                        args = \(6, 8\)
+                        kwargs = {'d': 12, 'e': 14}
+                        tg = <TaskGroup cancelling>
+                        _ = <Task finished name='Task-\d+' coro=<func_task_group_one_second\(\) done, defined at .+src.+utilities.+traceback\.py:\d+> exception=AssertionError\('Result \(112\) must be divisible by 10'\)>
+                    Line 18:
+                        async with TaskGroup\(\) as tg:
+                    Raised:
+                        ExceptionGroup\(unhandled errors in a TaskGroup \(1 sub-exception\)\)
 
-                Group error 1/1:
+                Exception group error 1/1:
                     Frame 1/1: func_task_group_one_second \(tests\.test_traceback_funcs\.task_group_one\)
                         Inputs:
                             args\[0\] = 2

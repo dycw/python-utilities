@@ -220,14 +220,19 @@ class _HasExceptionPath(Protocol):
 class ExcChainTB(Generic[_TBaseExc]):
     """A rich traceback for an exception chain."""
 
-    errors: list[ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | BaseException] = field(
+    errors: list[ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc] = field(
         default_factory=list
     )
     git_ref: str = field(default=MASTER, repr=False)
 
+    def __getitem__(
+        self, i: int, /
+    ) -> ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc:
+        return self.errors[i]
+
     def __iter__(
         self,
-    ) -> Iterator[ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | BaseException]:
+    ) -> Iterator[ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc]:
         yield from self.errors
 
     def __len__(self) -> int:
@@ -321,7 +326,7 @@ class ExcGroupTB(Generic[_TBaseExc]):
         lines.append("")
         total = len(self.errors)
         for i, errors in enumerate(self.errors, start=1):
-            lines.append(indent(f"Exception group {i}/{total}:", _INDENT))
+            lines.append(indent(f"Exception group error {i}/{total}:", _INDENT))
             match errors:
                 case ExcGroupTB() | ExcTB():  # pragma: no cover
                     lines.append(
@@ -334,7 +339,7 @@ class ExcGroupTB(Generic[_TBaseExc]):
                             max_string=max_string,
                             max_depth=max_depth,
                             expand_all=expand_all,
-                            depth=1,
+                            depth=2,
                         )
                     )
                 case BaseException():  # pragma: no cover
@@ -352,6 +357,9 @@ class ExcTB(Generic[_TBaseExc]):
     frames: list[_Frame] = field(default_factory=list)
     error: _TBaseExc
     git_ref: str = field(default=MASTER, repr=False)
+
+    def __getitem__(self, i: int, /) -> _Frame:
+        return self.frames[i]
 
     def __iter__(self) -> Iterator[_Frame]:
         yield from self.frames
