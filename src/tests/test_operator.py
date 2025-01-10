@@ -48,7 +48,7 @@ from utilities.polars import are_frames_equal
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from utilities.types import Number
+    from utilities.types import DateOrDateTime, Number
     from utilities.typing import StrMapping
 
 
@@ -311,6 +311,15 @@ class TestIsEqual:
 
     @given(x=integers())
     def test_dataclass_4(self, *, x: int) -> None:
+        first, second = DataClass4(x=x), DataClass4(x=x)
+        assert first != second
+        assert is_equal(first, second)
+
+    @given(
+        x=dates() | datetimes() | zoned_datetimes(time_zone=timezones()),
+        y=dates() | datetimes() | zoned_datetimes(time_zone=timezones()),
+    )
+    def test_dates_or_datetimes(self, *, x: DateOrDateTime, y: DateOrDateTime) -> None:
         first, second = DataClass4(x=x), DataClass4(x=x)
         assert first != second
         assert is_equal(first, second)
