@@ -136,7 +136,7 @@ from utilities.zoneinfo import UTC, HongKong, Tokyo
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from utilities.types import Number
+    from utilities.types import DateOrDateTime, Number
 
 
 class TestAddDuration:
@@ -173,7 +173,7 @@ class TestAddDuration:
         assert result == expected
 
     @given(date=dates() | zoned_datetimes())
-    def test_none(self, *, date: dt.date | dt.datetime) -> None:
+    def test_none(self, *, date: DateOrDateTime) -> None:
         result = add_duration(date)
         assert result == date
 
@@ -958,7 +958,7 @@ class TestSubDuration:
         assert result == expected
 
     @given(date=dates() | zoned_datetimes())
-    def test_none(self, *, date: dt.date | dt.datetime) -> None:
+    def test_none(self, *, date: DateOrDateTime) -> None:
         result = sub_duration(date)
         assert result == date
 
@@ -981,7 +981,7 @@ class TestSubDuration:
 
 class TestTimedeltaSinceEpoch:
     @given(date=dates() | zoned_datetimes(time_zone=timezones()))
-    def test_main(self, *, date: dt.date | dt.datetime) -> None:
+    def test_main(self, *, date: DateOrDateTime) -> None:
         result = timedelta_since_epoch(date)
         assert isinstance(result, dt.timedelta)
 

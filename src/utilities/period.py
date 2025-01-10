@@ -34,6 +34,7 @@ from utilities.whenever import (
 
 if TYPE_CHECKING:
     from utilities.iterables import MaybeIterable
+    from utilities.types import DateOrDateTime
 
 _DateOrDateTime: TypeAlias = Literal["date", "datetime"]
 _TPeriod = TypeVar("_TPeriod", dt.date, dt.datetime)
@@ -100,7 +101,7 @@ class Period(Generic[_TPeriod]):
         """Offset the period."""
         return self.replace(start=self.start + other, end=self.end + other)
 
-    def __contains__(self, other: dt.date | dt.datetime, /) -> bool:
+    def __contains__(self, other: DateOrDateTime, /) -> bool:
         """Check if a date/datetime lies in the period."""
         match self.kind:
             case "date":

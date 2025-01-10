@@ -30,7 +30,7 @@ from utilities.zoneinfo import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import Duration, ZoneInfoLike
+    from utilities.types import DateOrDateTime, Duration, ZoneInfoLike
 
 _DAYS_PER_YEAR = 365.25
 _MICROSECONDS_PER_MILLISECOND = int(1e3)
@@ -60,7 +60,7 @@ def add_duration(
 @overload
 def add_duration(date: dt.date, /, *, duration: Duration | None = ...) -> dt.date: ...
 def add_duration(
-    date: dt.date | dt.datetime, /, *, duration: Duration | None = None
+    date: DateOrDateTime, /, *, duration: Duration | None = None
 ) -> dt.date:
     """Add a duration to a date/datetime."""
     if duration is None:
@@ -122,7 +122,7 @@ def are_equal_date_durations(x: Duration, y: Duration, /) -> bool:
 
 
 def are_equal_dates_or_datetimes(
-    x: dt.date | dt.datetime, y: dt.date | dt.datetime, /, *, strict: bool = False
+    x: DateOrDateTime, y: DateOrDateTime, /, *, strict: bool = False
 ) -> bool:
     """Check if x == y for dates/datetimes."""
     if is_instance_date_not_datetime(x) and is_instance_date_not_datetime(y):
@@ -134,8 +134,8 @@ def are_equal_dates_or_datetimes(
 
 @dataclass(kw_only=True, slots=True)
 class AreEqualDatesOrDateTimesError(Exception):
-    x: dt.date | dt.datetime
-    y: dt.date | dt.datetime
+    x: DateOrDateTime
+    y: DateOrDateTime
 
     @override
     def __str__(self) -> str:
@@ -851,7 +851,7 @@ def sub_duration(
 @overload
 def sub_duration(date: dt.date, /, *, duration: Duration | None = ...) -> dt.date: ...
 def sub_duration(
-    date: dt.date | dt.datetime, /, *, duration: Duration | None = None
+    date: DateOrDateTime, /, *, duration: Duration | None = None
 ) -> dt.date:
     """Subtract a duration from a date/datetime."""
     if duration is None:
@@ -875,7 +875,7 @@ class SubDurationError(Exception):
 ##
 
 
-def timedelta_since_epoch(date: dt.date | dt.datetime, /) -> dt.timedelta:
+def timedelta_since_epoch(date: DateOrDateTime, /) -> dt.timedelta:
     """Compute the timedelta since the epoch."""
     if isinstance(date, dt.datetime):
         check_zoned_datetime(date)
