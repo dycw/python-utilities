@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from os import environ
+from pathlib import Path
 from re import IGNORECASE, search
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -26,7 +27,6 @@ from utilities.typing import get_args, is_literal_type
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
-    from pathlib import Path
 
     from utilities.types import PathLike, StrMapping
 
@@ -89,6 +89,13 @@ def _load_settings_post(
             return int(value)
         except ValueError:
             raise _LoadSettingsInvalidIntError(
+                path=path, values=values, field=field.name, value=value
+            ) from None
+    if type_ is Path:
+        try:
+            return Path(value)
+        except ValueError:
+            raise _LoadSettingsInvalidPathError(
                 path=path, values=values, field=field.name, value=value
             ) from None
     if isinstance(type_, type) and issubclass(type_, Enum):
@@ -155,6 +162,17 @@ class _LoadSettingsInvalidIntError(LoadSettingsError):
     @override
     def __str__(self) -> str:
         return f"Field {self.field!r} must contain a valid integer; got {self.value!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _LoadSettingsInvalidPathError(LoadSettingsError):
+    values: StrMapping
+    field: str
+    value: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Field {self.field!r} must contain a valid path; got {self.value!r}"
 
 
 @dataclass(kw_only=True, slots=True)

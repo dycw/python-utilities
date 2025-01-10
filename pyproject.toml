@@ -50,6 +50,7 @@ dev = [
   "numpy >= 2.0.2, < 2.1",  # if 2.1, llvmite: RuntimeError: Cannot install on Python version 3.11.9; only versions >=3.6,<3.10 are supported.
   "optuna >= 4.1.0, < 4.2",
   "orjson >= 3.10.14, < 3.11",
+  "pathvalidate >= 3.2.3, < 3.3",
   "polars-lts-cpu >= 1.19.0, < 1.20",
   "pqdm >= 0.2.0, < 0.3",
   "psycopg2-binary >= 2.9.10, < 2.10",  # for sqlalchemy
@@ -167,6 +168,7 @@ zzz-test-hypothesis = [
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
   "hypothesis >= 6.123.11, < 6.124",
   "numpy >= 2.0.2, < 2.1",
+  "pathvalidate >= 3.2.3, < 3.3",
   "redis >= 5.2.1, < 5.3",
   "sqlalchemy >= 2.0.36, < 2.1",
   "tenacity >= 9.0.0, < 9.1",

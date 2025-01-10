@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from functools import partial
 from math import nan
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 from hypothesis import example, given
@@ -35,6 +34,7 @@ from tests.conftest import IS_CI_AND_WINDOWS
 from utilities.hypothesis import (
     assume_does_not_raise,
     int64s,
+    paths,
     text_ascii,
     text_printable,
     timedeltas_2w,
@@ -75,7 +75,7 @@ def base_objects(
         | dates()
         | datetimes()
         | int64s()
-        | text_ascii().map(Path)
+        | paths()
         | text_printable().filter(lambda x: not x.startswith("["))
         | times()
         | timedeltas_2w()
