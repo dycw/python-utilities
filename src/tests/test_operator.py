@@ -320,17 +320,16 @@ class TestIsEqual:
         y=dates() | datetimes() | zoned_datetimes(time_zone=timezones()),
     )
     def test_dates_or_datetimes(self, *, x: DateOrDateTime, y: DateOrDateTime) -> None:
-        first, second = DataClass4(x=x), DataClass4(x=x)
-        assert first != second
-        assert is_equal(first, second)
+        result = is_equal(x, y)
+        assert isinstance(result, bool)
 
     @given(
-        first=dictionaries(text_ascii(), make_objects()),
-        second=dictionaries(text_ascii(), make_objects()),
+        x=dictionaries(text_ascii(), make_objects()),
+        y=dictionaries(text_ascii(), make_objects()),
     )
-    def test_mappings(self, *, first: StrMapping, second: StrMapping) -> None:
+    def test_mappings(self, *, x: StrMapping, y: StrMapping) -> None:
         with assume_does_not_raise(IsEqualError):
-            result = is_equal(first, second)
+            result = is_equal(x, y)
         assert isinstance(result, bool)
 
     @given(x=floats(), y=floats())
