@@ -48,6 +48,8 @@ from utilities.datetime import (
     ZERO_TIME,
     AddDurationError,
     AddWeekdaysError,
+    AreEqualDatesOrDateTimesError,
+    AreEqualDateTimesError,
     CheckDateNotDateTimeError,
     CheckZonedDateTimeError,
     EnsureMonthError,
@@ -68,7 +70,9 @@ from utilities.datetime import (
     add_duration,
     add_weekdays,
     are_equal_date_durations,
+    are_equal_dates_or_datetimes,
     are_equal_datetime_durations,
+    are_equal_datetimes,
     are_equal_months,
     check_date_not_datetime,
     check_zoned_datetime,
@@ -252,6 +256,31 @@ class TestAreEqualDateDurations:
         assert result is expected
 
 
+class TestAreEqualDateOrDateTimes:
+    @given(x=dates(), y=dates())
+    def test_dates(self, *, x: dt.date, y: dt.date) -> None:
+        result = are_equal_dates_or_datetimes(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(x=datetimes(), y=datetimes())
+    def test_datetimes(self, *, x: dt.datetime, y: dt.datetime) -> None:
+        result = are_equal_dates_or_datetimes(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(data=data(), x=dates(), y=datetimes())
+    def test_date_vs_datetime(
+        self, *, data: DataObject, x: dt.date, y: dt.datetime
+    ) -> None:
+        left, right = data.draw(permutations([x, y]))
+        with raises(
+            AreEqualDatesOrDateTimesError,
+            match=r"Cannot compare date and datetime \(.*, .*\)",
+        ):
+            _ = are_equal_dates_or_datetimes(left, right)
+
+
 class TestAreEqualDateTimeDurations:
     @given(x=integers(), y=integers())
     def test_ints(self, *, x: int, y: int) -> None:
@@ -275,6 +304,54 @@ class TestAreEqualDateTimeDurations:
             result = are_equal_datetime_durations(left, right)
         expected = x == datetime_duration_to_float(y)
         assert result is expected
+
+
+class TestAreEqualDateTimes:
+    @given(x=datetimes(), y=datetimes())
+    def test_local(self, *, x: dt.datetime, y: dt.datetime) -> None:
+        result = are_equal_datetimes(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(
+        x=zoned_datetimes(time_zone=timezones()),
+        y=zoned_datetimes(time_zone=timezones()),
+    )
+    def test_zoned_non_strict(self, *, x: dt.datetime, y: dt.datetime) -> None:
+        result = are_equal_datetimes(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(
+        x=zoned_datetimes(time_zone=UTC),
+        y=zoned_datetimes(time_zone=UTC),
+        time_zone1=timezones(),
+        time_zone2=timezones(),
+    )
+    def test_zoned_strict(
+        self,
+        *,
+        x: dt.datetime,
+        y: dt.datetime,
+        time_zone1: ZoneInfo,
+        time_zone2: ZoneInfo,
+    ) -> None:
+        result = are_equal_datetimes(
+            x.astimezone(time_zone1), y.astimezone(time_zone2), strict=True
+        )
+        expected = (x == y) and (time_zone1 is time_zone2)
+        assert result is expected
+
+    @given(data=data(), x=datetimes(), y=zoned_datetimes(time_zone=timezones()))
+    def test_local_vs_zoned(
+        self, *, data: DataObject, x: dt.datetime, y: dt.datetime
+    ) -> None:
+        left, right = data.draw(permutations([x, y]))
+        with raises(
+            AreEqualDateTimesError,
+            match=r"Cannot compare local and zoned datetimes \(.*, .*\)",
+        ):
+            _ = are_equal_datetimes(left, right)
 
 
 class TestAreEqualMonths:
@@ -610,7 +687,10 @@ class TestIsEqualModTz:
         expected = x == y
         assert result is expected
 
-    @given(x=zoned_datetimes(), y=zoned_datetimes())
+    @given(
+        x=zoned_datetimes(time_zone=timezones()),
+        y=zoned_datetimes(time_zone=timezones()),
+    )
     def test_zoned(self, *, x: dt.datetime, y: dt.datetime) -> None:
         result = is_equal_mod_tz(x, y)
         expected = x == y

@@ -122,14 +122,14 @@ def are_equal_date_durations(x: Duration, y: Duration, /) -> bool:
 
 
 def are_equal_dates_or_datetimes(
-    x: dt.date | dt.datetime, y: dt.date | dt.datetime, /
+    x: dt.date | dt.datetime, y: dt.date | dt.datetime, /, *, strict: bool = False
 ) -> bool:
     """Check if x == y for dates/datetimes."""
     if is_instance_date_not_datetime(x) and is_instance_date_not_datetime(y):
         return x == y
     if isinstance(x, dt.datetime) and isinstance(y, dt.datetime):
-        ...
-    return None
+        return are_equal_datetimes(x, y, strict=strict)
+    raise AreEqualDatesOrDateTimesError(x=x, y=y)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -139,7 +139,7 @@ class AreEqualDatesOrDateTimesError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Date must not be a datetime; got {self.date}"
+        return f"Cannot compare date and datetime ({self.x}, {self.y})"
 
 
 ##
@@ -150,6 +150,32 @@ def are_equal_datetime_durations(x: Duration, y: Duration, /) -> bool:
     x_timedelta = datetime_duration_to_timedelta(x)
     y_timedelta = datetime_duration_to_timedelta(y)
     return x_timedelta == y_timedelta
+
+
+##
+
+
+def are_equal_datetimes(
+    x: dt.datetime, y: dt.datetime, /, *, strict: bool = False
+) -> bool:
+    """Check if x == y for datetimes."""
+    if is_local_datetime(x) and is_local_datetime(y):
+        return x == y
+    if is_zoned_datetime(x) and is_zoned_datetime(y):
+        if x != y:
+            return False
+        return (x.tzinfo is y.tzinfo) or not strict
+    raise AreEqualDateTimesError(x=x, y=y)
+
+
+@dataclass(kw_only=True, slots=True)
+class AreEqualDateTimesError(Exception):
+    x: dt.datetime
+    y: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot compare local and zoned datetimes ({self.x}, {self.y})"
 
 
 ##
@@ -1025,6 +1051,7 @@ __all__ = [
     "ZERO_TIME",
     "AddDurationError",
     "AddWeekdaysError",
+    "AreEqualDatesOrDateTimesError",
     "CheckDateNotDateTimeError",
     "CheckZonedDateTimeError",
     "DateOrMonth",
@@ -1042,6 +1069,7 @@ __all__ = [
     "are_equal_date_durations",
     "are_equal_dates_or_datetimes",
     "are_equal_datetime_durations",
+    "are_equal_datetimes",
     "are_equal_months",
     "check_date_not_datetime",
     "check_zoned_datetime",
