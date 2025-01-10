@@ -135,7 +135,7 @@ if TYPE_CHECKING:
 
     from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
 
-    from utilities.types import DateOrDateTime, StrMapping
+    from utilities.types import StrMapping
 
 
 TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
@@ -709,7 +709,7 @@ class TestDataClassToSchema:
 
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: DateOrDateTime = today
+            x: dt.date | dt.datetime = today
 
         obj = Example()
         result = dataclass_to_schema(obj)
@@ -721,7 +721,7 @@ class TestDataClassToSchema:
 
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: DateOrDateTime = now
+            x: dt.date | dt.datetime = now
 
         obj = Example()
         result = dataclass_to_schema(obj)
@@ -734,7 +734,7 @@ class TestDataClassToSchema:
 
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: DateOrDateTime = now
+            x: dt.date | dt.datetime = now
 
         obj = Example()
         result = dataclass_to_schema(obj)
