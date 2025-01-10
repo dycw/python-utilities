@@ -1038,6 +1038,7 @@ __all__ = [
     "ZERO_TIME",
     "AddDurationError",
     "AddWeekdaysError",
+    "AreEqualDateTimesError",
     "AreEqualDatesOrDateTimesError",
     "CheckDateNotDateTimeError",
     "CheckZonedDateTimeError",
