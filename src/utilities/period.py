@@ -19,7 +19,7 @@ from typing_extensions import override
 
 from utilities.datetime import (
     ZERO_TIME,
-    CheckZonedDatetimeError,
+    CheckZonedDateTimeError,
     check_zoned_datetime,
     is_instance_date_not_datetime,
 )
@@ -34,8 +34,9 @@ from utilities.whenever import (
 
 if TYPE_CHECKING:
     from utilities.iterables import MaybeIterable
+    from utilities.types import DateOrDateTime
 
-_DateOrDatetime: TypeAlias = Literal["date", "datetime"]
+_DateOrDateTime: TypeAlias = Literal["date", "datetime"]
 _TPeriod = TypeVar("_TPeriod", dt.date, dt.datetime)
 
 
@@ -60,13 +61,13 @@ class Period(Generic[_TPeriod]):
         if is_instance_date_not_datetime(
             self.start
         ) is not is_instance_date_not_datetime(self.end):
-            raise _PeriodDateAndDatetimeMixedError(start=self.start, end=self.end)
+            raise _PeriodDateAndDateTimeMixedError(start=self.start, end=self.end)
         for date in [self.start, self.end]:
             if isinstance(date, dt.datetime):
                 try:
                     check_zoned_datetime(date)
-                except CheckZonedDatetimeError:
-                    raise _PeriodNaiveDatetimeError(
+                except CheckZonedDateTimeError:
+                    raise _PeriodNaiveDateTimeError(
                         start=self.start, end=self.end
                     ) from None
         duration = self.end - self.start
@@ -100,7 +101,7 @@ class Period(Generic[_TPeriod]):
         """Offset the period."""
         return self.replace(start=self.start + other, end=self.end + other)
 
-    def __contains__(self, other: dt.date | dt.datetime, /) -> bool:
+    def __contains__(self, other: DateOrDateTime, /) -> bool:
         """Check if a date/datetime lies in the period."""
         match self.kind:
             case "date":
@@ -167,7 +168,7 @@ class Period(Generic[_TPeriod]):
         return self.end - self.start
 
     @property
-    def kind(self) -> _DateOrDatetime:
+    def kind(self) -> _DateOrDateTime:
         """The kind of the period."""
         return "date" if is_instance_date_not_datetime(self.start) else "datetime"
 
@@ -234,14 +235,14 @@ class PeriodError(Generic[_TPeriod], Exception):
 
 
 @dataclass(kw_only=True, slots=True)
-class _PeriodDateAndDatetimeMixedError(PeriodError[_TPeriod]):
+class _PeriodDateAndDateTimeMixedError(PeriodError[_TPeriod]):
     @override
     def __str__(self) -> str:
         return f"Invalid period; got date and datetime mix ({self.start}, {self.end})"
 
 
 @dataclass(kw_only=True, slots=True)
-class _PeriodNaiveDatetimeError(PeriodError[_TPeriod]):
+class _PeriodNaiveDateTimeError(PeriodError[_TPeriod]):
     @override
     def __str__(self) -> str:
         return f"Invalid period; got naive datetime(s) ({self.start}, {self.end})"

@@ -48,7 +48,7 @@ from utilities.polars import are_frames_equal
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from utilities.types import Number
+    from utilities.types import DateOrDateTime, Number
     from utilities.typing import StrMapping
 
 
@@ -316,12 +316,20 @@ class TestIsEqual:
         assert is_equal(first, second)
 
     @given(
-        first=dictionaries(text_ascii(), make_objects()),
-        second=dictionaries(text_ascii(), make_objects()),
+        x=dates() | datetimes() | zoned_datetimes(time_zone=timezones()),
+        y=dates() | datetimes() | zoned_datetimes(time_zone=timezones()),
     )
-    def test_mappings(self, *, first: StrMapping, second: StrMapping) -> None:
+    def test_dates_or_datetimes(self, *, x: DateOrDateTime, y: DateOrDateTime) -> None:
+        result = is_equal(x, y)
+        assert isinstance(result, bool)
+
+    @given(
+        x=dictionaries(text_ascii(), make_objects()),
+        y=dictionaries(text_ascii(), make_objects()),
+    )
+    def test_mappings(self, *, x: StrMapping, y: StrMapping) -> None:
         with assume_does_not_raise(IsEqualError):
-            result = is_equal(first, second)
+            result = is_equal(x, y)
         assert isinstance(result, bool)
 
     @given(x=floats(), y=floats())

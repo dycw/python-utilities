@@ -88,7 +88,7 @@ from sqlalchemy.exc import DuplicateColumnError, OperationalError, ProgrammingEr
 
 from tests.conftest import FLAKY
 from tests.test_sqlalchemy import _table_names, _upsert_lists
-from utilities.datetime import is_equal_mod_tz
+from utilities.datetime import are_equal_datetimes
 from utilities.hypothesis import sqlalchemy_engines, text_ascii
 from utilities.math import is_equal
 from utilities.polars import DatetimeUTC, check_polars_dataframe
@@ -129,7 +129,7 @@ _CASES_SELECT: list[
         datetimes(timezones=just(UTC)) | none(),
         DatetimeUTC,
         DateTime(timezone=True),
-        is_equal_mod_tz,
+        are_equal_datetimes,
     ),
     (floats(allow_nan=False) | none(), Float64, Float, is_equal),
     (integers(-10, 10) | none(), Int64, Integer, eq),

@@ -227,11 +227,11 @@ def ensure_datetime(obj: Any, /, *, nullable: bool = False) -> dt.datetime | Non
     try:
         return ensure_class(obj, dt.datetime, nullable=nullable)
     except EnsureClassError as error:
-        raise EnsureDatetimeError(obj=error.obj, nullable=nullable) from None
+        raise EnsureDateTimeError(obj=error.obj, nullable=nullable) from None
 
 
 @dataclass(kw_only=True, slots=True)
-class EnsureDatetimeError(Exception):
+class EnsureDateTimeError(Exception):
     obj: Any
     nullable: bool
 
@@ -916,7 +916,7 @@ __all__ = [
     "EnsureBytesError",
     "EnsureClassError",
     "EnsureDateError",
-    "EnsureDatetimeError",
+    "EnsureDateTimeError",
     "EnsureFloatError",
     "EnsureHashableError",
     "EnsureIntError",

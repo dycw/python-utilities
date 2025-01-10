@@ -30,7 +30,7 @@ from utilities.functions import (
     EnsureBytesError,
     EnsureClassError,
     EnsureDateError,
-    EnsureDatetimeError,
+    EnsureDateTimeError,
     EnsureFloatError,
     EnsureHashableError,
     EnsureIntError,
@@ -179,7 +179,7 @@ class TestEnsureDate:
             _ = ensure_date(sentinel, nullable=nullable)
 
 
-class TestEnsureDatetime:
+class TestEnsureDateTime:
     @given(case=sampled_from([(get_now(), False), (get_now(), True), (None, True)]))
     def test_main(self, *, case: tuple[dt.datetime | None, bool]) -> None:
         obj, nullable = case
@@ -193,7 +193,7 @@ class TestEnsureDatetime:
     )
     def test_error(self, *, case: tuple[bool, str]) -> None:
         nullable, match = case
-        with raises(EnsureDatetimeError, match=match):
+        with raises(EnsureDateTimeError, match=match):
             _ = ensure_datetime(sentinel, nullable=nullable)
 
 

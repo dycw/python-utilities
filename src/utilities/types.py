@@ -44,6 +44,10 @@ class Dataclass(Protocol):
     __dataclass_fields__: ClassVar[dict[str, Any]]
 
 
+# datetime
+DateOrDateTime: TypeAlias = dt.date | dt.datetime
+
+
 # enum
 EnumOrStr: TypeAlias = _TEnum | str
 
@@ -90,6 +94,7 @@ ZoneInfoLike: TypeAlias = ZoneInfo | str
 __all__ = [
     "Coroutine1",
     "Dataclass",
+    "DateOrDateTime",
     "Duration",
     "EnumOrStr",
     "ExcInfo",

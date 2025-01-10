@@ -48,8 +48,10 @@ from utilities.datetime import (
     ZERO_TIME,
     AddDurationError,
     AddWeekdaysError,
-    CheckDateNotDatetimeError,
-    CheckZonedDatetimeError,
+    AreEqualDatesOrDateTimesError,
+    AreEqualDateTimesError,
+    CheckDateNotDateTimeError,
+    CheckZonedDateTimeError,
     EnsureMonthError,
     MillisecondsSinceEpochError,
     Month,
@@ -68,7 +70,9 @@ from utilities.datetime import (
     add_duration,
     add_weekdays,
     are_equal_date_durations,
+    are_equal_dates_or_datetimes,
     are_equal_datetime_durations,
+    are_equal_datetimes,
     are_equal_months,
     check_date_not_datetime,
     check_zoned_datetime,
@@ -94,7 +98,6 @@ from utilities.datetime import (
     get_today_hk,
     get_today_tokyo,
     get_years,
-    is_equal_mod_tz,
     is_instance_date_not_datetime,
     is_integral_timedelta,
     is_local_datetime,
@@ -133,7 +136,7 @@ from utilities.zoneinfo import UTC, HongKong, Tokyo
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from utilities.types import Number
+    from utilities.types import DateOrDateTime, Number
 
 
 class TestAddDuration:
@@ -170,7 +173,7 @@ class TestAddDuration:
         assert result == expected
 
     @given(date=dates() | zoned_datetimes())
-    def test_none(self, *, date: dt.date | dt.datetime) -> None:
+    def test_none(self, *, date: DateOrDateTime) -> None:
         result = add_duration(date)
         assert result == date
 
@@ -252,6 +255,31 @@ class TestAreEqualDateDurations:
         assert result is expected
 
 
+class TestAreEqualDateOrDateTimes:
+    @given(x=dates(), y=dates())
+    def test_dates(self, *, x: dt.date, y: dt.date) -> None:
+        result = are_equal_dates_or_datetimes(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(x=datetimes(), y=datetimes())
+    def test_datetimes(self, *, x: dt.datetime, y: dt.datetime) -> None:
+        result = are_equal_dates_or_datetimes(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(data=data(), x=dates(), y=datetimes())
+    def test_date_vs_datetime(
+        self, *, data: DataObject, x: dt.date, y: dt.datetime
+    ) -> None:
+        left, right = data.draw(permutations([x, y]))
+        with raises(
+            AreEqualDatesOrDateTimesError,
+            match=r"Cannot compare date and datetime \(.*, .*\)",
+        ):
+            _ = are_equal_dates_or_datetimes(left, right)
+
+
 class TestAreEqualDateTimeDurations:
     @given(x=integers(), y=integers())
     def test_ints(self, *, x: int, y: int) -> None:
@@ -277,6 +305,54 @@ class TestAreEqualDateTimeDurations:
         assert result is expected
 
 
+class TestAreEqualDateTimes:
+    @given(x=datetimes(), y=datetimes())
+    def test_local(self, *, x: dt.datetime, y: dt.datetime) -> None:
+        result = are_equal_datetimes(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(
+        x=zoned_datetimes(time_zone=timezones()),
+        y=zoned_datetimes(time_zone=timezones()),
+    )
+    def test_zoned_non_strict(self, *, x: dt.datetime, y: dt.datetime) -> None:
+        result = are_equal_datetimes(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(
+        x=zoned_datetimes(time_zone=UTC),
+        y=zoned_datetimes(time_zone=UTC),
+        time_zone1=timezones(),
+        time_zone2=timezones(),
+    )
+    def test_zoned_strict(
+        self,
+        *,
+        x: dt.datetime,
+        y: dt.datetime,
+        time_zone1: ZoneInfo,
+        time_zone2: ZoneInfo,
+    ) -> None:
+        result = are_equal_datetimes(
+            x.astimezone(time_zone1), y.astimezone(time_zone2), strict=True
+        )
+        expected = (x == y) and (time_zone1 is time_zone2)
+        assert result is expected
+
+    @given(data=data(), x=datetimes(), y=zoned_datetimes(time_zone=timezones()))
+    def test_local_vs_zoned(
+        self, *, data: DataObject, x: dt.datetime, y: dt.datetime
+    ) -> None:
+        left, right = data.draw(permutations([x, y]))
+        with raises(
+            AreEqualDateTimesError,
+            match=r"Cannot compare local and zoned datetimes \(.*, .*\)",
+        ):
+            _ = are_equal_datetimes(left, right)
+
+
 class TestAreEqualMonths:
     @given(x=dates(), y=dates())
     def test_dates(self, *, x: dt.date, y: dt.date) -> None:
@@ -298,7 +374,7 @@ class TestAreEqualMonths:
         assert result is expected
 
 
-class TestCheckDateNotDatetime:
+class TestCheckDateNotDateTime:
     @given(date=dates())
     def test_main(self, *, date: dt.date) -> None:
         check_date_not_datetime(date)
@@ -306,19 +382,19 @@ class TestCheckDateNotDatetime:
     @given(datetime=datetimes())
     def test_error(self, *, datetime: dt.datetime) -> None:
         with raises(
-            CheckDateNotDatetimeError, match="Date must not be a datetime; got .*"
+            CheckDateNotDateTimeError, match="Date must not be a datetime; got .*"
         ):
             check_date_not_datetime(datetime)
 
 
-class TestCheckZonedDatetime:
+class TestCheckZonedDateTime:
     @given(datetime=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC])))
     def test_date(self, *, datetime: dt.datetime) -> None:
         check_zoned_datetime(datetime)
 
     @given(datetime=datetimes())
     def test_datetime(self, *, datetime: dt.datetime) -> None:
-        with raises(CheckZonedDatetimeError, match="Datetime must be zoned; got .*"):
+        with raises(CheckZonedDateTimeError, match="DateTime must be zoned; got .*"):
             check_zoned_datetime(datetime)
 
 
@@ -448,7 +524,7 @@ class TestDateTimeDurationToTimeDelta:
         assert result == duration
 
 
-class TestDateToDatetime:
+class TestDateToDateTime:
     @given(date=dates())
     def test_main(self, *, date: dt.date) -> None:
         result = date_to_datetime(date).date()
@@ -498,7 +574,7 @@ class TestEpoch:
         assert epoch.tzinfo is time_zone
 
 
-class TestFormatDatetimeLocalAndUTC:
+class TestFormatDateTimeLocalAndUTC:
     @mark.parametrize(
         ("datetime", "expected"),
         [
@@ -593,7 +669,7 @@ class TestGetToday:
         assert isinstance(today, dt.date)
 
 
-class TestIsInstanceDateNotDatetime:
+class TestIsInstanceDateNotDateTime:
     @given(date=dates())
     def test_date(self, *, date: dt.date) -> None:
         assert is_instance_date_not_datetime(date)
@@ -601,30 +677,6 @@ class TestIsInstanceDateNotDatetime:
     @given(datetime=datetimes())
     def test_datetime(self, *, datetime: dt.datetime) -> None:
         assert not is_instance_date_not_datetime(datetime)
-
-
-class TestIsEqualModTz:
-    @given(x=datetimes(), y=datetimes())
-    def test_local(self, *, x: dt.datetime, y: dt.datetime) -> None:
-        result = is_equal_mod_tz(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(x=zoned_datetimes(), y=zoned_datetimes())
-    def test_zoned(self, *, x: dt.datetime, y: dt.datetime) -> None:
-        result = is_equal_mod_tz(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(data=data(), x=datetimes(), y=datetimes(), time_zone=timezones())
-    def test_local_vs_zoned(
-        self, *, data: DataObject, x: dt.datetime, y: dt.datetime, time_zone: ZoneInfo
-    ) -> None:
-        y_zoned = y.replace(tzinfo=UTC).astimezone(time_zone)
-        left, right = data.draw(permutations([x, y_zoned]))
-        result = is_equal_mod_tz(left, right)
-        expected = x == y
-        assert result is expected
 
 
 class TestIsIntegralTimeDelta:
@@ -660,7 +712,7 @@ class TestIsLocalDateTime:
         assert result is expected
 
 
-class TestIsSubClassDateNotDatetime:
+class TestIsSubClassDateNotDateTime:
     @given(date=dates())
     def test_date(self, *, date: dt.date) -> None:
         assert is_subclass_date_not_datetime(type(date))
@@ -906,7 +958,7 @@ class TestSubDuration:
         assert result == expected
 
     @given(date=dates() | zoned_datetimes())
-    def test_none(self, *, date: dt.date | dt.datetime) -> None:
+    def test_none(self, *, date: DateOrDateTime) -> None:
         result = sub_duration(date)
         assert result == date
 
@@ -929,7 +981,7 @@ class TestSubDuration:
 
 class TestTimedeltaSinceEpoch:
     @given(date=dates() | zoned_datetimes(time_zone=timezones()))
-    def test_main(self, *, date: dt.date | dt.datetime) -> None:
+    def test_main(self, *, date: DateOrDateTime) -> None:
         result = timedelta_since_epoch(date)
         assert isinstance(result, dt.timedelta)
 

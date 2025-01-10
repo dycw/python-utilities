@@ -755,7 +755,7 @@ def get_data_type_or_series_time_zone(
     else:
         dtype = dtype_or_series.dtype
     if not isinstance(dtype, Datetime):
-        raise _GetDataTypeOrSeriesTimeZoneNotDatetimeError(dtype=dtype)
+        raise _GetDataTypeOrSeriesTimeZoneNotDateTimeError(dtype=dtype)
     if dtype.time_zone is None:
         raise _GetDataTypeOrSeriesTimeZoneNotZonedError(dtype=dtype)
     return ZoneInfo(dtype.time_zone)
@@ -767,7 +767,7 @@ class GetDataTypeOrSeriesTimeZoneError(Exception):
 
 
 @dataclass(kw_only=True, slots=True)
-class _GetDataTypeOrSeriesTimeZoneNotDatetimeError(GetDataTypeOrSeriesTimeZoneError):
+class _GetDataTypeOrSeriesTimeZoneNotDateTimeError(GetDataTypeOrSeriesTimeZoneError):
     @override
     def __str__(self) -> str:
         return f"Data type must be Datetime; got {self.dtype}"

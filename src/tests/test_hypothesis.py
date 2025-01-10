@@ -979,7 +979,7 @@ class TestYieldTestRedis:
             assert result == value
 
 
-class TestZonedDatetimes:
+class TestZonedDateTimes:
     @given(
         data=data(),
         min_value=datetimes(timezones=timezones() | just(dt.UTC) | none()),

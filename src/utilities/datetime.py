@@ -30,7 +30,7 @@ from utilities.zoneinfo import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import Duration, ZoneInfoLike
+    from utilities.types import DateOrDateTime, Duration, ZoneInfoLike
 
 _DAYS_PER_YEAR = 365.25
 _MICROSECONDS_PER_MILLISECOND = int(1e3)
@@ -60,7 +60,7 @@ def add_duration(
 @overload
 def add_duration(date: dt.date, /, *, duration: Duration | None = ...) -> dt.date: ...
 def add_duration(
-    date: dt.date | dt.datetime, /, *, duration: Duration | None = None
+    date: DateOrDateTime, /, *, duration: Duration | None = None
 ) -> dt.date:
     """Add a duration to a date/datetime."""
     if duration is None:
@@ -121,11 +121,61 @@ def are_equal_date_durations(x: Duration, y: Duration, /) -> bool:
 ##
 
 
+def are_equal_dates_or_datetimes(
+    x: DateOrDateTime, y: DateOrDateTime, /, *, strict: bool = False
+) -> bool:
+    """Check if x == y for dates/datetimes."""
+    if is_instance_date_not_datetime(x) and is_instance_date_not_datetime(y):
+        return x == y
+    if isinstance(x, dt.datetime) and isinstance(y, dt.datetime):
+        return are_equal_datetimes(x, y, strict=strict)
+    raise AreEqualDatesOrDateTimesError(x=x, y=y)
+
+
+@dataclass(kw_only=True, slots=True)
+class AreEqualDatesOrDateTimesError(Exception):
+    x: DateOrDateTime
+    y: DateOrDateTime
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot compare date and datetime ({self.x}, {self.y})"
+
+
+##
+
+
 def are_equal_datetime_durations(x: Duration, y: Duration, /) -> bool:
     """Check if x == y for durations."""
     x_timedelta = datetime_duration_to_timedelta(x)
     y_timedelta = datetime_duration_to_timedelta(y)
     return x_timedelta == y_timedelta
+
+
+##
+
+
+def are_equal_datetimes(
+    x: dt.datetime, y: dt.datetime, /, *, strict: bool = False
+) -> bool:
+    """Check if x == y for datetimes."""
+    if is_local_datetime(x) and is_local_datetime(y):
+        return x == y
+    if is_zoned_datetime(x) and is_zoned_datetime(y):
+        if x != y:
+            return False
+        return (x.tzinfo is y.tzinfo) or not strict
+    raise AreEqualDateTimesError(x=x, y=y)
+
+
+@dataclass(kw_only=True, slots=True)
+class AreEqualDateTimesError(Exception):
+    x: dt.datetime
+    y: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot compare local and zoned datetimes ({self.x}, {self.y})"
 
 
 ##
@@ -144,11 +194,11 @@ def are_equal_months(x: DateOrMonth, y: DateOrMonth, /) -> bool:
 def check_date_not_datetime(date: dt.date, /) -> None:
     """Check if a date is not a datetime."""
     if not is_instance_date_not_datetime(date):
-        raise CheckDateNotDatetimeError(date=date)
+        raise CheckDateNotDateTimeError(date=date)
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckDateNotDatetimeError(Exception):
+class CheckDateNotDateTimeError(Exception):
     date: dt.date
 
     @override
@@ -162,16 +212,16 @@ class CheckDateNotDatetimeError(Exception):
 def check_zoned_datetime(datetime: dt.datetime, /) -> None:
     """Check if a datetime is zoned."""
     if datetime.tzinfo is None:
-        raise CheckZonedDatetimeError(datetime=datetime)
+        raise CheckZonedDateTimeError(datetime=datetime)
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckZonedDatetimeError(Exception):
+class CheckZonedDateTimeError(Exception):
     datetime: dt.datetime
 
     @override
     def __str__(self) -> str:
-        return f"Datetime must be zoned; got {self.datetime}"
+        return f"DateTime must be zoned; got {self.datetime}"
 
 
 ##
@@ -479,19 +529,6 @@ def get_years(*, n: int = 1) -> dt.timedelta:
 
 
 YEAR = get_years(n=1)
-
-
-##
-
-
-def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
-    """Check if x == y, modulo timezone."""
-    x_aware, y_aware = x.tzinfo is not None, y.tzinfo is not None
-    if x_aware and (not y_aware):
-        return x.astimezone(UTC).replace(tzinfo=None) == y
-    if (not x_aware) and y_aware:
-        return x == y.astimezone(UTC).replace(tzinfo=None)
-    return x == y
 
 
 ##
@@ -814,7 +851,7 @@ def sub_duration(
 @overload
 def sub_duration(date: dt.date, /, *, duration: Duration | None = ...) -> dt.date: ...
 def sub_duration(
-    date: dt.date | dt.datetime, /, *, duration: Duration | None = None
+    date: DateOrDateTime, /, *, duration: Duration | None = None
 ) -> dt.date:
     """Subtract a duration from a date/datetime."""
     if duration is None:
@@ -838,7 +875,7 @@ class SubDurationError(Exception):
 ##
 
 
-def timedelta_since_epoch(date: dt.date | dt.datetime, /) -> dt.timedelta:
+def timedelta_since_epoch(date: DateOrDateTime, /) -> dt.timedelta:
     """Compute the timedelta since the epoch."""
     if isinstance(date, dt.datetime):
         check_zoned_datetime(date)
@@ -1001,8 +1038,10 @@ __all__ = [
     "ZERO_TIME",
     "AddDurationError",
     "AddWeekdaysError",
-    "CheckDateNotDatetimeError",
-    "CheckZonedDatetimeError",
+    "AreEqualDateTimesError",
+    "AreEqualDatesOrDateTimesError",
+    "CheckDateNotDateTimeError",
+    "CheckZonedDateTimeError",
     "DateOrMonth",
     "EnsureMonthError",
     "MillisecondsSinceEpochError",
@@ -1016,7 +1055,9 @@ __all__ = [
     "add_duration",
     "add_weekdays",
     "are_equal_date_durations",
+    "are_equal_dates_or_datetimes",
     "are_equal_datetime_durations",
+    "are_equal_datetimes",
     "are_equal_months",
     "check_date_not_datetime",
     "check_zoned_datetime",

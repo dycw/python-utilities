@@ -12,6 +12,7 @@ from utilities.more_itertools import (
     yield_splits,
 )
 from utilities.text import strip_and_dedent
+from utilities.types import Number
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -43,7 +44,7 @@ class TestPartitionTypeguard:
         iterable = [1, 2.0, 3, 4.0]
         false, true = partition_typeguard(is_int, iterable)
         for el in false:
-            assert isinstance(el, int | float)
+            assert isinstance(el, Number)
         for el in true:
             assert isinstance(el, int)
 
