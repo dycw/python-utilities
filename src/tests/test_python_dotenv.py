@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Literal
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data, integers, sampled_from
-from pytest import mark, raises
+from pytest import raises
 
 from utilities.errors import ImpossibleCaseError
 from utilities.hypothesis import (
@@ -25,7 +25,6 @@ from utilities.python_dotenv import (
     _LoadSettingsInvalidBoolError,
     _LoadSettingsInvalidEnumError,
     _LoadSettingsInvalidIntError,
-    _LoadSettingsInvalidPathError,
     _LoadSettingsTypeError,
     load_settings,
 )
@@ -222,7 +221,6 @@ class TestLoadSettings:
         assert settings == expected
 
     @given(root=git_repos(), value=paths())
-    @mark.only
     @settings_with_reduced_examples()
     def test_path_value(self, *, root: Path, value: Path) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -235,22 +233,6 @@ class TestLoadSettings:
         settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)
         assert settings == expected
-
-    @given(root=git_repos())
-    @settings_with_reduced_examples()
-    def test_path_value_error(self, *, root: Path) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: Path
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write("key = '...'\n")
-
-        with raises(
-            _LoadSettingsInvalidPathError,
-            match=r"Field 'key' must contain a valid path; got '...'",
-        ):
-            _ = load_settings(Settings, cwd=root)
 
     @given(root=git_repos())
     @settings_with_reduced_examples()

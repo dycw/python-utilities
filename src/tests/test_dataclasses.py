@@ -14,7 +14,7 @@ from polars import DataFrame
 from pytest import raises
 from typing_extensions import override
 
-from tests.test_operator import DataClass3
+from tests.test_operator import DataClass5
 from utilities.dataclasses import (
     YieldFieldsError,
     _MappingToDataclassCaseInsensitiveNonUniqueError,
@@ -28,7 +28,7 @@ from utilities.dataclasses import (
     yield_fields,
 )
 from utilities.functions import get_class_name
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import paths, text_ascii
 from utilities.iterables import one
 from utilities.orjson import OrjsonLogRecord
 from utilities.polars import are_frames_equal
@@ -185,6 +185,16 @@ class TestMappingToDataclass:
             x: int
 
         obj = mapping_to_dataclass(Example, {key: value}, case_sensitive=False)
+        expected = Example(x=value)
+        assert obj == expected
+
+    @given(value=paths())
+    def test_path(self, *, value: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: Path
+
+        obj = mapping_to_dataclass(Example, {"x": value})
         expected = Example(x=value)
         assert obj == expected
 
@@ -392,10 +402,26 @@ class TestYieldFields:
         assert get_args(arg) == ("true", "false")
 
     def test_class_literal_defined_elsewhere(self) -> None:
-        result = one(yield_fields(DataClass3))
-        expected = _YieldFieldsClass(
-            name="truth", type_=Literal["true", "false"], kw_only=True
-        )
+        result = one(yield_fields(DataClass5))
+        expected = _YieldFieldsClass(name="path", type_=Path, kw_only=True)
+        assert result == expected
+
+    def test_class_path(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: Path
+
+        result = one(yield_fields(Example))
+        expected = _YieldFieldsClass(name="x", type_=Path, kw_only=True)
+        assert result == expected
+
+    def test_class_path_defined_elsewhere(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: Path
+
+        result = one(yield_fields(Example))
+        expected = _YieldFieldsClass(name="x", type_=Path, kw_only=True)
         assert result == expected
 
     def test_class_orjson_log_record(self) -> None:

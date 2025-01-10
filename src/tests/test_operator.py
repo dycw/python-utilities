@@ -46,6 +46,8 @@ from utilities.operator import IsEqualError, is_equal
 from utilities.polars import are_frames_equal
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from utilities.types import Number
     from utilities.typing import StrMapping
 
@@ -242,6 +244,11 @@ class DataClass4:
     @override
     def __hash__(self) -> int:
         return id(self)
+
+
+@dataclass(unsafe_hash=True, kw_only=True, slots=True)
+class DataClass5:
+    path: Path
 
 
 class TruthEnum(Enum):

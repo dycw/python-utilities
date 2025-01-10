@@ -92,12 +92,7 @@ def _load_settings_post(
                 path=path, values=values, field=field.name, value=value
             ) from None
     if type_ is Path:
-        try:
-            return Path(value)
-        except ValueError:
-            raise _LoadSettingsInvalidPathError(
-                path=path, values=values, field=field.name, value=value
-            ) from None
+        return Path(value)
     if isinstance(type_, type) and issubclass(type_, Enum):
         try:
             return ensure_enum(value, type_)
@@ -162,17 +157,6 @@ class _LoadSettingsInvalidIntError(LoadSettingsError):
     @override
     def __str__(self) -> str:
         return f"Field {self.field!r} must contain a valid integer; got {self.value!r}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _LoadSettingsInvalidPathError(LoadSettingsError):
-    values: StrMapping
-    field: str
-    value: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Field {self.field!r} must contain a valid path; got {self.value!r}"
 
 
 @dataclass(kw_only=True, slots=True)
