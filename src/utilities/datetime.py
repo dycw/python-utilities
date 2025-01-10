@@ -534,19 +534,6 @@ YEAR = get_years(n=1)
 ##
 
 
-def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
-    """Check if x == y, modulo timezone."""
-    x_aware, y_aware = x.tzinfo is not None, y.tzinfo is not None
-    if x_aware and (not y_aware):
-        return x.astimezone(UTC).replace(tzinfo=None) == y
-    if (not x_aware) and y_aware:
-        return x == y.astimezone(UTC).replace(tzinfo=None)
-    return x == y
-
-
-##
-
-
 def is_instance_date_not_datetime(obj: Any, /) -> TypeGuard[dt.date]:
     """Check if an object is a date, and not a datetime."""
     return isinstance(obj, dt.date) and not isinstance(obj, dt.datetime)

@@ -98,7 +98,6 @@ from utilities.datetime import (
     get_today_hk,
     get_today_tokyo,
     get_years,
-    is_equal_mod_tz,
     is_instance_date_not_datetime,
     is_integral_timedelta,
     is_local_datetime,
@@ -678,33 +677,6 @@ class TestIsInstanceDateNotDateTime:
     @given(datetime=datetimes())
     def test_datetime(self, *, datetime: dt.datetime) -> None:
         assert not is_instance_date_not_datetime(datetime)
-
-
-class TestIsEqualModTz:
-    @given(x=datetimes(), y=datetimes())
-    def test_local(self, *, x: dt.datetime, y: dt.datetime) -> None:
-        result = is_equal_mod_tz(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(
-        x=zoned_datetimes(time_zone=timezones()),
-        y=zoned_datetimes(time_zone=timezones()),
-    )
-    def test_zoned(self, *, x: dt.datetime, y: dt.datetime) -> None:
-        result = is_equal_mod_tz(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(data=data(), x=datetimes(), y=datetimes(), time_zone=timezones())
-    def test_local_vs_zoned(
-        self, *, data: DataObject, x: dt.datetime, y: dt.datetime, time_zone: ZoneInfo
-    ) -> None:
-        y_zoned = y.replace(tzinfo=UTC).astimezone(time_zone)
-        left, right = data.draw(permutations([x, y_zoned]))
-        result = is_equal_mod_tz(left, right)
-        expected = x == y
-        assert result is expected
 
 
 class TestIsIntegralTimeDelta:
