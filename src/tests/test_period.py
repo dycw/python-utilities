@@ -25,15 +25,15 @@ from utilities.datetime import ZERO_TIME
 from utilities.hypothesis import assume_does_not_raise, pairs, zoned_datetimes
 from utilities.period import (
     Period,
-    _DateOrDatetime,
+    _DateOrDateTime,
     _PeriodAsTimeZoneInapplicableError,
-    _PeriodDateAndDatetimeMixedError,
+    _PeriodDateAndDateTimeMixedError,
     _PeriodDateContainsDateTimeError,
     _PeriodDateTimeContainsDateError,
     _PeriodInvalidError,
     _PeriodMaxDurationError,
     _PeriodMinDurationError,
-    _PeriodNaiveDatetimeError,
+    _PeriodNaiveDateTimeError,
     _PeriodReqDurationError,
     _PeriodTimeZoneInapplicableError,
     _PeriodTimeZoneNonUniqueError,
@@ -124,7 +124,7 @@ class TestPeriod:
     @given(
         case=tuples(dates(), just("date")) | tuples(zoned_datetimes(), just("datetime"))
     )
-    def test_kind(self, *, case: tuple[dt.date, _DateOrDatetime]) -> None:
+    def test_kind(self, *, case: tuple[dt.date, _DateOrDateTime]) -> None:
         date_or_datetime, kind = case
         period = Period(date_or_datetime, date_or_datetime)
         assert period.kind == kind
@@ -244,7 +244,7 @@ class TestPeriod:
     ) -> None:
         start, end = data.draw(permutations([date, datetime]))
         with raises(
-            _PeriodDateAndDatetimeMixedError,
+            _PeriodDateAndDateTimeMixedError,
             match=r"Invalid period; got date and datetime mix \(.*, .*\)",
         ):
             _ = Period(start, end)
@@ -256,7 +256,7 @@ class TestPeriod:
         start, end = datetimes
         _ = assume((start.tzinfo is None) or (end.tzinfo is None))
         with raises(
-            _PeriodNaiveDatetimeError,
+            _PeriodNaiveDateTimeError,
             match=r"Invalid period; got naive datetime\(s\) \(.*, .*\)",
         ):
             _ = Period(start, end)

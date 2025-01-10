@@ -48,8 +48,8 @@ from utilities.datetime import (
     ZERO_TIME,
     AddDurationError,
     AddWeekdaysError,
-    CheckDateNotDatetimeError,
-    CheckZonedDatetimeError,
+    CheckDateNotDateTimeError,
+    CheckZonedDateTimeError,
     EnsureMonthError,
     MillisecondsSinceEpochError,
     Month,
@@ -298,7 +298,7 @@ class TestAreEqualMonths:
         assert result is expected
 
 
-class TestCheckDateNotDatetime:
+class TestCheckDateNotDateTime:
     @given(date=dates())
     def test_main(self, *, date: dt.date) -> None:
         check_date_not_datetime(date)
@@ -306,19 +306,19 @@ class TestCheckDateNotDatetime:
     @given(datetime=datetimes())
     def test_error(self, *, datetime: dt.datetime) -> None:
         with raises(
-            CheckDateNotDatetimeError, match="Date must not be a datetime; got .*"
+            CheckDateNotDateTimeError, match="Date must not be a datetime; got .*"
         ):
             check_date_not_datetime(datetime)
 
 
-class TestCheckZonedDatetime:
+class TestCheckZonedDateTime:
     @given(datetime=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC])))
     def test_date(self, *, datetime: dt.datetime) -> None:
         check_zoned_datetime(datetime)
 
     @given(datetime=datetimes())
     def test_datetime(self, *, datetime: dt.datetime) -> None:
-        with raises(CheckZonedDatetimeError, match="Datetime must be zoned; got .*"):
+        with raises(CheckZonedDateTimeError, match="DateTime must be zoned; got .*"):
             check_zoned_datetime(datetime)
 
 
@@ -448,7 +448,7 @@ class TestDateTimeDurationToTimeDelta:
         assert result == duration
 
 
-class TestDateToDatetime:
+class TestDateToDateTime:
     @given(date=dates())
     def test_main(self, *, date: dt.date) -> None:
         result = date_to_datetime(date).date()
@@ -498,7 +498,7 @@ class TestEpoch:
         assert epoch.tzinfo is time_zone
 
 
-class TestFormatDatetimeLocalAndUTC:
+class TestFormatDateTimeLocalAndUTC:
     @mark.parametrize(
         ("datetime", "expected"),
         [
@@ -593,7 +593,7 @@ class TestGetToday:
         assert isinstance(today, dt.date)
 
 
-class TestIsInstanceDateNotDatetime:
+class TestIsInstanceDateNotDateTime:
     @given(date=dates())
     def test_date(self, *, date: dt.date) -> None:
         assert is_instance_date_not_datetime(date)
@@ -660,7 +660,7 @@ class TestIsLocalDateTime:
         assert result is expected
 
 
-class TestIsSubClassDateNotDatetime:
+class TestIsSubClassDateNotDateTime:
     @given(date=dates())
     def test_date(self, *, date: dt.date) -> None:
         assert is_subclass_date_not_datetime(type(date))

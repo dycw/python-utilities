@@ -89,7 +89,7 @@ _TIMEDELTA_OVERFLOW = dt.timedelta(days=106751991, seconds=14454, microseconds=7
 
 
 @SKIPIF_CI_AND_WINDOWS
-class TestCheckValidZonedDatetime:
+class TestCheckValidZonedDateTime:
     @mark.parametrize(
         "datetime",
         [
@@ -413,7 +413,7 @@ class TestParseAndSerializeZonedDateTime:
             _ = ensure_zoned_datetime("invalid")
 
 
-class TestToDatetimeDelta:
+class TestToDateTimeDelta:
     @given(days=integers(), microseconds=integers())
     def test_main(self, *, days: int, microseconds: int) -> None:
         with assume_does_not_raise(OverflowError):

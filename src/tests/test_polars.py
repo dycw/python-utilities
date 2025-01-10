@@ -82,7 +82,7 @@ from utilities.polars import (
     _CheckPolarsDataFrameWidthError,
     _DataClassToDataFrameEmptyError,
     _DataClassToDataFrameNonUniqueError,
-    _GetDataTypeOrSeriesTimeZoneNotDatetimeError,
+    _GetDataTypeOrSeriesTimeZoneNotDateTimeError,
     _GetDataTypeOrSeriesTimeZoneNotZonedError,
     _RollingParametersArgumentsError,
     _RollingParametersMinPeriodsError,
@@ -241,7 +241,7 @@ class TestAreFramesEqual:
         assert result is expected
 
 
-class TestCeilDatetime:
+class TestCeilDateTime:
     start: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC)
     end: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC)
     expected: ClassVar[Series] = Series(
@@ -922,7 +922,7 @@ class TestDataClassToSchema:
             _ = dataclass_to_schema(obj)
 
 
-class TestDatetimeUTC:
+class TestDatetimeDTypes:
     @mark.parametrize(
         ("dtype", "time_zone"),
         [
@@ -969,7 +969,7 @@ class TestEnsureExprOrSeries:
         assert isinstance(result, Expr | Series)
 
 
-class TestFloorDatetime:
+class TestFloorDateTime:
     start: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC)
     end: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC)
     expected: ClassVar[Series] = Series(
@@ -1024,7 +1024,7 @@ class TestGetDataTypeOrSeriesTimeZone:
 
     def test_error_not_datetime(self) -> None:
         with raises(
-            _GetDataTypeOrSeriesTimeZoneNotDatetimeError,
+            _GetDataTypeOrSeriesTimeZoneNotDateTimeError,
             match="Data type must be Datetime; got Boolean",
         ):
             _ = get_data_type_or_series_time_zone(Boolean())
@@ -1850,7 +1850,7 @@ class TestYieldStructSeriesElements:
             _ = list(yield_struct_series_elements(series, strict=True))
 
 
-class TestZonedDatetime:
+class TestZonedDateTime:
     @given(time_zone=sampled_from([HongKong, UTC]))
     def test_main(self, *, time_zone: ZoneInfo) -> None:
         dtype = zoned_datetime(time_zone=time_zone)
