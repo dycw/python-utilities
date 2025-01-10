@@ -11,7 +11,12 @@ from hypothesis.strategies import DataObject, booleans, data, integers, sampled_
 from pytest import raises
 
 from utilities.errors import ImpossibleCaseError
-from utilities.hypothesis import git_repos, settings_with_reduced_examples, text_ascii
+from utilities.hypothesis import (
+    git_repos,
+    paths,
+    settings_with_reduced_examples,
+    text_ascii,
+)
 from utilities.os import temp_environ
 from utilities.python_dotenv import (
     _LoadSettingsDuplicateKeysError,
@@ -212,6 +217,20 @@ class TestLoadSettings:
             _ = fh.write(f"key = {value}\n")
 
         settings = load_settings(Settings, cwd=root, localns={"Literal": Literal})
+        expected = Settings(key=value)
+        assert settings == expected
+
+    @given(root=git_repos(), value=paths())
+    @settings_with_reduced_examples()
+    def test_path_value(self, *, root: Path, value: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: Path
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"key = {value}\n")
+
+        settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)
         assert settings == expected
 

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from os import environ
+from pathlib import Path
 from re import IGNORECASE, search
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -26,7 +27,6 @@ from utilities.typing import get_args, is_literal_type
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
-    from pathlib import Path
 
     from utilities.types import PathLike, StrMapping
 
@@ -91,6 +91,8 @@ def _load_settings_post(
             raise _LoadSettingsInvalidIntError(
                 path=path, values=values, field=field.name, value=value
             ) from None
+    if type_ is Path:
+        return Path(value)
     if isinstance(type_, type) and issubclass(type_, Enum):
         try:
             return ensure_enum(value, type_)

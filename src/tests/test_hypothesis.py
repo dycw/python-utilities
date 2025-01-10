@@ -28,6 +28,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
+from pathvalidate import validate_filepath
 from pytest import raises
 from sqlalchemy import Column, Integer, MetaData, Table, insert, select
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -69,6 +70,7 @@ from utilities.hypothesis import (
     months,
     numbers,
     pairs,
+    paths,
     random_states,
     sets_fixed_length,
     settings_with_reduced_examples,
@@ -639,6 +641,15 @@ class TestPairs:
             assert first != second
         if sorted_:
             assert first <= second
+
+
+class TestPaths:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        path = data.draw(paths())
+        assert isinstance(path, Path)
+        assert not path.is_absolute()
+        validate_filepath(str(path))
 
 
 class TestRandomStates:
