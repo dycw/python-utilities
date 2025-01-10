@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from collections.abc import Callable, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from dataclasses import asdict, dataclass
@@ -8,6 +9,7 @@ from typing import Any, TypeVar, cast
 from typing_extensions import override
 
 import utilities.math
+from utilities.datetime import are_equal_dates_or_datetimes
 from utilities.functions import is_dataclass_instance
 from utilities.iterables import SortIterableError, sort_iterable
 from utilities.reprlib import get_repr
@@ -47,6 +49,9 @@ def is_equal(
     if isinstance(x, str):  # else Sequence
         y = cast(str, y)
         return x == y
+    if isinstance(x, dt.date | dt.datetime):
+        y = cast(dt.date | dt.datetime, y)
+        return are_equal_dates_or_datetimes(x, y)
     if is_dataclass_instance(x):
         y = cast(Dataclass, y)
         x_values = asdict(x)
