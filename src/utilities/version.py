@@ -10,6 +10,7 @@ from typing_extensions import override
 
 from utilities.git import MASTER, fetch_all_tags, get_ref_tags
 from utilities.iterables import OneEmptyError, one
+from utilities.os import temp_environ
 from utilities.pathlib import PWD
 
 if TYPE_CHECKING:
@@ -163,7 +164,8 @@ class GetGitVersionError(Exception):
 
 def get_hatch_version(*, cwd: PathLike = PWD) -> Version:
     """Get the version according to `hatch`."""
-    output = check_output(["hatch", "version"], cwd=cwd, text=True)
+    with temp_environ(NO_COLOR="1"):
+        output = check_output(["hatch", "version"], cwd=cwd, text=True)
     return parse_version(output.strip("\n"))
 
 
