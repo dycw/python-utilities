@@ -104,7 +104,7 @@ def get_type_hints(
         return second
     if (first is not None) and (second is not None):
         check_sets_equal(first, second)
-        return {k: second[k] if isinstance(first[k], str) else second[k] for k in first}
+        return {k: second[k] for k in first}
     raise ImpossibleCaseError(case=[f"{first=}", f"{second=}"])  # pragma: no cover
 
 
