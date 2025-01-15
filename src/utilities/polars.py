@@ -55,7 +55,7 @@ from polars._typing import (
     SchemaDict,
     TimeUnit,
 )
-from polars.datatypes import DataType
+from polars.datatypes import DataType, DataTypeClass
 from polars.exceptions import (
     ColumnNotFoundError,
     OutOfBoundsError,
@@ -101,13 +101,7 @@ from utilities.math import (
 )
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel
-from utilities.types import (
-    Dataclass,
-    MaybeIterable,
-    MaybeType,
-    StrMapping,
-    ZoneInfoLike,
-)
+from utilities.types import Dataclass, MaybeIterable, StrMapping, ZoneInfoLike
 from utilities.typing import (
     get_args,
     get_type_hints,
@@ -129,7 +123,6 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 _TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 ExprLike: TypeAlias = Expr | str
-DataTypeLike: TypeAlias = MaybeType[DataType]
 DatetimeHongKong = Datetime(time_zone="Asia/Hong_Kong")
 DatetimeTokyo = Datetime(time_zone="Asia/Tokyo")
 DatetimeUSCentral = Datetime(time_zone="US/Central")
@@ -723,7 +716,7 @@ class DropNullStructSeriesError(Exception):
 ##
 
 
-def ensure_data_type(dtype: DataTypeLike, /) -> DataType:
+def ensure_data_type(dtype: PolarsDataType, /) -> DataType:
     """Ensure a data type is returned."""
     return dtype if isinstance(dtype, DataType) else dtype()
 
@@ -765,13 +758,13 @@ def floor_datetime(column: IntoExprColumn, every: ExprLike, /) -> Expr | Series:
 
 
 def get_data_type_or_series_time_zone(
-    dtype_or_series: DataTypeLike | Series, /
+    dtype_or_series: PolarsDataType | Series, /
 ) -> ZoneInfo:
     """Get the time zone of a dtype/series."""
     match dtype_or_series:
         case DataType() as dtype:
             ...
-        case type() as dtype_cls:
+        case DataTypeClass() as dtype_cls:
             dtype = dtype_cls()
         case Series() as series:
             dtype = series.dtype
@@ -1474,7 +1467,6 @@ __all__ = [
     "CheckPolarsDataFrameError",
     "ColumnsToDictError",
     "DataClassToDataFrameError",
-    "DataTypeLike",
     "DatetimeHongKong",
     "DatetimeTokyo",
     "DatetimeUSCentral",
