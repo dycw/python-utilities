@@ -934,18 +934,20 @@ class TestDataClassToSchema:
 
 
 class TestDatetimeDTypes:
-    @mark.parametrize(
-        ("dtype", "time_zone"),
-        [
-            param(DatetimeHongKong, HongKong),
-            param(DatetimeTokyo, Tokyo),
-            param(DatetimeUSCentral, USCentral),
-            param(DatetimeUSEastern, USEastern),
-            param(DatetimeUTC, UTC),
-        ],
+    @given(
+        case=sampled_from([
+            (HongKong, DatetimeHongKong),
+            (Tokyo, DatetimeTokyo),
+            (USCentral, DatetimeUSCentral),
+            (USEastern, DatetimeUSEastern),
+            (UTC, DatetimeUTC),
+        ])
     )
-    def test_main(self, *, dtype: Datetime, time_zone: ZoneInfo) -> None:
-        assert dtype.time_zone == get_time_zone_name(time_zone)
+    def test_main(self, *, case: tuple[ZoneInfo, Datetime]) -> None:
+        time_zone, dtype = case
+        name = get_time_zone_name(time_zone)
+        expected = dtype.time_zone
+        assert name == expected
 
 
 class TestDropNullStructSeries:
@@ -1084,16 +1086,14 @@ class TestGetSeriesNumberOfDecimals:
 
 
 class TestIsNullAndIsNotNullStructSeries:
-    @mark.parametrize(
-        ("func", "exp_values"),
-        [
-            param(is_null_struct_series, [True, False, False, False]),
-            param(is_not_null_struct_series, [False, True, True, True]),
-        ],
+    @given(
+        case=sampled_from([
+            (is_null_struct_series, [True, False, False, False]),
+            (is_not_null_struct_series, [False, True, True, True]),
+        ])
     )
-    def test_main(
-        self, *, func: Callable[[Series], Series], exp_values: list[bool]
-    ) -> None:
+    def test_main(self, *, case: tuple[Callable[[Series], Series], list[bool]]) -> None:
+        func, exp_values = case
         series = Series(
             values=[
                 {"a": None, "b": None},
@@ -1107,16 +1107,16 @@ class TestIsNullAndIsNotNullStructSeries:
         expected = Series(values=exp_values, dtype=Boolean)
         assert_series_equal(result, expected)
 
-    @mark.parametrize(
-        ("func", "exp_values"),
-        [
-            param(is_null_struct_series, [False, False, False, True]),
-            param(is_not_null_struct_series, [True, True, True, False]),
-        ],
+    @given(
+        case=sampled_from([
+            (is_null_struct_series, [False, False, False, True]),
+            (is_not_null_struct_series, [True, True, True, False]),
+        ])
     )
     def test_nested(
-        self, *, func: Callable[[Series], Series], exp_values: list[bool]
+        self, *, case: tuple[Callable[[Series], Series], list[bool]]
     ) -> None:
+        func, exp_values = case
         series = Series(
             values=[
                 {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
@@ -1134,16 +1134,16 @@ class TestIsNullAndIsNotNullStructSeries:
         expected = Series(values=exp_values, dtype=Boolean)
         assert_series_equal(result, expected)
 
-    @mark.parametrize(
-        ("func", "error"),
-        [
-            param(is_null_struct_series, IsNullStructSeriesError),
-            param(is_not_null_struct_series, IsNotNullStructSeriesError),
-        ],
+    @given(
+        case=sampled_from([
+            (is_null_struct_series, IsNullStructSeriesError),
+            (is_not_null_struct_series, IsNotNullStructSeriesError),
+        ])
     )
     def test_error(
-        self, *, func: Callable[[Series], Series], error: type[Exception]
+        self, *, case: tuple[Callable[[Series], Series], type[Exception]]
     ) -> None:
+        func, error = case
         series = Series(name="series", values=[1, 2, 3, None], dtype=Int64)
         with raises(error, match="Series must have Struct-dtype; got Int64"):
             _ = func(series)
