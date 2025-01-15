@@ -66,6 +66,7 @@ from utilities.iterables import (
     apply_bijection,
     apply_to_tuple,
     apply_to_varargs,
+    chain_nullable,
     check_bijection,
     check_duplicates,
     check_iterables_equal,
@@ -187,6 +188,17 @@ class TestApplyToVarArgs:
     def test_main(self, *, x: int, y: int) -> None:
         result = apply_to_varargs(sub, x, y)
         expected = x - y
+        assert result == expected
+
+
+class TestChainNullable:
+    @given(values=lists(lists(integers() | none()) | none()))
+    def test_main(self, *, values: list[list[int | None] | None]) -> None:
+        result = list(chain_nullable(values))
+        expected = []
+        for val in values:
+            if val is not None:
+                expected.extend(v for v in val if v is not None)
         assert result == expected
 
 
