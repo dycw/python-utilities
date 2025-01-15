@@ -28,6 +28,7 @@ Number: TypeAlias = int | float
 Duration: TypeAlias = Number | dt.timedelta
 StrMapping: TypeAlias = Mapping[str, Any]
 TupleOrStrMapping: TypeAlias = tuple[Any, ...] | StrMapping
+MaybeType: TypeAlias = _T | type[_T]
 
 
 # asyncio
@@ -105,6 +106,7 @@ __all__ = [
     "MaybeCoroutine1",
     "MaybeIterable",
     "MaybeIterableHashable",
+    "MaybeType",
     "Number",
     "OptExcInfo",
     "PathLike",

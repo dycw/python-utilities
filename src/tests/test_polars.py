@@ -14,6 +14,7 @@ import polars as pl
 from hypothesis import assume, given
 from hypothesis.strategies import (
     DataObject,
+    booleans,
     builds,
     data,
     fixed_dictionaries,
@@ -27,6 +28,7 @@ from hypothesis.strategies import (
 from polars import (
     Boolean,
     DataFrame,
+    DataType,
     Date,
     Datetime,
     Expr,
@@ -47,7 +49,12 @@ from pytest import mark, param, raises
 
 from utilities.datetime import get_now, get_today
 from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
-from utilities.math import is_greater_than, is_less_than, is_positive
+from utilities.math import (
+    is_greater_than,
+    is_less_than,
+    is_positive,
+    number_of_decimals,
+)
 from utilities.pathlib import PWD
 from utilities.polars import (
     AppendDataClassError,
@@ -84,6 +91,8 @@ from utilities.polars import (
     _DataClassToDataFrameNonUniqueError,
     _GetDataTypeOrSeriesTimeZoneNotDateTimeError,
     _GetDataTypeOrSeriesTimeZoneNotZonedError,
+    _GetSeriesNumberOfDecimalsAllNullError,
+    _GetSeriesNumberOfDecimalsNotFloatError,
     _RollingParametersArgumentsError,
     _RollingParametersMinPeriodsError,
     _yield_struct_series_element_remove_nulls,
@@ -99,9 +108,11 @@ from utilities.polars import (
     dataclass_to_dataframe,
     dataclass_to_schema,
     drop_null_struct_series,
+    ensure_data_type,
     ensure_expr_or_series,
     floor_datetime,
     get_data_type_or_series_time_zone,
+    get_series_number_of_decimals,
     is_not_null_struct_series,
     is_null_struct_series,
     join,
@@ -135,7 +146,7 @@ if TYPE_CHECKING:
 
     from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
 
-    from utilities.types import StrMapping
+    from utilities.types import MaybeType, StrMapping
 
 
 TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
@@ -960,10 +971,16 @@ class TestDropNullStructSeries:
             _ = drop_null_struct_series(series)
 
 
+class TestEnsureDataType:
+    @given(dtype=sampled_from([Boolean, Boolean()]))
+    def test_main(self, *, dtype: MaybeType[Boolean]) -> None:
+        result = ensure_data_type(dtype)
+        assert isinstance(result, DataType)
+        assert isinstance(result, Boolean)
+
+
 class TestEnsureExprOrSeries:
-    @mark.parametrize(
-        "column", [param("column"), param(col("column")), param(int_range(end=10))]
-    )
+    @given(column=sampled_from(["column", col("column"), int_range(end=10)]))
     def test_main(self, *, column: IntoExprColumn) -> None:
         result = ensure_expr_or_series(column)
         assert isinstance(result, Expr | Series)
@@ -1008,8 +1025,9 @@ class TestFloorDateTime:
 
 
 class TestGetDataTypeOrSeriesTimeZone:
-    @given(time_zone=sampled_from([HongKong, UTC]))
-    @mark.parametrize("case", [param("dtype"), param("series")])
+    @given(
+        time_zone=sampled_from([HongKong, UTC]), case=sampled_from(["dtype", "series"])
+    )
     def test_main(
         self, *, time_zone: ZoneInfo, case: Literal["dtype", "series"]
     ) -> None:
@@ -1027,14 +1045,42 @@ class TestGetDataTypeOrSeriesTimeZone:
             _GetDataTypeOrSeriesTimeZoneNotDateTimeError,
             match="Data type must be Datetime; got Boolean",
         ):
-            _ = get_data_type_or_series_time_zone(Boolean())
+            _ = get_data_type_or_series_time_zone(Boolean)
 
     def test_error_not_zoned(self) -> None:
         with raises(
             _GetDataTypeOrSeriesTimeZoneNotZonedError,
             match="Data type must be zoned; got .*",
         ):
-            _ = get_data_type_or_series_time_zone(Datetime())
+            _ = get_data_type_or_series_time_zone(Datetime)
+
+
+class TestGetSeriesNumberOfDecimals:
+    @given(data=data(), n=integers(1, 10), nullable=booleans())
+    def test_main(self, *, data: DataObject, n: int, nullable: bool) -> None:
+        strategy = int64s() | none() if nullable else int64s()
+        ints_or_none = data.draw(lists(strategy, min_size=1, max_size=10))
+        values = [None if i is None else i / 10**n for i in ints_or_none]
+        series = Series(values=values, dtype=Float64)
+        result = get_series_number_of_decimals(series, nullable=nullable)
+        if not nullable:
+            assert result is not None
+            expected = max(number_of_decimals(v) for v in values if v is not None)
+            assert result == expected
+
+    def test_error_not_float(self) -> None:
+        with raises(
+            _GetSeriesNumberOfDecimalsNotFloatError,
+            match="Data type must be Float64; got Boolean",
+        ):
+            _ = get_series_number_of_decimals(Series(dtype=Boolean))
+
+    def test_error_not_zoned(self) -> None:
+        with raises(
+            _GetSeriesNumberOfDecimalsAllNullError,
+            match="Series must not be all-null; got .*",
+        ):
+            _ = get_series_number_of_decimals(Series(dtype=Float64))
 
 
 class TestIsNullAndIsNotNullStructSeries:
