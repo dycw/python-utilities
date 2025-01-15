@@ -128,12 +128,13 @@ if TYPE_CHECKING:
 
 _T = TypeVar("_T")
 _TDataclass = TypeVar("_TDataclass", bound=Dataclass)
+ExprLike: TypeAlias = Expr | str
+DataTypeLike: TypeAlias = MaybeType[DataType]
 DatetimeHongKong = Datetime(time_zone="Asia/Hong_Kong")
 DatetimeTokyo = Datetime(time_zone="Asia/Tokyo")
 DatetimeUSCentral = Datetime(time_zone="US/Central")
 DatetimeUSEastern = Datetime(time_zone="US/Eastern")
 DatetimeUTC = Datetime(time_zone="UTC")
-ExprLike: TypeAlias = Expr | str
 
 
 ##
@@ -722,7 +723,7 @@ class DropNullStructSeriesError(Exception):
 ##
 
 
-def ensure_data_type(dtype: MaybeType[DataType], /) -> DataType:
+def ensure_data_type(dtype: DataTypeLike, /) -> DataType:
     """Ensure a data type is returned."""
     return dtype if isinstance(dtype, DataType) else dtype()
 
@@ -764,13 +765,18 @@ def floor_datetime(column: IntoExprColumn, every: ExprLike, /) -> Expr | Series:
 
 
 def get_data_type_or_series_time_zone(
-    dtype_or_series: DataType | Series, /
+    dtype_or_series: DataTypeLike | Series, /
 ) -> ZoneInfo:
     """Get the time zone of a dtype/series."""
-    if isinstance(dtype_or_series, DataType):
-        dtype = dtype_or_series
-    else:
-        dtype = dtype_or_series.dtype
+    match dtype_or_series:
+        case DataType() as dtype:
+            ...
+        case type() as dtype_cls:
+            dtype = dtype_cls()
+        case Series() as series:
+            dtype = series.dtype
+        case _ as never:
+            assert_never(never)
     if not isinstance(dtype, Datetime):
         raise _GetDataTypeOrSeriesTimeZoneNotDateTimeError(dtype=dtype)
     if dtype.time_zone is None:
@@ -1468,6 +1474,7 @@ __all__ = [
     "CheckPolarsDataFrameError",
     "ColumnsToDictError",
     "DataClassToDataFrameError",
+    "DataTypeLike",
     "DatetimeHongKong",
     "DatetimeTokyo",
     "DatetimeUSCentral",
