@@ -45,11 +45,10 @@ from utilities.math import (
     check_integer,
 )
 from utilities.reprlib import get_repr
-from utilities.sentinel import sentinel
+from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from utilities.sentinel import Sentinel
     from utilities.types import MaybeIterable, StrMapping
 
 
@@ -140,6 +139,15 @@ def apply_to_tuple(func: Callable[..., _T], args: tuple[Any, ...], /) -> _T:
 def apply_to_varargs(func: Callable[..., _T], *args: Any) -> _T:
     """Apply a function to a variable number of arguments."""
     return func(*args)
+
+
+##
+
+
+def chain_nullable(iterable: Iterable[Iterable[_T | None] | None], /) -> Iterable[_T]:
+    """Chain a set of values; ignoring nulls."""
+    values = ((i for i in it if i is not None) for it in iterable if it is not None)
+    return chain.from_iterable(values)
 
 
 ##
@@ -1241,6 +1249,7 @@ __all__ = [
     "apply_bijection",
     "apply_to_tuple",
     "apply_to_varargs",
+    "chain_nullable",
     "check_bijection",
     "check_duplicates",
     "check_iterables_equal",
