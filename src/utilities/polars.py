@@ -10,6 +10,7 @@ from datetime import timezone
 from functools import partial, reduce
 from itertools import chain
 from math import ceil, log
+from operator import add
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -95,7 +96,6 @@ from utilities.iterables import (
     check_superset,
     is_iterable_not_str,
     one,
-    one_modal_value,
 )
 from utilities.math import (
     CheckIntegerError,
@@ -122,7 +122,7 @@ from utilities.warnings import suppress_warnings
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Sequence
+    from collections.abc import Callable, Iterator, Sequence
     from collections.abc import Set as AbstractSet
 
 
@@ -816,14 +816,20 @@ def finite_ewma(
     one_minus_alpha = 1.0 - alpha_
     min_window = log(1.0 - threshold) / log(one_minus_alpha) - 1.0
     window = ceil(min_window)
-    print(f"{params=}", f"{window=}")
     terms = (alpha_ * one_minus_alpha**i * column.shift(n=i) for i in range(window + 1))
-    terms = list(terms)
-    print(f"{terms=}")
-    total = sum_horizontal(*terms)
-    predicate = int_range(start=1, end=pl.len() + 1) >= min_periods
-    print(f"{total=}")
-    return when(predicate).then(total)
+    match column:
+        case Expr():
+            terms = cast(Iterable[Expr], terms)
+            total = sum_horizontal(*terms)
+            predicate = int_range(end=pl.len()) > min_periods
+            return when(predicate).then(total)
+        case Series():
+            terms = cast(Iterable[Series], terms)
+            total = reduce(add, terms)
+            predicate = int_range(end=len(total), eager=True) > min_periods
+            return total.filter(predicate)
+        case _ as never:
+            assert_never(never)
 
 
 @dataclass(kw_only=True)
