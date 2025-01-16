@@ -47,12 +47,7 @@ from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import raises
 
 from utilities.datetime import get_now, get_today
-from utilities.hypothesis import (
-    assume_does_not_raise,
-    int64s,
-    text_ascii,
-    zoned_datetimes,
-)
+from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
 from utilities.math import number_of_decimals
 from utilities.pathlib import PWD
 from utilities.polars import (
@@ -92,8 +87,6 @@ from utilities.polars import (
     _GetDataTypeOrSeriesTimeZoneNotZonedError,
     _GetSeriesNumberOfDecimalsAllNullError,
     _GetSeriesNumberOfDecimalsNotFloatError,
-    _InsertBetweenMissingColumnsError,
-    _InsertBetweenNonConsecutiveError,
     _yield_struct_series_element_remove_nulls,
     _YieldRowsAsDataClassesColumnsSuperSetError,
     _YieldRowsAsDataClassesWrongTypeError,

@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass
 from datetime import timezone
 from functools import partial, reduce
 from itertools import chain
+from math import ceil, log
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -93,7 +94,14 @@ from utilities.iterables import (
     is_iterable_not_str,
     one,
 )
-from utilities.math import CheckIntegerError, check_integer, number_of_decimals
+from utilities.math import (
+    CheckIntegerError,
+    check_integer,
+    ewm_parameters,
+    is_less_than,
+    is_positive,
+    number_of_decimals,
+)
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel
 from utilities.types import Dataclass, MaybeIterable, StrMapping, ZoneInfoLike
@@ -742,6 +750,74 @@ def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series: ...
 def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
     """Ensure a column expression or Series is returned."""
     return col(column) if isinstance(column, str) else column
+
+
+##
+
+_THRESHOLD = 0.9999
+
+
+@overload
+def finite_ewma(
+    column: ExprLike,
+    /,
+    *,
+    threshold: float = _THRESHOLD,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_periods: int = 1,
+) -> Expr: ...
+@overload
+def finite_ewma(
+    column: Series,
+    /,
+    *,
+    threshold: float = _THRESHOLD,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_periods: int = 1,
+) -> Series: ...
+@overload
+def finite_ewma(
+    column: IntoExprColumn,
+    /,
+    *,
+    threshold: float = _THRESHOLD,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_periods: int = 1,
+) -> Expr | Series: ...
+def finite_ewma(
+    column: IntoExprColumn,
+    /,
+    *,
+    threshold: float = _THRESHOLD,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_periods: int = 1,
+) -> Expr | Series:
+    """Compute a finite EWMA."""
+    if not (is_positive(threshold) and is_less_than(threshold, 1.0)):
+        raise FiniteEWMAError(threshold=threshold)
+    column = ensure_expr_or_series(column)
+    params = ewm_parameters(com=com, span=span, half_life=half_life, alpha=alpha)
+    min_window = log(1.0 - threshold) / log(1.0 - params.alpha) - 1.0
+    window = ceil(min_window)
+
+
+def _finite_ewma_one(
+    x: IntoExprColumn, y: IntoExprColumn, /, *, alpha: float = 0.5
+) -> Expr | Series:
+    x, y = map(ensure_expr_or_series, [x, y])
+    return alpha * x + (1.0 - alpha) * y
 
 
 ##
