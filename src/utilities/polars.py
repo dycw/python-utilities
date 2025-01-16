@@ -817,17 +817,14 @@ def finite_ewma(
     min_window = log(1.0 - threshold) / log(one_minus_alpha) - 1.0
     window = ceil(min_window)
     terms = (alpha_ * one_minus_alpha**i * column.shift(n=i) for i in range(window + 1))
-    match column:
+    head, *tail = terms
+    total = sum(tail, start=head)
+    predicate = int_range(start=1, end=pl.len() + 1) >= min_periods
+    match total:
         case Expr():
-            terms = cast(Iterable[Expr], terms)
-            total = sum_horizontal(*terms)
-            predicate = int_range(end=pl.len()) > min_periods
             return when(predicate).then(total)
         case Series():
-            terms = cast(Iterable[Series], terms)
-            total = reduce(add, terms)
-            predicate = int_range(end=len(total), eager=True) > min_periods
-            return total.filter(predicate)
+            return total.to_frame().with_columns(predicate)[total.name]
         case _ as never:
             assert_never(never)
 
