@@ -14,6 +14,7 @@ import polars as pl
 from hypothesis import assume, given
 from hypothesis.strategies import (
     DataObject,
+    booleans,
     builds,
     data,
     fixed_dictionaries,
@@ -27,6 +28,7 @@ from hypothesis.strategies import (
 from polars import (
     Boolean,
     DataFrame,
+    DataType,
     Date,
     Datetime,
     Expr,
@@ -43,11 +45,16 @@ from polars import (
     lit,
 )
 from polars.testing import assert_frame_equal, assert_series_equal
-from pytest import mark, param, raises
+from pytest import raises
 
 from utilities.datetime import get_now, get_today
 from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
-from utilities.math import is_greater_than, is_less_than, is_positive
+from utilities.math import (
+    is_greater_than,
+    is_less_than,
+    is_positive,
+    number_of_decimals,
+)
 from utilities.pathlib import PWD
 from utilities.polars import (
     AppendDataClassError,
@@ -84,6 +91,8 @@ from utilities.polars import (
     _DataClassToDataFrameNonUniqueError,
     _GetDataTypeOrSeriesTimeZoneNotDateTimeError,
     _GetDataTypeOrSeriesTimeZoneNotZonedError,
+    _GetSeriesNumberOfDecimalsAllNullError,
+    _GetSeriesNumberOfDecimalsNotFloatError,
     _RollingParametersArgumentsError,
     _RollingParametersMinPeriodsError,
     _yield_struct_series_element_remove_nulls,
@@ -99,9 +108,11 @@ from utilities.polars import (
     dataclass_to_dataframe,
     dataclass_to_schema,
     drop_null_struct_series,
+    ensure_data_type,
     ensure_expr_or_series,
     floor_datetime,
     get_data_type_or_series_time_zone,
+    get_series_number_of_decimals,
     is_not_null_struct_series,
     is_null_struct_series,
     join,
@@ -133,9 +144,10 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
     from zoneinfo import ZoneInfo
 
-    from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
+    from polars._typing import IntoExprColumn, SchemaDict
+    from polars.datatypes import DataTypeClass
 
-    from utilities.types import StrMapping
+    from utilities.types import MaybeType, StrMapping
 
 
 TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
@@ -923,18 +935,20 @@ class TestDataClassToSchema:
 
 
 class TestDatetimeDTypes:
-    @mark.parametrize(
-        ("dtype", "time_zone"),
-        [
-            param(DatetimeHongKong, HongKong),
-            param(DatetimeTokyo, Tokyo),
-            param(DatetimeUSCentral, USCentral),
-            param(DatetimeUSEastern, USEastern),
-            param(DatetimeUTC, UTC),
-        ],
+    @given(
+        case=sampled_from([
+            (HongKong, DatetimeHongKong),
+            (Tokyo, DatetimeTokyo),
+            (USCentral, DatetimeUSCentral),
+            (USEastern, DatetimeUSEastern),
+            (UTC, DatetimeUTC),
+        ])
     )
-    def test_main(self, *, dtype: Datetime, time_zone: ZoneInfo) -> None:
-        assert dtype.time_zone == get_time_zone_name(time_zone)
+    def test_main(self, *, case: tuple[ZoneInfo, Datetime]) -> None:
+        time_zone, dtype = case
+        name = get_time_zone_name(time_zone)
+        expected = dtype.time_zone
+        assert name == expected
 
 
 class TestDropNullStructSeries:
@@ -960,10 +974,16 @@ class TestDropNullStructSeries:
             _ = drop_null_struct_series(series)
 
 
+class TestEnsureDataType:
+    @given(dtype=sampled_from([Boolean, Boolean()]))
+    def test_main(self, *, dtype: MaybeType[Boolean]) -> None:
+        result = ensure_data_type(dtype)
+        assert isinstance(result, DataType)
+        assert isinstance(result, Boolean)
+
+
 class TestEnsureExprOrSeries:
-    @mark.parametrize(
-        "column", [param("column"), param(col("column")), param(int_range(end=10))]
-    )
+    @given(column=sampled_from(["column", col("column"), int_range(end=10)]))
     def test_main(self, *, column: IntoExprColumn) -> None:
         result = ensure_expr_or_series(column)
         assert isinstance(result, Expr | Series)
@@ -1008,8 +1028,9 @@ class TestFloorDateTime:
 
 
 class TestGetDataTypeOrSeriesTimeZone:
-    @given(time_zone=sampled_from([HongKong, UTC]))
-    @mark.parametrize("case", [param("dtype"), param("series")])
+    @given(
+        time_zone=sampled_from([HongKong, UTC]), case=sampled_from(["dtype", "series"])
+    )
     def test_main(
         self, *, time_zone: ZoneInfo, case: Literal["dtype", "series"]
     ) -> None:
@@ -1027,27 +1048,53 @@ class TestGetDataTypeOrSeriesTimeZone:
             _GetDataTypeOrSeriesTimeZoneNotDateTimeError,
             match="Data type must be Datetime; got Boolean",
         ):
-            _ = get_data_type_or_series_time_zone(Boolean())
+            _ = get_data_type_or_series_time_zone(Boolean)
 
     def test_error_not_zoned(self) -> None:
         with raises(
             _GetDataTypeOrSeriesTimeZoneNotZonedError,
             match="Data type must be zoned; got .*",
         ):
-            _ = get_data_type_or_series_time_zone(Datetime())
+            _ = get_data_type_or_series_time_zone(Datetime)
+
+
+class TestGetSeriesNumberOfDecimals:
+    @given(data=data(), n=integers(1, 10), nullable=booleans())
+    def test_main(self, *, data: DataObject, n: int, nullable: bool) -> None:
+        strategy = int64s() | none() if nullable else int64s()
+        ints_or_none = data.draw(lists(strategy, min_size=1, max_size=10))
+        values = [None if i is None else i / 10**n for i in ints_or_none]
+        series = Series(values=values, dtype=Float64)
+        result = get_series_number_of_decimals(series, nullable=nullable)
+        if not nullable:
+            assert result is not None
+            expected = max(number_of_decimals(v) for v in values if v is not None)
+            assert result == expected
+
+    def test_error_not_float(self) -> None:
+        with raises(
+            _GetSeriesNumberOfDecimalsNotFloatError,
+            match="Data type must be Float64; got Boolean",
+        ):
+            _ = get_series_number_of_decimals(Series(dtype=Boolean))
+
+    def test_error_not_zoned(self) -> None:
+        with raises(
+            _GetSeriesNumberOfDecimalsAllNullError,
+            match="Series must not be all-null; got .*",
+        ):
+            _ = get_series_number_of_decimals(Series(dtype=Float64))
 
 
 class TestIsNullAndIsNotNullStructSeries:
-    @mark.parametrize(
-        ("func", "exp_values"),
-        [
-            param(is_null_struct_series, [True, False, False, False]),
-            param(is_not_null_struct_series, [False, True, True, True]),
-        ],
+    @given(
+        case=sampled_from([
+            (is_null_struct_series, [True, False, False, False]),
+            (is_not_null_struct_series, [False, True, True, True]),
+        ])
     )
-    def test_main(
-        self, *, func: Callable[[Series], Series], exp_values: list[bool]
-    ) -> None:
+    def test_main(self, *, case: tuple[Callable[[Series], Series], list[bool]]) -> None:
+        func, exp_values = case
         series = Series(
             values=[
                 {"a": None, "b": None},
@@ -1061,16 +1108,16 @@ class TestIsNullAndIsNotNullStructSeries:
         expected = Series(values=exp_values, dtype=Boolean)
         assert_series_equal(result, expected)
 
-    @mark.parametrize(
-        ("func", "exp_values"),
-        [
-            param(is_null_struct_series, [False, False, False, True]),
-            param(is_not_null_struct_series, [True, True, True, False]),
-        ],
+    @given(
+        case=sampled_from([
+            (is_null_struct_series, [False, False, False, True]),
+            (is_not_null_struct_series, [True, True, True, False]),
+        ])
     )
     def test_nested(
-        self, *, func: Callable[[Series], Series], exp_values: list[bool]
+        self, *, case: tuple[Callable[[Series], Series], list[bool]]
     ) -> None:
+        func, exp_values = case
         series = Series(
             values=[
                 {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
@@ -1088,16 +1135,16 @@ class TestIsNullAndIsNotNullStructSeries:
         expected = Series(values=exp_values, dtype=Boolean)
         assert_series_equal(result, expected)
 
-    @mark.parametrize(
-        ("func", "error"),
-        [
-            param(is_null_struct_series, IsNullStructSeriesError),
-            param(is_not_null_struct_series, IsNotNullStructSeriesError),
-        ],
+    @given(
+        case=sampled_from([
+            (is_null_struct_series, IsNullStructSeriesError),
+            (is_not_null_struct_series, IsNotNullStructSeriesError),
+        ])
     )
     def test_error(
-        self, *, func: Callable[[Series], Series], error: type[Exception]
+        self, *, case: tuple[Callable[[Series], Series], type[Exception]]
     ) -> None:
+        func, error = case
         series = Series(name="series", values=[1, 2, 3, None], dtype=Int64)
         with raises(error, match="Series must have Struct-dtype; got Int64"):
             _ = func(series)
@@ -1199,29 +1246,28 @@ class TestMapOverColumns:
 
 
 class TestNanSumAgg:
-    @mark.parametrize(
-        ("values", "expected"),
-        [
-            param([None], None, id="one None"),
-            param([None, None], None, id="two Nones"),
-            param([0], 0, id="one int"),
-            param([0, None], 0, id="one int, one None"),
-            param([0, None, None], 0, id="one int, two Nones"),
-            param([1, 2], 3, id="two ints"),
-            param([1, 2, None], 3, id="two ints, one None"),
-            param([1, 2, None, None], 3, id="two ints, two Nones"),
-        ],
+    @given(
+        case=sampled_from([
+            ([None], None),
+            ([None, None], None),
+            ([0], 0),
+            ([0, None], 0),
+            ([0, None, None], 0),
+            ([1, 2], 3),
+            ([1, 2, None], 3),
+            ([1, 2, None, None], 3),
+        ]),
+        dtype=sampled_from([Int64, Float64]),
+        mode=sampled_from(["str", "column"]),
     )
-    @mark.parametrize("dtype", [param(Int64), param(Float64)])
-    @mark.parametrize("mode", [param("str"), param("column")])
     def test_main(
         self,
         *,
-        values: list[Any],
-        expected: int | None,
-        dtype: PolarsDataType,
+        case: tuple[list[Any], int | None],
+        dtype: DataTypeClass,
         mode: Literal["str", "column"],
     ) -> None:
+        values, expected = case
         df = DataFrame(data=values, schema={"value": dtype}).with_columns(id=lit("id"))
         match mode:
             case "str":
@@ -1233,21 +1279,19 @@ class TestNanSumAgg:
 
 
 class TestNanSumCols:
-    @mark.parametrize(
-        ("x", "y", "expected"),
-        [param(None, None, None), param(None, 0, 0), param(0, None, 0), param(1, 2, 3)],
+    @given(
+        case=sampled_from([(None, None, None), (None, 0, 0), (0, None, 0), (1, 2, 3)]),
+        x_kind=sampled_from(["str", "column"]),
+        y_kind=sampled_from(["str", "column"]),
     )
-    @mark.parametrize("x_kind", [param("str"), param("column")])
-    @mark.parametrize("y_kind", [param("str"), param("column")])
     def test_main(
         self,
         *,
-        x: int | None,
-        y: int | None,
-        expected: int | None,
+        case: tuple[int | None, int | None, int | None],
         x_kind: Literal["str", "column"],
         y_kind: Literal["str", "column"],
     ) -> None:
+        x, y, expected = case
         x_use = "x" if x_kind == "str" else col("x")
         y_use = "y" if y_kind == "str" else col("y")
         df = DataFrame(
@@ -1801,32 +1845,30 @@ class TestYieldStructSeriesElements:
         ]
         assert result == expected
 
-    @mark.parametrize(
-        ("obj", "expected"),
-        [
-            param(None, None),
-            param(1, 1),
-            param({"a": 1, "b": 2}, {"a": 1, "b": 2}),
-            param({"a": 1, "b": None}, {"a": 1, "b": None}),
-            param({"a": None, "b": None}, None),
-            param(
+    @given(
+        case=sampled_from([
+            (None, None),
+            (1, 1),
+            ({"a": 1, "b": 2}, {"a": 1, "b": 2}),
+            ({"a": 1, "b": None}, {"a": 1, "b": None}),
+            ({"a": None, "b": None}, None),
+            (
                 {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
                 {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
             ),
-            param(
+            (
                 {"a": 1, "b": 2, "inner": {"lower": None, "upper": None}},
                 {"a": 1, "b": 2, "inner": None},
             ),
-            param(
+            (
                 {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
                 {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
             ),
-            param(
-                {"a": None, "b": None, "inner": {"lower": None, "upper": None}}, None
-            ),
-        ],
+            ({"a": None, "b": None, "inner": {"lower": None, "upper": None}}, None),
+        ])
     )
-    def test_remove_nulls(self, *, obj: Any, expected: Any) -> None:
+    def test_remove_nulls(self, *, case: tuple[Any, Any]) -> None:
+        obj, expected = case
         result = _yield_struct_series_element_remove_nulls(obj)
         assert result == expected
 

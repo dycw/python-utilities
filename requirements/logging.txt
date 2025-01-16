@@ -134,11 +134,11 @@ sortedcontainers==2.4.0
     # via hypothesis
 tomli==2.2.1
     # via coverage
-tomli-w==1.1.0
+tomli-w==1.2.0
     # via hatch
 tomlkit==0.13.2
     # via hatch
-trove-classifiers==2025.1.10.15
+trove-classifiers==2025.1.15.22
     # via hatchling
 typing-extensions==4.12.2
     # via
@@ -148,9 +148,9 @@ tzlocal==5.2
     # via dycw-utilities (pyproject.toml)
 userpath==1.9.2
     # via hatch
-uv==0.5.18
+uv==0.5.19
     # via hatch
-virtualenv==20.28.1
+virtualenv==20.29.0
     # via hatch
 whenever==0.6.16
     # via dycw-utilities (pyproject.toml)

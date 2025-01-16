@@ -55,7 +55,7 @@ from polars._typing import (
     SchemaDict,
     TimeUnit,
 )
-from polars.datatypes import DataType
+from polars.datatypes import DataType, DataTypeClass
 from polars.exceptions import (
     ColumnNotFoundError,
     OutOfBoundsError,
@@ -68,6 +68,8 @@ from utilities.dataclasses import _YieldFieldsInstance, yield_fields
 from utilities.datetime import is_instance_date_not_datetime
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
+    EnsureIntError,
+    ensure_int,
     is_dataclass_class,
     is_dataclass_instance,
     is_iterable_of,
@@ -95,6 +97,7 @@ from utilities.math import (
     _EWMParameters,
     check_integer,
     ewm_parameters,
+    number_of_decimals,
 )
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel
@@ -119,12 +122,12 @@ if TYPE_CHECKING:
 
 _T = TypeVar("_T")
 _TDataclass = TypeVar("_TDataclass", bound=Dataclass)
+ExprLike: TypeAlias = Expr | str
 DatetimeHongKong = Datetime(time_zone="Asia/Hong_Kong")
 DatetimeTokyo = Datetime(time_zone="Asia/Tokyo")
 DatetimeUSCentral = Datetime(time_zone="US/Central")
 DatetimeUSEastern = Datetime(time_zone="US/Eastern")
 DatetimeUTC = Datetime(time_zone="UTC")
-ExprLike: TypeAlias = Expr | str
 
 
 ##
@@ -713,6 +716,14 @@ class DropNullStructSeriesError(Exception):
 ##
 
 
+def ensure_data_type(dtype: PolarsDataType, /) -> DataType:
+    """Ensure a data type is returned."""
+    return dtype if isinstance(dtype, DataType) else dtype()
+
+
+##
+
+
 @overload
 def ensure_expr_or_series(column: ExprLike, /) -> Expr: ...
 @overload
@@ -747,13 +758,18 @@ def floor_datetime(column: IntoExprColumn, every: ExprLike, /) -> Expr | Series:
 
 
 def get_data_type_or_series_time_zone(
-    dtype_or_series: DataType | Series, /
+    dtype_or_series: PolarsDataType | Series, /
 ) -> ZoneInfo:
     """Get the time zone of a dtype/series."""
-    if isinstance(dtype_or_series, DataType):
-        dtype = dtype_or_series
-    else:
-        dtype = dtype_or_series.dtype
+    match dtype_or_series:
+        case DataType() as dtype:
+            ...
+        case DataTypeClass() as dtype_cls:
+            dtype = dtype_cls()
+        case Series() as series:
+            dtype = series.dtype
+        case _ as never:
+            assert_never(never)
     if not isinstance(dtype, Datetime):
         raise _GetDataTypeOrSeriesTimeZoneNotDateTimeError(dtype=dtype)
     if dtype.time_zone is None:
@@ -778,6 +794,52 @@ class _GetDataTypeOrSeriesTimeZoneNotZonedError(GetDataTypeOrSeriesTimeZoneError
     @override
     def __str__(self) -> str:
         return f"Data type must be zoned; got {self.dtype}"
+
+
+##
+
+
+@overload
+def get_series_number_of_decimals(
+    series: Series, /, *, nullable: bool
+) -> int | None: ...
+@overload
+def get_series_number_of_decimals(
+    series: Series, /, *, nullable: Literal[False] = False
+) -> int: ...
+def get_series_number_of_decimals(
+    series: Series, /, *, nullable: bool = False
+) -> int | None:
+    """Get the number of decimals of a series."""
+    if not isinstance(dtype := series.dtype, Float64):
+        raise _GetSeriesNumberOfDecimalsNotFloatError(dtype=dtype)
+    decimals = series.map_elements(number_of_decimals, return_dtype=Int64).max()
+    try:
+        return ensure_int(decimals, nullable=nullable)
+    except EnsureIntError:
+        raise _GetSeriesNumberOfDecimalsAllNullError(series=series) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class GetSeriesNumberOfDecimalsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetSeriesNumberOfDecimalsNotFloatError(GetSeriesNumberOfDecimalsError):
+    dtype: DataType
+
+    @override
+    def __str__(self) -> str:
+        return f"Data type must be Float64; got {self.dtype}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetSeriesNumberOfDecimalsAllNullError(GetSeriesNumberOfDecimalsError):
+    series: Series
+
+    @override
+    def __str__(self) -> str:
+        return f"Series must not be all-null; got {self.series}"
 
 
 ##
@@ -1412,6 +1474,7 @@ __all__ = [
     "DatetimeUTC",
     "DropNullStructSeriesError",
     "GetDataTypeOrSeriesTimeZoneError",
+    "GetSeriesNumberOfDecimalsError",
     "IsNullStructSeriesError",
     "RollingParametersError",
     "RollingParametersExponential",
@@ -1430,9 +1493,11 @@ __all__ = [
     "dataclass_to_dataframe",
     "dataclass_to_schema",
     "drop_null_struct_series",
+    "ensure_data_type",
     "ensure_expr_or_series",
     "floor_datetime",
     "get_data_type_or_series_time_zone",
+    "get_series_number_of_decimals",
     "is_not_null_struct_series",
     "is_null_struct_series",
     "join",
