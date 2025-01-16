@@ -44,8 +44,10 @@ from polars import (
     all_horizontal,
     col,
     concat,
+    int_range,
     lit,
     struct,
+    sum_horizontal,
     when,
 )
 from polars._typing import (
@@ -93,6 +95,7 @@ from utilities.iterables import (
     check_superset,
     is_iterable_not_str,
     one,
+    one_modal_value,
 )
 from utilities.math import (
     CheckIntegerError,
@@ -809,15 +812,23 @@ def finite_ewma(
         raise FiniteEWMAError(threshold=threshold)
     column = ensure_expr_or_series(column)
     params = ewm_parameters(com=com, span=span, half_life=half_life, alpha=alpha)
-    min_window = log(1.0 - threshold) / log(1.0 - params.alpha) - 1.0
+    alpha_ = params.alpha
+    one_minus_alpha = 1.0 - alpha_
+    min_window = log(1.0 - threshold) / log(one_minus_alpha) - 1.0
     window = ceil(min_window)
+    print(f"{params=}", f"{window=}")
+    terms = (alpha_ * one_minus_alpha**i * column.shift(n=i) for i in range(window + 1))
+    terms = list(terms)
+    print(f"{terms=}")
+    total = sum_horizontal(*terms)
+    predicate = int_range(start=1, end=pl.len() + 1) >= min_periods
+    print(f"{total=}")
+    return when(predicate).then(total)
 
 
-def _finite_ewma_one(
-    x: IntoExprColumn, y: IntoExprColumn, /, *, alpha: float = 0.5
-) -> Expr | Series:
-    x, y = map(ensure_expr_or_series, [x, y])
-    return alpha * x + (1.0 - alpha) * y
+@dataclass(kw_only=True)
+class FiniteEWMAError(Exception):
+    threshold: float = _THRESHOLD
 
 
 ##
@@ -1549,6 +1560,7 @@ __all__ = [
     "DatetimeUSEastern",
     "DatetimeUTC",
     "DropNullStructSeriesError",
+    "FiniteEWMAError",
     "GetDataTypeOrSeriesTimeZoneError",
     "GetSeriesNumberOfDecimalsError",
     "InsertAfterError",
