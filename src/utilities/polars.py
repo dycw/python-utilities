@@ -1417,8 +1417,8 @@ def yield_struct_series_dataclasses(
     cls: type[_TDataclass],
     /,
     *,
-    forward_references: dict[str, Any] | None = ...,
-    check_types: bool = ...,
+    forward_references: dict[str, Any] | None = None,
+    check_types: bool = True,
     strict: Literal[True],
 ) -> Iterator[_TDataclass]: ...
 @overload
@@ -1427,8 +1427,8 @@ def yield_struct_series_dataclasses(
     cls: type[_TDataclass],
     /,
     *,
-    forward_references: dict[str, Any] | None = ...,
-    check_types: bool = ...,
+    forward_references: dict[str, Any] | None = None,
+    check_types: bool = True,
     strict: bool = False,
 ) -> Iterator[_TDataclass | None]: ...
 def yield_struct_series_dataclasses(
