@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass
 from datetime import timezone
 from functools import partial, reduce
 from itertools import chain
+from math import ceil, log
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -94,9 +95,10 @@ from utilities.iterables import (
 )
 from utilities.math import (
     CheckIntegerError,
-    _EWMParameters,
     check_integer,
     ewm_parameters,
+    is_less_than,
+    is_positive,
     number_of_decimals,
 )
 from utilities.reprlib import get_repr
@@ -199,6 +201,8 @@ def are_frames_equal(
 def ceil_datetime(column: ExprLike, every: ExprLike, /) -> Expr: ...
 @overload
 def ceil_datetime(column: Series, every: ExprLike, /) -> Series: ...
+@overload
+def ceil_datetime(column: IntoExprColumn, every: ExprLike, /) -> Expr | Series: ...
 def ceil_datetime(column: IntoExprColumn, every: ExprLike, /) -> Expr | Series:
     """Compute the `ceil` of a datetime column."""
     column = ensure_expr_or_series(column)
@@ -530,6 +534,10 @@ def convert_time_zone(obj: Series, /, *, time_zone: ZoneInfoLike = UTC) -> Serie
 def convert_time_zone(
     obj: DataFrame, /, *, time_zone: ZoneInfoLike = UTC
 ) -> DataFrame: ...
+@overload
+def convert_time_zone(
+    obj: Series | DataFrame, /, *, time_zone: ZoneInfoLike = UTC
+) -> Series | DataFrame: ...
 def convert_time_zone(
     obj: Series | DataFrame, /, *, time_zone: ZoneInfoLike = UTC
 ) -> Series | DataFrame:
@@ -728,9 +736,79 @@ def ensure_data_type(dtype: PolarsDataType, /) -> DataType:
 def ensure_expr_or_series(column: ExprLike, /) -> Expr: ...
 @overload
 def ensure_expr_or_series(column: Series, /) -> Series: ...
+@overload
+def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series: ...
 def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
     """Ensure a column expression or Series is returned."""
     return col(column) if isinstance(column, str) else column
+
+
+##
+
+_THRESHOLD = 0.9999
+
+
+@overload
+def finite_ewma(
+    column: ExprLike,
+    /,
+    *,
+    threshold: float = _THRESHOLD,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_periods: int = 1,
+) -> Expr: ...
+@overload
+def finite_ewma(
+    column: Series,
+    /,
+    *,
+    threshold: float = _THRESHOLD,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_periods: int = 1,
+) -> Series: ...
+@overload
+def finite_ewma(
+    column: IntoExprColumn,
+    /,
+    *,
+    threshold: float = _THRESHOLD,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_periods: int = 1,
+) -> Expr | Series: ...
+def finite_ewma(
+    column: IntoExprColumn,
+    /,
+    *,
+    threshold: float = _THRESHOLD,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_periods: int = 1,
+) -> Expr | Series:
+    """Compute a finite EWMA."""
+    if not (is_positive(threshold) and is_less_than(threshold, 1.0)):
+        raise FiniteEWMAError(threshold=threshold)
+    column = ensure_expr_or_series(column)
+    params = ewm_parameters(com=com, span=span, half_life=half_life, alpha=alpha)
+    min_window = log(1.0 - threshold) / log(1.0 - params.alpha) - 1.0
+    window = ceil(min_window)
+
+
+def _finite_ewma_one(
+    x: IntoExprColumn, y: IntoExprColumn, /, *, alpha: float = 0.5
+) -> Expr | Series:
+    x, y = map(ensure_expr_or_series, [x, y])
+    return alpha * x + (1.0 - alpha) * y
 
 
 ##
@@ -740,6 +818,8 @@ def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
 def floor_datetime(column: ExprLike, every: ExprLike, /) -> Expr: ...
 @overload
 def floor_datetime(column: Series, every: ExprLike, /) -> Series: ...
+@overload
+def floor_datetime(column: IntoExprColumn, every: ExprLike, /) -> Expr | Series: ...
 def floor_datetime(column: IntoExprColumn, every: ExprLike, /) -> Expr | Series:
     """Compute the `floor` of a datetime column."""
     column = ensure_expr_or_series(column)
@@ -937,6 +1017,10 @@ def map_over_columns(func: Callable[[Series], Series], obj: Series, /) -> Series
 def map_over_columns(
     func: Callable[[Series], Series], obj: DataFrame, /
 ) -> DataFrame: ...
+@overload
+def map_over_columns(
+    func: Callable[[Series], Series], obj: Series | DataFrame, /
+) -> Series | DataFrame: ...
 def map_over_columns(
     func: Callable[[Series], Series], obj: Series | DataFrame, /
 ) -> Series | DataFrame:
@@ -1008,6 +1092,10 @@ def replace_time_zone(
 def replace_time_zone(
     obj: DataFrame, /, *, time_zone: ZoneInfoLike | None = UTC
 ) -> DataFrame: ...
+@overload
+def replace_time_zone(
+    obj: Series | DataFrame, /, *, time_zone: ZoneInfoLike | None = UTC
+) -> Series | DataFrame: ...
 def replace_time_zone(
     obj: Series | DataFrame, /, *, time_zone: ZoneInfoLike | None = UTC
 ) -> Series | DataFrame:
@@ -1022,126 +1110,6 @@ def _replace_time_zone_one(
         time_zone_use = None if time_zone is None else get_time_zone_name(time_zone)
         return sr.dt.replace_time_zone(time_zone_use)
     return sr
-
-
-##
-
-
-@overload
-def rolling_parameters(
-    *,
-    s_window: int,
-    e_com: None = None,
-    e_span: None = None,
-    e_half_life: None = None,
-    e_alpha: None = None,
-    min_periods: int | None = None,
-) -> RollingParametersSimple: ...
-@overload
-def rolling_parameters(
-    *,
-    s_window: None = None,
-    e_com: float | None = None,
-    e_span: float | None = None,
-    e_half_life: float | None = None,
-    e_alpha: float | None = None,
-    min_periods: int,
-) -> RollingParametersExponential: ...
-@overload
-def rolling_parameters(
-    *,
-    s_window: int | None = None,
-    e_com: float | None = None,
-    e_span: float | None = None,
-    e_half_life: float | None = None,
-    e_alpha: float | None = None,
-    min_periods: int | None = None,
-) -> RollingParametersSimple | RollingParametersExponential: ...
-def rolling_parameters(
-    *,
-    s_window: int | None = None,
-    e_com: float | None = None,
-    e_span: float | None = None,
-    e_half_life: float | None = None,
-    e_alpha: float | None = None,
-    min_periods: int | None = None,
-) -> RollingParametersSimple | RollingParametersExponential:
-    """Resolve a set of rolling parameters."""
-    if (
-        (s_window is not None)
-        and (e_com is None)
-        and (e_span is None)
-        and (e_half_life is None)
-        and (e_alpha is None)
-    ):
-        return RollingParametersSimple(window=s_window, min_periods=min_periods)
-    if (s_window is None) and (
-        (e_com is not None)
-        or (e_span is not None)
-        or (e_half_life is not None)
-        or (e_alpha is not None)
-    ):
-        if min_periods is None:
-            raise _RollingParametersMinPeriodsError(
-                e_com=e_com,
-                e_span=e_span,
-                e_half_life=e_half_life,
-                e_alpha=e_alpha,
-                min_periods=min_periods,
-            )
-        params = ewm_parameters(
-            com=e_com, span=e_span, half_life=e_half_life, alpha=e_alpha
-        )
-        return RollingParametersExponential(
-            com=params.com,
-            span=params.span,
-            half_life=params.half_life,
-            alpha=params.alpha,
-            min_periods=min_periods,
-        )
-    raise _RollingParametersArgumentsError(
-        s_window=s_window,
-        e_com=e_com,
-        e_span=e_span,
-        e_half_life=e_half_life,
-        e_alpha=e_alpha,
-    )
-
-
-@dataclass(kw_only=True, slots=True)
-class RollingParametersSimple:
-    window: int
-    min_periods: int | None = None
-
-
-@dataclass(kw_only=True, slots=True)
-class RollingParametersExponential(_EWMParameters):
-    min_periods: int
-
-
-@dataclass(kw_only=True, slots=True)
-class RollingParametersError(Exception):
-    s_window: int | None = None
-    e_com: float | None = None
-    e_span: float | None = None
-    e_half_life: float | None = None
-    e_alpha: float | None = None
-
-
-@dataclass(kw_only=True, slots=True)
-class _RollingParametersArgumentsError(RollingParametersError):
-    @override
-    def __str__(self) -> str:
-        return f"Exactly one of simple window, exponential center of mass (γ), exponential span (θ), exponential half-life (λ) or exponential smoothing factor (α) must be given; got s_window={self.s_window}, γ={self.e_com}, θ={self.e_span}, λ={self.e_half_life} and α={self.e_alpha}"  # noqa: RUF001
-
-
-@dataclass(kw_only=True, slots=True)
-class _RollingParametersMinPeriodsError(RollingParametersError):
-    min_periods: int | None = None
-
-    @override
-    def __str__(self) -> str:
-        return f"Exponential rolling requires 'min_periods' to be set; got {self.min_periods}"
 
 
 ##
@@ -1476,9 +1444,6 @@ __all__ = [
     "GetDataTypeOrSeriesTimeZoneError",
     "GetSeriesNumberOfDecimalsError",
     "IsNullStructSeriesError",
-    "RollingParametersError",
-    "RollingParametersExponential",
-    "RollingParametersSimple",
     "SetFirstRowAsColumnsError",
     "StructFromDataClassError",
     "YieldRowsAsDataClassesError",
@@ -1505,7 +1470,6 @@ __all__ = [
     "nan_sum_agg",
     "nan_sum_cols",
     "replace_time_zone",
-    "rolling_parameters",
     "set_first_row_as_columns",
     "struct_dtype",
     "struct_from_dataclass",
