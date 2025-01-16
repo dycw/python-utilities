@@ -45,7 +45,7 @@ from polars import (
     lit,
 )
 from polars.testing import assert_frame_equal, assert_series_equal
-from pytest import mark, param, raises
+from pytest import raises
 
 from utilities.datetime import get_now, get_today
 from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
@@ -144,7 +144,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
     from zoneinfo import ZoneInfo
 
-    from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
+    from polars._typing import IntoExprColumn, SchemaDict
+    from polars.datatypes import DataTypeClass
 
     from utilities.types import MaybeType, StrMapping
 
@@ -1245,29 +1246,28 @@ class TestMapOverColumns:
 
 
 class TestNanSumAgg:
-    @mark.parametrize(
-        ("values", "expected"),
-        [
-            param([None], None, id="one None"),
-            param([None, None], None, id="two Nones"),
-            param([0], 0, id="one int"),
-            param([0, None], 0, id="one int, one None"),
-            param([0, None, None], 0, id="one int, two Nones"),
-            param([1, 2], 3, id="two ints"),
-            param([1, 2, None], 3, id="two ints, one None"),
-            param([1, 2, None, None], 3, id="two ints, two Nones"),
-        ],
+    @given(
+        case=sampled_from([
+            ([None], None),
+            ([None, None], None),
+            ([0], 0),
+            ([0, None], 0),
+            ([0, None, None], 0),
+            ([1, 2], 3),
+            ([1, 2, None], 3),
+            ([1, 2, None, None], 3),
+        ]),
+        dtype=sampled_from([Int64, Float64]),
+        mode=sampled_from(["str", "column"]),
     )
-    @mark.parametrize("dtype", [param(Int64), param(Float64)])
-    @mark.parametrize("mode", [param("str"), param("column")])
     def test_main(
         self,
         *,
-        values: list[Any],
-        expected: int | None,
-        dtype: PolarsDataType,
+        case: tuple[list[Any], int | None],
+        dtype: DataTypeClass,
         mode: Literal["str", "column"],
     ) -> None:
+        values, expected = case
         df = DataFrame(data=values, schema={"value": dtype}).with_columns(id=lit("id"))
         match mode:
             case "str":
@@ -1279,21 +1279,19 @@ class TestNanSumAgg:
 
 
 class TestNanSumCols:
-    @mark.parametrize(
-        ("x", "y", "expected"),
-        [param(None, None, None), param(None, 0, 0), param(0, None, 0), param(1, 2, 3)],
+    @given(
+        case=sampled_from([(None, None, None), (None, 0, 0), (0, None, 0), (1, 2, 3)]),
+        x_kind=sampled_from(["str", "column"]),
+        y_kind=sampled_from(["str", "column"]),
     )
-    @mark.parametrize("x_kind", [param("str"), param("column")])
-    @mark.parametrize("y_kind", [param("str"), param("column")])
     def test_main(
         self,
         *,
-        x: int | None,
-        y: int | None,
-        expected: int | None,
+        case: tuple[int | None, int | None, int | None],
         x_kind: Literal["str", "column"],
         y_kind: Literal["str", "column"],
     ) -> None:
+        x, y, expected = case
         x_use = "x" if x_kind == "str" else col("x")
         y_use = "y" if y_kind == "str" else col("y")
         df = DataFrame(
@@ -1847,32 +1845,30 @@ class TestYieldStructSeriesElements:
         ]
         assert result == expected
 
-    @mark.parametrize(
-        ("obj", "expected"),
-        [
-            param(None, None),
-            param(1, 1),
-            param({"a": 1, "b": 2}, {"a": 1, "b": 2}),
-            param({"a": 1, "b": None}, {"a": 1, "b": None}),
-            param({"a": None, "b": None}, None),
-            param(
+    @given(
+        case=sampled_from([
+            (None, None),
+            (1, 1),
+            ({"a": 1, "b": 2}, {"a": 1, "b": 2}),
+            ({"a": 1, "b": None}, {"a": 1, "b": None}),
+            ({"a": None, "b": None}, None),
+            (
                 {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
                 {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
             ),
-            param(
+            (
                 {"a": 1, "b": 2, "inner": {"lower": None, "upper": None}},
                 {"a": 1, "b": 2, "inner": None},
             ),
-            param(
+            (
                 {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
                 {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
             ),
-            param(
-                {"a": None, "b": None, "inner": {"lower": None, "upper": None}}, None
-            ),
-        ],
+            ({"a": None, "b": None, "inner": {"lower": None, "upper": None}}, None),
+        ])
     )
-    def test_remove_nulls(self, *, obj: Any, expected: Any) -> None:
+    def test_remove_nulls(self, *, case: tuple[Any, Any]) -> None:
+        obj, expected = case
         result = _yield_struct_series_element_remove_nulls(obj)
         assert result == expected
 
