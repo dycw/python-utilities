@@ -10,7 +10,6 @@ from datetime import timezone
 from functools import partial, reduce
 from itertools import chain
 from math import ceil, log
-from operator import add
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -48,7 +47,6 @@ from polars import (
     int_range,
     lit,
     struct,
-    sum_horizontal,
     when,
 )
 from polars._typing import (
