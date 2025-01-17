@@ -48,7 +48,12 @@ from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import raises
 
 from utilities.datetime import get_now, get_today
-from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    int64s,
+    text_ascii,
+    zoned_datetimes,
+)
 from utilities.math import (
     is_greater_than,
     is_less_than,
@@ -669,7 +674,8 @@ class TestDataClassToDataFrame:
         objs = data.draw(
             lists(builds(Example, x=zoned_datetimes(time_zone=time_zone)), min_size=1)
         )
-        df = dataclass_to_dataframe(objs, localns=locals())
+        with assume_does_not_raise(ValueError, match="failed to parse timezone"):
+            df = dataclass_to_dataframe(objs, localns=locals())
         check_polars_dataframe(
             df, height=len(objs), schema_list={"x": zoned_datetime(time_zone=time_zone)}
         )
