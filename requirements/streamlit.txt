@@ -29,7 +29,7 @@ gitdb==4.0.12
     # via gitpython
 gitpython==3.1.44
     # via streamlit
-hypothesis==6.123.17
+hypothesis==6.124.0
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via requests
@@ -71,7 +71,7 @@ pluggy==1.5.0
     # via pytest
 protobuf==5.29.3
     # via streamlit
-pyarrow==18.1.0
+pyarrow==19.0.0
     # via streamlit
 pydeck==0.9.1
     # via streamlit
@@ -105,7 +105,7 @@ python-dateutil==2.9.0.post0
     # via pandas
 pytz==2024.2
     # via pandas
-referencing==0.35.1
+referencing==0.36.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -137,6 +137,7 @@ typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   altair
+    #   referencing
     #   streamlit
 tzdata==2024.2
     # via pandas

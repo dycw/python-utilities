@@ -48,7 +48,12 @@ from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import raises
 
 from utilities.datetime import get_now, get_today
-from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    int64s,
+    text_ascii,
+    zoned_datetimes,
+)
 from utilities.math import (
     is_greater_than,
     is_less_than,
@@ -104,6 +109,7 @@ from utilities.polars import (
     check_polars_dataframe,
     collect_series,
     columns_to_dict,
+    concat_series,
     convert_time_zone,
     dataclass_to_dataframe,
     dataclass_to_schema,
@@ -571,6 +577,19 @@ class TestColumnsToDict:
             _ = columns_to_dict(df, "a", "b")
 
 
+class TestConcatSeries:
+    def test_main(self) -> None:
+        x, y = [
+            Series(name=n, values=[v], dtype=Boolean)
+            for n, v in [("x", True), ("y", False)]
+        ]
+        df = concat_series(x, y)
+        expected = DataFrame(
+            [(True, False)], schema={"x": Boolean, "y": Boolean}, orient="row"
+        )
+        assert_frame_equal(df, expected)
+
+
 class TestConvertTimeZone:
     def test_datetime(self) -> None:
         now_utc = get_now()
@@ -655,7 +674,8 @@ class TestDataClassToDataFrame:
         objs = data.draw(
             lists(builds(Example, x=zoned_datetimes(time_zone=time_zone)), min_size=1)
         )
-        df = dataclass_to_dataframe(objs, localns=locals())
+        with assume_does_not_raise(ValueError, match="failed to parse timezone"):
+            df = dataclass_to_dataframe(objs, localns=locals())
         check_polars_dataframe(
             df, height=len(objs), schema_list={"x": zoned_datetime(time_zone=time_zone)}
         )

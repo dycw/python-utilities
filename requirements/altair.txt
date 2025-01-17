@@ -19,7 +19,7 @@ deprecated==1.2.15
     # via pikepdf
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.123.17
+hypothesis==6.124.0
     # via dycw-utilities (pyproject.toml)
 img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
@@ -52,7 +52,7 @@ pillow==11.1.0
     #   pikepdf
 pluggy==1.5.0
     # via pytest
-polars-lts-cpu==1.19.0
+polars-lts-cpu==1.20.0
     # via dycw-utilities (pyproject.toml)
 pytest==8.3.4
     # via
@@ -78,7 +78,7 @@ pytest-rerunfailures==15.0
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)
-referencing==0.35.1
+referencing==0.36.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -94,6 +94,7 @@ typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   altair
+    #   referencing
 vl-convert-python==1.6.1
     # via dycw-utilities (pyproject.toml)
 whenever==0.6.16

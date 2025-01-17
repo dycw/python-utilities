@@ -524,6 +524,14 @@ class ColumnsToDictError(Exception):
 ##
 
 
+def concat_series(*series: Series) -> DataFrame:
+    """Horizontally concatenate a set of Series."""
+    return concat([s.to_frame() for s in series], how="horizontal")
+
+
+##
+
+
 @overload
 def convert_time_zone(obj: Series, /, *, time_zone: ZoneInfoLike = ...) -> Series: ...
 @overload
@@ -1489,6 +1497,7 @@ __all__ = [
     "check_polars_dataframe",
     "collect_series",
     "columns_to_dict",
+    "concat_series",
     "convert_time_zone",
     "dataclass_to_dataframe",
     "dataclass_to_schema",
