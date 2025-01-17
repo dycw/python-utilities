@@ -6,12 +6,11 @@ from dataclasses import dataclass, field
 from enum import auto
 from math import isfinite, nan
 from pathlib import Path
-from re import escape
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 from uuid import UUID, uuid4
 
 import polars as pl
-from hypothesis import assume, given
+from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     booleans,
@@ -54,12 +53,7 @@ from utilities.hypothesis import (
     text_ascii,
     zoned_datetimes,
 )
-from utilities.math import (
-    is_greater_than,
-    is_less_than,
-    is_positive,
-    number_of_decimals,
-)
+from utilities.math import number_of_decimals
 from utilities.pathlib import PWD
 from utilities.polars import (
     AppendDataClassError,
@@ -72,8 +66,6 @@ from utilities.polars import (
     DropNullStructSeriesError,
     IsNotNullStructSeriesError,
     IsNullStructSeriesError,
-    RollingParametersExponential,
-    RollingParametersSimple,
     SetFirstRowAsColumnsError,
     StructFromDataClassError,
     YieldStructSeriesElementsError,
@@ -98,8 +90,6 @@ from utilities.polars import (
     _GetDataTypeOrSeriesTimeZoneNotZonedError,
     _GetSeriesNumberOfDecimalsAllNullError,
     _GetSeriesNumberOfDecimalsNotFloatError,
-    _RollingParametersArgumentsError,
-    _RollingParametersMinPeriodsError,
     _yield_struct_series_element_remove_nulls,
     _YieldRowsAsDataClassesColumnsSuperSetError,
     _YieldRowsAsDataClassesWrongTypeError,
@@ -126,7 +116,6 @@ from utilities.polars import (
     nan_sum_agg,
     nan_sum_cols,
     replace_time_zone,
-    rolling_parameters,
     set_first_row_as_columns,
     struct_dtype,
     struct_from_dataclass,
@@ -1332,77 +1321,6 @@ class TestReplaceTimeZone:
         series = Series(name="series", values=[True], dtype=Boolean)
         result = replace_time_zone(series, time_zone=None)
         assert_series_equal(result, series)
-
-
-class TestRollingParameters:
-    @given(s_window=integers())
-    def test_simple(self, *, s_window: int) -> None:
-        params = rolling_parameters(s_window=s_window)
-        assert isinstance(params, RollingParametersSimple)
-
-    @given(e_com=floats(0.0, 10.0), min_periods=integers(1, 10))
-    def test_exponential_com(self, *, e_com: float, min_periods: int) -> None:
-        _ = assume(is_positive(e_com, abs_tol=1e-8))
-        params = rolling_parameters(e_com=e_com, min_periods=min_periods)
-        assert isinstance(params, RollingParametersExponential)
-
-    @given(e_span=floats(1.0, 10.0), min_periods=integers(1, 10))
-    def test_exponential_span(self, *, e_span: float, min_periods: int) -> None:
-        _ = assume(is_greater_than(e_span, 1.0, abs_tol=1e-8))
-        params = rolling_parameters(e_span=e_span, min_periods=min_periods)
-        assert isinstance(params, RollingParametersExponential)
-
-    @given(e_half_life=floats(0.0, 10.0), min_periods=integers(1, 10))
-    def test_exponential_half_life(
-        self, *, e_half_life: float, min_periods: int
-    ) -> None:
-        _ = assume(is_positive(e_half_life, abs_tol=1e-8))
-        params = rolling_parameters(e_half_life=e_half_life, min_periods=min_periods)
-        assert isinstance(params, RollingParametersExponential)
-
-    @given(e_alpha=floats(0.0, 1.0), min_periods=integers(1, 10))
-    def test_exponential_alpha(self, *, e_alpha: float, min_periods: int) -> None:
-        _ = assume(is_positive(e_alpha, abs_tol=1e-8))
-        _ = assume(is_less_than(e_alpha, 1.0, abs_tol=1e-8))
-        params = rolling_parameters(e_alpha=e_alpha, min_periods=min_periods)
-        assert isinstance(params, RollingParametersExponential)
-
-    @given(
-        e_com=floats(0.0, 10.0) | none(),
-        e_span=floats(0.0, 10.0) | none(),
-        e_half_life=floats(0.0, 10.0) | none(),
-        e_alpha=floats(0.0, 1.0) | none(),
-    )
-    def test_error_min_periods(
-        self,
-        *,
-        e_com: float | None,
-        e_span: float | None,
-        e_half_life: float | None,
-        e_alpha: float | None,
-    ) -> None:
-        _ = assume(
-            (e_com is not None)
-            or (e_span is not None)
-            or (e_half_life is not None)
-            or (e_alpha is not None)
-        )
-        with raises(
-            _RollingParametersMinPeriodsError,
-            match="Exponential rolling requires 'min_periods' to be set; got None",
-        ):
-            _ = rolling_parameters(
-                e_com=e_com, e_span=e_span, e_half_life=e_half_life, e_alpha=e_alpha
-            )
-
-    def test_error_argument(self) -> None:
-        with raises(
-            _RollingParametersArgumentsError,
-            match=escape(
-                r"Exactly one of simple window, exponential center of mass (γ), exponential span (θ), exponential half-life (λ) or exponential smoothing factor (α) must be given; got s_window=None, γ=None, θ=None, λ=None and α=None"  # noqa: RUF001
-            ),
-        ):
-            _ = rolling_parameters()
 
 
 class TestSetFirstRowAsColumns:
