@@ -104,6 +104,7 @@ from utilities.polars import (
     check_polars_dataframe,
     collect_series,
     columns_to_dict,
+    concat_series,
     convert_time_zone,
     dataclass_to_dataframe,
     dataclass_to_schema,
@@ -569,6 +570,19 @@ class TestColumnsToDict:
         )
         with raises(ColumnsToDictError, match="DataFrame must be unique on 'a':\n\n.*"):
             _ = columns_to_dict(df, "a", "b")
+
+
+class TestConcatSeries:
+    def test_main(self) -> None:
+        x, y = [
+            Series(name=n, values=[v], dtype=Boolean)
+            for n, v in [("x", True), ("y", False)]
+        ]
+        df = concat_series(x, y)
+        expected = DataFrame(
+            [(True, False)], schema={"x": Boolean, "y": Boolean}, orient="row"
+        )
+        assert_frame_equal(df, expected)
 
 
 class TestConvertTimeZone:

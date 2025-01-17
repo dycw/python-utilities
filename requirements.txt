@@ -294,7 +294,7 @@ psycopg2-binary==2.9.10
     # via dycw-utilities (pyproject.toml)
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==18.1.0
+pyarrow==19.0.0
     # via streamlit
 pycparser==2.22
     # via cffi
@@ -350,7 +350,7 @@ qdldl==0.1.7.post5
     # via osqp
 redis==5.2.1
     # via dycw-utilities (pyproject.toml)
-referencing==0.35.1
+referencing==0.36.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -433,6 +433,7 @@ typing-extensions==4.12.2
     #   pqdm
     #   pydantic
     #   pydantic-core
+    #   referencing
     #   sqlalchemy
     #   streamlit
 tzdata==2024.2
@@ -445,7 +446,7 @@ urllib3==2.3.0
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.5.19
+uv==0.5.20
     # via hatch
 uvicorn==0.34.0
     # via dycw-utilities (pyproject.toml)

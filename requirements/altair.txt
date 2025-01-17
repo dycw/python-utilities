@@ -78,7 +78,7 @@ pytest-rerunfailures==15.0
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)
-referencing==0.35.1
+referencing==0.36.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -94,6 +94,7 @@ typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   altair
+    #   referencing
 vl-convert-python==1.6.1
     # via dycw-utilities (pyproject.toml)
 whenever==0.6.16
