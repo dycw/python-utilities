@@ -814,11 +814,11 @@ class _GetDataTypeOrSeriesTimeZoneNotZonedError(GetDataTypeOrSeriesTimeZoneError
 @overload
 def get_series_number_of_decimals(
     series: Series, /, *, nullable: Literal[True]
-) -> int: ...
+) -> int | None: ...
 @overload
 def get_series_number_of_decimals(
-    series: Series, /, *, nullable: Literal[False]
-) -> int | None: ...
+    series: Series, /, *, nullable: Literal[False] = False
+) -> int: ...
 @overload
 def get_series_number_of_decimals(
     series: Series, /, *, nullable: bool = False
