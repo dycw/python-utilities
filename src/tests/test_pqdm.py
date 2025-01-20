@@ -9,12 +9,12 @@ from hypothesis import given
 from hypothesis.strategies import integers, lists, sampled_from, tuples
 from pytest import mark, param
 
-from utilities.concurrent import Parallelism
 from utilities.functions import get_class_name
 from utilities.hypothesis import int32s, pairs, settings_with_reduced_examples
 from utilities.iterables import transpose
 from utilities.pqdm import _get_desc, pqdm_map, pqdm_starmap
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import Parallelism
 from utilities.typing import get_args
 
 if TYPE_CHECKING:

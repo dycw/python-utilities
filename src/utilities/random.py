@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 from random import Random, SystemRandom
-from typing import TYPE_CHECKING, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+    from utilities.types import Seed
+
 
 _T = TypeVar("_T")
-Seed: TypeAlias = int | float | str | bytes | bytearray | Random
 SYSTEM_RANDOM = SystemRandom()
 
 
@@ -47,4 +48,4 @@ def shuffle(iterable: Iterable[_T], /, *, seed: Seed | None = None) -> list[_T]:
     return copy
 
 
-__all__ = ["SYSTEM_RANDOM", "Seed", "get_docker_name", "get_state", "shuffle"]
+__all__ = ["SYSTEM_RANDOM", "get_docker_name", "get_state", "shuffle"]

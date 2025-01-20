@@ -5,6 +5,7 @@ from collections.abc import Awaitable, Callable, Coroutine, Hashable, Iterable, 
 from enum import Enum
 from logging import Logger
 from pathlib import Path
+from random import Random
 from types import TracebackType
 from typing import (
     Any,
@@ -35,6 +36,10 @@ MaybeType: TypeAlias = _T | type[_T]
 Coroutine1: TypeAlias = Coroutine[Any, Any, _T]
 MaybeAwaitable: TypeAlias = _T | Awaitable[_T]
 MaybeCoroutine1: TypeAlias = _T | Coroutine1[_T]
+
+
+# concurrent
+Parallelism: TypeAlias = Literal["processes", "threads"]
 
 
 # dataclasses
@@ -83,6 +88,10 @@ PathLike: TypeAlias = Path | str
 PathLikeOrCallable: TypeAlias = PathLike | Callable[[], PathLike]
 
 
+# random
+Seed: TypeAlias = int | float | str | bytes | bytearray | Random
+
+
 # traceback
 ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
 OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
@@ -109,8 +118,10 @@ __all__ = [
     "MaybeType",
     "Number",
     "OptExcInfo",
+    "Parallelism",
     "PathLike",
     "PathLikeOrCallable",
+    "Seed",
     "StrMapping",
     "SupportsDunderGT",
     "SupportsDunderLT",

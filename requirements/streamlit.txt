@@ -29,7 +29,7 @@ gitdb==4.0.12
     # via gitpython
 gitpython==3.1.44
     # via streamlit
-hypothesis==6.124.0
+hypothesis==6.124.1
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via requests
@@ -51,7 +51,7 @@ mdurl==0.1.2
     # via markdown-it-py
 narwhals==1.22.0
     # via altair
-numpy==2.2.1
+numpy==2.2.2
     # via
     #   pandas
     #   pydeck
