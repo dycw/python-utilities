@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, assert_never
+from typing import TYPE_CHECKING, Any, TypeVar, assert_never
 
 from utilities.iterables import apply_to_tuple
 from utilities.os import get_cpu_use
+from utilities.types import Parallelism
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -15,7 +16,6 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
-Parallelism: TypeAlias = Literal["processes", "threads"]
 
 
 def concurrent_map(

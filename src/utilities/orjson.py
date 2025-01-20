@@ -50,7 +50,7 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from logging import _FormatStyle
 
-    from utilities.concurrent import Parallelism
+    from utilities.types import Parallelism
 
 
 # serialize

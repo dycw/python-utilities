@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 
     from tqdm import tqdm as tqdm_type
 
-    from utilities.concurrent import Parallelism
     from utilities.os import IntOrAll
+    from utilities.types import Parallelism
 
 
 _T = TypeVar("_T")
