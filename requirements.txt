@@ -50,7 +50,7 @@ bottleneck==1.4.2
     # via dycw-utilities (pyproject.toml)
 bounded-pool-executor==0.0.3
     # via pqdm
-cachetools==5.5.0
+cachetools==5.5.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   streamlit
@@ -104,11 +104,11 @@ eventkit==1.0.3
     #   ib-async-dataclass
 execnet==2.1.1
     # via pytest-xdist
-fastapi==0.115.6
+fastapi==0.115.7
     # via dycw-utilities (pyproject.toml)
-filelock==3.16.1
+filelock==3.17.0
     # via virtualenv
-fonttools==4.55.3
+fonttools==4.55.4
     # via fpdf2
 fpdf2==2.8.2
     # via dycw-utilities (pyproject.toml)
@@ -142,7 +142,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.124.1
+hypothesis==6.124.2
     # via dycw-utilities (pyproject.toml)
 ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
@@ -155,7 +155,7 @@ idna==3.10
     #   yarl
 img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
-importlib-metadata==8.5.0
+importlib-metadata==8.6.1
     # via keyring
 iniconfig==2.0.0
     # via pytest
@@ -175,7 +175,7 @@ jsonschema-specifications==2024.10.1
     # via jsonschema
 keyring==25.6.0
     # via hatch
-llvmlite==0.43.0
+llvmlite==0.44.0
     # via numba
 loguru==0.7.3
     # via dycw-utilities (pyproject.toml)
@@ -202,7 +202,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.22.0
+narwhals==1.23.0
     # via
     #   altair
     #   vegafusion
@@ -212,7 +212,7 @@ nest-asyncio==1.6.0
     #   ib-async-dataclass
 nox==2024.10.9
     # via dycw-utilities (pyproject.toml)
-numba==0.60.0
+numba==0.61.0
     # via numbagg
 numbagg==0.8.2
     # via dycw-utilities (pyproject.toml)
@@ -319,20 +319,26 @@ pytest==8.3.4
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio
     #   pytest-cov
+    #   pytest-datadir
     #   pytest-instafail
     #   pytest-only
     #   pytest-randomly
+    #   pytest-regressions
     #   pytest-rerunfailures
     #   pytest-xdist
 pytest-asyncio==0.25.2
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
+pytest-datadir==1.5.0
+    # via pytest-regressions
 pytest-instafail==0.5.0
     # via dycw-utilities (pyproject.toml)
 pytest-only==2.1.2
     # via dycw-utilities (pyproject.toml)
 pytest-randomly==3.16.0
+    # via dycw-utilities (pyproject.toml)
+pytest-regressions==2.7.0
     # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==15.0
     # via dycw-utilities (pyproject.toml)
@@ -345,7 +351,9 @@ python-dotenv==1.0.1
 pytz==2024.2
     # via pandas
 pyyaml==6.0.2
-    # via optuna
+    # via
+    #   optuna
+    #   pytest-regressions
 qdldl==0.1.7.post5
     # via osqp
 redis==5.2.1
@@ -396,7 +404,7 @@ sqlalchemy==2.0.37
     #   dycw-utilities (pyproject.toml)
     #   alembic
     #   optuna
-starlette==0.41.3
+starlette==0.45.2
     # via fastapi
 streamlit==1.41.1
     # via dycw-utilities (pyproject.toml)
@@ -446,7 +454,7 @@ urllib3==2.3.0
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.5.21
+uv==0.5.22
     # via hatch
 uvicorn==0.34.0
     # via dycw-utilities (pyproject.toml)
