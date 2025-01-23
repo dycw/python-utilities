@@ -37,6 +37,8 @@ markupsafe==3.0.2
     # via jinja2
 narwhals==1.23.0
     # via altair
+numpy==2.2.2
+    # via pytest-rng
 packaging==24.2
     # via
     #   altair
@@ -65,6 +67,7 @@ pytest==8.3.4
     #   pytest-randomly
     #   pytest-regressions
     #   pytest-rerunfailures
+    #   pytest-rng
     #   pytest-xdist
 pytest-asyncio==0.25.2
     # via dycw-utilities (pyproject.toml)
@@ -81,6 +84,8 @@ pytest-randomly==3.16.0
 pytest-regressions==2.7.0
     # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==15.0
+    # via dycw-utilities (pyproject.toml)
+pytest-rng==1.0.0
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)

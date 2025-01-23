@@ -9,6 +9,7 @@ from pytest import fixture
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from utilities.git import get_repo_root
+from utilities.operator import is_equal
 from utilities.pytest import node_id_to_path
 
 if TYPE_CHECKING:
@@ -52,12 +53,12 @@ class OrjsonRegressionFixture:
             check_fn=self._check_fn,
         )
 
-    def _check_fn(self, left: Path, right: Path, /) -> None:
-        with left.open(mode="r") as fh:
-            obj_x = loads(fh.read())
-        with right.open(mode="r") as fh:
-            obj_y = loads(fh.read())
-        assert obj_x == obj_y
+    def _check_fn(self, path1: Path, path2: Path, /) -> None:
+        with path1.open(mode="r") as fh:
+            left = loads(fh.read())
+        with path2.open(mode="r") as fh:
+            right = loads(fh.read())
+        assert is_equal(left, right), f"{left=}, {right=}"
 
 
 @fixture
