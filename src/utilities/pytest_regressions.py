@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from json import loads
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -39,8 +40,19 @@ class OrjsonRegressionFixture:
         if suffix is not None:
             basename = f"{basename}__{suffix}"
         self._file_regression.check(
-            data, extension=".json", basename=basename, binary=True
+            data,
+            extension=".json",
+            basename=basename,
+            binary=True,
+            check_fn=self._check_fn,
         )
+
+    def _check_fn(self, left: Path, right: Path, /) -> None:
+        with left.open(mode="r") as fh:
+            obj_x = loads(fh.read())
+        with right.open(mode="r") as fh:
+            obj_y = loads(fh.read())
+        assert obj_x == obj_y
 
 
 @fixture
