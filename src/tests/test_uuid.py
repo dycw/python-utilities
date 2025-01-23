@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from hypothesis import given
-from hypothesis.strategies import integers, randoms, uuids
+from hypothesis.strategies import integers, none, randoms, uuids
 
 from utilities.uuid import UUID_EXACT_PATTERN, UUID_PATTERN, get_uuid
 
@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 
 
 class TestGetUUID4:
-    @given(state=randoms())
-    def test_main(self, *, state: Random) -> None:
-        uuid = get_uuid(seed=state)
+    @given(seed=randoms() | none())
+    def test_main(self, *, seed: Random | None) -> None:
+        uuid = get_uuid(seed=seed)
         assert isinstance(uuid, UUID)
 
     @given(seed=integers())
