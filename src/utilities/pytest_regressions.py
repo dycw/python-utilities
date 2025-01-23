@@ -12,10 +12,10 @@ from utilities.git import get_repo_root
 from utilities.pytest import node_id_to_path
 
 if TYPE_CHECKING:
-    from polars import DataFrame
+    from polars import DataFrame, Series
     from pytest import FixtureRequest
 
-    from utilities.types import PathLike
+    from utilities.types import PathLike, StrMapping
 
 
 _PATH_TESTS = Path("src", "tests")
@@ -70,45 +70,50 @@ def orjson_regression(*, request: FixtureRequest) -> OrjsonRegressionFixture:
 ##
 
 
-class PolarsDataFrameRegressionFixture:
-    """Implementation of `polars_dataframe_regression`."""
+class PolarsRegressionFixture:
+    """Implementation of `polars_regression`."""
 
     def __init__(self, path: PathLike, request: FixtureRequest, /) -> None:
         super().__init__()
         self._fixture = OrjsonRegressionFixture(path, request)
 
-    def check(self, df: DataFrame, /, *, suffix: str | None = None) -> None:
-        """Check the DataFrame summary against the baseline."""
-        from polars import col
+    def check(self, obj: Series | DataFrame, /, *, suffix: str | None = None) -> None:
+        """Check the Series/DataFrame summary against the baseline."""
+        from polars import DataFrame, Series, col
         from polars.exceptions import InvalidOperationError
 
-        approx_n_unique: dict[str, int] = {}
-        for column in df.columns:
-            with suppress(InvalidOperationError):
-                approx_n_unique[column] = df.select(
-                    col(column).approx_n_unique()
-                ).item()
-        data = {
-            "approx_n_unique": approx_n_unique,
-            "describe": df.describe(percentiles=[i / 10 for i in range(1, 10)]).rows(
-                named=True
-            ),
-            "estimated_size": df.estimated_size(),
-            "glimpse": df.glimpse(return_as_string=True),
-            "is_empty": df.is_empty(),
-            "n_unique": df.n_unique(),
-            "null_count": df.null_count().row(0, named=True),
-        }
+        data: StrMapping = {}
+        match obj:
+            case Series() as series:
+                data["has_nulls"] = series.has_nulls()
+                data["is_sorted"] = series.is_sorted()
+                data["len"] = series.len()
+                data["n_unique"] = series.n_unique()
+                data["null_count"] = series.null_count()
+            case DataFrame() as df:
+                approx_n_unique: dict[str, int] = {}
+                for column in df.columns:
+                    with suppress(InvalidOperationError):
+                        approx_n_unique[column] = df.select(
+                            col(column).approx_n_unique()
+                        ).item()
+                data["approx_n_unique"] = approx_n_unique
+                data["glimpse"] = df.glimpse(return_as_string=True)
+                data["n_unique"] = df.n_unique()
+                data["null_count"] = df.null_count().row(0, named=True)
+        data["describe"] = obj.describe(
+            percentiles=[i / 10 for i in range(1, 10)]
+        ).rows(named=True)
+        data["estimated_size"] = obj.estimated_size()
+        data["is_empty"] = obj.is_empty()
         self._fixture.check(data, suffix=suffix)
 
 
 @fixture
-def polars_dataframe_regression(
-    *, request: FixtureRequest
-) -> PolarsDataFrameRegressionFixture:
-    """Instance of the `PolarsDataFrameRegressionFixture`."""
+def polars_regression(*, request: FixtureRequest) -> PolarsRegressionFixture:
+    """Instance of the `PolarsRegressionFixture`."""
     path = _get_path(request)
-    return PolarsDataFrameRegressionFixture(path, request)
+    return PolarsRegressionFixture(path, request)
 
 
 ##
@@ -121,7 +126,7 @@ def _get_path(request: FixtureRequest, /) -> Path:
 
 __all__ = [
     "OrjsonRegressionFixture",
-    "PolarsDataFrameRegressionFixture",
+    "PolarsRegressionFixture",
     "orjson_regression",
-    "polars_dataframe_regression",
+    "polars_regression",
 ]

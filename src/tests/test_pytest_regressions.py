@@ -8,9 +8,9 @@ from polars import int_range
 
 from tests.test_operator import DataClass1, DataClass2Inner, DataClass2Outer, DataClass3
 from utilities.pytest_regressions import (
-    PolarsDataFrameRegressionFixture,
+    PolarsRegressionFixture,
     orjson_regression,
-    polars_dataframe_regression,
+    polars_regression,
 )
 
 if TYPE_CHECKING:
@@ -18,15 +18,17 @@ if TYPE_CHECKING:
 
 
 _ = orjson_regression
-_ = polars_dataframe_regression
+_ = polars_regression
 
 
-class TestPolarsDataFrameRegressionFixture:
-    def test_main(
-        self, *, polars_dataframe_regression: PolarsDataFrameRegressionFixture
-    ) -> None:
+class TestPolarsRegressionFixture:
+    def test_dataframe(self, *, polars_regression: PolarsRegressionFixture) -> None:
         df = int_range(end=10, eager=True).alias("value").to_frame()
-        polars_dataframe_regression.check(df)
+        polars_regression.check(df)
+
+    def test_series(self, *, polars_regression: PolarsRegressionFixture) -> None:
+        series = int_range(end=10, eager=True).alias("value")
+        polars_regression.check(series)
 
 
 class TestOrjsonRegressionFixture:
