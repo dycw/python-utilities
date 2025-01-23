@@ -7,6 +7,7 @@ from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from pytest import fixture
 from typing_extensions import override
 
 from utilities.datetime import datetime_duration_to_float, get_now
@@ -21,10 +22,12 @@ from utilities.platform import (
     IS_NOT_WINDOWS,
     IS_WINDOWS,
 )
+from utilities.random import get_state
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
+    from random import Random
 
     from utilities.types import Duration, PathLike
 
@@ -67,6 +70,9 @@ def add_pytest_addoption(parser: Parser, options: Sequence[str], /) -> None:
         )
 
 
+##
+
+
 def add_pytest_collection_modifyitems(
     config: Config, items: Iterable[Function], options: Sequence[str], /
 ) -> None:
@@ -89,6 +95,9 @@ def add_pytest_collection_modifyitems(
             _ = item.add_marker(mark.skip(reason=f"pass {joined}"))
 
 
+##
+
+
 def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) -> None:
     """Add the `--slow`, etc markers to pytest.
 
@@ -100,9 +109,15 @@ def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) 
         _ = config.addinivalue_line("markers", f"{opt}: mark test as {desc}")
 
 
+##
+
+
 def is_pytest() -> bool:
     """Check if `pytest` is running."""
     return "PYTEST_VERSION" in environ
+
+
+##
 
 
 def node_id_to_path(
@@ -129,6 +144,18 @@ class NodeIdToPathError(Exception):
     @override
     def __str__(self) -> str:
         return f"Node ID must be a Python file; got {self.node_id!r}"
+
+
+##
+
+
+@fixture
+def random_state(*, seed: int) -> Random:
+    """Fixture for a random state."""
+    return get_state(seed=seed)
+
+
+##
 
 
 def throttle(
@@ -210,6 +237,7 @@ __all__ = [
     "add_pytest_configure",
     "is_pytest",
     "node_id_to_path",
+    "random_state",
     "skipif_linux",
     "skipif_mac",
     "skipif_not_linux",

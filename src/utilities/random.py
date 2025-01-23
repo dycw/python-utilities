@@ -35,9 +35,7 @@ def get_docker_name(*, seed: Seed | None = None) -> str:
 
 def get_state(*, seed: Seed | None = None) -> Random:
     """Get a random state."""
-    if isinstance(seed, Random):
-        return seed
-    return Random(x=seed)
+    return seed if isinstance(seed, Random) else Random(x=seed)
 
 
 def shuffle(iterable: Iterable[_T], /, *, seed: Seed | None = None) -> list[_T]:
