@@ -48,7 +48,7 @@ dev = [
   "nox >= 2024.10.9, < 2024.11",
   "numbagg >= 0.8.2, < 0.9",
   "numpy >= 2.0.2, < 2.1",  # if 2.1, llvmlite: RuntimeError: Cannot install on Python version 3.11.9; only versions >=3.6,<3.10 are supported.
-  "optuna >= 4.1.0, < 4.2",
+  "optuna >= 4.2.0, < 4.3",
   "orjson >= 3.10.14, < 3.11",
   "pathvalidate >= 3.2.3, < 3.3",
   "polars-lts-cpu >= 1.20.0, < 1.21",
