@@ -24,7 +24,7 @@ markupsafe==3.0.2
     # via mako
 numpy==2.2.2
     # via optuna
-optuna==3.6.1
+optuna==4.2.0
     # via dycw-utilities (pyproject.toml)
 packaging==24.2
     # via
