@@ -10,7 +10,7 @@ coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.124.1
+hypothesis==6.124.2
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -26,20 +26,26 @@ pytest==8.3.4
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio
     #   pytest-cov
+    #   pytest-datadir
     #   pytest-instafail
     #   pytest-only
     #   pytest-randomly
+    #   pytest-regressions
     #   pytest-rerunfailures
     #   pytest-xdist
 pytest-asyncio==0.25.2
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
+pytest-datadir==1.5.0
+    # via pytest-regressions
 pytest-instafail==0.5.0
     # via dycw-utilities (pyproject.toml)
 pytest-only==2.1.2
     # via dycw-utilities (pyproject.toml)
 pytest-randomly==3.16.0
+    # via dycw-utilities (pyproject.toml)
+pytest-regressions==2.7.0
     # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==15.0
     # via dycw-utilities (pyproject.toml)
@@ -47,6 +53,8 @@ pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)
 python-dotenv==1.0.1
     # via dycw-utilities (pyproject.toml)
+pyyaml==6.0.2
+    # via pytest-regressions
 sortedcontainers==2.4.0
     # via hypothesis
 tomli==2.2.1

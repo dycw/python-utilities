@@ -9,7 +9,7 @@ attrs==24.3.0
     #   referencing
 blinker==1.9.0
     # via streamlit
-cachetools==5.5.0
+cachetools==5.5.1
     # via streamlit
 certifi==2024.12.14
     # via requests
@@ -29,7 +29,7 @@ gitdb==4.0.12
     # via gitpython
 gitpython==3.1.44
     # via streamlit
-hypothesis==6.124.1
+hypothesis==6.124.2
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via requests
@@ -49,7 +49,7 @@ markupsafe==3.0.2
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-narwhals==1.22.0
+narwhals==1.23.0
     # via altair
 numpy==2.2.2
     # via
@@ -82,20 +82,26 @@ pytest==8.3.4
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio
     #   pytest-cov
+    #   pytest-datadir
     #   pytest-instafail
     #   pytest-only
     #   pytest-randomly
+    #   pytest-regressions
     #   pytest-rerunfailures
     #   pytest-xdist
 pytest-asyncio==0.25.2
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
+pytest-datadir==1.5.0
+    # via pytest-regressions
 pytest-instafail==0.5.0
     # via dycw-utilities (pyproject.toml)
 pytest-only==2.1.2
     # via dycw-utilities (pyproject.toml)
 pytest-randomly==3.16.0
+    # via dycw-utilities (pyproject.toml)
+pytest-regressions==2.7.0
     # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==15.0
     # via dycw-utilities (pyproject.toml)
@@ -105,6 +111,8 @@ python-dateutil==2.9.0.post0
     # via pandas
 pytz==2024.2
     # via pandas
+pyyaml==6.0.2
+    # via pytest-regressions
 referencing==0.36.1
     # via
     #   jsonschema
@@ -139,7 +147,7 @@ typing-extensions==4.12.2
     #   altair
     #   referencing
     #   streamlit
-tzdata==2024.2
+tzdata==2025.1
     # via pandas
 urllib3==2.3.0
     # via requests

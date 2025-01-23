@@ -49,12 +49,12 @@ class TestNodeIdToPath:
         ],
     )
     def test_main(self, *, node_id: str, expected: Path) -> None:
-        result = node_id_to_path(node_id)
+        result = node_id_to_path(node_id, suffix=".csv")
         assert result == expected
 
     def test_head(self) -> None:
         node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
-        result = node_id_to_path(node_id, head=Path("src/tests"))
+        result = node_id_to_path(node_id, head=Path("src/tests"), suffix=".csv")
         expected = Path("module.test_funcs", "TestClass__test_main.csv")
         assert result == expected
 
