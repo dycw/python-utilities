@@ -25,7 +25,7 @@ _PATH_TESTS = Path("src", "tests")
 
 
 class OrjsonRegressionFixture:
-    """Implementation of `orjson_regression_fixture` fixture."""
+    """Implementation of `orjson_regression` fixture."""
 
     def __init__(self, path: PathLike, request: FixtureRequest, /) -> None:
         super().__init__()
@@ -61,7 +61,7 @@ class OrjsonRegressionFixture:
 
 
 @fixture
-def orjson_regression_fixture(*, request: FixtureRequest) -> OrjsonRegressionFixture:
+def orjson_regression(*, request: FixtureRequest) -> OrjsonRegressionFixture:
     """Instance of the `OrjsonRegressionFixture`."""
     path = _get_path(request)
     return OrjsonRegressionFixture(path, request)
@@ -71,7 +71,7 @@ def orjson_regression_fixture(*, request: FixtureRequest) -> OrjsonRegressionFix
 
 
 class PolarsDataFrameRegressionFixture:
-    """Implementation of `polars_dataframe_regression_fixture`."""
+    """Implementation of `polars_dataframe_regression`."""
 
     def __init__(self, path: PathLike, request: FixtureRequest, /) -> None:
         super().__init__()
@@ -103,7 +103,7 @@ class PolarsDataFrameRegressionFixture:
 
 
 @fixture
-def polars_dataframe_regression_fixture(
+def polars_dataframe_regression(
     *, request: FixtureRequest
 ) -> PolarsDataFrameRegressionFixture:
     """Instance of the `PolarsDataFrameRegressionFixture`."""
@@ -122,6 +122,6 @@ def _get_path(request: FixtureRequest, /) -> Path:
 __all__ = [
     "OrjsonRegressionFixture",
     "PolarsDataFrameRegressionFixture",
-    "orjson_regression_fixture",
-    "polars_dataframe_regression_fixture",
+    "orjson_regression",
+    "polars_dataframe_regression",
 ]
