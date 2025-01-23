@@ -105,10 +105,10 @@ class PolarsDataFrameRegressionFixture:
 @fixture
 def polars_dataframe_regression_fixture(
     *, request: FixtureRequest
-) -> OrjsonRegressionFixture:
+) -> PolarsDataFrameRegressionFixture:
     """Instance of the `PolarsDataFrameRegressionFixture`."""
     path = _get_path(request)
-    return OrjsonRegressionFixture(path, request)
+    return PolarsDataFrameRegressionFixture(path, request)
 
 
 ##
