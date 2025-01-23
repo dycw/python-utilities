@@ -21,7 +21,9 @@ iniconfig==2.0.0
 nest-asyncio==1.6.0
     # via ib-async-dataclass
 numpy==2.2.2
-    # via eventkit
+    # via
+    #   eventkit
+    #   pytest-rng
 orjson==3.10.15
     # via dycw-utilities (pyproject.toml)
 packaging==24.2
@@ -44,6 +46,7 @@ pytest==8.3.4
     #   pytest-randomly
     #   pytest-regressions
     #   pytest-rerunfailures
+    #   pytest-rng
     #   pytest-xdist
 pytest-asyncio==0.25.2
     # via dycw-utilities (pyproject.toml)
@@ -60,6 +63,8 @@ pytest-randomly==3.16.0
 pytest-regressions==2.7.0
     # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==15.0
+    # via dycw-utilities (pyproject.toml)
+pytest-rng==1.0.0
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)

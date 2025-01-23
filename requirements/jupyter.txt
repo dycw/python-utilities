@@ -155,7 +155,9 @@ nest-asyncio==1.6.0
 notebook-shim==0.2.4
     # via jupyterlab
 numpy==2.2.2
-    # via pandas
+    # via
+    #   pandas
+    #   pytest-rng
 overrides==7.7.0
     # via jupyter-server
 packaging==24.2
@@ -211,6 +213,7 @@ pytest==8.3.4
     #   pytest-randomly
     #   pytest-regressions
     #   pytest-rerunfailures
+    #   pytest-rng
     #   pytest-xdist
 pytest-asyncio==0.25.2
     # via dycw-utilities (pyproject.toml)
@@ -227,6 +230,8 @@ pytest-randomly==3.16.0
 pytest-regressions==2.7.0
     # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==15.0
+    # via dycw-utilities (pyproject.toml)
+pytest-rng==1.0.0
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)

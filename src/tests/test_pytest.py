@@ -9,12 +9,21 @@ from typing import TYPE_CHECKING
 from pytest import mark, param, raises
 
 from tests.conftest import FLAKY
-from utilities.pytest import NodeIdToPathError, is_pytest, node_id_to_path, throttle
+from utilities.pytest import (
+    NodeIdToPathError,
+    is_pytest,
+    node_id_to_path,
+    random_state,
+    throttle,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from _pytest.legacypath import Testdir
+
+
+_ = random_state
 
 
 class TestIsPytest:
