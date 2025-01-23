@@ -33,7 +33,7 @@ class OrjsonRegressionFixture:
         path = Path(path)
         datadir = path.parent
         self._fixture = FileRegressionFixture(
-            datadir=datadir, original_datadir=datadir, request=request
+            datadir=datadir.joinpath("tmp"), original_datadir=datadir, request=request
         )
         self._basename = path.name
 
