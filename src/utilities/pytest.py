@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import wraps
 from inspect import iscoroutinefunction
-from itertools import chain
 from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -13,6 +12,7 @@ from typing_extensions import override
 from utilities.datetime import datetime_duration_to_float, get_now
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
+from utilities.pathlib import ensure_suffix
 from utilities.platform import (
     IS_LINUX,
     IS_MAC,
@@ -106,7 +106,7 @@ def is_pytest() -> bool:
 
 
 def node_id_to_path(
-    node_id: str, suffix: str, /, *, head: PathLike | None = None
+    node_id: str, /, *, head: PathLike | None = None, suffix: str | None = None
 ) -> Path:
     """Map a node ID to a path."""
     path_file, *parts = node_id.split("::")
@@ -117,8 +117,8 @@ def node_id_to_path(
     if head is not None:
         path = path.relative_to(head)
     path = Path(".".join(path.parts), "__".join(parts))
-    if not ((len(path.suffixes) >= 1) and (path.suffixes[-1] == suffix)):
-        path = path.with_suffix("".join(chain(path.suffixes, [suffix])))
+    if suffix is not None:
+        path = ensure_suffix(path, suffix)
     return path
 
 
