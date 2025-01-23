@@ -25,7 +25,7 @@ dev = [
   "atools >= 0.14.2, < 0.15",
   "bottleneck >= 1.4.2, < 1.5",
   "beartype >= 0.19.0, < 0.20",
-  "cachetools >= 5.5.0, < 5.6",
+  "cachetools >= 5.5.1, < 5.6",
   "click >= 8.1.8, < 8.2",
   "coloredlogs >= 15.0.1, < 15.1",
   "concurrent-log-handler >= 0.9.25, < 0.10",
@@ -33,7 +33,7 @@ dev = [
   "cvxpy >= 1.6.0, < 1.7",
   "dacite >= 1.8.1, < 1.9",
   "eventkit >= 1.0.3, < 1.1",
-  "fastapi >= 0.115.6, < 0.116",
+  "fastapi >= 0.115.7, < 0.116",
   "fpdf2 >= 2.8.2, < 2.9",
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
   "hatch >= 1.14.0, < 1.15",
@@ -47,7 +47,7 @@ dev = [
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "nox >= 2024.10.9, < 2024.11",
   "numbagg >= 0.8.2, < 0.9",
-  "numpy >= 2.0.2, < 2.1",  # if 2.1, llvmite: RuntimeError: Cannot install on Python version 3.11.9; only versions >=3.6,<3.10 are supported.
+  "numpy >= 2.0.2, < 2.1",  # if 2.1, llvmlite: RuntimeError: Cannot install on Python version 3.11.9; only versions >=3.6,<3.10 are supported.
   "optuna >= 4.1.0, < 4.2",
   "orjson >= 3.10.14, < 3.11",
   "pathvalidate >= 3.2.3, < 3.3",
@@ -117,7 +117,7 @@ zzz-test-atools = [
   "atools >= 0.14.2, < 0.15",
 ]
 zzz-test-beartype = ["beartype >= 0.19.0, < 0.20"]
-zzz-test-cachetools = ["cachetools >= 5.5.0, < 5.6"]
+zzz-test-cachetools = ["cachetools >= 5.5.1, < 5.6"]
 zzz-test-click = [
   "click >= 8.1.8, < 8.2",
   "sqlalchemy >= 2.0.37, < 2.1",
@@ -140,7 +140,7 @@ zzz-test-enum = []
 zzz-test-errors = []
 zzz-test-eventkit = ["eventkit >= 1.0.3, < 1.1"]
 zzz-test-fastapi = [
-  "fastapi >= 0.115.6, < 0.116",
+  "fastapi >= 0.115.7, < 0.116",
   "httpx >= 0.28.1, < 0.29",
   "uvicorn >= 0.34.0, < 0.35",
 ]
