@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import suppress
 from json import loads
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, assert_never
 
 from pytest import fixture
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -101,6 +101,8 @@ class PolarsRegressionFixture:
                 data["glimpse"] = df.glimpse(return_as_string=True)
                 data["n_unique"] = df.n_unique()
                 data["null_count"] = df.null_count().row(0, named=True)
+            case _ as never:
+                assert_never(never)
         data["describe"] = obj.describe(
             percentiles=[i / 10 for i in range(1, 10)]
         ).rows(named=True)
