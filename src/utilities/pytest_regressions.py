@@ -62,9 +62,8 @@ class OrjsonRegressionFixture:
 
 @fixture
 def orjson_regression_fixture(*, request: FixtureRequest) -> OrjsonRegressionFixture:
-    """Fixture to provide an instance of ObjectRegressionFixture using path_regression."""
-    tail = node_id_to_path(request.node.nodeid, head=_PATH_TESTS)
-    path = get_repo_root().joinpath(_PATH_TESTS, "regressions", tail)
+    """Instance of the `OrjsonRegressionFixture`."""
+    path = _get_path(request)
     return OrjsonRegressionFixture(path, request)
 
 
@@ -103,4 +102,26 @@ class PolarsDataFrameRegressionFixture:
         self._fixture.check(data, suffix=suffix)
 
 
-__all__ = ["OrjsonRegressionFixture", "orjson_regression_fixture"]
+@fixture
+def polars_dataframe_regression_fixture(
+    *, request: FixtureRequest
+) -> OrjsonRegressionFixture:
+    """Instance of the `PolarsDataFrameRegressionFixture`."""
+    path = _get_path(request)
+    return OrjsonRegressionFixture(path, request)
+
+
+##
+
+
+def _get_path(request: FixtureRequest, /) -> Path:
+    tail = node_id_to_path(request.node.nodeid, head=_PATH_TESTS)
+    return get_repo_root().joinpath(_PATH_TESTS, "regressions", tail)
+
+
+__all__ = [
+    "OrjsonRegressionFixture",
+    "PolarsDataFrameRegressionFixture",
+    "orjson_regression_fixture",
+    "polars_dataframe_regression_fixture",
+]

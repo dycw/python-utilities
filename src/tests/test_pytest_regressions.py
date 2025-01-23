@@ -4,15 +4,29 @@ from typing import TYPE_CHECKING, Literal
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import sampled_from
+from polars import int_range
 
 from tests.test_operator import DataClass1, DataClass2Inner, DataClass2Outer, DataClass3
-from utilities.pytest_regressions import orjson_regression_fixture
+from utilities.pytest_regressions import (
+    PolarsDataFrameRegressionFixture,
+    orjson_regression_fixture,
+    polars_dataframe_regression_fixture,
+)
 
 if TYPE_CHECKING:
     from utilities.pytest_regressions import OrjsonRegressionFixture
 
 
 _ = orjson_regression_fixture
+_ = polars_dataframe_regression_fixture
+
+
+class TestPolarsDataFrameRegressionFixture:
+    def test_main(
+        self, *, polars_dataframe_regression_fixture: PolarsDataFrameRegressionFixture
+    ) -> None:
+        df = int_range(end=10, eager=True).alias("value").to_frame()
+        polars_dataframe_regression_fixture.check(df)
 
 
 class TestOrjsonRegressionFixture:
