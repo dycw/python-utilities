@@ -1,0 +1,26 @@
+{
+  "describe": [
+    { "statistic": "count", "value": 10.0 },
+    { "statistic": "null_count", "value": 0.0 },
+    { "statistic": "mean", "value": 4.5 },
+    { "statistic": "std", "value": 3.0276503540974917 },
+    { "statistic": "min", "value": 0.0 },
+    { "statistic": "10%", "value": 1.0 },
+    { "statistic": "20%", "value": 2.0 },
+    { "statistic": "30%", "value": 3.0 },
+    { "statistic": "40%", "value": 4.0 },
+    { "statistic": "50%", "value": 5.0 },
+    { "statistic": "60%", "value": 5.0 },
+    { "statistic": "70%", "value": 6.0 },
+    { "statistic": "80%", "value": 7.0 },
+    { "statistic": "90%", "value": 8.0 },
+    { "statistic": "max", "value": 9.0 }
+  ],
+  "estimated_size": 80,
+  "has_nulls": false,
+  "is_empty": false,
+  "is_sorted": true,
+  "len": 10,
+  "n_unique": 10,
+  "null_count": 0
+}
