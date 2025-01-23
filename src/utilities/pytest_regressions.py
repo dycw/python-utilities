@@ -91,9 +91,11 @@ class PolarsDataFrameRegressionFixture:
                 ).item()
         data = {
             "approx_n_unique": approx_n_unique,
-            "describe": df.describe().rows(named=True),
+            "describe": df.describe(percentiles=[i / 10 for i in range(1, 10)]).rows(
+                named=True
+            ),
             "estimated_size": df.estimated_size(),
-            "glimpse": df.glimpse(),
+            "glimpse": df.glimpse(return_as_string=True),
             "is_empty": df.is_empty(),
             "n_unique": df.n_unique(),
             "null_count": df.null_count().row(0, named=True),
