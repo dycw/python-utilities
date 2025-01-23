@@ -49,18 +49,20 @@ class TestNodeIdToPath:
         ],
     )
     def test_main(self, *, node_id: str, expected: Path) -> None:
-        result = node_id_to_path(node_id, suffix=".csv")
+        result = node_id_to_path(node_id, ".csv")
         assert result == expected
 
     def test_head(self) -> None:
         node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
-        result = node_id_to_path(node_id, head=Path("src/tests"), suffix=".csv")
+        result = node_id_to_path(node_id, ".csv", head=Path("src/tests"))
         expected = Path("module.test_funcs", "TestClass__test_main.csv")
         assert result == expected
 
     def test_error_file_suffix(self) -> None:
         with raises(NodeIdToPathError, match="Node ID must be a Python file; got .*"):
-            _ = node_id_to_path("src/tests/module/test_funcs.csv::TestClass::test_main")
+            _ = node_id_to_path(
+                "src/tests/module/test_funcs.csv::TestClass::test_main", ".csv"
+            )
 
 
 class TestPytestOptions:
