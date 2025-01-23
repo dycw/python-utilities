@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import suppress
 from json import loads
 from pathlib import Path
+from shutil import copytree
 from typing import TYPE_CHECKING, Any, assert_never
 
 from pytest import fixture
@@ -28,12 +29,16 @@ _PATH_TESTS = Path("src", "tests")
 class OrjsonRegressionFixture:
     """Implementation of `orjson_regression` fixture."""
 
-    def __init__(self, path: PathLike, request: FixtureRequest, /) -> None:
+    def __init__(
+        self, path: PathLike, request: FixtureRequest, tmp_path: Path, /
+    ) -> None:
         super().__init__()
         path = Path(path)
-        datadir = path.parent
+        original_datadir = path.parent
+        data_dir = tmp_path.joinpath("tmp")
+        copytree(original_datadir, data_dir)
         self._fixture = FileRegressionFixture(
-            datadir=datadir, original_datadir=datadir, request=request
+            datadir=data_dir, original_datadir=original_datadir, request=request
         )
         self._basename = path.name
 
@@ -62,10 +67,12 @@ class OrjsonRegressionFixture:
 
 
 @fixture
-def orjson_regression(*, request: FixtureRequest) -> OrjsonRegressionFixture:
+def orjson_regression(
+    *, request: FixtureRequest, tmp_path: Path
+) -> OrjsonRegressionFixture:
     """Instance of the `OrjsonRegressionFixture`."""
     path = _get_path(request)
-    return OrjsonRegressionFixture(path, request)
+    return OrjsonRegressionFixture(path, request, tmp_path)
 
 
 ##
@@ -74,9 +81,11 @@ def orjson_regression(*, request: FixtureRequest) -> OrjsonRegressionFixture:
 class PolarsRegressionFixture:
     """Implementation of `polars_regression`."""
 
-    def __init__(self, path: PathLike, request: FixtureRequest, /) -> None:
+    def __init__(
+        self, path: PathLike, request: FixtureRequest, tmp_path: Path, /
+    ) -> None:
         super().__init__()
-        self._fixture = OrjsonRegressionFixture(path, request)
+        self._fixture = OrjsonRegressionFixture(path, request, tmp_path)
 
     def check(self, obj: Series | DataFrame, /, *, suffix: str | None = None) -> None:
         """Check the Series/DataFrame summary against the baseline."""
@@ -113,10 +122,12 @@ class PolarsRegressionFixture:
 
 
 @fixture
-def polars_regression(*, request: FixtureRequest) -> PolarsRegressionFixture:
+def polars_regression(
+    *, request: FixtureRequest, tmp_path: Path
+) -> PolarsRegressionFixture:
     """Instance of the `PolarsRegressionFixture`."""
     path = _get_path(request)
-    return PolarsRegressionFixture(path, request)
+    return PolarsRegressionFixture(path, request, tmp_path)
 
 
 ##
