@@ -7,7 +7,7 @@ from typing import Any, ClassVar
 from hypothesis import given
 from hypothesis.strategies import integers, sampled_from
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
-from pytest import approx, mark, param, raises
+from pytest import approx, raises
 
 from utilities.hypothesis import pairs
 from utilities.math import (
@@ -1044,45 +1044,41 @@ class TestSafeRound:
 
 
 class TestSign:
-    @mark.parametrize(
-        ("x", "expected"),
-        [
-            param(-3, -1),
-            param(-2, -1),
-            param(-1, -1),
-            param(0, 0),
-            param(1, 1),
-            param(2, 1),
-            param(3, 1),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-3, -1),
+            (-2, -1),
+            (-1, -1),
+            (0, 0),
+            (1, 1),
+            (2, 1),
+            (3, 1),
+        ])
     )
     def test_int(self, *, x: int, expected: float) -> None:
         result = sign(x)
         assert result == expected
 
-    @mark.parametrize(
-        ("x", "expected"),
-        [
-            param(-2.0, -1),
-            param(-1.75, -1),
-            param(-1.5, -1),
-            param(-1.25, -1),
-            param(-1.0, -1),
-            param(-0.75, -1),
-            param(-0.5, -1),
-            param(-0.25, -1),
-            param(0.0, 0),
-            param(0.25, 1),
-            param(0.5, 1),
-            param(0.75, 1),
-            param(1.0, 1),
-            param(1.25, 1),
-            param(1.5, 1),
-            param(1.75, 1),
-            param(2.0, 1),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-2.0, -1),
+            (-1.75, -1),
+            (-1.5, -1),
+            (-1.25, -1),
+            (-1.0, -1),
+            (-0.75, -1),
+            (-0.5, -1),
+            (-0.25, -1),
+            (0.0, 0),
+            (0.25, 1),
+            (0.5, 1),
+            (0.75, 1),
+            (1.0, 1),
+            (1.25, 1),
+            (1.5, 1),
+            (1.75, 1),
+            (2.0, 1),
+        ])
     )
     def test_float(self, *, x: float, expected: float) -> None:
         result = sign(x)
