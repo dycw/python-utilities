@@ -4,7 +4,7 @@ from math import inf, nan
 from re import escape
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import DataObject, data, integers, permutations, sampled_from
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
 from pytest import approx, raises
@@ -1029,6 +1029,7 @@ class TestRound:
             ("standard-tie-away-zero", 2.0, 2),
         ])
     )
+    @settings(max_examples=1000)
     def test_main(self, *, case: tuple[_RoundMode, float, int]) -> None:
         mode, x, expected = case
         result = round_(x, mode=mode)
