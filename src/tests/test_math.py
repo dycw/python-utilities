@@ -460,23 +460,21 @@ class TestIsFiniteAndNonPositive:
 
 
 class TestIsFiniteAndNonZero:
-    @mark.parametrize(
-        ("x", "expected", "expected_nan"),
-        [
-            param(-inf, False, False),
-            param(-1.0, True, True),
-            param(-1e-6, True, True),
-            param(-1e-7, True, True),
-            param(-1e-8, False, False),
-            param(0.0, False, False),
-            param(1e-8, False, False),
-            param(1e-7, True, True),
-            param(1e-6, True, True),
-            param(1.0, True, True),
-            param(inf, False, False),
-            param(nan, False, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, False, False),
+            (-1.0, True, True),
+            (-1e-6, True, True),
+            (-1e-7, True, True),
+            (-1e-8, False, False),
+            (0.0, False, False),
+            (1e-8, False, False),
+            (1e-7, True, True),
+            (1e-6, True, True),
+            (1.0, True, True),
+            (inf, False, False),
+            (nan, False, True),
+        ])
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite_and_non_zero(x, abs_tol=1e-8) is expected
@@ -484,23 +482,21 @@ class TestIsFiniteAndNonZero:
 
 
 class TestIsFiniteAndPositive:
-    @mark.parametrize(
-        ("x", "expected", "expected_nan"),
-        [
-            param(-inf, False, False),
-            param(-1.0, False, False),
-            param(-1e-6, False, False),
-            param(-1e-7, False, False),
-            param(-1e-8, False, False),
-            param(0.0, False, False),
-            param(1e-8, False, False),
-            param(1e-7, True, True),
-            param(1e-6, True, True),
-            param(1.0, True, True),
-            param(inf, False, False),
-            param(nan, False, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, False, False),
+            (-1.0, False, False),
+            (-1e-6, False, False),
+            (-1e-7, False, False),
+            (-1e-8, False, False),
+            (0.0, False, False),
+            (1e-8, False, False),
+            (1e-7, True, True),
+            (1e-6, True, True),
+            (1.0, True, True),
+            (inf, False, False),
+            (nan, False, True),
+        ])
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite_and_positive(x, abs_tol=1e-8) is expected
