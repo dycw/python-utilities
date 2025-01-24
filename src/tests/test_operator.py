@@ -27,7 +27,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from polars import DataFrame, Int64
-from pytest import raises
+from pytest import mark, raises
 from typing_extensions import override
 
 from tests.conftest import IS_CI_AND_WINDOWS
@@ -314,6 +314,21 @@ class TestIsEqual:
         first, second = DataClass4(x=x), DataClass4(x=x)
         assert first != second
         assert is_equal(first, second)
+
+    @mark.only
+    def test_dataclass_of_floats(self) -> None:
+        @dataclass
+        class Example:
+            x: float = 0.0
+
+        first = Example(x=-7.000000000000001)
+        second = Example(x=-7)
+        import math
+
+        assert not is_equal(first.x, second.x)
+        assert math.isclose(first.x, second.x)
+        # assert is_equal(first.x, second.x, abs_tol=1e-8)
+        # assert is_equal(first.x, second.x, abs_tol=1e-8)
 
     @given(
         x=dates() | datetimes() | zoned_datetimes(time_zone=timezones()),

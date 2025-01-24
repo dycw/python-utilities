@@ -5,7 +5,7 @@ from re import escape
 from typing import Any, ClassVar
 
 from hypothesis import given
-from hypothesis.strategies import integers
+from hypothesis.strategies import integers, sampled_from
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
 from pytest import approx, mark, param, raises
 
@@ -99,26 +99,25 @@ class TestCheckInteger:
         with raises(CheckIntegerError, match="Integer must be equal to .*; got .*"):
             check_integer(0, equal=1)
 
-    @mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))], ids=str)
+    @given(equal_or_approx=sampled_from([10, (11, 0.1)]))
     def test_equal_or_approx_pass(
         self, *, equal_or_approx: int | tuple[int, float]
     ) -> None:
         check_integer(10, equal_or_approx=equal_or_approx)
 
-    @mark.parametrize(
-        ("equal_or_approx", "match"),
-        [
-            param(10, "Integer must be equal to .*; got .*"),
-            param(
+    @given(
+        case=sampled_from([
+            (10, "Integer must be equal to .*; got .*"),
+            (
                 (11, 0.1),
                 r"Integer must be approximately equal to .* \(error .*\); got .*",
             ),
-        ],
-        ids=str,
+        ])
     )
     def test_equal_or_approx_fail(
-        self, *, equal_or_approx: int | tuple[int, float], match: str
+        self, *, case: tuple[int | tuple[int, float], str]
     ) -> None:
+        equal_or_approx, match = case
         with raises(CheckIntegerError, match=match):
             check_integer(0, equal_or_approx=equal_or_approx)
 
@@ -179,7 +178,7 @@ class TestEWMParameters:
         ):
             _ = ewm_parameters(half_life=0.0)
 
-    @mark.parametrize("alpha", [param(0.0), param(1.0)], ids=str)
+    @given(alpha=sampled_from([0.0, 1.0]))
     def test_error_alpha(self, *, alpha: float) -> None:
         with raises(
             _EWMParametersAlphaError,
@@ -198,63 +197,53 @@ class TestEWMParameters:
 
 
 class TestIsAtLeast:
-    @mark.parametrize(
-        ("x", "y", "expected"),
-        [
-            param(0.0, -inf, True),
-            param(0.0, -1.0, True),
-            param(0.0, -1e-6, True),
-            param(0.0, -1e-7, True),
-            param(0.0, -1e-8, True),
-            param(0.0, 0.0, True),
-            param(0.0, 1e-8, True),
-            param(0.0, 1e-7, False),
-            param(0.0, 1e-6, False),
-            param(0.0, 1.0, False),
-            param(0.0, inf, False),
-            param(0.0, nan, False),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (0.0, -inf, True),
+            (0.0, -1.0, True),
+            (0.0, -1e-6, True),
+            (0.0, -1e-7, True),
+            (0.0, -1e-8, True),
+            (0.0, 0.0, True),
+            (0.0, 1e-8, True),
+            (0.0, 1e-7, False),
+            (0.0, 1e-6, False),
+            (0.0, 1.0, False),
+            (0.0, inf, False),
+            (0.0, nan, False),
+        ])
     )
-    def test_main(self, *, x: float, y: float, expected: bool) -> None:
+    def test_main(self, *, case: tuple[float, float, bool]) -> None:
+        x, y, expected = case
         assert is_at_least(x, y, abs_tol=1e-8) is expected
 
-    @mark.parametrize(
-        "y",
-        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
-        ids=str,
-    )
+    @given(y=sampled_from([-inf, -1.0, 0.0, 1.0, inf, nan]))
     def test_nan(self, *, y: float) -> None:
         assert is_at_least_or_nan(nan, y)
 
 
 class TestIsAtMost:
-    @mark.parametrize(
-        ("x", "y", "expected"),
-        [
-            param(0.0, -inf, False),
-            param(0.0, -1.0, False),
-            param(0.0, -1e-6, False),
-            param(0.0, -1e-7, False),
-            param(0.0, -1e-8, True),
-            param(0.0, 0.0, True),
-            param(0.0, 1e-8, True),
-            param(0.0, 1e-7, True),
-            param(0.0, 1e-6, True),
-            param(0.0, 1.0, True),
-            param(0.0, inf, True),
-            param(0.0, nan, False),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (0.0, -inf, False),
+            (0.0, -1.0, False),
+            (0.0, -1e-6, False),
+            (0.0, -1e-7, False),
+            (0.0, -1e-8, True),
+            (0.0, 0.0, True),
+            (0.0, 1e-8, True),
+            (0.0, 1e-7, True),
+            (0.0, 1e-6, True),
+            (0.0, 1.0, True),
+            (0.0, inf, True),
+            (0.0, nan, False),
+        ])
     )
-    def test_main(self, *, x: float, y: float, expected: bool) -> None:
+    def test_main(self, *, case: tuple[float, float, bool]) -> None:
+        x, y, expected = case
         assert is_at_most(x, y, abs_tol=1e-8) is expected
 
-    @mark.parametrize(
-        "y",
-        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
-        ids=str,
-    )
+    @given(y=sampled_from([-inf, -1.0, 0.0, 1.0, inf, nan]))
     def test_nan(self, *, y: float) -> None:
         assert is_at_most_or_nan(nan, y)
 
