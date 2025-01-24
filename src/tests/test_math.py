@@ -9,6 +9,7 @@ from hypothesis.strategies import integers, sampled_from
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
 from pytest import approx, mark, param, raises
 
+from utilities.hypothesis import pairs
 from utilities.math import (
     MAX_INT8,
     MAX_INT16,
@@ -249,36 +250,27 @@ class TestIsAtMost:
 
 
 class TestIsBetween:
-    @mark.parametrize(
-        ("x", "low", "high", "expected"),
-        [
-            param(0.0, -1.0, -1.0, False),
-            param(0.0, -1.0, 0.0, True),
-            param(0.0, -1.0, 1.0, True),
-            param(0.0, 0.0, -1.0, False),
-            param(0.0, 0.0, 0.0, True),
-            param(0.0, 0.0, 1.0, True),
-            param(0.0, 1.0, -1.0, False),
-            param(0.0, 1.0, 0.0, False),
-            param(0.0, 1.0, 1.0, False),
-            param(nan, -1.0, 1.0, False),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (0.0, -1.0, -1.0, False),
+            (0.0, -1.0, 0.0, True),
+            (0.0, -1.0, 1.0, True),
+            (0.0, 0.0, -1.0, False),
+            (0.0, 0.0, 0.0, True),
+            (0.0, 0.0, 1.0, True),
+            (0.0, 1.0, -1.0, False),
+            (0.0, 1.0, 0.0, False),
+            (0.0, 1.0, 1.0, False),
+            (nan, -1.0, 1.0, False),
+        ])
     )
-    def test_main(self, *, x: float, low: float, high: float, expected: bool) -> None:
+    def test_main(self, *, case: tuple[float, float, float, bool]) -> None:
+        x, low, high, expected = case
         assert is_between(x, low, high, abs_tol=1e-8) is expected
 
-    @mark.parametrize(
-        "low",
-        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
-        ids=str,
-    )
-    @mark.parametrize(
-        "high",
-        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
-        ids=str,
-    )
-    def test_nan(self, *, low: float, high: float) -> None:
+    @given(bounds=pairs(sampled_from([-inf, -1.0, 0.0, 1.0, inf, nan])))
+    def test_nan(self, *, bounds: tuple[float, float]) -> None:
+        low, high = bounds
         assert is_between_or_nan(nan, low, high)
 
 
