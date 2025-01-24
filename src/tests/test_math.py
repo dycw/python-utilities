@@ -522,7 +522,8 @@ class TestIsGreaterThan:
             (0.0, nan, False),
         ])
     )
-    def test_main(self, *, x: float, y: float, expected: bool) -> None:
+    def test_main(self, *, case: tuple[float, float, bool]) -> None:
+        x, y, expected = case
         assert is_greater_than(x, y, abs_tol=1e-8) is expected
 
     @given(y=sampled_from([-inf, -1.0, 0.0, 1.0, inf, nan]))
@@ -576,7 +577,8 @@ class TestIsLessThan:
             (0.0, nan, False),
         ])
     )
-    def test_main(self, *, x: float, y: float, expected: bool) -> None:
+    def test_main(self, *, case: tuple[float, float, bool]) -> None:
+        x, y, expected = case
         assert is_less_than(x, y, abs_tol=1e-8) is expected
 
     @given(y=sampled_from([-inf, -1.0, 0.0, 1.0, inf, nan]))
@@ -670,7 +672,8 @@ class TestIsNonZero:
             (nan, True),
         ])
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self, *, case: tuple[float, bool]) -> None:
+        x, expected = case
         assert is_non_zero(x, abs_tol=1e-8) is expected
         assert is_non_zero_or_nan(x, abs_tol=1e-8) is expected
 
@@ -761,7 +764,8 @@ class TestIsZeroOrNonMicro:
             (nan, True),
         ])
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self, *, case: tuple[float, bool]) -> None:
+        x, expected = case
         assert is_zero_or_non_micro(x, abs_tol=1e-8) is expected
         assert is_zero_or_non_micro_or_nan(x, abs_tol=1e-8) is expected
 
@@ -779,7 +783,8 @@ class TestMaxLongAndDouble:
             (MIN_UINT64, MAX_UINT64, uint64),
         ])
     )
-    def test_main(self, *, min_value: int, max_value: int, dtype: Any) -> None:
+    def test_main(self, *, case: tuple[int, int, Any]) -> None:
+        min_value, max_value, dtype = case
         info = iinfo(dtype)
         assert info.min == min_value
         assert info.max == max_value
@@ -803,7 +808,8 @@ class TestNumberOfDecimals:
             (0.123456789, 9),
         ]),
     )
-    def test_main(self, *, integer: int, frac: float, expected: int) -> None:
+    def test_main(self, *, integer: int, case: tuple[float, int]) -> None:
+        frac, expected = case
         x = integer + frac
         result = number_of_decimals(x)
         assert result == expected
@@ -833,7 +839,8 @@ class TestOrderOfMagnitude:
             (100.0, 2.0, 2),
         ]),
     )
-    def test_main(self, *, sign: int, x: float, exp_float: float, exp_int: int) -> None:
+    def test_main(self, *, sign: int, case: tuple[float, float, int]) -> None:
+        x, exp_float, exp_int = case
         x_use = sign * x
         res_float = order_of_magnitude(x_use)
         assert res_float == approx(exp_float)
@@ -999,7 +1006,8 @@ class TestRound:
             ("standard-tie-away-zero", 2.0, 2),
         ])
     )
-    def test_main(self, *, mode: _RoundMode, x: float, expected: int) -> None:
+    def test_main(self, *, case: tuple[_RoundMode, float, int]) -> None:
+        mode, x, expected = case
         result = round_(x, mode=mode)
         assert isinstance(result, int)
         assert result == expected
@@ -1031,19 +1039,21 @@ class TestRoundToFloat:
             (2.0, 0.5, 2.0),
         ])
     )
-    def test_main(self, *, x: float, y: float, expected: float) -> None:
+    def test_main(self, *, case: tuple[float, float, float]) -> None:
+        x, y, expected = case
         result = round_to_float(x, y)
         assert result == approx(expected)
 
 
 class TestSafeRound:
     @given(case=sampled_from([(-2.0, -2), (-1.0, -1), (0.0, 0), (1.0, 1), (2.0, 2)]))
-    def test_main(self, *, x: float, expected: int) -> None:
+    def test_main(self, *, case: tuple[float, int]) -> None:
+        x, expected = case
         result = safe_round(x)
         assert isinstance(result, int)
         assert result == expected
 
-    @given(case=sampled_from([-inf, -1.5, -0.5, 0.5, 1.5, inf, nan]))
+    @given(x=sampled_from([-inf, -1.5, -0.5, 0.5, 1.5, inf, nan]))
     def test_error(self, *, x: float) -> None:
         with raises(
             SafeRoundError,
@@ -1064,7 +1074,8 @@ class TestSign:
             (3, 1),
         ])
     )
-    def test_int(self, *, x: int, expected: float) -> None:
+    def test_int(self, *, case: tuple[int, float]) -> None:
+        x, expected = case
         result = sign(x)
         assert result == expected
 
@@ -1089,6 +1100,7 @@ class TestSign:
             (2.0, 1),
         ])
     )
-    def test_float(self, *, x: float, expected: float) -> None:
+    def test_float(self, *, case: tuple[float, int]) -> None:
+        x, expected = case
         result = sign(x)
         assert result == expected
