@@ -275,75 +275,71 @@ class TestIsBetween:
 
 
 class TestIsEqual:
-    @mark.parametrize(
-        ("x", "expected"), [param(-1, False), param(0, True), param(1, False)], ids=str
-    )
-    def test_two_ints(self, *, x: float, expected: bool) -> None:
+    @given(case=sampled_from([(-1, False), (0, True), (1, False)]))
+    def test_two_ints(self, *, case: tuple[float, bool]) -> None:
+        x, expected = case
         assert is_equal(x, 0) is expected
         assert is_equal(0, x) is expected
 
-    @mark.parametrize(
-        ("x", "expected"),
-        [
-            param(-inf, False),
-            param(-1.0, False),
-            param(-1e-6, False),
-            param(-1e-7, False),
-            param(-1e-8, False),
-            param(0.0, True),
-            param(1e-8, False),
-            param(1e-7, False),
-            param(1e-6, False),
-            param(1.0, False),
-            param(inf, False),
-            param(nan, False),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, False),
+            (-1.0, False),
+            (-1e-6, False),
+            (-1e-7, False),
+            (-1e-8, False),
+            (0.0, True),
+            (1e-8, False),
+            (1e-7, False),
+            (1e-6, False),
+            (1.0, False),
+            (inf, False),
+            (nan, False),
+        ])
     )
-    def test_one_float(self, *, x: float, expected: bool) -> None:
+    def test_one_float(self, *, case: tuple[float, bool]) -> None:
+        x, expected = case
         assert is_equal(x, 0.0) is expected
         assert is_equal(0.0, x) is expected
 
-    @mark.parametrize(
-        ("x", "y", "expected"),
-        [
-            param(nan, nan, True),
-            param(nan, inf, False),
-            param(nan, -inf, False),
-            param(inf, inf, True),
-            param(inf, -inf, False),
-            param(-inf, -inf, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (nan, nan, True),
+            (nan, inf, False),
+            (nan, -inf, False),
+            (inf, inf, True),
+            (inf, -inf, False),
+            (-inf, -inf, True),
+        ])
     )
-    def test_special(self, *, x: float, y: float, expected: bool) -> None:
+    def test_special(self, *, case: tuple[float, float, bool]) -> None:
+        x, y, expected = case
         assert is_equal(x, y) is expected
         assert is_equal(y, x) is expected
 
 
 class TestIsEqualOrApprox:
-    @mark.parametrize(
-        ("x", "y", "expected"),
-        [
-            param(0, 0, True),
-            param(0, 1, False),
-            param(1, 0, False),
-            param(10, (8, 0.1), False),
-            param(10, (9, 0.1), True),
-            param(10, (10, 0.1), True),
-            param(10, (11, 0.1), True),
-            param(10, (12, 0.1), False),
-            param((10, 0.1), (8, 0.1), False),
-            param((10, 0.1), (9, 0.1), True),
-            param((10, 0.1), (10, 0.1), True),
-            param((10, 0.1), (11, 0.1), True),
-            param((10, 0.1), (12, 0.1), False),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (0, 0, True),
+            (0, 1, False),
+            (1, 0, False),
+            (10, (8, 0.1), False),
+            (10, (9, 0.1), True),
+            (10, (10, 0.1), True),
+            (10, (11, 0.1), True),
+            (10, (12, 0.1), False),
+            ((10, 0.1), (8, 0.1), False),
+            ((10, 0.1), (9, 0.1), True),
+            ((10, 0.1), (10, 0.1), True),
+            ((10, 0.1), (11, 0.1), True),
+            ((10, 0.1), (12, 0.1), False),
+        ])
     )
     def test_main(
-        self, *, x: int | tuple[int, float], y: int | tuple[int, float], expected: bool
+        self, *, case: tuple[int | tuple[int, float], int | tuple[int, float], bool]
     ) -> None:
+        x, y, expected = case
         assert is_equal_or_approx(x, y) is expected
         assert is_equal_or_approx(y, x) is expected
 
@@ -538,11 +534,7 @@ class TestIsGreaterThan:
     def test_main(self, *, x: float, y: float, expected: bool) -> None:
         assert is_greater_than(x, y, abs_tol=1e-8) is expected
 
-    @mark.parametrize(
-        "y",
-        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
-        ids=str,
-    )
+    @given(y=sampled_from([-inf, -1.0, 0.0, 1.0, inf, nan]))
     def test_nan(self, *, y: float) -> None:
         assert is_greater_than_or_nan(nan, y)
 
@@ -599,11 +591,7 @@ class TestIsLessThan:
     def test_main(self, *, x: float, y: float, expected: bool) -> None:
         assert is_less_than(x, y, abs_tol=1e-8) is expected
 
-    @mark.parametrize(
-        "y",
-        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
-        ids=str,
-    )
+    @given(bounds=pairs(sampled_from([-inf, -1.0, 0.0, 1.0, inf, nan])))
     def test_nan(self, *, y: float) -> None:
         assert is_less_than_or_nan(nan, y)
 
