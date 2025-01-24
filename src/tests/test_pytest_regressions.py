@@ -21,6 +21,19 @@ _ = orjson_regression
 _ = polars_regression
 
 
+class TestMultipleRegressionFixtures:
+    def test_main(
+        self,
+        *,
+        orjson_regression: OrjsonRegressionFixture,
+        polars_regression: PolarsRegressionFixture,
+    ) -> None:
+        obj = DataClass1(x=0)
+        orjson_regression.check(obj, suffix="obj")
+        series = int_range(end=10, eager=True).alias("value")
+        polars_regression.check(series, suffix="series")
+
+
 class TestPolarsRegressionFixture:
     def test_dataframe(self, *, polars_regression: PolarsRegressionFixture) -> None:
         df = int_range(end=10, eager=True).alias("value").to_frame()
