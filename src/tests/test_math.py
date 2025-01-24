@@ -7,7 +7,7 @@ from typing import Any, ClassVar
 from hypothesis import given
 from hypothesis.strategies import integers, sampled_from
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
-from pytest import approx, raises
+from pytest import approx, mark, raises
 
 from utilities.hypothesis import pairs
 from utilities.math import (
@@ -301,6 +301,11 @@ class TestIsEqual:
         x, expected = case
         assert is_equal(x, 0.0) is expected
         assert is_equal(0.0, x) is expected
+
+    @mark.only
+    def test_two_floats(self) -> None:
+        x, y = -7.0, -7.000000000000001
+        assert is_equal(x, y)
 
     @given(
         case=sampled_from([

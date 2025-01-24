@@ -27,9 +27,11 @@ from hypothesis.strategies import (
     uuids,
 )
 from polars import DataFrame, Int64
-from pytest import mark, raises
+from pytest import raises
 from typing_extensions import override
 
+import utilities
+import utilities.math
 from tests.conftest import IS_CI_AND_WINDOWS
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -315,20 +317,14 @@ class TestIsEqual:
         assert first != second
         assert is_equal(first, second)
 
-    @mark.only
-    def test_dataclass_of_floats(self) -> None:
+    def test_dataclass_of_numbers(self) -> None:
         @dataclass
         class Example:
-            x: float = 0.0
+            x: Number
 
-        first = Example(x=-7.000000000000001)
-        second = Example(x=-7)
-        import math
-
-        assert not is_equal(first.x, second.x)
-        assert math.isclose(first.x, second.x)
-        # assert is_equal(first.x, second.x, abs_tol=1e-8)
-        # assert is_equal(first.x, second.x, abs_tol=1e-8)
+        first, second = Example(x=0), Example(x=1e-16)
+        assert not is_equal(first, second)
+        assert is_equal(first, second, abs_tol=1e-8)
 
     @given(
         x=dates() | datetimes() | zoned_datetimes(time_zone=timezones()),
@@ -337,6 +333,13 @@ class TestIsEqual:
     def test_dates_or_datetimes(self, *, x: DateOrDateTime, y: DateOrDateTime) -> None:
         result = is_equal(x, y)
         assert isinstance(result, bool)
+
+    def test_float_vs_int(self) -> None:
+        x, y = 0, 1e-16
+        assert not utilities.math.is_equal(x, y)
+        assert utilities.math.is_equal(x, y, abs_tol=1e-8)
+        assert not is_equal(x, y)
+        assert is_equal(x, y, abs_tol=1e-8)
 
     @given(
         x=dictionaries(text_ascii(), make_objects()),
