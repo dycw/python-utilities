@@ -27,7 +27,7 @@ packaging==24.2
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-pydantic==2.10.5
+pydantic==2.10.6
     # via dycw-utilities (pyproject.toml)
 pydantic-core==2.27.2
     # via pydantic
