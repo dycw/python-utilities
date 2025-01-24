@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from math import inf, nan
 from re import escape
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from hypothesis import given
-from hypothesis.strategies import integers, sampled_from
+from hypothesis.strategies import DataObject, data, integers, permutations, sampled_from
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
 from pytest import approx, mark, raises
 
@@ -90,6 +90,9 @@ from utilities.math import (
     safe_round,
     sign,
 )
+
+if TYPE_CHECKING:
+    from utilities.types import Number
 
 
 class TestCheckInteger:
@@ -303,9 +306,25 @@ class TestIsEqual:
         assert is_equal(0.0, x) is expected
 
     @mark.only
-    def test_two_floats(self) -> None:
-        x, y = -7.0, -7.000000000000001
-        assert is_equal(x, y)
+    @given(
+        data=data(),
+        case=sampled_from([
+            (0, 0, None, True),
+            (0, 0.0, None, True),
+            (0.0, 0.0, None, True),
+            (0, 1e-16, None, False),
+            (0, 1e-16, 1e-8, True),
+            (0.0, 1e-16, None, False),
+            (0.0, 1e-16, 1e-8, True),
+            (7.0, 7.000000000000001, None, True),
+        ]),
+    )
+    def test_two_numbers(
+        self, *, data: DataObject, case: tuple[Number, Number, float | None, bool]
+    ) -> None:
+        x, y, abs_tol, expected = case
+        x, y = data.draw(permutations([x, y]))
+        assert is_equal(x, y, abs_tol=abs_tol) is expected
 
     @given(
         case=sampled_from([

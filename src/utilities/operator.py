@@ -60,7 +60,7 @@ def is_equal(
             y = cast(Dataclass, y)
             x_values = asdict(x)
             y_values = asdict(y)
-            return is_equal(x_values, y_values)
+            return is_equal(x_values, y_values, rel_tol=rel_tol, abs_tol=abs_tol)
 
         # collections
         if isinstance(x, Mapping):
