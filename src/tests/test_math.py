@@ -476,7 +476,8 @@ class TestIsFiniteAndNonZero:
             (nan, False, True),
         ])
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self, *, case: tuple[float, bool, bool]) -> None:
+        x, expected, expected_nan = case
         assert is_finite_and_non_zero(x, abs_tol=1e-8) is expected
         assert is_finite_and_non_zero_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -498,7 +499,8 @@ class TestIsFiniteAndPositive:
             (nan, False, True),
         ])
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self, *, case: tuple[float, bool, bool]) -> None:
+        x, expected, expected_nan = case
         assert is_finite_and_positive(x, abs_tol=1e-8) is expected
         assert is_finite_and_positive_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -551,7 +553,8 @@ class TestIsIntegral:
             (nan, False, True),
         ])
     )
-    def test_is_integral(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_is_integral(self, *, case: tuple[float, bool, bool]) -> None:
+        x, expected, expected_nan = case
         assert is_integral(x, abs_tol=1e-8) is expected
         assert is_integral_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -598,7 +601,8 @@ class TestIsNegative:
             (nan, False, True),
         ])
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self, *, case: tuple[float, bool, bool]) -> None:
+        x, expected, expected_nan = case
         assert is_negative(x, abs_tol=1e-8) is expected
         assert is_negative_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -620,7 +624,8 @@ class TestIsNonNegative:
             (nan, False, True),
         ])
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self, *, case: tuple[float, bool, bool]) -> None:
+        x, expected, expected_nan = case
         assert is_non_negative(x, abs_tol=1e-8) is expected
         assert is_non_negative_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -642,7 +647,8 @@ class TestIsNonPositive:
             (nan, False, True),
         ])
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self, *, case: tuple[float, bool, bool]) -> None:
+        x, expected, expected_nan = case
         assert is_non_positive(x, abs_tol=1e-8) is expected
         assert is_non_positive_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -686,7 +692,8 @@ class TestIsPositive:
             (nan, False, True),
         ])
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self, *, case: tuple[float, bool, bool]) -> None:
+        x, expected, expected_nan = case
         assert is_positive(x, abs_tol=1e-8) is expected
         assert is_positive_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -708,7 +715,8 @@ class TestIsZero:
             (nan, False, True),
         ])
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self, *, case: tuple[float, bool, bool]) -> None:
+        x, expected, expected_nan = case
         assert is_zero(x, abs_tol=1e-8) is expected
         assert is_zero_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -730,7 +738,8 @@ class TestIsZeroOrFiniteAndNonMicro:
             (nan, False, True),
         ])
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self, *, case: tuple[float, bool, bool]) -> None:
+        x, expected, expected_nan = case
         assert is_zero_or_finite_and_non_micro(x, abs_tol=1e-8) is expected
         assert is_zero_or_finite_and_non_micro_or_nan(x, abs_tol=1e-8) is expected_nan
 
