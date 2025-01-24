@@ -30,8 +30,8 @@ from polars import DataFrame, Int64
 from pytest import raises
 from typing_extensions import override
 
-import utilities
 import utilities.math
+import utilities.operator
 from tests.conftest import IS_CI_AND_WINDOWS
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -44,7 +44,7 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.operator import IsEqualError, is_equal
+from utilities.operator import IsEqualError
 from utilities.polars import are_frames_equal
 
 if TYPE_CHECKING:
@@ -278,7 +278,7 @@ class TestIsEqual:
     )
     def test_one(self, *, obj: Any) -> None:
         with assume_does_not_raise(IsEqualError):
-            assert is_equal(obj, obj)
+            assert utilities.operator.is_equal(obj, obj)
 
     @given(
         first=make_objects(
@@ -308,14 +308,14 @@ class TestIsEqual:
     )
     def test_two_objects(self, *, first: Any, second: Any) -> None:
         with assume_does_not_raise(IsEqualError):
-            result = is_equal(first, second)
+            result = utilities.operator.is_equal(first, second)
         assert isinstance(result, bool)
 
     @given(x=integers())
     def test_dataclass_4(self, *, x: int) -> None:
         first, second = DataClass4(x=x), DataClass4(x=x)
         assert first != second
-        assert is_equal(first, second)
+        assert utilities.operator.is_equal(first, second)
 
     def test_dataclass_of_numbers(self) -> None:
         @dataclass
@@ -323,23 +323,23 @@ class TestIsEqual:
             x: Number
 
         first, second = Example(x=0), Example(x=1e-16)
-        assert not is_equal(first, second)
-        assert is_equal(first, second, abs_tol=1e-8)
+        assert not utilities.operator.is_equal(first, second)
+        assert utilities.operator.is_equal(first, second, abs_tol=1e-8)
 
     @given(
         x=dates() | datetimes() | zoned_datetimes(time_zone=timezones()),
         y=dates() | datetimes() | zoned_datetimes(time_zone=timezones()),
     )
     def test_dates_or_datetimes(self, *, x: DateOrDateTime, y: DateOrDateTime) -> None:
-        result = is_equal(x, y)
+        result = utilities.operator.is_equal(x, y)
         assert isinstance(result, bool)
 
     def test_float_vs_int(self) -> None:
         x, y = 0, 1e-16
         assert not utilities.math.is_equal(x, y)
         assert utilities.math.is_equal(x, y, abs_tol=1e-8)
-        assert not is_equal(x, y)
-        assert is_equal(x, y, abs_tol=1e-8)
+        assert not utilities.operator.is_equal(x, y)
+        assert utilities.operator.is_equal(x, y, abs_tol=1e-8)
 
     @given(
         x=dictionaries(text_ascii(), make_objects()),
@@ -347,13 +347,13 @@ class TestIsEqual:
     )
     def test_mappings(self, *, x: StrMapping, y: StrMapping) -> None:
         with assume_does_not_raise(IsEqualError):
-            result = is_equal(x, y)
+            result = utilities.operator.is_equal(x, y)
         assert isinstance(result, bool)
 
     @given(x=floats(), y=floats())
     @example(x=-4.233805663404397, y=nan)
     def test_sets_of_floats(self, *, x: float, y: float) -> None:
-        assert is_equal({x, y}, {y, x})
+        assert utilities.operator.is_equal({x, y}, {y, x})
 
     @given(
         case=sampled_from([
@@ -365,9 +365,11 @@ class TestIsEqual:
     )
     def test_extra(self, *, case: tuple[DataFrame, DataFrame, bool]) -> None:
         x, y, expected = case
-        result = is_equal(x, y, extra={DataFrame: are_frames_equal})
+        result = utilities.operator.is_equal(x, y, extra={DataFrame: are_frames_equal})
         assert result is expected
 
     def test_extra_but_no_match(self) -> None:
         with raises(ValueError, match="DataFrame columns do not match"):
-            _ = is_equal(DataFrame(), DataFrame(schema={"value": Int64}), extra={})
+            _ = utilities.operator.is_equal(
+                DataFrame(), DataFrame(schema={"value": Int64}), extra={}
+            )
