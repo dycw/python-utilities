@@ -504,23 +504,21 @@ class TestIsFiniteAndPositive:
 
 
 class TestIsGreaterThan:
-    @mark.parametrize(
-        ("x", "y", "expected"),
-        [
-            param(0.0, -inf, True),
-            param(0.0, -1.0, True),
-            param(0.0, -1e-6, True),
-            param(0.0, -1e-7, True),
-            param(0.0, -1e-8, False),
-            param(0.0, 0.0, False),
-            param(0.0, 1e-8, False),
-            param(0.0, 1e-7, False),
-            param(0.0, 1e-6, False),
-            param(0.0, 1.0, False),
-            param(0.0, inf, False),
-            param(0.0, nan, False),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (0.0, -inf, True),
+            (0.0, -1.0, True),
+            (0.0, -1e-6, True),
+            (0.0, -1e-7, True),
+            (0.0, -1e-8, False),
+            (0.0, 0.0, False),
+            (0.0, 1e-8, False),
+            (0.0, 1e-7, False),
+            (0.0, 1e-6, False),
+            (0.0, 1.0, False),
+            (0.0, inf, False),
+            (0.0, nan, False),
+        ])
     )
     def test_main(self, *, x: float, y: float, expected: bool) -> None:
         assert is_greater_than(x, y, abs_tol=1e-8) is expected
@@ -531,29 +529,27 @@ class TestIsGreaterThan:
 
 
 class TestIsIntegral:
-    @mark.parametrize(
-        ("x", "expected", "expected_nan"),
-        [
-            param(-inf, True, True),
-            param(-2.0, True, True),
-            param(-1.5, False, False),
-            param(-1.0, True, True),
-            param(-0.5, False, False),
-            param(-1e-6, False, False),
-            param(-1e-7, False, False),
-            param(-1e-8, True, True),
-            param(0.0, True, True),
-            param(1e-8, True, True),
-            param(1e-7, False, False),
-            param(1e-6, False, False),
-            param(0.5, False, False),
-            param(1.0, True, True),
-            param(1.5, False, False),
-            param(2.0, True, True),
-            param(inf, True, True),
-            param(nan, False, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, True, True),
+            (-2.0, True, True),
+            (-1.5, False, False),
+            (-1.0, True, True),
+            (-0.5, False, False),
+            (-1e-6, False, False),
+            (-1e-7, False, False),
+            (-1e-8, True, True),
+            (0.0, True, True),
+            (1e-8, True, True),
+            (1e-7, False, False),
+            (1e-6, False, False),
+            (0.5, False, False),
+            (1.0, True, True),
+            (1.5, False, False),
+            (2.0, True, True),
+            (inf, True, True),
+            (nan, False, True),
+        ])
     )
     def test_is_integral(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_integral(x, abs_tol=1e-8) is expected
@@ -561,23 +557,21 @@ class TestIsIntegral:
 
 
 class TestIsLessThan:
-    @mark.parametrize(
-        ("x", "y", "expected"),
-        [
-            param(0.0, -inf, False),
-            param(0.0, -1.0, False),
-            param(0.0, -1e-6, False),
-            param(0.0, -1e-7, False),
-            param(0.0, -1e-8, False),
-            param(0.0, 0.0, False),
-            param(0.0, 1e-8, False),
-            param(0.0, 1e-7, True),
-            param(0.0, 1e-6, True),
-            param(0.0, 1.0, True),
-            param(0.0, inf, True),
-            param(0.0, nan, False),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (0.0, -inf, False),
+            (0.0, -1.0, False),
+            (0.0, -1e-6, False),
+            (0.0, -1e-7, False),
+            (0.0, -1e-8, False),
+            (0.0, 0.0, False),
+            (0.0, 1e-8, False),
+            (0.0, 1e-7, True),
+            (0.0, 1e-6, True),
+            (0.0, 1.0, True),
+            (0.0, inf, True),
+            (0.0, nan, False),
+        ])
     )
     def test_main(self, *, x: float, y: float, expected: bool) -> None:
         assert is_less_than(x, y, abs_tol=1e-8) is expected
@@ -588,23 +582,21 @@ class TestIsLessThan:
 
 
 class TestIsNegative:
-    @mark.parametrize(
-        ("x", "expected", "expected_nan"),
-        [
-            param(-inf, True, True),
-            param(-1.0, True, True),
-            param(-1e-6, True, True),
-            param(-1e-7, True, True),
-            param(-1e-8, False, False),
-            param(0.0, False, False),
-            param(1e-8, False, False),
-            param(1e-7, False, False),
-            param(1e-6, False, False),
-            param(1.0, False, False),
-            param(inf, False, False),
-            param(nan, False, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, True, True),
+            (-1.0, True, True),
+            (-1e-6, True, True),
+            (-1e-7, True, True),
+            (-1e-8, False, False),
+            (0.0, False, False),
+            (1e-8, False, False),
+            (1e-7, False, False),
+            (1e-6, False, False),
+            (1.0, False, False),
+            (inf, False, False),
+            (nan, False, True),
+        ])
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_negative(x, abs_tol=1e-8) is expected
@@ -612,23 +604,21 @@ class TestIsNegative:
 
 
 class TestIsNonNegative:
-    @mark.parametrize(
-        ("x", "expected", "expected_nan"),
-        [
-            param(-inf, False, False),
-            param(-1.0, False, False),
-            param(-1e-6, False, False),
-            param(-1e-7, False, False),
-            param(-1e-8, True, True),
-            param(0.0, True, True),
-            param(1e-8, True, True),
-            param(1e-7, True, True),
-            param(1e-6, True, True),
-            param(1.0, True, True),
-            param(inf, True, True),
-            param(nan, False, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, False, False),
+            (-1.0, False, False),
+            (-1e-6, False, False),
+            (-1e-7, False, False),
+            (-1e-8, True, True),
+            (0.0, True, True),
+            (1e-8, True, True),
+            (1e-7, True, True),
+            (1e-6, True, True),
+            (1.0, True, True),
+            (inf, True, True),
+            (nan, False, True),
+        ])
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_non_negative(x, abs_tol=1e-8) is expected
@@ -636,23 +626,21 @@ class TestIsNonNegative:
 
 
 class TestIsNonPositive:
-    @mark.parametrize(
-        ("x", "expected", "expected_nan"),
-        [
-            param(-inf, True, True),
-            param(-1.0, True, True),
-            param(-1e-6, True, True),
-            param(-1e-7, True, True),
-            param(-1e-8, True, True),
-            param(0.0, True, True),
-            param(1e-8, True, True),
-            param(1e-7, False, False),
-            param(1e-6, False, False),
-            param(1.0, False, False),
-            param(inf, False, False),
-            param(nan, False, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, True, True),
+            (-1.0, True, True),
+            (-1e-6, True, True),
+            (-1e-7, True, True),
+            (-1e-8, True, True),
+            (0.0, True, True),
+            (1e-8, True, True),
+            (1e-7, False, False),
+            (1e-6, False, False),
+            (1.0, False, False),
+            (inf, False, False),
+            (nan, False, True),
+        ])
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_non_positive(x, abs_tol=1e-8) is expected
@@ -660,23 +648,21 @@ class TestIsNonPositive:
 
 
 class TestIsNonZero:
-    @mark.parametrize(
-        ("x", "expected"),
-        [
-            param(-inf, True),
-            param(-1.0, True),
-            param(-1e-6, True),
-            param(-1e-7, True),
-            param(-1e-8, False),
-            param(0.0, False),
-            param(1e-8, False),
-            param(1e-7, True),
-            param(1e-6, True),
-            param(1.0, True),
-            param(inf, True),
-            param(nan, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, True),
+            (-1.0, True),
+            (-1e-6, True),
+            (-1e-7, True),
+            (-1e-8, False),
+            (0.0, False),
+            (1e-8, False),
+            (1e-7, True),
+            (1e-6, True),
+            (1.0, True),
+            (inf, True),
+            (nan, True),
+        ])
     )
     def test_main(self, *, x: float, expected: bool) -> None:
         assert is_non_zero(x, abs_tol=1e-8) is expected
@@ -684,23 +670,21 @@ class TestIsNonZero:
 
 
 class TestIsPositive:
-    @mark.parametrize(
-        ("x", "expected", "expected_nan"),
-        [
-            param(-inf, False, False),
-            param(-1.0, False, False),
-            param(-1e-6, False, False),
-            param(-1e-7, False, False),
-            param(-1e-8, False, False),
-            param(0.0, False, False),
-            param(1e-8, False, False),
-            param(1e-7, True, True),
-            param(1e-6, True, True),
-            param(1.0, True, True),
-            param(inf, True, True),
-            param(nan, False, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, False, False),
+            (-1.0, False, False),
+            (-1e-6, False, False),
+            (-1e-7, False, False),
+            (-1e-8, False, False),
+            (0.0, False, False),
+            (1e-8, False, False),
+            (1e-7, True, True),
+            (1e-6, True, True),
+            (1.0, True, True),
+            (inf, True, True),
+            (nan, False, True),
+        ])
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_positive(x, abs_tol=1e-8) is expected
@@ -708,23 +692,21 @@ class TestIsPositive:
 
 
 class TestIsZero:
-    @mark.parametrize(
-        ("x", "expected", "expected_nan"),
-        [
-            param(-inf, False, False),
-            param(-1.0, False, False),
-            param(-1e-6, False, False),
-            param(-1e-7, False, False),
-            param(-1e-8, True, True),
-            param(0.0, True, True),
-            param(1e-8, True, True),
-            param(1e-7, False, False),
-            param(1e-6, False, False),
-            param(1.0, False, False),
-            param(inf, False, False),
-            param(nan, False, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, False, False),
+            (-1.0, False, False),
+            (-1e-6, False, False),
+            (-1e-7, False, False),
+            (-1e-8, True, True),
+            (0.0, True, True),
+            (1e-8, True, True),
+            (1e-7, False, False),
+            (1e-6, False, False),
+            (1.0, False, False),
+            (inf, False, False),
+            (nan, False, True),
+        ])
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_zero(x, abs_tol=1e-8) is expected
@@ -732,23 +714,21 @@ class TestIsZero:
 
 
 class TestIsZeroOrFiniteAndNonMicro:
-    @mark.parametrize(
-        ("x", "expected", "expected_nan"),
-        [
-            param(-inf, False, False),
-            param(-1.0, True, True),
-            param(-1e-6, True, True),
-            param(-1e-7, True, True),
-            param(-1e-8, False, False),
-            param(0.0, True, True),
-            param(1e-8, False, False),
-            param(1e-7, True, True),
-            param(1e-6, True, True),
-            param(1.0, True, True),
-            param(inf, False, False),
-            param(nan, False, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, False, False),
+            (-1.0, True, True),
+            (-1e-6, True, True),
+            (-1e-7, True, True),
+            (-1e-8, False, False),
+            (0.0, True, True),
+            (1e-8, False, False),
+            (1e-7, True, True),
+            (1e-6, True, True),
+            (1.0, True, True),
+            (inf, False, False),
+            (nan, False, True),
+        ])
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_zero_or_finite_and_non_micro(x, abs_tol=1e-8) is expected
@@ -756,23 +736,21 @@ class TestIsZeroOrFiniteAndNonMicro:
 
 
 class TestIsZeroOrNonMicro:
-    @mark.parametrize(
-        ("x", "expected"),
-        [
-            param(-inf, True),
-            param(-1.0, True),
-            param(-1e-6, True),
-            param(-1e-7, True),
-            param(-1e-8, False),
-            param(0.0, True),
-            param(1e-8, False),
-            param(1e-7, True),
-            param(1e-6, True),
-            param(1.0, True),
-            param(inf, True),
-            param(nan, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, True),
+            (-1.0, True),
+            (-1e-6, True),
+            (-1e-7, True),
+            (-1e-8, False),
+            (0.0, True),
+            (1e-8, False),
+            (1e-7, True),
+            (1e-6, True),
+            (1.0, True),
+            (inf, True),
+            (nan, True),
+        ])
     )
     def test_main(self, *, x: float, expected: bool) -> None:
         assert is_zero_or_non_micro(x, abs_tol=1e-8) is expected
@@ -780,19 +758,17 @@ class TestIsZeroOrNonMicro:
 
 
 class TestMaxLongAndDouble:
-    @mark.parametrize(
-        ("min_value", "max_value", "dtype"),
-        [
-            param(MIN_INT8, MAX_INT8, int8),
-            param(MIN_INT16, MAX_INT16, int16),
-            param(MIN_INT32, MAX_INT32, int32),
-            param(MIN_INT64, MAX_INT64, int64),
-            param(MIN_UINT8, MAX_UINT8, uint8),
-            param(MIN_UINT16, MAX_UINT16, uint16),
-            param(MIN_UINT32, MAX_UINT32, uint32),
-            param(MIN_UINT64, MAX_UINT64, uint64),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (MIN_INT8, MAX_INT8, int8),
+            (MIN_INT16, MAX_INT16, int16),
+            (MIN_INT32, MAX_INT32, int32),
+            (MIN_INT64, MAX_INT64, int64),
+            (MIN_UINT8, MAX_UINT8, uint8),
+            (MIN_UINT16, MAX_UINT16, uint16),
+            (MIN_UINT32, MAX_UINT32, uint32),
+            (MIN_UINT64, MAX_UINT64, uint64),
+        ])
     )
     def test_main(self, *, min_value: int, max_value: int, dtype: Any) -> None:
         info = iinfo(dtype)
@@ -803,22 +779,20 @@ class TestMaxLongAndDouble:
 class TestNumberOfDecimals:
     max_int: ClassVar[int] = int(1e6)
 
-    @given(integer=integers(-max_int, max_int))
-    @mark.parametrize(
-        ("frac", "expected"),
-        [
-            param(0.0, 0),
-            param(0.1, 1),
-            param(0.12, 2),
-            param(0.123, 3),
-            param(0.1234, 4),
-            param(0.12345, 5),
-            param(0.123456, 6),
-            param(0.1234567, 7),
-            param(0.12345678, 8),
-            param(0.123456789, 9),
-        ],
-        ids=str,
+    @given(
+        integer=integers(-max_int, max_int),
+        case=sampled_from([
+            (0.0, 0),
+            (0.1, 1),
+            (0.12, 2),
+            (0.123, 3),
+            (0.1234, 4),
+            (0.12345, 5),
+            (0.123456, 6),
+            (0.1234567, 7),
+            (0.12345678, 8),
+            (0.123456789, 9),
+        ]),
     )
     def test_main(self, *, integer: int, frac: float, expected: int) -> None:
         x = integer + frac
@@ -837,24 +811,20 @@ class TestNumberOfDecimals:
 
 
 class TestOrderOfMagnitude:
-    @mark.parametrize(
-        ("x", "exp_float", "exp_int"),
-        [
-            param(0.25, -0.60206, -1),
-            param(0.5, -0.30103, 0),
-            param(0.75, -0.1249387, 0),
-            param(1.0, 0.0, 0),
-            param(5.0, 0.69897, 1),
-            param(10.0, 1.0, 1),
-            param(50.0, 1.69897, 2),
-            param(100.0, 2.0, 2),
-        ],
-        ids=str,
+    @given(
+        sign=sampled_from([1, -1]),
+        case=sampled_from([
+            (0.25, -0.60206, -1),
+            (0.5, -0.30103, 0),
+            (0.75, -0.1249387, 0),
+            (1.0, 0.0, 0),
+            (5.0, 0.69897, 1),
+            (10.0, 1.0, 1),
+            (50.0, 1.69897, 2),
+            (100.0, 2.0, 2),
+        ]),
     )
-    @mark.parametrize("sign", [param(1.0), param(-1.0)], ids=str)
-    def test_main(
-        self, *, sign: float, x: float, exp_float: float, exp_int: int
-    ) -> None:
+    def test_main(self, *, sign: int, x: float, exp_float: float, exp_int: int) -> None:
         x_use = sign * x
         res_float = order_of_magnitude(x_use)
         assert res_float == approx(exp_float)
@@ -863,164 +833,162 @@ class TestOrderOfMagnitude:
 
 
 class TestRound:
-    @mark.parametrize(
-        ("mode", "x", "expected"),
-        [
-            param("standard", -2.0, -2),
-            param("standard", -1.75, -2),
-            param("standard", -1.5, -2),
-            param("standard", -1.25, -1),
-            param("standard", -1.0, -1),
-            param("standard", -0.75, -1),
-            param("standard", -0.5, 0),
-            param("standard", -0.25, 0),
-            param("standard", 0.0, 0),
-            param("standard", 0.25, 0),
-            param("standard", 0.5, 0),
-            param("standard", 0.75, 1),
-            param("standard", 1.0, 1),
-            param("standard", 1.25, 1),
-            param("standard", 1.5, 2),
-            param("standard", 1.75, 2),
-            param("standard", 2.0, 2),
-            param("floor", -2.0, -2),
-            param("floor", -1.75, -2),
-            param("floor", -1.5, -2),
-            param("floor", -1.25, -2),
-            param("floor", -1.0, -1),
-            param("floor", -0.75, -1),
-            param("floor", -0.5, -1),
-            param("floor", -0.25, -1),
-            param("floor", 0.0, 0),
-            param("floor", 0.25, 0),
-            param("floor", 0.5, 0),
-            param("floor", 0.75, 0),
-            param("floor", 1.0, 1),
-            param("floor", 1.25, 1),
-            param("floor", 1.5, 1),
-            param("floor", 1.75, 1),
-            param("floor", 2.0, 2),
-            param("ceil", -2.0, -2),
-            param("ceil", -1.75, -1),
-            param("ceil", -1.5, -1),
-            param("ceil", -1.25, -1),
-            param("ceil", -1.0, -1),
-            param("ceil", -0.75, 0),
-            param("ceil", -0.5, 0),
-            param("ceil", -0.25, 0),
-            param("ceil", 0.0, 0),
-            param("ceil", 0.25, 1),
-            param("ceil", 0.5, 1),
-            param("ceil", 0.75, 1),
-            param("ceil", 1.0, 1),
-            param("ceil", 1.25, 2),
-            param("ceil", 1.5, 2),
-            param("ceil", 1.75, 2),
-            param("ceil", 2.0, 2),
-            param("toward-zero", -2.0, -2),
-            param("toward-zero", -1.75, -1),
-            param("toward-zero", -1.5, -1),
-            param("toward-zero", -1.25, -1),
-            param("toward-zero", -1.0, -1),
-            param("toward-zero", -0.75, 0),
-            param("toward-zero", -0.5, 0),
-            param("toward-zero", -0.25, 0),
-            param("toward-zero", 0.0, 0),
-            param("toward-zero", 0.25, 0),
-            param("toward-zero", 0.5, 0),
-            param("toward-zero", 0.75, 0),
-            param("toward-zero", 1.0, 1),
-            param("toward-zero", 1.25, 1),
-            param("toward-zero", 1.5, 1),
-            param("toward-zero", 1.75, 1),
-            param("toward-zero", 2.0, 2),
-            param("away-zero", -2.0, -2),
-            param("away-zero", -1.75, -2),
-            param("away-zero", -1.5, -2),
-            param("away-zero", -1.25, -2),
-            param("away-zero", -1.0, -1),
-            param("away-zero", -0.75, -1),
-            param("away-zero", -0.5, -1),
-            param("away-zero", -0.25, -1),
-            param("away-zero", 0.0, 0),
-            param("away-zero", 0.25, 1),
-            param("away-zero", 0.5, 1),
-            param("away-zero", 0.75, 1),
-            param("away-zero", 1.0, 1),
-            param("away-zero", 1.25, 2),
-            param("away-zero", 1.5, 2),
-            param("away-zero", 1.75, 2),
-            param("away-zero", 2.0, 2),
-            param("standard-tie-floor", -2.0, -2),
-            param("standard-tie-floor", -1.75, -2),
-            param("standard-tie-floor", -1.5, -2),
-            param("standard-tie-floor", -1.25, -1),
-            param("standard-tie-floor", -1.0, -1),
-            param("standard-tie-floor", -0.75, -1),
-            param("standard-tie-floor", -0.5, -1),
-            param("standard-tie-floor", -0.25, 0),
-            param("standard-tie-floor", 0.0, 0),
-            param("standard-tie-floor", 0.25, 0),
-            param("standard-tie-floor", 0.5, 0),
-            param("standard-tie-floor", 0.75, 1),
-            param("standard-tie-floor", 1.0, 1),
-            param("standard-tie-floor", 1.25, 1),
-            param("standard-tie-floor", 1.5, 1),
-            param("standard-tie-floor", 1.75, 2),
-            param("standard-tie-floor", 2.0, 2),
-            param("standard-tie-ceil", -2.0, -2),
-            param("standard-tie-ceil", -1.75, -2),
-            param("standard-tie-ceil", -1.5, -1),
-            param("standard-tie-ceil", -1.25, -1),
-            param("standard-tie-ceil", -1.0, -1),
-            param("standard-tie-ceil", -0.75, -1),
-            param("standard-tie-ceil", -0.5, 0),
-            param("standard-tie-ceil", -0.25, 0),
-            param("standard-tie-ceil", 0.0, 0),
-            param("standard-tie-ceil", 0.25, 0),
-            param("standard-tie-ceil", 0.5, 1),
-            param("standard-tie-ceil", 0.75, 1),
-            param("standard-tie-ceil", 1.0, 1),
-            param("standard-tie-ceil", 1.25, 1),
-            param("standard-tie-ceil", 1.5, 2),
-            param("standard-tie-ceil", 1.75, 2),
-            param("standard-tie-ceil", 2.0, 2),
-            param("standard-tie-toward-zero", -2.0, -2),
-            param("standard-tie-toward-zero", -1.75, -2),
-            param("standard-tie-toward-zero", -1.5, -1),
-            param("standard-tie-toward-zero", -1.25, -1),
-            param("standard-tie-toward-zero", -1.0, -1),
-            param("standard-tie-toward-zero", -0.75, -1),
-            param("standard-tie-toward-zero", -0.5, 0),
-            param("standard-tie-toward-zero", -0.25, 0),
-            param("standard-tie-toward-zero", 0.0, 0),
-            param("standard-tie-toward-zero", 0.25, 0),
-            param("standard-tie-toward-zero", 0.5, 0),
-            param("standard-tie-toward-zero", 0.75, 1),
-            param("standard-tie-toward-zero", 1.0, 1),
-            param("standard-tie-toward-zero", 1.25, 1),
-            param("standard-tie-toward-zero", 1.5, 1),
-            param("standard-tie-toward-zero", 1.75, 2),
-            param("standard-tie-toward-zero", 2.0, 2),
-            param("standard-tie-away-zero", -2.0, -2),
-            param("standard-tie-away-zero", -1.75, -2),
-            param("standard-tie-away-zero", -1.5, -2),
-            param("standard-tie-away-zero", -1.25, -1),
-            param("standard-tie-away-zero", -1.0, -1),
-            param("standard-tie-away-zero", -0.75, -1),
-            param("standard-tie-away-zero", -0.5, -1),
-            param("standard-tie-away-zero", -0.25, 0),
-            param("standard-tie-away-zero", 0.0, 0),
-            param("standard-tie-away-zero", 0.25, 0),
-            param("standard-tie-away-zero", 0.5, 1),
-            param("standard-tie-away-zero", 0.75, 1),
-            param("standard-tie-away-zero", 1.0, 1),
-            param("standard-tie-away-zero", 1.25, 1),
-            param("standard-tie-away-zero", 1.5, 2),
-            param("standard-tie-away-zero", 1.75, 2),
-            param("standard-tie-away-zero", 2.0, 2),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            ("standard", -2.0, -2),
+            ("standard", -1.75, -2),
+            ("standard", -1.5, -2),
+            ("standard", -1.25, -1),
+            ("standard", -1.0, -1),
+            ("standard", -0.75, -1),
+            ("standard", -0.5, 0),
+            ("standard", -0.25, 0),
+            ("standard", 0.0, 0),
+            ("standard", 0.25, 0),
+            ("standard", 0.5, 0),
+            ("standard", 0.75, 1),
+            ("standard", 1.0, 1),
+            ("standard", 1.25, 1),
+            ("standard", 1.5, 2),
+            ("standard", 1.75, 2),
+            ("standard", 2.0, 2),
+            ("floor", -2.0, -2),
+            ("floor", -1.75, -2),
+            ("floor", -1.5, -2),
+            ("floor", -1.25, -2),
+            ("floor", -1.0, -1),
+            ("floor", -0.75, -1),
+            ("floor", -0.5, -1),
+            ("floor", -0.25, -1),
+            ("floor", 0.0, 0),
+            ("floor", 0.25, 0),
+            ("floor", 0.5, 0),
+            ("floor", 0.75, 0),
+            ("floor", 1.0, 1),
+            ("floor", 1.25, 1),
+            ("floor", 1.5, 1),
+            ("floor", 1.75, 1),
+            ("floor", 2.0, 2),
+            ("ceil", -2.0, -2),
+            ("ceil", -1.75, -1),
+            ("ceil", -1.5, -1),
+            ("ceil", -1.25, -1),
+            ("ceil", -1.0, -1),
+            ("ceil", -0.75, 0),
+            ("ceil", -0.5, 0),
+            ("ceil", -0.25, 0),
+            ("ceil", 0.0, 0),
+            ("ceil", 0.25, 1),
+            ("ceil", 0.5, 1),
+            ("ceil", 0.75, 1),
+            ("ceil", 1.0, 1),
+            ("ceil", 1.25, 2),
+            ("ceil", 1.5, 2),
+            ("ceil", 1.75, 2),
+            ("ceil", 2.0, 2),
+            ("toward-zero", -2.0, -2),
+            ("toward-zero", -1.75, -1),
+            ("toward-zero", -1.5, -1),
+            ("toward-zero", -1.25, -1),
+            ("toward-zero", -1.0, -1),
+            ("toward-zero", -0.75, 0),
+            ("toward-zero", -0.5, 0),
+            ("toward-zero", -0.25, 0),
+            ("toward-zero", 0.0, 0),
+            ("toward-zero", 0.25, 0),
+            ("toward-zero", 0.5, 0),
+            ("toward-zero", 0.75, 0),
+            ("toward-zero", 1.0, 1),
+            ("toward-zero", 1.25, 1),
+            ("toward-zero", 1.5, 1),
+            ("toward-zero", 1.75, 1),
+            ("toward-zero", 2.0, 2),
+            ("away-zero", -2.0, -2),
+            ("away-zero", -1.75, -2),
+            ("away-zero", -1.5, -2),
+            ("away-zero", -1.25, -2),
+            ("away-zero", -1.0, -1),
+            ("away-zero", -0.75, -1),
+            ("away-zero", -0.5, -1),
+            ("away-zero", -0.25, -1),
+            ("away-zero", 0.0, 0),
+            ("away-zero", 0.25, 1),
+            ("away-zero", 0.5, 1),
+            ("away-zero", 0.75, 1),
+            ("away-zero", 1.0, 1),
+            ("away-zero", 1.25, 2),
+            ("away-zero", 1.5, 2),
+            ("away-zero", 1.75, 2),
+            ("away-zero", 2.0, 2),
+            ("standard-tie-floor", -2.0, -2),
+            ("standard-tie-floor", -1.75, -2),
+            ("standard-tie-floor", -1.5, -2),
+            ("standard-tie-floor", -1.25, -1),
+            ("standard-tie-floor", -1.0, -1),
+            ("standard-tie-floor", -0.75, -1),
+            ("standard-tie-floor", -0.5, -1),
+            ("standard-tie-floor", -0.25, 0),
+            ("standard-tie-floor", 0.0, 0),
+            ("standard-tie-floor", 0.25, 0),
+            ("standard-tie-floor", 0.5, 0),
+            ("standard-tie-floor", 0.75, 1),
+            ("standard-tie-floor", 1.0, 1),
+            ("standard-tie-floor", 1.25, 1),
+            ("standard-tie-floor", 1.5, 1),
+            ("standard-tie-floor", 1.75, 2),
+            ("standard-tie-floor", 2.0, 2),
+            ("standard-tie-ceil", -2.0, -2),
+            ("standard-tie-ceil", -1.75, -2),
+            ("standard-tie-ceil", -1.5, -1),
+            ("standard-tie-ceil", -1.25, -1),
+            ("standard-tie-ceil", -1.0, -1),
+            ("standard-tie-ceil", -0.75, -1),
+            ("standard-tie-ceil", -0.5, 0),
+            ("standard-tie-ceil", -0.25, 0),
+            ("standard-tie-ceil", 0.0, 0),
+            ("standard-tie-ceil", 0.25, 0),
+            ("standard-tie-ceil", 0.5, 1),
+            ("standard-tie-ceil", 0.75, 1),
+            ("standard-tie-ceil", 1.0, 1),
+            ("standard-tie-ceil", 1.25, 1),
+            ("standard-tie-ceil", 1.5, 2),
+            ("standard-tie-ceil", 1.75, 2),
+            ("standard-tie-ceil", 2.0, 2),
+            ("standard-tie-toward-zero", -2.0, -2),
+            ("standard-tie-toward-zero", -1.75, -2),
+            ("standard-tie-toward-zero", -1.5, -1),
+            ("standard-tie-toward-zero", -1.25, -1),
+            ("standard-tie-toward-zero", -1.0, -1),
+            ("standard-tie-toward-zero", -0.75, -1),
+            ("standard-tie-toward-zero", -0.5, 0),
+            ("standard-tie-toward-zero", -0.25, 0),
+            ("standard-tie-toward-zero", 0.0, 0),
+            ("standard-tie-toward-zero", 0.25, 0),
+            ("standard-tie-toward-zero", 0.5, 0),
+            ("standard-tie-toward-zero", 0.75, 1),
+            ("standard-tie-toward-zero", 1.0, 1),
+            ("standard-tie-toward-zero", 1.25, 1),
+            ("standard-tie-toward-zero", 1.5, 1),
+            ("standard-tie-toward-zero", 1.75, 2),
+            ("standard-tie-toward-zero", 2.0, 2),
+            ("standard-tie-away-zero", -2.0, -2),
+            ("standard-tie-away-zero", -1.75, -2),
+            ("standard-tie-away-zero", -1.5, -2),
+            ("standard-tie-away-zero", -1.25, -1),
+            ("standard-tie-away-zero", -1.0, -1),
+            ("standard-tie-away-zero", -0.75, -1),
+            ("standard-tie-away-zero", -0.5, -1),
+            ("standard-tie-away-zero", -0.25, 0),
+            ("standard-tie-away-zero", 0.0, 0),
+            ("standard-tie-away-zero", 0.25, 0),
+            ("standard-tie-away-zero", 0.5, 1),
+            ("standard-tie-away-zero", 0.75, 1),
+            ("standard-tie-away-zero", 1.0, 1),
+            ("standard-tie-away-zero", 1.25, 1),
+            ("standard-tie-away-zero", 1.5, 2),
+            ("standard-tie-away-zero", 1.75, 2),
+            ("standard-tie-away-zero", 2.0, 2),
+        ])
     )
     def test_main(self, *, mode: _RoundMode, x: float, expected: int) -> None:
         result = round_(x, mode=mode)
@@ -1029,32 +997,30 @@ class TestRound:
 
 
 class TestRoundToFloat:
-    @mark.parametrize(
-        ("x", "y", "expected"),
-        [
-            param(0.0, 0.5, 0.0),
-            param(0.1, 0.5, 0.0),
-            param(0.2, 0.5, 0.0),
-            param(0.3, 0.5, 0.5),
-            param(0.4, 0.5, 0.5),
-            param(0.5, 0.5, 0.5),
-            param(0.6, 0.5, 0.5),
-            param(0.7, 0.5, 0.5),
-            param(0.8, 0.5, 1.0),
-            param(0.9, 0.5, 1.0),
-            param(1.0, 0.5, 1.0),
-            param(1.1, 0.5, 1.0),
-            param(1.2, 0.5, 1.0),
-            param(1.3, 0.5, 1.5),
-            param(1.4, 0.5, 1.5),
-            param(1.5, 0.5, 1.5),
-            param(1.6, 0.5, 1.5),
-            param(1.7, 0.5, 1.5),
-            param(1.8, 0.5, 2.0),
-            param(1.9, 0.5, 2.0),
-            param(2.0, 0.5, 2.0),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (0.0, 0.5, 0.0),
+            (0.1, 0.5, 0.0),
+            (0.2, 0.5, 0.0),
+            (0.3, 0.5, 0.5),
+            (0.4, 0.5, 0.5),
+            (0.5, 0.5, 0.5),
+            (0.6, 0.5, 0.5),
+            (0.7, 0.5, 0.5),
+            (0.8, 0.5, 1.0),
+            (0.9, 0.5, 1.0),
+            (1.0, 0.5, 1.0),
+            (1.1, 0.5, 1.0),
+            (1.2, 0.5, 1.0),
+            (1.3, 0.5, 1.5),
+            (1.4, 0.5, 1.5),
+            (1.5, 0.5, 1.5),
+            (1.6, 0.5, 1.5),
+            (1.7, 0.5, 1.5),
+            (1.8, 0.5, 2.0),
+            (1.9, 0.5, 2.0),
+            (2.0, 0.5, 2.0),
+        ])
     )
     def test_main(self, *, x: float, y: float, expected: float) -> None:
         result = round_to_float(x, y)
@@ -1062,29 +1028,13 @@ class TestRoundToFloat:
 
 
 class TestSafeRound:
-    @mark.parametrize(
-        ("x", "expected"),
-        [param(-2.0, -2), param(-1.0, -1), param(0.0, 0), param(1.0, 1), param(2.0, 2)],
-        ids=str,
-    )
+    @given(case=sampled_from([(-2.0, -2), (-1.0, -1), (0.0, 0), (1.0, 1), (2.0, 2)]))
     def test_main(self, *, x: float, expected: int) -> None:
         result = safe_round(x)
         assert isinstance(result, int)
         assert result == expected
 
-    @mark.parametrize(
-        "x",
-        [
-            param(-inf),
-            param(-1.5),
-            param(-0.5),
-            param(0.5),
-            param(1.5),
-            param(inf),
-            param(nan),
-        ],
-        ids=str,
-    )
+    @given(case=sampled_from([-inf, -1.5, -0.5, 0.5, 1.5, inf, nan]))
     def test_error(self, *, x: float) -> None:
         with raises(
             SafeRoundError,
