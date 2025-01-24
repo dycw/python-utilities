@@ -479,17 +479,12 @@ def _is_close(
     x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == y."""
-    match rel_tol, abs_tol:
-        case (None, None):
-            return isclose(x, y)
-        case (int() | float(), None):
-            return isclose(x, y, rel_tol=rel_tol)
-        case (None, int() | float()):
-            return isclose(x, y, abs_tol=abs_tol)
-        case (int() | float(), int() | float()):
-            return isclose(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
-        case _ as never:
-            assert_never(never)
+    return isclose(
+        x,
+        y,
+        **({} if rel_tol is None else {"rel_tol": rel_tol}),
+        **({} if abs_tol is None else {"abs_tol": abs_tol}),
+    )
 
 
 def number_of_decimals(x: float, /, *, max_decimals: int = 20) -> int:
