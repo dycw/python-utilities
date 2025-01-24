@@ -29,9 +29,9 @@ class TestMultipleRegressionFixtures:
         polars_regression: PolarsRegressionFixture,
     ) -> None:
         obj = DataClass1(x=0)
-        orjson_regression.check(obj)
-        df = int_range(end=10, eager=True).alias("value").to_frame()
-        polars_regression.check(df)
+        orjson_regression.check(obj, suffix="obj")
+        series = int_range(end=10, eager=True).alias("value")
+        polars_regression.check(series, suffix="series")
 
 
 class TestPolarsRegressionFixture:

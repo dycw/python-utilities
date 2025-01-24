@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, assert_never
 from pytest import fixture
 from pytest_regressions.file_regression import FileRegressionFixture
 
+from utilities.functions import ensure_str
 from utilities.git import get_repo_root
 from utilities.operator import is_equal
 from utilities.pytest import node_id_to_path
@@ -35,7 +36,7 @@ class OrjsonRegressionFixture:
         super().__init__()
         path = Path(path)
         original_datadir = path.parent
-        data_dir = tmp_path.joinpath("tmp")
+        data_dir = tmp_path.joinpath(ensure_str(request.fixturename))
         with suppress(FileNotFoundError):
             copytree(original_datadir, data_dir)
         self._fixture = FileRegressionFixture(
