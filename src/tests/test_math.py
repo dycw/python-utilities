@@ -345,121 +345,116 @@ class TestIsEqualOrApprox:
 
 
 class TestIsFinite:
-    @mark.parametrize(
-        ("x", "expected", "expected_nan"),
-        [
-            param(-inf, False, False),
-            param(-1.0, True, True),
-            param(0.0, True, True),
-            param(1.0, True, True),
-            param(inf, False, False),
-            param(nan, False, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, False, False),
+            (-1.0, True, True),
+            (0.0, True, True),
+            (1.0, True, True),
+            (inf, False, False),
+            (nan, False, True),
+        ])
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self, *, case: tuple[float, bool, bool]) -> None:
+        x, expected, expected_nan = case
         assert is_finite(x) is expected
         assert is_finite_or_nan(x) is expected_nan
 
 
 class TestIsFiniteAndIntegral:
-    @mark.parametrize(
-        ("x", "expected", "expected_nan"),
-        [
-            param(-inf, False, False),
-            param(-2.0, True, True),
-            param(-1.5, False, False),
-            param(-1.0, True, True),
-            param(-0.5, False, False),
-            param(-1e-6, False, False),
-            param(-1e-7, False, False),
-            param(-1e-8, True, True),
-            param(0.0, True, True),
-            param(1e-8, True, True),
-            param(1e-7, False, False),
-            param(1e-6, False, False),
-            param(0.5, False, False),
-            param(1.0, True, True),
-            param(1.5, False, False),
-            param(2.0, True, True),
-            param(inf, False, False),
-            param(nan, False, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, False, False),
+            (-2.0, True, True),
+            (-1.5, False, False),
+            (-1.0, True, True),
+            (-0.5, False, False),
+            (-1e-6, False, False),
+            (-1e-7, False, False),
+            (-1e-8, True, True),
+            (0.0, True, True),
+            (1e-8, True, True),
+            (1e-7, False, False),
+            (1e-6, False, False),
+            (0.5, False, False),
+            (1.0, True, True),
+            (1.5, False, False),
+            (2.0, True, True),
+            (inf, False, False),
+            (nan, False, True),
+        ])
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self, *, case: tuple[float, bool, bool]) -> None:
+        x, expected, expected_nan = case
         assert is_finite_and_integral(x, abs_tol=1e-8) is expected
         assert is_finite_and_integral_or_nan(x, abs_tol=1e-8) is expected_nan
 
 
 class TestIsFiniteAndNegative:
-    @mark.parametrize(
-        ("x", "expected", "expected_nan"),
-        [
-            param(-inf, False, False),
-            param(-1.0, True, True),
-            param(-1e-6, True, True),
-            param(-1e-7, True, True),
-            param(-1e-8, False, False),
-            param(0.0, False, False),
-            param(1e-8, False, False),
-            param(1e-7, False, False),
-            param(1e-6, False, False),
-            param(1.0, False, False),
-            param(inf, False, False),
-            param(nan, False, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, False, False),
+            (-1.0, True, True),
+            (-1e-6, True, True),
+            (-1e-7, True, True),
+            (-1e-8, False, False),
+            (0.0, False, False),
+            (1e-8, False, False),
+            (1e-7, False, False),
+            (1e-6, False, False),
+            (1.0, False, False),
+            (inf, False, False),
+            (nan, False, True),
+        ])
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self, *, case: tuple[float, bool, bool]) -> None:
+        x, expected, expected_nan = case
         assert is_finite_and_negative(x, abs_tol=1e-8) is expected
         assert is_finite_and_negative_or_nan(x, abs_tol=1e-8) is expected_nan
 
 
 class TestIsFiniteAndNonNegative:
-    @mark.parametrize(
-        ("x", "expected", "expected_nan"),
-        [
-            param(-inf, False, False),
-            param(-1.0, False, False),
-            param(-1e-6, False, False),
-            param(-1e-7, False, False),
-            param(-1e-8, True, True),
-            param(0.0, True, True),
-            param(1e-8, True, True),
-            param(1e-7, True, True),
-            param(1e-6, True, True),
-            param(1.0, True, True),
-            param(inf, False, False),
-            param(nan, False, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, False, False),
+            (-1.0, False, False),
+            (-1e-6, False, False),
+            (-1e-7, False, False),
+            (-1e-8, True, True),
+            (0.0, True, True),
+            (1e-8, True, True),
+            (1e-7, True, True),
+            (1e-6, True, True),
+            (1.0, True, True),
+            (inf, False, False),
+            (nan, False, True),
+        ])
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self, *, case: tuple[float, bool, bool]) -> None:
+        x, expected, expected_nan = case
         assert is_finite_and_non_negative(x, abs_tol=1e-8) is expected
         assert is_finite_and_non_negative_or_nan(x, abs_tol=1e-8) is expected_nan
 
 
 class TestIsFiniteAndNonPositive:
-    @mark.parametrize(
-        ("x", "expected", "expected_nan"),
-        [
-            param(-inf, False, False),
-            param(-1.0, True, True),
-            param(-1e-6, True, True),
-            param(-1e-7, True, True),
-            param(-1e-8, True, True),
-            param(0.0, True, True),
-            param(1e-8, True, True),
-            param(1e-7, False, False),
-            param(1e-6, False, False),
-            param(1.0, False, False),
-            param(inf, False, False),
-            param(nan, False, True),
-        ],
-        ids=str,
+    @given(
+        case=sampled_from([
+            (-inf, False, False),
+            (-1.0, True, True),
+            (-1e-6, True, True),
+            (-1e-7, True, True),
+            (-1e-8, True, True),
+            (0.0, True, True),
+            (1e-8, True, True),
+            (1e-7, False, False),
+            (1e-6, False, False),
+            (1.0, False, False),
+            (inf, False, False),
+            (nan, False, True),
+        ])
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self, *, case: tuple[float, bool, bool]) -> None:
+        x, expected, expected_nan = case
         assert is_finite_and_non_positive(x, abs_tol=1e-8) is expected
         assert is_finite_and_non_positive_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -591,7 +586,7 @@ class TestIsLessThan:
     def test_main(self, *, x: float, y: float, expected: bool) -> None:
         assert is_less_than(x, y, abs_tol=1e-8) is expected
 
-    @given(bounds=pairs(sampled_from([-inf, -1.0, 0.0, 1.0, inf, nan])))
+    @given(y=sampled_from([-inf, -1.0, 0.0, 1.0, inf, nan]))
     def test_nan(self, *, y: float) -> None:
         assert is_less_than_or_nan(nan, y)
 
