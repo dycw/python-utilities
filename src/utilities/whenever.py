@@ -13,18 +13,17 @@ from whenever import Date, DateTimeDelta, LocalDateTime, Time, ZonedDateTime
 from utilities.datetime import (
     _MICROSECONDS_PER_DAY,
     _MICROSECONDS_PER_SECOND,
+    ZERO_TIME,
     check_date_not_datetime,
     check_zoned_datetime,
-    get_months,
     timedelta_to_microseconds,
 )
+from utilities.re import ExtractGroupError, extract_group, extract_groups
 from utilities.types import Duration
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3659634, microseconds=-1)
 MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
-MAX_TWO_WAY_TIMEDELTA = dt.timedelta(days=1000000, microseconds=-1)
-MIN_TWO_WAY_TIMEDELTA = -MAX_TWO_WAY_TIMEDELTA
 
 
 def check_valid_zoned_datetime(datetime: dt.datetime, /) -> None:
@@ -297,22 +296,22 @@ class ParseTimeError(Exception):
 
 def parse_timedelta(timedelta: str, /) -> dt.timedelta:
     """Parse a string into a timedelta."""
-    try:
-        delta = DateTimeDelta.parse_common_iso(timedelta)
-    except ValueError:
-        raise _ParseTimedeltaParseError(timedelta=timedelta) from None
-    date_part = delta.date_part()
-    months, days = date_part.in_months_days()
-    months_as_days = get_months(n=months).days
-    total_days = months_as_days + days
-    time_part = delta.time_part()
-    _, nanoseconds = divmod(time_part.in_nanoseconds(), 1000)
-    if nanoseconds != 0:
-        raise _ParseTimedeltaNanosecondError(
-            timedelta=timedelta, nanoseconds=nanoseconds
-        )
-    total_micros = int(time_part.in_microseconds())
-    return dt.timedelta(days=total_days, microseconds=total_micros)
+    with suppress(ExtractGroupError):
+        rest = extract_group(r"^-([\w\.]+)$", timedelta)
+        return -parse_timedelta(rest)
+    days_str, time_str = extract_groups(r"^P(?:(\d+)D)?(?:T([\w\.]*))?$", timedelta)
+    days = ZERO_TIME if days_str == "" else dt.timedelta(days=int(days_str))
+    if time_str == "":
+        time = ZERO_TIME
+    else:
+        time_part = DateTimeDelta.parse_common_iso(f"PT{time_str}").time_part()
+        _, nanoseconds = divmod(time_part.in_nanoseconds(), 1000)
+        if nanoseconds != 0:
+            raise _ParseTimedeltaNanosecondError(
+                timedelta=timedelta, nanoseconds=nanoseconds
+            )
+        time = dt.timedelta(microseconds=int(time_part.in_microseconds()))
+    return days + time
 
 
 @dataclass(kw_only=True, slots=True)
@@ -498,9 +497,7 @@ class _ToDateTimeDeltaError(Exception):
 
 __all__ = [
     "MAX_SERIALIZABLE_TIMEDELTA",
-    "MAX_TWO_WAY_TIMEDELTA",
     "MIN_SERIALIZABLE_TIMEDELTA",
-    "MIN_TWO_WAY_TIMEDELTA",
     "CheckValidZonedDateimeError",
     "EnsureDateError",
     "EnsureLocalDateTimeError",
