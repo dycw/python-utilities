@@ -6,7 +6,7 @@ from re import escape
 from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
-from hypothesis import assume, given
+from hypothesis import assume, example, given
 from hypothesis.strategies import (
     DataObject,
     data,
@@ -26,6 +26,8 @@ from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
     _MICROSECONDS_PER_DAY,
     _MICROSECONDS_PER_SECOND,
+    DAY,
+    MICROSECOND,
     drop_milli_and_microseconds,
     maybe_sub_pct_y,
 )
@@ -37,26 +39,26 @@ from utilities.hypothesis import (
 )
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
-    MAX_TWO_WAY_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
-    MIN_TWO_WAY_TIMEDELTA,
     CheckValidZonedDateimeError,
     EnsureDateError,
     EnsureDurationError,
     EnsureLocalDateTimeError,
-    EnsureTimedeltaError,
     EnsureTimeError,
     EnsureZonedDateTimeError,
     ParseDateError,
     ParseDurationError,
     ParseLocalDateTimeError,
-    ParseTimedeltaError,
     ParseTimeError,
     ParseZonedDateTimeError,
     SerializeDurationError,
     SerializeLocalDateTimeError,
     SerializeTimeDeltaError,
     SerializeZonedDateTimeError,
+    _EnsureTimedeltaNanosecondError,
+    _EnsureTimedeltaParseError,
+    _ParseTimedeltaNanosecondError,
+    _ParseTimedeltaParseError,
     _to_datetime_delta,
     _ToDateTimeDeltaError,
     check_valid_zoned_datetime,
@@ -84,7 +86,7 @@ from utilities.zoneinfo import UTC, HongKong, get_time_zone_name
 if TYPE_CHECKING:
     from utilities.types import Duration
 
-_TIMEDELTA_MICROSECONDS = dt.timedelta(microseconds=1e18)
+_TIMEDELTA_MICROSECONDS = int(1e18) * MICROSECOND
 _TIMEDELTA_OVERFLOW = dt.timedelta(days=106751991, seconds=14454, microseconds=775808)
 
 
@@ -250,15 +252,21 @@ class TestParseAndSerializeTime:
 
 
 class TestParseAndSerializeTimedelta:
-    @given(timedelta=timedeltas())
+    @given(
+        timedelta=timedeltas(
+            min_value=MIN_SERIALIZABLE_TIMEDELTA, max_value=MAX_SERIALIZABLE_TIMEDELTA
+        )
+    )
+    @example(timedelta=int(1e6) * DAY)
+    @example(timedelta=MICROSECOND)
+    @example(timedelta=-DAY)
+    @example(timedelta=-DAY + MICROSECOND)
     def test_main(self, *, timedelta: dt.timedelta) -> None:
-        with assume_does_not_raise(SerializeTimeDeltaError):
-            serialized = serialize_timedelta(timedelta)
-        with assume_does_not_raise(ParseTimedeltaError):
-            result = parse_timedelta(serialized)
+        serialized = serialize_timedelta(timedelta)
+        result = parse_timedelta(serialized)
         assert result == timedelta
 
-    @given(timedelta=timedeltas(min_value=dt.timedelta(microseconds=1)))
+    @given(timedelta=timedeltas(min_value=MICROSECOND))
     def test_min_serializable(self, *, timedelta: dt.timedelta) -> None:
         _ = serialize_timedelta(MIN_SERIALIZABLE_TIMEDELTA)
         with assume_does_not_raise(OverflowError):
@@ -266,7 +274,7 @@ class TestParseAndSerializeTimedelta:
         with raises(SerializeTimeDeltaError):
             _ = serialize_timedelta(offset)
 
-    @given(timedelta=timedeltas(min_value=dt.timedelta(microseconds=1)))
+    @given(timedelta=timedeltas(min_value=MICROSECOND))
     def test_max_serializable(self, *, timedelta: dt.timedelta) -> None:
         _ = serialize_timedelta(MAX_SERIALIZABLE_TIMEDELTA)
         with assume_does_not_raise(OverflowError):
@@ -274,37 +282,16 @@ class TestParseAndSerializeTimedelta:
         with raises(SerializeTimeDeltaError):
             _ = serialize_timedelta(offset)
 
-    @given(timedelta=timedeltas(min_value=dt.timedelta(microseconds=1)))
-    def test_min_two_way(self, *, timedelta: dt.timedelta) -> None:
-        ser = serialize_timedelta(MIN_TWO_WAY_TIMEDELTA)
-        _ = parse_timedelta(ser)
-        with assume_does_not_raise(OverflowError):
-            offset = MIN_TWO_WAY_TIMEDELTA - timedelta
-        with assume_does_not_raise(SerializeTimeDeltaError):
-            ser2 = serialize_timedelta(offset)
-        with raises(ParseTimedeltaError):
-            _ = parse_timedelta(ser2)
-
-    @given(timedelta=timedeltas(min_value=dt.timedelta(microseconds=1)))
-    def test_max_two_way(self, *, timedelta: dt.timedelta) -> None:
-        ser = serialize_timedelta(MAX_TWO_WAY_TIMEDELTA)
-        _ = parse_timedelta(ser)
-        with assume_does_not_raise(OverflowError):
-            offset = MAX_TWO_WAY_TIMEDELTA + timedelta
-        with assume_does_not_raise(SerializeTimeDeltaError):
-            ser2 = serialize_timedelta(offset)
-        with raises(ParseTimedeltaError):
-            _ = parse_timedelta(ser2)
-
     def test_error_parse(self) -> None:
         with raises(
-            ParseTimedeltaError, match="Unable to parse timedelta; got 'invalid'"
+            _ParseTimedeltaParseError, match="Unable to parse timedelta; got 'invalid'"
         ):
             _ = parse_timedelta("invalid")
 
     def test_error_parse_nano_seconds(self) -> None:
         with raises(
-            ParseTimedeltaError, match="Unable to parse timedelta; got 333 nanoseconds"
+            _ParseTimedeltaNanosecondError,
+            match="Unable to parse timedelta; got 333 nanoseconds",
         ):
             _ = parse_timedelta("PT0.111222333S")
 
@@ -327,13 +314,14 @@ class TestParseAndSerializeTimedelta:
 
     def test_error_ensure(self) -> None:
         with raises(
-            EnsureTimedeltaError, match="Unable to ensure timedelta; got 'invalid'"
+            _EnsureTimedeltaParseError,
+            match="Unable to ensure timedelta; got 'invalid'",
         ):
             _ = ensure_timedelta("invalid")
 
     def test_error_ensure_nano_seconds(self) -> None:
         with raises(
-            EnsureTimedeltaError,
+            _EnsureTimedeltaNanosecondError,
             match="Unable to ensure timedelta; got 333 nanoseconds",
         ):
             _ = ensure_timedelta("PT0.111222333S")

@@ -11,8 +11,6 @@ from typing import (
     Self,
     TypeGuard,
     Union,  # pyright: ignore[reportDeprecated]
-    _eval_type,  # pyright: ignore[reportAttributeAccessIssue]
-    _TypedDictMeta,  # pyright: ignore[reportAttributeAccessIssue]
     get_origin,
 )
 from typing import get_args as _get_args
@@ -34,34 +32,6 @@ except ImportError:  # pragma: no cover
 def contains_self(obj: Any, /) -> bool:
     """Check if an annotation contains `Self`."""
     return (obj is Self) or any(map(contains_self, get_args(obj)))
-
-
-def eval_typed_dict(
-    cls: Any,
-    /,
-    *,
-    globals_: StrMapping | None = None,
-    locals_: StrMapping | None = None,
-) -> Mapping[str, Any]:
-    """Evaluate a typed dict."""
-    return {
-        k: _eval_typed_dict_one(v, globalsns=globals_, localns=locals_)
-        for k, v in cls.__annotations__.items()
-    }
-
-
-def _eval_typed_dict_one(
-    cls: Any,
-    /,
-    *,
-    globalsns: StrMapping | None = None,
-    localns: StrMapping | None = None,
-) -> Any:
-    """Evaluate the field of a typed dict."""
-    globals_use = globals() if globalsns is None else globalsns
-    locals_use = locals() if localns is None else localns
-    result = _eval_type(cls, globals_use, locals_use)
-    return eval_typed_dict(result) if isinstance(result, _TypedDictMeta) else result
 
 
 def get_args(obj: Any, /) -> tuple[Any, ...]:
@@ -187,7 +157,6 @@ def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:
 
 __all__ = [
     "contains_self",
-    "eval_typed_dict",
     "get_type_hints",
     "is_dict_type",
     "is_frozenset_type",
