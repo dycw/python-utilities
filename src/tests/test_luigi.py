@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, cast
 from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data, sampled_from, times
 from luigi import BoolParameter, Parameter, Task
-from pytest import mark, param
 from typing_extensions import override
 
 from tests.conftest import FLAKY
@@ -37,17 +36,17 @@ class TestBuild:
 
 
 class TestDateTimeParameter:
-    @given(data=data(), datetime=zoned_datetimes())
-    @mark.parametrize(
-        "param_cls",
-        [
-            param(DateHourParameter),
-            param(DateMinuteParameter),
-            param(DateSecondParameter),
-        ],
+    @given(
+        data=data(),
+        param_cls=sampled_from([
+            DateHourParameter,
+            DateMinuteParameter,
+            DateSecondParameter,
+        ]),
+        datetime=zoned_datetimes(),
     )
     def test_main(
-        self, *, data: DataObject, datetime: dt.datetime, param_cls: type[Parameter]
+        self, *, data: DataObject, param_cls: type[Parameter], datetime: dt.datetime
     ) -> None:
         param = param_cls()
         input_ = data.draw(sampled_from([datetime, serialize_zoned_datetime(datetime)]))
