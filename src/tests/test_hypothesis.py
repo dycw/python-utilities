@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Iterable
 from itertools import pairwise
 from pathlib import Path
 from re import search
@@ -42,6 +43,7 @@ from utilities.datetime import (
     is_local_datetime,
     is_zoned_datetime,
 )
+from utilities.functions import ensure_int
 from utilities.git import (
     _GIT_REMOTE_GET_URL_ORIGIN,
     _GIT_REV_PARSE_ABBREV_REV_HEAD,
@@ -112,8 +114,8 @@ from utilities.sqlalchemy import Dialect, _get_dialect
 from utilities.types import Duration, Number
 from utilities.version import Version
 from utilities.whenever import (
-    MAX_TWO_WAY_TIMEDELTA,
-    MIN_TWO_WAY_TIMEDELTA,
+    MAX_SERIALIZABLE_TIMEDELTA,
+    MIN_SERIALIZABLE_TIMEDELTA,
     check_valid_zoned_datetime,
     parse_duration,
     parse_timedelta,
@@ -666,7 +668,7 @@ class TestReducedExamples:
             pass
 
         result = cast(Any, test)._hypothesis_internal_use_settings.max_examples
-        expected = max(round(frac * settings().max_examples), 1)
+        expected = max(round(frac * ensure_int(settings().max_examples)), 1)
         assert result == expected
 
 
@@ -682,13 +684,13 @@ class TestSetupHypothesisProfiles:
     def test_main(self) -> None:
         setup_hypothesis_profiles()
         curr = settings()
-        assert Phase.shrink in curr.phases
+        assert Phase.shrink in cast(Iterable[Phase], curr.phases)
         assert curr.max_examples in {10, 100, 1000}
 
     def test_no_shrink(self) -> None:
         with temp_environ({"HYPOTHESIS_NO_SHRINK": "1"}):
             setup_hypothesis_profiles()
-        assert Phase.shrink not in settings().phases
+        assert Phase.shrink not in cast(Iterable[Phase], settings().phases)
 
     @given(max_examples=integers(1, 100))
     def test_max_examples(self, *, max_examples: int) -> None:
@@ -909,10 +911,10 @@ class TestTimeDeltas2W:
     @given(
         data=data(),
         min_value=timedeltas(
-            min_value=MIN_TWO_WAY_TIMEDELTA, max_value=MAX_TWO_WAY_TIMEDELTA
+            min_value=MIN_SERIALIZABLE_TIMEDELTA, max_value=MAX_SERIALIZABLE_TIMEDELTA
         ),
         max_value=timedeltas(
-            min_value=MIN_TWO_WAY_TIMEDELTA, max_value=MAX_TWO_WAY_TIMEDELTA
+            min_value=MIN_SERIALIZABLE_TIMEDELTA, max_value=MAX_SERIALIZABLE_TIMEDELTA
         ),
     )
     @settings(suppress_health_check={HealthCheck.filter_too_much})

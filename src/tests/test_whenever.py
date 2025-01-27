@@ -251,7 +251,6 @@ class TestParseAndSerializeTime:
             _ = ensure_time("invalid")
 
 
-@mark.only
 class TestParseAndSerializeTimedelta:
     @given(
         timedelta=timedeltas(

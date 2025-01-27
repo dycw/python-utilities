@@ -64,7 +64,7 @@ from utilities.datetime import (
     datetime_duration_to_timedelta,
     get_now,
 )
-from utilities.functions import ensure_str, max_nullable, min_nullable
+from utilities.functions import ensure_int, ensure_str, max_nullable, min_nullable
 from utilities.math import (
     MAX_INT32,
     MAX_INT64,
@@ -171,18 +171,18 @@ def date_durations(
         with assume_does_not_raise(OverflowError):
             min_parts.append(date_duration_to_timedelta(min_int_))
     if two_way:
-        from utilities.whenever import MIN_TWO_WAY_TIMEDELTA
+        from utilities.whenever import MIN_SERIALIZABLE_TIMEDELTA
 
-        min_parts.append(MIN_TWO_WAY_TIMEDELTA)
+        min_parts.append(MIN_SERIALIZABLE_TIMEDELTA)
     min_timedelta_use = max_nullable(min_parts)
     max_parts: Sequence[dt.timedelta | None] = [dt.timedelta.max, max_timedelta_]
     if max_int_ is not None:
         with assume_does_not_raise(OverflowError):
             max_parts.append(date_duration_to_timedelta(max_int_))
     if two_way:
-        from utilities.whenever import MAX_TWO_WAY_TIMEDELTA
+        from utilities.whenever import MAX_SERIALIZABLE_TIMEDELTA
 
-        max_parts.append(MAX_TWO_WAY_TIMEDELTA)
+        max_parts.append(MAX_SERIALIZABLE_TIMEDELTA)
     max_timedelta_use = min_nullable(max_parts)
     _ = assume(min_timedelta_use <= max_timedelta_use)
     st_timedeltas = (
@@ -238,9 +238,9 @@ def datetime_durations(
     if min_timedelta_ is not None:
         min_parts.append(min_timedelta_)
     if two_way:
-        from utilities.whenever import MIN_TWO_WAY_TIMEDELTA
+        from utilities.whenever import MIN_SERIALIZABLE_TIMEDELTA
 
-        min_parts.append(MIN_TWO_WAY_TIMEDELTA)
+        min_parts.append(MIN_SERIALIZABLE_TIMEDELTA)
     min_timedelta_use = max(min_parts)
     max_parts: list[dt.timedelta] = [dt.timedelta.max]
     if max_number_ is not None:
@@ -249,9 +249,9 @@ def datetime_durations(
     if max_timedelta_ is not None:
         max_parts.append(max_timedelta_)
     if two_way:
-        from utilities.whenever import MAX_TWO_WAY_TIMEDELTA
+        from utilities.whenever import MAX_SERIALIZABLE_TIMEDELTA
 
-        max_parts.append(MAX_TWO_WAY_TIMEDELTA)
+        max_parts.append(MAX_SERIALIZABLE_TIMEDELTA)
     max_timedelta_use = min(max_parts)
     _ = assume(min_timedelta_use <= max_timedelta_use)
     min_float_use, max_float_use = map(
@@ -713,7 +713,7 @@ def settings_with_reduced_examples(
 ) -> settings:
     """Set a test to fewer max examples."""
     curr = settings()
-    max_examples = max(round(frac * curr.max_examples), 1)
+    max_examples = max(round(frac * ensure_int(curr.max_examples)), 1)
     return settings(
         max_examples=max_examples,
         derandomize=derandomize,
