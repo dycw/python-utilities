@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, NotRequired, Self, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Self
 
 from beartype import beartype
 from pytest import mark, param
@@ -22,7 +22,6 @@ from tests.test_typing_funcs.no_future import (
 from utilities.beartype import beartype_cond
 from utilities.typing import (
     contains_self,
-    eval_typed_dict,
     get_args,
     get_type_hints,
     is_dict_type,
@@ -46,34 +45,6 @@ class TestContainsSelf:
     @mark.parametrize("obj", [param(Self), param(Self | None)])
     def test_main(self, *, obj: Any) -> None:
         assert contains_self(obj)
-
-
-class TestEvalTypedDict:
-    def test_main(self) -> None:
-        class Example(TypedDict):
-            a: int
-            b: str
-            c: NotRequired[float]
-
-        result = eval_typed_dict(Example)
-        expected = {"a": int, "b": str, "c": NotRequired[float]}
-        assert result == expected
-
-    def test_nested(self) -> None:
-        class Outer(TypedDict):
-            a: int
-            b: str
-            inner: Inner
-
-        class Inner(TypedDict):
-            c: int
-            d: str
-
-        _ = Inner
-
-        result = eval_typed_dict(Outer, globals_=globals(), locals_=locals())
-        expected = {"a": int, "b": str, "inner": {"c": int, "d": str}}
-        assert result == expected
 
 
 class TestGetArgs:
