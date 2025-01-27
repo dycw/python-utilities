@@ -44,19 +44,21 @@ from utilities.whenever import (
     EnsureDateError,
     EnsureDurationError,
     EnsureLocalDateTimeError,
-    EnsureTimedeltaError,
     EnsureTimeError,
     EnsureZonedDateTimeError,
     ParseDateError,
     ParseDurationError,
     ParseLocalDateTimeError,
-    ParseTimedeltaError,
     ParseTimeError,
     ParseZonedDateTimeError,
     SerializeDurationError,
     SerializeLocalDateTimeError,
     SerializeTimeDeltaError,
     SerializeZonedDateTimeError,
+    _EnsureTimedeltaNanosecondError,
+    _EnsureTimedeltaParseError,
+    _ParseTimedeltaNanosecondError,
+    _ParseTimedeltaParseError,
     _to_datetime_delta,
     _ToDateTimeDeltaError,
     check_valid_zoned_datetime,
@@ -283,13 +285,14 @@ class TestParseAndSerializeTimedelta:
 
     def test_error_parse(self) -> None:
         with raises(
-            ParseTimedeltaError, match="Unable to parse timedelta; got 'invalid'"
+            _ParseTimedeltaParseError, match="Unable to parse timedelta; got 'invalid'"
         ):
             _ = parse_timedelta("invalid")
 
     def test_error_parse_nano_seconds(self) -> None:
         with raises(
-            ParseTimedeltaError, match="Unable to parse timedelta; got 333 nanoseconds"
+            _ParseTimedeltaNanosecondError,
+            match="Unable to parse timedelta; got 333 nanoseconds",
         ):
             _ = parse_timedelta("PT0.111222333S")
 
@@ -312,13 +315,14 @@ class TestParseAndSerializeTimedelta:
 
     def test_error_ensure(self) -> None:
         with raises(
-            EnsureTimedeltaError, match="Unable to ensure timedelta; got 'invalid'"
+            _EnsureTimedeltaParseError,
+            match="Unable to ensure timedelta; got 'invalid'",
         ):
             _ = ensure_timedelta("invalid")
 
     def test_error_ensure_nano_seconds(self) -> None:
         with raises(
-            EnsureTimedeltaError,
+            _EnsureTimedeltaNanosecondError,
             match="Unable to ensure timedelta; got 333 nanoseconds",
         ):
             _ = ensure_timedelta("PT0.111222333S")

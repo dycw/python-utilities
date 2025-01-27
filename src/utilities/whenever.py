@@ -18,7 +18,12 @@ from utilities.datetime import (
     check_zoned_datetime,
     timedelta_to_microseconds,
 )
-from utilities.re import ExtractGroupError, extract_group, extract_groups
+from utilities.re import (
+    ExtractGroupError,
+    ExtractGroupsError,
+    extract_group,
+    extract_groups,
+)
 from utilities.types import Duration
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
@@ -299,7 +304,10 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
     with suppress(ExtractGroupError):
         rest = extract_group(r"^-([\w\.]+)$", timedelta)
         return -parse_timedelta(rest)
-    days_str, time_str = extract_groups(r"^P(?:(\d+)D)?(?:T([\w\.]*))?$", timedelta)
+    try:
+        days_str, time_str = extract_groups(r"^P(?:(\d+)D)?(?:T([\w\.]*))?$", timedelta)
+    except ExtractGroupsError:
+        raise _ParseTimedeltaParseError(timedelta=timedelta) from None
     days = ZERO_TIME if days_str == "" else dt.timedelta(days=int(days_str))
     if time_str == "":
         time = ZERO_TIME

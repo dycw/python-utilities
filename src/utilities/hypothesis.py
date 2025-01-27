@@ -956,11 +956,14 @@ def timedeltas_2w(
     max_value: MaybeSearchStrategy[dt.timedelta] = dt.timedelta.max,
 ) -> dt.timedelta:
     """Strategy for generating timedeltas which can be se/deserialized."""
-    from utilities.whenever import MAX_TWO_WAY_TIMEDELTA, MIN_TWO_WAY_TIMEDELTA
+    from utilities.whenever import (
+        MAX_SERIALIZABLE_TIMEDELTA,
+        MIN_SERIALIZABLE_TIMEDELTA,
+    )
 
     draw = lift_draw(_draw)
-    min_value_ = max(draw(min_value), MIN_TWO_WAY_TIMEDELTA)
-    max_value_ = min(draw(max_value), MAX_TWO_WAY_TIMEDELTA)
+    min_value_ = max(draw(min_value), MIN_SERIALIZABLE_TIMEDELTA)
+    max_value_ = min(draw(max_value), MAX_SERIALIZABLE_TIMEDELTA)
     return draw(timedeltas(min_value=min_value_, max_value=max_value_))
 
 
