@@ -18,6 +18,7 @@ from utilities.luigi import (
     ExternalTask,
     PathTarget,
     TimeParameter,
+    _ExternalTaskDummyTarget,
     build,
 )
 from utilities.whenever import serialize_time, serialize_zoned_datetime
@@ -80,6 +81,9 @@ class TestExternalTask:
         task = Example(is_complete=is_complete)
         result = task.exists()
         assert result is is_complete
+        assert isinstance(task.output(), _ExternalTaskDummyTarget)
+        result2 = task.output().exists()
+        assert result2 is is_complete
 
 
 class TestPathTarget:
