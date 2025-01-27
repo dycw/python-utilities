@@ -42,6 +42,7 @@ dev = [
   "ib-async-dataclass >= 1.0.3rc5, < 1.1",
   "img2pdf >= 0.5.1, < 0.6",
   "loguru >= 0.7.3, < 0.8",
+  "luigi >= 3.6.0, < 3.7",
   "memory-profiler >= 0.61.0, < 0.62",
   "more-itertools >= 10.6.0, < 10.7",
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
@@ -67,7 +68,7 @@ dev = [
   "slack-sdk >= 3.34.0, < 3.35",
   "sqlalchemy >= 2.0.37, < 2.1",
   "streamlit >= 1.41.1, < 1.42",
-  "tenacity >= 9.0.0, < 9.1",
+  "tenacity >= 8.0.0",  # limited by luigi
   "treelib >= 1.7.0, < 1.8",
   "tzdata >= 2025.1, < 2025.2",
   "tzlocal >= 5.2, < 5.3",
@@ -200,6 +201,7 @@ zzz-test-logging = [
   "whenever >= 0.6.16, < 0.7",
 ]
 zzz-test-loguru = ["loguru >= 0.7.3, < 0.8"]
+zzz-test-luigi = ["luigi >= 3.6.0, < 3.7"]
 zzz-test-math = ["numpy >= 2.0.2, < 2.1"]
 zzz-test-memory-profiler = ["memory-profiler >= 0.61.0, < 0.62"]
 zzz-test-modules = []
@@ -432,6 +434,7 @@ asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 filterwarnings = [
   "error",
+  "ignore:.*utcfromtimestamp.* is deprecated and scheduled for removal in a future version:DeprecationWarning",  # luigi
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
   "ignore:There is no current event loop:DeprecationWarning",  # eventkit
   "ignore:Using fork.* can cause Polars to deadlock in the child process:RuntimeWarning",  # polars/pqdm

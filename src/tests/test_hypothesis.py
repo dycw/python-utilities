@@ -28,6 +28,7 @@ from hypothesis.strategies import (
     timezones,
     uuids,
 )
+from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
 from pytest import raises
@@ -70,6 +71,7 @@ from utilities.hypothesis import (
     lift_draw,
     lists_fixed_length,
     months,
+    namespace_mixins,
     numbers,
     pairs,
     paths,
@@ -612,6 +614,24 @@ class TestMonths:
         _ = assume(min_value <= max_value)
         month = data.draw(months(min_value=min_value, max_value=max_value))
         assert min_value <= month <= max_value
+
+
+class TestNamespaceMixins:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        _ = data.draw(namespace_mixins())
+
+    @given(namespace_mixin=namespace_mixins())
+    def test_first(self, *, namespace_mixin: Any) -> None:
+        class Example(namespace_mixin, Task): ...
+
+        _ = Example()
+
+    @given(namespace_mixin=namespace_mixins())
+    def test_second(self, *, namespace_mixin: Any) -> None:
+        class Example(namespace_mixin, Task): ...
+
+        _ = Example()
 
 
 class TestNumbers:

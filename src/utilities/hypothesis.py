@@ -541,6 +541,21 @@ def months(
 
 
 @composite
+def namespace_mixins(_draw: DrawFn, /) -> type:
+    """Strategy for generating task namespace mixins."""
+    draw = lift_draw(_draw)
+    path = draw(temp_paths())
+
+    class NamespaceMixin:
+        task_namespace = path.name
+
+    return NamespaceMixin
+
+
+##
+
+
+@composite
 def numbers(
     _draw: DrawFn,
     /,
@@ -1139,6 +1154,7 @@ __all__ = [
     "lift_draw",
     "lists_fixed_length",
     "months",
+    "namespace_mixins",
     "numbers",
     "pairs",
     "paths",
