@@ -29,6 +29,7 @@ iterables
 jupyter
 logging
 loguru
+luigi
 math
 memory-profiler
 modules
