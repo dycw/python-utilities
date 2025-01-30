@@ -60,7 +60,7 @@ pytest==8.3.4
     #   pytest-rerunfailures
     #   pytest-rng
     #   pytest-xdist
-pytest-asyncio==0.25.2
+pytest-asyncio==0.25.3
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)

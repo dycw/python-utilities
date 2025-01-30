@@ -64,6 +64,8 @@ from utilities.polars import (
     DatetimeUSEastern,
     DatetimeUTC,
     DropNullStructSeriesError,
+    InsertAfterError,
+    InsertBeforeError,
     IsNotNullStructSeriesError,
     IsNullStructSeriesError,
     SetFirstRowAsColumnsError,
@@ -90,6 +92,8 @@ from utilities.polars import (
     _GetDataTypeOrSeriesTimeZoneNotZonedError,
     _GetSeriesNumberOfDecimalsAllNullError,
     _GetSeriesNumberOfDecimalsNotFloatError,
+    _InsertBetweenMissingColumnsError,
+    _InsertBetweenNonConsecutiveError,
     _yield_struct_series_element_remove_nulls,
     _YieldRowsAsDataClassesColumnsSuperSetError,
     _YieldRowsAsDataClassesWrongTypeError,
@@ -109,6 +113,9 @@ from utilities.polars import (
     floor_datetime,
     get_data_type_or_series_time_zone,
     get_series_number_of_decimals,
+    insert_after,
+    insert_before,
+    insert_between,
     is_not_null_struct_series,
     is_null_struct_series,
     join,
@@ -1093,6 +1100,81 @@ class TestGetSeriesNumberOfDecimals:
             match="Series must not be all-null; got .*",
         ):
             _ = get_series_number_of_decimals(Series(dtype=Float64))
+
+
+class TestInsertBeforeOrAfter:
+    df: ClassVar[DataFrame] = DataFrame(schema={"a": Int64, "b": Int64, "c": Int64})
+
+    @given(
+        case=sampled_from([
+            ("a", ["a", "new", "b", "c"]),
+            ("b", ["a", "b", "new", "c"]),
+            ("c", ["a", "b", "c", "new"]),
+        ])
+    )
+    def test_after(self, *, case: tuple[str, list[str]]) -> None:
+        column, expected = case
+        for _ in range(2):  # guard against in-place
+            result = insert_after(self.df, column, lit(None).alias("new"))
+            assert result.columns == expected
+
+    @given(
+        case=sampled_from([
+            ("a", ["new", "a", "b", "c"]),
+            ("b", ["a", "new", "b", "c"]),
+            ("c", ["a", "b", "new", "c"]),
+        ])
+    )
+    def test_before(self, *, case: tuple[str, list[str]]) -> None:
+        column, expected = case
+        for _ in range(2):  # guard against in-place
+            result = insert_before(self.df, column, lit(None).alias("new"))
+            assert result.columns == expected
+
+    @given(
+        case=sampled_from([
+            (insert_before, InsertBeforeError),
+            (insert_after, InsertAfterError),
+        ])
+    )
+    def test_error(
+        self,
+        *,
+        case: tuple[Callable[[DataFrame, str, IntoExprColumn]], type[Exception]],
+    ) -> None:
+        func, error = case
+        with raises(error, match="DataFrame must have column 'missing'; got .*"):
+            _ = func(self.df, "missing", lit(None).alias("new"))
+
+
+class TestInsertBetween:
+    df: ClassVar[DataFrame] = DataFrame(schema={"a": Int64, "b": Int64, "c": Int64})
+
+    @given(
+        case=sampled_from([
+            ("a", "b", ["a", "new", "b", "c"]),
+            ("b", "c", ["a", "b", "new", "c"]),
+        ])
+    )
+    def test_main(self, *, case: tuple[str, str, list[str]]) -> None:
+        left, right, expected = case
+        for _ in range(2):  # guard against in-place
+            result = insert_between(self.df, left, right, lit(None).alias("new"))
+            assert result.columns == expected
+
+    def test_error_missing(self) -> None:
+        with raises(
+            _InsertBetweenMissingColumnsError,
+            match="DataFrame must have columns 'x' and 'y'; got .*",
+        ):
+            _ = insert_between(self.df, "x", "y", lit(None).alias("new"))
+
+    def test_error_non_consecutive(self) -> None:
+        with raises(
+            _InsertBetweenNonConsecutiveError,
+            match="DataFrame columns 'a' and 'c' must be consecutive; got indices 0 and 2",
+        ):
+            _ = insert_between(self.df, "a", "c", lit(None).alias("new"))
 
 
 class TestIsNullAndIsNotNullStructSeries:

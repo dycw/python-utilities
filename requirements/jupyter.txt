@@ -139,11 +139,11 @@ matplotlib-inline==0.1.7
     # via
     #   ipykernel
     #   ipython
-mistune==3.1.0
+mistune==3.1.1
     # via nbconvert
 nbclient==0.10.2
     # via nbconvert
-nbconvert==7.16.5
+nbconvert==7.16.6
     # via jupyter-server
 nbformat==5.10.4
     # via
@@ -215,7 +215,7 @@ pytest==8.3.4
     #   pytest-rerunfailures
     #   pytest-rng
     #   pytest-xdist
-pytest-asyncio==0.25.2
+pytest-asyncio==0.25.3
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)

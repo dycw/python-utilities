@@ -26,6 +26,7 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import polars as pl
+from dacite.data import Data
 from polars import (
     Boolean,
     DataFrame,
@@ -861,6 +862,94 @@ class _GetSeriesNumberOfDecimalsAllNullError(GetSeriesNumberOfDecimalsError):
 ##
 
 
+def insert_after(df: DataFrame, column: str, value: IntoExprColumn, /) -> DataFrame:
+    """Insert a series after an existing column; not in-place."""
+    columns = df.columns
+    try:
+        index = columns.index(column)
+    except ValueError:
+        raise InsertAfterError(df=df, column=column) from None
+    return df.select(*columns[: index + 1], value, *columns[index + 1 :])
+
+
+@dataclass(kw_only=True)
+class InsertAfterError(Exception):
+    df: DataFrame
+    column: str
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must have column {self.column!r}; got {self.df.columns}"
+
+
+def insert_before(df: DataFrame, column: str, value: IntoExprColumn, /) -> DataFrame:
+    """Insert a series before an existing column; not in-place."""
+    columns = df.columns
+    try:
+        index = columns.index(column)
+    except ValueError:
+        raise InsertBeforeError(df=df, column=column) from None
+    return df.select(*columns[:index], value, *columns[index:])
+
+
+@dataclass(kw_only=True)
+class InsertBeforeError(Exception):
+    df: DataFrame
+    column: str
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must have column {self.column!r}; got {self.df.columns}"
+
+
+def insert_between(
+    df: DataFrame, left: str, right: str, value: IntoExprColumn, /
+) -> DataFrame:
+    """Insert a series in between two existing columns; not in-place."""
+    columns = df.columns
+    try:
+        index_left = columns.index(left)
+        index_right = columns.index(right)
+    except ValueError:
+        raise _InsertBetweenMissingColumnsError(df=df, left=left, right=right) from None
+    if (index_left + 1) != index_right:
+        raise _InsertBetweenNonConsecutiveError(
+            df=df,
+            left=left,
+            right=right,
+            index_left=index_left,
+            index_right=index_right,
+        )
+    return df.select(*columns[: index_left + 1], value, *columns[index_right:])
+
+
+@dataclass(kw_only=True)
+class InsertBetweenError(Exception):
+    df: DataFrame
+    left: str
+    right: str
+
+
+@dataclass(kw_only=True)
+class _InsertBetweenMissingColumnsError(InsertBetweenError):
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must have columns {self.left!r} and {self.right!r}; got {self.df.columns}"
+
+
+@dataclass(kw_only=True)
+class _InsertBetweenNonConsecutiveError(InsertBetweenError):
+    index_left: int
+    index_right: int
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame columns {self.left!r} and {self.right!r} must be consecutive; got indices {self.index_left} and {self.index_right}"
+
+
+##
+
+
 def is_not_null_struct_series(series: Series, /) -> Series:
     """Check if a struct-dtype Series is not null as per the <= 1.1 definition."""
     try:
@@ -1199,7 +1288,7 @@ def yield_rows_as_dataclasses(
             except StopIteration:
                 return
             try:
-                yield from_dict(cls, first)
+                yield from_dict(cls, cast(Data, first))
             except WrongTypeError as error:
                 raise _YieldRowsAsDataClassesWrongTypeError(
                     df=df, cls=cls, msg=str(error)
@@ -1208,7 +1297,7 @@ def yield_rows_as_dataclasses(
         case "all":
             try:
                 for row in rows:
-                    yield from_dict(cls, row)
+                    yield from_dict(cls, cast(Data, row))
             except WrongTypeError as error:
                 raise _YieldRowsAsDataClassesWrongTypeError(
                     df=df, cls=cls, msg=str(error)
@@ -1225,7 +1314,7 @@ def _yield_rows_as_dataclasses_no_check_types(
 
     config = Config(check_types=False)
     for row in rows:
-        yield from_dict(cls, row, config=config)
+        yield from_dict(cls, cast(Data, row), config=config)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1358,7 +1447,10 @@ def yield_struct_series_dataclasses(
         forward_references=forward_references, check_types=check_types, strict=True
     )
     for value in yield_struct_series_elements(series, strict=strict):
-        yield None if value is None else from_dict(cls, value, config=config)
+        if value is None:
+            yield None
+        else:
+            yield from_dict(cls, cast(Data, value), config=config)
 
 
 ##
@@ -1383,6 +1475,9 @@ __all__ = [
     "DropNullStructSeriesError",
     "GetDataTypeOrSeriesTimeZoneError",
     "GetSeriesNumberOfDecimalsError",
+    "InsertAfterError",
+    "InsertBeforeError",
+    "InsertBetweenError",
     "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
     "StructFromDataClassError",
@@ -1404,6 +1499,9 @@ __all__ = [
     "floor_datetime",
     "get_data_type_or_series_time_zone",
     "get_series_number_of_decimals",
+    "insert_after",
+    "insert_before",
+    "insert_between",
     "is_not_null_struct_series",
     "is_null_struct_series",
     "join",
