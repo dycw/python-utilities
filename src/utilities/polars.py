@@ -904,22 +904,22 @@ class InsertBeforeError(Exception):
 def insert_between(
     df: DataFrame, left: str, right: str, value: IntoExprColumn, /
 ) -> DataFrame:
-    """Insert a series in between two existing columns."""
-    cols = df.columns.to_numpy()
+    """Insert a series in between two existing columns; not in-place."""
+    columns = df.columns
     try:
-        index_left = flatn0(cols == left)
-        index_right = flatn0(cols == right)
-    except FlatN0Error:
-        raise insertBetweenIndexError(df=df, left=left, right=right) from None
+        index_left = columns.index(left)
+        index_right = columns.index(right)
+    except ValueError:
+        raise _InsertBetweenMissingColumnsError(df=df, left=left, right=right) from None
     if (index_left + 1) != index_right:
-        raise insertBetweenIndicesError(
+        raise _InsertBetweenNonConsecutiveError(
             df=df,
             left=left,
             right=right,
             index_left=index_left,
             index_right=index_right,
         )
-    return insert_after(df, left, value)
+    return df.select(*columns[: index_left + 1], value, *columns[index_right:])
 
 
 @dataclass(kw_only=True)
@@ -930,20 +930,20 @@ class InsertBetweenError(Exception):
 
 
 @dataclass(kw_only=True)
-class _InsertBetweenIndexError(InsertBetweenError):
+class _InsertBetweenMissingColumnsError(InsertBetweenError):
     @override
     def __str__(self) -> str:
-        return f"DataFrame must contain exactly one column named {self.left!r} and {self.right!r}:\n\n{self.df}"
+        return f"DataFrame must have columns {self.left!r} and {self.right!r}; got {self.df.columns}"
 
 
 @dataclass(kw_only=True)
-class _InsertBetweenIndicesError(InsertBetweenError):
+class _InsertBetweenNonConsecutiveError(InsertBetweenError):
     index_left: int
     index_right: int
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must specify consecutive indices; got {self.index_left} and {self.index_right}"
+        return f"DataFrame columns {self.left!r} and {self.right!r} must be consecutive; got indices {self.index_left} and {self.index_right}"
 
 
 ##
