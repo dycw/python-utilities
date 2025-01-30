@@ -861,6 +861,94 @@ class _GetSeriesNumberOfDecimalsAllNullError(GetSeriesNumberOfDecimalsError):
 ##
 
 
+def insert_after(df: DataFrame, column: str, value: IntoExprColumn, /) -> DataFrame:
+    """Insert a series after an existing column; not in-place."""
+    columns = df.columns
+    try:
+        index = columns.index(column)
+    except ValueError:
+        raise InsertAfterError(df=df, column=column) from None
+    return df.select(*columns[: index + 1], value, *columns[index + 1 :])
+
+
+@dataclass(kw_only=True)
+class InsertAfterError(Exception):
+    df: DataFrame
+    column: str
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must have column {self.column!r}; got {self.df.columns}"
+
+
+def insert_before(df: DataFrame, column: str, value: IntoExprColumn, /) -> DataFrame:
+    """Insert a series before an existing column; not in-place."""
+    columns = df.columns
+    try:
+        index = columns.index(column)
+    except ValueError:
+        raise InsertBeforeError(df=df, column=column) from None
+    return df.select(*columns[:index], value, *columns[index:])
+
+
+@dataclass(kw_only=True)
+class InsertBeforeError(Exception):
+    df: DataFrame
+    column: str
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must have column {self.column!r}; got {self.df.columns}"
+
+
+def insert_between(
+    df: DataFrame, left: str, right: str, value: IntoExprColumn, /
+) -> DataFrame:
+    """Insert a series in between two existing columns."""
+    cols = df.columns.to_numpy()
+    try:
+        index_left = flatn0(cols == left)
+        index_right = flatn0(cols == right)
+    except FlatN0Error:
+        raise insertBetweenIndexError(df=df, left=left, right=right) from None
+    if (index_left + 1) != index_right:
+        raise insertBetweenIndicesError(
+            df=df,
+            left=left,
+            right=right,
+            index_left=index_left,
+            index_right=index_right,
+        )
+    return insert_after(df, left, value)
+
+
+@dataclass(kw_only=True)
+class InsertBetweenError(Exception):
+    df: DataFrame
+    left: str
+    right: str
+
+
+@dataclass(kw_only=True)
+class _InsertBetweenIndexError(InsertBetweenError):
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must contain exactly one column named {self.left!r} and {self.right!r}:\n\n{self.df}"
+
+
+@dataclass(kw_only=True)
+class _InsertBetweenIndicesError(InsertBetweenError):
+    index_left: int
+    index_right: int
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must specify consecutive indices; got {self.index_left} and {self.index_right}"
+
+
+##
+
+
 def is_not_null_struct_series(series: Series, /) -> Series:
     """Check if a struct-dtype Series is not null as per the <= 1.1 definition."""
     try:
@@ -1383,6 +1471,8 @@ __all__ = [
     "DropNullStructSeriesError",
     "GetDataTypeOrSeriesTimeZoneError",
     "GetSeriesNumberOfDecimalsError",
+    "InsertAfterError",
+    "InsertBeforeError",
     "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
     "StructFromDataClassError",
@@ -1404,6 +1494,9 @@ __all__ = [
     "floor_datetime",
     "get_data_type_or_series_time_zone",
     "get_series_number_of_decimals",
+    "insert_after",
+    "insert_before",
+    "insert_between",
     "is_not_null_struct_series",
     "is_null_struct_series",
     "join",

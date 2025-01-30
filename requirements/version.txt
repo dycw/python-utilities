@@ -103,7 +103,7 @@ pytest==8.3.4
     #   pytest-rerunfailures
     #   pytest-rng
     #   pytest-xdist
-pytest-asyncio==0.25.2
+pytest-asyncio==0.25.3
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
@@ -147,7 +147,7 @@ typing-extensions==4.12.2
     #   anyio
 userpath==1.9.2
     # via hatch
-uv==0.5.24
+uv==0.5.25
     # via hatch
 virtualenv==20.29.1
     # via hatch
