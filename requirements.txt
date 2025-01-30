@@ -90,7 +90,7 @@ cryptography==44.0.0
     # via dycw-utilities (pyproject.toml)
 cvxpy==1.6.0
     # via dycw-utilities (pyproject.toml)
-dacite==1.8.1
+dacite==1.9.1
     # via dycw-utilities (pyproject.toml)
 defusedxml==0.7.1
     # via fpdf2

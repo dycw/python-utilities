@@ -31,7 +31,7 @@ dev = [
   "concurrent-log-handler >= 0.9.25, < 0.10",
   "cryptography >= 44.0.0, < 44.1",
   "cvxpy >= 1.6.0, < 1.7",
-  "dacite >= 1.8.1, < 1.9",
+  "dacite >= 1.9.1, < 1.10",
   "eventkit >= 1.0.3, < 1.1",
   "fastapi >= 0.115.7, < 0.116",
   "fpdf2 >= 2.8.2, < 2.9",
@@ -230,7 +230,7 @@ zzz-test-pathlib = []
 zzz-test-pickle = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-platform = []
 zzz-test-polars = [
-  "dacite >= 1.8.1, < 1.9",
+  "dacite >= 1.9.1, < 1.10",
   "polars-lts-cpu >= 1.21.0, < 1.22",
   "whenever >= 0.6.16, < 0.7",
 ]
