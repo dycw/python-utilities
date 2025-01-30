@@ -26,6 +26,7 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import polars as pl
+from dacite.data import Data
 from polars import (
     Boolean,
     DataFrame,
@@ -1287,7 +1288,7 @@ def yield_rows_as_dataclasses(
             except StopIteration:
                 return
             try:
-                yield from_dict(cls, first)
+                yield from_dict(cls, cast(Data, first))
             except WrongTypeError as error:
                 raise _YieldRowsAsDataClassesWrongTypeError(
                     df=df, cls=cls, msg=str(error)
@@ -1296,7 +1297,7 @@ def yield_rows_as_dataclasses(
         case "all":
             try:
                 for row in rows:
-                    yield from_dict(cls, row)
+                    yield from_dict(cls, cast(Data, row))
             except WrongTypeError as error:
                 raise _YieldRowsAsDataClassesWrongTypeError(
                     df=df, cls=cls, msg=str(error)
@@ -1313,7 +1314,7 @@ def _yield_rows_as_dataclasses_no_check_types(
 
     config = Config(check_types=False)
     for row in rows:
-        yield from_dict(cls, row, config=config)
+        yield from_dict(cls, cast(Data, row), config=config)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1446,7 +1447,10 @@ def yield_struct_series_dataclasses(
         forward_references=forward_references, check_types=check_types, strict=True
     )
     for value in yield_struct_series_elements(series, strict=strict):
-        yield None if value is None else from_dict(cls, value, config=config)
+        if value is None:
+            yield None
+        else:
+            yield from_dict(cls, cast(Data, value), config=config)
 
 
 ##
@@ -1473,6 +1477,7 @@ __all__ = [
     "GetSeriesNumberOfDecimalsError",
     "InsertAfterError",
     "InsertBeforeError",
+    "InsertBetweenError",
     "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
     "StructFromDataClassError",
