@@ -134,6 +134,9 @@ def _ewm_parameters_alpha_to_half_life(alpha: float, /) -> float:
     return -log(2) / log(1 - alpha)
 
 
+##
+
+
 def is_equal(
     x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
@@ -141,6 +144,9 @@ def is_equal(
     if isinstance(x, int) and isinstance(y, int):
         return x == y
     return _is_close(x, y, rel_tol=rel_tol, abs_tol=abs_tol) or (isnan(x) and isnan(y))
+
+
+##
 
 
 def is_equal_or_approx(
@@ -163,6 +169,9 @@ def is_equal_or_approx(
     raise ImpossibleCaseError(case=[f"{x=}", f"{y=}"])  # pragma: no cover
 
 
+##
+
+
 def is_at_least(
     x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
@@ -177,6 +186,9 @@ def is_at_least_or_nan(
     return is_at_least(x, y, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
+##
+
+
 def is_at_most(
     x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
@@ -189,6 +201,9 @@ def is_at_most_or_nan(
 ) -> bool:
     """Check if x <= y or x == nan."""
     return is_at_most(x, y, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+
+
+##
 
 
 def is_between(
@@ -219,9 +234,20 @@ def is_between_or_nan(
     return is_between(x, low, high, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
+##
+
+
 def is_finite(x: float, /) -> bool:
     """Check if -inf < x < inf."""
     return isfinite(x)
+
+
+def is_finite_or_nan(x: float, /) -> bool:
+    """Check if -inf < x < inf or x == nan."""
+    return isfinite(x) or isnan(x)
+
+
+##
 
 
 def is_finite_and_integral(
@@ -238,6 +264,9 @@ def is_finite_and_integral_or_nan(
     return is_finite_and_integral(x, rel_tol=rel_tol, abs_tol=abs_tol) | isnan(x)
 
 
+##
+
+
 def is_finite_and_negative(
     x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
@@ -250,6 +279,9 @@ def is_finite_and_negative_or_nan(
 ) -> bool:
     """Check if -inf < x < 0 or x == nan."""
     return is_finite_and_negative(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+
+
+##
 
 
 def is_finite_and_non_negative(
@@ -266,6 +298,9 @@ def is_finite_and_non_negative_or_nan(
     return is_finite_and_non_negative(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
+##
+
+
 def is_finite_and_non_positive(
     x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
@@ -278,6 +313,9 @@ def is_finite_and_non_positive_or_nan(
 ) -> bool:
     """Check if -inf < x <= 0 or x == nan."""
     return is_finite_and_non_positive(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+
+
+##
 
 
 def is_finite_and_non_zero(
@@ -294,6 +332,9 @@ def is_finite_and_non_zero_or_nan(
     return is_finite_and_non_zero(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
+##
+
+
 def is_finite_and_positive(
     x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
@@ -308,9 +349,7 @@ def is_finite_and_positive_or_nan(
     return is_finite_and_positive(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
-def is_finite_or_nan(x: float, /) -> bool:
-    """Check if -inf < x < inf or x == nan."""
-    return isfinite(x) or isnan(x)
+##
 
 
 def is_greater_than(
@@ -325,6 +364,9 @@ def is_greater_than_or_nan(
 ) -> bool:
     """Check if x > y or x == nan."""
     return is_greater_than(x, y, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+
+
+##
 
 
 def is_integral(
@@ -345,6 +387,9 @@ def is_integral_or_nan(
     return is_integral(x, rel_tol=rel_tol, abs_tol=abs_tol) | isnan(x)
 
 
+##
+
+
 def is_less_than(
     x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
@@ -357,6 +402,9 @@ def is_less_than_or_nan(
 ) -> bool:
     """Check if x < y or x == nan."""
     return is_less_than(x, y, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+
+
+##
 
 
 def is_negative(
@@ -373,6 +421,9 @@ def is_negative_or_nan(
     return is_negative(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
+##
+
+
 def is_non_negative(
     x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
@@ -385,6 +436,9 @@ def is_non_negative_or_nan(
 ) -> bool:
     """Check if x >= 0 or x == nan."""
     return is_non_negative(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+
+
+##
 
 
 def is_non_positive(
@@ -401,6 +455,9 @@ def is_non_positive_or_nan(
     return is_non_positive(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
+##
+
+
 def is_non_zero(
     x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
@@ -413,6 +470,9 @@ def is_non_zero_or_nan(
 ) -> bool:
     """Check if x != 0 or x == nan."""
     return is_non_zero(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+
+
+##
 
 
 def is_positive(
@@ -429,11 +489,24 @@ def is_positive_or_nan(
     return is_positive(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
+##
+
+
 def is_zero(
     x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == 0."""
     return _is_close(x, 0.0, rel_tol=rel_tol, abs_tol=abs_tol)
+
+
+def is_zero_or_nan(
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
+) -> bool:
+    """Check if x > 0 or x == nan."""
+    return is_zero(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+
+
+##
 
 
 def is_zero_or_finite_and_non_micro(
@@ -453,11 +526,7 @@ def is_zero_or_finite_and_non_micro_or_nan(
     ) or isnan(x)
 
 
-def is_zero_or_nan(
-    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
-) -> bool:
-    """Check if x > 0 or x == nan."""
-    return is_zero(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+##
 
 
 def is_zero_or_non_micro(
@@ -475,6 +544,9 @@ def is_zero_or_non_micro_or_nan(
     return is_zero_or_non_micro(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
+##
+
+
 def _is_close(
     x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
@@ -485,6 +557,9 @@ def _is_close(
         **({} if rel_tol is None else {"rel_tol": rel_tol}),
         **({} if abs_tol is None else {"abs_tol": abs_tol}),
     )
+
+
+##
 
 
 def number_of_decimals(x: float, /, *, max_decimals: int = 20) -> int:
@@ -514,6 +589,9 @@ class NumberOfDecimalsError(Exception):
         return f"Could not determine number of decimals of {self.x} (up to {self.max_decimals})"
 
 
+##
+
+
 @overload
 def order_of_magnitude(x: float, /, *, round_: Literal[True]) -> int: ...
 @overload
@@ -522,6 +600,9 @@ def order_of_magnitude(x: float, /, *, round_: bool = False) -> float:
     """Get the order of magnitude of a number."""
     result = log10(abs(x))
     return round(result) if round_ else result
+
+
+##
 
 
 _RoundMode: TypeAlias = Literal[
@@ -596,6 +677,9 @@ def _round_tie_standard(
     return round_(x, mode=mode_use)
 
 
+##
+
+
 def round_to_float(
     x: float,
     y: float,
@@ -607,6 +691,9 @@ def round_to_float(
 ) -> float:
     """Round a float to the nearest multiple of another float."""
     return y * round_(x / y, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
+
+
+##
 
 
 def safe_round(
@@ -627,6 +714,9 @@ class SafeRoundError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to safely round {self.x} (rel_tol={self.rel_tol}, abs_tol={self.abs_tol})"
+
+
+##
 
 
 def sign(

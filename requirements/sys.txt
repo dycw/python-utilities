@@ -8,7 +8,7 @@ attrs==25.1.0
     # via hypothesis
 backports-tarfile==1.2.0
     # via jaraco-context
-certifi==2024.12.14
+certifi==2025.1.31
     # via
     #   httpcore
     #   httpx
@@ -153,11 +153,11 @@ tzlocal==5.2
     # via dycw-utilities (pyproject.toml)
 userpath==1.9.2
     # via hatch
-uv==0.5.25
+uv==0.5.26
     # via hatch
 virtualenv==20.29.1
     # via hatch
-whenever==0.6.16
+whenever==0.6.17
     # via dycw-utilities (pyproject.toml)
 zipp==3.21.0
     # via importlib-metadata

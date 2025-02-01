@@ -54,7 +54,7 @@ cachetools==5.5.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   streamlit
-certifi==2024.12.14
+certifi==2025.1.31
     # via
     #   httpcore
     #   httpx
@@ -104,7 +104,7 @@ eventkit==1.0.3
     #   ib-async-dataclass
 execnet==2.1.1
     # via pytest-xdist
-fastapi==0.115.7
+fastapi==0.115.8
     # via dycw-utilities (pyproject.toml)
 filelock==3.17.0
     # via virtualenv
@@ -360,7 +360,7 @@ python-dateutil==2.9.0.post0
     #   pandas
 python-dotenv==1.0.1
     # via dycw-utilities (pyproject.toml)
-pytz==2024.2
+pytz==2025.1
     # via pandas
 pyyaml==6.0.2
     # via
@@ -469,7 +469,7 @@ urllib3==2.3.0
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.5.25
+uv==0.5.26
     # via hatch
 uvicorn==0.34.0
     # via dycw-utilities (pyproject.toml)
@@ -483,7 +483,7 @@ virtualenv==20.29.1
     #   nox
 vl-convert-python==1.7.0
     # via dycw-utilities (pyproject.toml)
-whenever==0.6.16
+whenever==0.6.17
     # via dycw-utilities (pyproject.toml)
 win32-setctime==1.2.0
     # via dycw-utilities (pyproject.toml)
