@@ -17,7 +17,77 @@ MIN_UINT16, MAX_UINT16 = 0, 2**16 - 1
 MIN_UINT32, MAX_UINT32 = 0, 2**32 - 1
 MIN_UINT64, MAX_UINT64 = 0, 2**64 - 1
 
-# functions
+
+##
+
+
+def check_integer(
+    n: int,
+    /,
+    *,
+    equal: int | None = None,
+    equal_or_approx: int | tuple[int, float] | None = None,
+    min: int | None = None,  # noqa: A002
+    max: int | None = None,  # noqa: A002
+) -> None:
+    """Check the properties of an integer."""
+    if (equal is not None) and (n != equal):
+        raise _CheckIntegerEqualError(n=n, equal=equal)
+    if (equal_or_approx is not None) and not is_equal_or_approx(n, equal_or_approx):
+        raise _CheckIntegerEqualOrApproxError(n=n, equal_or_approx=equal_or_approx)
+    if (min is not None) and (n < min):
+        raise _CheckIntegerMinError(n=n, min_=min)
+    if (max is not None) and (n > max):
+        raise _CheckIntegerMaxError(n=n, max_=max)
+
+
+@dataclass(kw_only=True, slots=True)
+class CheckIntegerError(Exception):
+    n: int
+
+
+@dataclass(kw_only=True, slots=True)
+class _CheckIntegerEqualError(CheckIntegerError):
+    equal: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Integer must be equal to {self.equal}; got {self.n}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _CheckIntegerEqualOrApproxError(CheckIntegerError):
+    equal_or_approx: int | tuple[int, float]
+
+    @override
+    def __str__(self) -> str:
+        match self.equal_or_approx:
+            case target, error:
+                desc = f"approximately equal to {target} (error {error:%})"
+            case target:
+                desc = f"equal to {target}"
+        return f"Integer must be {desc}; got {self.n}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _CheckIntegerMinError(CheckIntegerError):
+    min_: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Integer must be at least {self.min_}; got {self.n}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _CheckIntegerMaxError(CheckIntegerError):
+    max_: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Integer must be at most {self.max_}; got {self.n}"
+
+
+##
 
 
 @dataclass(kw_only=True, slots=True)
@@ -740,73 +810,12 @@ def sign(
             assert_never(never)
 
 
-# checks
+##
 
 
-def check_integer(
-    n: int,
-    /,
-    *,
-    equal: int | None = None,
-    equal_or_approx: int | tuple[int, float] | None = None,
-    min: int | None = None,  # noqa: A002
-    max: int | None = None,  # noqa: A002
-) -> None:
-    """Check the properties of an integer."""
-    if (equal is not None) and (n != equal):
-        raise _CheckIntegerEqualError(n=n, equal=equal)
-    if (equal_or_approx is not None) and not is_equal_or_approx(n, equal_or_approx):
-        raise _CheckIntegerEqualOrApproxError(n=n, equal_or_approx=equal_or_approx)
-    if (min is not None) and (n < min):
-        raise _CheckIntegerMinError(n=n, min_=min)
-    if (max is not None) and (n > max):
-        raise _CheckIntegerMaxError(n=n, max_=max)
-
-
-@dataclass(kw_only=True, slots=True)
-class CheckIntegerError(Exception):
-    n: int
-
-
-@dataclass(kw_only=True, slots=True)
-class _CheckIntegerEqualError(CheckIntegerError):
-    equal: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Integer must be equal to {self.equal}; got {self.n}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _CheckIntegerEqualOrApproxError(CheckIntegerError):
-    equal_or_approx: int | tuple[int, float]
-
-    @override
-    def __str__(self) -> str:
-        match self.equal_or_approx:
-            case target, error:
-                desc = f"approximately equal to {target} (error {error:%})"
-            case target:
-                desc = f"equal to {target}"
-        return f"Integer must be {desc}; got {self.n}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _CheckIntegerMinError(CheckIntegerError):
-    min_: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Integer must be at least {self.min_}; got {self.n}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _CheckIntegerMaxError(CheckIntegerError):
-    max_: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Integer must be at most {self.max_}; got {self.n}"
+def significant_figures(x: float, /, *, n: int = 2) -> str:
+    """Format an integer/float to a given number of significant figures."""
+    return "{:g}".format(float("{:.{p}g}".format(x, p=n)))
 
 
 __all__ = [
@@ -878,4 +887,5 @@ __all__ = [
     "round_",
     "round_to_float",
     "safe_round",
+    "significant_figures",
 ]
