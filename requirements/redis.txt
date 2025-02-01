@@ -92,5 +92,5 @@ typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
 tzlocal==5.2
     # via dycw-utilities (pyproject.toml)
-whenever==0.6.16
+whenever==0.6.17
     # via dycw-utilities (pyproject.toml)

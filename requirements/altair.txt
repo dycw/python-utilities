@@ -110,7 +110,7 @@ typing-extensions==4.12.2
     #   referencing
 vl-convert-python==1.6.1
     # via dycw-utilities (pyproject.toml)
-whenever==0.6.16
+whenever==0.6.17
     # via dycw-utilities (pyproject.toml)
 wrapt==1.17.2
     # via deprecated
