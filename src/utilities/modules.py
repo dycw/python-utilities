@@ -4,7 +4,7 @@ from importlib import import_module
 from pkgutil import iter_modules
 from typing import TYPE_CHECKING, Any
 
-from utilities.inspect import yield_object_attributes
+from utilities.functions import yield_object_attributes
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator

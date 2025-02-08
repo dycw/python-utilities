@@ -86,8 +86,8 @@ from utilities.functions import (
     min_nullable,
     not_func,
     second,
+    yield_object_attributes,
 )
-from utilities.inspect import yield_object_attributes
 from utilities.sentinel import sentinel
 
 if TYPE_CHECKING:
