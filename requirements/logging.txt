@@ -46,7 +46,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.124.7
+hypothesis==6.125.2
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -117,7 +117,7 @@ pytest-asyncio==0.25.3
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
-pytest-datadir==1.5.0
+pytest-datadir==1.6.1
     # via pytest-regressions
 pytest-instafail==0.5.0
     # via dycw-utilities (pyproject.toml)
@@ -161,7 +161,7 @@ tzlocal==5.2
     # via dycw-utilities (pyproject.toml)
 userpath==1.9.2
     # via hatch
-uv==0.5.26
+uv==0.5.29
     # via hatch
 virtualenv==20.29.1
     # via hatch

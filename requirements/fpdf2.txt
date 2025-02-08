@@ -12,11 +12,11 @@ defusedxml==0.7.1
     # via fpdf2
 execnet==2.1.1
     # via pytest-xdist
-fonttools==4.55.8
+fonttools==4.56.0
     # via fpdf2
 fpdf2==2.8.2
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.124.7
+hypothesis==6.125.2
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -48,7 +48,7 @@ pytest-asyncio==0.25.3
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
-pytest-datadir==1.5.0
+pytest-datadir==1.6.1
     # via pytest-regressions
 pytest-instafail==0.5.0
     # via dycw-utilities (pyproject.toml)
