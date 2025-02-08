@@ -6,7 +6,7 @@ aiohttp==3.11.12
     # via dycw-utilities (pyproject.toml)
 aiosignal==1.3.2
     # via aiohttp
-aiosqlite==0.20.0
+aiosqlite==0.21.0
     # via dycw-utilities (pyproject.toml)
 alembic==1.14.1
     # via optuna
@@ -142,7 +142,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.124.9
+hypothesis==6.125.2
     # via dycw-utilities (pyproject.toml)
 ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
