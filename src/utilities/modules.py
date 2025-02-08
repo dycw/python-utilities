@@ -4,6 +4,8 @@ from importlib import import_module
 from pkgutil import iter_modules
 from typing import TYPE_CHECKING, Any
 
+from utilities.inspect import yield_object_attributes
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from types import ModuleType
@@ -50,8 +52,7 @@ def yield_module_contents(
     Optionally, recurse into sub-packages.
     """
     for mod in yield_modules(module, recursive=recursive):
-        for name in dir(mod):
-            obj = getattr(mod, name)
+        for _, obj in yield_object_attributes(mod):
             if ((type is None) or isinstance(obj, type)) and (
                 (predicate is None) or predicate(obj)
             ):
