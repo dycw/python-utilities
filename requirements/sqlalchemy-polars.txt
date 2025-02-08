@@ -16,7 +16,7 @@ execnet==2.1.1
     # via pytest-xdist
 greenlet==3.1.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.124.7
+hypothesis==6.124.9
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -52,7 +52,7 @@ pytest-asyncio==0.25.3
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
-pytest-datadir==1.5.0
+pytest-datadir==1.6.1
     # via pytest-regressions
 pytest-instafail==0.5.0
     # via dycw-utilities (pyproject.toml)
@@ -72,7 +72,7 @@ pyyaml==6.0.2
     # via pytest-regressions
 sortedcontainers==2.4.0
     # via hypothesis
-sqlalchemy==2.0.37
+sqlalchemy==2.0.38
     # via dycw-utilities (pyproject.toml)
 tenacity==9.0.0
     # via dycw-utilities (pyproject.toml)

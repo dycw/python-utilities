@@ -14,7 +14,7 @@ execnet==2.1.1
     # via pytest-xdist
 frozendict==2.4.6
     # via atools
-hypothesis==6.124.7
+hypothesis==6.124.9
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -44,7 +44,7 @@ pytest-asyncio==0.25.3
     # via dycw-utilities (pyproject.toml)
 pytest-cov==6.0.0
     # via dycw-utilities (pyproject.toml)
-pytest-datadir==1.5.0
+pytest-datadir==1.6.1
     # via pytest-regressions
 pytest-instafail==0.5.0
     # via dycw-utilities (pyproject.toml)

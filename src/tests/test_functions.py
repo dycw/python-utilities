@@ -6,7 +6,7 @@ from functools import cache, lru_cache, partial, wraps
 from itertools import chain
 from operator import neg
 from types import NoneType
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -87,6 +87,7 @@ from utilities.functions import (
     not_func,
     second,
 )
+from utilities.inspect import yield_object_attributes
 from utilities.sentinel import sentinel
 
 if TYPE_CHECKING:
@@ -848,3 +849,14 @@ class TestSecond:
     def test_main(self, *, x: int, y: int) -> None:
         pair = x, y
         assert second(pair) == y
+
+
+class TestYieldObjectAttributes:
+    @given(n=integers())
+    def test_main(self, *, n: int) -> None:
+        class Example:
+            attr: ClassVar[int] = n
+
+        attrs = dict(yield_object_attributes(Example))
+        assert len(attrs) == 29
+        assert attrs["attr"] == n

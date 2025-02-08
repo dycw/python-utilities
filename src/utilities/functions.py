@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import asdict, dataclass, is_dataclass
 from functools import _lru_cache_wrapper, partial, wraps
 from re import findall
@@ -904,6 +904,16 @@ def second(pair: tuple[Any, _U], /) -> _U:
 ##
 
 
+def yield_object_attributes(obj: Any, /) -> Iterator[tuple[str, Any]]:
+    """Yield all the object attributes."""
+    for name in dir(obj):
+        value = getattr(obj, name)
+        yield name, value
+
+
+##
+
+
 def _make_error_msg(obj: Any, desc: str, /, *, nullable: bool = False) -> str:
     msg = f"{get_repr_and_class(obj)} must be {desc}"
     if nullable:
@@ -971,4 +981,5 @@ __all__ = [
     "min_nullable",
     "not_func",
     "second",
+    "yield_object_attributes",
 ]
