@@ -4,7 +4,7 @@ attrs==25.1.0
     # via hypothesis
 cachetools==5.5.1
     # via dycw-utilities (pyproject.toml)
-coverage==7.6.10
+coverage==7.6.11
     # via
     #   coverage-conditional-plugin
     #   pytest-cov

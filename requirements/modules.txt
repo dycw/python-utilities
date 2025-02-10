@@ -2,7 +2,7 @@
 #    uv pip compile --extra=test --extra=zzz-test-modules --prerelease=explicit --output-file=requirements/modules.txt --python-version=3.11 pyproject.toml
 attrs==25.1.0
     # via hypothesis
-coverage==7.6.10
+coverage==7.6.11
     # via
     #   coverage-conditional-plugin
     #   pytest-cov

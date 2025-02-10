@@ -4,7 +4,7 @@ attrs==25.1.0
     # via hypothesis
 bounded-pool-executor==0.0.3
     # via pqdm
-coverage==7.6.10
+coverage==7.6.11
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
