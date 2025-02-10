@@ -95,40 +95,82 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
         expected = {"[Example]": {"x": x}}
         assert result == expected
 
-    @given(x=integers())
-    def test_nested_with_recursive(self, *, x: int) -> None:
+    @given(y=integers())
+    def test_nested_with_recursive(self, *, y: int) -> None:
         @dataclass(kw_only=True, slots=True)
         class Inner:
-            x: int
+            x: int = 0
 
         @dataclass(kw_only=True, slots=True)
         class Outer:
             inner: Inner
+            y: int
 
-        obj = Outer(inner=Inner(x=x))
+        obj = Outer(inner=Inner(), y=y)
         asdict_res = asdict_without_defaults(obj, localns=locals(), recursive=True)
-        asdict_exp = {"inner": {"x": x}}
+        asdict_exp = {"inner": {}, "y": y}
         assert asdict_res == asdict_exp
         repr_res = repr_without_defaults(obj, localns=locals(), recursive=True)
-        repr_exp = f"Outer(inner=Inner(x={x}))"
+        repr_exp = f"Outer(inner=Inner(), y={y})"
         assert repr_res == repr_exp
 
-    @given(x=integers())
-    def test_nested_without_recursive(self, *, x: int) -> None:
+    @given(y=integers())
+    def test_nested_without_recursive(self, *, y: int) -> None:
         @dataclass(kw_only=True, slots=True)
         class Inner:
-            x: int
+            x: int = 0
 
         @dataclass(kw_only=True, slots=True)
         class Outer:
             inner: Inner
+            y: int
 
-        obj = Outer(inner=Inner(x=x))
+        obj = Outer(inner=Inner(), y=y)
         asdict_res = asdict_without_defaults(obj, localns=locals())
-        asdict_exp = {"inner": Inner(x=x)}
+        asdict_exp = {"inner": Inner(), "y": y}
         assert asdict_res == asdict_exp
         repr_res = repr_without_defaults(obj, localns=locals())
-        repr_exp = f"Outer(inner=TestAsDictWithoutDefaultsAndReprWithoutDefaults.test_nested_without_recursive.<locals>.Inner(x={x}))"
+        repr_exp = f"Outer(inner=TestAsDictWithoutDefaultsAndReprWithoutDefaults.test_nested_without_recursive.<locals>.Inner(x=0), y={y})"
+        assert repr_res == repr_exp
+
+    @given(y=lists(integers()), z=integers())
+    def test_nested_in_list_with_recursive(self, *, y: list[int], z: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Inner:
+            x: int = 0
+
+        @dataclass(kw_only=True, slots=True)
+        class Outer:
+            inner: list[Inner]
+            y: list[int]
+            z: int
+
+        obj = Outer(inner=[Inner()], y=y, z=z)
+        asdict_res = asdict_without_defaults(obj, localns=locals(), recursive=True)
+        asdict_exp = {"inner": [{}], "y": y, "z": z}
+        assert asdict_res == asdict_exp
+        repr_res = repr_without_defaults(obj, localns=locals(), recursive=True)
+        repr_exp = f"Outer(inner=[Inner()], y={y}, z={z})"
+        assert repr_res == repr_exp
+
+    @given(y=lists(integers()), z=integers())
+    def test_nested_in_list_without_recursive(self, *, y: list[int], z: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Inner:
+            x: int = 0
+
+        @dataclass(kw_only=True, slots=True)
+        class Outer:
+            inner: list[Inner]
+            y: list[int]
+            z: int
+
+        obj = Outer(inner=[Inner()], y=y, z=z)
+        asdict_res = asdict_without_defaults(obj, localns=locals())
+        asdict_exp = {"inner": [Inner(x=0)], "y": y, "z": z}
+        assert asdict_res == asdict_exp
+        repr_res = repr_without_defaults(obj, localns=locals())
+        repr_exp = f"Outer(inner=[TestAsDictWithoutDefaultsAndReprWithoutDefaults.test_nested_in_list_without_recursive.<locals>.Inner(x=0)], y={y}, z={z})"
         assert repr_res == repr_exp
 
     def test_ib_async(self) -> None:
