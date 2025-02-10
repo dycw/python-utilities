@@ -47,20 +47,37 @@ def asdict_without_defaults(
     out: dict[str, Any] = {}
     for fld in yield_fields(obj, globalns=globalns, localns=localns):
         if not fld.equals_default(rel_tol=rel_tol, abs_tol=abs_tol, extra=extra):
-            if recursive and is_dataclass_instance(fld.value):
-                value_as_dict = asdict_without_defaults(
-                    fld.value,
-                    globalns=globalns,
-                    localns=localns,
-                    rel_tol=rel_tol,
-                    abs_tol=abs_tol,
-                    extra=extra,
-                    final=final,
-                    recursive=recursive,
-                )
+            if recursive:
+                if is_dataclass_instance(fld.value):
+                    value = asdict_without_defaults(
+                        fld.value,
+                        globalns=globalns,
+                        localns=localns,
+                        rel_tol=rel_tol,
+                        abs_tol=abs_tol,
+                        extra=extra,
+                        final=final,
+                        recursive=recursive,
+                    )
+                elif isinstance(fld.value, list):
+                    value = [
+                        asdict_without_defaults(
+                            v,
+                            globalns=globalns,
+                            localns=localns,
+                            rel_tol=rel_tol,
+                            abs_tol=abs_tol,
+                            extra=extra,
+                            final=final,
+                            recursive=recursive,
+                        )
+                        for v in fld.value
+                    ]
+                else:
+                    value = fld.value
             else:
-                value_as_dict = fld.value
-            out[fld.name] = value_as_dict
+                value = fld.value
+            out[fld.name] = value
     return out if final is None else final(type(obj), out)
 
 
@@ -193,20 +210,37 @@ def repr_without_defaults(
             and fld.repr
             and not fld.equals_default(rel_tol=rel_tol, abs_tol=abs_tol, extra=extra)
         ):
-            if recursive and is_dataclass_instance(fld.value):
-                repr_as_dict = repr_without_defaults(
-                    fld.value,
-                    ignore=ignore,
-                    globalns=globalns,
-                    localns=localns,
-                    rel_tol=rel_tol,
-                    abs_tol=abs_tol,
-                    extra=extra,
-                    recursive=recursive,
-                )
+            if recursive:
+                if is_dataclass_instance(fld.value):
+                    repr_ = repr_without_defaults(
+                        fld.value,
+                        ignore=ignore,
+                        globalns=globalns,
+                        localns=localns,
+                        rel_tol=rel_tol,
+                        abs_tol=abs_tol,
+                        extra=extra,
+                        recursive=recursive,
+                    )
+                elif isinstance(fld.value, list):
+                    repr_ = ", ".join(
+                        repr_without_defaults(
+                            v,
+                            ignore=ignore,
+                            globalns=globalns,
+                            localns=localns,
+                            rel_tol=rel_tol,
+                            abs_tol=abs_tol,
+                            extra=extra,
+                            recursive=recursive,
+                        )
+                        for v in fld.value
+                    )
+                else:
+                    repr_ = repr(fld.value)
             else:
-                repr_as_dict = repr(fld.value)
-            out[fld.name] = repr_as_dict
+                repr_ = repr(fld.value)
+            out[fld.name] = repr_
     cls = get_class_name(obj)
     joined = ", ".join(f"{k}={v}" for k, v in out.items())
     return f"{cls}({joined})"
