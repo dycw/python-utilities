@@ -16,13 +16,13 @@ hypothesis==6.125.2
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
-llvmlite==0.36.0
+llvmlite==0.44.0
     # via numba
-numba==0.53.1
+numba==0.61.0
     # via numbagg
 numbagg==0.9.0
     # via dycw-utilities (pyproject.toml)
-numpy==2.2.2
+numpy==2.0.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   bottleneck
@@ -71,8 +71,6 @@ pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)
 pyyaml==6.0.2
     # via pytest-regressions
-setuptools==75.8.0
-    # via numba
 sortedcontainers==2.4.0
     # via hypothesis
 tomli==2.2.1
