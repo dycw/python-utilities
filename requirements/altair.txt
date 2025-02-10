@@ -31,11 +31,11 @@ jsonschema==4.23.0
     # via altair
 jsonschema-specifications==2024.10.1
     # via jsonschema
-lxml==5.3.0
+lxml==5.3.1
     # via pikepdf
 markupsafe==3.0.2
     # via jinja2
-narwhals==1.25.2
+narwhals==1.26.0
     # via altair
 numpy==2.2.2
     # via pytest-rng
