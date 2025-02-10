@@ -6,7 +6,7 @@ attrs==25.1.0
     # via hypothesis
 colorlog==6.9.0
     # via optuna
-coverage==7.6.10
+coverage==7.6.11
     # via
     #   coverage-conditional-plugin
     #   pytest-cov

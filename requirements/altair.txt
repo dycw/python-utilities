@@ -9,7 +9,7 @@ attrs==25.1.0
     #   hypothesis
     #   jsonschema
     #   referencing
-coverage==7.6.10
+coverage==7.6.11
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -54,7 +54,7 @@ pillow==11.1.0
     #   pikepdf
 pluggy==1.5.0
     # via pytest
-polars-lts-cpu==1.21.0
+polars-lts-cpu==1.22.0
     # via dycw-utilities (pyproject.toml)
 pytest==8.3.4
     # via

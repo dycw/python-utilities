@@ -2,7 +2,7 @@
 #    uv pip compile --extra=test --extra=zzz-test-iterables --prerelease=explicit --output-file=requirements/iterables.txt --python-version=3.11 pyproject.toml
 attrs==25.1.0
     # via hypothesis
-coverage==7.6.10
+coverage==7.6.11
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -31,7 +31,7 @@ packaging==24.2
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-polars-lts-cpu==1.21.0
+polars-lts-cpu==1.22.0
     # via dycw-utilities (pyproject.toml)
 pytest==8.3.4
     # via
