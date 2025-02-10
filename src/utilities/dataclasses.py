@@ -71,6 +71,8 @@ def asdict_without_defaults(
                             final=final,
                             recursive=recursive,
                         )
+                        if is_dataclass_instance(v)
+                        else v
                         for v in fld.value
                     ]
                 else:
@@ -223,7 +225,7 @@ def repr_without_defaults(
                         recursive=recursive,
                     )
                 elif isinstance(fld.value, list):
-                    repr_ = ", ".join(
+                    repr_ = [
                         repr_without_defaults(
                             v,
                             ignore=ignore,
@@ -234,8 +236,11 @@ def repr_without_defaults(
                             extra=extra,
                             recursive=recursive,
                         )
+                        if is_dataclass_instance(v)
+                        else repr(v)
                         for v in fld.value
-                    )
+                    ]
+                    repr_ = f"[{', '.join(repr_)}]"
                 else:
                     repr_ = repr(fld.value)
             else:
