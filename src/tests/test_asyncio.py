@@ -10,6 +10,7 @@ from pytest import mark, param, raises
 
 from tests.conftest import FLAKY
 from utilities.asyncio import (
+    BoundedTaskGroup,
     _MaybeAwaitableMaybeAsyncIterable,
     get_items,
     get_items_nowait,
@@ -52,7 +53,19 @@ async def _yield_strs_async() -> AsyncIterator[str]:
 
 
 class TestBoundedTaskGroup:
-    pass
+    async def test_with(self) -> None:
+        with Timer() as timer:
+            async with BoundedTaskGroup(max_tasks=2) as tg:
+                for _ in range(10):
+                    _ = tg.create_task(sleep(0.01))
+        assert timer >= 0.05
+
+    async def test_without(self) -> None:
+        with Timer() as timer:
+            async with BoundedTaskGroup() as tg:
+                for _ in range(10):
+                    _ = tg.create_task(sleep(0.01))
+        assert timer <= 0.02
 
 
 class TestGetItems:
