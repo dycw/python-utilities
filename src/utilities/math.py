@@ -754,8 +754,10 @@ def _round_tie_standard(
 
 def round_float_imprecisions(x: float, /, *, decimals: int = 8) -> float:
     """Round a float, removing binary representation imprecisions."""
-    y = str(x)
-    ((head, tail),) = _ROUND_FLOAT_IMPRECISIONS_PATTERN.findall(y)
+    try:
+        ((head, tail),) = _ROUND_FLOAT_IMPRECISIONS_PATTERN.findall(str(x))
+    except ValueError:
+        ((head, tail),) = _ROUND_FLOAT_IMPRECISIONS_PATTERN.findall(f"{x:.20f}")
     half = ceil(decimals / 2)
     pattern0 = search(rf"^([0-9]+?)(0{{{half},}})([0-9]+?)$", tail)
     pattern9 = search(rf"^(0*)([0-9]+?)(9{{{half},}})([0-9]+?)$", tail)
@@ -772,7 +774,22 @@ def round_float_imprecisions(x: float, /, *, decimals: int = 8) -> float:
             if ((len(t0) + len(t1) + len(t2)) >= decimals) and (len(t2) > len(t3)):
                 return float(f"{head}.{t0}{int(t1) + 1}")
             return x
-        case Match(), Match():
+        case Match() as match0, Match() as match9 if (
+            match0.span(3)[0] < match9.span(4)[0]
+        ):
+            t0, t1, t2, t3 = match9.groups()
+            if ((len(t0) + len(t1) + len(t2)) >= decimals) and (len(t2) > len(t3)):
+                return float(f"{head}.{t0}{int(t1) + 1}")
+                raise NotImplementedError
+
+                return float(f"{head}.{t0}{int(t1) + 1}")
+            raise NotImplementedError
+
+        case Match() as match0, Match() as match9 if (
+            match0.span(3)[0] > match9.span(4)[0]
+        ):
+            raise NotImplementedError
+
             raise ImpossibleCaseError(  # pragma: no cover
                 case=[f"{pattern0=}", f"{pattern9=}"]
             )
