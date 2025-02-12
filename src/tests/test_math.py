@@ -1124,7 +1124,7 @@ class TestRoundToFloat:
         result = round_to_float(x, y)
         assert result == approx(expected)
 
-    def test_precision(self) -> None:
+    def test_imprecisions(self) -> None:
         result = round_to_float(1.114838, 0.5e-4, mode="ceil", abs_tol=1e-8)
         assert result == 1.11485
         assert str(result) == "1.11485"

@@ -20,7 +20,7 @@ coloredlogs==15.0.1
     # via dycw-utilities (pyproject.toml)
 concurrent-log-handler==0.9.25
     # via dycw-utilities (pyproject.toml)
-coverage==7.6.11
+coverage==7.6.12
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -46,7 +46,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.125.2
+hypothesis==6.125.3
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via

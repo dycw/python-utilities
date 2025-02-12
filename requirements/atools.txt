@@ -4,7 +4,7 @@ atools==0.14.2
     # via dycw-utilities (pyproject.toml)
 attrs==25.1.0
     # via hypothesis
-coverage==7.6.11
+coverage==7.6.12
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -14,7 +14,7 @@ execnet==2.1.1
     # via pytest-xdist
 frozendict==2.4.6
     # via atools
-hypothesis==6.125.2
+hypothesis==6.125.3
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
