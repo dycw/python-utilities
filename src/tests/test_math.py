@@ -5,7 +5,14 @@ from re import escape
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from hypothesis import given, settings
-from hypothesis.strategies import DataObject, data, integers, permutations, sampled_from
+from hypothesis.strategies import (
+    DataObject,
+    data,
+    floats,
+    integers,
+    permutations,
+    sampled_from,
+)
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
 from pytest import approx, raises
 
@@ -86,6 +93,7 @@ from utilities.math import (
     number_of_decimals,
     order_of_magnitude,
     round_,
+    round_float_imprecisions,
     round_to_float,
     safe_round,
     sign,
@@ -1038,6 +1046,80 @@ class TestRound:
         assert result == expected
 
 
+class TestRoundFloatImprecisions:
+    @given(x=floats(allow_nan=False, allow_infinity=False))
+    @settings(max_examples=1000)
+    def test_main_vs_floats(self, *, x: float) -> None:
+        _ = round_float_imprecisions(x)
+
+    @given(x=integers(), y=integers().filter(is_non_zero), n=integers(-10, 10))
+    @settings(max_examples=1000)
+    def test_main_vs_fractions(self, *, x: int, y: int, n: int) -> None:
+        z = 10**n * x / y
+        _ = round_float_imprecisions(z)
+
+    @given(
+        case=sampled_from([
+            (0.1, "0.1"),
+            (0.101, "0.101"),
+            (0.1001, "0.1001"),
+            (0.10001, "0.10001"),
+            (0.100001, "0.100001"),
+            (0.1000001, "0.1000001"),
+            (0.10000001, "0.10000001"),
+            (0.100000001, "0.1"),
+            (0.1000000001, "0.1"),
+            (0.10000000010000000000, "0.1"),
+            (0.12, "0.12"),
+            (0.1201, "0.1201"),
+            (0.12001, "0.12001"),
+            (0.120001, "0.120001"),
+            (0.1200001, "0.1200001"),
+            (0.12000001, "0.12000001"),
+            (0.120000001, "0.12"),
+            (0.1200000001, "0.12"),
+            (0.12000000010000000000, "0.12"),
+            (0.1234567, "0.1234567"),
+            (0.123456701, "0.123456701"),
+            (0.1234567001, "0.1234567001"),
+            (0.12345670001, "0.12345670001"),
+            (0.123456700001, "0.1234567"),
+            (0.1234567000001, "0.1234567"),
+            (0.12345670000010000000000, "0.1234567"),
+            (0.12345678, "0.12345678"),
+            (0.1234567801, "0.1234567801"),
+            (0.12345678001, "0.12345678001"),
+            (0.123456780001, "0.123456780001"),
+            (0.1234567800001, "0.12345678"),
+            (0.12345678000001, "0.12345678"),
+            (0.123456780000010000000000, "0.12345678"),
+            (0.123456789, "0.123456789"),
+            (0.12345678901, "0.12345678901"),
+            (0.123456789001, "0.123456789001"),
+            (0.1234567890001, "0.1234567890001"),
+            (0.12345678900001, "0.123456789"),
+            (0.123456789000001, "0.123456789"),
+            (0.1234567890000010000000000, "0.123456789"),
+            (0.9999912345, "0.9999912345"),
+            # scientific
+            (6.1e-05, "6.1e-05"),
+            # additional
+            (-91913 * 1e-1, "-9191.3"),  # -9191.300000000001
+            (209995 * 1e-5, "2.09995"),  # 2.09995
+            (24680 * 1e-7, "0.002468"),  # 0.0024679999999999997
+            (432861 * 1e-1, "43286.1"),  # 43286.100000000006
+            (458442 * 1e-5, "4.58442"),  # 4.584420000000001
+            (462036 * 1e-8, "0.00462036"),  # 0.0046203600000000004
+            (781763 * 1e-7, "0.0781763"),  # 0.07817629999999999
+            (871804 * 1e-7, "0.0871804"),  # 0.08718039999999999
+        ])
+    )
+    def test_examples(self, *, case: tuple[float, str]) -> None:
+        x, expected = case
+        result = str(round_float_imprecisions(x))
+        assert result == expected
+
+
 class TestRoundToFloat:
     @given(
         case=sampled_from([
@@ -1068,6 +1150,11 @@ class TestRoundToFloat:
         x, y, expected = case
         result = round_to_float(x, y)
         assert result == approx(expected)
+
+    def test_imprecisions(self) -> None:
+        result = round_to_float(1.114838, 0.5e-4, mode="ceil", abs_tol=1e-8)
+        assert result == 1.11485
+        assert str(result) == "1.11485"
 
 
 class TestSafeRound:

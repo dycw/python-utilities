@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from math import ceil, exp, floor, isclose, isfinite, isnan, log, log10, modf
+from re import Match, search
 from typing import Literal, TypeAlias, assert_never, overload
 
 from typing_extensions import override
@@ -750,6 +752,38 @@ def _round_tie_standard(
 ##
 
 
+def round_float_imprecisions(x: float, /, *, decimals: int = 8) -> float:
+    """Round a float, removing binary representation imprecisions."""
+    try:
+        ((head, tail),) = _ROUND_FLOAT_IMPRECISIONS_PATTERN.findall(str(x))
+    except ValueError:
+        ((head, tail),) = _ROUND_FLOAT_IMPRECISIONS_PATTERN.findall(f"{x:.20f}")
+    half = ceil(decimals / 2)
+    pattern0 = search(rf"^([0-9]+?)(0{{{half},}})([0-9]+?)$", tail)
+    pattern9 = search(rf"^(0*)([0-9]+?)(9{{{half},}})([0-9]+?)$", tail)
+    match pattern0, pattern9:
+        case None, None:
+            return x
+        case Match() as match, None:
+            t0, t1, t2 = match.groups()
+            if ((len(t0) + len(t1)) >= decimals) and (len(t1) > len(t2)):
+                return float(f"{head}.{t0}")
+            return x
+        case None, Match() as match:
+            t0, t1, t2, t3 = match.groups()
+            if ((len(t0) + len(t1) + len(t2)) >= decimals) and (len(t2) > len(t3)):
+                return float(f"{head}.{t0}{int(t1) + 1}")
+            return x
+        case _:  # pragma: no cover
+            raise ImpossibleCaseError(case=[f"{pattern0=}", f"{pattern9=}"])
+
+
+_ROUND_FLOAT_IMPRECISIONS_PATTERN = re.compile(r"^(-?\d+)\.(\d+)$")
+
+
+##
+
+
 def round_to_float(
     x: float,
     y: float,
@@ -760,7 +794,8 @@ def round_to_float(
     abs_tol: float | None = None,
 ) -> float:
     """Round a float to the nearest multiple of another float."""
-    return y * round_(x / y, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
+    rounded = round_(x / y, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
+    return round_float_imprecisions(y * rounded)
 
 
 ##
@@ -885,6 +920,7 @@ __all__ = [
     "number_of_decimals",
     "order_of_magnitude",
     "round_",
+    "round_float_imprecisions",
     "round_to_float",
     "safe_round",
     "significant_figures",
