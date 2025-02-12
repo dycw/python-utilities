@@ -51,6 +51,10 @@ async def _yield_strs_async() -> AsyncIterator[str]:
         await sleep(0.01)
 
 
+class TestBoundedTaskGroup:
+    pass
+
+
 class TestGetItems:
     @given(xs=lists(integers(), min_size=1))
     async def test_put_then_get(self, *, xs: list[int]) -> None:
