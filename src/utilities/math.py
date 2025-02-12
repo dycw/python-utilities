@@ -774,27 +774,8 @@ def round_float_imprecisions(x: float, /, *, decimals: int = 8) -> float:
             if ((len(t0) + len(t1) + len(t2)) >= decimals) and (len(t2) > len(t3)):
                 return float(f"{head}.{t0}{int(t1) + 1}")
             return x
-        case Match() as match0, Match() as match9 if (
-            match0.span(3)[0] < match9.span(4)[0]
-        ):
-            t0, t1, t2, t3 = match9.groups()
-            if ((len(t0) + len(t1) + len(t2)) >= decimals) and (len(t2) > len(t3)):
-                return float(f"{head}.{t0}{int(t1) + 1}")
-                raise NotImplementedError
-
-                return float(f"{head}.{t0}{int(t1) + 1}")
-            raise NotImplementedError
-
-        case Match() as match0, Match() as match9 if (
-            match0.span(3)[0] > match9.span(4)[0]
-        ):
-            raise NotImplementedError
-
-            raise ImpossibleCaseError(  # pragma: no cover
-                case=[f"{pattern0=}", f"{pattern9=}"]
-            )
-        case _ as never:
-            assert_never(never)
+        case _:  # pragma: no cover
+            raise ImpossibleCaseError(case=[f"{pattern0=}", f"{pattern9=}"])
 
 
 _ROUND_FLOAT_IMPRECISIONS_PATTERN = re.compile(r"^(-?\d+)\.(\d+)$")

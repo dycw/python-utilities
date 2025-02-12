@@ -5,7 +5,14 @@ from re import escape
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from hypothesis import given, settings
-from hypothesis.strategies import DataObject, data, integers, permutations, sampled_from
+from hypothesis.strategies import (
+    DataObject,
+    data,
+    floats,
+    integers,
+    permutations,
+    sampled_from,
+)
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
 from pytest import approx, raises
 
@@ -1040,6 +1047,17 @@ class TestRound:
 
 
 class TestRoundFloatImprecisions:
+    @given(x=floats(allow_nan=False, allow_infinity=False))
+    @settings(max_examples=1000)
+    def test_main_vs_floats(self, *, x: float) -> None:
+        _ = round_float_imprecisions(x)
+
+    @given(x=integers(), y=integers().filter(is_non_zero), n=integers(-10, 10))
+    @settings(max_examples=1000)
+    def test_main_vs_fractions(self, *, x: int, y: int, n: int) -> None:
+        z = 10**n * x / y
+        _ = round_float_imprecisions(z)
+
     @given(
         case=sampled_from([
             (0.1, "0.1"),
@@ -1082,19 +1100,21 @@ class TestRoundFloatImprecisions:
             (0.12345678900001, "0.123456789"),
             (0.123456789000001, "0.123456789"),
             (0.1234567890000010000000000, "0.123456789"),
+            (0.9999912345, "0.9999912345"),
             # scientific
             (6.1e-05, "6.1e-05"),
             # additional
-            (458442 * 1e-5, "4.58442"),  # 4.584420000000001
-            (432861 * 1e-1, "43286.1"),  # 43286.100000000006
             (-91913 * 1e-1, "-9191.3"),  # -9191.300000000001
-            (462036 * 1e-8, "0.00462036"),  # 0.0046203600000000004
-            (871804 * 1e-7, "0.0871804"),  # 0.08718039999999999
-            (781763 * 1e-7, "0.0781763"),  # 0.07817629999999999
+            (209995 * 1e-5, "2.09995"),  # 2.09995
             (24680 * 1e-7, "0.002468"),  # 0.0024679999999999997
+            (432861 * 1e-1, "43286.1"),  # 43286.100000000006
+            (458442 * 1e-5, "4.58442"),  # 4.584420000000001
+            (462036 * 1e-8, "0.00462036"),  # 0.0046203600000000004
+            (781763 * 1e-7, "0.0781763"),  # 0.07817629999999999
+            (871804 * 1e-7, "0.0871804"),  # 0.08718039999999999
         ])
     )
-    def test_main(self, *, case: tuple[float, str]) -> None:
+    def test_examples(self, *, case: tuple[float, str]) -> None:
         x, expected = case
         result = str(round_float_imprecisions(x))
         assert result == expected
