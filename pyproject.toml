@@ -49,7 +49,7 @@ dev = [
   "nox >= 2025.2.9, < 2025.3",
   "numbagg >= 0.9.0, < 0.10",
   "numpy >= 2.0.2, < 2.1",  # if 2.1, llvmlite: RuntimeError: Cannot install on Python version 3.11.9; only versions >=3.6,<3.10 are supported.
-  "optuna >= 4.2.0, < 4.3",
+  "optuna >= 4.2.1, < 4.3",
   "orjson >= 3.10.14, < 3.11",
   "pathvalidate >= 3.2.3, < 3.3",
   "polars-lts-cpu >= 1.22.0, < 1.23",
@@ -216,7 +216,7 @@ zzz-test-operator = [
   "polars-lts-cpu >= 1.22.0, < 1.23",
   "whenever >= 0.6.17, < 0.7",
 ]
-zzz-test-optuna = ["optuna >= 4.2.0, < 4.3"]
+zzz-test-optuna = ["optuna >= 4.2.1, < 4.3"]
 zzz-test-orjson = [
   "ib-async-dataclass >= 1.0.3rc5, < 1.1",
   "orjson >= 3.10.15, < 3.11",

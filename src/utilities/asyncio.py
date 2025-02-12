@@ -4,7 +4,9 @@ from asyncio import (
     Lock,
     Queue,
     QueueEmpty,
+    Semaphore,
     StreamReader,
+    Task,
     TaskGroup,
     create_subprocess_shell,
     sleep,
@@ -18,20 +20,56 @@ from subprocess import PIPE
 from sys import stderr, stdout
 from typing import TYPE_CHECKING, Any, TextIO, TypeAlias, TypeGuard, TypeVar, cast
 
+from typing_extensions import override
+
 from utilities.datetime import datetime_duration_to_float
 from utilities.functions import EnsureStrError, ensure_int, ensure_not_none, ensure_str
 from utilities.iterables import OneError, one
 from utilities.types import MaybeAwaitable
 
 if TYPE_CHECKING:
-    from asyncio import Timeout
+    from asyncio import Timeout, _CoroutineLike
     from asyncio.subprocess import Process
+    from contextvars import Context
 
     from utilities.types import Duration
 
 _T = TypeVar("_T")
 _MaybeAsyncIterable: TypeAlias = Iterable[_T] | AsyncIterable[_T]
 _MaybeAwaitableMaybeAsyncIterable: TypeAlias = MaybeAwaitable[_MaybeAsyncIterable[_T]]
+
+
+class BoundedTaskGroup(TaskGroup):
+    """Task group with an internal limiter."""
+
+    _semaphore: Semaphore | None
+
+    @override
+    def __init__(self, *, max_tasks: int | None = None) -> None:
+        super().__init__()
+        self._semaphore = None if max_tasks is None else Semaphore(max_tasks)
+
+    @override
+    def create_task(
+        self,
+        coro: _CoroutineLike[_T],
+        *,
+        name: str | None = None,
+        context: Context | None = None,
+    ) -> Task[_T]:
+        if self._semaphore is None:
+            return super().create_task(coro, name=name, context=context)
+
+        async def wrapped(semaphore: Semaphore, coro: _CoroutineLike[_T], /) -> _T:
+            async with semaphore:
+                return await cast(Any, coro)
+
+        return super().create_task(
+            wrapped(self._semaphore, coro), name=name, context=context
+        )
+
+
+##
 
 
 async def get_items(queue: Queue[_T], /, *, lock: Lock | None = None) -> list[_T]:
@@ -62,6 +100,9 @@ def _get_items_nowait_core(queue: Queue[_T], /) -> list[_T]:
     return items
 
 
+##
+
+
 async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
     """Check if an object is awaitable."""
     try:
@@ -71,11 +112,17 @@ async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
     return True
 
 
+##
+
+
 async def sleep_dur(*, duration: Duration | None = None) -> None:
     """Sleep which accepts durations."""
     if duration is None:
         return
     await sleep(datetime_duration_to_float(duration))
+
+
+##
 
 
 @dataclass(kw_only=True, slots=True)
@@ -125,10 +172,16 @@ async def _stream_one(
         _ = ret_stream.write(decoded)
 
 
+##
+
+
 def timeout_dur(*, duration: Duration | None = None) -> Timeout:
     """Timeout context manager which accepts durations."""
     delay = None if duration is None else datetime_duration_to_float(duration)
     return timeout(delay)
+
+
+##
 
 
 async def to_list(iterable: _MaybeAwaitableMaybeAsyncIterable[_T], /) -> list[_T]:
@@ -138,6 +191,9 @@ async def to_list(iterable: _MaybeAwaitableMaybeAsyncIterable[_T], /) -> list[_T
         return [x async for x in cast(AsyncIterable[_T], value)]
     except TypeError:
         return list(cast(Iterable[_T], value))
+
+
+##
 
 
 async def try_await(obj: MaybeAwaitable[_T], /) -> _T:
@@ -155,6 +211,7 @@ async def try_await(obj: MaybeAwaitable[_T], /) -> _T:
 
 
 __all__ = [
+    "BoundedTaskGroup",
     "StreamCommandOutput",
     "get_items",
     "get_items_nowait",
