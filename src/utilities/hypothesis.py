@@ -26,7 +26,7 @@ from re import search
 from shutil import move, rmtree
 from string import ascii_letters, ascii_lowercase, ascii_uppercase, digits, printable
 from subprocess import check_call
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
+from typing import TYPE_CHECKING, Any, TypeVar, assert_never, cast, overload
 from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
@@ -126,20 +126,22 @@ def assume_does_not_raise(
 
 @composite
 def bool_arrays(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
-    shape: MaybeSearchStrategy[Shape] | None = None,
-    fill: SearchStrategy[Any] | None = None,
+    shape: MaybeSearchStrategy[Shape | None] = None,
+    fill: MaybeSearchStrategy[Any] = None,
     unique: MaybeSearchStrategy[bool] = False,
 ) -> NDArrayB:
     """Strategy for generating arrays of booleans."""
     from hypothesis.extra.numpy import array_shapes, arrays
 
-    draw = lift_draw(_draw)
-    shape_use = array_shapes() if shape is None else shape
     strategy: SearchStrategy[NDArrayB] = arrays(
-        bool, draw(shape_use), elements=booleans(), fill=fill, unique=draw(unique)
+        bool,
+        draw2(draw, shape, array_shapes()),
+        elements=booleans(),
+        fill=fill,
+        unique=draw2(draw, unique),
     )
     return draw(strategy)
 
@@ -149,22 +151,19 @@ def bool_arrays(
 
 @composite
 def date_durations(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
-    min_int: MaybeSearchStrategy[int] | None = None,
-    max_int: MaybeSearchStrategy[int] | None = None,
-    min_timedelta: MaybeSearchStrategy[dt.timedelta] | None = None,
-    max_timedelta: MaybeSearchStrategy[dt.timedelta] | None = None,
+    min_int: MaybeSearchStrategy[int | None] = None,
+    max_int: MaybeSearchStrategy[int | None] = None,
+    min_timedelta: MaybeSearchStrategy[dt.timedelta | None] = None,
+    max_timedelta: MaybeSearchStrategy[dt.timedelta | None] = None,
     two_way: bool = False,
 ) -> Duration:
     """Strategy for generating datetime durations."""
-    draw = lift_draw(_draw)
-    min_int_, max_int_, min_timedelta_, max_timedelta_ = (
-        draw(min_int),
-        draw(max_int),
-        draw(min_timedelta),
-        draw(max_timedelta),
+    min_int_, max_int_ = (draw2(draw, v) for v in [min_int, max_int])
+    min_timedelta_, max_timedelta_ = (
+        draw2(draw, v) for v in [min_timedelta, max_timedelta]
     )
     min_parts: Sequence[dt.timedelta | None] = [dt.timedelta.min, min_timedelta_]
     if min_int_ is not None:
@@ -196,7 +195,7 @@ def date_durations(
     )
     st_integers = st_timedeltas.map(date_duration_to_int)
     st_floats = st_integers.map(float)
-    return _draw(st_integers | st_floats | st_timedeltas)
+    return draw(st_integers | st_floats | st_timedeltas)
 
 
 def _round_timedelta(timedelta: dt.timedelta, /) -> dt.timedelta:
@@ -214,22 +213,21 @@ def _is_between_timedelta(
 
 @composite
 def datetime_durations(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
-    min_number: MaybeSearchStrategy[Number] | None = None,
-    max_number: MaybeSearchStrategy[Number] | None = None,
-    min_timedelta: MaybeSearchStrategy[dt.timedelta] | None = None,
-    max_timedelta: MaybeSearchStrategy[dt.timedelta] | None = None,
+    min_number: MaybeSearchStrategy[Number | None] = None,
+    max_number: MaybeSearchStrategy[Number | None] = None,
+    min_timedelta: MaybeSearchStrategy[dt.timedelta | None] = None,
+    max_timedelta: MaybeSearchStrategy[dt.timedelta | None] = None,
     two_way: bool = False,
 ) -> Duration:
     """Strategy for generating datetime durations."""
-    draw = lift_draw(_draw)
     min_number_, max_number_, min_timedelta_, max_timedelta_ = (
-        draw(min_number),
-        draw(max_number),
-        draw(min_timedelta),
-        draw(max_timedelta),
+        draw2(draw, min_number),
+        draw2(draw, max_number),
+        draw2(draw, min_timedelta),
+        draw2(draw, max_timedelta),
     )
     min_parts: list[dt.timedelta] = [dt.timedelta.min]
     if min_number_ is not None:
@@ -260,7 +258,36 @@ def datetime_durations(
     _ = assume(min_float_use <= max_float_use)
     st_numbers = numbers(min_value=min_float_use, max_value=max_float_use)
     st_timedeltas = timedeltas(min_value=min_timedelta_use, max_value=max_timedelta_use)
-    return _draw(st_numbers | st_timedeltas)
+    return draw(st_numbers | st_timedeltas)
+
+
+##
+
+
+@overload
+def draw2(
+    data_or_draw: DataObject | DrawFn, maybe_strategy: MaybeSearchStrategy[_T], /
+) -> _T: ...
+@overload
+def draw2(
+    data_or_draw: DataObject | DrawFn,
+    maybe_strategy: MaybeSearchStrategy[_T | None],
+    default: SearchStrategy[_T],
+    /,
+) -> _T: ...
+def draw2(
+    data_or_draw: DataObject | DrawFn,
+    maybe_strategy: MaybeSearchStrategy[_T | None],
+    default: SearchStrategy[_T] | None = None,
+    /,
+) -> _T | None:
+    """Draw an element from a strategy, unless you require it to be non-nullable."""
+    draw = data_or_draw.draw if isinstance(data_or_draw, DataObject) else data_or_draw
+    if isinstance(maybe_strategy, SearchStrategy):
+        value = draw(maybe_strategy)
+    else:
+        value = maybe_strategy
+    return draw(default) if (value is None) and (default is not None) else value
 
 
 ##
@@ -268,10 +295,10 @@ def datetime_durations(
 
 @composite
 def float_arrays(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
-    shape: MaybeSearchStrategy[Shape] | None = None,
+    shape: MaybeSearchStrategy[Shape | None] = None,
     min_value: MaybeSearchStrategy[float | None] = None,
     max_value: MaybeSearchStrategy[float | None] = None,
     allow_nan: MaybeSearchStrategy[bool] = False,
@@ -279,14 +306,12 @@ def float_arrays(
     allow_pos_inf: MaybeSearchStrategy[bool] = False,
     allow_neg_inf: MaybeSearchStrategy[bool] = False,
     integral: MaybeSearchStrategy[bool] = False,
-    fill: SearchStrategy[Any] | None = None,
+    fill: MaybeSearchStrategy[Any] = None,
     unique: MaybeSearchStrategy[bool] = False,
 ) -> NDArrayF:
     """Strategy for generating arrays of floats."""
     from hypothesis.extra.numpy import array_shapes, arrays
 
-    draw = lift_draw(_draw)
-    shape_use = array_shapes() if shape is None else shape
     elements = floats_extra(
         min_value=min_value,
         max_value=max_value,
@@ -297,7 +322,11 @@ def float_arrays(
         integral=integral,
     )
     strategy: SearchStrategy[NDArrayF] = arrays(
-        float, draw(shape_use), elements=elements, fill=fill, unique=draw(unique)
+        float,
+        draw2(draw, shape, array_shapes()),
+        elements=elements,
+        fill=fill,
+        unique=draw2(draw, unique),
     )
     return draw(strategy)
 
@@ -307,7 +336,7 @@ def float_arrays(
 
 @composite
 def floats_extra(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[float | None] = None,
@@ -319,31 +348,30 @@ def floats_extra(
     integral: MaybeSearchStrategy[bool] = False,
 ) -> float:
     """Strategy for generating floats, with extra special values."""
-    draw = lift_draw(_draw)
-    min_value_, max_value_ = draw(min_value), draw(max_value)
+    min_value_, max_value_ = (draw2(draw, min_value), draw2(draw, max_value))
     elements = floats(
         min_value=min_value_,
         max_value=max_value_,
         allow_nan=False,
         allow_infinity=False,
     )
-    if draw(allow_nan):
+    if draw2(draw, allow_nan):
         elements |= just(nan)
-    if draw(allow_inf):
+    if draw2(draw, allow_inf):
         elements |= sampled_from([inf, -inf])
-    if draw(allow_pos_inf):
+    if draw2(draw, allow_pos_inf):
         elements |= just(inf)
-    if draw(allow_neg_inf):
+    if draw2(draw, allow_neg_inf):
         elements |= just(-inf)
-    element = draw(elements)
-    if isfinite(element) and draw(integral):
+    element = draw2(draw, elements)
+    if isfinite(element) and draw2(draw, integral):
         candidates = [floor(element), ceil(element)]
         if min_value_ is not None:
             candidates = [c for c in candidates if c >= min_value_]
         if max_value_ is not None:
             candidates = [c for c in candidates if c <= max_value_]
         _ = assume(len(candidates) >= 1)
-        element = draw(sampled_from(candidates))
+        element = draw2(draw, sampled_from(candidates))
         return float(element)
     return element
 
@@ -353,7 +381,7 @@ def floats_extra(
 
 @composite
 def git_repos(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
     branch: MaybeSearchStrategy[str | None] = None,
@@ -361,7 +389,6 @@ def git_repos(
     git_version: MaybeSearchStrategy[Version | None] = None,
     hatch_version: MaybeSearchStrategy[Version | None] = None,
 ) -> Path:
-    draw = lift_draw(_draw)
     path = draw(temp_paths())
     with temp_cwd(path):
         _ = check_call(["git", "init", "-b", "master"])
@@ -374,13 +401,13 @@ def git_repos(
         _ = check_call(["git", "commit", "-m", "add"])
         _ = check_call(["git", "rm", file_str])
         _ = check_call(["git", "commit", "-m", "rm"])
-        if (branch_ := draw(branch)) is not None:
+        if (branch_ := draw2(draw, branch)) is not None:
             _ = check_call(["git", "checkout", "-b", branch_])
-        if (remote_ := draw(remote)) is not None:
+        if (remote_ := draw2(draw, remote)) is not None:
             _ = check_call(["git", "remote", "add", "origin", remote_])
-        if (git_version_ := draw(git_version)) is not None:
+        if (git_version_ := draw2(draw, git_version)) is not None:
             _ = check_call(["git", "tag", str(git_version_), "master"])
-        if (hatch_version_ := draw(hatch_version)) is not None:
+        if (hatch_version_ := draw2(draw, hatch_version)) is not None:
             _ = check_call(["hatch", "new", "package"])
             package = path.joinpath("package")
             for p in package.iterdir():
@@ -404,24 +431,26 @@ def hashables() -> SearchStrategy[Hashable]:
 
 @composite
 def int_arrays(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
-    shape: MaybeSearchStrategy[Shape] | None = None,
+    shape: MaybeSearchStrategy[Shape | None] = None,
     min_value: MaybeSearchStrategy[int] = MIN_INT64,
     max_value: MaybeSearchStrategy[int] = MAX_INT64,
-    fill: SearchStrategy[Any] | None = None,
+    fill: MaybeSearchStrategy[Any] = None,
     unique: MaybeSearchStrategy[bool] = False,
 ) -> NDArrayI:
     """Strategy for generating arrays of ints."""
     from hypothesis.extra.numpy import array_shapes, arrays
     from numpy import int64
 
-    draw = lift_draw(_draw)
-    shape_use = array_shapes() if shape is None else shape
     elements = int64s(min_value=min_value, max_value=max_value)
     strategy: SearchStrategy[NDArrayI] = arrays(
-        int64, draw(shape_use), elements=elements, fill=fill, unique=draw(unique)
+        int64,
+        draw2(draw, shape, array_shapes()),
+        elements=elements,
+        fill=fill,
+        unique=draw2(draw, unique),
     )
     return draw(strategy)
 
@@ -431,15 +460,14 @@ def int_arrays(
 
 @composite
 def int32s(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[int] = MIN_INT32,
     max_value: MaybeSearchStrategy[int] = MAX_INT32,
 ) -> int:
     """Strategy for generating int32s."""
-    draw = lift_draw(_draw)
-    min_value_, max_value_ = draw(min_value), draw(max_value)
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     min_value_ = max(min_value_, MIN_INT32)
     max_value_ = min(max_value_, MAX_INT32)
     return draw(integers(min_value_, max_value_))
@@ -447,15 +475,14 @@ def int32s(
 
 @composite
 def int64s(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[int] = MIN_INT64,
     max_value: MaybeSearchStrategy[int] = MAX_INT64,
 ) -> int:
     """Strategy for generating int64s."""
-    draw = lift_draw(_draw)
-    min_value_, max_value_ = draw(min_value), draw(max_value)
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     min_value_ = max(min_value_, MIN_INT64)
     max_value_ = min(max_value_, MAX_INT64)
     return draw(integers(min_value_, max_value_))
@@ -464,42 +491,9 @@ def int64s(
 ##
 
 
-_MDF = TypeVar("_MDF")
-
-
-class _MaybeDrawFn(Protocol):
-    @overload
-    def __call__(self, obj: SearchStrategy[_MDF], /) -> _MDF: ...
-    @overload
-    def __call__(self, obj: MaybeSearchStrategy[_MDF], /) -> _MDF: ...
-    def __call__(self, obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
-        raise NotImplementedError(obj)  # pragma: no cover
-
-
-def lift_data(data: DataObject, /) -> _MaybeDrawFn:
-    """Lift the `data` object to handle non-`SearchStrategy` types."""
-
-    def func(obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
-        return data.draw(obj) if isinstance(obj, SearchStrategy) else obj
-
-    return cast(_MaybeDrawFn, func)
-
-
-def lift_draw(draw: DrawFn, /) -> _MaybeDrawFn:
-    """Lift the `draw` function to handle non-`SearchStrategy` types."""
-
-    def func(obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
-        return draw(obj) if isinstance(obj, SearchStrategy) else obj
-
-    return cast(_MaybeDrawFn, func)
-
-
-##
-
-
 @composite
 def lists_fixed_length(
-    _draw: DrawFn,
+    draw: DrawFn,
     strategy: SearchStrategy[_T],
     size: MaybeSearchStrategy[int],
     /,
@@ -508,12 +502,11 @@ def lists_fixed_length(
     sorted: MaybeSearchStrategy[bool] = False,  # noqa: A002
 ) -> list[_T]:
     """Strategy for generating lists of a fixed length."""
-    draw = lift_draw(_draw)
-    size_ = draw(size)
+    size_ = draw2(draw, size)
     elements = draw(
-        lists(strategy, min_size=size_, max_size=size_, unique=draw(unique))
+        lists(strategy, min_size=size_, max_size=size_, unique=draw2(draw, unique))
     )
-    if draw(sorted):
+    if draw2(draw, sorted):
         return builtins.sorted(cast(Iterable[Any], elements))
     return elements
 
@@ -523,17 +516,15 @@ def lists_fixed_length(
 
 @composite
 def months(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[Month] = MIN_MONTH,
     max_value: MaybeSearchStrategy[Month] = MAX_MONTH,
 ) -> Month:
     """Strategy for generating datetimes with the UTC timezone."""
-    draw = lift_draw(_draw)
-    min_date = draw(min_value).to_date()
-    max_date = draw(max_value).to_date()
-    date = draw(dates(min_value=min_date, max_value=max_date))
+    min_value_, max_value_ = (draw2(draw, v).to_date() for v in [min_value, max_value])
+    date = draw(dates(min_value=min_value_, max_value=max_value_))
     return date_to_month(date)
 
 
@@ -541,9 +532,8 @@ def months(
 
 
 @composite
-def namespace_mixins(_draw: DrawFn, /) -> type:
+def namespace_mixins(draw: DrawFn, /) -> type:
     """Strategy for generating task namespace mixins."""
-    draw = lift_draw(_draw)
     path = draw(temp_paths())
 
     class NamespaceMixin:
@@ -557,15 +547,14 @@ def namespace_mixins(_draw: DrawFn, /) -> type:
 
 @composite
 def numbers(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
-    min_value: MaybeSearchStrategy[Number] | None = None,
-    max_value: MaybeSearchStrategy[Number] | None = None,
+    min_value: MaybeSearchStrategy[Number | None] = None,
+    max_value: MaybeSearchStrategy[Number | None] = None,
 ) -> int | float:
     """Strategy for generating numbers."""
-    draw = lift_draw(_draw)
-    min_value_, max_value_ = draw(min_value), draw(max_value)
+    min_value_, max_value_ = (draw2(draw, v) for v in [min_value, max_value])
     if (min_value_ is None) or isinstance(min_value_, int):
         min_int = min_value_
     else:
@@ -627,15 +616,13 @@ def paths() -> SearchStrategy[Path]:
 
 @composite
 def random_states(
-    _draw: DrawFn, /, *, seed: MaybeSearchStrategy[int | None] = None
+    draw: DrawFn, /, *, seed: MaybeSearchStrategy[int | None] = None
 ) -> RandomState:
     """Strategy for generating `numpy` random states."""
     from numpy.random import RandomState
 
-    draw = lift_draw(_draw)
-    seed_ = draw(seed)
-    seed_use = draw(integers(0, MAX_UINT32)) if seed_ is None else seed_
-    return RandomState(seed=seed_use)
+    seed_ = draw2(draw, seed, integers(0, MAX_UINT32))
+    return RandomState(seed=seed_)
 
 
 ##
@@ -643,11 +630,10 @@ def random_states(
 
 @composite
 def sets_fixed_length(
-    _draw: DrawFn, strategy: SearchStrategy[_T], size: MaybeSearchStrategy[int], /
+    draw: DrawFn, strategy: SearchStrategy[_T], size: MaybeSearchStrategy[int], /
 ) -> set[_T]:
     """Strategy for generating lists of a fixed length."""
-    draw = lift_draw(_draw)
-    size_ = draw(size)
+    size_ = draw2(draw, size)
     return draw(sets(strategy, min_size=size_, max_size=size_))
 
 
@@ -749,18 +735,16 @@ def settings_with_reduced_examples(
 
 @composite
 def slices(
-    _draw: DrawFn,
+    draw: DrawFn,
     iter_len: MaybeSearchStrategy[int],
     /,
     *,
     slice_len: MaybeSearchStrategy[int | None] = None,
 ) -> slice:
     """Strategy for generating continuous slices from an iterable."""
-    draw = lift_draw(_draw)
-    iter_len_ = draw(iter_len)
-    if (slice_len_ := draw(slice_len)) is None:
-        slice_len_ = draw(integers(0, iter_len_))
-    elif not 0 <= slice_len_ <= iter_len_:
+    iter_len_ = draw2(draw, iter_len)
+    slice_len_ = draw2(draw, slice_len, integers(0, iter_len_))
+    if not 0 <= slice_len_ <= iter_len_:
         msg = f"Slice length {slice_len_} exceeds iterable length {iter_len_}"
         raise InvalidArgument(msg)
     start = draw(integers(0, iter_len_ - slice_len_))
@@ -776,7 +760,7 @@ _SQLALCHEMY_ENGINE_DIALECTS = sampled_from(_STRATEGY_DIALECTS)
 
 
 async def sqlalchemy_engines(
-    _data: DataObject,
+    data: DataObject,
     /,
     *tables_or_orms: TableOrORMInstOrClass,
     dialect: MaybeSearchStrategy[Dialect] = _SQLALCHEMY_ENGINE_DIALECTS,
@@ -784,13 +768,12 @@ async def sqlalchemy_engines(
     """Strategy for generating sqlalchemy engines."""
     from utilities.sqlalchemy import create_async_engine
 
-    draw = lift_data(_data)
-    dialect_: Dialect = draw(dialect)
+    dialect_: Dialect = draw2(data, dialect)
     if "CI" in environ:  # pragma: no cover
         _ = assume(dialect_ == "sqlite")
     match dialect_:
         case "sqlite":
-            temp_path = draw(temp_paths())
+            temp_path = data.draw(temp_paths())
             path = Path(temp_path, "db.sqlite")
             engine = create_async_engine("sqlite+aiosqlite", database=str(path))
 
@@ -816,26 +799,28 @@ async def sqlalchemy_engines(
 
 @composite
 def str_arrays(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
-    shape: MaybeSearchStrategy[Shape] | None = None,
+    shape: MaybeSearchStrategy[Shape | None] = None,
     min_size: MaybeSearchStrategy[int] = 0,
     max_size: MaybeSearchStrategy[int | None] = None,
     allow_none: MaybeSearchStrategy[bool] = False,
-    fill: SearchStrategy[Any] | None = None,
+    fill: MaybeSearchStrategy[Any] = None,
     unique: MaybeSearchStrategy[bool] = False,
 ) -> NDArrayO:
     """Strategy for generating arrays of strings."""
     from hypothesis.extra.numpy import array_shapes, arrays
 
-    draw = lift_draw(_draw)
-    shape_use = array_shapes() if shape is None else shape
     elements = text_ascii(min_size=min_size, max_size=max_size)
-    if draw(allow_none):
+    if draw2(draw, allow_none):
         elements |= none()
     strategy: SearchStrategy[NDArrayO] = arrays(
-        object, draw(shape_use), elements=elements, fill=fill, unique=draw(unique)
+        object,
+        draw2(draw, shape, array_shapes()),
+        elements=elements,
+        fill=fill,
+        unique=draw2(draw, unique),
     )
     return draw(strategy)
 
@@ -847,10 +832,10 @@ _TEMP_DIR_HYPOTHESIS = Path(TEMP_DIR, "hypothesis")
 
 
 @composite
-def temp_dirs(_draw: DrawFn, /) -> TemporaryDirectory:
+def temp_dirs(draw: DrawFn, /) -> TemporaryDirectory:
     """Search strategy for temporary directories."""
     _TEMP_DIR_HYPOTHESIS.mkdir(exist_ok=True)
-    uuid = _draw(uuids())
+    uuid = draw(uuids())
     return TemporaryDirectory(
         prefix=f"{uuid}__", dir=_TEMP_DIR_HYPOTHESIS, ignore_cleanup_errors=IS_WINDOWS
     )
@@ -860,9 +845,9 @@ def temp_dirs(_draw: DrawFn, /) -> TemporaryDirectory:
 
 
 @composite
-def temp_paths(_draw: DrawFn, /) -> Path:
+def temp_paths(draw: DrawFn, /) -> Path:
     """Search strategy for paths to temporary directories."""
-    temp_dir = _draw(temp_dirs())
+    temp_dir = draw(temp_dirs())
     root = temp_dir.path
     cls = type(root)
 
@@ -877,86 +862,92 @@ def temp_paths(_draw: DrawFn, /) -> Path:
 
 @composite
 def text_ascii(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
     max_size: MaybeSearchStrategy[int | None] = None,
 ) -> str:
     """Strategy for generating ASCII text."""
-    draw = lift_draw(_draw)
     alphabet = characters(whitelist_categories=[], whitelist_characters=ascii_letters)
-    return draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+    return draw(
+        text(alphabet, min_size=draw2(draw, min_size), max_size=draw2(draw, max_size))
+    )
 
 
 @composite
 def text_ascii_lower(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
     max_size: MaybeSearchStrategy[int | None] = None,
 ) -> str:
     """Strategy for generating ASCII lower-case text."""
-    draw = lift_draw(_draw)
     alphabet = characters(whitelist_categories=[], whitelist_characters=ascii_lowercase)
-    return draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+    return draw(
+        text(alphabet, min_size=draw2(draw, min_size), max_size=draw2(draw, max_size))
+    )
 
 
 @composite
 def text_ascii_upper(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
     max_size: MaybeSearchStrategy[int | None] = None,
 ) -> str:
     """Strategy for generating ASCII upper-case text."""
-    draw = lift_draw(_draw)
     alphabet = characters(whitelist_categories=[], whitelist_characters=ascii_uppercase)
-    return draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+    return draw(
+        text(alphabet, min_size=draw2(draw, min_size), max_size=draw2(draw, max_size))
+    )
 
 
 @composite
 def text_clean(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
     max_size: MaybeSearchStrategy[int | None] = None,
 ) -> str:
     """Strategy for generating clean text."""
-    draw = lift_draw(_draw)
     alphabet = characters(blacklist_categories=["Z", "C"])
-    return draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+    return draw(
+        text(alphabet, min_size=draw2(draw, min_size), max_size=draw2(draw, max_size))
+    )
 
 
 @composite
 def text_digits(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
     max_size: MaybeSearchStrategy[int | None] = None,
 ) -> str:
     """Strategy for generating ASCII text."""
-    draw = lift_draw(_draw)
     alphabet = characters(whitelist_categories=[], whitelist_characters=digits)
-    return draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+    return draw(
+        text(alphabet, min_size=draw2(draw, min_size), max_size=draw2(draw, max_size))
+    )
 
 
 @composite
 def text_printable(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
     max_size: MaybeSearchStrategy[int | None] = None,
 ) -> str:
     """Strategy for generating printable text."""
-    draw = lift_draw(_draw)
     alphabet = characters(whitelist_categories=[], whitelist_characters=printable)
-    return draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+    return draw(
+        text(alphabet, min_size=draw2(draw, min_size), max_size=draw2(draw, max_size))
+    )
 
 
 ##
@@ -964,7 +955,7 @@ def text_printable(
 
 @composite
 def timedeltas_2w(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[dt.timedelta] = dt.timedelta.min,
@@ -976,10 +967,13 @@ def timedeltas_2w(
         MIN_SERIALIZABLE_TIMEDELTA,
     )
 
-    draw = lift_draw(_draw)
-    min_value_ = max(draw(min_value), MIN_SERIALIZABLE_TIMEDELTA)
-    max_value_ = min(draw(max_value), MAX_SERIALIZABLE_TIMEDELTA)
-    return draw(timedeltas(min_value=min_value_, max_value=max_value_))
+    min_value_, max_value_ = (draw2(draw, v) for v in [min_value, max_value])
+    return draw(
+        timedeltas(
+            min_value=max(min_value_, MIN_SERIALIZABLE_TIMEDELTA),
+            max_value=min(max_value_, MAX_SERIALIZABLE_TIMEDELTA),
+        )
+    )
 
 
 ##
@@ -1008,46 +1002,47 @@ def _triples_map(elements: list[_T], /) -> tuple[_T, _T, _T]:
 
 @composite
 def uint32s(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[int] = MIN_UINT32,
     max_value: MaybeSearchStrategy[int] = MAX_UINT32,
 ) -> int:
     """Strategy for generating uint32s."""
-    draw = lift_draw(_draw)
-    min_value_, max_value_ = draw(min_value), draw(max_value)
-    min_value_ = max(min_value_, MIN_UINT32)
-    max_value_ = min(max_value_, MAX_UINT32)
-    return draw(integers(min_value_, max_value_))
+    min_value_, max_value_ = (draw2(draw, v) for v in [min_value, max_value])
+    return draw(
+        integers(
+            min_value=max(min_value_, MIN_UINT32), max_value=min(max_value_, MAX_UINT32)
+        )
+    )
 
 
 @composite
 def uint64s(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[int] = MIN_UINT64,
     max_value: MaybeSearchStrategy[int] = MAX_UINT64,
 ) -> int:
     """Strategy for generating uint64s."""
-    draw = lift_draw(_draw)
-    min_value_, max_value_ = draw(min_value), draw(max_value)
-    min_value_ = max(min_value_, MIN_UINT64)
-    max_value_ = min(max_value_, MAX_UINT64)
-    return draw(integers(min_value_, max_value_))
+    min_value_, max_value_ = (draw2(draw, v) for v in [min_value, max_value])
+    return draw(
+        integers(
+            min_value=max(min_value_, MIN_UINT32), max_value=min(max_value_, MAX_UINT32)
+        )
+    )
 
 
 ##
 
 
 @composite
-def versions(_draw: DrawFn, /, *, suffix: MaybeSearchStrategy[bool] = False) -> Version:
+def versions(draw: DrawFn, /, *, suffix: MaybeSearchStrategy[bool] = False) -> Version:
     """Strategy for generating versions."""
-    draw = lift_draw(_draw)
     major, minor, patch = draw(triples(integers(min_value=0)))
     _ = assume((major >= 1) or (minor >= 1) or (patch >= 1))
-    suffix_use = draw(text_ascii(min_size=1)) if draw(suffix) else None
+    suffix_use = draw(text_ascii(min_size=1)) if draw2(draw, suffix) else None
     return Version(major=major, minor=minor, patch=patch, suffix=suffix_use)
 
 
@@ -1061,9 +1056,8 @@ def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[_TestRe
 
     from utilities.redis import _TestRedis, yield_redis  #  skipif-ci-and-not-linux
 
-    draw = lift_data(data)  # skipif-ci-and-not-linux
     now = get_now(time_zone="local")  # skipif-ci-and-not-linux
-    uuid = draw(uuids())  # skipif-ci-and-not-linux
+    uuid = data.draw(uuids())  # skipif-ci-and-not-linux
     key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
 
     @asynccontextmanager
@@ -1089,7 +1083,7 @@ _ZONED_DATETIMES_RIGHT_MOST = ZoneInfo("Pacific/Kiritimati")
 
 @composite
 def zoned_datetimes(
-    _draw: DrawFn,
+    draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
@@ -1103,12 +1097,8 @@ def zoned_datetimes(
         check_valid_zoned_datetime,
     )
 
-    draw = lift_draw(_draw)
-    min_value_, max_value_, time_zone_ = (
-        draw(min_value),
-        draw(max_value),
-        draw(time_zone),
-    )
+    min_value_, max_value_ = (draw2(draw, v) for v in [min_value, max_value])
+    time_zone_ = draw2(draw, time_zone)
     if min_value_.tzinfo is not None:
         with assume_does_not_raise(OverflowError, match="date value out of range"):
             min_value_ = min_value_.astimezone(time_zone_)
@@ -1143,6 +1133,7 @@ __all__ = [
     "bool_arrays",
     "date_durations",
     "datetime_durations",
+    "draw2",
     "float_arrays",
     "floats_extra",
     "git_repos",
@@ -1150,8 +1141,6 @@ __all__ = [
     "int32s",
     "int64s",
     "int_arrays",
-    "lift_data",
-    "lift_draw",
     "lists_fixed_length",
     "months",
     "namespace_mixins",

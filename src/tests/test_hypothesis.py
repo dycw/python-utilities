@@ -60,6 +60,7 @@ from utilities.hypothesis import (
     bool_arrays,
     date_durations,
     datetime_durations,
+    draw2,
     float_arrays,
     floats_extra,
     git_repos,
@@ -67,8 +68,6 @@ from utilities.hypothesis import (
     int32s,
     int64s,
     int_arrays,
-    lift_data,
-    lift_draw,
     lists_fixed_length,
     months,
     namespace_mixins,
@@ -296,6 +295,28 @@ class TestDateTimeDurations:
         duration = data.draw(datetime_durations(two_way=True))
         ser = serialize_duration(duration)
         _ = parse_duration(ser)
+
+
+class TestDraw2:
+    @given(data=data(), value=booleans())
+    def test_main(self, *, data: DataObject, value: bool) -> None:
+        @composite
+        def strategy(draw: DrawFn, /) -> bool:
+            maybe_value = draw(just(value) | just(just(value)))
+            return draw2(draw, maybe_value)
+
+        result = data.draw(strategy())
+        assert result is value
+
+    @given(data=data())
+    def test_with_default(self, *, data: DataObject) -> None:
+        @composite
+        def strategy(draw: DrawFn, /) -> bool:
+            maybe_none = draw(none() | just(none()))
+            return draw2(draw, maybe_none, booleans())
+
+        result = data.draw(strategy())
+        assert isinstance(result, bool)
 
 
 class TestFloatArrays:
@@ -541,48 +562,6 @@ class TestInt64s:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(int64s(min_value=min_value, max_value=max_value))
         assert max(min_value, MIN_INT64) <= x <= min(max_value, MAX_INT64)
-
-
-class TestLiftDataDraw:
-    @given(data=data(), value=booleans())
-    def test_fixed(self, *, data: DataObject, value: bool) -> None:
-        def strategy(_data: DataObject, /) -> bool:
-            draw = lift_data(_data)
-            return draw(value)
-
-        result = strategy(data)
-        assert result is value
-
-    @given(data=data(), value=booleans())
-    def test_strategy(self, *, data: DataObject, value: bool) -> None:
-        def strategy(_data: DataObject, /) -> bool:
-            draw = lift_data(_data)
-            return draw(just(value))
-
-        result = strategy(data)
-        assert result is value
-
-
-class TestLiftDraw:
-    @given(data=data(), value=booleans())
-    def test_fixed(self, *, data: DataObject, value: bool) -> None:
-        @composite
-        def strategy(_draw: DrawFn, /) -> bool:
-            draw = lift_draw(_draw)
-            return draw(value)
-
-        result = data.draw(strategy())
-        assert result is value
-
-    @given(data=data(), value=booleans())
-    def test_strategy(self, *, data: DataObject, value: bool) -> None:
-        @composite
-        def strategy(_draw: DrawFn, /) -> bool:
-            draw = lift_draw(_draw)
-            return draw(just(value))
-
-        result = data.draw(strategy())
-        assert result is value
 
 
 class TestListsFixedLength:

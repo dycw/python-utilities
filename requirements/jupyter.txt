@@ -154,7 +154,7 @@ nest-asyncio==1.6.0
     # via ipykernel
 notebook-shim==0.2.4
     # via jupyterlab
-numpy==2.2.2
+numpy==2.2.3
     # via
     #   pandas
     #   pytest-rng
@@ -189,7 +189,7 @@ prometheus-client==0.21.1
     # via jupyter-server
 prompt-toolkit==3.0.50
     # via ipython
-psutil==6.1.1
+psutil==7.0.0
     # via ipykernel
 ptyprocess==0.7.0
     # via

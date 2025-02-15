@@ -14,7 +14,7 @@ hypothesis==6.125.3
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
-numpy==2.2.2
+numpy==2.2.3
     # via
     #   pytest-rng
     #   scipy

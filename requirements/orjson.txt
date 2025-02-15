@@ -24,7 +24,7 @@ mdurl==0.1.2
     # via markdown-it-py
 nest-asyncio==1.6.0
     # via ib-async-dataclass
-numpy==2.2.2
+numpy==2.2.3
     # via
     #   eventkit
     #   pytest-rng

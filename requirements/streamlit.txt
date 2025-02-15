@@ -51,7 +51,7 @@ mdurl==0.1.2
     # via markdown-it-py
 narwhals==1.26.0
     # via altair
-numpy==2.2.2
+numpy==2.2.3
     # via
     #   pandas
     #   pydeck
