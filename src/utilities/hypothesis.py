@@ -26,7 +26,7 @@ from re import search
 from shutil import move, rmtree
 from string import ascii_letters, ascii_lowercase, ascii_uppercase, digits, printable
 from subprocess import check_call
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
+from typing import TYPE_CHECKING, Any, TypeVar, assert_never, cast, overload
 from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
@@ -52,7 +52,6 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from numpy.random import RandomState
 
 from utilities.datetime import (
     MAX_MONTH,
@@ -84,6 +83,7 @@ from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from hypothesis.database import ExampleDatabase
+    from numpy.random import RandomState
     from sqlalchemy.ext.asyncio import AsyncEngine
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
@@ -292,21 +292,6 @@ def draw2(
 ##
 
 
-def draw_non_null_element(
-    draw: DrawFn,
-    maybe_strategy: MaybeSearchStrategy[_T | None],
-    default: SearchStrategy[_T],
-    /,
-) -> _T:
-    maybe_value = _lift_draw(draw)(maybe_strategy)
-    if maybe_value is not None:
-        return maybe_value
-    return draw(default)
-
-
-##
-
-
 @composite
 def float_arrays(
     draw: DrawFn,
@@ -337,7 +322,7 @@ def float_arrays(
     )
     strategy: SearchStrategy[NDArrayF] = arrays(
         float,
-        draw_non_null_element(draw, shape, array_shapes()),
+        draw2(draw, shape, array_shapes()),
         elements=elements,
         fill=fill,
         unique=draw2(draw, unique),
@@ -635,7 +620,7 @@ def random_states(
     """Strategy for generating `numpy` random states."""
     from numpy.random import RandomState
 
-    seed_ = draw_non_null_element(draw, seed, integers(0, MAX_UINT32))
+    seed_ = draw2(draw, seed, integers(0, MAX_UINT32))
     return RandomState(seed=seed_)
 
 
@@ -807,20 +792,6 @@ async def sqlalchemy_engines(
         case _:  # pragma: no cover
             raise NotImplementedError(dialect)
 
-
-##
-
-
-@composite
-def states(
-    draw: DrawFn, /, *, seed: MaybeSearchStrategy[int | None] = None
-) -> RandomState:
-    """Strategy for generating random states."""
-    seed_ = draw2(draw, seed, integers(0, MAX_UINT32))
-    return RandomState(seed=seed_)
-
-
-##
 
 ##
 
@@ -998,8 +969,8 @@ def timedeltas_2w(
     min_value_, max_value_ = (draw2(draw, v) for v in [min_value, max_value])
     return draw(
         timedeltas(
-            min_value_=max(min_value_, MIN_SERIALIZABLE_TIMEDELTA),
-            max_value_=min(max_value_, MAX_SERIALIZABLE_TIMEDELTA),
+            min_value=max(min_value_, MIN_SERIALIZABLE_TIMEDELTA),
+            max_value=min(max_value_, MAX_SERIALIZABLE_TIMEDELTA),
         )
     )
 
@@ -1154,30 +1125,6 @@ def zoned_datetimes(
     return result
 
 
-##
-
-
-_MDF = TypeVar("_MDF")
-
-
-class _LiftedDrawFn(Protocol):
-    @overload
-    def __call__(self, obj: SearchStrategy[_MDF], /) -> _MDF: ...
-    @overload
-    def __call__(self, obj: MaybeSearchStrategy[_MDF], /) -> _MDF: ...
-    def __call__(self, obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
-        raise NotImplementedError(obj)  # pragma: no cover
-
-
-def _lift_draw(draw: DrawFn, /) -> _LiftedDrawFn:
-    """Lift the `draw` function to handle non-`SearchStrategy` types."""
-
-    def func(obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
-        return draw(obj) if isinstance(obj, SearchStrategy) else obj
-
-    return cast(_LiftedDrawFn, func)
-
-
 __all__ = [
     "MaybeSearchStrategy",
     "Shape",
@@ -1186,7 +1133,6 @@ __all__ = [
     "date_durations",
     "datetime_durations",
     "draw2",
-    "draw_non_null_element",
     "float_arrays",
     "floats_extra",
     "git_repos",

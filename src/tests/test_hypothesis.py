@@ -63,7 +63,6 @@ from utilities.hypothesis import (
     date_durations,
     datetime_durations,
     draw2,
-    draw_non_null_element,
     float_arrays,
     floats_extra,
     git_repos,
@@ -300,7 +299,7 @@ class TestDateTimeDurations:
         _ = parse_duration(ser)
 
 
-class TestDrawElement:
+class TestDraw2:
     @given(data=data(), value=booleans())
     def test_main(self, *, data: DataObject, value: bool) -> None:
         @composite
@@ -312,15 +311,13 @@ class TestDrawElement:
         result = data.draw(strategy())
         assert result is value
 
-
-class TestDrawNonNullElement:
     @given(data=data(), value=booleans() | none())
-    def test_main(self, *, data: DataObject, value: bool | None) -> None:
+    def test_with_default(self, *, data: DataObject, value: bool | None) -> None:
         @composite
         def strategy(
             draw: DrawFn, /, *, maybe_value: MaybeSearchStrategy[bool | None] = value
         ) -> bool:
-            return draw_non_null_element(draw, maybe_value, booleans())
+            return draw2(draw, maybe_value, booleans())
 
         result = data.draw(strategy())
         if isinstance(value, bool):
