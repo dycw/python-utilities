@@ -55,11 +55,15 @@ from utilities.hypothesis import (
     _SQLALCHEMY_ENGINE_DIALECTS,
     _ZONED_DATETIMES_LEFT_MOST,
     _ZONED_DATETIMES_RIGHT_MOST,
+    MaybeSearchStrategy,
     Shape,
+    _lift_draw,
     assume_does_not_raise,
     bool_arrays,
     date_durations,
     datetime_durations,
+    draw2,
+    draw_non_null_element,
     float_arrays,
     floats_extra,
     git_repos,
@@ -67,8 +71,6 @@ from utilities.hypothesis import (
     int32s,
     int64s,
     int_arrays,
-    lift_data,
-    lift_draw,
     lists_fixed_length,
     months,
     namespace_mixins,
@@ -296,6 +298,35 @@ class TestDateTimeDurations:
         duration = data.draw(datetime_durations(two_way=True))
         ser = serialize_duration(duration)
         _ = parse_duration(ser)
+
+
+class TestDrawElement:
+    @given(data=data(), value=booleans())
+    def test_main(self, *, data: DataObject, value: bool) -> None:
+        @composite
+        def strategy(
+            draw: DrawFn, /, *, maybe_value: MaybeSearchStrategy[bool] = value
+        ) -> bool:
+            return draw2(draw, maybe_value)
+
+        result = data.draw(strategy())
+        assert result is value
+
+
+class TestDrawNonNullElement:
+    @given(data=data(), value=booleans() | none())
+    def test_main(self, *, data: DataObject, value: bool | None) -> None:
+        @composite
+        def strategy(
+            draw: DrawFn, /, *, maybe_value: MaybeSearchStrategy[bool | None] = value
+        ) -> bool:
+            return draw_non_null_element(draw, maybe_value, booleans())
+
+        result = data.draw(strategy())
+        if isinstance(value, bool):
+            assert result is value
+        else:
+            assert isinstance(result, bool)
 
 
 class TestFloatArrays:
@@ -543,32 +574,12 @@ class TestInt64s:
         assert max(min_value, MIN_INT64) <= x <= min(max_value, MAX_INT64)
 
 
-class TestLiftDataDraw:
-    @given(data=data(), value=booleans())
-    def test_fixed(self, *, data: DataObject, value: bool) -> None:
-        def strategy(_data: DataObject, /) -> bool:
-            draw = lift_data(_data)
-            return draw(value)
-
-        result = strategy(data)
-        assert result is value
-
-    @given(data=data(), value=booleans())
-    def test_strategy(self, *, data: DataObject, value: bool) -> None:
-        def strategy(_data: DataObject, /) -> bool:
-            draw = lift_data(_data)
-            return draw(just(value))
-
-        result = strategy(data)
-        assert result is value
-
-
 class TestLiftDraw:
     @given(data=data(), value=booleans())
     def test_fixed(self, *, data: DataObject, value: bool) -> None:
         @composite
         def strategy(_draw: DrawFn, /) -> bool:
-            draw = lift_draw(_draw)
+            draw = _lift_draw(_draw)
             return draw(value)
 
         result = data.draw(strategy())
@@ -578,7 +589,7 @@ class TestLiftDraw:
     def test_strategy(self, *, data: DataObject, value: bool) -> None:
         @composite
         def strategy(_draw: DrawFn, /) -> bool:
-            draw = lift_draw(_draw)
+            draw = _lift_draw(_draw)
             return draw(just(value))
 
         result = data.draw(strategy())
