@@ -282,10 +282,11 @@ def draw2(
     /,
 ) -> _T | None:
     """Draw an element from a strategy, unless you require it to be non-nullable."""
-    if not isinstance(maybe_strategy, SearchStrategy):
-        return maybe_strategy
     draw = data_or_draw.draw if isinstance(data_or_draw, DataObject) else data_or_draw
-    value = draw(maybe_strategy)
+    if isinstance(maybe_strategy, SearchStrategy):
+        value = draw(maybe_strategy)
+    else:
+        value = maybe_strategy
     return draw(default) if (value is None) and (default is not None) else value
 
 
