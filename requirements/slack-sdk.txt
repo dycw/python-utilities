@@ -32,7 +32,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-numpy==2.2.2
+numpy==2.2.3
     # via pytest-rng
 packaging==24.2
     # via

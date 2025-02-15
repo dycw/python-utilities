@@ -22,7 +22,7 @@ mako==1.3.9
     # via alembic
 markupsafe==3.0.2
     # via mako
-numpy==2.2.2
+numpy==2.2.3
     # via
     #   optuna
     #   pytest-rng

@@ -22,7 +22,7 @@ iniconfig==2.0.0
     # via pytest
 nest-asyncio==1.6.0
     # via ib-async-dataclass
-numpy==2.2.2
+numpy==2.2.3
     # via
     #   eventkit
     #   pytest-rng
