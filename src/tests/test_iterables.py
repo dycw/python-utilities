@@ -66,6 +66,7 @@ from utilities.iterables import (
     apply_bijection,
     apply_to_tuple,
     apply_to_varargs,
+    chain_maybe_iterables,
     chain_nullable,
     check_bijection,
     check_duplicates,
@@ -191,10 +192,23 @@ class TestApplyToVarArgs:
         assert result == expected
 
 
+class TestChainMaybeIterables:
+    @given(values=lists(integers() | lists(integers())))
+    def test_main(self, *, values: list[int | list[int]]) -> None:
+        result = list(chain_maybe_iterables(*values))
+        expected = []
+        for val in values:
+            if isinstance(val, int):
+                expected.append(val)
+            else:
+                expected.extend(v for v in val)
+        assert result == expected
+
+
 class TestChainNullable:
     @given(values=lists(lists(integers() | none()) | none()))
     def test_main(self, *, values: list[list[int | None] | None]) -> None:
-        result = list(chain_nullable(values))
+        result = list(chain_nullable(*values))
         expected = []
         for val in values:
             if val is not None:
@@ -931,7 +945,7 @@ class TestOne:
         assert one([None]) is None
 
     def test_error_empty(self) -> None:
-        with raises(OneEmptyError, match="Iterable .* must not be empty"):
+        with raises(OneEmptyError, match="Iterable must not be empty"):
             _ = one([])
 
     @given(iterable=sets(integers(), min_size=2))
@@ -939,7 +953,7 @@ class TestOne:
         with raises(
             OneNonUniqueError,
             match=re.compile(
-                "Iterable .* must contain exactly one item; got .*, .* and perhaps more",
+                r"Iterable\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
                 flags=DOTALL,
             ),
         ):

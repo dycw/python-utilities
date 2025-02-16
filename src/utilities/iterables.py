@@ -144,9 +144,19 @@ def apply_to_varargs(func: Callable[..., _T], *args: Any) -> _T:
 ##
 
 
-def chain_nullable(iterable: Iterable[Iterable[_T | None] | None], /) -> Iterable[_T]:
+def chain_maybe_iterables(*maybe_iterables: MaybeIterable[_T]) -> Iterable[_T]:
+    """Chain a set of maybe iterables."""
+    iterables = map(always_iterable, maybe_iterables)
+    return chain.from_iterable(iterables)
+
+
+##
+
+
+def chain_nullable(*maybe_iterables: Iterable[_T | None] | None) -> Iterable[_T]:
     """Chain a set of values; ignoring nulls."""
-    values = ((i for i in it if i is not None) for it in iterable if it is not None)
+    iterables = (mi for mi in maybe_iterables if mi is not None)
+    values = ((i for i in it if i is not None) for it in iterables)
     return chain.from_iterable(values)
 
 
@@ -907,40 +917,81 @@ class MergeStrMappingsError(Exception):
 ##
 
 
-def one(iterable: Iterable[_T], /) -> _T:
+def one(*iterables: Iterable[_T]) -> _T:
     """Return the unique value in an iterable."""
-    it = iter(iterable)
+    it = chain.from_iterable(iterables)
     try:
         first = next(it)
     except StopIteration:
-        raise OneEmptyError(iterable=iterable) from None
+        raise OneEmptyError from None
     try:
         second = next(it)
     except StopIteration:
         return first
-    raise OneNonUniqueError(iterable=iterable, first=first, second=second)
+    raise OneNonUniqueError(iterables=iterables, first=first, second=second)
 
 
 @dataclass(kw_only=True, slots=True)
-class OneError(Exception, Generic[_T]):
-    iterable: Iterable[_T]
+class OneError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
-class OneEmptyError(OneError[_T]):
+class OneEmptyError(OneError):
     @override
     def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} must not be empty"
+        return "Iterable must not be empty"
 
 
 @dataclass(kw_only=True, slots=True)
-class OneNonUniqueError(OneError[_T]):
+class OneNonUniqueError(OneError, Generic[_T]):
+    iterables: tuple[Iterable[_T], ...]
     first: _T
     second: _T
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
+        return f"Iterable(s) {get_repr(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
+
+
+##
+
+
+def one_maybe_iterables(*maybe_iterables: MaybeIterable[_T]) -> _T:
+    """Return the unique value in a set of maybe iterables."""
+    it = chain_maybe_iterables(*maybe_iterables)
+    try:
+        return one(it)
+    except OneEmptyError:
+        raise OneMaybeIterablesError from None
+    except OneNonUniqueError as error:
+        raise OneMaybeIterablesNonUniqueError(
+            maybe_iterables=error.iterables, first=error.first, second=error.second
+        ) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class OneMaybeIterablesError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class OneMaybeIterablesEmptyError(OneMaybeIterablesError):
+    @override
+    def __str__(self) -> str:
+        return "Maybe-iterable must not be empty"
+
+
+@dataclass(kw_only=True, slots=True)
+class OneMaybeIterablesNonUniqueError(OneMaybeIterablesError, Generic[_T]):
+    maybe_iterables: tuple[MaybeIterable[_T], ...]
+    first: _T
+    second: _T
+
+    @override
+    def __str__(self) -> str:
+        return f"Maybe-iterable(s) {get_repr(self.maybe_iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
+
+
+##
 
 
 ##
@@ -953,11 +1004,11 @@ def one_modal_value(iterable: Iterable[_T], /, *, min_frac: float = 0.5) -> _T:
     enoughs = {k for k, v in fracs.items() if v >= min_frac}
     try:
         return one(enoughs)
-    except OneEmptyError as error:
-        raise _OneModalValueEmptyError(iterable=error.iterable, fracs=fracs) from None
+    except OneEmptyError:
+        raise _OneModalValueEmptyError(iterable=iterable, fracs=fracs) from None
     except OneNonUniqueError as error:
         raise _OneModalValueNonUniqueError(
-            iterable=error.iterable, fracs=fracs, first=error.first, second=error.second
+            iterable=iterable, fracs=fracs, first=error.first, second=error.second
         ) from None
 
 
@@ -1240,6 +1291,9 @@ __all__ = [
     "MergeStrMappingsError",
     "OneEmptyError",
     "OneError",
+    "OneMaybeIterablesEmptyError",
+    "OneMaybeIterablesError",
+    "OneMaybeIterablesNonUniqueError",
     "OneModalValueError",
     "OneNonUniqueError",
     "OneStrError",
@@ -1249,6 +1303,7 @@ __all__ = [
     "apply_bijection",
     "apply_to_tuple",
     "apply_to_varargs",
+    "chain_maybe_iterables",
     "chain_nullable",
     "check_bijection",
     "check_duplicates",
@@ -1274,6 +1329,7 @@ __all__ = [
     "is_iterable_not_str",
     "merge_str_mappings",
     "one",
+    "one_maybe_iterables",
     "one_modal_value",
     "one_str",
     "pairwise_tail",
