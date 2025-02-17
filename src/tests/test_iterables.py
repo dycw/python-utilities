@@ -49,6 +49,8 @@ from utilities.iterables import (
     EnsureIterableNotStrError,
     MergeStrMappingsError,
     OneEmptyError,
+    OneMaybeEmptyError,
+    OneMaybeNonUniqueError,
     OneNonUniqueError,
     ResolveIncludeAndExcludeError,
     SortIterableError,
@@ -93,6 +95,7 @@ from utilities.iterables import (
     is_iterable_not_str,
     merge_str_mappings,
     one,
+    one_maybe,
     one_modal_value,
     one_str,
     pairwise_tail,
@@ -941,12 +944,14 @@ class TestMergeStrMappings:
 
 
 class TestOne:
-    def test_main(self) -> None:
-        assert one([None]) is None
+    @given(args=sampled_from([([None],), ([None], []), ([None], [], [])]))
+    def test_main(self, *, args: tuple[Iterable[Any], ...]) -> None:
+        assert one(*args) is None
 
-    def test_error_empty(self) -> None:
-        with raises(OneEmptyError, match="Iterable must not be empty"):
-            _ = one([])
+    @given(args=sampled_from([([],), ([], []), ([], [], [])]))
+    def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
+        with raises(OneEmptyError, match=r"Iterable\(s\) must not be empty"):
+            _ = one(*args)
 
     @given(iterable=sets(integers(), min_size=2))
     def test_error_non_unique(self, *, iterable: set[int]) -> None:
@@ -989,6 +994,37 @@ class TestOneModalValue:
             ),
         ):
             _ = one_modal_value(x, min_frac=0.5)
+
+
+class TestOneMaybe:
+    @given(
+        args=sampled_from([
+            (None,),
+            ([None],),
+            (None, []),
+            ([None], []),
+            (None, []),
+            ([None], [], []),
+        ])
+    )
+    def test_main(self, *, args: tuple[Iterable[Any], ...]) -> None:
+        assert one_maybe(*args) is None
+
+    @given(args=sampled_from([([],), ([], []), ([], [], [])]))
+    def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
+        with raises(OneMaybeEmptyError, match=r"Maybe-iterable\(s\) must not be empty"):
+            _ = one_maybe(*args)
+
+    @given(iterable=sets(integers(), min_size=2))
+    def test_error_non_unique(self, *, iterable: set[int]) -> None:
+        with raises(
+            OneMaybeNonUniqueError,
+            match=re.compile(
+                r"Maybe-iterable\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
+                flags=DOTALL,
+            ),
+        ):
+            _ = one_maybe(iterable)
 
 
 class TestOneStr:
