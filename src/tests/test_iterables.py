@@ -50,6 +50,8 @@ from utilities.iterables import (
     MergeStrMappingsError,
     OneEmptyError,
     OneNonUniqueError,
+    OneUniqueEmptyError,
+    OneUniqueNonUniqueError,
     ResolveIncludeAndExcludeError,
     SortIterableError,
     _ApplyBijectionDuplicateKeysError,
@@ -66,6 +68,7 @@ from utilities.iterables import (
     apply_bijection,
     apply_to_tuple,
     apply_to_varargs,
+    chain_maybe_iterables,
     chain_nullable,
     check_bijection,
     check_duplicates,
@@ -94,6 +97,7 @@ from utilities.iterables import (
     one,
     one_modal_value,
     one_str,
+    one_unique,
     pairwise_tail,
     product_dicts,
     resolve_include_and_exclude,
@@ -191,10 +195,23 @@ class TestApplyToVarArgs:
         assert result == expected
 
 
+class TestChainMaybeIterables:
+    @given(values=lists(integers() | lists(integers())))
+    def test_main(self, *, values: list[int | list[int]]) -> None:
+        result = list(chain_maybe_iterables(*values))
+        expected = []
+        for val in values:
+            if isinstance(val, int):
+                expected.append(val)
+            else:
+                expected.extend(v for v in val)
+        assert result == expected
+
+
 class TestChainNullable:
     @given(values=lists(lists(integers() | none()) | none()))
     def test_main(self, *, values: list[list[int | None] | None]) -> None:
-        result = list(chain_nullable(values))
+        result = list(chain_nullable(*values))
         expected = []
         for val in values:
             if val is not None:
@@ -927,19 +944,30 @@ class TestMergeStrMappings:
 
 
 class TestOne:
-    def test_main(self) -> None:
-        assert one([None]) is None
+    @given(
+        args=sampled_from([
+            (None,),
+            ([None],),
+            (None, []),
+            ([None], []),
+            (None, []),
+            ([None], [], []),
+        ])
+    )
+    def test_main(self, *, args: tuple[Iterable[Any], ...]) -> None:
+        assert one(*args) is None
 
-    def test_error_empty(self) -> None:
-        with raises(OneEmptyError, match="Iterable .* must not be empty"):
-            _ = one([])
+    @given(args=sampled_from([([],), ([], []), ([], [], [])]))
+    def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
+        with raises(OneEmptyError, match=r"Object\(s\) must not be empty"):
+            _ = one(*args)
 
     @given(iterable=sets(integers(), min_size=2))
     def test_error_non_unique(self, *, iterable: set[int]) -> None:
         with raises(
             OneNonUniqueError,
             match=re.compile(
-                "Iterable .* must contain exactly one item; got .*, .* and perhaps more",
+                r"Object\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
                 flags=DOTALL,
             ),
         ):
@@ -1016,6 +1044,37 @@ class TestOneStr:
             match=r"Iterable .* must contain 'a' exactly once \(modulo case\); got 'a', 'A' and perhaps more",
         ):
             _ = one_str(["a", "A"], "a", case_sensitive=False)
+
+
+class TestOneUnique:
+    @given(
+        args=sampled_from([
+            (None,),
+            ([None],),
+            (None, None),
+            (None, [None]),
+            ([None], None),
+            ([None], [None]),
+        ])
+    )
+    def test_main(self, *, args: tuple[Iterable[Any], ...]) -> None:
+        assert one_unique(*args) is None
+
+    @given(args=sampled_from([([],), ([], []), ([], [], [])]))
+    def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
+        with raises(OneUniqueEmptyError, match=r"Object\(s\) must not be empty"):
+            _ = one_unique(*args)
+
+    @given(iterable=sets(integers(), min_size=2))
+    def test_error_non_unique(self, *, iterable: set[int]) -> None:
+        with raises(
+            OneUniqueNonUniqueError,
+            match=re.compile(
+                r"Object\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
+                flags=DOTALL,
+            ),
+        ):
+            _ = one_unique(iterable)
 
 
 class TestPairwiseTail:

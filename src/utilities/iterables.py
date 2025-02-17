@@ -144,9 +144,19 @@ def apply_to_varargs(func: Callable[..., _T], *args: Any) -> _T:
 ##
 
 
-def chain_nullable(iterable: Iterable[Iterable[_T | None] | None], /) -> Iterable[_T]:
+def chain_maybe_iterables(*maybe_iterables: MaybeIterable[_T]) -> Iterable[_T]:
+    """Chain a set of maybe iterables."""
+    iterables = map(always_iterable, maybe_iterables)
+    return chain.from_iterable(iterables)
+
+
+##
+
+
+def chain_nullable(*maybe_iterables: Iterable[_T | None] | None) -> Iterable[_T]:
     """Chain a set of values; ignoring nulls."""
-    values = ((i for i in it if i is not None) for it in iterable if it is not None)
+    iterables = (mi for mi in maybe_iterables if mi is not None)
+    values = ((i for i in it if i is not None) for it in iterables)
     return chain.from_iterable(values)
 
 
@@ -907,40 +917,40 @@ class MergeStrMappingsError(Exception):
 ##
 
 
-def one(iterable: Iterable[_T], /) -> _T:
-    """Return the unique value in an iterable."""
-    it = iter(iterable)
+def one(*objs: MaybeIterable[_T]) -> _T:
+    """Return the unique value in a set of values/iterables."""
+    it = iter(chain_maybe_iterables(*objs))
     try:
         first = next(it)
     except StopIteration:
-        raise OneEmptyError(iterable=iterable) from None
+        raise OneEmptyError from None
     try:
         second = next(it)
     except StopIteration:
         return first
-    raise OneNonUniqueError(iterable=iterable, first=first, second=second)
+    raise OneNonUniqueError(objs=objs, first=first, second=second)
 
 
 @dataclass(kw_only=True, slots=True)
-class OneError(Exception, Generic[_T]):
-    iterable: Iterable[_T]
+class OneError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
-class OneEmptyError(OneError[_T]):
+class OneEmptyError(OneError):
     @override
     def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} must not be empty"
+        return "Object(s) must not be empty"
 
 
 @dataclass(kw_only=True, slots=True)
-class OneNonUniqueError(OneError[_T]):
+class OneNonUniqueError(OneError, Generic[_T]):
+    objs: tuple[MaybeIterable[_T], ...]
     first: _T
     second: _T
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
+        return f"Object(s) {get_repr(self.objs)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
 
 
 ##
@@ -953,11 +963,11 @@ def one_modal_value(iterable: Iterable[_T], /, *, min_frac: float = 0.5) -> _T:
     enoughs = {k for k, v in fracs.items() if v >= min_frac}
     try:
         return one(enoughs)
-    except OneEmptyError as error:
-        raise _OneModalValueEmptyError(iterable=error.iterable, fracs=fracs) from None
+    except OneEmptyError:
+        raise _OneModalValueEmptyError(iterable=iterable, fracs=fracs) from None
     except OneNonUniqueError as error:
         raise _OneModalValueNonUniqueError(
-            iterable=error.iterable, fracs=fracs, first=error.first, second=error.second
+            iterable=iterable, fracs=fracs, first=error.first, second=error.second
         ) from None
 
 
@@ -1046,9 +1056,52 @@ class _OneStrNonUniqueError(OneStrError):
                 assert_never(never)
 
 
+##
+
+
+def one_unique(*objs: MaybeIterable[_THashable]) -> _THashable:
+    """Return the set-unique value in a set of iterables."""
+    try:
+        return one(set(chain_maybe_iterables(*objs)))
+    except OneEmptyError:
+        raise OneUniqueEmptyError from None
+    except OneNonUniqueError as error:
+        raise OneUniqueNonUniqueError(
+            objs=objs, first=error.first, second=error.second
+        ) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class OneUniqueError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class OneUniqueEmptyError(OneUniqueError):
+    @override
+    def __str__(self) -> str:
+        return "Object(s) must not be empty"
+
+
+@dataclass(kw_only=True, slots=True)
+class OneUniqueNonUniqueError(OneUniqueError, Generic[_THashable]):
+    objs: tuple[MaybeIterable[_THashable], ...]
+    first: _THashable
+    second: _THashable
+
+    @override
+    def __str__(self) -> str:
+        return f"Object(s) {get_repr(self.objs)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
+
+
+##
+
+
 def pairwise_tail(iterable: Iterable[_T], /) -> Iterator[tuple[_T, _T | Sentinel]]:
     """Return pairwise elements, with the last paired with the sentinel."""
     return pairwise(chain(iterable, [sentinel]))
+
+
+##
 
 
 def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterator[Mapping[_K, _V]]:
@@ -1056,6 +1109,9 @@ def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterator[Mapping[_K,
     keys = list(mapping)
     for values in product(*mapping.values()):
         yield cast(Mapping[_K, _V], dict(zip(keys, values, strict=True)))
+
+
+##
 
 
 def resolve_include_and_exclude(
@@ -1086,6 +1142,9 @@ class ResolveIncludeAndExcludeError(Exception, Generic[_T]):
         exclude = list(self.exclude)
         overlap = set(include) & set(exclude)
         return f"Iterables {get_repr(include)} and {get_repr(exclude)} must not overlap; got {get_repr(overlap)}"
+
+
+##
 
 
 def sort_iterable(iterable: Iterable[_T], /) -> list[_T]:
@@ -1192,9 +1251,15 @@ def _sort_iterable_cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
     raise ImpossibleCaseError(case=[f"{x=}", f"{y=}"])  # pragma: no cover
 
 
+##
+
+
 def take(n: int, iterable: Iterable[_T], /) -> Sequence[_T]:
     """Return first n items of the iterable as a list."""
     return list(islice(iterable, n))
+
+
+##
 
 
 @overload
@@ -1222,6 +1287,9 @@ def transpose(iterable: Iterable[tuple[Any, ...]]) -> tuple[tuple[Any, ...], ...
     return tuple(zip(*iterable, strict=True))
 
 
+##
+
+
 __all__ = [
     "ApplyBijectionError",
     "CheckBijectionError",
@@ -1243,12 +1311,16 @@ __all__ = [
     "OneModalValueError",
     "OneNonUniqueError",
     "OneStrError",
+    "OneUniqueEmptyError",
+    "OneUniqueError",
+    "OneUniqueNonUniqueError",
     "ResolveIncludeAndExcludeError",
     "SortIterableError",
     "always_iterable",
     "apply_bijection",
     "apply_to_tuple",
     "apply_to_varargs",
+    "chain_maybe_iterables",
     "chain_nullable",
     "check_bijection",
     "check_duplicates",
@@ -1276,6 +1348,7 @@ __all__ = [
     "one",
     "one_modal_value",
     "one_str",
+    "one_unique",
     "pairwise_tail",
     "product_dicts",
     "resolve_include_and_exclude",
