@@ -917,9 +917,9 @@ class MergeStrMappingsError(Exception):
 ##
 
 
-def one(*iterables: Iterable[_T]) -> _T:
-    """Return the unique value in a set of iterables."""
-    it = chain.from_iterable(iterables)
+def one(*objs: MaybeIterable[_T]) -> _T:
+    """Return the unique value in a set of values/iterables."""
+    it = iter(chain_maybe_iterables(*objs))
     try:
         first = next(it)
     except StopIteration:
@@ -928,7 +928,7 @@ def one(*iterables: Iterable[_T]) -> _T:
         second = next(it)
     except StopIteration:
         return first
-    raise OneNonUniqueError(iterables=iterables, first=first, second=second)
+    raise OneNonUniqueError(objs=objs, first=first, second=second)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -944,51 +944,13 @@ class OneEmptyError(OneError):
 
 @dataclass(kw_only=True, slots=True)
 class OneNonUniqueError(OneError, Generic[_T]):
-    iterables: tuple[Iterable[_T], ...]
+    objs: tuple[MaybeIterable[_T], ...]
     first: _T
     second: _T
 
     @override
     def __str__(self) -> str:
-        return f"Iterable(s) {get_repr(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
-
-
-##
-
-
-def one_maybe(*maybe_iterables: MaybeIterable[_T]) -> _T:
-    """Return the unique value in a set of maybe iterables."""
-    it = chain_maybe_iterables(*maybe_iterables)
-    try:
-        return one(it)
-    except OneEmptyError:
-        raise OneMaybeEmptyError from None
-    except OneNonUniqueError as error:
-        raise OneMaybeNonUniqueError(
-            maybe_iterables=error.iterables, first=error.first, second=error.second
-        ) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class OneMaybeError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class OneMaybeEmptyError(OneMaybeError):
-    @override
-    def __str__(self) -> str:
-        return "Maybe-iterable(s) must not be empty"
-
-
-@dataclass(kw_only=True, slots=True)
-class OneMaybeNonUniqueError(OneMaybeError, Generic[_T]):
-    maybe_iterables: tuple[MaybeIterable[_T], ...]
-    first: _T
-    second: _T
-
-    @override
-    def __str__(self) -> str:
-        return f"Maybe-iterable(s) {get_repr(self.maybe_iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
+        return f"Objects(s) {get_repr(self.objs)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
 
 
 ##
@@ -1097,15 +1059,15 @@ class _OneStrNonUniqueError(OneStrError):
 ##
 
 
-def one_unique(*iterables: Iterable[_THashable]) -> _THashable:
+def one_unique(*objs: MaybeIterable[_THashable]) -> _THashable:
     """Return the set-unique value in a set of iterables."""
     try:
-        return one(set(chain.from_iterable(iterables)))
+        return one(set(chain_maybe_iterables(*objs)))
     except OneEmptyError:
         raise OneUniqueEmptyError from None
     except OneNonUniqueError as error:
         raise OneUniqueNonUniqueError(
-            iterables=iterables, first=error.first, second=error.second
+            objs=objs, first=error.first, second=error.second
         ) from None
 
 
@@ -1122,13 +1084,13 @@ class OneUniqueEmptyError(OneUniqueError):
 
 @dataclass(kw_only=True, slots=True)
 class OneUniqueNonUniqueError(OneUniqueError, Generic[_THashable]):
-    iterables: tuple[Iterable[_THashable], ...]
+    objs: tuple[MaybeIterable[_THashable], ...]
     first: _THashable
     second: _THashable
 
     @override
     def __str__(self) -> str:
-        return f"Iterable(s) {get_repr(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
+        return f"Objects(s) {get_repr(self.objs)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
 
 
 ##
@@ -1346,9 +1308,6 @@ __all__ = [
     "MergeStrMappingsError",
     "OneEmptyError",
     "OneError",
-    "OneMaybeEmptyError",
-    "OneMaybeError",
-    "OneMaybeNonUniqueError",
     "OneModalValueError",
     "OneNonUniqueError",
     "OneStrError",
@@ -1387,7 +1346,6 @@ __all__ = [
     "is_iterable_not_str",
     "merge_str_mappings",
     "one",
-    "one_maybe",
     "one_modal_value",
     "one_str",
     "one_unique",
