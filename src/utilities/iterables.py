@@ -1096,15 +1096,15 @@ class _OneStrNonUniqueError(OneStrError):
 ##
 
 
-def one_unique(*objs: MaybeIterable[_THashable]) -> _THashable:
+def one_unique(*iterables: Iterable[_THashable]) -> _THashable:
     """Return the set-unique value in a set of iterables."""
     try:
-        return one(set(chain_maybe_iterables(*objs)))
+        return one(set(chain(*iterables)))
     except OneEmptyError:
         raise OneUniqueEmptyError from None
     except OneNonUniqueError as error:
         raise OneUniqueNonUniqueError(
-            objs=objs, first=error.first, second=error.second
+            iterables=iterables, first=error.first, second=error.second
         ) from None
 
 
@@ -1116,18 +1116,18 @@ class OneUniqueError(Exception): ...
 class OneUniqueEmptyError(OneUniqueError):
     @override
     def __str__(self) -> str:
-        return "Object(s) must not be empty"
+        return "Iterable(s) must not be empty"
 
 
 @dataclass(kw_only=True, slots=True)
 class OneUniqueNonUniqueError(OneUniqueError, Generic[_THashable]):
-    objs: tuple[MaybeIterable[_THashable], ...]
+    iterables: tuple[MaybeIterable[_THashable], ...]
     first: _THashable
     second: _THashable
 
     @override
     def __str__(self) -> str:
-        return f"Object(s) {get_repr(self.objs)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
+        return f"Iterable(s) {get_repr(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
 
 
 ##
@@ -1345,6 +1345,9 @@ __all__ = [
     "MergeStrMappingsError",
     "OneEmptyError",
     "OneError",
+    "OneMaybeEmptyError",
+    "OneMaybeError",
+    "OneMaybeNonUniqueError",
     "OneModalValueError",
     "OneNonUniqueError",
     "OneStrError",
@@ -1383,6 +1386,7 @@ __all__ = [
     "is_iterable_not_str",
     "merge_str_mappings",
     "one",
+    "one_maybe",
     "one_modal_value",
     "one_str",
     "one_unique",
