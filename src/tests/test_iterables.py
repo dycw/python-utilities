@@ -49,6 +49,8 @@ from utilities.iterables import (
     EnsureIterableNotStrError,
     MergeStrMappingsError,
     OneEmptyError,
+    OneMaybeEmptyError,
+    OneMaybeNonUniqueError,
     OneNonUniqueError,
     OneUniqueEmptyError,
     OneUniqueNonUniqueError,
@@ -95,6 +97,7 @@ from utilities.iterables import (
     is_iterable_not_str,
     merge_str_mappings,
     one,
+    one_maybe,
     one_modal_value,
     one_str,
     one_unique,
@@ -944,6 +947,28 @@ class TestMergeStrMappings:
 
 
 class TestOne:
+    @given(args=sampled_from([([None],), ([None], []), ([None], [], [])]))
+    def test_main(self, *, args: tuple[Iterable[Any], ...]) -> None:
+        assert one(*args) is None
+
+    @given(args=sampled_from([([],), ([], []), ([], [], [])]))
+    def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
+        with raises(OneEmptyError, match=r"Iterable\(s\) must not be empty"):
+            _ = one(*args)
+
+    @given(iterable=sets(integers(), min_size=2))
+    def test_error_non_unique(self, *, iterable: set[int]) -> None:
+        with raises(
+            OneNonUniqueError,
+            match=re.compile(
+                r"Iterable\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
+                flags=DOTALL,
+            ),
+        ):
+            _ = one(iterable)
+
+
+class TestOneMaybe:
     @given(
         args=sampled_from([
             (None,),
@@ -954,24 +979,24 @@ class TestOne:
             ([None], [], []),
         ])
     )
-    def test_main(self, *, args: tuple[Iterable[Any], ...]) -> None:
-        assert one(*args) is None
+    def test_main(self, *, args: tuple[MaybeIterable[Any], ...]) -> None:
+        assert one_maybe(*args) is None
 
     @given(args=sampled_from([([],), ([], []), ([], [], [])]))
-    def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
-        with raises(OneEmptyError, match=r"Object\(s\) must not be empty"):
-            _ = one(*args)
+    def test_error_empty(self, *, args: tuple[MaybeIterable[Any], ...]) -> None:
+        with raises(OneMaybeEmptyError, match=r"Object\(s\) must not be empty"):
+            _ = one_maybe(*args)
 
     @given(iterable=sets(integers(), min_size=2))
     def test_error_non_unique(self, *, iterable: set[int]) -> None:
         with raises(
-            OneNonUniqueError,
+            OneMaybeNonUniqueError,
             match=re.compile(
                 r"Object\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
                 flags=DOTALL,
             ),
         ):
-            _ = one(iterable)
+            _ = one_maybe(iterable)
 
 
 class TestOneModalValue:
@@ -1047,22 +1072,13 @@ class TestOneStr:
 
 
 class TestOneUnique:
-    @given(
-        args=sampled_from([
-            (None,),
-            ([None],),
-            (None, None),
-            (None, [None]),
-            ([None], None),
-            ([None], [None]),
-        ])
-    )
+    @given(args=sampled_from([([None],), ([None], [None]), ([None], [None], [None])]))
     def test_main(self, *, args: tuple[Iterable[Any], ...]) -> None:
         assert one_unique(*args) is None
 
     @given(args=sampled_from([([],), ([], []), ([], [], [])]))
     def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
-        with raises(OneUniqueEmptyError, match=r"Object\(s\) must not be empty"):
+        with raises(OneUniqueEmptyError, match=r"Iterable\(s\) must not be empty"):
             _ = one_unique(*args)
 
     @given(iterable=sets(integers(), min_size=2))
@@ -1070,7 +1086,7 @@ class TestOneUnique:
         with raises(
             OneUniqueNonUniqueError,
             match=re.compile(
-                r"Object\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
+                r"Iterable\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
                 flags=DOTALL,
             ),
         ):
