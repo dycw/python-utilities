@@ -959,7 +959,7 @@ class TestOne:
 
     @given(args=sampled_from([([],), ([], []), ([], [], [])]))
     def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
-        with raises(OneEmptyError, match=r"Iterable\(s\) must not be empty"):
+        with raises(OneEmptyError, match=r"Objects\(s\) must not be empty"):
             _ = one(*args)
 
     @given(iterable=sets(integers(), min_size=2))
@@ -967,7 +967,7 @@ class TestOne:
         with raises(
             OneNonUniqueError,
             match=re.compile(
-                r"Iterable\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
+                r"Objects\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
                 flags=DOTALL,
             ),
         ):
@@ -1062,7 +1062,7 @@ class TestOneUnique:
 
     @given(args=sampled_from([([],), ([], []), ([], [], [])]))
     def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
-        with raises(OneUniqueEmptyError, match=r"Iterable\(s\) must not be empty"):
+        with raises(OneUniqueEmptyError, match=r"Object\(s\) must not be empty"):
             _ = one_unique(*args)
 
     @given(iterable=sets(integers(), min_size=2))
@@ -1070,7 +1070,7 @@ class TestOneUnique:
         with raises(
             OneUniqueNonUniqueError,
             match=re.compile(
-                r"Iterable\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
+                r"Object\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
                 flags=DOTALL,
             ),
         ):
