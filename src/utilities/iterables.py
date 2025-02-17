@@ -939,7 +939,7 @@ class OneError(Exception): ...
 class OneEmptyError(OneError):
     @override
     def __str__(self) -> str:
-        return "Iterable(s) must not be empty"
+        return "Object(s) must not be empty"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -950,7 +950,7 @@ class OneNonUniqueError(OneError, Generic[_T]):
 
     @override
     def __str__(self) -> str:
-        return f"Objects(s) {get_repr(self.objs)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
+        return f"Object(s) {get_repr(self.objs)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
 
 
 ##
@@ -1079,7 +1079,7 @@ class OneUniqueError(Exception): ...
 class OneUniqueEmptyError(OneUniqueError):
     @override
     def __str__(self) -> str:
-        return "Iterable(s) must not be empty"
+        return "Object(s) must not be empty"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1090,7 +1090,7 @@ class OneUniqueNonUniqueError(OneUniqueError, Generic[_THashable]):
 
     @override
     def __str__(self) -> str:
-        return f"Objects(s) {get_repr(self.objs)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
+        return f"Object(s) {get_repr(self.objs)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
 
 
 ##

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from contextlib import suppress
 from dataclasses import dataclass, field
 from enum import Enum, unique
@@ -13,7 +13,7 @@ from math import isinf, isnan
 from operator import or_
 from pathlib import Path
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, assert_never
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, assert_never, cast
 from uuid import UUID
 
 from orjson import (
@@ -410,7 +410,7 @@ def _object_hook(
             ]
         case dict():
             if len(obj) == 1:
-                key, value = one(obj.items())
+                key, value = one(cast(Iterable[tuple[str, Any]], obj.items()))
                 for cls, pattern in [
                     (frozenset, _FROZENSET_PATTERN),
                     (list, _LIST_PATTERN),
