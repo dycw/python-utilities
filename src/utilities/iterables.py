@@ -917,9 +917,9 @@ class MergeStrMappingsError(Exception):
 ##
 
 
-def one(*objs: MaybeIterable[_T]) -> _T:
-    """Return the unique value in a set of values/iterables."""
-    it = iter(chain_maybe_iterables(*objs))
+def one(*iterables: Iterable[_T]) -> _T:
+    """Return the unique value in a set of iterables."""
+    it = iter(chain(*iterables))
     try:
         first = next(it)
     except StopIteration:
@@ -928,7 +928,7 @@ def one(*objs: MaybeIterable[_T]) -> _T:
         second = next(it)
     except StopIteration:
         return first
-    raise OneNonUniqueError(objs=objs, first=first, second=second)
+    raise OneNonUniqueError(iterables=iterables, first=first, second=second)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -939,11 +939,48 @@ class OneError(Exception): ...
 class OneEmptyError(OneError):
     @override
     def __str__(self) -> str:
-        return "Object(s) must not be empty"
+        return "Iterable(s) must not be empty"
 
 
 @dataclass(kw_only=True, slots=True)
 class OneNonUniqueError(OneError, Generic[_T]):
+    iterables: tuple[Iterable[_T], ...]
+    first: _T
+    second: _T
+
+    @override
+    def __str__(self) -> str:
+        return f"Iterable(s) {get_repr(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
+
+
+##
+
+
+def one_maybe(*objs: MaybeIterable[_T]) -> _T:
+    """Return the unique value in a set of values/iterables."""
+    try:
+        return one(chain_maybe_iterables(*objs))
+    except OneEmptyError:
+        raise OneMaybeEmptyError from None
+    except OneNonUniqueError as error:
+        raise OneMaybeNonUniqueError(
+            objs=objs, first=error.first, second=error.second
+        ) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class OneMaybeError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class OneMaybeEmptyError(OneMaybeError):
+    @override
+    def __str__(self) -> str:
+        return "Object(s) must not be empty"
+
+
+@dataclass(kw_only=True, slots=True)
+class OneMaybeNonUniqueError(OneMaybeError, Generic[_T]):
     objs: tuple[MaybeIterable[_T], ...]
     first: _T
     second: _T
