@@ -149,7 +149,7 @@ typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   anyio
-tzlocal==5.3
+tzlocal==5.2
     # via dycw-utilities (pyproject.toml)
 userpath==1.9.2
     # via hatch

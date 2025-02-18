@@ -85,7 +85,7 @@ typing-extensions==4.12.2
     #   dycw-utilities (pyproject.toml)
     #   aiosqlite
     #   sqlalchemy
-tzlocal==5.3
+tzlocal==5.2
     # via dycw-utilities (pyproject.toml)
 whenever==0.6.17
     # via dycw-utilities (pyproject.toml)

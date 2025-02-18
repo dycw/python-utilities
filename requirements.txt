@@ -467,7 +467,7 @@ tzdata==2025.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pandas
-tzlocal==5.3
+tzlocal==5.2
     # via dycw-utilities (pyproject.toml)
 urllib3==2.3.0
     # via requests

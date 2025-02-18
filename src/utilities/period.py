@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass, field
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Generic,
@@ -13,7 +14,6 @@ from typing import (
     assert_never,
     cast,
 )
-from zoneinfo import ZoneInfo
 
 from typing_extensions import override
 
@@ -24,15 +24,18 @@ from utilities.datetime import (
     is_instance_date_not_datetime,
 )
 from utilities.functions import get_class_name
-from utilities.iterables import OneNonUniqueError, always_iterable, one
+from utilities.iterables import OneUniqueNonUniqueError, always_iterable, one_unique
 from utilities.sentinel import Sentinel, sentinel
 from utilities.whenever import (
     serialize_date,
     serialize_local_datetime,
     serialize_zoned_datetime,
 )
+from utilities.zoneinfo import ensure_time_zone
 
 if TYPE_CHECKING:
+    from zoneinfo import ZoneInfo
+
     from utilities.iterables import MaybeIterable
     from utilities.types import DateOrDateTime
 
@@ -45,7 +48,7 @@ class _PeriodAsDict(TypedDict, Generic[_TPeriod]):
     end: _TPeriod
 
 
-@dataclass(repr=False, order=True, unsafe_hash=True, slots=True)
+@dataclass(repr=False, order=True, unsafe_hash=True)
 class Period(Generic[_TPeriod]):
     """A period of time."""
 
@@ -162,12 +165,12 @@ class Period(Generic[_TPeriod]):
             case _ as never:
                 assert_never(never)
 
-    @property
+    @cached_property
     def duration(self) -> dt.timedelta:
         """The duration of the period."""
         return self.end - self.start
 
-    @property
+    @cached_property
     def kind(self) -> _DateOrDateTime:
         """The kind of the period."""
         return "date" if is_instance_date_not_datetime(self.start) else "datetime"
@@ -196,7 +199,7 @@ class Period(Generic[_TPeriod]):
             else max_duration,
         )
 
-    @property
+    @cached_property
     def time_zone(self) -> ZoneInfo:
         """The time zone of the period."""
         match self.kind:
@@ -206,14 +209,9 @@ class Period(Generic[_TPeriod]):
                 ) from None
             case "datetime":
                 result = cast(Period[dt.datetime], self)
-                time_zones = {
-                    t
-                    for t in (result.start.tzinfo, result.end.tzinfo)
-                    if isinstance(t, ZoneInfo)
-                }
                 try:
-                    return one(time_zones)
-                except OneNonUniqueError as error:
+                    return one_unique(map(ensure_time_zone, [result.start, result.end]))
+                except OneUniqueNonUniqueError as error:
                     raise _PeriodTimeZoneNonUniqueError(
                         start=self.start,
                         end=self.end,
