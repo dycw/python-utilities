@@ -209,7 +209,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.26.0
+narwhals==1.27.1
     # via
     #   altair
     #   vegafusion
@@ -389,7 +389,7 @@ rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
-scipy==1.15.1
+scipy==1.15.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   clarabel
@@ -422,7 +422,7 @@ sqlalchemy==2.0.38
     #   optuna
 starlette==0.45.3
     # via fastapi
-streamlit==1.42.0
+streamlit==1.42.1
     # via dycw-utilities (pyproject.toml)
 tenacity==8.5.0
     # via
@@ -473,7 +473,7 @@ urllib3==2.3.0
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.6.0
+uv==0.6.1
     # via hatch
 uvicorn==0.34.0
     # via dycw-utilities (pyproject.toml)

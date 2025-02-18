@@ -35,7 +35,7 @@ lxml==5.3.1
     # via pikepdf
 markupsafe==3.0.2
     # via jinja2
-narwhals==1.26.0
+narwhals==1.27.1
     # via altair
 numpy==2.2.3
     # via pytest-rng
