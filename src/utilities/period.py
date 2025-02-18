@@ -24,7 +24,7 @@ from utilities.datetime import (
     is_instance_date_not_datetime,
 )
 from utilities.functions import get_class_name
-from utilities.iterables import OneNonUniqueError, always_iterable, one_unique
+from utilities.iterables import OneUniqueNonUniqueError, always_iterable, one_unique
 from utilities.sentinel import Sentinel, sentinel
 from utilities.whenever import (
     serialize_date,
@@ -211,7 +211,7 @@ class Period(Generic[_TPeriod]):
                 result = cast(Period[dt.datetime], self)
                 try:
                     return one_unique(map(ensure_time_zone, [result.start, result.end]))
-                except OneNonUniqueError as error:
+                except OneUniqueNonUniqueError as error:
                     raise _PeriodTimeZoneNonUniqueError(
                         start=self.start,
                         end=self.end,
