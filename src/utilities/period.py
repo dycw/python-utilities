@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass, field
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Generic,
@@ -162,12 +163,12 @@ class Period(Generic[_TPeriod]):
             case _ as never:
                 assert_never(never)
 
-    @property
+    @cached_property
     def duration(self) -> dt.timedelta:
         """The duration of the period."""
         return self.end - self.start
 
-    @property
+    @cached_property
     def kind(self) -> _DateOrDateTime:
         """The kind of the period."""
         return "date" if is_instance_date_not_datetime(self.start) else "datetime"
@@ -196,7 +197,7 @@ class Period(Generic[_TPeriod]):
             else max_duration,
         )
 
-    @property
+    @cached_property
     def time_zone(self) -> ZoneInfo:
         """The time zone of the period."""
         match self.kind:

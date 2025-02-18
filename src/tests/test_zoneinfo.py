@@ -1,20 +1,21 @@
 from __future__ import annotations
 
 import datetime as dt
-from re import escape
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, sampled_from
+from hypothesis.strategies import DataObject, data, datetimes, sampled_from, timezones
 from pytest import mark, param, raises
 
+from utilities.hypothesis import zoned_datetimes
 from utilities.zoneinfo import (
     UTC,
-    EnsureTimeZoneError,
     HongKong,
     Tokyo,
     USCentral,
     USEastern,
+    _EnsureTimeZoneInvalidTZInfoError,
+    _EnsureTimeZoneLocalDateTimeError,
     ensure_time_zone,
     get_time_zone_name,
 )
@@ -51,7 +52,7 @@ class TestEnsureZoneInfo:
             param(dt.UTC, UTC),
         ],
     )
-    def test_main(
+    def test_time_zone(
         self, *, data: DataObject, time_zone: ZoneInfo | dt.timezone, expected: ZoneInfo
     ) -> None:
         zone_info_or_str = data.draw(
@@ -60,12 +61,23 @@ class TestEnsureZoneInfo:
         result = ensure_time_zone(zone_info_or_str)
         assert result is expected
 
-    def test_error(self) -> None:
+    @given(data=data(), time_zone=timezones())
+    def test_zoned_datetime(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+        datetime = data.draw(zoned_datetimes(time_zone=time_zone))
+        result = ensure_time_zone(datetime)
+        assert result is time_zone
+
+    def test_error_invalid_tzinfo(self) -> None:
         time_zone = dt.timezone(dt.timedelta(hours=12))
         with raises(
-            EnsureTimeZoneError, match=escape("Unsupported time zone: UTC+12:00")
+            _EnsureTimeZoneInvalidTZInfoError, match="Unsupported time zone: .*"
         ):
             _ = ensure_time_zone(time_zone)
+
+    @given(datetime=datetimes())
+    def test_error_local_datetime(self, *, datetime: dt.datetime) -> None:
+        with raises(_EnsureTimeZoneLocalDateTimeError, match="Local datetime: .*"):
+            _ = ensure_time_zone(datetime)
 
 
 class TestTimeZones:
