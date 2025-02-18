@@ -58,7 +58,7 @@ class _EnsureTimeZoneLocalDateTimeError(EnsureTimeZoneError):
         return f"Local datetime: {self.datetime}"
 
 
-def get_time_zone_name(time_zone: ZoneInfoLike | dt.timezone, /) -> str:
+def get_time_zone_name(time_zone: ZoneInfoLike | dt.tzinfo | dt.datetime, /) -> str:
     """Get the name of a time zone."""
     return ensure_time_zone(time_zone).key
 
