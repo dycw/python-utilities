@@ -48,7 +48,7 @@ class _PeriodAsDict(TypedDict, Generic[_TPeriod]):
     end: _TPeriod
 
 
-@dataclass(repr=False, order=True, unsafe_hash=True, slots=True)
+@dataclass(repr=False, order=True, unsafe_hash=True)
 class Period(Generic[_TPeriod]):
     """A period of time."""
 
