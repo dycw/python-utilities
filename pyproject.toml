@@ -40,7 +40,7 @@ dev = [
   "httpx >= 0.28.1, < 0.29",  # for fastapi
   "hypothesis >= 6.125.3, < 6.126",
   "ib-async-dataclass >= 1.0.3rc5, < 1.1",
-  "img2pdf >= 0.5.1, < 0.6",
+  "img2pdf >= 0.6.0, < 0.7",
   "loguru >= 0.7.3, < 0.8",
   "luigi >= 3.6.0, < 3.7",
   "memory-profiler >= 0.61.0, < 0.62",
@@ -64,14 +64,14 @@ dev = [
   "python-dotenv >= 1.0.1, < 1.1",
   "redis >= 5.2.1, < 5.3",
   "rich >= 13.8.1, < 13.9",  # if 13.9, twine upload fails https://github.com/dycw/python-utilities/actions/runs/11125686648/job/30913966455
-  "scipy >= 1.15.1, < 1.16",
+  "scipy >= 1.15.2, < 1.16",
   "slack-sdk >= 3.34.0, < 3.35",
   "sqlalchemy >= 2.0.38, < 2.1",
-  "streamlit >= 1.42.0, < 1.43",
+  "streamlit >= 1.42.1, < 1.43",
   "tenacity >= 8.0.0",  # limited by luigi
   "treelib >= 1.7.0, < 1.8",
   "tzdata >= 2025.1, < 2025.2",
-  "tzlocal >= 5.2, < 5.3",
+  "tzlocal >= 5.3, < 5.4",
   "uvicorn >= 0.34.0, < 0.35",
   "vegafusion >= 2.0.1, < 2.1",
   "vegafusion-python-embed >= 1.6.9, < 1.7",
@@ -108,7 +108,7 @@ test = [
 zzz-test-altair = [
   "altair >= 5.5.0, < 5.6",
   "atomicwrites >= 1.4.1, < 1.5",
-  "img2pdf >= 0.5.1, < 0.6",
+  "img2pdf >= 0.6.0, < 0.7",
   "polars-lts-cpu >= 1.22.0, < 1.23",
   "vl-convert-python >= 1.6.1, < 1.7",
   "whenever >= 0.6.17, < 0.7",
@@ -136,7 +136,7 @@ zzz-test-dataclasses = [
   "whenever >= 0.6.17, < 0.7",
 ]
 zzz-test-datetime = [
-  "tzlocal >= 5.2, < 5.3",
+  "tzlocal >= 5.3, < 5.4",
   "whenever >= 0.6.17, < 0.7",
 ]
 zzz-test-enum = []
@@ -149,7 +149,7 @@ zzz-test-fastapi = [
 ]
 zzz-test-fpdf2 = [
   "fpdf2 >= 2.8.2, < 2.9",
-  "tzlocal >= 5.2, < 5.3",
+  "tzlocal >= 5.3, < 5.4",
 ]
 zzz-test-functions = []
 zzz-test-functools = []
@@ -177,7 +177,7 @@ zzz-test-hypothesis = [
   "redis >= 5.2.1, < 5.3",
   "sqlalchemy >= 2.0.38, < 2.1",
   "tenacity >= 9.0.0, < 9.1",
-  "tzlocal >= 5.2, < 5.3",
+  "tzlocal >= 5.3, < 5.4",
   "whenever >= 0.6.17, < 0.7",
 ]
 zzz-test-ipython = ["ipython >= 8.24.0, < 8.25"]
@@ -197,7 +197,7 @@ zzz-test-logging = [
   "concurrent-log-handler >= 0.9.25, < 0.10",
   "hatch >= 1.14.0, < 1.15",
   "rich >= 13.8.1, < 13.9",
-  "tzlocal >= 5.2, < 5.3",
+  "tzlocal >= 5.3, < 5.4",
   "whenever >= 0.6.17, < 0.7",
 ]
 zzz-test-loguru = ["loguru >= 0.7.3, < 0.8"]
@@ -222,7 +222,7 @@ zzz-test-orjson = [
   "orjson >= 3.10.15, < 3.11",
   "polars-lts-cpu >= 1.22.0, < 1.23",
   "rich >= 13.8.1, < 13.9",
-  "tzlocal >= 5.2, < 5.3",
+  "tzlocal >= 5.3, < 5.4",
   "whenever >= 0.6.17, < 0.7",
 ]
 zzz-test-os = []
@@ -242,7 +242,7 @@ zzz-test-pydantic = [
 zzz-test-pyinstrument = [
   "atomicwrites >= 1.4.1, < 1.5",
   "pyinstrument >= 5.0.0, < 5.1",
-  "tzlocal >= 5.2, < 5.3",
+  "tzlocal >= 5.3, < 5.4",
 ]
 zzz-test-pyrsistent = ["pyrsistent >= 0.20.0, < 0.21"]
 zzz-test-pytest = [
@@ -261,11 +261,11 @@ zzz-test-redis = [
   "redis >= 5.2.1, < 5.3",
   "rich >= 13.8.1, < 13.9",
   "tenacity >= 9.0.0, < 9.1",
-  "tzlocal >= 5.2, < 5.3",
+  "tzlocal >= 5.3, < 5.4",
   "whenever >= 0.6.17, < 0.7",
 ]
 zzz-test-rich = ["rich >= 13.8.1, < 13.9"]
-zzz-test-scipy = ["scipy >= 1.15.1, < 1.16"]
+zzz-test-scipy = ["scipy >= 1.15.2, < 1.16"]
 zzz-test-sentinel = []
 zzz-test-slack-sdk = [
   "aiohttp >= 3.11.12, < 3.12",  # for slack-sdk
@@ -291,12 +291,12 @@ zzz-test-sqlalchemy-polars = [
   "sqlalchemy >= 2.0.38, < 2.1",
   "tenacity >= 9.0.0, < 9.1",
 ]
-zzz-test-streamlit = ["streamlit >= 1.42.0, < 1.43"]
+zzz-test-streamlit = ["streamlit >= 1.42.1, < 1.43"]
 zzz-test-sys = [
   "atomicwrites >= 1.4.1, < 1.5",
   "hatch >= 1.14.0, < 1.15",
   "rich >= 13.8.1, < 13.9",
-  "tzlocal >= 5.2, < 5.3",
+  "tzlocal >= 5.3, < 5.4",
   "whenever >= 0.6.17, < 0.7",
 ]
 zzz-test-tempfile = []
@@ -308,7 +308,7 @@ zzz-test-traceback = [
   "beartype >= 0.19.0, < 0.20",
   "hatch >= 1.14.0, < 1.15",
   "rich >= 13.8.1, < 13.9",
-  "tzlocal >= 5.2, < 5.3",
+  "tzlocal >= 5.3, < 5.4",
   "whenever >= 0.6.17, < 0.7",
 ]
 zzz-test-treelib = ["treelib >= 1.7.0, < 1.8"]

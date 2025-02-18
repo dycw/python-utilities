@@ -60,7 +60,7 @@ pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)
 pyyaml==6.0.2
     # via pytest-regressions
-scipy==1.15.1
+scipy==1.15.2
     # via dycw-utilities (pyproject.toml)
 sortedcontainers==2.4.0
     # via hypothesis
