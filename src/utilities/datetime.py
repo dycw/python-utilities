@@ -17,7 +17,7 @@ from typing import (
 from typing_extensions import override
 
 from utilities.functions import ensure_not_none
-from utilities.math import SafeRoundError, safe_round
+from utilities.math import SafeRoundError, _RoundMode, round_, safe_round
 from utilities.platform import SYSTEM
 from utilities.zoneinfo import (
     UTC,
@@ -806,6 +806,29 @@ class _ParseTwoDigitYearInvalidStringError(Exception):
 ##
 
 
+def round_datetime(
+    datetime: dt.datetime,
+    timedelta: dt.timedelta,
+    /,
+    *,
+    mode: _RoundMode = "standard",
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+) -> dt.datetime:
+    """Round a datetime to a timedelta."""
+    dividend = microseconds_since_epoch(datetime)
+    divisor = timedelta_to_microseconds(timedelta)
+    frac = dividend / divisor
+    quotient = round_(frac, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
+    microseconds = quotient * divisor
+    return microseconds_since_epoch_to_datetime(microseconds).astimezone(
+        datetime.tzinfo
+    )
+
+
+##
+
+
 def round_to_next_weekday(date: dt.date, /) -> dt.date:
     """Round a date to the next weekday."""
     return _round_to_weekday(date, prev_or_next="next")
@@ -1098,6 +1121,7 @@ __all__ = [
     "milliseconds_to_timedelta",
     "parse_month",
     "parse_two_digit_year",
+    "round_datetime",
     "round_to_next_weekday",
     "round_to_prev_weekday",
     "serialize_month",
