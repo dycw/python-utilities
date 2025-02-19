@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator, MutableSet
 from math import inf
+from time import monotonic
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
-from cachetools import TTLCache
+import cachetools
 from cachetools.func import ttl_cache
 from typing_extensions import override
 
@@ -16,11 +17,34 @@ if TYPE_CHECKING:
     from utilities.types import Duration
 
 _F = TypeVar("_F", bound=Callable[..., Any])
+_K = TypeVar("_K")
 _T = TypeVar("_T")
+_V = TypeVar("_V")
+
+
+class TTLCache(cachetools.TTLCache[_K, _V]):
+    """A TTL-cache."""
+
+    def __init__(
+        self,
+        *,
+        max_size: int | None = None,
+        max_duration: Duration | None = None,
+        timer: Callable[[], float] = monotonic,
+        get_size_of: Callable[[Any], int] | None = None,
+    ) -> None:
+        super().__init__(
+            maxsize=inf if max_size is None else max_size,
+            ttl=inf
+            if max_duration is None
+            else datetime_duration_to_float(max_duration),
+            timer=timer,
+            getsizeof=get_size_of,
+        )
 
 
 class TTLSet(MutableSet[_T]):
-    """A set."""
+    """A TTL-set."""
 
     _cache: TTLCache[_T, None]
 
@@ -32,13 +56,15 @@ class TTLSet(MutableSet[_T]):
         *,
         max_size: int | None = None,
         max_duration: Duration | None = None,
+        timer: Callable[[], float] = monotonic,
+        get_size_of: Callable[[Any], int] | None = None,
     ) -> None:
         super().__init__()
         self._cache = TTLCache(
-            maxsize=inf if max_size is None else max_size,
-            ttl=inf
-            if max_duration is None
-            else datetime_duration_to_float(max_duration),
+            max_size=max_size,
+            max_duration=max_duration,
+            timer=timer,
+            get_size_of=get_size_of,
         )
         if iterable is not None:
             self._cache.update((i, None) for i in iterable)
@@ -83,4 +109,4 @@ def cache(
     return identity
 
 
-__all__ = ["TTLSet", "cache"]
+__all__ = ["TTLCache", "TTLSet", "cache"]
