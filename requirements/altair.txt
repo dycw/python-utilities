@@ -19,7 +19,7 @@ deprecated==1.2.18
     # via pikepdf
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.125.3
+hypothesis==6.126.0
     # via dycw-utilities (pyproject.toml)
 img2pdf==0.6.0
     # via dycw-utilities (pyproject.toml)

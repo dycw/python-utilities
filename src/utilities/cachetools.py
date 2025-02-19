@@ -83,4 +83,4 @@ def cache(
     return identity
 
 
-__all__ = ["cache"]
+__all__ = ["TTLSet", "cache"]
