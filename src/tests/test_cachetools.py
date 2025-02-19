@@ -44,6 +44,10 @@ class TestTTLSet:
     def test_init_without_iterable(self) -> None:
         _ = TTLSet()
 
+    def test_len(self) -> None:
+        set_ = TTLSet(range(3))
+        assert len(set_) == 3
+
     def test_max_duration(self) -> None:
         set_ = TTLSet(range(3), max_duration=0.1)
         assert set_ == {0, 1, 2}
