@@ -145,7 +145,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.125.3
+hypothesis==6.126.0
     # via dycw-utilities (pyproject.toml)
 ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
@@ -303,7 +303,7 @@ psycopg2-binary==2.9.10
     # via dycw-utilities (pyproject.toml)
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==19.0.0
+pyarrow==19.0.1
     # via streamlit
 pycparser==2.22
     # via cffi
@@ -447,7 +447,7 @@ tqdm==4.67.1
     #   pqdm
 treelib==1.7.0
     # via dycw-utilities (pyproject.toml)
-trove-classifiers==2025.1.15.22
+trove-classifiers==2025.2.18.16
     # via hatchling
 typing-extensions==4.12.2
     # via
