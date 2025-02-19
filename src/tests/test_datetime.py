@@ -113,6 +113,7 @@ from utilities.datetime import (
     milliseconds_to_timedelta,
     parse_month,
     parse_two_digit_year,
+    round_datetime,
     round_to_next_weekday,
     round_to_prev_weekday,
     serialize_month,
@@ -914,6 +915,24 @@ class TestParseTwoDigitYear:
             _ParseTwoDigitYearInvalidStringError, match="Unable to parse year; got .*"
         ):
             _ = parse_two_digit_year(year)
+
+
+class TestRoundDateTime:
+    @given(datetime=zoned_datetimes())
+    def test_minute(self, *, datetime: dt.datetime) -> None:
+        floor = round_datetime(datetime, MINUTE, mode="floor")
+        ceil = round_datetime(datetime, MINUTE, mode="ceil")
+        assert floor.second == floor.microsecond == 0
+        assert ceil.second == ceil.microsecond == 0
+        assert floor <= datetime <= ceil
+
+    @given(datetime=zoned_datetimes())
+    def test_second(self, *, datetime: dt.datetime) -> None:
+        floor = round_datetime(datetime, SECOND, mode="floor")
+        ceil = round_datetime(datetime, SECOND, mode="ceil")
+        assert floor.microsecond == 0
+        assert ceil.microsecond == 0
+        assert floor <= datetime <= ceil
 
 
 class TestRoundToWeekday:
