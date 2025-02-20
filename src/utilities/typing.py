@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Mapping, Sequence
-from contextlib import suppress
 from pathlib import Path
 from types import NoneType, UnionType
 from typing import (
@@ -60,19 +59,19 @@ def get_type_hints(
 ) -> dict[str, Any]:
     """Get the type hints of an object."""
     result: dict[str, Any] = cls.__annotations__
-    with suppress(NameError):
-        for key, value in _get_type_hints(cls).items():
-            if (key not in result) or isinstance(result[key], str):
-                result[key] = value
     _ = {Literal, Path, Sentinel, StrMapping, UUID, dt}
     globalns = globals() | ({} if globalns is None else dict(globalns))
     localns = {} if localns is None else dict(localns)
-    with suppress(NameError):
-        for key, value in _get_type_hints(
-            cls, globalns=globalns, localns=localns
-        ).items():
-            if (key not in result) or isinstance(result[key], str):
-                result[key] = value
+    try:
+        hints = _get_type_hints(cls, globalns=globalns, localns=localns)
+    except NameError:
+        pass
+    else:
+        result.update({
+            key: value
+            for key, value in hints.items()
+            if (key not in result) or isinstance(result[key], str)
+        })
     return result
 
 
