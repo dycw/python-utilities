@@ -293,6 +293,11 @@ class TestGetTypeHints:
         expected = {"uuid": UUID}
         assert hints == expected
 
+    def test_unresolved(self) -> None:
+        hints = get_type_hints(DataClassNestedWithFutureOuterThenInnerOuter)
+        expected = {"inner": "DataClassNestedWithFutureOuterThenInnerInner"}
+        assert hints == expected
+
 
 class TestIsAnnotationOfType:
     @mark.parametrize(
