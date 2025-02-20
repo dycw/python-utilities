@@ -6,16 +6,9 @@ from enum import Enum, auto
 from re import DOTALL
 from typing import TYPE_CHECKING, Literal
 
-from hypothesis import Phase, given, reproduce_failure, settings
-from hypothesis.strategies import (
-    DataObject,
-    booleans,
-    data,
-    integers,
-    sampled_from,
-    timedeltas,
-)
-from pytest import mark, param, raises
+from hypothesis import given
+from hypothesis.strategies import DataObject, booleans, data, integers, sampled_from
+from pytest import mark, raises
 
 from utilities.errors import ImpossibleCaseError
 from utilities.hypothesis import (

@@ -48,8 +48,6 @@ from utilities.operator import IsEqualError
 from utilities.polars import are_frames_equal
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from utilities.types import DateOrDateTime, Number
     from utilities.typing import StrMapping
 
