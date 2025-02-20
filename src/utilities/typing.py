@@ -19,8 +19,11 @@ from typing import (
 )
 from typing import get_args as _get_args
 from typing import get_type_hints as _get_type_hints
+from uuid import UUID
 
 from typing_extensions import override
+
+from utilities.sentinel import Sentinel
 
 if TYPE_CHECKING:
     from utilities.types import StrMapping
@@ -65,12 +68,9 @@ def get_type_hints(
     """Get the type hints of an object."""
     globalns = globals() if globalns is None else dict(globalns)
     localns = locals() if localns is None else dict(localns)
+    extra = {"Sentinel": Sentinel, "UUID": UUID, "dt": dt, "path": Path}
     try:
-        return _get_type_hints(
-            cls,
-            globalns=globalns | {"dt": dt},
-            localns=localns | {"dt": dt, "path": Path},
-        )
+        return _get_type_hints(cls, globalns=globalns, localns=localns | extra)
     except NameError as error:
         (name,) = findall(r"name '(\w+)' is not defined", *error.args)
         raise GetTypeHintsError(name=name) from None

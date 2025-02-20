@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import NoneType
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Self
+from uuid import UUID
 
 from beartype import beartype
 from hypothesis import given
@@ -31,10 +32,13 @@ from tests.test_typing_funcs.with_future import (
     DataClassWithLiteral,
     DataClassWithNone,
     DataClassWithPath,
+    DataClassWithSentinel,
     DataClassWithStr,
     DataClassWithTimeDelta,
+    DataClassWithUUID,
 )
 from utilities.beartype import beartype_cond
+from utilities.sentinel import Sentinel
 from utilities.typing import (
     GetTypeHintsError,
     contains_self,
@@ -239,6 +243,19 @@ class TestGetTypeHints:
         assert hints == expected
 
     @given(data=data())
+    def test_sentinel(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            sentinel: Sentinel
+
+        cls = data.draw(sampled_from([Example, DataClassWithSentinel]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"sentinel": Sentinel}
+        assert hints == expected
+
+    @given(data=data())
     def test_str(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -262,6 +279,19 @@ class TestGetTypeHints:
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
         expected = {"timedelta": dt.timedelta}
+        assert hints == expected
+
+    @given(data=data())
+    def test_uuid(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            uuid: UUID
+
+        cls = data.draw(sampled_from([Example, DataClassWithUUID]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"uuid": UUID}
         assert hints == expected
 
     def test_error(self) -> None:

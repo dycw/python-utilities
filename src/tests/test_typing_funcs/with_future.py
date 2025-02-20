@@ -10,6 +10,9 @@ from utilities.beartype import beartype_cond
 if TYPE_CHECKING:
     import datetime as dt
     from pathlib import Path
+    from uuid import UUID
+
+    from utilities.sentinel import Sentinel
 
 
 @dataclass(kw_only=True, slots=True)
@@ -80,6 +83,11 @@ class DataClassWithPath:
 
 
 @dataclass(kw_only=True, slots=True)
+class DataClassWithSentinel:
+    sentinel: Sentinel
+
+
+@dataclass(kw_only=True, slots=True)
 class DataClassWithStr:
     str_: str
 
@@ -87,3 +95,8 @@ class DataClassWithStr:
 @dataclass(kw_only=True, slots=True)
 class DataClassWithTimeDelta:
     timedelta: dt.timedelta
+
+
+@dataclass(kw_only=True, slots=True)
+class DataClassWithUUID:
+    uuid: UUID
