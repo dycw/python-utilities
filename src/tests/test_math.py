@@ -4,7 +4,7 @@ from math import inf, nan
 from re import escape
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from hypothesis import given, settings
+from hypothesis import example, given, settings
 from hypothesis.strategies import (
     DataObject,
     data,
@@ -1052,6 +1052,7 @@ class TestRoundFloatImprecisions:
     def test_main_vs_floats(self, *, x: float) -> None:
         _ = round_float_imprecisions(x)
 
+    @example(x=9998, y=9999, n=-5)
     @given(x=integers(), y=integers().filter(is_non_zero), n=integers(-10, 10))
     @settings(max_examples=1000)
     def test_main_vs_fractions(self, *, x: int, y: int, n: int) -> None:
