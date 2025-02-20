@@ -8,16 +8,12 @@ from types import NoneType
 from typing import Any, Literal, cast
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, integers, lists, sampled_from
-from ib_async import ComboLeg, DeltaNeutralContract, Future
+from hypothesis.strategies import integers, lists, sampled_from
+from ib_async import Future
 from polars import DataFrame
 from pytest import raises
 from typing_extensions import override
 
-from tests.test_typing_funcs.with_future import (
-    DataClassWithLiteral,
-    DataClassWithLiteralNullable,
-)
 from utilities.dataclasses import (
     YieldFieldsError,
     _MappingToDataclassCaseInsensitiveNonUniqueError,
@@ -198,8 +194,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             comboLegs=[],
             deltaNeutralContract=None,
         )
-        _ = {ComboLeg, DeltaNeutralContract}
-        result = asdict_without_defaults(fut, globalns=globals())
+        result = asdict_without_defaults(fut)
         expected = {
             "secType": "FUT",
             "conId": 495512557,
@@ -419,27 +414,23 @@ class TestYieldFields:
         assert result == expected
         assert result.type_ is Inner
 
-    @given(data=data())
-    def test_class_literal(self, *, data: DataObject) -> None:
+    def test_class_literal(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             truth: TruthLit
 
-        cls = data.draw(sampled_from([Example, DataClassWithLiteral]))
-        result = one(yield_fields(cls, globalns=globals()))
+        result = one(yield_fields(Example, globalns=globals()))
         expected = _YieldFieldsClass(name="truth", type_=TruthLit, kw_only=True)
         assert result == expected
         assert is_literal_type(result.type_)
         assert get_args(result.type_) == ("true", "false")
 
-    @given(data=data())
-    def test_class_literal_nullable(self, *, data: DataObject) -> None:
+    def test_class_literal_nullable(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             truth: TruthLit | None = None
 
-        cls = data.draw(sampled_from([Example, DataClassWithLiteralNullable]))
-        result = one(yield_fields(cls, globalns=globals()))
+        result = one(yield_fields(Example, globalns=globals()))
         expected = _YieldFieldsClass(
             name="truth", type_=TruthLit | None, default=None, kw_only=True
         )

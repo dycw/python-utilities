@@ -11,7 +11,7 @@ from uuid import UUID
 from beartype import beartype
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, just, none, sampled_from
-from pytest import mark, param, raises
+from pytest import mark, param
 
 from tests.test_typing_funcs.no_future import (
     DataClassNestedNoFutureInnerThenOuterInner,
@@ -40,7 +40,6 @@ from tests.test_typing_funcs.with_future import (
 from utilities.beartype import beartype_cond
 from utilities.sentinel import Sentinel
 from utilities.typing import (
-    GetTypeHintsError,
     contains_self,
     get_args,
     get_type_hints,
@@ -169,7 +168,7 @@ class TestGetTypeHints:
 
         @dataclass(kw_only=True, slots=True)
         class Inner:
-            x: int
+            int_: int
 
         hints = get_type_hints(Outer, localns=locals())
         expected = {"inner": Inner}
@@ -294,12 +293,18 @@ class TestGetTypeHints:
         expected = {"uuid": UUID}
         assert hints == expected
 
-    def test_error(self) -> None:
-        with raises(
-            GetTypeHintsError,
-            match="Name 'DataClassNestedWithFutureOuterThenInnerInner' is not defined",
-        ):
-            _ = get_type_hints(DataClassNestedWithFutureOuterThenInnerOuter)
+    def test_unresolved(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Outer:
+            inner: Inner
+
+        @dataclass(kw_only=True, slots=True)
+        class Inner:
+            int_: int
+
+        hints = get_type_hints(Outer)
+        expected = {"inner": "Inner"}
+        assert hints == expected
 
 
 class TestIsAnnotationOfType:
