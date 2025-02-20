@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import datetime as dt
 from dataclasses import MISSING, dataclass, field, fields, replace
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
 
 from typing_extensions import override
@@ -295,14 +293,7 @@ def yield_fields(
                 kw_only=field.kw_only,
             )
     elif is_dataclass_class(obj):
-        hints = get_type_hints(
-            obj,
-            globalns=globalns,
-            localns={"Path": Path, "dt.timedelta": dt.timedelta}
-            | ({} if localns is None else dict(localns)),
-        )
-        breakpoint()
-
+        hints = get_type_hints(obj, globalns=globalns, localns=localns)
         for field in fields(obj):
             if isinstance(field.type, type):
                 type_ = field.type

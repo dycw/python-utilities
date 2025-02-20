@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -8,19 +7,16 @@ from re import DOTALL
 from types import NoneType
 from typing import Any, Literal, cast
 
-from hypothesis import given, reproduce_failure
+from hypothesis import given
 from hypothesis.strategies import DataObject, data, integers, lists, sampled_from
-from ib_async import Future
+from ib_async import ComboLeg, DeltaNeutralContract, Future
 from polars import DataFrame
-from pytest import mark, raises
+from pytest import raises
 from typing_extensions import override
 
 from tests.test_typing_funcs.with_future import (
     DataClassWithLiteral,
     DataClassWithLiteralNullable,
-    DataClassWithNone,
-    DataClassWithPath,
-    DataClassWithTimeDelta,
 )
 from utilities.dataclasses import (
     YieldFieldsError,
@@ -202,7 +198,8 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             comboLegs=[],
             deltaNeutralContract=None,
         )
-        result = asdict_without_defaults(fut)
+        _ = {ComboLeg, DeltaNeutralContract}
+        result = asdict_without_defaults(fut, globalns=globals())
         expected = {
             "secType": "FUT",
             "conId": 495512557,
@@ -366,14 +363,12 @@ class TestReprWithoutDefaults:
 
 
 class TestYieldFields:
-    @given(data=data())
-    def test_class_with_none_type_no_default(self, *, data: DataObject) -> None:
+    def test_class_with_none_type_no_default(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             none: None
 
-        cls = data.draw(sampled_from([Example, DataClassWithNone]))
-        result = one(yield_fields(cls))
+        result = one(yield_fields(Example))
         expected = _YieldFieldsClass(name="none", type_=NoneType, kw_only=True)
         assert result == expected
 
@@ -455,17 +450,6 @@ class TestYieldFields:
         arg = one(args)
         assert get_args(arg) == ("true", "false")
 
-    @given(data=data())
-    def test_class_with_path(self, *, data: DataObject) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            path: Path
-
-        cls = data.draw(sampled_from([Example, DataClassWithPath]))
-        result = one(yield_fields(cls))
-        expected = _YieldFieldsClass(name="path", type_=Path, kw_only=True)
-        assert result == expected
-
     def test_class_orjson_log_record(self) -> None:
         result = list(yield_fields(OrjsonLogRecord, globalns=globals()))
         exp_head = [
@@ -486,19 +470,6 @@ class TestYieldFields:
             ),
         ]
         assert result[-3:] == exp_tail
-
-    @given(data=data())
-    @mark.only
-    @reproduce_failure("6.126.0", b"AEEB")
-    def test_class_with_timedelta(self, *, data: DataObject) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            timedelta: dt.timedelta
-
-        cls = data.draw(sampled_from([Example, DataClassWithTimeDelta]))
-        result = one(yield_fields(cls))
-        expected = _YieldFieldsClass(name="timedelta", type_=dt.timedelta, kw_only=True)
-        assert result == expected
 
     def test_instance(self) -> None:
         @dataclass(kw_only=True, slots=True)

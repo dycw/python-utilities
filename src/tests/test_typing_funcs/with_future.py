@@ -55,6 +55,11 @@ class DataClassWithIntNullable:
 
 
 @dataclass(kw_only=True, slots=True)
+class DataClassWithListInts:
+    ints: list[int]
+
+
+@dataclass(kw_only=True, slots=True)
 class DataClassWithLiteral:
     truth: Literal["true", "false"]
 

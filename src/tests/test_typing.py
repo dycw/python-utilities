@@ -27,6 +27,7 @@ from tests.test_typing_funcs.with_future import (
     DataClassWithBeartypeCond,
     DataClassWithInt,
     DataClassWithIntNullable,
+    DataClassWithListInts,
     DataClassWithLiteral,
     DataClassWithNone,
     DataClassWithPath,
@@ -142,6 +143,19 @@ class TestGetTypeHints:
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
         expected = {"int_": int | None}
+        assert hints == expected
+
+    @given(data=data())
+    def test_list(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            ints: list[int]
+
+        cls = data.draw(sampled_from([Example, DataClassWithListInts]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"ints": list[int]}
         assert hints == expected
 
     def test_nested_local(self) -> None:
