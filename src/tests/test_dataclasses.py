@@ -9,7 +9,7 @@ from typing import Any, Literal, cast
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, integers, lists, sampled_from
-from ib_async import ComboLeg, DeltaNeutralContract, Future
+from ib_async import Future
 from polars import DataFrame
 from pytest import raises
 from typing_extensions import override
@@ -198,8 +198,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             comboLegs=[],
             deltaNeutralContract=None,
         )
-        _ = {ComboLeg, DeltaNeutralContract}
-        result = asdict_without_defaults(fut, globalns=globals())
+        result = asdict_without_defaults(fut)
         expected = {
             "secType": "FUT",
             "conId": 495512557,

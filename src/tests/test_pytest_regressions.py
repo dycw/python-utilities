@@ -51,7 +51,7 @@ class TestOrjsonRegressionFixture:
 
     def test_dataclass2(self, *, orjson_regression: OrjsonRegressionFixture) -> None:
         obj = DataClass2Outer(inner=DataClass2Inner(x=0))
-        orjson_regression.check(obj, globalns=globals())
+        orjson_regression.check(obj)
 
     @given(truth=sampled_from(["true", "false"]))
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
