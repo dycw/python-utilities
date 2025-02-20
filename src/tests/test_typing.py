@@ -1,26 +1,46 @@
 from __future__ import annotations
 
+import datetime as dt
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
+from types import NoneType
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Self
+from uuid import UUID
 
 from beartype import beartype
-from pytest import mark, param
+from hypothesis import given
+from hypothesis.strategies import DataObject, data, just, none, sampled_from
+from pytest import mark, param, raises
 
-from tests.test_operator import (
-    DataClass1,
-    DataClass2Inner,
-    DataClass2Outer,
-    DataClass3,
-    DataClass4,
-)
 from tests.test_typing_funcs.no_future import (
-    Example_TestTypingFuncs_BeartypeCondOnMethod,
-    Example_TestTypingFuncs_Inner,
-    Example_TestTypingFuncs_Outer,
+    DataClassNestedNoFutureInnerThenOuterInner,
+    DataClassNestedNoFutureInnerThenOuterOuter,
+    DataClassNestedNoFutureOuterThenInnerInner,
+    DataClassNestedNoFutureOuterThenInnerOuter,
+)
+from tests.test_typing_funcs.with_future import (
+    DataClassNestedWithFutureInnerThenOuterInner,
+    DataClassNestedWithFutureInnerThenOuterOuter,
+    DataClassNestedWithFutureOuterThenInnerInner,
+    DataClassNestedWithFutureOuterThenInnerOuter,
+    DataClassWithBeartype,
+    DataClassWithBeartypeCond,
+    DataClassWithInt,
+    DataClassWithIntNullable,
+    DataClassWithListInts,
+    DataClassWithLiteral,
+    DataClassWithNone,
+    DataClassWithPath,
+    DataClassWithSentinel,
+    DataClassWithStr,
+    DataClassWithTimeDelta,
+    DataClassWithUUID,
 )
 from utilities.beartype import beartype_cond
+from utilities.sentinel import Sentinel
 from utilities.typing import (
+    GetTypeHintsError,
     contains_self,
     get_args,
     get_type_hints,
@@ -68,84 +88,218 @@ class TestGetArgs:
 
 
 class TestGetTypeHints:
-    def test_main(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
-
-        result = get_type_hints(Example)
-        expected = {"x": int}
-        assert result == expected
-
-    def test_beartype(self) -> None:
+    @given(data=data())
+    def test_beartype(self, *, data: DataObject) -> None:
         @beartype
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: int
+            int_: int
 
             def identity(self) -> Self:
                 return self
 
-        hints = get_type_hints(Example)
-        expected = {"x": int}
+        cls = data.draw(sampled_from([Example, DataClassWithBeartype]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"int_": int}
         assert hints == expected
 
-    def test_beartype_cond(self) -> None:
+    @given(data=data())
+    def test_beartype_cond(self, *, data: DataObject) -> None:
         @beartype_cond
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: int
+            int_: int
 
             @beartype_cond
             def identity(self) -> Self:
                 return self
 
-        hints = get_type_hints(Example)
-        expected = {"x": int}
+        cls = data.draw(sampled_from([Example, DataClassWithBeartypeCond]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"int_": int}
         assert hints == expected
 
-    def test_nested(self) -> None:
+    @given(data=data())
+    def test_int(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
-        class Inner:
-            x: int
+        class Example:
+            int_: int
 
+        cls = data.draw(sampled_from([Example, DataClassWithInt]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"int_": int}
+        assert hints == expected
+
+    @given(data=data())
+    def test_int_nullable(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            int_: int | None = None
+
+        cls = data.draw(sampled_from([Example, DataClassWithIntNullable]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"int_": int | None}
+        assert hints == expected
+
+    @given(data=data())
+    def test_list(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            ints: list[int]
+
+        cls = data.draw(sampled_from([Example, DataClassWithListInts]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"ints": list[int]}
+        assert hints == expected
+
+    def test_nested_local(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Outer:
             inner: Inner
+
+        @dataclass(kw_only=True, slots=True)
+        class Inner:
+            x: int
 
         hints = get_type_hints(Outer, localns=locals())
         expected = {"inner": Inner}
         assert hints == expected
 
-    def test_no_future(self) -> None:
-        hints = get_type_hints(Example_TestTypingFuncs_Outer)
-        expected = {"inner": Example_TestTypingFuncs_Inner}
+    def test_nested_no_future_inner_then_outer(self) -> None:
+        hints = get_type_hints(
+            DataClassNestedNoFutureInnerThenOuterOuter, globalns=globals()
+        )
+        expected = {"inner": DataClassNestedNoFutureInnerThenOuterInner}
         assert hints == expected
 
-    def test_no_future2(self) -> None:
-        hints = get_type_hints(Example_TestTypingFuncs_BeartypeCondOnMethod)
-        expected = {}
+    def test_nested_no_future_outer_then_inner(self) -> None:
+        hints = get_type_hints(
+            DataClassNestedNoFutureOuterThenInnerOuter, globalns=globals()
+        )
+        expected = {"inner": DataClassNestedNoFutureOuterThenInnerInner}
         assert hints == expected
 
-    def test_dataclass1(self) -> None:
-        hints = get_type_hints(DataClass1)
-        expected = {"x": int}
+    def test_nested_with_future_inner_then_outer(self) -> None:
+        hints = get_type_hints(
+            DataClassNestedWithFutureInnerThenOuterOuter, globalns=globals()
+        )
+        expected = {"inner": DataClassNestedWithFutureInnerThenOuterInner}
         assert hints == expected
 
-    def test_dataclass2(self) -> None:
-        hints = get_type_hints(DataClass2Outer)
-        expected = {"inner": DataClass2Inner}
+    def test_nested_with_future_outer_then_inner(self) -> None:
+        hints = get_type_hints(
+            DataClassNestedWithFutureOuterThenInnerOuter, globalns=globals()
+        )
+        expected = {"inner": DataClassNestedWithFutureOuterThenInnerInner}
         assert hints == expected
 
-    def test_dataclass3(self) -> None:
-        hints = get_type_hints(DataClass3)
+    @given(data=data())
+    def test_literal(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            truth: Literal["true", "false"]
+
+        cls = data.draw(sampled_from([Example, DataClassWithLiteral]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
         expected = {"truth": Literal["true", "false"]}
         assert hints == expected
 
-    def test_dataclass4(self) -> None:
-        hints = get_type_hints(DataClass4)
-        expected = {"x": int}
+    @given(data=data())
+    def test_none(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            none: None
+
+        cls = data.draw(sampled_from([Example, DataClassWithNone]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"none": NoneType}
         assert hints == expected
+
+    @given(data=data())
+    def test_path(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            path: Path
+
+        cls = data.draw(sampled_from([Example, DataClassWithPath]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"path": Path}
+        assert hints == expected
+
+    @given(data=data())
+    def test_sentinel(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            sentinel: Sentinel
+
+        cls = data.draw(sampled_from([Example, DataClassWithSentinel]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"sentinel": Sentinel}
+        assert hints == expected
+
+    @given(data=data())
+    def test_str(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            str_: str
+
+        cls = data.draw(sampled_from([Example, DataClassWithStr]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"str_": str}
+        assert hints == expected
+
+    @given(data=data())
+    def test_timedelta(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            timedelta: dt.timedelta
+
+        cls = data.draw(sampled_from([Example, DataClassWithTimeDelta]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"timedelta": dt.timedelta}
+        assert hints == expected
+
+    @given(data=data())
+    def test_uuid(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            uuid: UUID
+
+        cls = data.draw(sampled_from([Example, DataClassWithUUID]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"uuid": UUID}
+        assert hints == expected
+
+    def test_error(self) -> None:
+        with raises(
+            GetTypeHintsError,
+            match="Name 'DataClassNestedWithFutureOuterThenInnerInner' is not defined",
+        ):
+            _ = get_type_hints(DataClassNestedWithFutureOuterThenInnerOuter)
 
 
 class TestIsAnnotationOfType:

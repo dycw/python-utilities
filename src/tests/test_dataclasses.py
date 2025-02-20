@@ -8,13 +8,16 @@ from types import NoneType
 from typing import Any, Literal, cast
 
 from hypothesis import given
-from hypothesis.strategies import integers, lists, sampled_from
-from ib_async import Future
+from hypothesis.strategies import DataObject, data, integers, lists, sampled_from
+from ib_async import ComboLeg, DeltaNeutralContract, Future
 from polars import DataFrame
 from pytest import raises
 from typing_extensions import override
 
-from tests.test_operator import DataClass5
+from tests.test_typing_funcs.with_future import (
+    DataClassWithLiteral,
+    DataClassWithLiteralNullable,
+)
 from utilities.dataclasses import (
     YieldFieldsError,
     _MappingToDataclassCaseInsensitiveNonUniqueError,
@@ -195,7 +198,8 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             comboLegs=[],
             deltaNeutralContract=None,
         )
-        result = asdict_without_defaults(fut)
+        _ = {ComboLeg, DeltaNeutralContract}
+        result = asdict_without_defaults(fut, globalns=globals())
         expected = {
             "secType": "FUT",
             "conId": 495512557,
@@ -362,10 +366,10 @@ class TestYieldFields:
     def test_class_with_none_type_no_default(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: None
+            none: None
 
         result = one(yield_fields(Example))
-        expected = _YieldFieldsClass(name="x", type_=NoneType, kw_only=True)
+        expected = _YieldFieldsClass(name="none", type_=NoneType, kw_only=True)
         assert result == expected
 
     def test_class_with_none_type_and_default(self) -> None:
@@ -415,24 +419,27 @@ class TestYieldFields:
         assert result == expected
         assert result.type_ is Inner
 
-    def test_class_literal(self) -> None:
+    @given(data=data())
+    def test_class_literal(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             truth: TruthLit
 
-        result = one(yield_fields(Example, globalns=globals()))
+        cls = data.draw(sampled_from([Example, DataClassWithLiteral]))
+        result = one(yield_fields(cls, globalns=globals()))
         expected = _YieldFieldsClass(name="truth", type_=TruthLit, kw_only=True)
-
         assert result == expected
         assert is_literal_type(result.type_)
         assert get_args(result.type_) == ("true", "false")
 
-    def test_class_literal_nullable(self) -> None:
+    @given(data=data())
+    def test_class_literal_nullable(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             truth: TruthLit | None = None
 
-        result = one(yield_fields(Example, globalns=globals()))
+        cls = data.draw(sampled_from([Example, DataClassWithLiteralNullable]))
+        result = one(yield_fields(cls, globalns=globals()))
         expected = _YieldFieldsClass(
             name="truth", type_=TruthLit | None, default=None, kw_only=True
         )
@@ -442,29 +449,6 @@ class TestYieldFields:
         assert args == (Literal["true", "false"],)
         arg = one(args)
         assert get_args(arg) == ("true", "false")
-
-    def test_class_literal_defined_elsewhere(self) -> None:
-        result = one(yield_fields(DataClass5))
-        expected = _YieldFieldsClass(name="path", type_=Path, kw_only=True)
-        assert result == expected
-
-    def test_class_path(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: Path
-
-        result = one(yield_fields(Example))
-        expected = _YieldFieldsClass(name="x", type_=Path, kw_only=True)
-        assert result == expected
-
-    def test_class_path_defined_elsewhere(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: Path
-
-        result = one(yield_fields(Example))
-        expected = _YieldFieldsClass(name="x", type_=Path, kw_only=True)
-        assert result == expected
 
     def test_class_orjson_log_record(self) -> None:
         result = list(yield_fields(OrjsonLogRecord, globalns=globals()))

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
@@ -24,6 +25,7 @@ from utilities.pathlib import PWD
 from utilities.reprlib import get_repr
 from utilities.types import Dataclass
 from utilities.typing import get_args, is_literal_type
+from utilities.whenever import parse_timedelta
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -93,6 +95,8 @@ def _load_settings_post(
             ) from None
     if type_ is Path:
         return Path(value)
+    if type_ is dt.timedelta:
+        return parse_timedelta(value)
     if isinstance(type_, type) and issubclass(type_, Enum):
         try:
             return ensure_enum(value, type_)
