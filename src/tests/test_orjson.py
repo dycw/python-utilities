@@ -18,7 +18,6 @@ from ib_async import (
     Fill,
     Forex,
     Order,
-    OrderStatus,
     Trade,
 )
 from orjson import JSONDecodeError
@@ -210,7 +209,6 @@ class TestSerializeAndDeserialize:
         result = deserialize(
             ser,
             objects={
-                ComboLeg,
                 CommissionReport,
                 Contract,
                 DataClass1,
@@ -218,12 +216,10 @@ class TestSerializeAndDeserialize:
                 DataClass2Outer,
                 DataClass3,
                 DataClass4,
-                DeltaNeutralContract,
                 Execution,
                 Fill,
                 Forex,
                 Order,
-                OrderStatus,
                 SubFrozenSet,
                 SubList,
                 SubSet,
