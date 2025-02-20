@@ -1,20 +1,26 @@
 from __future__ import annotations
 
+import datetime as dt
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from re import DOTALL
 from types import NoneType
-from typing import Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
-from hypothesis import given
-from hypothesis.strategies import integers, lists, sampled_from
+from hypothesis import Phase, given, reproduce_failure, settings
+from hypothesis.strategies import DataObject, data, integers, lists, sampled_from
 from ib_async import Future
 from polars import DataFrame
-from pytest import raises
+from pytest import mark, param, raises
 from typing_extensions import override
 
-from tests.test_operator import DataClass5
+from tests.test_typing_funcs.with_future import (
+    DataClassWithLiteral,
+    DataClassWithLiteralNullable,
+    DataClassWithPath,
+    DataClassWithTimeDelta,
+)
 from utilities.dataclasses import (
     YieldFieldsError,
     _MappingToDataclassCaseInsensitiveNonUniqueError,
@@ -415,24 +421,27 @@ class TestYieldFields:
         assert result == expected
         assert result.type_ is Inner
 
-    def test_class_literal(self) -> None:
+    @given(data=data())
+    def test_class_literal(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             truth: TruthLit
 
-        result = one(yield_fields(Example, globalns=globals()))
+        cls = data.draw(sampled_from([Example, DataClassWithLiteral]))
+        result = one(yield_fields(cls, globalns=globals()))
         expected = _YieldFieldsClass(name="truth", type_=TruthLit, kw_only=True)
-
         assert result == expected
         assert is_literal_type(result.type_)
         assert get_args(result.type_) == ("true", "false")
 
-    def test_class_literal_nullable(self) -> None:
+    @given(data=data())
+    def test_class_literal_nullable(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             truth: TruthLit | None = None
 
-        result = one(yield_fields(Example, globalns=globals()))
+        cls = data.draw(sampled_from([Example, DataClassWithLiteralNullable]))
+        result = one(yield_fields(cls, globalns=globals()))
         expected = _YieldFieldsClass(
             name="truth", type_=TruthLit | None, default=None, kw_only=True
         )
@@ -443,27 +452,15 @@ class TestYieldFields:
         arg = one(args)
         assert get_args(arg) == ("true", "false")
 
-    def test_class_literal_defined_elsewhere(self) -> None:
-        result = one(yield_fields(DataClass5))
+    @given(data=data())
+    def test_class_path(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            path: Path
+
+        cls = data.draw(sampled_from([Example, DataClassWithPath]))
+        result = one(yield_fields(cls))
         expected = _YieldFieldsClass(name="path", type_=Path, kw_only=True)
-        assert result == expected
-
-    def test_class_path(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: Path
-
-        result = one(yield_fields(Example))
-        expected = _YieldFieldsClass(name="x", type_=Path, kw_only=True)
-        assert result == expected
-
-    def test_class_path_defined_elsewhere(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: Path
-
-        result = one(yield_fields(Example))
-        expected = _YieldFieldsClass(name="x", type_=Path, kw_only=True)
         assert result == expected
 
     def test_class_orjson_log_record(self) -> None:
@@ -486,6 +483,17 @@ class TestYieldFields:
             ),
         ]
         assert result[-3:] == exp_tail
+
+    @given(data=data())
+    def test_class_timedelta(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            timedelta: dt.timedelta
+
+        cls = data.draw(sampled_from([Example, DataClassWithTimeDelta]))
+        result = one(yield_fields(cls))
+        expected = _YieldFieldsClass(name="timedelta", type_=dt.timedelta, kw_only=True)
+        assert result == expected
 
     def test_instance(self) -> None:
         @dataclass(kw_only=True, slots=True)

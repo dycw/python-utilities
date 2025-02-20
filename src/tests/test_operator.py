@@ -248,11 +248,6 @@ class DataClass4:
         return id(self)
 
 
-@dataclass(unsafe_hash=True, kw_only=True, slots=True)
-class DataClass5:
-    path: Path
-
-
 class TruthEnum(Enum):
     true = auto()
     false = auto()
