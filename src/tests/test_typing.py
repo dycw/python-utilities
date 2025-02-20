@@ -168,7 +168,7 @@ class TestGetTypeHints:
 
         @dataclass(kw_only=True, slots=True)
         class Inner:
-            x: int
+            int_: int
 
         hints = get_type_hints(Outer, localns=locals())
         expected = {"inner": Inner}
@@ -294,8 +294,16 @@ class TestGetTypeHints:
         assert hints == expected
 
     def test_unresolved(self) -> None:
-        hints = get_type_hints(DataClassNestedWithFutureOuterThenInnerOuter)
-        expected = {"inner": "DataClassNestedWithFutureOuterThenInnerInner"}
+        @dataclass(kw_only=True, slots=True)
+        class Outer:
+            inner: Inner
+
+        @dataclass(kw_only=True, slots=True)
+        class Inner:
+            int_: int
+
+        hints = get_type_hints(Outer)
+        expected = {"inner": "Inner"}
         assert hints == expected
 
 
