@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Literal
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data, integers, sampled_from
-from pytest import mark, raises
+from pytest import raises
 
 from utilities.errors import ImpossibleCaseError
 from utilities.hypothesis import (
@@ -139,7 +139,6 @@ class TestLoadSettings:
             _ = load_settings(Settings, cwd=root)
 
     @given(root=git_repos(), value=timedeltas_2w())
-    @mark.only
     @settings_with_reduced_examples()
     def test_timedelta_value(self, *, root: Path, value: dt.timedelta) -> None:
         @dataclass(kw_only=True, slots=True)
