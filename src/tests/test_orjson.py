@@ -18,6 +18,8 @@ from ib_async import (
     Fill,
     Forex,
     Order,
+    OrderComboLeg,
+    OrderCondition,
     OrderStatus,
     Trade,
 )
@@ -223,6 +225,8 @@ class TestSerializeAndDeserialize:
                 Fill,
                 Forex,
                 Order,
+                OrderCondition,
+                OrderComboLeg,
                 OrderStatus,
                 SubFrozenSet,
                 SubList,

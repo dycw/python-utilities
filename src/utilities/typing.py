@@ -7,7 +7,6 @@ from pathlib import Path
 from re import findall
 from types import NoneType, UnionType
 from typing import (
-    TYPE_CHECKING,
     Any,
     Literal,
     NamedTuple,
@@ -24,10 +23,7 @@ from uuid import UUID
 from typing_extensions import override
 
 from utilities.sentinel import Sentinel
-
-if TYPE_CHECKING:
-    from utilities.types import StrMapping
-
+from utilities.types import StrMapping
 
 try:  # skipif-version-ge-312
     from typing import TypeAliasType  # pyright: ignore[reportAttributeAccessIssue]
@@ -66,11 +62,11 @@ def get_type_hints(
     localns: StrMapping | None = None,
 ) -> dict[str, Any]:
     """Get the type hints of an object."""
-    globalns = globals() if globalns is None else dict(globalns)
-    localns = locals() if localns is None else dict(localns)
-    extra = {"Sentinel": Sentinel, "UUID": UUID, "dt": dt, "path": Path}
+    _ = {Literal, Path, Sentinel, StrMapping, UUID, dt}
+    globalns = globals() | ({} if globalns is None else dict(globalns))
+    localns = {} if localns is None else dict(localns)
     try:
-        return _get_type_hints(cls, globalns=globalns, localns=localns | extra)
+        return _get_type_hints(cls, globalns=globalns, localns=localns)
     except NameError as error:
         (name,) = findall(r"name '(\w+)' is not defined", *error.args)
         raise GetTypeHintsError(name=name) from None

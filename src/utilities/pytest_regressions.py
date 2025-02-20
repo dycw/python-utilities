@@ -44,11 +44,19 @@ class OrjsonRegressionFixture:
         )
         self._basename = path.name
 
-    def check(self, obj: Any, /, *, suffix: str | None = None) -> None:
+    def check(
+        self,
+        obj: Any,
+        /,
+        *,
+        globalns: StrMapping | None = None,
+        localns: StrMapping | None = None,
+        suffix: str | None = None,
+    ) -> None:
         """Check the serialization of the object against the baseline."""
         from utilities.orjson import serialize
 
-        data = serialize(obj)
+        data = serialize(obj, globalns=globalns, localns=localns)
         basename = self._basename
         if suffix is not None:
             basename = f"{basename}__{suffix}"

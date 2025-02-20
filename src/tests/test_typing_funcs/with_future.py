@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -10,6 +10,7 @@ from utilities.beartype import beartype_cond
 if TYPE_CHECKING:
     import datetime as dt
     from pathlib import Path
+    from typing import Literal
     from uuid import UUID
 
     from utilities.sentinel import Sentinel
