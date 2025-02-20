@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from contextlib import suppress
 from pathlib import Path
-from re import findall
 from types import NoneType, UnionType
 from typing import (
     Any,
@@ -19,8 +18,6 @@ from typing import (
 from typing import get_args as _get_args
 from typing import get_type_hints as _get_type_hints
 from uuid import UUID
-
-from typing_extensions import override
 
 from utilities.sentinel import Sentinel
 from utilities.types import StrMapping
@@ -62,23 +59,21 @@ def get_type_hints(
     localns: StrMapping | None = None,
 ) -> dict[str, Any]:
     """Get the type hints of an object."""
+    result: dict[str, Any] = cls.__annotations__
+    with suppress(NameError):
+        for key, value in _get_type_hints(cls).items():
+            if (key not in result) or isinstance(result[key], str):
+                result[key] = value
     _ = {Literal, Path, Sentinel, StrMapping, UUID, dt}
     globalns = globals() | ({} if globalns is None else dict(globalns))
     localns = {} if localns is None else dict(localns)
-    try:
-        return _get_type_hints(cls, globalns=globalns, localns=localns)
-    except NameError as error:
-        (name,) = findall(r"name '(\w+)' is not defined", *error.args)
-        raise GetTypeHintsError(name=name) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class GetTypeHintsError(Exception):
-    name: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Name {self.name!r} is not defined"
+    with suppress(NameError):
+        for key, value in _get_type_hints(
+            cls, globalns=globalns, localns=localns
+        ).items():
+            if (key not in result) or isinstance(result[key], str):
+                result[key] = value
+    return result
 
 
 ##
