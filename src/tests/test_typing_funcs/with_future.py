@@ -3,9 +3,55 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
+from beartype import beartype
+
+from utilities.beartype import beartype_cond
+
 if TYPE_CHECKING:
     import datetime as dt
     from pathlib import Path
+
+
+@dataclass(kw_only=True, slots=True)
+class DataClassNestedWithFutureInnerThenOuterInner:
+    int_: int
+
+
+@dataclass(kw_only=True, slots=True)
+class DataClassNestedWithFutureInnerThenOuterOuter:
+    inner: DataClassNestedWithFutureInnerThenOuterInner
+
+
+@dataclass(kw_only=True, slots=True)
+class DataClassNestedWithFutureOuterThenInnerOuter:
+    inner: DataClassNestedWithFutureOuterThenInnerInner
+
+
+@dataclass(kw_only=True, slots=True)
+class DataClassNestedWithFutureOuterThenInnerInner:
+    int_: int
+
+
+@beartype
+@dataclass(kw_only=True, slots=True)
+class DataClassWithBeartype:
+    int_: int
+
+
+@beartype_cond
+@dataclass(kw_only=True, slots=True)
+class DataClassWithBeartypeCond:
+    int_: int
+
+
+@dataclass(kw_only=True, slots=True)
+class DataClassWithInt:
+    int_: int
+
+
+@dataclass(kw_only=True, slots=True)
+class DataClassWithIntNullable:
+    int_: int | None = None
 
 
 @dataclass(kw_only=True, slots=True)
@@ -18,9 +64,19 @@ class DataClassWithLiteralNullable:
     truth: Literal["true", "false"] | None = None
 
 
+@dataclass(kw_only=True, slots=True)
+class DataClassWithNone:
+    none: None
+
+
 @dataclass(unsafe_hash=True, kw_only=True, slots=True)
 class DataClassWithPath:
     path: Path
+
+
+@dataclass(kw_only=True, slots=True)
+class DataClassWithStr:
+    str_: str
 
 
 @dataclass(kw_only=True, slots=True)

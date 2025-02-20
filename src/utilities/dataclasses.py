@@ -298,12 +298,11 @@ def yield_fields(
         hints = get_type_hints(
             obj,
             globalns=globalns,
-            localns={
-                "Path": Path,
-                "dt.timedelta": dt.timedelta,
-            }
+            localns={"Path": Path, "dt.timedelta": dt.timedelta}
             | ({} if localns is None else dict(localns)),
         )
+        breakpoint()
+
         for field in fields(obj):
             if isinstance(field.type, type):
                 type_ = field.type

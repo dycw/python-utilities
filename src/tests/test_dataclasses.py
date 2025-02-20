@@ -6,18 +6,19 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from re import DOTALL
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import Any, Literal, cast
 
-from hypothesis import Phase, given, reproduce_failure, settings
+from hypothesis import given, reproduce_failure
 from hypothesis.strategies import DataObject, data, integers, lists, sampled_from
 from ib_async import Future
 from polars import DataFrame
-from pytest import mark, param, raises
+from pytest import mark, raises
 from typing_extensions import override
 
 from tests.test_typing_funcs.with_future import (
     DataClassWithLiteral,
     DataClassWithLiteralNullable,
+    DataClassWithNone,
     DataClassWithPath,
     DataClassWithTimeDelta,
 )
@@ -365,13 +366,15 @@ class TestReprWithoutDefaults:
 
 
 class TestYieldFields:
-    def test_class_with_none_type_no_default(self) -> None:
+    @given(data=data())
+    def test_class_with_none_type_no_default(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: None
+            none: None
 
-        result = one(yield_fields(Example))
-        expected = _YieldFieldsClass(name="x", type_=NoneType, kw_only=True)
+        cls = data.draw(sampled_from([Example, DataClassWithNone]))
+        result = one(yield_fields(cls))
+        expected = _YieldFieldsClass(name="none", type_=NoneType, kw_only=True)
         assert result == expected
 
     def test_class_with_none_type_and_default(self) -> None:
@@ -453,7 +456,7 @@ class TestYieldFields:
         assert get_args(arg) == ("true", "false")
 
     @given(data=data())
-    def test_class_path(self, *, data: DataObject) -> None:
+    def test_class_with_path(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             path: Path
@@ -485,7 +488,9 @@ class TestYieldFields:
         assert result[-3:] == exp_tail
 
     @given(data=data())
-    def test_class_timedelta(self, *, data: DataObject) -> None:
+    @mark.only
+    @reproduce_failure("6.126.0", b"AEEB")
+    def test_class_with_timedelta(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             timedelta: dt.timedelta

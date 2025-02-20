@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import datetime as dt
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from re import findall
 from types import NoneType, UnionType
 from typing import (
     TYPE_CHECKING,
@@ -16,8 +20,7 @@ from typing import (
 from typing import get_args as _get_args
 from typing import get_type_hints as _get_type_hints
 
-from utilities.errors import ImpossibleCaseError
-from utilities.iterables import check_sets_equal
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from utilities.types import StrMapping
@@ -34,6 +37,9 @@ def contains_self(obj: Any, /) -> bool:
     return (obj is Self) or any(map(contains_self, get_args(obj)))
 
 
+##
+
+
 def get_args(obj: Any, /) -> tuple[Any, ...]:
     """Get the arguments of an annotation."""
     if (TypeAliasType is not None) and isinstance(  # skipif-version-ge-312
@@ -46,6 +52,9 @@ def get_args(obj: Any, /) -> tuple[Any, ...]:
     return _get_args(obj)
 
 
+##
+
+
 def get_type_hints(
     cls: Any,
     /,
@@ -54,28 +63,29 @@ def get_type_hints(
     localns: StrMapping | None = None,
 ) -> dict[str, Any]:
     """Get the type hints of an object."""
+    globalns = globals() if globalns is None else dict(globalns)
+    localns = locals() if localns is None else dict(localns)
     try:
-        first = _get_type_hints(cls)
-    except NameError:
-        first = None
-    try:
-        second = _get_type_hints(
+        return _get_type_hints(
             cls,
-            globalns=globals() if globalns is None else dict(globalns),
-            localns=locals() if localns is None else dict(localns),
+            globalns=globalns | {"dt": dt},
+            localns=localns | {"dt": dt, "path": Path},
         )
-    except NameError:
-        second = None
-    if (first is None) and (second is None):
-        return cls.__annotations__
-    if (first is not None) and (second is None):
-        return first
-    if (first is None) and (second is not None):
-        return second
-    if (first is not None) and (second is not None):
-        check_sets_equal(first, second)
-        return {k: second[k] for k in first}
-    raise ImpossibleCaseError(case=[f"{first=}", f"{second=}"])  # pragma: no cover
+    except NameError as error:
+        (name,) = findall(r"name '(\w+)' is not defined", *error.args)
+        raise GetTypeHintsError(name=name) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class GetTypeHintsError(Exception):
+    name: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Name {self.name!r} is not defined"
+
+
+##
 
 
 def is_dict_type(obj: Any, /) -> bool:
@@ -83,9 +93,15 @@ def is_dict_type(obj: Any, /) -> bool:
     return _is_annotation_of_type(obj, dict)
 
 
+##
+
+
 def is_frozenset_type(obj: Any, /) -> bool:
     """Check if an object is a frozenset type annotation."""
     return _is_annotation_of_type(obj, frozenset)
+
+
+##
 
 
 def is_list_type(obj: Any, /) -> bool:
@@ -93,14 +109,23 @@ def is_list_type(obj: Any, /) -> bool:
     return _is_annotation_of_type(obj, list)
 
 
+##
+
+
 def is_literal_type(obj: Any, /) -> bool:
     """Check if an object is a literal type annotation."""
     return _is_annotation_of_type(obj, Literal)
 
 
+##
+
+
 def is_mapping_type(obj: Any, /) -> bool:
     """Check if an object is a mapping type annotation."""
     return _is_annotation_of_type(obj, Mapping)
+
+
+##
 
 
 def is_namedtuple_class(obj: Any, /) -> TypeGuard[type[Any]]:
@@ -122,6 +147,9 @@ def _is_namedtuple_core(obj: Any, /) -> bool:
     return base is NamedTuple
 
 
+##
+
+
 def is_optional_type(obj: Any, /) -> bool:
     """Check if an object is an optional type annotation."""
     is_optional = _is_annotation_of_type(obj, Optional)  # pyright: ignore[reportDeprecated]
@@ -130,9 +158,15 @@ def is_optional_type(obj: Any, /) -> bool:
     )
 
 
+##
+
+
 def is_sequence_type(obj: Any, /) -> bool:
     """Check if an object is a sequence type annotation."""
     return _is_annotation_of_type(obj, Sequence)
+
+
+##
 
 
 def is_set_type(obj: Any, /) -> bool:
@@ -140,10 +174,16 @@ def is_set_type(obj: Any, /) -> bool:
     return _is_annotation_of_type(obj, set)
 
 
+##
+
+
 def is_union_type(obj: Any, /) -> bool:
     """Check if an object is a union type annotation."""
     is_old_union = _is_annotation_of_type(obj, Union)  # pyright: ignore[reportDeprecated]
     return is_old_union or _is_annotation_of_type(obj, UnionType)
+
+
+##
 
 
 def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:
