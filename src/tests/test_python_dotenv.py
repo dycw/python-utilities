@@ -26,6 +26,7 @@ from utilities.python_dotenv import (
     _LoadSettingsInvalidBoolError,
     _LoadSettingsInvalidEnumError,
     _LoadSettingsInvalidIntError,
+    _LoadSettingsInvalidTimeDeltaError,
     _LoadSettingsTypeError,
     load_settings,
 )
@@ -151,6 +152,22 @@ class TestLoadSettings:
         settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)
         assert settings == expected
+
+    @given(root=git_repos())
+    @settings_with_reduced_examples()
+    def test_timedelta_value_error(self, *, root: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: dt.timedelta
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write("key = '...'\n")
+
+        with raises(
+            _LoadSettingsInvalidTimeDeltaError,
+            match=r"Field 'key' must contain a valid timedelta; got '...'",
+        ):
+            _ = load_settings(Settings, cwd=root)
 
     @given(root=git_repos(), value=integers())
     @settings_with_reduced_examples()
