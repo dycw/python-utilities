@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum, auto
+from pathlib import Path
 from re import DOTALL
 from typing import TYPE_CHECKING, Literal
 
@@ -26,6 +27,7 @@ from utilities.python_dotenv import (
     _LoadSettingsInvalidBoolError,
     _LoadSettingsInvalidEnumError,
     _LoadSettingsInvalidIntError,
+    _LoadSettingsInvalidTimeDeltaError,
     _LoadSettingsTypeError,
     load_settings,
 )
@@ -34,7 +36,6 @@ from utilities.whenever import serialize_timedelta
 
 if TYPE_CHECKING:
     import datetime as dt
-    from pathlib import Path
 
 
 class TestLoadSettings:
@@ -152,6 +153,22 @@ class TestLoadSettings:
         expected = Settings(key=value)
         assert settings == expected
 
+    @given(root=git_repos())
+    @settings_with_reduced_examples()
+    def test_timedelta_value_error(self, *, root: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: dt.timedelta
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write("key = '...'\n")
+
+        with raises(
+            _LoadSettingsInvalidTimeDeltaError,
+            match=r"Field 'key' must contain a valid timedelta; got '...'",
+        ):
+            _ = load_settings(Settings, cwd=root)
+
     @given(root=git_repos(), value=integers())
     @settings_with_reduced_examples()
     def test_int_value(self, *, root: Path, value: int) -> None:
@@ -250,6 +267,19 @@ class TestLoadSettings:
         settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)
         assert settings == expected
+
+    @given(root=git_repos(), value=paths().map(lambda p: Path("~", p)))
+    @settings_with_reduced_examples()
+    def test_path_expanded(self, *, root: Path, value: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: Path
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"key = {value}\n")
+
+        settings = load_settings(Settings, cwd=root)
+        assert settings.key == settings.key.expanduser()
 
     @given(root=git_repos())
     @settings_with_reduced_examples()
