@@ -3,12 +3,13 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum, auto
+from pathlib import Path
 from re import DOTALL
 from typing import TYPE_CHECKING, Literal
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data, integers, sampled_from
-from pytest import raises
+from pytest import mark, raises
 
 from utilities.errors import ImpossibleCaseError
 from utilities.hypothesis import (
@@ -35,7 +36,6 @@ from utilities.whenever import serialize_timedelta
 
 if TYPE_CHECKING:
     import datetime as dt
-    from pathlib import Path
 
 
 class TestLoadSettings:
@@ -267,6 +267,20 @@ class TestLoadSettings:
         settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)
         assert settings == expected
+
+    @given(root=git_repos(), value=paths().map(lambda p: Path("~", p)))
+    @settings_with_reduced_examples()
+    @mark.only
+    def test_path_expanded(self, *, root: Path, value: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: Path
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"key = {value}\n")
+
+        settings = load_settings(Settings, cwd=root)
+        assert settings.key == settings.key.expanduser()
 
     @given(root=git_repos())
     @settings_with_reduced_examples()
