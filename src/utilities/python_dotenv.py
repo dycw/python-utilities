@@ -94,7 +94,7 @@ def _load_settings_post(
                 path=path, values=values, field=field.name, value=value
             ) from None
     if type_ is Path:
-        return Path(value)
+        return Path(value).expanduser()
     if type_ is dt.timedelta:
         try:
             return parse_timedelta(value)

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Literal
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data, integers, sampled_from
-from pytest import mark, raises
+from pytest import raises
 
 from utilities.errors import ImpossibleCaseError
 from utilities.hypothesis import (
@@ -270,7 +270,6 @@ class TestLoadSettings:
 
     @given(root=git_repos(), value=paths().map(lambda p: Path("~", p)))
     @settings_with_reduced_examples()
-    @mark.only
     def test_path_expanded(self, *, root: Path, value: Path) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
