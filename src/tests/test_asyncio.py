@@ -8,7 +8,6 @@ from hypothesis import Phase, given, settings
 from hypothesis.strategies import integers, lists
 from pytest import mark, param, raises
 
-from tests.conftest import FLAKY
 from utilities.asyncio import (
     BoundedTaskGroup,
     _MaybeAwaitableMaybeAsyncIterable,
@@ -129,7 +128,6 @@ class TestIsAwaitable:
 
 
 class TestSleepDur:
-    @FLAKY
     @given(
         duration=datetime_durations(
             min_number=0.0,
@@ -173,7 +171,6 @@ class TestStreamCommand:
 
 
 class TestTimeoutDur:
-    @FLAKY
     @given(
         duration=datetime_durations(
             min_number=0.0,

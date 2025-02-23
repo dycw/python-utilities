@@ -27,7 +27,6 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 from typing_extensions import override
 
-from tests.conftest import FLAKY
 from utilities.hypothesis import (
     int32s,
     pairs,
@@ -131,14 +130,12 @@ def _upsert_lists(
 
 
 class TestCheckEngine:
-    @FLAKY
     @given(data=data())
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_main(self, *, data: DataObject) -> None:
         engine = await sqlalchemy_engines(data)
         await check_engine(engine)
 
-    @FLAKY
     @given(data=data(), name=_table_names())
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_num_tables_pass(self, *, data: DataObject, name: str) -> None:
@@ -154,7 +151,6 @@ class TestCheckEngine:
                 raise NotImplementedError(dialect)
         await check_engine(engine, num_tables=expected)
 
-    @FLAKY
     @given(data=data())
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_num_tables_error(self, *, data: DataObject) -> None:
@@ -164,7 +160,6 @@ class TestCheckEngine:
 
 
 class TestColumnwiseMinMax:
-    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
@@ -206,7 +201,6 @@ class TestColumnwiseMinMax:
                 assert min_xy == min(x, y)
                 assert max_xy == max(x, y)
 
-    @FLAKY
     @given(data=data(), name=_table_names())
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_label(self, *, data: DataObject, name: str) -> None:
@@ -224,14 +218,12 @@ class TestColumnwiseMinMax:
 
 
 class TestCreateAsyncEngine:
-    @FLAKY
     @given(temp_path=temp_paths())
     @settings_with_reduced_examples(phases={Phase.generate})
     def test_async(self, *, temp_path: Path) -> None:
         engine = create_async_engine("sqlite+aiosqlite", database=temp_path.name)
         assert isinstance(engine, AsyncEngine)
 
-    @FLAKY
     @given(temp_path=temp_paths())
     @settings_with_reduced_examples(phases={Phase.generate})
     def test_query(self, *, temp_path: Path) -> None:
@@ -244,7 +236,6 @@ class TestCreateAsyncEngine:
 
 
 class TestEnsureTablesCreated:
-    @FLAKY
     @given(data=data(), name=_table_names())
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_table(self, *, data: DataObject, name: str) -> None:
@@ -252,7 +243,6 @@ class TestEnsureTablesCreated:
         engine = await sqlalchemy_engines(data, table)
         await self._run_test(engine, table)
 
-    @FLAKY
     @given(data=data(), name=_table_names())
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_mapped_class(self, *, data: DataObject, name: str) -> None:
@@ -277,7 +267,6 @@ class TestEnsureTablesCreated:
 
 
 class TestEnsureTablesDropped:
-    @FLAKY
     @given(data=data(), name=_table_names())
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_table(self, *, data: DataObject, name: str) -> None:
@@ -285,7 +274,6 @@ class TestEnsureTablesDropped:
         engine = await sqlalchemy_engines(data, table)
         await self._run_test(engine, table)
 
-    @FLAKY
     @given(data=data(), name=_table_names())
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_mapped_class(self, *, data: DataObject, name: str) -> None:
@@ -311,7 +299,6 @@ class TestEnsureTablesDropped:
 
 
 class TestGetChunkSize:
-    @FLAKY
     @given(data=data(), chunk_size_frac=floats(0.0, 1.0), scaling=floats(0.1, 10.0))
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_main(
@@ -488,7 +475,6 @@ class TestHashPrimaryKeyColumns:
 
 
 class TestInsertItems:
-    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
@@ -508,7 +494,6 @@ class TestInsertItems:
                 item = {"id_": id_}, table
         await self._run_test(engine, table, {id_}, item)
 
-    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
@@ -547,7 +532,6 @@ class TestInsertItems:
                 item = [({"id_": id_}, table) for id_ in ids]
         await self._run_test(engine, table, ids, item)
 
-    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
@@ -561,7 +545,6 @@ class TestInsertItems:
         engine = await sqlalchemy_engines(data, table)
         await self._run_test(engine, table, ids, [({"id_": id_}, table) for id_ in ids])
 
-    @FLAKY
     @given(data=data(), name=_table_names(), id_=integers(0, 10))
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_mapped_class(self, *, data: DataObject, name: str, id_: int) -> None:
@@ -569,7 +552,6 @@ class TestInsertItems:
         engine = await sqlalchemy_engines(data, cls)
         await self._run_test(engine, cls, {id_}, cls(id_=id_))
 
-    @FLAKY
     @given(data=data(), name=_table_names(), ids=sets(integers(0, 10), min_size=1))
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_mapped_classes(
@@ -579,7 +561,6 @@ class TestInsertItems:
         engine = await sqlalchemy_engines(data, cls)
         await self._run_test(engine, cls, ids, [cls(id_=id_) for id_ in ids])
 
-    @FLAKY
     @given(data=data(), name=_table_names(), id_=integers(0, 10))
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_snake(self, *, data: DataObject, name: str, id_: int) -> None:
@@ -588,7 +569,6 @@ class TestInsertItems:
         item = {data.draw(sampled_from(["Id_", "id_"])): id_}, table
         await self._run_test(engine, table, {id_}, item, snake=True)
 
-    @FLAKY
     @given(data=data(), name=_table_names(), id_=integers(0, 10))
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_assume_table_exists(
@@ -601,7 +581,6 @@ class TestInsertItems:
         ):
             await insert_items(engine, ({"id_": id_}, table), assume_tables_exist=True)
 
-    @FLAKY
     @given(data=data(), name=_table_names())
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_error(self, *, data: DataObject, name: str) -> None:
@@ -840,7 +819,6 @@ class TestMapMappingToTable:
 
 
 class TestMigrateData:
-    @FLAKY
     @given(
         data=data(),
         names=sets(_table_names(), min_size=2, max_size=2),
@@ -1016,7 +994,6 @@ class TestORMInstToDict:
 
 
 class TestPrepareInsertOrUpsertItems:
-    @FLAKY
     @given(
         data=data(),
         normalize_item=sampled_from([_normalize_insert_item, _normalize_upsert_item]),
@@ -1035,7 +1012,6 @@ class TestPrepareInsertOrUpsertItems:
 
 
 class TestPrepareInsertOrUpsertItemsMergeItems:
-    @FLAKY
     @given(data=data(), name=_table_names())
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_main(self, *, data: DataObject, name: str) -> None:
@@ -1059,7 +1035,6 @@ class TestPrepareInsertOrUpsertItemsMergeItems:
         async with engine.begin() as conn:
             _ = await conn.execute(table.insert().values(expected))
 
-    @FLAKY
     @given(data=data(), name=_table_names())
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_just_value(self, *, data: DataObject, name: str) -> None:
@@ -1077,7 +1052,6 @@ class TestPrepareInsertOrUpsertItemsMergeItems:
         async with engine.begin() as conn:
             _ = await conn.execute(table.insert().values(items))
 
-    @FLAKY
     @given(data=data(), name=_table_names())
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_autoincrement(self, *, data: DataObject, name: str) -> None:
@@ -1097,7 +1071,6 @@ class TestPrepareInsertOrUpsertItemsMergeItems:
 
 
 class TestSelectableToString:
-    @FLAKY
     @given(data=data())
     @settings_with_reduced_examples()
     async def test_main(self, *, data: DataObject) -> None:
@@ -1153,7 +1126,6 @@ class TestTupleToMapping:
 
 
 class TestUpserter:
-    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
@@ -1181,7 +1153,6 @@ class TestUpserter:
 
 
 class TestUpsertItems:
-    @FLAKY
     @given(data=data(), name=_table_names(), triple=_upsert_triples(nullable=True))
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_pair_of_dict_and_table(
@@ -1197,7 +1168,6 @@ class TestUpsertItems:
             engine, table, post_item, expected={(id_, init if post is None else post)}
         )
 
-    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
@@ -1245,7 +1215,6 @@ class TestUpsertItems:
         }
         _ = await self._run_test(engine, table, post, expected=post_expected)
 
-    @FLAKY
     @given(data=data(), name=_table_names(), triple=_upsert_triples())
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_mapped_class(
@@ -1261,7 +1230,6 @@ class TestUpsertItems:
             engine, cls, cls(id_=id_, value=post), expected={(id_, post)}
         )
 
-    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
@@ -1288,7 +1256,6 @@ class TestUpsertItems:
         }
         _ = await self._run_test(engine, cls, post, expected=post_expected)
 
-    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
@@ -1338,7 +1305,6 @@ class TestUpsertItems:
             expected={expected},
         )
 
-    @FLAKY
     @given(data=data(), name=_table_names(), id_=integers(0, 10))
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_assume_table_exists(
@@ -1351,7 +1317,6 @@ class TestUpsertItems:
                 engine, ({"id_": id_, "value": True}, table), assume_tables_exist=True
             )
 
-    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
@@ -1377,7 +1342,6 @@ class TestUpsertItems:
         item = [{"id_": id1, "value": value1}, {"id_": id2, "value": value2}], table
         await upsert_items(engine, item)
 
-    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
@@ -1403,7 +1367,6 @@ class TestUpsertItems:
         }
         await self._run_test(engine, table, item, expected=expected)
 
-    @FLAKY
     @given(data=data(), name=_table_names())
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_error(self, *, data: DataObject, name: str) -> None:

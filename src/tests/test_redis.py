@@ -8,7 +8,7 @@ from hypothesis.strategies import DataObject, booleans, data
 from redis.asyncio import Redis
 from tenacity import stop_after_delay
 
-from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
+from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_operator import make_objects
 from utilities.functions import get_class_name
 from utilities.hypothesis import (
@@ -34,7 +34,6 @@ if TYPE_CHECKING:
 
 
 class TestPublishAndSubscribe:
-    @FLAKY
     @given(
         data=data(),
         channel=text_ascii(min_size=1).map(
@@ -70,7 +69,6 @@ class TestPublishAndSubscribe:
             finally:
                 _ = task.cancel()
 
-    @FLAKY
     @given(
         data=data(),
         channel=text_ascii(min_size=1).map(
@@ -106,7 +104,6 @@ class TestPublishAndSubscribe:
 
 
 class TestSubscribeMessages:
-    @FLAKY
     @given(
         channel=text_ascii(min_size=1).map(
             lambda c: f"{get_class_name(TestSubscribeMessages)}_{c}"
@@ -141,7 +138,6 @@ class TestSubscribeMessages:
 
 
 class TestRedisHashMapKey:
-    @FLAKY
     @given(data=data(), key=int64s(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
@@ -154,7 +150,6 @@ class TestRedisHashMapKey:
             _ = await hm_key.set(test.redis, key, value)
             assert await hm_key.get(test.redis, key) is value
 
-    @FLAKY
     @given(data=data(), key=booleans() | int64s(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
@@ -167,7 +162,6 @@ class TestRedisHashMapKey:
             _ = await hm_key.set(test.redis, key, value)
             assert await hm_key.get(test.redis, key) is value
 
-    @FLAKY
     @given(data=data(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
@@ -185,7 +179,6 @@ class TestRedisHashMapKey:
             _ = await hm_key.set(test.redis, sentinel, value)
             assert await hm_key.get(test.redis, sentinel) is value
 
-    @FLAKY
     @given(data=data(), key=int64s(), value=int64s() | booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
@@ -198,7 +191,6 @@ class TestRedisHashMapKey:
             _ = await hm_key.set(test.redis, key, value)
             assert await hm_key.get(test.redis, key) == value
 
-    @FLAKY
     @given(data=data(), key=int64s())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
@@ -224,7 +216,6 @@ class TestRedisHashMapKey:
             _ = await hm_key.set(test.redis, key, sentinel)
             assert await hm_key.get(test.redis, key) is sentinel
 
-    @FLAKY
     @given(data=data(), key=int64s(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
@@ -236,7 +227,6 @@ class TestRedisHashMapKey:
             _ = await hm_key.delete(test.redis, key)
             assert await hm_key.get(test.redis, key) is None
 
-    @FLAKY
     @given(data=data(), key=int64s(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
@@ -247,7 +237,6 @@ class TestRedisHashMapKey:
             _ = await hm_key.set(test.redis, key, value)
             assert await hm_key.exists(test.redis, key)
 
-    @FLAKY
     @given(data=data(), key=int64s(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
@@ -265,7 +254,6 @@ class TestRedisHashMapKey:
             _ = await hm_key.set(test.redis, key, value)
             assert await hm_key.exists(test.redis, key)
 
-    @FLAKY
     @given(data=data(), key=int64s(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
@@ -279,7 +267,6 @@ class TestRedisHashMapKey:
 
 
 class TestRedisKey:
-    @FLAKY
     @given(data=data(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
@@ -290,7 +277,6 @@ class TestRedisKey:
             _ = await key.set(test.redis, value)
             assert await key.get(test.redis) is value
 
-    @FLAKY
     @given(data=data(), value=booleans() | int64s())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
@@ -303,7 +289,6 @@ class TestRedisKey:
             _ = await key.set(test.redis, value)
             assert await key.get(test.redis) == value
 
-    @FLAKY
     @given(data=data())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
@@ -325,7 +310,6 @@ class TestRedisKey:
             _ = await key.set(test.redis, sentinel)
             assert await key.get(test.redis) is sentinel
 
-    @FLAKY
     @given(data=data(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
@@ -337,7 +321,6 @@ class TestRedisKey:
             _ = await key.delete(test.redis)
             assert await key.get(test.redis) is None
 
-    @FLAKY
     @given(data=data(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
@@ -348,7 +331,6 @@ class TestRedisKey:
             _ = await key.set(test.redis, value)
             assert await key.exists(test.redis)
 
-    @FLAKY
     @given(data=data(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX
@@ -360,7 +342,6 @@ class TestRedisKey:
             _ = await key.set(test.redis, value)
             assert await key.exists(test.redis)
 
-    @FLAKY
     @given(data=data(), value=booleans())
     @settings_with_reduced_examples()
     @SKIPIF_CI_AND_NOT_LINUX

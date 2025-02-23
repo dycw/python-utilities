@@ -86,7 +86,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import DuplicateColumnError, OperationalError, ProgrammingError
 
-from tests.conftest import FLAKY
 from tests.test_sqlalchemy import _table_names, _upsert_lists
 from utilities.datetime import are_equal_datetimes
 from utilities.hypothesis import sqlalchemy_engines, text_ascii
@@ -141,7 +140,6 @@ _CASES_INSERT: list[
 
 
 class TestInsertDataFrame:
-    @FLAKY
     @given(data=data(), name=_table_names(), case=sampled_from(_CASES_INSERT))
     @settings(phases={Phase.generate})
     async def test_main(
@@ -165,7 +163,6 @@ class TestInsertDataFrame:
         for r, v in zip(results, values, strict=True):
             assert ((r is None) == (v is None)) or check(r, v)
 
-    @FLAKY
     @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
     async def test_assume_exists_with_empty(
@@ -177,7 +174,6 @@ class TestInsertDataFrame:
         await ensure_tables_created(engine, table)
         await insert_dataframe(df, table, engine, assume_tables_exist=True)
 
-    @FLAKY
     @given(data=data(), name=_table_names(), value=booleans())
     @settings(phases={Phase.generate})
     async def test_assume_exists_with_non_empty(
@@ -191,7 +187,6 @@ class TestInsertDataFrame:
         ):
             await insert_dataframe(df, table, engine, assume_tables_exist=True)
 
-    @FLAKY
     @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
     async def test_empty(self, *, data: DataObject, name: str) -> None:
@@ -204,7 +199,6 @@ class TestInsertDataFrame:
             results = (await conn.execute(sel)).scalars().all()
         assert results == []
 
-    @FLAKY
     @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
     async def test_upsert(self, *, data: DataObject, name: str) -> None:
@@ -239,7 +233,6 @@ class TestInsertDataFrame:
         )
         assert set(results) == set(expected.rows())
 
-    @FLAKY
     @given(data=data(), name=_table_names(), value=booleans())
     @settings(phases={Phase.generate})
     async def test_error(self, *, data: DataObject, name: str, value: bool) -> None:
@@ -403,7 +396,6 @@ class TestInsertDataFrameMapDFSchemaToTable:
 
 
 class TestSelectToDataFrame:
-    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
@@ -430,7 +422,6 @@ class TestSelectToDataFrame:
         result = await select_to_dataframe(sel, engine)
         assert_frame_equal(result, df)
 
-    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
@@ -450,7 +441,6 @@ class TestSelectToDataFrame:
         expected = DataFrame({"value": values}, schema={"value": pl.Boolean})
         assert_frame_equal(result, expected)
 
-    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
@@ -466,7 +456,6 @@ class TestSelectToDataFrame:
         dfs = await select_to_dataframe(sel, engine, batch_size=batch_size)
         self._assert_batch_results(dfs, batch_size, values)
 
-    @FLAKY
     @given(
         data=data(),
         name=_table_names(),
@@ -494,7 +483,6 @@ class TestSelectToDataFrame:
         check_polars_dataframe(df, height=len(in_values), schema_list={"value": Int64})
         assert set(df["value"].to_list()) == in_values
 
-    @FLAKY
     @given(data=data(), name=_table_names())
     @settings(phases={Phase.generate})
     async def test_in_clauses_empty(self, *, data: DataObject, name: str) -> None:
@@ -505,7 +493,6 @@ class TestSelectToDataFrame:
         df = await select_to_dataframe(sel, engine, in_clauses=(table.c["value"], []))
         check_polars_dataframe(df, height=0, schema_list={"value": Int64})
 
-    @FLAKY
     @given(
         data=data(),
         name=_table_names(),

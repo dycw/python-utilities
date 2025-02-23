@@ -9,7 +9,6 @@ from hypothesis import HealthCheck, given
 from hypothesis.strategies import integers, sampled_from
 from pytest import CaptureFixture
 
-from tests.conftest import FLAKY
 from utilities.eventkit import add_listener
 from utilities.functions import identity
 from utilities.hypothesis import settings_with_reduced_examples
@@ -21,7 +20,6 @@ if TYPE_CHECKING:
 class TestAddListener:
     datetime: ClassVar[str] = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
 
-    @FLAKY
     @given(sync_or_async=sampled_from(["sync", "async"]), n=integers())
     @settings_with_reduced_examples(
         suppress_health_check={HealthCheck.function_scoped_fixture}
