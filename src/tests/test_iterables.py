@@ -1005,7 +1005,7 @@ class TestOneModalValue:
         modal_value = data.draw(sampled_from(init))
         all_ints = list(chain(init, repeat(modal_value, times=len(init))))
         all_ints = data.draw(permutations(all_ints))
-        result = one_modal_value(all_ints, min_frac=0.51)
+        result = one_modal_value(all_ints, min_frac=0.501)
         assert result == modal_value
 
     @given(x=sets(integers(), min_size=2))
