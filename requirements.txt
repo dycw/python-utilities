@@ -43,7 +43,7 @@ attrs==25.1.0
     #   referencing
 backports-tarfile==1.2.0
     # via jaraco-context
-beartype==0.19.0
+beartype==0.20.0
     # via dycw-utilities (pyproject.toml)
 blinker==1.9.0
     # via streamlit
@@ -51,7 +51,7 @@ bottleneck==1.4.2
     # via dycw-utilities (pyproject.toml)
 bounded-pool-executor==0.0.3
     # via pqdm
-cachetools==5.5.1
+cachetools==5.5.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   streamlit
@@ -89,7 +89,7 @@ coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
 cryptography==44.0.1
     # via dycw-utilities (pyproject.toml)
-cvxpy==1.6.0
+cvxpy==1.6.1
     # via dycw-utilities (pyproject.toml)
 dacite==1.9.2
     # via dycw-utilities (pyproject.toml)
@@ -285,13 +285,13 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==1.22.0
+polars-lts-cpu==1.23.0
     # via dycw-utilities (pyproject.toml)
 portalocker==3.1.1
     # via concurrent-log-handler
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
-propcache==0.2.1
+propcache==0.3.0
     # via
     #   aiohttp
     #   yarl
@@ -385,7 +385,7 @@ rich==13.8.1
     #   dycw-utilities (pyproject.toml)
     #   hatch
     #   streamlit
-rpds-py==0.22.3
+rpds-py==0.23.1
     # via
     #   jsonschema
     #   referencing
@@ -422,7 +422,7 @@ sqlalchemy==2.0.38
     #   optuna
 starlette==0.45.3
     # via fastapi
-streamlit==1.42.1
+streamlit==1.42.2
     # via dycw-utilities (pyproject.toml)
 tenacity==8.5.0
     # via
@@ -487,7 +487,7 @@ virtualenv==20.29.2
     #   nox
 vl-convert-python==1.7.0
     # via dycw-utilities (pyproject.toml)
-whenever==0.6.17
+whenever==0.7.0
     # via dycw-utilities (pyproject.toml)
 win32-setctime==1.2.0
     # via dycw-utilities (pyproject.toml)
