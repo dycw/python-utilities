@@ -477,7 +477,7 @@ uv==0.6.2
     # via hatch
 uvicorn==0.34.0
     # via dycw-utilities (pyproject.toml)
-vegafusion==2.0.1
+vegafusion==2.0.2
     # via dycw-utilities (pyproject.toml)
 vegafusion-python-embed==1.6.9
     # via dycw-utilities (pyproject.toml)
