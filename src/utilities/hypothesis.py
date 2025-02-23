@@ -52,6 +52,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
+from pytest import skip
 
 from utilities.datetime import (
     MAX_MONTH,
@@ -788,7 +789,10 @@ async def sqlalchemy_engines(
             engine = create_async_engine(
                 "postgresql+asyncpg", host="localhost", port=5432, database="testing"
             )
-            await ensure_tables_dropped(engine, *tables_or_orms)
+            try:
+                await ensure_tables_dropped(engine, *tables_or_orms)
+            except ConnectionRefusedError:
+                skip(reason="Unable to connect to `postgres`")
             return engine
         case _:  # pragma: no cover
             raise NotImplementedError(dialect)
