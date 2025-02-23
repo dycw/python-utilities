@@ -20,13 +20,13 @@ class _PingerReceiverApp(FastAPI):
 
     @override
     def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # skipif-ci
 
         @self.get("/ping")
         def ping() -> str:
-            return "pong"
+            return "pong"  # skipif-ci
 
-        _ = ping
+        _ = ping  # skipif-ci
 
 
 @dataclass(kw_only=True, slots=True)
@@ -41,16 +41,16 @@ class PingReceiver:
     _task: Task[None] | None = None
 
     def __post_init__(self) -> None:
-        self._config = Config(self._app, host=self.host, port=self.port)
-        self._server = Server(self._config)
+        self._config = Config(self._app, host=self.host, port=self.port)  # skipif-ci
+        self._server = Server(self._config)  # skipif-ci
 
     @classmethod
     async def ping(cls, port: int, *, host: str = _LOCALHOST) -> bool:
         """Ping the receiver."""
         from httpx import AsyncClient, ConnectError
 
-        url = f"http://{host}:{port}/ping"
-        try:
+        url = f"http://{host}:{port}/ping"  # skipif-ci
+        try:  # skipif-ci
             async with AsyncClient() as client:
                 response = await client.get(url)
         except ConnectError:
@@ -60,8 +60,8 @@ class PingReceiver:
 
     async def __aenter__(self) -> Self:
         """Start the server."""
-        self._task = create_task(self._server.serve())
-        return self
+        self._task = create_task(self._server.serve())  # skipif-ci
+        return self  # skipif-ci
 
     async def __aexit__(
         self,
@@ -70,8 +70,8 @@ class PingReceiver:
         traceback: TracebackType | None = None,
     ) -> None:
         """Stop the server."""
-        _ = (exc_type, exc_value, traceback)
-        self._server.should_exit = True
+        _ = (exc_type, exc_value, traceback)  # skipif-ci
+        self._server.should_exit = True  # skipif-ci
 
 
 __all__ = ["PingReceiver"]
