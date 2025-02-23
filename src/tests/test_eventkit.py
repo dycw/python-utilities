@@ -21,9 +21,6 @@ class TestAddListener:
     datetime: ClassVar[str] = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
 
     @given(sync_or_async=sampled_from(["sync", "async"]), n=integers())
-    @settings_with_reduced_examples(
-        suppress_health_check={HealthCheck.function_scoped_fixture}
-    )
     async def test_main(
         self, *, sync_or_async: Literal["sync", "async"], n: int
     ) -> None:
