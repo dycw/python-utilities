@@ -22,7 +22,7 @@ class _PingerReceiverApp(FastAPI):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)  # skipif-ci
 
-        @self.get("/ping")
+        @self.get("/ping")  # skipif-ci
         def ping() -> str:
             return "pong"  # skipif-ci
 
@@ -47,7 +47,7 @@ class PingReceiver:
     @classmethod
     async def ping(cls, port: int, *, host: str = _LOCALHOST) -> bool:
         """Ping the receiver."""
-        from httpx import AsyncClient, ConnectError
+        from httpx import AsyncClient, ConnectError  # skipif-ci
 
         url = f"http://{host}:{port}/ping"  # skipif-ci
         try:  # skipif-ci
