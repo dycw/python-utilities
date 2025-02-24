@@ -53,9 +53,9 @@ class PingReceiver:
         try:  # skipif-ci
             async with AsyncClient() as client:
                 response = await client.get(url)
-        except ConnectError:
+        except ConnectError:  # skipif-ci
             return False
-        else:
+        else:  # skipif-ci
             return response.status_code == 200
 
     async def __aenter__(self) -> Self:
