@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from asyncio import sleep
 
+from tests.conftest import SKIPIF_CI
 from utilities.fastapi import PingReceiver
 
 
 class TestPingReceiver:
+    @SKIPIF_CI
     async def test_main(self) -> None:
         port = 5465
         assert not await PingReceiver.ping(port)

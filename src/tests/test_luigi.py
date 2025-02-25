@@ -8,7 +8,6 @@ from hypothesis.strategies import DataObject, booleans, data, sampled_from, time
 from luigi import BoolParameter, Parameter, Task
 from typing_extensions import override
 
-from tests.conftest import FLAKY
 from utilities.hypothesis import namespace_mixins, temp_paths, zoned_datetimes
 from utilities.luigi import (
     DateHourParameter,
@@ -28,7 +27,6 @@ if TYPE_CHECKING:
 
 
 class TestBuild:
-    @FLAKY
     @given(namespace_mixin=namespace_mixins())
     def test_main(self, *, namespace_mixin: Any) -> None:
         class Example(namespace_mixin, Task): ...

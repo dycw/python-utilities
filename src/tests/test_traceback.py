@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, ClassVar, Literal
 from beartype.roar import BeartypeCallHintReturnViolation
 from pytest import raises
 
-from tests.conftest import FLAKY, SKIPIF_CI
+from tests.conftest import SKIPIF_CI
 from tests.test_traceback_funcs.beartype import func_beartype
 from tests.test_traceback_funcs.beartype_error import func_beartype_error_first
 from tests.test_traceback_funcs.chain import func_chain_first
@@ -365,7 +365,6 @@ class TestGetRichTraceback:
         res_group = repr(exc_group_tb)
         assert traceback_func_task_group_one.search(res_group)
 
-    @FLAKY
     @SKIPIF_CI
     async def test_func_task_group_two(self, *, git_ref: str) -> None:
         with raises(ExceptionGroup) as exc_info:

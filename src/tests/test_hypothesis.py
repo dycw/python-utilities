@@ -35,7 +35,7 @@ from pytest import raises
 from sqlalchemy import Column, Integer, MetaData, Table, insert, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX, SKIPIF_CI_AND_WINDOWS
+from tests.conftest import SKIPIF_CI_AND_NOT_LINUX, SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
     date_duration_to_timedelta,
     datetime_duration_to_float,
@@ -717,7 +717,6 @@ class TestSlices:
 
 
 class TestSQLAlchemyEngines:
-    @FLAKY
     @given(
         data=data(),
         name=uuids(),
@@ -799,7 +798,6 @@ class TestTempDirs:
         assert path.is_dir()
         assert len(set(path.iterdir())) == 0
 
-    @FLAKY
     @given(temp_dir=temp_dirs(), contents=sets(text_ascii(min_size=1), max_size=10))
     def test_writing_files(
         self, *, temp_dir: TemporaryDirectory, contents: AbstractSet[str]
@@ -818,7 +816,6 @@ class TestTempPaths:
         assert path.is_dir()
         assert len(set(path.iterdir())) == 0
 
-    @FLAKY
     @given(path=temp_paths(), contents=sets(text_ascii(min_size=1), max_size=10))
     def test_writing_files(self, *, path: Path, contents: AbstractSet[str]) -> None:
         assert len(set(path.iterdir())) == 0
