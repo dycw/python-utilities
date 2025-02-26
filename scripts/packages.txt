@@ -69,6 +69,7 @@ traceback
 treelib
 types
 typing
+tzlocal
 uuid
 version
 warnings

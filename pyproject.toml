@@ -319,6 +319,7 @@ zzz-test-typing = [
   "polars-lts-cpu >= 1.23.0, < 1.24",
   "whenever >= 0.7.0, < 0.7.1",
 ]
+zzz-test-tzlocal = ["tzlocal >= 5.3, < 5.4"]
 zzz-test-uuid = []
 zzz-test-version = ["hatch >= 1.14.0, < 1.15"]
 zzz-test-warnings = []
