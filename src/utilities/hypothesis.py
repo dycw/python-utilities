@@ -49,7 +49,6 @@ from hypothesis.strategies import (
     sets,
     text,
     timedeltas,
-    timezones,
     uuids,
 )
 from hypothesis.utils.conventions import not_set
@@ -980,17 +979,6 @@ def timedeltas_2w(
             max_value=min(max_value_, MAX_SERIALIZABLE_TIMEDELTA),
         )
     )
-
-
-##
-
-
-@composite
-def time_zones(draw: DrawFn, /) -> ZoneInfo:
-    """Strategy for generating time zones."""
-    try:
-        draw(timezones())
-    ass
 
 
 ##
