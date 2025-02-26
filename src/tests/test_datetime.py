@@ -16,7 +16,6 @@ from hypothesis.strategies import (
     datetimes,
     floats,
     integers,
-    just,
     permutations,
     sampled_from,
     timedeltas,
@@ -756,7 +755,7 @@ class TestMaybeSubPctY:
 
 
 class TestMicrosecondsOrMillisecondsSinceEpoch:
-    @given(datetime=datetimes(timezones=just(UTC)))
+    @given(datetime=zoned_datetimes())
     def test_datetime_to_microseconds(self, *, datetime: dt.datetime) -> None:
         microseconds = microseconds_since_epoch(datetime)
         result = microseconds_since_epoch_to_datetime(microseconds)
@@ -783,7 +782,7 @@ class TestMicrosecondsOrMillisecondsSinceEpoch:
         result = milliseconds_since_epoch_to_datetime(round(milliseconds))
         assert result == datetime
 
-    @given(datetime=datetimes(timezones=just(UTC)))
+    @given(datetime=zoned_datetimes())
     def test_datetime_to_milliseconds_error(self, *, datetime: dt.datetime) -> None:
         _, microseconds = divmod(datetime.microsecond, _MICROSECONDS_PER_MILLISECOND)
         _ = assume(microseconds != 0)
