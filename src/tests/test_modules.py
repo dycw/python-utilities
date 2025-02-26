@@ -5,9 +5,15 @@ from operator import le, lt
 from re import search
 from typing import TYPE_CHECKING, Any
 
-from pytest import mark, param
+from pytest import mark, param, raises
 
-from tests.modules import package_with, package_without, standalone, with_imports
+from tests.modules import (
+    package_missing,
+    package_with,
+    package_without,
+    standalone,
+    with_imports,
+)
 from utilities.functions import get_class_name
 from utilities.modules import (
     is_installed,
@@ -45,6 +51,17 @@ class TestYieldModules:
     def test_main(self, *, module: ModuleType, recursive: bool, expected: int) -> None:
         res = list(yield_modules(module, recursive=recursive))
         assert len(res) == expected
+
+    def test_missing_ok(self) -> None:
+        _ = list(
+            yield_modules(
+                package_missing, missing_ok=["missing_package"], recursive=True
+            )
+        )
+
+    def test_error(self) -> None:
+        with raises(ModuleNotFoundError, match="No module named 'missing_package'"):
+            _ = list(yield_modules(package_missing, recursive=True))
 
 
 class TestYieldModuleContents:
