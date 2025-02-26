@@ -41,7 +41,7 @@ def yield_modules(
     except AttributeError:
         yield module
     else:
-        for _x, name, ispkg in iter_modules(path, module.__name__ + "."):
+        for _, name, ispkg in iter_modules(path, module.__name__ + "."):
             try:
                 mod = import_module(name)
             except ModuleNotFoundError as error:
