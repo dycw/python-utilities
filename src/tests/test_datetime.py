@@ -768,7 +768,7 @@ class TestMicrosecondsOrMillisecondsSinceEpoch:
         result = microseconds_since_epoch(datetime)
         assert result == microseconds
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=zoned_datetimes(), strict=booleans())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_datetime_to_milliseconds_exact(
         self, *, datetime: dt.datetime, strict: bool
