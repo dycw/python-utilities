@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from hypothesis import given
 from hypothesis.strategies import sampled_from
-from pytest import mark, raises
+from pytest import raises
 
 from tests.modules import (
     package_missing,
@@ -60,7 +60,6 @@ class TestYieldModules:
             )
         )
 
-    @mark.only
     def test_error(self) -> None:
         with raises(ModuleNotFoundError, match="No module named 'missing_package'"):
             _ = list(yield_modules(package_missing, recursive=True))
