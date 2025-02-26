@@ -31,6 +31,9 @@ MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3659634, microseconds=-1)
 MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
 
 
+##
+
+
 def check_valid_zoned_datetime(datetime: dt.datetime, /) -> None:
     """Check if a zoned datetime is valid."""
     check_zoned_datetime(datetime)  # skipif-ci-and-windows
@@ -58,6 +61,9 @@ class CheckValidZonedDateimeError(Exception):
         return f"Zoned datetime must be valid; got {self.datetime} != {self.result}"  # skipif-ci-and-windows
 
 
+##
+
+
 def ensure_date(date: dt.date | str, /) -> dt.date:
     """Ensure the object is a date."""
     if isinstance(date, dt.date):
@@ -76,6 +82,9 @@ class EnsureDateError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to ensure date; got {self.date!r}"
+
+
+##
 
 
 def ensure_duration(duration: Duration | str, /) -> Duration:
@@ -97,6 +106,9 @@ class EnsureDurationError(Exception):
         return f"Unable to ensure duration; got {self.duration!r}"
 
 
+##
+
+
 def ensure_local_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
     """Ensure the object is a local datetime."""
     if isinstance(datetime, dt.datetime):
@@ -116,6 +128,9 @@ class EnsureLocalDateTimeError(Exception):
         return f"Unable to ensure local datetime; got {self.datetime!r}"
 
 
+##
+
+
 def ensure_time(time: dt.time | str, /) -> dt.time:
     """Ensure the object is a time."""
     if isinstance(time, dt.time):
@@ -133,6 +148,9 @@ class EnsureTimeError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to ensure time; got {self.time!r}"
+
+
+##
 
 
 def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
@@ -170,6 +188,9 @@ class _EnsureTimedeltaNanosecondError(EnsureTimedeltaError):
         return f"Unable to ensure timedelta; got {self.nanoseconds} nanoseconds"
 
 
+##
+
+
 def ensure_zoned_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
     """Ensure the object is a zoned datetime."""
     if isinstance(datetime, dt.datetime):
@@ -187,6 +208,9 @@ class EnsureZonedDateTimeError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to ensure zoned datetime; got {self.datetime!r}"
+
+
+##
 
 
 _PARSE_DATE_REGEX = re.compile(r"^(\d{4})(\d{2})(\d{2})$")
@@ -216,6 +240,9 @@ class ParseDateError(Exception):
         return f"Unable to parse date; got {self.date!r}"
 
 
+##
+
+
 def parse_duration(duration: str, /) -> Duration:
     """Parse a string into a Duration."""
     with suppress(ValueError):
@@ -235,6 +262,9 @@ class ParseDurationError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to parse duration; got {self.duration!r}"
+
+
+##
 
 
 _PARSE_LOCAL_DATETIME_REGEX = re.compile(
@@ -281,6 +311,9 @@ class ParseLocalDateTimeError(Exception):
         return f"Unable to parse local datetime; got {self.datetime!r}"
 
 
+##
+
+
 def parse_time(time: str, /) -> dt.time:
     """Parse a string into a time."""
     try:
@@ -297,6 +330,9 @@ class ParseTimeError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to parse time; got {self.time!r}"
+
+
+##
 
 
 def parse_timedelta(timedelta: str, /) -> dt.timedelta:
@@ -343,6 +379,9 @@ class _ParseTimedeltaNanosecondError(ParseTimedeltaError):
         return f"Unable to parse timedelta; got {self.nanoseconds} nanoseconds"
 
 
+##
+
+
 _PARSE_ZONED_DATETIME_REGEX = re.compile(
     r"^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})\.?(\d{6})?\[([\w/]+)\]$"
 )
@@ -387,10 +426,16 @@ class ParseZonedDateTimeError(Exception):
         return f"Unable to parse zoned datetime; got {self.datetime!r}"
 
 
+##
+
+
 def serialize_date(date: dt.date, /) -> str:
     """Serialize a date."""
     check_date_not_datetime(date)
     return Date.from_py_date(date).format_common_iso()
+
+
+##
 
 
 def serialize_duration(duration: Duration, /) -> str:
@@ -412,6 +457,9 @@ class SerializeDurationError(Exception):
         return f"Unable to serialize duration; got {self.duration}"
 
 
+##
+
+
 def serialize_local_datetime(datetime: dt.datetime, /) -> str:
     """Serialize a local datetime."""
     try:
@@ -430,9 +478,15 @@ class SerializeLocalDateTimeError(Exception):
         return f"Unable to serialize local datetime; got {self.datetime}"
 
 
+##
+
+
 def serialize_time(time: dt.time, /) -> str:
     """Serialize a time."""
     return Time.from_py_time(time).format_common_iso()
+
+
+##
 
 
 def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
@@ -451,6 +505,9 @@ class SerializeTimeDeltaError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to serialize timedelta; got {self.timedelta}"
+
+
+##
 
 
 def serialize_zoned_datetime(datetime: dt.datetime, /) -> str:
@@ -473,6 +530,9 @@ class SerializeZonedDateTimeError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to serialize zoned datetime; got {self.datetime}"
+
+
+##
 
 
 def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
