@@ -157,7 +157,7 @@ uv==0.6.3
     # via hatch
 virtualenv==20.29.2
     # via hatch
-whenever==0.7.2
+whenever==0.7.0
     # via dycw-utilities (pyproject.toml)
 zipp==3.21.0
     # via importlib-metadata
