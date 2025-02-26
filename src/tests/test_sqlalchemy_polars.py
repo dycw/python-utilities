@@ -18,7 +18,6 @@ from hypothesis.strategies import (
     datetimes,
     floats,
     integers,
-    just,
     lists,
     none,
     sampled_from,
@@ -88,7 +87,7 @@ from sqlalchemy.exc import DuplicateColumnError, OperationalError, ProgrammingEr
 
 from tests.test_sqlalchemy import _table_names, _upsert_lists
 from utilities.datetime import are_equal_datetimes
-from utilities.hypothesis import sqlalchemy_engines, text_ascii
+from utilities.hypothesis import sqlalchemy_engines, text_ascii, zoned_datetimes
 from utilities.math import is_equal
 from utilities.polars import DatetimeUTC, check_polars_dataframe
 from utilities.sqlalchemy import ensure_tables_created
@@ -108,7 +107,6 @@ from utilities.sqlalchemy_polars import (
     insert_dataframe,
     select_to_dataframe,
 )
-from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
@@ -125,7 +123,7 @@ _CASES_SELECT: list[
     (dates() | none(), pl.Date, sqlalchemy.Date, eq),
     (datetimes() | none(), Datetime, DateTime, eq),
     (
-        datetimes(timezones=just(UTC)) | none(),
+        zoned_datetimes() | none(),
         DatetimeUTC,
         DateTime(timezone=True),
         are_equal_datetimes,
