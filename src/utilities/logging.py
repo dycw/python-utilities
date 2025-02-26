@@ -69,6 +69,9 @@ class StandaloneFileHandler(Handler):
             self.handleError(record)
 
 
+##
+
+
 def add_filters(
     handler: Handler, /, *, filters: Iterable[_FilterType] | None = None
 ) -> None:
@@ -76,6 +79,9 @@ def add_filters(
     if filters is not None:
         for filter_ in filters:
             handler.addFilter(filter_)
+
+
+##
 
 
 def basic_config(
@@ -91,9 +97,15 @@ def basic_config(
     )
 
 
+##
+
+
 def get_default_logging_path() -> Path:
     """Get the logging default path."""
     return get_repo_root().joinpath(".logs")
+
+
+##
 
 
 def get_logger(*, logger: LoggerOrName | None = None) -> Logger:
@@ -105,6 +117,9 @@ def get_logger(*, logger: LoggerOrName | None = None) -> Logger:
             return getLogger(logger)
         case _ as never:
             assert_never(never)
+
+
+##
 
 
 def get_logging_level_number(level: LogLevel, /) -> int:
@@ -123,6 +138,9 @@ class GetLoggingLevelNumberError(Exception):
     @override
     def __str__(self) -> str:
         return f"Invalid logging level: {self.level!r}"
+
+
+##
 
 
 def setup_logging(
@@ -144,10 +162,10 @@ def setup_logging(
 ) -> None:
     """Set up logger."""
     # log record factory
-    from tzlocal import get_localzone  # skipif-ci-and-windows
+    from utilities.tzlocal import get_local_time_zone  # skipif-ci-and-windows
 
     class LogRecordNanoLocal(  # skipif-ci-and-windows
-        _AdvancedLogRecord, time_zone=get_localzone()
+        _AdvancedLogRecord, time_zone=get_local_time_zone()
     ): ...
 
     setLogRecordFactory(LogRecordNanoLocal)  # skipif-ci-and-windows
@@ -255,6 +273,9 @@ def setup_logging(
         extra(logger_use)
 
 
+##
+
+
 @contextmanager
 def temp_handler(
     handler: Handler, /, *, logger: LoggerOrName | None = None
@@ -266,6 +287,9 @@ def temp_handler(
         yield
     finally:
         _ = logger_use.removeHandler(handler)
+
+
+##
 
 
 @contextmanager
@@ -297,6 +321,9 @@ def temp_logger(
             logger_use.setLevel(init_level)
         if propagate is not None:
             logger_use.propagate = init_propagate
+
+
+##
 
 
 class _AdvancedLogRecord(LogRecord):
@@ -363,6 +390,9 @@ class _AdvancedLogRecord(LogRecord):
         """Get the zoned datetime format string."""
         length = len(cls.get_now().format_common_iso())  # skipif-ci-and-windows
         return f"{{_zoned_datetime_str:{length}}}"  # skipif-ci-and-windows
+
+
+##
 
 
 def _ansi_wrap_red(text: str, /) -> str:

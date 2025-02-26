@@ -611,7 +611,7 @@ class OrjsonFormatter(Formatter):
 
     @override
     def format(self, record: LogRecord) -> str:
-        from tzlocal import get_localzone
+        from utilities.tzlocal import get_local_time_zone
 
         extra = {
             k: v
@@ -624,7 +624,9 @@ class OrjsonFormatter(Formatter):
             path_name=Path(record.pathname),
             line_num=record.lineno,
             message=record.getMessage(),
-            datetime=dt.datetime.fromtimestamp(record.created, tz=get_localzone()),
+            datetime=dt.datetime.fromtimestamp(
+                record.created, tz=get_local_time_zone()
+            ),
             func_name=record.funcName,
             extra=extra if len(extra) >= 1 else None,
         )
