@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from os import cpu_count, environ, getenv
-from typing import TYPE_CHECKING, Literal, TypeAlias, assert_never
+from typing import TYPE_CHECKING, Literal, TypeAlias, assert_never, overload
 
 from typing_extensions import override
 
@@ -14,6 +14,9 @@ if TYPE_CHECKING:
 
 
 IntOrAll: TypeAlias = int | Literal["all"]
+
+
+##
 
 
 def get_cpu_count() -> int:
@@ -32,6 +35,9 @@ class GetCPUCountError(Exception):
 
 
 CPU_COUNT = get_cpu_count()
+
+
+##
 
 
 def get_cpu_use(*, n: IntOrAll = "all") -> int:
@@ -56,13 +62,69 @@ class GetCPUUseError(Exception):
         return f"Invalid number of CPUs to use: {self.n}"
 
 
-def get_env_var(key: str, /, *, case_sensitive: bool = True) -> str | None:
+##
+
+
+@overload
+def get_env_var(
+    key: str, /, *, case_sensitive: bool = True, default: str, nullable: bool = False
+) -> str: ...
+@overload
+def get_env_var(
+    key: str,
+    /,
+    *,
+    case_sensitive: bool = True,
+    default: str | None = None,
+    nullable: Literal[True],
+) -> str | None: ...
+@overload
+def get_env_var(
+    key: str,
+    /,
+    *,
+    case_sensitive: bool = True,
+    default: str | None = None,
+    nullable: bool = False,
+) -> str | None: ...
+def get_env_var(
+    key: str,
+    /,
+    *,
+    case_sensitive: bool = True,
+    default: str | None = None,
+    nullable: bool = False,
+) -> str | None:
     """Get an environment variable."""
     try:
         key_use = one_str(environ, key, case_sensitive=case_sensitive)
     except _OneStrEmptyError:
-        return None
+        match default, nullable:
+            case None, False:
+                raise GetEnvVarError(key=key, case_sensitive=case_sensitive) from None
+            case None, True:
+                return None
+            case str(), _:
+                return default
+            case _ as never:
+                assert_never(never)
     return environ[key_use]
+
+
+@dataclass(kw_only=True, slots=True)
+class GetEnvVarError(Exception):
+    key: str
+    case_sensitive: bool = True
+
+    @override
+    def __str__(self) -> str:
+        desc = f"No environment variable {self.key!r}"
+        if not self.case_sensitive:
+            desc += " (modulo case)"
+        return desc
+
+
+##
 
 
 @contextmanager

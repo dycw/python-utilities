@@ -1,16 +1,23 @@
 from __future__ import annotations
 
 from os import getenv
-from typing import Literal
 
 from hypothesis import given
-from hypothesis.strategies import booleans, integers, sampled_from
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    integers,
+    none,
+    sampled_from,
+)
 from pytest import raises
 
 from utilities.hypothesis import text_ascii
 from utilities.os import (
     CPU_COUNT,
     GetCPUUseError,
+    GetEnvVarError,
     get_cpu_count,
     get_cpu_use,
     get_env_var,
@@ -51,31 +58,65 @@ class TestGetCPUUse:
 
 
 class TestGetEnvVar:
-    @given(key=text.map(_prefix), value=text)
+    @given(
+        key=text.map(_prefix), value=text, default=text | none(), nullable=booleans()
+    )
     @skipif_windows
-    def test_case_sensitive(self, *, key: str, value: str) -> None:
-        assert getenv(key) is None
+    def test_case_sensitive(
+        self, *, key: str, value: str, default: str | None, nullable: bool
+    ) -> None:
         with temp_environ({key: value}):
-            assert get_env_var(key) == value
+            result = get_env_var(key, default=default, nullable=nullable)
+        assert result == value
 
-    @given(key=text.map(_prefix), value=text, case=sampled_from(["upper", "lower"]))
+    @given(
+        data=data(),
+        key=text.map(_prefix),
+        value=text,
+        default=text | none(),
+        nullable=booleans(),
+    )
     def test_case_insensitive(
-        self, *, key: str, value: str, case: Literal["lower", "upper"]
+        self,
+        *,
+        data: DataObject,
+        key: str,
+        value: str,
+        default: str | None,
+        nullable: bool,
     ) -> None:
-        match case:
-            case "lower":
-                key_use = key.lower()
-            case "upper":
-                key_use = key.upper()
+        key_use = data.draw(sampled_from([key, key.lower(), key.upper()]))
         with temp_environ({key: value}):
-            assert get_env_var(key_use, case_sensitive=False) == value
+            result = get_env_var(
+                key_use, case_sensitive=False, default=default, nullable=nullable
+            )
+        assert result == value
 
-    @given(key=text.map(_prefix), value=text, case_sensitive=booleans())
-    def test_error_case_sensitive_empty(
-        self, *, key: str, value: str, case_sensitive: bool
+    @given(
+        key=text.map(_prefix),
+        case_sensitive=booleans(),
+        default=text,
+        nullable=booleans(),
+    )
+    def test_default(
+        self, *, key: str, case_sensitive: bool, default: str, nullable: bool
     ) -> None:
-        with temp_environ({key: value}):
-            assert get_env_var(_prefix(key), case_sensitive=case_sensitive) is None
+        value = get_env_var(
+            key, case_sensitive=case_sensitive, default=default, nullable=nullable
+        )
+        assert value == default
+
+    @given(key=text.map(_prefix), case_sensitive=booleans())
+    def test_nullable(self, *, key: str, case_sensitive: bool) -> None:
+        value = get_env_var(key, case_sensitive=case_sensitive, nullable=True)
+        assert value is None
+
+    @given(key=text.map(_prefix), case_sensitive=booleans())
+    def test_error(self, *, key: str, case_sensitive: bool) -> None:
+        with raises(
+            GetEnvVarError, match=r"No environment variable .*(\(modulo case\))?"
+        ):
+            _ = get_env_var(key, case_sensitive=case_sensitive)
 
 
 class TestTempEnviron:
