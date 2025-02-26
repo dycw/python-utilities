@@ -15,7 +15,6 @@ from hypothesis.strategies import (
     datetimes,
     floats,
     integers,
-    just,
     permutations,
     sampled_from,
     timedeltas,
@@ -755,7 +754,7 @@ class TestMaybeSubPctY:
 
 
 class TestMicrosecondsOrMillisecondsSinceEpoch:
-    @given(datetime=datetimes(timezones=just(UTC)))
+    @given(datetime=zoned_datetimes())
     def test_datetime_to_microseconds(self, *, datetime: dt.datetime) -> None:
         microseconds = microseconds_since_epoch(datetime)
         result = microseconds_since_epoch_to_datetime(microseconds)
@@ -768,8 +767,9 @@ class TestMicrosecondsOrMillisecondsSinceEpoch:
         result = microseconds_since_epoch(datetime)
         assert result == microseconds
 
-    @given(datetime=datetimes(timezones=just(UTC)))
-    @mark.parametrize("strict", [param(True), param(False)])
+    @given(datetime=zoned_datetimes())
+    @mark.parametrize("strict", [param(True), param(False)])  # use mark.parametrize
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_datetime_to_milliseconds_exact(
         self, *, datetime: dt.datetime, strict: bool
     ) -> None:
@@ -782,7 +782,7 @@ class TestMicrosecondsOrMillisecondsSinceEpoch:
         result = milliseconds_since_epoch_to_datetime(round(milliseconds))
         assert result == datetime
 
-    @given(datetime=datetimes(timezones=just(UTC)))
+    @given(datetime=zoned_datetimes())
     def test_datetime_to_milliseconds_error(self, *, datetime: dt.datetime) -> None:
         _, microseconds = divmod(datetime.microsecond, _MICROSECONDS_PER_MILLISECOND)
         _ = assume(microseconds != 0)
@@ -1028,7 +1028,8 @@ class TestTimedeltaToMicrosecondsOrMilliseconds:
         assert result == microseconds
 
     @given(timedelta=timedeltas())
-    @mark.parametrize("strict", [param(True), param(False)])
+    @mark.parametrize("strict", [param(True), param(False)])  # use mark.parametrize
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_timedelta_to_milliseconds_exact(
         self, *, timedelta: dt.timedelta, strict: bool
     ) -> None:

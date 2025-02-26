@@ -48,6 +48,7 @@ if TYPE_CHECKING:
 
 class TestPeriod:
     @given(dates=pairs(dates(), sorted=True), duration=timedeltas())
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_add(
         self, *, dates: tuple[dt.date, dt.date], duration: dt.timedelta
     ) -> None:
@@ -200,6 +201,7 @@ class TestPeriod:
         _ = sorted([period1, period2])
 
     @given(dates=pairs(dates(), sorted=True), duration=timedeltas())
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_sub(
         self, *, dates: tuple[dt.date, dt.date], duration: dt.timedelta
     ) -> None:

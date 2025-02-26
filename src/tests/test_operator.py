@@ -335,8 +335,8 @@ class TestIsEqual:
         assert utilities.operator.is_equal(x, y, abs_tol=1e-8)
 
     @given(
-        x=dictionaries(text_ascii(), make_objects()),
-        y=dictionaries(text_ascii(), make_objects()),
+        x=dictionaries(text_ascii(), make_objects(), max_size=10),
+        y=dictionaries(text_ascii(), make_objects(), max_size=10),
     )
     def test_mappings(self, *, x: StrMapping, y: StrMapping) -> None:
         with assume_does_not_raise(IsEqualError):

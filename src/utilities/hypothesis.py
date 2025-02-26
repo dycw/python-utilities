@@ -75,6 +75,7 @@ from utilities.math import (
     MIN_UINT32,
     MIN_UINT64,
 )
+from utilities.os import get_env_var
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
@@ -691,7 +692,10 @@ def setup_hypothesis_profiles(
             suppress_health_check=suppress_health_check,
             verbosity=profile.verbosity,
         )
-    settings.load_profile(Profile.default.name)
+    profile = get_env_var(
+        "HYPOTHESIS_PROFILE", case_sensitive=False, default=Profile.default.name
+    )
+    settings.load_profile(profile)
 
 
 ##
