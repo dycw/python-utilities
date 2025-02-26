@@ -162,10 +162,10 @@ def setup_logging(
 ) -> None:
     """Set up logger."""
     # log record factory
-    from tzlocal import get_localzone  # skipif-ci-and-windows
+    from utilities.tzlocal import get_local_time_zone  # skipif-ci-and-windows
 
     class LogRecordNanoLocal(  # skipif-ci-and-windows
-        _AdvancedLogRecord, time_zone=get_localzone()
+        _AdvancedLogRecord, time_zone=get_local_time_zone()
     ): ...
 
     setLogRecordFactory(LogRecordNanoLocal)  # skipif-ci-and-windows

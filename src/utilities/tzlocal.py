@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 
 def get_local_time_zone() -> ZoneInfo:
+    """Get the local time zone, with the logging disabled."""
     with temp_logger("tzlocal", disabled=True):
         return get_localzone()
 

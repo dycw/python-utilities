@@ -454,9 +454,9 @@ MONTH = get_months(n=1)
 def get_now(*, time_zone: ZoneInfoLike = UTC) -> dt.datetime:
     """Get the current, timezone-aware time."""
     if time_zone == "local":
-        from tzlocal import get_localzone
+        from utilities.tzlocal import get_local_time_zone
 
-        time_zone_use = get_localzone()
+        time_zone_use = get_local_time_zone()
     else:
         time_zone_use = ensure_time_zone(time_zone)
     return dt.datetime.now(tz=time_zone_use)
