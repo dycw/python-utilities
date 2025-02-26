@@ -68,5 +68,5 @@ tomli==2.2.1
     # via coverage
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
-whenever==0.7.0
+whenever==0.7.2
     # via dycw-utilities (pyproject.toml)
