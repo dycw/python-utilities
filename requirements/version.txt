@@ -38,7 +38,7 @@ httpx==0.28.1
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.127.1
+hypothesis==6.127.2
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -147,7 +147,7 @@ typing-extensions==4.12.2
     #   anyio
 userpath==1.9.2
     # via hatch
-uv==0.6.2
+uv==0.6.3
     # via hatch
 virtualenv==20.29.2
     # via hatch

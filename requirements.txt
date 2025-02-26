@@ -2,7 +2,7 @@
 #    uv pip compile --extra=dev --prerelease=explicit --output-file=requirements.txt --python-version=3.11 pyproject.toml
 aiohappyeyeballs==2.4.6
     # via aiohttp
-aiohttp==3.11.12
+aiohttp==3.11.13
     # via dycw-utilities (pyproject.toml)
 aiosignal==1.3.2
     # via aiohttp
@@ -145,7 +145,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.127.1
+hypothesis==6.127.2
     # via dycw-utilities (pyproject.toml)
 ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
@@ -209,7 +209,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.27.1
+narwhals==1.28.0
     # via
     #   altair
     #   vegafusion
@@ -399,7 +399,7 @@ scipy==1.15.2
     #   scs
 scs==3.2.7.post2
     # via cvxpy
-setuptools==75.8.0
+setuptools==75.8.1
     # via dycw-utilities (pyproject.toml)
 shellingham==1.5.4
     # via hatch
@@ -473,7 +473,7 @@ urllib3==2.3.0
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.6.2
+uv==0.6.3
     # via hatch
 uvicorn==0.34.0
     # via dycw-utilities (pyproject.toml)
@@ -487,7 +487,7 @@ virtualenv==20.29.2
     #   nox
 vl-convert-python==1.7.0
     # via dycw-utilities (pyproject.toml)
-whenever==0.7.0
+whenever==0.7.2
     # via dycw-utilities (pyproject.toml)
 win32-setctime==1.2.0
     # via dycw-utilities (pyproject.toml)

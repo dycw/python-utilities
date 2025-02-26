@@ -18,7 +18,7 @@ execnet==2.1.1
     # via pytest-xdist
 greenlet==3.1.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.127.1
+hypothesis==6.127.2
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -87,5 +87,5 @@ typing-extensions==4.12.2
     #   sqlalchemy
 tzlocal==5.3
     # via dycw-utilities (pyproject.toml)
-whenever==0.7.0
+whenever==0.7.2
     # via dycw-utilities (pyproject.toml)

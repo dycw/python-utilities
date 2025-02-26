@@ -46,7 +46,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.127.1
+hypothesis==6.127.2
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -161,11 +161,11 @@ tzlocal==5.3
     # via dycw-utilities (pyproject.toml)
 userpath==1.9.2
     # via hatch
-uv==0.6.2
+uv==0.6.3
     # via hatch
 virtualenv==20.29.2
     # via hatch
-whenever==0.7.0
+whenever==0.7.2
     # via dycw-utilities (pyproject.toml)
 zipp==3.21.0
     # via importlib-metadata

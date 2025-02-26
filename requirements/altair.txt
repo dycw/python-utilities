@@ -19,7 +19,7 @@ deprecated==1.2.18
     # via pikepdf
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.127.1
+hypothesis==6.127.2
     # via dycw-utilities (pyproject.toml)
 img2pdf==0.6.0
     # via dycw-utilities (pyproject.toml)
@@ -35,7 +35,7 @@ lxml==5.3.1
     # via pikepdf
 markupsafe==3.0.2
     # via jinja2
-narwhals==1.27.1
+narwhals==1.28.0
     # via altair
 numpy==2.2.3
     # via pytest-rng
@@ -110,7 +110,7 @@ typing-extensions==4.12.2
     #   referencing
 vl-convert-python==1.6.1
     # via dycw-utilities (pyproject.toml)
-whenever==0.7.0
+whenever==0.7.2
     # via dycw-utilities (pyproject.toml)
 wrapt==1.17.2
     # via deprecated
