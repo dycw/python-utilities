@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
+    booleans,
     data,
     dates,
     datetimes,
@@ -768,8 +769,8 @@ class TestMicrosecondsOrMillisecondsSinceEpoch:
         result = microseconds_since_epoch(datetime)
         assert result == microseconds
 
-    @given(datetime=datetimes(timezones=just(UTC)))
-    @mark.parametrize("strict", [param(True), param(False)])
+    @given(datetime=zoned_datetimes())
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_datetime_to_milliseconds_exact(
         self, *, datetime: dt.datetime, strict: bool
     ) -> None:
@@ -1027,8 +1028,8 @@ class TestTimedeltaToMicrosecondsOrMilliseconds:
         result = timedelta_to_microseconds(timedelta)
         assert result == microseconds
 
-    @given(timedelta=timedeltas())
-    @mark.parametrize("strict", [param(True), param(False)])
+    @given(timedelta=timedeltas(), strict=booleans())
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_timedelta_to_milliseconds_exact(
         self, *, timedelta: dt.timedelta, strict: bool
     ) -> None:
