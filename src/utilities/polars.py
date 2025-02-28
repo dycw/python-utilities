@@ -131,6 +131,7 @@ DatetimeTokyo = Datetime(time_zone="Asia/Tokyo")
 DatetimeUSCentral = Datetime(time_zone="US/Central")
 DatetimeUSEastern = Datetime(time_zone="US/Eastern")
 DatetimeUTC = Datetime(time_zone="UTC")
+_FINITE_EWM_MIN_WEIGHT = 0.9999
 
 
 ##
@@ -755,9 +756,6 @@ def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
 ##
 
 
-_FINITE_EWM_MEAN_MIN_WEIGHT = 0.9999
-
-
 @overload
 def finite_ewm_mean(
     column: ExprLike,
@@ -767,7 +765,7 @@ def finite_ewm_mean(
     span: float | None = None,
     half_life: float | None = None,
     alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_MEAN_MIN_WEIGHT,
+    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
 ) -> Expr: ...
 @overload
 def finite_ewm_mean(
@@ -778,7 +776,7 @@ def finite_ewm_mean(
     span: float | None = None,
     half_life: float | None = None,
     alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_MEAN_MIN_WEIGHT,
+    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
 ) -> Series: ...
 @overload
 def finite_ewm_mean(
@@ -789,7 +787,7 @@ def finite_ewm_mean(
     span: float | None = None,
     half_life: float | None = None,
     alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_MEAN_MIN_WEIGHT,
+    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
 ) -> Expr | Series: ...
 def finite_ewm_mean(
     column: IntoExprColumn,
@@ -799,7 +797,7 @@ def finite_ewm_mean(
     span: float | None = None,
     half_life: float | None = None,
     alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_MEAN_MIN_WEIGHT,
+    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
 ) -> Expr | Series:
     """Compute a finite EWMA."""
     try:
@@ -808,12 +806,14 @@ def finite_ewm_mean(
         )
     except _FiniteEWMWeightsError as error:
         raise FiniteEWMMeanError(min_weight=error.min_weight) from None
-    return column.rolling_mean(len(weights), weights=weights)
+    return ensure_expr_or_series(column).rolling_mean(
+        len(weights), weights=list(weights)
+    )
 
 
 @dataclass(kw_only=True)
 class FiniteEWMMeanError(Exception):
-    min_weight: float = _FINITE_EWM_MEAN_MIN_WEIGHT
+    min_weight: float = _FINITE_EWM_MIN_WEIGHT
 
     @override
     def __str__(self) -> str:
@@ -821,9 +821,6 @@ class FiniteEWMMeanError(Exception):
 
 
 ##
-
-
-_FINITE_EWM_STD_MIN_WEIGHT = 0.9999
 
 
 @overload
@@ -835,7 +832,7 @@ def finite_ewm_std(
     span: float | None = None,
     half_life: float | None = None,
     alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_STD_MIN_WEIGHT,
+    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
 ) -> Expr: ...
 @overload
 def finite_ewm_std(
@@ -846,7 +843,7 @@ def finite_ewm_std(
     span: float | None = None,
     half_life: float | None = None,
     alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_STD_MIN_WEIGHT,
+    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
 ) -> Series: ...
 @overload
 def finite_ewm_std(
@@ -857,7 +854,7 @@ def finite_ewm_std(
     span: float | None = None,
     half_life: float | None = None,
     alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_STD_MIN_WEIGHT,
+    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
 ) -> Expr | Series: ...
 def finite_ewm_std(
     column: IntoExprColumn,
@@ -867,7 +864,7 @@ def finite_ewm_std(
     span: float | None = None,
     half_life: float | None = None,
     alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_STD_MIN_WEIGHT,
+    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
 ) -> Expr | Series:
     """Compute a finite EWMA."""
     try:
@@ -876,12 +873,14 @@ def finite_ewm_std(
         )
     except _FiniteEWMWeightsError as error:
         raise FiniteEWMStdError(min_weight=error.min_weight) from None
-    return column.rolling_std(len(weights), weights=weights)
+    return ensure_expr_or_series(column).rolling_std(
+        len(weights), weights=list(weights)
+    )
 
 
 @dataclass(kw_only=True)
 class FiniteEWMStdError(Exception):
-    min_weight: float = _FINITE_EWM_STD_MIN_WEIGHT
+    min_weight: float = _FINITE_EWM_MIN_WEIGHT
 
     @override
     def __str__(self) -> str:
@@ -890,7 +889,72 @@ class FiniteEWMStdError(Exception):
 
 ##
 
-_FINITE_EWM_MIN_WEIGHT = 0.9999
+
+@overload
+def finite_ewm_var(
+    column: ExprLike,
+    /,
+    *,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
+) -> Expr: ...
+@overload
+def finite_ewm_var(
+    column: Series,
+    /,
+    *,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
+) -> Series: ...
+@overload
+def finite_ewm_var(
+    column: IntoExprColumn,
+    /,
+    *,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
+) -> Expr | Series: ...
+def finite_ewm_var(
+    column: IntoExprColumn,
+    /,
+    *,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
+) -> Expr | Series:
+    """Compute a finite EWMA."""
+    try:
+        weights = _finite_ewm_weights(
+            com=com, span=span, half_life=half_life, alpha=alpha, min_weight=min_weight
+        )
+    except _FiniteEWMWeightsError as error:
+        raise FiniteEWMVarError(min_weight=error.min_weight) from None
+    return ensure_expr_or_series(column).rolling_var(
+        len(weights), weights=list(weights)
+    )
+
+
+@dataclass(kw_only=True)
+class FiniteEWMVarError(Exception):
+    min_weight: float = _FINITE_EWM_MIN_WEIGHT
+
+    @override
+    def __str__(self) -> str:
+        return f"Min weight must be at least 0 and less than 1; got {self.min_weight}"
+
+
+##
 
 
 def _finite_ewm_weights(
@@ -1656,6 +1720,7 @@ __all__ = [
     "DropNullStructSeriesError",
     "FiniteEWMMeanError",
     "FiniteEWMStdError",
+    "FiniteEWMVarError",
     "GetDataTypeOrSeriesTimeZoneError",
     "GetSeriesNumberOfDecimalsError",
     "InsertAfterError",
@@ -1681,6 +1746,7 @@ __all__ = [
     "ensure_expr_or_series",
     "finite_ewm_mean",
     "finite_ewm_std",
+    "finite_ewm_var",
     "floor_datetime",
     "get_data_type_or_series_time_zone",
     "get_series_number_of_decimals",
