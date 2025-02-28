@@ -1191,6 +1191,16 @@ class TestFiniteEWMVar:
         exp_result_sr = Series(values=exp_result, dtype=Float64)
         assert_series_equal(result[-3:], exp_result_sr, check_names=False)
 
+    @given(alpha1=floats(0.1, 0.9), alpha2=floats(0.1, 0.9))
+    def test_repeated(self, *, alpha1: float, alpha2: float) -> None:
+        state = get_state(seed=0)
+        series = Series(values=[state.randint(-10, 10) for _ in range(100)])
+        first = finite_ewm_mean(series, alpha=alpha1)
+        second = finite_ewm_mean(first, alpha=alpha2)
+        for i, j in zip(first.is_null(), second.is_null(), strict=False):
+            if i:
+                assert j
+
     def test_expr(self) -> None:
         expr = finite_ewm_var(int_range(end=10), alpha=0.5)
         assert isinstance(expr, Expr)
