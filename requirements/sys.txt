@@ -153,7 +153,7 @@ tzlocal==5.3
     # via dycw-utilities (pyproject.toml)
 userpath==1.9.2
     # via hatch
-uv==0.5.20
+uv==0.6.3
     # via hatch
 virtualenv==20.29.2
     # via hatch
