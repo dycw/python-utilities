@@ -1561,7 +1561,6 @@ __all__ = [
     "DatetimeUTC",
     "DropNullStructSeriesError",
     "FiniteEWMAError",
-    "FiniteEWMAError",
     "GetDataTypeOrSeriesTimeZoneError",
     "GetSeriesNumberOfDecimalsError",
     "InsertAfterError",
