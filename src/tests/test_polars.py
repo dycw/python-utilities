@@ -88,6 +88,8 @@ from utilities.polars import (
     _GetDataTypeOrSeriesTimeZoneNotZonedError,
     _GetSeriesNumberOfDecimalsAllNullError,
     _GetSeriesNumberOfDecimalsNotFloatError,
+    _InsertBetweenMissingColumnsError,
+    _InsertBetweenNonConsecutiveError,
     _yield_struct_series_element_remove_nulls,
     _YieldRowsAsDataClassesColumnsSuperSetError,
     _YieldRowsAsDataClassesWrongTypeError,
