@@ -100,6 +100,7 @@ from utilities.math import (
     check_integer,
     ewm_parameters,
     is_less_than,
+    is_non_negative,
     is_positive,
     number_of_decimals,
 )
@@ -755,7 +756,7 @@ def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
 
 ##
 
-_THRESHOLD = 0.9999
+_MIN_WEIGHT = 0.9999
 
 
 @overload
@@ -763,11 +764,11 @@ def finite_ewma(
     column: ExprLike,
     /,
     *,
-    threshold: float = _THRESHOLD,
     com: float | None = None,
     span: float | None = None,
     half_life: float | None = None,
     alpha: float | None = None,
+    min_weight: float = _MIN_WEIGHT,
     min_periods: int = 1,
 ) -> Expr: ...
 @overload
@@ -775,11 +776,11 @@ def finite_ewma(
     column: Series,
     /,
     *,
-    threshold: float = _THRESHOLD,
     com: float | None = None,
     span: float | None = None,
     half_life: float | None = None,
     alpha: float | None = None,
+    min_weight: float = _MIN_WEIGHT,
     min_periods: int = 1,
 ) -> Series: ...
 @overload
@@ -787,49 +788,65 @@ def finite_ewma(
     column: IntoExprColumn,
     /,
     *,
-    threshold: float = _THRESHOLD,
     com: float | None = None,
     span: float | None = None,
     half_life: float | None = None,
     alpha: float | None = None,
+    min_weight: float = _MIN_WEIGHT,
     min_periods: int = 1,
 ) -> Expr | Series: ...
 def finite_ewma(
     column: IntoExprColumn,
     /,
     *,
-    threshold: float = _THRESHOLD,
     com: float | None = None,
     span: float | None = None,
     half_life: float | None = None,
     alpha: float | None = None,
+    min_weight: float = _MIN_WEIGHT,
     min_periods: int = 1,
 ) -> Expr | Series:
     """Compute a finite EWMA."""
-    if not (is_positive(threshold) and is_less_than(threshold, 1.0)):
-        raise FiniteEWMAError(threshold=threshold)
+    if not (is_non_negative(min_weight) and is_less_than(min_weight, 1.0)):
+        raise FiniteEWMAError(min_weight=min_weight)
     column = ensure_expr_or_series(column)
     params = ewm_parameters(com=com, span=span, half_life=half_life, alpha=alpha)
-    alpha_ = params.alpha
-    one_minus_alpha = 1.0 - alpha_
-    min_window = log(1.0 - threshold) / log(one_minus_alpha) - 1.0
-    window = ceil(min_window)
-    terms = (alpha_ * one_minus_alpha**i * column.shift(n=i) for i in range(window + 1))
-    head, *tail = terms
-    total = sum(tail, start=head)
+    alpha_use = params.alpha
+    step = ceil(log(1 - min_weight) / log(1 - alpha_use))
+    ewma = _finite_ewma_core(column, alpha_use, step)
     predicate = int_range(start=1, end=pl.len() + 1) >= min_periods
-    match total:
+    replaced = when(predicate).then(ewma)
+    match ewma:
         case Expr():
-            return when(predicate).then(total)
+            return replaced
         case Series():
-            return total.to_frame().with_columns(predicate)[total.name]
+            return ewma.to_frame().with_columns(replaced.alias(ewma.name))[ewma.name]
         case _ as never:
             assert_never(never)
 
 
+def _finite_ewma_core(
+    column: Expr | Series,
+    alpha: float,
+    step: int,
+    /,
+) -> Expr | Series:
+    if step == 0:
+        return column
+    if step > 0:
+        return alpha * column + (1 - alpha) * _finite_ewma_core(
+            column.shift(), alpha, step - 1
+        )
+    raise ImpossibleCaseError(case=[f"{step=}"])  # pragma: no cover
+
+
 @dataclass(kw_only=True)
 class FiniteEWMAError(Exception):
-    threshold: float = _THRESHOLD
+    min_weight: float = _MIN_WEIGHT
+
+    @override
+    def __str__(self) -> str:
+        return f"Min weight must be at least 0 and at most 1; got {self.min_weight}"
 
 
 ##
@@ -1562,6 +1579,7 @@ __all__ = [
     "DatetimeUTC",
     "DropNullStructSeriesError",
     "FiniteEWMAError",
+    "FiniteEWMAError",
     "GetDataTypeOrSeriesTimeZoneError",
     "GetSeriesNumberOfDecimalsError",
     "InsertAfterError",
@@ -1585,6 +1603,7 @@ __all__ = [
     "drop_null_struct_series",
     "ensure_data_type",
     "ensure_expr_or_series",
+    "finite_ewma",
     "floor_datetime",
     "get_data_type_or_series_time_zone",
     "get_series_number_of_decimals",
