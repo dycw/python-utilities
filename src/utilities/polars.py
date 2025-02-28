@@ -805,21 +805,13 @@ def finite_ewma(
         raise FiniteEWMAError(min_weight=min_weight)
     column = ensure_expr_or_series(column)
     params = ewm_parameters(com=com, span=span, half_life=half_life, alpha=alpha)
-    alpha_use = params.alpha
-    step = ceil(log(1 - min_weight) / log(1 - alpha_use))
-    return _finite_ewma_core(column, alpha_use, step)
-
-
-def _finite_ewma_core(
-    column: Expr | Series, alpha: float, step: int, /
-) -> Expr | Series:
-    if step == 0:
-        return column
-    if step > 0:
-        return alpha * column + (1 - alpha) * _finite_ewma_core(
-            column.shift(), alpha, step - 1
-        )
-    raise ImpossibleCaseError(case=[f"{step=}"])  # pragma: no cover
+    alpha_ = params.alpha
+    one_minus_alpha = 1 - alpha_
+    min_terms = ceil(log(1 - min_weight) / log(one_minus_alpha))
+    window_size = min_terms + 2
+    raw_weights = [alpha_ * one_minus_alpha**i for i in reversed(range(window_size))]
+    weights = [w / sum(raw_weights) for w in raw_weights]
+    return column.rolling_mean(window_size, weights=weights)
 
 
 @dataclass(kw_only=True)
