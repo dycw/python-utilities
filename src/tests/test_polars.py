@@ -64,7 +64,9 @@ from utilities.polars import (
     DatetimeUSEastern,
     DatetimeUTC,
     DropNullStructSeriesError,
-    FiniteEWMAError,
+    FiniteEWMMeanError,
+    FiniteEWMStdError,
+    FiniteEWMVarError,
     InsertAfterError,
     InsertBeforeError,
     IsNotNullStructSeriesError,
@@ -89,6 +91,8 @@ from utilities.polars import (
     _CheckPolarsDataFrameWidthError,
     _DataClassToDataFrameEmptyError,
     _DataClassToDataFrameNonUniqueError,
+    _finite_ewm_weights,
+    _FiniteEWMWeightsError,
     _GetDataTypeOrSeriesTimeZoneNotDateTimeError,
     _GetDataTypeOrSeriesTimeZoneNotZonedError,
     _GetSeriesNumberOfDecimalsAllNullError,
@@ -111,7 +115,9 @@ from utilities.polars import (
     drop_null_struct_series,
     ensure_data_type,
     ensure_expr_or_series,
-    finite_ewma,
+    finite_ewm_mean,
+    finite_ewm_std,
+    finite_ewm_var,
     floor_datetime,
     get_data_type_or_series_time_zone,
     get_series_number_of_decimals,
@@ -1008,17 +1014,13 @@ class TestEnsureExprOrSeries:
         assert isinstance(result, Expr | Series)
 
 
-class TestFiniteEWMA:
+class TestFiniteEWMMean:
     alpha_0_75_values: ClassVar[list[float]] = [
-        -6.3176116240621605,
-        -6.079402906015541,
         -8.269850726503885,
         -8.067462681625972,
         3.233134329593507,
     ]
     alpha_0_99_values: ClassVar[list[float]] = [
-        -6.01998706891796,
-        -6.00019987068918,
         -8.970001998706891,
         -8.009700019987068,
         6.849902999800129,
@@ -1026,31 +1028,29 @@ class TestFiniteEWMA:
 
     @given(
         case=sampled_from([
-            [0.75, 0.9, alpha_0_75_values, [-6.5, -6.125, -8.25, -8.0625, 3.1875]],
+            [
+                0.75,
+                0.9,
+                alpha_0_75_values,
+                [-8.28235294117647, -8.070588235294117, 3.2705882352941176],
+            ],
             [
                 0.75,
                 0.9999,
                 alpha_0_75_values,
-                [
-                    -6.317626953125,
-                    -6.0794677734375,
-                    -8.26959228515625,
-                    -8.06756591796875,
-                    3.23321533203125,
-                ],
+                [-8.269864158112174, -8.06746317849418, 3.2331284833087284],
             ],
-            [0.99, 0.9, alpha_0_99_values, [-6.02, -6.0, -8.97, -8.01, 6.85]],
+            [
+                0.99,
+                0.9,
+                alpha_0_99_values,
+                [-8.970002970002971, -8.00970200970201, 6.849915849915851],
+            ],
             [
                 0.99,
                 0.9999,
                 alpha_0_99_values,
-                [
-                    -6.0199869999999995,
-                    -6.0001999999999995,
-                    -8.970002000000001,
-                    -8.0097,
-                    6.849902999999999,
-                ],
+                [-8.970002000096999, -8.00970002000097, 6.84990300128499],
             ],
         ])
     )
@@ -1060,21 +1060,162 @@ class TestFiniteEWMA:
         series = Series(values=[state.randint(-10, 10) for _ in range(100)])
         base = series.ewm_mean(alpha=alpha)
         exp_base_sr = Series(values=exp_base, dtype=Float64)
-        assert_series_equal(base[-5:], exp_base_sr, check_names=False)
-        result = finite_ewma(series, alpha=alpha, min_weight=min_weight)
+        assert_series_equal(base[-3:], exp_base_sr, check_names=False)
+        result = finite_ewm_mean(series, alpha=alpha, min_weight=min_weight)
         exp_result_sr = Series(values=exp_result, dtype=Float64)
-        assert_series_equal(result[-5:], exp_result_sr, check_names=False)
+        assert_series_equal(result[-3:], exp_result_sr, check_names=False)
 
     def test_expr(self) -> None:
-        expr = finite_ewma(int_range(end=10), alpha=0.5)
+        expr = finite_ewm_mean(int_range(end=10), alpha=0.5)
         assert isinstance(expr, Expr)
 
     def test_error(self) -> None:
         with raises(
-            FiniteEWMAError,
+            FiniteEWMMeanError,
             match=r"Min weight must be at least 0 and less than 1; got 1\.0",
         ):
-            _ = finite_ewma(int_range(end=10), alpha=0.5, min_weight=1.0)
+            _ = finite_ewm_mean(int_range(end=10), alpha=0.5, min_weight=1.0)
+
+
+class TestFiniteEWMStd:
+    alpha_0_75_values: ClassVar[list[float]] = [
+        2.096625000075372,
+        1.0644685050890503,
+        10.329707190488694,
+    ]
+    alpha_0_99_values: ClassVar[list[float]] = [
+        2.121120702209997,
+        0.7179111531988066,
+        10.613172793962372,
+    ]
+
+    @given(
+        case=sampled_from([
+            [
+                0.75,
+                0.9,
+                alpha_0_75_values,
+                [1.2705882352941238, 0.6469518628172929, 6.517647058823529],
+            ],
+            [
+                0.75,
+                0.9999,
+                alpha_0_75_values,
+                [1.3260061196275215, 0.673220307027668, 6.533076272849769],
+            ],
+            [
+                0.99,
+                0.9,
+                alpha_0_99_values,
+                [0.2984816044288642, 0.10100436279559027, 1.4934259274365649],
+            ],
+            [
+                0.99,
+                0.9999,
+                alpha_0_99_values,
+                [0.2984830311941447, 0.10102410411885458, 1.4934804566187174],
+            ],
+        ])
+    )
+    def test_main(self, *, case: tuple[float, float, list[float], list[float]]) -> None:
+        alpha, min_weight, exp_base, exp_result = case
+        state = get_state(seed=0)
+        series = Series(values=[state.randint(-10, 10) for _ in range(100)])
+        base = series.ewm_std(alpha=alpha)
+        exp_base_sr = Series(values=exp_base, dtype=Float64)
+        assert_series_equal(base[-3:], exp_base_sr, check_names=False)
+        result = finite_ewm_std(series, alpha=alpha, min_weight=min_weight)
+        exp_result_sr = Series(values=exp_result, dtype=Float64)
+        assert_series_equal(result[-3:], exp_result_sr, check_names=False)
+
+    def test_expr(self) -> None:
+        expr = finite_ewm_std(int_range(end=10), alpha=0.5)
+        assert isinstance(expr, Expr)
+
+    def test_error(self) -> None:
+        with raises(
+            FiniteEWMStdError,
+            match=r"Min weight must be at least 0 and less than 1; got 1\.0",
+        ):
+            _ = finite_ewm_std(int_range(end=10), alpha=0.5, min_weight=1.0)
+
+
+class TestFiniteEWMVar:
+    alpha_0_75_values: ClassVar[list[float]] = [
+        4.395836390941055,
+        1.1330931983265176,
+        106.70285064123384,
+    ]
+    alpha_0_99_values: ClassVar[list[float]] = [
+        4.499153033343832,
+        0.5153964238872404,
+        112.63943675450305,
+    ]
+
+    @given(
+        case=sampled_from([
+            [
+                0.75,
+                0.9,
+                alpha_0_75_values,
+                [1.6143944636678356, 0.41854671280276534, 42.479723183391],
+            ],
+            [
+                0.75,
+                0.9999,
+                alpha_0_75_values,
+                [1.758292229289637, 0.4532255817944275, 42.68108558687263],
+            ],
+            [
+                0.99,
+                0.9,
+                alpha_0_99_values,
+                [0.08909126818242896, 0.010201881303743221, 2.230321000739764],
+            ],
+            [
+                0.99,
+                0.9999,
+                alpha_0_99_values,
+                [0.08909211991084476, 0.010205869613017171, 2.2304838743020525],
+            ],
+        ])
+    )
+    def test_main(self, *, case: tuple[float, float, list[float], list[float]]) -> None:
+        alpha, min_weight, exp_base, exp_result = case
+        state = get_state(seed=0)
+        series = Series(values=[state.randint(-10, 10) for _ in range(100)])
+        base = series.ewm_var(alpha=alpha)
+        exp_base_sr = Series(values=exp_base, dtype=Float64)
+        assert_series_equal(base[-3:], exp_base_sr, check_names=False)
+        result = finite_ewm_var(series, alpha=alpha, min_weight=min_weight)
+        exp_result_sr = Series(values=exp_result, dtype=Float64)
+        assert_series_equal(result[-3:], exp_result_sr, check_names=False)
+
+    def test_expr(self) -> None:
+        expr = finite_ewm_var(int_range(end=10), alpha=0.5)
+        assert isinstance(expr, Expr)
+
+    def test_error(self) -> None:
+        with raises(
+            FiniteEWMVarError,
+            match=r"Min weight must be at least 0 and less than 1; got 1\.0",
+        ):
+            _ = finite_ewm_var(int_range(end=10), alpha=0.5, min_weight=1.0)
+
+
+class TestFiniteEWMWeights:
+    @given(alpha=floats(0.0001, 0.9999), min_weight=floats(0.0, 0.9999))
+    def test_main(self, *, alpha: float, min_weight: float) -> None:
+        weights = _finite_ewm_weights(alpha=alpha, min_weight=min_weight, raw=True)
+        total = sum(weights)
+        assert total >= min_weight
+
+    def test_error(self) -> None:
+        with raises(
+            _FiniteEWMWeightsError,
+            match=r"Min weight must be at least 0 and less than 1; got 1\.0",
+        ):
+            _ = _finite_ewm_weights(min_weight=1.0)
 
 
 class TestFloorDateTime:
