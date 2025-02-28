@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass
 from datetime import timezone
 from functools import partial, reduce
 from itertools import chain
+from math import ceil, log
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -93,7 +94,14 @@ from utilities.iterables import (
     is_iterable_not_str,
     one,
 )
-from utilities.math import CheckIntegerError, check_integer, number_of_decimals
+from utilities.math import (
+    CheckIntegerError,
+    check_integer,
+    ewm_parameters,
+    is_less_than,
+    is_non_negative,
+    number_of_decimals,
+)
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel
 from utilities.types import Dataclass, MaybeIterable, StrMapping, ZoneInfoLike
@@ -111,7 +119,7 @@ from utilities.warnings import suppress_warnings
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Sequence
+    from collections.abc import Callable, Iterator, Sequence
     from collections.abc import Set as AbstractSet
 
 
@@ -742,6 +750,85 @@ def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series: ...
 def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
     """Ensure a column expression or Series is returned."""
     return col(column) if isinstance(column, str) else column
+
+
+##
+
+_MIN_WEIGHT = 0.9999
+
+
+@overload
+def finite_ewma(
+    column: ExprLike,
+    /,
+    *,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_weight: float = _MIN_WEIGHT,
+) -> Expr: ...
+@overload
+def finite_ewma(
+    column: Series,
+    /,
+    *,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_weight: float = _MIN_WEIGHT,
+) -> Series: ...
+@overload
+def finite_ewma(
+    column: IntoExprColumn,
+    /,
+    *,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_weight: float = _MIN_WEIGHT,
+) -> Expr | Series: ...
+def finite_ewma(
+    column: IntoExprColumn,
+    /,
+    *,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+    min_weight: float = _MIN_WEIGHT,
+) -> Expr | Series:
+    """Compute a finite EWMA."""
+    if not (is_non_negative(min_weight) and is_less_than(min_weight, 1.0)):
+        raise FiniteEWMAError(min_weight=min_weight)
+    column = ensure_expr_or_series(column)
+    params = ewm_parameters(com=com, span=span, half_life=half_life, alpha=alpha)
+    alpha_use = params.alpha
+    step = ceil(log(1 - min_weight) / log(1 - alpha_use))
+    return _finite_ewma_core(column, alpha_use, step)
+
+
+def _finite_ewma_core(
+    column: Expr | Series, alpha: float, step: int, /
+) -> Expr | Series:
+    if step == 0:
+        return column
+    if step > 0:
+        return alpha * column + (1 - alpha) * _finite_ewma_core(
+            column.shift(), alpha, step - 1
+        )
+    raise ImpossibleCaseError(case=[f"{step=}"])  # pragma: no cover
+
+
+@dataclass(kw_only=True)
+class FiniteEWMAError(Exception):
+    min_weight: float = _MIN_WEIGHT
+
+    @override
+    def __str__(self) -> str:
+        return f"Min weight must be at least 0 and less than 1; got {self.min_weight}"
 
 
 ##
@@ -1417,8 +1504,8 @@ def yield_struct_series_dataclasses(
     cls: type[_TDataclass],
     /,
     *,
-    forward_references: dict[str, Any] | None = ...,
-    check_types: bool = ...,
+    forward_references: dict[str, Any] | None = None,
+    check_types: bool = True,
     strict: Literal[True],
 ) -> Iterator[_TDataclass]: ...
 @overload
@@ -1427,8 +1514,8 @@ def yield_struct_series_dataclasses(
     cls: type[_TDataclass],
     /,
     *,
-    forward_references: dict[str, Any] | None = ...,
-    check_types: bool = ...,
+    forward_references: dict[str, Any] | None = None,
+    check_types: bool = True,
     strict: bool = False,
 ) -> Iterator[_TDataclass | None]: ...
 def yield_struct_series_dataclasses(
@@ -1473,6 +1560,7 @@ __all__ = [
     "DatetimeUSEastern",
     "DatetimeUTC",
     "DropNullStructSeriesError",
+    "FiniteEWMAError",
     "GetDataTypeOrSeriesTimeZoneError",
     "GetSeriesNumberOfDecimalsError",
     "InsertAfterError",
@@ -1496,6 +1584,7 @@ __all__ = [
     "drop_null_struct_series",
     "ensure_data_type",
     "ensure_expr_or_series",
+    "finite_ewma",
     "floor_datetime",
     "get_data_type_or_series_time_zone",
     "get_series_number_of_decimals",

@@ -64,6 +64,7 @@ from utilities.polars import (
     DatetimeUSEastern,
     DatetimeUTC,
     DropNullStructSeriesError,
+    FiniteEWMAError,
     InsertAfterError,
     InsertBeforeError,
     IsNotNullStructSeriesError,
@@ -110,6 +111,7 @@ from utilities.polars import (
     drop_null_struct_series,
     ensure_data_type,
     ensure_expr_or_series,
+    finite_ewma,
     floor_datetime,
     get_data_type_or_series_time_zone,
     get_series_number_of_decimals,
@@ -132,6 +134,7 @@ from utilities.polars import (
     yield_struct_series_elements,
     zoned_datetime,
 )
+from utilities.random import get_state
 from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import (
     UTC,
@@ -1003,6 +1006,75 @@ class TestEnsureExprOrSeries:
     def test_main(self, *, column: IntoExprColumn) -> None:
         result = ensure_expr_or_series(column)
         assert isinstance(result, Expr | Series)
+
+
+class TestFiniteEWMA:
+    alpha_0_75_values: ClassVar[list[float]] = [
+        -6.3176116240621605,
+        -6.079402906015541,
+        -8.269850726503885,
+        -8.067462681625972,
+        3.233134329593507,
+    ]
+    alpha_0_99_values: ClassVar[list[float]] = [
+        -6.01998706891796,
+        -6.00019987068918,
+        -8.970001998706891,
+        -8.009700019987068,
+        6.849902999800129,
+    ]
+
+    @given(
+        case=sampled_from([
+            [0.75, 0.9, alpha_0_75_values, [-6.5, -6.125, -8.25, -8.0625, 3.1875]],
+            [
+                0.75,
+                0.9999,
+                alpha_0_75_values,
+                [
+                    -6.317626953125,
+                    -6.0794677734375,
+                    -8.26959228515625,
+                    -8.06756591796875,
+                    3.23321533203125,
+                ],
+            ],
+            [0.99, 0.9, alpha_0_99_values, [-6.02, -6.0, -8.97, -8.01, 6.85]],
+            [
+                0.99,
+                0.9999,
+                alpha_0_99_values,
+                [
+                    -6.0199869999999995,
+                    -6.0001999999999995,
+                    -8.970002000000001,
+                    -8.0097,
+                    6.849902999999999,
+                ],
+            ],
+        ])
+    )
+    def test_main(self, *, case: tuple[float, float, list[float], list[float]]) -> None:
+        alpha, min_weight, exp_base, exp_result = case
+        state = get_state(seed=0)
+        series = Series(values=[state.randint(-10, 10) for _ in range(100)])
+        base = series.ewm_mean(alpha=alpha)
+        exp_base_sr = Series(values=exp_base, dtype=Float64)
+        assert_series_equal(base[-5:], exp_base_sr, check_names=False)
+        result = finite_ewma(series, alpha=alpha, min_weight=min_weight)
+        exp_result_sr = Series(values=exp_result, dtype=Float64)
+        assert_series_equal(result[-5:], exp_result_sr, check_names=False)
+
+    def test_expr(self) -> None:
+        expr = finite_ewma(int_range(end=10), alpha=0.5)
+        assert isinstance(expr, Expr)
+
+    def test_error(self) -> None:
+        with raises(
+            FiniteEWMAError,
+            match=r"Min weight must be at least 0 and less than 1; got 1\.0",
+        ):
+            _ = finite_ewma(int_range(end=10), alpha=0.5, min_weight=1.0)
 
 
 class TestFloorDateTime:
