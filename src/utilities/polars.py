@@ -806,9 +806,16 @@ def finite_ewm_mean(
         )
     except _FiniteEWMWeightsError as error:
         raise FiniteEWMMeanError(min_weight=error.min_weight) from None
-    return ensure_expr_or_series(column).rolling_mean(
-        len(weights), weights=list(weights)
-    )
+    column = ensure_expr_or_series(column)
+    mean = column.fill_null(value=0.0).rolling_mean(len(weights), weights=list(weights))
+    expr = when(column.is_not_null()).then(mean)
+    match column:
+        case Expr():
+            return expr
+        case Series() as series:
+            return series.to_frame().with_columns(expr.alias(series.name))[series.name]
+        case _ as never:
+            assert_never(never)
 
 
 @dataclass(kw_only=True)
