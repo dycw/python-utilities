@@ -44,7 +44,6 @@ from polars import (
     all_horizontal,
     col,
     concat,
-    int_range,
     lit,
     struct,
     when,
@@ -101,7 +100,6 @@ from utilities.math import (
     ewm_parameters,
     is_less_than,
     is_non_negative,
-    is_positive,
     number_of_decimals,
 )
 from utilities.reprlib import get_repr
@@ -769,7 +767,6 @@ def finite_ewma(
     half_life: float | None = None,
     alpha: float | None = None,
     min_weight: float = _MIN_WEIGHT,
-    min_periods: int = 1,
 ) -> Expr: ...
 @overload
 def finite_ewma(
@@ -781,7 +778,6 @@ def finite_ewma(
     half_life: float | None = None,
     alpha: float | None = None,
     min_weight: float = _MIN_WEIGHT,
-    min_periods: int = 1,
 ) -> Series: ...
 @overload
 def finite_ewma(
@@ -793,7 +789,6 @@ def finite_ewma(
     half_life: float | None = None,
     alpha: float | None = None,
     min_weight: float = _MIN_WEIGHT,
-    min_periods: int = 1,
 ) -> Expr | Series: ...
 def finite_ewma(
     column: IntoExprColumn,
@@ -804,7 +799,6 @@ def finite_ewma(
     half_life: float | None = None,
     alpha: float | None = None,
     min_weight: float = _MIN_WEIGHT,
-    min_periods: int = 1,
 ) -> Expr | Series:
     """Compute a finite EWMA."""
     if not (is_non_negative(min_weight) and is_less_than(min_weight, 1.0)):
@@ -813,23 +807,11 @@ def finite_ewma(
     params = ewm_parameters(com=com, span=span, half_life=half_life, alpha=alpha)
     alpha_use = params.alpha
     step = ceil(log(1 - min_weight) / log(1 - alpha_use))
-    ewma = _finite_ewma_core(column, alpha_use, step)
-    predicate = int_range(start=1, end=pl.len() + 1) >= min_periods
-    replaced = when(predicate).then(ewma)
-    match ewma:
-        case Expr():
-            return replaced
-        case Series():
-            return ewma.to_frame().with_columns(replaced.alias(ewma.name))[ewma.name]
-        case _ as never:
-            assert_never(never)
+    return _finite_ewma_core(column, alpha_use, step)
 
 
 def _finite_ewma_core(
-    column: Expr | Series,
-    alpha: float,
-    step: int,
-    /,
+    column: Expr | Series, alpha: float, step: int, /
 ) -> Expr | Series:
     if step == 0:
         return column
@@ -846,7 +828,7 @@ class FiniteEWMAError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Min weight must be at least 0 and at most 1; got {self.min_weight}"
+        return f"Min weight must be at least 0 and less than 1; got {self.min_weight}"
 
 
 ##
