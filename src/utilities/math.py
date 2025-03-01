@@ -110,48 +110,50 @@ def ewm_parameters(
     alpha: float | None = None,
 ) -> _EWMParameters:
     """Compute a set of EWM parameters."""
-    if (com is not None) and (span is None) and (half_life is None) and (alpha is None):
-        if com <= 0:
-            raise _EWMParametersCOMError(com=com)
-        alpha = 1 / (1 + com)
-        return _EWMParameters(
-            com=com,
-            span=_ewm_parameters_alpha_to_span(alpha),
-            half_life=_ewm_parameters_alpha_to_half_life(alpha),
-            alpha=alpha,
-        )
-    if (com is None) and (span is not None) and (half_life is None) and (alpha is None):
-        if span <= 1:
-            raise _EWMParametersSpanError(span=span)
-        alpha = 2 / (span + 1)
-        return _EWMParameters(
-            com=_ewm_parameters_alpha_to_com(alpha),
-            span=span,
-            half_life=_ewm_parameters_alpha_to_half_life(alpha),
-            alpha=alpha,
-        )
-    if (com is None) and (span is None) and (half_life is not None) and (alpha is None):
-        if half_life <= 0:
-            raise _EWMParametersHalfLifeError(half_life=half_life)
-        alpha = 1 - exp(-log(2) / half_life)
-        return _EWMParameters(
-            com=_ewm_parameters_alpha_to_com(alpha),
-            span=_ewm_parameters_alpha_to_span(alpha),
-            half_life=half_life,
-            alpha=alpha,
-        )
-    if (com is None) and (span is None) and (half_life is None) and (alpha is not None):
-        if not (0 < alpha < 1):
-            raise _EWMParametersAlphaError(alpha=alpha)
-        return _EWMParameters(
-            com=_ewm_parameters_alpha_to_com(alpha),
-            span=_ewm_parameters_alpha_to_span(alpha),
-            half_life=_ewm_parameters_alpha_to_half_life(alpha),
-            alpha=alpha,
-        )
-    raise _EWMParametersArgumentsError(
-        com=com, span=span, half_life=half_life, alpha=alpha
-    )
+    match com, span, half_life, alpha:
+        case int() | float(), None, None, None:
+            if com <= 0:
+                raise _EWMParametersCOMError(com=com)
+            alpha = 1 / (1 + com)
+            return _EWMParameters(
+                com=com,
+                span=_ewm_parameters_alpha_to_span(alpha),
+                half_life=_ewm_parameters_alpha_to_half_life(alpha),
+                alpha=alpha,
+            )
+        case None, int() | float(), None, None:
+            if span <= 1:
+                raise _EWMParametersSpanError(span=span)
+            alpha = 2 / (span + 1)
+            return _EWMParameters(
+                com=_ewm_parameters_alpha_to_com(alpha),
+                span=span,
+                half_life=_ewm_parameters_alpha_to_half_life(alpha),
+                alpha=alpha,
+            )
+        case None, None, int() | float(), None:
+            if half_life <= 0:
+                raise _EWMParametersHalfLifeError(half_life=half_life)
+            alpha = 1 - exp(-log(2) / half_life)
+            return _EWMParameters(
+                com=_ewm_parameters_alpha_to_com(alpha),
+                span=_ewm_parameters_alpha_to_span(alpha),
+                half_life=half_life,
+                alpha=alpha,
+            )
+        case None, None, None, int() | float():
+            if not (0 < alpha < 1):
+                raise _EWMParametersAlphaError(alpha=alpha)
+            return _EWMParameters(
+                com=_ewm_parameters_alpha_to_com(alpha),
+                span=_ewm_parameters_alpha_to_span(alpha),
+                half_life=_ewm_parameters_alpha_to_half_life(alpha),
+                alpha=alpha,
+            )
+        case _:
+            raise _EWMParametersArgumentsError(
+                com=com, span=span, half_life=half_life, alpha=alpha
+            )
 
 
 @dataclass(kw_only=True, slots=True)

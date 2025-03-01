@@ -960,19 +960,19 @@ def yield_days(
             date = start
             while date <= end:
                 yield date
-                date += dt.timedelta(days=1)
+                date += DAY
         case dt.date(), None, int():
             check_date_not_datetime(start)
             date = start
             for _ in range(days):
                 yield date
-                date += dt.timedelta(days=1)
+                date += DAY
         case None, dt.date(), int():
             check_date_not_datetime(end)
             date = end
             for _ in range(days):
                 yield date
-                date -= dt.timedelta(days=1)
+                date -= DAY
         case _:
             raise YieldDaysError(start=start, end=end, days=days)
 
@@ -997,29 +997,28 @@ def yield_weekdays(
     *, start: dt.date | None = None, end: dt.date | None = None, days: int | None = None
 ) -> Iterator[dt.date]:
     """Yield the weekdays in a range."""
-    if (start is not None) and (end is not None) and (days is None):
-        check_date_not_datetime(start)
-        check_date_not_datetime(end)
-        date = round_to_next_weekday(start)
-        while date <= end:
-            yield date
-            date = round_to_next_weekday(date + dt.timedelta(days=1))
-        return
-    if (start is not None) and (end is None) and (days is not None):
-        check_date_not_datetime(start)
-        date = round_to_next_weekday(start)
-        for _ in range(days):
-            yield date
-            date = round_to_next_weekday(date + dt.timedelta(days=1))
-        return
-    if (start is None) and (end is not None) and (days is not None):
-        check_date_not_datetime(end)
-        date = round_to_prev_weekday(end)
-        for _ in range(days):
-            yield date
-            date = round_to_prev_weekday(date - dt.timedelta(days=1))
-        return
-    raise YieldWeekdaysError(start=start, end=end, days=days)
+    match start, end, days:
+        case dt.date(), dt.date(), None:
+            check_date_not_datetime(start)
+            check_date_not_datetime(end)
+            date = round_to_next_weekday(start)
+            while date <= end:
+                yield date
+                date = round_to_next_weekday(date + DAY)
+        case dt.date(), None, int():
+            check_date_not_datetime(start)
+            date = round_to_next_weekday(start)
+            for _ in range(days):
+                yield date
+                date = round_to_next_weekday(date + DAY)
+        case None, dt.date(), int():
+            check_date_not_datetime(end)
+            date = round_to_prev_weekday(end)
+            for _ in range(days):
+                yield date
+                date = round_to_prev_weekday(date - DAY)
+        case _:
+            raise YieldWeekdaysError(start=start, end=end, days=days)
 
 
 @dataclass(kw_only=True, slots=True)
