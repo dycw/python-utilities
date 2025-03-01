@@ -830,140 +830,6 @@ class FiniteEWMMeanError(Exception):
 ##
 
 
-@overload
-def finite_ewm_std(
-    column: ExprLike,
-    /,
-    *,
-    com: float | None = None,
-    span: float | None = None,
-    half_life: float | None = None,
-    alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
-) -> Expr: ...
-@overload
-def finite_ewm_std(
-    column: Series,
-    /,
-    *,
-    com: float | None = None,
-    span: float | None = None,
-    half_life: float | None = None,
-    alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
-) -> Series: ...
-@overload
-def finite_ewm_std(
-    column: IntoExprColumn,
-    /,
-    *,
-    com: float | None = None,
-    span: float | None = None,
-    half_life: float | None = None,
-    alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
-) -> Expr | Series: ...
-def finite_ewm_std(
-    column: IntoExprColumn,
-    /,
-    *,
-    com: float | None = None,
-    span: float | None = None,
-    half_life: float | None = None,
-    alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
-) -> Expr | Series:
-    """Compute a finite EWMA."""
-    try:
-        weights = _finite_ewm_weights(
-            com=com, span=span, half_life=half_life, alpha=alpha, min_weight=min_weight
-        )
-    except _FiniteEWMWeightsError as error:
-        raise FiniteEWMStdError(min_weight=error.min_weight) from None
-    return ensure_expr_or_series(column).rolling_std(
-        len(weights), weights=list(weights)
-    )
-
-
-@dataclass(kw_only=True)
-class FiniteEWMStdError(Exception):
-    min_weight: float = _FINITE_EWM_MIN_WEIGHT
-
-    @override
-    def __str__(self) -> str:
-        return f"Min weight must be at least 0 and less than 1; got {self.min_weight}"
-
-
-##
-
-
-@overload
-def finite_ewm_var(
-    column: ExprLike,
-    /,
-    *,
-    com: float | None = None,
-    span: float | None = None,
-    half_life: float | None = None,
-    alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
-) -> Expr: ...
-@overload
-def finite_ewm_var(
-    column: Series,
-    /,
-    *,
-    com: float | None = None,
-    span: float | None = None,
-    half_life: float | None = None,
-    alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
-) -> Series: ...
-@overload
-def finite_ewm_var(
-    column: IntoExprColumn,
-    /,
-    *,
-    com: float | None = None,
-    span: float | None = None,
-    half_life: float | None = None,
-    alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
-) -> Expr | Series: ...
-def finite_ewm_var(
-    column: IntoExprColumn,
-    /,
-    *,
-    com: float | None = None,
-    span: float | None = None,
-    half_life: float | None = None,
-    alpha: float | None = None,
-    min_weight: float = _FINITE_EWM_MIN_WEIGHT,
-) -> Expr | Series:
-    """Compute a finite EWMA."""
-    try:
-        weights = _finite_ewm_weights(
-            com=com, span=span, half_life=half_life, alpha=alpha, min_weight=min_weight
-        )
-    except _FiniteEWMWeightsError as error:
-        raise FiniteEWMVarError(min_weight=error.min_weight) from None
-    return ensure_expr_or_series(column).rolling_var(
-        len(weights), weights=list(weights)
-    )
-
-
-@dataclass(kw_only=True)
-class FiniteEWMVarError(Exception):
-    min_weight: float = _FINITE_EWM_MIN_WEIGHT
-
-    @override
-    def __str__(self) -> str:
-        return f"Min weight must be at least 0 and less than 1; got {self.min_weight}"
-
-
-##
-
-
 def _finite_ewm_weights(
     *,
     com: float | None = None,
@@ -1726,8 +1592,6 @@ __all__ = [
     "DatetimeUTC",
     "DropNullStructSeriesError",
     "FiniteEWMMeanError",
-    "FiniteEWMStdError",
-    "FiniteEWMVarError",
     "GetDataTypeOrSeriesTimeZoneError",
     "GetSeriesNumberOfDecimalsError",
     "InsertAfterError",
@@ -1752,8 +1616,6 @@ __all__ = [
     "ensure_data_type",
     "ensure_expr_or_series",
     "finite_ewm_mean",
-    "finite_ewm_std",
-    "finite_ewm_var",
     "floor_datetime",
     "get_data_type_or_series_time_zone",
     "get_series_number_of_decimals",
