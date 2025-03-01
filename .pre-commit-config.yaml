@@ -4,13 +4,13 @@ default_language_version:
 repos:
   # fixers
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.6
+    rev: v0.9.9
     hooks:
       - id: ruff
         args: [--fix]
       - id: ruff-format
   - repo: https://github.com/dycw/pre-commit-hooks
-    rev: 0.9.24
+    rev: 0.9.26
     hooks:
       - id: run-hatch-version
       - id: run-ruff-format
