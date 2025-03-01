@@ -6,7 +6,6 @@ from typing import Generic, Literal, TypeAlias, TypeVar, assert_never, overload
 
 from typing_extensions import override
 
-from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_str
 from utilities.iterables import _OneStrEmptyError, _OneStrNonUniqueError, one_str
 from utilities.types import EnumOrStr
@@ -79,25 +78,27 @@ def parse_enum(
             names_or_values="names",
         )
     by_value = _parse_enum_one(value, enum, "values", case_sensitive=case_sensitive)
-    if (by_name is None) and (by_value is None):
-        raise _ParseEnumStrEnumEmptyError(
-            value=value, enum=enum, case_sensitive=case_sensitive
-        )
-    if (by_name is not None) and (by_value is None):
-        return by_name
-    if (by_name is None) and (by_value is not None):
-        return by_value
-    if (by_name is not None) and (by_value is not None):
-        if by_name is by_value:
+    match by_name, by_value:
+        case None, None:
+            raise _ParseEnumStrEnumEmptyError(
+                value=value, enum=enum, case_sensitive=case_sensitive
+            )
+        case Enum(), None:
             return by_name
-        raise _ParseEnumStrEnumNonUniqueError(
-            value=value,
-            enum=enum,
-            case_sensitive=case_sensitive,
-            by_name=by_name.name,
-            by_value=by_value.name,
-        )
-    raise ImpossibleCaseError(case=[f"{by_name=}", f"{by_value=}"])  # pragma: no cover
+        case None, Enum():
+            return by_value
+        case Enum(), Enum():
+            if by_name is by_value:
+                return by_name
+            raise _ParseEnumStrEnumNonUniqueError(
+                value=value,
+                enum=enum,
+                case_sensitive=case_sensitive,
+                by_name=by_name.name,
+                by_value=by_value.name,
+            )
+        case _ as never:
+            assert_never(never)
 
 
 _NamesOrValues: TypeAlias = Literal["names", "values"]
