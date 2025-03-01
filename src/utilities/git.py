@@ -25,7 +25,18 @@ _GIT_TAG_POINTS_AT = ["git", "tag", "--points-at"]
 
 def fetch_all_tags(*, cwd: PathLike = PWD) -> None:
     """Fetch the tags."""
-    _ = check_call(["git", "fetch", "--all", "--tags"], cwd=cwd)
+    try:
+        _ = check_call(["git", "fetch", "--all", "--tags"], cwd=cwd)
+    except CalledProcessError as error:
+        if error.stdout == "ssh":
+            raise FetchAllTagsError from None
+
+
+# ssh: connect to host github.com port 22: Undefined error: 0
+# fatal: Could not read from remote repository.
+#
+# Please make sure you have the correct access rights
+# and the repository exists.
 
 
 ##
