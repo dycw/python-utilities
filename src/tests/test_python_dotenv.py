@@ -8,7 +8,14 @@ from re import DOTALL
 from typing import TYPE_CHECKING, Literal
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, booleans, data, integers, sampled_from
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    dates,
+    integers,
+    sampled_from,
+)
 from pytest import raises
 
 from utilities.errors import ImpossibleCaseError
@@ -25,6 +32,7 @@ from utilities.python_dotenv import (
     _LoadSettingsEmptyError,
     _LoadSettingsFileNotFoundError,
     _LoadSettingsInvalidBoolError,
+    _LoadSettingsInvalidDateError,
     _LoadSettingsInvalidEnumError,
     _LoadSettingsInvalidIntError,
     _LoadSettingsInvalidTimeDeltaError,
@@ -32,7 +40,7 @@ from utilities.python_dotenv import (
     load_settings,
 )
 from utilities.sentinel import Sentinel
-from utilities.whenever import serialize_timedelta
+from utilities.whenever import serialize_date, serialize_timedelta
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -139,15 +147,15 @@ class TestLoadSettings:
         ):
             _ = load_settings(Settings, cwd=root)
 
-    @given(root=git_repos(), value=timedeltas_2w())
+    @given(root=git_repos(), value=dates())
     @settings_with_reduced_examples()
-    def test_timedelta_value(self, *, root: Path, value: dt.timedelta) -> None:
+    def test_date_value(self, *, root: Path, value: dt.date) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
-            key: dt.timedelta
+            key: dt.date
 
         with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write(f"key = {serialize_timedelta(value)}\n")
+            _ = fh.write(f"key = {serialize_date(value)}\n")
 
         settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)
@@ -155,47 +163,17 @@ class TestLoadSettings:
 
     @given(root=git_repos())
     @settings_with_reduced_examples()
-    def test_timedelta_value_error(self, *, root: Path) -> None:
+    def test_date_value_error(self, *, root: Path) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
-            key: dt.timedelta
+            key: dt.date
 
         with root.joinpath(".env").open(mode="w") as fh:
             _ = fh.write("key = '...'\n")
 
         with raises(
-            _LoadSettingsInvalidTimeDeltaError,
-            match=r"Field 'key' must contain a valid timedelta; got '...'",
-        ):
-            _ = load_settings(Settings, cwd=root)
-
-    @given(root=git_repos(), value=integers())
-    @settings_with_reduced_examples()
-    def test_int_value(self, *, root: Path, value: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: int
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write(f"key = {value}\n")
-
-        settings = load_settings(Settings, cwd=root)
-        expected = Settings(key=value)
-        assert settings == expected
-
-    @given(root=git_repos())
-    @settings_with_reduced_examples()
-    def test_int_value_error(self, *, root: Path) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: int
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write("key = '...'\n")
-
-        with raises(
-            _LoadSettingsInvalidIntError,
-            match=r"Field 'key' must contain a valid integer; got '...'",
+            _LoadSettingsInvalidDateError,
+            match=r"Field 'key' must contain a valid date; got '...'",
         ):
             _ = load_settings(Settings, cwd=root)
 
@@ -237,6 +215,36 @@ class TestLoadSettings:
             match=r"Field '.*' must contain a valid member of '.*'; got '...'",
         ):
             _ = load_settings(Settings, cwd=root, localns=locals())
+
+    @given(root=git_repos(), value=integers())
+    @settings_with_reduced_examples()
+    def test_int_value(self, *, root: Path, value: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: int
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"key = {value}\n")
+
+        settings = load_settings(Settings, cwd=root)
+        expected = Settings(key=value)
+        assert settings == expected
+
+    @given(root=git_repos())
+    @settings_with_reduced_examples()
+    def test_int_value_error(self, *, root: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: int
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write("key = '...'\n")
+
+        with raises(
+            _LoadSettingsInvalidIntError,
+            match=r"Field 'key' must contain a valid integer; got '...'",
+        ):
+            _ = load_settings(Settings, cwd=root)
 
     @given(root=git_repos(), value=sampled_from(["true", "false"]))
     @settings_with_reduced_examples()
@@ -280,6 +288,36 @@ class TestLoadSettings:
 
         settings = load_settings(Settings, cwd=root)
         assert settings.key == settings.key.expanduser()
+
+    @given(root=git_repos(), value=timedeltas_2w())
+    @settings_with_reduced_examples()
+    def test_timedelta_value(self, *, root: Path, value: dt.timedelta) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: dt.timedelta
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"key = {serialize_timedelta(value)}\n")
+
+        settings = load_settings(Settings, cwd=root)
+        expected = Settings(key=value)
+        assert settings == expected
+
+    @given(root=git_repos())
+    @settings_with_reduced_examples()
+    def test_timedelta_value_error(self, *, root: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: dt.timedelta
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write("key = '...'\n")
+
+        with raises(
+            _LoadSettingsInvalidTimeDeltaError,
+            match=r"Field 'key' must contain a valid timedelta; got '...'",
+        ):
+            _ = load_settings(Settings, cwd=root)
 
     @given(root=git_repos())
     @settings_with_reduced_examples()

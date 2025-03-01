@@ -26,6 +26,7 @@ from tests.test_typing_funcs.with_future import (
     DataClassNestedWithFutureOuterThenInnerOuter,
     DataClassWithBeartype,
     DataClassWithBeartypeCond,
+    DataClassWithDate,
     DataClassWithInt,
     DataClassWithIntNullable,
     DataClassWithListInts,
@@ -120,6 +121,19 @@ class TestGetTypeHints:
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
         expected = {"int_": int}
+        assert hints == expected
+
+    @given(data=data())
+    def test_date(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            date: dt.date
+
+        cls = data.draw(sampled_from([Example, DataClassWithDate]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"date": dt.date}
         assert hints == expected
 
     @given(data=data())
