@@ -49,6 +49,11 @@ class DataClassWithBeartypeCond:
 
 
 @dataclass(kw_only=True, slots=True)
+class DataClassWithDate:
+    date: dt.date
+
+
+@dataclass(kw_only=True, slots=True)
 class DataClassWithInt:
     int_: int
 

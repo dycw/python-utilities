@@ -25,7 +25,6 @@ from utilities.pathlib import PWD
 from utilities.reprlib import get_repr
 from utilities.types import Dataclass
 from utilities.typing import get_args, is_literal_type
-from utilities.whenever import ParseTimedeltaError, parse_timedelta
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -95,7 +94,18 @@ def _load_settings_post(
             ) from None
     if type_ is Path:
         return Path(value).expanduser()
+    if type_ is dt.date:
+        from utilities.whenever import ParseDateError, parse_date
+
+        try:
+            return parse_date(value)
+        except ParseDateError:
+            raise _LoadSettingsInvalidDateError(
+                path=path, values=values, field=field.name, value=value
+            ) from None
     if type_ is dt.timedelta:
+        from utilities.whenever import ParseTimedeltaError, parse_timedelta
+
         try:
             return parse_timedelta(value)
         except ParseTimedeltaError:
@@ -158,14 +168,14 @@ class _LoadSettingsInvalidBoolError(LoadSettingsError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _LoadSettingsInvalidIntError(LoadSettingsError):
+class _LoadSettingsInvalidDateError(LoadSettingsError):
     values: StrMapping
     field: str
     value: str
 
     @override
     def __str__(self) -> str:
-        return f"Field {self.field!r} must contain a valid integer; got {self.value!r}"
+        return f"Field {self.field!r} must contain a valid date; got {self.value!r}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -179,6 +189,17 @@ class _LoadSettingsInvalidEnumError(LoadSettingsError):
     def __str__(self) -> str:
         type_ = get_class_name(self.type_)
         return f"Field {self.field!r} must contain a valid member of {type_!r}; got {self.value!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _LoadSettingsInvalidIntError(LoadSettingsError):
+    values: StrMapping
+    field: str
+    value: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Field {self.field!r} must contain a valid integer; got {self.value!r}"
 
 
 @dataclass(kw_only=True, slots=True)

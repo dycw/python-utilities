@@ -40,7 +40,7 @@ httpx==0.28.1
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.127.2
+hypothesis==6.127.3
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
