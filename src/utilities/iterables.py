@@ -1255,37 +1255,43 @@ def _sort_iterable_cmp_datetimes(
     x: dt.datetime, y: dt.datetime, /
 ) -> Literal[-1, 0, 1]:
     """Compare two datetimes."""
-    if (x.tzinfo is None) and (y.tzinfo is None):
-        return cast(Literal[-1, 0, 1], (x > y) - (x < y))
-    if (x.tzinfo is None) and (y.tzinfo is not None):
-        return -1
-    if (x.tzinfo is not None) and (y.tzinfo is None):
-        return 1
-    if (x.tzinfo is not None) and (y.tzinfo is not None):
-        x_utc = x.astimezone(tz=UTC)
-        y_utc = y.astimezone(tz=UTC)
-        result = cast(Literal[-1, 0, 1], (x_utc > y_utc) - (x_utc < y_utc))
-        if result != 0:
-            return result
-        x_time_zone = ensure_not_none(x.tzinfo.tzname(x))
-        y_time_zone = ensure_not_none(y.tzinfo.tzname(y))
-        return cast(
-            Literal[-1, 0, 1], (x_time_zone > y_time_zone) - (x_time_zone < y_time_zone)
-        )
-    raise ImpossibleCaseError(case=[f"{x=}", f"{y=}"])  # pragma: no cover
+    match x.tzinfo, y.tzinfo:
+        case None, None:
+            return cast(Literal[-1, 0, 1], (x > y) - (x < y))
+        case dt.tzinfo(), None:
+            return 1
+        case None, dt.tzinfo():
+            return -1
+        case dt.tzinfo(), dt.tzinfo():
+            x_utc = x.astimezone(tz=UTC)
+            y_utc = y.astimezone(tz=UTC)
+            result = cast(Literal[-1, 0, 1], (x_utc > y_utc) - (x_utc < y_utc))
+            if result != 0:
+                return result
+            x_time_zone = ensure_not_none(ensure_not_none(x.tzinfo).tzname(x))
+            y_time_zone = ensure_not_none(ensure_not_none(y.tzinfo).tzname(y))
+            return cast(
+                Literal[-1, 0, 1],
+                (x_time_zone > y_time_zone) - (x_time_zone < y_time_zone),
+            )
+        case _ as never:
+            assert_never(never)
 
 
 def _sort_iterable_cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
     """Compare two floats."""
-    if isnan(x) and isnan(y):
-        return 0
-    if isnan(x) and (not isnan(y)):
-        return 1
-    if (not isnan(x)) and isnan(y):
-        return -1
-    if (not isnan(x)) and (not isnan(y)):
-        return cast(Literal[-1, 0, 1], (x > y) - (x < y))
-    raise ImpossibleCaseError(case=[f"{x=}", f"{y=}"])  # pragma: no cover
+    x_nan, y_nan = map(isnan, [x, y])
+    match x_nan, y_nan:
+        case True, True:
+            return 0
+        case True, False:
+            return 1
+        case False, True:
+            return -1
+        case False, False:
+            return cast(Literal[-1, 0, 1], (x > y) - (x < y))
+        case _ as never:
+            assert_never(never)
 
 
 ##
