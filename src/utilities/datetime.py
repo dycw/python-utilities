@@ -953,29 +953,28 @@ def yield_days(
     *, start: dt.date | None = None, end: dt.date | None = None, days: int | None = None
 ) -> Iterator[dt.date]:
     """Yield the days in a range."""
-    if (start is not None) and (end is not None) and (days is None):
-        check_date_not_datetime(start)
-        check_date_not_datetime(end)
-        date = start
-        while date <= end:
-            yield date
-            date += dt.timedelta(days=1)
-        return
-    if (start is not None) and (end is None) and (days is not None):
-        check_date_not_datetime(start)
-        date = start
-        for _ in range(days):
-            yield date
-            date += dt.timedelta(days=1)
-        return
-    if (start is None) and (end is not None) and (days is not None):
-        check_date_not_datetime(end)
-        date = end
-        for _ in range(days):
-            yield date
-            date -= dt.timedelta(days=1)
-        return
-    raise YieldDaysError(start=start, end=end, days=days)
+    match start, end, days:
+        case dt.date(), dt.date(), None:
+            check_date_not_datetime(start)
+            check_date_not_datetime(end)
+            date = start
+            while date <= end:
+                yield date
+                date += dt.timedelta(days=1)
+        case dt.date(), None, int():
+            check_date_not_datetime(start)
+            date = start
+            for _ in range(days):
+                yield date
+                date += dt.timedelta(days=1)
+        case None, dt.date(), int():
+            check_date_not_datetime(end)
+            date = end
+            for _ in range(days):
+                yield date
+                date -= dt.timedelta(days=1)
+        case _:
+            raise YieldDaysError(start=start, end=end, days=days)
 
 
 @dataclass(kw_only=True, slots=True)
