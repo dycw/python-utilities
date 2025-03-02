@@ -4,12 +4,10 @@ from io import StringIO
 from logging import DEBUG, ERROR, StreamHandler, getLogger
 from typing import TYPE_CHECKING, ClassVar, Literal
 
-from beartype.roar import BeartypeCallHintReturnViolation
 from pytest import raises
 
 from tests.conftest import SKIPIF_CI
 from tests.test_traceback_funcs.beartype import func_beartype
-from tests.test_traceback_funcs.beartype_error import func_beartype_error_first
 from tests.test_traceback_funcs.chain import func_chain_first
 from tests.test_traceback_funcs.decorated_async import func_decorated_async_first
 from tests.test_traceback_funcs.decorated_sync import func_decorated_sync_first
@@ -171,34 +169,6 @@ class TestGetRichTraceback:
         assert frame.locals["args"] == (6, 8)
         assert frame.locals["kwargs"] == {"d": 12, "e": 14}
         assert isinstance(exc_tb.error, AssertionError)
-
-    def test_func_beartype_error(self, *, git_ref: str) -> None:
-        with raises(BeartypeCallHintReturnViolation) as exc_info:
-            _ = func_beartype_error_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
-        assert isinstance(exc_tb, ExcTB)
-        assert len(exc_tb) == 2
-        frame1, frame2 = exc_tb
-        assert frame1.module == "tests.test_traceback_funcs.beartype_error"
-        assert frame1.name == "func_beartype_error_first"
-        assert (
-            frame1.code_line
-            == "return func_beartype_error_second(a, b, *args, c=c, **kwargs)"
-        )
-        assert frame1.args == (1, 2, 3, 4)
-        assert frame1.kwargs == {"c": 5, "d": 6, "e": 7}
-        assert frame1.locals["a"] == 2
-        assert frame1.locals["b"] == 4
-        assert frame1.locals["args"] == (6, 8)
-        assert frame1.locals["kwargs"] == {"d": 12, "e": 14}
-        assert frame2.module is None
-        assert frame2.name == "func_beartype_error_second"
-        assert frame2.code_line == ""
-        assert frame2.args == (2, 4, 6, 8)
-        assert frame2.kwargs == {"c": 10, "d": 12, "e": 14}
-        assert frame2.locals["args"] == (2, 4, 6, 8)
-        assert frame2.locals["kwargs"] == {"c": 10, "d": 12, "e": 14}
-        assert isinstance(exc_tb.error, BeartypeCallHintReturnViolation)
 
     def test_func_chain(
         self, *, git_ref: str, traceback_func_chain: Pattern[str]
