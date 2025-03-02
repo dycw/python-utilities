@@ -23,7 +23,6 @@ from hypothesis.strategies import (
 )
 from pytest import raises
 
-from utilities.asyncio import try_await
 from utilities.datetime import ZERO_TIME, get_now, get_today
 from utilities.functions import (
     EnsureBoolError,
@@ -432,7 +431,6 @@ class TestGetFuncNameAndGetFuncQualName:
             (object.__str__, "object.__str__", "builtins.object.__str__"),
             (repr, "repr", "builtins.repr"),
             (str, "str", "builtins.str"),
-            (try_await, "try_await", "utilities.asyncio.try_await"),
             (str.join, "str.join", "builtins.str.join"),
             (sys.exit, "exit", "sys.exit"),
         ])

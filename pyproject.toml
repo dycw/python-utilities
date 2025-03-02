@@ -24,7 +24,6 @@ dev = [
   "atomicwrites >= 1.4.1, < 1.5",
   "atools >= 0.14.2, < 0.15",
   "bottleneck >= 1.4.2, < 1.5",
-  "beartype >= 0.20.0, < 0.21",
   "cachetools >= 5.5.2, < 5.6",
   "click >= 8.1.8, < 8.2",
   "coloredlogs >= 15.0.1, < 15.1",
@@ -119,7 +118,6 @@ zzz-test-atomicwrites = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-atools = [
   "atools >= 0.14.2, < 0.15",
 ]
-zzz-test-beartype = ["beartype >= 0.20.0, < 0.21"]
 zzz-test-cachetools = ["cachetools >= 5.5.2, < 5.6"]
 zzz-test-click = [
   "click >= 8.1.8, < 8.2",
@@ -305,7 +303,6 @@ zzz-test-text = []
 zzz-test-threading = []
 zzz-test-timer = []
 zzz-test-traceback = [
-  "beartype >= 0.20.0, < 0.21",
   "hatch >= 1.14.0, < 1.15",
   "rich >= 13.8.1, < 13.9",
   "tzlocal >= 5.3, < 5.4",
@@ -314,7 +311,6 @@ zzz-test-traceback = [
 zzz-test-treelib = ["treelib >= 1.7.0, < 1.8"]
 zzz-test-types = []
 zzz-test-typing = [
-  "beartype >= 0.20.0, < 0.21",
   "ib-async-dataclass >= 1.0.3rc5, < 1.1",
   "polars-lts-cpu >= 1.23.0, < 1.24",
   "whenever >= 0.7.2, < 0.8",
@@ -520,7 +516,6 @@ select = [
   "S101",  # assert
   "SLF001",  # private-member-access
 ]
-"src/tests/test_beartype_funcs/no_future.py" = ["I002"]  # missing-required-import
 "src/tests/test_typing_funcs/no_future.py" = ["I002"]  # missing-required-import
 
 [tool.ruff.lint.flake8-tidy-imports]

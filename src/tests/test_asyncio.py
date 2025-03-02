@@ -22,29 +22,7 @@ from utilities.pytest import skipif_windows
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterable, Iterator
-
     from utilities.types import Duration
-
-_STRS = list("AAAABBBCCDAABB")
-
-
-def _get_strs_sync() -> Iterable[str]:
-    return iter(_STRS)
-
-
-async def _get_strs_async() -> Iterable[str]:
-    return _get_strs_sync()
-
-
-def _yield_strs_sync() -> Iterator[str]:
-    return iter(_get_strs_sync())
-
-
-async def _yield_strs_async() -> AsyncIterator[str]:
-    for i in _get_strs_sync():
-        yield i
-        await sleep(0.01)
 
 
 class TestBoundedTaskGroup:
