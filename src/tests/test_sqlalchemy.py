@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from asyncio import sleep
 from itertools import chain
+from os import getpid
 from time import time_ns
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
@@ -98,7 +99,7 @@ if TYPE_CHECKING:
 
 def _table_names() -> SearchStrategy[str]:
     now = time_ns()
-    return uuids().map(lambda x: f"test_{now}_{str(x).replace('-', '')}")
+    return uuids().map(lambda x: f"test_{now}_{getpid()}_{str(x).replace('-', '')}")
 
 
 @overload
@@ -388,7 +389,7 @@ class TestGetDialect:
 
 
 class TestGetDialectMaxParams:
-    @mark.parametrize("dialect", get_args(Dialect))
+    @given(dialect=sampled_from(get_args(Dialect)))
     def test_max_params(self, *, dialect: Dialect) -> None:
         max_params = _get_dialect_max_params(dialect)
         assert isinstance(max_params, int)
