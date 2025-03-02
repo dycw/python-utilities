@@ -10,7 +10,7 @@ coverage==7.6.12
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
-cryptography==44.0.1
+cryptography==44.0.2
     # via dycw-utilities (pyproject.toml)
 execnet==2.1.1
     # via pytest-xdist

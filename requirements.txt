@@ -43,8 +43,6 @@ attrs==25.1.0
     #   referencing
 backports-tarfile==1.2.0
     # via jaraco-context
-beartype==0.20.0
-    # via dycw-utilities (pyproject.toml)
 blinker==1.9.0
     # via streamlit
 bottleneck==1.4.2
@@ -87,7 +85,7 @@ coverage==7.6.12
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
-cryptography==44.0.1
+cryptography==44.0.2
     # via dycw-utilities (pyproject.toml)
 cvxpy==1.6.2
     # via dycw-utilities (pyproject.toml)
@@ -107,7 +105,7 @@ eventkit==1.0.3
     #   ib-async-dataclass
 execnet==2.1.1
     # via pytest-xdist
-fastapi==0.115.10
+fastapi==0.115.11
     # via dycw-utilities (pyproject.toml)
 filelock==3.17.0
     # via virtualenv

@@ -2,13 +2,10 @@ from __future__ import annotations
 
 from itertools import chain
 
-from beartype import beartype
-
 from utilities.traceback import trace
 
 
 @trace
-@beartype
 def func_recursive(a: int, b: int, /, *args: int, c: int = 0, **kwargs: int) -> int:
     a *= 2
     b *= 2

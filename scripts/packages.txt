@@ -3,7 +3,6 @@ astor
 asyncio
 atomicwrites
 atools
-beartype
 cachetools
 click
 contextlib

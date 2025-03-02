@@ -22,7 +22,7 @@ coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
 execnet==2.1.1
     # via pytest-xdist
-fastapi==0.115.10
+fastapi==0.115.11
     # via dycw-utilities (pyproject.toml)
 h11==0.14.0
     # via

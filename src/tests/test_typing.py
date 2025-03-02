@@ -8,7 +8,6 @@ from types import NoneType
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Self
 from uuid import UUID
 
-from beartype import beartype
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, just, none, sampled_from
 from pytest import mark, param
@@ -24,8 +23,6 @@ from tests.test_typing_funcs.with_future import (
     DataClassNestedWithFutureInnerThenOuterOuter,
     DataClassNestedWithFutureOuterThenInnerInner,
     DataClassNestedWithFutureOuterThenInnerOuter,
-    DataClassWithBeartype,
-    DataClassWithBeartypeCond,
     DataClassWithDate,
     DataClassWithInt,
     DataClassWithIntNullable,
@@ -38,7 +35,6 @@ from tests.test_typing_funcs.with_future import (
     DataClassWithTimeDelta,
     DataClassWithUUID,
 )
-from utilities.beartype import beartype_cond
 from utilities.sentinel import Sentinel
 from utilities.typing import (
     contains_self,
@@ -88,41 +84,6 @@ class TestGetArgs:
 
 
 class TestGetTypeHints:
-    @given(data=data())
-    def test_beartype(self, *, data: DataObject) -> None:
-        @beartype
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            int_: int
-
-            def identity(self) -> Self:
-                return self
-
-        cls = data.draw(sampled_from([Example, DataClassWithBeartype]))
-        globalns = data.draw(just(globals()) | none())
-        localns = data.draw(just(locals()) | none())
-        hints = get_type_hints(cls, globalns=globalns, localns=localns)
-        expected = {"int_": int}
-        assert hints == expected
-
-    @given(data=data())
-    def test_beartype_cond(self, *, data: DataObject) -> None:
-        @beartype_cond
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            int_: int
-
-            @beartype_cond
-            def identity(self) -> Self:
-                return self
-
-        cls = data.draw(sampled_from([Example, DataClassWithBeartypeCond]))
-        globalns = data.draw(just(globals()) | none())
-        localns = data.draw(just(locals()) | none())
-        hints = get_type_hints(cls, globalns=globalns, localns=localns)
-        expected = {"int_": int}
-        assert hints == expected
-
     @given(data=data())
     def test_date(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
