@@ -139,7 +139,7 @@ class TestSubscribeMessages:
 
 class TestRedisHashMapKey:
     @given(data=data(), key=int64s(), value=booleans())
-    @settings_with_reduced_examples()
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_bool(
         self, *, data: DataObject, key: int, value: bool
@@ -151,7 +151,7 @@ class TestRedisHashMapKey:
             assert await hm_key.get(test.redis, key) is value
 
     @given(data=data(), key=booleans() | int64s(), value=booleans())
-    @settings_with_reduced_examples()
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_union_key(
         self, *, data: DataObject, key: bool | int, value: bool
@@ -163,7 +163,7 @@ class TestRedisHashMapKey:
             assert await hm_key.get(test.redis, key) is value
 
     @given(data=data(), value=booleans())
-    @settings_with_reduced_examples()
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_sentinel_key(
         self, *, data: DataObject, value: bool
@@ -180,7 +180,7 @@ class TestRedisHashMapKey:
             assert await hm_key.get(test.redis, sentinel) is value
 
     @given(data=data(), key=int64s(), value=int64s() | booleans())
-    @settings_with_reduced_examples()
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_union_value(
         self, *, data: DataObject, key: int, value: bool | int
@@ -192,7 +192,7 @@ class TestRedisHashMapKey:
             assert await hm_key.get(test.redis, key) == value
 
     @given(data=data(), key=int64s())
-    @settings_with_reduced_examples()
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_sentinel_value(
         self, *, data: DataObject, key: int
@@ -217,7 +217,7 @@ class TestRedisHashMapKey:
             assert await hm_key.get(test.redis, key) is sentinel
 
     @given(data=data(), key=int64s(), value=booleans())
-    @settings_with_reduced_examples()
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_delete(self, *, data: DataObject, key: int, value: bool) -> None:
         async with yield_test_redis(data) as test:
@@ -228,7 +228,7 @@ class TestRedisHashMapKey:
             assert await hm_key.get(test.redis, key) is None
 
     @given(data=data(), key=int64s(), value=booleans())
-    @settings_with_reduced_examples()
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_exists(self, *, data: DataObject, key: int, value: bool) -> None:
         async with yield_test_redis(data) as test:
@@ -238,7 +238,7 @@ class TestRedisHashMapKey:
             assert await hm_key.exists(test.redis, key)
 
     @given(data=data(), key=int64s(), value=booleans())
-    @settings_with_reduced_examples()
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_stop_and_wait(
         self, *, data: DataObject, key: int, value: bool
@@ -269,7 +269,7 @@ class TestRedisHashMapKey:
 
 class TestRedisKey:
     @given(data=data(), value=booleans())
-    @settings_with_reduced_examples()
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_bool(self, *, data: DataObject, value: bool) -> None:
         async with yield_test_redis(data) as test:
@@ -279,7 +279,7 @@ class TestRedisKey:
             assert await key.get(test.redis) is value
 
     @given(data=data(), value=booleans() | int64s())
-    @settings_with_reduced_examples()
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_union(
         self, *, data: DataObject, value: bool | int
@@ -291,7 +291,7 @@ class TestRedisKey:
             assert await key.get(test.redis) == value
 
     @given(data=data())
-    @settings_with_reduced_examples()
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_sentinel_with_serialize(
         self, *, data: DataObject
@@ -312,7 +312,7 @@ class TestRedisKey:
             assert await key.get(test.redis) is sentinel
 
     @given(data=data(), value=booleans())
-    @settings_with_reduced_examples()
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_delete(self, *, data: DataObject, value: bool) -> None:
         async with yield_test_redis(data) as test:
@@ -323,7 +323,7 @@ class TestRedisKey:
             assert await key.get(test.redis) is None
 
     @given(data=data(), value=booleans())
-    @settings_with_reduced_examples()
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_exists(self, *, data: DataObject, value: bool) -> None:
         async with yield_test_redis(data) as test:
@@ -333,7 +333,7 @@ class TestRedisKey:
             assert await key.exists(test.redis)
 
     @given(data=data(), value=booleans())
-    @settings_with_reduced_examples()
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_stop_and_wait(self, *, data: DataObject, value: bool) -> None:
         async with yield_test_redis(data) as test:
