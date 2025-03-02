@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, ClassVar, Literal
 from pytest import raises
 
 from tests.conftest import SKIPIF_CI
+from tests.test_traceback_funcs.beartype import func_beartype
 from tests.test_traceback_funcs.chain import func_chain_first
 from tests.test_traceback_funcs.decorated_async import func_decorated_async_first
 from tests.test_traceback_funcs.decorated_sync import func_decorated_sync_first
@@ -147,6 +148,27 @@ class TestGetRichTraceback:
         assert isinstance(exc_tb.error, AssertionError)
 
         assert traceback_func_two.search(repr(exc_tb))
+
+    def test_func_beartype(self, *, git_ref: str) -> None:
+        with raises(AssertionError) as exc_info:
+            _ = func_beartype(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        assert isinstance(exc_tb, ExcTB)
+        assert len(exc_tb) == 1
+        frame = one(exc_tb)
+        assert frame.module == "tests.test_traceback_funcs.beartype"
+        assert frame.name == "func_beartype"
+        assert (
+            frame.code_line
+            == 'assert result % 10 == 0, f"Result ({result}) must be divisible by 10"'
+        )
+        assert frame.args == (1, 2, 3, 4)
+        assert frame.kwargs == {"c": 5, "d": 6, "e": 7}
+        assert frame.locals["a"] == 2
+        assert frame.locals["b"] == 4
+        assert frame.locals["args"] == (6, 8)
+        assert frame.locals["kwargs"] == {"d": 12, "e": 14}
+        assert isinstance(exc_tb.error, AssertionError)
 
     def test_func_chain(
         self, *, git_ref: str, traceback_func_chain: Pattern[str]
