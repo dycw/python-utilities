@@ -389,7 +389,7 @@ class TestGetDialect:
 
 
 class TestGetDialectMaxParams:
-    @mark.parametrize("dialect", get_args(Dialect))
+    @given(dialect=sampled_from(get_args(Dialect)))
     def test_max_params(self, *, dialect: Dialect) -> None:
         max_params = _get_dialect_max_params(dialect)
         assert isinstance(max_params, int)
