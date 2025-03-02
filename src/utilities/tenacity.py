@@ -30,8 +30,7 @@ if TYPE_CHECKING:
     from tenacity.stop import StopBaseT
     from tenacity.wait import WaitBaseT
 
-    from utilities.asyncio import MaybeAwaitable
-    from utilities.types import Duration
+    from utilities.types import Duration, MaybeAwaitable
 
 
 MaybeAttemptManager: TypeAlias = NoOpContextManager | AttemptManager
