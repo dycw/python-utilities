@@ -516,16 +516,32 @@ async def migrate_data(
     /,
     *,
     table_or_orm_to: TableOrORMInstOrClass | None = None,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    assume_tables_exist: bool = False,
+    stop: StopBaseT | None = None,
+    wait: WaitBaseT | None = None,
+    retry: SyncRetryBaseT | None = None,
+    timeout_create: Duration | None = None,
+    timeout_insert: Duration | None = None,
 ) -> None:
     """Migrate the contents of a table from one database to another."""
     table_from = get_table(table_or_orm_from)
     async with engine_from.begin() as conn:
         rows = (await conn.execute(select(table_from))).all()
-    table_to = table_from if table_or_orm_to is None else get_table(table_or_orm_to)
-    await ensure_tables_created(engine_to, table_to)
     mappings = [dict(r._mapping) for r in rows]  # noqa: SLF001
-    async with engine_to.begin() as conn:
-        _ = await conn.execute(insert(table_to).values(mappings))
+    table_to = table_from if table_or_orm_to is None else get_table(table_or_orm_to)
+    items = (mappings, table_to)
+    await insert_items(
+        engine_to,
+        items,
+        chunk_size_frac=chunk_size_frac,
+        assume_tables_exist=assume_tables_exist,
+        stop=stop,
+        wait=wait,
+        retry=retry,
+        timeout_create=timeout_create,
+        timeout_insert=timeout_insert,
+    )
 
 
 ##
