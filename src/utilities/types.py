@@ -99,6 +99,7 @@ OptExcInfo: TypeAlias = ExcInfo | tuple[None, None, None]
 
 # zoneinfo
 ZoneInfoLike: TypeAlias = ZoneInfo | str
+LocalOrZoneInfoLike: TypeAlias = Literal["local"] | ZoneInfoLike
 
 
 __all__ = [
@@ -109,6 +110,7 @@ __all__ = [
     "EnumOrStr",
     "ExcInfo",
     "IterableHashable",
+    "LocalOrZoneInfoLike",
     "LogLevel",
     "LoggerOrName",
     "MaybeAwaitable",

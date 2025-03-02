@@ -35,11 +35,13 @@ from utilities.datetime import (
     MINUTE,
     MONTH,
     NOW_HK,
+    NOW_LOCAL,
     NOW_TOKYO,
     NOW_UTC,
     QUARTER,
     SECOND,
     TODAY_HK,
+    TODAY_LOCAL,
     TODAY_TOKYO,
     TODAY_UTC,
     WEEK,
@@ -91,10 +93,12 @@ from utilities.datetime import (
     get_months,
     get_now,
     get_now_hk,
+    get_now_local,
     get_now_tokyo,
     get_quarters,
     get_today,
     get_today_hk,
+    get_today_local,
     get_today_tokyo,
     get_years,
     is_instance_date_not_datetime,
@@ -618,13 +622,11 @@ class TestGetNow:
         ETC = ZoneInfo("Etc/UTC")  # noqa: N806
         assert now.tzinfo in {ETC, HongKong, Tokyo, UTC}
 
-    @mark.parametrize(
-        "get_now", [param(get_now), param(get_now_hk), param(get_now_tokyo)]
-    )
+    @given(get_now=sampled_from([get_now, get_now_local, get_now_hk, get_now_tokyo]))
     def test_getters(self, *, get_now: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_now(), dt.date)
 
-    @mark.parametrize("now", [param(NOW_UTC), param(NOW_HK), param(NOW_TOKYO)])
+    @given(now=sampled_from([NOW_UTC, NOW_LOCAL, NOW_HK, NOW_TOKYO]))
     def test_constants(self, *, now: dt.datetime) -> None:
         assert isinstance(now, dt.date)
 
@@ -645,9 +647,7 @@ class TestGetTimedelta:
     ) -> None:
         assert isinstance(get_timedelta(n=n), dt.timedelta)
 
-    @mark.parametrize(
-        "timedelta", [param(MONTH), param(QUARTER), param(HALF_YEAR), param(YEAR)]
-    )
+    @given(timedelta=sampled_from([MONTH, QUARTER, HALF_YEAR, YEAR]))
     def test_constants(self, *, timedelta: dt.timedelta) -> None:
         assert isinstance(timedelta, dt.timedelta)
 
@@ -658,13 +658,18 @@ class TestGetToday:
         today = get_today(time_zone=time_zone)
         assert isinstance(today, dt.date)
 
-    @mark.parametrize(
-        "get_today", [param(get_today), param(get_today_hk), param(get_today_tokyo)]
+    @given(
+        get_today=sampled_from([
+            get_today,
+            get_today_local,
+            get_today_hk,
+            get_today_tokyo,
+        ])
     )
     def test_getters(self, *, get_today: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_today(), dt.date)
 
-    @mark.parametrize("today", [param(TODAY_UTC), param(TODAY_HK), param(TODAY_TOKYO)])
+    @given(today=sampled_from([TODAY_UTC, TODAY_LOCAL, TODAY_HK, TODAY_TOKYO]))
     def test_constants(self, *, today: dt.date) -> None:
         assert isinstance(today, dt.date)
 

@@ -30,7 +30,13 @@ from utilities.zoneinfo import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import DateOrDateTime, Duration, ZoneInfoLike
+    from utilities.types import (
+        DateOrDateTime,
+        Duration,
+        LocalOrZoneInfoLike,
+        ZoneInfoLike,
+    )
+
 
 _DAYS_PER_YEAR = 365.25
 _MICROSECONDS_PER_MILLISECOND = int(1e3)
@@ -451,7 +457,7 @@ MONTH = get_months(n=1)
 ##
 
 
-def get_now(*, time_zone: ZoneInfoLike = UTC) -> dt.datetime:
+def get_now(*, time_zone: LocalOrZoneInfoLike = UTC) -> dt.datetime:
     """Get the current, timezone-aware time."""
     if time_zone == "local":
         from utilities.tzlocal import get_local_time_zone
@@ -471,6 +477,14 @@ def get_now_hk() -> dt.datetime:
 
 
 NOW_HK = get_now_hk()
+
+
+def get_now_local() -> dt.datetime:
+    """Get the current time in local."""
+    return get_now(time_zone="local")
+
+
+NOW_LOCAL = get_now_local()
 
 
 def get_now_tokyo() -> dt.datetime:
@@ -496,7 +510,7 @@ QUARTER = get_quarters(n=1)
 ##
 
 
-def get_today(*, time_zone: ZoneInfoLike = UTC) -> dt.date:
+def get_today(*, time_zone: LocalOrZoneInfoLike = UTC) -> dt.date:
     """Get the current, timezone-aware date."""
     return get_now(time_zone=time_zone).date()
 
@@ -510,6 +524,14 @@ def get_today_hk() -> dt.date:
 
 
 TODAY_HK = get_today_hk()
+
+
+def get_today_local() -> dt.date:
+    """Get the current, timezone-aware local date."""
+    return get_now(time_zone="local").date()
+
+
+TODAY_LOCAL = get_today_local()
 
 
 def get_today_tokyo() -> dt.date:
@@ -1047,11 +1069,13 @@ __all__ = [
     "MIN_MONTH",
     "MONTH",
     "NOW_HK",
+    "NOW_LOCAL",
     "NOW_TOKYO",
     "NOW_UTC",
     "QUARTER",
     "SECOND",
     "TODAY_HK",
+    "TODAY_LOCAL",
     "TODAY_TOKYO",
     "TODAY_UTC",
     "WEEK",
@@ -1098,10 +1122,12 @@ __all__ = [
     "get_months",
     "get_now",
     "get_now_hk",
+    "get_now_local",
     "get_now_tokyo",
     "get_quarters",
     "get_today",
     "get_today_hk",
+    "get_today_local",
     "get_today_tokyo",
     "get_years",
     "is_instance_date_not_datetime",
