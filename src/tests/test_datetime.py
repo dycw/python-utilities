@@ -106,6 +106,7 @@ from utilities.datetime import (
     is_local_datetime,
     is_subclass_date_not_datetime,
     is_weekday,
+    is_zero_time,
     is_zoned_datetime,
     maybe_sub_pct_y,
     microseconds_since_epoch,
@@ -127,6 +128,7 @@ from utilities.datetime import (
     yield_days,
     yield_weekdays,
 )
+from utilities.functions import not_func
 from utilities.hypothesis import (
     assume_does_not_raise,
     int32s,
@@ -186,7 +188,7 @@ class TestAddDuration:
         n=integers(),
         frac=timedeltas(
             min_value=-(DAY - MICROSECOND), max_value=DAY - MICROSECOND
-        ).filter(lambda x: x != ZERO_TIME),
+        ).filter(not_func(is_zero_time)),
     )
     def test_error(self, *, date: dt.date, n: int, frac: dt.timedelta) -> None:
         with assume_does_not_raise(OverflowError):
@@ -433,7 +435,7 @@ class TestDateDurationToInt:
         n=integers(),
         frac=timedeltas(
             min_value=-(DAY - MICROSECOND), max_value=DAY - MICROSECOND
-        ).filter(lambda x: x != ZERO_TIME),
+        ).filter(not_func(is_zero_time)),
     )
     def test_error_timedelta(self, *, n: int, frac: dt.timedelta) -> None:
         with assume_does_not_raise(OverflowError):
@@ -480,7 +482,7 @@ class TestDateDurationToTimeDelta:
         n=integers(),
         frac=timedeltas(
             min_value=-(DAY - MICROSECOND), max_value=DAY - MICROSECOND
-        ).filter(lambda x: x != ZERO_TIME),
+        ).filter(not_func(is_zero_time)),
     )
     def test_error_timedelta(self, *, n: int, frac: dt.timedelta) -> None:
         with assume_does_not_raise(OverflowError):
@@ -695,7 +697,7 @@ class TestIsIntegralTimeDelta:
         n=integers(),
         frac=timedeltas(
             min_value=-(DAY - MICROSECOND), max_value=DAY - MICROSECOND
-        ).filter(lambda x: x != ZERO_TIME),
+        ).filter(not_func(is_zero_time)),
     )
     def test_non_integral(self, *, n: int, frac: dt.timedelta) -> None:
         with assume_does_not_raise(OverflowError):
@@ -733,6 +735,14 @@ class TestIsWeekday:
         result = is_weekday(date)
         name = date.strftime("%A")
         expected = name in {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}
+        assert result is expected
+
+
+class TestIsZeroTime:
+    @given(case=sampled_from([(ZERO_TIME, True), (SECOND, False)]))
+    def test_main(self, *, case: tuple[dt.timedelta, bool]) -> None:
+        timedelta, expected = case
+        result = is_zero_time(timedelta)
         assert result is expected
 
 
@@ -991,7 +1001,7 @@ class TestSubDuration:
         n=integers(),
         frac=timedeltas(
             min_value=-(DAY - MICROSECOND), max_value=DAY - MICROSECOND
-        ).filter(lambda x: x != ZERO_TIME),
+        ).filter(not_func(is_zero_time)),
     )
     def test_error(self, *, date: dt.date, n: int, frac: dt.timedelta) -> None:
         with assume_does_not_raise(OverflowError):

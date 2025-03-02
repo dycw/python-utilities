@@ -165,13 +165,15 @@ def are_equal_datetimes(
     x: dt.datetime, y: dt.datetime, /, *, strict: bool = False
 ) -> bool:
     """Check if x == y for datetimes."""
-    if is_local_datetime(x) and is_local_datetime(y):
-        return x == y
-    if is_zoned_datetime(x) and is_zoned_datetime(y):
-        if x != y:
+    match x.tzinfo is None, y.tzinfo is None:
+        case True, True:
+            return x == y
+        case False, False if x == y:
+            return (x.tzinfo is y.tzinfo) or not strict
+        case False, False if x != y:
             return False
-        return (x.tzinfo is y.tzinfo) or not strict
-    raise AreEqualDateTimesError(x=x, y=y)
+        case _:
+            raise AreEqualDateTimesError(x=x, y=y)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -595,6 +597,14 @@ def is_weekday(date: dt.date, /) -> bool:
     """Check if a date is a weekday."""
     check_date_not_datetime(date)
     return date.isoweekday() <= _FRIDAY
+
+
+##
+
+
+def is_zero_time(timedelta: dt.timedelta, /) -> bool:
+    """Check if a timedelta is 0."""
+    return timedelta == ZERO_TIME
 
 
 ##
@@ -1135,6 +1145,7 @@ __all__ = [
     "is_local_datetime",
     "is_subclass_date_not_datetime",
     "is_weekday",
+    "is_zero_time",
     "is_zoned_datetime",
     "maybe_sub_pct_y",
     "microseconds_since_epoch",
