@@ -259,8 +259,9 @@ class TestRedisHashMapKey:
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_ttl(self, *, data: DataObject, key: int, value: bool) -> None:
         async with yield_test_redis(data) as test:
-            hm_key = redis_hash_map_key(test.key, int, bool, ttl=0.01)
+            hm_key = redis_hash_map_key(test.key, int, bool, ttl=0.05)
             _ = await hm_key.set(test.redis, key, value)
+            await sleep(0.04)  # there can be flakiness regarding this
             assert await hm_key.exists(test.redis, key)
             await sleep(0.02)
             assert not await test.redis.exists(hm_key.name)
