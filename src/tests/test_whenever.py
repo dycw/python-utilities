@@ -126,7 +126,7 @@ class TestParseAndSerializeDate:
         date_use = date.replace(parse_two_digit_year(year))
         serialized = date_use.strftime(maybe_sub_pct_y("%y%m%d"))
         result = parse_date(serialized)
-        assert result == date
+        assert result == date_use
 
     @given(date=dates())
     def test_yyyymmdd(self, *, date: dt.date) -> None:
