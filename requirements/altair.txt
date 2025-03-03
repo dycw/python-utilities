@@ -54,7 +54,7 @@ pillow==11.1.0
     #   pikepdf
 pluggy==1.5.0
     # via pytest
-polars-lts-cpu==1.23.0
+polars-lts-cpu==1.24.0
     # via dycw-utilities (pyproject.toml)
 pytest==8.3.5
     # via
