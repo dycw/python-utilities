@@ -35,13 +35,11 @@ from utilities.datetime import (
     MINUTE,
     MONTH,
     NOW_HK,
-    NOW_LOCAL,
     NOW_TOKYO,
     NOW_UTC,
     QUARTER,
     SECOND,
     TODAY_HK,
-    TODAY_LOCAL,
     TODAY_TOKYO,
     TODAY_UTC,
     WEEK,
@@ -628,7 +626,7 @@ class TestGetNow:
     def test_getters(self, *, get_now: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_now(), dt.date)
 
-    @given(now=sampled_from([NOW_UTC, NOW_LOCAL, NOW_HK, NOW_TOKYO]))
+    @given(now=sampled_from([NOW_UTC, NOW_HK, NOW_TOKYO]))
     def test_constants(self, *, now: dt.datetime) -> None:
         assert isinstance(now, dt.date)
 
@@ -671,7 +669,7 @@ class TestGetToday:
     def test_getters(self, *, get_today: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_today(), dt.date)
 
-    @given(today=sampled_from([TODAY_UTC, TODAY_LOCAL, TODAY_HK, TODAY_TOKYO]))
+    @given(today=sampled_from([TODAY_UTC, TODAY_HK, TODAY_TOKYO]))
     def test_constants(self, *, today: dt.date) -> None:
         assert isinstance(today, dt.date)
 
