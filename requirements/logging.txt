@@ -46,7 +46,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.127.3
+hypothesis==6.127.4
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -100,7 +100,7 @@ ptyprocess==0.7.0
     # via pexpect
 pygments==2.19.1
     # via rich
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio

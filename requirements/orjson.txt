@@ -12,7 +12,7 @@ eventkit==1.0.3
     # via ib-async-dataclass
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.127.3
+hypothesis==6.127.4
     # via dycw-utilities (pyproject.toml)
 ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
@@ -41,7 +41,7 @@ polars-lts-cpu==1.23.0
     # via dycw-utilities (pyproject.toml)
 pygments==2.19.1
     # via rich
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio

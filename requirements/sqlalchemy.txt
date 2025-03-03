@@ -16,7 +16,7 @@ execnet==2.1.1
     # via pytest-xdist
 greenlet==3.1.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.127.3
+hypothesis==6.127.4
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -33,7 +33,7 @@ pluggy==1.5.0
     # via pytest
 pyhumps==3.8.0
     # via dycw-utilities (pyproject.toml)
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio

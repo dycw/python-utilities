@@ -22,7 +22,7 @@ frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
-hypothesis==6.127.3
+hypothesis==6.127.4
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via yarl
@@ -45,7 +45,7 @@ propcache==0.3.0
     # via
     #   aiohttp
     #   yarl
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio

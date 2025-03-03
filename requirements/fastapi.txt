@@ -32,7 +32,7 @@ httpcore==1.0.7
     # via httpx
 httpx==0.28.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.127.3
+hypothesis==6.127.4
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -53,7 +53,7 @@ pydantic==2.10.6
     # via fastapi
 pydantic-core==2.27.2
     # via pydantic
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio
