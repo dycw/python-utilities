@@ -14,7 +14,7 @@ coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.127.3
+hypothesis==6.127.4
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -31,7 +31,7 @@ pydantic==2.10.6
     # via dycw-utilities (pyproject.toml)
 pydantic-core==2.27.2
     # via pydantic
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio

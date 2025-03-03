@@ -143,7 +143,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.127.3
+hypothesis==6.127.4
     # via dycw-utilities (pyproject.toml)
 ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
@@ -321,7 +321,7 @@ pyinstrument==5.0.1
     # via dycw-utilities (pyproject.toml)
 pyrsistent==0.20.0
     # via dycw-utilities (pyproject.toml)
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio
@@ -443,7 +443,7 @@ tqdm==4.67.1
     # via
     #   optuna
     #   pqdm
-treelib==1.7.0
+treelib==1.7.1
     # via dycw-utilities (pyproject.toml)
 trove-classifiers==2025.2.18.16
     # via hatchling
