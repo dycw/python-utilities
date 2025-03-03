@@ -68,7 +68,7 @@ dev = [
   "sqlalchemy >= 2.0.38, < 2.1",
   "streamlit >= 1.42.2, < 1.43",
   "tenacity >= 8.0.0",  # limited by luigi
-  "treelib >= 1.7.0, < 1.8",
+  "treelib >= 1.7.1, < 1.8",
   "tzdata >= 2025.1, < 2025.2",
   "tzlocal >= 5.3, < 5.4",
   "uvicorn >= 0.34.0, < 0.35",
@@ -309,7 +309,7 @@ zzz-test-traceback = [
   "tzlocal >= 5.3, < 5.4",
   "whenever >= 0.7.2, < 0.8",
 ]
-zzz-test-treelib = ["treelib >= 1.7.0, < 1.8"]
+zzz-test-treelib = ["treelib >= 1.7.1, < 1.8"]
 zzz-test-types = []
 zzz-test-typing = [
   "ib-async-dataclass >= 1.0.3rc5, < 1.1",
