@@ -21,6 +21,7 @@ from pytest import raises
 from utilities.errors import ImpossibleCaseError
 from utilities.hypothesis import (
     git_repos,
+    int32s,
     paths,
     settings_with_reduced_examples,
     text_ascii,
@@ -34,6 +35,7 @@ from utilities.python_dotenv import (
     _LoadSettingsInvalidBoolError,
     _LoadSettingsInvalidDateError,
     _LoadSettingsInvalidEnumError,
+    _LoadSettingsInvalidFloatError,
     _LoadSettingsInvalidIntError,
     _LoadSettingsInvalidTimeDeltaError,
     _LoadSettingsTypeError,
@@ -215,6 +217,36 @@ class TestLoadSettings:
             match=r"Field '.*' must contain a valid member of '.*'; got '...'",
         ):
             _ = load_settings(Settings, cwd=root, localns=locals())
+
+    @given(root=git_repos(), value=int32s().map(float))
+    @settings_with_reduced_examples()
+    def test_float_value(self, *, root: Path, value: float) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: float
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"key = {value}\n")
+
+        settings = load_settings(Settings, cwd=root)
+        expected = Settings(key=value)
+        assert settings == expected
+
+    @given(root=git_repos())
+    @settings_with_reduced_examples()
+    def test_float_value_error(self, *, root: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: float
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write("key = '...'\n")
+
+        with raises(
+            _LoadSettingsInvalidFloatError,
+            match=r"Field 'key' must contain a valid float; got '...'",
+        ):
+            _ = load_settings(Settings, cwd=root)
 
     @given(root=git_repos(), value=integers())
     @settings_with_reduced_examples()

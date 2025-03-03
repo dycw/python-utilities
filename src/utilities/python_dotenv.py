@@ -85,6 +85,13 @@ def _load_settings_post(
         raise _LoadSettingsInvalidBoolError(
             path=path, values=values, field=field.name, value=value
         )
+    if type_ is float:
+        try:
+            return float(value)
+        except ValueError:
+            raise _LoadSettingsInvalidFloatError(
+                path=path, values=values, field=field.name, value=value
+            ) from None
     if type_ is int:
         try:
             return int(value)
@@ -189,6 +196,17 @@ class _LoadSettingsInvalidEnumError(LoadSettingsError):
     def __str__(self) -> str:
         type_ = get_class_name(self.type_)
         return f"Field {self.field!r} must contain a valid member of {type_!r}; got {self.value!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _LoadSettingsInvalidFloatError(LoadSettingsError):
+    values: StrMapping
+    field: str
+    value: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Field {self.field!r} must contain a valid float; got {self.value!r}"
 
 
 @dataclass(kw_only=True, slots=True)

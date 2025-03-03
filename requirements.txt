@@ -143,7 +143,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.127.4
+hypothesis==6.127.5
     # via dycw-utilities (pyproject.toml)
 ib-async-dataclass==1.0.3rc5
     # via dycw-utilities (pyproject.toml)
@@ -207,7 +207,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.28.0
+narwhals==1.29.0
     # via
     #   altair
     #   vegafusion
