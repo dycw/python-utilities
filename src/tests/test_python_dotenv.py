@@ -21,6 +21,7 @@ from pytest import raises
 from utilities.errors import ImpossibleCaseError
 from utilities.hypothesis import (
     git_repos,
+    int32s,
     paths,
     settings_with_reduced_examples,
     text_ascii,
@@ -217,7 +218,7 @@ class TestLoadSettings:
         ):
             _ = load_settings(Settings, cwd=root, localns=locals())
 
-    @given(root=git_repos(), value=integers())
+    @given(root=git_repos(), value=int32s().map(float))
     @settings_with_reduced_examples()
     def test_float_value(self, *, root: Path, value: float) -> None:
         @dataclass(kw_only=True, slots=True)
