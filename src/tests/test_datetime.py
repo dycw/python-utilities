@@ -40,7 +40,6 @@ from utilities.datetime import (
     QUARTER,
     SECOND,
     TODAY_HK,
-    TODAY_LOCAL,
     TODAY_TOKYO,
     TODAY_UTC,
     WEEK,
@@ -670,7 +669,7 @@ class TestGetToday:
     def test_getters(self, *, get_today: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_today(), dt.date)
 
-    @given(today=sampled_from([TODAY_UTC, TODAY_LOCAL, TODAY_HK, TODAY_TOKYO]))
+    @given(today=sampled_from([TODAY_UTC, TODAY_HK, TODAY_TOKYO]))
     def test_constants(self, *, today: dt.date) -> None:
         assert isinstance(today, dt.date)
 

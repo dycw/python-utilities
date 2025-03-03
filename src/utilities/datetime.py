@@ -531,9 +531,6 @@ def get_today_local() -> dt.date:
     return get_now(time_zone="local").date()
 
 
-TODAY_LOCAL = get_today_local()
-
-
 def get_today_tokyo() -> dt.date:
     """Get the current date in Tokyo."""
     return get_now_tokyo().date()
@@ -1082,7 +1079,6 @@ __all__ = [
     "QUARTER",
     "SECOND",
     "TODAY_HK",
-    "TODAY_LOCAL",
     "TODAY_TOKYO",
     "TODAY_UTC",
     "WEEK",
