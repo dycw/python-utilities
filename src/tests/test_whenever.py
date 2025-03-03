@@ -30,6 +30,7 @@ from utilities.datetime import (
     MICROSECOND,
     drop_milli_and_microseconds,
     maybe_sub_pct_y,
+    parse_two_digit_year,
 )
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -117,6 +118,13 @@ class TestParseAndSerializeDate:
     @given(date=dates())
     def test_main(self, *, date: dt.date) -> None:
         serialized = serialize_date(date)
+        result = parse_date(serialized)
+        assert result == date
+
+    @given(year=integers(0, 99), date=dates())
+    def test_yymmdd(self, *, year: int, date: dt.date) -> None:
+        date_use = date.replace(parse_two_digit_year(year))
+        serialized = date_use.strftime(maybe_sub_pct_y("%y%m%d"))
         result = parse_date(serialized)
         assert result == date
 
