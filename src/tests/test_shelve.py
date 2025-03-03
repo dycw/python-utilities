@@ -13,8 +13,9 @@ if TYPE_CHECKING:
 
 
 class TestYieldShelf:
-    @given(path=temp_paths(), key=text_ascii(), value=integers())
-    def test_main(self, *, path: Path, key: str, value: int) -> None:
+    @given(root=temp_paths(), key=text_ascii(), value=integers())
+    def test_main(self, *, root: Path, key: str, value: int) -> None:
+        path = root.joinpath("shelf")
         with yield_shelf(path) as shelf:
             shelf[key] = value
         with yield_shelf(path) as shelf:
