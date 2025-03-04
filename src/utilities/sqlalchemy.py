@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from asyncio import Queue, Task, create_task
 from collections import defaultdict
 from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence, Sized
 from collections.abc import Set as AbstractSet
@@ -61,7 +60,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 from typing_extensions import override
 
-from utilities.asyncio import get_items, get_items_nowait
+from utilities.asyncio import QueueProcessor, get_items, get_items_nowait
 from utilities.functions import (
     ensure_str,
     get_class_name,
@@ -86,7 +85,6 @@ from utilities.types import Duration, MaybeIterable, StrMapping, TupleOrStrMappi
 
 if TYPE_CHECKING:
     from types import TracebackType
-    from typing import Self
 
     from tenacity.retry import RetryBaseT as SyncRetryBaseT
     from tenacity.stop import StopBaseT
@@ -648,7 +646,7 @@ class TablenameMixin:
 
 
 @dataclass(kw_only=True, slots=True)
-class Upserter:
+class Upserter(QueueProcessor[_InsertItem]):
     """Upsert a set of items into a database."""
 
     engine: AsyncEngine
@@ -656,18 +654,11 @@ class Upserter:
     selected_or_all: _SelectedOrAll = "selected"
     chunk_size_frac: float = CHUNK_SIZE_FRAC
     assume_tables_exist: bool = False
-    stop: StopBaseT | None = None
+    stop_: StopBaseT | None = None
     wait: WaitBaseT | None = None
     retry: SyncRetryBaseT | None = None
     timeout_create: Duration | None = None
     timeout_insert: Duration | None = None
-    _queue: Queue[_InsertItem] = field(default_factory=Queue, repr=False)
-    _task: Task[None] = field(init=False)
-
-    async def __aenter__(self) -> Self:
-        """Start the server."""
-        self._task = create_task(self._loop())
-        return self
 
     async def __aexit__(
         self,

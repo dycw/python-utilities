@@ -241,8 +241,19 @@ class TestQueueProcessor:
         del processor
         _ = collect()
 
+    async def test_empty(self) -> None:
+        class Processor(QueueProcessor[int]):
+            @override
+            async def _run(self, item: int) -> None:
+                _ = item
+
+        processor = Processor()
+        assert processor.empty()
+        processor.enqueue(0)
+        assert not processor.empty()
+
     @given(n=integers(0, 10))
-    async def test_enqueue_and_len(self, *, n: int) -> None:
+    async def test_len(self, *, n: int) -> None:
         class Processor(QueueProcessor[int]):
             @override
             async def _run(self, item: int) -> None:
