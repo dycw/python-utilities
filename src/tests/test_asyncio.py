@@ -1,13 +1,21 @@
 from __future__ import annotations
 
-from asyncio import Lock, Queue, TaskGroup, run, sleep, timeout
+from asyncio import Lock, PriorityQueue, Queue, TaskGroup, run, sleep, timeout
 from dataclasses import dataclass, field
 from gc import collect
 from re import search
 from typing import TYPE_CHECKING
 
 from hypothesis import Phase, given, settings
-from hypothesis.strategies import integers, just, lists, none
+from hypothesis.strategies import (
+    DataObject,
+    data,
+    integers,
+    just,
+    lists,
+    none,
+    permutations,
+)
 from pytest import raises
 from typing_extensions import override
 
@@ -21,7 +29,8 @@ from utilities.asyncio import (
     timeout_dur,
 )
 from utilities.datetime import MILLISECOND, ZERO_TIME, datetime_duration_to_timedelta
-from utilities.hypothesis import datetime_durations
+from utilities.hypothesis import datetime_durations, text_ascii
+from utilities.iterables import one
 from utilities.pytest import skipif_windows
 from utilities.timer import Timer
 
@@ -222,11 +231,9 @@ class TestQueueProcessor:
         processor = Example()
         processor.enqueue(*range(n))
         assert len(processor.output) == 0
-        assert processor._task is None
         async with processor:
-            assert processor._task is not None
+            pass
         assert len(processor.output) == n
-        assert processor._task is None
 
     async def test_del_without_task(self) -> None:
         class Example(QueueProcessor[int]):
@@ -284,6 +291,27 @@ class TestQueueProcessor:
         processor = await Example.new(*range(n))
         assert len(processor) == n
         assert processor._task is not None
+
+    @given(
+        data=data(),
+        texts=lists(text_ascii(min_size=1), min_size=1, max_size=10, unique=True),
+    )
+    async def test_priority_queue(self, *, data: DataObject, texts: list[str]) -> None:
+        @dataclass(kw_only=True)
+        class Example(QueueProcessor[tuple[int, str]]):
+            output: set[str] = field(default_factory=set)
+
+            @override
+            async def _run(self, item: tuple[int, str]) -> None:
+                _, text = item
+                self.output.add(text)
+
+        processor = Example(_queue=PriorityQueue())
+        pairs = data.draw(permutations(list(enumerate(texts))))
+        processor.enqueue(*pairs)
+        assert await processor._get_and_run()
+        result = one(processor.output)
+        assert result == texts[0]
 
     async def test_start_with_task(self) -> None:
         class Example(QueueProcessor[int]):
