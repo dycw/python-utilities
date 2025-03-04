@@ -668,7 +668,7 @@ class Upserter(QueueProcessor[_InsertItem]):
     @override
     async def _run(self, item: _InsertItem) -> None:
         """Run the upserter."""
-        rest = await self._get_items()
+        rest = [] if self.empty() else await self._get_items()
         items = list(chain([item], rest))
         await self._pre_upsert(items)
         await upsert_items(
