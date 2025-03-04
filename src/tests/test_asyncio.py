@@ -323,7 +323,7 @@ class TestQueueProcessor:
                 _, text = item
                 self.output.add(text)
 
-        processor = Example(_queue=PriorityQueue())
+        processor = Example(queue_type=PriorityQueue)
         pairs = data.draw(permutations(list(enumerate(texts))))
         processor.enqueue(*pairs)
         await processor._get_and_run()

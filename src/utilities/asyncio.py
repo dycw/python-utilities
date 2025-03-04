@@ -76,9 +76,18 @@ class BoundedTaskGroup(TaskGroup):
 class QueueProcessor(ABC, Generic[_T]):
     """Process a set of items in a queue."""
 
-    _lock: Lock = field(default_factory=Lock, repr=False)
-    _queue: Queue[_T] = field(default_factory=Queue)
-    _task: Task[None] | None = field(default=None, repr=False)
+    queue_type: type[Queue[_T]] = Queue
+    queue_max_size: int | None = None
+    _lock: Lock = field(init=False, repr=False)
+    _queue: Queue[_T] = field(init=False, repr=False)
+    _task: Task[None] | None = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        self._lock = Lock()
+        self._queue = self.queue_type(
+            maxsize=0 if self.queue_max_size is None else self.queue_max_size
+        )
+        self._task = None
 
     async def __aenter__(self) -> Self:
         """Start the server."""
