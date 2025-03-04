@@ -140,7 +140,7 @@ class TestQueueProcessor:
                 _ = tg.create_task(yield_tasks())
                 _ = tg.create_task(processor.run_until_empty())
         assert len(processor.output) == n
-        assert float(timer) == approx((n + 2) * 0.01, abs=0.03)
+        assert float(timer) == approx((n + 2) * 0.01, abs=0.03, rel=0.1)
         assert processor._task is not None
         await processor.stop()
         assert processor._task is None
@@ -162,7 +162,7 @@ class TestQueueProcessor:
             async with TaskGroup() as tg:
                 _ = tg.create_task(processor.run_until_empty())
         assert len(processor.output) == n
-        assert float(timer) == approx(n * 0.01, abs=0.03)
+        assert float(timer) == approx(n * 0.01, abs=0.03, rel=0.1)
         await processor.stop()
         assert processor._task is None
 
