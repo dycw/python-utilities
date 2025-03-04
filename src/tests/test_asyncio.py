@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from asyncio import Lock, Queue, TaskGroup, run, sleep, timeout
+from dataclasses import dataclass, field
+from gc import collect
 from re import search
 from typing import TYPE_CHECKING
 
 from hypothesis import Phase, given, settings
-from hypothesis.strategies import floats, integers, lists
+from hypothesis.strategies import integers, just, lists, none
 from pytest import approx, raises
 from typing_extensions import override
 
@@ -24,8 +26,6 @@ from utilities.pytest import skipif_windows
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from utilities.types import Duration
 
 
@@ -46,16 +46,31 @@ class TestBoundedTaskGroup:
 
 
 class TestGetItems:
-    @given(xs=lists(integers(), min_size=1))
-    async def test_put_then_get(self, *, xs: list[int]) -> None:
+    @given(
+        xs=lists(integers(), min_size=1, max_size=10),
+        max_size=integers(1, 10) | none(),
+        lock=just(Lock()) | none(),
+    )
+    async def test_put_then_get(
+        self, *, xs: list[int], max_size: int | None, lock: Lock | None
+    ) -> None:
         queue: Queue[int] = Queue()
         for x in xs:
             queue.put_nowait(x)
-        result = await get_items(queue)
-        assert result == xs
+        result = await get_items(queue, max_size=max_size, lock=lock)
+        if max_size is None:
+            assert result == xs
+        else:
+            assert result == xs[:max_size]
 
-    @given(xs=lists(integers(), min_size=1))
-    async def test_get_then_put(self, *, xs: list[int]) -> None:
+    @given(
+        xs=lists(integers(), min_size=1, max_size=10),
+        max_size=integers(1, 10) | none(),
+        lock=just(Lock()) | none(),
+    )
+    async def test_get_then_put(
+        self, *, xs: list[int], max_size: int | None, lock: Lock | None
+    ) -> None:
         queue: Queue[int] = Queue()
 
         async def put() -> None:
@@ -64,10 +79,13 @@ class TestGetItems:
                 queue.put_nowait(x)
 
         async with TaskGroup() as tg:
-            task = tg.create_task(get_items(queue))
+            task = tg.create_task(get_items(queue, max_size=max_size, lock=lock))
             _ = tg.create_task(put())
         result = task.result()
-        assert result == xs
+        if max_size is None:
+            assert result == xs
+        else:
+            assert result == xs[:max_size]
 
     async def test_empty(self) -> None:
         queue: Queue[int] = Queue()
@@ -78,65 +96,145 @@ class TestGetItems:
 
 
 class TestGetItemsNoWait:
-    @given(xs=lists(integers()))
-    async def test_main(self, *, xs: list[int]) -> None:
+    @given(
+        xs=lists(integers(), min_size=1, max_size=10),
+        max_size=integers(1, 10) | none(),
+        lock=just(Lock()) | none(),
+    )
+    async def test_main(
+        self, *, xs: list[int], max_size: int | None, lock: Lock | None
+    ) -> None:
         queue: Queue[int] = Queue()
         for x in xs:
             queue.put_nowait(x)
-        result = await get_items_nowait(queue)
-        assert result == xs
-
-    @given(xs=lists(integers()))
-    async def test_lock(self, *, xs: list[int]) -> None:
-        queue: Queue[int] = Queue()
-        for x in xs:
-            queue.put_nowait(x)
-        lock = Lock()
-        result = await get_items_nowait(queue, lock=lock)
-        assert result == xs
+        result = await get_items_nowait(queue, max_size=max_size, lock=lock)
+        if max_size is None:
+            assert result == xs
+        else:
+            assert result == xs[:max_size]
 
 
 class TestQueueProcessor:
-    @given(
-        time_before_first_task=floats(0.1, 0.2),
-        times_between_tasks=lists(floats(0.1, 0.2), min_size=1, max_size=10),
-        time_after_last_task=floats(0.1, 0.2),
-    )
-    @settings(max_examples=1)
-    async def test_main(
-        self,
-        *,
-        time_before_first_task: float,
-        times_between_tasks: Sequence[float],
-        time_after_last_task: float,
-    ) -> None:
-        processed: set[int] = set()
-
+    async def test_one_processor_yield_tasks_is_slow(self) -> None:
+        @dataclass(kw_only=True)
         class Processor(QueueProcessor[int]):
-            @override
-            async def _run(self, *items: int) -> None:
-                nonlocal processed
-                processed.update(items)
+            output: set[int] = field(default_factory=set)
 
-        processor = Processor()
+            @override
+            async def _run(self, item: int) -> None:
+                self.output.add(item)
+
+        processor = await Processor.new()
 
         async def yield_tasks() -> None:
-            await sleep(time_before_first_task)
-            for i, time in enumerate(times_between_tasks):
+            await sleep(0.1)
+            for i in range(5):
                 processor.enqueue(i)
-                await sleep(time)
-            await sleep(time_after_last_task)
-            await processor.stop()
+                await sleep(0.1)
+            await sleep(0.1)
 
         with Timer() as timer:
             async with TaskGroup() as tg:
-                _ = tg.create_task(processor.run_forever())
                 _ = tg.create_task(yield_tasks())
-        assert len(processed) == len(times_between_tasks)
-        expected = (
-            time_before_first_task + sum(times_between_tasks) + time_after_last_task
-        )
-        assert float(timer) == approx(expected, rel=0.2)
+                _ = tg.create_task(processor.run_until_empty())
+        assert len(processor.output) == 5
+        assert float(timer) == approx(0.7, rel=0.1)
+        assert processor._task is not None
+        await processor.stop()
+        assert processor._task is None
+
+    async def test_one_processor_run_is_slow(self) -> None:
+        @dataclass(kw_only=True)
+        class Processor(QueueProcessor[int]):
+            output: set[int] = field(default_factory=set)
+
+            @override
+            async def _run(self, item: int) -> None:
+                self.output.add(item)
+                await sleep(0.1)
+
+        processor = await Processor.new()
+
+        async def yield_tasks() -> None:
+            for i in range(5):
+                processor.enqueue(i)
+
+        with Timer() as timer:
+            async with TaskGroup() as tg:
+                _ = tg.create_task(yield_tasks())
+                _ = tg.create_task(processor.run_until_empty())
+        assert len(processor.output) == 5
+        assert float(timer) == approx(0.5, rel=0.1)
+        assert processor._task is not None
+        await processor.stop()
+        assert processor._task is None
+
+    async def test_two_processors(self) -> None:
+        @dataclass(kw_only=True)
+        class First(QueueProcessor[int]):
+            second: Second
+            output: set[int] = field(default_factory=set)
+
+            @override
+            async def _run(self, item: int) -> None:
+                self.second.enqueue(item)
+                self.output.add(item)
+
+        @dataclass(kw_only=True)
+        class Second(QueueProcessor[int]):
+            output: set[int] = field(default_factory=set)
+
+            @override
+            async def _run(self, item: int) -> None:
+                self.output.add(item)
+
+        second = await Second.new()
+        first = await First.new(second=second)
+
+        async def yield_tasks() -> None:
+            for i in range(5):
+                first.enqueue(i)
+            await first.run_until_empty()
+
+        async with TaskGroup() as tg:
+            _ = tg.create_task(yield_tasks())
+
+        assert len(first.output) == 5
+        assert len(second.output) == 5
+
+    async def test_del_without_task(self) -> None:
+        class Processor(QueueProcessor[int]):
+            @override
+            async def _run(self, item: int) -> None:
+                _ = item
+
+        processor = Processor()
+        assert processor._task is None
+        del processor
+        _ = collect()
+
+    async def test_del_with_task(self) -> None:
+        class Processor(QueueProcessor[int]):
+            @override
+            async def _run(self, item: int) -> None:
+                _ = item
+
+        processor = await Processor.new()
+        assert processor._task is not None
+        await sleep(0.01)
+        del processor
+        _ = collect()
+
+    async def test_enqueue_and_len(self) -> None:
+        class Processor(QueueProcessor[int]):
+            @override
+            async def _run(self, item: int) -> None:
+                _ = item
+
+        processor = Processor()
+        assert len(processor) == 0
+        processor.enqueue(0)
+        assert len(processor) == 1
 
 
 class TestSleepDur:

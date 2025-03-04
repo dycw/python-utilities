@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from asyncio import (
+    CancelledError,
     Lock,
     Queue,
     QueueEmpty,
@@ -19,12 +20,12 @@ from dataclasses import dataclass, field
 from io import StringIO
 from subprocess import PIPE
 from sys import stderr, stdout
-from typing import TYPE_CHECKING, Any, Generic, TextIO, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, Self, TextIO, TypeVar, cast
 
 from typing_extensions import override
 
 from utilities.datetime import datetime_duration_to_float
-from utilities.functions import ensure_int, ensure_not_none
+from utilities.functions import ensure_int, ensure_not_none, get_class_name
 
 if TYPE_CHECKING:
     from asyncio import Timeout, _CoroutineLike
@@ -73,73 +74,124 @@ class BoundedTaskGroup(TaskGroup):
 class QueueProcessor(ABC, Generic[_T]):
     """Process a set of items in a queue."""
 
-    _queue: Queue[_T] = field(default_factory=Queue, repr=False)
-    _running: bool = False
-    _task: Task[None] = field(init=False)
+    _lock: Lock = field(default_factory=Lock, repr=False)
+    _queue: Queue[_T] = field(default_factory=Queue)
+    _task: Task[None] | None = field(default=None, repr=False)
 
     def __del__(self) -> None:
-        with suppress(AttributeError, RuntimeError):  # pragma: no cover
-            _ = self._task.cancel()
+        if (task := self._task) is None:
+            return
+        with suppress(RuntimeError):
+            _ = task.cancel()
 
-    async def run_forever(self) -> None:
-        self._running = True
-        self._task = create_task(self._loop())
+    def __len__(self) -> int:
+        return self._queue.qsize()
 
     def enqueue(self, *items: _T) -> None:
         """Enqueue a set items."""
-        if self._running:
-            for item in items:
-                self._queue.put_nowait(item)
-        else:
-            msg = "Process is not accepting any more tasks"
-            raise ValueError(msg)
+        for item in items:
+            self._queue.put_nowait(item)
+
+    @classmethod
+    async def new(cls, **kwargs: Any) -> Self:
+        """Create and start ."""
+        self = cls(**kwargs)
+        await self.start()
+        return self
+
+    async def run_until_empty(self) -> None:
+        """Run the processor until the queue is empty."""
+        items = await get_items_nowait(self._queue, lock=self._lock)
+        for item in items:
+            await self._run(item)
+
+    async def start(self) -> None:
+        """Create and start the processor."""
+        self._task = create_task(self._loop())
 
     async def stop(self) -> None:
         """Stop the processor."""
-        self._running = False
-        items = await get_items_nowait(self._queue)
-        await self._run(*items)
+        if self._task is None:
+            return
+        _ = self._task.cancel()
+        await self.run_until_empty()
+        with suppress(CancelledError):
+            await self._task
+        self._task = None
 
     async def _loop(self, /) -> None:
         """Loop the processor."""
-        while self._running:
-            items = await get_items(self._queue)
-            await self._run(*items)
+        while True:
+            try:
+                (item,) = await get_items(self._queue, max_size=1, lock=self._lock)
+            except RuntimeError as error:
+                if error.args[0] == "Event loop is closed":
+                    break
+                raise
+            await self._run(item)
 
     @abstractmethod
-    async def _run(self, *items: _T) -> None:
+    async def _run(self, item: _T) -> None:
         """Run the processor once."""
-        raise NotImplementedError(*items)
+        raise NotImplementedError(item)
+
+
+@dataclass(kw_only=True, slots=True)
+class QueueProcessorError(Exception):
+    processor: QueueProcessor
+    items: tuple[Any, ...]
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Cannot enqueue items whilst {get_class_name(self.processor)} is stopping"
+        )
 
 
 ##
 
 
-async def get_items(queue: Queue[_T], /, *, lock: Lock | None = None) -> list[_T]:
+async def get_items(
+    queue: Queue[_T], /, *, max_size: int | None = None, lock: Lock | None = None
+) -> list[_T]:
     """Get all the items from a queue; if empty then wait."""
     items = [await queue.get()]
-    items.extend(await get_items_nowait(queue, lock=lock))
+    max_size_use = None if max_size is None else (max_size - 1)
+    if lock is None:
+        items.extend(await get_items_nowait(queue, max_size=max_size_use))
+    else:
+        async with lock:
+            items.extend(await get_items_nowait(queue, max_size=max_size_use))
     return items
 
 
 async def get_items_nowait(
-    queue: Queue[_T], /, *, lock: Lock | None = None
+    queue: Queue[_T], /, *, max_size: int | None = None, lock: Lock | None = None
 ) -> list[_T]:
     """Get all the items from a queue; no waiting."""
     if lock is None:
-        return _get_items_nowait_core(queue)
+        return _get_items_nowait_core(queue, max_size=max_size)
     async with lock:
-        return _get_items_nowait_core(queue)
+        return _get_items_nowait_core(queue, max_size=max_size)
 
 
-def _get_items_nowait_core(queue: Queue[_T], /) -> list[_T]:
+def _get_items_nowait_core(
+    queue: Queue[_T], /, *, max_size: int | None = None
+) -> list[_T]:
     """Get all the items from a queue; no waiting."""
     items: list[_T] = []
-    while True:
-        try:
-            items.append(queue.get_nowait())
-        except QueueEmpty:
-            break
+    if max_size is None:
+        while True:
+            try:
+                items.append(queue.get_nowait())
+            except QueueEmpty:
+                break
+    else:
+        while len(items) < max_size:
+            try:
+                items.append(queue.get_nowait())
+            except QueueEmpty:
+                break
     return items
 
 
