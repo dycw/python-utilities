@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, Any, Generic, Self, TextIO, TypeVar, cast
 from typing_extensions import override
 
 from utilities.datetime import datetime_duration_to_float
-from utilities.functions import ensure_int, ensure_not_none, get_class_name
+from utilities.functions import ensure_int, ensure_not_none
 
 if TYPE_CHECKING:
     from asyncio import Timeout, _CoroutineLike
@@ -127,27 +127,15 @@ class QueueProcessor(ABC, Generic[_T]):
             try:
                 (item,) = await get_items(self._queue, max_size=1, lock=self._lock)
             except RuntimeError as error:
-                if error.args[0] == "Event loop is closed":
+                if error.args[0] == "Event loop is closed":  # pragma: no cover
                     break
-                raise
+                raise  # pragma: no cover
             await self._run(item)
 
     @abstractmethod
     async def _run(self, item: _T) -> None:
         """Run the processor once."""
         raise NotImplementedError(item)
-
-
-@dataclass(kw_only=True, slots=True)
-class QueueProcessorError(Exception):
-    processor: QueueProcessor
-    items: tuple[Any, ...]
-
-    @override
-    def __str__(self) -> str:
-        return (
-            f"Cannot enqueue items whilst {get_class_name(self.processor)} is stopping"
-        )
 
 
 ##

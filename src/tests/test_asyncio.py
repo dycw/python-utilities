@@ -236,6 +236,17 @@ class TestQueueProcessor:
         processor.enqueue(0)
         assert len(processor) == 1
 
+    async def test_stop_without_task(self) -> None:
+        class Processor(QueueProcessor[int]):
+            @override
+            async def _run(self, item: int) -> None:
+                _ = item
+
+        processor = Processor()
+        assert processor._task is None
+        await processor.stop()
+        assert processor._task is None
+
 
 class TestSleepDur:
     @given(
