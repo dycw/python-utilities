@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence, Sized
 from collections.abc import Set as AbstractSet
-from contextlib import suppress
 from dataclasses import dataclass, field
 from functools import partial, reduce
 from itertools import chain
@@ -60,7 +59,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 from typing_extensions import override
 
-from utilities.asyncio import QueueProcessor, get_items, get_items_nowait
+from utilities.asyncio import QueueProcessor
 from utilities.functions import (
     ensure_str,
     get_class_name,
@@ -84,8 +83,6 @@ from utilities.tenacity import yield_timeout_attempts
 from utilities.types import Duration, MaybeIterable, StrMapping, TupleOrStrMapping
 
 if TYPE_CHECKING:
-    from types import TracebackType
-
     from tenacity.retry import RetryBaseT as SyncRetryBaseT
     from tenacity.stop import StopBaseT
     from tenacity.wait import WaitBaseT
@@ -660,32 +657,6 @@ class Upserter(QueueProcessor[_InsertItem]):
     timeout_create: Duration | None = None
     timeout_insert: Duration | None = None
 
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None = None,
-        exc_value: BaseException | None = None,
-        traceback: TracebackType | None = None,
-    ) -> None:
-        """Stop the server."""
-        _ = (exc_type, exc_value, traceback)
-        items = await get_items_nowait(self._queue)
-        await self._run(*items)
-
-    def __del__(self) -> None:
-        with suppress(AttributeError, RuntimeError):  # pragma: no cover
-            _ = self._task.cancel()
-
-    async def add(self, *items: _InsertItem) -> None:
-        """Add a set items to the upserter."""
-        for item in items:
-            self._queue.put_nowait(item)
-
-    async def _loop(self, /) -> None:
-        """Loop the upserter."""
-        while True:
-            items = await get_items(self._queue)
-            await self._run(*items)
-
     async def _pre_upsert(self, items: Sequence[_InsertItem], /) -> None:
         """Pre-upsert coroutine."""
         _ = items
@@ -694,24 +665,26 @@ class Upserter(QueueProcessor[_InsertItem]):
         """Post-upsert coroutine."""
         _ = items
 
-    async def _run(self, *items: _InsertItem) -> None:
-        """Run the upserter once."""
-        if len(items) >= 1:
-            await self._pre_upsert(items)
-            await upsert_items(
-                self.engine,
-                *items,
-                snake=self.snake,
-                selected_or_all=self.selected_or_all,
-                chunk_size_frac=self.chunk_size_frac,
-                assume_tables_exist=self.assume_tables_exist,
-                stop=self.stop,
-                wait=self.wait,
-                retry=self.retry,
-                timeout_create=self.timeout_create,
-                timeout_insert=self.timeout_insert,
-            )
-            await self._post_upsert(items)
+    @override
+    async def _run(self, item: _InsertItem) -> None:
+        """Run the upserter."""
+        rest = await self._get_items()
+        items = list(chain([item], rest))
+        await self._pre_upsert(items)
+        await upsert_items(
+            self.engine,
+            *items,
+            snake=self.snake,
+            selected_or_all=self.selected_or_all,
+            chunk_size_frac=self.chunk_size_frac,
+            assume_tables_exist=self.assume_tables_exist,
+            stop=self.stop_,
+            wait=self.wait,
+            retry=self.retry,
+            timeout_create=self.timeout_create,
+            timeout_insert=self.timeout_insert,
+        )
+        await self._post_upsert(items)
 
 
 ##

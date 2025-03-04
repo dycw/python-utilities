@@ -30,6 +30,7 @@ from utilities.functions import ensure_int, ensure_not_none
 if TYPE_CHECKING:
     from asyncio import Timeout, _CoroutineLike
     from asyncio.subprocess import Process
+    from collections.abc import Sequence
     from contextvars import Context
     from types import TracebackType
 
@@ -141,8 +142,12 @@ class QueueProcessor(ABC, Generic[_T]):
 
     async def _get_and_run(self) -> None:
         """Get and run."""
-        (item,) = await get_items(self._queue, max_size=1, lock=self._lock)
+        (item,) = await self._get_items(max_size=1)
         await self._run(item)
+
+    async def _get_items(self, *, max_size: int | None = None) -> Sequence[_T]:
+        """Get items from the queue."""
+        return await get_items(self._queue, max_size=max_size, lock=self._lock)
 
     async def _loop(self, /) -> None:
         """Loop the processor."""
@@ -166,7 +171,7 @@ class QueueProcessor(ABC, Generic[_T]):
 async def get_items(
     queue: Queue[_T], /, *, max_size: int | None = None, lock: Lock | None = None
 ) -> list[_T]:
-    """Get all the items from a queue; if empty then wait."""
+    """Get items from a queue; if empty then wait."""
     items = [await queue.get()]
     max_size_use = None if max_size is None else (max_size - 1)
     if lock is None:
@@ -180,7 +185,7 @@ async def get_items(
 async def get_items_nowait(
     queue: Queue[_T], /, *, max_size: int | None = None, lock: Lock | None = None
 ) -> list[_T]:
-    """Get all the items from a queue; no waiting."""
+    """Get items from a queue; no waiting."""
     if lock is None:
         return _get_items_nowait_core(queue, max_size=max_size)
     async with lock:
