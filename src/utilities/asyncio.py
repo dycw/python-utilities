@@ -104,6 +104,10 @@ class QueueProcessor(ABC, Generic[_T]):
     def __len__(self) -> int:
         return self._queue.qsize()
 
+    def empty(self) -> bool:
+        """Check if the queue is empty."""
+        return self._queue.empty()
+
     def enqueue(self, *items: _T) -> None:
         """Enqueue a set items."""
         for item in items:
@@ -119,9 +123,8 @@ class QueueProcessor(ABC, Generic[_T]):
 
     async def run_until_empty(self) -> None:
         """Run the processor until the queue is empty."""
-        items = await get_items_nowait(self._queue, lock=self._lock)
-        for item in items:
-            await self._run(item)
+        while not self._queue.empty():
+            await self._get_and_run()
 
     async def start(self) -> None:
         """Create and start the processor."""
@@ -137,20 +140,24 @@ class QueueProcessor(ABC, Generic[_T]):
             await self._task
         self._task = None
 
+    async def _get_and_run(self) -> None:
+        """Get and run."""
+        (item,) = await get_items(self._queue, max_size=1, lock=self._lock)
+        await self._run(item)
+
     async def _loop(self, /) -> None:
         """Loop the processor."""
         while True:
             try:
-                (item,) = await get_items(self._queue, max_size=1, lock=self._lock)
+                await self._get_and_run()
             except RuntimeError as error:
                 if error.args[0] == "Event loop is closed":  # pragma: no cover
                     break
                 raise  # pragma: no cover
-            await self._run(item)
 
     @abstractmethod
     async def _run(self, item: _T) -> None:
-        """Run the processor once."""
+        """Run the processor on the first item."""
         raise NotImplementedError(item)  # pragma: no cover
 
 

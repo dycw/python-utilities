@@ -59,7 +59,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 from typing_extensions import override
 
-from utilities.asyncio import QueueProcessor
+from utilities.asyncio import QueueProcessor, get_items, get_items_nowait
 from utilities.functions import (
     ensure_str,
     get_class_name,
@@ -83,6 +83,8 @@ from utilities.tenacity import yield_timeout_attempts
 from utilities.types import Duration, MaybeIterable, StrMapping, TupleOrStrMapping
 
 if TYPE_CHECKING:
+    from types import TracebackType
+
     from tenacity.retry import RetryBaseT as SyncRetryBaseT
     from tenacity.stop import StopBaseT
     from tenacity.wait import WaitBaseT
@@ -656,6 +658,32 @@ class Upserter(QueueProcessor[_InsertItem]):
     retry: SyncRetryBaseT | None = None
     timeout_create: Duration | None = None
     timeout_insert: Duration | None = None
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None = None,
+        exc_value: BaseException | None = None,
+        traceback: TracebackType | None = None,
+    ) -> None:
+        """Stop the server."""
+        _ = (exc_type, exc_value, traceback)
+        items = await get_items_nowait(self._queue)
+        await self._run(*items)
+
+    def __del__(self) -> None:
+        with suppress(AttributeError, RuntimeError):  # pragma: no cover
+            _ = self._task.cancel()
+
+    async def add(self, *items: _InsertItem) -> None:
+        """Add a set items to the upserter."""
+        for item in items:
+            self._queue.put_nowait(item)
+
+    async def _loop(self, /) -> None:
+        """Loop the upserter."""
+        while True:
+            items = await get_items(self._queue)
+            await self._run(*items)
 
     async def _pre_upsert(self, items: Sequence[_InsertItem], /) -> None:
         """Pre-upsert coroutine."""
