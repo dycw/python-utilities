@@ -714,9 +714,9 @@ class Upserter:
                 selected_or_all=self.selected_or_all,
                 chunk_size_frac=self.chunk_size_frac,
                 assume_tables_exist=self.assume_tables_exist,
-                retry=self.retry,
                 stop=self.stop,
                 wait=self.wait,
+                retry=self.retry,
                 timeout_create=self.timeout_create,
                 timeout_insert=self.timeout_insert,
             )

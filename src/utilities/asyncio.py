@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from asyncio import (
     Lock,
     Queue,
@@ -9,14 +10,16 @@ from asyncio import (
     Task,
     TaskGroup,
     create_subprocess_shell,
+    create_task,
     sleep,
     timeout,
 )
-from dataclasses import dataclass
+from contextlib import suppress
+from dataclasses import dataclass, field
 from io import StringIO
 from subprocess import PIPE
 from sys import stderr, stdout
-from typing import TYPE_CHECKING, Any, TextIO, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, TextIO, TypeVar, cast
 
 from typing_extensions import override
 
@@ -61,6 +64,52 @@ class BoundedTaskGroup(TaskGroup):
         return super().create_task(
             wrapped(self._semaphore, coro), name=name, context=context
         )
+
+
+##
+
+
+@dataclass(kw_only=True, slots=True)
+class QueueProcessor(ABC, Generic[_T]):
+    """Process a set of items in a queue."""
+
+    _queue: Queue[_T] = field(default_factory=Queue, repr=False)
+    _running: bool = False
+    _task: Task[None] = field(init=False)
+
+    def __del__(self) -> None:
+        with suppress(AttributeError, RuntimeError):  # pragma: no cover
+            _ = self._task.cancel()
+
+    async def run_forever(self) -> None:
+        self._running = True
+        self._task = create_task(self._loop())
+
+    def enqueue(self, *items: _T) -> None:
+        """Enqueue a set items."""
+        if self._running:
+            for item in items:
+                self._queue.put_nowait(item)
+        else:
+            msg = "Process is not accepting any more tasks"
+            raise ValueError(msg)
+
+    async def stop(self) -> None:
+        """Stop the processor."""
+        self._running = False
+        items = await get_items_nowait(self._queue)
+        await self._run(*items)
+
+    async def _loop(self, /) -> None:
+        """Loop the processor."""
+        while self._running:
+            items = await get_items(self._queue)
+            await self._run(*items)
+
+    @abstractmethod
+    async def _run(self, *items: _T) -> None:
+        """Run the processor once."""
+        raise NotImplementedError(*items)
 
 
 ##
@@ -165,6 +214,7 @@ def timeout_dur(*, duration: Duration | None = None) -> Timeout:
 
 __all__ = [
     "BoundedTaskGroup",
+    "QueueProcessor",
     "StreamCommandOutput",
     "get_items",
     "get_items_nowait",
