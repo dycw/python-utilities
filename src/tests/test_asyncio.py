@@ -253,6 +253,15 @@ class TestQueueProcessor:
         processor.enqueue(*range(n))
         assert len(processor) == n
 
+    async def test_new(self) -> None:
+        class Processor(QueueProcessor[int]):
+            @override
+            async def _run(self, item: int) -> None:
+                _ = item
+
+        processor = await Processor.new()
+        assert processor._task is not None
+
     async def test_stop_without_task(self) -> None:
         class Processor(QueueProcessor[int]):
             @override
