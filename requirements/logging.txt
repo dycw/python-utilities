@@ -46,7 +46,7 @@ humanfriendly==10.0
     # via coloredlogs
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.127.5
+hypothesis==6.127.6
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -151,7 +151,7 @@ tomli-w==1.2.0
     # via hatch
 tomlkit==0.13.2
     # via hatch
-trove-classifiers==2025.2.18.16
+trove-classifiers==2025.3.3.18
     # via hatchling
 typing-extensions==4.12.2
     # via
@@ -161,7 +161,7 @@ tzlocal==5.3
     # via dycw-utilities (pyproject.toml)
 userpath==1.9.2
     # via hatch
-uv==0.6.3
+uv==0.6.4
     # via hatch
 virtualenv==20.29.2
     # via hatch
