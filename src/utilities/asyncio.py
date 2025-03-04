@@ -72,7 +72,7 @@ class BoundedTaskGroup(TaskGroup):
 ##
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class QueueProcessor(ABC, Generic[_T]):
     """Process a set of items in a queue."""
 
