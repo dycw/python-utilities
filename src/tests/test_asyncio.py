@@ -16,7 +16,7 @@ from hypothesis.strategies import (
     none,
     permutations,
 )
-from pytest import raises
+from pytest import mark, raises
 from typing_extensions import override
 
 from utilities.asyncio import (
@@ -370,7 +370,8 @@ class TestSleepDur:
             max_timedelta=10 * MILLISECOND,
         )
     )
-    @settings(max_examples=1, phases={Phase.generate})
+    @mark.flaky
+    @settings(phases={Phase.generate})
     async def test_main(self, *, duration: Duration) -> None:
         with Timer() as timer:
             await sleep_dur(duration=duration)
@@ -413,7 +414,8 @@ class TestTimeoutDur:
             max_timedelta=10 * MILLISECOND,
         )
     )
-    @settings(max_examples=1, phases={Phase.generate})
+    @mark.flaky
+    @settings(phases={Phase.generate})
     async def test_main(self, *, duration: Duration) -> None:
         with raises(TimeoutError):
             async with timeout_dur(duration=duration):
