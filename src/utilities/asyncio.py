@@ -80,6 +80,21 @@ class QueueProcessor(ABC, Generic[_T]):
     _queue: Queue[_T] = field(default_factory=Queue)
     _task: Task[None] | None = field(default=None, repr=False)
 
+    async def __aenter__(self) -> Self:
+        """Start the server."""
+        await self.start()
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None = None,
+        exc_value: BaseException | None = None,
+        traceback: TracebackType | None = None,
+    ) -> None:
+        """Stop the server."""
+        _ = (exc_type, exc_value, traceback)
+        await self.stop()
+
     def __del__(self) -> None:
         if (task := self._task) is None:
             return
@@ -95,9 +110,10 @@ class QueueProcessor(ABC, Generic[_T]):
             self._queue.put_nowait(item)
 
     @classmethod
-    async def new(cls, **kwargs: Any) -> Self:
+    async def new(cls, *args: _T, **kwargs: Any) -> Self:
         """Create and start ."""
         self = cls(**kwargs)
+        self.enqueue(*args)
         await self.start()
         return self
 

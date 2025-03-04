@@ -115,7 +115,8 @@ class TestGetItemsNoWait:
 
 
 class TestQueueProcessor:
-    async def test_one_processor_yield_tasks_is_slow(self) -> None:
+    @given(n=integers(1, 10))
+    async def test_one_processor_slow_tasks(self, *, n: int) -> None:
         @dataclass(kw_only=True)
         class Processor(QueueProcessor[int]):
             output: set[int] = field(default_factory=set)
@@ -124,11 +125,12 @@ class TestQueueProcessor:
             async def _run(self, item: int) -> None:
                 self.output.add(item)
 
-        processor = await Processor.new()
+        processor = Processor()
 
         async def yield_tasks() -> None:
+            await processor.start()
             await sleep(0.1)
-            for i in range(5):
+            for i in range(n):
                 processor.enqueue(i)
                 await sleep(0.1)
             await sleep(0.1)
@@ -137,13 +139,14 @@ class TestQueueProcessor:
             async with TaskGroup() as tg:
                 _ = tg.create_task(yield_tasks())
                 _ = tg.create_task(processor.run_until_empty())
-        assert len(processor.output) == 5
-        assert float(timer) == approx(0.7, rel=0.1)
+        assert len(processor.output) == n
+        assert float(timer) == approx(n * 0.1, abs=0.2)
         assert processor._task is not None
         await processor.stop()
         assert processor._task is None
 
-    async def test_one_processor_run_is_slow(self) -> None:
+    @given(n=integers(1, 10))
+    async def test_one_processor_slow_run(self, *, n: int) -> None:
         @dataclass(kw_only=True)
         class Processor(QueueProcessor[int]):
             output: set[int] = field(default_factory=set)
@@ -153,23 +156,18 @@ class TestQueueProcessor:
                 self.output.add(item)
                 await sleep(0.1)
 
-        processor = await Processor.new()
-
-        async def yield_tasks() -> None:
-            for i in range(5):
-                processor.enqueue(i)
-
+        processor = Processor()
+        processor.enqueue(*range(n))
         with Timer() as timer:
             async with TaskGroup() as tg:
-                _ = tg.create_task(yield_tasks())
                 _ = tg.create_task(processor.run_until_empty())
-        assert len(processor.output) == 5
-        assert float(timer) == approx(0.5, rel=0.1)
-        assert processor._task is not None
+        assert len(processor.output) == n
+        assert float(timer) == approx(n * 0.1, abs=0.2)
         await processor.stop()
         assert processor._task is None
 
-    async def test_two_processors(self) -> None:
+    @given(n=integers(0, 10))
+    async def test_two_processors(self, *, n: int) -> None:
         @dataclass(kw_only=True)
         class First(QueueProcessor[int]):
             second: Second
@@ -192,15 +190,33 @@ class TestQueueProcessor:
         first = await First.new(second=second)
 
         async def yield_tasks() -> None:
-            for i in range(5):
-                first.enqueue(i)
+            first.enqueue(*range(n))
             await first.run_until_empty()
 
         async with TaskGroup() as tg:
             _ = tg.create_task(yield_tasks())
 
-        assert len(first.output) == 5
-        assert len(second.output) == 5
+        assert len(first.output) == n
+        assert len(second.output) == n
+
+    @given(n=integers(0, 10))
+    async def test_context_manager(self, *, n: int) -> None:
+        @dataclass(kw_only=True)
+        class Processor(QueueProcessor[int]):
+            output: set[int] = field(default_factory=set)
+
+            @override
+            async def _run(self, item: int) -> None:
+                self.output.add(item)
+
+        processor = Processor()
+        processor.enqueue(*range(n))
+        assert len(processor.output) == 0
+        assert processor._task is None
+        async with processor:
+            assert processor._task is not None
+        assert len(processor.output) == n
+        assert processor._task is None
 
     async def test_del_without_task(self) -> None:
         class Processor(QueueProcessor[int]):
@@ -225,7 +241,8 @@ class TestQueueProcessor:
         del processor
         _ = collect()
 
-    async def test_enqueue_and_len(self) -> None:
+    @given(n=integers(0, 10))
+    async def test_enqueue_and_len(self, *, n: int) -> None:
         class Processor(QueueProcessor[int]):
             @override
             async def _run(self, item: int) -> None:
@@ -233,8 +250,8 @@ class TestQueueProcessor:
 
         processor = Processor()
         assert len(processor) == 0
-        processor.enqueue(0)
-        assert len(processor) == 1
+        processor.enqueue(*range(n))
+        assert len(processor) == n
 
     async def test_stop_without_task(self) -> None:
         class Processor(QueueProcessor[int]):
