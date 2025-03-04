@@ -129,18 +129,18 @@ class TestQueueProcessor:
 
         async def yield_tasks() -> None:
             await processor.start()
-            await sleep(0.1)
+            await sleep(0.01)
             for i in range(n):
                 processor.enqueue(i)
-                await sleep(0.1)
-            await sleep(0.1)
+                await sleep(0.01)
+            await sleep(0.01)
 
         with Timer() as timer:
             async with TaskGroup() as tg:
                 _ = tg.create_task(yield_tasks())
                 _ = tg.create_task(processor.run_until_empty())
         assert len(processor.output) == n
-        assert float(timer) == approx(n * 0.1, abs=0.2)
+        assert float(timer) == approx((n + 2) * 0.01, abs=0.02)
         assert processor._task is not None
         await processor.stop()
         assert processor._task is None
@@ -154,7 +154,7 @@ class TestQueueProcessor:
             @override
             async def _run(self, item: int) -> None:
                 self.output.add(item)
-                await sleep(0.1)
+                await sleep(0.01)
 
         processor = Processor()
         processor.enqueue(*range(n))
@@ -162,7 +162,7 @@ class TestQueueProcessor:
             async with TaskGroup() as tg:
                 _ = tg.create_task(processor.run_until_empty())
         assert len(processor.output) == n
-        assert float(timer) == approx(n * 0.1, abs=0.2)
+        assert float(timer) == approx(n * 0.01, abs=0.02)
         await processor.stop()
         assert processor._task is None
 
