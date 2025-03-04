@@ -142,7 +142,7 @@ class QueueProcessor(ABC, Generic[_T]):
         self._task = None
 
     async def _get_and_run(self) -> bool:
-        """Get and run."""
+        """Get the next item and run the processor."""
         items = await self._get_items(max_size=1)
         if items is None:  # pragma: no cover
             return False
