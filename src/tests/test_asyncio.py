@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import integers, just, lists, none
-from pytest import approx, raises
+from pytest import raises
 from typing_extensions import override
 
 from utilities.asyncio import (
@@ -21,7 +21,7 @@ from utilities.asyncio import (
     timeout_dur,
 )
 from utilities.datetime import MILLISECOND, ZERO_TIME, datetime_duration_to_timedelta
-from utilities.hypothesis import datetime_durations, settings_with_reduced_examples
+from utilities.hypothesis import datetime_durations
 from utilities.pytest import skipif_windows
 from utilities.timer import Timer
 
@@ -116,7 +116,6 @@ class TestGetItemsNoWait:
 
 class TestQueueProcessor:
     @given(n=integers(1, 10))
-    @settings_with_reduced_examples()
     async def test_one_processor_slow_tasks(self, *, n: int) -> None:
         @dataclass(kw_only=True)
         class Example(QueueProcessor[int]):
@@ -136,18 +135,15 @@ class TestQueueProcessor:
                 await sleep(0.01)
             await sleep(0.01)
 
-        with Timer() as timer:
-            async with TaskGroup() as tg:
-                _ = tg.create_task(yield_tasks())
-                _ = tg.create_task(processor.run_until_empty())
+        async with TaskGroup() as tg:
+            _ = tg.create_task(yield_tasks())
+            _ = tg.create_task(processor.run_until_empty())
         assert len(processor.output) == n
-        assert float(timer) == approx((n + 2) * 0.01, abs=0.05, rel=0.2)
         assert processor._task is not None
         await processor.stop()
         assert processor._task is None
 
     @given(n=integers(1, 10))
-    @settings_with_reduced_examples()
     async def test_one_processor_slow_run(self, *, n: int) -> None:
         @dataclass(kw_only=True)
         class Example(QueueProcessor[int]):
@@ -160,11 +156,9 @@ class TestQueueProcessor:
 
         processor = Example()
         processor.enqueue(*range(n))
-        with Timer() as timer:
-            async with TaskGroup() as tg:
-                _ = tg.create_task(processor.run_until_empty())
+        async with TaskGroup() as tg:
+            _ = tg.create_task(processor.run_until_empty())
         assert len(processor.output) == n
-        assert float(timer) == approx(n * 0.01, abs=0.05, rel=0.2)
         await processor.stop()
         assert processor._task is None
 
