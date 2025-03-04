@@ -124,7 +124,7 @@ class QueueProcessor(ABC, Generic[_T]):
     async def run_until_empty(self) -> None:
         """Run the processor until the queue is empty."""
         while not self._queue.empty():
-            await self._get_and_run()
+            _ = await self._get_and_run()
 
     async def start(self) -> None:
         """Start the processor."""
