@@ -127,7 +127,7 @@ class QueueProcessor(ABC, Generic[_T]):
             await self._get_and_run()
 
     async def start(self) -> None:
-        """Create and start the processor."""
+        """Start the processor."""
         if self._task is None:
             self._task = create_task(self._loop())
 
