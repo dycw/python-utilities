@@ -162,7 +162,8 @@ class QueueProcessor(ABC, Generic[_T]):
     async def _loop(self, /) -> None:
         """Loop the processor."""
         while True:
-            if not await self._get_and_run():  # pragma: no cover
+            is_success = await self._get_and_run()
+            if not is_success:  # pragma: no cover
                 break
 
     @abstractmethod
