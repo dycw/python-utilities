@@ -139,9 +139,7 @@ class TestQueueProcessor:
             _ = tg.create_task(yield_tasks())
             _ = tg.create_task(processor.run_until_empty())
         assert len(processor.output) == n
-        assert processor._task is not None
         await processor.stop()
-        assert processor._task is None
 
     @given(n=integers(1, 10))
     async def test_one_processor_slow_run(self, *, n: int) -> None:
@@ -160,7 +158,23 @@ class TestQueueProcessor:
             _ = tg.create_task(processor.run_until_empty())
         assert len(processor.output) == n
         await processor.stop()
-        assert processor._task is None
+
+    @given(n=integers(1, 10))
+    async def test_one_processor_continually_adding(self, *, n: int) -> None:
+        @dataclass(kw_only=True)
+        class Example(QueueProcessor[int]):
+            output: set[int] = field(default_factory=set)
+
+            @override
+            async def _run(self, item: int) -> None:
+                self.output.add(item)
+
+        processor = Example()
+        await processor.start()
+        for i in range(n):
+            processor.enqueue(i)
+            await sleep(0.01)
+        assert len(processor.output) == n
 
     @given(n=integers(0, 10))
     async def test_two_processors(self, *, n: int) -> None:

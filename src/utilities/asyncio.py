@@ -141,24 +141,28 @@ class QueueProcessor(ABC, Generic[_T]):
             await self._task
         self._task = None
 
-    async def _get_and_run(self) -> None:
+    async def _get_and_run(self) -> bool:
         """Get and run."""
-        (item,) = await self._get_items(max_size=1)
+        if (items := await self._get_items(max_size=1)) is None:
+            return False
+        (item,) = items
         await self._run(item)
+        return True
 
-    async def _get_items(self, *, max_size: int | None = None) -> Sequence[_T]:
+    async def _get_items(self, *, max_size: int | None = None) -> Sequence[_T] | None:
         """Get items from the queue."""
-        return await get_items(self._queue, max_size=max_size, lock=self._lock)
+        try:
+            return await get_items(self._queue, max_size=max_size, lock=self._lock)
+        except RuntimeError as error:
+            if error.args[0] == "Event loop is closed":  # pragma: no cover
+                return None
+            raise  # pragma: no cover
 
     async def _loop(self, /) -> None:
         """Loop the processor."""
         while True:
-            try:
-                await self._get_and_run()
-            except RuntimeError as error:
-                if error.args[0] == "Event loop is closed":  # pragma: no cover
-                    break
-                raise  # pragma: no cover
+            if not await self._get_and_run():
+                break
 
     @abstractmethod
     async def _run(self, item: _T, /) -> None:
