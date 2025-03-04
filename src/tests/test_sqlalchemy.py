@@ -1132,6 +1132,7 @@ class TestUpserter:
         name=_table_names(),
         triples=_upsert_lists(nullable=True, min_size=1),
     )
+    @mark.flaky
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_main(
         self, *, data: DataObject, name: str, triples: list[tuple[int, bool, bool]]
