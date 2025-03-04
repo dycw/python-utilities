@@ -642,7 +642,7 @@ class TablenameMixin:
 ##
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class Upserter(QueueProcessor[_InsertItem]):
     """Upsert a set of items into a database."""
 
