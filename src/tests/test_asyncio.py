@@ -269,7 +269,8 @@ class TestQueueProcessor:
         processor.enqueue(0)
         assert not processor.empty()
 
-    async def test_get_items_nowait(self) -> None:
+    @given(n=integers(0, 10))
+    async def test_get_items_nowait(self, *, n: int) -> None:
         @dataclass(kw_only=True)
         class Example(QueueProcessor[int]):
             output: set[int] = field(default_factory=set)
@@ -280,9 +281,10 @@ class TestQueueProcessor:
                 self.output.add(len(items))
 
         processor = Example()
-        await processor.start()
-        processor.enqueue(0)
-        assert not processor.empty()
+        processor.enqueue(*range(n + 1))
+        await processor._get_and_run()
+        result = one(processor.output)
+        assert result == n
 
     @given(n=integers(0, 10))
     async def test_len(self, *, n: int) -> None:
