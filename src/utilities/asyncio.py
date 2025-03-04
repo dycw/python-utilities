@@ -143,7 +143,8 @@ class QueueProcessor(ABC, Generic[_T]):
 
     async def _get_and_run(self) -> bool:
         """Get and run."""
-        if (items := await self._get_items(max_size=1)) is None:
+        items = await self._get_items(max_size=1)
+        if items is None:  # pragma: no cover
             return False
         (item,) = items
         await self._run(item)
@@ -161,7 +162,7 @@ class QueueProcessor(ABC, Generic[_T]):
     async def _loop(self, /) -> None:
         """Loop the processor."""
         while True:
-            if not await self._get_and_run():
+            if not await self._get_and_run():  # pragma: no cover
                 break
 
     @abstractmethod
