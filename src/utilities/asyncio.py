@@ -160,7 +160,7 @@ class QueueProcessor(ABC, Generic[_T]):
                 raise  # pragma: no cover
 
     @abstractmethod
-    async def _run(self, item: _T) -> None:
+    async def _run(self, item: _T, /) -> None:
         """Run the processor on the first item."""
         raise NotImplementedError(item)  # pragma: no cover
 

@@ -118,14 +118,14 @@ class TestQueueProcessor:
     @given(n=integers(1, 10))
     async def test_one_processor_slow_tasks(self, *, n: int) -> None:
         @dataclass(kw_only=True)
-        class Processor(QueueProcessor[int]):
+        class Example(QueueProcessor[int]):
             output: set[int] = field(default_factory=set)
 
             @override
             async def _run(self, item: int) -> None:
                 self.output.add(item)
 
-        processor = Processor()
+        processor = Example()
 
         async def yield_tasks() -> None:
             await processor.start()
@@ -148,7 +148,7 @@ class TestQueueProcessor:
     @given(n=integers(1, 10))
     async def test_one_processor_slow_run(self, *, n: int) -> None:
         @dataclass(kw_only=True)
-        class Processor(QueueProcessor[int]):
+        class Example(QueueProcessor[int]):
             output: set[int] = field(default_factory=set)
 
             @override
@@ -156,7 +156,7 @@ class TestQueueProcessor:
                 self.output.add(item)
                 await sleep(0.01)
 
-        processor = Processor()
+        processor = Example()
         processor.enqueue(*range(n))
         with Timer() as timer:
             async with TaskGroup() as tg:
@@ -202,14 +202,14 @@ class TestQueueProcessor:
     @given(n=integers(0, 10))
     async def test_context_manager(self, *, n: int) -> None:
         @dataclass(kw_only=True)
-        class Processor(QueueProcessor[int]):
+        class Example(QueueProcessor[int]):
             output: set[int] = field(default_factory=set)
 
             @override
             async def _run(self, item: int) -> None:
                 self.output.add(item)
 
-        processor = Processor()
+        processor = Example()
         processor.enqueue(*range(n))
         assert len(processor.output) == 0
         assert processor._task is None
@@ -219,67 +219,67 @@ class TestQueueProcessor:
         assert processor._task is None
 
     async def test_del_without_task(self) -> None:
-        class Processor(QueueProcessor[int]):
+        class Example(QueueProcessor[int]):
             @override
             async def _run(self, item: int) -> None:
                 _ = item
 
-        processor = Processor()
+        processor = Example()
         assert processor._task is None
         del processor
         _ = collect()
 
     async def test_del_with_task(self) -> None:
-        class Processor(QueueProcessor[int]):
+        class Example(QueueProcessor[int]):
             @override
             async def _run(self, item: int) -> None:
                 _ = item
 
-        processor = await Processor.new()
+        processor = await Example.new()
         assert processor._task is not None
         await sleep(0.01)
         del processor
         _ = collect()
 
     async def test_empty(self) -> None:
-        class Processor(QueueProcessor[int]):
+        class Example(QueueProcessor[int]):
             @override
             async def _run(self, item: int) -> None:
                 _ = item
 
-        processor = Processor()
+        processor = Example()
         assert processor.empty()
         processor.enqueue(0)
         assert not processor.empty()
 
     @given(n=integers(0, 10))
     async def test_len(self, *, n: int) -> None:
-        class Processor(QueueProcessor[int]):
+        class Example(QueueProcessor[int]):
             @override
             async def _run(self, item: int) -> None:
                 _ = item
 
-        processor = Processor()
+        processor = Example()
         assert len(processor) == 0
         processor.enqueue(*range(n))
         assert len(processor) == n
 
     async def test_new(self) -> None:
-        class Processor(QueueProcessor[int]):
+        class Example(QueueProcessor[int]):
             @override
             async def _run(self, item: int) -> None:
                 _ = item
 
-        processor = await Processor.new()
+        processor = await Example.new()
         assert processor._task is not None
 
     async def test_stop_without_task(self) -> None:
-        class Processor(QueueProcessor[int]):
+        class Example(QueueProcessor[int]):
             @override
             async def _run(self, item: int) -> None:
                 _ = item
 
-        processor = Processor()
+        processor = Example()
         assert processor._task is None
         await processor.stop()
         assert processor._task is None
