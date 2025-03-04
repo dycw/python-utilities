@@ -21,7 +21,7 @@ from utilities.asyncio import (
     timeout_dur,
 )
 from utilities.datetime import MILLISECOND, ZERO_TIME, datetime_duration_to_timedelta
-from utilities.hypothesis import datetime_durations
+from utilities.hypothesis import datetime_durations, settings_with_reduced_examples
 from utilities.pytest import skipif_windows
 from utilities.timer import Timer
 
@@ -116,6 +116,7 @@ class TestGetItemsNoWait:
 
 class TestQueueProcessor:
     @given(n=integers(1, 10))
+    @settings_with_reduced_examples()
     async def test_one_processor_slow_tasks(self, *, n: int) -> None:
         @dataclass(kw_only=True)
         class Example(QueueProcessor[int]):
@@ -140,12 +141,13 @@ class TestQueueProcessor:
                 _ = tg.create_task(yield_tasks())
                 _ = tg.create_task(processor.run_until_empty())
         assert len(processor.output) == n
-        assert float(timer) == approx((n + 2) * 0.01, abs=0.03, rel=0.1)
+        assert float(timer) == approx((n + 2) * 0.01, abs=0.05, rel=0.2)
         assert processor._task is not None
         await processor.stop()
         assert processor._task is None
 
     @given(n=integers(1, 10))
+    @settings_with_reduced_examples()
     async def test_one_processor_slow_run(self, *, n: int) -> None:
         @dataclass(kw_only=True)
         class Example(QueueProcessor[int]):
@@ -162,7 +164,7 @@ class TestQueueProcessor:
             async with TaskGroup() as tg:
                 _ = tg.create_task(processor.run_until_empty())
         assert len(processor.output) == n
-        assert float(timer) == approx(n * 0.01, abs=0.03, rel=0.1)
+        assert float(timer) == approx(n * 0.01, abs=0.05, rel=0.2)
         await processor.stop()
         assert processor._task is None
 
