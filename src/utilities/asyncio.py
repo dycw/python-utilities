@@ -128,7 +128,8 @@ class QueueProcessor(ABC, Generic[_T]):
 
     async def start(self) -> None:
         """Create and start the processor."""
-        self._task = create_task(self._loop())
+        if self._task is None:
+            self._task = create_task(self._loop())
 
     async def stop(self) -> None:
         """Stop the processor."""
