@@ -131,7 +131,7 @@ class TestQueueProcessor:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _run(self, item: int) -> None:
+            async def _run(self, item: int, /) -> None:
                 self.output.add(item)
 
         processor = Example()
@@ -157,7 +157,7 @@ class TestQueueProcessor:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _run(self, item: int) -> None:
+            async def _run(self, item: int, /) -> None:
                 self.output.add(item)
                 await sleep(0.01)
 
@@ -175,7 +175,7 @@ class TestQueueProcessor:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _run(self, item: int) -> None:
+            async def _run(self, item: int, /) -> None:
                 self.output.add(item)
 
         processor = Example()
@@ -193,7 +193,7 @@ class TestQueueProcessor:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _run(self, item: int) -> None:
+            async def _run(self, item: int, /) -> None:
                 self.second.enqueue(item)
                 self.output.add(item)
 
@@ -202,7 +202,7 @@ class TestQueueProcessor:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _run(self, item: int) -> None:
+            async def _run(self, item: int, /) -> None:
                 self.output.add(item)
 
         second = await Second.new()
@@ -225,7 +225,7 @@ class TestQueueProcessor:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _run(self, item: int) -> None:
+            async def _run(self, item: int, /) -> None:
                 self.output.add(item)
 
         processor = Example()
@@ -235,21 +235,10 @@ class TestQueueProcessor:
             pass
         assert len(processor.output) == n
 
-    async def test_del_without_task(self) -> None:
-        class Example(QueueProcessor[int]):
-            @override
-            async def _run(self, item: int) -> None:
-                _ = item
-
-        processor = Example()
-        assert processor._task is None
-        del processor
-        _ = collect()
-
     async def test_del_with_task(self) -> None:
         class Example(QueueProcessor[int]):
             @override
-            async def _run(self, item: int) -> None:
+            async def _run(self, item: int, /) -> None:
                 _ = item
 
         processor = await Example.new()
@@ -258,14 +247,40 @@ class TestQueueProcessor:
         del processor
         _ = collect()
 
+    async def test_del_without_task(self) -> None:
+        class Example(QueueProcessor[int]):
+            @override
+            async def _run(self, item: int, /) -> None:
+                _ = item
+
+        processor = Example()
+        assert processor._task is None
+        del processor
+        _ = collect()
+
     async def test_empty(self) -> None:
         class Example(QueueProcessor[int]):
             @override
-            async def _run(self, item: int) -> None:
+            async def _run(self, item: int, /) -> None:
                 _ = item
 
         processor = Example()
         assert processor.empty()
+        processor.enqueue(0)
+        assert not processor.empty()
+
+    async def test_get_items_nowait(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(QueueProcessor[int]):
+            output: set[int] = field(default_factory=set)
+
+            @override
+            async def _run(self, _: int, /) -> None:
+                items = await self._get_items_nowait()
+                self.output.add(len(items))
+
+        processor = Example()
+        await processor.start()
         processor.enqueue(0)
         assert not processor.empty()
 
@@ -309,7 +324,7 @@ class TestQueueProcessor:
         processor = Example(_queue=PriorityQueue())
         pairs = data.draw(permutations(list(enumerate(texts))))
         processor.enqueue(*pairs)
-        assert await processor._get_and_run()
+        await processor._get_and_run()
         result = one(processor.output)
         assert result == texts[0]
 
