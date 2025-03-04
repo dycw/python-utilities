@@ -7,8 +7,8 @@ from re import search
 from typing import TYPE_CHECKING
 
 from hypothesis import Phase, given, settings
-from hypothesis.strategies import integers, just, lists, none
-from pytest import raises
+from hypothesis.strategies import floats, integers, lists
+from pytest import approx, raises
 from typing_extensions import override
 
 from utilities.asyncio import (
@@ -26,6 +26,8 @@ from utilities.pytest import skipif_windows
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from utilities.types import Duration
 
 
@@ -314,6 +316,49 @@ class TestQueueProcessor:
         assert processor._task is None
         await processor.stop()
         assert processor._task is None
+
+
+class TestQueueProcessor:
+    @given(
+        time_before_first_task=floats(0.1, 0.2),
+        times_between_tasks=lists(floats(0.1, 0.2), min_size=1, max_size=10),
+        time_after_last_task=floats(0.1, 0.2),
+    )
+    @settings(max_examples=1)
+    async def test_main(
+        self,
+        *,
+        time_before_first_task: float,
+        times_between_tasks: Sequence[float],
+        time_after_last_task: float,
+    ) -> None:
+        processed: set[int] = set()
+
+        class Processor(QueueProcessor[int]):
+            @override
+            async def _run(self, *items: int) -> None:
+                nonlocal processed
+                processed.update(items)
+
+        processor = Processor()
+
+        async def yield_tasks() -> None:
+            await sleep(time_before_first_task)
+            for i, time in enumerate(times_between_tasks):
+                processor.enqueue(i)
+                await sleep(time)
+            await sleep(time_after_last_task)
+            await processor.stop()
+
+        with Timer() as timer:
+            async with TaskGroup() as tg:
+                _ = tg.create_task(processor.run_forever())
+                _ = tg.create_task(yield_tasks())
+        assert len(processed) == len(times_between_tasks)
+        expected = (
+            time_before_first_task + sum(times_between_tasks) + time_after_last_task
+        )
+        assert float(timer) == approx(expected, rel=0.2)
 
 
 class TestSleepDur:

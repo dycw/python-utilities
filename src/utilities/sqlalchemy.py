@@ -665,26 +665,24 @@ class Upserter(QueueProcessor[_InsertItem]):
         """Post-upsert coroutine."""
         _ = items
 
-    @override
-    async def _run(self, item: _InsertItem, /) -> None:
-        """Run the upserter."""
-        rest = [] if self.empty() else await self._get_items()
-        items = list(chain([item], rest))
-        await self._pre_upsert(items)
-        await upsert_items(
-            self.engine,
-            *items,
-            snake=self.snake,
-            selected_or_all=self.selected_or_all,
-            chunk_size_frac=self.chunk_size_frac,
-            assume_tables_exist=self.assume_tables_exist,
-            stop=self.stop_,
-            wait=self.wait,
-            retry=self.retry,
-            timeout_create=self.timeout_create,
-            timeout_insert=self.timeout_insert,
-        )
-        await self._post_upsert(items)
+    async def _run(self, *items: _InsertItem) -> None:
+        """Run the upserter once."""
+        if len(items) >= 1:
+            await self._pre_upsert(items)
+            await upsert_items(
+                self.engine,
+                *items,
+                snake=self.snake,
+                selected_or_all=self.selected_or_all,
+                chunk_size_frac=self.chunk_size_frac,
+                assume_tables_exist=self.assume_tables_exist,
+                stop=self.stop,
+                wait=self.wait,
+                retry=self.retry,
+                timeout_create=self.timeout_create,
+                timeout_insert=self.timeout_insert,
+            )
+            await self._post_upsert(items)
 
 
 ##
