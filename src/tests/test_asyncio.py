@@ -273,6 +273,22 @@ class TestQueueProcessor:
         processor = await Example.new()
         assert processor._task is not None
 
+    async def test_start_with_task(self) -> None:
+        class Example(QueueProcessor[int]):
+            @override
+            async def _run(self, item: int) -> None:
+                _ = item
+
+        processor = Example()
+        assert processor._task is None
+        for _ in range(2):
+            await processor.start()
+            assert processor._task is not None
+            await processor.start()
+            assert processor._task is not None
+            await processor.stop()
+            assert processor._task is None
+
     async def test_stop_without_task(self) -> None:
         class Example(QueueProcessor[int]):
             @override
@@ -281,8 +297,13 @@ class TestQueueProcessor:
 
         processor = Example()
         assert processor._task is None
-        await processor.stop()
-        assert processor._task is None
+        for _ in range(2):
+            await processor.start()
+            assert processor._task is not None
+            await processor.stop()
+            assert processor._task is None
+            await processor.stop()
+            assert processor._task is None
 
 
 class TestSleepDur:
