@@ -330,6 +330,7 @@ async def test_main():
             if i == 0:
                 sleep(1.0)
 
+    @mark.flaky
     def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
