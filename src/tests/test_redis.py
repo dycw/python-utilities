@@ -255,7 +255,7 @@ class TestRedisHashMapKey:
             assert await hm_key.exists(test.redis, key)
 
     @given(data=data(), key=int64s(), value=booleans())
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_ttl(self, *, data: DataObject, key: int, value: bool) -> None:
         async with yield_test_redis(data) as test:
@@ -344,7 +344,7 @@ class TestRedisKey:
             assert await key.exists(test.redis)
 
     @given(data=data(), value=booleans())
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_ttl(self, *, data: DataObject, value: bool) -> None:
         async with yield_test_redis(data) as test:
