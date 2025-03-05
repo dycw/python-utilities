@@ -19,13 +19,13 @@ deprecated==1.2.18
     # via pikepdf
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.127.6
+hypothesis==6.127.7
     # via dycw-utilities (pyproject.toml)
 img2pdf==0.6.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
-jinja2==3.1.5
+jinja2==3.1.6
     # via altair
 jsonschema==4.23.0
     # via altair
