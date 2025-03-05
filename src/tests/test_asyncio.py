@@ -326,8 +326,8 @@ class TestQueueProcessor:
                 self.output.add(text)
 
         processor = Example(queue_type=PriorityQueue)
-        pairs = data.draw(permutations(list(enumerate(texts))))
-        processor.enqueue(*pairs)
+        items = data.draw(permutations(list(enumerate(texts))))
+        processor.enqueue(*items)
         await processor._get_and_run()
         result = one(processor.output)
         assert result == texts[0]
@@ -367,7 +367,7 @@ class TestUniquePriorityQueue:
     @given(data=data(), texts=lists(text_ascii(min_size=1), min_size=1, unique=True))
     async def test_main(self, *, data: DataObject, texts: list[str]) -> None:
         items = list(enumerate(texts))
-        extra = data.draw(lists(sampled_from(items), min_size=1))
+        extra = data.draw(lists(sampled_from(items)))
         items_use = data.draw(permutations(list(chain(items, extra))))
         queue: UniquePriorityQueue[int, str] = UniquePriorityQueue()
         assert queue._set == set()
