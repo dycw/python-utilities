@@ -76,9 +76,10 @@ from utilities.sqlalchemy import (
     get_chunk_size,
     get_column_names,
     get_columns,
+    get_primary_key_values,
     get_table,
     get_table_name,
-    hash_primary_key_columns,
+    hash_primary_key_values,
     insert_items,
     is_orm,
     is_table_or_orm,
@@ -395,6 +396,24 @@ class TestGetDialectMaxParams:
         assert isinstance(max_params, int)
 
 
+class TestGetPrimaryKeyValues:
+    @given(id1=integers(), id2=integers(), value=booleans())
+    def test_main(self, *, id1: int, id2: int, value: bool) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
+            __tablename__ = "example"
+
+            id1: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            id2: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
+
+        obj = Example(id1=id1, id2=id2, value=value)
+        result = get_primary_key_values(obj)
+        expected = (id1, id2)
+        assert result == expected
+
+
 class TestGetTable:
     def test_table(self) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
@@ -453,7 +472,7 @@ class TestGetTableName:
         assert result == expected
 
 
-class TestHashPrimaryKeyColumns:
+class TestHashPrimaryKeyValues:
     @given(id1=integers(), id2=integers(), value=booleans())
     def test_main(self, *, id1: int, id2: int, value: bool) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
@@ -467,7 +486,7 @@ class TestHashPrimaryKeyColumns:
 
             @override
             def __hash__(self) -> int:
-                return hash_primary_key_columns(self)
+                return hash_primary_key_values(self)
 
         obj = Example(id1=id1, id2=id2, value=value)
         result = hash(obj)
