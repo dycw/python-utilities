@@ -85,7 +85,7 @@ def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
 @overload
 def always_iterable_hashable(obj: None, /) -> None: ...  # pyright: ignore[reportOverlappingOverload]
 @overload
-def always_iterable_hashable(  # pyright: ignore[reportOverlappingOverload]
+def always_iterable_hashable(
     obj: MaybeIterable[_THashable], /
 ) -> tuple[_THashable, ...]: ...
 def always_iterable_hashable(
@@ -1379,6 +1379,7 @@ __all__ = [
     "ResolveIncludeAndExcludeError",
     "SortIterableError",
     "always_iterable",
+    "always_iterable_hashable",
     "apply_bijection",
     "apply_to_tuple",
     "apply_to_varargs",

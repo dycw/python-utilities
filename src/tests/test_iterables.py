@@ -67,6 +67,7 @@ from utilities.iterables import (
     _sort_iterable_cmp_datetimes,
     _sort_iterable_cmp_floats,
     always_iterable,
+    always_iterable_hashable,
     apply_bijection,
     apply_to_tuple,
     apply_to_varargs,
@@ -122,6 +123,10 @@ class TestAlwaysIterable:
     def test_bytes(self, *, x: bytes) -> None:
         assert list(always_iterable(x)) == [x]
 
+    @given(x=dictionaries(text(), integers()))
+    def test_dict(self, *, x: dict[str, int]) -> None:
+        assert list(always_iterable(x)) == list(x)
+
     @given(x=integers())
     def test_integer(self, *, x: int) -> None:
         assert list(always_iterable(x)) == [x]
@@ -134,16 +139,12 @@ class TestAlwaysIterable:
     def test_string(self, *, x: str) -> None:
         assert list(always_iterable(x)) == [x]
 
-    @given(x=lists(text()))
-    def test_list_of_strings(self, *, x: list[str]) -> None:
+    @given(x=lists(integers()))
+    def test_list_of_integers(self, *, x: list[int]) -> None:
         assert list(always_iterable(x)) == x
 
-    @given(x=dictionaries(text(), integers()))
-    def test_dict(self, *, x: dict[str, int]) -> None:
-        assert list(always_iterable(x)) == list(x)
-
-    @given(x=lists(integers()))
-    def test_lists(self, *, x: list[int]) -> None:
+    @given(x=lists(text()))
+    def test_list_of_strings(self, *, x: list[str]) -> None:
         assert list(always_iterable(x)) == x
 
     def test_generator(self) -> None:
@@ -152,6 +153,27 @@ class TestAlwaysIterable:
             yield 1
 
         assert list(always_iterable(yield_ints())) == [0, 1]
+
+
+class TestAlwaysIterableHashable:
+    def test_none(self) -> None:
+        assert always_iterable_hashable(None) is None
+
+    @given(x=integers())
+    def test_integer(self, *, x: int) -> None:
+        assert always_iterable_hashable(x) == (x,)
+
+    @given(x=text())
+    def test_string(self, *, x: str) -> None:
+        assert always_iterable_hashable(x) == (x,)
+
+    @given(x=lists(integers()))
+    def test_list_of_integers(self, *, x: list[int]) -> None:
+        assert always_iterable_hashable(x) == tuple(x)
+
+    @given(x=lists(text()))
+    def test_list_of_strings(self, *, x: list[str]) -> None:
+        assert always_iterable_hashable(x) == tuple(x)
 
 
 class TestApplyBijection:
