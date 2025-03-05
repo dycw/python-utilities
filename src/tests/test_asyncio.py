@@ -16,12 +16,14 @@ from hypothesis.strategies import (
     none,
     permutations,
 )
+from more_itertools import unique_everseen
 from pytest import mark, raises
 from typing_extensions import override
 
 from utilities.asyncio import (
     BoundedTaskGroup,
     QueueProcessor,
+    SetQueue,
     get_items,
     get_items_nowait,
     sleep_dur,
@@ -359,6 +361,17 @@ class TestQueueProcessor:
         assert processor._task is None
         await processor.stop()
         assert processor._task is None
+
+
+class TestSetQueue:
+    @given(x=lists(integers(0, 10), max_size=10))
+    async def test_main(self, *, x: list[int]) -> None:
+        queue = SetQueue()
+        for x_i in x:
+            await queue.put(x_i)
+        result = await get_items(queue)
+        expected = list(unique_everseen(x))
+        assert result == expected
 
 
 class TestSleepDur:
