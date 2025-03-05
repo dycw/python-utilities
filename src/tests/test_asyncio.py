@@ -332,6 +332,17 @@ class TestQueueProcessor:
         result = one(processor.output)
         assert result == texts[0]
 
+    def test_repr(self) -> None:
+        class Example(QueueProcessor[int]):
+            @override
+            async def _run(self, item: int) -> None:
+                _ = item
+
+        queue = Example()
+        result = repr(queue)
+        expected = "TestQueueProcessor.test_repr.<locals>.Example()"
+        assert result == expected
+
     async def test_start_with_task(self) -> None:
         class Example(QueueProcessor[int]):
             @override
