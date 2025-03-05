@@ -83,8 +83,8 @@ def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
 
 
 def always_iterable_hashable(
-    obj: MaybeIterable[_THashable] | None, /
-) -> MaybeIterableHashable[_THashable] | None:
+    obj: MaybeIterable[_T] | None, /
+) -> MaybeIterableHashable[_T] | None:
     """Ensure an object is always hashable."""
     return None if obj is None else tuple(always_iterable(obj))
 
