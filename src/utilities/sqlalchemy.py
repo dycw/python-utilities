@@ -343,6 +343,14 @@ def get_columns(table_or_orm: TableOrORMInstOrClass, /) -> list[Column[Any]]:
 ##
 
 
+def get_primary_key_values(orm: DeclarativeBase, /) -> tuple[Any, ...]:
+    """Get a tuple of the primary key values."""
+    return tuple(getattr(orm, c.name) for c in yield_primary_key_columns(orm))
+
+
+##
+
+
 def get_table(table_or_orm: TableOrORMInstOrClass, /) -> Table:
     """Get the table from a Table or mapped class."""
     if isinstance(table_or_orm, Table):
@@ -372,10 +380,9 @@ def get_table_name(table_or_orm: TableOrORMInstOrClass, /) -> str:
 ##
 
 
-def hash_primary_key_columns(orm: DeclarativeBase, /) -> int:
-    """Compute a hash of the primary key columns."""
-    values = tuple(getattr(orm, c.name) for c in yield_primary_key_columns(orm))
-    return hash(values)
+def hash_primary_key_values(orm: DeclarativeBase, /) -> int:
+    """Compute a hash of the primary key values."""
+    return hash(get_primary_key_values(orm))
 
 
 ##
@@ -1147,7 +1154,7 @@ __all__ = [
     "get_columns",
     "get_table",
     "get_table_name",
-    "hash_primary_key_columns",
+    "hash_primary_key_values",
     "insert_items",
     "is_orm",
     "is_table_or_orm",
