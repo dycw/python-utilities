@@ -49,7 +49,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from utilities.types import MaybeIterable, StrMapping
+    from utilities.types import MaybeIterable, MaybeIterableHashable, StrMapping
 
 
 _K = TypeVar("_K")
@@ -82,15 +82,9 @@ def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
 ##
 
 
-@overload
-def always_iterable_hashable(obj: None, /) -> None: ...  # pyright: ignore[reportOverlappingOverload]
-@overload
-def always_iterable_hashable(
-    obj: MaybeIterable[_THashable], /
-) -> tuple[_THashable, ...]: ...
 def always_iterable_hashable(
     obj: MaybeIterable[_THashable] | None, /
-) -> tuple[_THashable, ...] | None:
+) -> MaybeIterableHashable[_THashable] | None:
     """Ensure an object is always hashable."""
     return None if obj is None else tuple(always_iterable(obj))
 
