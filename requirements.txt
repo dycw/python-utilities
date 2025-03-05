@@ -382,7 +382,6 @@ rich==13.8.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   hatch
-    #   streamlit
 rpds-py==0.23.1
     # via
     #   jsonschema
@@ -418,7 +417,7 @@ sqlalchemy==2.0.38
     #   optuna
 starlette==0.46.0
     # via fastapi
-streamlit==1.42.2
+streamlit==1.43.0
     # via dycw-utilities (pyproject.toml)
 tenacity==8.5.0
     # via

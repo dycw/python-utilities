@@ -66,7 +66,7 @@ dev = [
   "scipy >= 1.15.2, < 1.16",
   "slack-sdk >= 3.34.0, < 3.35",
   "sqlalchemy >= 2.0.38, < 2.1",
-  "streamlit >= 1.42.2, < 1.43",
+  "streamlit >= 1.43.0, < 1.44",
   "tenacity >= 8.0.0",  # limited by luigi
   "tzdata >= 2025.1, < 2025.2",
   "tzlocal >= 5.3, < 5.4",
@@ -289,7 +289,7 @@ zzz-test-sqlalchemy-polars = [
   "sqlalchemy >= 2.0.38, < 2.1",
   "tenacity >= 9.0.0, < 9.1",
 ]
-zzz-test-streamlit = ["streamlit >= 1.42.2, < 1.43"]
+zzz-test-streamlit = ["streamlit >= 1.43.0, < 1.44"]
 zzz-test-sys = [
   "atomicwrites >= 1.4.1, < 1.5",
   "hatch >= 1.14.0, < 1.15",
