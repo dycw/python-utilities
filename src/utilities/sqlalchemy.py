@@ -1152,6 +1152,7 @@ __all__ = [
     "get_chunk_size",
     "get_column_names",
     "get_columns",
+    "get_primary_key_values",
     "get_table",
     "get_table_name",
     "hash_primary_key_values",
