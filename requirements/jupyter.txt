@@ -44,7 +44,7 @@ coverage==7.6.12
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
-debugpy==1.8.12
+debugpy==1.8.13
     # via ipykernel
 decorator==5.2.1
     # via ipython
