@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from asyncio import (
     CancelledError,
     Lock,
+    PriorityQueue,
     Queue,
     QueueEmpty,
     Semaphore,
@@ -15,6 +16,7 @@ from asyncio import (
     sleep,
     timeout,
 )
+from collections.abc import Hashable
 from contextlib import suppress
 from dataclasses import dataclass, field
 from io import StringIO
@@ -26,6 +28,7 @@ from typing_extensions import override
 
 from utilities.datetime import datetime_duration_to_float
 from utilities.functions import ensure_int, ensure_not_none
+from utilities.types import SupportsRichComparison
 
 if TYPE_CHECKING:
     from asyncio import Timeout, _CoroutineLike
@@ -37,6 +40,10 @@ if TYPE_CHECKING:
     from utilities.types import Duration
 
 _T = TypeVar("_T")
+_THashable = TypeVar("_THashable", bound=Hashable)
+_TSupportsRichComparison = TypeVar(
+    "_TSupportsRichComparison", bound=SupportsRichComparison
+)
 
 
 class BoundedTaskGroup(TaskGroup):
@@ -132,7 +139,7 @@ class QueueProcessor(ABC, Generic[_T]):
 
     async def run_until_empty(self) -> None:
         """Run the processor until the queue is empty."""
-        while not self._queue.empty():
+        while not self.empty():
             _ = await self._get_and_run()
 
     async def start(self) -> None:
@@ -177,6 +184,53 @@ class QueueProcessor(ABC, Generic[_T]):
     async def _run(self, item: _T, /) -> None:
         """Run the processor on the first item."""
         raise NotImplementedError(item)  # pragma: no cover
+
+
+##
+
+
+class UniquePriorityQueue(PriorityQueue[tuple[_TSupportsRichComparison, _THashable]]):
+    """Priority queue with unique tasks."""
+
+    @override
+    def __init__(self, maxsize: int = 0) -> None:
+        super().__init__(maxsize)
+        self._set: set[_THashable] = set()
+
+    @override
+    def _get(self) -> tuple[_TSupportsRichComparison, _THashable]:
+        item = super()._get()
+        _, value = item
+        self._set.remove(value)
+        return item
+
+    @override
+    def _put(self, item: tuple[_TSupportsRichComparison, _THashable]) -> None:
+        _, value = item
+        if value not in self._set:
+            super()._put(item)
+            self._set.add(value)
+
+
+class UniqueQueue(Queue[_THashable]):
+    """Queue with unique tasks."""
+
+    @override
+    def __init__(self, maxsize: int = 0) -> None:
+        super().__init__(maxsize)
+        self._set: set[_THashable] = set()
+
+    @override
+    def _get(self) -> _THashable:
+        item = super()._get()
+        self._set.remove(item)
+        return item
+
+    @override
+    def _put(self, item: _THashable) -> None:
+        if item not in self._set:
+            super()._put(item)
+            self._set.add(item)
 
 
 ##
@@ -299,6 +353,8 @@ __all__ = [
     "BoundedTaskGroup",
     "QueueProcessor",
     "StreamCommandOutput",
+    "UniquePriorityQueue",
+    "UniqueQueue",
     "get_items",
     "get_items_nowait",
     "sleep_dur",
