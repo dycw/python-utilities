@@ -3,6 +3,7 @@ from __future__ import annotations
 from asyncio import Lock, PriorityQueue, Queue, TaskGroup, run, sleep, timeout
 from dataclasses import dataclass, field
 from gc import collect
+from itertools import chain
 from re import search
 from typing import TYPE_CHECKING
 
@@ -15,6 +16,7 @@ from hypothesis.strategies import (
     lists,
     none,
     permutations,
+    sampled_from,
 )
 from more_itertools import unique_everseen
 from pytest import mark, raises
@@ -23,7 +25,8 @@ from typing_extensions import override
 from utilities.asyncio import (
     BoundedTaskGroup,
     QueueProcessor,
-    SetQueue,
+    UniquePriorityQueue,
+    UniqueQueue,
     get_items,
     get_items_nowait,
     sleep_dur,
@@ -58,7 +61,7 @@ class TestBoundedTaskGroup:
 
 class TestGetItems:
     @given(
-        xs=lists(integers(), min_size=1, max_size=10),
+        xs=lists(integers(), min_size=1),
         max_size=integers(1, 10) | none(),
         lock=just(Lock()) | none(),
     )
@@ -67,7 +70,7 @@ class TestGetItems:
     ) -> None:
         queue: Queue[int] = Queue()
         for x in xs:
-            queue.put_nowait(x)
+            await queue.put(x)
         result = await get_items(queue, max_size=max_size, lock=lock)
         if max_size is None:
             assert result == xs
@@ -75,7 +78,7 @@ class TestGetItems:
             assert result == xs[:max_size]
 
     @given(
-        xs=lists(integers(), min_size=1, max_size=10),
+        xs=lists(integers(), min_size=1),
         max_size=integers(1, 10) | none(),
         lock=just(Lock()) | none(),
     )
@@ -87,7 +90,7 @@ class TestGetItems:
         async def put() -> None:
             await sleep(0.01)
             for x in xs:
-                queue.put_nowait(x)
+                await queue.put(x)
 
         async with TaskGroup() as tg:
             task = tg.create_task(get_items(queue, max_size=max_size, lock=lock))
@@ -108,7 +111,7 @@ class TestGetItems:
 
 class TestGetItemsNoWait:
     @given(
-        xs=lists(integers(), min_size=1, max_size=10),
+        xs=lists(integers(), min_size=1),
         max_size=integers(1, 10) | none(),
         lock=just(Lock()) | none(),
     )
@@ -117,7 +120,7 @@ class TestGetItemsNoWait:
     ) -> None:
         queue: Queue[int] = Queue()
         for x in xs:
-            queue.put_nowait(x)
+            await queue.put(x)
         result = await get_items_nowait(queue, max_size=max_size, lock=lock)
         if max_size is None:
             assert result == xs
@@ -311,10 +314,7 @@ class TestQueueProcessor:
         assert len(processor) == n
         assert processor._task is not None
 
-    @given(
-        data=data(),
-        texts=lists(text_ascii(min_size=1), min_size=1, max_size=10, unique=True),
-    )
+    @given(data=data(), texts=lists(text_ascii(min_size=1), min_size=1))
     async def test_priority_queue(self, *, data: DataObject, texts: list[str]) -> None:
         @dataclass(kw_only=True)
         class Example(QueueProcessor[tuple[int, str]]):
@@ -363,15 +363,34 @@ class TestQueueProcessor:
         assert processor._task is None
 
 
-class TestSetQueue:
-    @given(x=lists(integers(0, 10), max_size=10))
+class TestUniquePriorityQueue:
+    @given(data=data(), texts=lists(text_ascii(min_size=1), min_size=1, unique=True))
+    async def test_main(self, *, data: DataObject, texts: list[str]) -> None:
+        items = list(enumerate(texts))
+        extra = data.draw(lists(sampled_from(items), min_size=1))
+        items_use = data.draw(permutations(list(chain(items, extra))))
+        queue: UniquePriorityQueue[int, str] = UniquePriorityQueue()
+        assert queue._set == set()
+        for item in items_use:
+            await queue.put(item)
+        assert queue._set == set(texts)
+        result = await get_items(queue)
+        assert result == items
+        assert queue._set == set()
+
+
+class TestUniqueQueue:
+    @given(x=lists(integers(), min_size=1))
     async def test_main(self, *, x: list[int]) -> None:
-        queue = SetQueue()
+        queue: UniqueQueue[int] = UniqueQueue()
+        assert queue._set == set()
         for x_i in x:
             await queue.put(x_i)
+        assert queue._set == set(x)
         result = await get_items(queue)
         expected = list(unique_everseen(x))
         assert result == expected
+        assert queue._set == set()
 
 
 class TestSleepDur:
