@@ -83,8 +83,8 @@ class BoundedTaskGroup(TaskGroup):
 class QueueProcessor(ABC, Generic[_T]):
     """Process a set of items in a queue."""
 
-    queue_type: type[Queue[_T]] = Queue
-    queue_max_size: int | None = None
+    queue_type: type[Queue[_T]] = field(default=Queue, repr=False)
+    queue_max_size: int | None = field(default=None, repr=False)
     _lock: Lock = field(init=False, repr=False)
     _queue: Queue[_T] = field(init=False, repr=False)
     _task: Task[None] | None = field(init=False, repr=False)
