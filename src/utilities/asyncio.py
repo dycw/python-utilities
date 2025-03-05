@@ -353,6 +353,7 @@ __all__ = [
     "BoundedTaskGroup",
     "QueueProcessor",
     "StreamCommandOutput",
+    "UniquePriorityQueue",
     "UniqueQueue",
     "get_items",
     "get_items_nowait",
