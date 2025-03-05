@@ -82,6 +82,22 @@ def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
 ##
 
 
+@overload
+def always_iterable_hashable(obj: None, /) -> None: ...  # pyright: ignore[reportOverlappingOverload]
+@overload
+def always_iterable_hashable(  # pyright: ignore[reportOverlappingOverload]
+    obj: MaybeIterable[_THashable], /
+) -> tuple[_THashable, ...]: ...
+def always_iterable_hashable(
+    obj: MaybeIterable[_THashable] | None, /
+) -> tuple[_THashable, ...] | None:
+    """Ensure an object is always hashable."""
+    return None if obj is None else tuple(always_iterable(obj))
+
+
+##
+
+
 def apply_bijection(
     func: Callable[[_T], _U], iterable: Iterable[_T], /
 ) -> Mapping[_T, _U]:
