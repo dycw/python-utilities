@@ -66,3 +66,5 @@ typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
 tzdata==2025.1
     # via dycw-utilities (pyproject.toml)
+whenever==0.7.2
+    # via dycw-utilities (pyproject.toml)
