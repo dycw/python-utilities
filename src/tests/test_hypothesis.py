@@ -979,32 +979,37 @@ class TestYieldTestRedis:
 class TestZonedDateTimes:
     @given(
         data=data(),
+        min_value=datetimes(timezones=timezones() | just(dt.UTC) | none()),
+        max_value=datetimes(timezones=timezones() | just(dt.UTC) | none()),
         time_zone=timezones() | just(dt.UTC),
         time_zone_extra=timezones() | just(dt.UTC),
     )
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
-        self, *, data: DataObject, time_zone: ZoneInfo, time_zone_extra: ZoneInfo
+        self,
+        *,
+        data: DataObject,
+        min_value: dt.datetime,
+        max_value: dt.datetime,
+        time_zone: ZoneInfo,
+        time_zone_extra: ZoneInfo,
     ) -> None:
-        min_value, max_value = data.draw(
-            pairs(datetimes(timezones=timezones() | just(dt.UTC) | none()), sorted=True)
-        )
-        _ = assume((min_value.tzinfo is None) is (max_value.tzinfo is None))
-        datetime = data.draw(
-            zoned_datetimes(
-                min_value=min_value, max_value=max_value, time_zone=time_zone
+        with assume_does_not_raise(InvalidArgument):
+            datetime = data.draw(
+                zoned_datetimes(
+                    min_value=min_value, max_value=max_value, time_zone=time_zone
+                )
             )
-        )
         assert datetime.tzinfo is time_zone
         if min_value.tzinfo is None:
             min_value_ = min_value.replace(tzinfo=time_zone)
         else:
             min_value_ = min_value.astimezone(time_zone)
         if max_value.tzinfo is None:
-            max_value_use = max_value.replace(tzinfo=time_zone)
+            max_value_ = max_value.replace(tzinfo=time_zone)
         else:
-            max_value_use = max_value.astimezone(time_zone)
-        assert min_value_ <= datetime <= max_value_use
+            max_value_ = max_value.astimezone(time_zone)
+        assert min_value_ <= datetime <= max_value_
         _ = datetime.astimezone(time_zone_extra)
 
     @given(
