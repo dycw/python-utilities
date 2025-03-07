@@ -41,6 +41,9 @@ class TTLCache(cachetools.TTLCache[_K, _V]):
         )
 
 
+##
+
+
 class TTLSet(MutableSet[_T]):
     """A TTL-set."""
 
@@ -94,6 +97,9 @@ class TTLSet(MutableSet[_T]):
     @override
     def discard(self, value: _T) -> None:
         del self._cache[value]
+
+
+##
 
 
 def cache(

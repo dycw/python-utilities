@@ -160,6 +160,9 @@ def _plot_dataframes_get_spec(
     return _PlotDataFramesSpec(y=list(always_iterable(y0)), height=height_use)
 
 
+##
+
+
 def plot_intraday_dataframe(
     data: DataFrame,
     /,
@@ -252,6 +255,9 @@ def plot_intraday_dataframe(
     return chart
 
 
+##
+
+
 def save_chart(
     chart: _ChartLike, path: PathLike, /, *, overwrite: bool = False
 ) -> None:
@@ -260,6 +266,9 @@ def save_chart(
 
     with writer(path, overwrite=overwrite) as temp:
         chart.save(str(temp), format="png")
+
+
+##
 
 
 def save_charts_as_pdf(
@@ -277,6 +286,9 @@ def save_charts_as_pdf(
         data = ensure_bytes(convert(*temp_paths))
     with writer(path, overwrite=overwrite) as temp, temp.open(mode="wb") as fh:
         _ = fh.write(data)
+
+
+##
 
 
 def vconcat_charts(*charts: _ChartLike, width: int = _WIDTH) -> VConcatChart:

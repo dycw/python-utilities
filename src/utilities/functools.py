@@ -18,6 +18,9 @@ def cache(func: _F, /) -> _F:
     return typed_cache(func)
 
 
+##
+
+
 @overload
 def lru_cache(func: _F, /, *, max_size: int = ..., typed: bool = ...) -> _F: ...
 @overload
@@ -33,6 +36,9 @@ def lru_cache(
         return cast(Callable[[_F], _F], result)
     wrapped = _lru_cache(maxsize=max_size, typed=typed)(func)
     return cast(Any, wrapped)
+
+
+##
 
 
 class partial(_partial[_T]):  # noqa: N801

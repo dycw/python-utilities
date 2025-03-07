@@ -29,6 +29,9 @@ LEVEL_CONFIGS: Sequence[LevelConfig] = [
 ]
 
 
+##
+
+
 class InterceptHandler(Handler):
     """Handler for intercepting standard logging messages.
 
@@ -56,6 +59,9 @@ class InterceptHandler(Handler):
         )
 
 
+##
+
+
 @unique
 class LogLevel(StrEnum):
     """An enumeration of the logging levels."""
@@ -67,6 +73,9 @@ class LogLevel(StrEnum):
     WARNING = "WARNING"
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
+
+
+##
 
 
 def get_logging_level_name(level: int, /) -> str:
@@ -103,6 +112,9 @@ class _GetLoggingLevelNameNonUniqueError(GetLoggingLevelNameError):
     @override
     def __str__(self) -> str:
         return f"There must be exactly one level with severity {self.level}; got {self.first!r}, {self.second!r} and perhaps more"
+
+
+##
 
 
 def get_logging_level_number(level: str, /) -> int:
