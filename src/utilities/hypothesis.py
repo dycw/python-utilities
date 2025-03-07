@@ -269,20 +269,6 @@ def datetime_durations(
 ##
 
 
-#
-# @overload
-# def draw2(
-#     data_or_draw: DataObject | DrawFn,
-#     maybe_strategy: MaybeSearchStrategy[_T | Sentinel],
-#     /,
-# ) -> _T: ...
-# @overload
-# def draw2(
-#     data_or_draw: DataObject | DrawFn,
-#     maybe_strategy: MaybeSearchStrategy[_T | Sentinel],
-#     default: SearchStrategy[_T | None],
-#     /,
-# ) -> _T | None: ...
 @overload
 def draw2(
     data_or_draw: DataObject | DrawFn,
