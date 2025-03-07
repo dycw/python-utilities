@@ -133,7 +133,7 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.math import MAX_INT32, MIN_INT32, is_integral, round_to_float
-from utilities.zoneinfo import UTC, HongKong, Tokyo, ensure_time_zone
+from utilities.zoneinfo import UTC, HongKong, Tokyo
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -754,17 +754,11 @@ class TestMaybeSubPctY:
 
 
 class TestMicrosecondsOrMillisecondsSinceEpoch:
-    @given(datetime=datetimes())
-    def test_local_datetime_to_microseconds(self, *, datetime: dt.datetime) -> None:
-        microseconds = microseconds_since_epoch(datetime)
-        result = microseconds_since_epoch_to_datetime(microseconds)
-        assert result == datetime
-
-    @given(datetime=zoned_datetimes(time_zone=timezones()))
-    def test_zoned_datetime_to_microseconds(self, *, datetime: dt.datetime) -> None:
+    @given(datetime=datetimes() | zoned_datetimes(time_zone=timezones()))
+    def test_datetime_to_microseconds(self, *, datetime: dt.datetime) -> None:
         microseconds = microseconds_since_epoch(datetime)
         result = microseconds_since_epoch_to_datetime(
-            microseconds, time_zone=ensure_time_zone(datetime)
+            microseconds, time_zone=datetime.tzinfo
         )
         assert result == datetime
 
@@ -775,10 +769,10 @@ class TestMicrosecondsOrMillisecondsSinceEpoch:
         result = microseconds_since_epoch(datetime)
         assert result == microseconds
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=datetimes() | zoned_datetimes())
     @mark.parametrize("strict", [param(True), param(False)])  # use mark.parametrize
     @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_datetime_to_milliseconds_exact(
+    def test_zoned_datetime_to_milliseconds_exact(
         self, *, datetime: dt.datetime, strict: bool
     ) -> None:
         _ = assume(datetime.microsecond == 0)
@@ -787,10 +781,12 @@ class TestMicrosecondsOrMillisecondsSinceEpoch:
             assert isinstance(milliseconds, int)
         else:
             assert milliseconds == round(milliseconds)
-        result = milliseconds_since_epoch_to_datetime(round(milliseconds))
+        result = milliseconds_since_epoch_to_datetime(
+            round(milliseconds), time_zone=datetime.tzinfo
+        )
         assert result == datetime
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=datetimes() | zoned_datetimes())
     def test_datetime_to_milliseconds_error(self, *, datetime: dt.datetime) -> None:
         _, microseconds = divmod(datetime.microsecond, _MICROSECONDS_PER_MILLISECOND)
         _ = assume(microseconds != 0)
@@ -1009,7 +1005,9 @@ class TestSubDuration:
 
 
 class TestTimedeltaSinceEpoch:
-    @given(date=dates() | datetimes() | zoned_datetimes(time_zone=timezones()))
+    @given(
+        date_or_datetime=dates() | datetimes() | zoned_datetimes(time_zone=timezones())
+    )
     def test_main(self, *, date_or_datetime: DateOrDateTime) -> None:
         result = timedelta_since_epoch(date_or_datetime)
         assert isinstance(result, dt.timedelta)
