@@ -517,31 +517,6 @@ def lists_fixed_length(
 
 
 @composite
-def local_datetimes(
-    draw: DrawFn,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
-    max_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.max,
-    round_: dt.timedelta | None = None,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
-) -> dt.datetime:
-    """Strategy for generating local datetimes."""
-    min_value_ = draw2(draw, min_value)
-    max_value_ = draw2(draw, max_value)
-    datetime = draw(datetimes(min_value=min_value_, max_value=max_value_))
-    if round_ is None:
-        return datetime
-    rounded = round_datetime(datetime, round_, rel_tol=rel_tol, abs_tol=abs_tol)
-    _ = assume(min_value_ <= rounded <= max_value_)
-    return rounded
-
-
-##
-
-
-@composite
 def months(
     draw: DrawFn,
     /,
@@ -1120,6 +1095,9 @@ def zoned_datetimes(
     min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
     max_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.max,
     time_zone: MaybeSearchStrategy[ZoneInfo | timezone] = UTC,
+    round_: dt.timedelta | None = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
     valid: bool = False,
 ) -> dt.datetime:
     """Strategy for generating zoned datetimes."""
@@ -1130,31 +1108,36 @@ def zoned_datetimes(
 
     min_value_, max_value_ = (draw2(draw, v) for v in [min_value, max_value])
     time_zone_ = draw2(draw, time_zone)
-    if min_value_.tzinfo is not None:
+    if min_value_.tzinfo is None:
+        min_value_ = min_value_.replace(tzinfo=time_zone_)
+    else:
         with assume_does_not_raise(OverflowError, match="date value out of range"):
             min_value_ = min_value_.astimezone(time_zone_)
-        min_value_ = min_value_.replace(tzinfo=None)
-    if max_value_.tzinfo is not None:
+    if max_value_.tzinfo is None:
+        max_value_ = max_value_.replace(tzinfo=time_zone_)
+    else:
         with assume_does_not_raise(OverflowError, match="date value out of range"):
             max_value_ = max_value_.astimezone(time_zone_)
-        max_value_ = max_value_.replace(tzinfo=None)
     strategy = datetimes(
-        min_value=min_value_, max_value=max_value_, timezones=just(time_zone_)
+        min_value=min_value_.replace(tzinfo=None),
+        max_value=max_value_.replace(tzinfo=None),
     )
-    datetime = draw(strategy)
+    datetime = draw(strategy).replace(tzinfo=time_zone_)
+    if round_ is not None:
+        datetime = round_datetime(datetime, round_, rel_tol=rel_tol, abs_tol=abs_tol)
+        _ = assume(min_value_ <= datetime <= max_value_)
     with assume_does_not_raise(OverflowError, match="date value out of range"):
         _ = datetime.astimezone(_ZONED_DATETIMES_LEFT_MOST)  # for dt.datetime.min
     with assume_does_not_raise(OverflowError, match="date value out of range"):
         _ = datetime.astimezone(  # for dt.datetime.max
             _ZONED_DATETIMES_RIGHT_MOST
         )
-    result = datetime.astimezone(time_zone_)
     if valid:
         with assume_does_not_raise(  # skipif-ci-and-windows
             CheckValidZonedDateimeError
         ):
-            check_valid_zoned_datetime(result)
-    return result
+            check_valid_zoned_datetime(datetime)
+    return datetime
 
 
 __all__ = [
@@ -1173,7 +1156,6 @@ __all__ = [
     "int64s",
     "int_arrays",
     "lists_fixed_length",
-    "local_datetimes",
     "months",
     "namespace_mixins",
     "numbers",

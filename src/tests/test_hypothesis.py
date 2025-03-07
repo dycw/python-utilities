@@ -42,8 +42,6 @@ from utilities.datetime import (
     datetime_duration_to_float,
     datetime_duration_to_timedelta,
     is_integral_timedelta,
-    is_local_datetime,
-    is_zoned_datetime,
 )
 from utilities.functions import ensure_int
 from utilities.git import (
@@ -70,7 +68,6 @@ from utilities.hypothesis import (
     int64s,
     int_arrays,
     lists_fixed_length,
-    local_datetimes,
     months,
     namespace_mixins,
     numbers,
@@ -582,25 +579,6 @@ class TestListsFixedLength:
             assert sorted(result) == result
 
 
-class TestLocalDateTimes:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        min_value, max_value = data.draw(pairs(datetimes(), sorted=True))
-        datetime = data.draw(local_datetimes(min_value=min_value, max_value=max_value))
-        assert isinstance(datetime, dt.datetime)
-        assert min_value <= datetime <= max_value
-
-    @given(data=data())
-    def test_rounding(self, *, data: DataObject) -> None:
-        min_value, max_value = data.draw(pairs(datetimes(), sorted=True))
-        datetime = data.draw(
-            local_datetimes(min_value=min_value, max_value=max_value, round_=MINUTE)
-        )
-        assert isinstance(datetime, dt.datetime)
-        assert datetime.second == datetime.microsecond == 0
-        assert min_value <= datetime <= max_value
-
-
 class TestMonths:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
@@ -1001,42 +979,33 @@ class TestYieldTestRedis:
 class TestZonedDateTimes:
     @given(
         data=data(),
-        min_value=datetimes(timezones=timezones() | just(dt.UTC) | none()),
-        max_value=timezones() | datetimes(timezones=just(dt.UTC) | none()),
-        time_zone1=timezones() | just(dt.UTC),
-        time_zone2=timezones() | just(dt.UTC),
+        time_zone=timezones() | just(dt.UTC),
+        time_zone_extra=timezones() | just(dt.UTC),
     )
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
-        self,
-        *,
-        data: DataObject,
-        min_value: dt.datetime,
-        max_value: dt.datetime,
-        time_zone1: ZoneInfo,
-        time_zone2: ZoneInfo,
+        self, *, data: DataObject, time_zone: ZoneInfo, time_zone_extra: ZoneInfo
     ) -> None:
-        _ = assume(
-            (is_local_datetime(min_value) and is_local_datetime(max_value))
-            or (is_zoned_datetime(min_value) and is_zoned_datetime(max_value))
+        min_value, max_value = data.draw(
+            pairs(datetimes(timezones=timezones() | just(dt.UTC) | none()), sorted=True)
         )
-        _ = assume(min_value <= max_value)
+        _ = assume((min_value.tzinfo is None) is (max_value.tzinfo is None))
         datetime = data.draw(
             zoned_datetimes(
-                min_value=min_value, max_value=max_value, time_zone=time_zone1
+                min_value=min_value, max_value=max_value, time_zone=time_zone
             )
         )
-        assert datetime.tzinfo is time_zone1
+        assert datetime.tzinfo is time_zone
         if min_value.tzinfo is None:
-            min_value_use = min_value.replace(tzinfo=time_zone1)
+            min_value_ = min_value.replace(tzinfo=time_zone)
         else:
-            min_value_use = min_value.astimezone(time_zone1)
+            min_value_ = min_value.astimezone(time_zone)
         if max_value.tzinfo is None:
-            max_value_use = max_value.replace(tzinfo=time_zone1)
+            max_value_use = max_value.replace(tzinfo=time_zone)
         else:
-            max_value_use = max_value.astimezone(time_zone1)
-        assert min_value_use <= datetime <= max_value_use
-        _ = datetime.astimezone(time_zone2)
+            max_value_use = max_value.astimezone(time_zone)
+        assert min_value_ <= datetime <= max_value_use
+        _ = datetime.astimezone(time_zone_extra)
 
     @given(
         time_zone=timezones()
@@ -1055,6 +1024,16 @@ class TestZonedDateTimes:
     def test_max(self, *, time_zone: ZoneInfo) -> None:
         datetime = dt.datetime.max.replace(tzinfo=_ZONED_DATETIMES_RIGHT_MOST)
         _ = datetime.astimezone(time_zone)
+
+    @given(data=data())
+    def test_rounding(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(zoned_datetimes(), sorted=True))
+        datetime = data.draw(
+            zoned_datetimes(min_value=min_value, max_value=max_value, round_=MINUTE)
+        )
+        assert isinstance(datetime, dt.datetime)
+        assert datetime.second == datetime.microsecond == 0
+        assert min_value <= datetime <= max_value
 
     @given(
         data=data(),
