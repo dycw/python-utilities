@@ -27,7 +27,7 @@ from re import search
 from shutil import move, rmtree
 from string import ascii_letters, ascii_lowercase, ascii_uppercase, digits, printable
 from subprocess import check_call
-from typing import TYPE_CHECKING, Any, TypeVar, assert_never, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, assert_never, cast, overload
 from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
@@ -69,19 +69,25 @@ from utilities.datetime import (
 )
 from utilities.functions import ensure_int, ensure_str, max_nullable, min_nullable
 from utilities.math import (
+    MAX_FLOAT32,
+    MAX_FLOAT64,
     MAX_INT32,
     MAX_INT64,
     MAX_UINT32,
     MAX_UINT64,
+    MIN_FLOAT32,
+    MIN_FLOAT64,
     MIN_INT32,
     MIN_INT64,
     MIN_UINT32,
     MIN_UINT64,
     _RoundMode,
+    is_zero,
 )
 from utilities.os import get_env_var
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
+from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.version import Version
 from utilities.zoneinfo import UTC
@@ -166,10 +172,10 @@ def date_durations(
     two_way: bool = False,
 ) -> Duration:
     """Strategy for generating datetime durations."""
-    min_int_, max_int_ = (draw2(draw, v) for v in [min_int, max_int])
-    min_timedelta_, max_timedelta_ = (
+    min_int_, max_int_ = [draw2(draw, v) for v in [min_int, max_int]]
+    min_timedelta_, max_timedelta_ = [
         draw2(draw, v) for v in [min_timedelta, max_timedelta]
-    )
+    ]
     min_parts: Sequence[dt.timedelta | None] = [dt.timedelta.min, min_timedelta_]
     if min_int_ is not None:
         with assume_does_not_raise(OverflowError):
@@ -228,34 +234,28 @@ def datetime_durations(
     two_way: bool = False,
 ) -> Duration:
     """Strategy for generating datetime durations."""
-    min_number_, max_number_, min_timedelta_, max_timedelta_ = (
-        draw2(draw, min_number),
-        draw2(draw, max_number),
-        draw2(draw, min_timedelta),
-        draw2(draw, max_timedelta),
-    )
-    min_parts: list[dt.timedelta] = [dt.timedelta.min]
+    min_number_, max_number_ = [draw2(draw, v) for v in [min_number, max_number]]
+    min_timedelta_, max_timedelta_ = [
+        draw2(draw, v) for v in [min_timedelta, max_timedelta]
+    ]
+    min_parts = [min_timedelta_, dt.timedelta.min]
     if min_number_ is not None:
         with assume_does_not_raise(OverflowError):
             min_parts.append(datetime_duration_to_timedelta(min_number_))
-    if min_timedelta_ is not None:
-        min_parts.append(min_timedelta_)
     if two_way:
         from utilities.whenever import MIN_SERIALIZABLE_TIMEDELTA
 
         min_parts.append(MIN_SERIALIZABLE_TIMEDELTA)
-    min_timedelta_use = max(min_parts)
-    max_parts: list[dt.timedelta] = [dt.timedelta.max]
+    min_timedelta_use = max_nullable(min_parts)
+    max_parts = [max_timedelta_, dt.timedelta.max]
     if max_number_ is not None:
         with assume_does_not_raise(OverflowError):
             max_parts.append(datetime_duration_to_timedelta(max_number_))
-    if max_timedelta_ is not None:
-        max_parts.append(max_timedelta_)
     if two_way:
         from utilities.whenever import MAX_SERIALIZABLE_TIMEDELTA
 
         max_parts.append(MAX_SERIALIZABLE_TIMEDELTA)
-    max_timedelta_use = min(max_parts)
+    max_timedelta_use = min_nullable(max_parts)
     _ = assume(min_timedelta_use <= max_timedelta_use)
     min_float_use, max_float_use = map(
         datetime_duration_to_float, [min_timedelta_use, max_timedelta_use]
@@ -271,20 +271,46 @@ def datetime_durations(
 
 @overload
 def draw2(
-    data_or_draw: DataObject | DrawFn, maybe_strategy: MaybeSearchStrategy[_T], /
+    data_or_draw: DataObject | DrawFn,
+    maybe_strategy: MaybeSearchStrategy[_T],
+    /,
+    *,
+    sentinel: bool = False,
 ) -> _T: ...
+@overload
+def draw2(
+    data_or_draw: DataObject | DrawFn,
+    maybe_strategy: MaybeSearchStrategy[_T | None | Sentinel],
+    default: SearchStrategy[_T | None],
+    /,
+    *,
+    sentinel: Literal[True],
+) -> _T | None: ...
 @overload
 def draw2(
     data_or_draw: DataObject | DrawFn,
     maybe_strategy: MaybeSearchStrategy[_T | None],
     default: SearchStrategy[_T],
     /,
+    *,
+    sentinel: Literal[False] = False,
 ) -> _T: ...
+@overload
 def draw2(
     data_or_draw: DataObject | DrawFn,
-    maybe_strategy: MaybeSearchStrategy[_T | None],
+    maybe_strategy: MaybeSearchStrategy[_T | None | Sentinel],
     default: SearchStrategy[_T] | None = None,
     /,
+    *,
+    sentinel: bool = False,
+) -> _T | None: ...
+def draw2(
+    data_or_draw: DataObject | DrawFn,
+    maybe_strategy: MaybeSearchStrategy[_T | None | Sentinel],
+    default: SearchStrategy[_T | None] | None = None,
+    /,
+    *,
+    sentinel: bool = False,
 ) -> _T | None:
     """Draw an element from a strategy, unless you require it to be non-nullable."""
     draw = data_or_draw.draw if isinstance(data_or_draw, DataObject) else data_or_draw
@@ -292,7 +318,73 @@ def draw2(
         value = draw(maybe_strategy)
     else:
         value = maybe_strategy
-    return draw(default) if (value is None) and (default is not None) else value
+    match value, default, sentinel:
+        case None | Sentinel(), SearchStrategy(), _:
+            value2 = draw(default)
+            if isinstance(value2, Sentinel):
+                raise _Draw2DefaultGeneratedSentinelError
+            return value2
+        case Sentinel(), None, _:
+            raise _Draw2InputResolvedToSentinelError
+        case _, _, _:
+            return value
+        case _ as never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class Draw2Error(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _Draw2InputResolvedToSentinelError(Draw2Error):
+    @override
+    def __str__(self) -> str:
+        return "The input resolved to the sentinel value; a default strategy is needed"
+
+
+@dataclass(kw_only=True, slots=True)
+class _Draw2DefaultGeneratedSentinelError(Draw2Error):
+    @override
+    def __str__(self) -> str:
+        return "The default search strategy generated the sentinel value"
+
+
+##
+
+
+@composite
+def float32s(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[float] = MIN_FLOAT32,
+    max_value: MaybeSearchStrategy[float] = MAX_FLOAT32,
+) -> float:
+    """Strategy for generating float32s."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    min_value_ = max(min_value_, MIN_FLOAT32)
+    max_value_ = min(max_value_, MAX_FLOAT32)
+    if is_zero(min_value_) and is_zero(max_value_):
+        min_value_ = max_value_ = 0.0
+    return draw(floats(min_value_, max_value_, width=32))
+
+
+@composite
+def float64s(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[float] = MIN_FLOAT64,
+    max_value: MaybeSearchStrategy[float] = MAX_FLOAT64,
+) -> float:
+    """Strategy for generating float64s."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    min_value_ = max(min_value_, MIN_FLOAT64)
+    max_value_ = min(max_value_, MAX_FLOAT64)
+    if is_zero(min_value_) and is_zero(max_value_):
+        min_value_ = max_value_ = 0.0
+    return draw(floats(min_value_, max_value_, width=64))
 
 
 ##
@@ -353,7 +445,7 @@ def floats_extra(
     integral: MaybeSearchStrategy[bool] = False,
 ) -> float:
     """Strategy for generating floats, with extra special values."""
-    min_value_, max_value_ = (draw2(draw, min_value), draw2(draw, max_value))
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     elements = floats(
         min_value=min_value_,
         max_value=max_value_,
@@ -528,7 +620,7 @@ def months(
     max_value: MaybeSearchStrategy[Month] = MAX_MONTH,
 ) -> Month:
     """Strategy for generating datetimes with the UTC timezone."""
-    min_value_, max_value_ = (draw2(draw, v).to_date() for v in [min_value, max_value])
+    min_value_, max_value_ = [draw2(draw, v).to_date() for v in [min_value, max_value]]
     date = draw(dates(min_value=min_value_, max_value=max_value_))
     return date_to_month(date)
 
@@ -559,7 +651,7 @@ def numbers(
     max_value: MaybeSearchStrategy[Number | None] = None,
 ) -> int | float:
     """Strategy for generating numbers."""
-    min_value_, max_value_ = (draw2(draw, v) for v in [min_value, max_value])
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     if (min_value_ is None) or isinstance(min_value_, int):
         min_int = min_value_
     else:
@@ -628,6 +720,14 @@ def random_states(
 
     seed_ = draw2(draw, seed, integers(0, MAX_UINT32))
     return RandomState(seed=seed_)
+
+
+##
+
+
+def sentinels() -> SearchStrategy[Sentinel]:
+    """Strategy for generating sentinels."""
+    return just(sentinel)
 
 
 ##
@@ -976,7 +1076,7 @@ def timedeltas_2w(
         MIN_SERIALIZABLE_TIMEDELTA,
     )
 
-    min_value_, max_value_ = (draw2(draw, v) for v in [min_value, max_value])
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     return draw(
         timedeltas(
             min_value=max(min_value_, MIN_SERIALIZABLE_TIMEDELTA),
@@ -1018,12 +1118,10 @@ def uint32s(
     max_value: MaybeSearchStrategy[int] = MAX_UINT32,
 ) -> int:
     """Strategy for generating uint32s."""
-    min_value_, max_value_ = (draw2(draw, v) for v in [min_value, max_value])
-    return draw(
-        integers(
-            min_value=max(min_value_, MIN_UINT32), max_value=min(max_value_, MAX_UINT32)
-        )
-    )
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    min_value_ = max(min_value_, MIN_UINT32)
+    max_value_ = min(max_value_, MAX_UINT32)
+    return draw(integers(min_value=min_value_, max_value=max_value_))
 
 
 @composite
@@ -1035,12 +1133,10 @@ def uint64s(
     max_value: MaybeSearchStrategy[int] = MAX_UINT64,
 ) -> int:
     """Strategy for generating uint64s."""
-    min_value_, max_value_ = (draw2(draw, v) for v in [min_value, max_value])
-    return draw(
-        integers(
-            min_value=max(min_value_, MIN_UINT32), max_value=min(max_value_, MAX_UINT32)
-        )
-    )
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    min_value_ = max(min_value_, MIN_UINT64)
+    max_value_ = min(max_value_, MAX_UINT64)
+    return draw(integers(min_value=min_value_, max_value=max_value_))
 
 
 ##
@@ -1110,7 +1206,7 @@ def zoned_datetimes(
         check_valid_zoned_datetime,
     )
 
-    min_value_, max_value_ = (draw2(draw, v) for v in [min_value, max_value])
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     time_zone_ = draw2(draw, time_zone)
     if min_value_.tzinfo is None:
         min_value_ = min_value_.replace(tzinfo=time_zone_)
@@ -1158,6 +1254,7 @@ class ZonedDateTimesError(Exception):
 
 
 __all__ = [
+    "Draw2Error",
     "MaybeSearchStrategy",
     "Shape",
     "ZonedDateTimesError",
@@ -1166,6 +1263,8 @@ __all__ = [
     "date_durations",
     "datetime_durations",
     "draw2",
+    "float32s",
+    "float64s",
     "float_arrays",
     "floats_extra",
     "git_repos",
@@ -1180,6 +1279,7 @@ __all__ = [
     "pairs",
     "paths",
     "random_states",
+    "sentinels",
     "sets_fixed_length",
     "setup_hypothesis_profiles",
     "slices",

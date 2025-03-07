@@ -7,7 +7,7 @@ from itertools import chain
 from re import search
 from typing import TYPE_CHECKING
 
-from hypothesis import Phase, given, settings
+from hypothesis import Phase, given
 from hypothesis.strategies import (
     DataObject,
     data,
@@ -34,7 +34,11 @@ from utilities.asyncio import (
     timeout_dur,
 )
 from utilities.datetime import MILLISECOND, ZERO_TIME, datetime_duration_to_timedelta
-from utilities.hypothesis import datetime_durations, text_ascii
+from utilities.hypothesis import (
+    datetime_durations,
+    settings_with_reduced_examples,
+    text_ascii,
+)
 from utilities.iterables import one
 from utilities.pytest import skipif_windows
 from utilities.timer import Timer
@@ -414,7 +418,7 @@ class TestSleepDur:
         )
     )
     @mark.flaky
-    @settings(phases={Phase.generate})
+    @settings_with_reduced_examples(phases={Phase.generate})
     async def test_main(self, *, duration: Duration) -> None:
         with Timer() as timer:
             await sleep_dur(duration=duration)
@@ -458,7 +462,7 @@ class TestTimeoutDur:
         )
     )
     @mark.flaky
-    @settings(phases={Phase.generate})
+    @settings_with_reduced_examples(phases={Phase.generate})
     async def test_main(self, *, duration: Duration) -> None:
         with raises(TimeoutError):
             async with timeout_dur(duration=duration):

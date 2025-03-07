@@ -56,11 +56,15 @@ from utilities.hypothesis import (
     _ZONED_DATETIMES_RIGHT_MOST,
     Shape,
     ZonedDateTimesError,
+    _Draw2DefaultGeneratedSentinelError,
+    _Draw2InputResolvedToSentinelError,
     assume_does_not_raise,
     bool_arrays,
     date_durations,
     datetime_durations,
     draw2,
+    float32s,
+    float64s,
     float_arrays,
     floats_extra,
     git_repos,
@@ -75,6 +79,7 @@ from utilities.hypothesis import (
     pairs,
     paths,
     random_states,
+    sentinels,
     sets_fixed_length,
     settings_with_reduced_examples,
     setup_hypothesis_profiles,
@@ -98,10 +103,14 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.math import (
+    MAX_FLOAT32,
+    MAX_FLOAT64,
     MAX_INT32,
     MAX_INT64,
     MAX_UINT32,
     MAX_UINT64,
+    MIN_FLOAT32,
+    MIN_FLOAT64,
     MIN_INT32,
     MIN_INT64,
     MIN_UINT32,
@@ -111,6 +120,7 @@ from utilities.math import (
 )
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
+from utilities.sentinel import Sentinel
 from utilities.sqlalchemy import Dialect, _get_dialect
 from utilities.types import Duration, Number
 from utilities.version import Version
@@ -317,6 +327,58 @@ class TestDraw2:
 
         result = data.draw(strategy())
         assert isinstance(result, bool)
+
+    @given(data=data(), value=booleans())
+    def test_with_sentinel(self, *, data: DataObject, value: bool) -> None:
+        @composite
+        def strategy(draw: DrawFn, /) -> bool | None:
+            maybe_value = draw(just(value) | none() | sentinels())
+            return draw2(draw, maybe_value, just(value) | none(), sentinel=True)
+
+        result = data.draw(strategy())
+        assert (result is None) or (result is value)
+
+    @given(data=data(), sentinel=booleans())
+    def test_error_input_resolved_to_sentinel(
+        self, *, data: DataObject, sentinel: bool
+    ) -> None:
+        @composite
+        def strategy(draw: DrawFn, /) -> Sentinel:
+            return draw2(draw, sentinels(), sentinel=sentinel)
+
+        with raises(
+            _Draw2InputResolvedToSentinelError,
+            match="The input resolved to the sentinel value; a default strategy is needed",
+        ):
+            _ = data.draw(strategy())
+
+    @given(data=data())
+    def test_error_default_generated_sentinel(self, *, data: DataObject) -> None:
+        @composite
+        def strategy(draw: DrawFn, /) -> Any:
+            return draw2(draw, none() | sentinels(), sentinels())
+
+        with raises(
+            _Draw2DefaultGeneratedSentinelError,
+            match="The default search strategy generated the sentinel value",
+        ):
+            _ = data.draw(strategy())
+
+
+class TestFloat32s:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(float32s(), sorted=True))
+        x = data.draw(float32s(min_value=min_value, max_value=max_value))
+        assert max(min_value, MIN_FLOAT32) <= x <= min(max_value, MAX_FLOAT32)
+
+
+class TestFloat64s:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(float64s(), sorted=True))
+        x = data.draw(float64s(min_value=min_value, max_value=max_value))
+        assert max(min_value, MIN_FLOAT64) <= x <= min(max_value, MAX_FLOAT64)
 
 
 class TestFloatArrays:
@@ -549,18 +611,18 @@ class TestIntArrays:
 
 
 class TestInt32s:
-    @given(data=data(), min_value=int32s(), max_value=int32s())
-    def test_main(self, *, data: DataObject, min_value: int, max_value: int) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            x = data.draw(int32s(min_value=min_value, max_value=max_value))
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(int32s(), sorted=True))
+        x = data.draw(int32s(min_value=min_value, max_value=max_value))
         assert max(min_value, MIN_INT32) <= x <= min(max_value, MAX_INT32)
 
 
 class TestInt64s:
-    @given(data=data(), min_value=int64s(), max_value=int64s())
-    def test_main(self, *, data: DataObject, min_value: int, max_value: int) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            x = data.draw(int64s(min_value=min_value, max_value=max_value))
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(int64s(), sorted=True))
+        x = data.draw(int64s(min_value=min_value, max_value=max_value))
         assert max(min_value, MIN_INT64) <= x <= min(max_value, MAX_INT64)
 
 
@@ -669,6 +731,13 @@ class TestReducedExamples:
         result = cast(Any, test)._hypothesis_internal_use_settings.max_examples
         expected = max(round(frac * ensure_int(settings().max_examples)), 1)
         assert result == expected
+
+
+class TestSentinels:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        sentinel = data.draw(sentinels())
+        assert isinstance(sentinel, Sentinel)
 
 
 class TestSetsFixedLength:
@@ -939,18 +1008,18 @@ class TestTriples:
 
 
 class TestUInt32s:
-    @given(data=data(), min_value=uint32s(), max_value=uint32s())
-    def test_main(self, *, data: DataObject, min_value: int, max_value: int) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            x = data.draw(uint32s(min_value=min_value, max_value=max_value))
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(uint32s(), sorted=True))
+        x = data.draw(uint32s(min_value=min_value, max_value=max_value))
         assert max(min_value, MIN_UINT32) <= x <= min(max_value, MAX_UINT32)
 
 
 class TestUInt64s:
-    @given(data=data(), min_value=uint64s(), max_value=uint64s())
-    def test_main(self, *, data: DataObject, min_value: int, max_value: int) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            x = data.draw(uint64s(min_value=min_value, max_value=max_value))
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(uint64s(), sorted=True))
+        x = data.draw(uint64s(min_value=min_value, max_value=max_value))
         assert max(min_value, MIN_UINT64) <= x <= min(max_value, MAX_UINT64)
 
 
