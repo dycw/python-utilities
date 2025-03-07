@@ -244,7 +244,10 @@ zzz-test-pytest = [
   "whenever >= 0.7.2, < 0.8",
 ]
 zzz-test-pytest-regressions = ["pytest-regressions >= 2.7.0, < 2.8"]
-zzz-test-python-dotenv = ["python-dotenv >= 1.0.1, < 1.1"]
+zzz-test-python-dotenv = [
+  "python-dotenv >= 1.0.1, < 1.1",
+  "whenever >= 0.7.2, < 0.8",
+]
 zzz-test-random = []
 zzz-test-re = []
 zzz-test-redis = [
