@@ -16,6 +16,7 @@ from contextlib import (
     contextmanager,
     suppress,
 )
+from dataclasses import dataclass
 from datetime import timezone
 from enum import Enum, auto
 from functools import partial
@@ -52,17 +53,20 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
+from typing_extensions import override
 
 from utilities.datetime import (
     MAX_MONTH,
     MIN_MONTH,
     Month,
+    _RoundMode,
     date_duration_to_int,
     date_duration_to_timedelta,
     date_to_month,
     datetime_duration_to_float,
     datetime_duration_to_timedelta,
     get_now,
+    round_datetime,
 )
 from utilities.functions import ensure_int, ensure_str, max_nullable, min_nullable
 from utilities.math import (
@@ -510,6 +514,40 @@ def lists_fixed_length(
     if draw2(draw, sorted):
         return builtins.sorted(cast(Iterable[Any], elements))
     return elements
+
+
+##
+
+
+@composite
+def local_datetimes(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
+    max_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.max,
+    round_: dt.timedelta | None = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+) -> dt.datetime:
+    """Strategy for generating local datetimes."""
+    min_value_ = draw2(draw, min_value)
+    max_value_ = draw2(draw, max_value)
+    datetime = draw(datetimes(min_value=min_value_, max_value=max_value_))
+    if round_ is None:
+        return datetime
+    rounded = round_datetime(datetime, round_, rel_tol=rel_tol, abs_tol=abs_tol)
+    _ = assume(min_value_ <= rounded <= max_value_)
+    return rounded
+
+
+@dataclass(kw_only=True, slots=True)
+class LocalDateTimesError(Exception):
+    round_: _RoundMode
+
+    @override
+    def __str__(self) -> str:
+        return f"Rounding {self.round_!r} specified but no timedelta available"
 
 
 ##
@@ -1132,6 +1170,7 @@ def zoned_datetimes(
 
 
 __all__ = [
+    "LocalDateTimesError",
     "MaybeSearchStrategy",
     "Shape",
     "assume_does_not_raise",
@@ -1147,6 +1186,7 @@ __all__ = [
     "int64s",
     "int_arrays",
     "lists_fixed_length",
+    "local_datetimes",
     "months",
     "namespace_mixins",
     "numbers",

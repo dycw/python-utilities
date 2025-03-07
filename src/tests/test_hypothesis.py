@@ -37,6 +37,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX, SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
+    MINUTE,
     date_duration_to_timedelta,
     datetime_duration_to_float,
     datetime_duration_to_timedelta,
@@ -69,6 +70,7 @@ from utilities.hypothesis import (
     int64s,
     int_arrays,
     lists_fixed_length,
+    local_datetimes,
     months,
     namespace_mixins,
     numbers,
@@ -578,6 +580,25 @@ class TestListsFixedLength:
             assert len(set(result)) == len(result)
         if sorted_:
             assert sorted(result) == result
+
+
+class TestLocalDateTimes:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(datetimes(), sorted=True))
+        datetime = data.draw(local_datetimes(min_value=min_value, max_value=max_value))
+        assert isinstance(datetime, dt.datetime)
+        assert min_value <= datetime <= max_value
+
+    @given(data=data())
+    def test_rounding(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(datetimes(), sorted=True))
+        datetime = data.draw(
+            local_datetimes(min_value=min_value, max_value=max_value, round_=MINUTE)
+        )
+        assert isinstance(datetime, dt.datetime)
+        assert datetime.second == datetime.microsecond == 0
+        assert min_value <= datetime <= max_value
 
 
 class TestMonths:

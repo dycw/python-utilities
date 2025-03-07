@@ -50,7 +50,6 @@ from utilities.datetime import (
     AreEqualDatesOrDateTimesError,
     AreEqualDateTimesError,
     CheckDateNotDateTimeError,
-    CheckZonedDateTimeError,
     EnsureMonthError,
     MillisecondsSinceEpochError,
     Month,
@@ -74,7 +73,6 @@ from utilities.datetime import (
     are_equal_datetimes,
     are_equal_months,
     check_date_not_datetime,
-    check_zoned_datetime,
     date_duration_to_int,
     date_duration_to_timedelta,
     date_to_datetime,
@@ -130,12 +128,13 @@ from utilities.functions import not_func
 from utilities.hypothesis import (
     assume_does_not_raise,
     int32s,
+    local_datetimes,
     months,
     text_clean,
     zoned_datetimes,
 )
 from utilities.math import MAX_INT32, MIN_INT32, is_integral, round_to_float
-from utilities.zoneinfo import UTC, HongKong, Tokyo
+from utilities.zoneinfo import UTC, HongKong, Tokyo, ensure_time_zone
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -389,17 +388,6 @@ class TestCheckDateNotDateTime:
             CheckDateNotDateTimeError, match="Date must not be a datetime; got .*"
         ):
             check_date_not_datetime(datetime)
-
-
-class TestCheckZonedDateTime:
-    @given(datetime=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC])))
-    def test_date(self, *, datetime: dt.datetime) -> None:
-        check_zoned_datetime(datetime)
-
-    @given(datetime=datetimes())
-    def test_datetime(self, *, datetime: dt.datetime) -> None:
-        with raises(CheckZonedDateTimeError, match="DateTime must be zoned; got .*"):
-            check_zoned_datetime(datetime)
 
 
 class TestDateDurationToInt:
@@ -767,10 +755,18 @@ class TestMaybeSubPctY:
 
 
 class TestMicrosecondsOrMillisecondsSinceEpoch:
-    @given(datetime=zoned_datetimes())
-    def test_datetime_to_microseconds(self, *, datetime: dt.datetime) -> None:
+    @given(datetime=local_datetimes())
+    def test_local_datetime_to_microseconds(self, *, datetime: dt.datetime) -> None:
         microseconds = microseconds_since_epoch(datetime)
         result = microseconds_since_epoch_to_datetime(microseconds)
+        assert result == datetime
+
+    @given(datetime=zoned_datetimes(time_zone=timezones()))
+    def test_zoned_datetime_to_microseconds(self, *, datetime: dt.datetime) -> None:
+        microseconds = microseconds_since_epoch(datetime)
+        result = microseconds_since_epoch_to_datetime(
+            microseconds, time_zone=ensure_time_zone(datetime)
+        )
         assert result == datetime
 
     @given(microseconds=integers())
@@ -931,20 +927,22 @@ class TestParseTwoDigitYear:
 
 
 class TestRoundDateTime:
-    @given(datetime=zoned_datetimes())
+    @given(datetime=local_datetimes() | zoned_datetimes(time_zone=timezones()))
     def test_minute(self, *, datetime: dt.datetime) -> None:
         floor = round_datetime(datetime, MINUTE, mode="floor")
         ceil = round_datetime(datetime, MINUTE, mode="ceil")
         assert floor.second == floor.microsecond == 0
         assert ceil.second == ceil.microsecond == 0
+        assert floor.tzinfo == ceil.tzinfo == datetime.tzinfo
         assert floor <= datetime <= ceil
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=local_datetimes() | zoned_datetimes(time_zone=timezones()))
     def test_second(self, *, datetime: dt.datetime) -> None:
         floor = round_datetime(datetime, SECOND, mode="floor")
         ceil = round_datetime(datetime, SECOND, mode="ceil")
         assert floor.microsecond == 0
         assert ceil.microsecond == 0
+        assert floor.tzinfo == ceil.tzinfo == datetime.tzinfo
         assert floor <= datetime <= ceil
 
 
@@ -1012,7 +1010,7 @@ class TestSubDuration:
 
 
 class TestTimedeltaSinceEpoch:
-    @given(date=dates() | zoned_datetimes(time_zone=timezones()))
+    @given(date=dates() | local_datetimes() | zoned_datetimes(time_zone=timezones()))
     def test_main(self, *, date: DateOrDateTime) -> None:
         result = timedelta_since_epoch(date)
         assert isinstance(result, dt.timedelta)
