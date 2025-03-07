@@ -627,10 +627,9 @@ def microseconds_since_epoch_to_datetime(
     microseconds: int, /, *, time_zone: dt.tzinfo | None = None
 ) -> dt.datetime:
     """Convert a number of microseconds since the epoch to a datetime."""
+    epoch = EPOCH_NAIVE if time_zone is None else EPOCH_UTC
     timedelta = microseconds_to_timedelta(microseconds)
-    if time_zone is None:
-        return EPOCH_NAIVE + timedelta
-    return (EPOCH_UTC + timedelta).astimezone(time_zone)
+    return epoch + timedelta
 
 
 ##
@@ -667,9 +666,13 @@ class MillisecondsSinceEpochError(Exception):
         return f"Unable to convert {self.datetime} to milliseconds since epoch; got {self.remainder} microsecond(s)"
 
 
-def milliseconds_since_epoch_to_datetime(milliseconds: int, /) -> dt.datetime:
+def milliseconds_since_epoch_to_datetime(
+    milliseconds: int, /, *, time_zone: dt.tzinfo | None = None
+) -> dt.datetime:
     """Convert a number of milliseconds since the epoch to a datetime."""
-    return EPOCH_UTC + milliseconds_to_timedelta(milliseconds)
+    epoch = EPOCH_NAIVE if time_zone is None else EPOCH_UTC
+    timedelta = milliseconds_to_timedelta(milliseconds)
+    return epoch + timedelta
 
 
 def milliseconds_to_timedelta(milliseconds: int, /) -> dt.timedelta:
@@ -829,9 +832,12 @@ def round_datetime(
     if datetime.tzinfo is None:
         dividend = microseconds_since_epoch(datetime)
         divisor = timedelta_to_microseconds(timedelta)
-        frac = dividend / divisor
-        quotient = round_(frac, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
-        microseconds = quotient * divisor
+        quotient, remainder = divmod(dividend, divisor)
+        rnd_remainder = round_(
+            remainder / divisor, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol
+        )
+        rnd_quotient = quotient + rnd_remainder
+        microseconds = rnd_quotient * divisor
         return microseconds_since_epoch_to_datetime(microseconds)
     local = datetime.replace(tzinfo=None)
     rounded = round_datetime(
