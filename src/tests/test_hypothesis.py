@@ -308,18 +308,18 @@ class TestDateTimeDurations:
 
 
 class TestDraw2:
-    @given(data=data(), value=booleans())
-    def test_main(self, *, data: DataObject, value: bool) -> None:
+    @given(data=data())
+    def test_none_no_default(self, *, data: DataObject) -> None:
         @composite
-        def strategy(draw: DrawFn, /) -> bool:
-            maybe_value = draw(just(value) | just(just(value)))
-            return draw2(draw, maybe_value)
+        def strategy(draw: DrawFn, /) -> None:
+            maybe_none = draw(none() | just(none()))
+            return draw2(draw, maybe_none)
 
         result = data.draw(strategy())
-        assert result is value
+        assert result is None
 
     @given(data=data())
-    def test_with_default(self, *, data: DataObject) -> None:
+    def test_none_with_default_no_sentinel(self, *, data: DataObject) -> None:
         @composite
         def strategy(draw: DrawFn, /) -> bool:
             maybe_none = draw(none() | just(none()))
@@ -328,18 +328,38 @@ class TestDraw2:
         result = data.draw(strategy())
         assert isinstance(result, bool)
 
-    @given(data=data(), value=booleans())
-    def test_with_sentinel(self, *, data: DataObject, value: bool) -> None:
+    @given(data=data())
+    def test_none_with_default_with_sentinel(self, *, data: DataObject) -> None:
         @composite
         def strategy(draw: DrawFn, /) -> bool | None:
-            maybe_value = draw(just(value) | none() | sentinels())
-            return draw2(draw, maybe_value, just(value) | none(), sentinel=True)
+            maybe_none = draw(none() | just(none()))
+            return draw2(draw, maybe_none, booleans(), sentinel=True)
 
         result = data.draw(strategy())
-        assert (result is None) or (result is value)
+        assert result is None
+
+    @given(data=data(), value=booleans())
+    def test_sentinel_with_default(self, *, data: DataObject, value: bool) -> None:
+        @composite
+        def strategy(draw: DrawFn, /) -> bool | None:
+            return draw2(draw, sentinels(), just(value), sentinel=True)
+
+        result = data.draw(strategy())
+        assert result is value
+
+    @given(data=data(), value=booleans(), sentinel=booleans())
+    def test_value(self, *, data: DataObject, value: bool, sentinel: bool) -> None:
+        @composite
+        def strategy(draw: DrawFn, /) -> bool | None:
+            maybe_value = draw(just(value) | just(just(value)))
+            maybe_default = draw(just(booleans()) | none())
+            return draw2(draw, maybe_value, maybe_default, sentinel=sentinel)
+
+        result = data.draw(strategy())
+        assert result is value
 
     @given(data=data(), sentinel=booleans())
-    def test_error_input_resolved_to_sentinel(
+    def test_error_input_resolved_to_sentinel_no_default(
         self, *, data: DataObject, sentinel: bool
     ) -> None:
         @composite
@@ -353,10 +373,41 @@ class TestDraw2:
             _ = data.draw(strategy())
 
     @given(data=data())
-    def test_error_default_generated_sentinel(self, *, data: DataObject) -> None:
+    def test_error_input_resolved_to_sentinel_with_default(
+        self, *, data: DataObject
+    ) -> None:
+        @composite
+        def strategy(draw: DrawFn, /) -> Sentinel:
+            return draw2(draw, sentinels(), sentinels())
+
+        with raises(
+            _Draw2InputResolvedToSentinelError,
+            match="The input resolved to the sentinel value; a default strategy is needed",
+        ):
+            _ = data.draw(strategy())
+
+    @given(data=data())
+    def test_error_default_generated_sentinel_with_none(
+        self, *, data: DataObject
+    ) -> None:
+        @composite
+        def strategy(draw: DrawFn, /) -> Sentinel:
+            maybe_none = draw(none() | just(none()))
+            return draw2(draw, maybe_none, sentinels())
+
+        with raises(
+            _Draw2DefaultGeneratedSentinelError,
+            match="The default search strategy generated the sentinel value",
+        ):
+            _ = data.draw(strategy())
+
+    @given(data=data())
+    def test_error_default_generated_sentinel_with_sentinel(
+        self, *, data: DataObject
+    ) -> None:
         @composite
         def strategy(draw: DrawFn, /) -> Any:
-            return draw2(draw, none() | sentinels(), sentinels())
+            return draw2(draw, sentinels(), sentinels(), sentinel=True)
 
         with raises(
             _Draw2DefaultGeneratedSentinelError,
