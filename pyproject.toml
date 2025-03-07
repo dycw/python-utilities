@@ -64,7 +64,7 @@ dev = [
   "slack-sdk >= 3.34.0, < 3.35",
   "sqlalchemy >= 2.0.38, < 2.1",
   "streamlit >= 1.43.0, < 1.44",
-  "tenacity >= 8.0.0",  # limited by luigi
+  "tenacity >= 8.5.0, < 9.0",  # limited by luigi
   "tzdata >= 2025.1, < 2025.2",
   "tzlocal >= 5.3.1, < 5.4",
   "uvicorn >= 0.34.0, < 0.35",
@@ -165,11 +165,12 @@ zzz-test-hypothesis = [
   "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
   "hypothesis >= 6.127.9, < 6.128",
+  "luigi >= 3.6.0, < 3.7",
   "numpy >= 2.2.3, < 2.3",
   "pathvalidate >= 3.2.3, < 3.3",
   "redis >= 5.2.1, < 5.3",
   "sqlalchemy >= 2.0.38, < 2.1",
-  "tenacity >= 9.0.0, < 9.1",
+  "tenacity >= 8.5.0, < 9.0",  # limited by luigi
   "tzlocal >= 5.3.1, < 5.4",
   "whenever >= 0.7.2, < 0.8",
 ]
@@ -194,7 +195,10 @@ zzz-test-logging = [
   "whenever >= 0.7.2, < 0.8",
 ]
 zzz-test-loguru = ["loguru >= 0.7.3, < 0.8"]
-zzz-test-luigi = ["luigi >= 3.6.0, < 3.7"]
+zzz-test-luigi = [
+  "luigi >= 3.6.0, < 3.7",
+  "whenever >= 0.7.2, < 0.8",
+]
 zzz-test-math = ["numpy >= 2.2.3, < 2.3"]
 zzz-test-memory-profiler = ["memory-profiler >= 0.61.0, < 0.62"]
 zzz-test-modules = []
@@ -240,7 +244,10 @@ zzz-test-pytest = [
   "whenever >= 0.7.2, < 0.8",
 ]
 zzz-test-pytest-regressions = ["pytest-regressions >= 2.7.0, < 2.8"]
-zzz-test-python-dotenv = ["python-dotenv >= 1.0.1, < 1.1"]
+zzz-test-python-dotenv = [
+  "python-dotenv >= 1.0.1, < 1.1",
+  "whenever >= 0.7.2, < 0.8",
+]
 zzz-test-random = []
 zzz-test-re = []
 zzz-test-redis = [
@@ -278,6 +285,7 @@ zzz-test-sqlalchemy-polars = [
   "polars-lts-cpu >= 1.24.0, < 1.25",
   "sqlalchemy >= 2.0.38, < 2.1",
   "tenacity >= 9.0.0, < 9.1",
+  "whenever >= 0.7.2, < 0.8",
 ]
 zzz-test-streamlit = ["streamlit >= 1.43.0, < 1.44"]
 zzz-test-sys = [
@@ -310,7 +318,10 @@ zzz-test-version = ["hatch >= 1.14.0, < 1.15"]
 zzz-test-warnings = []
 zzz-test-whenever = ["whenever >= 0.7.2, < 0.8"]
 zzz-test-zipfile = []
-zzz-test-zoneinfo = ["tzdata >= 2025.1, < 2025.2"]
+zzz-test-zoneinfo = [
+  "tzdata >= 2025.1, < 2025.2",
+  "whenever >= 0.7.2, < 0.8",
+]
 
 [project.scripts]
 

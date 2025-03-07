@@ -22,6 +22,10 @@ hypothesis==6.127.9
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
+lockfile==0.12.2
+    # via python-daemon
+luigi==3.6.0
+    # via dycw-utilities (pyproject.toml)
 numpy==2.2.3
     # via
     #   dycw-utilities (pyproject.toml)
@@ -68,18 +72,28 @@ pytest-rng==1.0.0
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)
+python-daemon==3.1.2
+    # via luigi
+python-dateutil==2.9.0.post0
+    # via luigi
 pyyaml==6.0.2
     # via pytest-regressions
 redis==5.2.1
     # via dycw-utilities (pyproject.toml)
+six==1.17.0
+    # via python-dateutil
 sortedcontainers==2.4.0
     # via hypothesis
 sqlalchemy==2.0.38
     # via dycw-utilities (pyproject.toml)
-tenacity==9.0.0
-    # via dycw-utilities (pyproject.toml)
+tenacity==8.5.0
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   luigi
 tomli==2.2.1
     # via coverage
+tornado==6.4.2
+    # via luigi
 typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)

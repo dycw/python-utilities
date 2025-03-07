@@ -27,7 +27,6 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import polars as pl
-from dacite.data import Data
 from polars import (
     Boolean,
     DataFrame,
@@ -1381,6 +1380,7 @@ def yield_rows_as_dataclasses(
 ) -> Iterator[_TDataclass]:
     """Yield the rows of a DataFrame as dataclasses."""
     from dacite import from_dict
+    from dacite.data import Data
     from dacite.exceptions import WrongTypeError
 
     columns = df.columns
@@ -1429,6 +1429,7 @@ def _yield_rows_as_dataclasses_no_check_types(
 ) -> Iterator[_TDataclass]:
     """Yield the rows of a DataFrame as dataclasses without type checking."""
     from dacite import Config, from_dict
+    from dacite.data import Data
 
     config = Config(check_types=False)
     for row in rows:
@@ -1560,6 +1561,7 @@ def yield_struct_series_dataclasses(
 ) -> Iterator[_TDataclass | None]:
     """Yield the elements of a struct-dtype Series as dataclasses."""
     from dacite import Config, from_dict
+    from dacite.data import Data
 
     config = Config(
         forward_references=forward_references, check_types=check_types, strict=True
