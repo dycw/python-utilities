@@ -164,7 +164,12 @@ class QueueProcessor(ABC, Generic[_T]):
 
     async def _get_items(self, *, max_size: int | None = None) -> Sequence[_T]:
         """Get items from the queue; if empty then wait."""
-        return await get_items(self._queue, max_size=max_size, lock=self._lock)
+        try:
+            return await get_items(self._queue, max_size=max_size, lock=self._lock)
+        except RuntimeError as error:  # pragma: no cover
+            if error.args[0] == "Event loop is closed":
+                return []
+            raise
 
     async def _get_items_nowait(self, *, max_size: int | None = None) -> Sequence[_T]:
         """Get items from the queue; no waiting."""
