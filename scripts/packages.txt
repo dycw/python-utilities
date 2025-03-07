@@ -21,7 +21,6 @@ getpass
 git
 hashlib
 http
-humps
 hypothesis
 ipython
 iterables
