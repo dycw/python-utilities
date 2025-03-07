@@ -45,8 +45,6 @@ backports-tarfile==1.2.0
     # via jaraco-context
 blinker==1.9.0
     # via streamlit
-bottleneck==1.4.2
-    # via dycw-utilities (pyproject.toml)
 bounded-pool-executor==0.0.3
     # via pqdm
 cachetools==5.5.2
@@ -176,8 +174,6 @@ jsonschema-specifications==2024.10.1
     # via jsonschema
 keyring==25.6.0
     # via hatch
-llvmlite==0.36.0
-    # via numba
 lockfile==0.12.2
     # via python-daemon
 loguru==0.7.3
@@ -217,19 +213,12 @@ nest-asyncio==1.6.0
     #   ib-async-dataclass
 nox==2025.2.9
     # via dycw-utilities (pyproject.toml)
-numba==0.53.1
-    # via numbagg
-numbagg==0.9.0
-    # via dycw-utilities (pyproject.toml)
 numpy==2.2.3
     # via
     #   dycw-utilities (pyproject.toml)
-    #   bottleneck
     #   clarabel
     #   cvxpy
     #   eventkit
-    #   numba
-    #   numbagg
     #   optuna
     #   osqp
     #   pandas
@@ -397,9 +386,7 @@ scipy==1.15.2
 scs==3.2.7.post2
     # via cvxpy
 setuptools==75.8.2
-    # via
-    #   dycw-utilities (pyproject.toml)
-    #   numba
+    # via dycw-utilities (pyproject.toml)
 shellingham==1.5.4
     # via hatch
 six==1.17.0

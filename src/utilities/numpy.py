@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import reduce
 from itertools import repeat
-from typing import TYPE_CHECKING, Any, cast, overload
+from typing import TYPE_CHECKING, Any, overload
 
 import numpy as np
 from numpy import (
@@ -12,9 +12,7 @@ from numpy import (
     digitize,
     dtype,
     errstate,
-    exp,
     flatnonzero,
-    flip,
     float64,
     full_like,
     inf,
@@ -24,7 +22,6 @@ from numpy import (
     isinf,
     isnan,
     linspace,
-    log,
     nan,
     nanquantile,
     object_,
@@ -41,7 +38,7 @@ from typing_extensions import override
 from utilities.iterables import is_iterable_not_str
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterable
 
 
 # RNG
@@ -139,64 +136,6 @@ def discretize(x: NDArrayF, bins: int | Iterable[float], /) -> NDArrayF:
     out = full_like(x, nan, dtype=float)
     out[is_fin] = discretize(x[is_fin], bins)
     return out
-
-
-def ewma(array: NDArrayF, halflife: float, /, *, axis: int = -1) -> NDArrayF:
-    """Compute the EWMA of an array."""
-    from numbagg import move_exp_nanmean
-
-    alpha = _exp_weighted_alpha(halflife)
-    return cast(Any, move_exp_nanmean)(array, axis=axis, alpha=alpha)
-
-
-def exp_moving_sum(array: NDArrayF, halflife: float, /, *, axis: int = -1) -> NDArrayF:
-    """Compute the exponentially-weighted moving sum of an array."""
-    from numbagg import move_exp_nansum
-
-    alpha = _exp_weighted_alpha(halflife)
-    return cast(Any, move_exp_nansum)(array, axis=axis, alpha=alpha)
-
-
-def _exp_weighted_alpha(halflife: float, /) -> float:
-    """Get the alpha."""
-    decay = 1.0 - exp(log(0.5) / halflife)
-    com = 1.0 / decay - 1.0
-    return 1.0 / (1.0 + com)
-
-
-def ffill(array: NDArrayF, /, *, limit: int | None = None, axis: int = -1) -> NDArrayF:
-    """Forward fill the elements in an array."""
-    from bottleneck import push
-
-    return push(array, n=limit, axis=axis)
-
-
-def ffill_non_nan_slices(
-    array: NDArrayF, /, *, limit: int | None = None, axis: int = -1
-) -> NDArrayF:
-    """Forward fill the slices in an array which contain non-nan values."""
-    ndim = array.ndim
-    arrays = (
-        array[array_indexer(i, ndim, axis=axis)] for i in range(array.shape[axis])
-    )
-    out = array.copy()
-    for i, repl_i in _ffill_non_nan_slices_helper(arrays, limit=limit):
-        out[array_indexer(i, ndim, axis=axis)] = repl_i
-    return out
-
-
-def _ffill_non_nan_slices_helper(
-    arrays: Iterator[NDArrayF], /, *, limit: int | None = None
-) -> Iterator[tuple[int, NDArrayF]]:
-    """Yield the slices to be pasted in."""
-    last: tuple[int, NDArrayF] | None = None
-    for i, arr_i in enumerate(arrays):
-        if (~isnan(arr_i)).any():
-            last = i, arr_i
-        elif last is not None:
-            last_i, last_sl = last
-            if (limit is None) or ((i - last_i) <= limit):
-                yield i, last_sl
 
 
 def fillna(array: NDArrayF, /, *, value: float = 0.0) -> NDArrayF:
@@ -746,28 +685,6 @@ def minimum(*xs: float | NDArrayF) -> float | NDArrayF:
     return reduce(np.minimum, xs)
 
 
-def pct_change(
-    array: NDArrayF | NDArrayI,
-    /,
-    *,
-    limit: int | None = None,
-    n: int = 1,
-    axis: int = -1,
-) -> NDArrayF:
-    """Compute the percentage change in an array."""
-    if n == 0:
-        raise PctChangeError
-    if n > 0:
-        filled = ffill(array.astype(float), limit=limit, axis=axis)
-        shifted = shift(filled, n=n, axis=axis)
-        with errstate(all="ignore"):
-            ratio = (filled / shifted) if n >= 0 else (shifted / filled)
-        return where(isfinite(array), ratio - 1.0, nan)
-    flipped = cast(NDArrayF | NDArrayI, flip(array, axis=axis))
-    result = pct_change(flipped, limit=limit, n=-n, axis=axis)
-    return flip(result, axis=axis)
-
-
 @dataclass(kw_only=True, slots=True)
 class PctChangeError(Exception):
     @override
@@ -831,10 +748,6 @@ __all__ = [
     "datetime64s",
     "datetime64us",
     "discretize",
-    "ewma",
-    "exp_moving_sum",
-    "ffill",
-    "ffill_non_nan_slices",
     "fillna",
     "flatn0",
     "has_dtype",
@@ -886,7 +799,5 @@ __all__ = [
     "is_zero_or_non_micro_or_nan",
     "maximum",
     "minimum",
-    "pct_change",
-    "shift",
     "shift_bool",
 ]

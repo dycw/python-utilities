@@ -23,7 +23,6 @@ dev = [
   "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
   "atomicwrites >= 1.4.1, < 1.5",
   "atools >= 0.14.2, < 0.15",
-  "bottleneck >= 1.4.2, < 1.5",
   "cachetools >= 5.5.2, < 5.6",
   "click >= 8.1.8, < 8.2",
   "coloredlogs >= 15.0.1, < 15.1",
@@ -46,7 +45,6 @@ dev = [
   "more-itertools >= 10.6.0, < 10.7",
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "nox >= 2025.2.9, < 2025.3",
-  "numbagg >= 0.9.0, < 0.10",
   "numpy >= 2.2.3, < 2.3",
   "optuna >= 4.2.1, < 4.3",
   "orjson >= 3.10.14, < 3.11",
@@ -203,11 +201,7 @@ zzz-test-math = ["numpy >= 2.2.3, < 2.3"]
 zzz-test-memory-profiler = ["memory-profiler >= 0.61.0, < 0.62"]
 zzz-test-modules = []
 zzz-test-more-itertools = ["more-itertools >= 10.6.0, < 10.7"]
-zzz-test-numpy = [
-  "bottleneck >= 1.4.0, < 1.5",
-  "numbagg >= 0.9.0, < 0.10",
-  "numpy >= 2.2.3, < 2.3",
-]
+zzz-test-numpy = ["numpy >= 2.2.3, < 2.3"]
 zzz-test-operator = [
   "ib-async-dataclass >= 1.0.3rc5, < 1.1",
   "polars-lts-cpu >= 1.24.0, < 1.25",
