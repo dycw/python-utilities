@@ -18,6 +18,9 @@ def get_public_ip(*, timeout: float | None = None) -> IPv4Address:
     return IPv4Address(address)  # pragma: no cover
 
 
+##
+
+
 @contextmanager
 def yield_connection(
     host: str, /, *, timeout: float | None = None
