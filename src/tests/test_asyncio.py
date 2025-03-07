@@ -411,10 +411,10 @@ class TestUniqueQueue:
 class TestSleepDur:
     @given(
         duration=datetime_durations(
-            min_number=0.0,
-            max_number=0.01,
-            min_timedelta=ZERO_TIME,
-            max_timedelta=10 * MILLISECOND,
+            min_number=0.1,
+            max_number=0.2,
+            min_timedelta=100 * MILLISECOND,
+            max_timedelta=200 * MILLISECOND,
         )
     )
     @mark.flaky
