@@ -38,7 +38,7 @@ httpx==0.28.1
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.127.7
+hypothesis==6.127.9
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -151,9 +151,9 @@ tzlocal==5.3.1
     # via dycw-utilities (pyproject.toml)
 userpath==1.9.2
     # via hatch
-uv==0.6.4
+uv==0.6.5
     # via hatch
-virtualenv==20.29.2
+virtualenv==20.29.3
     # via hatch
 whenever==0.7.2
     # via dycw-utilities (pyproject.toml)
