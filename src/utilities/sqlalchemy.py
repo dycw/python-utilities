@@ -80,6 +80,7 @@ from utilities.iterables import (
 )
 from utilities.reprlib import get_repr
 from utilities.tenacity import yield_timeout_attempts
+from utilities.text import snake_case
 from utilities.types import Duration, MaybeIterable, StrMapping, TupleOrStrMapping
 
 if TYPE_CHECKING:
@@ -641,8 +642,6 @@ class TablenameMixin:
 
     @cast(Any, declared_attr)
     def __tablename__(cls) -> str:  # noqa: N805
-        from utilities.humps import snake_case
-
         return snake_case(get_class_name(cls))
 
 
@@ -963,9 +962,6 @@ def _map_mapping_to_table(
                 mapping=mapping, columns=columns, extra=error.extra
             ) from None
         return {k: v for k, v in mapping.items() if k in columns}
-
-    from utilities.humps import snake_case
-
     out: dict[str, Any] = {}
     for key, value in mapping.items():
         try:
