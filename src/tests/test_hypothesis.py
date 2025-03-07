@@ -1061,7 +1061,5 @@ class TestZonedDateTimes:
 
     @given(data=data())
     def test_error_rounding(self, *, data: DataObject) -> None:
-        with raises(
-            ZonedDateTimesError, match="Rounding requires a timedelta; got None"
-        ):
+        with raises(ZonedDateTimesError, match="zz"):
             _ = data.draw(zoned_datetimes(round_="standard"))
