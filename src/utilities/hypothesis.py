@@ -16,7 +16,6 @@ from contextlib import (
     contextmanager,
     suppress,
 )
-from dataclasses import dataclass
 from datetime import timezone
 from enum import Enum, auto
 from functools import partial
@@ -53,13 +52,11 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from typing_extensions import override
 
 from utilities.datetime import (
     MAX_MONTH,
     MIN_MONTH,
     Month,
-    _RoundMode,
     date_duration_to_int,
     date_duration_to_timedelta,
     date_to_month,
@@ -539,15 +536,6 @@ def local_datetimes(
     rounded = round_datetime(datetime, round_, rel_tol=rel_tol, abs_tol=abs_tol)
     _ = assume(min_value_ <= rounded <= max_value_)
     return rounded
-
-
-@dataclass(kw_only=True, slots=True)
-class LocalDateTimesError(Exception):
-    round_: _RoundMode
-
-    @override
-    def __str__(self) -> str:
-        return f"Rounding {self.round_!r} specified but no timedelta available"
 
 
 ##
@@ -1170,7 +1158,6 @@ def zoned_datetimes(
 
 
 __all__ = [
-    "LocalDateTimesError",
     "MaybeSearchStrategy",
     "Shape",
     "assume_does_not_raise",
