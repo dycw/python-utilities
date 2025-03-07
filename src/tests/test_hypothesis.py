@@ -77,6 +77,7 @@ from utilities.hypothesis import (
     pairs,
     paths,
     random_states,
+    sentinels,
     sets_fixed_length,
     settings_with_reduced_examples,
     setup_hypothesis_profiles,
@@ -117,6 +118,7 @@ from utilities.math import (
 )
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
+from utilities.sentinel import Sentinel
 from utilities.sqlalchemy import Dialect, _get_dialect
 from utilities.types import Duration, Number
 from utilities.version import Version
@@ -323,6 +325,16 @@ class TestDraw2:
 
         result = data.draw(strategy())
         assert isinstance(result, bool)
+
+    @given(data=data(), value=booleans())
+    def test_with_sentinel(self, *, data: DataObject, value: bool) -> None:
+        @composite
+        def strategy(draw: DrawFn, /) -> bool:
+            maybe_value = draw(just(value) | just(just(value)))
+            return draw2(draw, maybe_value)
+
+        result = data.draw(strategy())
+        assert result is value
 
 
 class TestFloat32s:
@@ -691,6 +703,13 @@ class TestReducedExamples:
         result = cast(Any, test)._hypothesis_internal_use_settings.max_examples
         expected = max(round(frac * ensure_int(settings().max_examples)), 1)
         assert result == expected
+
+
+class TestSentinels:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        sentinel = data.draw(sentinels())
+        assert isinstance(sentinel, Sentinel)
 
 
 class TestSetsFixedLength:

@@ -82,10 +82,12 @@ from utilities.math import (
     MIN_UINT32,
     MIN_UINT64,
     _RoundMode,
+    is_zero,
 )
 from utilities.os import get_env_var
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
+from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.version import Version
 from utilities.zoneinfo import UTC
@@ -97,6 +99,7 @@ if TYPE_CHECKING:
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.redis import _TestRedis
+    from utilities.sentinel import Sentinel
     from utilities.sqlalchemy import Dialect, TableOrORMInstOrClass
     from utilities.types import Duration, Number
 
@@ -308,6 +311,8 @@ def float32s(
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     min_value_ = max(min_value_, MIN_FLOAT32)
     max_value_ = min(max_value_, MAX_FLOAT32)
+    if is_zero(min_value_) and is_zero(max_value_):
+        min_value_ = max_value_ = 0.0
     return draw(floats(min_value_, max_value_, width=32))
 
 
@@ -323,6 +328,8 @@ def float64s(
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     min_value_ = max(min_value_, MIN_FLOAT64)
     max_value_ = min(max_value_, MAX_FLOAT64)
+    if is_zero(min_value_) and is_zero(max_value_):
+        min_value_ = max_value_ = 0.0
     return draw(floats(min_value_, max_value_, width=64))
 
 
@@ -659,6 +666,14 @@ def random_states(
 
     seed_ = draw2(draw, seed, integers(0, MAX_UINT32))
     return RandomState(seed=seed_)
+
+
+##
+
+
+def sentinels() -> SearchStrategy[Sentinel]:
+    """Strategy for generating sentinels."""
+    return just(sentinel)
 
 
 ##
@@ -1209,6 +1224,7 @@ __all__ = [
     "pairs",
     "paths",
     "random_states",
+    "sentinels",
     "sets_fixed_length",
     "setup_hypothesis_profiles",
     "slices",
