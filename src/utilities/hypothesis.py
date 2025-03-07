@@ -27,7 +27,7 @@ from re import search
 from shutil import move, rmtree
 from string import ascii_letters, ascii_lowercase, ascii_uppercase, digits, printable
 from subprocess import check_call
-from typing import TYPE_CHECKING, Any, TypeVar, assert_never, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, assert_never, cast, overload
 from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
@@ -99,7 +99,6 @@ if TYPE_CHECKING:
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.redis import _TestRedis
-    from utilities.sentinel import Sentinel
     from utilities.sqlalchemy import Dialect, TableOrORMInstOrClass
     from utilities.types import Duration, Number
 
@@ -272,7 +271,28 @@ def datetime_durations(
 
 @overload
 def draw2(
-    data_or_draw: DataObject | DrawFn, maybe_strategy: MaybeSearchStrategy[_T], /
+    data_or_draw: DataObject | DrawFn,
+    maybe_strategy: MaybeSearchStrategy[_T | Sentinel],
+    /,
+    *,
+    sentinel: Literal[True],
+) -> _T: ...
+@overload
+def draw2(
+    data_or_draw: DataObject | DrawFn,
+    maybe_strategy: MaybeSearchStrategy[_T | Sentinel],
+    default: SearchStrategy[_T | None],
+    /,
+    *,
+    sentinel: Literal[True],
+) -> _T | None: ...
+@overload
+def draw2(
+    data_or_draw: DataObject | DrawFn,
+    maybe_strategy: MaybeSearchStrategy[_T],
+    /,
+    *,
+    sentinel: bool = False,
 ) -> _T: ...
 @overload
 def draw2(
@@ -280,12 +300,16 @@ def draw2(
     maybe_strategy: MaybeSearchStrategy[_T | None],
     default: SearchStrategy[_T],
     /,
+    *,
+    sentinel: bool = False,
 ) -> _T: ...
 def draw2(
     data_or_draw: DataObject | DrawFn,
-    maybe_strategy: MaybeSearchStrategy[_T | None],
-    default: SearchStrategy[_T] | None = None,
+    maybe_strategy: MaybeSearchStrategy[_T | None | Sentinel],
+    default: SearchStrategy[_T | None] | None = None,
     /,
+    *,
+    sentinel: bool = False,
 ) -> _T | None:
     """Draw an element from a strategy, unless you require it to be non-nullable."""
     draw = data_or_draw.draw if isinstance(data_or_draw, DataObject) else data_or_draw
@@ -293,7 +317,47 @@ def draw2(
         value = draw(maybe_strategy)
     else:
         value = maybe_strategy
-    return draw(default) if (value is None) and (default is not None) else value
+    match value, default, sentinel:
+        case None, None, False:
+            raise NotImplementedError
+        case None, SearchStrategy(), False:
+            return draw(default)
+        case Sentinel(), None, _:
+            raise _Draw2InputResolvedToSentinelError
+        case Sentinel(), SearchStrategy(), _:
+            value2 = draw(default)
+            if isinstance(value2, Sentinel):
+                raise _Draw2DefaultGeneratedSentinelError
+            return value2
+
+        case SearchStrategy(), _, _:
+            return draw2(data_or_draw, value, default, sentinel=sentinel)
+        case _, None, False:
+            return value
+        case _, None, True:
+            raise NotImplementedError
+        case _, SearchStrategy(), False:
+            return value
+        case _, SearchStrategy(), True:
+            return value
+
+
+@dataclass(kw_only=True, slots=True)
+class Draw2Error(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _Draw2InputResolvedToSentinelError(Draw2Error):
+    @override
+    def __str__(self) -> str:
+        return "The input resolved to the sentinel value; a default strategy is needed"
+
+
+@dataclass(kw_only=True, slots=True)
+class _Draw2DefaultGeneratedSentinelError(Draw2Error):
+    @override
+    def __str__(self) -> str:
+        return "The default search strategy generated the sentinel value"
 
 
 ##
@@ -1200,6 +1264,7 @@ class ZonedDateTimesError(Exception):
 
 
 __all__ = [
+    "Draw2Error",
     "MaybeSearchStrategy",
     "Shape",
     "ZonedDateTimesError",

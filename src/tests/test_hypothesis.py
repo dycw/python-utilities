@@ -56,6 +56,8 @@ from utilities.hypothesis import (
     _ZONED_DATETIMES_RIGHT_MOST,
     Shape,
     ZonedDateTimesError,
+    _Draw2DefaultGeneratedSentinelError,
+    _Draw2InputResolvedToSentinelError,
     assume_does_not_raise,
     bool_arrays,
     date_durations,
@@ -329,12 +331,40 @@ class TestDraw2:
     @given(data=data(), value=booleans())
     def test_with_sentinel(self, *, data: DataObject, value: bool) -> None:
         @composite
-        def strategy(draw: DrawFn, /) -> bool:
-            maybe_value = draw(just(value) | just(just(value)))
-            return draw2(draw, maybe_value)
+        def strategy(draw: DrawFn, /) -> bool | None:
+            maybe_value = draw(just(value) | none() | sentinels())
+            return draw2(draw, maybe_value, just(value) | none(), sentinel=True)
 
         result = data.draw(strategy())
-        assert result is value
+        assert (result is None) or (result is value)
+
+    @given(data=data(), sentinel=booleans())
+    def test_error_input_resolved_to_sentinel(
+        self, *, data: DataObject, sentinel: bool
+    ) -> None:
+        @composite
+        def strategy(draw: DrawFn, /) -> Sentinel:
+            return draw2(draw, sentinels(), sentinel=sentinel)
+
+        with raises(
+            _Draw2InputResolvedToSentinelError,
+            match="The input resolved to the sentinel value; a default strategy is needed",
+        ):
+            _ = data.draw(strategy())
+
+    @given(data=data(), sentinel=booleans())
+    def test_error_default_generated_sentinel(
+        self, *, data: DataObject, sentinel: bool
+    ) -> None:
+        @composite
+        def strategy(draw: DrawFn, /) -> Sentinel:
+            return draw2(draw, sentinels(), sentinels(), sentinel=sentinel)
+
+        with raises(
+            _Draw2DefaultGeneratedSentinelError,
+            match="The default search strategy generated the sentinel value",
+        ):
+            _ = data.draw(strategy())
 
 
 class TestFloat32s:
