@@ -10,6 +10,8 @@ from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
 
+MIN_FLOAT32, MAX_FLOAT32 = -3.4028234663852886e38, 3.4028234663852886e38
+MIN_FLOAT64, MAX_FLOAT64 = -1.7976931348623157e308, 1.7976931348623157e308
 MIN_INT8, MAX_INT8 = -(2 ** (8 - 1)), 2 ** (8 - 1) - 1
 MIN_INT16, MAX_INT16 = -(2 ** (16 - 1)), 2 ** (16 - 1) - 1
 MIN_INT32, MAX_INT32 = -(2 ** (32 - 1)), 2 ** (32 - 1) - 1
@@ -876,6 +878,8 @@ def significant_figures(x: float, /, *, n: int = 2) -> str:
 
 
 __all__ = [
+    "MAX_FLOAT32",
+    "MAX_FLOAT64",
     "MAX_INT8",
     "MAX_INT16",
     "MAX_INT32",
@@ -884,6 +888,8 @@ __all__ = [
     "MAX_UINT16",
     "MAX_UINT32",
     "MAX_UINT64",
+    "MIN_FLOAT32",
+    "MIN_FLOAT64",
     "MIN_INT8",
     "MIN_INT16",
     "MIN_INT32",
