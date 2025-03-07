@@ -128,7 +128,6 @@ from utilities.functions import not_func
 from utilities.hypothesis import (
     assume_does_not_raise,
     int32s,
-    local_datetimes,
     months,
     text_clean,
     zoned_datetimes,
@@ -755,7 +754,7 @@ class TestMaybeSubPctY:
 
 
 class TestMicrosecondsOrMillisecondsSinceEpoch:
-    @given(datetime=local_datetimes())
+    @given(datetime=datetimes())
     def test_local_datetime_to_microseconds(self, *, datetime: dt.datetime) -> None:
         microseconds = microseconds_since_epoch(datetime)
         result = microseconds_since_epoch_to_datetime(microseconds)
@@ -927,7 +926,7 @@ class TestParseTwoDigitYear:
 
 
 class TestRoundDateTime:
-    @given(datetime=local_datetimes() | zoned_datetimes(time_zone=timezones()))
+    @given(datetime=datetimes() | zoned_datetimes(time_zone=timezones()))
     def test_minute(self, *, datetime: dt.datetime) -> None:
         floor = round_datetime(datetime, MINUTE, mode="floor")
         ceil = round_datetime(datetime, MINUTE, mode="ceil")
@@ -936,7 +935,7 @@ class TestRoundDateTime:
         assert floor.tzinfo == ceil.tzinfo == datetime.tzinfo
         assert floor <= datetime <= ceil
 
-    @given(datetime=local_datetimes() | zoned_datetimes(time_zone=timezones()))
+    @given(datetime=datetimes() | zoned_datetimes(time_zone=timezones()))
     def test_second(self, *, datetime: dt.datetime) -> None:
         floor = round_datetime(datetime, SECOND, mode="floor")
         ceil = round_datetime(datetime, SECOND, mode="ceil")
@@ -1010,9 +1009,9 @@ class TestSubDuration:
 
 
 class TestTimedeltaSinceEpoch:
-    @given(date=dates() | local_datetimes() | zoned_datetimes(time_zone=timezones()))
-    def test_main(self, *, date: DateOrDateTime) -> None:
-        result = timedelta_since_epoch(date)
+    @given(date=dates() | datetimes() | zoned_datetimes(time_zone=timezones()))
+    def test_main(self, *, date_or_datetime: DateOrDateTime) -> None:
+        result = timedelta_since_epoch(date_or_datetime)
         assert isinstance(result, dt.timedelta)
 
     @given(datetime=zoned_datetimes(), time_zone1=timezones(), time_zone2=timezones())
