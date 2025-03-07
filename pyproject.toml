@@ -285,6 +285,7 @@ zzz-test-sqlalchemy-polars = [
   "polars-lts-cpu >= 1.24.0, < 1.25",
   "sqlalchemy >= 2.0.38, < 2.1",
   "tenacity >= 9.0.0, < 9.1",
+  "whenever >= 0.7.2, < 0.8",
 ]
 zzz-test-streamlit = ["streamlit >= 1.43.0, < 1.44"]
 zzz-test-sys = [
