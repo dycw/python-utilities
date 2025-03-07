@@ -319,12 +319,23 @@ def draw2(
     else:
         value = maybe_strategy
     match value, default, sentinel:
-        case None | Sentinel(), SearchStrategy(), _:
+        case (None, None, _):
+            return value
+        case None, SearchStrategy(), True:
+            return value
+        case None, SearchStrategy(), False:
             value2 = draw(default)
             if isinstance(value2, Sentinel):
                 raise _Draw2DefaultGeneratedSentinelError
             return value2
         case Sentinel(), None, _:
+            raise _Draw2InputResolvedToSentinelError
+        case Sentinel(), SearchStrategy(), True:
+            value2 = draw(default)
+            if isinstance(value2, Sentinel):
+                raise _Draw2DefaultGeneratedSentinelError
+            return value2
+        case Sentinel(), SearchStrategy(), False:
             raise _Draw2InputResolvedToSentinelError
         case _, _, _:
             return value
