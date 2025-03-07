@@ -269,23 +269,20 @@ def datetime_durations(
 ##
 
 
-@overload
-def draw2(
-    data_or_draw: DataObject | DrawFn,
-    maybe_strategy: MaybeSearchStrategy[_T | Sentinel],
-    /,
-    *,
-    sentinel: Literal[True],
-) -> _T: ...
-@overload
-def draw2(
-    data_or_draw: DataObject | DrawFn,
-    maybe_strategy: MaybeSearchStrategy[_T | Sentinel],
-    default: SearchStrategy[_T | None],
-    /,
-    *,
-    sentinel: Literal[True],
-) -> _T | None: ...
+#
+# @overload
+# def draw2(
+#     data_or_draw: DataObject | DrawFn,
+#     maybe_strategy: MaybeSearchStrategy[_T | Sentinel],
+#     /,
+# ) -> _T: ...
+# @overload
+# def draw2(
+#     data_or_draw: DataObject | DrawFn,
+#     maybe_strategy: MaybeSearchStrategy[_T | Sentinel],
+#     default: SearchStrategy[_T | None],
+#     /,
+# ) -> _T | None: ...
 @overload
 def draw2(
     data_or_draw: DataObject | DrawFn,
@@ -297,12 +294,30 @@ def draw2(
 @overload
 def draw2(
     data_or_draw: DataObject | DrawFn,
+    maybe_strategy: MaybeSearchStrategy[_T | None | Sentinel],
+    default: SearchStrategy[_T | None],
+    /,
+    *,
+    sentinel: Literal[True],
+) -> _T | None: ...
+@overload
+def draw2(
+    data_or_draw: DataObject | DrawFn,
     maybe_strategy: MaybeSearchStrategy[_T | None],
     default: SearchStrategy[_T],
     /,
     *,
-    sentinel: bool = False,
+    sentinel: Literal[False] = False,
 ) -> _T: ...
+@overload
+def draw2(
+    data_or_draw: DataObject | DrawFn,
+    maybe_strategy: MaybeSearchStrategy[_T | None | Sentinel],
+    default: SearchStrategy[_T] | None = None,
+    /,
+    *,
+    sentinel: bool = False,
+) -> _T | None: ...
 def draw2(
     data_or_draw: DataObject | DrawFn,
     maybe_strategy: MaybeSearchStrategy[_T | None | Sentinel],
@@ -318,28 +333,17 @@ def draw2(
     else:
         value = maybe_strategy
     match value, default, sentinel:
-        case None, None, False:
-            raise NotImplementedError
-        case None, SearchStrategy(), False:
-            return draw(default)
-        case Sentinel(), None, _:
-            raise _Draw2InputResolvedToSentinelError
-        case Sentinel(), SearchStrategy(), _:
+        case None | Sentinel(), SearchStrategy(), _:
             value2 = draw(default)
             if isinstance(value2, Sentinel):
                 raise _Draw2DefaultGeneratedSentinelError
             return value2
-
-        case SearchStrategy(), _, _:
-            return draw2(data_or_draw, value, default, sentinel=sentinel)
-        case _, None, False:
+        case Sentinel(), None, _:
+            raise _Draw2InputResolvedToSentinelError
+        case _, _, _:
             return value
-        case _, None, True:
-            raise NotImplementedError
-        case _, SearchStrategy(), False:
-            return value
-        case _, SearchStrategy(), True:
-            return value
+        case _ as never:
+            assert_never(never)
 
 
 @dataclass(kw_only=True, slots=True)

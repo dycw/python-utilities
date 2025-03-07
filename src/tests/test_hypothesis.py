@@ -352,13 +352,11 @@ class TestDraw2:
         ):
             _ = data.draw(strategy())
 
-    @given(data=data(), sentinel=booleans())
-    def test_error_default_generated_sentinel(
-        self, *, data: DataObject, sentinel: bool
-    ) -> None:
+    @given(data=data())
+    def test_error_default_generated_sentinel(self, *, data: DataObject) -> None:
         @composite
-        def strategy(draw: DrawFn, /) -> Sentinel:
-            return draw2(draw, sentinels(), sentinels(), sentinel=sentinel)
+        def strategy(draw: DrawFn, /) -> Any:
+            return draw2(draw, none() | sentinels(), sentinels())
 
         with raises(
             _Draw2DefaultGeneratedSentinelError,
