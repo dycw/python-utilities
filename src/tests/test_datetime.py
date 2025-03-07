@@ -772,7 +772,7 @@ class TestMicrosecondsOrMillisecondsSinceEpoch:
     @given(datetime=datetimes() | zoned_datetimes())
     @mark.parametrize("strict", [param(True), param(False)])  # use mark.parametrize
     @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_zoned_datetime_to_milliseconds_exact(
+    def test_datetime_to_milliseconds_exact(
         self, *, datetime: dt.datetime, strict: bool
     ) -> None:
         _ = assume(datetime.microsecond == 0)
