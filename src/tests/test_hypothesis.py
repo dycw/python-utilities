@@ -55,6 +55,7 @@ from utilities.hypothesis import (
     _ZONED_DATETIMES_LEFT_MOST,
     _ZONED_DATETIMES_RIGHT_MOST,
     Shape,
+    ZonedDateTimesError,
     assume_does_not_raise,
     bool_arrays,
     date_durations,
@@ -1034,7 +1035,12 @@ class TestZonedDateTimes:
     def test_rounding(self, *, data: DataObject) -> None:
         min_value, max_value = data.draw(pairs(zoned_datetimes(), sorted=True))
         datetime = data.draw(
-            zoned_datetimes(min_value=min_value, max_value=max_value, round_=MINUTE)
+            zoned_datetimes(
+                min_value=min_value,
+                max_value=max_value,
+                round_="standard",
+                timedelta=MINUTE,
+            )
         )
         assert isinstance(datetime, dt.datetime)
         assert datetime.second == datetime.microsecond == 0
@@ -1052,3 +1058,8 @@ class TestZonedDateTimes:
         _ = assume(min_value <= max_value)
         datetime = data.draw(zoned_datetimes(valid=True))
         check_valid_zoned_datetime(datetime)
+
+    @given(data=data())
+    def test_error_rounding(self, *, data: DataObject) -> None:
+        with raises(ZonedDateTimesError, match="zz"):
+            _ = data.draw(zoned_datetimes(round_="standard"))

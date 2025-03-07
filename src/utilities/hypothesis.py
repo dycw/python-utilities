@@ -16,6 +16,7 @@ from contextlib import (
     contextmanager,
     suppress,
 )
+from dataclasses import dataclass
 from datetime import timezone
 from enum import Enum, auto
 from functools import partial
@@ -52,6 +53,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
+from typing_extensions import override
 
 from utilities.datetime import (
     MAX_MONTH,
@@ -75,6 +77,7 @@ from utilities.math import (
     MIN_INT64,
     MIN_UINT32,
     MIN_UINT64,
+    _RoundMode,
 )
 from utilities.os import get_env_var
 from utilities.pathlib import temp_cwd
@@ -1095,7 +1098,8 @@ def zoned_datetimes(
     min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
     max_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.max,
     time_zone: MaybeSearchStrategy[ZoneInfo | timezone] = UTC,
-    round_: dt.timedelta | None = None,
+    round_: _RoundMode | None = None,
+    timedelta: dt.timedelta | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
     valid: bool = False,
@@ -1124,7 +1128,11 @@ def zoned_datetimes(
     )
     datetime = draw(strategy).replace(tzinfo=time_zone_)
     if round_ is not None:
-        datetime = round_datetime(datetime, round_, rel_tol=rel_tol, abs_tol=abs_tol)
+        if timedelta is None:
+            raise ZonedDateTimesError(round_=round_)
+        datetime = round_datetime(
+            datetime, timedelta, mode=round_, rel_tol=rel_tol, abs_tol=abs_tol
+        )
         _ = assume(min_value_ <= datetime <= max_value_)
     with assume_does_not_raise(OverflowError, match="date value out of range"):
         _ = datetime.astimezone(_ZONED_DATETIMES_LEFT_MOST)  # for dt.datetime.min
@@ -1140,9 +1148,19 @@ def zoned_datetimes(
     return datetime
 
 
+@dataclass(kw_only=True, slots=True)
+class ZonedDateTimesError(Exception):
+    round_: _RoundMode
+
+    @override
+    def __str__(self) -> str:
+        return "Rounding requires a timedelta; got None"
+
+
 __all__ = [
     "MaybeSearchStrategy",
     "Shape",
+    "ZonedDateTimesError",
     "assume_does_not_raise",
     "bool_arrays",
     "date_durations",
