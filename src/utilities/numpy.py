@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import reduce
 from itertools import repeat
-from typing import TYPE_CHECKING, Any, cast, overload
+from typing import TYPE_CHECKING, Any, overload
 
 import numpy as np
 from numpy import (
@@ -12,9 +12,7 @@ from numpy import (
     digitize,
     dtype,
     errstate,
-    exp,
     flatnonzero,
-    flip,
     float64,
     full_like,
     inf,
@@ -24,7 +22,6 @@ from numpy import (
     isinf,
     isnan,
     linspace,
-    log,
     nan,
     nanquantile,
     object_,
@@ -41,14 +38,18 @@ from typing_extensions import override
 from utilities.iterables import is_iterable_not_str
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterable
 
 
-# RNG
+##
+
+
 DEFAULT_RNG = default_rng()
 
 
-# dtypes
+##
+
+
 datetime64Y = dtype("datetime64[Y]")  # noqa: N816
 datetime64M = dtype("datetime64[M]")  # noqa: N816
 datetime64W = dtype("datetime64[W]")  # noqa: N816
@@ -79,7 +80,9 @@ timedelta64fs = dtype("timedelta64[fs]")
 timedelta64as = dtype("timedelta64[as]")
 
 
-# annotations - dtypes
+##
+
+
 NDArrayA = NDArray[Any]
 NDArrayB = NDArray[bool_]
 NDArrayF = NDArray[float64]
@@ -87,7 +90,7 @@ NDArrayI = NDArray[int64]
 NDArrayO = NDArray[object_]
 
 
-# functions
+##
 
 
 def array_indexer(i: int, ndim: int, /, *, axis: int = -1) -> tuple[int | slice, ...]:
@@ -95,6 +98,9 @@ def array_indexer(i: int, ndim: int, /, *, axis: int = -1) -> tuple[int | slice,
     indexer: list[int | slice] = list(repeat(slice(None), times=ndim))
     indexer[axis] = i
     return tuple(indexer)
+
+
+##
 
 
 def as_int(
@@ -121,6 +127,9 @@ def as_int(
 class AsIntError(Exception): ...
 
 
+##
+
+
 def discretize(x: NDArrayF, bins: int | Iterable[float], /) -> NDArrayF:
     """Discretize an array of floats.
 
@@ -141,67 +150,15 @@ def discretize(x: NDArrayF, bins: int | Iterable[float], /) -> NDArrayF:
     return out
 
 
-def ewma(array: NDArrayF, halflife: float, /, *, axis: int = -1) -> NDArrayF:
-    """Compute the EWMA of an array."""
-    from numbagg import move_exp_nanmean
-
-    alpha = _exp_weighted_alpha(halflife)
-    return cast(Any, move_exp_nanmean)(array, axis=axis, alpha=alpha)
-
-
-def exp_moving_sum(array: NDArrayF, halflife: float, /, *, axis: int = -1) -> NDArrayF:
-    """Compute the exponentially-weighted moving sum of an array."""
-    from numbagg import move_exp_nansum
-
-    alpha = _exp_weighted_alpha(halflife)
-    return cast(Any, move_exp_nansum)(array, axis=axis, alpha=alpha)
-
-
-def _exp_weighted_alpha(halflife: float, /) -> float:
-    """Get the alpha."""
-    decay = 1.0 - exp(log(0.5) / halflife)
-    com = 1.0 / decay - 1.0
-    return 1.0 / (1.0 + com)
-
-
-def ffill(array: NDArrayF, /, *, limit: int | None = None, axis: int = -1) -> NDArrayF:
-    """Forward fill the elements in an array."""
-    from bottleneck import push
-
-    return push(array, n=limit, axis=axis)
-
-
-def ffill_non_nan_slices(
-    array: NDArrayF, /, *, limit: int | None = None, axis: int = -1
-) -> NDArrayF:
-    """Forward fill the slices in an array which contain non-nan values."""
-    ndim = array.ndim
-    arrays = (
-        array[array_indexer(i, ndim, axis=axis)] for i in range(array.shape[axis])
-    )
-    out = array.copy()
-    for i, repl_i in _ffill_non_nan_slices_helper(arrays, limit=limit):
-        out[array_indexer(i, ndim, axis=axis)] = repl_i
-    return out
-
-
-def _ffill_non_nan_slices_helper(
-    arrays: Iterator[NDArrayF], /, *, limit: int | None = None
-) -> Iterator[tuple[int, NDArrayF]]:
-    """Yield the slices to be pasted in."""
-    last: tuple[int, NDArrayF] | None = None
-    for i, arr_i in enumerate(arrays):
-        if (~isnan(arr_i)).any():
-            last = i, arr_i
-        elif last is not None:
-            last_i, last_sl = last
-            if (limit is None) or ((i - last_i) <= limit):
-                yield i, last_sl
+##
 
 
 def fillna(array: NDArrayF, /, *, value: float = 0.0) -> NDArrayF:
     """Fill the null elements in an array."""
     return where(isnan(array), value, array)
+
+
+##
 
 
 def flatn0(array: NDArrayB, /) -> int:
@@ -234,11 +191,17 @@ class FlatN0MultipleError(FlatN0Error):
         return f"Array {self.array} must contain at most one True."
 
 
+##
+
+
 def has_dtype(x: Any, dtype: Any, /) -> bool:
     """Check if an object has the required dtype."""
     if is_iterable_not_str(dtype):
         return any(has_dtype(x, d) for d in dtype)
     return x.dtype == dtype
+
+
+##
 
 
 def is_at_least(
@@ -267,6 +230,9 @@ def is_at_least_or_nan(
     return is_at_least(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
 
 
+##
+
+
 def is_at_most(
     x: Any,
     y: Any,
@@ -291,6 +257,9 @@ def is_at_most_or_nan(
 ) -> Any:
     """Check if x <= y or x == nan."""
     return is_at_most(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
+
+
+##
 
 
 def is_between(
@@ -336,23 +305,7 @@ def is_between_or_nan(
     ) | isnan(x)
 
 
-def _is_close(
-    x: Any,
-    y: Any,
-    /,
-    *,
-    rtol: float | None = None,
-    atol: float | None = None,
-    equal_nan: bool = False,
-) -> Any:
-    """Check if x == y."""
-    return np.isclose(
-        x,
-        y,
-        **({} if rtol is None else {"rtol": rtol}),
-        **({} if atol is None else {"atol": atol}),
-        equal_nan=equal_nan,
-    )
+##
 
 
 def is_empty(shape_or_array: int | tuple[int, ...] | NDArrayA, /) -> bool:
@@ -362,6 +315,9 @@ def is_empty(shape_or_array: int | tuple[int, ...] | NDArrayA, /) -> bool:
     if isinstance(shape_or_array, tuple):
         return (len(shape_or_array) == 0) or (prod(shape_or_array).item() == 0)
     return is_empty(shape_or_array.shape)
+
+
+##
 
 
 def is_finite_and_integral(
@@ -378,6 +334,9 @@ def is_finite_and_integral_or_nan(
     return is_finite_and_integral(x, rtol=rtol, atol=atol) | isnan(x)
 
 
+##
+
+
 def is_finite_and_negative(
     x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
@@ -390,6 +349,9 @@ def is_finite_and_negative_or_nan(
 ) -> Any:
     """Check if -inf < x < 0 or x == nan."""
     return is_finite_and_negative(x, rtol=rtol, atol=atol) | isnan(x)
+
+
+##
 
 
 def is_finite_and_non_negative(
@@ -406,6 +368,9 @@ def is_finite_and_non_negative_or_nan(
     return is_finite_and_non_negative(x, rtol=rtol, atol=atol) | isnan(x)
 
 
+##
+
+
 def is_finite_and_non_positive(
     x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
@@ -418,6 +383,9 @@ def is_finite_and_non_positive_or_nan(
 ) -> Any:
     """Check if -inf < x <= 0 or x == nan."""
     return is_finite_and_non_positive(x, rtol=rtol, atol=atol) | isnan(x)
+
+
+##
 
 
 def is_finite_and_non_zero(
@@ -434,6 +402,9 @@ def is_finite_and_non_zero_or_nan(
     return is_finite_and_non_zero(x, rtol=rtol, atol=atol) | isnan(x)
 
 
+##
+
+
 def is_finite_and_positive(
     x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
@@ -448,9 +419,15 @@ def is_finite_and_positive_or_nan(
     return is_finite_and_positive(x, rtol=rtol, atol=atol) | isnan(x)
 
 
+##
+
+
 def is_finite_or_nan(x: Any, /) -> Any:
     """Check if -inf < x < inf or x == nan."""
     return isfinite(x) | isnan(x)
+
+
+##
 
 
 def is_greater_than(
@@ -481,6 +458,9 @@ def is_greater_than_or_nan(
     return is_greater_than(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
 
 
+##
+
+
 def is_integral(
     x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
@@ -493,6 +473,9 @@ def is_integral_or_nan(
 ) -> Any:
     """Check if x == int(x) or x == nan."""
     return is_integral(x, rtol=rtol, atol=atol) | isnan(x)
+
+
+##
 
 
 def is_less_than(
@@ -523,6 +506,9 @@ def is_less_than_or_nan(
     return is_less_than(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
 
 
+##
+
+
 def is_negative(
     x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
@@ -537,6 +523,9 @@ def is_negative_or_nan(
     return is_negative(x, rtol=rtol, atol=atol) | isnan(x)
 
 
+##
+
+
 def is_non_empty(shape_or_array: int | tuple[int, ...] | NDArrayA, /) -> bool:
     """Check if an ndarray is non-empty."""
     if isinstance(shape_or_array, int):
@@ -544,6 +533,9 @@ def is_non_empty(shape_or_array: int | tuple[int, ...] | NDArrayA, /) -> bool:
     if isinstance(shape_or_array, tuple):
         return (len(shape_or_array) >= 1) and (prod(shape_or_array).item() >= 1)
     return is_non_empty(shape_or_array.shape)
+
+
+##
 
 
 def is_non_negative(
@@ -560,6 +552,9 @@ def is_non_negative_or_nan(
     return is_non_negative(x, rtol=rtol, atol=atol) | isnan(x)
 
 
+##
+
+
 def is_non_positive(
     x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
@@ -572,6 +567,9 @@ def is_non_positive_or_nan(
 ) -> Any:
     """Check if x <=0 or x == nan."""
     return is_non_positive(x, rtol=rtol, atol=atol) | isnan(x)
+
+
+##
 
 
 def is_non_singular(
@@ -589,6 +587,9 @@ def is_non_singular(
         return False
 
 
+##
+
+
 def is_non_zero(
     x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
@@ -601,6 +602,9 @@ def is_non_zero_or_nan(
 ) -> Any:
     """Check if x != 0 or x == nan."""
     return is_non_zero(x, rtol=rtol, atol=atol) | isnan(x)
+
+
+##
 
 
 def is_positive(
@@ -617,12 +621,18 @@ def is_positive_or_nan(
     return is_positive(x, rtol=rtol, atol=atol) | isnan(x)
 
 
+##
+
+
 def is_positive_semidefinite(x: NDArrayF | NDArrayI, /) -> bool:
     """Check if `x` is positive semidefinite."""
     if not is_symmetric(x):
         return False
     w, _ = eig(x)
     return bool(is_non_negative(w).all())
+
+
+##
 
 
 def is_symmetric(
@@ -642,9 +652,22 @@ def is_symmetric(
     )
 
 
+##
+
+
 def is_zero(x: Any, /, *, rtol: float | None = None, atol: float | None = None) -> Any:
     """Check if x == 0."""
     return _is_close(x, 0.0, rtol=rtol, atol=atol)
+
+
+def is_zero_or_nan(
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
+) -> Any:
+    """Check if x > 0 or x == nan."""
+    return is_zero(x, rtol=rtol, atol=atol) | isnan(x)
+
+
+##
 
 
 def is_zero_or_finite_and_non_micro(
@@ -662,11 +685,7 @@ def is_zero_or_finite_and_non_micro_or_nan(
     return is_zero_or_finite_and_non_micro(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-def is_zero_or_nan(
-    x: Any, /, *, rtol: float | None = None, atol: float | None = None
-) -> Any:
-    """Check if x > 0 or x == nan."""
-    return is_zero(x, rtol=rtol, atol=atol) | isnan(x)
+##
 
 
 def is_zero_or_non_micro(
@@ -682,6 +701,9 @@ def is_zero_or_non_micro_or_nan(
 ) -> Any:
     """Check if x == 0 or ~isclose(x, 0) or x == nan."""
     return is_zero_or_non_micro(x, rtol=rtol, atol=atol) | isnan(x)
+
+
+##
 
 
 @overload
@@ -746,33 +768,7 @@ def minimum(*xs: float | NDArrayF) -> float | NDArrayF:
     return reduce(np.minimum, xs)
 
 
-def pct_change(
-    array: NDArrayF | NDArrayI,
-    /,
-    *,
-    limit: int | None = None,
-    n: int = 1,
-    axis: int = -1,
-) -> NDArrayF:
-    """Compute the percentage change in an array."""
-    if n == 0:
-        raise PctChangeError
-    if n > 0:
-        filled = ffill(array.astype(float), limit=limit, axis=axis)
-        shifted = shift(filled, n=n, axis=axis)
-        with errstate(all="ignore"):
-            ratio = (filled / shifted) if n >= 0 else (shifted / filled)
-        return where(isfinite(array), ratio - 1.0, nan)
-    flipped = cast(NDArrayF | NDArrayI, flip(array, axis=axis))
-    result = pct_change(flipped, limit=limit, n=-n, axis=axis)
-    return flip(result, axis=axis)
-
-
-@dataclass(kw_only=True, slots=True)
-class PctChangeError(Exception):
-    @override
-    def __str__(self) -> str:
-        return "Shift must be non-zero"
+##
 
 
 def shift(array: NDArrayF | NDArrayI, /, *, n: int = 1, axis: int = -1) -> NDArrayF:
@@ -794,12 +790,37 @@ class ShiftError(Exception):
         return "Shift must be non-zero"
 
 
+##
+
+
 def shift_bool(
     array: NDArrayB, /, *, n: int = 1, axis: int = -1, fill_value: bool = False
 ) -> NDArrayB:
     """Shift the elements of a boolean array."""
     shifted = shift(array.astype(float), n=n, axis=axis)
     return fillna(shifted, value=float(fill_value)).astype(bool)
+
+
+##
+
+
+def _is_close(
+    x: Any,
+    y: Any,
+    /,
+    *,
+    rtol: float | None = None,
+    atol: float | None = None,
+    equal_nan: bool = False,
+) -> Any:
+    """Check if x == y."""
+    return np.isclose(
+        x,
+        y,
+        **({} if rtol is None else {"rtol": rtol}),
+        **({} if atol is None else {"atol": atol}),
+        equal_nan=equal_nan,
+    )
 
 
 __all__ = [
@@ -813,7 +834,6 @@ __all__ = [
     "NDArrayF",
     "NDArrayI",
     "NDArrayO",
-    "PctChangeError",
     "ShiftError",
     "array_indexer",
     "as_int",
@@ -831,10 +851,6 @@ __all__ = [
     "datetime64s",
     "datetime64us",
     "discretize",
-    "ewma",
-    "exp_moving_sum",
-    "ffill",
-    "ffill_non_nan_slices",
     "fillna",
     "flatn0",
     "has_dtype",
@@ -886,7 +902,5 @@ __all__ = [
     "is_zero_or_non_micro_or_nan",
     "maximum",
     "minimum",
-    "pct_change",
-    "shift",
     "shift_bool",
 ]
