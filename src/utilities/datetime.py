@@ -16,7 +16,6 @@ from typing import (
 
 from typing_extensions import override
 
-from utilities.functions import ensure_not_none
 from utilities.math import SafeRoundError, _RoundMode, round_, safe_round
 from utilities.platform import SYSTEM
 from utilities.zoneinfo import (
@@ -217,24 +216,6 @@ class CheckDateNotDateTimeError(Exception):
 ##
 
 
-def check_zoned_datetime(datetime: dt.datetime, /) -> None:
-    """Check if a datetime is zoned."""
-    if datetime.tzinfo is None:
-        raise CheckZonedDateTimeError(datetime=datetime)
-
-
-@dataclass(kw_only=True, slots=True)
-class CheckZonedDateTimeError(Exception):
-    datetime: dt.datetime
-
-    @override
-    def __str__(self) -> str:
-        return f"DateTime must be zoned; got {self.datetime}"
-
-
-##
-
-
 def date_to_datetime(
     date: dt.date, /, *, time: dt.time | None = None, time_zone: ZoneInfoLike = UTC
 ) -> dt.datetime:
@@ -415,10 +396,7 @@ class EnsureMonthError(Exception):
 
 def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
     """Format a local datetime locally & in UTC."""
-    check_zoned_datetime(datetime)
-    time_zone = ensure_time_zone(
-        ensure_not_none(datetime.tzinfo, desc="datetime.tzinfo")
-    )
+    time_zone = ensure_time_zone(datetime)
     if time_zone is UTC:
         return datetime.strftime("%Y-%m-%d %H:%M:%S (%a, UTC)")
     as_utc = datetime.astimezone(UTC)
@@ -645,9 +623,13 @@ def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
     return -microseconds_to_timedelta(-microseconds)
 
 
-def microseconds_since_epoch_to_datetime(microseconds: int, /) -> dt.datetime:
+def microseconds_since_epoch_to_datetime(
+    microseconds: int, /, *, time_zone: dt.tzinfo | None = None
+) -> dt.datetime:
     """Convert a number of microseconds since the epoch to a datetime."""
-    return EPOCH_UTC + microseconds_to_timedelta(microseconds)
+    epoch = EPOCH_NAIVE if time_zone is None else EPOCH_UTC
+    timedelta = microseconds_to_timedelta(microseconds)
+    return epoch + timedelta
 
 
 ##
@@ -684,9 +666,13 @@ class MillisecondsSinceEpochError(Exception):
         return f"Unable to convert {self.datetime} to milliseconds since epoch; got {self.remainder} microsecond(s)"
 
 
-def milliseconds_since_epoch_to_datetime(milliseconds: int, /) -> dt.datetime:
+def milliseconds_since_epoch_to_datetime(
+    milliseconds: int, /, *, time_zone: dt.tzinfo | None = None
+) -> dt.datetime:
     """Convert a number of milliseconds since the epoch to a datetime."""
-    return EPOCH_UTC + milliseconds_to_timedelta(milliseconds)
+    epoch = EPOCH_NAIVE if time_zone is None else EPOCH_UTC
+    timedelta = milliseconds_to_timedelta(milliseconds)
+    return epoch + timedelta
 
 
 def milliseconds_to_timedelta(milliseconds: int, /) -> dt.timedelta:
@@ -843,14 +829,21 @@ def round_datetime(
     abs_tol: float | None = None,
 ) -> dt.datetime:
     """Round a datetime to a timedelta."""
-    dividend = microseconds_since_epoch(datetime)
-    divisor = timedelta_to_microseconds(timedelta)
-    frac = dividend / divisor
-    quotient = round_(frac, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
-    microseconds = quotient * divisor
-    return microseconds_since_epoch_to_datetime(microseconds).astimezone(
-        datetime.tzinfo
+    if datetime.tzinfo is None:
+        dividend = microseconds_since_epoch(datetime)
+        divisor = timedelta_to_microseconds(timedelta)
+        quotient, remainder = divmod(dividend, divisor)
+        rnd_remainder = round_(
+            remainder / divisor, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol
+        )
+        rnd_quotient = quotient + rnd_remainder
+        microseconds = rnd_quotient * divisor
+        return microseconds_since_epoch_to_datetime(microseconds)
+    local = datetime.replace(tzinfo=None)
+    rounded = round_datetime(
+        local, timedelta, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol
     )
+    return rounded.replace(tzinfo=datetime.tzinfo)
 
 
 ##
@@ -925,12 +918,17 @@ class SubDurationError(Exception):
 ##
 
 
-def timedelta_since_epoch(date: DateOrDateTime, /) -> dt.timedelta:
+def timedelta_since_epoch(date_or_datetime: DateOrDateTime, /) -> dt.timedelta:
     """Compute the timedelta since the epoch."""
-    if isinstance(date, dt.datetime):
-        check_zoned_datetime(date)
-        return date.astimezone(UTC) - EPOCH_UTC
-    return date - EPOCH_DATE
+    match date_or_datetime:
+        case dt.datetime() as datetime:
+            if datetime.tzinfo is None:
+                return datetime - EPOCH_NAIVE
+            return datetime.astimezone(UTC) - EPOCH_UTC
+        case dt.date() as date:
+            return date - EPOCH_DATE
+        case _ as never:
+            assert_never(never)
 
 
 def timedelta_to_microseconds(timedelta: dt.timedelta, /) -> int:
@@ -1089,7 +1087,6 @@ __all__ = [
     "AreEqualDateTimesError",
     "AreEqualDatesOrDateTimesError",
     "CheckDateNotDateTimeError",
-    "CheckZonedDateTimeError",
     "DateOrMonth",
     "EnsureMonthError",
     "MillisecondsSinceEpochError",
@@ -1108,7 +1105,6 @@ __all__ = [
     "are_equal_datetimes",
     "are_equal_months",
     "check_date_not_datetime",
-    "check_zoned_datetime",
     "date_duration_to_int",
     "date_duration_to_timedelta",
     "date_to_datetime",

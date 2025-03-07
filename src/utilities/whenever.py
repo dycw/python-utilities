@@ -4,7 +4,6 @@ import datetime as dt
 import re
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import cast
 from zoneinfo import ZoneInfo
 
 from typing_extensions import override
@@ -15,7 +14,6 @@ from utilities.datetime import (
     _MICROSECONDS_PER_SECOND,
     ZERO_TIME,
     check_date_not_datetime,
-    check_zoned_datetime,
     parse_two_digit_year,
     timedelta_to_microseconds,
 )
@@ -37,10 +35,7 @@ MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
 
 def check_valid_zoned_datetime(datetime: dt.datetime, /) -> None:
     """Check if a zoned datetime is valid."""
-    check_zoned_datetime(datetime)  # skipif-ci-and-windows
-    time_zone = ensure_time_zone(  # skipif-ci-and-windows
-        cast(dt.timezone, datetime.tzinfo)
-    )
+    time_zone = ensure_time_zone(datetime)  # skipif-ci-and-windows
     datetime2 = datetime.replace(tzinfo=time_zone)  # skipif-ci-and-windows
     result = (  # skipif-ci-and-windows
         ZonedDateTime.from_py_datetime(datetime2)

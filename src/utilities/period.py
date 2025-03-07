@@ -17,12 +17,7 @@ from typing import (
 
 from typing_extensions import override
 
-from utilities.datetime import (
-    ZERO_TIME,
-    CheckZonedDateTimeError,
-    check_zoned_datetime,
-    is_instance_date_not_datetime,
-)
+from utilities.datetime import ZERO_TIME, is_instance_date_not_datetime
 from utilities.functions import get_class_name
 from utilities.iterables import OneUniqueNonUniqueError, always_iterable, one_unique
 from utilities.sentinel import Sentinel, sentinel
@@ -31,7 +26,7 @@ from utilities.whenever import (
     serialize_local_datetime,
     serialize_zoned_datetime,
 )
-from utilities.zoneinfo import ensure_time_zone
+from utilities.zoneinfo import EnsureTimeZoneError, ensure_time_zone
 
 if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
@@ -68,8 +63,8 @@ class Period(Generic[_TPeriod]):
         for date in [self.start, self.end]:
             if isinstance(date, dt.datetime):
                 try:
-                    check_zoned_datetime(date)
-                except CheckZonedDateTimeError:
+                    _ = ensure_time_zone(date)
+                except EnsureTimeZoneError:
                     raise _PeriodNaiveDateTimeError(
                         start=self.start, end=self.end
                     ) from None
