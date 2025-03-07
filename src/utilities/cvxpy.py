@@ -25,6 +25,9 @@ def abs_(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
     return cvxpy.abs(x)
 
 
+##
+
+
 @overload
 def add(x: float, y: float, /) -> float: ...
 @overload
@@ -50,6 +53,9 @@ def add(
     if isinstance(x, Number | ndarray) and isinstance(y, Number | ndarray):
         return np.add(x, y)
     return cast(Any, x) + cast(Any, y)
+
+
+##
 
 
 @overload
@@ -79,6 +85,9 @@ def divide(
     return cast(Any, x) / cast(Any, y)
 
 
+##
+
+
 @overload
 def max_(x: float | NDArrayF, /) -> float: ...
 @overload
@@ -88,6 +97,20 @@ def max_(x: float | NDArrayF | Expression, /) -> float | Expression:
     if isinstance(x, Number | ndarray):
         return np.max(x)
     return cvxpy.max(x)
+
+
+@overload
+def min_(x: float | NDArrayF, /) -> float: ...
+@overload
+def min_(x: Expression, /) -> Expression: ...
+def min_(x: float | NDArrayF | Expression, /) -> float | Expression:
+    """Compute the minimum of a quantity."""
+    if isinstance(x, Number | ndarray):
+        return np.min(x)
+    return cvxpy.min(x)
+
+
+##
 
 
 @overload
@@ -118,17 +141,6 @@ def maximum(
 
 
 @overload
-def min_(x: float | NDArrayF, /) -> float: ...
-@overload
-def min_(x: Expression, /) -> Expression: ...
-def min_(x: float | NDArrayF | Expression, /) -> float | Expression:
-    """Compute the minimum of a quantity."""
-    if isinstance(x, Number | ndarray):
-        return np.min(x)
-    return cvxpy.min(x)
-
-
-@overload
 def minimum(x: float, y: float, /) -> float: ...
 @overload
 def minimum(x: NDArrayF, y: float, /) -> NDArrayF: ...
@@ -153,6 +165,9 @@ def minimum(
     if isinstance(x, Number | ndarray) and isinstance(y, Number | ndarray):
         return np.minimum(x, y)
     return cvxpy.minimum(x, y)
+
+
+##
 
 
 @overload
@@ -182,6 +197,9 @@ def multiply(
     return cvxpy.multiply(x, y)
 
 
+##
+
+
 @overload
 def negate(x: float, /) -> float: ...
 @overload
@@ -191,6 +209,9 @@ def negate(x: Expression, /) -> Expression: ...
 def negate(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
     """Negate a quantity."""
     return -x
+
+
+##
 
 
 @overload
@@ -207,6 +228,9 @@ def negative(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expressi
     return cvxpy.neg(x)
 
 
+##
+
+
 @overload
 def norm(x: NDArrayF, /) -> float: ...
 @overload
@@ -216,6 +240,9 @@ def norm(x: NDArrayF | Expression, /) -> float | Expression:
     if isinstance(x, ndarray):
         return numpy.linalg.norm(x).item()
     return cvxpy.norm(x)
+
+
+##
 
 
 @overload
@@ -230,6 +257,9 @@ def positive(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expressi
         result = maximum(x, 0.0)
         return where(is_zero(result), 0.0, result)
     return cvxpy.pos(x)
+
+
+##
 
 
 @overload
@@ -253,6 +283,9 @@ def power(
     return cvxpy.power(x, p)
 
 
+##
+
+
 @overload
 def quad_form(x: NDArrayF, P: NDArrayF, /) -> float: ...  # noqa: N803
 @overload
@@ -266,6 +299,9 @@ def quad_form(
     if isinstance(x, ndarray):
         return (x.T @ P @ x).item()
     return cvxpy.quad_form(x, P)
+
+
+##
 
 
 @overload
@@ -291,6 +327,9 @@ def scalar_product(
 ) -> float | NDArrayF | Expression:
     """Compute the scalar product of two quantities."""
     return sum_(multiply(x, y))
+
+
+##
 
 
 def solve(
@@ -352,6 +391,9 @@ class SolveInfeasibleError(SolveError): ...
 class SolveUnboundedError(SolveError): ...
 
 
+##
+
+
 @overload
 def sqrt(x: float, /) -> float: ...
 @overload
@@ -363,6 +405,9 @@ def sqrt(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
     if isinstance(x, Number | ndarray):
         return np.sqrt(x)
     return cvxpy.sqrt(x)
+
+
+##
 
 
 @overload
@@ -392,6 +437,9 @@ def subtract(
     return cast(Any, x) - cast(Any, y)
 
 
+##
+
+
 @overload
 def sum_(x: float | NDArrayF, /) -> float: ...
 @overload
@@ -403,6 +451,9 @@ def sum_(x: float | NDArrayF | Expression, /) -> float | Expression:
     if isinstance(x, ndarray):
         return np.sum(x).item()
     return cvxpy.sum(x)
+
+
+##
 
 
 @overload
