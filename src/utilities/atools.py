@@ -6,19 +6,17 @@ from typing import TYPE_CHECKING, ParamSpec, TypeVar
 from atools import memoize
 
 from utilities.datetime import datetime_duration_to_timedelta
-from utilities.types import Coroutine1, Duration
+from utilities.types import Coroutine1
 
 if TYPE_CHECKING:
     import datetime as dt
 
+    from utilities.types import Duration
+
+
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 _AsyncFunc = Callable[_P, Coroutine1[_R]]
-
-
-##
-
-
 _MEMOIZED_FUNCS: dict[tuple[_AsyncFunc, dt.timedelta], _AsyncFunc] = {}
 
 
