@@ -685,13 +685,6 @@ def minimum(*xs: float | NDArrayF) -> float | NDArrayF:
     return reduce(np.minimum, xs)
 
 
-@dataclass(kw_only=True, slots=True)
-class PctChangeError(Exception):
-    @override
-    def __str__(self) -> str:
-        return "Shift must be non-zero"
-
-
 def shift(array: NDArrayF | NDArrayI, /, *, n: int = 1, axis: int = -1) -> NDArrayF:
     """Shift the elements of an array."""
     if n == 0:
@@ -730,7 +723,6 @@ __all__ = [
     "NDArrayF",
     "NDArrayI",
     "NDArrayO",
-    "PctChangeError",
     "ShiftError",
     "array_indexer",
     "as_int",
