@@ -623,9 +623,14 @@ def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
     return -microseconds_to_timedelta(-microseconds)
 
 
-def microseconds_since_epoch_to_datetime(microseconds: int, /) -> dt.datetime:
+def microseconds_since_epoch_to_datetime(
+    microseconds: int, /, *, time_zone: dt.tzinfo | None = None
+) -> dt.datetime:
     """Convert a number of microseconds since the epoch to a datetime."""
-    return EPOCH_UTC + microseconds_to_timedelta(microseconds)
+    timedelta = microseconds_to_timedelta(microseconds)
+    if time_zone is None:
+        return EPOCH_NAIVE + timedelta
+    return (EPOCH_UTC + timedelta).astimezone(time_zone)
 
 
 ##
@@ -821,12 +826,18 @@ def round_datetime(
     abs_tol: float | None = None,
 ) -> dt.datetime:
     """Round a datetime to a timedelta."""
-    dividend = microseconds_since_epoch(datetime)
-    divisor = timedelta_to_microseconds(timedelta)
-    frac = dividend / divisor
-    quotient = round_(frac, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
-    microseconds = quotient * divisor
-    return microseconds_since_epoch_to_datetime(microseconds)
+    if datetime.tzinfo is None:
+        dividend = microseconds_since_epoch(datetime)
+        divisor = timedelta_to_microseconds(timedelta)
+        frac = dividend / divisor
+        quotient = round_(frac, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
+        microseconds = quotient * divisor
+        return microseconds_since_epoch_to_datetime(microseconds)
+    local = datetime.replace(tzinfo=None)
+    rounded = round_datetime(
+        local, timedelta, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol
+    )
+    return rounded.replace(tzinfo=datetime.tzinfo)
 
 
 ##
@@ -905,7 +916,8 @@ def timedelta_since_epoch(date_or_datetime: DateOrDateTime, /) -> dt.timedelta:
     """Compute the timedelta since the epoch."""
     match date_or_datetime:
         case dt.datetime() as datetime:
-            _ = ensure_time_zone(datetime)
+            if datetime.tzinfo is None:
+                return datetime - EPOCH_NAIVE
             return datetime.astimezone(UTC) - EPOCH_UTC
         case dt.date() as date:
             return date - EPOCH_DATE
