@@ -402,9 +402,9 @@ sqlalchemy==2.0.38
     #   dycw-utilities (pyproject.toml)
     #   alembic
     #   optuna
-starlette==0.46.0
+starlette==0.46.1
     # via fastapi
-streamlit==1.43.0
+streamlit==1.43.1
     # via dycw-utilities (pyproject.toml)
 tenacity==8.5.0
     # via
