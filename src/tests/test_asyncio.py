@@ -256,7 +256,7 @@ class TestQueueProcessor:
         del processor
         _ = collect()
 
-    async def test_del_without_task(self) -> None:
+    async def test_del_with_none_task(self) -> None:
         class Example(QueueProcessor[int]):
             @override
             async def _run(self, item: int, /) -> None:
@@ -266,6 +266,18 @@ class TestQueueProcessor:
         assert processor._task is None
         del processor
         _ = collect()
+
+    async def test_del_without_task_attribute(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(QueueProcessor[int]):
+            x: int
+
+            @override
+            async def _run(self, item: int, /) -> None:
+                _ = item
+
+        with raises(TypeError, match="missing 1 required keyword-only argument: 'x'"):
+            _ = Example()  # pyright: ignore[reportCallIssue]
 
     async def test_empty(self) -> None:
         class Example(QueueProcessor[int]):

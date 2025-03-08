@@ -112,7 +112,11 @@ class QueueProcessor(ABC, Generic[_T]):
         await self.stop()
 
     def __del__(self) -> None:
-        if (task := self._task) is None:
+        try:
+            task = self._task
+        except AttributeError:
+            return
+        if task is None:
             return
         with suppress(RuntimeError):
             _ = task.cancel()
