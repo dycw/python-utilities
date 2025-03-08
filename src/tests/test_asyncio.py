@@ -256,7 +256,7 @@ class TestQueueProcessor:
         del processor
         _ = collect()
 
-    async def test_del_without_task(self) -> None:
+    async def test_del_with_none_task(self) -> None:
         class Example(QueueProcessor[int]):
             @override
             async def _run(self, item: int, /) -> None:
@@ -267,7 +267,7 @@ class TestQueueProcessor:
         del processor
         _ = collect()
 
-    async def test_del_without_task2(self) -> None:
+    async def test_del_without_task_attribute(self) -> None:
         @dataclass(kw_only=True)
         class Example(QueueProcessor[int]):
             x: int
