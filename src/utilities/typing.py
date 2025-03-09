@@ -33,10 +33,6 @@ def contains_self(obj: Any, /) -> bool:
 
 def get_args(obj: Any, /) -> tuple[Any, ...]:
     """Get the arguments of an annotation."""
-    if (TypeAliasType is not None) and isinstance(  # skipif-version-ge-312
-        obj, TypeAliasType
-    ):
-        return get_args(obj.__value__)  # pragma: no cover
     if is_optional_type(obj):
         args = _get_args(obj)
         return tuple(a for a in args if a is not NoneType)
