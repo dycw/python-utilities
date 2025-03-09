@@ -523,13 +523,12 @@ def git_repos(
         if (git_version_ := draw2(draw, git_version)) is not None:
             _ = check_call(["git", "tag", str(git_version_), "master"])
         if (pyproject_version_ := draw2(draw, pyproject_version)) is not None:
-            from tomlkit import dump, parse
-            from tomlkit.container import Container
+            from tomlkit import document, dump, table
 
-            _ = check_call(["uv", "init"])
-            with path.joinpath("pyproject.toml").open() as fh:
-                doc = parse(fh.read())
-            cast(Container, doc["project"])["version"] = str(pyproject_version_)
+            doc = document()
+            table = table()
+            table["version"] = str(pyproject_version_)
+            doc["project"] = table
             with path.joinpath("pyproject.toml").open(mode="w") as fh:
                 dump(doc, fh)
     return path
