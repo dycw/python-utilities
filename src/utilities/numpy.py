@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import reduce
 from itertools import repeat
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any, overload, override
 
 import numpy as np
 from numpy import (
@@ -33,7 +33,6 @@ from numpy import (
 from numpy.linalg import det, eig
 from numpy.random import default_rng
 from numpy.typing import NDArray
-from typing_extensions import override
 
 from utilities.iterables import is_iterable_not_str
 

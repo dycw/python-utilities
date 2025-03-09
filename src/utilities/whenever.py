@@ -4,9 +4,9 @@ import datetime as dt
 import re
 from contextlib import suppress
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, override
 from zoneinfo import ZoneInfo
 
-from typing_extensions import override
 from whenever import Date, DateTimeDelta, LocalDateTime, Time, ZonedDateTime
 
 from utilities.datetime import (
@@ -23,8 +23,10 @@ from utilities.re import (
     extract_group,
     extract_groups,
 )
-from utilities.types import Duration
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
+
+if TYPE_CHECKING:
+    from utilities.types import Duration
 
 MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3659635, microseconds=-1)
 MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
@@ -85,7 +87,7 @@ class EnsureDateError(Exception):
 
 def ensure_duration(duration: Duration | str, /) -> Duration:
     """Ensure the object is a Duration."""
-    if isinstance(duration, Duration):
+    if isinstance(duration, int | float | dt.timedelta):
         return duration
     try:
         return parse_duration(duration)

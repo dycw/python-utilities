@@ -13,11 +13,11 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    TypeAlias,
     TypeGuard,
     TypeVar,
     assert_never,
     cast,
+    override,
 )
 
 from sqlalchemy import (
@@ -57,7 +57,6 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
-from typing_extensions import override
 
 from utilities.asyncio import QueueProcessor
 from utilities.functions import (
@@ -89,12 +88,10 @@ if TYPE_CHECKING:
     from tenacity.wait import WaitBaseT
 
 _T = TypeVar("_T")
-_EngineOrConnectionOrAsync: TypeAlias = (
-    Engine | Connection | AsyncEngine | AsyncConnection
-)
-Dialect: TypeAlias = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
-ORMInstOrClass: TypeAlias = DeclarativeBase | type[DeclarativeBase]
-TableOrORMInstOrClass: TypeAlias = Table | ORMInstOrClass
+type _EngineOrConnectionOrAsync = Engine | Connection | AsyncEngine | AsyncConnection
+type Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
+type ORMInstOrClass = DeclarativeBase | type[DeclarativeBase]
+type TableOrORMInstOrClass = Table | ORMInstOrClass
 CHUNK_SIZE_FRAC = 0.95
 
 
@@ -389,15 +386,13 @@ def hash_primary_key_values(orm: DeclarativeBase, /) -> int:
 ##
 
 
-_PairOfTupleAndTable: TypeAlias = tuple[tuple[Any, ...], TableOrORMInstOrClass]
-_PairOfStrMappingAndTable: TypeAlias = tuple[StrMapping, TableOrORMInstOrClass]
-_PairOfTupleOrStrMappingAndTable: TypeAlias = tuple[
-    TupleOrStrMapping, TableOrORMInstOrClass
-]
-_PairOfSequenceOfTupleOrStrMappingAndTable: TypeAlias = tuple[
+type _PairOfTupleAndTable = tuple[tuple[Any, ...], TableOrORMInstOrClass]
+type _PairOfStrMappingAndTable = tuple[StrMapping, TableOrORMInstOrClass]
+type _PairOfTupleOrStrMappingAndTable = tuple[TupleOrStrMapping, TableOrORMInstOrClass]
+type _PairOfSequenceOfTupleOrStrMappingAndTable = tuple[
     Sequence[TupleOrStrMapping], TableOrORMInstOrClass
 ]
-_InsertItem: TypeAlias = (
+type _InsertItem = (
     _PairOfTupleOrStrMappingAndTable
     | _PairOfSequenceOfTupleOrStrMappingAndTable
     | DeclarativeBase
@@ -695,7 +690,7 @@ class Upserter(QueueProcessor[_InsertItem]):
 ##
 
 
-_SelectedOrAll: TypeAlias = Literal["selected", "all"]
+type _SelectedOrAll = Literal["selected", "all"]
 
 
 async def upsert_items(

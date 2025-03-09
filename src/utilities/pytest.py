@@ -5,10 +5,9 @@ from functools import wraps
 from inspect import iscoroutinefunction
 from os import environ
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from pytest import fixture
-from typing_extensions import override
 
 from utilities.datetime import datetime_duration_to_float, get_now
 from utilities.functools import cache

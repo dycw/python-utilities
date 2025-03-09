@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import datetime as dt
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeVar
 
+from hypothesis import given
+from hypothesis.strategies import sampled_from
 from pytest import mark, param
 
 from utilities.datetime import ZERO_TIME
@@ -25,27 +28,27 @@ class TestDataClassProtocol:
 
 
 class TestDuration:
-    @mark.parametrize("x", [param(0), param(0.0), param(ZERO_TIME)])
+    @given(x=sampled_from([0, 0.0, ZERO_TIME]))
     def test_success(self, *, x: Duration) -> None:
-        assert isinstance(x, Duration)
+        assert isinstance(x, int | float | dt.timedelta)
 
     def test_error(self) -> None:
-        assert not isinstance("0", Duration)
+        assert not isinstance("0", int | float | dt.timedelta)
 
 
 class TestNumber:
-    @mark.parametrize("x", [param(0), param(0.0)])
+    @given(x=sampled_from([0, 0.0]))
     def test_ok(self, *, x: Number) -> None:
-        assert isinstance(x, Number)
+        assert isinstance(x, int | float)
 
     def test_error(self) -> None:
-        assert not isinstance(None, Number)
+        assert not isinstance(None, int | float)
 
 
 class TestPathLike:
     @mark.parametrize("path", [param(Path.home()), param("~")])
     def test_main(self, *, path: PathLike) -> None:
-        assert isinstance(path, PathLike)
+        assert isinstance(path, Path | str)
 
     def test_error(self) -> None:
-        assert not isinstance(None, PathLike)
+        assert not isinstance(None, Path | str)

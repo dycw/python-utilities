@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from platform import system
-from typing import TYPE_CHECKING, Literal, assert_never
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Literal, assert_never, override
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

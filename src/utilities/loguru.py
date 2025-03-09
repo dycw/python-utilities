@@ -5,10 +5,9 @@ from dataclasses import dataclass
 from enum import StrEnum, unique
 from logging import Handler, LogRecord
 from sys import _getframe
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 
 from loguru import logger
-from typing_extensions import override
 
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 

@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from gc import collect
 from itertools import chain
 from re import search
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
@@ -20,7 +20,6 @@ from hypothesis.strategies import (
 )
 from more_itertools import unique_everseen
 from pytest import mark, raises
-from typing_extensions import override
 
 from utilities.asyncio import (
     BoundedTaskGroup,

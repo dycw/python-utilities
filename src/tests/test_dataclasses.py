@@ -5,14 +5,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from re import DOTALL
 from types import NoneType
-from typing import Any, Literal, cast
+from typing import Any, Literal, cast, override
 
 from hypothesis import given
 from hypothesis.strategies import integers, lists, sampled_from
 from ib_async import Future
 from polars import DataFrame
 from pytest import raises
-from typing_extensions import override
 
 from utilities.dataclasses import (
     YieldFieldsError,

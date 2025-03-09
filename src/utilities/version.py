@@ -4,9 +4,7 @@ import re
 from dataclasses import dataclass, field, replace
 from functools import total_ordering
 from subprocess import check_output
-from typing import TYPE_CHECKING, Any, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Any, Self, override
 
 from utilities.git import MASTER, fetch_all_tags, get_ref_tags
 from utilities.iterables import OneEmptyError, one

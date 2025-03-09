@@ -16,12 +16,12 @@ from typing import (
     Any,
     Generic,
     Literal,
-    TypeAlias,
     TypeGuard,
     TypeVar,
     assert_never,
     cast,
     overload,
+    override,
 )
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -63,7 +63,6 @@ from polars.exceptions import (
     PolarsInefficientMapWarning,
 )
 from polars.testing import assert_frame_equal
-from typing_extensions import override
 
 from utilities.dataclasses import _YieldFieldsInstance, yield_fields
 from utilities.datetime import is_instance_date_not_datetime
@@ -124,7 +123,7 @@ if TYPE_CHECKING:
 
 _T = TypeVar("_T")
 _TDataclass = TypeVar("_TDataclass", bound=Dataclass)
-ExprLike: TypeAlias = Expr | str
+type ExprLike = Expr | str
 DatetimeHongKong = Datetime(time_zone="Asia/Hong_Kong")
 DatetimeTokyo = Datetime(time_zone="Asia/Tokyo")
 DatetimeUSCentral = Datetime(time_zone="US/Central")

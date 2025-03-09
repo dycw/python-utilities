@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from asyncio import Task, create_task
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, override
 
 from fastapi import FastAPI
-from typing_extensions import override
 from uvicorn import Config, Server
 
 if TYPE_CHECKING:

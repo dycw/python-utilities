@@ -7,7 +7,7 @@ from itertools import chain, repeat
 from math import isfinite, isinf, isnan
 from operator import sub
 from re import DOTALL
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, override
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -28,7 +28,6 @@ from hypothesis.strategies import (
     text,
 )
 from pytest import mark, param, raises
-from typing_extensions import override
 
 from tests.test_operator import make_objects
 from utilities.hypothesis import sets_fixed_length, text_ascii, zoned_datetimes

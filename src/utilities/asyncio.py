@@ -22,9 +22,7 @@ from dataclasses import dataclass, field
 from io import StringIO
 from subprocess import PIPE
 from sys import stderr, stdout
-from typing import TYPE_CHECKING, Any, Generic, Self, TextIO, TypeVar, cast
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Any, Generic, Self, TextIO, TypeVar, cast, override
 
 from utilities.datetime import datetime_duration_to_float
 from utilities.functions import ensure_int, ensure_not_none

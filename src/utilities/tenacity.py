@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any, override
 
 from tenacity import (
     AsyncRetrying,
@@ -17,7 +17,6 @@ from tenacity import (
 from tenacity import wait_exponential_jitter as _wait_exponential_jitter
 from tenacity._utils import MAX_WAIT
 from tenacity.asyncio import _portable_async_sleep
-from typing_extensions import override
 
 from utilities.asyncio import timeout_dur
 from utilities.contextlib import NoOpContextManager
@@ -33,8 +32,8 @@ if TYPE_CHECKING:
     from utilities.types import Duration, MaybeAwaitable
 
 
-MaybeAttemptManager: TypeAlias = NoOpContextManager | AttemptManager
-MaybeAttemptContextManager: TypeAlias = AbstractAsyncContextManager[MaybeAttemptManager]
+type MaybeAttemptManager = NoOpContextManager | AttemptManager
+type MaybeAttemptContextManager = AbstractAsyncContextManager[MaybeAttemptManager]
 
 
 class wait_exponential_jitter(_wait_exponential_jitter):  # noqa: N801

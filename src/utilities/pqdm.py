@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, assert_never
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, assert_never
 
 from pqdm import processes, threads
 from tqdm.auto import tqdm as tqdm_auto
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
-_ExceptionBehaviour: TypeAlias = Literal["ignore", "immediate", "deferred"]
+type _ExceptionBehaviour = Literal["ignore", "immediate", "deferred"]
 
 
 def pqdm_map(

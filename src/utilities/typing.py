@@ -10,6 +10,7 @@ from typing import (
     NamedTuple,
     Optional,  # pyright: ignore[reportDeprecated]
     Self,
+    TypeAliasType,
     TypeGuard,
     Union,  # pyright: ignore[reportDeprecated]
     get_origin,
@@ -20,11 +21,6 @@ from uuid import UUID
 
 from utilities.sentinel import Sentinel
 from utilities.types import StrMapping
-
-try:  # skipif-version-ge-312
-    from typing import TypeAliasType  # pyright: ignore[reportAttributeAccessIssue]
-except ImportError:  # pragma: no cover
-    TypeAliasType = None
 
 
 def contains_self(obj: Any, /) -> bool:

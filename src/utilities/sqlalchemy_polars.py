@@ -4,7 +4,7 @@ import datetime as dt
 import decimal
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 from uuid import UUID
 
 import polars as pl
@@ -26,7 +26,6 @@ from polars import (
 from sqlalchemy import Column, Select, select
 from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-from typing_extensions import override
 
 from utilities.datetime import is_subclass_date_not_datetime
 from utilities.errors import ImpossibleCaseError

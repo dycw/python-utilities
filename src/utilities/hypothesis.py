@@ -27,7 +27,16 @@ from re import search
 from shutil import move, rmtree
 from string import ascii_letters, ascii_lowercase, ascii_uppercase, digits, printable
 from subprocess import check_call
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, assert_never, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    TypeVar,
+    assert_never,
+    cast,
+    overload,
+    override,
+)
 from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
@@ -53,7 +62,6 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from typing_extensions import override
 
 from utilities.datetime import (
     MAX_MONTH,

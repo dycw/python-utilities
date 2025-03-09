@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
 
 import luigi
 from luigi import Parameter, PathParameter, Target, Task
 from luigi import build as _build
-from typing_extensions import override
 
 from utilities.datetime import EPOCH_UTC
 

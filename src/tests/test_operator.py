@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from functools import partial
 from math import nan
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, override
 
 from hypothesis import example, given
 from hypothesis.strategies import (
@@ -28,7 +28,6 @@ from hypothesis.strategies import (
 )
 from polars import DataFrame, Int64
 from pytest import raises
-from typing_extensions import override
 
 import utilities.math
 import utilities.operator

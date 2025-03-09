@@ -76,7 +76,7 @@ dev = [
   "pytest-xdist >= 3.6.1, < 3.7",
   # CI
   "win32_setctime >= 1.2.0, < 1.3",  # https://github.com/Delgan/loguru/issues/147
-  "setuptools >= 75.8.0, < 75.9",  # https://github.com/theY4Kman/pytest-only/issues/14
+  "setuptools >= 75.9.1",  # https://github.com/theY4Kman/pytest-only/issues/14
 ]
 test = [
   "coverage-conditional-plugin >= 0.9.0, < 0.10",
@@ -323,15 +323,15 @@ authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
 dependencies = ["typing-extensions >= 4.12.2, < 4.13"]
 name = "dycw-utilities"
 readme = "README.md"
-requires-python = ">= 3.11"
-version = "0.96.0"
+requires-python = ">= 3.12"
+version = "0.97.0"
 
 [project.scripts]
 
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.96.0"
+current_version = "0.97.0"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -350,8 +350,6 @@ skipif-mac = 'sys_platform == "darwin"'
 skipif-not-linux = 'sys_platform != "linux"'
 skipif-not-macos = 'sys_platform != "darwin"'
 skipif-not-windows = 'sys_platform != "windows"'
-skipif-version-ge-312 = "sys_version_info >= (3, 12)"
-skipif-version-le-311 = "sys_version_info <= (3, 11)"
 skipif-windows = 'sys_platform == "windows"'
 
 [tool.coverage.html]
@@ -391,7 +389,7 @@ float_to_top = true
 # nitpick
 [tool.nitpick]
 style = [
-  "https://raw.githubusercontent.com/dycw/nitpick/master/styles/3.11.toml",
+  "https://raw.githubusercontent.com/dycw/nitpick/master/styles/3.12.toml",
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/common.toml",
 ]
 
@@ -399,7 +397,7 @@ style = [
 [tool.pyright]
 deprecateTypingAliases = true
 enableReachabilityAnalysis = false
-pythonVersion = "3.11"
+pythonVersion = "3.12"
 reportAny = false
 reportCallInDefaultInitializer = true
 reportImplicitOverride = true
@@ -461,7 +459,7 @@ xfail_strict = true
 # ruff
 [tool.ruff]
 src = ["src"]
-target-version = "py311"
+target-version = "py312"
 unsafe-fixes = true
 
 [tool.ruff.format]
