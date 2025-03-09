@@ -611,8 +611,9 @@ class TestGitRepos:
     @settings(max_examples=1)
     def test_hatch_version_001(self, *, data: DataObject) -> None:
         root = data.draw(git_repos(pyproject_version=Version(0, 0, 1)))
-        output = check_output(["hatch", "version"], stderr=PIPE, cwd=root, text=True)
-        assert output.strip("\n") == "0.0.1"
+        output = get_pyproject_version(cwd=root)
+        expected = Version(major=0, minor=0, patch=1)
+        assert output == expected
 
 
 class TestHashables:
