@@ -1127,7 +1127,7 @@ dev = [
     { name = "redis", specifier = ">=5.2.1,<5.3" },
     { name = "rich", specifier = ">=13.8.1,<13.9" },
     { name = "scipy", specifier = ">=1.15.2,<1.16" },
-    { name = "setuptools", specifier = ">=75.9.0" },
+    { name = "setuptools", specifier = ">=75.9.1" },
     { name = "slack-sdk", specifier = ">=3.34.0,<3.35" },
     { name = "sqlalchemy", specifier = ">=2.0.38,<2.1" },
     { name = "streamlit", specifier = ">=1.43.1,<1.44" },
