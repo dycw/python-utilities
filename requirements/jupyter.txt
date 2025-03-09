@@ -76,7 +76,7 @@ iniconfig==2.0.0
     # via pytest
 ipykernel==6.29.5
     # via jupyterlab
-ipython==9.0.1
+ipython==9.0.2
     # via ipykernel
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -278,7 +278,7 @@ rpds-py==0.23.1
     #   referencing
 send2trash==1.8.3
     # via jupyter-server
-setuptools==75.8.2
+setuptools==75.9.0
     # via jupyterlab
 six==1.17.0
     # via
