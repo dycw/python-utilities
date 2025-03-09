@@ -160,7 +160,7 @@ class GetGitVersionError(Exception):
 
 
 def get_pyproject_version(*, cwd: PathLike = PWD) -> Version:
-    """Get the version according to `hatch`."""
+    """Get the version according to `pyproject.toml`."""
     path = get_repo_root(cwd=cwd).joinpath("pyproject.toml")
     with path.open() as fh:
         contents = loads(fh.read())
