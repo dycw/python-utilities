@@ -69,10 +69,12 @@ dev = [
   "pytest-asyncio >= 0.25.3, < 0.26",
   "pytest-cov >= 6.0.0, < 6.1",
   "pytest-instafail >= 0.5.0, < 0.6",
+  "pytest-lazy-fixtures >= 1.1.2, < 1.2",
   "pytest-only >= 2.1.2, < 2.2",
   "pytest-randomly >= 3.16.0, < 3.17",
   "pytest-rerunfailures >= 15.0, < 16",
   "pytest-rng >= 1.0.0, < 1.1",
+  "pytest-timeout >= 2.3.1, < 2.4",
   "pytest-xdist >= 3.6.1, < 3.7",
   # CI
   "win32_setctime >= 1.2.0, < 1.3",  # https://github.com/Delgan/loguru/issues/147
@@ -86,22 +88,24 @@ dependencies = ["typing-extensions >= 4.12.2, < 4.13"]
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.97.1"
+version = "0.97.2"
 
 [project.optional-dependencies]
 test = [
-  "coverage-conditional-plugin >= 0.9.0, < 0.10",
   "hypothesis >= 6.127.9, < 6.128",
   "pytest >= 8.3.5, < 8.4",
   "pytest-asyncio >= 0.25.3, < 0.26",
   "pytest-cov >= 6.0.0, < 6.1",
   "pytest-instafail >= 0.5.0, < 0.6",
+  "pytest-lazy-fixtures >= 1.1.2, < 1.2",
   "pytest-only >= 2.1.2, < 2.2",
   "pytest-randomly >= 3.16.0, < 3.17",
   "pytest-regressions >= 2.7.0, < 2.8",
   "pytest-rerunfailures >= 15.0, < 16",
   "pytest-rng >= 1.0.0, < 1.1",
+  "pytest-timeout >= 2.3.1, < 2.4",
   "pytest-xdist >= 3.6.1, < 3.7",
+  "setuptools >= 75.9.1",  # https://github.com/theY4Kman/pytest-only/issues/14
 ]
 zzz-test-altair = [
   "altair >= 5.5.0, < 5.6",
@@ -333,7 +337,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.97.1"
+current_version = "0.97.2"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -378,15 +382,11 @@ plugins = ["coverage_conditional_plugin"]
 # hatch
 [tool.hatch]
 
-[tool.hatch.build]
-sources = ["src"]
+[tool.hatch.build.targets.sdist]
+include = ["src"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/utilities"]
-
-# isort
-[tool.isort]
-float_to_top = true
 
 # nitpick
 [tool.nitpick]
