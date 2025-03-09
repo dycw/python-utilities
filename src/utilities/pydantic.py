@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, override
 
 from pydantic import BaseModel
-from typing_extensions import override
 
 if TYPE_CHECKING:
     from utilities.types import PathLike

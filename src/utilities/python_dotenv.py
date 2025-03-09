@@ -7,10 +7,9 @@ from functools import partial
 from os import environ
 from pathlib import Path
 from re import IGNORECASE, search
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, override
 
 from dotenv import dotenv_values
-from typing_extensions import override
 
 from utilities.dataclasses import (
     _MappingToDataclassEmptyError,

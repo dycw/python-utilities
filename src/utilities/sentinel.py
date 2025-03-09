@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
-
-from typing_extensions import override
+from typing import Any, override
 
 
 class _Meta(type):

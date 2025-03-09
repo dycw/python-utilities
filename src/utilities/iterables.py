@@ -25,15 +25,13 @@ from typing import (
     Generic,
     Literal,
     Self,
-    TypeAlias,
     TypeGuard,
     TypeVar,
     assert_never,
     cast,
     overload,
+    override,
 )
-
-from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_hashable, ensure_not_none, ensure_str
@@ -241,7 +239,7 @@ def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
         )
 
 
-_CheckIterablesEqualState: TypeAlias = Literal["left_longer", "right_longer"]
+type _CheckIterablesEqualState = Literal["left_longer", "right_longer"]
 
 
 @dataclass(kw_only=True, slots=True)

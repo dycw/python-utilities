@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import isfinite
-from typing import TYPE_CHECKING, Any, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from altair import (
     X2,
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from utilities.types import PathLike
 
 
-_ChartLike: TypeAlias = Chart | HConcatChart | LayerChart | VConcatChart
+type _ChartLike = Chart | HConcatChart | LayerChart | VConcatChart
 _HEIGHT = 400
 _WIDTH = 800
 

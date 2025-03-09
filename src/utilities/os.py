@@ -3,9 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from os import cpu_count, environ, getenv
-from typing import TYPE_CHECKING, Literal, TypeAlias, assert_never, overload
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.iterables import _OneStrEmptyError, one_str
 
@@ -13,7 +11,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
 
 
-IntOrAll: TypeAlias = int | Literal["all"]
+type IntOrAll = int | Literal["all"]
 
 
 ##

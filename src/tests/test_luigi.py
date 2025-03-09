@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, cast, override
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data, sampled_from, times
 from luigi import BoolParameter, Parameter, Task
-from typing_extensions import override
 
 from utilities.hypothesis import namespace_mixins, temp_paths, zoned_datetimes
 from utilities.luigi import (

@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import enum
 import pathlib
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, override
 from uuid import UUID
 
 import click
@@ -15,7 +15,6 @@ from click.types import (
     StringParamType,
     UUIDParameterType,
 )
-from typing_extensions import override
 
 import utilities.datetime
 import utilities.types

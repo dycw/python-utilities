@@ -8,13 +8,11 @@ from typing import (
     Any,
     Literal,
     Self,
-    TypeAlias,
     TypeGuard,
     assert_never,
     overload,
+    override,
 )
-
-from typing_extensions import override
 
 from utilities.math import SafeRoundError, _RoundMode, round_, safe_round
 from utilities.platform import SYSTEM
@@ -744,7 +742,7 @@ class MonthError(Exception):
         return f"Invalid year and month: {self.year}, {self.month}"
 
 
-DateOrMonth: TypeAlias = dt.date | Month
+type DateOrMonth = dt.date | Month
 MIN_MONTH = Month(dt.date.min.year, dt.date.min.month)
 MAX_MONTH = Month(dt.date.max.year, dt.date.max.month)
 

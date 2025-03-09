@@ -22,9 +22,10 @@ from typing import (
     TypeVar,
     cast,
     overload,
+    override,
 )
 
-from typing_extensions import ParamSpec, override
+from typing_extensions import ParamSpec
 
 from utilities.reprlib import get_repr, get_repr_and_class
 from utilities.sentinel import Sentinel, sentinel

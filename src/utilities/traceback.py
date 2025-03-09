@@ -17,16 +17,14 @@ from typing import (
     Generic,
     Protocol,
     Self,
-    TypeAlias,
     TypeGuard,
     TypeVar,
     assert_never,
     cast,
     overload,
+    override,
     runtime_checkable,
 )
-
-from typing_extensions import override
 
 from utilities.datetime import get_now
 from utilities.errors import ImpossibleCaseError
@@ -197,8 +195,8 @@ class _ExtFrameSummary(Generic[_T]):
     extra: _T
 
 
-_ExtFrameSummaryCAOpt: TypeAlias = _ExtFrameSummary[_CallArgs | None]
-_ExtFrameSummaryCA: TypeAlias = _ExtFrameSummary[_CallArgs]
+type _ExtFrameSummaryCAOpt = _ExtFrameSummary[_CallArgs | None]
+type _ExtFrameSummaryCA = _ExtFrameSummary[_CallArgs]
 
 
 @dataclass(repr=False, kw_only=True, slots=True)

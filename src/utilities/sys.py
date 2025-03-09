@@ -6,9 +6,7 @@ from dataclasses import dataclass
 from functools import partial
 from inspect import iscoroutinefunction
 from sys import version_info
-from typing import TYPE_CHECKING, Any, cast
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Any, cast, override
 
 from utilities.logging import get_logger
 from utilities.types import Coroutine1, LoggerOrName

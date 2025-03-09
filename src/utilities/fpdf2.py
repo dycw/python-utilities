@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
-from typing_extensions import override
 
 from utilities.datetime import get_now
 

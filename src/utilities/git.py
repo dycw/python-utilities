@@ -4,9 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from re import IGNORECASE, search
 from subprocess import PIPE, CalledProcessError, check_call, check_output
-from typing import TYPE_CHECKING
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, override
 
 from utilities.pathlib import PWD
 

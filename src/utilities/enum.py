@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, StrEnum
-from typing import Generic, Literal, TypeAlias, TypeVar, assert_never, overload
-
-from typing_extensions import override
+from typing import Generic, Literal, TypeVar, assert_never, overload, override
 
 from utilities.functions import ensure_str
 from utilities.iterables import _OneStrEmptyError, _OneStrNonUniqueError, one_str
@@ -101,7 +99,7 @@ def parse_enum(
             assert_never(never)
 
 
-_NamesOrValues: TypeAlias = Literal["names", "values"]
+type _NamesOrValues = Literal["names", "values"]
 
 
 def _parse_enum_one(

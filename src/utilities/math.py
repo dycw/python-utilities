@@ -4,9 +4,7 @@ import re
 from dataclasses import dataclass
 from math import ceil, exp, floor, isclose, isfinite, isnan, log, log10, modf
 from re import Match, search
-from typing import Literal, TypeAlias, assert_never, overload
-
-from typing_extensions import override
+from typing import Literal, assert_never, overload, override
 
 from utilities.errors import ImpossibleCaseError
 
@@ -681,7 +679,7 @@ def order_of_magnitude(x: float, /, *, round_: bool = False) -> float:
 ##
 
 
-_RoundMode: TypeAlias = Literal[
+type _RoundMode = Literal[
     "standard",
     "floor",
     "ceil",

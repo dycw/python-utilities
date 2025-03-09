@@ -3,9 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from dataclasses import asdict, dataclass
-from typing import Any, TypeVar, cast
-
-from typing_extensions import override
+from typing import Any, TypeVar, cast, override
 
 import utilities.math
 from utilities.datetime import (

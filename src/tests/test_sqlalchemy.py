@@ -4,7 +4,7 @@ from asyncio import sleep
 from itertools import chain
 from os import getpid
 from time import time_ns
-from typing import TYPE_CHECKING, Any, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
 
 from hypothesis import Phase, assume, given
 from hypothesis.strategies import (
@@ -26,7 +26,6 @@ from sqlalchemy import Boolean, Column, Integer, MetaData, Table, select
 from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
-from typing_extensions import override
 
 from utilities.hypothesis import (
     int32s,

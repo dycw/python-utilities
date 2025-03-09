@@ -3,9 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from operator import add, eq, ge, gt, le, lt, mul, ne, sub, truediv
 from timeit import default_timer
-from typing import TYPE_CHECKING, Any, Self, overload
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Any, Self, overload, override
 
 from utilities.types import Number
 

@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import MISSING, dataclass, field, fields, replace
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload, override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (

@@ -8,14 +8,12 @@ from typing import (
     Generic,
     Literal,
     Self,
-    TypeAlias,
     TypedDict,
     TypeVar,
     assert_never,
     cast,
+    override,
 )
-
-from typing_extensions import override
 
 from utilities.datetime import ZERO_TIME, is_instance_date_not_datetime
 from utilities.functions import get_class_name
@@ -34,7 +32,7 @@ if TYPE_CHECKING:
     from utilities.iterables import MaybeIterable
     from utilities.types import DateOrDateTime
 
-_DateOrDateTime: TypeAlias = Literal["date", "datetime"]
+type _DateOrDateTime = Literal["date", "datetime"]
 _TPeriod = TypeVar("_TPeriod", dt.date, dt.datetime)
 
 

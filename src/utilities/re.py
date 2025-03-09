@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-
-from typing_extensions import override
+from typing import override
 
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 

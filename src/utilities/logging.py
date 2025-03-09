@@ -20,9 +20,7 @@ from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from re import search
 from sys import stdout
-from typing import TYPE_CHECKING, Any, ClassVar, assert_never, cast
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Any, ClassVar, assert_never, cast, override
 
 from utilities.atomicwrites import writer
 from utilities.datetime import get_now, maybe_sub_pct_y

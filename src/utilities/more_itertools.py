@@ -14,11 +14,11 @@ from typing import (
     assert_never,
     cast,
     overload,
+    override,
 )
 
 from more_itertools import bucket, partition, split_into
 from more_itertools import peekable as _peekable
-from typing_extensions import override
 
 from utilities.functions import get_class_name
 from utilities.sentinel import Sentinel, sentinel

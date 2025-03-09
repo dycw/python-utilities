@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, assert_never
+from typing import TYPE_CHECKING, assert_never, override
 from zoneinfo import ZoneInfo
-
-from typing_extensions import override
 
 if TYPE_CHECKING:
     from utilities.types import ZoneInfoLike

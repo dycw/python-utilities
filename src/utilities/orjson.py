@@ -13,7 +13,7 @@ from math import isinf, isnan
 from operator import or_
 from pathlib import Path
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, assert_never
+from typing import TYPE_CHECKING, Any, Literal, assert_never, override
 from uuid import UUID
 
 from orjson import (
@@ -23,7 +23,6 @@ from orjson import (
     dumps,
     loads,
 )
-from typing_extensions import override
 
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import asdict_without_defaults
@@ -78,8 +77,8 @@ class _Prefixes(Enum):
     version = "v"
 
 
-_DataclassFinalHook: TypeAlias = Callable[[type[Dataclass], StrMapping], StrMapping]
-_ErrorMode: TypeAlias = Literal["raise", "drop", "str"]
+type _DataclassFinalHook = Callable[[type[Dataclass], StrMapping], StrMapping]
+type _ErrorMode = Literal["raise", "drop", "str"]
 
 
 @dataclass(kw_only=True, slots=True)

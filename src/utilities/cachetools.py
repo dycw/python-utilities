@@ -3,11 +3,10 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Iterator, MutableSet
 from math import inf
 from time import monotonic
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, override
 
 import cachetools
 from cachetools.func import ttl_cache
-from typing_extensions import override
 
 from utilities.datetime import datetime_duration_to_float
 

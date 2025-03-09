@@ -4,10 +4,9 @@ from asyncio import CancelledError, Lock, Queue, QueueEmpty, Task, get_event_loo
 from dataclasses import dataclass
 from http import HTTPStatus
 from logging import NOTSET, Handler, LogRecord, getLogger
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from slack_sdk.webhook.async_client import AsyncWebhookClient
-from typing_extensions import override
 
 from utilities.asyncio import sleep_dur
 from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float

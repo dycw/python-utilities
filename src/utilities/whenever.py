@@ -4,9 +4,9 @@ import datetime as dt
 import re
 from contextlib import suppress
 from dataclasses import dataclass
+from typing import override
 from zoneinfo import ZoneInfo
 
-from typing_extensions import override
 from whenever import Date, DateTimeDelta, LocalDateTime, Time, ZonedDateTime
 
 from utilities.datetime import (
