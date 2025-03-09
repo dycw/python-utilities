@@ -20,8 +20,10 @@ hypothesis==6.127.9
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
-ipython==8.24.0
+ipython==9.0.2
     # via dycw-utilities (pyproject.toml)
+ipython-pygments-lexers==1.1.1
+    # via ipython
 jedi==0.19.2
     # via ipython
 matplotlib-inline==0.1.7
@@ -46,7 +48,9 @@ ptyprocess==0.7.0
 pure-eval==0.2.3
     # via stack-data
 pygments==2.19.1
-    # via ipython
+    # via
+    #   ipython
+    #   ipython-pygments-lexers
 pytest==8.3.5
     # via
     #   dycw-utilities (pyproject.toml)

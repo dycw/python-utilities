@@ -16,8 +16,8 @@ from asyncio import (
     sleep,
     timeout,
 )
-from collections.abc import Hashable
-from contextlib import suppress
+from collections.abc import AsyncIterator, Hashable
+from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from io import StringIO
 from subprocess import PIPE
@@ -31,7 +31,7 @@ from utilities.functions import ensure_int, ensure_not_none
 from utilities.types import SupportsRichComparison
 
 if TYPE_CHECKING:
-    from asyncio import Timeout, _CoroutineLike
+    from asyncio import _CoroutineLike
     from asyncio.subprocess import Process
     from collections.abc import Sequence
     from contextvars import Context
@@ -352,10 +352,17 @@ async def _stream_one(
 ##
 
 
-def timeout_dur(*, duration: Duration | None = None) -> Timeout:
+@asynccontextmanager
+async def timeout_dur(
+    *, duration: Duration | None = None, error: type[Exception] = TimeoutError
+) -> AsyncIterator[None]:
     """Timeout context manager which accepts durations."""
     delay = None if duration is None else datetime_duration_to_float(duration)
-    return timeout(delay)
+    try:
+        async with timeout(delay):
+            yield
+    except TimeoutError:
+        raise error from None
 
 
 __all__ = [
