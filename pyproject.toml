@@ -350,8 +350,6 @@ skipif-mac = 'sys_platform == "darwin"'
 skipif-not-linux = 'sys_platform != "linux"'
 skipif-not-macos = 'sys_platform != "darwin"'
 skipif-not-windows = 'sys_platform != "windows"'
-skipif-version-ge-312 = "sys_version_info >= (3, 12)"
-skipif-version-le-311 = "sys_version_info <= (3, 11)"
 skipif-windows = 'sys_platform == "windows"'
 
 [tool.coverage.html]
