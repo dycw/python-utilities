@@ -750,7 +750,6 @@ test = [
     { name = "pytest-randomly" },
     { name = "pytest-regressions" },
     { name = "pytest-rerunfailures" },
-    { name = "pytest-retry" },
     { name = "pytest-rng" },
     { name = "pytest-timeout" },
     { name = "pytest-xdist" },
@@ -1053,7 +1052,6 @@ dev = [
     { name = "pytest-randomly" },
     { name = "pytest-regressions" },
     { name = "pytest-rerunfailures" },
-    { name = "pytest-retry" },
     { name = "pytest-rng" },
     { name = "pytest-timeout" },
     { name = "pytest-xdist" },
@@ -1171,7 +1169,6 @@ requires-dist = [
     { name = "pytest-regressions", marker = "extra == 'test'", specifier = ">=2.7.0,<2.8" },
     { name = "pytest-regressions", marker = "extra == 'zzz-test-pytest-regressions'", specifier = ">=2.7.0,<2.8" },
     { name = "pytest-rerunfailures", marker = "extra == 'test'", specifier = ">=15.0,<16" },
-    { name = "pytest-retry", marker = "extra == 'test'", specifier = ">=1.7.0,<1.8" },
     { name = "pytest-rng", marker = "extra == 'test'", specifier = ">=1.0.0,<1.1" },
     { name = "pytest-timeout", marker = "extra == 'test'", specifier = ">=2.3.1,<2.4" },
     { name = "pytest-xdist", marker = "extra == 'test'", specifier = ">=3.6.1,<3.7" },
@@ -1287,7 +1284,6 @@ dev = [
     { name = "pytest-randomly", specifier = ">=3.16.0,<3.17" },
     { name = "pytest-regressions", specifier = ">=2.7.0,<2.8" },
     { name = "pytest-rerunfailures", specifier = ">=15.0,<16" },
-    { name = "pytest-retry", specifier = ">=1.7.0,<1.8" },
     { name = "pytest-rng", specifier = ">=1.0.0,<1.1" },
     { name = "pytest-timeout", specifier = ">=2.3.1,<2.4" },
     { name = "pytest-xdist", specifier = ">=3.6.1,<3.7" },
@@ -3160,18 +3156,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/26/47/ec4e12f45f4b9fac027a41ccaabb353ed4f23695aae860258ba11a84ed9b/pytest-rerunfailures-15.0.tar.gz", hash = "sha256:2d9ac7baf59f4c13ac730b47f6fa80e755d1ba0581da45ce30b72fb3542b4474", size = 21816 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/89/37/54e5ffc7c0cebee7cf30a3ac5915faa7e7abf8bdfdf3228c277f7c192489/pytest_rerunfailures-15.0-py3-none-any.whl", hash = "sha256:dd150c4795c229ef44320adc9a0c0532c51b78bb7a6843a8c53556b9a611df1a", size = 13017 },
-]
-
-[[package]]
-name = "pytest-retry"
-version = "1.7.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c5/5b/607b017994cca28de3a1ad22a3eee8418e5d428dcd8ec25b26b18e995a73/pytest_retry-1.7.0.tar.gz", hash = "sha256:f8d52339f01e949df47c11ba9ee8d5b362f5824dff580d3870ec9ae0057df80f", size = 19977 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7c/ff/3266c8a73b9b93c4b14160a7e2b31d1e1088e28ed29f4c2d93ae34093bfd/pytest_retry-1.7.0-py3-none-any.whl", hash = "sha256:a2dac85b79a4e2375943f1429479c65beb6c69553e7dae6b8332be47a60954f4", size = 13775 },
 ]
 
 [[package]]
