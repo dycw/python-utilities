@@ -13,6 +13,7 @@ from typing import (
     TypeAliasType,
     TypeGuard,
     Union,  # pyright: ignore[reportDeprecated]
+    get_origin,
 )
 from typing import get_args as _get_args
 from typing import get_type_hints as _get_type_hints
@@ -169,8 +170,8 @@ def is_union_type(obj: Any, /) -> bool:
 
 def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:
     """Check if an object is an annotation with a given origin."""
-    return isinstance(obj, TypeAliasType) and _is_annotation_of_type(
-        obj.__value__, origin
+    return (get_origin(obj) is origin) or (
+        isinstance(obj, TypeAliasType) and _is_annotation_of_type(obj.__value__, origin)
     )
 
 
