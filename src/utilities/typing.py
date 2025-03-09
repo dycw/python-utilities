@@ -33,6 +33,8 @@ def contains_self(obj: Any, /) -> bool:
 
 def get_args(obj: Any, /) -> tuple[Any, ...]:
     """Get the arguments of an annotation."""
+    if isinstance(obj, TypeAliasType):
+        return get_args(obj.__value__)
     if is_optional_type(obj):
         args = _get_args(obj)
         return tuple(a for a in args if a is not NoneType)
