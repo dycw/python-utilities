@@ -27,7 +27,7 @@ from utilities.version import (
     _VersionNegativePatchVersionError,
     _VersionZeroError,
     get_git_version,
-    get_hatch_version,
+    get_pyproject_version,
     get_version,
     parse_version,
 )
@@ -51,12 +51,12 @@ class TestGetGitVersion:
             _ = get_git_version(cwd=repo, ref=MASTER)
 
 
-class TestGetHatchVersion:
+class TestGetPyProjectVersion:
     @given(data=data(), version=versions())
     @settings(max_examples=1)
     def test_main(self, *, data: DataObject, version: Version) -> None:
-        repo = data.draw(git_repos(hatch_version=version))
-        result = get_hatch_version(cwd=repo)
+        repo = data.draw(git_repos(pyproject_version=version))
+        result = get_pyproject_version(cwd=repo)
         assert result == version
 
 
@@ -64,7 +64,7 @@ class TestGetVersion:
     @given(data=data(), version=versions())
     @settings(max_examples=1)
     def test_equal(self, *, data: DataObject, version: Version) -> None:
-        repo = data.draw(git_repos(git_version=version, hatch_version=version))
+        repo = data.draw(git_repos(git_version=version, pyproject_version=version))
         result = get_version(cwd=repo, ref=MASTER)
         assert result == version
 
@@ -73,21 +73,21 @@ class TestGetVersion:
     def test_behind(
         self, *, data: DataObject, versions: tuple[Version, Version]
     ) -> None:
-        hatch, git = versions
-        repo = data.draw(git_repos(git_version=git, hatch_version=hatch))
+        pyproject, git = versions
+        repo = data.draw(git_repos(git_version=git, pyproject_version=pyproject))
         result = get_version(cwd=repo, ref=MASTER)
-        expected = hatch.with_suffix(suffix="behind")
+        expected = pyproject.with_suffix(suffix="behind")
         assert result == expected
 
     @given(data=data(), git=versions())
     @settings(max_examples=1)
     def test_dirty(self, *, data: DataObject, git: Version) -> None:
-        hatch = data.draw(
+        pyproject = data.draw(
             sampled_from([git.bump_major(), git.bump_minor(), git.bump_patch()])
         )
-        repo = data.draw(git_repos(git_version=git, hatch_version=hatch))
+        repo = data.draw(git_repos(git_version=git, pyproject_version=pyproject))
         result = get_version(cwd=repo, ref=MASTER)
-        expected = hatch.with_suffix(suffix="dirty")
+        expected = pyproject.with_suffix(suffix="dirty")
         assert result == expected
 
     @given(data=data(), versions=pairs(versions(), unique=True, sorted=True))
@@ -95,12 +95,14 @@ class TestGetVersion:
     def test_error(
         self, *, data: DataObject, versions: tuple[Version, Version]
     ) -> None:
-        git, hatch = versions
-        _ = assume(hatch not in [git.bump_major(), git.bump_minor(), git.bump_patch()])
-        repo = data.draw(git_repos(git_version=git, hatch_version=hatch))
+        git, pyproject = versions
+        _ = assume(
+            pyproject not in [git.bump_major(), git.bump_minor(), git.bump_patch()]
+        )
+        repo = data.draw(git_repos(git_version=git, pyproject_version=pyproject))
         with raises(
             GetVersionError,
-            match="`hatch` version is ahead of `git` version in an incompatible way; got .* and .*",
+            match="`pyproject` version is ahead of `git` version in an incompatible way; got .* and .*",
         ):
             _ = get_version(cwd=repo, ref=MASTER)
 

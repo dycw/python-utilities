@@ -122,7 +122,7 @@ from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sentinel import Sentinel
 from utilities.sqlalchemy import Dialect, _get_dialect
-from utilities.version import Version
+from utilities.version import Version, get_pyproject_version
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
@@ -577,13 +577,13 @@ class TestGitRepos:
         branch = data.draw(text_ascii(min_size=1) | none())
         remote = data.draw(text_ascii(min_size=1) | none())
         git_version = data.draw(versions() | none())
-        hatch_version = data.draw(versions() | none())
+        pyproject_version = data.draw(versions() | none())
         root = data.draw(
             git_repos(
                 branch=branch,
                 remote=remote,
                 git_version=git_version,
-                hatch_version=hatch_version,
+                pyproject_version=pyproject_version,
             )
         )
         files = set(root.iterdir())
@@ -603,23 +603,14 @@ class TestGitRepos:
                 [*_GIT_TAG_POINTS_AT, MASTER], stderr=PIPE, cwd=root, text=True
             )
             assert output.strip("\n") == str(git_version)
-        if hatch_version is not None:
-            assert {
-                Path(root, "LICENSE.txt"),
-                Path(root, "README.md"),
-                Path(root, "pyproject.toml"),
-                Path(root, "src"),
-                Path(root, "tests"),
-            }.issubset(files)
-            output = check_output(
-                ["hatch", "version"], stderr=PIPE, cwd=root, text=True
-            )
-            assert output.strip("\n") == str(hatch_version)
+        if pyproject_version is not None:
+            output = get_pyproject_version(cwd=root)
+            assert output == pyproject_version
 
     @given(data=data())
     @settings(max_examples=1)
     def test_hatch_version_001(self, *, data: DataObject) -> None:
-        root = data.draw(git_repos(hatch_version=Version(0, 0, 1)))
+        root = data.draw(git_repos(pyproject_version=Version(0, 0, 1)))
         output = check_output(["hatch", "version"], stderr=PIPE, cwd=root, text=True)
         assert output.strip("\n") == "0.0.1"
 
