@@ -752,6 +752,7 @@ test = [
     { name = "pytest-rerunfailures" },
     { name = "pytest-rng" },
     { name = "pytest-xdist" },
+    { name = "setuptools" },
 ]
 zzz-test-altair = [
     { name = "altair" },
@@ -1177,6 +1178,7 @@ requires-dist = [
     { name = "rich", marker = "extra == 'zzz-test-sys'", specifier = ">=13.8.1,<13.9" },
     { name = "rich", marker = "extra == 'zzz-test-traceback'", specifier = ">=13.8.1,<13.9" },
     { name = "scipy", marker = "extra == 'zzz-test-scipy'", specifier = ">=1.15.2,<1.16" },
+    { name = "setuptools", marker = "extra == 'test'", specifier = ">=75.9.1" },
     { name = "slack-sdk", marker = "extra == 'zzz-test-slack-sdk'", specifier = ">=3.34.0,<3.35" },
     { name = "sqlalchemy", marker = "extra == 'zzz-test-click'", specifier = ">=2.0.38,<2.1" },
     { name = "sqlalchemy", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=2.0.38,<2.1" },
