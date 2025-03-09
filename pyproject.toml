@@ -323,15 +323,15 @@ authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
 dependencies = ["typing-extensions >= 4.12.2, < 4.13"]
 name = "dycw-utilities"
 readme = "README.md"
-requires-python = ">= 3.11"
-version = "0.96.0"
+requires-python = ">= 3.12"
+version = "0.96.1"
 
 [project.scripts]
 
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.96.0"
+current_version = "0.96.1"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -391,7 +391,7 @@ float_to_top = true
 # nitpick
 [tool.nitpick]
 style = [
-  "https://raw.githubusercontent.com/dycw/nitpick/master/styles/3.11.toml",
+  "https://raw.githubusercontent.com/dycw/nitpick/master/styles/3.12.toml",
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/common.toml",
 ]
 
@@ -399,7 +399,7 @@ style = [
 [tool.pyright]
 deprecateTypingAliases = true
 enableReachabilityAnalysis = false
-pythonVersion = "3.11"
+pythonVersion = "3.12"
 reportAny = false
 reportCallInDefaultInitializer = true
 reportImplicitOverride = true
@@ -461,7 +461,7 @@ xfail_strict = true
 # ruff
 [tool.ruff]
 src = ["src"]
-target-version = "py311"
+target-version = "py312"
 unsafe-fixes = true
 
 [tool.ruff.format]
