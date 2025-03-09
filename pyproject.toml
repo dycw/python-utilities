@@ -84,11 +84,15 @@ dev = [
 # project
 [project]
 authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
-dependencies = ["typing-extensions >= 4.12.2, < 4.13"]
+dependencies = [
+  "jupyterlab>=4.2.7",
+  "tomlkit>=0.13.2",
+  "typing-extensions >= 4.12.2, < 4.13",
+]
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.97.2"
+version = "0.97.3"
 
 [project.optional-dependencies]
 test = [
@@ -337,7 +341,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.97.2"
+current_version = "0.97.3"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"

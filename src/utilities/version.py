@@ -3,12 +3,11 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field, replace
 from functools import total_ordering
-from subprocess import check_output
+from tomllib import loads
 from typing import TYPE_CHECKING, Any, Self, override
 
-from utilities.git import MASTER, fetch_all_tags, get_ref_tags
+from utilities.git import MASTER, fetch_all_tags, get_ref_tags, get_repo_root
 from utilities.iterables import OneEmptyError, one
-from utilities.os import temp_environ
 from utilities.pathlib import PWD
 
 if TYPE_CHECKING:
@@ -160,11 +159,12 @@ class GetGitVersionError(Exception):
 ##
 
 
-def get_hatch_version(*, cwd: PathLike = PWD) -> Version:
+def get_pyproject_version(*, cwd: PathLike = PWD) -> Version:
     """Get the version according to `hatch`."""
-    with temp_environ(NO_COLOR="1"):
-        output = check_output(["hatch", "version"], cwd=cwd, text=True)
-    return parse_version(output.strip("\n"))
+    path = get_repo_root(cwd=cwd).joinpath("pyproject.toml")
+    with path.open() as fh:
+        contents = loads(fh.read())
+    return parse_version(contents["project"]["version"])
 
 
 ##
@@ -173,24 +173,24 @@ def get_hatch_version(*, cwd: PathLike = PWD) -> Version:
 def get_version(*, cwd: PathLike = PWD, ref: str = MASTER) -> Version:
     """Get the version."""
     git = get_git_version(cwd=cwd, ref=ref)
-    hatch = get_hatch_version(cwd=cwd)
-    if hatch < git:
-        return hatch.with_suffix(suffix="behind")
-    if hatch == git:
-        return hatch
-    if hatch in {git.bump_major(), git.bump_minor(), git.bump_patch()}:
-        return hatch.with_suffix(suffix="dirty")
-    raise GetVersionError(git=git, hatch=hatch)
+    pyproject = get_pyproject_version(cwd=cwd)
+    if pyproject < git:
+        return pyproject.with_suffix(suffix="behind")
+    if pyproject == git:
+        return pyproject
+    if pyproject in {git.bump_major(), git.bump_minor(), git.bump_patch()}:
+        return pyproject.with_suffix(suffix="dirty")
+    raise GetVersionError(git=git, pyproject=pyproject)
 
 
 @dataclass(kw_only=True, slots=True)
 class GetVersionError(Exception):
     git: Version
-    hatch: Version
+    pyproject: Version
 
     @override
     def __str__(self) -> str:
-        return f"`hatch` version is ahead of `git` version in an incompatible way; got {self.hatch} and {self.git}"
+        return f"`pyproject` version is ahead of `git` version in an incompatible way; got {self.pyproject} and {self.git}"
 
 
 ##
@@ -221,7 +221,7 @@ __all__ = [
     "Version",
     "VersionError",
     "get_git_version",
-    "get_hatch_version",
+    "get_pyproject_version",
     "get_version",
     "parse_version",
 ]
