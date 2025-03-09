@@ -7,7 +7,7 @@ from itertools import chain
 from re import search
 from typing import TYPE_CHECKING
 
-from hypothesis import Phase, given
+from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
     data,
@@ -33,12 +33,8 @@ from utilities.asyncio import (
     stream_command,
     timeout_dur,
 )
-from utilities.datetime import MILLISECOND, ZERO_TIME, datetime_duration_to_timedelta
-from utilities.hypothesis import (
-    datetime_durations,
-    settings_with_reduced_examples,
-    text_ascii,
-)
+from utilities.datetime import MILLISECOND, datetime_duration_to_timedelta
+from utilities.hypothesis import text_ascii
 from utilities.iterables import one
 from utilities.pytest import skipif_windows
 from utilities.timer import Timer
@@ -421,16 +417,9 @@ class TestUniqueQueue:
 
 
 class TestSleepDur:
-    @given(
-        duration=datetime_durations(
-            min_number=0.1,
-            max_number=0.2,
-            min_timedelta=100 * MILLISECOND,
-            max_timedelta=200 * MILLISECOND,
-        )
-    )
+    @given(duration=sampled_from([0.1, 10 * MILLISECOND]))
     @mark.flaky
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(phases={Phase.generate})
     async def test_main(self, *, duration: Duration) -> None:
         with Timer() as timer:
             await sleep_dur(duration=duration)
@@ -465,20 +454,21 @@ class TestStreamCommand:
 
 
 class TestTimeoutDur:
-    @given(
-        duration=datetime_durations(
-            min_number=0.0,
-            max_number=0.01,
-            min_timedelta=ZERO_TIME,
-            max_timedelta=10 * MILLISECOND,
-        )
-    )
+    @given(duration=sampled_from([0.01, 5 * MILLISECOND]))
     @mark.flaky
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(phases={Phase.generate})
     async def test_main(self, *, duration: Duration) -> None:
         with raises(TimeoutError):
             async with timeout_dur(duration=duration):
                 await sleep_dur(duration=2 * duration)
+
+    @mark.flaky
+    async def test_custom_error(self) -> None:
+        class CustomError(Exception): ...
+
+        with raises(CustomError):
+            async with timeout_dur(duration=0.05, error=CustomError):
+                await sleep_dur(duration=0.1)
 
 
 if __name__ == "__main__":
