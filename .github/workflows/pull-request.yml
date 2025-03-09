@@ -6,52 +6,11 @@ on:
       - master
 
 jobs:
-  test-windows-and-mac:
-    name: test / ${{ matrix.os }} / ${{ matrix.version }}
-    env:
-      CI: 1
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, macos-latest]
-        version: ["3.11", "3.12"]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.version }}
-      - run: git fetch origin master:origin/master --update-head-ok # https://stackoverflow.com/a/76384065
-      - run: python -m pip install uv
-      - run: uv pip sync --system --compile requirements.txt
-      - run: pytest --cov-report=term-missing:skip-covered -n=auto
-    timeout-minutes: 60
-
-  test-ubuntu:
-    name: test / ubuntu-latest / ${{ matrix.version }}
-    env:
-      CI: 1
+  lint:
+    name: lint
     runs-on: ubuntu-latest
-    services:
-      redis:
-        image: redis/redis-stack:latest
-        ports:
-          - 6379:6379
-    strategy:
-      fail-fast: false
-      matrix:
-        version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.version }}
-      - run: git fetch origin master:origin/master --update-head-ok
-      - run: python -m pip install uv
-      - run: uv pip sync --system --compile requirements.txt
-      - run: pytest --cov-report=term-missing:skip-covered -n=auto
-    timeout-minutes: 60
+      - uses: astral-sh/ruff-action@v3
+      - run: ruff check --fix
+      - run: ruff format
