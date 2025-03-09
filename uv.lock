@@ -740,7 +740,6 @@ dependencies = [
 
 [package.optional-dependencies]
 test = [
-    { name = "coverage-conditional-plugin" },
     { name = "hypothesis" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -750,7 +749,6 @@ test = [
     { name = "pytest-only" },
     { name = "pytest-randomly" },
     { name = "pytest-regressions" },
-    { name = "pytest-repeat" },
     { name = "pytest-rerunfailures" },
     { name = "pytest-retry" },
     { name = "pytest-rng" },
@@ -1054,7 +1052,6 @@ dev = [
     { name = "pytest-only" },
     { name = "pytest-randomly" },
     { name = "pytest-regressions" },
-    { name = "pytest-repeat" },
     { name = "pytest-rerunfailures" },
     { name = "pytest-retry" },
     { name = "pytest-rng" },
@@ -1104,7 +1101,6 @@ requires-dist = [
     { name = "click", marker = "extra == 'zzz-test-click'", specifier = ">=8.1.8,<8.2" },
     { name = "coloredlogs", marker = "extra == 'zzz-test-logging'", specifier = ">=15.0.1,<15.1" },
     { name = "concurrent-log-handler", marker = "extra == 'zzz-test-logging'", specifier = ">=0.9.25,<0.10" },
-    { name = "coverage-conditional-plugin", marker = "extra == 'test'", specifier = ">=0.9.0,<0.10" },
     { name = "cryptography", marker = "extra == 'zzz-test-cryptography'", specifier = ">=44.0.2,<44.1" },
     { name = "cvxpy", marker = "extra == 'zzz-test-cvxpy'", specifier = ">=1.6.2,<1.7" },
     { name = "dacite", marker = "extra == 'zzz-test-polars'", specifier = ">=1.9.2,<1.10" },
@@ -1174,7 +1170,6 @@ requires-dist = [
     { name = "pytest-randomly", marker = "extra == 'test'", specifier = ">=3.16.0,<3.17" },
     { name = "pytest-regressions", marker = "extra == 'test'", specifier = ">=2.7.0,<2.8" },
     { name = "pytest-regressions", marker = "extra == 'zzz-test-pytest-regressions'", specifier = ">=2.7.0,<2.8" },
-    { name = "pytest-repeat", marker = "extra == 'test'", specifier = ">=0.9.3,<0.10" },
     { name = "pytest-rerunfailures", marker = "extra == 'test'", specifier = ">=15.0,<16" },
     { name = "pytest-retry", marker = "extra == 'test'", specifier = ">=1.7.0,<1.8" },
     { name = "pytest-rng", marker = "extra == 'test'", specifier = ">=1.0.0,<1.1" },
@@ -1291,7 +1286,6 @@ dev = [
     { name = "pytest-only", specifier = ">=2.1.2,<2.2" },
     { name = "pytest-randomly", specifier = ">=3.16.0,<3.17" },
     { name = "pytest-regressions", specifier = ">=2.7.0,<2.8" },
-    { name = "pytest-repeat", specifier = ">=0.9.3,<0.10" },
     { name = "pytest-rerunfailures", specifier = ">=15.0,<16" },
     { name = "pytest-retry", specifier = ">=1.7.0,<1.8" },
     { name = "pytest-rng", specifier = ">=1.0.0,<1.1" },
@@ -3153,18 +3147,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/07/40/2e233d49a86e2ba88325bcfdcad77fa56b05ba7ca61b58bc0212330e560a/pytest_regressions-2.7.0.tar.gz", hash = "sha256:4c30064e0923929012c94f5d6f35205be06fd8709c7f0dba0228e05c460af05e", size = 116270 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6d/83/3eaf30c06a1cf8bb58b1e5dba0345d1c747b720e889cbae81750c7659e9f/pytest_regressions-2.7.0-py3-none-any.whl", hash = "sha256:69f5e3f03493cf0ef84d96d23e50a546617c198b1d7746f2e2b9e441cbab4847", size = 24497 },
-]
-
-[[package]]
-name = "pytest-repeat"
-version = "0.9.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/86/5e/99365eb229efff0b1bd475886150fc6db9937ab7e1bd21f6f65c1279e0eb/pytest_repeat-0.9.3.tar.gz", hash = "sha256:ffd3836dfcd67bb270bec648b330e20be37d2966448c4148c4092d1e8aba8185", size = 6272 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/49/a8/0a0aec0c2541b8baf4a0b95af2ba99abce217ee43534adf9cb7c908cf184/pytest_repeat-0.9.3-py3-none-any.whl", hash = "sha256:26ab2df18226af9d5ce441c858f273121e92ff55f5bb311d25755b8d7abdd8ed", size = 4196 },
 ]
 
 [[package]]
