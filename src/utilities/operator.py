@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from collections.abc import Callable, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from dataclasses import asdict, dataclass
@@ -42,13 +43,13 @@ def is_equal(
                 return cmp(x, y)
 
         # singletons
-        if isinstance(x, Number):
+        if isinstance(x, int | float):
             y = cast(Number, y)
             return utilities.math.is_equal(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
         if isinstance(x, str):  # else Sequence
             y = cast(str, y)
             return x == y
-        if isinstance(x, DateOrDateTime):
+        if isinstance(x, dt.date | dt.datetime):
             y = cast(DateOrDateTime, y)
             try:
                 return are_equal_dates_or_datetimes(x, y)
@@ -87,7 +88,7 @@ def is_equal(
                 for x_i, y_i in zip(x, y, strict=True)
             )
 
-    if isinstance(x, Number) and isinstance(y, Number):
+    if isinstance(x, int | float) and isinstance(y, int | float):
         return utilities.math.is_equal(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
 
     return (type(x) is type(y)) and (x == y)
