@@ -36,6 +36,7 @@ from tests.test_typing_funcs.with_future import (
     DataClassWithUUID,
 )
 from utilities.sentinel import Sentinel
+from utilities.types import LogLevel, Parallelism
 from utilities.typing import (
     contains_self,
     get_args,
@@ -76,6 +77,8 @@ class TestGetArgs:
             param(Mapping[int, int], (int, int)),
             param(Sequence[int], (int,)),
             param(set[int], (int,)),
+            param(LogLevel, ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")),
+            param(Parallelism, ("processes", "threads")),
         ],
     )
     def test_main(self, *, obj: Any, expected: tuple[Any, ...]) -> None:

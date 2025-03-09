@@ -78,6 +78,17 @@ dev = [
   "win32_setctime >= 1.2.0, < 1.3",  # https://github.com/Delgan/loguru/issues/147
   "setuptools >= 75.9.1",  # https://github.com/theY4Kman/pytest-only/issues/14
 ]
+
+# project
+[project]
+authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
+dependencies = ["typing-extensions >= 4.12.2, < 4.13"]
+name = "dycw-utilities"
+readme = "README.md"
+requires-python = ">= 3.12"
+version = "0.97.1"
+
+[project.optional-dependencies]
 test = [
   "coverage-conditional-plugin >= 0.9.0, < 0.10",
   "hypothesis >= 6.127.9, < 6.128",
@@ -317,21 +328,12 @@ zzz-test-zoneinfo = [
   "whenever >= 0.7.2, < 0.8",
 ]
 
-# project
-[project]
-authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
-dependencies = ["typing-extensions >= 4.12.2, < 4.13"]
-name = "dycw-utilities"
-readme = "README.md"
-requires-python = ">= 3.12"
-version = "0.97.0"
-
 [project.scripts]
 
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.97.0"
+current_version = "0.97.1"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"

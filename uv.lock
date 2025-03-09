@@ -732,82 +732,13 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.97.0"
+version = "0.97.1"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "aiohttp" },
-    { name = "aiosqlite" },
-    { name = "altair" },
-    { name = "astor" },
-    { name = "asyncpg" },
-    { name = "atomicwrites" },
-    { name = "atools" },
-    { name = "cachetools" },
-    { name = "click" },
-    { name = "coloredlogs" },
-    { name = "concurrent-log-handler" },
-    { name = "coverage-conditional-plugin" },
-    { name = "cryptography" },
-    { name = "cvxpy" },
-    { name = "dacite" },
-    { name = "eventkit" },
-    { name = "fastapi" },
-    { name = "fpdf2" },
-    { name = "greenlet" },
-    { name = "hatch" },
-    { name = "httpx" },
-    { name = "hypothesis" },
-    { name = "ib-async-dataclass" },
-    { name = "img2pdf" },
-    { name = "loguru" },
-    { name = "luigi" },
-    { name = "memory-profiler" },
-    { name = "more-itertools" },
-    { name = "nest-asyncio" },
-    { name = "nox" },
-    { name = "numpy" },
-    { name = "optuna" },
-    { name = "orjson" },
-    { name = "pathvalidate" },
-    { name = "polars-lts-cpu" },
-    { name = "pqdm" },
-    { name = "psycopg2-binary" },
-    { name = "pydantic" },
-    { name = "pyinstrument" },
-    { name = "pyrsistent" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-instafail" },
-    { name = "pytest-only" },
-    { name = "pytest-randomly" },
-    { name = "pytest-regressions" },
-    { name = "pytest-rerunfailures" },
-    { name = "pytest-rng" },
-    { name = "pytest-xdist" },
-    { name = "python-dotenv" },
-    { name = "redis" },
-    { name = "rich" },
-    { name = "scipy" },
-    { name = "setuptools" },
-    { name = "slack-sdk" },
-    { name = "sqlalchemy" },
-    { name = "streamlit" },
-    { name = "tenacity" },
-    { name = "tzdata" },
-    { name = "tzlocal" },
-    { name = "uvicorn" },
-    { name = "vegafusion" },
-    { name = "vegafusion-python-embed" },
-    { name = "vl-convert-python" },
-    { name = "whenever" },
-    { name = "win32-setctime" },
-]
+[package.optional-dependencies]
 test = [
     { name = "coverage-conditional-plugin" },
     { name = "hypothesis" },
@@ -1068,8 +999,233 @@ zzz-test-zoneinfo = [
     { name = "whenever" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "aiohttp" },
+    { name = "aiosqlite" },
+    { name = "altair" },
+    { name = "astor" },
+    { name = "asyncpg" },
+    { name = "atomicwrites" },
+    { name = "atools" },
+    { name = "cachetools" },
+    { name = "click" },
+    { name = "coloredlogs" },
+    { name = "concurrent-log-handler" },
+    { name = "coverage-conditional-plugin" },
+    { name = "cryptography" },
+    { name = "cvxpy" },
+    { name = "dacite" },
+    { name = "eventkit" },
+    { name = "fastapi" },
+    { name = "fpdf2" },
+    { name = "greenlet" },
+    { name = "hatch" },
+    { name = "httpx" },
+    { name = "hypothesis" },
+    { name = "ib-async-dataclass" },
+    { name = "img2pdf" },
+    { name = "loguru" },
+    { name = "luigi" },
+    { name = "memory-profiler" },
+    { name = "more-itertools" },
+    { name = "nest-asyncio" },
+    { name = "nox" },
+    { name = "numpy" },
+    { name = "optuna" },
+    { name = "orjson" },
+    { name = "pathvalidate" },
+    { name = "polars-lts-cpu" },
+    { name = "pqdm" },
+    { name = "psycopg2-binary" },
+    { name = "pydantic" },
+    { name = "pyinstrument" },
+    { name = "pyrsistent" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-instafail" },
+    { name = "pytest-only" },
+    { name = "pytest-randomly" },
+    { name = "pytest-regressions" },
+    { name = "pytest-rerunfailures" },
+    { name = "pytest-rng" },
+    { name = "pytest-xdist" },
+    { name = "python-dotenv" },
+    { name = "redis" },
+    { name = "rich" },
+    { name = "scipy" },
+    { name = "setuptools" },
+    { name = "slack-sdk" },
+    { name = "sqlalchemy" },
+    { name = "streamlit" },
+    { name = "tenacity" },
+    { name = "tzdata" },
+    { name = "tzlocal" },
+    { name = "uvicorn" },
+    { name = "vegafusion" },
+    { name = "vegafusion-python-embed" },
+    { name = "vl-convert-python" },
+    { name = "whenever" },
+    { name = "win32-setctime" },
+]
+
 [package.metadata]
-requires-dist = [{ name = "typing-extensions", specifier = ">=4.12.2,<4.13" }]
+requires-dist = [
+    { name = "aiohttp", marker = "extra == 'zzz-test-slack-sdk'", specifier = ">=3.11.13,<3.12" },
+    { name = "aiosqlite", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=0.21.0,<0.22" },
+    { name = "aiosqlite", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=0.21.0,<0.22" },
+    { name = "aiosqlite", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=0.21.0,<0.22" },
+    { name = "altair", marker = "extra == 'zzz-test-altair'", specifier = ">=5.5.0,<5.6" },
+    { name = "astor", marker = "extra == 'zzz-test-astor'", specifier = ">=0.8.1,<0.9" },
+    { name = "asyncpg", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=0.30.0,<0.31" },
+    { name = "asyncpg", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=0.30.0,<0.31" },
+    { name = "asyncpg", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=0.30.0,<0.31" },
+    { name = "atomicwrites", marker = "extra == 'zzz-test-altair'", specifier = ">=1.4.1,<1.5" },
+    { name = "atomicwrites", marker = "extra == 'zzz-test-atomicwrites'", specifier = ">=1.4.1,<1.5" },
+    { name = "atomicwrites", marker = "extra == 'zzz-test-http'", specifier = ">=1.4.1,<1.5" },
+    { name = "atomicwrites", marker = "extra == 'zzz-test-logging'", specifier = ">=1.4.1,<1.5" },
+    { name = "atomicwrites", marker = "extra == 'zzz-test-pickle'", specifier = ">=1.4.1,<1.5" },
+    { name = "atomicwrites", marker = "extra == 'zzz-test-pydantic'", specifier = ">=1.4.1,<1.5" },
+    { name = "atomicwrites", marker = "extra == 'zzz-test-pyinstrument'", specifier = ">=1.4.1,<1.5" },
+    { name = "atomicwrites", marker = "extra == 'zzz-test-pytest'", specifier = ">=1.4.1,<1.5" },
+    { name = "atomicwrites", marker = "extra == 'zzz-test-sys'", specifier = ">=1.4.1,<1.5" },
+    { name = "atools", marker = "extra == 'zzz-test-atools'", specifier = ">=0.14.2,<0.15" },
+    { name = "cachetools", marker = "extra == 'zzz-test-cachetools'", specifier = ">=5.5.2,<5.6" },
+    { name = "click", marker = "extra == 'zzz-test-click'", specifier = ">=8.1.8,<8.2" },
+    { name = "coloredlogs", marker = "extra == 'zzz-test-logging'", specifier = ">=15.0.1,<15.1" },
+    { name = "concurrent-log-handler", marker = "extra == 'zzz-test-logging'", specifier = ">=0.9.25,<0.10" },
+    { name = "coverage-conditional-plugin", marker = "extra == 'test'", specifier = ">=0.9.0,<0.10" },
+    { name = "cryptography", marker = "extra == 'zzz-test-cryptography'", specifier = ">=44.0.2,<44.1" },
+    { name = "cvxpy", marker = "extra == 'zzz-test-cvxpy'", specifier = ">=1.6.2,<1.7" },
+    { name = "dacite", marker = "extra == 'zzz-test-polars'", specifier = ">=1.9.2,<1.10" },
+    { name = "eventkit", marker = "extra == 'zzz-test-eventkit'", specifier = ">=1.0.3,<1.1" },
+    { name = "fastapi", marker = "extra == 'zzz-test-fastapi'", specifier = ">=0.115.11,<0.116" },
+    { name = "fpdf2", marker = "extra == 'zzz-test-fpdf2'", specifier = ">=2.8.2,<2.9" },
+    { name = "greenlet", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=3.1.1,<3.2" },
+    { name = "greenlet", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=3.1.1,<3.2" },
+    { name = "greenlet", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=3.1.1,<3.2" },
+    { name = "hatch", marker = "extra == 'zzz-test-logging'", specifier = ">=1.14.0,<1.15" },
+    { name = "hatch", marker = "extra == 'zzz-test-sys'", specifier = ">=1.14.0,<1.15" },
+    { name = "hatch", marker = "extra == 'zzz-test-traceback'", specifier = ">=1.14.0,<1.15" },
+    { name = "hatch", marker = "extra == 'zzz-test-version'", specifier = ">=1.14.0,<1.15" },
+    { name = "httpx", marker = "extra == 'zzz-test-fastapi'", specifier = ">=0.28.1,<0.29" },
+    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.127.9,<6.128" },
+    { name = "hypothesis", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=6.127.9,<6.128" },
+    { name = "ib-async-dataclass", marker = "extra == 'zzz-test-dataclasses'", specifier = ">=1.0.3rc5,<1.1" },
+    { name = "ib-async-dataclass", marker = "extra == 'zzz-test-hashlib'", specifier = ">=1.0.3rc5,<1.1" },
+    { name = "ib-async-dataclass", marker = "extra == 'zzz-test-iterables'", specifier = ">=1.0.3rc5,<1.1" },
+    { name = "ib-async-dataclass", marker = "extra == 'zzz-test-operator'", specifier = ">=1.0.3rc5,<1.1" },
+    { name = "ib-async-dataclass", marker = "extra == 'zzz-test-orjson'", specifier = ">=1.0.3rc5,<1.1" },
+    { name = "ib-async-dataclass", marker = "extra == 'zzz-test-redis'", specifier = ">=1.0.3rc5,<1.1" },
+    { name = "ib-async-dataclass", marker = "extra == 'zzz-test-typing'", specifier = ">=1.0.3rc5,<1.1" },
+    { name = "img2pdf", marker = "extra == 'zzz-test-altair'", specifier = ">=0.6.0,<0.7" },
+    { name = "ipython", marker = "extra == 'zzz-test-ipython'", specifier = ">=9.0.1,<9.1" },
+    { name = "jupyterlab", marker = "extra == 'zzz-test-jupyter'", specifier = ">=4.2.0,<4.3" },
+    { name = "loguru", marker = "extra == 'zzz-test-loguru'", specifier = ">=0.7.3,<0.8" },
+    { name = "luigi", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=3.6.0,<3.7" },
+    { name = "luigi", marker = "extra == 'zzz-test-luigi'", specifier = ">=3.6.0,<3.7" },
+    { name = "memory-profiler", marker = "extra == 'zzz-test-memory-profiler'", specifier = ">=0.61.0,<0.62" },
+    { name = "more-itertools", marker = "extra == 'zzz-test-more-itertools'", specifier = ">=10.6.0,<10.7" },
+    { name = "nest-asyncio", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=1.6.0,<1.7" },
+    { name = "nest-asyncio", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=1.6.0,<1.7" },
+    { name = "numpy", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=2.2.3,<2.3" },
+    { name = "numpy", marker = "extra == 'zzz-test-math'", specifier = ">=2.2.3,<2.3" },
+    { name = "numpy", marker = "extra == 'zzz-test-numpy'", specifier = ">=2.2.3,<2.3" },
+    { name = "optuna", marker = "extra == 'zzz-test-optuna'", specifier = ">=4.2.1,<4.3" },
+    { name = "orjson", marker = "extra == 'zzz-test-dataclasses'", specifier = ">=3.10.15,<3.11" },
+    { name = "orjson", marker = "extra == 'zzz-test-hashlib'", specifier = ">=3.10.15,<3.11" },
+    { name = "orjson", marker = "extra == 'zzz-test-http'", specifier = ">=3.10.14,<3.11" },
+    { name = "orjson", marker = "extra == 'zzz-test-orjson'", specifier = ">=3.10.15,<3.11" },
+    { name = "orjson", marker = "extra == 'zzz-test-pytest'", specifier = ">=3.10.14,<3.11" },
+    { name = "orjson", marker = "extra == 'zzz-test-redis'", specifier = ">=3.10.15,<3.11" },
+    { name = "pandas", marker = "extra == 'zzz-test-jupyter'", specifier = ">=2.2.2,<2.3" },
+    { name = "pathvalidate", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=3.2.3,<3.3" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-altair'", specifier = ">=1.24.0,<1.25" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-dataclasses'", specifier = ">=1.24.0,<1.25" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-hashlib'", specifier = ">=1.24.0,<1.25" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-iterables'", specifier = ">=1.24.0,<1.25" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-jupyter'", specifier = ">=1.24.0,<1.25" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-operator'", specifier = ">=1.24.0,<1.25" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-orjson'", specifier = ">=1.24.0,<1.25" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-polars'", specifier = ">=1.24.0,<1.25" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-redis'", specifier = ">=1.24.0,<1.25" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=1.24.0,<1.25" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-typing'", specifier = ">=1.24.0,<1.25" },
+    { name = "pqdm", marker = "extra == 'zzz-test-pqdm'", specifier = ">=0.2.0,<0.3" },
+    { name = "pydantic", marker = "extra == 'zzz-test-pydantic'", specifier = ">=2.10.6,<2.11" },
+    { name = "pyinstrument", marker = "extra == 'zzz-test-pyinstrument'", specifier = ">=5.0.0,<5.1" },
+    { name = "pyrsistent", marker = "extra == 'zzz-test-pyrsistent'", specifier = ">=0.20.0,<0.21" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.3.5,<8.4" },
+    { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=0.25.3,<0.26" },
+    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=6.0.0,<6.1" },
+    { name = "pytest-instafail", marker = "extra == 'test'", specifier = ">=0.5.0,<0.6" },
+    { name = "pytest-only", marker = "extra == 'test'", specifier = ">=2.1.2,<2.2" },
+    { name = "pytest-randomly", marker = "extra == 'test'", specifier = ">=3.16.0,<3.17" },
+    { name = "pytest-regressions", marker = "extra == 'test'", specifier = ">=2.7.0,<2.8" },
+    { name = "pytest-regressions", marker = "extra == 'zzz-test-pytest-regressions'", specifier = ">=2.7.0,<2.8" },
+    { name = "pytest-rerunfailures", marker = "extra == 'test'", specifier = ">=15.0,<16" },
+    { name = "pytest-rng", marker = "extra == 'test'", specifier = ">=1.0.0,<1.1" },
+    { name = "pytest-xdist", marker = "extra == 'test'", specifier = ">=3.6.1,<3.7" },
+    { name = "python-dotenv", marker = "extra == 'zzz-test-python-dotenv'", specifier = ">=1.0.1,<1.1" },
+    { name = "redis", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=5.2.1,<5.3" },
+    { name = "redis", marker = "extra == 'zzz-test-redis'", specifier = ">=5.2.1,<5.3" },
+    { name = "rich", marker = "extra == 'zzz-test-logging'", specifier = ">=13.8.1,<13.9" },
+    { name = "rich", marker = "extra == 'zzz-test-orjson'", specifier = ">=13.8.1,<13.9" },
+    { name = "rich", marker = "extra == 'zzz-test-redis'", specifier = ">=13.8.1,<13.9" },
+    { name = "rich", marker = "extra == 'zzz-test-rich'", specifier = ">=13.8.1,<13.9" },
+    { name = "rich", marker = "extra == 'zzz-test-sys'", specifier = ">=13.8.1,<13.9" },
+    { name = "rich", marker = "extra == 'zzz-test-traceback'", specifier = ">=13.8.1,<13.9" },
+    { name = "scipy", marker = "extra == 'zzz-test-scipy'", specifier = ">=1.15.2,<1.16" },
+    { name = "slack-sdk", marker = "extra == 'zzz-test-slack-sdk'", specifier = ">=3.34.0,<3.35" },
+    { name = "sqlalchemy", marker = "extra == 'zzz-test-click'", specifier = ">=2.0.38,<2.1" },
+    { name = "sqlalchemy", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=2.0.38,<2.1" },
+    { name = "sqlalchemy", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=2.0.38,<2.1" },
+    { name = "sqlalchemy", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=2.0.38,<2.1" },
+    { name = "streamlit", marker = "extra == 'zzz-test-streamlit'", specifier = ">=1.43.1,<1.44" },
+    { name = "tenacity", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=8.5.0,<9.0" },
+    { name = "tenacity", marker = "extra == 'zzz-test-redis'", specifier = ">=8.5.0,<9.0" },
+    { name = "tenacity", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=8.5.0,<9.0" },
+    { name = "tenacity", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=8.5.0,<9.0" },
+    { name = "tenacity", marker = "extra == 'zzz-test-tenacity'", specifier = ">=8.5.0,<9.0" },
+    { name = "typing-extensions", specifier = ">=4.12.2,<4.13" },
+    { name = "tzdata", marker = "extra == 'zzz-test-zoneinfo'", specifier = ">=2025.1,<2025.2" },
+    { name = "tzlocal", marker = "extra == 'zzz-test-datetime'", specifier = ">=5.3.1,<5.4" },
+    { name = "tzlocal", marker = "extra == 'zzz-test-fpdf2'", specifier = ">=5.3.1,<5.4" },
+    { name = "tzlocal", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=5.3.1,<5.4" },
+    { name = "tzlocal", marker = "extra == 'zzz-test-logging'", specifier = ">=5.3.1,<5.4" },
+    { name = "tzlocal", marker = "extra == 'zzz-test-orjson'", specifier = ">=5.3.1,<5.4" },
+    { name = "tzlocal", marker = "extra == 'zzz-test-pyinstrument'", specifier = ">=5.3.1,<5.4" },
+    { name = "tzlocal", marker = "extra == 'zzz-test-redis'", specifier = ">=5.3.1,<5.4" },
+    { name = "tzlocal", marker = "extra == 'zzz-test-sys'", specifier = ">=5.3.1,<5.4" },
+    { name = "tzlocal", marker = "extra == 'zzz-test-traceback'", specifier = ">=5.3.1,<5.4" },
+    { name = "tzlocal", marker = "extra == 'zzz-test-tzlocal'", specifier = ">=5.3.1,<5.4" },
+    { name = "uvicorn", marker = "extra == 'zzz-test-fastapi'", specifier = ">=0.34.0,<0.35" },
+    { name = "vl-convert-python", marker = "extra == 'zzz-test-altair'", specifier = ">=1.7.0,<1.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-altair'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-click'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-dataclasses'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-datetime'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-hashlib'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-http'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-iterables'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-logging'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-luigi'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-operator'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-orjson'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-polars'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-pytest'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-python-dotenv'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-redis'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-sys'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-traceback'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-typing'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-whenever'", specifier = ">=0.7.2,<0.8" },
+    { name = "whenever", marker = "extra == 'zzz-test-zoneinfo'", specifier = ">=0.7.2,<0.8" },
+]
+provides-extras = ["test", "zzz-test-altair", "zzz-test-astor", "zzz-test-asyncio", "zzz-test-atomicwrites", "zzz-test-atools", "zzz-test-cachetools", "zzz-test-click", "zzz-test-contextlib", "zzz-test-cryptography", "zzz-test-cvxpy", "zzz-test-dataclasses", "zzz-test-datetime", "zzz-test-enum", "zzz-test-errors", "zzz-test-eventkit", "zzz-test-fastapi", "zzz-test-fpdf2", "zzz-test-functions", "zzz-test-functools", "zzz-test-getpass", "zzz-test-git", "zzz-test-hashlib", "zzz-test-http", "zzz-test-hypothesis", "zzz-test-ipython", "zzz-test-iterables", "zzz-test-jupyter", "zzz-test-logging", "zzz-test-loguru", "zzz-test-luigi", "zzz-test-math", "zzz-test-memory-profiler", "zzz-test-modules", "zzz-test-more-itertools", "zzz-test-numpy", "zzz-test-operator", "zzz-test-optuna", "zzz-test-orjson", "zzz-test-os", "zzz-test-pathlib", "zzz-test-pickle", "zzz-test-platform", "zzz-test-polars", "zzz-test-pqdm", "zzz-test-pydantic", "zzz-test-pyinstrument", "zzz-test-pyrsistent", "zzz-test-pytest", "zzz-test-pytest-regressions", "zzz-test-python-dotenv", "zzz-test-random", "zzz-test-re", "zzz-test-redis", "zzz-test-rich", "zzz-test-scipy", "zzz-test-sentinel", "zzz-test-shelve", "zzz-test-slack-sdk", "zzz-test-socket", "zzz-test-sqlalchemy", "zzz-test-sqlalchemy-polars", "zzz-test-streamlit", "zzz-test-sys", "zzz-test-tempfile", "zzz-test-tenacity", "zzz-test-text", "zzz-test-threading", "zzz-test-timer", "zzz-test-traceback", "zzz-test-types", "zzz-test-typing", "zzz-test-tzlocal", "zzz-test-uuid", "zzz-test-version", "zzz-test-warnings", "zzz-test-whenever", "zzz-test-zipfile", "zzz-test-zoneinfo"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1140,240 +1296,6 @@ dev = [
     { name = "vl-convert-python", specifier = ">=1.7.0,<1.8" },
     { name = "whenever", specifier = ">=0.7.2,<0.8" },
     { name = "win32-setctime", specifier = ">=1.2.0,<1.3" },
-]
-test = [
-    { name = "coverage-conditional-plugin", specifier = ">=0.9.0,<0.10" },
-    { name = "hypothesis", specifier = ">=6.127.9,<6.128" },
-    { name = "pytest", specifier = ">=8.3.5,<8.4" },
-    { name = "pytest-asyncio", specifier = ">=0.25.3,<0.26" },
-    { name = "pytest-cov", specifier = ">=6.0.0,<6.1" },
-    { name = "pytest-instafail", specifier = ">=0.5.0,<0.6" },
-    { name = "pytest-only", specifier = ">=2.1.2,<2.2" },
-    { name = "pytest-randomly", specifier = ">=3.16.0,<3.17" },
-    { name = "pytest-regressions", specifier = ">=2.7.0,<2.8" },
-    { name = "pytest-rerunfailures", specifier = ">=15.0,<16" },
-    { name = "pytest-rng", specifier = ">=1.0.0,<1.1" },
-    { name = "pytest-xdist", specifier = ">=3.6.1,<3.7" },
-]
-zzz-test-altair = [
-    { name = "altair", specifier = ">=5.5.0,<5.6" },
-    { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
-    { name = "img2pdf", specifier = ">=0.6.0,<0.7" },
-    { name = "polars-lts-cpu", specifier = ">=1.24.0,<1.25" },
-    { name = "vl-convert-python", specifier = ">=1.7.0,<1.8" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-astor = [{ name = "astor", specifier = ">=0.8.1,<0.9" }]
-zzz-test-asyncio = []
-zzz-test-atomicwrites = [{ name = "atomicwrites", specifier = ">=1.4.1,<1.5" }]
-zzz-test-atools = [{ name = "atools", specifier = ">=0.14.2,<0.15" }]
-zzz-test-cachetools = [{ name = "cachetools", specifier = ">=5.5.2,<5.6" }]
-zzz-test-click = [
-    { name = "click", specifier = ">=8.1.8,<8.2" },
-    { name = "sqlalchemy", specifier = ">=2.0.38,<2.1" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-contextlib = []
-zzz-test-cryptography = [{ name = "cryptography", specifier = ">=44.0.2,<44.1" }]
-zzz-test-cvxpy = [{ name = "cvxpy", specifier = ">=1.6.2,<1.7" }]
-zzz-test-dataclasses = [
-    { name = "ib-async-dataclass", specifier = ">=1.0.3rc5,<1.1" },
-    { name = "orjson", specifier = ">=3.10.15,<3.11" },
-    { name = "polars-lts-cpu", specifier = ">=1.24.0,<1.25" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-datetime = [
-    { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-enum = []
-zzz-test-errors = []
-zzz-test-eventkit = [{ name = "eventkit", specifier = ">=1.0.3,<1.1" }]
-zzz-test-fastapi = [
-    { name = "fastapi", specifier = ">=0.115.11,<0.116" },
-    { name = "httpx", specifier = ">=0.28.1,<0.29" },
-    { name = "uvicorn", specifier = ">=0.34.0,<0.35" },
-]
-zzz-test-fpdf2 = [
-    { name = "fpdf2", specifier = ">=2.8.2,<2.9" },
-    { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-]
-zzz-test-functions = []
-zzz-test-functools = []
-zzz-test-getpass = []
-zzz-test-git = []
-zzz-test-hashlib = [
-    { name = "ib-async-dataclass", specifier = ">=1.0.3rc5,<1.1" },
-    { name = "orjson", specifier = ">=3.10.15,<3.11" },
-    { name = "polars-lts-cpu", specifier = ">=1.24.0,<1.25" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-http = [
-    { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
-    { name = "orjson", specifier = ">=3.10.14,<3.11" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-hypothesis = [
-    { name = "aiosqlite", specifier = ">=0.21.0,<0.22" },
-    { name = "asyncpg", specifier = ">=0.30.0,<0.31" },
-    { name = "greenlet", specifier = ">=3.1.1,<3.2" },
-    { name = "hypothesis", specifier = ">=6.127.9,<6.128" },
-    { name = "luigi", specifier = ">=3.6.0,<3.7" },
-    { name = "numpy", specifier = ">=2.2.3,<2.3" },
-    { name = "pathvalidate", specifier = ">=3.2.3,<3.3" },
-    { name = "redis", specifier = ">=5.2.1,<5.3" },
-    { name = "sqlalchemy", specifier = ">=2.0.38,<2.1" },
-    { name = "tenacity", specifier = ">=8.5.0,<9.0" },
-    { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-ipython = [{ name = "ipython", specifier = ">=9.0.1,<9.1" }]
-zzz-test-iterables = [
-    { name = "ib-async-dataclass", specifier = ">=1.0.3rc5,<1.1" },
-    { name = "polars-lts-cpu", specifier = ">=1.24.0,<1.25" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-jupyter = [
-    { name = "jupyterlab", specifier = ">=4.2.0,<4.3" },
-    { name = "pandas", specifier = ">=2.2.2,<2.3" },
-    { name = "polars-lts-cpu", specifier = ">=1.24.0,<1.25" },
-]
-zzz-test-logging = [
-    { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
-    { name = "coloredlogs", specifier = ">=15.0.1,<15.1" },
-    { name = "concurrent-log-handler", specifier = ">=0.9.25,<0.10" },
-    { name = "hatch", specifier = ">=1.14.0,<1.15" },
-    { name = "rich", specifier = ">=13.8.1,<13.9" },
-    { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-loguru = [{ name = "loguru", specifier = ">=0.7.3,<0.8" }]
-zzz-test-luigi = [
-    { name = "luigi", specifier = ">=3.6.0,<3.7" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-math = [{ name = "numpy", specifier = ">=2.2.3,<2.3" }]
-zzz-test-memory-profiler = [{ name = "memory-profiler", specifier = ">=0.61.0,<0.62" }]
-zzz-test-modules = []
-zzz-test-more-itertools = [{ name = "more-itertools", specifier = ">=10.6.0,<10.7" }]
-zzz-test-numpy = [{ name = "numpy", specifier = ">=2.2.3,<2.3" }]
-zzz-test-operator = [
-    { name = "ib-async-dataclass", specifier = ">=1.0.3rc5,<1.1" },
-    { name = "polars-lts-cpu", specifier = ">=1.24.0,<1.25" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-optuna = [{ name = "optuna", specifier = ">=4.2.1,<4.3" }]
-zzz-test-orjson = [
-    { name = "ib-async-dataclass", specifier = ">=1.0.3rc5,<1.1" },
-    { name = "orjson", specifier = ">=3.10.15,<3.11" },
-    { name = "polars-lts-cpu", specifier = ">=1.24.0,<1.25" },
-    { name = "rich", specifier = ">=13.8.1,<13.9" },
-    { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-os = []
-zzz-test-pathlib = []
-zzz-test-pickle = [{ name = "atomicwrites", specifier = ">=1.4.1,<1.5" }]
-zzz-test-platform = []
-zzz-test-polars = [
-    { name = "dacite", specifier = ">=1.9.2,<1.10" },
-    { name = "polars-lts-cpu", specifier = ">=1.24.0,<1.25" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-pqdm = [{ name = "pqdm", specifier = ">=0.2.0,<0.3" }]
-zzz-test-pydantic = [
-    { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
-    { name = "pydantic", specifier = ">=2.10.6,<2.11" },
-]
-zzz-test-pyinstrument = [
-    { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
-    { name = "pyinstrument", specifier = ">=5.0.0,<5.1" },
-    { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-]
-zzz-test-pyrsistent = [{ name = "pyrsistent", specifier = ">=0.20.0,<0.21" }]
-zzz-test-pytest = [
-    { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
-    { name = "orjson", specifier = ">=3.10.14,<3.11" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-pytest-regressions = [{ name = "pytest-regressions", specifier = ">=2.7.0,<2.8" }]
-zzz-test-python-dotenv = [
-    { name = "python-dotenv", specifier = ">=1.0.1,<1.1" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-random = []
-zzz-test-re = []
-zzz-test-redis = [
-    { name = "ib-async-dataclass", specifier = ">=1.0.3rc5,<1.1" },
-    { name = "orjson", specifier = ">=3.10.15,<3.11" },
-    { name = "polars-lts-cpu", specifier = ">=1.24.0,<1.25" },
-    { name = "redis", specifier = ">=5.2.1,<5.3" },
-    { name = "rich", specifier = ">=13.8.1,<13.9" },
-    { name = "tenacity", specifier = ">=8.5.0,<9.0" },
-    { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-rich = [{ name = "rich", specifier = ">=13.8.1,<13.9" }]
-zzz-test-scipy = [{ name = "scipy", specifier = ">=1.15.2,<1.16" }]
-zzz-test-sentinel = []
-zzz-test-shelve = []
-zzz-test-slack-sdk = [
-    { name = "aiohttp", specifier = ">=3.11.13,<3.12" },
-    { name = "slack-sdk", specifier = ">=3.34.0,<3.35" },
-]
-zzz-test-socket = []
-zzz-test-sqlalchemy = [
-    { name = "aiosqlite", specifier = ">=0.21.0,<0.22" },
-    { name = "asyncpg", specifier = ">=0.30.0,<0.31" },
-    { name = "greenlet", specifier = ">=3.1.1,<3.2" },
-    { name = "nest-asyncio", specifier = ">=1.6.0,<1.7" },
-    { name = "sqlalchemy", specifier = ">=2.0.38,<2.1" },
-    { name = "tenacity", specifier = ">=8.5.0,<9.0" },
-]
-zzz-test-sqlalchemy-polars = [
-    { name = "aiosqlite", specifier = ">=0.21.0,<0.22" },
-    { name = "asyncpg", specifier = ">=0.30.0,<0.31" },
-    { name = "greenlet", specifier = ">=3.1.1,<3.2" },
-    { name = "nest-asyncio", specifier = ">=1.6.0,<1.7" },
-    { name = "polars-lts-cpu", specifier = ">=1.24.0,<1.25" },
-    { name = "sqlalchemy", specifier = ">=2.0.38,<2.1" },
-    { name = "tenacity", specifier = ">=8.5.0,<9.0" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-streamlit = [{ name = "streamlit", specifier = ">=1.43.1,<1.44" }]
-zzz-test-sys = [
-    { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
-    { name = "hatch", specifier = ">=1.14.0,<1.15" },
-    { name = "rich", specifier = ">=13.8.1,<13.9" },
-    { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-tempfile = []
-zzz-test-tenacity = [{ name = "tenacity", specifier = ">=8.5.0,<9.0" }]
-zzz-test-text = []
-zzz-test-threading = []
-zzz-test-timer = []
-zzz-test-traceback = [
-    { name = "hatch", specifier = ">=1.14.0,<1.15" },
-    { name = "rich", specifier = ">=13.8.1,<13.9" },
-    { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-types = []
-zzz-test-typing = [
-    { name = "ib-async-dataclass", specifier = ">=1.0.3rc5,<1.1" },
-    { name = "polars-lts-cpu", specifier = ">=1.24.0,<1.25" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
-]
-zzz-test-tzlocal = [{ name = "tzlocal", specifier = ">=5.3.1,<5.4" }]
-zzz-test-uuid = []
-zzz-test-version = [{ name = "hatch", specifier = ">=1.14.0,<1.15" }]
-zzz-test-warnings = []
-zzz-test-whenever = [{ name = "whenever", specifier = ">=0.7.2,<0.8" }]
-zzz-test-zipfile = []
-zzz-test-zoneinfo = [
-    { name = "tzdata", specifier = ">=2025.1,<2025.2" },
-    { name = "whenever", specifier = ">=0.7.2,<0.8" },
 ]
 
 [[package]]

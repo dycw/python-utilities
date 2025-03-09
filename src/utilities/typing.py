@@ -33,10 +33,8 @@ def contains_self(obj: Any, /) -> bool:
 
 def get_args(obj: Any, /) -> tuple[Any, ...]:
     """Get the arguments of an annotation."""
-    if (TypeAliasType is not None) and isinstance(  # skipif-version-ge-312
-        obj, TypeAliasType
-    ):
-        return get_args(obj.__value__)  # pragma: no cover
+    if isinstance(obj, TypeAliasType):
+        return get_args(obj.__value__)
     if is_optional_type(obj):
         args = _get_args(obj)
         return tuple(a for a in args if a is not NoneType)
@@ -175,9 +173,7 @@ def is_union_type(obj: Any, /) -> bool:
 def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:
     """Check if an object is an annotation with a given origin."""
     return (get_origin(obj) is origin) or (
-        (TypeAliasType is not None)
-        and isinstance(obj, TypeAliasType)
-        and _is_annotation_of_type(obj.__value__, origin)
+        isinstance(obj, TypeAliasType) and _is_annotation_of_type(obj.__value__, origin)
     )
 
 
