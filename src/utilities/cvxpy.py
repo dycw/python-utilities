@@ -9,7 +9,6 @@ from cvxpy import CLARABEL, Expression, Problem
 from numpy import ndarray, where
 
 from utilities.numpy import NDArrayF, is_zero
-from utilities.types import Number
 
 
 @overload
@@ -446,7 +445,7 @@ def sum_(x: float | NDArrayF, /) -> float: ...
 def sum_(x: Expression, /) -> Expression: ...
 def sum_(x: float | NDArrayF | Expression, /) -> float | Expression:
     """Compute the sum of a quantity."""
-    if isinstance(x, Number):
+    if isinstance(x, int | float):
         return x
     if isinstance(x, ndarray):
         return np.sum(x).item()
