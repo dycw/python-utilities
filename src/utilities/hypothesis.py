@@ -24,7 +24,6 @@ from math import ceil, floor, inf, isclose, isfinite, nan
 from os import environ
 from pathlib import Path
 from re import search
-from shutil import move, rmtree
 from string import ascii_letters, ascii_lowercase, ascii_uppercase, digits, printable
 from subprocess import check_call
 from typing import (
@@ -503,7 +502,7 @@ def git_repos(
     branch: MaybeSearchStrategy[str | None] = None,
     remote: MaybeSearchStrategy[str | None] = None,
     git_version: MaybeSearchStrategy[Version | None] = None,
-    hatch_version: MaybeSearchStrategy[Version | None] = None,
+    pyproject_version: MaybeSearchStrategy[Version | None] = None,
 ) -> Path:
     path = draw(temp_paths())
     with temp_cwd(path):
@@ -523,14 +522,15 @@ def git_repos(
             _ = check_call(["git", "remote", "add", "origin", remote_])
         if (git_version_ := draw2(draw, git_version)) is not None:
             _ = check_call(["git", "tag", str(git_version_), "master"])
-        if (hatch_version_ := draw2(draw, hatch_version)) is not None:
-            _ = check_call(["hatch", "new", "package"])
-            package = path.joinpath("package")
-            for p in package.iterdir():
-                move(p, p.parent.with_name(p.name))
-            rmtree(package)
-            if (hatch_version_ > Version(0, 0, 1)) and (hatch_version_.suffix is None):
-                _ = check_call(["hatch", "version", str(hatch_version_)])
+        if (pyproject_version_ := draw2(draw, pyproject_version)) is not None:
+            from tomlkit import document, dump, table
+
+            doc = document()
+            table = table()
+            table["version"] = str(pyproject_version_)
+            doc["project"] = table
+            with path.joinpath("pyproject.toml").open(mode="w") as fh:
+                dump(doc, fh)
     return path
 
 
