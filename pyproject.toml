@@ -324,14 +324,14 @@ dependencies = ["typing-extensions >= 4.12.2, < 4.13"]
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.96.1"
+version = "0.97.0"
 
 [project.scripts]
 
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.96.1"
+current_version = "0.97.0"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
