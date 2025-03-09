@@ -122,7 +122,6 @@ from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sentinel import Sentinel
 from utilities.sqlalchemy import Dialect, _get_dialect
-from utilities.types import Duration, Number
 from utilities.version import Version
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
@@ -141,6 +140,7 @@ if TYPE_CHECKING:
 
     from utilities.datetime import Month
     from utilities.tempfile import TemporaryDirectory
+    from utilities.types import Number
 
 
 class TestAssumeDoesNotRaise:
@@ -211,7 +211,7 @@ class TestDateDurations:
                 max_timedelta=max_timedelta,
             )
         )
-        assert isinstance(duration, Duration)
+        assert isinstance(duration, int | float | dt.timedelta)
         match duration:
             case int():
                 if min_int is not None:
@@ -275,7 +275,7 @@ class TestDateTimeDurations:
                 max_timedelta=max_timedelta,
             )
         )
-        assert isinstance(duration, Duration)
+        assert isinstance(duration, int | float | dt.timedelta)
         match duration:
             case int() | float():
                 if min_number is not None:
