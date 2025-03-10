@@ -29,6 +29,7 @@ from tests.test_traceback_funcs.task_group_one import func_task_group_one_first
 from tests.test_traceback_funcs.task_group_two import func_task_group_two_first
 from tests.test_traceback_funcs.two import func_two_first
 from tests.test_traceback_funcs.untraced import func_untraced
+from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_str, is_sequence_of
 from utilities.iterables import OneNonUniqueError, one
 from utilities.text import strip_and_dedent
@@ -38,6 +39,7 @@ from utilities.traceback import (
     ExcTB,
     RichTracebackFormatter,
     _CallArgsError,
+    _format_exception,
     _Frame,
     get_rich_traceback,
     trace,
@@ -51,6 +53,21 @@ if TYPE_CHECKING:
     from re import Pattern
     from traceback import FrameSummary
     from types import FrameType
+
+
+class TestFormatException:
+    def test_main(self) -> None:
+        error = ValueError("Generic value error")
+        result = _format_exception(error)
+        expected = "builtins.ValueError(Generic value error)"
+        assert result == expected
+
+    def test_custom(self) -> None:
+        x = 0
+        error = ImpossibleCaseError(case=[f"{x=}"])
+        result = _format_exception(error)
+        expected = "utilities.errors.ImpossibleCaseError(Case must be possible: x=0.)"
+        assert result == expected
 
 
 class TestFrame:

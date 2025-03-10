@@ -525,9 +525,10 @@ def get_class(obj: _T | type[_T], /) -> type[_T]:
 ##
 
 
-def get_class_name(obj: Any, /) -> str:
+def get_class_name(obj: Any, /, *, qual: bool = False) -> str:
     """Get the name of the class of an object, unless it is already a class."""
-    return get_class(obj).__name__
+    cls = get_class(obj)
+    return f"{cls.__module__}.{cls.__qualname__}" if qual else cls.__name__
 
 
 ##
