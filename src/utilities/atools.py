@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from asyncio import Lock
 from collections.abc import Callable
 from typing import TYPE_CHECKING, ParamSpec, TypeVar
 
@@ -20,7 +19,6 @@ _R = TypeVar("_R")
 _AsyncFunc = Callable[_P, Coroutine1[_R]]
 type _Key = tuple[_AsyncFunc, dt.timedelta]
 _MEMOIZED_FUNCS: dict[_Key, _AsyncFunc] = {}
-_LOCKS: dict[_Key, Lock] = {}
 
 
 async def call_memoized(
@@ -35,16 +33,12 @@ async def call_memoized(
         return await func(*args, **kwargs)
     timedelta = datetime_duration_to_timedelta(refresh)
     key: _Key = (func, timedelta)
+    memoized_func: _AsyncFunc[_P, _R]
     try:
-        lock = _LOCKS[key]
+        memoized_func = _MEMOIZED_FUNCS[key]
     except KeyError:
-        lock = _LOCKS[key] = Lock()
-    try:
-        memoized = _MEMOIZED_FUNCS[key]
-    except KeyError:
-        memoized = _MEMOIZED_FUNCS[(key)] = memoize(duration=refresh)(func)
-    async with lock:
-        return await memoized(*args, **kwargs)
+        memoized_func = _MEMOIZED_FUNCS[(key)] = memoize(duration=refresh)(func)
+    return await memoized_func(*args, **kwargs)
 
 
 __all__ = ["call_memoized"]
