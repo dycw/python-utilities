@@ -341,6 +341,32 @@ def datetime_duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
 ##
 
 
+def datetime_utc(
+    year: int,
+    month: int,
+    day: int,
+    /,
+    hour: int = 0,
+    minute: int = 0,
+    second: int = 0,
+    microsecond: int = 0,
+) -> dt.datetime:
+    """Create a UTC-zoned datetime."""
+    return dt.datetime(
+        year,
+        month,
+        day,
+        hour=hour,
+        minute=minute,
+        second=second,
+        microsecond=microsecond,
+        tzinfo=UTC,
+    )
+
+
+##
+
+
 def days_since_epoch(date: dt.date, /) -> int:
     """Compute the number of days since the epoch."""
     check_date_not_datetime(date)
@@ -1109,6 +1135,7 @@ __all__ = [
     "date_to_month",
     "datetime_duration_to_float",
     "datetime_duration_to_timedelta",
+    "datetime_utc",
     "days_since_epoch",
     "days_since_epoch_to_date",
     "drop_microseconds",

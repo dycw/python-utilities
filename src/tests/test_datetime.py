@@ -79,6 +79,7 @@ from utilities.datetime import (
     date_to_month,
     datetime_duration_to_float,
     datetime_duration_to_timedelta,
+    datetime_utc,
     days_since_epoch,
     days_since_epoch_to_date,
     drop_microseconds,
@@ -527,6 +528,21 @@ class TestDateToMonth:
     def test_main(self, *, date: dt.date) -> None:
         result = date_to_month(date).to_date(day=date.day)
         assert result == date
+
+
+class TestDatetimeUTC:
+    @given(datetime=zoned_datetimes())
+    def test_main(self, *, datetime: dt.datetime) -> None:
+        result = datetime_utc(
+            datetime.year,
+            datetime.month,
+            datetime.day,
+            hour=datetime.hour,
+            minute=datetime.minute,
+            second=datetime.second,
+            microsecond=datetime.microsecond,
+        )
+        assert result == datetime
 
 
 class TestDaysSinceEpoch:
