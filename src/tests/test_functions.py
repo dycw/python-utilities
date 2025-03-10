@@ -24,6 +24,7 @@ from hypothesis.strategies import (
 from pytest import raises
 
 from utilities.datetime import ZERO_TIME, get_now, get_today
+from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     EnsureBoolError,
     EnsureBytesError,
@@ -414,6 +415,12 @@ class TestGetClassName:
         class Example: ...
 
         assert get_class_name(Example()) == "Example"
+
+    def test_qual(self) -> None:
+        assert (
+            get_class_name(ImpossibleCaseError, qual=True)
+            == "utilities.errors.ImpossibleCaseError"
+        )
 
 
 class TestGetFuncNameAndGetFuncQualName:

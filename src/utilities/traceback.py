@@ -682,8 +682,8 @@ def yield_frames(*, traceback: TracebackType | None = None) -> Iterator[FrameTyp
 
 def _format_exception(error: BaseException, /, *, depth: int = 0) -> str:
     """Format an exception."""
-    cls = get_class_name(error)
-    line = f"{cls}({error})"
+    name = get_class_name(error, qual=True)
+    line = f"{name}({error})"
     return indent(line, depth * _INDENT)
 
 
