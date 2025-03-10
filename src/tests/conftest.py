@@ -68,7 +68,7 @@ def traceback_func_chain() -> Pattern[str]:
                     Line 19:
                         raise ValueError\(msg\) from error
                     Raised:
-                        ValueError\(Assertion failed: Result \(112\) must be divisible by 10\)
+                        builtins\.ValueError\(Assertion failed: Result \(112\) must be divisible by 10\)
 
             Exception chain 2/2:
                 Frame 1/1: func_chain_second \(tests\.test_traceback_funcs\.chain\)
@@ -90,7 +90,7 @@ def traceback_func_chain() -> Pattern[str]:
                     Line 30:
                         assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"
                     Raised:
-                        AssertionError\(Result \(112\) must be divisible by 10\)
+                        builtins\.AssertionError\(Result \(112\) must be divisible by 10\)
             """
         ),
         flags=MULTILINE,
@@ -126,7 +126,7 @@ def traceback_func_one() -> Pattern[str]:
                 Line 16:
                     assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"
                 Raised:
-                    AssertionError\(Result \(56\) must be divisible by 10\)
+                    builtins\.AssertionError\(Result \(56\) must be divisible by 10\)
             """
         ),
         flags=MULTILINE,
@@ -164,7 +164,7 @@ def traceback_func_task_group_one() -> Pattern[str]:
                     Line 18:
                         async with TaskGroup\(\) as tg:
                     Raised:
-                        ExceptionGroup\(unhandled errors in a TaskGroup \(1 sub-exception\)\)
+                        builtins\.ExceptionGroup\(unhandled errors in a TaskGroup \(1 sub-exception\)\)
 
                 Exception group error 1/1:
                     Frame 1/1: func_task_group_one_second \(tests\.test_traceback_funcs\.task_group_one\)
@@ -186,7 +186,7 @@ def traceback_func_task_group_one() -> Pattern[str]:
                         Line 33:
                             assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"
                         Raised:
-                            AssertionError\(Result \(112\) must be divisible by 10\)
+                            builtins\.AssertionError\(Result \(112\) must be divisible by 10\)
             """
         )
     )
@@ -239,7 +239,7 @@ def traceback_func_two() -> Pattern[str]:
                 Line 26:
                     assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"
                 Raised:
-                    AssertionError\(Result \(112\) must be divisible by 10\)
+                    builtins\.AssertionError\(Result \(112\) must be divisible by 10\)
             """
         ),
         flags=MULTILINE,
