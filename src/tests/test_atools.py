@@ -18,7 +18,7 @@ class TestCallMemoized:
             assert (await call_memoized(increment)) == i
             assert counter == i
 
-    async def test_duration(self) -> None:
+    async def test_refresh(self) -> None:
         counter = 0
 
         async def increment() -> int:
