@@ -7,19 +7,29 @@ from utilities.atools import call_memoized
 
 class TestCallMemoized:
     async def test_main(self) -> None:
-        i = 0
+        counter = 0
 
         async def increment() -> int:
-            nonlocal i
-            i += 1
-            return i
+            nonlocal counter
+            counter += 1
+            return counter
 
-        assert (await call_memoized(increment)) == 1
-        assert (await call_memoized(increment)) == 2
+        for i in range(1, 3):
+            assert (await call_memoized(increment)) == i
+            assert counter == i
+
+    async def test_refresh(self) -> None:
+        counter = 0
+
+        async def increment() -> int:
+            nonlocal counter
+            counter += 1
+            return counter
+
         for _ in range(2):
-            assert (await call_memoized(increment, 0.01)) == 3
-        await sleep(0.01)
-        assert (await call_memoized(increment)) == 4
-        assert (await call_memoized(increment)) == 5
+            assert (await call_memoized(increment, 0.05)) == 1
+            assert counter == 1
+        await sleep(0.1)
         for _ in range(2):
-            assert (await call_memoized(increment, 0.01)) == 6
+            assert (await call_memoized(increment, 0.05)) == 2
+            assert counter == 2
