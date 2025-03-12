@@ -1039,7 +1039,7 @@ class TestOneModalValue:
         ):
             _ = one_modal_value(x, min_frac=0.51)
 
-    @given(x=sets(integers(), min_size=2, max_size=2))
+    @given(x=sets(integers(), min_size=2))
     def test_error_non_unique(self, *, x: set[int]) -> None:
         with raises(
             _OneModalValueNonUniqueError,

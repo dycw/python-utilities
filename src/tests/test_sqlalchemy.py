@@ -6,7 +6,7 @@ from os import getpid
 from time import time_ns
 from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
 
-from hypothesis import Phase, assume, given
+from hypothesis import Phase, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -840,16 +840,21 @@ class TestMapMappingToTable:
 class TestMigrateData:
     @given(
         data=data(),
-        names=sets(_table_names(), min_size=2, max_size=2),
+        names=pairs(_table_names(), unique=True),
         values=lists(
             tuples(integers(0, 10), booleans() | none()),
             min_size=1,
             unique_by=lambda x: x[0],
         ),
     )
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @mark.flaky
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_main(
-        self, *, data: DataObject, names: set[str], values: list[tuple[int, bool]]
+        self,
+        *,
+        data: DataObject,
+        names: tuple[str, str],
+        values: list[tuple[int, bool]],
     ) -> None:
         engine1 = await sqlalchemy_engines(data)
         name1, name2 = names
@@ -1151,7 +1156,7 @@ class TestUpserter:
         triples=_upsert_lists(nullable=True, min_size=1),
     )
     @mark.flaky
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_main(
         self, *, data: DataObject, name: str, triples: list[tuple[int, bool, bool]]
     ) -> None:

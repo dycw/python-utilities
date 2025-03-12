@@ -14,7 +14,6 @@ from hypothesis.strategies import (
     just,
     permutations,
     sampled_from,
-    sets,
     timedeltas,
     timezones,
     tuples,
@@ -154,14 +153,14 @@ class TestPeriod:
 
     @given(
         datetimes=pairs(zoned_datetimes(time_zone=timezones()), sorted=True),
-        time_zones=sets(timezones(), min_size=2, max_size=2),
+        time_zones=pairs(timezones()),
         func=sampled_from([repr, str]),
     )
     def test_repr_datetime_different_time_zone(
         self,
         *,
         datetimes: tuple[dt.datetime, dt.datetime],
-        time_zones: set[ZoneInfo],
+        time_zones: tuple[ZoneInfo, ZoneInfo],
         func: Callable[..., str],
     ) -> None:
         start, end = datetimes
@@ -364,10 +363,13 @@ class TestPeriod:
 
     @given(
         datetimes=pairs(zoned_datetimes(time_zone=timezones()), sorted=True),
-        time_zones=sets(timezones(), min_size=2, max_size=2),
+        time_zones=pairs(timezones()),
     )
     def test_error_time_zone_non_unique(
-        self, *, datetimes: tuple[dt.datetime, dt.datetime], time_zones: set[ZoneInfo]
+        self,
+        *,
+        datetimes: tuple[dt.datetime, dt.datetime],
+        time_zones: tuple[ZoneInfo, ZoneInfo],
     ) -> None:
         start, end = datetimes
         time_zone1, time_zone2 = time_zones
