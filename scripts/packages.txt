@@ -6,6 +6,7 @@ atools
 cachetools
 click
 contextlib
+contextvars
 cryptography
 cvxpy
 dataclasses

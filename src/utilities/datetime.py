@@ -974,15 +974,19 @@ def timedelta_to_milliseconds(
 ) -> float: ...
 def timedelta_to_milliseconds(
     timedelta: dt.timedelta, /, *, strict: bool = False
-) -> float:
+) -> int | float:
     """Compute the number of milliseconds in a timedelta."""
     microseconds = timedelta_to_microseconds(timedelta)
     milliseconds, remainder = divmod(microseconds, _MICROSECONDS_PER_MILLISECOND)
-    if strict:
-        if remainder == 0:
+    match remainder, strict:
+        case 0, _:
             return milliseconds
-        raise TimedeltaToMillisecondsError(timedelta=timedelta, remainder=remainder)
-    return milliseconds + remainder / _MICROSECONDS_PER_MILLISECOND
+        case _, True:
+            raise TimedeltaToMillisecondsError(timedelta=timedelta, remainder=remainder)
+        case _, False:
+            return milliseconds + remainder / _MICROSECONDS_PER_MILLISECOND
+        case _ as never:
+            assert_never(never)
 
 
 @dataclass(kw_only=True, slots=True)

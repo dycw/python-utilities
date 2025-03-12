@@ -4,9 +4,8 @@ from io import StringIO
 from logging import DEBUG, ERROR, StreamHandler, getLogger
 from typing import TYPE_CHECKING, ClassVar, Literal
 
-from pytest import raises
+from pytest import mark, raises
 
-from tests.conftest import SKIPIF_CI
 from tests.test_traceback_funcs.chain import func_chain_first
 from tests.test_traceback_funcs.decorated_async import func_decorated_async_first
 from tests.test_traceback_funcs.decorated_sync import func_decorated_sync_first
@@ -330,7 +329,7 @@ class TestGetRichTraceback:
         res_group = repr(exc_group_tb)
         assert traceback_func_task_group_one.search(res_group)
 
-    @SKIPIF_CI
+    @mark.flaky
     async def test_func_task_group_two(self, *, git_ref: str) -> None:
         with raises(ExceptionGroup) as exc_info:
             await func_task_group_two_first(1, 2, 3, 4, c=5, d=6, e=7)

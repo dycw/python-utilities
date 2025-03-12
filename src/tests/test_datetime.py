@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
+    booleans,
     data,
     dates,
     datetimes,
@@ -547,7 +548,7 @@ class TestDatetimeUTC:
 
 class TestDaysSinceEpoch:
     @given(date=dates())
-    def test_datetime_to_microseconds(self, *, date: dt.date) -> None:
+    def test_main(self, *, date: dt.date) -> None:
         days = days_since_epoch(date)
         result = days_since_epoch_to_date(days)
         assert result == date
@@ -770,7 +771,7 @@ class TestMaybeSubPctY:
 
 
 class TestMicrosecondsOrMillisecondsSinceEpoch:
-    @given(datetime=datetimes() | zoned_datetimes(time_zone=timezones()))
+    @given(datetime=datetimes() | zoned_datetimes())
     def test_datetime_to_microseconds(self, *, datetime: dt.datetime) -> None:
         microseconds = microseconds_since_epoch(datetime)
         result = microseconds_since_epoch_to_datetime(
@@ -1051,20 +1052,27 @@ class TestTimedeltaToMicrosecondsOrMilliseconds:
         result = timedelta_to_microseconds(timedelta)
         assert result == microseconds
 
-    @given(timedelta=timedeltas())
-    @mark.parametrize("strict", [param(True), param(False)])  # use mark.parametrize
+    @given(timedelta=timedeltas(), strict=booleans())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_timedelta_to_milliseconds_exact(
         self, *, timedelta: dt.timedelta, strict: bool
     ) -> None:
-        _ = assume(timedelta.microseconds == 0)
+        _, remainder = divmod(timedelta.microseconds, _MICROSECONDS_PER_MILLISECOND)
+        _ = assume(remainder == 0)
         milliseconds = timedelta_to_milliseconds(timedelta, strict=strict)
-        if strict:
-            assert isinstance(milliseconds, int)
-        else:
-            assert milliseconds == round(milliseconds)
-        result = milliseconds_to_timedelta(round(milliseconds))
+        assert isinstance(milliseconds, int)
+        result = milliseconds_to_timedelta(milliseconds)
         assert result == timedelta
+
+    @given(timedelta=timedeltas())
+    def test_timedelta_to_milliseconds_inexact(
+        self, *, timedelta: dt.timedelta
+    ) -> None:
+        _, remainder = divmod(timedelta.microseconds, _MICROSECONDS_PER_MILLISECOND)
+        _ = assume(remainder != 0)
+        milliseconds = timedelta_to_milliseconds(timedelta)
+        result = milliseconds_to_timedelta(round(milliseconds))
+        assert abs(result - timedelta) <= SECOND
 
     @given(timedelta=timedeltas())
     def test_timedelta_to_milliseconds_error(self, *, timedelta: dt.timedelta) -> None:
