@@ -10,7 +10,7 @@ _GLOBAL_BREAKPOINT = ContextVar("GLOBAL_BREAKPOINT", default=False)
 
 def global_breakpoint() -> None:
     """Set a breakpoint if the global breakpoint is enabled."""
-    if _GLOBAL_BREAKPOINT.get():  # skipif-ci
+    if _GLOBAL_BREAKPOINT.get():  # pragma: no cover
         breakpoint()  # noqa: T100
 
 
