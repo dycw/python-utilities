@@ -16,7 +16,7 @@ def global_breakpoint() -> None:
 
 def set_global_breakpoint() -> None:
     """Set the global breakpoint ."""
-    _ = _GLOBAL_BREAKPOINT.set(True)  # skipif-ci
+    _ = _GLOBAL_BREAKPOINT.set(True)
 
 
 __all__ = ["global_breakpoint", "set_global_breakpoint"]
