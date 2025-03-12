@@ -130,6 +130,7 @@ zzz-test-click = [
   "whenever >= 0.7.2, < 0.8",
 ]
 zzz-test-contextlib = []
+zzz-test-contextvars = []
 zzz-test-cryptography = ["cryptography >= 44.0.2, < 44.1"]
 zzz-test-cvxpy = ["cvxpy >= 1.6.3, < 1.7"]
 zzz-test-dataclasses = [
