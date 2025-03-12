@@ -1017,6 +1017,37 @@ class TestOneMaybe:
             _ = one_maybe(iterable)
 
 
+class TestOneModalValue:
+    @given(data=data(), init=lists(integers(), min_size=1))
+    def test_main(self, *, data: DataObject, init: list[int]) -> None:
+        modal_value = data.draw(sampled_from(init))
+        all_ints = list(chain(init, repeat(modal_value, times=len(init))))
+        all_ints = data.draw(permutations(all_ints))
+        result = one_modal_value(all_ints, min_frac=0.501)
+        assert result == modal_value
+
+    @given(x=sets(integers(), min_size=2))
+    def test_error_empty(self, *, x: set[int]) -> None:
+        with raises(
+            _OneModalValueEmptyError,
+            match=re.compile(
+                "Iterable .* with fractions .* must have a modal value", flags=DOTALL
+            ),
+        ):
+            _ = one_modal_value(x, min_frac=0.51)
+
+    @given(x=sets(integers(), min_size=2))
+    def test_error_non_unique(self, *, x: set[int]) -> None:
+        with raises(
+            _OneModalValueNonUniqueError,
+            match=re.compile(
+                "Iterable .* with fractions .* must contain exactly one modal value; got .*, .* and perhaps more",
+                flags=DOTALL,
+            ),
+        ):
+            _ = one_modal_value(x, min_frac=0.5)
+
+
 class TestOneStr:
     @given(text=sampled_from(["a", "b", "c"]))
     def test_case_sensitive(self, *, text: str) -> None:
