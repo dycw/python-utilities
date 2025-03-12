@@ -157,7 +157,7 @@ class TestPeriod:
 
     @given(
         datetimes=pairs(zoned_datetimes(time_zone=timezones()), sorted=True),
-        time_zones=pairs(timezones()),
+        time_zones=pairs(timezones(), unique=True),
         func=sampled_from([repr, str]),
     )
     def test_repr_datetime_different_time_zone(
@@ -365,7 +365,7 @@ class TestPeriod:
 
     @given(
         datetimes=pairs(zoned_datetimes(time_zone=timezones()), sorted=True),
-        time_zones=pairs(timezones()),
+        time_zones=pairs(timezones(), unique=True),
     )
     def test_error_time_zone_non_unique(
         self,
