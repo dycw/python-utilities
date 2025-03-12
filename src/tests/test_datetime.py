@@ -548,7 +548,7 @@ class TestDatetimeUTC:
 
 class TestDaysSinceEpoch:
     @given(date=dates())
-    def test_datetime_to_microseconds(self, *, date: dt.date) -> None:
+    def test_main(self, *, date: dt.date) -> None:
         days = days_since_epoch(date)
         result = days_since_epoch_to_date(days)
         assert result == date
@@ -771,7 +771,7 @@ class TestMaybeSubPctY:
 
 
 class TestMicrosecondsOrMillisecondsSinceEpoch:
-    @given(datetime=datetimes() | zoned_datetimes(time_zone=timezones()))
+    @given(datetime=datetimes() | zoned_datetimes())
     def test_datetime_to_microseconds(self, *, datetime: dt.datetime) -> None:
         microseconds = microseconds_since_epoch(datetime)
         result = microseconds_since_epoch_to_datetime(
