@@ -1148,7 +1148,7 @@ class TestYieldWeekdays:
     def test_start_and_end(self, *, start: dt.date, days: int) -> None:
         with assume_does_not_raise(OverflowError, match="date value out of range"):
             end = start + dt.timedelta(days=days)
-        dates = list(yield_weekdays(start=start, end=end))
+            dates = list(yield_weekdays(start=start, end=end))
         assert all(start <= d <= end for d in dates)
         assert all(map(is_weekday, dates))
         if is_weekday(start):
