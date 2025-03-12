@@ -28,7 +28,7 @@ _TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 ##
 
 
-def asdict_without_defaults(
+def dataclass_to_dict(
     obj: Dataclass,
     /,
     *,
@@ -37,34 +37,39 @@ def asdict_without_defaults(
     rel_tol: float | None = None,
     abs_tol: float | None = None,
     extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
+    drop_defaults: bool = False,
     final: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
     recursive: bool = False,
 ) -> StrMapping:
-    """Cast a dataclass as a dictionary, without its defaults."""
+    """Convert a dataclass to a dictionary."""
     out: dict[str, Any] = {}
     for fld in yield_fields(obj, globalns=globalns, localns=localns):
-        if not fld.equals_default(rel_tol=rel_tol, abs_tol=abs_tol, extra=extra):
+        equal = fld.equals_default(rel_tol=rel_tol, abs_tol=abs_tol, extra=extra)
+        keep = (not equal) or (not drop_defaults)
+        if keep:
             if recursive:
                 if is_dataclass_instance(fld.value):
-                    value = asdict_without_defaults(
+                    value = dataclass_to_dict(
                         fld.value,
                         globalns=globalns,
                         localns=localns,
                         rel_tol=rel_tol,
                         abs_tol=abs_tol,
                         extra=extra,
+                        drop_defaults=drop_defaults,
                         final=final,
                         recursive=recursive,
                     )
                 elif isinstance(fld.value, list):
                     value = [
-                        asdict_without_defaults(
+                        dataclass_to_dict(
                             v,
                             globalns=globalns,
                             localns=localns,
                             rel_tol=rel_tol,
                             abs_tol=abs_tol,
                             extra=extra,
+                            drop_defaults=drop_defaults,
                             final=final,
                             recursive=recursive,
                         )
@@ -388,7 +393,7 @@ class YieldFieldsError(Exception):
 __all__ = [
     "MappingToDataclassError",
     "YieldFieldsError",
-    "asdict_without_defaults",
+    "dataclass_to_dict",
     "mapping_to_dataclass",
     "replace_non_sentinel",
     "repr_without_defaults",

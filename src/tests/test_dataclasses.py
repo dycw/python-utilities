@@ -19,7 +19,7 @@ from utilities.dataclasses import (
     _MappingToDataclassEmptyError,
     _YieldFieldsClass,
     _YieldFieldsInstance,
-    asdict_without_defaults,
+    dataclass_to_dict,
     mapping_to_dataclass,
     replace_non_sentinel,
     repr_without_defaults,
@@ -45,7 +45,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             x: int
 
         obj = Example(x=x)
-        asdict_res = asdict_without_defaults(obj)
+        asdict_res = dataclass_to_dict(obj)
         asdict_exp = {"x": x}
         assert asdict_res == asdict_exp
         repr_res = repr_without_defaults(obj)
@@ -58,7 +58,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             x: int = 0
 
         obj = Example()
-        asdict_res = asdict_without_defaults(obj)
+        asdict_res = dataclass_to_dict(obj)
         asdict_exp = {}
         assert asdict_res == asdict_exp
         repr_res = repr_without_defaults(obj)
@@ -72,7 +72,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
 
         obj = Example()
         extra = {DataFrame: are_frames_equal}
-        asdict_res = asdict_without_defaults(obj, globalns=globals(), extra=extra)
+        asdict_res = dataclass_to_dict(obj, globalns=globals(), extra=extra)
         asdict_exp = {}
         assert set(asdict_res) == set(asdict_exp)
         repr_res = repr_without_defaults(obj, globalns=globals(), extra=extra)
@@ -89,7 +89,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             return {f"[{get_class_name(obj)}]": mapping}
 
         obj = Example(x=x)
-        result = asdict_without_defaults(obj, final=final)
+        result = dataclass_to_dict(obj, final=final)
         expected = {"[Example]": {"x": x}}
         assert result == expected
 
@@ -105,7 +105,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             y: int
 
         obj = Outer(inner=Inner(), y=y)
-        asdict_res = asdict_without_defaults(obj, localns=locals(), recursive=True)
+        asdict_res = dataclass_to_dict(obj, localns=locals(), recursive=True)
         asdict_exp = {"inner": {}, "y": y}
         assert asdict_res == asdict_exp
         repr_res = repr_without_defaults(obj, localns=locals(), recursive=True)
@@ -124,7 +124,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             y: int
 
         obj = Outer(inner=Inner(), y=y)
-        asdict_res = asdict_without_defaults(obj, localns=locals())
+        asdict_res = dataclass_to_dict(obj, localns=locals())
         asdict_exp = {"inner": Inner(), "y": y}
         assert asdict_res == asdict_exp
         repr_res = repr_without_defaults(obj, localns=locals())
@@ -144,7 +144,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             z: int
 
         obj = Outer(inner=[Inner()], y=y, z=z)
-        asdict_res = asdict_without_defaults(obj, localns=locals(), recursive=True)
+        asdict_res = dataclass_to_dict(obj, localns=locals(), recursive=True)
         asdict_exp = {"inner": [{}], "y": y, "z": z}
         assert asdict_res == asdict_exp
         repr_res = repr_without_defaults(obj, localns=locals(), recursive=True)
@@ -164,7 +164,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             z: int
 
         obj = Outer(inner=[Inner()], y=y, z=z)
-        asdict_res = asdict_without_defaults(obj, localns=locals())
+        asdict_res = dataclass_to_dict(obj, localns=locals())
         asdict_exp = {"inner": [Inner(x=0)], "y": y, "z": z}
         assert asdict_res == asdict_exp
         repr_res = repr_without_defaults(obj, localns=locals())
@@ -193,7 +193,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
             comboLegs=[],
             deltaNeutralContract=None,
         )
-        result = asdict_without_defaults(fut)
+        result = dataclass_to_dict(fut)
         expected = {
             "secType": "FUT",
             "conId": 495512557,
