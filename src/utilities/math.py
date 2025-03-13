@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from math import ceil, exp, floor, isclose, isfinite, isnan, log, log10, modf
+from math import ceil, exp, floor, isclose, isfinite, isinf, isnan, log, log10, modf
 from re import Match, search
 from typing import Literal, assert_never, overload, override
 
@@ -447,11 +447,10 @@ def is_integral(
     x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == int(x)."""
-    try:
-        rounded = round(x)
-    except (OverflowError, ValueError):
-        rounded = x
-    return _is_close(x, rounded, rel_tol=rel_tol, abs_tol=abs_tol)
+    if isinf(x) or isnan(x):
+        return False
+    frac, _ = modf(x)
+    return is_zero(frac, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_integral_or_nan(
