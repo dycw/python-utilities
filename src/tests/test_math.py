@@ -16,7 +16,7 @@ from hypothesis.strategies import (
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
 from pytest import approx, raises
 
-from utilities.hypothesis import pairs
+from utilities.hypothesis import int32s, pairs
 from utilities.math import (
     MAX_INT8,
     MAX_INT16,
@@ -566,7 +566,7 @@ class TestIsGreaterThan:
 class TestIsIntegral:
     @given(
         case=sampled_from([
-            (-inf, True, True),
+            (-inf, False, False),
             (-2.0, True, True),
             (-1.5, False, False),
             (-1.0, True, True),
@@ -582,14 +582,30 @@ class TestIsIntegral:
             (1.0, True, True),
             (1.5, False, False),
             (2.0, True, True),
-            (inf, True, True),
+            (inf, False, False),
             (nan, False, True),
         ])
     )
-    def test_is_integral(self, *, case: tuple[float, bool, bool]) -> None:
+    def test_main(self, *, case: tuple[float, bool, bool]) -> None:
         x, expected, expected_nan = case
         assert is_integral(x, abs_tol=1e-8) is expected
         assert is_integral_or_nan(x, abs_tol=1e-8) is expected_nan
+
+    @given(n=int32s())
+    def test_integral(self, *, n: int) -> None:
+        x = float(n)
+        assert is_integral(x)
+        assert is_integral_or_nan(x)
+
+    @given(n=int32s() | sampled_from([-inf, inf]))
+    def test_non_integral(self, *, n: int) -> None:
+        x = n + 0.5
+        assert not is_integral(x)
+        assert not is_integral_or_nan(x)
+
+    def test_nan(self) -> None:
+        assert not is_integral(nan)
+        assert is_integral_or_nan(nan)
 
 
 class TestIsLessThan:
@@ -1159,15 +1175,15 @@ class TestRoundToFloat:
 
 
 class TestSafeRound:
-    @given(case=sampled_from([(-2.0, -2), (-1.0, -1), (0.0, 0), (1.0, 1), (2.0, 2)]))
-    def test_main(self, *, case: tuple[float, int]) -> None:
-        x, expected = case
-        result = safe_round(x)
+    @given(n=int32s())
+    def test_main(self, *, n: int) -> None:
+        result = safe_round(float(n))
         assert isinstance(result, int)
-        assert result == expected
+        assert result == n
 
-    @given(x=sampled_from([-inf, -1.5, -0.5, 0.5, 1.5, inf, nan]))
-    def test_error(self, *, x: float) -> None:
+    @given(n=int32s() | sampled_from([-inf, inf, nan]))
+    def test_error(self, *, n: int) -> None:
+        x = n + 0.5
         with raises(
             SafeRoundError,
             match=r"Unable to safely round .* \(rel_tol=.*, abs_tol=.*\)",
