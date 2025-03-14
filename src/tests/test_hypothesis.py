@@ -1082,7 +1082,7 @@ class TestYieldTestRedis:
         async with yield_test_redis(data) as test:
             assert not await test.redis.exists(test.key)
             _ = await test.redis.set(test.key, value)
-            result = int(cast("str", await test.redis.get(test.key)))
+            result = int(await test.redis.get(test.key))
             assert result == value
 
 

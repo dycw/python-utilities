@@ -364,7 +364,7 @@ class TestPeriod:
             _ = period.time_zone
 
     @given(
-        datetimes=pairs(zoned_datetimes(), sorted=True),
+        datetimes=pairs(zoned_datetimes(time_zone=timezones()), sorted=True),
         time_zones=pairs(timezones(), unique=True),
     )
     def test_error_time_zone_non_unique(
