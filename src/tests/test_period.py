@@ -59,17 +59,24 @@ class TestPeriod:
         expected = Period(adj_start, adj_end)
         assert result == expected
 
-    @given(data=data(), time_zone1=timezones(), time_zone2=timezones())
+    @given(
+        datetimes=pairs(zoned_datetimes(), sorted=True),
+        time_zone1=timezones(),
+        time_zone2=timezones(),
+    )
     def test_astimezone(
-        self, *, data: DataObject, time_zone1: ZoneInfo, time_zone2: ZoneInfo
+        self,
+        *,
+        datetimes: tuple[dt.datetime, dt.datetime],
+        time_zone1: ZoneInfo,
+        time_zone2: ZoneInfo,
     ) -> None:
-        start, end = data.draw(
-            pairs(zoned_datetimes(time_zone=time_zone1), sorted=True)
-        )
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            start, end = [d.astimezone(time_zone1) for d in datetimes]
         period = Period(start, end)
         with assume_does_not_raise(OverflowError, match="date value out of range"):
             result = period.astimezone(time_zone2)
-            adj_start, adj_end = [d.astimezone(time_zone2) for d in dates]
+            adj_start, adj_end = [d.astimezone(time_zone2) for d in datetimes]
         expected = Period(adj_start, adj_end)
         assert result == expected
 
