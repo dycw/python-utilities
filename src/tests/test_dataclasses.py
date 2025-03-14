@@ -37,7 +37,7 @@ from utilities.typing import get_args, is_list_type, is_literal_type, is_optiona
 TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
 
 
-class TestAsDictWithoutDefaultsAndDataclassRepr:
+class TestDataclassToDictAndDataclassRepr:
     @given(x=integers(), defaults=booleans())
     def test_field_without_defaults(self, *, x: int, defaults: bool) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -158,7 +158,7 @@ class TestAsDictWithoutDefaultsAndDataclassRepr:
         asdict_exp = {"inner": Inner(), "y": y}
         assert asdict_res == asdict_exp
         repr_res = dataclass_repr(obj, localns=locals())
-        repr_exp = f"Outer(inner=TestAsDictWithoutDefaultsAndReprWithoutDefaults.test_nested_without_recursive.<locals>.Inner(x=0), y={y})"
+        repr_exp = f"Outer(inner=TestDataclassToDictAndDataclassRepr.test_nested_without_recursive.<locals>.Inner(x=0), y={y})"
         assert repr_res == repr_exp
 
     @given(y=lists(integers()), z=integers())
@@ -198,7 +198,7 @@ class TestAsDictWithoutDefaultsAndDataclassRepr:
         asdict_exp = {"inner": [Inner(x=0)], "y": y, "z": z}
         assert asdict_res == asdict_exp
         repr_res = dataclass_repr(obj, localns=locals())
-        repr_exp = f"Outer(inner=[TestAsDictWithoutDefaultsAndReprWithoutDefaults.test_nested_in_list_without_recursive.<locals>.Inner(x=0)], y={y}, z={z})"
+        repr_exp = f"Outer(inner=[TestDataclassToDictAndDataclassRepr.test_nested_in_list_without_recursive.<locals>.Inner(x=0)], y={y}, z={z})"
         assert repr_res == repr_exp
 
     def test_ib_async(self) -> None:
@@ -371,18 +371,6 @@ class TestReprWithoutDefaults:
         obj = Example(x=x)
         result = dataclass_repr(obj)
         expected = "Example()"
-        assert result == expected
-
-    @given(x=integers(), y=integers())
-    def test_ignore(self, *, x: int, y: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
-            y: int
-
-        obj = Example(x=x, y=y)
-        result = dataclass_repr(obj, ignore="x")
-        expected = f"Example(y={y})"
         assert result == expected
 
 

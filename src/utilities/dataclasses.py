@@ -45,13 +45,16 @@ def dataclass_repr(
     """Repr a dataclass, without its defaults."""
     out: dict[str, str] = {}
     for fld in yield_fields(obj, globalns=globalns, localns=localns):
-        if fld.keep(
-            include=include,
-            exclude=exclude,
-            rel_tol=rel_tol,
-            abs_tol=abs_tol,
-            extra=extra,
-            defaults=defaults,
+        if (
+            fld.keep(
+                include=include,
+                exclude=exclude,
+                rel_tol=rel_tol,
+                abs_tol=abs_tol,
+                extra=extra,
+                defaults=defaults,
+            )
+            and fld.repr
         ):
             if recursive:
                 if is_dataclass_instance(fld.value):
