@@ -339,9 +339,10 @@ class TestAreEqualDateTimes:
         time_zone1: ZoneInfo,
         time_zone2: ZoneInfo,
     ) -> None:
-        result = are_equal_datetimes(
-            x.astimezone(time_zone1), y.astimezone(time_zone2), strict=True
-        )
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            x1 = x.astimezone(time_zone1)
+            y2 = y.astimezone(time_zone2)
+        result = are_equal_datetimes(x1, y2, strict=True)
         expected = (x == y) and (time_zone1 is time_zone2)
         assert result is expected
 
@@ -1033,8 +1034,9 @@ class TestTimedeltaSinceEpoch:
     def test_time_zone(
         self, *, datetime: dt.datetime, time_zone1: ZoneInfo, time_zone2: ZoneInfo
     ) -> None:
-        result1 = timedelta_since_epoch(datetime.astimezone(time_zone1))
-        result2 = timedelta_since_epoch(datetime.astimezone(time_zone2))
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            result1 = timedelta_since_epoch(datetime.astimezone(time_zone1))
+            result2 = timedelta_since_epoch(datetime.astimezone(time_zone2))
         assert result1 == result2
 
 
