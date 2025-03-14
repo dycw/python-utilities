@@ -8,7 +8,7 @@ from types import NoneType
 from typing import Any, Literal, cast, override
 
 from hypothesis import given
-from hypothesis.strategies import integers, lists, sampled_from
+from hypothesis.strategies import booleans, integers, lists, sampled_from
 from ib_async import Future
 from polars import DataFrame
 from pytest import raises
@@ -19,10 +19,10 @@ from utilities.dataclasses import (
     _MappingToDataclassEmptyError,
     _YieldFieldsClass,
     _YieldFieldsInstance,
+    dataclass_repr,
     dataclass_to_dict,
     mapping_to_dataclass,
     replace_non_sentinel,
-    repr_without_defaults,
     yield_fields,
 )
 from utilities.functions import get_class_name
@@ -37,22 +37,36 @@ from utilities.typing import get_args, is_list_type, is_literal_type, is_optiona
 TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
 
 
-class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
-    @given(x=integers())
-    def test_field_without_defaults(self, *, x: int) -> None:
+class TestAsDictWithoutDefaultsAndDataclassRepr:
+    @given(x=integers(), defaults=booleans())
+    def test_field_without_defaults(self, *, x: int, defaults: bool) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: int
 
         obj = Example(x=x)
-        asdict_res = dataclass_to_dict(obj)
+        asdict_res = dataclass_to_dict(obj, defaults=defaults)
         asdict_exp = {"x": x}
         assert asdict_res == asdict_exp
-        repr_res = repr_without_defaults(obj)
+        repr_res = dataclass_repr(obj, defaults=defaults)
         repr_exp = f"Example(x={x})"
         assert repr_res == repr_exp
 
-    def test_field_with_default(self) -> None:
+    @given(x=integers())
+    def test_field_with_default_included(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+        obj = Example(x=x)
+        asdict_res = dataclass_to_dict(obj, defaults=True)
+        asdict_exp = {"x": x}
+        assert asdict_res == asdict_exp
+        repr_res = dataclass_repr(obj, defaults=True)
+        repr_exp = f"Example(x={x})"
+        assert repr_res == repr_exp
+
+    def test_field_with_default_dropped(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: int = 0
@@ -61,11 +75,27 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
         asdict_res = dataclass_to_dict(obj)
         asdict_exp = {}
         assert asdict_res == asdict_exp
-        repr_res = repr_without_defaults(obj)
+        repr_res = dataclass_repr(obj)
         repr_exp = "Example()"
         assert repr_res == repr_exp
 
-    def test_field_with_dataframe(self) -> None:
+    def test_field_with_dataframe_included(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DataFrame = field(default_factory=DataFrame)
+
+        obj = Example()
+        extra = {DataFrame: are_frames_equal}
+        asdict_res = dataclass_to_dict(
+            obj, globalns=globals(), extra=extra, defaults=True
+        )
+        asdict_exp = {"x": DataFrame()}
+        assert set(asdict_res) == set(asdict_exp)
+        repr_res = dataclass_repr(obj, globalns=globals(), extra=extra, defaults=True)
+        repr_exp = f"Example(x={DataFrame()})"
+        assert repr_res == repr_exp
+
+    def test_field_with_dataframe_dropped(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: DataFrame = field(default_factory=DataFrame)
@@ -75,7 +105,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
         asdict_res = dataclass_to_dict(obj, globalns=globals(), extra=extra)
         asdict_exp = {}
         assert set(asdict_res) == set(asdict_exp)
-        repr_res = repr_without_defaults(obj, globalns=globals(), extra=extra)
+        repr_res = dataclass_repr(obj, globalns=globals(), extra=extra)
         repr_exp = "Example()"
         assert repr_res == repr_exp
 
@@ -108,7 +138,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
         asdict_res = dataclass_to_dict(obj, localns=locals(), recursive=True)
         asdict_exp = {"inner": {}, "y": y}
         assert asdict_res == asdict_exp
-        repr_res = repr_without_defaults(obj, localns=locals(), recursive=True)
+        repr_res = dataclass_repr(obj, localns=locals(), recursive=True)
         repr_exp = f"Outer(inner=Inner(), y={y})"
         assert repr_res == repr_exp
 
@@ -127,7 +157,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
         asdict_res = dataclass_to_dict(obj, localns=locals())
         asdict_exp = {"inner": Inner(), "y": y}
         assert asdict_res == asdict_exp
-        repr_res = repr_without_defaults(obj, localns=locals())
+        repr_res = dataclass_repr(obj, localns=locals())
         repr_exp = f"Outer(inner=TestAsDictWithoutDefaultsAndReprWithoutDefaults.test_nested_without_recursive.<locals>.Inner(x=0), y={y})"
         assert repr_res == repr_exp
 
@@ -147,7 +177,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
         asdict_res = dataclass_to_dict(obj, localns=locals(), recursive=True)
         asdict_exp = {"inner": [{}], "y": y, "z": z}
         assert asdict_res == asdict_exp
-        repr_res = repr_without_defaults(obj, localns=locals(), recursive=True)
+        repr_res = dataclass_repr(obj, localns=locals(), recursive=True)
         repr_exp = f"Outer(inner=[Inner()], y={y}, z={z})"
         assert repr_res == repr_exp
 
@@ -167,7 +197,7 @@ class TestAsDictWithoutDefaultsAndReprWithoutDefaults:
         asdict_res = dataclass_to_dict(obj, localns=locals())
         asdict_exp = {"inner": [Inner(x=0)], "y": y, "z": z}
         assert asdict_res == asdict_exp
-        repr_res = repr_without_defaults(obj, localns=locals())
+        repr_res = dataclass_repr(obj, localns=locals())
         repr_exp = f"Outer(inner=[TestAsDictWithoutDefaultsAndReprWithoutDefaults.test_nested_in_list_without_recursive.<locals>.Inner(x=0)], y={y}, z={z})"
         assert repr_res == repr_exp
 
@@ -325,7 +355,7 @@ class TestReprWithoutDefaults:
 
             @override
             def __repr__(self) -> str:
-                return repr_without_defaults(self)
+                return dataclass_repr(self)
 
         obj = Example()
         result = repr(obj)
@@ -339,7 +369,7 @@ class TestReprWithoutDefaults:
             x: int = field(default=0, repr=False)
 
         obj = Example(x=x)
-        result = repr_without_defaults(obj)
+        result = dataclass_repr(obj)
         expected = "Example()"
         assert result == expected
 
@@ -351,7 +381,7 @@ class TestReprWithoutDefaults:
             y: int
 
         obj = Example(x=x, y=y)
-        result = repr_without_defaults(obj, ignore="x")
+        result = dataclass_repr(obj, ignore="x")
         expected = f"Example(y={y})"
         assert result == expected
 
@@ -474,7 +504,7 @@ class TestYieldFields:
         assert result == expected
 
     @given(x=integers())
-    def test_instance_is_default_value_with_no_default(self, *, x: int) -> None:
+    def test_instance_with_no_default_equals_default(self, *, x: int) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: int
@@ -484,7 +514,7 @@ class TestYieldFields:
         assert not field.equals_default()
 
     @given(x=integers())
-    def test_instance_is_default_value_with_default(self, *, x: int) -> None:
+    def test_instance_with_default_equals_default(self, *, x: int) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: int = 0
@@ -496,7 +526,7 @@ class TestYieldFields:
         assert result is expected
 
     @given(x=lists(integers()))
-    def test_instance_is_default_value_with_default_factory(
+    def test_instance_with_default_factory_equals_default(
         self, *, x: list[int]
     ) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -508,6 +538,54 @@ class TestYieldFields:
         result = fld.equals_default()
         expected = x == []
         assert result is expected
+
+    @given(x=integers())
+    def test_instance_with_no_default_keep(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        obj = Example(x=x)
+        field = one(yield_fields(obj))
+        assert field.keep()
+
+    @given(x=integers())
+    def test_instance_keep_include(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        obj = Example(x=x)
+        field = one(yield_fields(obj))
+        assert not field.keep(include=[])
+
+    @given(x=integers())
+    def test_instance_keep_exclude(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int
+
+        obj = Example(x=x)
+        field = one(yield_fields(obj))
+        assert not field.keep(exclude=["x"])
+
+    def test_instance_with_default_keep_included(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+        obj = Example()
+        field = one(yield_fields(obj))
+        assert field.keep(defaults=True)
+
+    def test_instance_with_default_keep_dropped(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = 0
+
+        obj = Example()
+        field = one(yield_fields(obj))
+        assert not field.keep()
 
     def test_error(self) -> None:
         with raises(

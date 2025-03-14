@@ -28,25 +28,112 @@ _TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 ##
 
 
-def dataclass_to_dict(
+def dataclass_repr(
     obj: Dataclass,
     /,
     *,
+    include: Iterable[str] | None = None,
+    exclude: Iterable[str] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
     extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
-    drop_defaults: bool = False,
+    defaults: bool = False,
+    recursive: bool = False,
+) -> str:
+    """Repr a dataclass, without its defaults."""
+    out: dict[str, str] = {}
+    for fld in yield_fields(obj, globalns=globalns, localns=localns):
+        if fld.keep(
+            include=include,
+            exclude=exclude,
+            rel_tol=rel_tol,
+            abs_tol=abs_tol,
+            extra=extra,
+            defaults=defaults,
+        ):
+            if recursive:
+                if is_dataclass_instance(fld.value):
+                    repr_ = dataclass_repr(
+                        fld.value,
+                        include=include,
+                        exclude=exclude,
+                        globalns=globalns,
+                        localns=localns,
+                        rel_tol=rel_tol,
+                        abs_tol=abs_tol,
+                        extra=extra,
+                        defaults=defaults,
+                        recursive=recursive,
+                    )
+                elif isinstance(fld.value, list):
+                    repr_ = [
+                        dataclass_repr(
+                            v,
+                            include=include,
+                            exclude=exclude,
+                            globalns=globalns,
+                            localns=localns,
+                            rel_tol=rel_tol,
+                            abs_tol=abs_tol,
+                            extra=extra,
+                            defaults=defaults,
+                            recursive=recursive,
+                        )
+                        if is_dataclass_instance(v)
+                        else repr(v)
+                        for v in fld.value
+                    ]
+                    repr_ = f"[{', '.join(repr_)}]"
+                else:
+                    repr_ = repr(fld.value)
+            else:
+                repr_ = repr(fld.value)
+            out[fld.name] = repr_
+    cls = get_class_name(obj)
+    joined = ", ".join(f"{k}={v}" for k, v in out.items())
+    return f"{cls}({joined})"
+
+
+##
+
+
+def dataclass_to_dict(
+    obj: Dataclass,
+    /,
+    *,
+    include: Iterable[str] | None = None,
+    exclude: Iterable[str] | None = None,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+    extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
+    defaults: bool = False,
     final: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
     recursive: bool = False,
 ) -> StrMapping:
     """Convert a dataclass to a dictionary."""
     out: dict[str, Any] = {}
     for fld in yield_fields(obj, globalns=globalns, localns=localns):
-        equal = fld.equals_default(rel_tol=rel_tol, abs_tol=abs_tol, extra=extra)
-        keep = (not equal) or (not drop_defaults)
-        if keep:
+        fld.keep(
+            include=include,
+            exclude=exclude,
+            rel_tol=rel_tol,
+            abs_tol=abs_tol,
+            extra=extra,
+            defaults=defaults,
+        )
+
+        if fld.keep(
+            include=include,
+            exclude=exclude,
+            rel_tol=rel_tol,
+            abs_tol=abs_tol,
+            extra=extra,
+            defaults=defaults,
+        ):
             if recursive:
                 if is_dataclass_instance(fld.value):
                     value = dataclass_to_dict(
@@ -56,7 +143,7 @@ def dataclass_to_dict(
                         rel_tol=rel_tol,
                         abs_tol=abs_tol,
                         extra=extra,
-                        drop_defaults=drop_defaults,
+                        defaults=defaults,
                         final=final,
                         recursive=recursive,
                     )
@@ -69,7 +156,7 @@ def dataclass_to_dict(
                             rel_tol=rel_tol,
                             abs_tol=abs_tol,
                             extra=extra,
-                            drop_defaults=drop_defaults,
+                            defaults=defaults,
                             final=final,
                             recursive=recursive,
                         )
@@ -193,69 +280,6 @@ def replace_non_sentinel(
 ##
 
 
-def repr_without_defaults(
-    obj: Dataclass,
-    /,
-    *,
-    ignore: Iterable[str] | None = None,
-    globalns: StrMapping | None = None,
-    localns: StrMapping | None = None,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
-    extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
-    recursive: bool = False,
-) -> str:
-    """Repr a dataclass, without its defaults."""
-    ignore_use: set[str] = set() if ignore is None else set(ignore)
-    out: dict[str, str] = {}
-    for fld in yield_fields(obj, globalns=globalns, localns=localns):
-        if (
-            (fld.name not in ignore_use)
-            and fld.repr
-            and not fld.equals_default(rel_tol=rel_tol, abs_tol=abs_tol, extra=extra)
-        ):
-            if recursive:
-                if is_dataclass_instance(fld.value):
-                    repr_ = repr_without_defaults(
-                        fld.value,
-                        ignore=ignore,
-                        globalns=globalns,
-                        localns=localns,
-                        rel_tol=rel_tol,
-                        abs_tol=abs_tol,
-                        extra=extra,
-                        recursive=recursive,
-                    )
-                elif isinstance(fld.value, list):
-                    repr_ = [
-                        repr_without_defaults(
-                            v,
-                            ignore=ignore,
-                            globalns=globalns,
-                            localns=localns,
-                            rel_tol=rel_tol,
-                            abs_tol=abs_tol,
-                            extra=extra,
-                            recursive=recursive,
-                        )
-                        if is_dataclass_instance(v)
-                        else repr(v)
-                        for v in fld.value
-                    ]
-                    repr_ = f"[{', '.join(repr_)}]"
-                else:
-                    repr_ = repr(fld.value)
-            else:
-                repr_ = repr(fld.value)
-            out[fld.name] = repr_
-    cls = get_class_name(obj)
-    joined = ", ".join(f"{k}={v}" for k, v in out.items())
-    return f"{cls}({joined})"
-
-
-##
-
-
 @overload
 def yield_fields(
     obj: Dataclass,
@@ -364,6 +388,24 @@ class _YieldFieldsInstance(Generic[_T]):
             self.value, expected, rel_tol=rel_tol, abs_tol=abs_tol, extra=extra
         )
 
+    def keep(
+        self,
+        *,
+        include: Iterable[str] | None = None,
+        exclude: Iterable[str] | None = None,
+        rel_tol: float | None = None,
+        abs_tol: float | None = None,
+        extra: Mapping[type[_U], Callable[[_U, _U], bool]] | None = None,
+        defaults: bool = False,
+    ) -> bool:
+        """Whether to include a field."""
+        if (include is not None) and (self.name not in include):
+            return False
+        if (exclude is not None) and (self.name in exclude):
+            return False
+        equal = self.equals_default(rel_tol=rel_tol, abs_tol=abs_tol, extra=extra)
+        return (defaults and equal) or not equal
+
 
 @dataclass(kw_only=True, slots=True)
 class _YieldFieldsClass(Generic[_T]):
@@ -393,9 +435,9 @@ class YieldFieldsError(Exception):
 __all__ = [
     "MappingToDataclassError",
     "YieldFieldsError",
+    "dataclass_repr",
     "dataclass_to_dict",
     "mapping_to_dataclass",
     "replace_non_sentinel",
-    "repr_without_defaults",
     "yield_fields",
 ]
