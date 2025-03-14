@@ -19,6 +19,7 @@ from hypothesis.strategies import (
     integers,
     just,
     lists,
+    none,
     recursive,
     sampled_from,
     times,
@@ -78,6 +79,7 @@ def base_objects(
         | dates()
         | datetimes()
         | int64s()
+        | none()
         | paths()
         | text_printable().filter(lambda x: not x.startswith("["))
         | times()
