@@ -85,7 +85,7 @@ def get_logging_level_name(level: int, /) -> str:
     except OneEmptyError:
         raise _GetLoggingLevelNameEmptyError(level=level) from None
     except OneNonUniqueError as error:
-        error = cast(OneNonUniqueError[str], error)
+        error = cast("OneNonUniqueError[str]", error)
         raise _GetLoggingLevelNameNonUniqueError(
             level=level, first=error.first, second=error.second
         ) from None

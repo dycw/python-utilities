@@ -168,7 +168,7 @@ class _ExternalTaskDummyTarget(Target):
 class ExternalFile(ExternalTask):
     """Await an external file on the local disk."""
 
-    path: Path = cast(Any, PathParameter())
+    path: Path = cast("Any", PathParameter())
 
     @override
     def exists(self) -> bool:

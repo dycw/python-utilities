@@ -54,7 +54,7 @@ def record() -> Record:
             tzinfo=dt.timezone(dt.timedelta(seconds=32400), "JST"),
         ),
     }
-    return cast(Any, record)
+    return cast("Any", record)
 
 
 class TestGetLoggingLevelNameAndNumber:

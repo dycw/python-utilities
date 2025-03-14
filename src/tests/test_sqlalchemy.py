@@ -448,7 +448,7 @@ class TestGetTable:
         with raises(
             GetTableError, match="Object .* must be a Table or mapped class; got .*"
         ):
-            _ = get_table(cast(Any, type(None)))
+            _ = get_table(cast("Any", type(None)))
 
 
 class TestGetTableName:
@@ -606,7 +606,7 @@ class TestInsertItems:
         cls = self._make_mapped_class(name)
         engine = await sqlalchemy_engines(data, cls)
         with raises(InsertItemsError, match="Item must be valid; got None"):
-            await self._run_test(engine, cls, set(), cast(Any, None))
+            await self._run_test(engine, cls, set(), cast("Any", None))
 
     def _make_table(self, name: str, /, *, title: bool = False) -> Table:
         return Table(
@@ -1031,7 +1031,7 @@ class TestPrepareInsertOrUpsertItems:
             _PrepareInsertOrUpsertItemsError, match="Item must be valid; got None"
         ):
             _ = _prepare_insert_or_upsert_items(
-                normalize_item, engine, cast(Any, None), cast(Any, None)
+                normalize_item, engine, cast("Any", None), cast("Any", None)
             )
 
 
@@ -1398,7 +1398,7 @@ class TestUpsertItems:
         table = self._make_table(name)
         engine = await sqlalchemy_engines(data, table)
         with raises(UpsertItemsError, match="Item must be valid; got None"):
-            _ = await self._run_test(engine, table, cast(Any, None))
+            _ = await self._run_test(engine, table, cast("Any", None))
 
     def _make_table(self, name: str, /) -> Table:
         return Table(

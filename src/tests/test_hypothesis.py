@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Iterable
 from itertools import pairwise
 from pathlib import Path
 from re import search
@@ -134,6 +133,7 @@ from utilities.whenever import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from collections.abc import Set as AbstractSet
     from uuid import UUID
     from zoneinfo import ZoneInfo
@@ -771,7 +771,7 @@ class TestReducedExamples:
         def test() -> None:
             pass
 
-        result = cast(Any, test)._hypothesis_internal_use_settings.max_examples
+        result = cast("Any", test)._hypothesis_internal_use_settings.max_examples
         expected = max(round(frac * ensure_int(settings().max_examples)), 1)
         assert result == expected
 
@@ -795,13 +795,13 @@ class TestSetupHypothesisProfiles:
     def test_main(self) -> None:
         setup_hypothesis_profiles()
         curr = settings()
-        assert Phase.shrink in cast(Iterable[Phase], curr.phases)
+        assert Phase.shrink in cast("Iterable[Phase]", curr.phases)
         assert curr.max_examples in {10, 100, 1000}
 
     def test_no_shrink(self) -> None:
         with temp_environ({"HYPOTHESIS_NO_SHRINK": "1"}):
             setup_hypothesis_profiles()
-        assert Phase.shrink not in cast(Iterable[Phase], settings().phases)
+        assert Phase.shrink not in cast("Iterable[Phase]", settings().phases)
 
     @given(max_examples=integers(1, 100))
     def test_max_examples(self, *, max_examples: int) -> None:
@@ -1085,7 +1085,7 @@ class TestYieldTestRedis:
         async with yield_test_redis(data) as test:
             assert not await test.redis.exists(test.key)
             _ = await test.redis.set(test.key, value)
-            result = int(cast(str, await test.redis.get(test.key)))
+            result = int(cast("str", await test.redis.get(test.key)))
             assert result == value
 
 

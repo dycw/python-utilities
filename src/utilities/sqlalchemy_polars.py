@@ -325,7 +325,7 @@ async def select_to_dataframe(
             async with attempt:
                 return read_database(
                     sel,
-                    cast(Any, engine),
+                    cast("Any", engine),
                     iter_batches=batch_size is not None,
                     batch_size=batch_size,
                     schema_overrides=schema,
@@ -401,7 +401,7 @@ def _select_to_dataframe_map_select_to_df_schema(
     sel: Select[Any], /, *, time_zone: ZoneInfoLike = UTC
 ) -> SchemaDict:
     """Map a select to a DataFrame schema."""
-    columns: ReadOnlyColumnCollection = cast(Any, sel).selected_columns
+    columns: ReadOnlyColumnCollection = cast("Any", sel).selected_columns
     _select_to_dataframe_check_duplicates(columns)
     return {
         col.name: _select_to_dataframe_map_table_column_type_to_dtype(

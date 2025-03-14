@@ -4,7 +4,7 @@ import datetime as dt
 from collections.abc import Callable, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from dataclasses import asdict, dataclass
-from typing import Any, TypeVar, cast, override
+from typing import TYPE_CHECKING, Any, TypeVar, cast, override
 
 import utilities.math
 from utilities.datetime import (
@@ -15,7 +15,9 @@ from utilities.datetime import (
 from utilities.functions import is_dataclass_instance
 from utilities.iterables import SortIterableError, sort_iterable
 from utilities.reprlib import get_repr
-from utilities.types import Dataclass, DateOrDateTime, Number
+
+if TYPE_CHECKING:
+    from utilities.types import Dataclass, DateOrDateTime, Number
 
 _T = TypeVar("_T")
 
@@ -38,32 +40,32 @@ def is_equal(
             except StopIteration:
                 pass
             else:
-                x = cast(_T, x)
-                y = cast(_T, y)
+                x = cast("_T", x)
+                y = cast("_T", y)
                 return cmp(x, y)
 
         # singletons
         if isinstance(x, int | float):
-            y = cast(Number, y)
+            y = cast("Number", y)
             return utilities.math.is_equal(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
         if isinstance(x, str):  # else Sequence
-            y = cast(str, y)
+            y = cast("str", y)
             return x == y
         if isinstance(x, dt.date | dt.datetime):
-            y = cast(DateOrDateTime, y)
+            y = cast("DateOrDateTime", y)
             try:
                 return are_equal_dates_or_datetimes(x, y)
             except (AreEqualDateTimesError, AreEqualDatesOrDateTimesError):
                 return False
         if is_dataclass_instance(x):
-            y = cast(Dataclass, y)
+            y = cast("Dataclass", y)
             x_values = asdict(x)
             y_values = asdict(y)
             return is_equal(x_values, y_values, rel_tol=rel_tol, abs_tol=abs_tol)
 
         # collections
         if isinstance(x, Mapping):
-            y = cast(Mapping[Any, Any], y)
+            y = cast("Mapping[Any, Any]", y)
             x_keys = set(x)
             y_keys = set(y)
             if not is_equal(x_keys, y_keys, rel_tol=rel_tol, abs_tol=abs_tol):
@@ -72,7 +74,7 @@ def is_equal(
             y_values = [y[i] for i in x]
             return is_equal(x_values, y_values, rel_tol=rel_tol, abs_tol=abs_tol)
         if isinstance(x, AbstractSet):
-            y = cast(AbstractSet[Any], y)
+            y = cast("AbstractSet[Any]", y)
             try:
                 x_sorted = sort_iterable(x)
                 y_sorted = sort_iterable(y)
@@ -80,7 +82,7 @@ def is_equal(
                 raise IsEqualError(x=error.x, y=error.y) from None
             return is_equal(x_sorted, y_sorted, rel_tol=rel_tol, abs_tol=abs_tol)
         if isinstance(x, Sequence):
-            y = cast(Sequence[Any], y)
+            y = cast("Sequence[Any]", y)
             if len(x) != len(y):
                 return False
             return all(

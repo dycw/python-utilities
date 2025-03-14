@@ -119,11 +119,11 @@ class Period(Generic[_TPeriod]):
         cls = get_class_name(self)
         match self.kind:
             case "date":
-                result = cast(Period[dt.date], self)
+                result = cast("Period[dt.date]", self)
                 start, end = map(serialize_date, [result.start, result.end])
                 return f"{cls}({start}, {end})"
             case "datetime":
-                result = cast(Period[dt.datetime], self)
+                result = cast("Period[dt.datetime]", self)
                 try:
                     time_zone = result.time_zone
                 except _PeriodTimeZoneNonUniqueError:
@@ -149,12 +149,12 @@ class Period(Generic[_TPeriod]):
             case "date":
                 raise _PeriodAsTimeZoneInapplicableError(start=self.start, end=self.end)
             case "datetime":
-                result = cast(Period[dt.datetime], self)
+                result = cast("Period[dt.datetime]", self)
                 result = result.replace(
                     start=result.start.astimezone(time_zone),
                     end=result.end.astimezone(time_zone),
                 )
-                return cast(Self, result)
+                return cast("Self", result)
             case _ as never:
                 assert_never(never)
 
@@ -201,7 +201,7 @@ class Period(Generic[_TPeriod]):
                     start=self.start, end=self.end
                 ) from None
             case "datetime":
-                result = cast(Period[dt.datetime], self)
+                result = cast("Period[dt.datetime]", self)
                 try:
                     return one_unique(map(ensure_time_zone, [result.start, result.end]))
                 except OneUniqueNonUniqueError as error:

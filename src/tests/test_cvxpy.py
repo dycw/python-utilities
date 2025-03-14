@@ -54,7 +54,8 @@ def _get_variable(
         scalar = cvxpy.sum(var)
     threshold = 10.0
     problem = Problem(
-        objective(scalar), [cast(Any, var) >= -threshold, cast(Any, var) <= threshold]
+        objective(scalar),
+        [cast("Any", var) >= -threshold, cast("Any", var) <= threshold],
     )
     _ = problem.solve(solver=CLARABEL)
     return var
@@ -530,7 +531,7 @@ class TestSolve:
         threshold = 1.0
         problem = Problem(
             Minimize(sum_(abs_(var))),
-            [cast(Any, var) >= threshold, cast(Any, var) <= -threshold],
+            [cast("Any", var) >= threshold, cast("Any", var) <= -threshold],
         )
         with raises(SolveInfeasibleError):
             _ = solve(problem, solver=CLARABEL)

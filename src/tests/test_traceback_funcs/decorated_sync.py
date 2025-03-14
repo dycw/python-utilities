@@ -15,7 +15,7 @@ def other_decorator(func: _F, /) -> _F:
     def wrapped(*args: Any, **kwargs: Any) -> Any:
         return func(*args, **kwargs)
 
-    return cast(_F, wrapped)
+    return cast("_F", wrapped)
 
 
 @trace
