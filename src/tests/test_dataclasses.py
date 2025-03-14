@@ -45,9 +45,9 @@ class TestDataclassToDictAndDataclassRepr:
             x: int
 
         obj = Example(x=x)
-        asdict_res = dataclass_to_dict(obj, defaults=defaults)
-        asdict_exp = {"x": x}
-        assert asdict_res == asdict_exp
+        dict_res = dataclass_to_dict(obj, defaults=defaults)
+        dict_exp = {"x": x}
+        assert dict_res == dict_exp
         repr_res = dataclass_repr(obj, defaults=defaults)
         repr_exp = f"Example(x={x})"
         assert repr_res == repr_exp
@@ -59,9 +59,9 @@ class TestDataclassToDictAndDataclassRepr:
             x: int = 0
 
         obj = Example(x=x)
-        asdict_res = dataclass_to_dict(obj, defaults=True)
-        asdict_exp = {"x": x}
-        assert asdict_res == asdict_exp
+        dict_res = dataclass_to_dict(obj, defaults=True)
+        dict_exp = {"x": x}
+        assert dict_res == dict_exp
         repr_res = dataclass_repr(obj, defaults=True)
         repr_exp = f"Example(x={x})"
         assert repr_res == repr_exp
@@ -72,9 +72,9 @@ class TestDataclassToDictAndDataclassRepr:
             x: int = 0
 
         obj = Example()
-        asdict_res = dataclass_to_dict(obj)
-        asdict_exp = {}
-        assert asdict_res == asdict_exp
+        dict_res = dataclass_to_dict(obj)
+        dict_exp = {}
+        assert dict_res == dict_exp
         repr_res = dataclass_repr(obj)
         repr_exp = "Example()"
         assert repr_res == repr_exp
@@ -86,11 +86,11 @@ class TestDataclassToDictAndDataclassRepr:
 
         obj = Example()
         extra = {DataFrame: are_frames_equal}
-        asdict_res = dataclass_to_dict(
+        dict_res = dataclass_to_dict(
             obj, globalns=globals(), extra=extra, defaults=True
         )
-        asdict_exp = {"x": DataFrame()}
-        assert set(asdict_res) == set(asdict_exp)
+        dict_exp = {"x": DataFrame()}
+        assert set(dict_res) == set(dict_exp)
         repr_res = dataclass_repr(obj, globalns=globals(), extra=extra, defaults=True)
         repr_exp = f"Example(x={DataFrame()})"
         assert repr_res == repr_exp
@@ -102,9 +102,9 @@ class TestDataclassToDictAndDataclassRepr:
 
         obj = Example()
         extra = {DataFrame: are_frames_equal}
-        asdict_res = dataclass_to_dict(obj, globalns=globals(), extra=extra)
-        asdict_exp = {}
-        assert set(asdict_res) == set(asdict_exp)
+        dict_res = dataclass_to_dict(obj, globalns=globals(), extra=extra)
+        dict_exp = {}
+        assert set(dict_res) == set(dict_exp)
         repr_res = dataclass_repr(obj, globalns=globals(), extra=extra)
         repr_exp = "Example()"
         assert repr_res == repr_exp
@@ -135,9 +135,9 @@ class TestDataclassToDictAndDataclassRepr:
             y: int
 
         obj = Outer(inner=Inner(), y=y)
-        asdict_res = dataclass_to_dict(obj, localns=locals(), recursive=True)
-        asdict_exp = {"inner": {}, "y": y}
-        assert asdict_res == asdict_exp
+        dict_res = dataclass_to_dict(obj, localns=locals(), recursive=True)
+        dict_exp = {"inner": {}, "y": y}
+        assert dict_res == dict_exp
         repr_res = dataclass_repr(obj, localns=locals(), recursive=True)
         repr_exp = f"Outer(inner=Inner(), y={y})"
         assert repr_res == repr_exp
@@ -154,9 +154,9 @@ class TestDataclassToDictAndDataclassRepr:
             y: int
 
         obj = Outer(inner=Inner(), y=y)
-        asdict_res = dataclass_to_dict(obj, localns=locals())
-        asdict_exp = {"inner": Inner(), "y": y}
-        assert asdict_res == asdict_exp
+        dict_res = dataclass_to_dict(obj, localns=locals())
+        dict_exp = {"inner": Inner(), "y": y}
+        assert dict_res == dict_exp
         repr_res = dataclass_repr(obj, localns=locals())
         repr_exp = f"Outer(inner=TestDataclassToDictAndDataclassRepr.test_nested_without_recursive.<locals>.Inner(x=0), y={y})"
         assert repr_res == repr_exp
@@ -174,9 +174,9 @@ class TestDataclassToDictAndDataclassRepr:
             z: int
 
         obj = Outer(inner=[Inner()], y=y, z=z)
-        asdict_res = dataclass_to_dict(obj, localns=locals(), recursive=True)
-        asdict_exp = {"inner": [{}], "y": y, "z": z}
-        assert asdict_res == asdict_exp
+        dict_res = dataclass_to_dict(obj, localns=locals(), recursive=True)
+        dict_exp = {"inner": [{}], "y": y, "z": z}
+        assert dict_res == dict_exp
         repr_res = dataclass_repr(obj, localns=locals(), recursive=True)
         repr_exp = f"Outer(inner=[Inner()], y={y}, z={z})"
         assert repr_res == repr_exp
@@ -194,9 +194,9 @@ class TestDataclassToDictAndDataclassRepr:
             z: int
 
         obj = Outer(inner=[Inner()], y=y, z=z)
-        asdict_res = dataclass_to_dict(obj, localns=locals())
-        asdict_exp = {"inner": [Inner(x=0)], "y": y, "z": z}
-        assert asdict_res == asdict_exp
+        dict_res = dataclass_to_dict(obj, localns=locals())
+        dict_exp = {"inner": [Inner(x=0)], "y": y, "z": z}
+        assert dict_res == dict_exp
         repr_res = dataclass_repr(obj, localns=locals())
         repr_exp = f"Outer(inner=[TestDataclassToDictAndDataclassRepr.test_nested_in_list_without_recursive.<locals>.Inner(x=0)], y={y}, z={z})"
         assert repr_res == repr_exp
