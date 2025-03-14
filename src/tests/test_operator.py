@@ -19,6 +19,7 @@ from hypothesis.strategies import (
     integers,
     just,
     lists,
+    none,
     recursive,
     sampled_from,
     times,
@@ -32,6 +33,7 @@ from pytest import raises
 import utilities.math
 import utilities.operator
 from tests.conftest import IS_CI_AND_WINDOWS
+from tests.test_typing_funcs.with_future import DataClassWithNone
 from utilities.hypothesis import (
     assume_does_not_raise,
     int64s,
@@ -57,6 +59,7 @@ def base_objects(
     dataclass2: bool = False,
     dataclass3: bool = False,
     dataclass4: bool = False,
+    dataclass_with_none: bool = False,
     enum: bool = False,
     floats_min_value: Number | None = None,
     floats_max_value: Number | None = None,
@@ -76,6 +79,7 @@ def base_objects(
         | dates()
         | datetimes()
         | int64s()
+        | none()
         | paths()
         | text_printable().filter(lambda x: not x.startswith("["))
         | times()
@@ -95,6 +99,8 @@ def base_objects(
         base |= builds(DataClass3)
     if dataclass4:
         base |= builds(DataClass4)
+    if dataclass_with_none:
+        base |= builds(DataClassWithNone)
     if enum:
         base |= sampled_from(TruthEnum)
     if ib_orders:
@@ -117,6 +123,7 @@ def make_objects(
     dataclass2: bool = False,
     dataclass3: bool = False,
     dataclass4: bool = False,
+    dataclass_with_none: bool = False,
     enum: bool = False,
     floats_min_value: Number | None = None,
     floats_max_value: Number | None = None,
@@ -135,6 +142,7 @@ def make_objects(
         dataclass2=dataclass2,
         dataclass3=dataclass3,
         dataclass4=dataclass4,
+        dataclass_with_none=dataclass_with_none,
         enum=enum,
         floats_min_value=floats_min_value,
         floats_max_value=floats_max_value,

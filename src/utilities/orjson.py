@@ -65,6 +65,7 @@ class _Prefixes(Enum):
     frozenset_ = "fr"
     list_ = "l"
     nan = "nan"
+    none = "none"
     path = "p"
     pos_inf = "pos_inf"
     neg_inf = "neg_inf"
@@ -139,6 +140,8 @@ def _pre_process(
     )
     match obj:
         # singletons
+        case None:
+            return f"[{_Prefixes.none.value}]"
         case dt.datetime():
             if obj.tzinfo is None:
                 ser = serialize_local_datetime(obj)
@@ -308,6 +311,7 @@ def deserialize(
     return _object_hook(loads(data), data=data, objects=objects, redirects=redirects)
 
 
+_NONE_PATTERN = re.compile(r"^\[" + _Prefixes.none.value + r"\]$")
 _LOCAL_DATETIME_PATTERN = re.compile(
     r"^\["
     + _Prefixes.datetime.value
@@ -385,38 +389,40 @@ def _object_hook(
     match obj:
         case bool() | int() | float() | Dataclass() | None:
             return obj
-        case str():
-            if match := _DATE_PATTERN.search(obj):
+        case str() as text:
+            if match := _NONE_PATTERN.search(text):
+                return None
+            if match := _DATE_PATTERN.search(text):
                 return parse_date(match.group(1))
-            if match := _FLOAT_PATTERN.search(obj):
+            if match := _FLOAT_PATTERN.search(text):
                 return float(match.group(1))
-            if match := _LOCAL_DATETIME_PATTERN.search(obj):
+            if match := _LOCAL_DATETIME_PATTERN.search(text):
                 return parse_local_datetime(match.group(1))
-            if match := _PATH_PATTERN.search(obj):
+            if match := _PATH_PATTERN.search(text):
                 return Path(match.group(1))
-            if match := _TIME_PATTERN.search(obj):
+            if match := _TIME_PATTERN.search(text):
                 return parse_time(match.group(1))
-            if match := _TIMEDELTA_PATTERN.search(obj):
+            if match := _TIMEDELTA_PATTERN.search(text):
                 return parse_timedelta(match.group(1))
-            if match := _UUID_PATTERN.search(obj):
+            if match := _UUID_PATTERN.search(text):
                 return UUID(match.group(1))
-            if match := _VERSION_PATTERN.search(obj):
+            if match := _VERSION_PATTERN.search(text):
                 return parse_version(match.group(1))
-            if match := _ZONED_DATETIME_PATTERN.search(obj):
+            if match := _ZONED_DATETIME_PATTERN.search(text):
                 return parse_zoned_datetime(match.group(1))
-            if match := _ZONED_DATETIME_ALTERNATIVE_PATTERN.search(obj):
+            if match := _ZONED_DATETIME_ALTERNATIVE_PATTERN.search(text):
                 return parse_zoned_datetime(
                     match.group(1).replace("dt.UTC", "UTC")
                 ).replace(tzinfo=dt.UTC)
-            return obj
-        case list():
+            return text
+        case list() as list_:
             return [
-                _object_hook(o, data=data, objects=objects, redirects=redirects)
-                for o in obj
+                _object_hook(i, data=data, objects=objects, redirects=redirects)
+                for i in list_
             ]
-        case dict():
-            if len(obj) == 1:
-                key, value = one(obj.items())
+        case dict() as mapping:
+            if len(mapping) == 1:
+                key, value = one(mapping.items())
                 for cls, pattern in [
                     (frozenset, _FROZENSET_PATTERN),
                     (list, _LIST_PATTERN),
