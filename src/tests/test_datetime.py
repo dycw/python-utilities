@@ -1032,13 +1032,14 @@ class TestTimedeltaSinceEpoch:
         result = timedelta_since_epoch(date_or_datetime)
         assert isinstance(result, dt.timedelta)
 
-    @given(datetime=zoned_datetimes(), time_zones=pairs(timezones()))
+    @given(datetime=zoned_datetimes(), time_zone1=timezones(), time_zone2=timezones())
     def test_time_zone(
-        self, *, datetime: dt.datetime, time_zones: tuple[ZoneInfo, ZoneInfo]
+        self, *, datetime: dt.datetime, time_zone1: ZoneInfo, time_zone2: ZoneInfo
     ) -> None:
         with assume_does_not_raise(OverflowError, match="date value out of range"):
-            datetimes = [datetime.astimezone(tz) for tz in time_zones]
-        result1, result2 = [timedelta_since_epoch(dt) for dt in datetimes]
+            datetime1 = datetime.astimezone(time_zone1)
+            datetime2 = datetime.astimezone(time_zone2)
+        result1, result2 = [timedelta_since_epoch(dt) for dt in [datetime1, datetime2]]
         assert result1 == result2
 
 
