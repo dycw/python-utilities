@@ -4,7 +4,7 @@ import datetime as dt
 import re
 from collections.abc import Callable, Mapping
 from contextlib import suppress
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from enum import Enum, unique
 from functools import partial, reduce
 from itertools import chain
@@ -98,7 +98,7 @@ def serialize(
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     dataclass_final_hook: _DataclassFinalHook | None = None,
-    dataclass_include_defaults: bool = False,
+    dataclass_defaults: bool = False,
 ) -> bytes:
     """Serialize an object."""
     obj_use = _pre_process(
@@ -107,7 +107,7 @@ def serialize(
         globalns=globalns,
         localns=localns,
         dataclass_final_hook=dataclass_final_hook,
-        dataclass_include_defaults=dataclass_include_defaults,
+        dataclass_defaults=dataclass_defaults,
     )
     return dumps(
         obj_use,
@@ -123,7 +123,7 @@ def _pre_process(
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     dataclass_final_hook: _DataclassFinalHook | None = None,
-    dataclass_include_defaults: bool = False,
+    dataclass_defaults: bool = False,
     error: _ErrorMode = "raise",
 ) -> Any:
     if before is not None:
@@ -134,7 +134,7 @@ def _pre_process(
         globalns=globalns,
         localns=localns,
         dataclass_final_hook=dataclass_final_hook,
-        dataclass_include_defaults=dataclass_include_defaults,
+        dataclass_defaults=dataclass_defaults,
         error=error,
     )
     match obj:
@@ -176,15 +176,13 @@ def _pre_process(
             return f"[{_Prefixes.version.value}]{ser}"
         # contains
         case Dataclass():
-            if dataclass_include_defaults:
-                obj_as_dict = asdict(obj)
-            else:
-                obj_as_dict = dataclass_to_dict(
-                    obj,
-                    globalns=globalns,
-                    localns=localns,
-                    final=partial(_dataclass_final, hook=dataclass_final_hook),
-                )
+            obj_as_dict = dataclass_to_dict(
+                obj,
+                globalns=globalns,
+                localns=localns,
+                final=partial(_dataclass_final, hook=dataclass_final_hook),
+                defaults=dataclass_defaults,
+            )
             return pre(obj_as_dict)
         case dict():
             return {k: pre(v) for k, v in obj.items()}
@@ -259,7 +257,7 @@ def _pre_process_container(
             globalns=globalns,
             localns=localns,
             dataclass_final_hook=dataclass_final_hook,
-            dataclass_include_defaults=dataclass_include_defaults,
+            dataclass_defaults=dataclass_include_defaults,
         )
         for o in obj
     ]
