@@ -41,7 +41,7 @@ _MICROSECONDS_PER_SECOND = int(1e6)
 _SECONDS_PER_DAY = 24 * 60 * 60
 _MICROSECONDS_PER_DAY = _MICROSECONDS_PER_SECOND * _SECONDS_PER_DAY
 DATETIME_MIN_UTC = dt.datetime.min.replace(tzinfo=UTC)
-DATETIME_MAX_UTC = dt.datetime.min.replace(tzinfo=UTC)
+DATETIME_MAX_UTC = dt.datetime.max.replace(tzinfo=UTC)
 EPOCH_UTC = dt.datetime.fromtimestamp(0, tz=UTC)
 EPOCH_DATE = EPOCH_UTC.date()
 EPOCH_NAIVE = EPOCH_UTC.replace(tzinfo=None)
