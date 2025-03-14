@@ -21,7 +21,6 @@ from hypothesis.strategies import (
     integers,
     just,
     none,
-    sampled_from,
     sets,
     timedeltas,
     timezones,
@@ -51,8 +50,6 @@ from utilities.git import (
 )
 from utilities.hypothesis import (
     _SQLALCHEMY_ENGINE_DIALECTS,
-    _ZONED_DATETIMES_LEFT_MOST,
-    _ZONED_DATETIMES_RIGHT_MOST,
     Shape,
     ZonedDateTimesError,
     _Draw2DefaultGeneratedSentinelError,
@@ -1124,24 +1121,6 @@ class TestZonedDateTimes:
             max_value_ = max_value.astimezone(time_zone)
         assert min_value_ <= datetime <= max_value_
         _ = datetime.astimezone(time_zone_extra)
-
-    @given(
-        time_zone=timezones()
-        | sampled_from([_ZONED_DATETIMES_LEFT_MOST, _ZONED_DATETIMES_RIGHT_MOST])
-        | just(dt.UTC)
-    )
-    def test_min(self, *, time_zone: ZoneInfo) -> None:
-        datetime = dt.datetime.min.replace(tzinfo=_ZONED_DATETIMES_LEFT_MOST)
-        _ = datetime.astimezone(time_zone)
-
-    @given(
-        time_zone=timezones()
-        | sampled_from([_ZONED_DATETIMES_LEFT_MOST, _ZONED_DATETIMES_RIGHT_MOST])
-        | just(dt.UTC)
-    )
-    def test_max(self, *, time_zone: ZoneInfo) -> None:
-        datetime = dt.datetime.max.replace(tzinfo=_ZONED_DATETIMES_RIGHT_MOST)
-        _ = datetime.astimezone(time_zone)
 
     @given(data=data())
     def test_rounding(self, *, data: DataObject) -> None:

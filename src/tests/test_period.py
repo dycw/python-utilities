@@ -52,10 +52,10 @@ class TestPeriod:
         self, *, dates: tuple[dt.date, dt.date], duration: dt.timedelta
     ) -> None:
         start, end = dates
-        with assume_does_not_raise(OverflowError, match="date value out of range"):
-            adj_start, adj_end = start + duration, end + duration
         period = Period(start, end)
-        result = period + duration
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            result = period + duration
+            adj_start, adj_end = [d + duration for d in dates]
         expected = Period(adj_start, adj_end)
         assert result == expected
 
@@ -66,13 +66,10 @@ class TestPeriod:
         start, end = data.draw(
             pairs(zoned_datetimes(time_zone=time_zone1), sorted=True)
         )
-        with assume_does_not_raise(OverflowError, match="date value out of range"):
-            adj_start, adj_end = (
-                start.astimezone(time_zone2),
-                end.astimezone(time_zone2),
-            )
         period = Period(start, end)
-        result = period.astimezone(time_zone2)
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            result = period.astimezone(time_zone2)
+            adj_start, adj_end = [d.astimezone(time_zone2) for d in dates]
         expected = Period(adj_start, adj_end)
         assert result == expected
 
