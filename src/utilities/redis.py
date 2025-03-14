@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from typing import (
@@ -17,7 +17,6 @@ from typing import (
 from uuid import UUID, uuid4
 
 from redis.asyncio import Redis
-from redis.typing import EncodableT
 
 from utilities.datetime import (
     MILLISECOND,
@@ -33,11 +32,11 @@ from utilities.tenacity import MaybeAttemptContextManager, yield_timeout_attempt
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import Callable
+    from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
 
     from redis.asyncio import ConnectionPool
     from redis.asyncio.client import PubSub
-    from redis.typing import ResponseT
+    from redis.typing import EncodableT, ResponseT
     from tenacity.retry import RetryBaseT as SyncRetryBaseT
     from tenacity.stop import StopBaseT
     from tenacity.wait import WaitBaseT
@@ -102,7 +101,9 @@ class _RedisHashMapKey(Generic[_K, _V]):
         """Delete a key from a hashmap in `redis`."""
         async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
             async with attempt:
-                return await cast(Awaitable[int], redis.hdel(self.name, cast(str, key)))
+                return await cast(
+                    "Awaitable[int]", redis.hdel(self.name, cast("str", key))
+                )
         raise ImpossibleCaseError(case=[f"{redis=}", f"{key=}"])  # pragma: no cover
 
     async def exists(self, redis: Redis, key: _K, /) -> bool:
@@ -110,7 +111,7 @@ class _RedisHashMapKey(Generic[_K, _V]):
         async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
             async with attempt:
                 return await cast(
-                    Awaitable[bool], redis.hexists(self.name, cast(str, key))
+                    "Awaitable[bool]", redis.hexists(self.name, cast("str", key))
                 )
         raise ImpossibleCaseError(case=[f"{redis=}", f"{key=}"])  # pragma: no cover
 
@@ -119,12 +120,12 @@ class _RedisHashMapKey(Generic[_K, _V]):
         ser_key = self._serialize_key(key)  # skipif-ci-and-not-linux
         async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
             async with attempt:
-                return await self._get_core(redis, cast(Any, ser_key))
+                return await self._get_core(redis, cast("Any", ser_key))
         raise ImpossibleCaseError(case=[f"{redis=}", f"{key=}"])  # pragma: no cover
 
     async def _get_core(self, redis: Redis, ser_key: bytes, /) -> _V | None:
         result = await cast(  # skipif-ci-and-not-linux
-            Awaitable[Any], redis.hget(self.name, cast(Any, ser_key))
+            "Awaitable[Any]", redis.hget(self.name, cast("Any", ser_key))
         )
         match result:  # skipif-ci-and-not-linux
             case None:
@@ -155,8 +156,10 @@ class _RedisHashMapKey(Generic[_K, _V]):
 
     async def _set_core(self, redis: Redis, ser_key: bytes, ser_value: bytes, /) -> int:
         result = await cast(  # skipif-ci-and-not-linux
-            Awaitable[int],
-            redis.hset(self.name, key=cast(Any, ser_key), value=cast(Any, ser_value)),
+            "Awaitable[int]",
+            redis.hset(
+                self.name, key=cast("Any", ser_key), value=cast("Any", ser_value)
+            ),
         )
         if self.ttl is not None:  # skipif-ci-and-not-linux
             await redis.pexpire(self.name, datetime_duration_to_timedelta(self.ttl))
@@ -560,7 +563,7 @@ async def publish(
 ) -> ResponseT:
     """Publish an object to a channel."""
     data_use = (  # skipif-ci-and-not-linux
-        cast(EncodableT, data) if serializer is None else serializer(data)
+        cast("EncodableT", data) if serializer is None else serializer(data)
     )
     return await redis.publish(channel, data_use)  # skipif-ci-and-not-linux
 
@@ -626,7 +629,7 @@ async def subscribe_messages(
     sleep_use = datetime_duration_to_float(sleep)  # skipif-ci-and-not-linux
     while True:  # skipif-ci-and-not-linux
         message = cast(
-            _RedisMessageSubscribe | _RedisMessageUnsubscribe | None,
+            "_RedisMessageSubscribe | _RedisMessageUnsubscribe | None",
             await pubsub.get_message(timeout=timeout_use),
         )
         if (
@@ -635,7 +638,7 @@ async def subscribe_messages(
             and (message["channel"] in channels_bytes)
             and isinstance(message["data"], bytes)
         ):
-            yield cast(_RedisMessageSubscribe, message)
+            yield cast("_RedisMessageSubscribe", message)
         else:
             await asyncio.sleep(sleep_use)
 

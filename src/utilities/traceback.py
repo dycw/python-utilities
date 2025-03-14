@@ -487,10 +487,10 @@ def get_rich_traceback(
         case []:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{error}"])
         case [err]:
-            err_recast = cast(_TBaseExc, err)
+            err_recast = cast("_TBaseExc", err)
             return _get_rich_traceback_non_chain(err_recast, git_ref=git_ref)
         case errs:
-            errs_recast = cast(list[_TBaseExc], errs)
+            errs_recast = cast("list[_TBaseExc]", errs)
             return ExcChainTB(
                 errors=[
                     _get_rich_traceback_non_chain(e, git_ref=git_ref)
@@ -567,7 +567,7 @@ def trace(
     """Trace a function call."""
     if func is None:
         result = partial(trace, setup=setup, runtime=runtime)
-        return cast(Callable[[_F], _F], result)
+        return cast("Callable[[_F], _F]", result)
 
     if (setup is not None) and not setup():
         return func
@@ -581,10 +581,10 @@ def trace(
                 try:
                     return func(*args, **kwargs)
                 except Exception as error:
-                    cast(Any, error).exc_tb = _get_rich_traceback_internal(error)
+                    cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
                     raise
 
-            return cast(_F, trace_sync)
+            return cast("_F", trace_sync)
 
         @wraps(func)
         async def trace_async(*args: Any, **kwargs: Any) -> Any:
@@ -592,10 +592,10 @@ def trace(
             try:
                 return await func(*args, **kwargs)
             except Exception as error:
-                cast(Any, error).exc_tb = _get_rich_traceback_internal(error)
+                cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
                 raise
 
-        return cast(_F, trace_async)
+        return cast("_F", trace_async)
 
     if not iscoroutinefunction(func):
 
@@ -607,10 +607,10 @@ def trace(
                 return func(*args, **kwargs)
             except Exception as error:
                 if en:
-                    cast(Any, error).exc_tb = _get_rich_traceback_internal(error)
+                    cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
                 raise
 
-        return cast(_F, trace_sync)
+        return cast("_F", trace_sync)
 
     @wraps(func)
     async def trace_async(*args: Any, **kwargs: Any) -> Any:
@@ -620,10 +620,10 @@ def trace(
             return await func(*args, **kwargs)
         except Exception as error:
             if en:
-                cast(Any, error).exc_tb = _get_rich_traceback_internal(error)
+                cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
             raise
 
-    return cast(_F, trace_async)
+    return cast("_F", trace_async)
 
 
 @overload
@@ -731,7 +731,7 @@ def _merge_frames(
         if not has_match(curr, rev):
             continue
         next_ = get_solution(curr, rev)
-        new = cast(_ExtFrameSummaryCA, replace(curr, extra=next_.extra))
+        new = cast("_ExtFrameSummaryCA", replace(curr, extra=next_.extra))
         values.append(new)
     return values[::-1]
 

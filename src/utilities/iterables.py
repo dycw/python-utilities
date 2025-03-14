@@ -18,7 +18,6 @@ from enum import Enum
 from functools import cmp_to_key, partial, reduce
 from itertools import accumulate, chain, groupby, islice, pairwise, product
 from math import isnan
-from types import NoneType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -47,6 +46,8 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
+    from types import NoneType
+
     from utilities.types import MaybeIterable, MaybeIterableHashable, StrMapping
 
 
@@ -68,13 +69,13 @@ _UHashable = TypeVar("_UHashable", bound=Hashable)
 
 def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
     """Typed version of `always_iterable`."""
-    obj = cast(Any, obj)
+    obj = cast("Any", obj)
     if isinstance(obj, str | bytes):
-        return cast(list[_T], [obj])
+        return cast("list[_T]", [obj])
     try:
-        return iter(cast(Iterable[_T], obj))
+        return iter(cast("Iterable[_T]", obj))
     except TypeError:
-        return cast(list[_T], [obj])
+        return cast("list[_T]", [obj])
 
 
 ##
@@ -704,8 +705,8 @@ class Collection(frozenset[_THashable]):
     def map(
         self, func: Callable[[_THashable], _UHashable], /
     ) -> Collection[_UHashable]:
-        values = cast(Any, map(func, self))
-        return cast(Any, type(self)(values))
+        values = cast("Any", map(func, self))
+        return cast("Any", type(self)(values))
 
     def partition(self, func: Callable[[_THashable], bool], /) -> tuple[Self, Self]:
         from more_itertools import partition
@@ -1112,7 +1113,7 @@ def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterator[Mapping[_K,
     """Return the cartesian product of the values in a mapping, as mappings."""
     keys = list(mapping)
     for values in product(*mapping.values()):
-        yield cast(Mapping[_K, _V], dict(zip(keys, values, strict=True)))
+        yield cast("Mapping[_K, _V]", dict(zip(keys, values, strict=True)))
 
 
 ##
@@ -1171,31 +1172,31 @@ def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
 
     # singletons
     if x is None:
-        y = cast(NoneType, y)
+        y = cast("NoneType", y)
         return 0
     if isinstance(x, dt.datetime):
-        y = cast(dt.datetime, y)
+        y = cast("dt.datetime", y)
         return _sort_iterable_cmp_datetimes(x, y)
     if isinstance(x, float):
-        y = cast(float, y)
+        y = cast("float", y)
         return _sort_iterable_cmp_floats(x, y)
     if isinstance(x, str):  # else Sequence
-        y = cast(str, y)
-        return cast(Literal[-1, 0, 1], (x > y) - (x < y))
+        y = cast("str", y)
+        return cast("Literal[-1, 0, 1]", (x > y) - (x < y))
 
     # collections
     if isinstance(x, Sized):
-        y = cast(Sized, y)
+        y = cast("Sized", y)
         if (result := _sort_iterable_cmp(len(x), len(y))) != 0:
             return result
     if isinstance(x, Mapping):
-        y = cast(Mapping[Any, Any], y)
+        y = cast("Mapping[Any, Any]", y)
         return _sort_iterable_cmp(x.items(), y.items())
     if isinstance(x, AbstractSet):
-        y = cast(AbstractSet[Any], y)
+        y = cast("AbstractSet[Any]", y)
         return _sort_iterable_cmp(sort_iterable(x), sort_iterable(y))
     if isinstance(x, Sequence):
-        y = cast(Sequence[Any], y)
+        y = cast("Sequence[Any]", y)
         it: Iterable[Literal[-1, 0, 1]] = (
             _sort_iterable_cmp(x_i, y_i) for x_i, y_i in zip(x, y, strict=True)
         )
@@ -1203,7 +1204,7 @@ def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
             return next(r for r in it if r != 0)
 
     try:
-        return cast(Literal[-1, 0, 1], (x > y) - (x < y))
+        return cast("Literal[-1, 0, 1]", (x > y) - (x < y))
     except TypeError:
         raise SortIterableError(x=x, y=y) from None
 
@@ -1224,7 +1225,7 @@ def _sort_iterable_cmp_datetimes(
     """Compare two datetimes."""
     match x.tzinfo, y.tzinfo:
         case None, None:
-            return cast(Literal[-1, 0, 1], (x > y) - (x < y))
+            return cast("Literal[-1, 0, 1]", (x > y) - (x < y))
         case dt.tzinfo(), None:
             return 1
         case None, dt.tzinfo():
@@ -1232,13 +1233,13 @@ def _sort_iterable_cmp_datetimes(
         case dt.tzinfo(), dt.tzinfo():
             x_utc = x.astimezone(tz=UTC)
             y_utc = y.astimezone(tz=UTC)
-            result = cast(Literal[-1, 0, 1], (x_utc > y_utc) - (x_utc < y_utc))
+            result = cast("Literal[-1, 0, 1]", (x_utc > y_utc) - (x_utc < y_utc))
             if result != 0:
                 return result
             x_time_zone = ensure_not_none(ensure_not_none(x.tzinfo).tzname(x))
             y_time_zone = ensure_not_none(ensure_not_none(y.tzinfo).tzname(y))
             return cast(
-                Literal[-1, 0, 1],
+                "Literal[-1, 0, 1]",
                 (x_time_zone > y_time_zone) - (x_time_zone < y_time_zone),
             )
         case _ as never:
@@ -1256,7 +1257,7 @@ def _sort_iterable_cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
         case False, True:
             return -1
         case False, False:
-            return cast(Literal[-1, 0, 1], (x > y) - (x < y))
+            return cast("Literal[-1, 0, 1]", (x > y) - (x < y))
         case _ as never:
             assert_never(never)
 

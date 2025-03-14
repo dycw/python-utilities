@@ -2,14 +2,6 @@ from __future__ import annotations
 
 import builtins
 import datetime as dt
-from collections.abc import (
-    AsyncIterator,
-    Collection,
-    Hashable,
-    Iterable,
-    Iterator,
-    Sequence,
-)
 from contextlib import (
     AbstractAsyncContextManager,
     asynccontextmanager,
@@ -36,7 +28,6 @@ from typing import (
     overload,
     override,
 )
-from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
@@ -63,6 +54,9 @@ from hypothesis.strategies import (
 from hypothesis.utils.conventions import not_set
 
 from utilities.datetime import (
+    DATETIME_MAX_UTC,
+    DATETIME_MIN_UTC,
+    DAY,
     MAX_MONTH,
     MIN_MONTH,
     Month,
@@ -100,8 +94,19 @@ from utilities.version import Version
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
+    from collections.abc import (
+        AsyncIterator,
+        Collection,
+        Hashable,
+        Iterable,
+        Iterator,
+        Sequence,
+    )
+    from zoneinfo import ZoneInfo
+
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
+    from redis.typing import KeyT
     from sqlalchemy.ext.asyncio import AsyncEngine
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
@@ -623,7 +628,7 @@ def lists_fixed_length(
         lists(strategy, min_size=size_, max_size=size_, unique=draw2(draw, unique))
     )
     if draw2(draw, sorted):
-        return builtins.sorted(cast(Iterable[Any], elements))
+        return builtins.sorted(cast("Iterable[Any]", elements))
     return elements
 
 
@@ -907,7 +912,9 @@ async def sqlalchemy_engines(
             class EngineWithPath(type(engine)): ...
 
             engine_with_path = EngineWithPath(engine.sync_engine)
-            cast(Any, engine_with_path).temp_path = temp_path  # keep `temp_path` alive
+            cast(
+                "Any", engine_with_path
+            ).temp_path = temp_path  # keep `temp_path` alive
             return engine_with_path
         case "postgresql":  # skipif-ci-and-not-linux
             from utilities.sqlalchemy import ensure_tables_dropped
@@ -1176,7 +1183,6 @@ def versions(draw: DrawFn, /, *, suffix: MaybeSearchStrategy[bool] = False) -> V
 def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[_TestRedis]:
     """Strategy for generating test redis clients."""
     from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
-    from redis.typing import KeyT  # skipif-ci-and-not-linux
 
     from utilities.redis import _TestRedis, yield_redis  #  skipif-ci-and-not-linux
 
@@ -1187,11 +1193,11 @@ def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[_TestRe
     @asynccontextmanager
     async def func() -> AsyncIterator[_TestRedis]:  # skipif-ci-and-not-linux
         async with yield_redis(db=15) as redis:  # skipif-ci-and-not-linux
-            keys = cast(list[KeyT], await redis.keys(pattern=f"{key}_*"))
+            keys = cast("list[KeyT]", await redis.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
                 _ = await redis.delete(*keys)
             yield _TestRedis(redis=redis, timestamp=now, uuid=uuid, key=key)
-            keys = cast(list[KeyT], await redis.keys(pattern=f"{key}_*"))
+            keys = cast("list[KeyT]", await redis.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
                 _ = await redis.delete(*keys)
 
@@ -1201,17 +1207,13 @@ def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[_TestRe
 ##
 
 
-_ZONED_DATETIMES_LEFT_MOST = ZoneInfo("Asia/Manila")
-_ZONED_DATETIMES_RIGHT_MOST = ZoneInfo("Pacific/Kiritimati")
-
-
 @composite
 def zoned_datetimes(
     draw: DrawFn,
     /,
     *,
-    min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
-    max_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.max,
+    min_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MIN_UTC + DAY,
+    max_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MAX_UTC - DAY,
     time_zone: MaybeSearchStrategy[ZoneInfo | timezone] = UTC,
     round_: _RoundMode | None = None,
     timedelta: dt.timedelta | None = None,
@@ -1249,12 +1251,6 @@ def zoned_datetimes(
             datetime, timedelta, mode=round_, rel_tol=rel_tol, abs_tol=abs_tol
         )
         _ = assume(min_value_ <= datetime <= max_value_)
-    with assume_does_not_raise(OverflowError, match="date value out of range"):
-        _ = datetime.astimezone(_ZONED_DATETIMES_LEFT_MOST)  # for dt.datetime.min
-    with assume_does_not_raise(OverflowError, match="date value out of range"):
-        _ = datetime.astimezone(  # for dt.datetime.max
-            _ZONED_DATETIMES_RIGHT_MOST
-        )
     if valid:
         with assume_does_not_raise(  # skipif-ci-and-windows
             CheckValidZonedDateimeError

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Iterable
 from itertools import pairwise
 from pathlib import Path
 from re import search
@@ -22,7 +21,6 @@ from hypothesis.strategies import (
     integers,
     just,
     none,
-    sampled_from,
     sets,
     timedeltas,
     timezones,
@@ -52,8 +50,6 @@ from utilities.git import (
 )
 from utilities.hypothesis import (
     _SQLALCHEMY_ENGINE_DIALECTS,
-    _ZONED_DATETIMES_LEFT_MOST,
-    _ZONED_DATETIMES_RIGHT_MOST,
     Shape,
     ZonedDateTimesError,
     _Draw2DefaultGeneratedSentinelError,
@@ -134,6 +130,7 @@ from utilities.whenever import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from collections.abc import Set as AbstractSet
     from uuid import UUID
     from zoneinfo import ZoneInfo
@@ -771,7 +768,7 @@ class TestReducedExamples:
         def test() -> None:
             pass
 
-        result = cast(Any, test)._hypothesis_internal_use_settings.max_examples
+        result = cast("Any", test)._hypothesis_internal_use_settings.max_examples
         expected = max(round(frac * ensure_int(settings().max_examples)), 1)
         assert result == expected
 
@@ -795,13 +792,13 @@ class TestSetupHypothesisProfiles:
     def test_main(self) -> None:
         setup_hypothesis_profiles()
         curr = settings()
-        assert Phase.shrink in cast(Iterable[Phase], curr.phases)
+        assert Phase.shrink in cast("Iterable[Phase]", curr.phases)
         assert curr.max_examples in {10, 100, 1000}
 
     def test_no_shrink(self) -> None:
         with temp_environ({"HYPOTHESIS_NO_SHRINK": "1"}):
             setup_hypothesis_profiles()
-        assert Phase.shrink not in cast(Iterable[Phase], settings().phases)
+        assert Phase.shrink not in cast("Iterable[Phase]", settings().phases)
 
     @given(max_examples=integers(1, 100))
     def test_max_examples(self, *, max_examples: int) -> None:
@@ -1085,7 +1082,7 @@ class TestYieldTestRedis:
         async with yield_test_redis(data) as test:
             assert not await test.redis.exists(test.key)
             _ = await test.redis.set(test.key, value)
-            result = int(cast(str, await test.redis.get(test.key)))
+            result = int(cast("str", await test.redis.get(test.key)))
             assert result == value
 
 
@@ -1124,24 +1121,6 @@ class TestZonedDateTimes:
             max_value_ = max_value.astimezone(time_zone)
         assert min_value_ <= datetime <= max_value_
         _ = datetime.astimezone(time_zone_extra)
-
-    @given(
-        time_zone=timezones()
-        | sampled_from([_ZONED_DATETIMES_LEFT_MOST, _ZONED_DATETIMES_RIGHT_MOST])
-        | just(dt.UTC)
-    )
-    def test_min(self, *, time_zone: ZoneInfo) -> None:
-        datetime = dt.datetime.min.replace(tzinfo=_ZONED_DATETIMES_LEFT_MOST)
-        _ = datetime.astimezone(time_zone)
-
-    @given(
-        time_zone=timezones()
-        | sampled_from([_ZONED_DATETIMES_LEFT_MOST, _ZONED_DATETIMES_RIGHT_MOST])
-        | just(dt.UTC)
-    )
-    def test_max(self, *, time_zone: ZoneInfo) -> None:
-        datetime = dt.datetime.max.replace(tzinfo=_ZONED_DATETIMES_RIGHT_MOST)
-        _ = datetime.astimezone(time_zone)
 
     @given(data=data())
     def test_rounding(self, *, data: DataObject) -> None:

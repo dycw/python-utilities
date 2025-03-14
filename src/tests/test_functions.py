@@ -274,7 +274,7 @@ class TestEnsureMember:
 
 class TestEnsureNotNone:
     def test_main(self) -> None:
-        maybe_int = cast(int | None, 0)
+        maybe_int = cast("int | None", 0)
         result = ensure_not_none(maybe_int)
         assert result == 0
 

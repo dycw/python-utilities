@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup, run
-from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from inspect import iscoroutinefunction
@@ -9,13 +8,12 @@ from sys import version_info
 from typing import TYPE_CHECKING, Any, cast, override
 
 from utilities.logging import get_logger
-from utilities.types import Coroutine1, LoggerOrName
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
     from types import TracebackType
 
-    from utilities.types import MaybeCoroutine1, StrMapping
+    from utilities.types import Coroutine1, LoggerOrName, MaybeCoroutine1, StrMapping
 
 
 VERSION_MAJOR_MINOR = (version_info.major, version_info.minor)
@@ -57,14 +55,14 @@ def _make_except_hook_inner(
         raise MakeExceptHookError
     logger_use = get_logger(logger=logger)
     exc_info = (exc_type, exc_val, traceback)
-    logger_use.exception(message, exc_info=cast(Any, exc_info), extra=extra)
+    logger_use.exception(message, exc_info=cast("Any", exc_info), extra=extra)
     async_callbacks: list[Callable[[], Coroutine1[None]]] = []
     if callbacks is not None:
         for callback in callbacks:
             if not iscoroutinefunction(callback):
-                cast(Callable[[], None], callback)()
+                cast("Callable[[], None]", callback)()
             else:  # skipif-ci
-                async_callback = cast(Callable[[], Coroutine1[None]], callback)
+                async_callback = cast("Callable[[], Coroutine1[None]]", callback)
                 async_callbacks.append(async_callback)
     if len(async_callbacks) >= 1:  # skipif-ci
         run(_run_async_callbacks(async_callbacks))

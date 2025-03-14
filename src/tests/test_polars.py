@@ -1638,7 +1638,7 @@ class TestStructFromDataClass:
         with raises(
             StructFromDataClassError, match="Object must be a dataclass; got None"
         ):
-            _ = struct_from_dataclass(cast(Any, None))
+            _ = struct_from_dataclass(cast("Any", None))
 
     def test_missing_time_zone_error(self) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -1690,7 +1690,7 @@ class TestYieldRowsAsDataclasses:
             x: str
 
         result = list(yield_rows_as_dataclasses(df, Row, check_types="none"))
-        expected = [Row(x=cast(Any, 1)), Row(x=cast(Any, 2)), Row(x=cast(Any, 3))]
+        expected = [Row(x=cast("Any", 1)), Row(x=cast("Any", 2)), Row(x=cast("Any", 3))]
         assert result == expected
 
     def test_first(self) -> None:
@@ -1701,7 +1701,7 @@ class TestYieldRowsAsDataclasses:
             x: int
 
         result = list(yield_rows_as_dataclasses(df, Row, check_types="first"))
-        expected = [Row(x=1), Row(x=cast(Any, None)), Row(x=cast(Any, None))]
+        expected = [Row(x=1), Row(x=cast("Any", None)), Row(x=cast("Any", None))]
         assert result == expected
 
     @given(check_types=sampled_from(["none", "first", "all"]))

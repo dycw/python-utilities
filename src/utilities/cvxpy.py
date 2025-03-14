@@ -51,7 +51,7 @@ def add(
     """Compute the sum of two quantities."""
     if isinstance(x, int | float | ndarray) and isinstance(y, int | float | ndarray):
         return np.add(x, y)
-    return cast(Any, x) + cast(Any, y)
+    return cast("Any", x) + cast("Any", y)
 
 
 ##
@@ -81,7 +81,7 @@ def divide(
     """Compute the quotient of two quantities."""
     if isinstance(x, int | float | ndarray) and isinstance(y, int | float | ndarray):
         return np.divide(x, y)
-    return cast(Any, x) / cast(Any, y)
+    return cast("Any", x) / cast("Any", y)
 
 
 ##
@@ -367,7 +367,7 @@ def solve(
         case _:
             specific = {}
     obj = cast(
-        float, problem.solve(solver=solver, verbose=verbose, **kwargs, **specific)
+        "float", problem.solve(solver=solver, verbose=verbose, **kwargs, **specific)
     )
     if (status := problem.status) in {"optimal", "optimal_inaccurate"}:
         return obj
@@ -433,7 +433,7 @@ def subtract(
     """Compute the difference of two quantities."""
     if isinstance(x, int | float | ndarray) and isinstance(y, int | float | ndarray):
         return np.subtract(x, y)
-    return cast(Any, x) - cast(Any, y)
+    return cast("Any", x) - cast("Any", y)
 
 
 ##
@@ -478,7 +478,7 @@ def _sum_axis_0_or_1(
 ) -> NDArrayF | Expression:
     if isinstance(x, ndarray):
         return np.sum(x, axis=axis)
-    return cast(Expression, cvxpy.sum(x, axis=axis))
+    return cast("Expression", cvxpy.sum(x, axis=axis))
 
 
 __all__ = [

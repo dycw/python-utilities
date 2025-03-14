@@ -95,7 +95,7 @@ class TestGetLoggingLevelNumber:
         with raises(
             GetLoggingLevelNumberError, match="Invalid logging level: 'invalid'"
         ):
-            _ = get_logging_level_number(cast(Any, "invalid"))
+            _ = get_logging_level_number(cast("Any", "invalid"))
 
 
 class TestLogLevel:

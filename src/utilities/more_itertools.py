@@ -56,7 +56,7 @@ def partition_typeguard(
 ) -> tuple[Iterator[_T], Iterator[_U]]:
     """Partition with a typeguarded function."""
     false, true = partition(pred, iterable)
-    true = cast(Iterator[_U], true)
+    true = cast("Iterator[_U]", true)
     return false, true
 
 
@@ -175,7 +175,9 @@ def _yield_splits3(
 ) -> Iterator[Split[Sequence[_T]]]:
     for window, len_head, len_tail in iterable:
         head_win, tail_win = split_into(window, [len_head, len_tail])
-        yield cast(Split[Sequence[_T]], Split(head=list(head_win), tail=list(tail_win)))
+        yield cast(
+            "Split[Sequence[_T]]", Split(head=list(head_win), tail=list(tail_win))
+        )
 
 
 __all__ = ["Split", "bucket_mapping", "partition_typeguard", "peekable", "yield_splits"]

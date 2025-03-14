@@ -47,15 +47,6 @@ from polars import (
     struct,
     when,
 )
-from polars._typing import (
-    IntoExpr,
-    IntoExprColumn,
-    JoinStrategy,
-    JoinValidation,
-    PolarsDataType,
-    SchemaDict,
-    TimeUnit,
-)
 from polars.datatypes import DataType, DataTypeClass
 from polars.exceptions import (
     ColumnNotFoundError,
@@ -119,6 +110,17 @@ from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
     from collections.abc import Set as AbstractSet
+
+    from dacite.data import Data
+    from polars._typing import (
+        IntoExpr,
+        IntoExprColumn,
+        JoinStrategy,
+        JoinValidation,
+        PolarsDataType,
+        SchemaDict,
+        TimeUnit,
+    )
 
 
 _T = TypeVar("_T")
@@ -441,7 +443,7 @@ def _check_polars_dataframe_sorted(
     df: DataFrame, by: MaybeIterable[IntoExpr], /
 ) -> None:
     by_use = cast(
-        IntoExpr | list[IntoExpr], list(by) if is_iterable_not_str(by) else by
+        "IntoExpr | list[IntoExpr]", list(by) if is_iterable_not_str(by) else by
     )
     df_sorted = df.sort(by_use)
     try:
@@ -463,7 +465,7 @@ def _check_polars_dataframe_unique(
     df: DataFrame, by: MaybeIterable[IntoExpr], /
 ) -> None:
     by_use = cast(
-        IntoExpr | list[IntoExpr], list(by) if is_iterable_not_str(by) else by
+        "IntoExpr | list[IntoExpr]", list(by) if is_iterable_not_str(by) else by
     )
     if df.select(by_use).is_duplicated().any():
         raise _CheckPolarsDataFrameUniqueError(df=df, by=by_use)
@@ -1379,7 +1381,6 @@ def yield_rows_as_dataclasses(
 ) -> Iterator[_TDataclass]:
     """Yield the rows of a DataFrame as dataclasses."""
     from dacite import from_dict
-    from dacite.data import Data
     from dacite.exceptions import WrongTypeError
 
     columns = df.columns
@@ -1405,7 +1406,7 @@ def yield_rows_as_dataclasses(
             except StopIteration:
                 return
             try:
-                yield from_dict(cls, cast(Data, first))
+                yield from_dict(cls, cast("Data", first))
             except WrongTypeError as error:
                 raise _YieldRowsAsDataClassesWrongTypeError(
                     df=df, cls=cls, msg=str(error)
@@ -1414,7 +1415,7 @@ def yield_rows_as_dataclasses(
         case "all":
             try:
                 for row in rows:
-                    yield from_dict(cls, cast(Data, row))
+                    yield from_dict(cls, cast("Data", row))
             except WrongTypeError as error:
                 raise _YieldRowsAsDataClassesWrongTypeError(
                     df=df, cls=cls, msg=str(error)
@@ -1428,11 +1429,10 @@ def _yield_rows_as_dataclasses_no_check_types(
 ) -> Iterator[_TDataclass]:
     """Yield the rows of a DataFrame as dataclasses without type checking."""
     from dacite import Config, from_dict
-    from dacite.data import Data
 
     config = Config(check_types=False)
     for row in rows:
-        yield from_dict(cls, cast(Data, row), config=config)
+        yield from_dict(cls, cast("Data", row), config=config)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1560,7 +1560,6 @@ def yield_struct_series_dataclasses(
 ) -> Iterator[_TDataclass | None]:
     """Yield the elements of a struct-dtype Series as dataclasses."""
     from dacite import Config, from_dict
-    from dacite.data import Data
 
     config = Config(
         forward_references=forward_references, check_types=check_types, strict=True
@@ -1569,7 +1568,7 @@ def yield_struct_series_dataclasses(
         if value is None:
             yield None
         else:
-            yield from_dict(cls, cast(Data, value), config=config)
+            yield from_dict(cls, cast("Data", value), config=config)
 
 
 ##

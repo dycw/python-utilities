@@ -100,7 +100,7 @@ def plot_dataframes(
             x=x_use,
             y=Y(value_name).scale(zero=False),
             color=f"{var_name}:N",
-            opacity=cast(Any, condition(selection, value(1.0), value(0.01))),
+            opacity=cast("Any", condition(selection, value(1.0), value(0.01))),
         )
         .add_params(selection)
         for chart in charts
@@ -112,7 +112,7 @@ def plot_dataframes(
     )
     points = [
         line.mark_point().encode(
-            opacity=cast(Any, condition(nearest, value(1), value(0)))
+            opacity=cast("Any", condition(nearest, value(1), value(0)))
         )
         for line in lines
     ]
@@ -129,7 +129,7 @@ def plot_dataframes(
         .mark_rule(color="gray")
         .encode(
             x=x_use,
-            opacity=cast(Any, condition(nearest, value(0.3), value(0))),
+            opacity=cast("Any", condition(nearest, value(0.3), value(0))),
             tooltip=[Tooltip(x_use, format=tooltip_format_use, title=x_use)]
             + [Tooltip(c, type="quantitative") for c in spec.y],
         )
@@ -217,7 +217,7 @@ def plot_intraday_dataframe(
         .mark_rule(color="black")
         .encode(
             x=f"{datetime} index",
-            opacity=cast(Any, condition(nearest, value(1.0), value(0.0))),
+            opacity=cast("Any", condition(nearest, value(1.0), value(0.0))),
             tooltip=[Tooltip(f"{datetime} index:Q", format="%Y-%m-%d %H:%M:%S (%a)")]
             + [f"{c}:Q" for c in other_cols],
         )

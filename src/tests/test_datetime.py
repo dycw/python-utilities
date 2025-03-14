@@ -131,6 +131,7 @@ from utilities.hypothesis import (
     assume_does_not_raise,
     int32s,
     months,
+    pairs,
     text_clean,
     zoned_datetimes,
 )
@@ -223,11 +224,12 @@ class TestAddWeekdays:
         with raises(AddWeekdaysError):
             _ = add_weekdays(date, n=0)
 
-    @given(date=dates(), n1=integers(-10, 10), n2=integers(-10, 10))
-    def test_two(self, *, date: dt.date, n1: int, n2: int) -> None:
+    @given(date=dates(), ns=pairs(integers(-10, 10)))
+    def test_two(self, *, date: dt.date, ns: tuple[int, int]) -> None:
         with assume_does_not_raise(AddWeekdaysError, OverflowError):
-            weekday1, weekday2 = (add_weekdays(date, n=n) for n in [n1, n2])
+            weekday1, weekday2 = (add_weekdays(date, n=n) for n in ns)
         result = weekday1 <= weekday2
+        n1, n2 = ns
         expected = n1 <= n2
         assert result is expected
 
@@ -339,9 +341,10 @@ class TestAreEqualDateTimes:
         time_zone1: ZoneInfo,
         time_zone2: ZoneInfo,
     ) -> None:
-        result = are_equal_datetimes(
-            x.astimezone(time_zone1), y.astimezone(time_zone2), strict=True
-        )
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            x1 = x.astimezone(time_zone1)
+            y2 = y.astimezone(time_zone2)
+        result = are_equal_datetimes(x1, y2, strict=True)
         expected = (x == y) and (time_zone1 is time_zone2)
         assert result is expected
 
@@ -1033,8 +1036,10 @@ class TestTimedeltaSinceEpoch:
     def test_time_zone(
         self, *, datetime: dt.datetime, time_zone1: ZoneInfo, time_zone2: ZoneInfo
     ) -> None:
-        result1 = timedelta_since_epoch(datetime.astimezone(time_zone1))
-        result2 = timedelta_since_epoch(datetime.astimezone(time_zone2))
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            datetime1 = datetime.astimezone(time_zone1)
+            datetime2 = datetime.astimezone(time_zone2)
+        result1, result2 = [timedelta_since_epoch(dt) for dt in [datetime1, datetime2]]
         assert result1 == result2
 
 

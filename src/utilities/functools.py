@@ -12,7 +12,7 @@ _T = TypeVar("_T")
 
 def cache(func: _F, /) -> _F:
     """Typed version of `cache`."""
-    typed_cache = cast(Callable[[_F], _F], _cache)
+    typed_cache = cast("Callable[[_F], _F]", _cache)
     return typed_cache(func)
 
 
@@ -31,9 +31,9 @@ def lru_cache(
     """Typed version of `lru_cache`."""
     if func is None:
         result = partial(lru_cache, max_size=max_size, typed=typed)
-        return cast(Callable[[_F], _F], result)
+        return cast("Callable[[_F], _F]", result)
     wrapped = _lru_cache(maxsize=max_size, typed=typed)(func)
-    return cast(Any, wrapped)
+    return cast("Any", wrapped)
 
 
 ##

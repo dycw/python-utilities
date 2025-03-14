@@ -354,7 +354,7 @@ def get_table(table_or_orm: TableOrORMInstOrClass, /) -> Table:
     if isinstance(table_or_orm, Table):
         return table_or_orm
     if is_orm(table_or_orm):
-        return cast(Table, table_or_orm.__table__)
+        return cast("Table", table_or_orm.__table__)
     raise GetTableError(obj=table_or_orm)
 
 
@@ -489,7 +489,7 @@ def is_orm(obj: Any, /) -> TypeGuard[ORMInstOrClass]:
     """Check if an object is an ORM instance/class."""
     if isinstance(obj, type):
         try:
-            _ = class_mapper(cast(Any, obj))
+            _ = class_mapper(cast("Any", obj))
         except (ArgumentError, UnmappedClassError):
             return False
         return True
@@ -571,11 +571,11 @@ def _normalize_insert_item(
     except TypeError:
         raise _NormalizeInsertItemError(item=item) from None
     if all(map(_is_pair_of_tuple_or_str_mapping_and_table, item)):
-        seq = cast(Sequence[_PairOfTupleOrStrMappingAndTable], item)
+        seq = cast("Sequence[_PairOfTupleOrStrMappingAndTable]", item)
         normalized = (_normalize_insert_item(p, snake=snake) for p in seq)
         return list(chain.from_iterable(normalized))
     if all(map(is_orm, item)):
-        seq = cast(Sequence[DeclarativeBase], item)
+        seq = cast("Sequence[DeclarativeBase]", item)
         normalized = (_normalize_insert_item(p, snake=snake) for p in seq)
         return list(chain.from_iterable(normalized))
     raise _NormalizeInsertItemError(item=item)
@@ -635,7 +635,7 @@ def selectable_to_string(
 class TablenameMixin:
     """Mix-in for an auto-generated tablename."""
 
-    @cast(Any, declared_attr)
+    @cast("Any", declared_attr)
     def __tablename__(cls) -> str:  # noqa: N805
         return snake_case(get_class_name(cls))
 
@@ -771,7 +771,7 @@ def _upsert_items_build(
 ) -> Insert:
     values = list(values)
     keys = set(reduce(or_, values))
-    dict_nones = {k: None for k in keys}
+    dict_nones = dict.fromkeys(keys)
     values = [{**dict_nones, **v} for v in values]
     match _get_dialect(engine):
         case "postgresql":  # skipif-ci-and-not-linux
@@ -783,7 +783,7 @@ def _upsert_items_build(
         case _ as never:
             assert_never(never)
     ins = insert(table).values(values)
-    primary_key = cast(Any, table.primary_key)
+    primary_key = cast("Any", table.primary_key)
     return _upsert_items_apply_on_conflict_do_update(
         values, ins, primary_key, selected_or_all=selected_or_all
     )
@@ -1110,7 +1110,7 @@ def _prepare_insert_or_upsert_items_merge_items(
             mapping[pkey].append(rest)
         else:
             unchanged.append(item)
-    merged = {k: cast(StrMapping, reduce(or_, v)) for k, v in mapping.items()}
+    merged = {k: cast("StrMapping", reduce(or_, v)) for k, v in mapping.items()}
     return [
         dict(zip(col_names, k, strict=True)) | dict(v) for k, v in merged.items()
     ] + unchanged

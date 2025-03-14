@@ -52,27 +52,31 @@ class TestPeriod:
         self, *, dates: tuple[dt.date, dt.date], duration: dt.timedelta
     ) -> None:
         start, end = dates
-        with assume_does_not_raise(OverflowError):
-            adj_start, adj_end = start + duration, end + duration
         period = Period(start, end)
-        result = period + duration
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            result = period + duration
+            adj_start, adj_end = [d + duration for d in dates]
         expected = Period(adj_start, adj_end)
         assert result == expected
 
-    @given(data=data(), time_zone1=timezones(), time_zone2=timezones())
+    @given(
+        datetimes=pairs(zoned_datetimes(), sorted=True),
+        time_zone1=timezones(),
+        time_zone2=timezones(),
+    )
     def test_astimezone(
-        self, *, data: DataObject, time_zone1: ZoneInfo, time_zone2: ZoneInfo
+        self,
+        *,
+        datetimes: tuple[dt.datetime, dt.datetime],
+        time_zone1: ZoneInfo,
+        time_zone2: ZoneInfo,
     ) -> None:
-        start, end = data.draw(
-            pairs(zoned_datetimes(time_zone=time_zone1), sorted=True)
-        )
-        with assume_does_not_raise(OverflowError):
-            adj_start, adj_end = (
-                start.astimezone(time_zone2),
-                end.astimezone(time_zone2),
-            )
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            start, end = [d.astimezone(time_zone1) for d in datetimes]
         period = Period(start, end)
-        result = period.astimezone(time_zone2)
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            result = period.astimezone(time_zone2)
+            adj_start, adj_end = [d.astimezone(time_zone2) for d in datetimes]
         expected = Period(adj_start, adj_end)
         assert result == expected
 
@@ -165,7 +169,8 @@ class TestPeriod:
     ) -> None:
         start, end = datetimes
         time_zone1, time_zone2 = time_zones
-        period = Period(start.astimezone(time_zone1), end.astimezone(time_zone2))
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            period = Period(start.astimezone(time_zone1), end.astimezone(time_zone2))
         result = func(period)
         assert search(
             r"^Period\(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?[\+-]\d{2}:\d{2}(:\d{2})?\[.+\], \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?[\+-]\d{2}:\d{2}(:\d{2})?\[.+\]\)$",
@@ -268,11 +273,8 @@ class TestPeriod:
         with raises(_PeriodInvalidError, match="Invalid period; got .* > .*"):
             _ = Period(end, start)
 
-    @given(
-        datetimes=pairs(
-            zoned_datetimes(time_zone=timezones()), unique=True, sorted=True
-        )
-    )
+    @given(datetimes=pairs(zoned_datetimes(), unique=True, sorted=True))
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_error_invalid_datetimes(
         self, *, datetimes: tuple[dt.datetime, dt.datetime]
     ) -> None:
@@ -362,7 +364,7 @@ class TestPeriod:
             _ = period.time_zone
 
     @given(
-        datetimes=pairs(zoned_datetimes(time_zone=timezones()), sorted=True),
+        datetimes=pairs(zoned_datetimes(), sorted=True),
         time_zones=pairs(timezones(), unique=True),
     )
     def test_error_time_zone_non_unique(
@@ -373,7 +375,8 @@ class TestPeriod:
     ) -> None:
         start, end = datetimes
         time_zone1, time_zone2 = time_zones
-        period = Period(start.astimezone(time_zone1), end.astimezone(time_zone2))
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            period = Period(start.astimezone(time_zone1), end.astimezone(time_zone2))
         with raises(
             _PeriodTimeZoneNonUniqueError,
             match="Period must contain exactly one time zone; got .* and .*",

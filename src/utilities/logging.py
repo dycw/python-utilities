@@ -381,7 +381,7 @@ class _AdvancedLogRecord(LogRecord):
     @classmethod
     def get_now(cls) -> Any:
         """Get the current zoned datetime."""
-        return cast(Any, ZonedDateTime).now(cls.time_zone)  # skipif-ci-and-windows
+        return cast("Any", ZonedDateTime).now(cls.time_zone)  # skipif-ci-and-windows
 
     @classmethod
     def get_zoned_datetime_fmt(cls) -> str:

@@ -554,7 +554,7 @@ def get_func_name(obj: Callable[..., Any], /) -> str:
     ):
         return obj.__qualname__
     if isinstance(obj, _lru_cache_wrapper):
-        return cast(Any, obj).__name__
+        return cast("Any", obj).__name__
     if isinstance(obj, partial):
         return get_func_name(obj.func)
     return get_class_name(obj)

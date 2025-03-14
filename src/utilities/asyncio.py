@@ -67,7 +67,7 @@ class BoundedTaskGroup(TaskGroup):
 
         async def wrapped(semaphore: Semaphore, coro: _CoroutineLike[_T], /) -> _T:
             async with semaphore:
-                return await cast(Any, coro)
+                return await cast("Any", coro)
 
         return super().create_task(
             wrapped(self._semaphore, coro), name=name, context=context

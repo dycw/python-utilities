@@ -514,4 +514,4 @@ class TestYieldFields:
             YieldFieldsError,
             match="Object must be a dataclass instance or class; got None",
         ):
-            _ = list(yield_fields(cast(Any, None)))
+            _ = list(yield_fields(cast("Any", None)))
