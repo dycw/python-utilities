@@ -224,11 +224,12 @@ class TestAddWeekdays:
         with raises(AddWeekdaysError):
             _ = add_weekdays(date, n=0)
 
-    @given(date=dates(), n1=integers(-10, 10), n2=integers(-10, 10))
-    def test_two(self, *, date: dt.date, n1: int, n2: int) -> None:
+    @given(date=dates(), ns=pairs(integers(-10, 10)))
+    def test_two(self, *, date: dt.date, ns: tuple[int, int]) -> None:
         with assume_does_not_raise(AddWeekdaysError, OverflowError):
-            weekday1, weekday2 = (add_weekdays(date, n=n) for n in [n1, n2])
+            weekday1, weekday2 = (add_weekdays(date, n=n) for n in ns)
         result = weekday1 <= weekday2
+        n1, n2 = ns
         expected = n1 <= n2
         assert result is expected
 
