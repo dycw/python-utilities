@@ -69,7 +69,7 @@ class TestExternalTask:
     @given(namespace_mixin=namespace_mixins(), is_complete=booleans())
     def test_main(self, *, namespace_mixin: Any, is_complete: bool) -> None:
         class Example(namespace_mixin, ExternalTask):
-            is_complete: bool = cast("Any", BoolParameter())
+            is_complete: bool = cast("bool", BoolParameter())
 
             @override
             def exists(self) -> bool:
