@@ -37,6 +37,7 @@ from tests.test_operator import (
     TruthEnum,
     make_objects,
 )
+from tests.test_typing_funcs.with_future import DataClassWithNone
 from utilities.datetime import SECOND, get_now
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -190,6 +191,7 @@ class TestSerializeAndDeserialize:
             dataclass2=True,
             dataclass3=True,
             dataclass4=True,
+            dataclass_with_none=True,
             ib_orders=True,
             ib_trades=True,
             sub_frozenset=True,
@@ -216,6 +218,7 @@ class TestSerializeAndDeserialize:
                 DataClass2Outer,
                 DataClass3,
                 DataClass4,
+                DataClassWithNone,
                 Execution,
                 Fill,
                 Forex,
@@ -282,6 +285,12 @@ class TestSerializeAndDeserialize:
         ):
             _ = deserialize(ser, objects=set())
 
+    @given(obj=make_objects(enum=True))
+    def test_enum(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={TruthEnum})
+        with assume_does_not_raise(IsEqualError):
+            assert is_equal(result, obj)
+
     @given(data=data())
     @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
     def test_ib_trades(self, *, data: DataObject) -> None:
@@ -314,11 +323,9 @@ class TestSerializeAndDeserialize:
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
-    @given(obj=make_objects(enum=True))
-    def test_enum(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={TruthEnum})
-        with assume_does_not_raise(IsEqualError):
-            assert is_equal(result, obj)
+    def test_none(self) -> None:
+        result = deserialize(serialize(None))
+        assert result is None
 
     @given(obj=make_objects(sub_frozenset=True))
     def test_sub_frozenset(self, *, obj: Any) -> None:

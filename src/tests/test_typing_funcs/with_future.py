@@ -83,6 +83,11 @@ class DataClassWithStr:
 
 
 @dataclass(kw_only=True, slots=True)
+class DataClassWithStrNullable:
+    str_: str | None = None
+
+
+@dataclass(kw_only=True, slots=True)
 class DataClassWithTimeDelta:
     timedelta: dt.timedelta
 
