@@ -55,6 +55,8 @@ from hypothesis.strategies import (
 from hypothesis.utils.conventions import not_set
 
 from utilities.datetime import (
+    DATETIME_MAX_UTC,
+    DATETIME_MIN_UTC,
     MAX_MONTH,
     MIN_MONTH,
     Month,
@@ -1213,8 +1215,8 @@ def zoned_datetimes(
     draw: DrawFn,
     /,
     *,
-    min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
-    max_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.max,
+    min_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MIN_UTC,
+    max_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MAX_UTC,
     time_zone: MaybeSearchStrategy[ZoneInfo | timezone] = UTC,
     round_: _RoundMode | None = None,
     timedelta: dt.timedelta | None = None,
