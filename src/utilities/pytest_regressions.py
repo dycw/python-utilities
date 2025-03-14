@@ -51,12 +51,18 @@ class OrjsonRegressionFixture:
         *,
         globalns: StrMapping | None = None,
         localns: StrMapping | None = None,
+        dataclass_defaults: bool = False,
         suffix: str | None = None,
     ) -> None:
         """Check the serialization of the object against the baseline."""
         from utilities.orjson import serialize
 
-        data = serialize(obj, globalns=globalns, localns=localns)
+        data = serialize(
+            obj,
+            globalns=globalns,
+            localns=localns,
+            dataclass_defaults=dataclass_defaults,
+        )
         basename = self._basename
         if suffix is not None:
             basename = f"{basename}__{suffix}"
