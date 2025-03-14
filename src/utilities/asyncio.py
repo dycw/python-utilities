@@ -247,7 +247,12 @@ async def get_items(
     queue: Queue[_T], /, *, max_size: int | None = None, lock: Lock | None = None
 ) -> list[_T]:
     """Get items from a queue; if empty then wait."""
-    items = [await queue.get()]
+    try:
+        items = [await queue.get()]
+    except RuntimeError as error:  # pragma: no cover
+        if error.args[0] == "Event loop is closed":
+            return []
+        raise
     max_size_use = None if max_size is None else (max_size - 1)
     if lock is None:
         items.extend(await get_items_nowait(queue, max_size=max_size_use))
