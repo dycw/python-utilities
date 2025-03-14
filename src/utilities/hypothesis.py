@@ -28,7 +28,6 @@ from typing import (
     overload,
     override,
 )
-from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
@@ -102,6 +101,7 @@ if TYPE_CHECKING:
         Iterator,
         Sequence,
     )
+    from zoneinfo import ZoneInfo
 
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
@@ -1206,10 +1206,6 @@ def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[_TestRe
 ##
 
 
-_ZONED_DATETIMES_LEFT_MOST = ZoneInfo("Asia/Manila")
-_ZONED_DATETIMES_RIGHT_MOST = ZoneInfo("Pacific/Kiritimati")
-
-
 @composite
 def zoned_datetimes(
     draw: DrawFn,
@@ -1235,13 +1231,11 @@ def zoned_datetimes(
     if min_value_.tzinfo is None:
         min_value_ = min_value_.replace(tzinfo=time_zone_)
     else:
-        with assume_does_not_raise(OverflowError, match="date value out of range"):
-            min_value_ = min_value_.astimezone(time_zone_)
+        min_value_ = min_value_.astimezone(time_zone_)
     if max_value_.tzinfo is None:
         max_value_ = max_value_.replace(tzinfo=time_zone_)
     else:
-        with assume_does_not_raise(OverflowError, match="date value out of range"):
-            max_value_ = max_value_.astimezone(time_zone_)
+        max_value_ = max_value_.astimezone(time_zone_)
     strategy = datetimes(
         min_value=min_value_.replace(tzinfo=None),
         max_value=max_value_.replace(tzinfo=None),
@@ -1254,12 +1248,6 @@ def zoned_datetimes(
             datetime, timedelta, mode=round_, rel_tol=rel_tol, abs_tol=abs_tol
         )
         _ = assume(min_value_ <= datetime <= max_value_)
-    with assume_does_not_raise(OverflowError, match="date value out of range"):
-        _ = datetime.astimezone(_ZONED_DATETIMES_LEFT_MOST)  # for dt.datetime.min
-    with assume_does_not_raise(OverflowError, match="date value out of range"):
-        _ = datetime.astimezone(  # for dt.datetime.max
-            _ZONED_DATETIMES_RIGHT_MOST
-        )
     if valid:
         with assume_does_not_raise(  # skipif-ci-and-windows
             CheckValidZonedDateimeError
