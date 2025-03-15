@@ -1301,6 +1301,30 @@ def transpose(iterable: Iterable[tuple[Any, ...]]) -> tuple[tuple[Any, ...], ...
 ##
 
 
+def unique_everseen(
+    iterable: Iterable[_T], /, *, key: Callable[[_T], Any] | None = None
+) -> Iterator[_T]:
+    """Yield unique elements, preserving order."""
+    seenset = set()
+    seenset_add = seenset.add
+    seenlist = []
+    seenlist_add = seenlist.append
+    use_key = key is not None
+    for element in iterable:
+        k = key(element) if use_key else element
+        try:
+            if k not in seenset:
+                seenset_add(k)
+                yield element
+        except TypeError:
+            if k not in seenlist:
+                seenlist_add(k)
+                yield element
+
+
+##
+
+
 __all__ = [
     "ApplyBijectionError",
     "CheckBijectionError",
@@ -1369,4 +1393,5 @@ __all__ = [
     "sort_iterable",
     "take",
     "transpose",
+    "unique_everseen",
 ]

@@ -104,6 +104,7 @@ from utilities.iterables import (
     sort_iterable,
     take,
     transpose,
+    unique_everseen,
 )
 from utilities.sentinel import sentinel
 
@@ -1296,3 +1297,15 @@ class TestTranspose:
             assert len(part) == n
             for i in part:
                 assert isinstance(i, int)
+
+
+class TestUniqueEverseen:
+    def test_main(self) -> None:
+        result = list(unique_everseen("AAAABBBCCDAABBB"))
+        expected = ["A", "B", "C", "D"]
+        assert result == expected
+
+    def test_key(self) -> None:
+        result = list(unique_everseen("ABBCcAD", key=str.lower))
+        expected = ["A", "B", "C", "D"]
+        assert result == expected

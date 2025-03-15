@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Mapping, Sequence
+from itertools import chain
 from pathlib import Path
 from types import NoneType, UnionType
 from typing import (
@@ -19,6 +20,7 @@ from typing import get_args as _get_args
 from typing import get_type_hints as _get_type_hints
 from uuid import UUID
 
+from utilities.iterables import unique_everseen
 from utilities.sentinel import Sentinel
 from utilities.types import StrMapping
 
@@ -39,6 +41,23 @@ def get_args(obj: Any, /) -> tuple[Any, ...]:
         args = _get_args(obj)
         return tuple(a for a in args if a is not NoneType)
     return _get_args(obj)
+
+
+##
+
+
+def get_literal_elements(obj: Any, /) -> list[str]:
+    """Get the elements of a literal annotation."""
+    return _get_literal_elements_inner(obj)
+
+
+def _get_literal_elements_inner(obj: Any, /) -> list[str]:
+    """Get the elements of a literal annotation."""
+    if isinstance(obj, str):
+        return [obj]
+    args = get_args(obj)
+    parts = chain.from_iterable(map(_get_literal_elements_inner, args))
+    return list(unique_everseen(parts))
 
 
 ##
@@ -179,6 +198,7 @@ def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:
 
 __all__ = [
     "contains_self",
+    "get_literal_elements",
     "get_type_hints",
     "is_dict_type",
     "is_frozenset_type",

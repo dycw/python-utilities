@@ -40,6 +40,7 @@ from utilities.types import LogLevel, Parallelism
 from utilities.typing import (
     contains_self,
     get_args,
+    get_literal_elements,
     get_type_hints,
     is_dict_type,
     is_frozenset_type,
@@ -83,6 +84,21 @@ class TestGetArgs:
     )
     def test_main(self, *, obj: Any, expected: tuple[Any, ...]) -> None:
         result = get_args(obj)
+        assert result == expected
+
+
+type _TruthLit = Literal["true", "false"]
+type _True = Literal["true"]
+type _False = Literal["false"]
+type _TrueAndFalse = _True | _False
+type _TruthAndTrueAndFalse = _True | _TrueAndFalse
+
+
+class TestGetLiteralElements:
+    @given(obj=sampled_from([_TruthLit, _TrueAndFalse, _TruthAndTrueAndFalse]))
+    def test_main(self, *, obj: Any) -> None:
+        result = get_literal_elements(obj)
+        expected = ["true", "false"]
         assert result == expected
 
 
