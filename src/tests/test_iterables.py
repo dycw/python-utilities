@@ -1304,7 +1304,7 @@ class TestUniqueEverseen:
     expected: ClassVar[list[str]] = ["A", "B", "C", "D"]
 
     def test_main(self) -> None:
-        result = list(unique_everseen(self.text))
+        result = list(unique_everseen("AAAABBBCCDAABBB"))
         assert result == self.expected
 
     def test_key(self) -> None:
@@ -1312,7 +1312,6 @@ class TestUniqueEverseen:
         assert result == self.expected
 
     def test_non_hashable(self) -> None:
-        list_of_text = list(map(list, self.text))
-        result = list(unique_everseen(list_of_text))
-        expected = list(map(list, self.expected))
+        result = list(unique_everseen([[1, 2], [2, 3], [1, 2]]))
+        expected = [[1, 2], [2, 3]]
         assert result == expected

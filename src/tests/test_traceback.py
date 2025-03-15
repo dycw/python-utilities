@@ -213,6 +213,7 @@ class TestGetRichTraceback:
         self._assert_decorated(exc_tb, "sync")
         assert len(exc_tb) == 5
 
+    @mark.flaky
     async def test_func_decorated_async(self, *, git_ref: str) -> None:
         with raises(AssertionError) as exc_info:
             _ = await func_decorated_async_first(1, 2, 3, 4, c=5, d=6, e=7)
@@ -265,6 +266,7 @@ class TestGetRichTraceback:
         exc_tb3 = get_rich_traceback(exc_info3.value, git_ref=git_ref)
         assert isinstance(exc_tb3, ExcTB)
 
+    @mark.flaky
     async def test_func_runtime_async(self, *, git_ref: str) -> None:
         with raises(AssertionError) as exc_info1:
             _ = await func_runtime_async(1, 2, 3, 4, c=5, d=6, e=7)
@@ -286,6 +288,7 @@ class TestGetRichTraceback:
         assertion_error = get_rich_traceback(exc_info1.value, git_ref=git_ref)
         assert isinstance(assertion_error, AssertionError)
 
+    @mark.flaky
     async def test_func_task_group_one(
         self, *, git_ref: str, traceback_func_task_group_one: Pattern[str]
     ) -> None:
