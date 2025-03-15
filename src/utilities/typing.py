@@ -52,7 +52,6 @@ def get_literal_elements(obj: Any, /) -> list[Any]:
 
 
 def _get_literal_elements_inner(obj: Any, /) -> list[Any]:
-    """Get the elements of a literal annotation."""
     if isinstance(obj, str | int):
         return [obj]
     args = get_args(obj)
