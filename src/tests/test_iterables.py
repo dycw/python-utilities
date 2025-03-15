@@ -1300,12 +1300,19 @@ class TestTranspose:
 
 
 class TestUniqueEverseen:
+    text: ClassVar[str] = "AAAABBBCCDAABBB"
+    expected: ClassVar[list[str]] = ["A", "B", "C", "D"]
+
     def test_main(self) -> None:
-        result = list(unique_everseen("AAAABBBCCDAABBB"))
-        expected = ["A", "B", "C", "D"]
-        assert result == expected
+        result = list(unique_everseen(self.text))
+        assert result == self.expected
 
     def test_key(self) -> None:
         result = list(unique_everseen("ABBCcAD", key=str.lower))
-        expected = ["A", "B", "C", "D"]
+        assert result == self.expected
+
+    def test_non_hashable(self) -> None:
+        list_of_text = list(map(list, self.text))
+        result = list(unique_everseen(list_of_text))
+        expected = list(map(list, self.expected))
         assert result == expected
