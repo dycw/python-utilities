@@ -104,6 +104,7 @@ from utilities.iterables import (
     sort_iterable,
     take,
     transpose,
+    unique_everseen,
 )
 from utilities.sentinel import sentinel
 
@@ -1296,3 +1297,21 @@ class TestTranspose:
             assert len(part) == n
             for i in part:
                 assert isinstance(i, int)
+
+
+class TestUniqueEverseen:
+    text: ClassVar[str] = "AAAABBBCCDAABBB"
+    expected: ClassVar[list[str]] = ["A", "B", "C", "D"]
+
+    def test_main(self) -> None:
+        result = list(unique_everseen("AAAABBBCCDAABBB"))
+        assert result == self.expected
+
+    def test_key(self) -> None:
+        result = list(unique_everseen("ABBCcAD", key=str.lower))
+        assert result == self.expected
+
+    def test_non_hashable(self) -> None:
+        result = list(unique_everseen([[1, 2], [2, 3], [1, 2]]))
+        expected = [[1, 2], [2, 3]]
+        assert result == expected

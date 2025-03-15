@@ -732,7 +732,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.98.1"
+version = "0.98.2"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },
@@ -1109,8 +1109,8 @@ requires-dist = [
     { name = "greenlet", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=3.1.1,<3.2" },
     { name = "greenlet", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=3.1.1,<3.2" },
     { name = "httpx", marker = "extra == 'zzz-test-fastapi'", specifier = ">=0.28.1,<0.29" },
-    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.129.1,<6.130" },
-    { name = "hypothesis", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=6.129.1,<6.130" },
+    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.129.2,<6.130" },
+    { name = "hypothesis", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=6.129.2,<6.130" },
     { name = "ib-async-dataclass", marker = "extra == 'zzz-test-dataclasses'", specifier = ">=1.0.3rc5,<1.1" },
     { name = "ib-async-dataclass", marker = "extra == 'zzz-test-hashlib'", specifier = ">=1.0.3rc5,<1.1" },
     { name = "ib-async-dataclass", marker = "extra == 'zzz-test-iterables'", specifier = ">=1.0.3rc5,<1.1" },
@@ -1140,17 +1140,17 @@ requires-dist = [
     { name = "orjson", marker = "extra == 'zzz-test-redis'", specifier = ">=3.10.15,<3.11" },
     { name = "pandas", marker = "extra == 'zzz-test-jupyter'", specifier = ">=2.2.2,<2.3" },
     { name = "pathvalidate", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=3.2.3,<3.3" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-altair'", specifier = ">=1.24.0,<1.25" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-dataclasses'", specifier = ">=1.24.0,<1.25" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-hashlib'", specifier = ">=1.24.0,<1.25" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-iterables'", specifier = ">=1.24.0,<1.25" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-jupyter'", specifier = ">=1.24.0,<1.25" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-operator'", specifier = ">=1.24.0,<1.25" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-orjson'", specifier = ">=1.24.0,<1.25" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-polars'", specifier = ">=1.24.0,<1.25" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-redis'", specifier = ">=1.24.0,<1.25" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=1.24.0,<1.25" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-typing'", specifier = ">=1.24.0,<1.25" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-altair'", specifier = ">=1.25.0,<1.26" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-dataclasses'", specifier = ">=1.25.0,<1.26" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-hashlib'", specifier = ">=1.25.0,<1.26" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-iterables'", specifier = ">=1.25.0,<1.26" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-jupyter'", specifier = ">=1.25.0,<1.26" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-operator'", specifier = ">=1.25.0,<1.26" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-orjson'", specifier = ">=1.25.0,<1.26" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-polars'", specifier = ">=1.25.0,<1.26" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-redis'", specifier = ">=1.25.0,<1.26" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=1.25.0,<1.26" },
+    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-typing'", specifier = ">=1.25.0,<1.26" },
     { name = "pqdm", marker = "extra == 'zzz-test-pqdm'", specifier = ">=0.2.0,<0.3" },
     { name = "pydantic", marker = "extra == 'zzz-test-pydantic'", specifier = ">=2.10.6,<2.11" },
     { name = "pyinstrument", marker = "extra == 'zzz-test-pyinstrument'", specifier = ">=5.0.0,<5.1" },
@@ -1255,7 +1255,7 @@ dev = [
     { name = "fpdf2", specifier = ">=2.8.2,<2.9" },
     { name = "greenlet", specifier = ">=3.1.1,<3.2" },
     { name = "httpx", specifier = ">=0.28.1,<0.29" },
-    { name = "hypothesis", specifier = ">=6.129.1,<6.130" },
+    { name = "hypothesis", specifier = ">=6.129.2,<6.130" },
     { name = "ib-async-dataclass", specifier = ">=1.0.3rc5,<1.1" },
     { name = "img2pdf", specifier = ">=0.6.0,<0.7" },
     { name = "loguru", specifier = ">=0.7.3,<0.8" },
@@ -1268,7 +1268,7 @@ dev = [
     { name = "optuna", specifier = ">=4.2.1,<4.3" },
     { name = "orjson", specifier = ">=3.10.14,<3.11" },
     { name = "pathvalidate", specifier = ">=3.2.3,<3.3" },
-    { name = "polars-lts-cpu", specifier = ">=1.24.0,<1.25" },
+    { name = "polars-lts-cpu", specifier = ">=1.25.0,<1.26" },
     { name = "pqdm", specifier = ">=0.2.0,<0.3" },
     { name = "psycopg2-binary", specifier = ">=2.9.10,<2.10" },
     { name = "pydantic", specifier = ">=2.10.6,<2.11" },
@@ -1361,11 +1361,11 @@ wheels = [
 
 [[package]]
 name = "filelock"
-version = "3.17.0"
+version = "3.18.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/dc/9c/0b15fb47b464e1b663b1acd1253a062aa5feecb07d4e597daea542ebd2b5/filelock-3.17.0.tar.gz", hash = "sha256:ee4e77401ef576ebb38cd7f13b9b28893194acc20a8e68e18730ba9c0e54660e", size = 18027 }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/10/c23352565a6544bdc5353e0b15fc1c563352101f30e24bf500207a54df9a/filelock-3.18.0.tar.gz", hash = "sha256:adbc88eabb99d2fec8c9c1b229b171f18afa655400173ddc653d5d01501fb9f2", size = 18075 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/89/ec/00d68c4ddfedfe64159999e5f8a98fb8442729a63e2077eb9dcd89623d27/filelock-3.17.0-py3-none-any.whl", hash = "sha256:533dc2f7ba78dc2f0f531fc6c4940addf7b70a481e269a5a3b93be94ffbe8338", size = 16164 },
+    { url = "https://files.pythonhosted.org/packages/4d/36/2a115987e2d8c300a974597416d9de88f2444426de9571f4b59b2cca3acc/filelock-3.18.0-py3-none-any.whl", hash = "sha256:c401f4f8377c4464e6db25fff06205fd89bdd83b65eb0488ed1b160f780e21de", size = 16215 },
 ]
 
 [[package]]
@@ -1574,15 +1574,15 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.129.1"
+version = "6.129.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a2/07/848e5e2985e708364d3865e81c2f9b6b5437610201f7e9e1de5cb019c0ce/hypothesis-6.129.1.tar.gz", hash = "sha256:bfffa4e430b7bfcd9d281ccde30c084f794dd54856aa0a895951b80204b39cf6", size = 423833 }
+sdist = { url = "https://files.pythonhosted.org/packages/5f/8a/24cefac022122e41780d86e1dea9edc539036d334b1be5dc2cd2ae48cf7c/hypothesis-6.129.2.tar.gz", hash = "sha256:23f180782dbbbcb6e59051794295d75783ad59241e6629a5bf700936c28a995b", size = 423763 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e4/2d/ad20bfec3e683998b39a64c50aa221aee03188e06f2eb5ec14b4358bd971/hypothesis-6.129.1-py3-none-any.whl", hash = "sha256:7e12c7eb249966abab27c8fed4f8e2f43f63bbeff89b7cb3a6487095435ddee5", size = 487828 },
+    { url = "https://files.pythonhosted.org/packages/06/70/f18e13035fff19f6caa69233b4e5d2c30a63006ce634258e6fd63ec2eb82/hypothesis-6.129.2-py3-none-any.whl", hash = "sha256:a3b4c9087806c1f5650a538b6acd781b5f3856ebaf64aac20a10c226c9e7c3a8", size = 487806 },
 ]
 
 [[package]]
@@ -2551,16 +2551,16 @@ wheels = [
 
 [[package]]
 name = "polars-lts-cpu"
-version = "1.24.0"
+version = "1.25.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/62/ac/f0eeb6398b3ebc1a930f22fddd23dc4fcc59e861f07eb62c222d1aeced36/polars_lts_cpu-1.24.0.tar.gz", hash = "sha256:e9d8401f5dcdb8564512e4ba874ed8899b2e0c4ad296de5723f8f3df21c85cb2", size = 4446757 }
+sdist = { url = "https://files.pythonhosted.org/packages/8d/1f/41e7adf75b8e049e530fece1df8cde4da454b8752286384243927a89da80/polars_lts_cpu-1.25.0.tar.gz", hash = "sha256:9e6eadbc0ea3e52d2d12a35b6ff6a26437cdc31a7a91a820e7037447ccd8c09c", size = 4506862 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d0/35/0fae9335242575592ef5126d462f9347ae9e4c13ee585e0b27b13fe7a4f0/polars_lts_cpu-1.24.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:9cfd790c05fbe7a03ac3846b89d734c2e033e80be1bd349495a08697206cde71", size = 33383526 },
-    { url = "https://files.pythonhosted.org/packages/2a/74/56eb85a5c67f6243bd36fd8a9ff366772e84a840f4c7a3a7ca55e1b7c2c8/polars_lts_cpu-1.24.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:6be1426b328aa8bcf34fc08231b5fbd8bc69ba8de1526ae706cd7d5e3305ec46", size = 30469654 },
-    { url = "https://files.pythonhosted.org/packages/d6/f4/1c8c2ce77eb39654d1034dc48db1cf29bf33769d250ea87f2632228398fd/polars_lts_cpu-1.24.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9b301fde1d3f83643a79cbc8673b971efb4ee415afa5b1211fdd9ff4f8de7f47", size = 33930917 },
-    { url = "https://files.pythonhosted.org/packages/b6/89/05f5e427c3d99a21a26dab273628849e3167fd1fc1077c5c0663f572714b/polars_lts_cpu-1.24.0-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:b620352b16b0896a428cb78473ad575941ec920b4f75830246b063d406cee82d", size = 31490340 },
-    { url = "https://files.pythonhosted.org/packages/88/9f/19d793708224f358146eb28cd83575fe22f8c08e9badabdb23ef813d1c43/polars_lts_cpu-1.24.0-cp39-abi3-win_amd64.whl", hash = "sha256:47138b31264cd05f6d1dd70682c7389a10c834e6f3077546cf5ab5b2b855a78a", size = 34632271 },
-    { url = "https://files.pythonhosted.org/packages/2e/fe/d6494baf566f1c3744afd34bb8ec09fd5ed08035d62122d48b3f463253ee/polars_lts_cpu-1.24.0-cp39-abi3-win_arm64.whl", hash = "sha256:79603404011ef5edab31dc06af37a56d90be9e9647e099049c2690fa11f3824b", size = 30892332 },
+    { url = "https://files.pythonhosted.org/packages/72/a8/02fe75b80276eaf72e88824c7730c2858f1655526cda16edcb40c93190f0/polars_lts_cpu-1.25.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:55d8069592fc29d315e6c89702de479d9af3b7d5e78485cae1ede0f301edeee8", size = 34228208 },
+    { url = "https://files.pythonhosted.org/packages/e4/4a/13373d7f2bdb8eeb3614e55231e042d09b4a686d7746b2fc7f9b6a9c173e/polars_lts_cpu-1.25.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:415bac7fae3fb90eae0645ec64ea6bc4971779539f989d41a3ca66d4f756f560", size = 31394838 },
+    { url = "https://files.pythonhosted.org/packages/ba/f0/407d80b7e4d7f237fec8e5aa64188cb0d510c8babbcefe2025e5083a27a5/polars_lts_cpu-1.25.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:69d4dd0be27c169d3019c525429ecd6881d3685d2139001cc47d13bdcc3e2682", size = 34809937 },
+    { url = "https://files.pythonhosted.org/packages/03/d2/5e1fc1bd173be760073ba55ad2655e585f06ca0b43f2257e8e81bccd235c/polars_lts_cpu-1.25.0-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:866f23ad7805397b639c2bbaaf97b12f9e564fe5f7ed9885c8bc5e088f0a06d1", size = 32332117 },
+    { url = "https://files.pythonhosted.org/packages/e9/90/7ea6652d94bd1cd11d99a9e7d00bcb57ffa520ca1b01959b57447c3fedbe/polars_lts_cpu-1.25.0-cp39-abi3-win_amd64.whl", hash = "sha256:551658e850fbf3ca3315776e0b7551093ca66be613a05c91e5835592b8b8d506", size = 35259446 },
+    { url = "https://files.pythonhosted.org/packages/e1/13/5c6c41de3f8b8268c9ea8316fe72b8d30202c1016b3cac5ebe2a315142fc/polars_lts_cpu-1.25.0-cp39-abi3-win_arm64.whl", hash = "sha256:ab15e7a7dd21514f0782fac10bfb16f4dba171ff76bc0643afa18a1a3d3173dc", size = 31686579 },
 ]
 
 [[package]]

@@ -18,7 +18,6 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from more_itertools import unique_everseen
 from pytest import mark, raises
 
 from utilities.asyncio import (
@@ -34,7 +33,7 @@ from utilities.asyncio import (
 )
 from utilities.datetime import MILLISECOND, datetime_duration_to_timedelta
 from utilities.hypothesis import text_ascii
-from utilities.iterables import one
+from utilities.iterables import one, unique_everseen
 from utilities.pytest import skipif_windows
 from utilities.timer import Timer
 
