@@ -46,14 +46,14 @@ def get_args(obj: Any, /) -> tuple[Any, ...]:
 ##
 
 
-def get_literal_elements(obj: Any, /) -> list[str]:
+def get_literal_elements(obj: Any, /) -> list[Any]:
     """Get the elements of a literal annotation."""
     return _get_literal_elements_inner(obj)
 
 
-def _get_literal_elements_inner(obj: Any, /) -> list[str]:
+def _get_literal_elements_inner(obj: Any, /) -> list[Any]:
     """Get the elements of a literal annotation."""
-    if isinstance(obj, str):
+    if isinstance(obj, str | int):
         return [obj]
     args = get_args(obj)
     parts = chain.from_iterable(map(_get_literal_elements_inner, args))

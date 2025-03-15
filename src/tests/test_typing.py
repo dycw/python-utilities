@@ -87,6 +87,7 @@ class TestGetArgs:
         assert result == expected
 
 
+type _PlusOrMinusOneLit = Literal[1, -1]
 type _TruthLit = Literal["true", "false"]
 type _True = Literal["true"]
 type _False = Literal["false"]
@@ -95,10 +96,17 @@ type _TruthAndTrueAndFalse = _True | _TrueAndFalse
 
 
 class TestGetLiteralElements:
-    @given(obj=sampled_from([_TruthLit, _TrueAndFalse, _TruthAndTrueAndFalse]))
-    def test_main(self, *, obj: Any) -> None:
+    @given(
+        case=sampled_from([
+            (_PlusOrMinusOneLit, [1, -1]),
+            (_TruthLit, ["true", "false"]),
+            (_TrueAndFalse, ["true", "false"]),
+            (_TruthAndTrueAndFalse, ["true", "false"]),
+        ])
+    )
+    def test_main(self, *, case: tuple[Any, list[Any]]) -> None:
+        obj, expected = case
         result = get_literal_elements(obj)
-        expected = ["true", "false"]
         assert result == expected
 
 
