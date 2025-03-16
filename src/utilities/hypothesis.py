@@ -116,8 +116,8 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
-MaybeSearchStrategy = _T | SearchStrategy[_T]
-Shape = int | tuple[int, ...]
+type MaybeSearchStrategy[_T] = _T | SearchStrategy[_T]
+type Shape = int | tuple[int, ...]
 
 
 ##
