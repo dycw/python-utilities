@@ -35,11 +35,14 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX, SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
+    MAX_DATE_TWO_DIGIT_YEAR,
+    MIN_DATE_TWO_DIGIT_YEAR,
     MINUTE,
     date_duration_to_timedelta,
     datetime_duration_to_float,
     datetime_duration_to_timedelta,
     is_integral_timedelta,
+    parse_two_digit_year,
 )
 from utilities.functions import ensure_int
 from utilities.git import (
@@ -57,6 +60,7 @@ from utilities.hypothesis import (
     assume_does_not_raise,
     bool_arrays,
     date_durations,
+    dates_two_digit_year,
     datetime_durations,
     draw2,
     float32s,
@@ -245,6 +249,21 @@ class TestDateDurations:
         duration = data.draw(date_durations(two_way=True))
         ser = serialize_duration(duration)
         _ = parse_duration(ser)
+
+
+class TestDatesTwoDigitYear:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(dates_two_digit_year(), sorted=True))
+        date = data.draw(dates_two_digit_year(min_value=min_value, max_value=max_value))
+        assert (
+            max(min_value, MIN_DATE_TWO_DIGIT_YEAR)
+            <= date
+            <= min(max_value, MAX_DATE_TWO_DIGIT_YEAR)
+        )
+        year = f"{date:%y}"
+        parsed = parse_two_digit_year(year)
+        assert date.year == parsed
 
 
 class TestDateTimeDurations:
