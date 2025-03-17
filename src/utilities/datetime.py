@@ -14,6 +14,7 @@ from typing import (
     override,
 )
 
+from utilities.iterables import OneEmptyError, one
 from utilities.math import SafeRoundError, _RoundMode, round_, safe_round
 from utilities.platform import SYSTEM
 from utilities.zoneinfo import (
@@ -802,15 +803,25 @@ class ParseMonthError(Exception):
 ##
 
 
+_TWO_DIGIT_YEAR_MIN = 1969
+_TWO_DIGIT_YEAR_MAX = _TWO_DIGIT_YEAR_MIN + 99
+MIN_DATE_TWO_DIGIT_YEAR = dt.date(
+    _TWO_DIGIT_YEAR_MIN, dt.date.min.month, dt.date.min.day
+)
+MAX_DATE_TWO_DIGIT_YEAR = dt.date(
+    _TWO_DIGIT_YEAR_MAX, dt.date.max.month, dt.date.max.day
+)
+
+
 def parse_two_digit_year(year: int | str, /) -> int:
     """Parse a 2-digit year into a year."""
     match year:
         case int():
-            if 0 <= year <= 68:
-                return 2000 + year
-            if 69 <= year <= 99:
-                return 1900 + year
-            raise _ParseTwoDigitYearInvalidIntegerError(year=year)
+            years = range(_TWO_DIGIT_YEAR_MIN, _TWO_DIGIT_YEAR_MAX + 1)
+            try:
+                return one(y for y in years if y % 100 == year)
+            except OneEmptyError:
+                raise _ParseTwoDigitYearInvalidIntegerError(year=year) from None
         case str():
             if search(r"^\d{1,2}$", year):
                 return parse_two_digit_year(int(year))
@@ -1098,9 +1109,11 @@ __all__ = [
     "EPOCH_UTC",
     "HALF_YEAR",
     "HOUR",
+    "MAX_DATE_TWO_DIGIT_YEAR",
     "MAX_MONTH",
     "MILLISECOND",
     "MINUTE",
+    "MIN_DATE_TWO_DIGIT_YEAR",
     "MIN_MONTH",
     "MONTH",
     "NOW_HK",

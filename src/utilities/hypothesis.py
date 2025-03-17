@@ -57,7 +57,9 @@ from utilities.datetime import (
     DATETIME_MAX_UTC,
     DATETIME_MIN_UTC,
     DAY,
+    MAX_DATE_TWO_DIGIT_YEAR,
     MAX_MONTH,
+    MIN_DATE_TWO_DIGIT_YEAR,
     MIN_MONTH,
     Month,
     date_duration_to_int,
@@ -229,6 +231,24 @@ def _is_between_timedelta(
     timedelta: dt.timedelta, /, *, min_: dt.timedelta, max_: dt.timedelta
 ) -> bool:
     return min_ <= timedelta <= max_
+
+
+##
+
+
+@composite
+def dates_two_digit_year(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[dt.date] = MIN_DATE_TWO_DIGIT_YEAR,
+    max_value: MaybeSearchStrategy[dt.date] = MAX_DATE_TWO_DIGIT_YEAR,
+) -> dt.date:
+    """Strategy for generating dates with valid 2 digit years."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    min_value_ = max(min_value_, MIN_DATE_TWO_DIGIT_YEAR)
+    max_value_ = min(max_value_, MAX_DATE_TWO_DIGIT_YEAR)
+    return draw(dates(min_value=min_value_, max_value=max_value_))
 
 
 ##
@@ -1276,6 +1296,7 @@ __all__ = [
     "assume_does_not_raise",
     "bool_arrays",
     "date_durations",
+    "dates_two_digit_year",
     "datetime_durations",
     "draw2",
     "float32s",
