@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from functools import cached_property
 from operator import sub
 
 from hypothesis import given
 from hypothesis.strategies import booleans, integers
 
-from utilities.functools import cache, lru_cache, partial
+from utilities.functools import cache, lru_cache, partial, yield_cached_properties
 
 
 class TestCache:
@@ -57,3 +58,28 @@ class TestPartial:
     def test_main(self, *, x: int, y: int) -> None:
         func = partial(sub, ..., y)
         assert func(x) == x - y
+
+
+class TestYieldCachedProperties:
+    def test_main(self) -> None:
+        class Example:
+            @cached_property
+            def a(self) -> int:
+                return 1
+
+            @property
+            def b(self) -> int:
+                return 3
+
+            @cached_property
+            def c(self) -> int:
+                return 3
+
+            @property
+            def d(self) -> int:
+                return 4
+
+        obj = Example()
+        result = list(yield_cached_properties(obj))
+        expected = [("a", 1), ("c", 3)]
+        assert result == expected

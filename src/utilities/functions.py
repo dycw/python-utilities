@@ -4,6 +4,7 @@ import datetime as dt
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import asdict, dataclass, is_dataclass
 from functools import _lru_cache_wrapper, partial, wraps
+from inspect import getattr_static
 from re import findall
 from types import (
     BuiltinFunctionType,
@@ -906,11 +907,14 @@ def second(pair: tuple[Any, _U], /) -> _U:
 ##
 
 
-def yield_object_attributes(obj: Any, /) -> Iterator[tuple[str, Any]]:
+def yield_object_attributes(
+    obj: Any, /, *, static: Callable[[Any], bool] | None = None
+) -> Iterator[tuple[str, Any]]:
     """Yield all the object attributes."""
     for name in dir(obj):
-        value = getattr(obj, name)
-        yield name, value
+        if (static is None) or (static(getattr_static(obj, name))):
+            value = getattr(obj, name)
+            yield name, value
 
 
 ##
