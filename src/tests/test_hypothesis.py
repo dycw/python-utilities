@@ -29,7 +29,7 @@ from hypothesis.strategies import (
 from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
-from pytest import raises
+from pytest import mark, raises
 from sqlalchemy import Column, Integer, MetaData, Table, insert, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -53,6 +53,7 @@ from utilities.git import (
 )
 from utilities.hypothesis import (
     _SQLALCHEMY_ENGINE_DIALECTS,
+    MaybeSearchStrategy,
     Shape,
     ZonedDateTimesError,
     _Draw2DefaultGeneratedSentinelError,
@@ -73,6 +74,7 @@ from utilities.hypothesis import (
     int64s,
     int_arrays,
     lists_fixed_length,
+    min_and_maybe_max_datetimes,
     months,
     namespace_mixins,
     numbers,
@@ -699,6 +701,55 @@ class TestListsFixedLength:
             assert len(set(result)) == len(result)
         if sorted_:
             assert sorted(result) == result
+
+
+class TestMinAndMaxDateTimes:
+    @given(
+        data=data(),
+        min_value=zoned_datetimes() | none() | just(zoned_datetimes() | none()),
+        max_value=zoned_datetimes() | none() | just(zoned_datetimes() | none()),
+    )
+    @mark.only
+    def test_main(
+        self,
+        *,
+        data: DataObject,
+        min_value: MaybeSearchStrategy[dt.datetime | None],
+        max_value: MaybeSearchStrategy[dt.datetime | None],
+    ) -> None:
+        min_datetime, max_datetime = data.draw(
+            min_and_maybe_max_datetimes(min_value=min_value, max_value=max_value)
+        )
+        if isinstance(min_value, dt.datetime):
+            assert min_datetime == min_value
+        if isinstance(max_value, dt.datetime):
+            assert max_datetime == max_value
+
+
+class TestMinAndMaybeMaxDateTimes:
+    @given(
+        data=data(),
+        min_value=zoned_datetimes() | none() | just(zoned_datetimes() | none()),
+        max_value=zoned_datetimes()
+        | none()
+        | sentinels()
+        | just(zoned_datetimes() | none() | sentinels()),
+    )
+    @mark.only
+    def test_main(
+        self,
+        *,
+        data: DataObject,
+        min_value: MaybeSearchStrategy[dt.datetime | None],
+        max_value: MaybeSearchStrategy[dt.datetime | None | Sentinel],
+    ) -> None:
+        min_datetime, max_datetime = data.draw(
+            min_and_maybe_max_datetimes(min_value=min_value, max_value=max_value)
+        )
+        if isinstance(min_value, dt.datetime):
+            assert min_datetime == min_value
+        if isinstance(max_value, dt.datetime) or (max_value is None):
+            assert max_datetime == max_value
 
 
 class TestMonths:
