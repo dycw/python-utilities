@@ -29,7 +29,7 @@ from hypothesis.strategies import (
 from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
-from pytest import mark, raises
+from pytest import raises
 from sqlalchemy import Column, Integer, MetaData, Table, insert, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -74,6 +74,7 @@ from utilities.hypothesis import (
     int64s,
     int_arrays,
     lists_fixed_length,
+    min_and_max_datetimes,
     min_and_maybe_max_datetimes,
     months,
     namespace_mixins,
@@ -709,7 +710,6 @@ class TestMinAndMaxDateTimes:
         min_value=zoned_datetimes() | none() | just(zoned_datetimes() | none()),
         max_value=zoned_datetimes() | none() | just(zoned_datetimes() | none()),
     )
-    @mark.only
     def test_main(
         self,
         *,
@@ -718,7 +718,7 @@ class TestMinAndMaxDateTimes:
         max_value: MaybeSearchStrategy[dt.datetime | None],
     ) -> None:
         min_datetime, max_datetime = data.draw(
-            min_and_maybe_max_datetimes(min_value=min_value, max_value=max_value)
+            min_and_max_datetimes(min_value=min_value, max_value=max_value)
         )
         if isinstance(min_value, dt.datetime):
             assert min_datetime == min_value
@@ -735,7 +735,6 @@ class TestMinAndMaybeMaxDateTimes:
         | sentinels()
         | just(zoned_datetimes() | none() | sentinels()),
     )
-    @mark.only
     def test_main(
         self,
         *,
