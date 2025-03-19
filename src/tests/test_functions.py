@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
-from functools import cache, lru_cache, partial, wraps
+from functools import cache, cached_property, lru_cache, partial, wraps
 from itertools import chain
 from operator import neg
 from types import NoneType
@@ -87,6 +87,8 @@ from utilities.functions import (
     not_func,
     second,
     yield_object_attributes,
+    yield_object_cached_properties,
+    yield_object_properties,
 )
 from utilities.sentinel import sentinel
 
@@ -865,3 +867,39 @@ class TestYieldObjectAttributes:
         attrs = dict(yield_object_attributes(Example))
         assert len(attrs) == 29
         assert attrs["attr"] == n
+
+
+class TestYieldObjectCachedProperties:
+    @given(cprop=integers(), prop=integers())
+    def test_main(self, *, cprop: int, prop: int) -> None:
+        class Example:
+            @cached_property
+            def cprop(self) -> int:
+                return cprop
+
+            @property
+            def prop(self) -> int:
+                return prop
+
+        obj = Example()
+        cprops = dict(yield_object_cached_properties(obj))
+        expected = {"cprop": cprop}
+        assert cprops == expected
+
+
+class TestYieldObjectProperties:
+    @given(cprop=integers(), prop=integers())
+    def test_main(self, *, cprop: int, prop: int) -> None:
+        class Example:
+            @cached_property
+            def cprop(self) -> int:
+                return cprop
+
+            @property
+            def prop(self) -> int:
+                return prop
+
+        obj = Example()
+        props = dict(yield_object_properties(obj))
+        expected = {"prop": prop}
+        assert props == expected
