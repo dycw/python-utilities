@@ -726,6 +726,8 @@ def min_and_max_datetimes(
             max_value_ = draw2(draw, max_value, strategy)
             _ = assume(min_value_ <= max_value_)
             return min_value_, max_value_
+        case _ as never:
+            assert_never(never)
 
 
 ##
@@ -818,6 +820,8 @@ def min_and_maybe_max_datetimes(
             max_value_ = draw2(draw, max_value, strategy | none(), sentinel=True)
             _ = assume((max_value_ is None) or (min_value_ <= max_value_))
             return min_value_, max_value_
+        case _ as never:
+            assert_never(never)
 
 
 ##
