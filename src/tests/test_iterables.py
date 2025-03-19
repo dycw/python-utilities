@@ -111,6 +111,7 @@ from utilities.iterables import (
     reduce_mappings,
     resolve_include_and_exclude,
     sort_iterable,
+    sum_mappings,
     take,
     transpose,
     unique_everseen,
@@ -228,7 +229,7 @@ class TestApplyToVarArgs:
 
 class TestChainMappings:
     @given(mappings=lists(dictionaries(text_ascii(), integers())), list_=booleans())
-    def test_main(self, *, mappings: list[Mapping[str, int]], list_: bool) -> None:
+    def test_main(self, *, mappings: Sequence[Mapping[str, int]], list_: bool) -> None:
         result = chain_mappings(*mappings, list=list_)
         expected = {}
         for mapping in mappings:
@@ -1141,7 +1142,7 @@ class TestReduceMappings:
         initial=just(0) | sentinels(),
     )
     def test_main(
-        self, *, mappings: list[Mapping[str, int]], initial: int | Sentinel
+        self, *, mappings: Sequence[Mapping[str, int]], initial: int | Sentinel
     ) -> None:
         result = reduce_mappings(add, mappings, initial=initial)
         expected = {}
@@ -1263,6 +1264,17 @@ class TestSortIterablesCmpFloats:
             assert result1 != result2
         if isnan(x) is not isnan(y):
             assert result1 != result2
+
+
+class TestSumMappings:
+    @given(mappings=lists(dictionaries(text_ascii(), integers())))
+    def test_main(self, *, mappings: Sequence[Mapping[str, int]]) -> None:
+        result = sum_mappings(*mappings)
+        expected = {}
+        for mapping in mappings:
+            for key, value in mapping.items():
+                expected[key] = expected.get(key, 0) + value
+        assert result == expected
 
 
 class TestTake:

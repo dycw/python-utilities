@@ -19,6 +19,7 @@ from enum import Enum
 from functools import cmp_to_key, partial, reduce
 from itertools import accumulate, chain, groupby, islice, pairwise, product
 from math import isnan
+from operator import add
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -44,6 +45,7 @@ from utilities.math import (
 )
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import SupportsAdd
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -64,7 +66,7 @@ _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
 _THashable = TypeVar("_THashable", bound=Hashable)
 _UHashable = TypeVar("_UHashable", bound=Hashable)
-
+_TSupportsAdd = TypeVar("_TSupportsAdd", bound=SupportsAdd)
 
 ##
 
@@ -1187,7 +1189,7 @@ def reduce_mappings(
     *,
     initial: _W | Sentinel = sentinel,
 ) -> Mapping[_K, _V | _W]:
-    """Reduce a function over the values of a mappings."""
+    """Reduce a function over the values of a set of mappings."""
     chained = chain_mappings(*sequence)
     if isinstance(initial, Sentinel):
         func2 = cast("Callable[[_V, _V], _V]", func)
@@ -1340,6 +1342,14 @@ def _sort_iterable_cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
             return cast("Literal[-1, 0, 1]", (x > y) - (x < y))
         case _ as never:
             assert_never(never)
+
+
+##
+
+
+def sum_mappings(*mappings: Mapping[_K, _TSupportsAdd]) -> Mapping[_K, _TSupportsAdd]:
+    """Sum the values of a set of mappings."""
+    return reduce_mappings(add, mappings, initial=0)
 
 
 ##
