@@ -828,7 +828,7 @@ def setup_hypothesis_profiles(
             deadline=None,
             print_blob=True,
             suppress_health_check=suppress_health_check,
-            verbosity=Verbosity.debug,
+            verbosity=Verbosity.quiet,
         )
     profile = get_env_var(
         "HYPOTHESIS_PROFILE", case_sensitive=False, default=Profile.default.name
