@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import asdict, dataclass, is_dataclass
-from functools import _lru_cache_wrapper, partial, wraps
+from functools import _lru_cache_wrapper, cached_property, partial, wraps
 from inspect import getattr_static
 from re import findall
 from types import (
@@ -908,13 +908,26 @@ def second(pair: tuple[Any, _U], /) -> _U:
 
 
 def yield_object_attributes(
-    obj: Any, /, *, static: Callable[[Any], bool] | None = None
+    obj: Any, /, *, static_type: type[Any] | None = None
 ) -> Iterator[tuple[str, Any]]:
     """Yield all the object attributes."""
     for name in dir(obj):
-        if (static is None) or (static(getattr_static(obj, name))):
+        if (static_type is None) or isinstance(getattr_static(obj, name), static_type):
             value = getattr(obj, name)
             yield name, value
+
+
+##
+
+
+def yield_object_properties(obj: Any, /) -> Iterator[tuple[str, Any]]:
+    """Yield all the object properties."""
+    yield from yield_object_attributes(obj, static_type=property)
+
+
+def yield_object_cached_properties(obj: Any) -> Iterator[tuple[str, Any]]:
+    """Yield all the object cached properties."""
+    yield from yield_object_attributes(obj, static_type=cached_property)
 
 
 ##
@@ -988,4 +1001,6 @@ __all__ = [
     "not_func",
     "second",
     "yield_object_attributes",
+    "yield_object_cached_properties",
+    "yield_object_properties",
 ]
