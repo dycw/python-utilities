@@ -1484,6 +1484,7 @@ __all__ = [
     "reduce_mappings",
     "resolve_include_and_exclude",
     "sort_iterable",
+    "sum_mappings",
     "take",
     "transpose",
     "unique_everseen",
