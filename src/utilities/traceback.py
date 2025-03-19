@@ -345,7 +345,7 @@ class ExcGroupTB(Generic[_TBaseExc]):
                 case _ as never:
                     assert_never(never)
             lines.append("")
-        return indent("\n".join(lines), depth * _INDENT)  # skipif-c
+        return indent("\n".join(lines), depth * _INDENT)  # skipif-ci
 
 
 @dataclass(kw_only=True, slots=True)
