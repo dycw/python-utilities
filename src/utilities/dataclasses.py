@@ -120,15 +120,6 @@ def dataclass_to_dict(
     """Convert a dataclass to a dictionary."""
     out: dict[str, Any] = {}
     for fld in yield_fields(obj, globalns=globalns, localns=localns):
-        fld.keep(
-            include=include,
-            exclude=exclude,
-            rel_tol=rel_tol,
-            abs_tol=abs_tol,
-            extra=extra,
-            defaults=defaults,
-        )
-
         if fld.keep(
             include=include,
             exclude=exclude,

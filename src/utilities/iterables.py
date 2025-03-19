@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import datetime as dt
 from collections import Counter
 from collections.abc import (
@@ -18,6 +19,7 @@ from enum import Enum
 from functools import cmp_to_key, partial, reduce
 from itertools import accumulate, chain, groupby, islice, pairwise, product
 from math import isnan
+from operator import add
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -43,6 +45,7 @@ from utilities.math import (
 )
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import SupportsAdd
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -55,6 +58,7 @@ _K = TypeVar("_K")
 _T = TypeVar("_T")
 _U = TypeVar("_U")
 _V = TypeVar("_V")
+_W = TypeVar("_W")
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
 _T3 = TypeVar("_T3")
@@ -62,7 +66,7 @@ _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
 _THashable = TypeVar("_THashable", bound=Hashable)
 _UHashable = TypeVar("_UHashable", bound=Hashable)
-
+_TSupportsAdd = TypeVar("_TSupportsAdd", bound=SupportsAdd)
 
 ##
 
@@ -148,6 +152,43 @@ def apply_to_tuple(func: Callable[..., _T], args: tuple[Any, ...], /) -> _T:
 def apply_to_varargs(func: Callable[..., _T], *args: Any) -> _T:
     """Apply a function to a variable number of arguments."""
     return func(*args)
+
+
+##
+
+
+@overload
+def chain_mappings(
+    *mappings: Mapping[_K, _V], list: Literal[True]
+) -> Mapping[_K, Sequence[_V]]: ...
+@overload
+def chain_mappings(
+    *mappings: Mapping[_K, _V], list: bool = False
+) -> Mapping[_K, Iterable[_V]]: ...
+def chain_mappings(
+    *mappings: Mapping[_K, _V],
+    list: bool = False,  # noqa: A002
+) -> Mapping[_K, Iterable[_V]]:
+    """Chain the values of a set of mappings."""
+    try:
+        first, *rest = mappings
+    except ValueError:
+        return {}
+    initial = {k: [v] for k, v in first.items()}
+    reduced = reduce(_chain_mappings_one, rest, initial)
+    if list:
+        return {k: builtins.list(v) for k, v in reduced.items()}
+    return reduced
+
+
+def _chain_mappings_one(
+    acc: Mapping[_K, Iterable[_V]], el: Mapping[_K, _V], /
+) -> Mapping[_K, Iterable[_V]]:
+    """Chain the values of a set of mappings."""
+    out = dict(acc)
+    for key, value in el.items():
+        out[key] = chain(out.get(key, []), [value])
+    return out
 
 
 ##
@@ -883,6 +924,16 @@ def is_iterable_not_str(obj: Any, /) -> TypeGuard[Iterable[Any]]:
 ##
 
 
+def map_mapping(
+    func: Callable[[_V], _W], mapping: Mapping[_K, _V], /
+) -> Mapping[_K, _W]:
+    """Map a function over the values of a mapping."""
+    return {k: func(v) for k, v in mapping.items()}
+
+
+##
+
+
 def merge_str_mappings(
     *mappings: StrMapping, case_sensitive: bool = True
 ) -> StrMapping:
@@ -1119,6 +1170,37 @@ def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterator[Mapping[_K,
 ##
 
 
+@overload
+def reduce_mappings(
+    func: Callable[[_V, _V], _V], sequence: Iterable[Mapping[_K, _V]], /
+) -> Mapping[_K, _V]: ...
+@overload
+def reduce_mappings(
+    func: Callable[[_W, _V], _W],
+    sequence: Iterable[Mapping[_K, _V]],
+    /,
+    *,
+    initial: _W | Sentinel = sentinel,
+) -> Mapping[_K, _W]: ...
+def reduce_mappings(
+    func: Callable[[_V, _V], _V] | Callable[[_W, _V], _W],
+    sequence: Iterable[Mapping[_K, _V]],
+    /,
+    *,
+    initial: _W | Sentinel = sentinel,
+) -> Mapping[_K, _V | _W]:
+    """Reduce a function over the values of a set of mappings."""
+    chained = chain_mappings(*sequence)
+    if isinstance(initial, Sentinel):
+        func2 = cast("Callable[[_V, _V], _V]", func)
+        return {k: reduce(func2, v) for k, v in chained.items()}
+    func2 = cast("Callable[[_W, _V], _W]", func)
+    return {k: reduce(func2, v, initial) for k, v in chained.items()}
+
+
+##
+
+
 def resolve_include_and_exclude(
     *,
     include: MaybeIterable[_T] | None = None,
@@ -1265,6 +1347,14 @@ def _sort_iterable_cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
 ##
 
 
+def sum_mappings(*mappings: Mapping[_K, _TSupportsAdd]) -> Mapping[_K, _TSupportsAdd]:
+    """Sum the values of a set of mappings."""
+    return reduce_mappings(add, mappings, initial=0)
+
+
+##
+
+
 def take(n: int, iterable: Iterable[_T], /) -> Sequence[_T]:
     """Return first n items of the iterable as a list."""
     return list(islice(iterable, n))
@@ -1358,6 +1448,7 @@ __all__ = [
     "apply_bijection",
     "apply_to_tuple",
     "apply_to_varargs",
+    "chain_mappings",
     "chain_maybe_iterables",
     "chain_nullable",
     "check_bijection",
@@ -1382,6 +1473,7 @@ __all__ = [
     "is_iterable",
     "is_iterable_not_enum",
     "is_iterable_not_str",
+    "map_mapping",
     "merge_str_mappings",
     "one",
     "one_maybe",
@@ -1389,8 +1481,10 @@ __all__ = [
     "one_unique",
     "pairwise_tail",
     "product_dicts",
+    "reduce_mappings",
     "resolve_include_and_exclude",
     "sort_iterable",
+    "sum_mappings",
     "take",
     "transpose",
     "unique_everseen",

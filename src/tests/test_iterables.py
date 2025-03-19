@@ -3,9 +3,9 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, replace
 from enum import Enum, auto
-from itertools import repeat
+from itertools import chain, repeat
 from math import isfinite, isinf, isnan
-from operator import sub
+from operator import add, neg, sub
 from re import DOTALL
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, override
 
@@ -20,6 +20,7 @@ from hypothesis.strategies import (
     floats,
     frozensets,
     integers,
+    just,
     lists,
     none,
     permutations,
@@ -30,7 +31,12 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 
 from tests.test_operator import make_objects
-from utilities.hypothesis import sets_fixed_length, text_ascii, zoned_datetimes
+from utilities.hypothesis import (
+    sentinels,
+    sets_fixed_length,
+    text_ascii,
+    zoned_datetimes,
+)
 from utilities.iterables import (
     CheckBijectionError,
     CheckDuplicatesError,
@@ -68,6 +74,7 @@ from utilities.iterables import (
     apply_bijection,
     apply_to_tuple,
     apply_to_varargs,
+    chain_mappings,
     chain_maybe_iterables,
     chain_nullable,
     check_bijection,
@@ -93,6 +100,7 @@ from utilities.iterables import (
     is_iterable,
     is_iterable_not_enum,
     is_iterable_not_str,
+    map_mapping,
     merge_str_mappings,
     one,
     one_maybe,
@@ -100,13 +108,15 @@ from utilities.iterables import (
     one_unique,
     pairwise_tail,
     product_dicts,
+    reduce_mappings,
     resolve_include_and_exclude,
     sort_iterable,
+    sum_mappings,
     take,
     transpose,
     unique_everseen,
 )
-from utilities.sentinel import sentinel
+from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -215,6 +225,20 @@ class TestApplyToVarArgs:
         result = apply_to_varargs(sub, x, y)
         expected = x - y
         assert result == expected
+
+
+class TestChainMappings:
+    @given(mappings=lists(dictionaries(text_ascii(), integers())), list_=booleans())
+    def test_main(self, *, mappings: Sequence[Mapping[str, int]], list_: bool) -> None:
+        result = chain_mappings(*mappings, list=list_)
+        expected = {}
+        for mapping in mappings:
+            for key, value in mapping.items():
+                expected[key] = list(chain(expected.get(key, []), [value]))
+        if list_:
+            assert result == expected
+        else:
+            assert set(result) == set(expected)
 
 
 class TestChainMaybeIterables:
@@ -937,6 +961,14 @@ class TestIsIterableNotStr:
         assert result is expected
 
 
+class TestMapMappings:
+    @given(mapping=dictionaries(text_ascii(), integers()))
+    def test_main(self, *, mapping: Mapping[str, int]) -> None:
+        result = map_mapping(neg, mapping)
+        expected = {k: -v for k, v in mapping.items()}
+        assert result == expected
+
+
 class TestMergeStrMappings:
     @given(
         case=sampled_from([
@@ -1104,6 +1136,22 @@ class TestProductDicts:
         assert result == expected
 
 
+class TestReduceMappings:
+    @given(
+        mappings=lists(dictionaries(text_ascii(), integers())),
+        initial=just(0) | sentinels(),
+    )
+    def test_main(
+        self, *, mappings: Sequence[Mapping[str, int]], initial: int | Sentinel
+    ) -> None:
+        result = reduce_mappings(add, mappings, initial=initial)
+        expected = {}
+        for mapping in mappings:
+            for key, value in mapping.items():
+                expected[key] = expected.get(key, 0) + value
+        assert result == expected
+
+
 class TestResolveIncludeAndExclude:
     def test_none(self) -> None:
         include, exclude = resolve_include_and_exclude()
@@ -1216,6 +1264,17 @@ class TestSortIterablesCmpFloats:
             assert result1 != result2
         if isnan(x) is not isnan(y):
             assert result1 != result2
+
+
+class TestSumMappings:
+    @given(mappings=lists(dictionaries(text_ascii(), integers())))
+    def test_main(self, *, mappings: Sequence[Mapping[str, int]]) -> None:
+        result = sum_mappings(*mappings)
+        expected = {}
+        for mapping in mappings:
+            for key, value in mapping.items():
+                expected[key] = expected.get(key, 0) + value
+        assert result == expected
 
 
 class TestTake:

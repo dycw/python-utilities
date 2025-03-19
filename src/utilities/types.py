@@ -10,6 +10,7 @@ from types import TracebackType
 from typing import Any, ClassVar, Literal, Protocol, TypeVar, runtime_checkable
 from zoneinfo import ZoneInfo
 
+_T_co = TypeVar("_T_co", covariant=True)
 _T_contra = TypeVar("_T_contra", contravariant=True)
 
 
@@ -65,11 +66,15 @@ type LoggerOrName = Logger | str
 # operator
 
 
-class SupportsDunderLT(Protocol[_T_contra]):
+class SupportsAdd(Protocol[_T_contra, _T_co]):  # from typeshed
+    def __add__(self, x: _T_contra, /) -> _T_co: ...  # pragma: no cover
+
+
+class SupportsDunderLT(Protocol[_T_contra]):  # from typeshed
     def __lt__(self, other: _T_contra, /) -> bool: ...  # pragma: no cover
 
 
-class SupportsDunderGT(Protocol[_T_contra]):
+class SupportsDunderGT(Protocol[_T_contra]):  # from typeshed
     def __gt__(self, other: _T_contra, /) -> bool: ...  # pragma: no cover
 
 
@@ -118,6 +123,7 @@ __all__ = [
     "PathLikeOrCallable",
     "Seed",
     "StrMapping",
+    "SupportsAdd",
     "SupportsDunderGT",
     "SupportsDunderLT",
     "SupportsRichComparison",
