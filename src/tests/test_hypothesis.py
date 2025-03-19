@@ -29,7 +29,7 @@ from hypothesis.strategies import (
 from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
-from pytest import mark, raises
+from pytest import raises
 from sqlalchemy import Column, Integer, MetaData, Table, insert, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -711,7 +711,6 @@ class TestMinAndMaxDateTimes:
         min_value=zoned_datetimes() | none() | just(zoned_datetimes() | none()),
         max_value=zoned_datetimes() | none() | just(zoned_datetimes() | none()),
     )
-    @mark.only
     def test_main(
         self,
         *,
@@ -730,7 +729,6 @@ class TestMinAndMaxDateTimes:
 
 
 class TestMinAndMaybeMaxDateTimes:
-    @mark.only
     @given(
         data=data(),
         min_value=zoned_datetimes() | none() | just(zoned_datetimes() | none()),
@@ -756,7 +754,6 @@ class TestMinAndMaybeMaxDateTimes:
             assert max_datetime == max_value
 
 
-@mark.only
 class TestMinAndMaybeMaxSizes:
     @given(
         data=data(),
