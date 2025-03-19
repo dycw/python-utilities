@@ -824,7 +824,7 @@ def setup_hypothesis_profiles(
             profile.name,
             max_examples=max_examples,
             phases=phases,
-            report_multiple_bugs=True,
+            report_multiple_bugs=False,
             deadline=None,
             print_blob=True,
             suppress_health_check=suppress_health_check,
