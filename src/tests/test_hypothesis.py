@@ -29,7 +29,7 @@ from hypothesis.strategies import (
 from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
-from pytest import raises
+from pytest import mark, raises
 from sqlalchemy import Column, Integer, MetaData, Table, insert, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -76,6 +76,7 @@ from utilities.hypothesis import (
     lists_fixed_length,
     min_and_max_datetimes,
     min_and_maybe_max_datetimes,
+    min_and_maybe_max_sizes,
     months,
     namespace_mixins,
     numbers,
@@ -720,6 +721,7 @@ class TestMinAndMaxDateTimes:
         min_datetime, max_datetime = data.draw(
             min_and_max_datetimes(min_value=min_value, max_value=max_value)
         )
+        assert min_datetime <= max_datetime
         if isinstance(min_value, dt.datetime):
             assert min_datetime == min_value
         if isinstance(max_value, dt.datetime):
@@ -745,10 +747,39 @@ class TestMinAndMaybeMaxDateTimes:
         min_datetime, max_datetime = data.draw(
             min_and_maybe_max_datetimes(min_value=min_value, max_value=max_value)
         )
+        assert (max_datetime is None) or (min_datetime <= max_datetime)
         if isinstance(min_value, dt.datetime):
             assert min_datetime == min_value
         if isinstance(max_value, dt.datetime) or (max_value is None):
             assert max_datetime == max_value
+
+
+@mark.only
+class TestMinAndMaybeMaxSizes:
+    @given(
+        data=data(),
+        min_value=integers(min_value=0) | none() | just(integers(min_value=0) | none()),
+        max_value=integers(min_value=0)
+        | none()
+        | sentinels()
+        | just(integers(min_value=0) | none() | sentinels()),
+    )
+    def test_main(
+        self,
+        *,
+        data: DataObject,
+        min_value: MaybeSearchStrategy[int | None],
+        max_value: MaybeSearchStrategy[int | None | Sentinel],
+    ) -> None:
+        min_size, max_size = data.draw(
+            min_and_maybe_max_sizes(min_value=min_value, max_value=max_value)
+        )
+        assert min_size >= 0
+        assert (max_size is None) or (min_size <= max_size)
+        if isinstance(min_value, int):
+            assert min_size == min_value
+        if isinstance(max_value, int) or (max_value is None):
+            assert max_size == max_value
 
 
 class TestMonths:

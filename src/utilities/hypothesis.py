@@ -828,6 +828,45 @@ def min_and_maybe_max_datetimes(
 
 
 @composite
+def min_and_maybe_max_sizes(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[int | None] = None,
+    max_value: MaybeSearchStrategy[int | None | Sentinel] = sentinel,
+) -> tuple[int, int | None]:
+    match min_value, max_value:
+        case None, Sentinel():
+            min_value_, max_value_ = draw(pairs(integers(min_value=0), sorted=True))
+            return min_value_, draw(just(max_value_) | none())
+        case None, None:
+            min_value_ = draw(integers(min_value=0))
+            return min_value_, None
+        case None, int():
+            min_value_ = draw(integers(max_value=max_value))
+            return min_value_, max_value
+        case int(), Sentinel():
+            max_value_ = draw(integers(min_value=min_value) | none())
+            return min_value, max_value_
+        case int(), None:
+            return min_value, None
+        case int(), dt.datetime():
+            _ = assume(min_value <= max_value)
+            return min_value, max_value
+        case _, _:
+            strategy = integers(min_value=0)
+            min_value_ = draw2(draw, min_value, strategy)
+            max_value_ = draw2(draw, max_value, strategy | none(), sentinel=True)
+            _ = assume((max_value_ is None) or (min_value_ <= max_value_))
+            return min_value_, max_value_
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
+@composite
 def months(
     draw: DrawFn,
     /,
@@ -1473,6 +1512,7 @@ __all__ = [
     "lists_fixed_length",
     "min_and_max_datetimes",
     "min_and_maybe_max_datetimes",
+    "min_and_maybe_max_sizes",
     "months",
     "namespace_mixins",
     "numbers",
