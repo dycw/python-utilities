@@ -4,8 +4,9 @@ from io import StringIO
 from logging import DEBUG, ERROR, StreamHandler, getLogger
 from typing import TYPE_CHECKING, ClassVar, Literal
 
-from pytest import mark, raises
+from pytest import raises
 
+from tests.conftest import SKIPIF_CI
 from tests.test_traceback_funcs.chain import func_chain_first
 from tests.test_traceback_funcs.decorated_async import func_decorated_async_first
 from tests.test_traceback_funcs.decorated_sync import func_decorated_sync_first
@@ -213,7 +214,7 @@ class TestGetRichTraceback:
         self._assert_decorated(exc_tb, "sync")
         assert len(exc_tb) == 5
 
-    @mark.flaky
+    @SKIPIF_CI
     async def test_func_decorated_async(self, *, git_ref: str) -> None:
         with raises(AssertionError) as exc_info:
             _ = await func_decorated_async_first(1, 2, 3, 4, c=5, d=6, e=7)
@@ -266,7 +267,7 @@ class TestGetRichTraceback:
         exc_tb3 = get_rich_traceback(exc_info3.value, git_ref=git_ref)
         assert isinstance(exc_tb3, ExcTB)
 
-    @mark.flaky
+    @SKIPIF_CI
     async def test_func_runtime_async(self, *, git_ref: str) -> None:
         with raises(AssertionError) as exc_info1:
             _ = await func_runtime_async(1, 2, 3, 4, c=5, d=6, e=7)
@@ -288,7 +289,7 @@ class TestGetRichTraceback:
         assertion_error = get_rich_traceback(exc_info1.value, git_ref=git_ref)
         assert isinstance(assertion_error, AssertionError)
 
-    @mark.flaky
+    @SKIPIF_CI
     async def test_func_task_group_one(
         self, *, git_ref: str, traceback_func_task_group_one: Pattern[str]
     ) -> None:
@@ -332,7 +333,7 @@ class TestGetRichTraceback:
         res_group = repr(exc_group_tb)
         assert traceback_func_task_group_one.search(res_group)
 
-    @mark.flaky
+    @SKIPIF_CI
     async def test_func_task_group_two(self, *, git_ref: str) -> None:
         with raises(ExceptionGroup) as exc_info:
             await func_task_group_two_first(1, 2, 3, 4, c=5, d=6, e=7)

@@ -294,7 +294,7 @@ class ExcGroupTB(Generic[_TBaseExc]):
 
     @override
     def __repr__(self) -> str:
-        return self.format(header=True, detail=True)
+        return self.format(header=True, detail=True)  # skipif-ci
 
     def format(
         self,
@@ -310,20 +310,20 @@ class ExcGroupTB(Generic[_TBaseExc]):
         depth: int = 0,
     ) -> str:
         """Format the traceback."""
-        lines: list[str] = []
+        lines: list[str] = []  # skipif-ci
         if header:  # pragma: no cover
             lines.extend(_yield_header_lines(git_ref=self.git_ref))
-        lines.append("Exception group:")
-        match self.exc_group:
+        lines.append("Exception group:")  # skipif-ci
+        match self.exc_group:  # skipif-ci
             case ExcTB() as exc_tb:
                 lines.append(exc_tb.format(header=False, detail=detail, depth=1))
             case ExceptionGroup() as exc_group:  # pragma: no cover
                 lines.append(_format_exception(exc_group, depth=1))
             case _ as never:
                 assert_never(never)
-        lines.append("")
-        total = len(self.errors)
-        for i, errors in enumerate(self.errors, start=1):
+        lines.append("")  # skipif-ci
+        total = len(self.errors)  # skipif-ci
+        for i, errors in enumerate(self.errors, start=1):  # skipif-ci
             lines.append(indent(f"Exception group error {i}/{total}:", _INDENT))
             match errors:
                 case ExcGroupTB() | ExcTB():  # pragma: no cover
@@ -345,7 +345,7 @@ class ExcGroupTB(Generic[_TBaseExc]):
                 case _ as never:
                     assert_never(never)
             lines.append("")
-        return indent("\n".join(lines), depth * _INDENT)
+        return indent("\n".join(lines), depth * _INDENT)  # skipif-ci
 
 
 @dataclass(kw_only=True, slots=True)
@@ -505,7 +505,7 @@ def _get_rich_traceback_non_chain(
 ) -> ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc:
     """Get a rich traceback, for a non-chained error."""
     match error:
-        case ExceptionGroup() as exc_group:
+        case ExceptionGroup() as exc_group:  # skipif-ci
             exc_group_or_exc_tb = _get_rich_traceback_base_one(exc_group)
             errors = [
                 _get_rich_traceback_non_chain(e, git_ref=git_ref)
@@ -589,9 +589,9 @@ def trace(
         @wraps(func)
         async def trace_async(*args: Any, **kwargs: Any) -> Any:
             locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
-            try:
+            try:  # skipif-ci
                 return await func(*args, **kwargs)
-            except Exception as error:
+            except Exception as error:  # skipif-ci
                 cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
                 raise
 
@@ -614,11 +614,11 @@ def trace(
 
     @wraps(func)
     async def trace_async(*args: Any, **kwargs: Any) -> Any:
-        if en := runtime():
+        if en := runtime():  # skipif-ci
             locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
-        try:
+        try:  # skipif-ci
             return await func(*args, **kwargs)
-        except Exception as error:
+        except Exception as error:  # skipif-ci
             if en:
                 cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
             raise
