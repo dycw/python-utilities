@@ -712,6 +712,7 @@ def min_and_max_datetimes(
             )
             return min_value, max_value_
         case dt.datetime(), dt.datetime():
+            _ = assume(min_value <= max_value)
             return min_value, max_value
         case _, _:
             strategy = zoned_datetimes(
@@ -843,14 +844,14 @@ def min_and_maybe_max_sizes(
             min_value_ = draw(integers(min_value=0))
             return min_value_, None
         case None, int():
-            min_value_ = draw(integers(max_value=max_value))
+            min_value_ = draw(integers(0, max_value))
             return min_value_, max_value
         case int(), Sentinel():
             max_value_ = draw(integers(min_value=min_value) | none())
             return min_value, max_value_
         case int(), None:
             return min_value, None
-        case int(), dt.datetime():
+        case int(), int():
             _ = assume(min_value <= max_value)
             return min_value, max_value
         case _, _:
@@ -1512,6 +1513,7 @@ __all__ = [
     "lists_fixed_length",
     "min_and_max_datetimes",
     "min_and_maybe_max_datetimes",
+    "min_and_maybe_max_sizes",
     "min_and_maybe_max_sizes",
     "months",
     "namespace_mixins",

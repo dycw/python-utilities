@@ -711,6 +711,7 @@ class TestMinAndMaxDateTimes:
         min_value=zoned_datetimes() | none() | just(zoned_datetimes() | none()),
         max_value=zoned_datetimes() | none() | just(zoned_datetimes() | none()),
     )
+    @mark.only
     def test_main(
         self,
         *,
@@ -729,6 +730,7 @@ class TestMinAndMaxDateTimes:
 
 
 class TestMinAndMaybeMaxDateTimes:
+    @mark.only
     @given(
         data=data(),
         min_value=zoned_datetimes() | none() | just(zoned_datetimes() | none()),
