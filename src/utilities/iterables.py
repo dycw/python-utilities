@@ -952,17 +952,13 @@ def merge_str_mappings(
     *mappings: StrMapping, case_sensitive: bool = True
 ) -> StrMapping:
     """Merge a set of string mappings."""
-    return reduce(
-        partial(_merge_str_mappings_one, case_sensitive=case_sensitive), mappings, {}
-    )
-
-
-def _merge_str_mappings_one(
-    acc: StrMapping, el: StrMapping, /, *, case_sensitive: bool = True
-) -> StrMapping:
-    out = dict(acc)
     if case_sensitive:
-        return out | dict(el)
+        return merge_mappings(*mappings)
+    return reduce(_merge_str_mappings_one, mappings, {})
+
+
+def _merge_str_mappings_one(acc: StrMapping, el: StrMapping, /) -> StrMapping:
+    out = dict(acc)
     try:
         check_unique_modulo_case(el)
     except _CheckUniqueModuloCaseDuplicateLowerCaseStringsError as error:
