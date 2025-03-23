@@ -934,6 +934,20 @@ def map_mapping(
 ##
 
 
+def merge_mappings(*mappings: Mapping[_K, _V]) -> Mapping[_K, _V]:
+    """Merge a set of mappings."""
+    return reduce(_merge_mappings_one, mappings, {})
+
+
+def _merge_mappings_one(
+    acc: Mapping[_K, _V], el: Mapping[_K, _V], /
+) -> Mapping[_K, _V]:
+    return dict(acc) | dict(el)
+
+
+##
+
+
 def merge_str_mappings(
     *mappings: StrMapping, case_sensitive: bool = True
 ) -> StrMapping:
@@ -1474,6 +1488,7 @@ __all__ = [
     "is_iterable_not_enum",
     "is_iterable_not_str",
     "map_mapping",
+    "merge_mappings",
     "merge_str_mappings",
     "one",
     "one_maybe",

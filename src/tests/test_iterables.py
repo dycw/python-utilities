@@ -101,6 +101,7 @@ from utilities.iterables import (
     is_iterable_not_enum,
     is_iterable_not_str,
     map_mapping,
+    merge_mappings,
     merge_str_mappings,
     one,
     one_maybe,
@@ -966,6 +967,20 @@ class TestMapMappings:
     def test_main(self, *, mapping: Mapping[str, int]) -> None:
         result = map_mapping(neg, mapping)
         expected = {k: -v for k, v in mapping.items()}
+        assert result == expected
+
+
+class TestMergeMappings:
+    def test_main(self) -> None:
+        mapping1 = {"x": 1, "y": 2}
+        mapping2 = {"X": 3, "z": 4}
+        result = merge_mappings(mapping1, mapping2)
+        expected = {"x": 1, "y": 2, "X": 3, "z": 4}
+        assert result == expected
+
+    def test_empty(self) -> None:
+        result = merge_str_mappings()
+        expected = {}
         assert result == expected
 
 
