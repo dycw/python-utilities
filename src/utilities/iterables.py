@@ -934,21 +934,31 @@ def map_mapping(
 ##
 
 
+def merge_mappings(*mappings: Mapping[_K, _V]) -> Mapping[_K, _V]:
+    """Merge a set of mappings."""
+    return reduce(_merge_mappings_one, mappings, {})
+
+
+def _merge_mappings_one(
+    acc: Mapping[_K, _V], el: Mapping[_K, _V], /
+) -> Mapping[_K, _V]:
+    return dict(acc) | dict(el)
+
+
+##
+
+
 def merge_str_mappings(
     *mappings: StrMapping, case_sensitive: bool = True
 ) -> StrMapping:
     """Merge a set of string mappings."""
-    return reduce(
-        partial(_merge_str_mappings_one, case_sensitive=case_sensitive), mappings, {}
-    )
-
-
-def _merge_str_mappings_one(
-    acc: StrMapping, el: StrMapping, /, *, case_sensitive: bool = True
-) -> StrMapping:
-    out = dict(acc)
     if case_sensitive:
-        return out | dict(el)
+        return merge_mappings(*mappings)
+    return reduce(_merge_str_mappings_one, mappings, {})
+
+
+def _merge_str_mappings_one(acc: StrMapping, el: StrMapping, /) -> StrMapping:
+    out = dict(acc)
     try:
         check_unique_modulo_case(el)
     except _CheckUniqueModuloCaseDuplicateLowerCaseStringsError as error:
@@ -1474,6 +1484,7 @@ __all__ = [
     "is_iterable_not_enum",
     "is_iterable_not_str",
     "map_mapping",
+    "merge_mappings",
     "merge_str_mappings",
     "one",
     "one_maybe",
