@@ -898,13 +898,10 @@ class TestYieldObjectCachedProperties:
                 return cprop
 
             @cached_property
-            def _cached_properties(self) -> set[str]:
-                return {
-                    k
-                    for k, _ in yield_object_cached_properties(
-                        self, skip={"_cached_properties"}
-                    )
-                }
+            def _cached_properties(self) -> list[tuple[str, Any]]:
+                return list(
+                    yield_object_cached_properties(self, skip={"_cached_properties"})
+                )
 
         obj = Example()
         assert obj._cached_properties == {"cprop"}
