@@ -908,11 +908,18 @@ def second(pair: tuple[Any, _U], /) -> _U:
 
 
 def yield_object_attributes(
-    obj: Any, /, *, static_type: type[Any] | None = None
+    obj: Any,
+    /,
+    *,
+    skip: Iterable[str] | None = None,
+    static_type: type[Any] | None = None,
 ) -> Iterator[tuple[str, Any]]:
     """Yield all the object attributes."""
+    skip = None if skip is None else set(skip)
     for name in dir(obj):
-        if (static_type is None) or isinstance(getattr_static(obj, name), static_type):
+        if ((skip is None) or (name not in skip)) and (
+            (static_type is None) or isinstance(getattr_static(obj, name), static_type)
+        ):
             value = getattr(obj, name)
             yield name, value
 
@@ -920,14 +927,18 @@ def yield_object_attributes(
 ##
 
 
-def yield_object_properties(obj: Any, /) -> Iterator[tuple[str, Any]]:
+def yield_object_properties(
+    obj: Any, /, *, skip: Iterable[str] | None = None
+) -> Iterator[tuple[str, Any]]:
     """Yield all the object properties."""
-    yield from yield_object_attributes(obj, static_type=property)
+    yield from yield_object_attributes(obj, skip=skip, static_type=property)
 
 
-def yield_object_cached_properties(obj: Any) -> Iterator[tuple[str, Any]]:
+def yield_object_cached_properties(
+    obj: Any, /, *, skip: Iterable[str] | None = None
+) -> Iterator[tuple[str, Any]]:
     """Yield all the object cached properties."""
-    yield from yield_object_attributes(obj, static_type=cached_property)
+    yield from yield_object_attributes(obj, skip=skip, static_type=cached_property)
 
 
 ##
