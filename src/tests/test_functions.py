@@ -908,6 +908,7 @@ class TestYieldObjectCachedProperties:
 
         obj = Example()
         assert obj._cached_properties == {"cprop"}
+        assert obj.cprop == cprop
 
 
 class TestYieldObjectProperties:
