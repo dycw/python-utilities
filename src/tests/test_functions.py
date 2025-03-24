@@ -886,6 +886,29 @@ class TestYieldObjectCachedProperties:
         expected = {"cprop": cprop}
         assert cprops == expected
 
+    @given(cprop=integers())
+    def test_skip(self, *, cprop: int) -> None:
+        @dataclass(kw_only=True)
+        class Example:
+            def __post_init__(self) -> None:
+                _ = self._cached_properties
+
+            @cached_property
+            def cprop(self) -> int:
+                return cprop
+
+            @cached_property
+            def _cached_properties(self) -> set[str]:
+                return {
+                    k
+                    for k, _ in yield_object_cached_properties(
+                        self, skip={"_cached_properties"}
+                    )
+                }
+
+        obj = Example()
+        assert obj._cached_properties == {"cprop"}
+
 
 class TestYieldObjectProperties:
     @given(cprop=integers(), prop=integers())
