@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from asyncio import sleep
 from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from pathlib import Path
 from re import search
@@ -14,6 +15,7 @@ from utilities.iterables import one
 from utilities.logging import (
     GetLoggingLevelNumberError,
     LogLevel,
+    SizeAndTimeRotatingFileHandler,
     StandaloneFileHandler,
     _AdvancedLogRecord,
     add_filters,
@@ -219,6 +221,52 @@ class TestSetupLogging:
                     with one(files).open() as fh:
                         contents = fh.read()
                     assert pattern.search(contents)
+
+
+@mark.only
+class TestSizeAndTimeRotatingFileHandler:
+    def test_size(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
+        handler = SizeAndTimeRotatingFileHandler(
+            filename=tmp_path.joinpath("log"), maxBytes=100, backupCount=2, when="D"
+        )
+        logger.addHandler(handler)
+        logger.setLevel(DEBUG)
+        assert len(list(tmp_path.iterdir())) == 0
+        logger.info("message")
+        assert len(list(tmp_path.iterdir())) == 1
+        logger.info(100 * "message")
+        assert len(list(tmp_path.iterdir())) == 2
+        for _ in range(10):
+            logger.info("message")
+            assert len(list(tmp_path.iterdir())) == 3
+            logger.info(100 * "message")
+            assert len(list(tmp_path.iterdir())) == 3
+
+    async def test_time(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
+        handler = SizeAndTimeRotatingFileHandler(
+            filename=tmp_path.joinpath("log"),
+            backupCount=1,
+            when="S",
+            interval=1,
+            atTime=None,
+        )
+        logger.addHandler(handler)
+        logger.setLevel(DEBUG)
+        assert len(list(tmp_path.iterdir())) == 0
+        logger.info("message 1")
+        assert len(list(tmp_path.iterdir())) == 1
+        await sleep(1.1)
+        logger.info("message 2")
+        assert len(list(tmp_path.iterdir())) == 2
+        logger.info("message 3")
+        assert len(list(tmp_path.iterdir())) == 2
+        await sleep(1.1)
+        logger.info("message 4")
+        assert len(list(tmp_path.iterdir())) == 2
+        logger.info("message 5")
+        assert len(list(tmp_path.iterdir())) == 2
 
 
 class TestStandaloneFileHandler:
