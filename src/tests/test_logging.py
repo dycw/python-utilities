@@ -244,11 +244,7 @@ class TestSizeAndTimeRotatingFileHandler:
     async def test_time(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         handler = SizeAndTimeRotatingFileHandler(
-            filename=tmp_path.joinpath("log"),
-            backupCount=1,
-            when="S",
-            interval=1,
-            atTime=None,
+            filename=tmp_path.joinpath("log"), backupCount=1, when="S", interval=1
         )
         logger.addHandler(handler)
         logger.setLevel(DEBUG)
