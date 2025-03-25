@@ -224,6 +224,7 @@ class TestSetupLogging:
 
 
 class TestSizeAndTimeRotatingFileHandler:
+    @skipif_windows
     def test_size(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         handler = SizeAndTimeRotatingFileHandler(
@@ -241,6 +242,7 @@ class TestSizeAndTimeRotatingFileHandler:
         logger.info(100 * "message")
         assert len(list(tmp_path.iterdir())) == 2
 
+    @skipif_windows
     async def test_time(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         handler = SizeAndTimeRotatingFileHandler(

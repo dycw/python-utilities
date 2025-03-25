@@ -46,6 +46,13 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     ZonedDateTime = None
 
+##
+
+
+type _When = Literal[
+    "S", "M", "H", "D", "midnight", "W0", "W1", "W2", "W3", "W4", "W5", "W6"
+]
+
 
 class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
     """Handler which rotates on size & time."""
@@ -59,9 +66,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         backupCount: int = 0,
         delay: bool = True,  # set to True
         errors: Literal["strict", "ignore", "replace"] | None = None,
-        when: Literal[
-            "S", "M", "H", "D", "midnight", "W0", "W1", "W2", "W3", "W4", "W5", "W6"
-        ] = "midnight",
+        when: _When = "midnight",
         interval: int = 1,
         encoding: str | None = None,
         utc: bool = False,
@@ -214,7 +219,7 @@ def setup_logging(
     console_fmt: str = "❯ {_zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
     git_ref: str = MASTER,
     files_dir: PathLikeOrCallable | None = get_default_logging_path,
-    files_when: str = "D",
+    files_when: _When = "D",
     files_interval: int = 1,
     files_backup_count: int = 10,
     files_max_bytes: int = 10 * 1024**2,
@@ -298,23 +303,13 @@ def setup_logging(
     ):
         path = ensure_suffix(directory.joinpath(subpath, level.lower()), ".txt")
         path.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            from concurrent_log_handler import ConcurrentTimedRotatingFileHandler
-        except ModuleNotFoundError:  # pragma: no cover
-            file_handler = TimedRotatingFileHandler(
-                filename=str(path),
-                when=files_when,
-                interval=files_interval,
-                backupCount=files_backup_count,
-            )
-        else:
-            file_handler = ConcurrentTimedRotatingFileHandler(
-                filename=str(path),
-                when=files_when,
-                interval=files_interval,
-                backupCount=files_backup_count,
-                maxBytes=files_max_bytes,
-            )
+        file_handler = SizeAndTimeRotatingFileHandler(
+            filename=str(path),
+            when=files_when,
+            interval=files_interval,
+            backupCount=files_backup_count,
+            maxBytes=files_max_bytes,
+        )
         add_filters(file_handler, filters=files_filters)
         add_filters(file_handler, filters=filters)
         file_handler.setFormatter(files_or_plain_formatter)
