@@ -48,7 +48,7 @@ dev = [
   "pyrsistent >= 0.20.0, < 0.21",
   "pytest >= 8.3.5, < 8.4",
   "pytest-regressions >= 2.7.0, < 2.8",
-  "python-dotenv >= 1.0.1, < 1.1",
+  "python-dotenv >= 1.1.0, < 1.2",
   "redis >= 5.2.1, < 5.3",
   "rich >= 13.9.4, < 13.10",
   "scipy >= 1.15.2, < 1.16",
@@ -255,7 +255,7 @@ zzz-test-pytest = [
 ]
 zzz-test-pytest-regressions = ["pytest-regressions >= 2.7.0, < 2.8"]
 zzz-test-python-dotenv = [
-  "python-dotenv >= 1.0.1, < 1.1",
+  "python-dotenv >= 1.1.0, < 1.2",
   "whenever >= 0.7.3, < 0.8",
 ]
 zzz-test-random = []
