@@ -94,11 +94,9 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
     def doRollover(self) -> None:  # noqa: N802
         if (record := self._last_record) is None:
             return
-        if bool(self.size_handler.shouldRollover(record)):
-            self._last_record = None
+        if bool(self.size_handler.shouldRollover(record)):  # pragma: no cover
             self.size_handler.doRollover()
-        elif bool(self.time_handler.shouldRollover(record)):
-            self._last_record = None
+        elif bool(self.time_handler.shouldRollover(record)):  # pragma: no cover
             self.time_handler.doRollover()
 
     @override

@@ -271,6 +271,17 @@ class TestSizeAndTimeRotatingFileHandler:
         handler = SizeAndTimeRotatingFileHandler(filename=tmp_path.joinpath("log"))
         handler.doRollover()
 
+    def test_should_rollover(
+        self, *, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
+        logger = getLogger(str(tmp_path))
+        handler = SizeAndTimeRotatingFileHandler(filename=tmp_path.joinpath("log"))
+        logger.addHandler(handler)
+        logger.setLevel(DEBUG)
+        logger.info("message")
+        record = one(caplog.records)
+        assert not handler.shouldRollover(record)
+
 
 class TestStandaloneFileHandler:
     def test_main(self, *, tmp_path: Path) -> None:
