@@ -66,7 +66,6 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         encoding: str | None = None,
         utc: bool = False,
         atTime: dt.time | None = None,
-        retention_days: int | None = None,
     ) -> None:
         filename = str(Path(filename))
         super().__init__(filename, mode, encoding=encoding, delay=delay)
@@ -90,18 +89,17 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
             atTime=atTime,
             errors=errors,
         )
-        self.retention_days = retention_days
         self._last_record: LogRecord | None = None
 
     def doRollover(self) -> None:  # noqa: N802
-        match self._last_record:
-            case None:
-                ...
-            case LogRecord() as record:
-                if bool(self.size_handler.shouldRollover(record)):
-                    self.size_handler.doRollover()
-                elif bool(self.time_handler.shouldRollover(record)):
-                    self.time_handler.doRollover()
+        if (record := self._last_record) is None:
+            return
+        if bool(self.size_handler.shouldRollover(record)):
+            self._last_record = None
+            self.size_handler.doRollover()
+        elif bool(self.time_handler.shouldRollover(record)):
+            self._last_record = None
+            self.time_handler.doRollover()
 
     @override
     def emit(self, record: LogRecord) -> None:
