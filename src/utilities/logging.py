@@ -304,7 +304,7 @@ def setup_logging(
         path = ensure_suffix(directory.joinpath(subpath, level.lower()), ".txt")
         path.parent.mkdir(parents=True, exist_ok=True)
         file_handler = SizeAndTimeRotatingFileHandler(
-            filename=str(path),
+            filename=path,
             when=files_when,
             interval=files_interval,
             backupCount=files_backup_count,
