@@ -211,7 +211,19 @@ class TestSetupLogging:
                 assert pattern.search(contents)
 
 
+@mark.only
 class TestSizeAndTimeRotatingFileHandler:
+    def test_handlers(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
+        filename = tmp_path.joinpath("log")
+        handler = SizeAndTimeRotatingFileHandler(filename=filename)
+        logger.addHandler(handler)
+        logger.setLevel(DEBUG)
+        logger.info("message")
+        with filename.open() as fh:
+            content = fh.read()
+        assert content == "message\n"
+
     def test_size(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         handler = SizeAndTimeRotatingFileHandler(

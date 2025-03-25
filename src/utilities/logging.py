@@ -6,6 +6,7 @@ from itertools import product
 from logging import (
     ERROR,
     NOTSET,
+    FileHandler,
     Formatter,
     Handler,
     Logger,
@@ -94,16 +95,19 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
             atTime=atTime,
             errors=errors,
         )
-        self._last_record: LogRecord | None = None
 
     @override
     def emit(self, record: LogRecord) -> None:
-        self._last_record = record
-        self.size_handler.emit(record)
-        self.time_handler.emit(record)
+        try:
+            if self.size_handler.shouldRollover(record):
+                self.size_handler.doRollover()
+            if self.time_handler.shouldRollover(record):
+                self.time_handler.doRollover()
+            FileHandler.emit(self, record)
+        except Exception:  # noqa: BLE001
+            self.handleError(record)
 
     def shouldRollover(self, record: LogRecord, /) -> bool:  # noqa: N802
-        self._last_record = record
         return bool(self.size_handler.shouldRollover(record)) or bool(
             self.time_handler.shouldRollover(record)
         )
