@@ -223,7 +223,6 @@ class TestSetupLogging:
                     assert pattern.search(contents)
 
 
-@mark.only
 class TestSizeAndTimeRotatingFileHandler:
     def test_size(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
