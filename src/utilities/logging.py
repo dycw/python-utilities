@@ -16,20 +16,25 @@ from logging import (
     getLogger,
     setLogRecordFactory,
 )
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import (
+    BaseRotatingHandler,
+    RotatingFileHandler,
+    TimedRotatingFileHandler,
+)
 from pathlib import Path
 from re import search
 from sys import stdout
-from typing import TYPE_CHECKING, Any, ClassVar, assert_never, cast, override
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never, cast, override
 
 from utilities.atomicwrites import writer
 from utilities.datetime import get_now, maybe_sub_pct_y
 from utilities.git import MASTER, get_repo_root
 from utilities.pathlib import ensure_suffix, resolve_path
 from utilities.traceback import RichTracebackFormatter
-from utilities.types import LogLevel
+from utilities.types import LogLevel, PathLike
 
 if TYPE_CHECKING:
+    import datetime as dt
     from collections.abc import Callable, Iterable, Iterator
     from logging import _FilterType
     from zoneinfo import ZoneInfo
@@ -40,6 +45,71 @@ try:
     from whenever import ZonedDateTime
 except ModuleNotFoundError:  # pragma: no cover
     ZonedDateTime = None
+
+##
+
+
+type _When = Literal[
+    "S", "M", "H", "D", "midnight", "W0", "W1", "W2", "W3", "W4", "W5", "W6"
+]
+
+
+class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
+    """Handler which rotates on size & time."""
+
+    @override
+    def __init__(
+        self,
+        filename: PathLike,
+        mode: Literal["a", "w", "x"] = "a",
+        maxBytes: int = 0,
+        backupCount: int = 0,
+        delay: bool = True,  # set to True
+        errors: Literal["strict", "ignore", "replace"] | None = None,
+        when: _When = "midnight",
+        interval: int = 1,
+        encoding: str | None = None,
+        utc: bool = False,
+        atTime: dt.time | None = None,
+    ) -> None:
+        filename = str(Path(filename))
+        super().__init__(filename, mode, encoding=encoding, delay=delay)
+        self.size_handler = RotatingFileHandler(
+            filename,
+            mode=mode,
+            maxBytes=maxBytes,
+            backupCount=backupCount,
+            encoding=encoding,
+            delay=True,
+            errors=errors,
+        )
+        self.time_handler = TimedRotatingFileHandler(
+            filename,
+            when=when,
+            interval=interval,
+            backupCount=backupCount,
+            encoding=encoding,
+            delay=True,
+            utc=utc,
+            atTime=atTime,
+            errors=errors,
+        )
+        self._last_record: LogRecord | None = None
+
+    @override
+    def emit(self, record: LogRecord) -> None:
+        self._last_record = record
+        self.size_handler.emit(record)
+        self.time_handler.emit(record)
+
+    def shouldRollover(self, record: LogRecord, /) -> bool:  # noqa: N802
+        self._last_record = record
+        return bool(self.size_handler.shouldRollover(record)) or bool(
+            self.time_handler.shouldRollover(record)
+        )
+
+
+##
 
 
 class StandaloneFileHandler(Handler):
@@ -149,7 +219,7 @@ def setup_logging(
     console_fmt: str = "❯ {_zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
     git_ref: str = MASTER,
     files_dir: PathLikeOrCallable | None = get_default_logging_path,
-    files_when: str = "D",
+    files_when: _When = "D",
     files_interval: int = 1,
     files_backup_count: int = 10,
     files_max_bytes: int = 10 * 1024**2,
@@ -233,23 +303,13 @@ def setup_logging(
     ):
         path = ensure_suffix(directory.joinpath(subpath, level.lower()), ".txt")
         path.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            from concurrent_log_handler import ConcurrentTimedRotatingFileHandler
-        except ModuleNotFoundError:  # pragma: no cover
-            file_handler = TimedRotatingFileHandler(
-                filename=str(path),
-                when=files_when,
-                interval=files_interval,
-                backupCount=files_backup_count,
-            )
-        else:
-            file_handler = ConcurrentTimedRotatingFileHandler(
-                filename=str(path),
-                when=files_when,
-                interval=files_interval,
-                backupCount=files_backup_count,
-                maxBytes=files_max_bytes,
-            )
+        file_handler = SizeAndTimeRotatingFileHandler(
+            filename=path,
+            when=files_when,
+            interval=files_interval,
+            backupCount=files_backup_count,
+            maxBytes=files_max_bytes,
+        )
         add_filters(file_handler, filters=files_filters)
         add_filters(file_handler, filters=filters)
         file_handler.setFormatter(files_or_plain_formatter)
@@ -404,6 +464,7 @@ def _ansi_wrap_red(text: str, /) -> str:
 __all__ = [
     "GetLoggingLevelNumberError",
     "LogLevel",
+    "SizeAndTimeRotatingFileHandler",
     "StandaloneFileHandler",
     "add_filters",
     "basic_config",

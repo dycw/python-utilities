@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from asyncio import sleep
 from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from pathlib import Path
-from re import search
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pytest import LogCaptureFixture, mark, param, raises
@@ -14,6 +14,7 @@ from utilities.iterables import one
 from utilities.logging import (
     GetLoggingLevelNumberError,
     LogLevel,
+    SizeAndTimeRotatingFileHandler,
     StandaloneFileHandler,
     _AdvancedLogRecord,
     add_filters,
@@ -195,7 +196,7 @@ class TestSetupLogging:
         logger = getLogger(name)
         logger.info("")
         files = list(tmp_path.iterdir())
-        names = {f.name for f in files if not search(r"\.lock", f.name)}
+        names = {f.name for f in files}
         assert len(names) == 4
 
     @classmethod
@@ -203,22 +204,72 @@ class TestSetupLogging:
         cls, path: Path, check: Literal["init"] | tuple[Literal["post"], Pattern[str]]
     ) -> None:
         files = list(path.iterdir())
-        names = {f.name for f in files if not search(r"\.lock", f.name)}
-        expected = {"debug.txt", "info.txt", "plain"}
-        assert names.issuperset(expected)
+        names = {f.name for f in files}
         match check:
             case "init":
-                pass
-            case ("post", pattern):
-                if "errors" in names:
-                    assert names == (expected | {"errors"})
-                    errors = path.joinpath("errors")
-                    assert errors.is_dir()
-                    files = list(errors.iterdir())
-                    assert len(files) == 1
-                    with one(files).open() as fh:
-                        contents = fh.read()
-                    assert pattern.search(contents)
+                assert names == {"plain"}
+            case "post", pattern:
+                assert names == {"debug.txt", "info.txt", "errors", "plain"}
+                errors = path.joinpath("errors")
+                assert errors.is_dir()
+                files = list(errors.iterdir())
+                assert len(files) == 1
+                with one(files).open() as fh:
+                    contents = fh.read()
+                assert pattern.search(contents)
+
+
+class TestSizeAndTimeRotatingFileHandler:
+    @skipif_windows
+    def test_size(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
+        handler = SizeAndTimeRotatingFileHandler(
+            filename=tmp_path.joinpath("log"), maxBytes=100, backupCount=1, when="D"
+        )
+        logger.addHandler(handler)
+        logger.setLevel(DEBUG)
+        assert len(list(tmp_path.iterdir())) == 0
+        logger.info("message")
+        assert len(list(tmp_path.iterdir())) == 1
+        logger.info(100 * "message")
+        assert len(list(tmp_path.iterdir())) == 2
+        logger.info("message")
+        assert len(list(tmp_path.iterdir())) == 2
+        logger.info(100 * "message")
+        assert len(list(tmp_path.iterdir())) == 2
+
+    @skipif_windows
+    async def test_time(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
+        handler = SizeAndTimeRotatingFileHandler(
+            filename=tmp_path.joinpath("log"), backupCount=1, when="S", interval=1
+        )
+        logger.addHandler(handler)
+        logger.setLevel(DEBUG)
+        assert len(list(tmp_path.iterdir())) == 0
+        logger.info("message 1")
+        assert len(list(tmp_path.iterdir())) == 1
+        await sleep(1.1)
+        logger.info("message 2")
+        assert len(list(tmp_path.iterdir())) == 2
+        logger.info("message 3")
+        assert len(list(tmp_path.iterdir())) == 2
+        await sleep(1.1)
+        logger.info("message 4")
+        assert len(list(tmp_path.iterdir())) == 2
+        logger.info("message 5")
+        assert len(list(tmp_path.iterdir())) == 2
+
+    def test_should_rollover(
+        self, *, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
+        logger = getLogger(str(tmp_path))
+        handler = SizeAndTimeRotatingFileHandler(filename=tmp_path.joinpath("log"))
+        logger.addHandler(handler)
+        logger.setLevel(DEBUG)
+        logger.info("message")
+        record = one(caplog.records)
+        assert not handler.shouldRollover(record)
 
 
 class TestStandaloneFileHandler:
