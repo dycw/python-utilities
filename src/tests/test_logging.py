@@ -206,21 +206,18 @@ class TestSetupLogging:
     ) -> None:
         files = list(path.iterdir())
         names = {f.name for f in files if not search(r"\.lock", f.name)}
-        expected = {"debug.txt", "info.txt", "plain"}
-        assert names.issuperset(expected)
         match check:
             case "init":
-                pass
+                assert names == {"plain"}
             case ("post", pattern):
-                if "errors" in names:
-                    assert names == (expected | {"errors"})
-                    errors = path.joinpath("errors")
-                    assert errors.is_dir()
-                    files = list(errors.iterdir())
-                    assert len(files) == 1
-                    with one(files).open() as fh:
-                        contents = fh.read()
-                    assert pattern.search(contents)
+                assert names == {"debug.txt", "info.txt", "errors", "plain"}
+                errors = path.joinpath("errors")
+                assert errors.is_dir()
+                files = list(errors.iterdir())
+                assert len(files) == 1
+                with one(files).open() as fh:
+                    contents = fh.read()
+                assert pattern.search(contents)
 
 
 class TestSizeAndTimeRotatingFileHandler:
