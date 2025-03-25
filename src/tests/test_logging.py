@@ -209,7 +209,7 @@ class TestSetupLogging:
         match check:
             case "init":
                 assert names == {"plain"}
-            case ("post", pattern):
+            case "post", pattern:
                 assert names == {"debug.txt", "info.txt", "errors", "plain"}
                 errors = path.joinpath("errors")
                 assert errors.is_dir()
