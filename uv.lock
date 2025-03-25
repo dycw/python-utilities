@@ -732,7 +732,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.98.16"
+version = "0.98.17"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },
@@ -1184,7 +1184,7 @@ requires-dist = [
     { name = "sqlalchemy", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=2.0.39,<2.1" },
     { name = "sqlalchemy", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=2.0.39,<2.1" },
     { name = "sqlalchemy", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=2.0.39,<2.1" },
-    { name = "streamlit", marker = "extra == 'zzz-test-streamlit'", specifier = ">=1.43.2,<1.44" },
+    { name = "streamlit", marker = "extra == 'zzz-test-streamlit'", specifier = ">=1.44.0,<1.45" },
     { name = "tenacity", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=8.5.0,<9.0" },
     { name = "tenacity", marker = "extra == 'zzz-test-redis'", specifier = ">=8.5.0,<9.0" },
     { name = "tenacity", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=8.5.0,<9.0" },
@@ -1293,7 +1293,7 @@ dev = [
     { name = "setuptools", specifier = ">=77.0.3" },
     { name = "slack-sdk", specifier = ">=3.35.0,<3.36" },
     { name = "sqlalchemy", specifier = ">=2.0.39,<2.1" },
-    { name = "streamlit", specifier = ">=1.43.2,<1.44" },
+    { name = "streamlit", specifier = ">=1.44.0,<1.45" },
     { name = "tenacity", specifier = ">=8.5.0,<9.0" },
     { name = "tomlkit", specifier = ">=0.13.2,<0.14" },
     { name = "tzdata", specifier = ">=2025.2,<2025.3" },
@@ -2379,7 +2379,7 @@ wheels = [
 
 [[package]]
 name = "osqp"
-version = "1.0.0"
+version = "1.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jinja2" },
@@ -2388,16 +2388,16 @@ dependencies = [
     { name = "scipy" },
     { name = "setuptools" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/82/2d/283f726722383da92d51ed0f7faf6e4852c99f3810e6dddb2fc6b56eb261/osqp-1.0.0.tar.gz", hash = "sha256:3da7ebf59a61e6d6b20dc1b2ba691d8d9ff4b0b2aca81c722cbf718271071196", size = 54359 }
+sdist = { url = "https://files.pythonhosted.org/packages/61/8f/660684ca6114893a997d7b0ea1ef1584834579af8a1a9e520e6a151b8ada/osqp-1.0.1.tar.gz", hash = "sha256:8425d24067d9f20ee97919965950f6e661178654114d6f8ce21418cc123eb0b3", size = 54645 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e6/3f/dfdaa1d3bc42b7d336df7d6e484b94674bc955336910169696ecc15f1dc7/osqp-1.0.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:1c276badee5c686e6d45b8bb1599723c8705f928cb3e4253d4c352bd0bd9a8f2", size = 309255 },
-    { url = "https://files.pythonhosted.org/packages/af/9d/87f59d593182e9199b8072a0153a62e71d7cba3aed103676e87bba7a3f5a/osqp-1.0.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:4aca556bd560a69c7d25bb8d41821627fc5e520688fd87cb47668feefe2a2830", size = 287907 },
-    { url = "https://files.pythonhosted.org/packages/5d/c3/28d789fd2324060e9f49a66ea7f260f2ed3c8c3add92c06da9230b877e3e/osqp-1.0.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3813c6b73a1d2259987592f6b6d2fa257bbb84f3a3df394ed6e26594bb53b614", size = 340926 },
-    { url = "https://files.pythonhosted.org/packages/b4/cc/a93c8b8b531c0b81ffb80f2b29417cb12397113ee4d0019506050f99b240/osqp-1.0.0-cp312-cp312-win_amd64.whl", hash = "sha256:110c5d0ad435fc14cff75181c3cc18ae34ec323ae4272b6c5f212700b49da2c9", size = 300063 },
-    { url = "https://files.pythonhosted.org/packages/50/11/61c88c584b2c359373dd9f254e2d315e9f1faea2a8e8ad75428820dbe7fc/osqp-1.0.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:6552a519beb8b962b56f7da8e42a951e58b82d74798c1ad76cf6932d3a41b4e7", size = 309305 },
-    { url = "https://files.pythonhosted.org/packages/e6/b6/2eaf6dccf81146aadf6f36012a08207959c39c4da7a0e344582fc3dd4c67/osqp-1.0.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:8fccaea6501b1e2cf7a8f061341f0cfc74b4a8750c07456a471484f128a298c9", size = 287964 },
-    { url = "https://files.pythonhosted.org/packages/be/51/ae195619e40bfa7aee5553830f74545a7a9021e2b7c4a8852e485f1fa1f8/osqp-1.0.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0170d59a604baaf1c605ea6fecbdcce37244bf9e64bff06f36861ea6df81a074", size = 341104 },
-    { url = "https://files.pythonhosted.org/packages/f6/e7/1bd5c918dc377cffcc1105abd1e44c12d42504f619f189dc563a16f9629f/osqp-1.0.0-cp313-cp313-win_amd64.whl", hash = "sha256:44baaea43eb730dabbf9fef9f1ecec3691b9fc0277fd2e19dc03148f964126d1", size = 300013 },
+    { url = "https://files.pythonhosted.org/packages/8d/53/763a20e3f50ce1968081f023a9905a2df71588c282097c817605030f6317/osqp-1.0.1-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:10fe62f9766479ab626cb82ab8459dd8dc7f0d82052aa547d3086dac11a3dfa9", size = 309254 },
+    { url = "https://files.pythonhosted.org/packages/3c/0b/cede77e009d44d59f23dbfba9f5ff90e2af8a76cbd05309e458bdae757c5/osqp-1.0.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:fa93fe11668cb5186dac8c80fe4d6a66bb46b7d2617b5fa53184f1df76fcae7e", size = 287905 },
+    { url = "https://files.pythonhosted.org/packages/0e/34/8f27a083b16a14b43dc7031f73817e01472cd3b1f81d80947d4c4b183c25/osqp-1.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:cd8d213d4baac00a9e7c2a53dba4169da7b23c65e5b5a4d7c9d802d409314bdb", size = 340925 },
+    { url = "https://files.pythonhosted.org/packages/8c/ef/1e789d8a45873713170d116cef62aee4555096bfd34d3e0e050229d914fd/osqp-1.0.1-cp312-cp312-win_amd64.whl", hash = "sha256:9c1bf437d8b8a8940f8416a095b13ddeb30186d37a32a9cd5d46c6b33cc4fb36", size = 300061 },
+    { url = "https://files.pythonhosted.org/packages/3e/50/03efe258a8a87d9481ad9fcb0102b225a5eb6715d621f23b0812ca75ac03/osqp-1.0.1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:116abfbd5b9c8389148c5238cac5cc821736aae0910b92ddce263730a5059677", size = 309303 },
+    { url = "https://files.pythonhosted.org/packages/7b/55/d495c5cbf15332ad299c0f84ec17dcb68ed257b4f1a50b85f708fac2c8d5/osqp-1.0.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:f82fdbd76b848011d56ce390855933cdfcd339e1096f0666d1c59f3ff2e3f54f", size = 287964 },
+    { url = "https://files.pythonhosted.org/packages/d3/c1/d6566302e548346b13e75b10b0a828b70a5b6cf0dfe15ab19cefd9cddb38/osqp-1.0.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4474f1a8ca7f814769786d192c61dd2b2a42aed19d0156bb032dea371022d911", size = 341104 },
+    { url = "https://files.pythonhosted.org/packages/d0/0e/c0456e982538084ed7bf05f2d987011e8a2b2ded519d1f069eda344672d8/osqp-1.0.1-cp313-cp313-win_amd64.whl", hash = "sha256:46df6041a59fb6655789a47f6de245e9eed663d7a449c1852dc3c4975b625782", size = 300012 },
 ]
 
 [[package]]
@@ -3552,7 +3552,7 @@ wheels = [
 
 [[package]]
 name = "streamlit"
-version = "1.43.2"
+version = "1.44.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "altair" },
@@ -3574,9 +3574,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "watchdog", marker = "sys_platform != 'darwin'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/53/c6/c2a5a9037b583d7e48c8fe4ea07f72f59c1796c57f7c01f907a0a388e40a/streamlit-1.43.2.tar.gz", hash = "sha256:f3afa2af637d00154c6a4c560d2fde256d7dc8cc1f32a53cf20570c0967841bc", size = 9345475 }
+sdist = { url = "https://files.pythonhosted.org/packages/b4/86/764e2079c58790f232bb5882853fe8a68302dfdd0e29a5cf6efeb3bbcd17/streamlit-1.44.0.tar.gz", hash = "sha256:da75933bae94595167f43822dea43fcdde0d747433f7d04989266d78967951bb", size = 9422437 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3d/b0/031933cb253d757dfc8791707d413ce90ab52ec7fb4524ef955070136d31/streamlit-1.43.2-py2.py3-none-any.whl", hash = "sha256:c773ff70e8dd14066e49ba4b36740e4d36b0c534624f49abcc73b75389bf9420", size = 9734394 },
+    { url = "https://files.pythonhosted.org/packages/46/9e/e51e34f504940da00145795b9e8be9c129704708b071f672f3626a37d842/streamlit-1.44.0-py3-none-any.whl", hash = "sha256:98510d03e53622bba8f0e9f2fd4f1191b3b55e5c7e55abbbaa0289cb9e21cdea", size = 9812034 },
 ]
 
 [[package]]
