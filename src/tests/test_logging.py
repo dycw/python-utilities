@@ -3,7 +3,6 @@ from __future__ import annotations
 from asyncio import sleep
 from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from pathlib import Path
-from re import search
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pytest import LogCaptureFixture, mark, param, raises
@@ -197,7 +196,7 @@ class TestSetupLogging:
         logger = getLogger(name)
         logger.info("")
         files = list(tmp_path.iterdir())
-        names = {f.name for f in files if not search(r"\.lock", f.name)}
+        names = {f.name for f in files}
         assert len(names) == 4
 
     @classmethod
@@ -205,7 +204,7 @@ class TestSetupLogging:
         cls, path: Path, check: Literal["init"] | tuple[Literal["post"], Pattern[str]]
     ) -> None:
         files = list(path.iterdir())
-        names = {f.name for f in files if not search(r"\.lock", f.name)}
+        names = {f.name for f in files}
         match check:
             case "init":
                 assert names == {"plain"}
