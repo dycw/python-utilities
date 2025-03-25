@@ -26,7 +26,6 @@ from utilities.logging import (
     temp_handler,
     temp_logger,
 )
-from utilities.pytest import skipif_windows
 from utilities.typing import get_args
 
 if TYPE_CHECKING:
@@ -105,7 +104,6 @@ class TestLogLevel:
 
 
 class TestSetupLogging:
-    @skipif_windows
     def test_decorated(
         self, *, tmp_path: Path, git_ref: str, traceback_func_one: Pattern[str]
     ) -> None:
@@ -120,7 +118,6 @@ class TestSetupLogging:
             logger.exception("message")
         self.assert_files(tmp_path, ("post", traceback_func_one))
 
-    @skipif_windows
     def test_undecorated(
         self, *, tmp_path: Path, git_ref: str, traceback_func_untraced: Pattern[str]
     ) -> None:
@@ -135,7 +132,6 @@ class TestSetupLogging:
             logger.exception("message")
         self.assert_files(tmp_path, ("post", traceback_func_untraced))
 
-    @skipif_windows
     def test_regular_percent_formatting(
         self, *, tmp_path: Path, git_ref: str, caplog: LogCaptureFixture
     ) -> None:
@@ -148,7 +144,6 @@ class TestSetupLogging:
         expected = "int: 1, float: 12.35"
         assert record.message == expected
 
-    @skipif_windows
     def test_new_brace_formatting(
         self, *, tmp_path: Path, git_ref: str, caplog: LogCaptureFixture
     ) -> None:
@@ -161,7 +156,6 @@ class TestSetupLogging:
         expected = "int: 1, float: 12.35, percent: 12.35%"
         assert record.message == expected
 
-    @skipif_windows
     def test_no_console(self, *, tmp_path: Path, git_ref: str) -> None:
         name = str(tmp_path)
         setup_logging(
@@ -170,7 +164,6 @@ class TestSetupLogging:
         logger = getLogger(name)
         assert len(logger.handlers) == 5
 
-    @skipif_windows
     def test_zoned_datetime(
         self, *, tmp_path: Path, git_ref: str, caplog: LogCaptureFixture
     ) -> None:
@@ -183,7 +176,6 @@ class TestSetupLogging:
         assert isinstance(record._zoned_datetime, ZonedDateTime)
         assert isinstance(record._zoned_datetime_str, str)
 
-    @skipif_windows
     def test_extra(self, *, tmp_path: Path, git_ref: str) -> None:
         name = str(tmp_path)
 
@@ -220,7 +212,6 @@ class TestSetupLogging:
 
 
 class TestSizeAndTimeRotatingFileHandler:
-    @skipif_windows
     def test_size(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         handler = SizeAndTimeRotatingFileHandler(
@@ -238,7 +229,6 @@ class TestSizeAndTimeRotatingFileHandler:
         logger.info(100 * "message")
         assert len(list(tmp_path.iterdir())) == 2
 
-    @skipif_windows
     async def test_time(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         handler = SizeAndTimeRotatingFileHandler(
