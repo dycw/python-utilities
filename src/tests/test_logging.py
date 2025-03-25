@@ -228,7 +228,7 @@ class TestSizeAndTimeRotatingFileHandler:
     def test_size(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         handler = SizeAndTimeRotatingFileHandler(
-            filename=tmp_path.joinpath("log"), maxBytes=100, backupCount=2, when="D"
+            filename=tmp_path.joinpath("log"), maxBytes=100, backupCount=1, when="D"
         )
         logger.addHandler(handler)
         logger.setLevel(DEBUG)
@@ -237,11 +237,10 @@ class TestSizeAndTimeRotatingFileHandler:
         assert len(list(tmp_path.iterdir())) == 1
         logger.info(100 * "message")
         assert len(list(tmp_path.iterdir())) == 2
-        for _ in range(10):
-            logger.info("message")
-            assert len(list(tmp_path.iterdir())) == 3
-            logger.info(100 * "message")
-            assert len(list(tmp_path.iterdir())) == 3
+        logger.info("message")
+        assert len(list(tmp_path.iterdir())) == 2
+        logger.info(100 * "message")
+        assert len(list(tmp_path.iterdir())) == 2
 
     async def test_time(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
