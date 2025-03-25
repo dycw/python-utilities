@@ -449,6 +449,7 @@ filterwarnings = [
   "ignore:ResourceTracker called reentrantly for resource cleanup, which is unsupported:UserWarning",  # redis
   "ignore:There is no current event loop:DeprecationWarning",  # eventkit
   "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",  # astor
+  "ignore:unclosed <StreamWriter .*>:ResourceWarning",  # redis
 ]
 minversion = "8.0"
 testpaths = ["src/tests"]
