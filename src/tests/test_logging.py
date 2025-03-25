@@ -262,10 +262,6 @@ class TestSizeAndTimeRotatingFileHandler:
         logger.info("message 5")
         assert len(list(tmp_path.iterdir())) == 2
 
-    def test_do_rollover(self, *, tmp_path: Path) -> None:
-        handler = SizeAndTimeRotatingFileHandler(filename=tmp_path.joinpath("log"))
-        handler.doRollover()
-
     def test_should_rollover(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
