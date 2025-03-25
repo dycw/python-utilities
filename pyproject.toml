@@ -90,7 +90,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.98.15"
+version = "0.98.16"
 
 [project.optional-dependencies]
 test = [
@@ -340,7 +340,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.98.15"
+current_version = "0.98.16"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -444,18 +444,13 @@ asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 filterwarnings = [
   "error",
-  "ignore:.*utcfromtimestamp.* is deprecated and scheduled for removal in a future version:DeprecationWarning",  # luigi
+  # "ignore:.*utcfromtimestamp.* is deprecated and scheduled for removal in a future version:DeprecationWarning",  # luigi
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
-  "ignore:ResourceTracker called reentrantly for resource cleanup, which is unsupported:UserWarning",
-  "ignore:Task .* without outputs has no custom complete.* method:UserWarning",  # luigi
+  # "ignore:ResourceTracker called reentrantly for resource cleanup, which is unsupported:UserWarning",
+  # "ignore:Task .* without outputs has no custom complete.* method:UserWarning",  # luigi
   "ignore:There is no current event loop:DeprecationWarning",  # eventkit
-  "ignore:Using fork.* can cause Polars to deadlock in the child process:RuntimeWarning",  # polars/pqdm
+  # "ignore:Using fork.* can cause Polars to deadlock in the child process:RuntimeWarning",  # polars/pqdm
   "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",  # astor
-  "ignore:unclosed <StreamWriter .*>:ResourceWarning",  # redis
-  "ignore:unclosed <socket.*socket .*>:ResourceWarning",  # redis
-  "ignore:unclosed Connection <redis.*asyncio.*connection.*Connection.*>:ResourceWarning",  # redis
-  "ignore:unclosed event loop <_UnixSelectorEventLoop .*>:ResourceWarning",  # redis
-  "ignore:unclosed transport <_SelectorSocketTransport .*>:ResourceWarning",  # redis
 ]
 minversion = "8.0"
 testpaths = ["src/tests"]
