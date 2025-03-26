@@ -310,6 +310,29 @@ class TestSerializeAndDeserialize:
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
+    def test_ib_like(self) -> None:
+        @dataclass(kw_only=True)
+        class Parent:
+            x: int
+
+        @dataclass(kw_only=True)
+        class Zero(Parent):
+            def __init__(self) -> None:
+                Parent.__init__(self, x=0)
+
+        zero = Zero()
+        ser = serialize(zero)
+        with raises(TypeError, match="got an unexpected keyword argument 'x'"):
+            _ = deserialize(ser, objects={Zero})
+
+        def hook(cls: type[Any], mapping: StrMapping, /) -> StrMapping:
+            if issubclass(cls, Zero):
+                mapping = {k: v for k, v in mapping.items() if k != "x"}
+            return mapping
+
+        result = deserialize(ser, dataclass_hook=hook, objects={Zero})
+        assert result == zero
+
     @given(data=data())
     @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
     def test_ib_trades(self, *, data: DataObject) -> None:
