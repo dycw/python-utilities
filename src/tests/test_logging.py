@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from asyncio import sleep
 from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from pathlib import Path
 from re import search
+from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from hypothesis import given
@@ -33,6 +33,7 @@ from utilities.logging import (
     temp_handler,
     temp_logger,
 )
+from utilities.pytest import skipif_windows
 from utilities.typing import get_args
 
 if TYPE_CHECKING:
@@ -64,7 +65,7 @@ class TestBasicConfig:
 
 
 class TestComputeRolloverActions:
-    async def test_main(self, *, tmp_path: Path) -> None:
+    def test_main(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("log.txt").touch()
 
         actions = _compute_rollover_actions(tmp_path, "log", ".txt")
@@ -76,7 +77,7 @@ class TestComputeRolloverActions:
         assert any(p for p in files if search(r"^log\.1\__[\dT]+\.txt$", p.name))
 
         for _ in range(2):
-            await sleep(1)
+            sleep(1)
             tmp_path.joinpath("log.txt").touch()
             actions = _compute_rollover_actions(tmp_path, "log", ".txt")
             assert len(actions.deletions) == 1
@@ -88,7 +89,7 @@ class TestComputeRolloverActions:
                 p for p in files if search(r"^log\.1\__[\dT]+__[\dT]+\.txt$", p.name)
             )
 
-    async def test_multiple_backups(self, *, tmp_path: Path) -> None:
+    def test_multiple_backups(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("log.txt").touch()
 
         actions = _compute_rollover_actions(tmp_path, "log", ".txt", backup_count=3)
@@ -99,7 +100,7 @@ class TestComputeRolloverActions:
         assert len(files) == 1
         assert any(p for p in files if search(r"^log\.1\__[\dT]+\.txt$", p.name))
 
-        await sleep(1)
+        sleep(1)
         tmp_path.joinpath("log.txt").touch()
         actions = _compute_rollover_actions(tmp_path, "log", ".txt", backup_count=3)
         assert len(actions.deletions) == 0
@@ -112,7 +113,7 @@ class TestComputeRolloverActions:
         )
         assert any(p for p in files if search(r"^log\.2\__[\dT]+\.txt$", p.name))
 
-        await sleep(1)
+        sleep(1)
         tmp_path.joinpath("log.txt").touch()
         actions = _compute_rollover_actions(tmp_path, "log", ".txt", backup_count=3)
         assert len(actions.deletions) == 0
@@ -129,7 +130,7 @@ class TestComputeRolloverActions:
         assert all(p for p in files if search(r"^log\.3\__[\dT]+\.txt$", p.name))
 
         for _ in range(2):
-            await sleep(1)
+            sleep(1)
             tmp_path.joinpath("log.txt").touch()
             actions = _compute_rollover_actions(tmp_path, "log", ".txt", backup_count=3)
             assert len(actions.deletions) == 1
@@ -147,7 +148,7 @@ class TestComputeRolloverActions:
                 p for p in files if search(r"^log\.3\__[\dT]+__[\dT]+\.txt$", p.name)
             )
 
-    async def test_deleting_old_files(self, *, tmp_path: Path) -> None:
+    def test_deleting_old_files(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("log.txt").touch()
 
         actions = _compute_rollover_actions(tmp_path, "log", ".txt")
@@ -158,7 +159,7 @@ class TestComputeRolloverActions:
         assert len(files) == 1
         assert any(p for p in files if search(r"^log\.1\__[\dT]+\.txt$", p.name))
 
-        await sleep(1)
+        sleep(1)
         tmp_path.joinpath("log.txt").touch()
         tmp_path.joinpath(
             f"log.99__{NOW_UTC:%Y%m%dT%H%M%S}__{NOW_UTC:%Y%m%dT%H%M%S}.txt"
@@ -320,6 +321,7 @@ class TestRotatingLogFile:
 
 
 class TestSetupLogging:
+    @skipif_windows
     def test_decorated(
         self, *, tmp_path: Path, git_ref: str, traceback_func_one: Pattern[str]
     ) -> None:
@@ -334,6 +336,7 @@ class TestSetupLogging:
             logger.exception("message")
         self.assert_files(tmp_path, ("post", traceback_func_one))
 
+    @skipif_windows
     def test_undecorated(
         self, *, tmp_path: Path, git_ref: str, traceback_func_untraced: Pattern[str]
     ) -> None:
@@ -348,6 +351,7 @@ class TestSetupLogging:
             logger.exception("message")
         self.assert_files(tmp_path, ("post", traceback_func_untraced))
 
+    @skipif_windows
     def test_regular_percent_formatting(
         self, *, tmp_path: Path, git_ref: str, caplog: LogCaptureFixture
     ) -> None:
@@ -360,6 +364,7 @@ class TestSetupLogging:
         expected = "int: 1, float: 12.35"
         assert record.message == expected
 
+    @skipif_windows
     def test_new_brace_formatting(
         self, *, tmp_path: Path, git_ref: str, caplog: LogCaptureFixture
     ) -> None:
@@ -372,6 +377,7 @@ class TestSetupLogging:
         expected = "int: 1, float: 12.35, percent: 12.35%"
         assert record.message == expected
 
+    @skipif_windows
     def test_no_console(self, *, tmp_path: Path, git_ref: str) -> None:
         name = str(tmp_path)
         setup_logging(
@@ -380,6 +386,7 @@ class TestSetupLogging:
         logger = getLogger(name)
         assert len(logger.handlers) == 5
 
+    @skipif_windows
     def test_zoned_datetime(
         self, *, tmp_path: Path, git_ref: str, caplog: LogCaptureFixture
     ) -> None:
@@ -392,6 +399,7 @@ class TestSetupLogging:
         assert isinstance(record._zoned_datetime, ZonedDateTime)
         assert isinstance(record._zoned_datetime_str, str)
 
+    @skipif_windows
     def test_extra(self, *, tmp_path: Path, git_ref: str) -> None:
         name = str(tmp_path)
 
@@ -428,6 +436,7 @@ class TestSetupLogging:
 
 
 class TestSizeAndTimeRotatingFileHandler:
+    @skipif_windows
     def test_handlers(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         filename = tmp_path.joinpath("log")
@@ -439,6 +448,7 @@ class TestSizeAndTimeRotatingFileHandler:
             content = fh.read()
         assert content == "message\n"
 
+    @skipif_windows
     def test_size(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         handler = SizeAndTimeRotatingFileHandler(
@@ -507,7 +517,8 @@ class TestSizeAndTimeRotatingFileHandler:
                 p for p in files if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
             )
 
-    async def test_time(self, *, tmp_path: Path) -> None:
+    @skipif_windows
+    def test_time(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         handler = SizeAndTimeRotatingFileHandler(
             filename=tmp_path.joinpath("log.txt"), backupCount=3, when="S", interval=1
@@ -524,7 +535,7 @@ class TestSizeAndTimeRotatingFileHandler:
         assert len(files) == 1
         assert any(p for p in files if search(r"^log\.txt$", p.name))
 
-        await sleep(1.01)
+        sleep(1.01)
         for i in range(2, 4):
             logger.info("message %d", i)
             files = list(tmp_path.iterdir())
@@ -532,7 +543,7 @@ class TestSizeAndTimeRotatingFileHandler:
             assert any(p for p in files if search(r"^log\.txt$", p.name))
             assert any(p for p in files if search(r"^log\.1__[\dT]+\.txt$", p.name))
 
-        await sleep(1.01)
+        sleep(1.01)
         for i in range(4, 6):
             logger.info("message %d", i)
             files = list(tmp_path.iterdir())
@@ -543,7 +554,7 @@ class TestSizeAndTimeRotatingFileHandler:
             )
             assert any(p for p in files if search(r"^log\.2__[\dT]+\.txt$", p.name))
 
-        await sleep(1.01)
+        sleep(1.01)
         for i in range(6, 8):
             logger.info("message %d", i)
             files = list(tmp_path.iterdir())
@@ -558,7 +569,7 @@ class TestSizeAndTimeRotatingFileHandler:
             assert any(p for p in files if search(r"^log\.3__[\dT]+\.txt$", p.name))
 
         for _ in range(2):
-            await sleep(1.01)
+            sleep(1.01)
             for i in range(8, 10):
                 logger.info("message %d", i)
                 files = list(tmp_path.iterdir())
