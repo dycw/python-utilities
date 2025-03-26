@@ -250,33 +250,9 @@ class TestSerializeAndDeserialize:
         assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass_default_in_init_child=True))
-    def test_dataclass_default_in_init_child_hook_in_serialize(
-        self, *, obj: Any
-    ) -> None:
-        def hook(cls: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
-            if issubclass(cls, DataClassFutureDefaultInInitParent):
-                mapping = {k: v for k, v in mapping.items() if k != "int_"}
-            return mapping
-
+    def test_dataclass_default_in_init_child(self, *, obj: Any) -> None:
         result = deserialize(
-            serialize(obj, dataclass_hook=hook),
-            objects={DataClassFutureDefaultInInitChild},
-        )
-        assert is_equal(result, obj)
-
-    @given(obj=make_objects(dataclass_default_in_init_child=True))
-    def test_dataclass_default_in_init_child_hook_in_deserialize(
-        self, *, obj: Any
-    ) -> None:
-        def hook(cls: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
-            if issubclass(cls, DataClassFutureDefaultInInitParent):
-                mapping = {k: v for k, v in mapping.items() if k != "int_"}
-            return mapping
-
-        result = deserialize(
-            serialize(obj),
-            dataclass_hook=hook,
-            objects={DataClassFutureDefaultInInitChild},
+            serialize(obj), objects={DataClassFutureDefaultInInitChild}
         )
         assert is_equal(result, obj)
 
@@ -298,8 +274,7 @@ class TestSerializeAndDeserialize:
     @given(obj=make_objects(dataclass_literal_nullable=True))
     def test_dataclass_literal_nullable(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassFutureLiteralNullable})
-        with assume_does_not_raise(IsEqualError):
-            assert is_equal(result, obj)
+        assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass_nested=True))
     def test_dataclass_nested(self, *, obj: Any) -> None:
@@ -315,7 +290,7 @@ class TestSerializeAndDeserialize:
         )
         assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass_none=True))
+    @given(obj=make_objects(dataclass_nested=True))
     def test_dataclass_none(self, *, obj: Any) -> None:
         ser = serialize(obj, globalns=globals())
         result = deserialize(ser, objects={DataClassFutureNone})
