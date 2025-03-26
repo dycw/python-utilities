@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from contextlib import suppress
 from dataclasses import dataclass, replace
-from re import search, sub
+from re import search
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -17,7 +17,6 @@ from typing import (
 
 from utilities.iterables import OneEmptyError, one
 from utilities.math import SafeRoundError, _RoundMode, round_, safe_round
-from utilities.platform import SYSTEM
 from utilities.zoneinfo import (
     UTC,
     HongKong,
@@ -614,22 +613,6 @@ def is_zero_time(timedelta: dt.timedelta, /) -> bool:
 def is_zoned_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
     """Check if an object is a zoned datetime."""
     return isinstance(obj, dt.datetime) and (obj.tzinfo is not None)
-
-
-##
-
-
-def maybe_sub_pct_y(text: str, /) -> str:
-    """Substitute the `%Y' token with '%4Y' if necessary."""
-    match SYSTEM:
-        case "windows":  # skipif-not-windows
-            return text
-        case "mac":  # skipif-not-macos
-            return text
-        case "linux":  # skipif-not-linux
-            return sub("%Y", "%4Y", text)
-        case _ as never:
-            assert_never(never)
 
 
 ##
@@ -1249,7 +1232,6 @@ __all__ = [
     "is_weekday",
     "is_zero_time",
     "is_zoned_datetime",
-    "maybe_sub_pct_y",
     "microseconds_since_epoch",
     "microseconds_since_epoch_to_datetime",
     "microseconds_to_timedelta",

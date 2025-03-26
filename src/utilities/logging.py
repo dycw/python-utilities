@@ -39,12 +39,7 @@ from typing import (
 
 from utilities.atomicwrites import writer
 from utilities.dataclasses import replace_non_sentinel
-from utilities.datetime import (
-    get_now_local,
-    maybe_sub_pct_y,
-    parse_datetime_compact,
-    serialize_compact,
-)
+from utilities.datetime import get_now_local, parse_datetime_compact, serialize_compact
 from utilities.errors import ImpossibleCaseError
 from utilities.git import MASTER, get_repo_root
 from utilities.iterables import OneEmptyError, one
@@ -414,12 +409,7 @@ def basic_config(
     format: str = "{asctime} | {name} | {levelname:8} | {message}",  # noqa: A002
 ) -> None:
     """Do the basic config."""
-    basicConfig(
-        format=format,
-        datefmt=maybe_sub_pct_y("%Y-%m-%d %H:%M:%S"),
-        style="{",
-        level="DEBUG",
-    )
+    basicConfig(format=format, datefmt="%Y-%m-%d %H:%M:%S", style="{", level="DEBUG")
 
 
 ##
