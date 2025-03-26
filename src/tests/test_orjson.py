@@ -249,6 +249,13 @@ class TestSerializeAndDeserialize:
         result = deserialize(serialize(obj), objects={DataClassFutureCustomEquality})
         assert is_equal(result, obj)
 
+    @given(obj=make_objects(dataclass_default_in_init_child=True))
+    def test_dataclass_default_in_init_child(self, *, obj: Any) -> None:
+        result = deserialize(
+            serialize(obj), objects={DataClassFutureDefaultInInitChild}
+        )
+        assert is_equal(result, obj)
+
     @given(obj=make_objects(dataclass_int=True))
     def test_dataclass_int(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassFutureInt})
@@ -264,6 +271,11 @@ class TestSerializeAndDeserialize:
         result = deserialize(serialize(obj), objects={DataClassFutureLiteral})
         assert is_equal(result, obj)
 
+    @given(obj=make_objects(dataclass_literal_nullable=True))
+    def test_dataclass_literal_nullable(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={DataClassFutureLiteralNullable})
+        assert is_equal(result, obj)
+
     @given(obj=make_objects(dataclass_nested=True))
     def test_dataclass_nested(self, *, obj: Any) -> None:
         ser = serialize(obj, globalns=globals())
@@ -276,6 +288,12 @@ class TestSerializeAndDeserialize:
                 DataClassFutureNestedOuterFirstOuter,
             },
         )
+        assert is_equal(result, obj)
+
+    @given(obj=make_objects(dataclass_nested=True))
+    def test_dataclass_none(self, *, obj: Any) -> None:
+        ser = serialize(obj, globalns=globals())
+        result = deserialize(ser, objects={DataClassFutureNone})
         assert is_equal(result, obj)
 
     @given(obj=builds(DataClassFutureNone))
