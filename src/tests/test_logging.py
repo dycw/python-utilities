@@ -574,15 +574,17 @@ class TestSizeAndTimeRotatingFileHandler:
                     p for p in files if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
                 )
 
-    def test_should_rollover(
+    def test_should_rollover_file_not_found(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
         logger = getLogger(str(tmp_path))
-        handler = SizeAndTimeRotatingFileHandler(filename=tmp_path.joinpath("log"))
+        path = tmp_path.joinpath("log")
+        handler = SizeAndTimeRotatingFileHandler(filename=path)
         logger.addHandler(handler)
         logger.setLevel(DEBUG)
         logger.info("message")
         record = one(caplog.records)
+        path.unlink()
         assert not handler._should_rollover(record)
 
 
