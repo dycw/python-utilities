@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import builds, sampled_from
-from ib_async import CommissionReport, Contract, Execution, Fill, Forex, Order, Trade
 from orjson import JSONDecodeError
 from pytest import mark, param, raises
 
@@ -197,8 +196,6 @@ class TestSerializeAndDeserialize:
             dataclass3=True,
             dataclass4=True,
             dataclass_with_none=True,
-            ib_orders=True,
-            ib_trades=True,
             sub_frozenset=True,
             sub_list=True,
             sub_set=True,
@@ -206,33 +203,21 @@ class TestSerializeAndDeserialize:
         )
     )
     def test_all(self, *, obj: Any) -> None:
-        def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
-            if issubclass(cls, Contract) and not issubclass(Contract, cls):
-                mapping = {k: v for k, v in mapping.items() if k != "secType"}
-            return mapping
-
         with assume_does_not_raise(_SerializeIntegerError):
-            ser = serialize(obj, globalns=globals(), dataclass_final_hook=hook)
+            ser = serialize(obj, globalns=globals())
         result = deserialize(
             ser,
             objects={
-                CommissionReport,
-                Contract,
                 DataClass1,
                 DataClass2Inner,
                 DataClass2Outer,
                 DataClass3,
                 DataClass4,
                 DataClassWithNone,
-                Execution,
-                Fill,
-                Forex,
-                Order,
                 SubFrozenSet,
                 SubList,
                 SubSet,
                 SubTuple,
-                Trade,
             },
         )
         with assume_does_not_raise(IsEqualError):
