@@ -379,7 +379,7 @@ class TestSerialize:
     def test_dataclass(self) -> None:
         obj = DataClassFutureNone(none=None)
         result = serialize(obj)
-        expected = b'{"[dc|DataClassWithNone]":{"none":"[none]"}}'
+        expected = b'{"[dc|DataClassFutureNone]":{"none":"[none]"}}'
         assert result == expected
 
     def test_dataclass_nested(self) -> None:
@@ -387,7 +387,7 @@ class TestSerialize:
             inner=DataClassFutureNestedOuterFirstInner(int_=0)
         )
         result = serialize(obj, globalns=globals())
-        expected = b'{"[dc|DataClassNestedWithFutureOuterThenInnerOuter]":{"inner":{"[dc|DataClassNestedWithFutureOuterThenInnerInner]":{"int_":0}}}}'
+        expected = b'{"[dc|DataClassNestedFutureOuterThenInnerOuter]":{"inner":{"[dc|DataClassNestedFutureOuterThenInnerInner]":{"int_":0}}}}'
         assert result == expected
 
     def test_dataclass_hook_main(self) -> None:
