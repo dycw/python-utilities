@@ -711,11 +711,7 @@ class TestLocalDateTimes:
     @given(data=data(), min_value=datetimes(), max_value=datetimes())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
-        self,
-        *,
-        data: DataObject,
-        min_value: dt.datetime,
-        max_value: dt.datetime,
+        self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             datetime = data.draw(

@@ -1510,18 +1510,21 @@ def zoned_datetimes(
     else:
         with assume_does_not_raise(OverflowError, match="date value out of range"):
             max_value_ = max_value_.astimezone(time_zone_)
-    strategy = datetimes(
-        min_value=min_value_.replace(tzinfo=None),
-        max_value=max_value_.replace(tzinfo=None),
-    )
-    datetime = draw(strategy).replace(tzinfo=time_zone_)
-    if round_ is not None:
-        if timedelta is None:
-            raise ZonedDateTimesError(round_=round_)
-        datetime = round_datetime(
-            datetime, timedelta, mode=round_, rel_tol=rel_tol, abs_tol=abs_tol
+    try:
+        datetime = draw(
+            local_datetimes(
+                min_value=min_value_.replace(tzinfo=None),
+                max_value=min_value_.replace(tzinfo=None),
+                round_=round_,
+                timedelta=timedelta,
+                rel_tol=rel_tol,
+                abs_tol=abs_tol,
+            )
         )
-        _ = assume(min_value_ <= datetime <= max_value_)
+    except LocalDateTimesError as error:
+        raise ZonedDateTimesError(round_=error.round_) from None
+    datetime = datetime.replace(tzinfo=time_zone_)
+    _ = assume(min_value_ <= datetime <= max_value_)
     if valid:
         with assume_does_not_raise(  # skipif-ci-and-windows
             CheckValidZonedDateimeError

@@ -86,8 +86,6 @@ from utilities.datetime import (
     datetime_utc,
     days_since_epoch,
     days_since_epoch_to_date,
-    drop_microseconds,
-    drop_milli_and_microseconds,
     ensure_month,
     format_datetime_local_and_utc,
     get_half_years,
@@ -141,7 +139,7 @@ from utilities.hypothesis import (
     text_clean,
     zoned_datetimes,
 )
-from utilities.math import MAX_INT32, MIN_INT32, is_integral, round_, round_to_float
+from utilities.math import MAX_INT32, MIN_INT32, is_integral, round_to_float
 from utilities.zoneinfo import UTC, HongKong, Tokyo
 
 if TYPE_CHECKING:
@@ -561,21 +559,6 @@ class TestDaysSinceEpoch:
         days = days_since_epoch(date)
         result = days_since_epoch_to_date(days)
         assert result == date
-
-
-class TestDropMicroseconds:
-    @given(datetime=datetimes())
-    def test_main(self, *, datetime: dt.datetime) -> None:
-        result = drop_microseconds(datetime)
-        _, remainder = divmod(result.microsecond, _MICROSECONDS_PER_MILLISECOND)
-        assert remainder == 0
-
-
-class TestDropMilliAndMicroseconds:
-    @given(datetime=datetimes())
-    def test_main(self, *, datetime: dt.datetime) -> None:
-        result = drop_milli_and_microseconds(datetime)
-        assert result.microsecond == 0
 
 
 class TestEpoch:

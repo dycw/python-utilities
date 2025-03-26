@@ -29,17 +29,16 @@ from utilities.datetime import (
     DAY,
     MICROSECOND,
     SECOND,
-    drop_milli_and_microseconds,
     parse_two_digit_year,
     serialize_compact,
 )
 from utilities.hypothesis import (
     assume_does_not_raise,
     datetime_durations,
+    local_datetimes,
     timedeltas_2w,
     zoned_datetimes,
 )
-from utilities.math import round_
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
@@ -196,7 +195,7 @@ class TestParseAndSerializeLocalDateTime:
         result = parse_local_datetime(serialized)
         assert result == datetime
 
-    @given(datetime=datetimes().map())
+    @given(datetime=local_datetimes(round_="standard", timedelta=SECOND))
     def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime) -> None:
         assert datetime.microsecond == 0
         serialized = serialize_local_datetime(datetime.replace(microsecond=0))
