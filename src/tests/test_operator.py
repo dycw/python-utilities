@@ -101,6 +101,12 @@ def base_objects(
         base |= zoned_datetimes()
     else:
         base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
+    if dataclass_nested:
+        base |= builds(DataClassNestedWithFutureInnerThenOuterOuter).filter(
+            lambda outer: _is_int64(outer.inner.int_)
+        ) | builds(DataClassNestedWithFutureOuterThenInnerOuter).filter(
+            lambda outer: _is_int64(outer.inner.int_)
+        )
     if dataclass_with_custom_equality:
         base |= builds(DataClassWithCustomEquality)
     if dataclass_with_int:
@@ -112,12 +118,6 @@ def base_objects(
     if dataclass_with_literal_nullable:
         base |= builds(
             DataClassWithLiteralNullable, truth=sampled_from(["true", "false"]) | none()
-        )
-    if dataclass_nested:
-        base |= builds(DataClassNestedWithFutureInnerThenOuterOuter).filter(
-            lambda outer: _is_int64(outer.inner.int_)
-        ) | builds(DataClassNestedWithFutureOuterThenInnerOuter).filter(
-            lambda outer: _is_int64(outer.inner.int_)
         )
     if dataclass_with_none:
         base |= builds(DataClassWithNone)
