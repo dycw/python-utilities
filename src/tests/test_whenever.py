@@ -197,14 +197,14 @@ class TestParseAndSerializeLocalDateTime:
         assert result == datetime
 
     @given(datetime=local_datetimes(round_="standard", timedelta=SECOND))
-    def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime) -> None:
+    def test_compact_no_microseconds(self, *, datetime: dt.datetime) -> None:
         assert datetime.microsecond == 0
         serialized = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
         result = parse_local_datetime(serialized)
         assert result == datetime
 
     @given(datetime=datetimes())
-    def test_yyyymmdd_hhmmss_ffffff(self, *, datetime: dt.datetime) -> None:
+    def test_compact_with_microseconds(self, *, datetime: dt.datetime) -> None:
         _ = assume(datetime.microsecond != 0)
         serialized = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S.%f"))
         result = parse_local_datetime(serialized)
@@ -356,7 +356,7 @@ class TestParseAndSerializeZonedDateTime:
         )
     )
     @SKIPIF_CI_AND_WINDOWS
-    def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime) -> None:
+    def test_compact_no_microseconds(self, *, datetime: dt.datetime) -> None:
         assert datetime.microsecond == 0
         part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
         assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
@@ -371,7 +371,7 @@ class TestParseAndSerializeZonedDateTime:
         )
     )
     @SKIPIF_CI_AND_WINDOWS
-    def test_yyyymmdd_hhmmss_ffffff(self, *, datetime: dt.datetime) -> None:
+    def test_compact_with_microseconds(self, *, datetime: dt.datetime) -> None:
         _ = assume(datetime.microsecond != 0)
         part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S.%f"))
         assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
