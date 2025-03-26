@@ -299,7 +299,11 @@ class TestRotatingLogFile:
         file = _RotatingLogFile(directory=root, stem="log", suffix=".txt", index=index)
         assert file.path == root.joinpath(f"log.{index}.txt")
 
-    @given(root=temp_paths(), index=integers(min_value=1), end=datetimes())
+    @given(
+        root=temp_paths(),
+        index=integers(min_value=1),
+        end=datetimes().map(lambda d: round_datetime(d, SECOND)),
+    )
     def test_path_with_index_and_end(
         self, *, root: Path, index: int, end: dt.datetime
     ) -> None:
