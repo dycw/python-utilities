@@ -344,7 +344,7 @@ class _Rotation:
     def rotate(self) -> None:
         try:
             from utilities.atomicwrites import writer
-        except ModuleNotFoundError:
+        except ModuleNotFoundError:  # pragma: no cover
             move(self.file.path, self.destination)
         else:
             with writer(self.destination) as tmp_path:
