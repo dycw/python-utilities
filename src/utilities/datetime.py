@@ -387,21 +387,6 @@ def days_since_epoch_to_date(days: int, /) -> dt.date:
 ##
 
 
-def drop_microseconds(datetime: dt.datetime, /) -> dt.datetime:
-    """Drop the microseconds of a datetime object."""
-    milliseconds, _ = divmod(datetime.microsecond, _MICROSECONDS_PER_MILLISECOND)
-    microseconds = _MICROSECONDS_PER_MILLISECOND * milliseconds
-    return datetime.replace(microsecond=microseconds)
-
-
-def drop_milli_and_microseconds(datetime: dt.datetime, /) -> dt.datetime:
-    """Drop the milliseconds & microseconds of a datetime object."""
-    return datetime.replace(microsecond=0)
-
-
-##
-
-
 def ensure_month(month: Month | str, /) -> Month:
     """Ensure the object is a month."""
     if isinstance(month, Month):
@@ -1227,8 +1212,6 @@ __all__ = [
     "datetime_utc",
     "days_since_epoch",
     "days_since_epoch_to_date",
-    "drop_microseconds",
-    "drop_milli_and_microseconds",
     "ensure_month",
     "format_datetime_local_and_utc",
     "get_half_years",
