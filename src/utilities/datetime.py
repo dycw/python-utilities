@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from contextlib import suppress
 from dataclasses import dataclass, replace
 from re import search, sub
 from typing import (
@@ -779,30 +780,6 @@ MAX_MONTH = Month(dt.date.max.year, dt.date.max.month)
 ##
 
 
-def parse_month(month: str, /) -> Month:
-    """Parse a string into a month."""
-    for fmt in ["%Y-%m", "%Y%m", "%Y %m"]:
-        try:
-            date = dt.datetime.strptime(month, fmt).replace(tzinfo=UTC).date()
-        except ValueError:
-            pass
-        else:
-            return Month(date.year, date.month)
-    raise ParseMonthError(month=month)
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseMonthError(Exception):
-    month: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse month; got {self.month!r}"
-
-
-##
-
-
 _TWO_DIGIT_YEAR_MIN = 1969
 _TWO_DIGIT_YEAR_MAX = _TWO_DIGIT_YEAR_MIN + 99
 MIN_DATE_TWO_DIGIT_YEAR = dt.date(
@@ -916,9 +893,82 @@ def _round_to_weekday(
 ##
 
 
+def serialize_compact_iso(date_or_datetime: DateOrDateTime, /) -> str:
+    """Serialize a date/datetime using a compact ISO format."""
+    match date_or_datetime:
+        case dt.datetime() as datetime:
+            if datetime.tzinfo is not None:
+                raise SerializeCompactISOError(datetime=datetime)
+            if datetime.microsecond == 0:
+                format_ = "%Y%m%dT%H%M%S"
+            else:
+                format_ = "%Y%m%dT%H%M%S.%f"
+        case dt.date():
+            format_ = "%Y%m%d"
+        case _ as never:
+            assert_never(never)
+    return date_or_datetime.strftime(maybe_sub_pct_y(format_))
+
+
+@dataclass(kw_only=True, slots=True)
+class SerializeCompactISOError(Exception):
+    datetime: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to serialize zoned datetime {self.datetime}"
+
+
+def parse_compact_iso(text: str, /) -> dt.date:
+    """Construct a date/datetime from a compact ISO string."""
+    try:
+        datetime = dt.datetime.strptime(text, maybe_sub_pct_y("%Y%m%d"))  # noqa: DTZ007
+    except ValueError:
+        pass
+    else:
+        return datetime.date()
+    for format_ in ["%Y%m%dT%H%M%S", "%Y%m%dT%H%M%S.%f"]:
+        with suppress(ValueError):
+            return dt.datetime.strptime(text, maybe_sub_pct_y(format_))  # noqa: DTZ007
+    raise ParseCompactISOError(text=text)
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseCompactISOError(Exception):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse {self.text!r} into a date/datetime"
+
+
+##
+
+
 def serialize_month(month: Month, /) -> str:
     """Serialize a month."""
     return f"{month.year:04}-{month.month:02}"
+
+
+def parse_month(month: str, /) -> Month:
+    """Parse a string into a month."""
+    for fmt in ["%Y-%m", "%Y%m", "%Y %m"]:
+        try:
+            date = dt.datetime.strptime(month, fmt).replace(tzinfo=UTC).date()
+        except ValueError:
+            pass
+        else:
+            return Month(date.year, date.month)
+    raise ParseMonthError(month=month)
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseMonthError(Exception):
+    month: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse month; got {self.month!r}"
 
 
 ##
@@ -1137,6 +1187,7 @@ __all__ = [
     "MillisecondsSinceEpochError",
     "Month",
     "MonthError",
+    "ParseCompactISOError",
     "ParseMonthError",
     "SubDurationError",
     "TimedeltaToMillisecondsError",
@@ -1189,11 +1240,13 @@ __all__ = [
     "milliseconds_since_epoch",
     "milliseconds_since_epoch_to_datetime",
     "milliseconds_to_timedelta",
+    "parse_compact_iso",
     "parse_month",
     "parse_two_digit_year",
     "round_datetime",
     "round_to_next_weekday",
     "round_to_prev_weekday",
+    "serialize_compact_iso",
     "serialize_month",
     "sub_duration",
     "timedelta_since_epoch",
