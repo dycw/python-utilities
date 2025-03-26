@@ -39,7 +39,7 @@ from typing import (
 
 from utilities.atomicwrites import writer
 from utilities.dataclasses import replace_non_sentinel
-from utilities.datetime import get_now_local, maybe_sub_pct_y
+from utilities.datetime import get_now_local, maybe_sub_pct_y, parse_date_compact_iso
 from utilities.errors import ImpossibleCaseError
 from utilities.git import MASTER, get_repo_root
 from utilities.iterables import OneEmptyError, one
@@ -277,7 +277,7 @@ class _RotatingLogFile:
                 stem=stem,
                 suffix=suffix,
                 index=int(index),
-                end=dt.datetime.strptime(end, maybe_sub_pct_y("%Y%m%dT%H%M%S")),  # noqa: DTZ007
+                end=parse_date_compact_iso(end),
             )
         try:
             ((index, start, end),) = patterns.pattern3.findall(path.name)
@@ -289,8 +289,8 @@ class _RotatingLogFile:
                 stem=stem,
                 suffix=suffix,
                 index=int(index),
-                start=dt.datetime.strptime(start, "%Y%m%dT%H%M%S"),  # noqa: DTZ007
-                end=dt.datetime.strptime(end, "%Y%m%dT%H%M%S"),  # noqa: DTZ007
+                start=parse_date_compact_iso(start),
+                end=parse_date_compact_iso(end),
             )
 
     @cached_property

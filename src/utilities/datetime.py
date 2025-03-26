@@ -919,27 +919,39 @@ class SerializeCompactISOError(Exception):
         return f"Unable to serialize zoned datetime {self.datetime}"
 
 
-def parse_compact_iso(text: str, /) -> dt.date:
-    """Construct a date/datetime from a compact ISO string."""
+def parse_date_compact_iso(text: str, /) -> dt.date:
+    """Parse a compact ISO string into a date."""
     try:
         datetime = dt.datetime.strptime(text, maybe_sub_pct_y("%Y%m%d"))  # noqa: DTZ007
     except ValueError:
-        pass
-    else:
-        return datetime.date()
-    for format_ in ["%Y%m%dT%H%M%S", "%Y%m%dT%H%M%S.%f"]:
-        with suppress(ValueError):
-            return dt.datetime.strptime(text, maybe_sub_pct_y(format_))  # noqa: DTZ007
-    raise ParseCompactISOError(text=text)
+        raise ParseDateCompactISOError(text=text) from None
+    return datetime.date()
 
 
 @dataclass(kw_only=True, slots=True)
-class ParseCompactISOError(Exception):
+class ParseDateCompactISOError(Exception):
     text: str
 
     @override
     def __str__(self) -> str:
-        return f"Unable to parse {self.text!r} into a date/datetime"
+        return f"Unable to parse {self.text!r} into a date"
+
+
+def parse_datetime_compact_iso(text: str, /) -> dt.datetime:
+    """Parse a compact ISO string into a datetime."""
+    for format_ in ["%Y%m%dT%H%M%S", "%Y%m%dT%H%M%S.%f"]:
+        with suppress(ValueError):
+            return dt.datetime.strptime(text, maybe_sub_pct_y(format_))  # noqa: DTZ007
+    raise ParseDateTimeCompactISOError(text=text)
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseDateTimeCompactISOError(Exception):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse {self.text!r} into a datetime"
 
 
 ##
@@ -1187,7 +1199,8 @@ __all__ = [
     "MillisecondsSinceEpochError",
     "Month",
     "MonthError",
-    "ParseCompactISOError",
+    "ParseDateCompactISOError",
+    "ParseDateTimeCompactISOError",
     "ParseMonthError",
     "SerializeCompactISOError",
     "SubDurationError",
@@ -1241,7 +1254,8 @@ __all__ = [
     "milliseconds_since_epoch",
     "milliseconds_since_epoch_to_datetime",
     "milliseconds_to_timedelta",
-    "parse_compact_iso",
+    "parse_date_compact_iso",
+    "parse_datetime_compact_iso",
     "parse_month",
     "parse_two_digit_year",
     "round_datetime",
