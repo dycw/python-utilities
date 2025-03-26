@@ -98,7 +98,7 @@ def serialize(
     before: Callable[[Any], Any] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-    dataclass_final_hook: _DataclassHook | None = None,
+    dataclass_hook: _DataclassHook | None = None,
     dataclass_defaults: bool = False,
 ) -> bytes:
     """Serialize an object."""
@@ -107,7 +107,7 @@ def serialize(
         before=before,
         globalns=globalns,
         localns=localns,
-        dataclass_final_hook=dataclass_final_hook,
+        dataclass_hook=dataclass_hook,
         dataclass_defaults=dataclass_defaults,
     )
     return dumps(
@@ -123,7 +123,7 @@ def _pre_process(
     before: Callable[[Any], Any] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-    dataclass_final_hook: _DataclassHook | None = None,
+    dataclass_hook: _DataclassHook | None = None,
     dataclass_defaults: bool = False,
     error: _ErrorMode = "raise",
 ) -> Any:
@@ -134,7 +134,7 @@ def _pre_process(
         before=before,
         globalns=globalns,
         localns=localns,
-        dataclass_final_hook=dataclass_final_hook,
+        dataclass_hook=dataclass_hook,
         dataclass_defaults=dataclass_defaults,
         error=error,
     )
@@ -183,7 +183,7 @@ def _pre_process(
                 obj,
                 globalns=globalns,
                 localns=localns,
-                final=partial(_dataclass_final, hook=dataclass_final_hook),
+                final=partial(_dataclass_final, hook=dataclass_hook),
                 defaults=dataclass_defaults,
             )
             return pre(obj_as_dict)
@@ -201,7 +201,7 @@ def _pre_process(
                 before=before,
                 globalns=globalns,
                 localns=localns,
-                dataclass_final_hook=dataclass_final_hook,
+                dataclass_hook=dataclass_hook,
             )
         case list():
             return _pre_process_container(
@@ -211,7 +211,7 @@ def _pre_process(
                 before=before,
                 globalns=globalns,
                 localns=localns,
-                dataclass_final_hook=dataclass_final_hook,
+                dataclass_hook=dataclass_hook,
             )
         case set():
             return _pre_process_container(
@@ -221,7 +221,7 @@ def _pre_process(
                 before=before,
                 globalns=globalns,
                 localns=localns,
-                dataclass_final_hook=dataclass_final_hook,
+                dataclass_hook=dataclass_hook,
             )
         case tuple():
             return _pre_process_container(
@@ -231,7 +231,7 @@ def _pre_process(
                 before=before,
                 globalns=globalns,
                 localns=localns,
-                dataclass_final_hook=dataclass_final_hook,
+                dataclass_hook=dataclass_hook,
             )
         # other
         case _:
@@ -250,7 +250,7 @@ def _pre_process_container(
     before: Callable[[Any], Any] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-    dataclass_final_hook: _DataclassHook | None = None,
+    dataclass_hook: _DataclassHook | None = None,
     dataclass_include_defaults: bool = False,
 ) -> Any:
     values = [
@@ -259,7 +259,7 @@ def _pre_process_container(
             before=before,
             globalns=globalns,
             localns=localns,
-            dataclass_final_hook=dataclass_final_hook,
+            dataclass_hook=dataclass_hook,
             dataclass_defaults=dataclass_include_defaults,
         )
         for o in obj
@@ -274,11 +274,7 @@ def _pre_process_container(
 
 
 def _dataclass_final(
-    cls: type[Dataclass],
-    mapping: StrMapping,
-    /,
-    *,
-    hook: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
+    cls: type[Dataclass], mapping: StrMapping, /, *, hook: _DataclassHook | None = None
 ) -> StrMapping:
     if hook is not None:
         mapping = hook(cls, mapping)
@@ -689,7 +685,7 @@ class OrjsonFormatter(Formatter):
             before=self._before,
             globalns=self._globalns,
             localns=self._localns,
-            dataclass_final_hook=self._dataclass_final_hook,
+            dataclass_hook=self._dataclass_final_hook,
         ).decode()
 
 

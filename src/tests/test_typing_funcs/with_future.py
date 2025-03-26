@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -10,6 +10,17 @@ if TYPE_CHECKING:
     from uuid import UUID
 
     from utilities.sentinel import Sentinel
+
+
+@dataclass(kw_only=True, slots=True)
+class DataClassDefaultInInitParent:
+    int_: int
+
+
+@dataclass(kw_only=True, slots=True)
+class DataClassDefaultInInitChild(DataClassDefaultInInitParent):
+    def __init__(self) -> None:
+        DataClassDefaultInInitParent.__init__(self, int_=0)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -38,7 +49,25 @@ class DataClassWithDate:
 
 
 @dataclass(kw_only=True, slots=True)
+class DataClassWithCustomEquality:
+    int_: int = 0
+
+    @override
+    def __eq__(self, other: object) -> bool:
+        return self is other
+
+    @override
+    def __hash__(self) -> int:
+        return id(self)
+
+
+@dataclass(kw_only=True, slots=True)
 class DataClassWithInt:
+    int_: int
+
+
+@dataclass(kw_only=True, slots=True)
+class DataClassWithIntDefault:
     int_: int
 
 

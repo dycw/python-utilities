@@ -14,11 +14,6 @@ from pytest import mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from tests.test_operator import (
-    DataClass1,
-    DataClass2Inner,
-    DataClass2Outer,
-    DataClass3,
-    DataClass4,
     SubFrozenSet,
     SubList,
     SubSet,
@@ -26,7 +21,20 @@ from tests.test_operator import (
     TruthEnum,
     make_objects,
 )
-from tests.test_typing_funcs.with_future import DataClassWithNone
+from tests.test_typing_funcs.with_future import (
+    DataClassDefaultInInitChild,
+    DataClassDefaultInInitParent,
+    DataClassNestedWithFutureInnerThenOuterInner,
+    DataClassNestedWithFutureInnerThenOuterOuter,
+    DataClassNestedWithFutureOuterThenInnerInner,
+    DataClassNestedWithFutureOuterThenInnerOuter,
+    DataClassWithCustomEquality,
+    DataClassWithInt,
+    DataClassWithIntDefault,
+    DataClassWithLiteral,
+    DataClassWithLiteralNullable,
+    DataClassWithNone,
+)
 from utilities.datetime import SECOND, get_now
 from utilities.hypothesis import assume_does_not_raise, text_printable
 from utilities.iterables import one
@@ -191,11 +199,14 @@ class TestOrjsonFormatter:
 class TestSerializeAndDeserialize:
     @given(
         obj=make_objects(
-            dataclass1=True,
-            dataclass2=True,
-            dataclass3=True,
-            dataclass4=True,
+            dataclass_nested=True,
+            dataclass_with_custom_equality=True,
+            dataclass_with_int=True,
+            dataclass_with_int_default=True,
+            dataclass_with_literal=True,
+            dataclass_with_literal_nullable=True,
             dataclass_with_none=True,
+            enum=True,
             sub_frozenset=True,
             sub_list=True,
             sub_set=True,
@@ -208,16 +219,21 @@ class TestSerializeAndDeserialize:
         result = deserialize(
             ser,
             objects={
-                DataClass1,
-                DataClass2Inner,
-                DataClass2Outer,
-                DataClass3,
-                DataClass4,
+                DataClassNestedWithFutureInnerThenOuterInner,
+                DataClassNestedWithFutureInnerThenOuterOuter,
+                DataClassNestedWithFutureOuterThenInnerInner,
+                DataClassNestedWithFutureOuterThenInnerOuter,
+                DataClassWithCustomEquality,
+                DataClassWithInt,
+                DataClassWithIntDefault,
+                DataClassWithLiteral,
+                DataClassWithLiteralNullable,
                 DataClassWithNone,
                 SubFrozenSet,
                 SubList,
                 SubSet,
                 SubTuple,
+                TruthEnum,
             },
         )
         with assume_does_not_raise(IsEqualError):
@@ -229,36 +245,57 @@ class TestSerializeAndDeserialize:
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass1=True))
-    def test_dataclass(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={DataClass1})
-        with assume_does_not_raise(IsEqualError):
-            assert is_equal(result, obj)
-
-    @given(obj=make_objects(dataclass2=True))
+    @given(obj=make_objects(dataclass_nested=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_nested(self, *, obj: Any) -> None:
         ser = serialize(obj, globalns=globals())
-        result = deserialize(ser, objects={DataClass2Inner, DataClass2Outer})
+        result = deserialize(
+            ser,
+            objects={
+                DataClassNestedWithFutureInnerThenOuterInner,
+                DataClassNestedWithFutureInnerThenOuterOuter,
+                DataClassNestedWithFutureOuterThenInnerInner,
+                DataClassNestedWithFutureOuterThenInnerOuter,
+            },
+        )
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass3=True))
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_dataclass_lit(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={DataClass3})
+    @given(obj=make_objects(dataclass_with_custom_equality=True))
+    # @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_dataclass_with_custom_equality(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={DataClassWithCustomEquality})
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass4=True))
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_dataclass_custom_eq(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={DataClass4})
+    @given(obj=make_objects(dataclass_with_int=True))
+    def test_dataclass_with_int(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={DataClassWithInt})
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
-    @given(obj=builds(DataClass1))
-    def test_dataclass_no_objects_error(self, *, obj: DataClass1) -> None:
+    @given(obj=make_objects(dataclass_with_int_default=True))
+    def test_dataclass_with_int_default(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={DataClassWithIntDefault})
+        with assume_does_not_raise(IsEqualError):
+            assert is_equal(result, obj)
+
+    @given(obj=make_objects(dataclass_with_literal=True))
+    # @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_dataclass_with_literal(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={DataClassWithLiteral})
+        with assume_does_not_raise(IsEqualError):
+            assert is_equal(result, obj)
+
+    @given(obj=make_objects(dataclass_with_literal_nullable=True))
+    # @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_dataclass_with_literal_nullable(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={DataClassWithLiteralNullable})
+        with assume_does_not_raise(IsEqualError):
+            assert is_equal(result, obj)
+
+    @given(obj=builds(DataClassWithNone))
+    def test_dataclass_no_objects_error(self, *, obj: DataClassWithNone) -> None:
         ser = serialize(obj)
         with raises(
             _DeserializeNoObjectsError,
@@ -266,8 +303,8 @@ class TestSerializeAndDeserialize:
         ):
             _ = deserialize(ser)
 
-    @given(obj=builds(DataClass1))
-    def test_dataclass_empty_error(self, *, obj: DataClass1) -> None:
+    @given(obj=builds(DataClassWithNone))
+    def test_dataclass_empty_error(self, *, obj: DataClassWithNone) -> None:
         ser = serialize(obj)
         with raises(
             _DeserializeObjectNotFoundError,
@@ -276,27 +313,20 @@ class TestSerializeAndDeserialize:
             _ = deserialize(ser, objects=set())
 
     def test_deserialize_hook(self) -> None:
-        @dataclass(kw_only=True)
-        class Parent:
-            x: int
+        obj = DataClassDefaultInInitChild()
+        ser = serialize(obj)
+        with raises(TypeError, match="got an unexpected keyword argument 'int_'"):
+            _ = deserialize(ser, objects={DataClassDefaultInInitChild})
 
-        @dataclass(kw_only=True)
-        class Zero(Parent):
-            def __init__(self) -> None:
-                Parent.__init__(self, x=0)
-
-        zero = Zero()
-        ser = serialize(zero)
-        with raises(TypeError, match="got an unexpected keyword argument 'x'"):
-            _ = deserialize(ser, objects={Zero})
-
-        def hook(cls: type[Any], mapping: StrMapping, /) -> StrMapping:
-            if issubclass(cls, Zero):
-                mapping = {k: v for k, v in mapping.items() if k != "x"}
+        def hook(cls: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
+            if issubclass(cls, DataClassDefaultInInitParent):
+                mapping = {k: v for k, v in mapping.items() if k != "int_"}
             return mapping
 
-        result = deserialize(ser, dataclass_hook=hook, objects={Zero})
-        assert result == zero
+        result = deserialize(
+            ser, dataclass_hook=hook, objects={DataClassDefaultInInitChild}
+        )
+        assert result == obj
 
     @given(obj=make_objects(enum=True))
     def test_enum(self, *, obj: Any) -> None:
@@ -367,25 +397,29 @@ class TestSerialize:
         assert result == expected
 
     def test_dataclass(self) -> None:
-        obj = DataClass1()
+        obj = DataClassWithNone(none=None)
         result = serialize(obj)
-        expected = b'{"[dc|DataClass1]":{}}'
+        expected = b'{"[dc|DataClassWithNone]":{"none":"[none]"}}'
         assert result == expected
 
     def test_dataclass_nested(self) -> None:
-        obj = DataClass2Outer(inner=DataClass2Inner(x=0))
+        obj = DataClassNestedWithFutureOuterThenInnerOuter(
+            inner=DataClassNestedWithFutureOuterThenInnerInner(int_=0)
+        )
         result = serialize(obj, globalns=globals())
-        expected = b'{"[dc|DataClass2Outer]":{"inner":{"[dc|DataClass2Inner]":{}}}}'
+        expected = b'{"[dc|DataClassNestedWithFutureOuterThenInnerOuter]":{"inner":{"[dc|DataClassNestedWithFutureOuterThenInnerInner]":{"int_":0}}}}'
         assert result == expected
 
     def test_dataclass_hook_main(self) -> None:
-        obj = DataClass1()
+        obj = DataClassDefaultInInitChild()
 
-        def hook(_: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
-            return {k: v for k, v in mapping.items() if v >= 0}
+        def hook(cls: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
+            if issubclass(cls, DataClassDefaultInInitParent):
+                mapping = {k: v for k, v in mapping.items() if k != "int_"}
+            return mapping
 
-        result = serialize(obj, dataclass_final_hook=hook)
-        expected = b'{"[dc|DataClass1]":{}}'
+        result = serialize(obj, dataclass_hook=hook)
+        expected = b'{"[dc|DataClassDefaultInInitChild]":{}}'
         assert result == expected
 
     @given(x=sampled_from([MIN_INT64 - 1, MAX_INT64 + 1]))
