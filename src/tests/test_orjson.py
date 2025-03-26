@@ -399,7 +399,7 @@ class TestSerialize:
             return mapping
 
         result = serialize(obj, dataclass_hook=hook)
-        expected = b'{"[dc|DataClassDefaultInInitChild]":{}}'
+        expected = b'{"[dc|DataClassFutureDefaultInInitChild]":{}}'
         assert result == expected
 
     @given(x=sampled_from([MIN_INT64 - 1, MAX_INT64 + 1]))
