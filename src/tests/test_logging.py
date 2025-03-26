@@ -164,9 +164,8 @@ class TestComputeRolloverActions:
 
         sleep(1)
         tmp_path.joinpath("log.txt").touch()
-        tmp_path.joinpath(
-            f"log.99__{serialize_compact(NOW_UTC)}__{serialize_compact(NOW_UTC)}.txt"
-        ).touch()
+        now = serialize_compact(NOW_UTC.replace(microsecond=0, tzinfo=None))
+        tmp_path.joinpath(f"log.99__{now}__{now}.txt").touch()
         actions = _compute_rollover_actions(tmp_path, "log", ".txt")
         assert len(actions.deletions) == 2
         assert len(actions.rotations) == 1
