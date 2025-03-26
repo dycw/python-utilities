@@ -922,14 +922,14 @@ class SerializeCompactISOError(Exception):
 def parse_compact_iso(text: str, /) -> dt.date:
     """Construct a date/datetime from a compact ISO string."""
     try:
-        datetime = dt.datetime.strptime(text, maybe_sub_pct_y("%Y%m%d"))  # noqa: DTZ007
+        datetime = dt.datetime.strptime(text, "%Y%m%d")  # noqa: DTZ007
     except ValueError:
         pass
     else:
         return datetime.date()
     for format_ in ["%Y%m%dT%H%M%S", "%Y%m%dT%H%M%S.%f"]:
         with suppress(ValueError):
-            return dt.datetime.strptime(text, maybe_sub_pct_y(format_))  # noqa: DTZ007
+            return dt.datetime.strptime(text, format_)  # noqa: DTZ007
     raise ParseCompactISOError(text=text)
 
 
