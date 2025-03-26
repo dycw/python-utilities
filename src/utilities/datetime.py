@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-from contextlib import suppress
 from dataclasses import dataclass, replace
 from re import search, sub
 from typing import (
@@ -926,10 +925,10 @@ def parse_datetime_compact(
 ) -> dt.datetime:
     """Parse a compact string into a datetime."""
     time_zone = ensure_time_zone(time_zone)
-    for fmt in ["%Y%m%dT%H%M%S", "%Y%m%dT%H%M%S.%f"]:
-        with suppress(ValueError):
-            return dt.datetime.strptime(text, fmt).replace(tzinfo=time_zone)
-    raise ParseDateTimeCompactError(text=text)
+    try:
+        return dt.datetime.strptime(text, "%Y%m%dT%H%M%S").replace(tzinfo=time_zone)
+    except ValueError:
+        raise ParseDateTimeCompactError(text=text) from None
 
 
 @dataclass(kw_only=True, slots=True)
