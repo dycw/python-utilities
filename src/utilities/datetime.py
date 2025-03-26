@@ -922,12 +922,13 @@ class ParseDateCompactError(Exception):
 
 
 def parse_datetime_compact(
-    text: str, /, *, timezone: ZoneInfoLike = UTC
+    text: str, /, *, time_zone: ZoneInfoLike = UTC
 ) -> dt.datetime:
     """Parse a compact string into a datetime."""
+    time_zone = ensure_time_zone(time_zone)
     for fmt in ["%Y%m%dT%H%M%S", "%Y%m%dT%H%M%S.%f"]:
         with suppress(ValueError):
-            return dt.datetime.strptime(text, fmt).replace(tzinfo=timezone)
+            return dt.datetime.strptime(text, fmt).replace(tzinfo=time_zone)
     raise ParseDateTimeCompactError(text=text)
 
 
