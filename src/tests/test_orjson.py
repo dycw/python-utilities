@@ -250,9 +250,33 @@ class TestSerializeAndDeserialize:
         assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass_default_in_init_child=True))
-    def test_dataclass_default_in_init_child(self, *, obj: Any) -> None:
+    def test_dataclass_default_in_init_child_hook_in_serialize(
+        self, *, obj: Any
+    ) -> None:
+        def hook(cls: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
+            if issubclass(cls, DataClassFutureDefaultInInitParent):
+                mapping = {k: v for k, v in mapping.items() if k != "int_"}
+            return mapping
+
         result = deserialize(
-            serialize(obj), objects={DataClassFutureDefaultInInitChild}
+            serialize(obj, dataclass_hook=hook),
+            objects={DataClassFutureDefaultInInitChild},
+        )
+        assert is_equal(result, obj)
+
+    @given(obj=make_objects(dataclass_default_in_init_child=True))
+    def test_dataclass_default_in_init_child_hook_in_deserialize(
+        self, *, obj: Any
+    ) -> None:
+        def hook(cls: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
+            if issubclass(cls, DataClassFutureDefaultInInitParent):
+                mapping = {k: v for k, v in mapping.items() if k != "int_"}
+            return mapping
+
+        result = deserialize(
+            serialize(obj),
+            dataclass_hook=hook,
+            objects={DataClassFutureDefaultInInitChild},
         )
         assert is_equal(result, obj)
 
