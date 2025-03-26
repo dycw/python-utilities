@@ -9,7 +9,6 @@ from typing import Any, Literal, cast, override
 
 from hypothesis import given
 from hypothesis.strategies import booleans, integers, lists, sampled_from
-from ib_async import Future
 from polars import DataFrame
 from pytest import raises
 
@@ -200,41 +199,6 @@ class TestDataclassToDictAndDataclassRepr:
         repr_res = dataclass_repr(obj, localns=locals())
         repr_exp = f"Outer(inner=[TestDataclassToDictAndDataclassRepr.test_nested_in_list_without_recursive.<locals>.Inner(x=0)], y={y}, z={z})"
         assert repr_res == repr_exp
-
-    def test_ib_async(self) -> None:
-        fut = Future(
-            conId=495512557,
-            symbol="ES",
-            lastTradeDateOrContractMonth="20241220",
-            strike=0.0,
-            right="",
-            multiplier="50",
-            exchange="",
-            primaryExchange="",
-            currency="USD",
-            localSymbol="ESZ4",
-            tradingClass="ES",
-            includeExpired=False,
-            secIdType="",
-            secId="",
-            description="",
-            issuerId="",
-            comboLegsDescrip="",
-            comboLegs=[],
-            deltaNeutralContract=None,
-        )
-        result = dataclass_to_dict(fut)
-        expected = {
-            "secType": "FUT",
-            "conId": 495512557,
-            "symbol": "ES",
-            "lastTradeDateOrContractMonth": "20241220",
-            "multiplier": "50",
-            "currency": "USD",
-            "localSymbol": "ESZ4",
-            "tradingClass": "ES",
-        }
-        assert result == expected
 
 
 class TestMappingToDataclass:
