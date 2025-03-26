@@ -218,6 +218,23 @@ class CheckDateNotDateTimeError(Exception):
 ##
 
 
+def compact_iso_format(date_or_datetime: dt.date, /) -> str:
+    """Compact ISO format."""
+    match date_or_datetime:
+        case dt.datetime() as datetime:
+            format = maybe_sub_pct_y("%Y%m%d")
+            if datetime.tzinfo is None:
+                return datetime - EPOCH_NAIVE
+            return datetime.astimezone(UTC) - EPOCH_UTC
+        case dt.date() as date:
+            return date - EPOCH_DATE
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
 def date_to_datetime(
     date: dt.date, /, *, time: dt.time | None = None, time_zone: ZoneInfoLike = UTC
 ) -> dt.datetime:

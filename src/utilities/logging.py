@@ -277,7 +277,7 @@ class _RotatingLogFile:
                 stem=stem,
                 suffix=suffix,
                 index=int(index),
-                end=dt.datetime.strptime(end, "%Y%m%dT%H%M%S"),  # noqa: DTZ007
+                end=dt.datetime.strptime(end, maybe_sub_pct_y("%Y%m%dT%H%M%S")),  # noqa: DTZ007
             )
         try:
             ((index, start, end),) = patterns.pattern3.findall(path.name)
