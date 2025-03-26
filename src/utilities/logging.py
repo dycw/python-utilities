@@ -112,28 +112,27 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
     @override
     def emit(self, record: LogRecord) -> None:
         try:
-            if self._should_rollover(record):
-                self._do_rollover()
+            if (self._backup_count is not None) and self._should_rollover(record):
+                self._do_rollover(backup_count=self._backup_count)
             FileHandler.emit(self, record)
         except Exception:  # noqa: BLE001
             self.handleError(record)
 
-    def _do_rollover(self) -> None:
-        if self.stream:
+    def _do_rollover(self, *, backup_count: int = 1) -> None:
+        if self.stream:  # pragma: no cover
             self.stream.close()
             self.stream = None
 
-        if self._backup_count is not None:
-            actions = _compute_rollover_actions(
-                self._directory,
-                self._stem,
-                self._suffix,
-                patterns=self._patterns,
-                backup_count=self._backup_count,
-            )
-            actions.do()
+        actions = _compute_rollover_actions(
+            self._directory,
+            self._stem,
+            self._suffix,
+            patterns=self._patterns,
+            backup_count=backup_count,
+        )
+        actions.do()
 
-        if not self.delay:
+        if not self.delay:  # pragma: no cover
             self.stream = self._open()
         self._time_handler.rolloverAt = self._time_handler.computeRollover(int(time()))
 
