@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from math import isclose
 from operator import eq, gt, lt
+from re import search
 from typing import TYPE_CHECKING, Any
 from zoneinfo import ZoneInfo
 
@@ -108,6 +109,7 @@ from utilities.datetime import (
     is_weekday,
     is_zero_time,
     is_zoned_datetime,
+    maybe_sub_pct_y,
     microseconds_since_epoch,
     microseconds_since_epoch_to_datetime,
     microseconds_to_timedelta,
@@ -136,6 +138,7 @@ from utilities.hypothesis import (
     int32s,
     months,
     pairs,
+    text_clean,
     zoned_datetimes,
 )
 from utilities.math import MAX_INT32, MIN_INT32, is_integral, round_to_float
@@ -766,6 +769,14 @@ class TestIsZonedDateTime:
     def test_main(self, *, obj: Any, expected: bool) -> None:
         result = is_zoned_datetime(obj)
         assert result is expected
+
+
+class TestMaybeSubPctY:
+    @given(text=text_clean())
+    def test_main(self, *, text: str) -> None:
+        result = maybe_sub_pct_y(text)
+        _ = assume(not search("%Y", result))
+        assert not search("%Y", result)
 
 
 class TestMicrosecondsOrMillisecondsSinceEpoch:
