@@ -651,56 +651,6 @@ class OrjsonFormatter(Formatter):
         ).decode()
 
 
-@dataclass(kw_only=True, slots=True)
-class OrjsonLogRecord:
-    """The log record as a dataclass."""
-
-    name: str
-    message: str
-    level: int
-    path_name: Path
-    line_num: int
-    datetime: dt.datetime
-    func_name: str | None = None
-    stack_info: str | None = None
-    extra: StrMapping | None = None
-    log_file: Path | None = None
-    log_file_line_num: int | None = None
-
-
-@dataclass(kw_only=True, slots=True)
-class GetLogRecordsOutput:
-    """A collection of outputs."""
-
-    path: Path
-    files: list[Path] = field(default_factory=list)
-    num_files: int = 0
-    num_files_ok: int = 0
-    num_files_error: int = 0
-    num_lines: int = 0
-    num_lines_ok: int = 0
-    num_lines_error: int = 0
-    records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
-    missing: set[str] = field(default_factory=set)
-    other_errors: list[Exception] = field(default_factory=list)
-
-    @property
-    def frac_files_ok(self) -> float:
-        return self.num_files_ok / self.num_files
-
-    @property
-    def frac_files_error(self) -> float:
-        return self.num_files_error / self.num_files
-
-    @property
-    def frac_lines_ok(self) -> float:
-        return self.num_lines_ok / self.num_lines
-
-    @property
-    def frac_lines_error(self) -> float:
-        return self.num_lines_error / self.num_lines
-
-
 def get_log_records(
     path: PathLike,
     /,
@@ -722,11 +672,12 @@ def get_log_records(
     return GetLogRecordsOutput(
         path=path,
         files=files,
-        num_files=sum(o.num_files for o in outputs),
-        num_files_ok=sum(o.num_files_ok for o in outputs),
-        num_files_error=sum(o.num_files_error for o in outputs),
+        num_files=len(outputs),
+        num_files_ok=sum(o.file_ok for o in outputs),
+        num_files_error=sum(not o.file_ok for o in outputs),
         num_lines=sum(o.num_lines for o in outputs),
         num_lines_ok=sum(o.num_lines_ok for o in outputs),
+        num_lines_blank=sum(o.num_lines_blank for o in outputs),
         num_lines_error=sum(o.num_lines_error for o in outputs),
         records=sorted(
             chain.from_iterable(o.records for o in outputs), key=lambda r: r.datetime
@@ -737,17 +688,58 @@ def get_log_records(
 
 
 @dataclass(kw_only=True, slots=True)
-class _GetLogRecordsOneOutput:
+class GetLogRecordsOutput:
+    """A collection of outputs."""
+
     path: Path
+    files: list[Path] = field(default_factory=list)
     num_files: int = 0
     num_files_ok: int = 0
     num_files_error: int = 0
     num_lines: int = 0
     num_lines_ok: int = 0
+    num_lines_blank: int = 0
     num_lines_error: int = 0
     records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
     missing: set[str] = field(default_factory=set)
-    other_errors: list[Exception] = field(default_factory=list, repr=False)
+    other_errors: list[Exception] = field(default_factory=list)
+
+    @property
+    def frac_files_ok(self) -> float:
+        return self.num_files_ok / self.num_files
+
+    @property
+    def frac_files_error(self) -> float:
+        return self.num_files_error / self.num_files
+
+    @property
+    def frac_lines_ok(self) -> float:
+        return self.num_lines_ok / self.num_lines
+
+    @property
+    def frac_lines_blank(self) -> float:
+        return self.num_lines_blank / self.num_lines
+
+    @property
+    def frac_lines_error(self) -> float:
+        return self.num_lines_error / self.num_lines
+
+
+@dataclass(kw_only=True, slots=True)
+class OrjsonLogRecord:
+    """The log record as a dataclass."""
+
+    name: str
+    message: str
+    level: int
+    path_name: Path
+    line_num: int
+    datetime: dt.datetime
+    func_name: str | None = None
+    stack_info: str | None = None
+    extra: StrMapping | None = None
+    log_file: Path | None = None
+    log_file_line_num: int | None = None
 
 
 def _get_log_records_one(
@@ -762,42 +754,58 @@ def _get_log_records_one(
         with path.open() as fh:
             lines = fh.readlines()
     except UnicodeDecodeError as error:  # skipif-ci-and-windows
-        return _GetLogRecordsOneOutput(
-            path=path, num_files=1, num_files_error=1, other_errors=[error]
-        )
-    num_lines_error = 0
+        return _GetLogRecordsOneOutput(path=path, file_ok=False, other_errors=[error])
+    num_lines_blank, num_lines_error = 0, 0
     missing: set[str] = set()
     records: list[OrjsonLogRecord] = []
     errors: list[Exception] = []
     objects_use = {OrjsonLogRecord} | (set() if objects is None else objects)
     for i, line in enumerate(lines, start=1):
-        try:
-            result = deserialize(
-                line.encode(), objects=objects_use, redirects=redirects
-            )
-            record = ensure_class(result, OrjsonLogRecord)
-        except (_DeserializeNoObjectsError, _DeserializeObjectNotFoundError) as error:
-            num_lines_error += 1
-            missing.add(error.qualname)
-        except Exception as error:  # noqa: BLE001
-            num_lines_error += 1
-            errors.append(error)
+        if line.strip("\n") == "":
+            num_lines_blank += 1
         else:
-            record.log_file = path
-            record.log_file_line_num = i
-            records.append(record)
+            try:
+                result = deserialize(
+                    line.encode(), objects=objects_use, redirects=redirects
+                )
+                record = ensure_class(result, OrjsonLogRecord)
+            except (
+                _DeserializeNoObjectsError,
+                _DeserializeObjectNotFoundError,
+            ) as error:
+                num_lines_error += 1
+                missing.add(error.qualname)
+            except Exception as error:  # noqa: BLE001
+                num_lines_error += 1
+                errors.append(error)
+            else:
+                record.log_file = path
+                record.log_file_line_num = i
+                records.append(record)
     return _GetLogRecordsOneOutput(
         path=path,
-        num_files=1,
-        num_files_ok=1,
-        num_files_error=0,
+        file_ok=True,
         num_lines=len(lines),
         num_lines_ok=len(records),
+        num_lines_blank=num_lines_blank,
         num_lines_error=num_lines_error,
         records=sorted(records, key=lambda r: r.datetime),
         missing=missing,
         other_errors=errors,
     )
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetLogRecordsOneOutput:
+    path: Path
+    file_ok: bool = False
+    num_lines: int = 0
+    num_lines_ok: int = 0
+    num_lines_blank: int = 0
+    num_lines_error: int = 0
+    records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
+    missing: set[str] = field(default_factory=set)
+    other_errors: list[Exception] = field(default_factory=list, repr=False)
 
 
 __all__ = [
