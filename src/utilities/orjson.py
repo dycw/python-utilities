@@ -4,7 +4,7 @@ import datetime as dt
 import re
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum, unique
 from functools import partial, reduce
 from itertools import chain
@@ -12,8 +12,8 @@ from logging import Formatter, LogRecord
 from math import isinf, isnan
 from operator import or_
 from pathlib import Path
-from re import Pattern
-from typing import TYPE_CHECKING, Any, Literal, assert_never, overload, override
+from re import Pattern, search
+from typing import TYPE_CHECKING, Any, Literal, Self, assert_never, overload, override
 from uuid import UUID
 
 from orjson import (
@@ -28,8 +28,9 @@ from utilities.concurrent import concurrent_map
 from utilities.dataclasses import dataclass_to_dict
 from utilities.functions import ensure_class, is_string_mapping
 from utilities.iterables import OneEmptyError, one
+from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.types import Dataclass, PathLike, StrMapping
+from utilities.types import Dataclass, LogLevel, PathLike, StrMapping
 from utilities.uuid import UUID_PATTERN
 from utilities.version import GetVersionError, Version, parse_version
 from utilities.whenever import (
@@ -609,6 +610,7 @@ class _DeserializeObjectNotFoundError(DeserializeError):
 
 # logging
 
+
 _LOG_RECORD_DEFAULT_ATTRS = {
     "args",
     "asctime",
@@ -652,13 +654,15 @@ class OrjsonFormatter(Formatter):
         before: Callable[[Any], Any] | None = None,
         globalns: StrMapping | None = None,
         localns: StrMapping | None = None,
-        dataclass_final_hook: _DataclassHook | None = None,
+        dataclass_hook: _DataclassHook | None = None,
+        dataclass_defaults: bool = False,
     ) -> None:
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
         self._before = before
         self._globalns = globalns
         self._localns = localns
-        self._dataclass_final_hook = dataclass_final_hook
+        self._dataclass_hook = dataclass_hook
+        self._dataclass_defaults = dataclass_defaults
 
     @override
     def format(self, record: LogRecord) -> str:
@@ -686,7 +690,8 @@ class OrjsonFormatter(Formatter):
             before=self._before,
             globalns=self._globalns,
             localns=self._localns,
-            dataclass_hook=self._dataclass_final_hook,
+            dataclass_hook=self._dataclass_hook,
+            dataclass_defaults=self._dataclass_defaults,
         ).decode()
 
 
@@ -757,6 +762,34 @@ class GetLogRecordsOutput:
         self, item: int | slice, /
     ) -> OrjsonLogRecord | Sequence[OrjsonLogRecord]:
         return self.records[item]
+
+    def filter(
+        self,
+        *,
+        name: str | None = None,
+        message: str | None = None,
+        level: LogLevel | None = None,
+        min_level: LogLevel | None = None,
+        max_level: LogLevel | None = None,
+    ) -> Self:
+        records = self.records
+        if name is not None:
+            records = [r for r in records if (r.name != "") and search(r.name, name)]
+        if message is not None:
+            records = [
+                r for r in records if (r.message != "") and search(r.message, message)
+            ]
+        if level is not None:
+            records = [r for r in records if r.level == get_logging_level_number(level)]
+        if min_level is not None:
+            records = [
+                r for r in records if r.level >= get_logging_level_number(min_level)
+            ]
+        if max_level is not None:
+            records = [
+                r for r in records if r.level <= get_logging_level_number(max_level)
+            ]
+        return replace(self, records=records)
 
     @property
     def frac_files_ok(self) -> float:
