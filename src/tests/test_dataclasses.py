@@ -376,14 +376,14 @@ class TestYieldFields:
         expected = _YieldFieldsClass(name="int_", type_=int, kw_only=True)
         assert result == expected
 
-    def test_class_list_ints(self) -> None:
+    def test_class_future_list_ints(self) -> None:
         result = one(yield_fields(DataClassFutureListInts))
         expected = _YieldFieldsClass(name="ints", type_=list[int], kw_only=True)
         assert result == expected
         assert is_list_type(result.type_)
         assert get_args(result.type_) == (int,)
 
-    def test_class_list_ints_default(self) -> None:
+    def test_class_future_list_ints_default(self) -> None:
         result = one(yield_fields(DataClassFutureListIntsDefault))
         expected = _YieldFieldsClass(
             name="ints", type_=list[int], default_factory=list, kw_only=True
@@ -392,14 +392,14 @@ class TestYieldFields:
         assert is_list_type(result.type_)
         assert get_args(result.type_) == (int,)
 
-    def test_class_literal(self) -> None:
+    def test_class_future_literal(self) -> None:
         result = one(yield_fields(DataClassWithLiteral))
         expected = _YieldFieldsClass(name="truth", type_=TruthLit, kw_only=True)
         assert result == expected
         assert is_literal_type(result.type_)
         assert get_args(result.type_) == ("true", "false")
 
-    def test_class_literal_nullable(self) -> None:
+    def test_class_future_literal_nullable(self) -> None:
         result = one(yield_fields(DataClassWithLiteralNullable))
         expected = _YieldFieldsClass(
             name="truth", type_=TruthLit | None, default=None, kw_only=True
@@ -411,7 +411,7 @@ class TestYieldFields:
         arg = one(args)
         assert get_args(arg) == ("true", "false")
 
-    def test_class_nested(self) -> None:
+    def test_class_future_nested(self) -> None:
         result = one(
             yield_fields(DataClassFutureNestedOuterFirstOuter, globalns=globals())
         )
@@ -420,6 +420,27 @@ class TestYieldFields:
         )
         assert result == expected
         assert result.type_ is DataClassFutureNestedOuterFirstInner
+
+    def test_class_future_type_literal(self) -> None:
+        result = one(yield_fields(DataClassFutureTypeLiteral, globalns=globals()))
+        expected = _YieldFieldsClass(name="truth", type_=TruthLit, kw_only=True)
+        assert result == expected
+        assert is_literal_type(result.type_)
+        assert get_args(result.type_) == ("true", "false")
+
+    def test_class_future_type_literal_nullable(self) -> None:
+        result = one(
+            yield_fields(DataClassFutureTypeLiteralNullable, globalns=globals())
+        )
+        expected = _YieldFieldsClass(
+            name="truth", type_=TruthLit | None, default=None, kw_only=True
+        )
+        assert result == expected
+        assert is_optional_type(result.type_)
+        args = get_args(result.type_)
+        assert args == (Literal["true", "false"],)
+        arg = one(args)
+        assert get_args(arg) == ("true", "false")
 
     def test_class_orjson_log_record(self) -> None:
         result = list(yield_fields(OrjsonLogRecord, globalns=globals()))
@@ -442,122 +463,59 @@ class TestYieldFields:
         ]
         assert result[-3:] == exp_tail
 
-    def test_class_type_literal(self) -> None:
-        result = one(yield_fields(DataClassFutureTypeLiteral, globalns=globals()))
-        expected = _YieldFieldsClass(name="truth", type_=TruthLit, kw_only=True)
-        assert result == expected
-        assert is_literal_type(result.type_)
-        assert get_args(result.type_) == ("true", "false")
-
-    def test_class_type_literal_nullable(self) -> None:
-        result = one(
-            yield_fields(DataClassFutureTypeLiteralNullable, globalns=globals())
-        )
-        expected = _YieldFieldsClass(
-            name="truth", type_=TruthLit | None, default=None, kw_only=True
-        )
-        assert result == expected
-        assert is_optional_type(result.type_)
-        args = get_args(result.type_)
-        assert args == (Literal["true", "false"],)
-        arg = one(args)
-        assert get_args(arg) == ("true", "false")
-
-    def test_instance(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: None = None
-
-        obj = Example()
+    @given(int_=integers())
+    def test_instance_no_future_int(self, *, int_: int) -> None:
+        obj = DataClassNoFutureInt(int_=int_)
         result = one(yield_fields(obj))
         expected = _YieldFieldsInstance(
-            name="x", value=None, type_=NoneType, default=None, kw_only=True
+            name="int_", value=int_, type_=int, kw_only=True
         )
         assert result == expected
 
-    @given(x=integers())
-    def test_instance_with_no_default_equals_default(self, *, x: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
+    @given(int_=integers())
+    def test_instance_no_future_int_default(self, *, int_: int) -> None:
+        obj = DataClassNoFutureIntDefault(int_=int_)
+        result = one(yield_fields(obj))
+        expected = _YieldFieldsInstance(
+            name="int_", value=int_, type_=int, default=0, kw_only=True
+        )
+        assert result == expected
 
-        obj = Example(x=x)
+    def test_instance_future_none_default(self) -> None:
+        obj = DataClassFutureNoneDefault()
+        result = one(yield_fields(obj))
+        expected = _YieldFieldsInstance(
+            name="none", value=None, type_=NoneType, default=None, kw_only=True
+        )
+        assert result == expected
+
+    @given(int_=integers())
+    def test_instance_future_int(self, *, int_: int) -> None:
+        obj = DataClassFutureInt(int_=int_)
         field = one(yield_fields(obj))
         assert not field.equals_default()
+        assert field.keep()
+        assert not field.keep(include=[])
+        assert not field.keep(exclude=["int_"])
 
-    @given(x=integers())
-    def test_instance_with_default_equals_default(self, *, x: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int = 0
-
-        obj = Example(x=x)
+    @given(int_=integers())
+    def test_instance_with_default_equals_default(self, *, int_: int) -> None:
+        obj = DataClassFutureIntDefault(int_=int_)
         field = one(yield_fields(obj))
         result = field.equals_default()
-        expected = x == 0
+        expected = int_ == 0
         assert result is expected
-
-    @given(x=lists(integers()))
-    def test_instance_with_default_factory_equals_default(
-        self, *, x: list[int]
-    ) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: list[int] = field(default_factory=list)
-
-        obj = Example(x=x)
-        fld = one(yield_fields(obj))
-        result = fld.equals_default()
-        expected = x == []
-        assert result is expected
-
-    @given(x=integers())
-    def test_instance_with_no_default_keep(self, *, x: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
-
-        obj = Example(x=x)
-        field = one(yield_fields(obj))
-        assert field.keep()
-
-    @given(x=integers())
-    def test_instance_keep_include(self, *, x: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
-
-        obj = Example(x=x)
-        field = one(yield_fields(obj))
-        assert not field.keep(include=[])
-
-    @given(x=integers())
-    def test_instance_keep_exclude(self, *, x: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
-
-        obj = Example(x=x)
-        field = one(yield_fields(obj))
-        assert not field.keep(exclude=["x"])
-
-    def test_instance_with_default_keep_included(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int = 0
-
-        obj = Example()
-        field = one(yield_fields(obj))
+        assert field.keep() is not expected
         assert field.keep(defaults=True)
 
-    def test_instance_with_default_keep_dropped(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int = 0
-
-        obj = Example()
+    @given(ints=lists(integers()))
+    def test_instance_future_list_ints_default(self, *, ints: list[int]) -> None:
+        obj = DataClassFutureListIntsDefault(ints=ints)
         field = one(yield_fields(obj))
-        assert not field.keep()
+        result = field.equals_default()
+        expected = ints == []
+        assert result is expected
+        assert field.keep() is not expected
 
     def test_error(self) -> None:
         with raises(
