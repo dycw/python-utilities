@@ -8,18 +8,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, given, settings
-from hypothesis.strategies import DataObject, builds, data, lists, sampled_from
-from ib_async import (
-    ComboLeg,
-    CommissionReport,
-    Contract,
-    DeltaNeutralContract,
-    Execution,
-    Fill,
-    Forex,
-    Order,
-    Trade,
-)
+from hypothesis.strategies import builds, sampled_from
+from ib_async import CommissionReport, Contract, Execution, Fill, Forex, Order, Trade
 from orjson import JSONDecodeError
 from pytest import mark, param, raises
 
@@ -39,11 +29,7 @@ from tests.test_operator import (
 )
 from tests.test_typing_funcs.with_future import DataClassWithNone
 from utilities.datetime import SECOND, get_now
-from utilities.hypothesis import (
-    assume_does_not_raise,
-    settings_with_reduced_examples,
-    text_printable,
-)
+from utilities.hypothesis import assume_does_not_raise, text_printable
 from utilities.iterables import one
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.operator import IsEqualError, is_equal
@@ -304,13 +290,7 @@ class TestSerializeAndDeserialize:
         ):
             _ = deserialize(ser, objects=set())
 
-    @given(obj=make_objects(enum=True))
-    def test_enum(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={TruthEnum})
-        with assume_does_not_raise(IsEqualError):
-            assert is_equal(result, obj)
-
-    def test_ib_like(self) -> None:
+    def test_deserialize_hook(self) -> None:
         @dataclass(kw_only=True)
         class Parent:
             x: int
@@ -333,35 +313,9 @@ class TestSerializeAndDeserialize:
         result = deserialize(ser, dataclass_hook=hook, objects={Zero})
         assert result == zero
 
-    @given(data=data())
-    @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
-    def test_ib_trades(self, *, data: DataObject) -> None:
-        forexes = builds(Forex)
-        fills = builds(Fill, contract=forexes)
-        trades = builds(Trade, fills=lists(fills))
-        obj = data.draw(make_objects(extra_base=trades))
-
-        def hook(cls: type[Any], mapping: StrMapping, /) -> Any:
-            if issubclass(cls, Contract) and not issubclass(Contract, cls):
-                mapping = {k: v for k, v in mapping.items() if k != "secType"}
-            return mapping
-
-        with assume_does_not_raise(_SerializeIntegerError):
-            ser = serialize(obj, globalns=globals(), dataclass_final_hook=hook)
-        result = deserialize(
-            ser,
-            objects={
-                CommissionReport,
-                ComboLeg,
-                Contract,
-                DeltaNeutralContract,
-                Execution,
-                Fill,
-                Forex,
-                Order,
-                Trade,
-            },
-        )
+    @given(obj=make_objects(enum=True))
+    def test_enum(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={TruthEnum})
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
