@@ -65,6 +65,7 @@ class TestBasicConfig:
 
 
 class TestComputeRolloverActions:
+    @skipif_windows
     def test_main(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("log.txt").touch()
 
@@ -89,6 +90,7 @@ class TestComputeRolloverActions:
                 p for p in files if search(r"^log\.1\__[\dT]+__[\dT]+\.txt$", p.name)
             )
 
+    @skipif_windows
     def test_multiple_backups(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("log.txt").touch()
 
@@ -148,6 +150,7 @@ class TestComputeRolloverActions:
                 p for p in files if search(r"^log\.3\__[\dT]+__[\dT]+\.txt$", p.name)
             )
 
+    @skipif_windows
     def test_deleting_old_files(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("log.txt").touch()
 
