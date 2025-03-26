@@ -439,7 +439,6 @@ class TestSizeAndTimeRotatingFileHandler:
             content = fh.read()
         assert content == "message\n"
 
-    @mark.only
     def test_size(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         handler = SizeAndTimeRotatingFileHandler(
@@ -508,13 +507,11 @@ class TestSizeAndTimeRotatingFileHandler:
                 p for p in files if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
             )
 
-    @mark.only
     async def test_time(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         handler = SizeAndTimeRotatingFileHandler(
             filename=tmp_path.joinpath("log.txt"), backupCount=3, when="S", interval=1
         )
-
         logger.addHandler(handler)
         logger.setLevel(DEBUG)
 
