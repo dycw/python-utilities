@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-from contextlib import suppress
 from dataclasses import dataclass, replace
 from re import search, sub
 from typing import (
@@ -44,6 +43,8 @@ _SECONDS_PER_DAY = 24 * 60 * 60
 _MICROSECONDS_PER_DAY = _MICROSECONDS_PER_SECOND * _SECONDS_PER_DAY
 DATETIME_MIN_UTC = dt.datetime.min.replace(tzinfo=UTC)
 DATETIME_MAX_UTC = dt.datetime.max.replace(tzinfo=UTC)
+DATETIME_MIN_NAIVE = DATETIME_MIN_UTC.replace(tzinfo=None)
+DATETIME_MAX_NAIVE = DATETIME_MAX_UTC.replace(tzinfo=None)
 EPOCH_UTC = dt.datetime.fromtimestamp(0, tz=UTC)
 EPOCH_DATE = EPOCH_UTC.date()
 EPOCH_NAIVE = EPOCH_UTC.replace(tzinfo=None)
@@ -380,21 +381,6 @@ def days_since_epoch(date: dt.date, /) -> int:
 def days_since_epoch_to_date(days: int, /) -> dt.date:
     """Convert a number of days since the epoch to a date."""
     return EPOCH_DATE + days * DAY
-
-
-##
-
-
-def drop_microseconds(datetime: dt.datetime, /) -> dt.datetime:
-    """Drop the microseconds of a datetime object."""
-    milliseconds, _ = divmod(datetime.microsecond, _MICROSECONDS_PER_MILLISECOND)
-    microseconds = _MICROSECONDS_PER_MILLISECOND * milliseconds
-    return datetime.replace(microsecond=microseconds)
-
-
-def drop_milli_and_microseconds(datetime: dt.datetime, /) -> dt.datetime:
-    """Drop the milliseconds & microseconds of a datetime object."""
-    return datetime.replace(microsecond=0)
 
 
 ##
@@ -897,12 +883,9 @@ def serialize_compact(date_or_datetime: DateOrDateTime, /) -> str:
     """Serialize a date/datetime using a compact format."""
     match date_or_datetime:
         case dt.datetime() as datetime:
-            if datetime.tzinfo is not None:
+            if datetime.tzinfo is None:
                 raise SerializeCompactError(datetime=datetime)
-            if datetime.microsecond == 0:
-                format_ = "%Y%m%dT%H%M%S"
-            else:
-                format_ = "%Y%m%dT%H%M%S.%f"
+            format_ = "%Y%m%dT%H%M%S"
         case dt.date():
             format_ = "%Y%m%d"
         case _ as never:
@@ -916,7 +899,7 @@ class SerializeCompactError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to serialize zoned datetime {self.datetime}"
+        return f"Unable to serialize local datetime {self.datetime}"
 
 
 def parse_date_compact(text: str, /) -> dt.date:
@@ -937,14 +920,15 @@ class ParseDateCompactError(Exception):
         return f"Unable to parse {self.text!r} into a date"
 
 
-def parse_datetime_compact(text: str, /) -> dt.datetime:
+def parse_datetime_compact(
+    text: str, /, *, time_zone: ZoneInfoLike = UTC
+) -> dt.datetime:
     """Parse a compact string into a datetime."""
-    for fmt in ["%Y%m%dT%H%M%S", "%Y%m%dT%H%M%S.%f"]:
-        with suppress(ValueError):
-            return (
-                dt.datetime.strptime(text, fmt).replace(tzinfo=UTC).replace(tzinfo=None)
-            )
-    raise ParseDateTimeCompactError(text=text)
+    time_zone = ensure_time_zone(time_zone)
+    try:
+        return dt.datetime.strptime(text, "%Y%m%dT%H%M%S").replace(tzinfo=time_zone)
+    except ValueError:
+        raise ParseDateTimeCompactError(text=text) from None
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1165,7 +1149,9 @@ class YieldWeekdaysError(Exception):
 
 
 __all__ = [
+    "DATETIME_MAX_NAIVE",
     "DATETIME_MAX_UTC",
+    "DATETIME_MIN_NAIVE",
     "DATETIME_MIN_UTC",
     "DAY",
     "EPOCH_DATE",
@@ -1226,8 +1212,6 @@ __all__ = [
     "datetime_utc",
     "days_since_epoch",
     "days_since_epoch_to_date",
-    "drop_microseconds",
-    "drop_milli_and_microseconds",
     "ensure_month",
     "format_datetime_local_and_utc",
     "get_half_years",

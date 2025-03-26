@@ -86,8 +86,6 @@ from utilities.datetime import (
     datetime_utc,
     days_since_epoch,
     days_since_epoch_to_date,
-    drop_microseconds,
-    drop_milli_and_microseconds,
     ensure_month,
     format_datetime_local_and_utc,
     get_half_years,
@@ -563,21 +561,6 @@ class TestDaysSinceEpoch:
         assert result == date
 
 
-class TestDropMicroseconds:
-    @given(datetime=datetimes())
-    def test_main(self, *, datetime: dt.datetime) -> None:
-        result = drop_microseconds(datetime)
-        _, remainder = divmod(result.microsecond, _MICROSECONDS_PER_MILLISECOND)
-        assert remainder == 0
-
-
-class TestDropMilliAndMicroseconds:
-    @given(datetime=datetimes())
-    def test_main(self, *, datetime: dt.datetime) -> None:
-        result = drop_milli_and_microseconds(datetime)
-        assert result.microsecond == 0
-
-
 class TestEpoch:
     def test_date(self) -> None:
         assert isinstance(EPOCH_DATE, dt.date)
@@ -999,15 +982,15 @@ class TestSerializeAndParseCompact:
         result = parse_date_compact(serialize_compact(date))
         assert result == date
 
-    @given(datetime=datetimes())
+    @given(datetime=zoned_datetimes(round_="standard", timedelta=SECOND))
     def test_datetimes(self, *, datetime: dt.datetime) -> None:
         result = parse_datetime_compact(serialize_compact(datetime))
         assert result == datetime
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=datetimes())
     def test_error_serialize(self, *, datetime: dt.datetime) -> None:
         with raises(
-            SerializeCompactError, match="Unable to serialize zoned datetime .*"
+            SerializeCompactError, match="Unable to serialize local datetime .*"
         ):
             _ = serialize_compact(datetime)
 

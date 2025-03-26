@@ -28,13 +28,15 @@ from utilities.datetime import (
     _MICROSECONDS_PER_SECOND,
     DAY,
     MICROSECOND,
-    drop_milli_and_microseconds,
+    SECOND,
+    maybe_sub_pct_y,
     parse_two_digit_year,
     serialize_compact,
 )
 from utilities.hypothesis import (
     assume_does_not_raise,
     datetime_durations,
+    local_datetimes,
     timedeltas_2w,
     zoned_datetimes,
 )
@@ -194,16 +196,17 @@ class TestParseAndSerializeLocalDateTime:
         result = parse_local_datetime(serialized)
         assert result == datetime
 
-    @given(datetime=datetimes().map(drop_milli_and_microseconds))
-    def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime) -> None:
-        serialized = serialize_compact(datetime)
+    @given(datetime=local_datetimes(round_="standard", timedelta=SECOND))
+    def test_compact_no_microseconds(self, *, datetime: dt.datetime) -> None:
+        assert datetime.microsecond == 0
+        serialized = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
         result = parse_local_datetime(serialized)
         assert result == datetime
 
     @given(datetime=datetimes())
-    def test_yyyymmdd_hhmmss_ffffff(self, *, datetime: dt.datetime) -> None:
+    def test_compact_with_microseconds(self, *, datetime: dt.datetime) -> None:
         _ = assume(datetime.microsecond != 0)
-        serialized = serialize_compact(datetime)
+        serialized = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S.%f"))
         result = parse_local_datetime(serialized)
         assert result == datetime
 
@@ -346,12 +349,16 @@ class TestParseAndSerializeZonedDateTime:
 
     @given(
         datetime=zoned_datetimes(
-            time_zone=sampled_from([HongKong, UTC, dt.UTC]), valid=True
-        ).map(drop_milli_and_microseconds)
+            time_zone=sampled_from([HongKong, UTC, dt.UTC]),
+            round_="standard",
+            timedelta=SECOND,
+            valid=True,
+        )
     )
     @SKIPIF_CI_AND_WINDOWS
-    def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime) -> None:
-        part1 = serialize_compact(datetime.replace(tzinfo=None))
+    def test_compact_no_microseconds(self, *, datetime: dt.datetime) -> None:
+        assert datetime.microsecond == 0
+        part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
         assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
         part2 = get_time_zone_name(datetime.tzinfo)
         serialized = f"{part1}[{part2}]"
@@ -364,9 +371,9 @@ class TestParseAndSerializeZonedDateTime:
         )
     )
     @SKIPIF_CI_AND_WINDOWS
-    def test_yyyymmdd_hhmmss_ffffff(self, *, datetime: dt.datetime) -> None:
+    def test_compact_with_microseconds(self, *, datetime: dt.datetime) -> None:
         _ = assume(datetime.microsecond != 0)
-        part1 = serialize_compact(datetime.replace(tzinfo=None))
+        part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S.%f"))
         assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
         part2 = get_time_zone_name(datetime.tzinfo)
         serialized = f"{part1}[{part2}]"

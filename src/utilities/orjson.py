@@ -31,7 +31,7 @@ from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import Dataclass, PathLike, StrMapping
 from utilities.uuid import UUID_PATTERN
-from utilities.version import Version, parse_version
+from utilities.version import GetVersionError, Version, parse_version
 from utilities.whenever import (
     parse_date,
     parse_local_datetime,
@@ -775,6 +775,8 @@ def _get_log_records_one(
             ) as error:
                 num_lines_error += 1
                 missing.add(error.qualname)
+            except GetVersionError:  # pragma: no cover
+                raise
             except Exception as error:  # noqa: BLE001
                 num_lines_error += 1
                 errors.append(error)

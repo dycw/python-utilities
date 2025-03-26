@@ -40,9 +40,11 @@ from typing import (
 from utilities.atomicwrites import writer
 from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
+    SECOND,
     get_now_local,
     maybe_sub_pct_y,
     parse_datetime_compact,
+    round_datetime,
     serialize_compact,
 )
 from utilities.errors import ImpossibleCaseError
@@ -249,9 +251,9 @@ class _RotatingLogFile:
 
     def __post_init__(self) -> None:
         if self.start is not None:
-            self.start = self.start.replace(microsecond=0, tzinfo=None)
+            self.start = round_datetime(self.start, SECOND)
         if self.end is not None:
-            self.end = self.end.replace(microsecond=0, tzinfo=None)
+            self.end = round_datetime(self.end, SECOND)
 
     @classmethod
     def from_path(
@@ -349,9 +351,9 @@ class _Rotation:
 
     def __post_init__(self) -> None:
         if isinstance(self.start, dt.datetime):  # skipif-ci-and-windows
-            self.start = self.start.replace(microsecond=0, tzinfo=None)
+            self.start = round_datetime(self.start, SECOND)
         if isinstance(self.end, dt.datetime):  # skipif-ci-and-windows
-            self.end = self.end.replace(microsecond=0, tzinfo=None)
+            self.end = round_datetime(self.end, SECOND)
 
     @cached_property
     def destination(self) -> Path:
@@ -387,7 +389,7 @@ class StandaloneFileHandler(Handler):
         try:
             path = (
                 resolve_path(path=self._path)
-                .joinpath(serialize_compact(get_now_local().replace(tzinfo=None)))
+                .joinpath(serialize_compact(get_now_local()))
                 .with_suffix(".txt")
             )
             formatted = self.format(record)

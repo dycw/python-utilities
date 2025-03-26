@@ -54,7 +54,9 @@ from hypothesis.strategies import (
 from hypothesis.utils.conventions import not_set
 
 from utilities.datetime import (
+    DATETIME_MAX_NAIVE,
     DATETIME_MAX_UTC,
+    DATETIME_MIN_NAIVE,
     DATETIME_MIN_UTC,
     DAY,
     MAX_DATE_TWO_DIGIT_YEAR,
@@ -650,6 +652,43 @@ def lists_fixed_length(
     if draw2(draw, sorted):
         return builtins.sorted(cast("Iterable[Any]", elements))
     return elements
+
+
+##
+
+
+@composite
+def local_datetimes(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MIN_NAIVE,
+    max_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MAX_NAIVE,
+    round_: _RoundMode | None = None,
+    timedelta: dt.timedelta | None = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+) -> dt.datetime:
+    """Strategy for generating local datetimes."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    datetime = draw(datetimes(min_value=min_value_, max_value=max_value_))
+    if round_ is not None:
+        if timedelta is None:
+            raise LocalDateTimesError(round_=round_)
+        datetime = round_datetime(
+            datetime, timedelta, mode=round_, rel_tol=rel_tol, abs_tol=abs_tol
+        )
+        _ = assume(min_value_ <= datetime <= max_value_)
+    return datetime
+
+
+@dataclass(kw_only=True, slots=True)
+class LocalDateTimesError(Exception):
+    round_: _RoundMode
+
+    @override
+    def __str__(self) -> str:
+        return "Rounding requires a timedelta; got None"
 
 
 ##
@@ -1471,18 +1510,21 @@ def zoned_datetimes(
     else:
         with assume_does_not_raise(OverflowError, match="date value out of range"):
             max_value_ = max_value_.astimezone(time_zone_)
-    strategy = datetimes(
-        min_value=min_value_.replace(tzinfo=None),
-        max_value=max_value_.replace(tzinfo=None),
-    )
-    datetime = draw(strategy).replace(tzinfo=time_zone_)
-    if round_ is not None:
-        if timedelta is None:
-            raise ZonedDateTimesError(round_=round_)
-        datetime = round_datetime(
-            datetime, timedelta, mode=round_, rel_tol=rel_tol, abs_tol=abs_tol
+    try:
+        datetime = draw(
+            local_datetimes(
+                min_value=min_value_.replace(tzinfo=None),
+                max_value=max_value_.replace(tzinfo=None),
+                round_=round_,
+                timedelta=timedelta,
+                rel_tol=rel_tol,
+                abs_tol=abs_tol,
+            )
         )
-        _ = assume(min_value_ <= datetime <= max_value_)
+    except LocalDateTimesError as error:
+        raise ZonedDateTimesError(round_=error.round_) from None
+    datetime = datetime.replace(tzinfo=time_zone_)
+    _ = assume(min_value_ <= datetime <= max_value_)
     if valid:
         with assume_does_not_raise(  # skipif-ci-and-windows
             CheckValidZonedDateimeError
@@ -1502,6 +1544,7 @@ class ZonedDateTimesError(Exception):
 
 __all__ = [
     "Draw2Error",
+    "LocalDateTimesError",
     "MaybeSearchStrategy",
     "Shape",
     "ZonedDateTimesError",
@@ -1521,6 +1564,8 @@ __all__ = [
     "int64s",
     "int_arrays",
     "lists_fixed_length",
+    "local_datetimes",
+    "local_datetimes",
     "min_and_max_datetimes",
     "min_and_maybe_max_datetimes",
     "min_and_maybe_max_sizes",
