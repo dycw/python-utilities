@@ -21,6 +21,14 @@ repos:
       - id: uv-sync # after version bump
         args: [--all-packages, --upgrade]
         stages: [pre-commit, pre-push]
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        entry: prettier
+        language: system
+        types: [json]
+        args: [--write]
   # linters
   - repo: https://github.com/andreoliwa/nitpick
     rev: v0.35.0
