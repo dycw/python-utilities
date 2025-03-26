@@ -35,7 +35,8 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureNestedOuterFirstOuter,
     DataClassFutureNone,
 )
-from utilities.datetime import SECOND, get_now
+from utilities.datetime import MINUTE, SECOND, get_now
+from utilities.functions import is_sequence_of
 from utilities.hypothesis import assume_does_not_raise, text_printable
 from utilities.iterables import one
 from utilities.math import MAX_INT64, MIN_INT64
@@ -82,9 +83,6 @@ class TestGetLogRecords:
         assert result.num_lines_blank == 0
         assert result.num_lines_error == 0
         assert len(result.records) == 1
-        record = one(result.records)
-        assert record.log_file == file
-        assert record.log_file_line_num == 1
         assert result.missing == set()
         assert result.other_errors == []
         # properties
@@ -93,6 +91,23 @@ class TestGetLogRecords:
         assert result.frac_lines_ok == 1.0
         assert result.frac_lines_blank == 0.0
         assert result.frac_lines_error == 0.0
+
+        # record
+        record = one(result.records)
+        assert record.name == str(tmp_path)
+        assert record.message == ""
+        assert record.level == DEBUG
+        assert record.line_num == 74
+        assert abs(record.datetime - get_now()) <= MINUTE
+        assert record.func_name == "test_main"
+        assert record.stack_info is None
+        assert record.extra == {"a": 1, "b": 2}
+        assert record.log_file == file
+        assert record.log_file_line_num == 1
+
+        # slicing
+        assert is_sequence_of(result[:], OrjsonLogRecord)
+        assert isinstance(result[0], OrjsonLogRecord)
 
     def test_skip_blank_lines(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))

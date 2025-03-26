@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass, field
 from enum import Enum, unique
@@ -13,7 +13,7 @@ from math import isinf, isnan
 from operator import or_
 from pathlib import Path
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Literal, assert_never, override
+from typing import TYPE_CHECKING, Any, Literal, assert_never, overload, override
 from uuid import UUID
 
 from orjson import (
@@ -748,6 +748,15 @@ class GetLogRecordsOutput:
     records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
     missing: set[str] = field(default_factory=set)
     other_errors: list[Exception] = field(default_factory=list)
+
+    @overload
+    def __getitem__(self, item: int, /) -> OrjsonLogRecord: ...
+    @overload
+    def __getitem__(self, item: slice, /) -> Sequence[OrjsonLogRecord]: ...
+    def __getitem__(
+        self, item: int | slice, /
+    ) -> OrjsonLogRecord | Sequence[OrjsonLogRecord]:
+        return self.records[item]
 
     @property
     def frac_files_ok(self) -> float:
