@@ -12,43 +12,43 @@ if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassDefaultInInitParent:
     int_: int
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassDefaultInInitChild(DataClassDefaultInInitParent):
     def __init__(self) -> None:
         DataClassDefaultInInitParent.__init__(self, int_=0)
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassNestedWithFutureInnerThenOuterInner:
     int_: int
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassNestedWithFutureInnerThenOuterOuter:
     inner: DataClassNestedWithFutureInnerThenOuterInner
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassNestedWithFutureOuterThenInnerOuter:
     inner: DataClassNestedWithFutureOuterThenInnerInner
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassNestedWithFutureOuterThenInnerInner:
     int_: int
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassWithDate:
     date: dt.date
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, kw_only=True)
 class DataClassWithCustomEquality:
     int_: int = 0
 
@@ -61,61 +61,61 @@ class DataClassWithCustomEquality:
         return id(self)
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassWithInt:
     int_: int
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassWithIntDefault:
     int_: int
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassWithIntNullable:
     int_: int | None = None
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassWithListInts:
     ints: list[int]
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassWithLiteral:
     truth: Literal["true", "false"]
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassWithLiteralNullable:
     truth: Literal["true", "false"] | None = None
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassWithNone:
     none: None
 
 
-@dataclass(unsafe_hash=True, kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassWithPath:
     path: Path
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassWithSentinel:
     sentinel: Sentinel
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassWithStr:
     str_: str
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassWithTimeDelta:
     timedelta: dt.timedelta
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassWithUUID:
     uuid: UUID

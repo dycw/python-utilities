@@ -7,7 +7,7 @@ from logging import DEBUG, FileHandler, StreamHandler, getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import HealthCheck, given, settings
+from hypothesis import given
 from hypothesis.strategies import builds, sampled_from
 from orjson import JSONDecodeError
 from pytest import mark, param, raises
@@ -242,11 +242,9 @@ class TestSerializeAndDeserialize:
     @given(obj=make_objects())
     def test_base(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj))
-        with assume_does_not_raise(IsEqualError):
-            assert is_equal(result, obj)
+        assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass_nested=True))
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_nested(self, *, obj: Any) -> None:
         ser = serialize(obj, globalns=globals())
         result = deserialize(
@@ -258,41 +256,27 @@ class TestSerializeAndDeserialize:
                 DataClassNestedWithFutureOuterThenInnerOuter,
             },
         )
-        with assume_does_not_raise(IsEqualError):
-            assert is_equal(result, obj)
+        assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass_with_custom_equality=True))
-    # @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_with_custom_equality(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassWithCustomEquality})
-        with assume_does_not_raise(IsEqualError):
-            assert is_equal(result, obj)
+        assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass_with_int=True))
     def test_dataclass_with_int(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassWithInt})
-        with assume_does_not_raise(IsEqualError):
-            assert is_equal(result, obj)
+        assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass_with_int_default=True))
     def test_dataclass_with_int_default(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassWithIntDefault})
-        with assume_does_not_raise(IsEqualError):
-            assert is_equal(result, obj)
+        assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass_with_literal=True))
-    # @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_dataclass_with_literal(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassWithLiteral})
-        with assume_does_not_raise(IsEqualError):
-            assert is_equal(result, obj)
-
-    @given(obj=make_objects(dataclass_with_literal_nullable=True))
-    # @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_dataclass_with_literal_nullable(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={DataClassWithLiteralNullable})
-        with assume_does_not_raise(IsEqualError):
-            assert is_equal(result, obj)
+        assert is_equal(result, obj)
 
     @given(obj=builds(DataClassWithNone))
     def test_dataclass_no_objects_error(self, *, obj: DataClassWithNone) -> None:
@@ -341,26 +325,22 @@ class TestSerializeAndDeserialize:
     @given(obj=make_objects(sub_frozenset=True))
     def test_sub_frozenset(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubFrozenSet})
-        with assume_does_not_raise(IsEqualError):
-            assert is_equal(result, obj)
+        assert is_equal(result, obj)
 
     @given(obj=make_objects(sub_list=True))
     def test_sub_list(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubList})
-        with assume_does_not_raise(IsEqualError):
-            assert is_equal(result, obj)
+        assert is_equal(result, obj)
 
     @given(obj=make_objects(sub_set=True))
     def test_sub_set(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubSet})
-        with assume_does_not_raise(IsEqualError):
-            assert is_equal(result, obj)
+        assert is_equal(result, obj)
 
     @given(obj=make_objects(sub_tuple=True))
     def test_sub_tuple(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubTuple})
-        with assume_does_not_raise(IsEqualError):
-            assert is_equal(result, obj)
+        assert is_equal(result, obj)
 
     def test_unserializable(self) -> None:
         ser = serialize(sentinel)
