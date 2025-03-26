@@ -7,14 +7,14 @@ from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from hypothesis import given
-from hypothesis.strategies import datetimes, integers
+from hypothesis.strategies import integers
 from pytest import LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
 
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.untraced import func_untraced
-from utilities.datetime import NOW_UTC, SECOND, round_datetime, serialize_compact
-from utilities.hypothesis import pairs, temp_paths
+from utilities.datetime import NOW_UTC, SECOND, serialize_compact
+from utilities.hypothesis import pairs, temp_paths, zoned_datetimes
 from utilities.iterables import one
 from utilities.logging import (
     GetLoggingLevelNumberError,
@@ -164,7 +164,7 @@ class TestComputeRolloverActions:
 
         sleep(1)
         tmp_path.joinpath("log.txt").touch()
-        now = serialize_compact(NOW_UTC.replace(microsecond=0, tzinfo=None))
+        now = serialize_compact(NOW_UTC)
         tmp_path.joinpath(f"log.99__{now}__{now}.txt").touch()
         actions = _compute_rollover_actions(tmp_path, "log", ".txt")
         assert len(actions.deletions) == 2
@@ -249,7 +249,7 @@ class TestRotatingLogFile:
 
     @given(
         index=integers(min_value=1),
-        end=datetimes().map(lambda d: round_datetime(d, SECOND)),
+        end=zoned_datetimes(round_="standard", timedelta=SECOND),
     )
     def test_from_path_with_index_and_end(
         self, *, index: int, end: dt.datetime
@@ -266,7 +266,7 @@ class TestRotatingLogFile:
     @given(
         index=integers(min_value=1),
         datetimes=pairs(
-            datetimes().map(lambda d: round_datetime(d, SECOND)), sorted=True
+            zoned_datetimes(round_="standard", timedelta=SECOND), sorted=True
         ),
     )
     def test_from_path_with_index_start_and_end(
@@ -301,7 +301,7 @@ class TestRotatingLogFile:
     @given(
         root=temp_paths(),
         index=integers(min_value=1),
-        end=datetimes().map(lambda d: round_datetime(d, SECOND)),
+        end=zoned_datetimes(round_="standard", timedelta=SECOND),
     )
     def test_path_with_index_and_end(
         self, *, root: Path, index: int, end: dt.datetime
@@ -315,7 +315,7 @@ class TestRotatingLogFile:
         root=temp_paths(),
         index=integers(min_value=1),
         datetimes=pairs(
-            datetimes().map(lambda d: round_datetime(d, SECOND)), sorted=True
+            zoned_datetimes(round_="standard", timedelta=SECOND), sorted=True
         ),
     )
     def test_path_with_index_start_and_end(

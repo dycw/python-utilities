@@ -53,6 +53,7 @@ from utilities.git import (
 )
 from utilities.hypothesis import (
     _SQLALCHEMY_ENGINE_DIALECTS,
+    LocalDateTimesError,
     MaybeSearchStrategy,
     Shape,
     ZonedDateTimesError,
@@ -74,6 +75,7 @@ from utilities.hypothesis import (
     int64s,
     int_arrays,
     lists_fixed_length,
+    local_datetimes,
     min_and_max_datetimes,
     min_and_maybe_max_datetimes,
     min_and_maybe_max_sizes,
@@ -703,6 +705,46 @@ class TestListsFixedLength:
             assert len(set(result)) == len(result)
         if sorted_:
             assert sorted(result) == result
+
+
+class TestLocalDateTimes:
+    @given(data=data(), min_value=datetimes(), max_value=datetimes())
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_main(
+        self,
+        *,
+        data: DataObject,
+        min_value: dt.datetime,
+        max_value: dt.datetime,
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            datetime = data.draw(
+                local_datetimes(min_value=min_value, max_value=max_value)
+            )
+        assert datetime.tzinfo is None
+        assert min_value <= datetime <= max_value
+
+    @given(data=data())
+    def test_rounding(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(local_datetimes(), sorted=True))
+        datetime = data.draw(
+            local_datetimes(
+                min_value=min_value,
+                max_value=max_value,
+                round_="standard",
+                timedelta=MINUTE,
+            )
+        )
+        assert isinstance(datetime, dt.datetime)
+        assert datetime.second == datetime.microsecond == 0
+        assert min_value <= datetime <= max_value
+
+    @given(data=data())
+    def test_error_rounding(self, *, data: DataObject) -> None:
+        with raises(
+            LocalDateTimesError, match="Rounding requires a timedelta; got None"
+        ):
+            _ = data.draw(local_datetimes(round_="standard"))
 
 
 class TestMinAndMaxDateTimes:

@@ -141,7 +141,7 @@ from utilities.hypothesis import (
     text_clean,
     zoned_datetimes,
 )
-from utilities.math import MAX_INT32, MIN_INT32, is_integral, round_to_float
+from utilities.math import MAX_INT32, MIN_INT32, is_integral, round_, round_to_float
 from utilities.zoneinfo import UTC, HongKong, Tokyo
 
 if TYPE_CHECKING:
@@ -999,15 +999,15 @@ class TestSerializeAndParseCompact:
         result = parse_date_compact(serialize_compact(date))
         assert result == date
 
-    @given(datetime=datetimes())
+    @given(datetime=zoned_datetimes(round_="standard", timedelta=SECOND))
     def test_datetimes(self, *, datetime: dt.datetime) -> None:
         result = parse_datetime_compact(serialize_compact(datetime))
         assert result == datetime
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=datetimes())
     def test_error_serialize(self, *, datetime: dt.datetime) -> None:
         with raises(
-            SerializeCompactError, match="Unable to serialize zoned datetime .*"
+            SerializeCompactError, match="Unable to serialize local datetime .*"
         ):
             _ = serialize_compact(datetime)
 
