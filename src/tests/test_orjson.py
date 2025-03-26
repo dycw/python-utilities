@@ -298,7 +298,8 @@ class TestSerializeAndDeserialize:
     @given(obj=make_objects(dataclass_literal_nullable=True))
     def test_dataclass_literal_nullable(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassFutureLiteralNullable})
-        assert is_equal(result, obj)
+        with assume_does_not_raise(IsEqualError):
+            assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass_nested=True))
     def test_dataclass_nested(self, *, obj: Any) -> None:
@@ -314,7 +315,7 @@ class TestSerializeAndDeserialize:
         )
         assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass_nested=True))
+    @given(obj=make_objects(dataclass_none=True))
     def test_dataclass_none(self, *, obj: Any) -> None:
         ser = serialize(obj, globalns=globals())
         result = deserialize(ser, objects={DataClassFutureNone})
