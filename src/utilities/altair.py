@@ -24,6 +24,7 @@ from altair import (
 from altair.utils.schemapi import Undefined
 from polars import Date, Datetime
 
+from utilities.datetime import maybe_sub_pct_y
 from utilities.functions import ensure_bytes, ensure_number
 from utilities.iterables import always_iterable
 from utilities.tempfile import TemporaryDirectory
@@ -119,9 +120,9 @@ def plot_dataframes(
 
     # rules
     if isinstance(data.schema[x_use], Date):
-        tooltip_format_use = "%Y-%m-%d (%a)"
+        tooltip_format_use = maybe_sub_pct_y("%Y-%m-%d (%a)")
     elif isinstance(data.schema[x_use], Datetime):
-        tooltip_format_use = "%Y-%m-%d %H:%M:%S (%a)"
+        tooltip_format_use = maybe_sub_pct_y("%Y-%m-%d %H:%M:%S (%a)")
     else:
         tooltip_format_use = Undefined
     rules = [
@@ -211,6 +212,7 @@ def plot_intraday_dataframe(
     nearest = selection_point(
         nearest=True, on="pointerover", fields=[f"{datetime} index"], empty=False
     )
+    fmt = maybe_sub_pct_y("%Y-%m-%d %H:%M:%S (%a)")
     hover_line = (
         Chart(unpivoted)
         .transform_pivot("variable", value=value_name, groupby=[f"{datetime} index"])
@@ -218,7 +220,7 @@ def plot_intraday_dataframe(
         .encode(
             x=f"{datetime} index",
             opacity=cast("Any", condition(nearest, value(1.0), value(0.0))),
-            tooltip=[Tooltip(f"{datetime} index:Q", format="%Y-%m-%d %H:%M:%S (%a)")]
+            tooltip=[Tooltip(f"{datetime} index:Q", format=fmt)]
             + [f"{c}:Q" for c in other_cols],
         )
         .add_params(nearest)
