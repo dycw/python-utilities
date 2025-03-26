@@ -65,8 +65,6 @@ def base_objects(
     floats_max_value: Number | None = None,
     floats_allow_nan: bool | None = None,
     floats_allow_infinity: bool | None = None,
-    ib_orders: bool = False,
-    ib_trades: bool = False,
 ) -> SearchStrategy[Any]:
     base = (
         booleans()
@@ -103,17 +101,6 @@ def base_objects(
         base |= builds(DataClassWithNone)
     if enum:
         base |= sampled_from(TruthEnum)
-    if ib_orders:
-        from ib_async import Order
-
-        base |= builds(Order)
-    if ib_trades:
-        from ib_async import Fill, Forex, Trade
-
-        forexes = builds(Forex)
-        fills = builds(Fill, contract=forexes)
-        trades = builds(Trade, fills=lists(fills))
-        base |= trades
     return base
 
 
@@ -129,8 +116,6 @@ def make_objects(
     floats_max_value: Number | None = None,
     floats_allow_nan: bool | None = None,
     floats_allow_infinity: bool | None = None,
-    ib_orders: bool = False,
-    ib_trades: bool = False,
     extra_base: SearchStrategy[Any] | None = None,
     sub_frozenset: bool = False,
     sub_list: bool = False,
@@ -148,8 +133,6 @@ def make_objects(
         floats_max_value=floats_max_value,
         floats_allow_nan=floats_allow_nan,
         floats_allow_infinity=floats_allow_infinity,
-        ib_orders=ib_orders,
-        ib_trades=ib_trades,
     )
     if extra_base is not None:
         base |= extra_base
@@ -268,8 +251,6 @@ class TestIsEqual:
             dataclass2=True,
             dataclass3=True,
             dataclass4=True,
-            ib_orders=True,
-            ib_trades=True,
             sub_frozenset=True,
             sub_list=True,
             sub_set=True,
@@ -286,8 +267,6 @@ class TestIsEqual:
             dataclass2=True,
             dataclass3=True,
             dataclass4=True,
-            ib_orders=True,
-            ib_trades=True,
             sub_frozenset=True,
             sub_list=True,
             sub_set=True,
@@ -298,8 +277,6 @@ class TestIsEqual:
             dataclass2=True,
             dataclass3=True,
             dataclass4=True,
-            ib_orders=True,
-            ib_trades=True,
             sub_frozenset=True,
             sub_list=True,
             sub_set=True,
