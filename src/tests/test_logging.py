@@ -3,6 +3,7 @@ from __future__ import annotations
 from asyncio import sleep
 from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from pathlib import Path
+from re import search
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from hypothesis import given
@@ -13,7 +14,7 @@ from whenever import ZonedDateTime
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.untraced import func_untraced
 from utilities.datetime import NOW_UTC, SECOND, round_datetime
-from utilities.hypothesis import pairs, temp_paths, zoned_datetimes
+from utilities.hypothesis import pairs, temp_paths
 from utilities.iterables import one
 from utilities.logging import (
     GetLoggingLevelNumberError,
@@ -32,7 +33,6 @@ from utilities.logging import (
     temp_handler,
     temp_logger,
 )
-from utilities.math import round_
 from utilities.typing import get_args
 
 if TYPE_CHECKING:
@@ -72,17 +72,22 @@ class TestComputeRolloverActions:
         assert len(actions.deletions) == 0
         assert len(actions.rotations) == 1
         actions.do()
-        assert len(list(tmp_path.iterdir())) == 1
+        files = list(tmp_path.iterdir())
+        assert len(files) == 1
+        assert any(p for p in files if search(r"^log\.1\__[\dT]+\.txt$", p.name))
 
-        tmp_path.joinpath("log.txt").touch()
-        assert len(list(tmp_path.iterdir())) == 2
-
-        await sleep(1)
-        actions = _compute_rollover_actions(tmp_path, "log", ".txt")
-        assert len(actions.deletions) == 1
-        assert len(actions.rotations) == 1
-        actions.do()
-        assert len(list(tmp_path.iterdir())) == 1
+        for _ in range(2):
+            await sleep(1)
+            tmp_path.joinpath("log.txt").touch()
+            actions = _compute_rollover_actions(tmp_path, "log", ".txt")
+            assert len(actions.deletions) == 1
+            assert len(actions.rotations) == 1
+            actions.do()
+            files = list(tmp_path.iterdir())
+            assert len(files) == 1
+            assert any(
+                p for p in files if search(r"^log\.1\__[\dT]+__[\dT]+\.txt$", p.name)
+            )
 
     async def test_multiple_backups(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("log.txt").touch()
@@ -91,17 +96,83 @@ class TestComputeRolloverActions:
         assert len(actions.deletions) == 0
         assert len(actions.rotations) == 1
         actions.do()
-        assert len(list(tmp_path.iterdir())) == 1
-
-        tmp_path.joinpath("log.txt").touch()
-        assert len(list(tmp_path.iterdir())) == 2
+        files = list(tmp_path.iterdir())
+        assert len(files) == 1
+        assert any(p for p in files if search(r"^log\.1\__[\dT]+\.txt$", p.name))
 
         await sleep(1)
+        tmp_path.joinpath("log.txt").touch()
         actions = _compute_rollover_actions(tmp_path, "log", ".txt", backup_count=3)
         assert len(actions.deletions) == 0
         assert len(actions.rotations) == 2
         actions.do()
-        assert len(list(tmp_path.iterdir())) == 1
+        files = list(tmp_path.iterdir())
+        assert len(files) == 2
+        assert any(
+            p for p in files if search(r"^log\.1\__[\dT]+__[\dT]+\.txt$", p.name)
+        )
+        assert any(p for p in files if search(r"^log\.2\__[\dT]+\.txt$", p.name))
+
+        await sleep(1)
+        tmp_path.joinpath("log.txt").touch()
+        actions = _compute_rollover_actions(tmp_path, "log", ".txt", backup_count=3)
+        assert len(actions.deletions) == 0
+        assert len(actions.rotations) == 3
+        actions.do()
+        files = list(tmp_path.iterdir())
+        assert len(files) == 3
+        assert any(
+            p for p in files if search(r"^log\.1\__[\dT]+__[\dT]+\.txt$", p.name)
+        )
+        assert any(
+            p for p in files if search(r"^log\.2\__[\dT]+__[\dT]+\.txt$", p.name)
+        )
+        assert all(p for p in files if search(r"^log\.3\__[\dT]+\.txt$", p.name))
+
+        for _ in range(2):
+            await sleep(1)
+            tmp_path.joinpath("log.txt").touch()
+            actions = _compute_rollover_actions(tmp_path, "log", ".txt", backup_count=3)
+            assert len(actions.deletions) == 1
+            assert len(actions.rotations) == 3
+            actions.do()
+            files = list(tmp_path.iterdir())
+            assert len(files) == 3
+            assert any(
+                p for p in files if search(r"^log\.1\__[\dT]+__[\dT]+\.txt$", p.name)
+            )
+            assert any(
+                p for p in files if search(r"^log\.2\__[\dT]+__[\dT]+\.txt$", p.name)
+            )
+            assert all(
+                p for p in files if search(r"^log\.3\__[\dT]+__[\dT]+\.txt$", p.name)
+            )
+
+    async def test_deleting_old_files(self, *, tmp_path: Path) -> None:
+        tmp_path.joinpath("log.txt").touch()
+
+        actions = _compute_rollover_actions(tmp_path, "log", ".txt")
+        assert len(actions.deletions) == 0
+        assert len(actions.rotations) == 1
+        actions.do()
+        files = list(tmp_path.iterdir())
+        assert len(files) == 1
+        assert any(p for p in files if search(r"^log\.1\__[\dT]+\.txt$", p.name))
+
+        await sleep(1)
+        tmp_path.joinpath("log.txt").touch()
+        tmp_path.joinpath(
+            f"log.99__{NOW_UTC:%Y%m%dT%H%M%S}__{NOW_UTC:%Y%m%dT%H%M%S}.txt"
+        ).touch()
+        actions = _compute_rollover_actions(tmp_path, "log", ".txt")
+        assert len(actions.deletions) == 2
+        assert len(actions.rotations) == 1
+        actions.do()
+        files = list(tmp_path.iterdir())
+        assert len(files) == 1
+        assert any(
+            p for p in files if search(r"^log\.1\__[\dT]+__[\dT]+\.txt$", p.name)
+        )
 
 
 class TestGetDefaultLoggingPath:
@@ -395,24 +466,24 @@ class TestSizeAndTimeRotatingFileHandler:
         )
         logger.addHandler(handler)
         logger.setLevel(DEBUG)
-        contents = list(tmp_path.iterdir())
+        list(tmp_path.iterdir())
         assert len(list(tmp_path.iterdir())) == 0
         logger.info("message 1")
-        contents = list(tmp_path.iterdir())
+        list(tmp_path.iterdir())
         assert len(list(tmp_path.iterdir())) == 1
         await sleep(1.1)
         logger.info("message 2")
-        contents = list(tmp_path.iterdir())
+        list(tmp_path.iterdir())
         assert len(list(tmp_path.iterdir())) == 1
         logger.info("message 3")
-        contents = list(tmp_path.iterdir())
+        list(tmp_path.iterdir())
         assert len(list(tmp_path.iterdir())) == 1
         await sleep(1.1)
         logger.info("message 4")
-        contents = list(tmp_path.iterdir())
+        list(tmp_path.iterdir())
         assert len(list(tmp_path.iterdir())) == 1
         logger.info("message 5")
-        contents = list(tmp_path.iterdir())
+        list(tmp_path.iterdir())
         assert len(list(tmp_path.iterdir())) == 1
 
     def test_should_rollover(

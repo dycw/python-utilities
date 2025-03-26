@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import datetime as dt
 import re
-from contextlib import contextmanager, suppress
-from dataclasses import InitVar, dataclass, field
+from contextlib import contextmanager
+from dataclasses import dataclass, field
 from functools import cached_property
-from itertools import chain, product
+from itertools import product
 from logging import (
     ERROR,
     NOTSET,
@@ -28,7 +28,7 @@ from logging.handlers import (
 from pathlib import Path
 from re import Pattern, search
 from shutil import move
-from sys import base_exec_prefix, exception, stdout
+from sys import stdout
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -40,8 +40,6 @@ from typing import (
     cast,
     override,
 )
-
-from whenever import microseconds
 
 from utilities.atomicwrites import writer
 from utilities.dataclasses import replace_non_sentinel
@@ -55,8 +53,7 @@ from utilities.traceback import RichTracebackFormatter
 from utilities.types import LogLevel, PathLike
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Sequence
-    from io import TextIOWrapper
+    from collections.abc import Callable, Iterable, Iterator
     from logging import _FilterType
     from zoneinfo import ZoneInfo
 
@@ -260,15 +257,24 @@ def _compute_rollover_actions(
                 try:
                     index1 = one(f for f in files if f.index == 1)
                 except OneEmptyError:
-                    rotations.add(_Rotation(file=file, index=1))
+                    start = None
                 else:
-                    rotations.add(_Rotation(file=file, index=1, start=index1.end))
+                    start = index1.end
+                rotations.add(
+                    _Rotation(file=file, index=1, start=start, end=get_now_local())
+                )
             case int() as index, _, _ if index >= backup_count:
                 deletions.add(_Deletion(file=file))
-            case int() as index, None, dt.datetime() as end:
-                raise NotImplementedError
-            case int(), dt.datetime(), dt.datetime():
-                raise NotImplementedError
+            case int() as index, None, dt.datetime():
+                try:
+                    index_plus1 = one(f for f in files if f.index == index + 1)
+                except OneEmptyError:
+                    start = None
+                else:
+                    start = index_plus1.end
+                rotations.add(_Rotation(file=file, index=index + 1, start=start))
+            case int() as index, dt.datetime(), dt.datetime():
+                rotations.add(_Rotation(file=file, index=index + 1))
             case _:
                 raise NotImplementedError
     return _RolloverActions(deletions=deletions, rotations=rotations)
@@ -321,10 +327,7 @@ class _RotatingLogFile:
             pass
         else:
             return cls(
-                directory=path.parent,
-                stem=stem,
-                suffix=suffix,
-                index=int(index),
+                directory=path.parent, stem=stem, suffix=suffix, index=int(index)
             )
         try:
             ((index, end),) = patterns.pattern2.findall(path.name)
@@ -341,11 +344,7 @@ class _RotatingLogFile:
         try:
             ((index, start, end),) = patterns.pattern3.findall(path.name)
         except ValueError:
-            return cls(
-                directory=path.parent,
-                stem=stem,
-                suffix=suffix,
-            )
+            return cls(directory=path.parent, stem=stem, suffix=suffix)
         else:
             return cls(
                 directory=path.parent,
@@ -398,12 +397,13 @@ class _Rotation:
     file: _RotatingLogFile
     index: int = 0
     start: dt.datetime | None | Sentinel = sentinel
-    end: dt.datetime = field(default_factory=get_now_local)
+    end: dt.datetime | Sentinel = sentinel
 
     def __post_init__(self) -> None:
         if isinstance(self.start, dt.datetime):
             self.start = self.start.replace(microsecond=0, tzinfo=None)
-        self.end = self.end.replace(microsecond=0, tzinfo=None)
+        if isinstance(self.end, dt.datetime):
+            self.end = self.end.replace(microsecond=0, tzinfo=None)
 
     @cached_property
     def destination(self) -> Path:
