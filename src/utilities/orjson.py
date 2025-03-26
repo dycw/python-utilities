@@ -777,11 +777,9 @@ class GetLogRecordsOutput:
     ) -> Self:
         records = self.records
         if name is not None:
-            records = [r for r in records if (r.name != "") and search(r.name, name)]
+            records = [r for r in records if search(name, r.name)]
         if message is not None:
-            records = [
-                r for r in records if (r.message != "") and search(r.message, message)
-            ]
+            records = [r for r in records if search(message, r.message)]
         if level is not None:
             records = [
                 r for r in records if r.level_num == get_logging_level_number(level)

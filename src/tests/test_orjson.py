@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 from hypothesis import given
 from hypothesis.strategies import (
     builds,
+    dates,
     dictionaries,
     integers,
     lists,
@@ -50,6 +51,7 @@ from utilities.hypothesis import (
     temp_paths,
     text_ascii,
     text_printable,
+    zoned_datetimes,
 )
 from utilities.iterables import one
 from utilities.logging import get_logging_level_number
@@ -68,7 +70,7 @@ from utilities.orjson import (
     serialize,
 )
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import LogLevel
+from utilities.types import DateOrDateTime, LogLevel
 from utilities.typing import get_args
 from utilities.zoneinfo import UTC
 
@@ -140,6 +142,9 @@ class TestGetLogRecords:
         level=sampled_from(get_args(LogLevel)) | none(),
         min_level=sampled_from(get_args(LogLevel)) | none(),
         max_level=sampled_from(get_args(LogLevel)) | none(),
+        date_or_datetime=dates() | zoned_datetimes() | none(),
+        min_date_or_datetime=dates() | zoned_datetimes() | none(),
+        max_date_or_datetime=dates() | zoned_datetimes() | none(),
     )
     def test_filter(
         self,
@@ -151,6 +156,9 @@ class TestGetLogRecords:
         level: LogLevel | None,
         min_level: LogLevel | None,
         max_level: LogLevel | None,
+        date_or_datetime: DateOrDateTime | None,
+        min_date_or_datetime: DateOrDateTime | None,
+        max_date_or_datetime: DateOrDateTime | None,
     ) -> None:
         logger = getLogger(str(root))
         logger.setLevel(DEBUG)
@@ -166,25 +174,43 @@ class TestGetLogRecords:
             level=level,
             min_level=min_level,
             max_level=max_level,
+            date_or_datetime=date_or_datetime,
+            min_date_or_datetime=min_date_or_datetime,
+            max_date_or_datetime=max_date_or_datetime,
         )
+        records = output.records
         if name is not None:
-            assert all(search(name, r.name) for r in output.records)
+            assert all(search(name, r.name) for r in records)
         if message is not None:
-            assert all(search(message, r.message) for r in output.records)
+            assert all(search(message, r.message) for r in records)
         if level is not None:
-            assert all(
-                r.level_num == get_logging_level_number(level) for r in output.records
-            )
+            assert all(r.level_num == get_logging_level_number(level) for r in records)
         if min_level is not None:
             assert all(
-                r.level_num >= get_logging_level_number(min_level)
-                for r in output.records
+                r.level_num >= get_logging_level_number(min_level) for r in records
             )
         if max_level is not None:
             assert all(
-                r.level_num <= get_logging_level_number(max_level)
-                for r in output.records
+                r.level_num <= get_logging_level_number(max_level) for r in records
             )
+        if date_or_datetime is not None:
+            match date_or_datetime:
+                case dt.datetime() as datetime:
+                    assert all(r.datetime == datetime for r in records)
+                case dt.date() as date:
+                    assert all(r.date == date for r in records)
+        if min_date_or_datetime is not None:
+            match min_date_or_datetime:
+                case dt.datetime() as min_datetime:
+                    assert all(r.datetime >= min_datetime for r in records)
+                case dt.date() as min_date:
+                    assert all(r.date >= min_date for r in records)
+        if max_date_or_datetime is not None:
+            match max_date_or_datetime:
+                case dt.datetime() as max_datetime:
+                    assert all(r.datetime <= max_datetime for r in records)
+                case dt.date() as max_date:
+                    assert all(r.date <= max_date for r in records)
 
     def test_skip_blank_lines(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
