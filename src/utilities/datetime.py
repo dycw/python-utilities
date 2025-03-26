@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from contextlib import suppress
 from dataclasses import dataclass, replace
-from re import search
+from re import search, sub
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -17,6 +17,7 @@ from typing import (
 
 from utilities.iterables import OneEmptyError, one
 from utilities.math import SafeRoundError, _RoundMode, round_, safe_round
+from utilities.platform import SYSTEM
 from utilities.zoneinfo import (
     UTC,
     HongKong,
@@ -618,6 +619,22 @@ def is_zoned_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
 ##
 
 
+def maybe_sub_pct_y(text: str, /) -> str:
+    """Substitute the `%Y' token with '%4Y' if necessary."""
+    match SYSTEM:
+        case "windows":  # skipif-not-windows
+            return text
+        case "mac":  # skipif-not-macos
+            return text
+        case "linux":  # skipif-not-linux
+            return sub("%Y", "%4Y", text)
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
 def microseconds_since_epoch(datetime: dt.datetime, /) -> int:
     """Compute the number of microseconds since the epoch."""
     return timedelta_to_microseconds(timedelta_since_epoch(datetime))
@@ -890,7 +907,7 @@ def serialize_compact(date_or_datetime: DateOrDateTime, /) -> str:
             format_ = "%Y%m%d"
         case _ as never:
             assert_never(never)
-    return date_or_datetime.strftime(format_)
+    return date_or_datetime.strftime(maybe_sub_pct_y(format_))
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1232,6 +1249,7 @@ __all__ = [
     "is_weekday",
     "is_zero_time",
     "is_zoned_datetime",
+    "maybe_sub_pct_y",
     "microseconds_since_epoch",
     "microseconds_since_epoch_to_datetime",
     "microseconds_to_timedelta",
