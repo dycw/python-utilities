@@ -115,7 +115,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
             if (self._backup_count is not None) and self._should_rollover(record):
                 self._do_rollover(backup_count=self._backup_count)
             FileHandler.emit(self, record)
-        except Exception:  # noqa: BLE001 # pragma: no cover
+        except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
     def _do_rollover(self, *, backup_count: int = 1) -> None:
@@ -379,13 +379,13 @@ class StandaloneFileHandler(Handler):
         try:
             path = (
                 resolve_path(path=self._path)
-                .joinpath(serialize_compact(get_now_local()))
+                .joinpath(serialize_compact(get_now_local().replace(tzinfo=None)))
                 .with_suffix(".txt")
             )
             formatted = self.format(record)
             with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
                 _ = fh.write(formatted)
-        except Exception:  # noqa: BLE001 # pragma: no cover
+        except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
 
