@@ -90,7 +90,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.98.19"
+version = "0.98.20"
 
 [project.optional-dependencies]
 test = [
@@ -340,7 +340,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.98.19"
+current_version = "0.98.20"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -451,6 +451,7 @@ filterwarnings = [
   "ignore:There is no current event loop:DeprecationWarning",  # eventkit
   "ignore:Using fork.* can cause Polars to deadlock in the child process:RuntimeWarning",  # polars/pqdm
   "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",  # astor
+  "ignore:loop is closed:ResourceWarning",  # redis
   "ignore:unclosed <StreamWriter .*>:ResourceWarning",  # redis
   "ignore:unclosed <socket.*socket .*>:ResourceWarning",  # redis
   "ignore:unclosed Connection <redis.*asyncio.*connection.*Connection.*>:ResourceWarning",  # redis

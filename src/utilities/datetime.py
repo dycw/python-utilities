@@ -893,12 +893,12 @@ def _round_to_weekday(
 ##
 
 
-def serialize_compact_iso(date_or_datetime: DateOrDateTime, /) -> str:
-    """Serialize a date/datetime using a compact ISO format."""
+def serialize_compact(date_or_datetime: DateOrDateTime, /) -> str:
+    """Serialize a date/datetime using a compact format."""
     match date_or_datetime:
         case dt.datetime() as datetime:
             if datetime.tzinfo is not None:
-                raise SerializeCompactISOError(datetime=datetime)
+                raise SerializeCompactError(datetime=datetime)
             if datetime.microsecond == 0:
                 format_ = "%Y%m%dT%H%M%S"
             else:
@@ -911,7 +911,7 @@ def serialize_compact_iso(date_or_datetime: DateOrDateTime, /) -> str:
 
 
 @dataclass(kw_only=True, slots=True)
-class SerializeCompactISOError(Exception):
+class SerializeCompactError(Exception):
     datetime: dt.datetime
 
     @override
@@ -919,27 +919,41 @@ class SerializeCompactISOError(Exception):
         return f"Unable to serialize zoned datetime {self.datetime}"
 
 
-def parse_compact_iso(text: str, /) -> dt.date:
-    """Construct a date/datetime from a compact ISO string."""
+def parse_date_compact(text: str, /) -> dt.date:
+    """Parse a compact string into a date."""
     try:
-        datetime = dt.datetime.strptime(text, "%Y%m%d")  # noqa: DTZ007
+        datetime = dt.datetime.strptime(text, "%Y%m%d").replace(tzinfo=UTC)
     except ValueError:
-        pass
-    else:
-        return datetime.date()
-    for format_ in ["%Y%m%dT%H%M%S", "%Y%m%dT%H%M%S.%f"]:
-        with suppress(ValueError):
-            return dt.datetime.strptime(text, format_)  # noqa: DTZ007
-    raise ParseCompactISOError(text=text)
+        raise ParseDateCompactError(text=text) from None
+    return datetime.date()
 
 
 @dataclass(kw_only=True, slots=True)
-class ParseCompactISOError(Exception):
+class ParseDateCompactError(Exception):
     text: str
 
     @override
     def __str__(self) -> str:
-        return f"Unable to parse {self.text!r} into a date/datetime"
+        return f"Unable to parse {self.text!r} into a date"
+
+
+def parse_datetime_compact(text: str, /) -> dt.datetime:
+    """Parse a compact string into a datetime."""
+    for fmt in ["%Y%m%dT%H%M%S", "%Y%m%dT%H%M%S.%f"]:
+        with suppress(ValueError):
+            return (
+                dt.datetime.strptime(text, fmt).replace(tzinfo=UTC).replace(tzinfo=None)
+            )
+    raise ParseDateTimeCompactError(text=text)
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseDateTimeCompactError(Exception):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse {self.text!r} into a datetime"
 
 
 ##
@@ -1187,9 +1201,10 @@ __all__ = [
     "MillisecondsSinceEpochError",
     "Month",
     "MonthError",
-    "ParseCompactISOError",
+    "ParseDateCompactError",
+    "ParseDateTimeCompactError",
     "ParseMonthError",
-    "SerializeCompactISOError",
+    "SerializeCompactError",
     "SubDurationError",
     "TimedeltaToMillisecondsError",
     "YieldDaysError",
@@ -1241,13 +1256,14 @@ __all__ = [
     "milliseconds_since_epoch",
     "milliseconds_since_epoch_to_datetime",
     "milliseconds_to_timedelta",
-    "parse_compact_iso",
+    "parse_date_compact",
+    "parse_datetime_compact",
     "parse_month",
     "parse_two_digit_year",
     "round_datetime",
     "round_to_next_weekday",
     "round_to_prev_weekday",
-    "serialize_compact_iso",
+    "serialize_compact",
     "serialize_month",
     "sub_duration",
     "timedelta_since_epoch",

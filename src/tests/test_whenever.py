@@ -30,7 +30,7 @@ from utilities.datetime import (
     MICROSECOND,
     drop_milli_and_microseconds,
     parse_two_digit_year,
-    serialize_compact_iso,
+    serialize_compact,
 )
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -131,7 +131,7 @@ class TestParseAndSerializeDate:
 
     @given(date=dates())
     def test_yyyymmdd(self, *, date: dt.date) -> None:
-        serialized = serialize_compact_iso(date)
+        serialized = serialize_compact(date)
         result = parse_date(serialized)
         assert result == date
 
@@ -196,14 +196,14 @@ class TestParseAndSerializeLocalDateTime:
 
     @given(datetime=datetimes().map(drop_milli_and_microseconds))
     def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime) -> None:
-        serialized = serialize_compact_iso(datetime)
+        serialized = serialize_compact(datetime)
         result = parse_local_datetime(serialized)
         assert result == datetime
 
     @given(datetime=datetimes())
     def test_yyyymmdd_hhmmss_ffffff(self, *, datetime: dt.datetime) -> None:
         _ = assume(datetime.microsecond != 0)
-        serialized = serialize_compact_iso(datetime)
+        serialized = serialize_compact(datetime)
         result = parse_local_datetime(serialized)
         assert result == datetime
 
@@ -351,7 +351,7 @@ class TestParseAndSerializeZonedDateTime:
     )
     @SKIPIF_CI_AND_WINDOWS
     def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime) -> None:
-        part1 = serialize_compact_iso(datetime.replace(tzinfo=None))
+        part1 = serialize_compact(datetime.replace(tzinfo=None))
         assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
         part2 = get_time_zone_name(datetime.tzinfo)
         serialized = f"{part1}[{part2}]"
@@ -366,7 +366,7 @@ class TestParseAndSerializeZonedDateTime:
     @SKIPIF_CI_AND_WINDOWS
     def test_yyyymmdd_hhmmss_ffffff(self, *, datetime: dt.datetime) -> None:
         _ = assume(datetime.microsecond != 0)
-        part1 = serialize_compact_iso(datetime.replace(tzinfo=None))
+        part1 = serialize_compact(datetime.replace(tzinfo=None))
         assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
         part2 = get_time_zone_name(datetime.tzinfo)
         serialized = f"{part1}[{part2}]"

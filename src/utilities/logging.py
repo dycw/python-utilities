@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import datetime as dt
+import re
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from functools import cached_property
 from itertools import product
 from logging import (
     ERROR,
     NOTSET,
+    FileHandler,
     Formatter,
     Handler,
     Logger,
@@ -16,25 +20,41 @@ from logging import (
     getLogger,
     setLogRecordFactory,
 )
-from logging.handlers import (
-    BaseRotatingHandler,
-    RotatingFileHandler,
-    TimedRotatingFileHandler,
-)
+from logging.handlers import BaseRotatingHandler, TimedRotatingFileHandler
 from pathlib import Path
-from re import search
+from re import Pattern, search
+from shutil import move
 from sys import stdout
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never, cast, override
+from time import time
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Literal,
+    Self,
+    assert_never,
+    cast,
+    override,
+)
 
 from utilities.atomicwrites import writer
-from utilities.datetime import get_now, maybe_sub_pct_y
+from utilities.dataclasses import replace_non_sentinel
+from utilities.datetime import (
+    get_now_local,
+    maybe_sub_pct_y,
+    parse_datetime_compact,
+    serialize_compact,
+)
+from utilities.errors import ImpossibleCaseError
 from utilities.git import MASTER, get_repo_root
+from utilities.iterables import OneEmptyError, one
 from utilities.pathlib import ensure_suffix, resolve_path
+from utilities.sentinel import Sentinel, sentinel
 from utilities.traceback import RichTracebackFormatter
 from utilities.types import LogLevel, PathLike
+from utilities.version import GetVersionError
 
 if TYPE_CHECKING:
-    import datetime as dt
     from collections.abc import Callable, Iterable, Iterator
     from logging import _FilterType
     from zoneinfo import ZoneInfo
@@ -57,56 +77,296 @@ type _When = Literal[
 class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
     """Handler which rotates on size & time."""
 
+    stream: Any
+
     @override
     def __init__(
         self,
         filename: PathLike,
         mode: Literal["a", "w", "x"] = "a",
-        maxBytes: int = 0,
-        backupCount: int = 0,
-        delay: bool = True,  # set to True
+        encoding: str | None = None,
+        delay: bool = False,
         errors: Literal["strict", "ignore", "replace"] | None = None,
+        maxBytes: int = 0,
         when: _When = "midnight",
         interval: int = 1,
-        encoding: str | None = None,
+        backupCount: int = 0,
         utc: bool = False,
         atTime: dt.time | None = None,
     ) -> None:
         filename = str(Path(filename))
-        super().__init__(filename, mode, encoding=encoding, delay=delay)
-        self.size_handler = RotatingFileHandler(
-            filename,
-            mode=mode,
-            maxBytes=maxBytes,
-            backupCount=backupCount,
-            encoding=encoding,
-            delay=True,
-            errors=errors,
-        )
-        self.time_handler = TimedRotatingFileHandler(
+        super().__init__(filename, mode, encoding=encoding, delay=delay, errors=errors)
+        self._max_bytes = maxBytes if maxBytes >= 1 else None
+        self._backup_count = backupCount if backupCount >= 1 else None
+        self._filename = Path(self.baseFilename)
+        self._directory = self._filename.parent
+        self._stem = self._filename.stem
+        self._suffix = self._filename.suffix
+        self._patterns = _compute_rollover_patterns(self._stem, self._suffix)
+        self._time_handler = TimedRotatingFileHandler(
             filename,
             when=when,
             interval=interval,
             backupCount=backupCount,
             encoding=encoding,
-            delay=True,
+            delay=delay,
             utc=utc,
             atTime=atTime,
             errors=errors,
         )
-        self._last_record: LogRecord | None = None
 
     @override
     def emit(self, record: LogRecord) -> None:
-        self._last_record = record
-        self.size_handler.emit(record)
-        self.time_handler.emit(record)
+        try:  # skipif-ci-and-windows
+            if (self._backup_count is not None) and self._should_rollover(record):
+                self._do_rollover(backup_count=self._backup_count)
+            FileHandler.emit(self, record)
+        except GetVersionError:  # pragma: no cover
+            raise
+        except Exception:  # noqa: BLE001  # pragma: no cover
+            self.handleError(record)
 
-    def shouldRollover(self, record: LogRecord, /) -> bool:  # noqa: N802
-        self._last_record = record
-        return bool(self.size_handler.shouldRollover(record)) or bool(
-            self.time_handler.shouldRollover(record)
+    def _do_rollover(self, *, backup_count: int = 1) -> None:
+        if self.stream:  # pragma: no cover
+            self.stream.close()
+            self.stream = None
+
+        actions = _compute_rollover_actions(  # skipif-ci-and-windows
+            self._directory,
+            self._stem,
+            self._suffix,
+            patterns=self._patterns,
+            backup_count=backup_count,
         )
+        actions.do()  # skipif-ci-and-windows
+
+        if not self.delay:  # pragma: no cover
+            self.stream = self._open()
+        self._time_handler.rolloverAt = (  # skipif-ci-and-windows
+            self._time_handler.computeRollover(int(time()))
+        )
+
+    def _should_rollover(self, record: LogRecord, /) -> bool:
+        if self._max_bytes is not None:  # skipif-ci-and-windows
+            try:
+                current = self._filename.stat().st_size
+            except FileNotFoundError:
+                pass
+            else:
+                delta = len(f"{self.format(record)}\n")
+                new = current + delta
+                if new >= self._max_bytes:
+                    return True
+        return bool(self._time_handler.shouldRollover(record))  # skipif-ci-and-windows
+
+
+def _compute_rollover_patterns(stem: str, suffix: str, /) -> _RolloverPatterns:
+    return _RolloverPatterns(
+        pattern1=re.compile(rf"^{stem}\.(\d+){suffix}$"),
+        pattern2=re.compile(rf"^{stem}\.(\d+)__(\d{{8}}T\d{{6}}){suffix}$"),
+        pattern3=re.compile(
+            rf"^{stem}\.(\d+)__(\d{{8}}T\d{{6}})__(\d{{8}}T\d{{6}}){suffix}$"
+        ),
+    )
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class _RolloverPatterns:
+    pattern1: Pattern[str]
+    pattern2: Pattern[str]
+    pattern3: Pattern[str]
+
+
+def _compute_rollover_actions(
+    directory: Path,
+    stem: str,
+    suffix: str,
+    /,
+    *,
+    patterns: _RolloverPatterns | None = None,
+    backup_count: int = 1,
+) -> _RolloverActions:
+    patterns = (  # skipif-ci-and-windows
+        _compute_rollover_patterns(stem, suffix) if patterns is None else patterns
+    )
+    files = {  # skipif-ci-and-windows
+        file
+        for path in directory.iterdir()
+        if (file := _RotatingLogFile.from_path(path, stem, suffix, patterns=patterns))
+        is not None
+    }
+    deletions: set[_Deletion] = set()  # skipif-ci-and-windows
+    rotations: set[_Rotation] = set()  # skipif-ci-and-windows
+    for file in files:  # skipif-ci-and-windows
+        match file.index, file.start, file.end:
+            case int() as index, _, _ if index >= backup_count:
+                deletions.add(_Deletion(file=file))
+            case index, None, _:
+                if index is None:
+                    curr = 0
+                    end = get_now_local()
+                else:
+                    curr = index
+                    end = sentinel
+                try:
+                    start = one(f for f in files if f.index == curr + 1).end
+                except OneEmptyError:
+                    start = None
+                rotations.add(
+                    _Rotation(file=file, index=curr + 1, start=start, end=end)
+                )
+            case int() as index, dt.datetime(), dt.datetime():
+                rotations.add(_Rotation(file=file, index=index + 1))
+            case _:  # pragma: no cover
+                raise NotImplementedError
+    return _RolloverActions(  # skipif-ci-and-windows
+        deletions=deletions, rotations=rotations
+    )
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class _RolloverActions:
+    deletions: set[_Deletion] = field(default_factory=set)
+    rotations: set[_Rotation] = field(default_factory=set)
+
+    def do(self) -> None:
+        for deletion in self.deletions:  # skipif-ci-and-windows
+            deletion.delete()
+        for rotation in sorted(  # skipif-ci-and-windows
+            self.rotations, key=lambda r: r.index, reverse=True
+        ):
+            rotation.rotate()
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class _RotatingLogFile:
+    directory: Path
+    stem: str
+    suffix: str
+    index: int | None = None
+    start: dt.datetime | None = None
+    end: dt.datetime | None = None
+
+    def __post_init__(self) -> None:
+        if self.start is not None:
+            self.start = self.start.replace(microsecond=0, tzinfo=None)
+        if self.end is not None:
+            self.end = self.end.replace(microsecond=0, tzinfo=None)
+
+    @classmethod
+    def from_path(
+        cls,
+        path: Path,
+        stem: str,
+        suffix: str,
+        /,
+        *,
+        patterns: _RolloverPatterns | None = None,
+    ) -> Self | None:
+        if (not path.stem.startswith(stem)) or path.suffix != suffix:
+            return None
+        if patterns is None:  # skipif-ci-and-windows
+            patterns = _compute_rollover_patterns(stem, suffix)
+        try:
+            (index,) = patterns.pattern1.findall(path.name)
+        except ValueError:
+            pass
+        else:
+            return cls(
+                directory=path.parent, stem=stem, suffix=suffix, index=int(index)
+            )
+        try:
+            ((index, end),) = patterns.pattern2.findall(path.name)
+        except ValueError:
+            pass
+        else:
+            return cls(
+                directory=path.parent,
+                stem=stem,
+                suffix=suffix,
+                index=int(index),
+                end=parse_datetime_compact(end),
+            )
+        try:
+            ((index, start, end),) = patterns.pattern3.findall(path.name)
+        except ValueError:
+            return cls(directory=path.parent, stem=stem, suffix=suffix)
+        else:
+            return cls(
+                directory=path.parent,
+                stem=stem,
+                suffix=suffix,
+                index=int(index),
+                start=parse_datetime_compact(start),
+                end=parse_datetime_compact(end),
+            )
+
+    @cached_property
+    def path(self) -> Path:
+        """The full path."""
+        match self.index, self.start, self.end:
+            case None, None, None:
+                tail = None
+            case int() as index, None, None:
+                tail = str(index)
+            case int() as index, None, dt.datetime() as end:
+                tail = f"{index}__{serialize_compact(end)}"
+            case int() as index, dt.datetime() as start, dt.datetime() as end:
+                tail = f"{index}__{serialize_compact(start)}__{serialize_compact(end)}"
+            case _:  # pragma: no cover
+                raise ImpossibleCaseError(
+                    case=[f"{self.index=}", f"{self.start=}", f"{self.end=}"]
+                )
+        stem = self.stem if tail is None else f"{self.stem}.{tail}"
+        return ensure_suffix(self.directory.joinpath(stem), self.suffix)
+
+    def replace(
+        self,
+        *,
+        index: int | None | Sentinel = sentinel,
+        start: dt.datetime | None | Sentinel = sentinel,
+        end: dt.datetime | None | Sentinel = sentinel,
+    ) -> Self:
+        return replace_non_sentinel(  # skipif-ci-and-windows
+            self, index=index, start=start, end=end
+        )
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class _Deletion:
+    file: _RotatingLogFile
+
+    def delete(self) -> None:
+        self.file.path.unlink(missing_ok=True)  # skipif-ci-and-windows
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class _Rotation:
+    file: _RotatingLogFile
+    index: int = 0
+    start: dt.datetime | None | Sentinel = sentinel
+    end: dt.datetime | Sentinel = sentinel
+
+    def __post_init__(self) -> None:
+        if isinstance(self.start, dt.datetime):  # skipif-ci-and-windows
+            self.start = self.start.replace(microsecond=0, tzinfo=None)
+        if isinstance(self.end, dt.datetime):  # skipif-ci-and-windows
+            self.end = self.end.replace(microsecond=0, tzinfo=None)
+
+    @cached_property
+    def destination(self) -> Path:
+        return self.file.replace(  # skipif-ci-and-windows
+            index=self.index, start=self.start, end=self.end
+        ).path
+
+    def rotate(self) -> None:
+        try:  # skipif-ci-and-windows
+            from utilities.atomicwrites import writer
+        except ModuleNotFoundError:  # pragma: no cover
+            move(self.file.path, self.destination)
+        else:  # skipif-ci-and-windows
+            with writer(self.destination) as tmp_path:
+                move(self.file.path, tmp_path)
 
 
 ##
@@ -127,13 +387,15 @@ class StandaloneFileHandler(Handler):
         try:
             path = (
                 resolve_path(path=self._path)
-                .joinpath(get_now(time_zone="local").strftime("%Y-%m-%dT%H-%M-%S"))
+                .joinpath(serialize_compact(get_now_local().replace(tzinfo=None)))
                 .with_suffix(".txt")
             )
             formatted = self.format(record)
             with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
                 _ = fh.write(formatted)
-        except Exception:  # noqa: BLE001 # pragma: no cover
+        except GetVersionError:  # pragma: no cover
+            raise
+        except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
 

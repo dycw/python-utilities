@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from pyinstrument.profiler import Profiler
 
-from utilities.datetime import get_now
+from utilities.datetime import get_now_local, serialize_compact
 from utilities.pathlib import PWD
 
 if TYPE_CHECKING:
@@ -22,8 +22,10 @@ def profile(*, path: PathLike = PWD) -> Iterator[None]:
 
     with Profiler() as profiler:
         yield
-    now = get_now(time_zone="local")
-    filename = Path(path, f"profile__{now:%Y%m%dT%H%M%S}.html")
+    filename = Path(
+        path,
+        f"profile__{serialize_compact(get_now_local().replace(microsecond=0, tzinfo=None))}.html",
+    )
     with writer(filename) as temp, temp.open(mode="w") as fh:
         _ = fh.write(profiler.output_html())
 

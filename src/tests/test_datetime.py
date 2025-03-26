@@ -55,9 +55,10 @@ from utilities.datetime import (
     MillisecondsSinceEpochError,
     Month,
     MonthError,
-    ParseCompactISOError,
+    ParseDateCompactError,
+    ParseDateTimeCompactError,
     ParseMonthError,
-    SerializeCompactISOError,
+    SerializeCompactError,
     SubDurationError,
     TimedeltaToMillisecondsError,
     YieldDaysError,
@@ -115,13 +116,14 @@ from utilities.datetime import (
     milliseconds_since_epoch,
     milliseconds_since_epoch_to_datetime,
     milliseconds_to_timedelta,
-    parse_compact_iso,
+    parse_date_compact,
+    parse_datetime_compact,
     parse_month,
     parse_two_digit_year,
     round_datetime,
     round_to_next_weekday,
     round_to_prev_weekday,
-    serialize_compact_iso,
+    serialize_compact,
     serialize_month,
     sub_duration,
     timedelta_since_epoch,
@@ -991,29 +993,33 @@ class TestRoundToWeekday:
         assert operator(result, date)
 
 
-class TestSerializeAndParseCompactISO:
+class TestSerializeAndParseCompact:
     @given(date=dates())
     def test_dates(self, *, date: dt.date) -> None:
-        result = parse_compact_iso(serialize_compact_iso(date))
+        result = parse_date_compact(serialize_compact(date))
         assert result == date
 
     @given(datetime=datetimes())
     def test_datetimes(self, *, datetime: dt.datetime) -> None:
-        result = parse_compact_iso(serialize_compact_iso(datetime))
+        result = parse_datetime_compact(serialize_compact(datetime))
         assert result == datetime
 
     @given(datetime=zoned_datetimes())
     def test_error_serialize(self, *, datetime: dt.datetime) -> None:
         with raises(
-            SerializeCompactISOError, match="Unable to serialize zoned datetime .*"
+            SerializeCompactError, match="Unable to serialize zoned datetime .*"
         ):
-            _ = serialize_compact_iso(datetime)
+            _ = serialize_compact(datetime)
 
-    def test_error_parse(self) -> None:
+    def test_error_parse_date(self) -> None:
+        with raises(ParseDateCompactError, match="Unable to parse '.*' into a date"):
+            _ = parse_date_compact("invalid")
+
+    def test_error_parse_datetime(self) -> None:
         with raises(
-            ParseCompactISOError, match="Unable to parse '.*' into a date/datetime"
+            ParseDateTimeCompactError, match="Unable to parse '.*' into a datetime"
         ):
-            _ = parse_compact_iso("invalid")
+            _ = parse_datetime_compact("invalid")
 
 
 class TestSubDuration:
