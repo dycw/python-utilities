@@ -579,7 +579,7 @@ class TestSizeAndTimeRotatingFileHandler:
     ) -> None:
         logger = getLogger(str(tmp_path))
         path = tmp_path.joinpath("log")
-        handler = SizeAndTimeRotatingFileHandler(filename=path)
+        handler = SizeAndTimeRotatingFileHandler(filename=path, maxBytes=1)
         logger.addHandler(handler)
         logger.setLevel(DEBUG)
         logger.info("message")
