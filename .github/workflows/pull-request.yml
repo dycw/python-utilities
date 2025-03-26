@@ -66,5 +66,5 @@ jobs:
           python-version: ${{ matrix.version }}
       - run: git fetch origin master:origin/master --update-head-ok # https://stackoverflow.com/a/76384065
       - run: uv sync
-      - run: uv run pytest --cov-report=term-missing:skip-covered -n=auto
+      - run: HYPOTHESIS_PROFILE='ci' uv run pytest --cov-report=term-missing:skip-covered -n=auto
     timeout-minutes: 60
