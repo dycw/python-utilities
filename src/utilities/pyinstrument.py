@@ -22,7 +22,10 @@ def profile(*, path: PathLike = PWD) -> Iterator[None]:
 
     with Profiler() as profiler:
         yield
-    filename = Path(path, f"profile__{serialize_compact(get_now_local())}.html")
+    filename = Path(
+        path,
+        f"profile__{serialize_compact(get_now_local().replace(microsecond=0, tzinfo=None))}.html",
+    )
     with writer(filename) as temp, temp.open(mode="w") as fh:
         _ = fh.write(profiler.output_html())
 
