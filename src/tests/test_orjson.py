@@ -86,6 +86,7 @@ class TestGetLogRecords:
         assert result.num_files_error == 0
         assert result.num_lines == 1
         assert result.num_lines_ok == 1
+        assert result.num_lines_blank == 0
         assert result.num_lines_error == 0
         assert len(result.records) == 1
         record = one(result.records)
@@ -97,7 +98,25 @@ class TestGetLogRecords:
         assert result.frac_files_ok == 1.0
         assert result.frac_files_error == 0.0
         assert result.frac_lines_ok == 1.0
+        assert result.frac_lines_blank == 0.0
         assert result.frac_lines_error == 0.0
+
+    def test_skip_blank_lines(self, *, tmp_path: Path) -> None:
+        logger = getLogger(str(tmp_path))
+        logger.setLevel(DEBUG)
+        handler = FileHandler(file := tmp_path.joinpath("log"))
+        with file.open(mode="w") as fh:
+            _ = fh.write("\n")
+        handler.setFormatter(OrjsonFormatter())
+        handler.setLevel(DEBUG)
+        logger.addHandler(handler)
+        logger.debug("", extra={"a": 1, "b": 2, "_ignored": 3})
+        result = get_log_records(tmp_path, parallelism="threads")
+        assert result.path == tmp_path
+        assert result.num_lines == 2
+        assert result.num_lines_ok == 1
+        assert result.num_lines_blank == 1
+        assert result.num_lines_error == 0
 
     def test_skip_dir(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("dir").mkdir()
