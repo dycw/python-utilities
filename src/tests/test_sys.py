@@ -5,7 +5,7 @@ from logging import basicConfig
 from sys import exc_info
 from typing import TYPE_CHECKING, Literal
 
-from pytest import LogCaptureFixture, mark, raises
+from pytest import LogCaptureFixture, raises
 
 from tests.conftest import SKIPIF_CI
 from tests.test_logging import TestSetupLogging
@@ -53,7 +53,6 @@ class TestMakeExceptHook:
             hook(exc_type, exc_val, traceback)
         self._assert_files_and_caplog(tmp_path, caplog, ("post", traceback_func_one))
 
-    @mark.only
     def test_with_setup_logging_undecorated(
         self,
         *,
