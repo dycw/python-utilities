@@ -1208,7 +1208,7 @@ class TestResolveIncludeAndExclude:
             _ = resolve_include_and_exclude(include=[1, 2, 3], exclude=[3, 4, 5])
 
 
-class TestSortIterables:
+class TestSortIterable:
     @given(
         x=make_objects(floats_allow_nan=False), y=make_objects(floats_allow_nan=False)
     )

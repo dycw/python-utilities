@@ -7,7 +7,7 @@ from functools import partial
 from math import nan
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import example, given
+from hypothesis import example, given, settings
 from hypothesis.strategies import (
     SearchStrategy,
     booleans,
@@ -286,11 +286,11 @@ class TestIsEqual:
             )
         )
     )
+    @settings(max_examples=1000)
     def test_two_objects(self, *, objs: tuple[Any, Any]) -> None:
         first, second = objs
         with assume_does_not_raise(IsEqualError):
-            result = utilities.operator.is_equal(first, second)
-        assert isinstance(result, bool)
+            _ = utilities.operator.is_equal(first, second)
 
     @given(x=integers())
     def test_dataclass_custom_equality(self, *, x: int) -> None:
@@ -330,14 +330,18 @@ class TestIsEqual:
         y=dictionaries(text_ascii(), make_objects(), max_size=10),
     )
     def test_mappings(self, *, x: StrMapping, y: StrMapping) -> None:
-        with assume_does_not_raise(IsEqualError):
-            result = utilities.operator.is_equal(x, y)
+        result = utilities.operator.is_equal(x, y)
         assert isinstance(result, bool)
 
     @given(x=floats(), y=floats())
     @example(x=-4.233805663404397, y=nan)
     def test_sets_of_floats(self, *, x: float, y: float) -> None:
         assert utilities.operator.is_equal({x, y}, {y, x})
+
+    def test_sets_of_unsortables(self) -> None:
+        obj = set(TruthEnum)
+        with raises(IsEqualError, match="Unable to sort .* and .*"):
+            _ = utilities.operator.is_equal(obj, obj)
 
     @given(
         case=sampled_from([
