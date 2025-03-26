@@ -992,8 +992,13 @@ class TestRoundToWeekday:
 
 
 class TestSerializeAndParseCompactISO:
+    @given(date=dates())
+    def test_dates(self, *, date: dt.date) -> None:
+        result = parse_compact_iso(serialize_compact_iso(date))
+        assert result == date
+
     @given(datetime=datetimes())
-    def test_main(self, *, datetime: dt.datetime) -> None:
+    def test_datetimes(self, *, datetime: dt.datetime) -> None:
         result = parse_compact_iso(serialize_compact_iso(datetime))
         assert result == datetime
 
