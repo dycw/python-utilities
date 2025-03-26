@@ -7,7 +7,7 @@ from functools import partial
 from math import nan
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import example, given
+from hypothesis import example, given, settings
 from hypothesis.strategies import (
     SearchStrategy,
     booleans,
@@ -35,6 +35,7 @@ import utilities.operator
 from tests.conftest import IS_CI_AND_WINDOWS
 from tests.test_typing_funcs.with_future import (
     DataClassFutureCustomEquality,
+    DataClassFutureDefaultInInitChild,
     DataClassFutureInt,
     DataClassFutureIntDefault,
     DataClassFutureLiteral,
@@ -66,6 +67,7 @@ if TYPE_CHECKING:
 def base_objects(
     *,
     dataclass_custom_equality: bool = False,
+    dataclass_default_in_init_child: bool = False,
     dataclass_int: bool = False,
     dataclass_int_default: bool = False,
     dataclass_literal: bool = False,
@@ -103,6 +105,8 @@ def base_objects(
         base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
     if dataclass_custom_equality:
         base |= builds(DataClassFutureCustomEquality)
+    if dataclass_default_in_init_child:
+        base |= builds(DataClassFutureDefaultInInitChild)
     if dataclass_int:
         base |= builds(DataClassFutureInt).filter(lambda obj: _is_int64(obj.int_))
     if dataclass_int_default:
@@ -132,6 +136,7 @@ def base_objects(
 def make_objects(
     *,
     dataclass_custom_equality: bool = False,
+    dataclass_default_in_init_child: bool = False,
     dataclass_int: bool = False,
     dataclass_int_default: bool = False,
     dataclass_literal: bool = False,
@@ -151,6 +156,7 @@ def make_objects(
 ) -> SearchStrategy[Any]:
     base = base_objects(
         dataclass_custom_equality=dataclass_custom_equality,
+        dataclass_default_in_init_child=dataclass_default_in_init_child,
         dataclass_int=dataclass_int,
         dataclass_int_default=dataclass_int_default,
         dataclass_literal=dataclass_literal,
@@ -244,6 +250,7 @@ class TestIsEqual:
     @given(
         obj=make_objects(
             dataclass_custom_equality=True,
+            dataclass_default_in_init_child=True,
             dataclass_int=True,
             dataclass_int_default=True,
             dataclass_literal=True,
@@ -279,11 +286,11 @@ class TestIsEqual:
             )
         )
     )
+    @settings(max_examples=1000)
     def test_two_objects(self, *, objs: tuple[Any, Any]) -> None:
         first, second = objs
         with assume_does_not_raise(IsEqualError):
-            result = utilities.operator.is_equal(first, second)
-        assert isinstance(result, bool)
+            _ = utilities.operator.is_equal(first, second)
 
     @given(x=integers())
     def test_dataclass_custom_equality(self, *, x: int) -> None:
@@ -323,14 +330,18 @@ class TestIsEqual:
         y=dictionaries(text_ascii(), make_objects(), max_size=10),
     )
     def test_mappings(self, *, x: StrMapping, y: StrMapping) -> None:
-        with assume_does_not_raise(IsEqualError):
-            result = utilities.operator.is_equal(x, y)
+        result = utilities.operator.is_equal(x, y)
         assert isinstance(result, bool)
 
     @given(x=floats(), y=floats())
     @example(x=-4.233805663404397, y=nan)
     def test_sets_of_floats(self, *, x: float, y: float) -> None:
         assert utilities.operator.is_equal({x, y}, {y, x})
+
+    def test_sets_of_unsortables(self) -> None:
+        obj = set(TruthEnum)
+        with raises(IsEqualError, match="Unable to sort .* and .*"):
+            _ = utilities.operator.is_equal(obj, obj)
 
     @given(
         case=sampled_from([

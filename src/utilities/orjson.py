@@ -445,6 +445,7 @@ def _object_hook(
                         cls,
                         pattern,
                         data=data,
+                        dataclass_hook=dataclass_hook,
                         objects=objects,
                         redirects=redirects,
                     )
