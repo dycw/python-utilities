@@ -65,9 +65,43 @@ class TestBasicConfig:
 
 @mark.only
 class TestComputeRolloverActions:
-    def test_main(self, *, tmp_path: Path) -> None:
+    async def test_main(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("log.txt").touch()
+
         actions = _compute_rollover_actions(tmp_path, "log", ".txt")
+        assert len(actions.deletions) == 0
+        assert len(actions.rotations) == 1
+        actions.do()
+        assert len(list(tmp_path.iterdir())) == 1
+
+        tmp_path.joinpath("log.txt").touch()
+        assert len(list(tmp_path.iterdir())) == 2
+
+        await sleep(1)
+        actions = _compute_rollover_actions(tmp_path, "log", ".txt")
+        assert len(actions.deletions) == 1
+        assert len(actions.rotations) == 1
+        actions.do()
+        assert len(list(tmp_path.iterdir())) == 1
+
+    async def test_multiple_backups(self, *, tmp_path: Path) -> None:
+        tmp_path.joinpath("log.txt").touch()
+
+        actions = _compute_rollover_actions(tmp_path, "log", ".txt", backup_count=3)
+        assert len(actions.deletions) == 0
+        assert len(actions.rotations) == 1
+        actions.do()
+        assert len(list(tmp_path.iterdir())) == 1
+
+        tmp_path.joinpath("log.txt").touch()
+        assert len(list(tmp_path.iterdir())) == 2
+
+        await sleep(1)
+        actions = _compute_rollover_actions(tmp_path, "log", ".txt", backup_count=3)
+        assert len(actions.deletions) == 0
+        assert len(actions.rotations) == 2
+        actions.do()
+        assert len(list(tmp_path.iterdir())) == 1
 
 
 class TestGetDefaultLoggingPath:

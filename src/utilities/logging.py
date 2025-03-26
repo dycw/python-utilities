@@ -5,7 +5,7 @@ import re
 from contextlib import contextmanager, suppress
 from dataclasses import InitVar, dataclass, field
 from functools import cached_property
-from itertools import product
+from itertools import chain, product
 from logging import (
     ERROR,
     NOTSET,
@@ -41,9 +41,11 @@ from typing import (
     override,
 )
 
+from whenever import microseconds
+
 from utilities.atomicwrites import writer
 from utilities.dataclasses import replace_non_sentinel
-from utilities.datetime import get_now, maybe_sub_pct_y
+from utilities.datetime import get_now_local, maybe_sub_pct_y
 from utilities.errors import ImpossibleCaseError
 from utilities.git import MASTER, get_repo_root
 from utilities.iterables import OneEmptyError, one
@@ -145,25 +147,11 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
             actions = _compute_rollover_actions(
                 self._directory,
                 self._stem,
-                self._backup_count,
+                self._suffix,
                 patterns=self._patterns,
+                backup_count=self._backup_count,
             )
-            details = {
-                _RotatingLogFile(
-                    dir_=self._directory,
-                    base=self._stem,
-                    path=p.name,
-                    _pattern1=self._pattern1,
-                    _pattern2=self._pattern2,
-                    _pattern3=self._pattern3,
-                )
-                for p in self._directory.iterdir()
-                if p.name.startswith(self._stem)
-            }
-            try:
-                detail = one(details)
-            except OneEmptyError:
-                detail = None
+            actions.do()
 
             zz
             breakpoint()
@@ -254,7 +242,7 @@ def _compute_rollover_actions(
     *,
     patterns: _RolloverPatterns | None = None,
     backup_count: int = 1,
-) -> Sequence[_Deletion | _Rotation]:
+) -> _RolloverActions:
     patterns = (
         _compute_rollover_patterns(stem, suffix) if patterns is None else patterns
     )
@@ -274,20 +262,28 @@ def _compute_rollover_actions(
                 except OneEmptyError:
                     rotations.add(_Rotation(file=file, index=1))
                 else:
-                    raise NotImplementedError
+                    rotations.add(_Rotation(file=file, index=1, start=index1.end))
             case int() as index, _, _ if index >= backup_count:
                 deletions.add(_Deletion(file=file))
+            case int() as index, None, dt.datetime() as end:
+                raise NotImplementedError
             case int(), dt.datetime(), dt.datetime():
                 raise NotImplementedError
             case _:
                 raise NotImplementedError
-    for deletion in deletions:
-        directory.joinpath(deletion.file.path).unlink(missing_ok=True)
-    for rotation in sorted(rotations, key=lambda r: r.index, reverse=True):
-        rotation.rotate()
-        from_ = directory.joinpath(rotation.file.path).unlink(missing_ok=True)
+    return _RolloverActions(deletions=deletions, rotations=rotations)
 
-    breakpoint()
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class _RolloverActions:
+    deletions: set[_Deletion] = field(default_factory=set)
+    rotations: set[_Rotation] = field(default_factory=set)
+
+    def do(self) -> None:
+        for deletion in self.deletions:
+            deletion.delete()
+        for rotation in sorted(self.rotations, key=lambda r: r.index, reverse=True):
+            rotation.rotate()
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -298,6 +294,12 @@ class _RotatingLogFile:
     index: int | None = None
     start: dt.datetime | None = None
     end: dt.datetime | None = None
+
+    def __post_init__(self) -> None:
+        if self.start is not None:
+            self.start = self.start.replace(microsecond=0, tzinfo=None)
+        if self.end is not None:
+            self.end = self.end.replace(microsecond=0, tzinfo=None)
 
     @classmethod
     def from_path(
@@ -382,57 +384,39 @@ class _RotatingLogFile:
     ) -> Self:
         return replace_non_sentinel(self, index=index, start=start, end=end)
 
-    def _compute_metadata(
-        self, patterns: _RolloverPatterns, /
-    ) -> tuple[int, dt.datetime | None, dt.datetime | None]:
-        with suppress(ValueError):
-            ((index,),) = patterns.pattern1.findall(self.path)
-            return int(index), None, None
-        with suppress(ValueError):
-            ((index, start),) = patterns.pattern2.findall(self.path)
-            return (
-                int(index),
-                dt.datetime.strptime(start, "%Y%m%dT%H%M%S"),  # noqa: DTZ007
-                None,
-            )
-        with suppress(ValueError):
-            ((index, start, end),) = patterns.pattern3.findall(self.path)
-            return (
-                int(index),
-                dt.datetime.strptime(start, "%Y%m%dT%H%M%S"),  # noqa: DTZ007
-                dt.datetime.strptime(end, "%Y%m%dT%H%M%S"),  # noqa: DTZ007
-            )
-        return 0, None, None
-
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class _Deletion:
     file: _RotatingLogFile
 
+    def delete(self) -> None:
+        self.file.path.unlink(missing_ok=True)
+
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class _Rotation:
-    directory: Path
     file: _RotatingLogFile
     index: int = 0
     start: dt.datetime | None | Sentinel = sentinel
-    end: dt.datetime = field(default_factory=get_now)
+    end: dt.datetime = field(default_factory=get_now_local)
+
+    def __post_init__(self) -> None:
+        if isinstance(self.start, dt.datetime):
+            self.start = self.start.replace(microsecond=0, tzinfo=None)
+        self.end = self.end.replace(microsecond=0, tzinfo=None)
 
     @cached_property
-    def new_name(self) -> str:
-        return self.file.replace(
-            index=self.index,
-            start=self.start,
-            end=self.end,
-        ).path
+    def destination(self) -> Path:
+        return self.file.replace(index=self.index, start=self.start, end=self.end).path
 
     def rotate(self) -> None:
-        source = self.directory.joinpath(self.file.path)
-        dest = self.directory.joinpath(self.new_name)
-        breakpoint()
-
-        with writer(self.new_name) as tmp_path:
-            move(self.file)
+        try:
+            from utilities.atomicwrites import writer
+        except ModuleNotFoundError:
+            move(self.file.path, self.destination)
+        else:
+            with writer(self.destination) as tmp_path:
+                move(self.file.path, tmp_path)
 
 
 ##
@@ -453,7 +437,7 @@ class StandaloneFileHandler(Handler):
         try:
             path = (
                 resolve_path(path=self._path)
-                .joinpath(get_now(time_zone="local").strftime("%Y-%m-%dT%H-%M-%S"))
+                .joinpath(get_now_local().strftime("%Y-%m-%dT%H-%M-%S"))
                 .with_suffix(".txt")
             )
             formatted = self.format(record)
