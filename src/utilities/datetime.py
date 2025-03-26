@@ -893,21 +893,12 @@ def _round_to_weekday(
 ##
 
 
-def serialize_compact_iso(date_or_datetime: DateOrDateTime, /) -> str:
-    """Serialize a date/datetime using a compact ISO format."""
-    match date_or_datetime:
-        case dt.datetime() as datetime:
-            if datetime.tzinfo is not None:
-                raise SerializeCompactISOError(datetime=datetime)
-            if datetime.microsecond == 0:
-                format_ = "%Y%m%dT%H%M%S"
-            else:
-                format_ = "%Y%m%dT%H%M%S.%f"
-        case dt.date():
-            format_ = "%Y%m%d"
-        case _ as never:
-            assert_never(never)
-    return date_or_datetime.strftime(maybe_sub_pct_y(format_))
+def serialize_compact_iso(datetime: dt.datetime, /) -> str:
+    """Serialize a local datetime using a compact ISO format."""
+    if datetime.tzinfo is not None:
+        raise SerializeCompactISOError(datetime=datetime)
+    format_ = "%Y%m%dT%H%M%S" if datetime.microsecond == 0 else "%Y%m%dT%H%M%S.%f"
+    return datetime.strftime(maybe_sub_pct_y(format_))
 
 
 @dataclass(kw_only=True, slots=True)
@@ -919,14 +910,8 @@ class SerializeCompactISOError(Exception):
         return f"Unable to serialize zoned datetime {self.datetime}"
 
 
-def parse_compact_iso(text: str, /) -> dt.date:
-    """Construct a date/datetime from a compact ISO string."""
-    try:
-        datetime = dt.datetime.strptime(text, maybe_sub_pct_y("%Y%m%d"))  # noqa: DTZ007
-    except ValueError:
-        pass
-    else:
-        return datetime.date()
+def parse_compact_iso(text: str, /) -> dt.datetime:
+    """Parse a compact ISO string into a local datetime."""
     for format_ in ["%Y%m%dT%H%M%S", "%Y%m%dT%H%M%S.%f"]:
         with suppress(ValueError):
             return dt.datetime.strptime(text, maybe_sub_pct_y(format_))  # noqa: DTZ007
