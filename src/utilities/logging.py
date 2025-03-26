@@ -39,7 +39,12 @@ from typing import (
 
 from utilities.atomicwrites import writer
 from utilities.dataclasses import replace_non_sentinel
-from utilities.datetime import get_now_local, maybe_sub_pct_y, parse_date_compact_iso
+from utilities.datetime import (
+    get_now_local,
+    maybe_sub_pct_y,
+    parse_datetime_compact,
+    serialize_compact,
+)
 from utilities.errors import ImpossibleCaseError
 from utilities.git import MASTER, get_repo_root
 from utilities.iterables import OneEmptyError, one
@@ -277,7 +282,7 @@ class _RotatingLogFile:
                 stem=stem,
                 suffix=suffix,
                 index=int(index),
-                end=parse_date_compact_iso(end),
+                end=parse_datetime_compact(end),
             )
         try:
             ((index, start, end),) = patterns.pattern3.findall(path.name)
@@ -289,8 +294,8 @@ class _RotatingLogFile:
                 stem=stem,
                 suffix=suffix,
                 index=int(index),
-                start=parse_date_compact_iso(start),
-                end=parse_date_compact_iso(end),
+                start=parse_datetime_compact(start),
+                end=parse_datetime_compact(end),
             )
 
     @cached_property
@@ -302,9 +307,9 @@ class _RotatingLogFile:
             case int() as index, None, None:
                 tail = str(index)
             case int() as index, None, dt.datetime() as end:
-                tail = f"{index}__{end:%Y%m%dT%H%M%S}"
+                tail = f"{index}__{serialize_compact(end)}"
             case int() as index, dt.datetime() as start, dt.datetime() as end:
-                tail = f"{index}__{start:%Y%m%dT%H%M%S}__{end:%Y%m%dT%H%M%S}"
+                tail = f"{index}__{serialize_compact(start)}__{serialize_compact(end)}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(
                     case=[f"{self.index=}", f"{self.start=}", f"{self.end=}"]
@@ -379,7 +384,7 @@ class StandaloneFileHandler(Handler):
         try:
             path = (
                 resolve_path(path=self._path)
-                .joinpath(get_now_local().strftime("%Y-%m-%dT%H-%M-%S"))
+                .joinpath(serialize_compact(get_now_local()))
                 .with_suffix(".txt")
             )
             formatted = self.format(record)

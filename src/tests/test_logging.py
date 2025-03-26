@@ -13,7 +13,7 @@ from whenever import ZonedDateTime
 
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.untraced import func_untraced
-from utilities.datetime import NOW_UTC, SECOND, round_datetime
+from utilities.datetime import NOW_UTC, SECOND, round_datetime, serialize_compact
 from utilities.hypothesis import pairs, temp_paths
 from utilities.iterables import one
 from utilities.logging import (
@@ -165,7 +165,7 @@ class TestComputeRolloverActions:
         sleep(1)
         tmp_path.joinpath("log.txt").touch()
         tmp_path.joinpath(
-            f"log.99__{NOW_UTC:%Y%m%dT%H%M%S}__{NOW_UTC:%Y%m%dT%H%M%S}.txt"
+            f"log.99__{serialize_compact(NOW_UTC)}__{serialize_compact(NOW_UTC)}.txt"
         ).touch()
         actions = _compute_rollover_actions(tmp_path, "log", ".txt")
         assert len(actions.deletions) == 2
@@ -255,7 +255,7 @@ class TestRotatingLogFile:
     def test_from_path_with_index_and_end(
         self, *, index: int, end: dt.datetime
     ) -> None:
-        path = Path(f"log.{index}__{end:%Y%m%dT%H%M%S}.txt")
+        path = Path(f"log.{index}__{serialize_compact(end)}.txt")
         result = _RotatingLogFile.from_path(path, "log", ".txt")
         assert result is not None
         assert result.stem == "log"
@@ -274,7 +274,9 @@ class TestRotatingLogFile:
         self, *, index: int, datetimes: tuple[dt.datetime, dt.datetime]
     ) -> None:
         start, end = datetimes
-        path = Path(f"log.{index}__{start:%Y%m%dT%H%M%S}__{end:%Y%m%dT%H%M%S}.txt")
+        path = Path(
+            f"log.{index}__{serialize_compact(start)}__{serialize_compact(end)}.txt"
+        )
         result = _RotatingLogFile.from_path(path, "log", ".txt")
         assert result is not None
         assert result.stem == "log"
@@ -304,7 +306,7 @@ class TestRotatingLogFile:
         file = _RotatingLogFile(
             directory=root, stem="log", suffix=".txt", index=index, end=end
         )
-        assert file.path == root.joinpath(f"log.{index}__{end:%Y%m%dT%H%M%S}.txt")
+        assert file.path == root.joinpath(f"log.{index}__{serialize_compact(end)}.txt")
 
     @given(
         root=temp_paths(),
@@ -319,7 +321,7 @@ class TestRotatingLogFile:
             directory=root, stem="log", suffix=".txt", index=index, start=start, end=end
         )
         assert file.path == root.joinpath(
-            f"log.{index}__{start:%Y%m%dT%H%M%S}__{end:%Y%m%dT%H%M%S}.txt"
+            f"log.{index}__{serialize_compact(start)}__{serialize_compact(end)}.txt"
         )
 
 
