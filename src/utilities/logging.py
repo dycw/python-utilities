@@ -112,10 +112,6 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
 
     @override
     def emit(self, record: LogRecord) -> None:
-        if (self._backup_count is not None) and self._should_rollover(record):
-            self._do_rollover(backup_count=self._backup_count)
-        FileHandler.emit(self, record)
-        return
         try:  # skipif-ci-and-windows
             if (self._backup_count is not None) and self._should_rollover(record):
                 self._do_rollover(backup_count=self._backup_count)
