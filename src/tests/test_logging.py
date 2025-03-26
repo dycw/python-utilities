@@ -315,7 +315,9 @@ class TestRotatingLogFile:
     @given(
         root=temp_paths(),
         index=integers(min_value=1),
-        datetimes=pairs(datetimes(), sorted=True),
+        datetimes=pairs(
+            datetimes().map(lambda d: round_datetime(d, SECOND)), sorted=True
+        ),
     )
     def test_path_with_index_start_and_end(
         self, *, root: Path, index: int, datetimes: tuple[dt.datetime, dt.datetime]
