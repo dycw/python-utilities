@@ -1189,6 +1189,7 @@ __all__ = [
     "MonthError",
     "ParseCompactISOError",
     "ParseMonthError",
+    "SerializeCompactISOError",
     "SubDurationError",
     "TimedeltaToMillisecondsError",
     "YieldDaysError",
