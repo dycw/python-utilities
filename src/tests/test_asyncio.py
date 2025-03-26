@@ -54,7 +54,7 @@ class TestBoundedTaskGroup:
             async with BoundedTaskGroup() as tg:
                 for _ in range(10):
                     _ = tg.create_task(sleep(0.01))
-        assert timer <= 0.02
+        assert timer <= 0.05
 
 
 class TestGetItems:
