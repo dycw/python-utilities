@@ -111,7 +111,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
 
     @override
     def emit(self, record: LogRecord) -> None:
-        try:
+        try:  # skipif-ci-and-windows
             if (self._backup_count is not None) and self._should_rollover(record):
                 self._do_rollover(backup_count=self._backup_count)
             FileHandler.emit(self, record)
@@ -123,21 +123,23 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
             self.stream.close()
             self.stream = None
 
-        actions = _compute_rollover_actions(
+        actions = _compute_rollover_actions(  # skipif-ci-and-windows
             self._directory,
             self._stem,
             self._suffix,
             patterns=self._patterns,
             backup_count=backup_count,
         )
-        actions.do()
+        actions.do()  # skipif-ci-and-windows
 
         if not self.delay:  # pragma: no cover
             self.stream = self._open()
-        self._time_handler.rolloverAt = self._time_handler.computeRollover(int(time()))
+        self._time_handler.rolloverAt = (  # skipif-ci-and-windows
+            self._time_handler.computeRollover(int(time()))
+        )
 
     def _should_rollover(self, record: LogRecord, /) -> bool:
-        if self._max_bytes is not None:
+        if self._max_bytes is not None:  # skipif-ci-and-windows
             try:
                 current = self._filename.stat().st_size
             except FileNotFoundError:
@@ -147,7 +149,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
                 new = current + delta
                 if new >= self._max_bytes:
                     return True
-        return bool(self._time_handler.shouldRollover(record))
+        return bool(self._time_handler.shouldRollover(record))  # skipif-ci-and-windows
 
 
 def _compute_rollover_patterns(stem: str, suffix: str, /) -> _RolloverPatterns:
@@ -176,18 +178,18 @@ def _compute_rollover_actions(
     patterns: _RolloverPatterns | None = None,
     backup_count: int = 1,
 ) -> _RolloverActions:
-    patterns = (
+    patterns = (  # skipif-ci-and-windows
         _compute_rollover_patterns(stem, suffix) if patterns is None else patterns
     )
-    files = {
+    files = {  # skipif-ci-and-windows
         file
         for path in directory.iterdir()
         if (file := _RotatingLogFile.from_path(path, stem, suffix, patterns=patterns))
         is not None
     }
-    deletions: set[_Deletion] = set()
-    rotations: set[_Rotation] = set()
-    for file in files:
+    deletions: set[_Deletion] = set()  # skipif-ci-and-windows
+    rotations: set[_Rotation] = set()  # skipif-ci-and-windows
+    for file in files:  # skipif-ci-and-windows
         match file.index, file.start, file.end:
             case int() as index, _, _ if index >= backup_count:
                 deletions.add(_Deletion(file=file))
@@ -209,7 +211,9 @@ def _compute_rollover_actions(
                 rotations.add(_Rotation(file=file, index=index + 1))
             case _:  # pragma: no cover
                 raise NotImplementedError
-    return _RolloverActions(deletions=deletions, rotations=rotations)
+    return _RolloverActions(  # skipif-ci-and-windows
+        deletions=deletions, rotations=rotations
+    )
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -218,9 +222,11 @@ class _RolloverActions:
     rotations: set[_Rotation] = field(default_factory=set)
 
     def do(self) -> None:
-        for deletion in self.deletions:
+        for deletion in self.deletions:  # skipif-ci-and-windows
             deletion.delete()
-        for rotation in sorted(self.rotations, key=lambda r: r.index, reverse=True):
+        for rotation in sorted(  # skipif-ci-and-windows
+            self.rotations, key=lambda r: r.index, reverse=True
+        ):
             rotation.rotate()
 
 
@@ -251,7 +257,7 @@ class _RotatingLogFile:
     ) -> Self | None:
         if (not path.stem.startswith(stem)) or path.suffix != suffix:
             return None
-        if patterns is None:
+        if patterns is None:  # skipif-ci-and-windows
             patterns = _compute_rollover_patterns(stem, suffix)
         try:
             (index,) = patterns.pattern1.findall(path.name)
@@ -313,7 +319,9 @@ class _RotatingLogFile:
         start: dt.datetime | None | Sentinel = sentinel,
         end: dt.datetime | None | Sentinel = sentinel,
     ) -> Self:
-        return replace_non_sentinel(self, index=index, start=start, end=end)
+        return replace_non_sentinel(  # skipif-ci-and-windows
+            self, index=index, start=start, end=end
+        )
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -321,7 +329,7 @@ class _Deletion:
     file: _RotatingLogFile
 
     def delete(self) -> None:
-        self.file.path.unlink(missing_ok=True)
+        self.file.path.unlink(missing_ok=True)  # skipif-ci-and-windows
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -332,21 +340,23 @@ class _Rotation:
     end: dt.datetime | Sentinel = sentinel
 
     def __post_init__(self) -> None:
-        if isinstance(self.start, dt.datetime):
+        if isinstance(self.start, dt.datetime):  # skipif-ci-and-windows
             self.start = self.start.replace(microsecond=0, tzinfo=None)
-        if isinstance(self.end, dt.datetime):
+        if isinstance(self.end, dt.datetime):  # skipif-ci-and-windows
             self.end = self.end.replace(microsecond=0, tzinfo=None)
 
     @cached_property
     def destination(self) -> Path:
-        return self.file.replace(index=self.index, start=self.start, end=self.end).path
+        return self.file.replace(  # skipif-ci-and-windows
+            index=self.index, start=self.start, end=self.end
+        ).path
 
     def rotate(self) -> None:
-        try:
+        try:  # skipif-ci-and-windows
             from utilities.atomicwrites import writer
         except ModuleNotFoundError:  # pragma: no cover
             move(self.file.path, self.destination)
-        else:
+        else:  # skipif-ci-and-windows
             with writer(self.destination) as tmp_path:
                 move(self.file.path, tmp_path)
 
