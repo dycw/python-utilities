@@ -26,7 +26,7 @@ from orjson import (
 
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import dataclass_to_dict
-from utilities.functions import ensure_class
+from utilities.functions import ensure_class, is_string_mapping
 from utilities.iterables import OneEmptyError, one
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import Dataclass, PathLike, StrMapping
@@ -78,7 +78,7 @@ class _Prefixes(Enum):
     version = "v"
 
 
-type _DataclassFinalHook = Callable[[type[Dataclass], StrMapping], StrMapping]
+type _DataclassHook = Callable[[type[Dataclass], StrMapping], StrMapping]
 type _ErrorMode = Literal["raise", "drop", "str"]
 
 
@@ -98,7 +98,7 @@ def serialize(
     before: Callable[[Any], Any] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-    dataclass_final_hook: _DataclassFinalHook | None = None,
+    dataclass_hook: _DataclassHook | None = None,
     dataclass_defaults: bool = False,
 ) -> bytes:
     """Serialize an object."""
@@ -107,7 +107,7 @@ def serialize(
         before=before,
         globalns=globalns,
         localns=localns,
-        dataclass_final_hook=dataclass_final_hook,
+        dataclass_hook=dataclass_hook,
         dataclass_defaults=dataclass_defaults,
     )
     return dumps(
@@ -123,7 +123,7 @@ def _pre_process(
     before: Callable[[Any], Any] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-    dataclass_final_hook: _DataclassFinalHook | None = None,
+    dataclass_hook: _DataclassHook | None = None,
     dataclass_defaults: bool = False,
     error: _ErrorMode = "raise",
 ) -> Any:
@@ -134,7 +134,7 @@ def _pre_process(
         before=before,
         globalns=globalns,
         localns=localns,
-        dataclass_final_hook=dataclass_final_hook,
+        dataclass_hook=dataclass_hook,
         dataclass_defaults=dataclass_defaults,
         error=error,
     )
@@ -183,7 +183,7 @@ def _pre_process(
                 obj,
                 globalns=globalns,
                 localns=localns,
-                final=partial(_dataclass_final, hook=dataclass_final_hook),
+                final=partial(_dataclass_final, hook=dataclass_hook),
                 defaults=dataclass_defaults,
             )
             return pre(obj_as_dict)
@@ -201,7 +201,7 @@ def _pre_process(
                 before=before,
                 globalns=globalns,
                 localns=localns,
-                dataclass_final_hook=dataclass_final_hook,
+                dataclass_hook=dataclass_hook,
             )
         case list():
             return _pre_process_container(
@@ -211,7 +211,7 @@ def _pre_process(
                 before=before,
                 globalns=globalns,
                 localns=localns,
-                dataclass_final_hook=dataclass_final_hook,
+                dataclass_hook=dataclass_hook,
             )
         case set():
             return _pre_process_container(
@@ -221,7 +221,7 @@ def _pre_process(
                 before=before,
                 globalns=globalns,
                 localns=localns,
-                dataclass_final_hook=dataclass_final_hook,
+                dataclass_hook=dataclass_hook,
             )
         case tuple():
             return _pre_process_container(
@@ -231,7 +231,7 @@ def _pre_process(
                 before=before,
                 globalns=globalns,
                 localns=localns,
-                dataclass_final_hook=dataclass_final_hook,
+                dataclass_hook=dataclass_hook,
             )
         # other
         case _:
@@ -250,7 +250,7 @@ def _pre_process_container(
     before: Callable[[Any], Any] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-    dataclass_final_hook: _DataclassFinalHook | None = None,
+    dataclass_hook: _DataclassHook | None = None,
     dataclass_include_defaults: bool = False,
 ) -> Any:
     values = [
@@ -259,7 +259,7 @@ def _pre_process_container(
             before=before,
             globalns=globalns,
             localns=localns,
-            dataclass_final_hook=dataclass_final_hook,
+            dataclass_hook=dataclass_hook,
             dataclass_defaults=dataclass_include_defaults,
         )
         for o in obj
@@ -274,11 +274,7 @@ def _pre_process_container(
 
 
 def _dataclass_final(
-    cls: type[Dataclass],
-    mapping: StrMapping,
-    /,
-    *,
-    hook: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
+    cls: type[Dataclass], mapping: StrMapping, /, *, hook: _DataclassHook | None = None
 ) -> StrMapping:
     if hook is not None:
         mapping = hook(cls, mapping)
@@ -304,11 +300,18 @@ def deserialize(
     data: bytes,
     /,
     *,
+    dataclass_hook: _DataclassHook | None = None,
     objects: AbstractSet[type[Any]] | None = None,
     redirects: Mapping[str, type[Any]] | None = None,
 ) -> Any:
     """Deserialize an object."""
-    return _object_hook(loads(data), data=data, objects=objects, redirects=redirects)
+    return _object_hook(
+        loads(data),
+        data=data,
+        dataclass_hook=dataclass_hook,
+        objects=objects,
+        redirects=redirects,
+    )
 
 
 _NONE_PATTERN = re.compile(r"^\[" + _Prefixes.none.value + r"\]$")
@@ -383,6 +386,7 @@ def _object_hook(
     /,
     *,
     data: bytes,
+    dataclass_hook: _DataclassHook | None = None,
     objects: AbstractSet[type[Any]] | None = None,
     redirects: Mapping[str, type[Any]] | None = None,
 ) -> Any:
@@ -417,7 +421,13 @@ def _object_hook(
             return text
         case list() as list_:
             return [
-                _object_hook(i, data=data, objects=objects, redirects=redirects)
+                _object_hook(
+                    i,
+                    data=data,
+                    dataclass_hook=dataclass_hook,
+                    objects=objects,
+                    redirects=redirects,
+                )
                 for i in list_
             ]
         case dict() as mapping:
@@ -440,23 +450,31 @@ def _object_hook(
                     )
                     if result is not None:
                         return result
-                result = _object_hook_dataclass(
-                    key, value, data=data, objects=objects, redirects=redirects
-                )
-                if result is not None:
-                    return result
+                if is_string_mapping(value):
+                    result = _object_hook_dataclass(
+                        key,
+                        value,
+                        data=data,
+                        hook=dataclass_hook,
+                        objects=objects,
+                        redirects=redirects,
+                    )
+                    if result is not None:
+                        return result
                 result = _object_hook_enum(
                     key, value, data=data, objects=objects, redirects=redirects
                 )
                 if result is not None:
                     return result
-                return {
-                    k: _object_hook(v, data=data, objects=objects, redirects=redirects)
-                    for k, v in obj.items()
-                }
             return {
-                k: _object_hook(v, data=data, objects=objects, redirects=redirects)
-                for k, v in obj.items()
+                k: _object_hook(
+                    v,
+                    data=data,
+                    dataclass_hook=dataclass_hook,
+                    objects=objects,
+                    redirects=redirects,
+                )
+                for k, v in mapping.items()
             }
         case _ as never:
             assert_never(never)
@@ -470,6 +488,7 @@ def _object_hook_container(
     /,
     *,
     data: bytes,
+    dataclass_hook: _DataclassHook | None = None,
     objects: AbstractSet[type[Any]] | None = None,
     redirects: Mapping[str, type[Any]] | None = None,
 ) -> Any:
@@ -482,7 +501,14 @@ def _object_hook_container(
             qualname, data=data, objects=objects, redirects=redirects
         )
     return cls_use(
-        _object_hook(v, data=data, objects=objects, redirects=redirects) for v in value
+        _object_hook(
+            v,
+            data=data,
+            dataclass_hook=dataclass_hook,
+            objects=objects,
+            redirects=redirects,
+        )
+        for v in value
     )
 
 
@@ -509,10 +535,11 @@ def _object_hook_get_object(
 
 def _object_hook_dataclass(
     key: str,
-    value: Any,
+    value: StrMapping,
     /,
     *,
     data: bytes,
+    hook: _DataclassHook | None = None,
     objects: AbstractSet[type[Any]] | None = None,
     redirects: Mapping[str, type[Any]] | None = None,
 ) -> Any:
@@ -521,8 +548,12 @@ def _object_hook_dataclass(
     cls = _object_hook_get_object(
         match.group(1), data=data, objects=objects, redirects=redirects
     )
+    if hook is not None:
+        value = hook(cls, value)
     items = {
-        k: _object_hook(v, data=data, objects=objects, redirects=redirects)
+        k: _object_hook(
+            v, data=data, dataclass_hook=hook, objects=objects, redirects=redirects
+        )
         for k, v in value.items()
     }
     return cls(**items)
@@ -534,6 +565,7 @@ def _object_hook_enum(
     /,
     *,
     data: bytes,
+    dataclass_hook: _DataclassHook | None = None,
     objects: AbstractSet[type[Any]] | None = None,
     redirects: Mapping[str, type[Any]] | None = None,
 ) -> Any:
@@ -542,7 +574,13 @@ def _object_hook_enum(
     cls: type[Enum] = _object_hook_get_object(
         match.group(1), data=data, objects=objects, redirects=redirects
     )
-    value_use = _object_hook(value, data=data, objects=objects, redirects=redirects)
+    value_use = _object_hook(
+        value,
+        data=data,
+        dataclass_hook=dataclass_hook,
+        objects=objects,
+        redirects=redirects,
+    )
     return one(i for i in cls if i.value == value_use)
 
 
@@ -613,7 +651,7 @@ class OrjsonFormatter(Formatter):
         before: Callable[[Any], Any] | None = None,
         globalns: StrMapping | None = None,
         localns: StrMapping | None = None,
-        dataclass_final_hook: _DataclassFinalHook | None = None,
+        dataclass_final_hook: _DataclassHook | None = None,
     ) -> None:
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
         self._before = before
@@ -647,7 +685,7 @@ class OrjsonFormatter(Formatter):
             before=self._before,
             globalns=self._globalns,
             localns=self._localns,
-            dataclass_final_hook=self._dataclass_final_hook,
+            dataclass_hook=self._dataclass_final_hook,
         ).decode()
 
 

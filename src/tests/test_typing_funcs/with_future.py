@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, override
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -12,81 +12,133 @@ if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
 
 
-@dataclass(kw_only=True, slots=True)
-class DataClassNestedWithFutureInnerThenOuterInner:
-    int_: int
+type TruthLit = Literal["true", "false"]
 
 
-@dataclass(kw_only=True, slots=True)
-class DataClassNestedWithFutureInnerThenOuterOuter:
-    inner: DataClassNestedWithFutureInnerThenOuterInner
+@dataclass(order=True, kw_only=True)
+class DataClassFutureCustomEquality:
+    int_: int = 0
+
+    @override
+    def __eq__(self, other: object) -> bool:
+        return self is other
+
+    @override
+    def __hash__(self) -> int:
+        return id(self)
 
 
-@dataclass(kw_only=True, slots=True)
-class DataClassNestedWithFutureOuterThenInnerOuter:
-    inner: DataClassNestedWithFutureOuterThenInnerInner
-
-
-@dataclass(kw_only=True, slots=True)
-class DataClassNestedWithFutureOuterThenInnerInner:
-    int_: int
-
-
-@dataclass(kw_only=True, slots=True)
-class DataClassWithDate:
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureDate:
     date: dt.date
 
 
-@dataclass(kw_only=True, slots=True)
-class DataClassWithInt:
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureInt:
     int_: int
 
 
-@dataclass(kw_only=True, slots=True)
-class DataClassWithIntNullable:
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureDefaultInInitParent:
+    int_: int
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureDefaultInInitChild(DataClassFutureDefaultInInitParent):
+    def __init__(self) -> None:
+        DataClassFutureDefaultInInitParent.__init__(self, int_=0)
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureIntDefault:
+    int_: int = 0
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureIntNullable:
     int_: int | None = None
 
 
-@dataclass(kw_only=True, slots=True)
-class DataClassWithListInts:
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureListInts:
     ints: list[int]
 
 
-@dataclass(kw_only=True, slots=True)
-class DataClassWithLiteral:
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureListIntsDefault:
+    ints: list[int] = field(default_factory=list)
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureLiteral:
     truth: Literal["true", "false"]
 
 
-@dataclass(kw_only=True, slots=True)
-class DataClassWithLiteralNullable:
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureLiteralNullable:
     truth: Literal["true", "false"] | None = None
 
 
-@dataclass(kw_only=True, slots=True)
-class DataClassWithNone:
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureNestedInnerFirstInner:
+    int_: int
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureNestedInnerFirstOuter:
+    inner: DataClassFutureNestedInnerFirstInner
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureNestedOuterFirstOuter:
+    inner: DataClassFutureNestedOuterFirstInner
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureNestedOuterFirstInner:
+    int_: int
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureNone:
     none: None
 
 
-@dataclass(unsafe_hash=True, kw_only=True, slots=True)
-class DataClassWithPath:
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureNoneDefault:
+    none: None = None
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFuturePath:
     path: Path
 
 
-@dataclass(kw_only=True, slots=True)
-class DataClassWithSentinel:
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureSentinel:
     sentinel: Sentinel
 
 
-@dataclass(kw_only=True, slots=True)
-class DataClassWithStr:
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureStr:
     str_: str
 
 
-@dataclass(kw_only=True, slots=True)
-class DataClassWithTimeDelta:
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureTimeDelta:
     timedelta: dt.timedelta
 
 
-@dataclass(kw_only=True, slots=True)
-class DataClassWithUUID:
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureTypeLiteral:
+    truth: TruthLit
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureTypeLiteralNullable:
+    truth: TruthLit | None = None
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureUUID:
     uuid: UUID

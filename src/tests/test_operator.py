@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from functools import partial
 from math import nan
-from typing import TYPE_CHECKING, Any, Literal, override
+from typing import TYPE_CHECKING, Any
 
 from hypothesis import example, given
 from hypothesis.strategies import (
@@ -33,10 +33,20 @@ from pytest import raises
 import utilities.math
 import utilities.operator
 from tests.conftest import IS_CI_AND_WINDOWS
-from tests.test_typing_funcs.with_future import DataClassWithNone
+from tests.test_typing_funcs.with_future import (
+    DataClassFutureCustomEquality,
+    DataClassFutureInt,
+    DataClassFutureIntDefault,
+    DataClassFutureLiteral,
+    DataClassFutureLiteralNullable,
+    DataClassFutureNestedInnerFirstOuter,
+    DataClassFutureNestedOuterFirstOuter,
+    DataClassFutureNone,
+)
 from utilities.hypothesis import (
     assume_does_not_raise,
     int64s,
+    pairs,
     paths,
     text_ascii,
     text_printable,
@@ -55,18 +65,18 @@ if TYPE_CHECKING:
 
 def base_objects(
     *,
-    dataclass1: bool = False,
-    dataclass2: bool = False,
-    dataclass3: bool = False,
-    dataclass4: bool = False,
-    dataclass_with_none: bool = False,
+    dataclass_custom_equality: bool = False,
+    dataclass_int: bool = False,
+    dataclass_int_default: bool = False,
+    dataclass_literal: bool = False,
+    dataclass_literal_nullable: bool = False,
+    dataclass_nested: bool = False,
+    dataclass_none: bool = False,
     enum: bool = False,
     floats_min_value: Number | None = None,
     floats_max_value: Number | None = None,
     floats_allow_nan: bool | None = None,
     floats_allow_infinity: bool | None = None,
-    ib_orders: bool = False,
-    ib_trades: bool = False,
 ) -> SearchStrategy[Any]:
     base = (
         booleans()
@@ -91,46 +101,48 @@ def base_objects(
         base |= zoned_datetimes()
     else:
         base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
-    if dataclass1:
-        base |= builds(DataClass1).filter(lambda obj: _is_int64(obj.x))
-    if dataclass2:
-        base |= builds(DataClass2Outer).filter(lambda outer: _is_int64(outer.inner.x))
-    if dataclass3:
-        base |= builds(DataClass3)
-    if dataclass4:
-        base |= builds(DataClass4)
-    if dataclass_with_none:
-        base |= builds(DataClassWithNone)
+    if dataclass_custom_equality:
+        base |= builds(DataClassFutureCustomEquality)
+    if dataclass_int:
+        base |= builds(DataClassFutureInt).filter(lambda obj: _is_int64(obj.int_))
+    if dataclass_int_default:
+        base |= builds(DataClassFutureIntDefault).filter(
+            lambda obj: _is_int64(obj.int_)
+        )
+    if dataclass_literal:
+        base |= builds(DataClassFutureLiteral, truth=sampled_from(["true", "false"]))
+    if dataclass_literal_nullable:
+        base |= builds(
+            DataClassFutureLiteralNullable,
+            truth=sampled_from(["true", "false"]) | none(),
+        )
+    if dataclass_nested:
+        base |= builds(DataClassFutureNestedInnerFirstOuter).filter(
+            lambda outer: _is_int64(outer.inner.int_)
+        ) | builds(DataClassFutureNestedOuterFirstOuter).filter(
+            lambda outer: _is_int64(outer.inner.int_)
+        )
+    if dataclass_none:
+        base |= builds(DataClassFutureNone)
     if enum:
         base |= sampled_from(TruthEnum)
-    if ib_orders:
-        from ib_async import Order
-
-        base |= builds(Order)
-    if ib_trades:
-        from ib_async import Fill, Forex, Trade
-
-        forexes = builds(Forex)
-        fills = builds(Fill, contract=forexes)
-        trades = builds(Trade, fills=lists(fills))
-        base |= trades
     return base
 
 
 def make_objects(
     *,
-    dataclass1: bool = False,
-    dataclass2: bool = False,
-    dataclass3: bool = False,
-    dataclass4: bool = False,
-    dataclass_with_none: bool = False,
+    dataclass_custom_equality: bool = False,
+    dataclass_int: bool = False,
+    dataclass_int_default: bool = False,
+    dataclass_literal: bool = False,
+    dataclass_literal_nullable: bool = False,
+    dataclass_nested: bool = False,
+    dataclass_none: bool = False,
     enum: bool = False,
     floats_min_value: Number | None = None,
     floats_max_value: Number | None = None,
     floats_allow_nan: bool | None = None,
     floats_allow_infinity: bool | None = None,
-    ib_orders: bool = False,
-    ib_trades: bool = False,
     extra_base: SearchStrategy[Any] | None = None,
     sub_frozenset: bool = False,
     sub_list: bool = False,
@@ -138,18 +150,18 @@ def make_objects(
     sub_tuple: bool = False,
 ) -> SearchStrategy[Any]:
     base = base_objects(
-        dataclass1=dataclass1,
-        dataclass2=dataclass2,
-        dataclass3=dataclass3,
-        dataclass4=dataclass4,
-        dataclass_with_none=dataclass_with_none,
+        dataclass_custom_equality=dataclass_custom_equality,
+        dataclass_int=dataclass_int,
+        dataclass_int_default=dataclass_int_default,
+        dataclass_literal=dataclass_literal,
+        dataclass_literal_nullable=dataclass_literal_nullable,
+        dataclass_nested=dataclass_nested,
+        dataclass_none=dataclass_none,
         enum=enum,
         floats_min_value=floats_min_value,
         floats_max_value=floats_max_value,
         floats_allow_nan=floats_allow_nan,
         floats_allow_infinity=floats_allow_infinity,
-        ib_orders=ib_orders,
-        ib_trades=ib_trades,
     )
     if extra_base is not None:
         base |= extra_base
@@ -220,39 +232,6 @@ class SubTuple(tuple):  # noqa: SLOT001
     pass
 
 
-@dataclass(unsafe_hash=True, kw_only=True, slots=True)
-class DataClass1:
-    x: int = 0
-
-
-@dataclass(unsafe_hash=True, kw_only=True, slots=True)
-class DataClass2Inner:
-    x: int = 0
-
-
-@dataclass(unsafe_hash=True, kw_only=True, slots=True)
-class DataClass2Outer:
-    inner: DataClass2Inner
-
-
-@dataclass(unsafe_hash=True, kw_only=True, slots=True)
-class DataClass3:
-    truth: Literal["true", "false"]
-
-
-@dataclass(kw_only=True, slots=True)
-class DataClass4:
-    x: int = 0
-
-    @override
-    def __eq__(self, other: object) -> bool:
-        return self is other
-
-    @override
-    def __hash__(self) -> int:
-        return id(self)
-
-
 class TruthEnum(Enum):
     true = auto()
     false = auto()
@@ -264,12 +243,14 @@ class TruthEnum(Enum):
 class TestIsEqual:
     @given(
         obj=make_objects(
-            dataclass1=True,
-            dataclass2=True,
-            dataclass3=True,
-            dataclass4=True,
-            ib_orders=True,
-            ib_trades=True,
+            dataclass_custom_equality=True,
+            dataclass_int=True,
+            dataclass_int_default=True,
+            dataclass_literal=True,
+            dataclass_literal_nullable=True,
+            dataclass_nested=True,
+            dataclass_none=True,
+            enum=True,
             sub_frozenset=True,
             sub_list=True,
             sub_set=True,
@@ -281,39 +262,35 @@ class TestIsEqual:
             assert utilities.operator.is_equal(obj, obj)
 
     @given(
-        first=make_objects(
-            dataclass1=True,
-            dataclass2=True,
-            dataclass3=True,
-            dataclass4=True,
-            ib_orders=True,
-            ib_trades=True,
-            sub_frozenset=True,
-            sub_list=True,
-            sub_set=True,
-            sub_tuple=True,
-        ),
-        second=make_objects(
-            dataclass1=True,
-            dataclass2=True,
-            dataclass3=True,
-            dataclass4=True,
-            ib_orders=True,
-            ib_trades=True,
-            sub_frozenset=True,
-            sub_list=True,
-            sub_set=True,
-            sub_tuple=True,
-        ),
+        objs=pairs(
+            make_objects(
+                dataclass_custom_equality=True,
+                dataclass_int=True,
+                dataclass_int_default=True,
+                dataclass_literal=True,
+                dataclass_literal_nullable=True,
+                dataclass_nested=True,
+                dataclass_none=True,
+                enum=True,
+                sub_frozenset=True,
+                sub_list=True,
+                sub_set=True,
+                sub_tuple=True,
+            )
+        )
     )
-    def test_two_objects(self, *, first: Any, second: Any) -> None:
+    def test_two_objects(self, *, objs: tuple[Any, Any]) -> None:
+        first, second = objs
         with assume_does_not_raise(IsEqualError):
             result = utilities.operator.is_equal(first, second)
         assert isinstance(result, bool)
 
     @given(x=integers())
-    def test_dataclass_4(self, *, x: int) -> None:
-        first, second = DataClass4(x=x), DataClass4(x=x)
+    def test_dataclass_custom_equality(self, *, x: int) -> None:
+        first, second = (
+            DataClassFutureCustomEquality(int_=x),
+            DataClassFutureCustomEquality(int_=x),
+        )
         assert first != second
         assert utilities.operator.is_equal(first, second)
 
