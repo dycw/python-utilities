@@ -415,7 +415,7 @@ class TestSetupLogging:
         names = {f.name for f in files}
         match check:
             case "init":
-                assert names == {"plain"}
+                assert names == {"debug.txt", "info.txt", "plain"}
             case "post", pattern:
                 assert names == {"debug.txt", "info.txt", "errors", "plain"}
                 errors = path.joinpath("errors")
