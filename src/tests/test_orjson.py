@@ -27,13 +27,13 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureDefaultInInitParent,
     DataClassFutureInt,
     DataClassFutureIntDefault,
+    DataClassFutureLiteral,
+    DataClassFutureLiteralNullable,
     DataClassFutureNestedInnerFirstInner,
     DataClassFutureNestedInnerFirstOuter,
     DataClassFutureNestedOuterFirstInner,
     DataClassFutureNestedOuterFirstOuter,
     DataClassFutureNone,
-    DataClassWithLiteral,
-    DataClassWithLiteralNullable,
 )
 from utilities.datetime import SECOND, get_now
 from utilities.hypothesis import assume_does_not_raise, text_printable
@@ -199,13 +199,13 @@ class TestOrjsonFormatter:
 class TestSerializeAndDeserialize:
     @given(
         obj=make_objects(
+            dataclass_custom_equality=True,
+            dataclass_int=True,
+            dataclass_int_default=True,
+            dataclass_literal=True,
+            dataclass_literal_nullable=True,
             dataclass_nested=True,
-            dataclass_with_custom_equality=True,
-            dataclass_with_int=True,
-            dataclass_with_int_default=True,
-            dataclass_with_literal=True,
-            dataclass_with_literal_nullable=True,
-            dataclass_with_none=True,
+            dataclass_none=True,
             enum=True,
             sub_frozenset=True,
             sub_list=True,
@@ -219,15 +219,15 @@ class TestSerializeAndDeserialize:
         result = deserialize(
             ser,
             objects={
+                DataClassFutureCustomEquality,
+                DataClassFutureInt,
+                DataClassFutureIntDefault,
+                DataClassFutureLiteral,
+                DataClassFutureLiteralNullable,
                 DataClassFutureNestedInnerFirstInner,
                 DataClassFutureNestedInnerFirstOuter,
                 DataClassFutureNestedOuterFirstInner,
                 DataClassFutureNestedOuterFirstOuter,
-                DataClassFutureCustomEquality,
-                DataClassFutureInt,
-                DataClassFutureIntDefault,
-                DataClassWithLiteral,
-                DataClassWithLiteralNullable,
                 DataClassFutureNone,
                 SubFrozenSet,
                 SubList,
@@ -244,6 +244,26 @@ class TestSerializeAndDeserialize:
         result = deserialize(serialize(obj))
         assert is_equal(result, obj)
 
+    @given(obj=make_objects(dataclass_custom_equality=True))
+    def test_dataclass_custom_equality(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={DataClassFutureCustomEquality})
+        assert is_equal(result, obj)
+
+    @given(obj=make_objects(dataclass_int=True))
+    def test_dataclass_int(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={DataClassFutureInt})
+        assert is_equal(result, obj)
+
+    @given(obj=make_objects(dataclass_int_default=True))
+    def test_dataclass_int_default(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={DataClassFutureIntDefault})
+        assert is_equal(result, obj)
+
+    @given(obj=make_objects(dataclass_literal=True))
+    def test_dataclass_literal(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={DataClassFutureLiteral})
+        assert is_equal(result, obj)
+
     @given(obj=make_objects(dataclass_nested=True))
     def test_dataclass_nested(self, *, obj: Any) -> None:
         ser = serialize(obj, globalns=globals())
@@ -256,26 +276,6 @@ class TestSerializeAndDeserialize:
                 DataClassFutureNestedOuterFirstOuter,
             },
         )
-        assert is_equal(result, obj)
-
-    @given(obj=make_objects(dataclass_with_custom_equality=True))
-    def test_dataclass_with_custom_equality(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={DataClassFutureCustomEquality})
-        assert is_equal(result, obj)
-
-    @given(obj=make_objects(dataclass_with_int=True))
-    def test_dataclass_with_int(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={DataClassFutureInt})
-        assert is_equal(result, obj)
-
-    @given(obj=make_objects(dataclass_with_int_default=True))
-    def test_dataclass_with_int_default(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={DataClassFutureIntDefault})
-        assert is_equal(result, obj)
-
-    @given(obj=make_objects(dataclass_with_literal=True))
-    def test_dataclass_with_literal(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={DataClassWithLiteral})
         assert is_equal(result, obj)
 
     @given(obj=builds(DataClassFutureNone))

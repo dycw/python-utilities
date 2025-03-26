@@ -8,9 +8,9 @@ from polars import int_range
 
 from tests.test_typing_funcs.with_future import (
     DataClassFutureInt,
+    DataClassFutureLiteral,
     DataClassFutureNestedOuterFirstInner,
     DataClassFutureNestedOuterFirstOuter,
-    DataClassWithLiteral,
 )
 from utilities.pytest_regressions import (
     PolarsRegressionFixture,
@@ -58,19 +58,17 @@ class TestOrjsonRegressionFixture:
         )
         orjson_regression.check(obj)
 
-    def test_dataclass_with_int(
-        self, *, orjson_regression: OrjsonRegressionFixture
-    ) -> None:
+    def test_dataclass_int(self, *, orjson_regression: OrjsonRegressionFixture) -> None:
         obj = DataClassFutureInt(int_=0)
         orjson_regression.check(obj)
 
     @given(truth=sampled_from(["true", "false"]))
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    def test_dataclass_with_literal(
+    def test_dataclass_literal(
         self,
         *,
         truth: Literal["true", "false"],
         orjson_regression: OrjsonRegressionFixture,
     ) -> None:
-        obj = DataClassWithLiteral(truth=truth)
+        obj = DataClassFutureLiteral(truth=truth)
         orjson_regression.check(obj, suffix=truth)

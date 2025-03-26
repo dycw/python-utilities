@@ -37,11 +37,11 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureCustomEquality,
     DataClassFutureInt,
     DataClassFutureIntDefault,
+    DataClassFutureLiteral,
+    DataClassFutureLiteralNullable,
     DataClassFutureNestedInnerFirstOuter,
     DataClassFutureNestedOuterFirstOuter,
     DataClassFutureNone,
-    DataClassWithLiteral,
-    DataClassWithLiteralNullable,
 )
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -65,13 +65,13 @@ if TYPE_CHECKING:
 
 def base_objects(
     *,
+    dataclass_custom_equality: bool = False,
+    dataclass_int: bool = False,
+    dataclass_int_default: bool = False,
+    dataclass_literal: bool = False,
+    dataclass_literal_nullable: bool = False,
     dataclass_nested: bool = False,
-    dataclass_with_custom_equality: bool = False,
-    dataclass_with_int: bool = False,
-    dataclass_with_int_default: bool = False,
-    dataclass_with_literal: bool = False,
-    dataclass_with_literal_nullable: bool = False,
-    dataclass_with_none: bool = False,
+    dataclass_none: bool = False,
     enum: bool = False,
     floats_min_value: Number | None = None,
     floats_max_value: Number | None = None,
@@ -101,27 +101,28 @@ def base_objects(
         base |= zoned_datetimes()
     else:
         base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
+    if dataclass_custom_equality:
+        base |= builds(DataClassFutureCustomEquality)
+    if dataclass_int:
+        base |= builds(DataClassFutureInt).filter(lambda obj: _is_int64(obj.int_))
+    if dataclass_int_default:
+        base |= builds(DataClassFutureIntDefault).filter(
+            lambda obj: _is_int64(obj.int_)
+        )
+    if dataclass_literal:
+        base |= builds(DataClassFutureLiteral, truth=sampled_from(["true", "false"]))
+    if dataclass_literal_nullable:
+        base |= builds(
+            DataClassFutureLiteralNullable,
+            truth=sampled_from(["true", "false"]) | none(),
+        )
     if dataclass_nested:
         base |= builds(DataClassFutureNestedInnerFirstOuter).filter(
             lambda outer: _is_int64(outer.inner.int_)
         ) | builds(DataClassFutureNestedOuterFirstOuter).filter(
             lambda outer: _is_int64(outer.inner.int_)
         )
-    if dataclass_with_custom_equality:
-        base |= builds(DataClassFutureCustomEquality)
-    if dataclass_with_int:
-        base |= builds(DataClassFutureInt).filter(lambda obj: _is_int64(obj.int_))
-    if dataclass_with_int_default:
-        base |= builds(DataClassFutureIntDefault).filter(
-            lambda obj: _is_int64(obj.int_)
-        )
-    if dataclass_with_literal:
-        base |= builds(DataClassWithLiteral, truth=sampled_from(["true", "false"]))
-    if dataclass_with_literal_nullable:
-        base |= builds(
-            DataClassWithLiteralNullable, truth=sampled_from(["true", "false"]) | none()
-        )
-    if dataclass_with_none:
+    if dataclass_none:
         base |= builds(DataClassFutureNone)
     if enum:
         base |= sampled_from(TruthEnum)
@@ -130,13 +131,13 @@ def base_objects(
 
 def make_objects(
     *,
+    dataclass_custom_equality: bool = False,
+    dataclass_int: bool = False,
+    dataclass_int_default: bool = False,
+    dataclass_literal: bool = False,
+    dataclass_literal_nullable: bool = False,
     dataclass_nested: bool = False,
-    dataclass_with_custom_equality: bool = False,
-    dataclass_with_int: bool = False,
-    dataclass_with_int_default: bool = False,
-    dataclass_with_literal: bool = False,
-    dataclass_with_literal_nullable: bool = False,
-    dataclass_with_none: bool = False,
+    dataclass_none: bool = False,
     enum: bool = False,
     floats_min_value: Number | None = None,
     floats_max_value: Number | None = None,
@@ -149,13 +150,13 @@ def make_objects(
     sub_tuple: bool = False,
 ) -> SearchStrategy[Any]:
     base = base_objects(
+        dataclass_custom_equality=dataclass_custom_equality,
+        dataclass_int=dataclass_int,
+        dataclass_int_default=dataclass_int_default,
+        dataclass_literal=dataclass_literal,
+        dataclass_literal_nullable=dataclass_literal_nullable,
         dataclass_nested=dataclass_nested,
-        dataclass_with_custom_equality=dataclass_with_custom_equality,
-        dataclass_with_int=dataclass_with_int,
-        dataclass_with_int_default=dataclass_with_int_default,
-        dataclass_with_literal=dataclass_with_literal,
-        dataclass_with_literal_nullable=dataclass_with_literal_nullable,
-        dataclass_with_none=dataclass_with_none,
+        dataclass_none=dataclass_none,
         enum=enum,
         floats_min_value=floats_min_value,
         floats_max_value=floats_max_value,
@@ -242,13 +243,13 @@ class TruthEnum(Enum):
 class TestIsEqual:
     @given(
         obj=make_objects(
+            dataclass_custom_equality=True,
+            dataclass_int=True,
+            dataclass_int_default=True,
+            dataclass_literal=True,
+            dataclass_literal_nullable=True,
             dataclass_nested=True,
-            dataclass_with_custom_equality=True,
-            dataclass_with_int=True,
-            dataclass_with_int_default=True,
-            dataclass_with_literal=True,
-            dataclass_with_literal_nullable=True,
-            dataclass_with_none=True,
+            dataclass_none=True,
             enum=True,
             sub_frozenset=True,
             sub_list=True,
@@ -263,13 +264,13 @@ class TestIsEqual:
     @given(
         objs=pairs(
             make_objects(
+                dataclass_custom_equality=True,
+                dataclass_int=True,
+                dataclass_int_default=True,
+                dataclass_literal=True,
+                dataclass_literal_nullable=True,
                 dataclass_nested=True,
-                dataclass_with_custom_equality=True,
-                dataclass_with_int=True,
-                dataclass_with_int_default=True,
-                dataclass_with_literal=True,
-                dataclass_with_literal_nullable=True,
-                dataclass_with_none=True,
+                dataclass_none=True,
                 enum=True,
                 sub_frozenset=True,
                 sub_list=True,
@@ -285,7 +286,7 @@ class TestIsEqual:
         assert isinstance(result, bool)
 
     @given(x=integers())
-    def test_dataclass_with_custom_equality(self, *, x: int) -> None:
+    def test_dataclass_custom_equality(self, *, x: int) -> None:
         first, second = (
             DataClassFutureCustomEquality(int_=x),
             DataClassFutureCustomEquality(int_=x),

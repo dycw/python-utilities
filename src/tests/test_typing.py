@@ -23,6 +23,7 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureInt,
     DataClassFutureIntNullable,
     DataClassFutureListInts,
+    DataClassFutureLiteral,
     DataClassFutureNestedInnerFirstInner,
     DataClassFutureNestedInnerFirstOuter,
     DataClassFutureNestedOuterFirstInner,
@@ -33,7 +34,6 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureStr,
     DataClassFutureTimeDelta,
     DataClassFutureUUID,
-    DataClassWithLiteral,
 )
 from utilities.sentinel import Sentinel
 from utilities.types import LogLevel, Parallelism
@@ -206,7 +206,7 @@ class TestGetTypeHints:
         class Example:
             truth: Literal["true", "false"]
 
-        cls = data.draw(sampled_from([Example, DataClassWithLiteral]))
+        cls = data.draw(sampled_from([Example, DataClassFutureLiteral]))
         globalns = data.draw(just(globals()) | none())
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)

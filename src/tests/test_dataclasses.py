@@ -21,14 +21,14 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureIntDefault,
     DataClassFutureListInts,
     DataClassFutureListIntsDefault,
+    DataClassFutureLiteral,
+    DataClassFutureLiteralNullable,
     DataClassFutureNestedOuterFirstInner,
     DataClassFutureNestedOuterFirstOuter,
     DataClassFutureNone,
     DataClassFutureNoneDefault,
     DataClassFutureTypeLiteral,
     DataClassFutureTypeLiteralNullable,
-    DataClassWithLiteral,
-    DataClassWithLiteralNullable,
 )
 from utilities.dataclasses import (
     YieldFieldsError,
@@ -393,14 +393,14 @@ class TestYieldFields:
         assert get_args(result.type_) == (int,)
 
     def test_class_future_literal(self) -> None:
-        result = one(yield_fields(DataClassWithLiteral))
+        result = one(yield_fields(DataClassFutureLiteral))
         expected = _YieldFieldsClass(name="truth", type_=TruthLit, kw_only=True)
         assert result == expected
         assert is_literal_type(result.type_)
         assert get_args(result.type_) == ("true", "false")
 
     def test_class_future_literal_nullable(self) -> None:
-        result = one(yield_fields(DataClassWithLiteralNullable))
+        result = one(yield_fields(DataClassFutureLiteralNullable))
         expected = _YieldFieldsClass(
             name="truth", type_=TruthLit | None, default=None, kw_only=True
         )

@@ -70,12 +70,12 @@ class DataClassFutureListIntsDefault:
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassWithLiteral:
+class DataClassFutureLiteral:
     truth: Literal["true", "false"]
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassWithLiteralNullable:
+class DataClassFutureLiteralNullable:
     truth: Literal["true", "false"] | None = None
 
 
