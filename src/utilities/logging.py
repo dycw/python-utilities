@@ -47,6 +47,7 @@ from utilities.pathlib import ensure_suffix, resolve_path
 from utilities.sentinel import Sentinel, sentinel
 from utilities.traceback import RichTracebackFormatter
 from utilities.types import LogLevel, PathLike
+from utilities.version import GetVersionError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
@@ -111,10 +112,16 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
 
     @override
     def emit(self, record: LogRecord) -> None:
+        if (self._backup_count is not None) and self._should_rollover(record):
+            self._do_rollover(backup_count=self._backup_count)
+        FileHandler.emit(self, record)
+        return
         try:  # skipif-ci-and-windows
             if (self._backup_count is not None) and self._should_rollover(record):
                 self._do_rollover(backup_count=self._backup_count)
             FileHandler.emit(self, record)
+        except GetVersionError:  # pragma: no cover
+            raise
         except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
@@ -385,6 +392,8 @@ class StandaloneFileHandler(Handler):
             formatted = self.format(record)
             with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
                 _ = fh.write(formatted)
+        except GetVersionError:  # pragma: no cover
+            raise
         except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
