@@ -585,6 +585,7 @@ class TestSizeAndTimeRotatingFileHandler:
                     p for p in files if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
                 )
 
+    @skipif_windows
     def test_should_rollover_file_not_found(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
@@ -600,6 +601,7 @@ class TestSizeAndTimeRotatingFileHandler:
 
 
 class TestStandaloneFileHandler:
+    @skipif_windows
     def test_main(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         handler = StandaloneFileHandler(level=DEBUG, path=tmp_path)
