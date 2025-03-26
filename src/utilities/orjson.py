@@ -694,13 +694,19 @@ def get_log_records(
     /,
     *,
     parallelism: Parallelism = "processes",
+    dataclass_hook: _DataclassHook | None = None,
     objects: AbstractSet[type[Any]] | None = None,
     redirects: Mapping[str, type[Any]] | None = None,
 ) -> GetLogRecordsOutput:
     """Get the log records under a directory."""
     path = Path(path)
     files = [p for p in path.iterdir() if p.is_file()]
-    func = partial(_get_log_records_one, objects=objects, redirects=redirects)
+    func = partial(
+        _get_log_records_one,
+        dataclass_hook=dataclass_hook,
+        objects=objects,
+        redirects=redirects,
+    )
     try:
         from utilities.pqdm import pqdm_map
     except ModuleNotFoundError:  # pragma: no cover
@@ -784,6 +790,7 @@ def _get_log_records_one(
     path: Path,
     /,
     *,
+    dataclass_hook: _DataclassHook | None = None,
     objects: AbstractSet[type[Any]] | None = None,
     redirects: Mapping[str, type[Any]] | None = None,
 ) -> _GetLogRecordsOneOutput:
@@ -804,7 +811,10 @@ def _get_log_records_one(
         else:
             try:
                 result = deserialize(
-                    line.encode(), objects=objects_use, redirects=redirects
+                    line.encode(),
+                    dataclass_hook=dataclass_hook,
+                    objects=objects_use,
+                    redirects=redirects,
                 )
                 record = ensure_class(result, OrjsonLogRecord)
             except (
