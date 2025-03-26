@@ -55,7 +55,9 @@ from utilities.datetime import (
     MillisecondsSinceEpochError,
     Month,
     MonthError,
+    ParseCompactISOError,
     ParseMonthError,
+    SerializeCompactISOError,
     SubDurationError,
     TimedeltaToMillisecondsError,
     YieldDaysError,
@@ -113,11 +115,13 @@ from utilities.datetime import (
     milliseconds_since_epoch,
     milliseconds_since_epoch_to_datetime,
     milliseconds_to_timedelta,
+    parse_compact_iso,
     parse_month,
     parse_two_digit_year,
     round_datetime,
     round_to_next_weekday,
     round_to_prev_weekday,
+    serialize_compact_iso,
     serialize_month,
     sub_duration,
     timedelta_since_epoch,
@@ -985,6 +989,31 @@ class TestRoundToWeekday:
         with assume_does_not_raise(OverflowError):
             result = func(date)
         assert operator(result, date)
+
+
+class TestSerializeAndParseCompactISO:
+    @given(date=dates())
+    def test_dates(self, *, date: dt.date) -> None:
+        result = parse_compact_iso(serialize_compact_iso(date))
+        assert result == date
+
+    @given(datetime=datetimes())
+    def test_datetimes(self, *, datetime: dt.datetime) -> None:
+        result = parse_compact_iso(serialize_compact_iso(datetime))
+        assert result == datetime
+
+    @given(datetime=zoned_datetimes())
+    def test_error_serialize(self, *, datetime: dt.datetime) -> None:
+        with raises(
+            SerializeCompactISOError, match="Unable to serialize zoned datetime .*"
+        ):
+            _ = serialize_compact_iso(datetime)
+
+    def test_error_parse(self) -> None:
+        with raises(
+            ParseCompactISOError, match="Unable to parse '.*' into a date/datetime"
+        ):
+            _ = parse_compact_iso("invalid")
 
 
 class TestSubDuration:

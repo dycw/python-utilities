@@ -78,19 +78,19 @@ dev = [
   "pytest-xdist >= 3.6.1, < 3.7",
   # CI
   "win32_setctime >= 1.2.0, < 1.3",  # https://github.com/Delgan/loguru/issues/147
-  "setuptools >= 77.0.3",  # https://github.com/theY4Kman/pytest-only/issues/14
+  "setuptools >= 78.1.0",  # https://github.com/theY4Kman/pytest-only/issues/14
 ]
 
 # project
 [project]
 authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
 dependencies = [
-  "typing-extensions >= 4.12.2, < 4.13",
+  "typing-extensions >= 4.13.0, < 4.14",
 ]
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.98.17"
+version = "0.98.18"
 
 [project.optional-dependencies]
 test = [
@@ -340,7 +340,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.98.17"
+current_version = "0.98.18"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
