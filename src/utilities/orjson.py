@@ -6,7 +6,7 @@ from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
 from enum import Enum, unique
-from functools import partial, reduce
+from functools import cached_property, partial, reduce
 from itertools import chain
 from logging import Formatter, LogRecord
 from math import isinf, isnan
@@ -30,7 +30,7 @@ from utilities.functions import ensure_class, is_string_mapping
 from utilities.iterables import OneEmptyError, one
 from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.types import Dataclass, LogLevel, PathLike, StrMapping
+from utilities.types import Dataclass, DateOrDateTime, LogLevel, PathLike, StrMapping
 from utilities.uuid import UUID_PATTERN
 from utilities.version import GetVersionError, Version, parse_version
 from utilities.whenever import (
@@ -675,7 +675,7 @@ class OrjsonFormatter(Formatter):
         }
         log_record = OrjsonLogRecord(
             name=record.name,
-            level=record.levelno,
+            level=record.levelname,
             path_name=Path(record.pathname),
             line_num=record.lineno,
             message=record.getMessage(),
@@ -771,6 +771,9 @@ class GetLogRecordsOutput:
         level: LogLevel | None = None,
         min_level: LogLevel | None = None,
         max_level: LogLevel | None = None,
+        date_or_datetime: DateOrDateTime | None = None,
+        min_date_or_datetime: DateOrDateTime | None = None,
+        max_date_or_datetime: DateOrDateTime | None = None,
     ) -> Self:
         records = self.records
         if name is not None:
@@ -780,15 +783,53 @@ class GetLogRecordsOutput:
                 r for r in records if (r.message != "") and search(r.message, message)
             ]
         if level is not None:
-            records = [r for r in records if r.level == get_logging_level_number(level)]
+            records = [
+                r for r in records if r.level_num == get_logging_level_number(level)
+            ]
         if min_level is not None:
             records = [
-                r for r in records if r.level >= get_logging_level_number(min_level)
+                r for r in records if r.level_num >= get_logging_level_number(min_level)
             ]
         if max_level is not None:
             records = [
-                r for r in records if r.level <= get_logging_level_number(max_level)
+                r for r in records if r.level_num <= get_logging_level_number(max_level)
             ]
+        if level is not None:
+            records = [
+                r for r in records if r.level_num == get_logging_level_number(level)
+            ]
+        if min_level is not None:
+            records = [
+                r for r in records if r.level_num >= get_logging_level_number(min_level)
+            ]
+        if max_level is not None:
+            records = [
+                r for r in records if r.level_num <= get_logging_level_number(max_level)
+            ]
+        if date_or_datetime is not None:
+            match date_or_datetime:
+                case dt.datetime() as datetime:
+                    records = [r for r in records if r.datetime == datetime]
+                case dt.date() as date:
+                    records = [r for r in records if r.date == date]
+                case _ as never:
+                    assert_never(never)
+        if min_date_or_datetime is not None:
+            match min_date_or_datetime:
+                case dt.datetime() as min_datetime:
+                    records = [r for r in records if r.datetime >= min_datetime]
+                case dt.date() as min_date:
+                    records = [r for r in records if r.date >= min_date]
+                case _ as never:
+                    assert_never(never)
+        if max_date_or_datetime is not None:
+            match max_date_or_datetime:
+                case dt.datetime() as max_datetime:
+                    records = [r for r in records if r.datetime <= max_datetime]
+                case dt.date() as max_date:
+                    records = [r for r in records if r.date <= max_date]
+                case _ as never:
+                    assert_never(never)
         return replace(self, records=records)
 
     @property
@@ -812,13 +853,13 @@ class GetLogRecordsOutput:
         return self.num_lines_error / self.num_lines
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, kw_only=True)
 class OrjsonLogRecord:
     """The log record as a dataclass."""
 
     name: str
     message: str
-    level: int
+    level: LogLevel
     path_name: Path
     line_num: int
     datetime: dt.datetime
@@ -827,6 +868,14 @@ class OrjsonLogRecord:
     extra: StrMapping | None = None
     log_file: Path | None = None
     log_file_line_num: int | None = None
+
+    @cached_property
+    def date(self) -> dt.date:
+        return self.datetime.date()
+
+    @cached_property
+    def level_num(self) -> int:
+        return get_logging_level_number(self.level)
 
 
 def _get_log_records_one(

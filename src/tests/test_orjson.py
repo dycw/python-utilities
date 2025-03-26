@@ -114,7 +114,7 @@ class TestGetLogRecords:
         record = one(output.records)
         assert record.name == str(tmp_path)
         assert record.message == ""
-        assert record.level == DEBUG
+        assert record.level == "DEBUG"
         assert record.line_num == approx(92, rel=0.1)
         assert abs(record.datetime - get_now()) <= MINUTE
         assert record.func_name == "test_main"
@@ -173,15 +173,17 @@ class TestGetLogRecords:
             assert all(search(message, r.message) for r in output.records)
         if level is not None:
             assert all(
-                r.level == get_logging_level_number(level) for r in output.records
+                r.level_num == get_logging_level_number(level) for r in output.records
             )
         if min_level is not None:
             assert all(
-                r.level >= get_logging_level_number(min_level) for r in output.records
+                r.level_num >= get_logging_level_number(min_level)
+                for r in output.records
             )
         if max_level is not None:
             assert all(
-                r.level <= get_logging_level_number(max_level) for r in output.records
+                r.level_num <= get_logging_level_number(max_level)
+                for r in output.records
             )
 
     def test_skip_blank_lines(self, *, tmp_path: Path) -> None:
