@@ -13,27 +13,27 @@ from hypothesis.strategies import DataObject, data, just, none, sampled_from
 from pytest import mark, param
 
 from tests.test_typing_funcs.no_future import (
-    DataClassNestedNoFutureInnerThenOuterInner,
-    DataClassNestedNoFutureInnerThenOuterOuter,
-    DataClassNestedNoFutureOuterThenInnerInner,
-    DataClassNestedNoFutureOuterThenInnerOuter,
+    DataClassNestedNoFutureOuterFirstInner,
+    DataClassNoFutureNestedInnerFirstInner,
+    DataClassNoFutureNestedInnerFirstOuter,
+    DataClassNoFutureNestedOuterFirstOuter,
 )
 from tests.test_typing_funcs.with_future import (
-    DataClassNestedWithFutureInnerThenOuterInner,
-    DataClassNestedWithFutureInnerThenOuterOuter,
-    DataClassNestedWithFutureOuterThenInnerInner,
-    DataClassNestedWithFutureOuterThenInnerOuter,
-    DataClassWithDate,
-    DataClassWithInt,
+    DataClassFutureDate,
+    DataClassFutureInt,
+    DataClassFutureListInts,
+    DataClassFutureNestedInnerFirstInner,
+    DataClassFutureNestedInnerFirstOuter,
+    DataClassFutureNestedOuterFirstInner,
+    DataClassFutureNestedOuterFirstOuter,
+    DataClassFutureNone,
+    DataClassFuturePath,
+    DataClassFutureSentinel,
+    DataClassFutureStr,
+    DataClassFutureUUID,
     DataClassWithIntNullable,
-    DataClassWithListInts,
     DataClassWithLiteral,
-    DataClassWithNone,
-    DataClassWithPath,
-    DataClassWithSentinel,
-    DataClassWithStr,
     DataClassWithTimeDelta,
-    DataClassWithUUID,
 )
 from utilities.sentinel import Sentinel
 from utilities.types import LogLevel, Parallelism
@@ -117,7 +117,7 @@ class TestGetTypeHints:
         class Example:
             date: dt.date
 
-        cls = data.draw(sampled_from([Example, DataClassWithDate]))
+        cls = data.draw(sampled_from([Example, DataClassFutureDate]))
         globalns = data.draw(just(globals()) | none())
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
@@ -130,7 +130,7 @@ class TestGetTypeHints:
         class Example:
             int_: int
 
-        cls = data.draw(sampled_from([Example, DataClassWithInt]))
+        cls = data.draw(sampled_from([Example, DataClassFutureInt]))
         globalns = data.draw(just(globals()) | none())
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
@@ -156,7 +156,7 @@ class TestGetTypeHints:
         class Example:
             ints: list[int]
 
-        cls = data.draw(sampled_from([Example, DataClassWithListInts]))
+        cls = data.draw(sampled_from([Example, DataClassFutureListInts]))
         globalns = data.draw(just(globals()) | none())
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
@@ -178,30 +178,26 @@ class TestGetTypeHints:
 
     def test_nested_no_future_inner_then_outer(self) -> None:
         hints = get_type_hints(
-            DataClassNestedNoFutureInnerThenOuterOuter, globalns=globals()
+            DataClassNoFutureNestedInnerFirstOuter, globalns=globals()
         )
-        expected = {"inner": DataClassNestedNoFutureInnerThenOuterInner}
+        expected = {"inner": DataClassNoFutureNestedInnerFirstInner}
         assert hints == expected
 
     def test_nested_no_future_outer_then_inner(self) -> None:
         hints = get_type_hints(
-            DataClassNestedNoFutureOuterThenInnerOuter, globalns=globals()
+            DataClassNoFutureNestedOuterFirstOuter, globalns=globals()
         )
-        expected = {"inner": DataClassNestedNoFutureOuterThenInnerInner}
+        expected = {"inner": DataClassNestedNoFutureOuterFirstInner}
         assert hints == expected
 
     def test_nested_with_future_inner_then_outer(self) -> None:
-        hints = get_type_hints(
-            DataClassNestedWithFutureInnerThenOuterOuter, globalns=globals()
-        )
-        expected = {"inner": DataClassNestedWithFutureInnerThenOuterInner}
+        hints = get_type_hints(DataClassFutureNestedInnerFirstOuter, globalns=globals())
+        expected = {"inner": DataClassFutureNestedInnerFirstInner}
         assert hints == expected
 
     def test_nested_with_future_outer_then_inner(self) -> None:
-        hints = get_type_hints(
-            DataClassNestedWithFutureOuterThenInnerOuter, globalns=globals()
-        )
-        expected = {"inner": DataClassNestedWithFutureOuterThenInnerInner}
+        hints = get_type_hints(DataClassFutureNestedOuterFirstOuter, globalns=globals())
+        expected = {"inner": DataClassFutureNestedOuterFirstInner}
         assert hints == expected
 
     @given(data=data())
@@ -223,7 +219,7 @@ class TestGetTypeHints:
         class Example:
             none: None
 
-        cls = data.draw(sampled_from([Example, DataClassWithNone]))
+        cls = data.draw(sampled_from([Example, DataClassFutureNone]))
         globalns = data.draw(just(globals()) | none())
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
@@ -236,7 +232,7 @@ class TestGetTypeHints:
         class Example:
             path: Path
 
-        cls = data.draw(sampled_from([Example, DataClassWithPath]))
+        cls = data.draw(sampled_from([Example, DataClassFuturePath]))
         globalns = data.draw(just(globals()) | none())
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
@@ -249,7 +245,7 @@ class TestGetTypeHints:
         class Example:
             sentinel: Sentinel
 
-        cls = data.draw(sampled_from([Example, DataClassWithSentinel]))
+        cls = data.draw(sampled_from([Example, DataClassFutureSentinel]))
         globalns = data.draw(just(globals()) | none())
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
@@ -262,7 +258,7 @@ class TestGetTypeHints:
         class Example:
             str_: str
 
-        cls = data.draw(sampled_from([Example, DataClassWithStr]))
+        cls = data.draw(sampled_from([Example, DataClassFutureStr]))
         globalns = data.draw(just(globals()) | none())
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
@@ -288,7 +284,7 @@ class TestGetTypeHints:
         class Example:
             uuid: UUID
 
-        cls = data.draw(sampled_from([Example, DataClassWithUUID]))
+        cls = data.draw(sampled_from([Example, DataClassFutureUUID]))
         globalns = data.draw(just(globals()) | none())
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)

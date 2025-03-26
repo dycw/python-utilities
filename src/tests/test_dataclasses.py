@@ -12,6 +12,17 @@ from hypothesis.strategies import booleans, integers, lists, sampled_from
 from polars import DataFrame
 from pytest import raises
 
+from tests.test_typing_funcs.no_future import (
+    DataClassNoFutureInt,
+    DataClassNoFutureIntDefault,
+)
+from tests.test_typing_funcs.with_future import (
+    DataClassFutureInt,
+    DataClassFutureListInts,
+    DataClassFutureListIntsDefault,
+    DataClassFutureNone,
+    DataClassFutureNoneDefault,
+)
 from utilities.dataclasses import (
     YieldFieldsError,
     _MappingToDataclassCaseInsensitiveNonUniqueError,
@@ -339,43 +350,44 @@ class TestReprWithoutDefaults:
 
 
 class TestYieldFields:
-    def test_class_with_none_type_no_default(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            none: None
+    def test_class_no_future_int(self) -> None:
+        result = one(yield_fields(DataClassNoFutureInt))
+        expected = _YieldFieldsClass(name="int_", type_=int, kw_only=True)
+        assert result == expected
 
-        result = one(yield_fields(Example))
+    def test_class_no_future_int_default(self) -> None:
+        result = one(yield_fields(DataClassNoFutureIntDefault))
+        expected = _YieldFieldsClass(name="int_", type_=int, default=0, kw_only=True)
+        assert result == expected
+
+    def test_class_future_none(self) -> None:
+        result = one(yield_fields(DataClassFutureNone))
         expected = _YieldFieldsClass(name="none", type_=NoneType, kw_only=True)
         assert result == expected
 
-    def test_class_with_none_type_and_default(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: None = None
-
-        result = one(yield_fields(Example))
+    def test_class_future_non_default(self) -> None:
+        result = one(yield_fields(DataClassFutureNoneDefault))
         expected = _YieldFieldsClass(
-            name="x", type_=NoneType, default=None, kw_only=True
+            name="none", type_=NoneType, default=None, kw_only=True
         )
         assert result == expected
 
-    def test_class_with_int_type(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
-
-        result = one(yield_fields(Example))
-        expected = _YieldFieldsClass(name="x", type_=int, kw_only=True)
+    def test_class_future_int(self) -> None:
+        result = one(yield_fields(DataClassFutureInt))
+        expected = _YieldFieldsClass(name="int_", type_=int, kw_only=True)
         assert result == expected
 
-    def test_class_with_list_int_type(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: list[int] = field(default_factory=list)
+    def test_class_with_list_ints(self) -> None:
+        result = one(yield_fields(DataClassFutureListInts))
+        expected = _YieldFieldsClass(name="ints", type_=list[int], kw_only=True)
+        assert result == expected
+        assert is_list_type(result.type_)
+        assert get_args(result.type_) == (int,)
 
-        result = one(yield_fields(Example))
+    def test_class_with_list_ints_default(self) -> None:
+        result = one(yield_fields(DataClassFutureListIntsDefault))
         expected = _YieldFieldsClass(
-            name="x", type_=list[int], default_factory=list, kw_only=True
+            name="ints", type_=list[int], default_factory=list, kw_only=True
         )
         assert result == expected
         assert is_list_type(result.type_)

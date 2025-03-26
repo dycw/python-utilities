@@ -34,14 +34,14 @@ import utilities.math
 import utilities.operator
 from tests.conftest import IS_CI_AND_WINDOWS
 from tests.test_typing_funcs.with_future import (
-    DataClassNestedWithFutureInnerThenOuterOuter,
-    DataClassNestedWithFutureOuterThenInnerOuter,
-    DataClassWithCustomEquality,
-    DataClassWithInt,
-    DataClassWithIntDefault,
+    DataClassFutureCustomEquality,
+    DataClassFutureInt,
+    DataClassFutureIntDefault,
+    DataClassFutureNestedInnerFirstOuter,
+    DataClassFutureNestedOuterFirstOuter,
+    DataClassFutureNone,
     DataClassWithLiteral,
     DataClassWithLiteralNullable,
-    DataClassWithNone,
 )
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -102,17 +102,19 @@ def base_objects(
     else:
         base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
     if dataclass_nested:
-        base |= builds(DataClassNestedWithFutureInnerThenOuterOuter).filter(
+        base |= builds(DataClassFutureNestedInnerFirstOuter).filter(
             lambda outer: _is_int64(outer.inner.int_)
-        ) | builds(DataClassNestedWithFutureOuterThenInnerOuter).filter(
+        ) | builds(DataClassFutureNestedOuterFirstOuter).filter(
             lambda outer: _is_int64(outer.inner.int_)
         )
     if dataclass_with_custom_equality:
-        base |= builds(DataClassWithCustomEquality)
+        base |= builds(DataClassFutureCustomEquality)
     if dataclass_with_int:
-        base |= builds(DataClassWithInt).filter(lambda obj: _is_int64(obj.int_))
+        base |= builds(DataClassFutureInt).filter(lambda obj: _is_int64(obj.int_))
     if dataclass_with_int_default:
-        base |= builds(DataClassWithIntDefault).filter(lambda obj: _is_int64(obj.int_))
+        base |= builds(DataClassFutureIntDefault).filter(
+            lambda obj: _is_int64(obj.int_)
+        )
     if dataclass_with_literal:
         base |= builds(DataClassWithLiteral, truth=sampled_from(["true", "false"]))
     if dataclass_with_literal_nullable:
@@ -120,7 +122,7 @@ def base_objects(
             DataClassWithLiteralNullable, truth=sampled_from(["true", "false"]) | none()
         )
     if dataclass_with_none:
-        base |= builds(DataClassWithNone)
+        base |= builds(DataClassFutureNone)
     if enum:
         base |= sampled_from(TruthEnum)
     return base
@@ -285,8 +287,8 @@ class TestIsEqual:
     @given(x=integers())
     def test_dataclass_with_custom_equality(self, *, x: int) -> None:
         first, second = (
-            DataClassWithCustomEquality(int_=x),
-            DataClassWithCustomEquality(int_=x),
+            DataClassFutureCustomEquality(int_=x),
+            DataClassFutureCustomEquality(int_=x),
         )
         assert first != second
         assert utilities.operator.is_equal(first, second)

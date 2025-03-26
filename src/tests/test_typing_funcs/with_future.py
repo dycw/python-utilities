@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, override
 
 if TYPE_CHECKING:
@@ -12,44 +12,8 @@ if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
 
 
-@dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassDefaultInInitParent:
-    int_: int
-
-
-@dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassDefaultInInitChild(DataClassDefaultInInitParent):
-    def __init__(self) -> None:
-        DataClassDefaultInInitParent.__init__(self, int_=0)
-
-
-@dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassNestedWithFutureInnerThenOuterInner:
-    int_: int
-
-
-@dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassNestedWithFutureInnerThenOuterOuter:
-    inner: DataClassNestedWithFutureInnerThenOuterInner
-
-
-@dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassNestedWithFutureOuterThenInnerOuter:
-    inner: DataClassNestedWithFutureOuterThenInnerInner
-
-
-@dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassNestedWithFutureOuterThenInnerInner:
-    int_: int
-
-
-@dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassWithDate:
-    date: dt.date
-
-
 @dataclass(order=True, kw_only=True)
-class DataClassWithCustomEquality:
+class DataClassFutureCustomEquality:
     int_: int = 0
 
     @override
@@ -62,13 +26,29 @@ class DataClassWithCustomEquality:
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassWithInt:
+class DataClassFutureDate:
+    date: dt.date
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureInt:
     int_: int
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassWithIntDefault:
+class DataClassFutureDefaultInInitParent:
     int_: int
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureDefaultInInitChild(DataClassFutureDefaultInInitParent):
+    def __init__(self) -> None:
+        DataClassFutureDefaultInInitParent.__init__(self, int_=0)
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureIntDefault:
+    int_: int = 0
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -77,8 +57,13 @@ class DataClassWithIntNullable:
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassWithListInts:
+class DataClassFutureListInts:
     ints: list[int]
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureListIntsDefault:
+    ints: list[int] = field(default_factory=list)
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -92,22 +77,47 @@ class DataClassWithLiteralNullable:
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassWithNone:
+class DataClassFutureNestedInnerFirstInner:
+    int_: int
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureNestedInnerFirstOuter:
+    inner: DataClassFutureNestedInnerFirstInner
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureNestedOuterFirstOuter:
+    inner: DataClassFutureNestedOuterFirstInner
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureNestedOuterFirstInner:
+    int_: int
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureNone:
     none: None
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassWithPath:
+class DataClassFutureNoneDefault:
+    none: None = None
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFuturePath:
     path: Path
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassWithSentinel:
+class DataClassFutureSentinel:
     sentinel: Sentinel
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassWithStr:
+class DataClassFutureStr:
     str_: str
 
 
@@ -117,5 +127,5 @@ class DataClassWithTimeDelta:
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassWithUUID:
+class DataClassFutureUUID:
     uuid: UUID

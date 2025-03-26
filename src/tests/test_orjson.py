@@ -22,18 +22,18 @@ from tests.test_operator import (
     make_objects,
 )
 from tests.test_typing_funcs.with_future import (
-    DataClassDefaultInInitChild,
-    DataClassDefaultInInitParent,
-    DataClassNestedWithFutureInnerThenOuterInner,
-    DataClassNestedWithFutureInnerThenOuterOuter,
-    DataClassNestedWithFutureOuterThenInnerInner,
-    DataClassNestedWithFutureOuterThenInnerOuter,
-    DataClassWithCustomEquality,
-    DataClassWithInt,
-    DataClassWithIntDefault,
+    DataClassFutureCustomEquality,
+    DataClassFutureDefaultInInitChild,
+    DataClassFutureDefaultInInitParent,
+    DataClassFutureInt,
+    DataClassFutureIntDefault,
+    DataClassFutureNestedInnerFirstInner,
+    DataClassFutureNestedInnerFirstOuter,
+    DataClassFutureNestedOuterFirstInner,
+    DataClassFutureNestedOuterFirstOuter,
+    DataClassFutureNone,
     DataClassWithLiteral,
     DataClassWithLiteralNullable,
-    DataClassWithNone,
 )
 from utilities.datetime import SECOND, get_now
 from utilities.hypothesis import assume_does_not_raise, text_printable
@@ -219,16 +219,16 @@ class TestSerializeAndDeserialize:
         result = deserialize(
             ser,
             objects={
-                DataClassNestedWithFutureInnerThenOuterInner,
-                DataClassNestedWithFutureInnerThenOuterOuter,
-                DataClassNestedWithFutureOuterThenInnerInner,
-                DataClassNestedWithFutureOuterThenInnerOuter,
-                DataClassWithCustomEquality,
-                DataClassWithInt,
-                DataClassWithIntDefault,
+                DataClassFutureNestedInnerFirstInner,
+                DataClassFutureNestedInnerFirstOuter,
+                DataClassFutureNestedOuterFirstInner,
+                DataClassFutureNestedOuterFirstOuter,
+                DataClassFutureCustomEquality,
+                DataClassFutureInt,
+                DataClassFutureIntDefault,
                 DataClassWithLiteral,
                 DataClassWithLiteralNullable,
-                DataClassWithNone,
+                DataClassFutureNone,
                 SubFrozenSet,
                 SubList,
                 SubSet,
@@ -250,27 +250,27 @@ class TestSerializeAndDeserialize:
         result = deserialize(
             ser,
             objects={
-                DataClassNestedWithFutureInnerThenOuterInner,
-                DataClassNestedWithFutureInnerThenOuterOuter,
-                DataClassNestedWithFutureOuterThenInnerInner,
-                DataClassNestedWithFutureOuterThenInnerOuter,
+                DataClassFutureNestedInnerFirstInner,
+                DataClassFutureNestedInnerFirstOuter,
+                DataClassFutureNestedOuterFirstInner,
+                DataClassFutureNestedOuterFirstOuter,
             },
         )
         assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass_with_custom_equality=True))
     def test_dataclass_with_custom_equality(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={DataClassWithCustomEquality})
+        result = deserialize(serialize(obj), objects={DataClassFutureCustomEquality})
         assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass_with_int=True))
     def test_dataclass_with_int(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={DataClassWithInt})
+        result = deserialize(serialize(obj), objects={DataClassFutureInt})
         assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass_with_int_default=True))
     def test_dataclass_with_int_default(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={DataClassWithIntDefault})
+        result = deserialize(serialize(obj), objects={DataClassFutureIntDefault})
         assert is_equal(result, obj)
 
     @given(obj=make_objects(dataclass_with_literal=True))
@@ -278,8 +278,8 @@ class TestSerializeAndDeserialize:
         result = deserialize(serialize(obj), objects={DataClassWithLiteral})
         assert is_equal(result, obj)
 
-    @given(obj=builds(DataClassWithNone))
-    def test_dataclass_no_objects_error(self, *, obj: DataClassWithNone) -> None:
+    @given(obj=builds(DataClassFutureNone))
+    def test_dataclass_no_objects_error(self, *, obj: DataClassFutureNone) -> None:
         ser = serialize(obj)
         with raises(
             _DeserializeNoObjectsError,
@@ -287,8 +287,8 @@ class TestSerializeAndDeserialize:
         ):
             _ = deserialize(ser)
 
-    @given(obj=builds(DataClassWithNone))
-    def test_dataclass_empty_error(self, *, obj: DataClassWithNone) -> None:
+    @given(obj=builds(DataClassFutureNone))
+    def test_dataclass_empty_error(self, *, obj: DataClassFutureNone) -> None:
         ser = serialize(obj)
         with raises(
             _DeserializeObjectNotFoundError,
@@ -297,18 +297,18 @@ class TestSerializeAndDeserialize:
             _ = deserialize(ser, objects=set())
 
     def test_deserialize_hook(self) -> None:
-        obj = DataClassDefaultInInitChild()
+        obj = DataClassFutureDefaultInInitChild()
         ser = serialize(obj)
         with raises(TypeError, match="got an unexpected keyword argument 'int_'"):
-            _ = deserialize(ser, objects={DataClassDefaultInInitChild})
+            _ = deserialize(ser, objects={DataClassFutureDefaultInInitChild})
 
         def hook(cls: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
-            if issubclass(cls, DataClassDefaultInInitParent):
+            if issubclass(cls, DataClassFutureDefaultInInitParent):
                 mapping = {k: v for k, v in mapping.items() if k != "int_"}
             return mapping
 
         result = deserialize(
-            ser, dataclass_hook=hook, objects={DataClassDefaultInInitChild}
+            ser, dataclass_hook=hook, objects={DataClassFutureDefaultInInitChild}
         )
         assert result == obj
 
@@ -377,24 +377,24 @@ class TestSerialize:
         assert result == expected
 
     def test_dataclass(self) -> None:
-        obj = DataClassWithNone(none=None)
+        obj = DataClassFutureNone(none=None)
         result = serialize(obj)
         expected = b'{"[dc|DataClassWithNone]":{"none":"[none]"}}'
         assert result == expected
 
     def test_dataclass_nested(self) -> None:
-        obj = DataClassNestedWithFutureOuterThenInnerOuter(
-            inner=DataClassNestedWithFutureOuterThenInnerInner(int_=0)
+        obj = DataClassFutureNestedOuterFirstOuter(
+            inner=DataClassFutureNestedOuterFirstInner(int_=0)
         )
         result = serialize(obj, globalns=globals())
         expected = b'{"[dc|DataClassNestedWithFutureOuterThenInnerOuter]":{"inner":{"[dc|DataClassNestedWithFutureOuterThenInnerInner]":{"int_":0}}}}'
         assert result == expected
 
     def test_dataclass_hook_main(self) -> None:
-        obj = DataClassDefaultInInitChild()
+        obj = DataClassFutureDefaultInInitChild()
 
         def hook(cls: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
-            if issubclass(cls, DataClassDefaultInInitParent):
+            if issubclass(cls, DataClassFutureDefaultInInitParent):
                 mapping = {k: v for k, v in mapping.items() if k != "int_"}
             return mapping
 

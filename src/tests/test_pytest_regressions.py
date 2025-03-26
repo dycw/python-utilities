@@ -7,9 +7,9 @@ from hypothesis.strategies import sampled_from
 from polars import int_range
 
 from tests.test_typing_funcs.with_future import (
-    DataClassNestedWithFutureOuterThenInnerInner,
-    DataClassNestedWithFutureOuterThenInnerOuter,
-    DataClassWithInt,
+    DataClassFutureInt,
+    DataClassFutureNestedOuterFirstInner,
+    DataClassFutureNestedOuterFirstOuter,
     DataClassWithLiteral,
 )
 from utilities.pytest_regressions import (
@@ -33,7 +33,7 @@ class TestMultipleRegressionFixtures:
         orjson_regression: OrjsonRegressionFixture,
         polars_regression: PolarsRegressionFixture,
     ) -> None:
-        obj = DataClassWithInt(int_=0)
+        obj = DataClassFutureInt(int_=0)
         orjson_regression.check(obj, suffix="obj")
         series = int_range(end=10, eager=True).alias("value")
         polars_regression.check(series, suffix="series")
@@ -53,15 +53,15 @@ class TestOrjsonRegressionFixture:
     def test_dataclass_nested(
         self, *, orjson_regression: OrjsonRegressionFixture
     ) -> None:
-        obj = DataClassNestedWithFutureOuterThenInnerOuter(
-            inner=DataClassNestedWithFutureOuterThenInnerInner(int_=0)
+        obj = DataClassFutureNestedOuterFirstOuter(
+            inner=DataClassFutureNestedOuterFirstInner(int_=0)
         )
         orjson_regression.check(obj)
 
     def test_dataclass_with_int(
         self, *, orjson_regression: OrjsonRegressionFixture
     ) -> None:
-        obj = DataClassWithInt(int_=0)
+        obj = DataClassFutureInt(int_=0)
         orjson_regression.check(obj)
 
     @given(truth=sampled_from(["true", "false"]))
