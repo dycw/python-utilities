@@ -55,6 +55,7 @@ from utilities.datetime import (
     Month,
     MonthError,
     ParseDateCompactError,
+    ParseDateTimeCompactError,
     ParseMonthError,
     SerializeCompactError,
     SubDurationError,
@@ -1000,10 +1001,14 @@ class TestSerializeAndParseCompact:
             _ = serialize_compact(datetime)
 
     def test_error_parse_date(self) -> None:
-        with raises(
-            ParseDateCompactError, match="Unable to parse '.*' into a date/datetime"
-        ):
+        with raises(ParseDateCompactError, match="Unable to parse '.*' into a date"):
             _ = parse_date_compact("invalid")
+
+    def test_error_parse_datetime(self) -> None:
+        with raises(
+            ParseDateTimeCompactError, match="Unable to parse '.*' into a datetime"
+        ):
+            _ = parse_datetime_compact("invalid")
 
 
 class TestSubDuration:
