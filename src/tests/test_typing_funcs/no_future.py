@@ -23,9 +23,9 @@ class DataClassNoFutureNestedInnerFirstOuter:
 
 @dataclass(kw_only=True)
 class DataClassNoFutureNestedOuterFirstOuter:
-    inner: "DataClassNestedNoFutureOuterFirstInner"
+    inner: "DataClassNoFutureNestedOuterFirstInner"
 
 
 @dataclass(kw_only=True)
-class DataClassNestedNoFutureOuterFirstInner:
+class DataClassNoFutureNestedOuterFirstInner:
     int_: int

@@ -18,10 +18,17 @@ from tests.test_typing_funcs.no_future import (
 )
 from tests.test_typing_funcs.with_future import (
     DataClassFutureInt,
+    DataClassFutureIntDefault,
     DataClassFutureListInts,
     DataClassFutureListIntsDefault,
+    DataClassFutureNestedOuterFirstInner,
+    DataClassFutureNestedOuterFirstOuter,
     DataClassFutureNone,
     DataClassFutureNoneDefault,
+    DataClassFutureTypeLiteral,
+    DataClassFutureTypeLiteralNullable,
+    DataClassWithLiteral,
+    DataClassWithLiteralNullable,
 )
 from utilities.dataclasses import (
     YieldFieldsError,
@@ -298,28 +305,20 @@ class TestMappingToDataclass:
 
 class TestReplaceNonSentinel:
     def test_main(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int = 0
-
-        obj = Example()
-        assert obj.x == 0
-        obj1 = replace_non_sentinel(obj, x=1)
-        assert obj1.x == 1
-        obj2 = replace_non_sentinel(obj1, x=sentinel)
-        assert obj2.x == 1
+        obj = DataClassFutureIntDefault()
+        assert obj.int_ == 0
+        obj1 = replace_non_sentinel(obj, int_=1)
+        assert obj1.int_ == 1
+        obj2 = replace_non_sentinel(obj1, int_=sentinel)
+        assert obj2.int_ == 1
 
     def test_in_place(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int = 0
-
-        obj = Example()
-        assert obj.x == 0
-        replace_non_sentinel(obj, x=1, in_place=True)
-        assert obj.x == 1
-        replace_non_sentinel(obj, x=sentinel, in_place=True)
-        assert obj.x == 1
+        obj = DataClassFutureIntDefault()
+        assert obj.int_ == 0
+        replace_non_sentinel(obj, int_=1, in_place=True)
+        assert obj.int_ == 1
+        replace_non_sentinel(obj, int_=sentinel, in_place=True)
+        assert obj.int_ == 1
 
 
 class TestReprWithoutDefaults:
@@ -377,14 +376,14 @@ class TestYieldFields:
         expected = _YieldFieldsClass(name="int_", type_=int, kw_only=True)
         assert result == expected
 
-    def test_class_with_list_ints(self) -> None:
+    def test_class_list_ints(self) -> None:
         result = one(yield_fields(DataClassFutureListInts))
         expected = _YieldFieldsClass(name="ints", type_=list[int], kw_only=True)
         assert result == expected
         assert is_list_type(result.type_)
         assert get_args(result.type_) == (int,)
 
-    def test_class_with_list_ints_default(self) -> None:
+    def test_class_list_ints_default(self) -> None:
         result = one(yield_fields(DataClassFutureListIntsDefault))
         expected = _YieldFieldsClass(
             name="ints", type_=list[int], default_factory=list, kw_only=True
@@ -393,37 +392,15 @@ class TestYieldFields:
         assert is_list_type(result.type_)
         assert get_args(result.type_) == (int,)
 
-    def test_class_nested(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Inner:
-            x: int
-
-        @dataclass(kw_only=True, slots=True)
-        class Outer:
-            inner: Inner
-
-        result = one(yield_fields(Outer, localns=locals()))
-        expected = _YieldFieldsClass(name="inner", type_=Inner, kw_only=True)
-        assert result == expected
-        assert result.type_ is Inner
-
     def test_class_literal(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            truth: TruthLit
-
-        result = one(yield_fields(Example, globalns=globals()))
+        result = one(yield_fields(DataClassWithLiteral))
         expected = _YieldFieldsClass(name="truth", type_=TruthLit, kw_only=True)
         assert result == expected
         assert is_literal_type(result.type_)
         assert get_args(result.type_) == ("true", "false")
 
     def test_class_literal_nullable(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            truth: TruthLit | None = None
-
-        result = one(yield_fields(Example, globalns=globals()))
+        result = one(yield_fields(DataClassWithLiteralNullable))
         expected = _YieldFieldsClass(
             name="truth", type_=TruthLit | None, default=None, kw_only=True
         )
@@ -433,6 +410,16 @@ class TestYieldFields:
         assert args == (Literal["true", "false"],)
         arg = one(args)
         assert get_args(arg) == ("true", "false")
+
+    def test_class_nested(self) -> None:
+        result = one(
+            yield_fields(DataClassFutureNestedOuterFirstOuter, globalns=globals())
+        )
+        expected = _YieldFieldsClass(
+            name="inner", type_=DataClassFutureNestedOuterFirstInner, kw_only=True
+        )
+        assert result == expected
+        assert result.type_ is DataClassFutureNestedOuterFirstInner
 
     def test_class_orjson_log_record(self) -> None:
         result = list(yield_fields(OrjsonLogRecord, globalns=globals()))
@@ -454,6 +441,27 @@ class TestYieldFields:
             ),
         ]
         assert result[-3:] == exp_tail
+
+    def test_class_type_literal(self) -> None:
+        result = one(yield_fields(DataClassFutureTypeLiteral, globalns=globals()))
+        expected = _YieldFieldsClass(name="truth", type_=TruthLit, kw_only=True)
+        assert result == expected
+        assert is_literal_type(result.type_)
+        assert get_args(result.type_) == ("true", "false")
+
+    def test_class_type_literal_nullable(self) -> None:
+        result = one(
+            yield_fields(DataClassFutureTypeLiteralNullable, globalns=globals())
+        )
+        expected = _YieldFieldsClass(
+            name="truth", type_=TruthLit | None, default=None, kw_only=True
+        )
+        assert result == expected
+        assert is_optional_type(result.type_)
+        args = get_args(result.type_)
+        assert args == (Literal["true", "false"],)
+        arg = one(args)
+        assert get_args(arg) == ("true", "false")
 
     def test_instance(self) -> None:
         @dataclass(kw_only=True, slots=True)

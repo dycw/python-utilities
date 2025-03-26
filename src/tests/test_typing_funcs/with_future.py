@@ -12,6 +12,9 @@ if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
 
 
+type TruthLit = Literal["true", "false"]
+
+
 @dataclass(order=True, kw_only=True)
 class DataClassFutureCustomEquality:
     int_: int = 0
@@ -52,7 +55,7 @@ class DataClassFutureIntDefault:
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassWithIntNullable:
+class DataClassFutureIntNullable:
     int_: int | None = None
 
 
@@ -122,8 +125,18 @@ class DataClassFutureStr:
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassWithTimeDelta:
+class DataClassFutureTimeDelta:
     timedelta: dt.timedelta
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureTypeLiteral:
+    truth: TruthLit
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureTypeLiteralNullable:
+    truth: TruthLit | None = None
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
