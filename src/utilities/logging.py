@@ -115,7 +115,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
             if (self._backup_count is not None) and self._should_rollover(record):
                 self._do_rollover(backup_count=self._backup_count)
             FileHandler.emit(self, record)
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001 # pragma: no cover
             self.handleError(record)
 
     def _do_rollover(self, *, backup_count: int = 1) -> None:
