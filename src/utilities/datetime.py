@@ -902,7 +902,7 @@ class SerializeCompactError(Exception):
         return f"Unable to serialize zoned datetime {self.datetime}"
 
 
-def parse_compact_date(text: str, /) -> dt.date:
+def parse_date_compact(text: str, /) -> dt.date:
     """Parse a compact string into a date."""
     try:
         datetime = dt.datetime.strptime(text, "%Y%m%d").replace(tzinfo=UTC)
@@ -1238,7 +1238,7 @@ __all__ = [
     "milliseconds_since_epoch",
     "milliseconds_since_epoch_to_datetime",
     "milliseconds_to_timedelta",
-    "parse_compact_date",
+    "parse_date_compact",
     "parse_datetime_compact",
     "parse_month",
     "parse_two_digit_year",
