@@ -907,7 +907,7 @@ def serialize_compact(date_or_datetime: DateOrDateTime, /) -> str:
             format_ = "%Y%m%d"
         case _ as never:
             assert_never(never)
-    return date_or_datetime.strftime(maybe_sub_pct_y(format_))
+    return date_or_datetime.strftime(format_)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -922,9 +922,7 @@ class SerializeCompactError(Exception):
 def parse_compact_date(text: str, /) -> dt.date:
     """Parse a compact string into a date."""
     try:
-        datetime = dt.datetime.strptime(text, maybe_sub_pct_y("%Y%m%d")).replace(
-            tzinfo=UTC
-        )
+        datetime = dt.datetime.strptime(text, "%Y%m%d").replace(tzinfo=UTC)
     except ValueError:
         raise ParseDateCompactError(text=text) from None
     return datetime.date()
@@ -941,7 +939,7 @@ class ParseDateCompactError(Exception):
 
 def parse_datetime_compact(text: str, /) -> dt.datetime:
     """Parse a compact string into a datetime."""
-    for fmt in map(maybe_sub_pct_y, ["%Y%m%dT%H%M%S", "%Y%m%dT%H%M%S.%f"]):
+    for fmt in ["%Y%m%dT%H%M%S", "%Y%m%dT%H%M%S.%f"]:
         with suppress(ValueError):
             return (
                 dt.datetime.strptime(text, fmt).replace(tzinfo=UTC).replace(tzinfo=None)
@@ -968,7 +966,7 @@ def serialize_month(month: Month, /) -> str:
 
 def parse_month(month: str, /) -> Month:
     """Parse a string into a month."""
-    for fmt in map(maybe_sub_pct_y, ["%Y-%m", "%Y%m", "%Y %m"]):
+    for fmt in ["%Y-%m", "%Y%m", "%Y %m"]:
         try:
             date = dt.datetime.strptime(month, fmt).replace(tzinfo=UTC).date()
         except ValueError:
