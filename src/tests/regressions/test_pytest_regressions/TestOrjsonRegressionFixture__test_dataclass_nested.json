@@ -1,1 +1,7 @@
-{"[dc|DataClassNestedWithFutureOuterThenInnerOuter]":{"inner":{"[dc|DataClassNestedWithFutureOuterThenInnerInner]":{"int_":0}}}}
+{
+  "[dc|DataClassNestedWithFutureOuterThenInnerOuter]": {
+    "inner": {
+      "[dc|DataClassNestedWithFutureOuterThenInnerInner]": { "int_": 0 }
+    }
+  }
+}
