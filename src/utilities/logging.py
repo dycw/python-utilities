@@ -20,22 +20,18 @@ from logging import (
     getLogger,
     setLogRecordFactory,
 )
-from logging.handlers import (
-    BaseRotatingHandler,
-    RotatingFileHandler,
-    TimedRotatingFileHandler,
-)
+from logging.handlers import BaseRotatingHandler, TimedRotatingFileHandler
 from pathlib import Path
 from re import Pattern, search
 from shutil import move
 from sys import stdout
+from time import time
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
     Literal,
     Self,
-    TextIO,
     assert_never,
     cast,
     override,
@@ -75,7 +71,7 @@ type _When = Literal[
 class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
     """Handler which rotates on size & time."""
 
-    stream: TextIO | None
+    stream: Any
 
     @override
     def __init__(
@@ -84,7 +80,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         mode: Literal["a", "w", "x"] = "a",
         maxBytes: int = 0,
         backupCount: int = 0,
-        delay: bool = True,  # set to True
+        delay: bool = False,  # set to True
         errors: Literal["strict", "ignore", "replace"] | None = None,
         when: _When = "midnight",
         interval: int = 1,
@@ -94,21 +90,13 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
     ) -> None:
         filename = str(Path(filename))
         super().__init__(filename, mode, encoding=encoding, delay=delay)
-        self._backup_count = backupCount
+        self._max_bytes = maxBytes if maxBytes >= 1 else None
+        self._backup_count = backupCount if backupCount >= 1 else None
         self._filename = Path(self.baseFilename)
         self._directory = self._filename.parent
         self._stem = self._filename.stem
         self._suffix = self._filename.suffix
         self._patterns = _compute_rollover_patterns(self._stem, self._suffix)
-        self._size_handler = RotatingFileHandler(
-            filename,
-            mode=mode,
-            maxBytes=maxBytes,
-            backupCount=backupCount,
-            encoding=encoding,
-            delay=True,
-            errors=errors,
-        )
         self._time_handler = TimedRotatingFileHandler(
             filename,
             when=when,
@@ -123,24 +111,19 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
 
     @override
     def emit(self, record: LogRecord) -> None:
-        # try:
-        if self._should_rollover(record):
-            self._do_rollover()
-        FileHandler.emit(self, record)
-        # except Exception:
-        #     self.handleError(record)
-
-    def _should_rollover(self, record: LogRecord, /) -> bool:
-        return bool(self._size_handler.shouldRollover(record)) or bool(
-            self._time_handler.shouldRollover(record)
-        )
+        try:
+            if self._should_rollover(record):
+                self._do_rollover()
+            FileHandler.emit(self, record)
+        except Exception:  # noqa: BLE001
+            self.handleError(record)
 
     def _do_rollover(self) -> None:
         if self.stream:
             self.stream.close()
             self.stream = None
 
-        if self._backup_count >= 1:
+        if self._backup_count is not None:
             actions = _compute_rollover_actions(
                 self._directory,
                 self._stem,
@@ -150,68 +133,22 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
             )
             actions.do()
 
-            zz
-            breakpoint()
+        if not self.delay:
+            self.stream = self._open()
+        self._time_handler.rolloverAt = self._time_handler.computeRollover(int(time()))
 
-        breakpoint()
-        # Backup rotation like RotatingFileHandler
-        for i in range(self.backup_count - 1, 0, -1):
-            sfn = f"{self.baseFilename}.{i}"
-            dfn = f"{self.baseFilename}.{i + 1}"
-            if os.path.exists(sfn):
-                os.rename(sfn, dfn)
-
-        dfn = f"{self.baseFilename}.1"
-        if os.path.exists(self.baseFilename):
-            os.rename(self.baseFilename, dfn)
-
-        self.stream = self._open()
-
-        # size....
-
-        # if self.backupCount > 0:
-        #     for i in range(self.backupCount - 1, 0, -1):
-        #         sfn = self.rotation_filename("%s.%d" % (self.baseFilename, i))
-        #         dfn = self.rotation_filename("%s.%d" % (self.baseFilename, i + 1))
-        #         if os.path.exists(sfn):
-        #             if os.path.exists(dfn):
-        #                 os.remove(dfn)
-        #             os.rename(sfn, dfn)
-        #     dfn = self.rotation_filename(self.baseFilename + ".1")
-        #     if os.path.exists(dfn):
-        #         os.remove(dfn)
-        #     self.rotate(self.baseFilename, dfn)
-        # if not self.delay:
-        #     self.stream = self._open()
-
-        # currentTime = int(time.time())
-        # t = self.rolloverAt - self.interval
-        # if self.utc:
-        #     timeTuple = time.gmtime(t)
-        # else:
-        #     timeTuple = time.localtime(t)
-        #     dstNow = time.localtime(currentTime)[-1]
-        #     dstThen = timeTuple[-1]
-        #     if dstNow != dstThen:
-        #         addend = 3600 if dstNow else -3600
-        #         timeTuple = time.localtime(t + addend)
-        # dfn = self.rotation_filename(
-        #     self.baseFilename + "." + time.strftime(self.suffix, timeTuple)
-        # )
-        # if os.path.exists(dfn):
-        #     # Already rolled over.
-        #     return
-        #
-        # if self.stream:
-        #     self.stream.close()
-        #     self.stream = None
-        # self.rotate(self.baseFilename, dfn)
-        # if self.backupCount > 0:
-        #     for s in self.getFilesToDelete():
-        #         os.remove(s)
-        # if not self.delay:
-        #     self.stream = self._open()
-        # self.rolloverAt = self.computeRollover(currentTime)
+    def _should_rollover(self, record: LogRecord, /) -> bool:
+        if self._max_bytes is not None:
+            try:
+                current = self._filename.stat().st_size
+            except FileNotFoundError:
+                pass
+            else:
+                delta = len(f"{self.format(record)}\n")
+                new = current + delta
+                if new >= self._max_bytes:
+                    return True
+        return bool(self._time_handler.shouldRollover(record))
 
 
 def _compute_rollover_patterns(stem: str, suffix: str, /) -> _RolloverPatterns:

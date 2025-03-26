@@ -63,7 +63,6 @@ class TestBasicConfig:
         logger.info("message")
 
 
-@mark.only
 class TestComputeRolloverActions:
     async def test_main(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("log.txt").touch()
@@ -223,7 +222,6 @@ class TestLogLevel:
         assert len(get_args(LogLevel)) == 5
 
 
-@mark.only
 class TestRotatingLogFile:
     def test_from_path(self) -> None:
         path = Path("log.txt")
@@ -429,7 +427,6 @@ class TestSetupLogging:
                 assert pattern.search(contents)
 
 
-@mark.only
 class TestSizeAndTimeRotatingFileHandler:
     def test_handlers(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
@@ -442,49 +439,143 @@ class TestSizeAndTimeRotatingFileHandler:
             content = fh.read()
         assert content == "message\n"
 
+    @mark.only
     def test_size(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         handler = SizeAndTimeRotatingFileHandler(
-            filename=tmp_path.joinpath("log"), maxBytes=100, backupCount=1, when="D"
+            filename=tmp_path.joinpath("log.txt"), maxBytes=100, backupCount=3
         )
         logger.addHandler(handler)
         logger.setLevel(DEBUG)
-        # assert len(list(tmp_path.iterdir())) == 0
-        logger.info("message")
-        # assert len(list(tmp_path.iterdir())) == 1
-        logger.info(100 * "message")
-        # assert len(list(tmp_path.iterdir())) == 2
-        logger.info("message")
-        # assert len(list(tmp_path.iterdir())) == 2
-        logger.info(100 * "message")
-        # assert len(list(tmp_path.iterdir())) == 2
 
+        for i in range(1, 3):
+            logger.info("message %d", i)
+            files = list(tmp_path.iterdir())
+            assert len(files) == 1
+            assert any(p for p in files if search(r"^log\.txt$", p.name))
+
+        logger.info(10 * "message 3")
+        files = list(tmp_path.iterdir())
+        assert len(files) == 2
+        assert any(p for p in files if search(r"^log\.txt$", p.name))
+        assert any(p for p in files if search(r"^log\.1__[\dT]+\.txt$", p.name))
+
+        for i in range(4, 6):
+            logger.info("message %d", i)
+            files = list(tmp_path.iterdir())
+            assert len(files) == 3
+            assert any(p for p in files if search(r"^log\.txt$", p.name))
+            assert any(
+                p for p in files if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
+            )
+            assert any(p for p in files if search(r"^log\.2__[\dT]+\.txt$", p.name))
+
+        logger.info(10 * "message 6")
+        files = list(tmp_path.iterdir())
+        assert len(files) == 4
+        assert any(p for p in files if search(r"^log\.txt$", p.name))
+        assert any(p for p in files if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name))
+        assert any(p for p in files if search(r"^log\.2__[\dT]+__[\dT]+\.txt$", p.name))
+        assert any(p for p in files if search(r"^log\.3__[\dT]+\.txt$", p.name))
+
+        for _ in range(2):
+            for i in range(7, 9):
+                logger.info("message %d", i)
+                files = list(tmp_path.iterdir())
+                assert len(files) == 4
+                assert any(p for p in files if search(r"^log\.txt$", p.name))
+                assert any(
+                    p for p in files if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
+                )
+                assert any(
+                    p for p in files if search(r"^log\.2__[\dT]+__[\dT]+\.txt$", p.name)
+                )
+                assert any(
+                    p for p in files if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
+                )
+
+            logger.info("message 9")
+            files = list(tmp_path.iterdir())
+            assert len(files) == 4
+            assert any(p for p in files if search(r"^log\.txt$", p.name))
+            assert any(
+                p for p in files if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
+            )
+            assert any(
+                p for p in files if search(r"^log\.2__[\dT]+__[\dT]+\.txt$", p.name)
+            )
+            assert any(
+                p for p in files if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
+            )
+
+    @mark.only
     async def test_time(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         handler = SizeAndTimeRotatingFileHandler(
-            filename=tmp_path.joinpath("log"), backupCount=1, when="S", interval=1
+            filename=tmp_path.joinpath("log.txt"), backupCount=3, when="S", interval=1
         )
+
         logger.addHandler(handler)
         logger.setLevel(DEBUG)
-        list(tmp_path.iterdir())
-        assert len(list(tmp_path.iterdir())) == 0
+
+        files = list(tmp_path.iterdir())
+        assert len(files) == 1
+        assert any(p for p in files if search(r"^log\.txt$", p.name))
+
         logger.info("message 1")
-        list(tmp_path.iterdir())
-        assert len(list(tmp_path.iterdir())) == 1
-        await sleep(1.1)
-        logger.info("message 2")
-        list(tmp_path.iterdir())
-        assert len(list(tmp_path.iterdir())) == 1
-        logger.info("message 3")
-        list(tmp_path.iterdir())
-        assert len(list(tmp_path.iterdir())) == 1
-        await sleep(1.1)
-        logger.info("message 4")
-        list(tmp_path.iterdir())
-        assert len(list(tmp_path.iterdir())) == 1
-        logger.info("message 5")
-        list(tmp_path.iterdir())
-        assert len(list(tmp_path.iterdir())) == 1
+        files = list(tmp_path.iterdir())
+        assert len(files) == 1
+        assert any(p for p in files if search(r"^log\.txt$", p.name))
+
+        await sleep(1.01)
+        for i in range(2, 4):
+            logger.info("message %d", i)
+            files = list(tmp_path.iterdir())
+            assert len(files) == 2
+            assert any(p for p in files if search(r"^log\.txt$", p.name))
+            assert any(p for p in files if search(r"^log\.1__[\dT]+\.txt$", p.name))
+
+        await sleep(1.01)
+        for i in range(4, 6):
+            logger.info("message %d", i)
+            files = list(tmp_path.iterdir())
+            assert len(files) == 3
+            assert any(p for p in files if search(r"^log\.txt$", p.name))
+            assert any(
+                p for p in files if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
+            )
+            assert any(p for p in files if search(r"^log\.2__[\dT]+\.txt$", p.name))
+
+        await sleep(1.01)
+        for i in range(6, 8):
+            logger.info("message %d", i)
+            files = list(tmp_path.iterdir())
+            assert len(files) == 4
+            assert any(p for p in files if search(r"^log\.txt$", p.name))
+            assert any(
+                p for p in files if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
+            )
+            assert any(
+                p for p in files if search(r"^log\.2__[\dT]+__[\dT]+\.txt$", p.name)
+            )
+            assert any(p for p in files if search(r"^log\.3__[\dT]+\.txt$", p.name))
+
+        for _ in range(2):
+            await sleep(1.01)
+            for i in range(8, 10):
+                logger.info("message %d", i)
+                files = list(tmp_path.iterdir())
+                assert len(files) == 4
+                assert any(p for p in files if search(r"^log\.txt$", p.name))
+                assert any(
+                    p for p in files if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
+                )
+                assert any(
+                    p for p in files if search(r"^log\.2__[\dT]+__[\dT]+\.txt$", p.name)
+                )
+                assert any(
+                    p for p in files if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
+                )
 
     def test_should_rollover(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
