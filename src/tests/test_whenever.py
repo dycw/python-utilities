@@ -199,7 +199,7 @@ class TestParseAndSerializeLocalDateTime:
     @given(datetime=local_datetimes(round_="standard", timedelta=SECOND))
     def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime) -> None:
         assert datetime.microsecond == 0
-        serialized = serialize_local_datetime(datetime.replace(microsecond=0))
+        serialized = serialize_local_datetime(datetime)
         result = parse_local_datetime(serialized)
         assert result == datetime
 
