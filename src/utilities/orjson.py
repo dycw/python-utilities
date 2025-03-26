@@ -784,6 +784,7 @@ def _get_log_records_one(
     path: Path,
     /,
     *,
+    dataclass_hook: _DataclassHook | None = None,
     objects: AbstractSet[type[Any]] | None = None,
     redirects: Mapping[str, type[Any]] | None = None,
 ) -> _GetLogRecordsOneOutput:
@@ -804,7 +805,10 @@ def _get_log_records_one(
         else:
             try:
                 result = deserialize(
-                    line.encode(), objects=objects_use, redirects=redirects
+                    line.encode(),
+                    dataclass_hook=dataclass_hook,
+                    objects=objects_use,
+                    redirects=redirects,
                 )
                 record = ensure_class(result, OrjsonLogRecord)
             except (
