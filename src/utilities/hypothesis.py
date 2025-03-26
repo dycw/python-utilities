@@ -1024,6 +1024,16 @@ def setup_hypothesis_profiles(
                 case _ as never:
                     assert_never(never)
 
+        @property
+        def verbosity(self) -> Verbosity:
+            match self:
+                case Profile.dev | Profile.debug | Profile.default:
+                    return Verbosity.quiet
+                case Profile.ci:
+                    return Verbosity.verbose
+                case _ as never:
+                    assert_never(never)
+
     phases = {Phase.explicit, Phase.reuse, Phase.generate, Phase.target}
     if "HYPOTHESIS_NO_SHRINK" not in environ:
         phases.add(Phase.shrink)
@@ -1040,7 +1050,7 @@ def setup_hypothesis_profiles(
             deadline=None,
             print_blob=True,
             suppress_health_check=suppress_health_check,
-            verbosity=Verbosity.quiet,
+            verbosity=profile.verbosity,
         )
     profile = get_env_var(
         "HYPOTHESIS_PROFILE", case_sensitive=False, default=Profile.default.name
