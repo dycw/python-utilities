@@ -78,18 +78,18 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         self,
         filename: PathLike,
         mode: Literal["a", "w", "x"] = "a",
-        maxBytes: int = 0,
-        backupCount: int = 0,
-        delay: bool = False,  # set to True
+        encoding: str | None = None,
+        delay: bool = False,
         errors: Literal["strict", "ignore", "replace"] | None = None,
+        maxBytes: int = 0,
         when: _When = "midnight",
         interval: int = 1,
-        encoding: str | None = None,
+        backupCount: int = 0,
         utc: bool = False,
         atTime: dt.time | None = None,
     ) -> None:
         filename = str(Path(filename))
-        super().__init__(filename, mode, encoding=encoding, delay=delay)
+        super().__init__(filename, mode, encoding=encoding, delay=delay, errors=errors)
         self._max_bytes = maxBytes if maxBytes >= 1 else None
         self._backup_count = backupCount if backupCount >= 1 else None
         self._filename = Path(self.baseFilename)
@@ -103,7 +103,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
             interval=interval,
             backupCount=backupCount,
             encoding=encoding,
-            delay=True,
+            delay=delay,
             utc=utc,
             atTime=atTime,
             errors=errors,
