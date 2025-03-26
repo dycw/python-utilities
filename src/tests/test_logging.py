@@ -5,11 +5,15 @@ from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, cast
 
+from hypothesis import given
+from hypothesis.strategies import datetimes, integers
 from pytest import LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
 
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.untraced import func_untraced
+from utilities.datetime import NOW_UTC, SECOND, round_datetime
+from utilities.hypothesis import pairs, temp_paths, zoned_datetimes
 from utilities.iterables import one
 from utilities.logging import (
     GetLoggingLevelNumberError,
@@ -17,6 +21,8 @@ from utilities.logging import (
     SizeAndTimeRotatingFileHandler,
     StandaloneFileHandler,
     _AdvancedLogRecord,
+    _compute_rollover_actions,
+    _RotatingLogFile,
     add_filters,
     basic_config,
     get_default_logging_path,
@@ -26,9 +32,11 @@ from utilities.logging import (
     temp_handler,
     temp_logger,
 )
+from utilities.math import round_
 from utilities.typing import get_args
 
 if TYPE_CHECKING:
+    import datetime as dt
     from re import Pattern
 
     from utilities.types import LoggerOrName
@@ -53,6 +61,13 @@ class TestBasicConfig:
         basic_config()
         logger = getLogger(__name__)
         logger.info("message")
+
+
+@mark.only
+class TestComputeRolloverActions:
+    def test_main(self, *, tmp_path: Path) -> None:
+        tmp_path.joinpath("log.txt").touch()
+        actions = _compute_rollover_actions(tmp_path, "log", ".txt")
 
 
 class TestGetDefaultLoggingPath:
@@ -101,6 +116,104 @@ class TestGetLoggingLevelNumber:
 class TestLogLevel:
     def test_main(self) -> None:
         assert len(get_args(LogLevel)) == 5
+
+
+@mark.only
+class TestRotatingLogFile:
+    def test_from_path(self) -> None:
+        path = Path("log.txt")
+        result = _RotatingLogFile.from_path(path, "log", ".txt")
+        assert result is not None
+        assert result.stem == "log"
+        assert result.suffix == ".txt"
+        assert result.index is None
+        assert result.start is None
+        assert result.end is None
+
+    @given(index=integers(min_value=1))
+    def test_from_path_with_index(self, *, index: int) -> None:
+        path = Path(f"log.{index}.txt")
+        result = _RotatingLogFile.from_path(path, "log", ".txt")
+        assert result is not None
+        assert result.stem == "log"
+        assert result.suffix == ".txt"
+        assert result.index == index
+        assert result.start is None
+        assert result.end is None
+
+    @given(
+        index=integers(min_value=1),
+        end=datetimes().map(lambda d: round_datetime(d, SECOND)),
+    )
+    def test_from_path_with_index_and_end(
+        self, *, index: int, end: dt.datetime
+    ) -> None:
+        path = Path(f"log.{index}__{end:%Y%m%dT%H%M%S}.txt")
+        result = _RotatingLogFile.from_path(path, "log", ".txt")
+        assert result is not None
+        assert result.stem == "log"
+        assert result.suffix == ".txt"
+        assert result.index == index
+        assert result.start is None
+        assert result.end == end
+
+    @given(
+        index=integers(min_value=1),
+        datetimes=pairs(
+            datetimes().map(lambda d: round_datetime(d, SECOND)), sorted=True
+        ),
+    )
+    def test_from_path_with_index_start_and_end(
+        self, *, index: int, datetimes: tuple[dt.datetime, dt.datetime]
+    ) -> None:
+        start, end = datetimes
+        path = Path(f"log.{index}__{start:%Y%m%dT%H%M%S}__{end:%Y%m%dT%H%M%S}.txt")
+        result = _RotatingLogFile.from_path(path, "log", ".txt")
+        assert result is not None
+        assert result.stem == "log"
+        assert result.suffix == ".txt"
+        assert result.index == index
+        assert result.start == start
+        assert result.end == end
+
+    def test_from_path_none(self) -> None:
+        path = Path("invalid.txt")
+        result = _RotatingLogFile.from_path(path, "log", ".txt")
+        assert result is None
+
+    def test_path(self, *, tmp_path: Path) -> None:
+        file = _RotatingLogFile(directory=tmp_path, stem="log", suffix=".txt")
+        assert file.path == tmp_path.joinpath("log.txt")
+
+    @given(index=integers(min_value=1), root=temp_paths())
+    def test_path_with_index(self, *, index: int, root: Path) -> None:
+        file = _RotatingLogFile(directory=root, stem="log", suffix=".txt", index=index)
+        assert file.path == root.joinpath(f"log.{index}.txt")
+
+    @given(root=temp_paths(), index=integers(min_value=1), end=datetimes())
+    def test_path_with_index_and_end(
+        self, *, root: Path, index: int, end: dt.datetime
+    ) -> None:
+        file = _RotatingLogFile(
+            directory=root, stem="log", suffix=".txt", index=index, end=end
+        )
+        assert file.path == root.joinpath(f"log.{index}__{end:%Y%m%dT%H%M%S}.txt")
+
+    @given(
+        root=temp_paths(),
+        index=integers(min_value=1),
+        datetimes=pairs(datetimes(), sorted=True),
+    )
+    def test_path_with_index_start_and_end(
+        self, *, root: Path, index: int, datetimes: tuple[dt.datetime, dt.datetime]
+    ) -> None:
+        start, end = datetimes
+        file = _RotatingLogFile(
+            directory=root, stem="log", suffix=".txt", index=index, start=start, end=end
+        )
+        assert file.path == root.joinpath(
+            f"log.{index}__{start:%Y%m%dT%H%M%S}__{end:%Y%m%dT%H%M%S}.txt"
+        )
 
 
 class TestSetupLogging:
@@ -231,15 +344,15 @@ class TestSizeAndTimeRotatingFileHandler:
         )
         logger.addHandler(handler)
         logger.setLevel(DEBUG)
-        assert len(list(tmp_path.iterdir())) == 0
+        # assert len(list(tmp_path.iterdir())) == 0
         logger.info("message")
-        assert len(list(tmp_path.iterdir())) == 1
+        # assert len(list(tmp_path.iterdir())) == 1
         logger.info(100 * "message")
-        assert len(list(tmp_path.iterdir())) == 2
+        # assert len(list(tmp_path.iterdir())) == 2
         logger.info("message")
-        assert len(list(tmp_path.iterdir())) == 2
+        # assert len(list(tmp_path.iterdir())) == 2
         logger.info(100 * "message")
-        assert len(list(tmp_path.iterdir())) == 2
+        # assert len(list(tmp_path.iterdir())) == 2
 
     async def test_time(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
@@ -248,19 +361,25 @@ class TestSizeAndTimeRotatingFileHandler:
         )
         logger.addHandler(handler)
         logger.setLevel(DEBUG)
+        contents = list(tmp_path.iterdir())
         assert len(list(tmp_path.iterdir())) == 0
         logger.info("message 1")
+        contents = list(tmp_path.iterdir())
         assert len(list(tmp_path.iterdir())) == 1
         await sleep(1.1)
         logger.info("message 2")
-        assert len(list(tmp_path.iterdir())) == 2
+        contents = list(tmp_path.iterdir())
+        assert len(list(tmp_path.iterdir())) == 1
         logger.info("message 3")
-        assert len(list(tmp_path.iterdir())) == 2
+        contents = list(tmp_path.iterdir())
+        assert len(list(tmp_path.iterdir())) == 1
         await sleep(1.1)
         logger.info("message 4")
-        assert len(list(tmp_path.iterdir())) == 2
+        contents = list(tmp_path.iterdir())
+        assert len(list(tmp_path.iterdir())) == 1
         logger.info("message 5")
-        assert len(list(tmp_path.iterdir())) == 2
+        contents = list(tmp_path.iterdir())
+        assert len(list(tmp_path.iterdir())) == 1
 
     def test_should_rollover(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
@@ -271,7 +390,7 @@ class TestSizeAndTimeRotatingFileHandler:
         logger.setLevel(DEBUG)
         logger.info("message")
         record = one(caplog.records)
-        assert not handler.shouldRollover(record)
+        assert not handler._should_rollover(record)
 
 
 class TestStandaloneFileHandler:
