@@ -1514,7 +1514,7 @@ def zoned_datetimes(
         datetime = draw(
             local_datetimes(
                 min_value=min_value_.replace(tzinfo=None),
-                max_value=min_value_.replace(tzinfo=None),
+                max_value=max_value_.replace(tzinfo=None),
                 round_=round_,
                 timedelta=timedelta,
                 rel_tol=rel_tol,

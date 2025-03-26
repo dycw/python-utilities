@@ -29,6 +29,7 @@ from utilities.datetime import (
     DAY,
     MICROSECOND,
     SECOND,
+    maybe_sub_pct_y,
     parse_two_digit_year,
     serialize_compact,
 )
@@ -357,7 +358,7 @@ class TestParseAndSerializeZonedDateTime:
     @SKIPIF_CI_AND_WINDOWS
     def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime) -> None:
         assert datetime.microsecond == 0
-        part1 = serialize_compact(datetime)
+        part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
         assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
         part2 = get_time_zone_name(datetime.tzinfo)
         serialized = f"{part1}[{part2}]"
@@ -372,7 +373,7 @@ class TestParseAndSerializeZonedDateTime:
     @SKIPIF_CI_AND_WINDOWS
     def test_yyyymmdd_hhmmss_ffffff(self, *, datetime: dt.datetime) -> None:
         _ = assume(datetime.microsecond != 0)
-        part1 = serialize_compact(datetime)
+        part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S.%f"))
         assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
         part2 = get_time_zone_name(datetime.tzinfo)
         serialized = f"{part1}[{part2}]"

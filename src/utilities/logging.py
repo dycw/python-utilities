@@ -125,8 +125,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
             FileHandler.emit(self, record)
         except GetVersionError:  # pragma: no cover
             raise
-        except Exception:  # pragma: no cover
-            raise
+        except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
     def _do_rollover(self, *, backup_count: int = 1) -> None:
@@ -398,8 +397,7 @@ class StandaloneFileHandler(Handler):
                 _ = fh.write(formatted)
         except GetVersionError:  # pragma: no cover
             raise
-        except Exception:  # pragma: no cover
-            raise
+        except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
 
