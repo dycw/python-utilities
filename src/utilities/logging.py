@@ -189,29 +189,25 @@ def _compute_rollover_actions(
     rotations: set[_Rotation] = set()
     for file in files:
         match file.index, file.start, file.end:
-            case None, None, None:
-                try:
-                    index1 = one(f for f in files if f.index == 1)
-                except OneEmptyError:
-                    start = None
-                else:
-                    start = index1.end
-                rotations.add(
-                    _Rotation(file=file, index=1, start=start, end=get_now_local())
-                )
             case int() as index, _, _ if index >= backup_count:
                 deletions.add(_Deletion(file=file))
-            case int() as index, None, dt.datetime():
+            case index, None, _:
+                if index is None:
+                    curr = 0
+                    end = get_now_local()
+                else:
+                    curr = index
+                    end = sentinel
                 try:
-                    index_plus1 = one(f for f in files if f.index == index + 1)
+                    start = one(f for f in files if f.index == curr + 1).end
                 except OneEmptyError:
                     start = None
-                else:
-                    start = index_plus1.end
-                rotations.add(_Rotation(file=file, index=index + 1, start=start))
+                rotations.add(
+                    _Rotation(file=file, index=curr + 1, start=start, end=end)
+                )
             case int() as index, dt.datetime(), dt.datetime():
                 rotations.add(_Rotation(file=file, index=index + 1))
-            case _:
+            case _:  # pragma: no cover
                 raise NotImplementedError
     return _RolloverActions(deletions=deletions, rotations=rotations)
 
