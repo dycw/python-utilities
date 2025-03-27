@@ -45,7 +45,7 @@ from utilities.math import (
 )
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import SupportsAdd, THashable, THashable2
+from utilities.types import THashable, THashable2, TSupportsAdd
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -64,7 +64,7 @@ _T2 = TypeVar("_T2")
 _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
-_TSupportsAdd = TypeVar("_TSupportsAdd", bound=SupportsAdd)
+
 
 ##
 
@@ -1353,7 +1353,7 @@ def _sort_iterable_cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
 ##
 
 
-def sum_mappings(*mappings: Mapping[_K, _TSupportsAdd]) -> Mapping[_K, _TSupportsAdd]:
+def sum_mappings(*mappings: Mapping[_K, TSupportsAdd]) -> Mapping[_K, TSupportsAdd]:
     """Sum the values of a set of mappings."""
     return reduce_mappings(add, mappings, initial=0)
 

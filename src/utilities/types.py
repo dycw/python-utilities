@@ -76,6 +76,9 @@ class SupportsAdd(Protocol[_T_contra, _T_co]):  # from typeshed
     def __add__(self, x: _T_contra, /) -> _T_co: ...  # pragma: no cover
 
 
+TSupportsAdd = TypeVar("TSupportsAdd", bound=SupportsAdd)
+
+
 class SupportsDunderLT(Protocol[_T_contra]):  # from typeshed
     def __lt__(self, other: _T_contra, /) -> bool: ...  # pragma: no cover
 
