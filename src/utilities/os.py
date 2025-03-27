@@ -65,21 +65,7 @@ class GetCPUUseError(Exception):
 
 @overload
 def get_env_var(
-    key: str,
-    /,
-    *,
-    case_sensitive: bool = True,
-    default: str | None = None,
-    nullable: Literal[True],
-) -> str | None: ...
-@overload
-def get_env_var(
-    key: str,
-    /,
-    *,
-    case_sensitive: bool = True,
-    default: str | None = None,
-    nullable: Literal[False],
+    key: str, /, *, case_sensitive: bool = True, default: str, nullable: bool = False
 ) -> str: ...
 @overload
 def get_env_var(
@@ -88,7 +74,7 @@ def get_env_var(
     *,
     case_sensitive: bool = True,
     default: None = None,
-    nullable: bool = False,
+    nullable: Literal[False] = False,
 ) -> str: ...
 @overload
 def get_env_var(
