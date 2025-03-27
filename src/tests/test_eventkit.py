@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from asyncio import sleep
+from functools import wraps
 from io import StringIO
 from logging import DEBUG, StreamHandler, getLogger
 from re import search
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, ParamSpec, TypeVar
 
 from eventkit import Event
 from hypothesis import given
@@ -15,7 +16,12 @@ from utilities.eventkit import AddListenerError, add_listener
 from utilities.hypothesis import temp_paths, text_ascii
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
+
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 
 
 class TestAddListener:
@@ -131,6 +137,28 @@ class TestAddListener:
         assert counter == n
         assert log == {(name, ValueError)}
 
+    @given(n=integers())
+    def test_decorators(self, *, n: int) -> None:
+        event = Event()
+        counter = 0
+
+        def listener(n: int, /) -> None:
+            nonlocal counter
+            counter += n
+
+        def increment(func: Callable[_P, _R], /) -> Callable[_P, _R]:
+            @wraps(func)
+            def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+                nonlocal counter
+                counter += 1
+                return func(*args, **kwargs)
+
+            return wrapped
+
+        _ = add_listener(event, listener, decorators=increment)
+        event.emit(n)
+        assert counter == n + 1
+
     def test_error(self) -> None:
         event = Event()
         counter = 0
@@ -149,5 +177,8 @@ class TestAddListener:
             log.add((event.name(), type(exception)))
             await sleep(0.01)
 
-        with raises(AddListenerError, match="asdf"):
+        with raises(
+            AddListenerError,
+            match="Synchronous listener .* cannot be paired with an asynchronous error handler .*",
+        ):
             _ = add_listener(event, listener, error=error)
