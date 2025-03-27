@@ -5,7 +5,7 @@ from functools import wraps
 from inspect import iscoroutinefunction
 from os import environ
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING, Any, ParamSpec, assert_never, cast, override
 
 from pytest import fixture
 
@@ -25,10 +25,10 @@ from utilities.random import get_state
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Sequence
+    from collections.abc import Awaitable, Callable, Iterable, Sequence
     from random import Random
 
-    from utilities.types import Duration, PathLike
+    from utilities.types import Duration, MaybeAwaitable, PathLike
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config  # pyright: ignore[reportPrivateImportUsage]
@@ -52,6 +52,12 @@ else:
     skipif_not_windows = mark.skipif(IS_NOT_WINDOWS, reason="Skipped for non-Windows")
     skipif_not_mac = mark.skipif(IS_NOT_MAC, reason="Skipped for non-Mac")
     skipif_not_linux = mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
+
+
+_P = ParamSpec("_P")
+
+
+##
 
 
 def add_pytest_addoption(parser: Parser, options: Sequence[str], /) -> None:
@@ -165,35 +171,43 @@ def throttle(
     """Throttle a test. On success by default, on try otherwise."""
     root_use = Path(".pytest_cache", "throttle") if root is None else Path(root)
 
-    def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
+    def wrapper(func: Callable[_P, MaybeAwaitable[None]], /) -> Callable[..., Any]:
         """Throttle a test function/method."""
-        if iscoroutinefunction(func):
+        match iscoroutinefunction(func):
+            case False:
+                func_typed = cast("Callable[_P, None]", func)
 
-            @wraps(func)
-            async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
-                """Call the throttled async test function/method."""
-                path, now = _throttle_path_and_now(root_use, duration=duration)
-                if on_try:
+                @wraps(func)
+                def throttle_sync(*args: _P.args, **kwargs: _P.kwargs) -> None:
+                    """Call the throttled sync test function/method."""
+                    path, now = _throttle_path_and_now(root_use, duration=duration)
+                    if on_try:
+                        _throttle_write(path, now)
+                        return func_typed(*args, **kwargs)
+                    func_typed(*args, **kwargs)
                     _throttle_write(path, now)
-                    return await func(*args, **kwargs)
-                out = await func(*args, **kwargs)
-                _throttle_write(path, now)
-                return out
+                    return None
 
-            return wrapped_async
+                return throttle_sync
 
-        @wraps(func)
-        def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
-            """Call the throttled sync test function/method."""
-            path, now = _throttle_path_and_now(root_use, duration=duration)
-            if on_try:
-                _throttle_write(path, now)
-                return func(*args, **kwargs)
-            out = func(*args, **kwargs)
-            _throttle_write(path, now)
-            return out
+            case True:
+                func_typed = cast("Callable[_P, Awaitable[None]]", func)
 
-        return wrapped_sync
+                @wraps(func)
+                async def throttle_async(*args: Any, **kwargs: Any) -> Any:
+                    """Call the throttled async test function/method."""
+                    path, now = _throttle_path_and_now(root_use, duration=duration)
+                    if on_try:
+                        _throttle_write(path, now)
+                        return await func(*args, **kwargs)
+                    out = await func(*args, **kwargs)
+                    _throttle_write(path, now)
+                    return out
+
+                return throttle_async
+
+            case _ as never:
+                assert_never(never)
 
     return wrapper
 

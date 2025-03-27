@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
-from functools import partial, wraps
+from functools import wraps
 from getpass import getuser
 from inspect import iscoroutinefunction, signature
 from logging import Formatter, Handler, LogRecord
@@ -15,6 +15,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
+    ParamSpec,
     Protocol,
     Self,
     TypeGuard,
@@ -51,14 +52,15 @@ from utilities.version import get_version
 from utilities.whenever import serialize_zoned_datetime
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Awaitable, Callable, Iterable, Iterator
     from logging import _FormatStyle
     from types import FrameType, TracebackType
 
-    from utilities.types import StrMapping
+    from utilities.types import MaybeAwaitable, StrMapping
 
 
-_F = TypeVar("_F", bound=Callable[..., Any])
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 _T = TypeVar("_T")
 _TBaseExc = TypeVar("_TBaseExc", bound=BaseException)
 _CALL_ARGS = "_CALL_ARGS"
@@ -542,88 +544,44 @@ def _get_rich_traceback_base_one(
 
 
 @overload
-def trace(
-    func: _F,
-    /,
-    *,
-    setup: Callable[[], bool] | None = ...,
-    runtime: Callable[[], bool] | None = ...,
-) -> _F: ...
+def trace(func: Callable[_P, _R], /) -> Callable[_P, _R]: ...
 @overload
+def trace(func: Callable[_P, Awaitable[_R]], /) -> Callable[_P, Awaitable[_R]]: ...
 def trace(
-    func: None = None,
-    /,
-    *,
-    setup: Callable[[], bool] | None = ...,
-    runtime: Callable[[], bool] | None = ...,
-) -> Callable[[_F], _F]: ...
-def trace(
-    func: _F | None = None,
-    /,
-    *,
-    setup: Callable[[], bool] | None = None,
-    runtime: Callable[[], bool] | None = None,
-) -> _F | Callable[[_F], _F]:
+    func: Callable[_P, MaybeAwaitable[_R]], /
+) -> Callable[_P, MaybeAwaitable[_R]]:
     """Trace a function call."""
-    if func is None:
-        result = partial(trace, setup=setup, runtime=runtime)
-        return cast("Callable[[_F], _F]", result)
-
-    if (setup is not None) and not setup():
-        return func
-
-    if runtime is None:
-        if not iscoroutinefunction(func):
+    match iscoroutinefunction(func):
+        case False:
+            func_typed = cast("Callable[_P, _R]", func)
 
             @wraps(func)
-            def trace_sync(*args: Any, **kwargs: Any) -> Any:
+            def trace_sync(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
                 try:
-                    return func(*args, **kwargs)
+                    return func_typed(*args, **kwargs)
                 except Exception as error:
                     cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
                     raise
 
-            return cast("_F", trace_sync)
+            return trace_sync
 
-        @wraps(func)
-        async def trace_async(*args: Any, **kwargs: Any) -> Any:
-            locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
-            try:  # skipif-ci
-                return await func(*args, **kwargs)
-            except Exception as error:  # skipif-ci
-                cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
-                raise
+        case True:
+            func_typed = cast("Callable[_P, Awaitable[_R]]", func)
 
-        return cast("_F", trace_async)
-
-    if not iscoroutinefunction(func):
-
-        @wraps(func)
-        def trace_sync(*args: Any, **kwargs: Any) -> Any:
-            if en := runtime():
+            @wraps(func)
+            async def trace_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
-            try:
-                return func(*args, **kwargs)
-            except Exception as error:
-                if en:
+                try:  # skipif-ci
+                    return await func_typed(*args, **kwargs)
+                except Exception as error:  # skipif-ci
                     cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
-                raise
+                    raise
 
-        return cast("_F", trace_sync)
+            return trace_async
 
-    @wraps(func)
-    async def trace_async(*args: Any, **kwargs: Any) -> Any:
-        if en := runtime():  # skipif-ci
-            locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
-        try:  # skipif-ci
-            return await func(*args, **kwargs)
-        except Exception as error:  # skipif-ci
-            if en:
-                cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
-            raise
-
-    return cast("_F", trace_async)
+        case _ as never:
+            assert_never(never)
 
 
 @overload
