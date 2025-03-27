@@ -15,7 +15,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
-    ParamSpec,
     Protocol,
     Self,
     TypeGuard,
@@ -60,8 +59,6 @@ if TYPE_CHECKING:
     from utilities.types import Coroutine1, StrMapping
 
 
-_P = ParamSpec("_P")
-_R = TypeVar("_R")
 _T = TypeVar("_T")
 _CALL_ARGS = "_CALL_ARGS"
 _INDENT = 4 * " "
@@ -567,7 +564,7 @@ def trace(func: TCallable, /) -> TCallable:
     func_typed = cast("Callable[..., Coroutine1[Any]]", func)
 
     @wraps(func)
-    async def trace_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+    async def trace_async(*args: Any, **kwargs: Any) -> Any:
         locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
         try:  # skipif-ci
             return await func_typed(*args, **kwargs)
