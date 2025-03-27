@@ -27,10 +27,9 @@ from orjson import (
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import dataclass_to_dict
 from utilities.functions import ensure_class, is_string_mapping
-from utilities.iterables import OneEmptyError, always_iterable, one
+from utilities.iterables import OneEmptyError, always_iterable, one, one_unique
 from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.polars import zoned_datetime
 from utilities.types import (
     Dataclass,
     DateOrDateTime,
@@ -778,7 +777,9 @@ class GetLogRecordsOutput:
 
     @cached_property
     def dataframe(self) -> Any:
-        from polars import DataFrame, String, UInt64
+        from polars import DataFrame, Object, String, UInt64
+
+        from utilities.polars import zoned_datetime
 
         records = [
             replace(
@@ -789,7 +790,7 @@ class GetLogRecordsOutput:
             for r in self.records
         ]
         if len(records) >= 1:
-            time_zone = one(ensure_time_zone(r.datetime) for r in records)
+            time_zone = one_unique(ensure_time_zone(r.datetime) for r in records)
         else:
             time_zone = get_local_time_zone()
         return DataFrame(
@@ -803,7 +804,7 @@ class GetLogRecordsOutput:
                 "datetime": zoned_datetime(time_zone=time_zone),
                 "func_name": String,
                 "stack_info": String,
-                "extra": String,
+                "extra": Object,
                 "log_file": String,
                 "log_file_line_num": UInt64,
             },

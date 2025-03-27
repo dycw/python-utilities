@@ -21,7 +21,7 @@ from hypothesis.strategies import (
     tuples,
 )
 from orjson import JSONDecodeError
-from polars import String, UInt64
+from polars import Object, String, UInt64
 from pytest import approx, mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
@@ -170,7 +170,7 @@ class TestGetLogRecords:
                 "datetime": zoned_datetime(time_zone="local"),
                 "func_name": String,
                 "stack_info": String,
-                "extra": String,
+                "extra": Object,
                 "log_file": String,
                 "log_file_line_num": UInt64,
             },
