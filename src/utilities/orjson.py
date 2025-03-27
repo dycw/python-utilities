@@ -902,6 +902,8 @@ class GetLogRecordsOutput:
                         for r in records
                         if (r.func_name is not None) and search(func_name, r.func_name)
                     ]
+                case _ as never:
+                    assert_never(never)
         if extra is not None:
             match extra:
                 case bool() as has_extra:
@@ -913,6 +915,8 @@ class GetLogRecordsOutput:
                         if (r.extra is not None)
                         and set(r.extra).issuperset(always_iterable(keys))
                     ]
+                case _ as never:
+                    assert_never(never)
         if log_file is not None:
             match log_file:
                 case bool() as has_log_file:
@@ -926,6 +930,8 @@ class GetLogRecordsOutput:
                         if (r.log_file is not None)
                         and search(str(log_file), str(r.log_file))
                     ]
+                case _ as never:
+                    assert_never(never)
         if log_file_line_num is not None:
             match log_file_line_num:
                 case bool() as has_log_file_line_num:
@@ -938,6 +944,8 @@ class GetLogRecordsOutput:
                     records = [
                         r for r in records if r.log_file_line_num == log_file_line_num
                     ]
+                case _ as never:
+                    assert_never(never)
         if min_log_file_line_num is not None:
             records = [
                 r
