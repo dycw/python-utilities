@@ -64,7 +64,6 @@ _T2 = TypeVar("_T2")
 _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
-_THashable = TypeVar("_THashable", bound=Hashable)
 _TSupportsAdd = TypeVar("_TSupportsAdd", bound=SupportsAdd)
 
 ##
@@ -221,9 +220,9 @@ def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckBijectionError(Exception, Generic[_THashable]):
-    mapping: Mapping[Any, _THashable]
-    counts: Mapping[_THashable, int]
+class CheckBijectionError(Exception, Generic[THashable]):
+    mapping: Mapping[Any, THashable]
+    counts: Mapping[THashable, int]
 
     @override
     def __str__(self) -> str:
@@ -241,9 +240,9 @@ def check_duplicates(iterable: Iterable[Hashable], /) -> None:
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckDuplicatesError(Exception, Generic[_THashable]):
-    iterable: Iterable[_THashable]
-    counts: Mapping[_THashable, int]
+class CheckDuplicatesError(Exception, Generic[THashable]):
+    iterable: Iterable[THashable]
+    counts: Mapping[THashable, int]
 
     @override
     def __str__(self) -> str:
@@ -885,7 +884,7 @@ def groupby_lists(
 ##
 
 
-def hashable_to_iterable(obj: _THashable | None, /) -> tuple[_THashable, ...] | None:
+def hashable_to_iterable(obj: THashable | None, /) -> tuple[THashable, ...] | None:
     """Lift a hashable singleton to an iterable of hashables."""
     return None if obj is None else (obj,)
 
@@ -1122,7 +1121,7 @@ class _OneStrNonUniqueError(OneStrError):
 ##
 
 
-def one_unique(*iterables: Iterable[_THashable]) -> _THashable:
+def one_unique(*iterables: Iterable[THashable]) -> THashable:
     """Return the set-unique value in a set of iterables."""
     try:
         return one(set(chain(*iterables)))
@@ -1146,10 +1145,10 @@ class OneUniqueEmptyError(OneUniqueError):
 
 
 @dataclass(kw_only=True, slots=True)
-class OneUniqueNonUniqueError(OneUniqueError, Generic[_THashable]):
-    iterables: tuple[MaybeIterable[_THashable], ...]
-    first: _THashable
-    second: _THashable
+class OneUniqueNonUniqueError(OneUniqueError, Generic[THashable]):
+    iterables: tuple[MaybeIterable[THashable], ...]
+    first: THashable
+    second: THashable
 
     @override
     def __str__(self) -> str:
