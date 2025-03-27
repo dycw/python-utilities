@@ -67,7 +67,7 @@ if TYPE_CHECKING:
     )
     from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
-    from tenacity.retry import RetryBaseT as SyncRetryBaseT
+    from tenacity.retry import RetryBaseT
     from tenacity.stop import StopBaseT
     from tenacity.wait import WaitBaseT
 
@@ -87,7 +87,7 @@ async def insert_dataframe(
     upsert: Literal["selected", "all"] | None = None,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     timeout_create: utilities.types.Duration | None = None,
     timeout_insert: utilities.types.Duration | None = None,
 ) -> None:
@@ -245,7 +245,7 @@ async def select_to_dataframe(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     timeout: utilities.types.Duration | None = None,
     **kwargs: Any,
 ) -> DataFrame: ...
@@ -263,7 +263,7 @@ async def select_to_dataframe(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     timeout: utilities.types.Duration | None = None,
     **kwargs: Any,
 ) -> Iterable[DataFrame]: ...
@@ -281,7 +281,7 @@ async def select_to_dataframe(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     timeout: utilities.types.Duration | None = None,
     **kwargs: Any,
 ) -> AsyncIterable[DataFrame]: ...
@@ -299,7 +299,7 @@ async def select_to_dataframe(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     timeout: utilities.types.Duration | None = None,
     **kwargs: Any,
 ) -> DataFrame | Iterable[DataFrame] | AsyncIterable[DataFrame]: ...
@@ -316,7 +316,7 @@ async def select_to_dataframe(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     timeout: utilities.types.Duration | None = None,
     **kwargs: Any,
 ) -> DataFrame | Iterable[DataFrame] | AsyncIterable[DataFrame]:

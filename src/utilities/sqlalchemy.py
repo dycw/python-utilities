@@ -83,7 +83,7 @@ from utilities.text import snake_case
 from utilities.types import Duration, MaybeIterable, StrMapping, TupleOrStrMapping
 
 if TYPE_CHECKING:
-    from tenacity.retry import RetryBaseT as SyncRetryBaseT
+    from tenacity.retry import RetryBaseT
     from tenacity.stop import StopBaseT
     from tenacity.wait import WaitBaseT
 
@@ -104,7 +104,7 @@ async def check_engine(
     *,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     timeout: Duration | None = None,
     num_tables: int | tuple[int, float] | None = None,
 ) -> None:
@@ -244,7 +244,7 @@ async def ensure_tables_created(
     *tables_or_orms: TableOrORMInstOrClass,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     timeout: Duration | None = None,
 ) -> None:
     """Ensure a table/set of tables is/are created."""
@@ -278,7 +278,7 @@ async def ensure_tables_dropped(
     *tables_or_orms: TableOrORMInstOrClass,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     timeout: Duration | None = None,
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
@@ -409,7 +409,7 @@ async def insert_items(
     assume_tables_exist: bool = False,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     timeout_create: Duration | None = None,
     timeout_insert: Duration | None = None,
 ) -> None:
@@ -518,7 +518,7 @@ async def migrate_data(
     assume_tables_exist: bool = False,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     timeout_create: Duration | None = None,
     timeout_insert: Duration | None = None,
 ) -> None:
@@ -654,7 +654,7 @@ class Upserter(QueueProcessor[_InsertItem]):
     assume_tables_exist: bool = False
     stop_: StopBaseT | None = None
     wait: WaitBaseT | None = None
-    retry: SyncRetryBaseT | None = None
+    retry: RetryBaseT | None = None
     timeout_create: Duration | None = None
     timeout_insert: Duration | None = None
 
@@ -703,7 +703,7 @@ async def upsert_items(
     assume_tables_exist: bool = False,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     timeout_create: Duration | None = None,
     timeout_insert: Duration | None = None,
 ) -> None:

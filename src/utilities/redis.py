@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from redis.asyncio import ConnectionPool
     from redis.asyncio.client import PubSub
     from redis.typing import EncodableT, ResponseT
-    from tenacity.retry import RetryBaseT as SyncRetryBaseT
+    from tenacity.retry import RetryBaseT
     from tenacity.stop import StopBaseT
     from tenacity.wait import WaitBaseT
 
@@ -93,7 +93,7 @@ class _RedisHashMapKey(Generic[_K, _V]):
     value_deserializer: Callable[[bytes], _V] | None = None
     stop: StopBaseT | None = None
     wait: WaitBaseT | None = None
-    retry: SyncRetryBaseT | None = None
+    retry: RetryBaseT | None = None
     timeout: Duration | None = None
     ttl: Duration | None = None
 
@@ -191,7 +191,7 @@ def redis_hash_map_key(
     value_deserializer: Callable[[bytes], _V] | None = ...,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
-    retry: SyncRetryBaseT | None = ...,
+    retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K, _V]: ...
@@ -207,7 +207,7 @@ def redis_hash_map_key(
     value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
-    retry: SyncRetryBaseT | None = ...,
+    retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K, _V1 | _V2]: ...
@@ -223,7 +223,7 @@ def redis_hash_map_key(
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
-    retry: SyncRetryBaseT | None = ...,
+    retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K, _V1 | _V2 | _V3]: ...
@@ -239,7 +239,7 @@ def redis_hash_map_key(
     value_deserializer: Callable[[bytes], _V] | None = ...,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
-    retry: SyncRetryBaseT | None = ...,
+    retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2, _V]: ...
@@ -255,7 +255,7 @@ def redis_hash_map_key(
     value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
-    retry: SyncRetryBaseT | None = ...,
+    retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2, _V1 | _V2]: ...
@@ -271,7 +271,7 @@ def redis_hash_map_key(
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
-    retry: SyncRetryBaseT | None = ...,
+    retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2, _V1 | _V2 | _V3]: ...
@@ -287,7 +287,7 @@ def redis_hash_map_key(
     value_deserializer: Callable[[bytes], _V] | None = ...,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
-    retry: SyncRetryBaseT | None = ...,
+    retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V]: ...
@@ -303,7 +303,7 @@ def redis_hash_map_key(
     value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
-    retry: SyncRetryBaseT | None = ...,
+    retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2]: ...
@@ -319,7 +319,7 @@ def redis_hash_map_key(
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
-    retry: SyncRetryBaseT | None = ...,
+    retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2 | _V3]: ...
@@ -334,7 +334,7 @@ def redis_hash_map_key(
     value_deserializer: Callable[[bytes], Any] | None = None,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     timeout: Duration | None = None,
     ttl: Duration | None = None,
 ) -> _RedisHashMapKey[Any, Any]:
@@ -364,7 +364,7 @@ class _RedisKey(Generic[_T]):
     deserializer: Callable[[bytes], _T] | None = None
     stop: StopBaseT | None = None
     wait: WaitBaseT | None = None
-    retry: SyncRetryBaseT | None = None
+    retry: RetryBaseT | None = None
     timeout: Duration | None = None
     ttl: Duration | None = None
 
@@ -453,7 +453,7 @@ def redis_key(
     deserializer: Callable[[bytes], _T] | None = ...,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
-    retry: SyncRetryBaseT | None = ...,
+    retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisKey[_T]: ...
@@ -467,7 +467,7 @@ def redis_key(
     deserializer: Callable[[bytes], _T1 | _T2] | None = None,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
-    retry: SyncRetryBaseT | None = ...,
+    retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2]: ...
@@ -481,7 +481,7 @@ def redis_key(
     deserializer: Callable[[bytes], _T1 | _T2 | _T3] | None = None,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
-    retry: SyncRetryBaseT | None = ...,
+    retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2 | _T3]: ...
@@ -495,7 +495,7 @@ def redis_key(
     deserializer: Callable[[bytes], _T1 | _T2 | _T3 | _T4] | None = None,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
-    retry: SyncRetryBaseT | None = ...,
+    retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2 | _T3 | _T4]: ...
@@ -509,7 +509,7 @@ def redis_key(
     deserializer: Callable[[bytes], _T1 | _T2 | _T3 | _T4 | _T5] | None = None,
     stop: StopBaseT | None = ...,
     wait: WaitBaseT | None = ...,
-    retry: SyncRetryBaseT | None = ...,
+    retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
 ) -> _RedisKey[_T1 | _T2 | _T3 | _T4 | _T5]: ...
@@ -522,7 +522,7 @@ def redis_key(
     deserializer: Callable[[bytes], Any] | None = None,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     timeout: Duration | None = None,
     ttl: Duration | None = None,
 ) -> _RedisKey[Any]:
