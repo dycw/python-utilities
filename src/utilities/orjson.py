@@ -682,7 +682,7 @@ class OrjsonFormatter(Formatter):
         }
         log_record = OrjsonLogRecord(
             name=record.name,
-            level=record.levelname,
+            level=record.levelno,
             path_name=Path(record.pathname),
             line_num=record.lineno,
             message=record.getMessage(),
@@ -794,28 +794,24 @@ class GetLogRecordsOutput:
         if message is not None:
             records = [r for r in records if search(message, r.message)]
         if level is not None:
-            records = [
-                r for r in records if r.level_num == get_logging_level_number(level)
-            ]
+            records = [r for r in records if r.level == get_logging_level_number(level)]
         if min_level is not None:
             records = [
-                r for r in records if r.level_num >= get_logging_level_number(min_level)
+                r for r in records if r.level >= get_logging_level_number(min_level)
             ]
         if max_level is not None:
             records = [
-                r for r in records if r.level_num <= get_logging_level_number(max_level)
+                r for r in records if r.level <= get_logging_level_number(max_level)
             ]
         if level is not None:
-            records = [
-                r for r in records if r.level_num == get_logging_level_number(level)
-            ]
+            records = [r for r in records if r.level == get_logging_level_number(level)]
         if min_level is not None:
             records = [
-                r for r in records if r.level_num >= get_logging_level_number(min_level)
+                r for r in records if r.level >= get_logging_level_number(min_level)
             ]
         if max_level is not None:
             records = [
-                r for r in records if r.level_num <= get_logging_level_number(max_level)
+                r for r in records if r.level <= get_logging_level_number(max_level)
             ]
         if date_or_datetime is not None:
             match date_or_datetime:
@@ -932,7 +928,7 @@ class OrjsonLogRecord:
 
     name: str
     message: str
-    level: LogLevel
+    level: int
     path_name: Path
     line_num: int
     datetime: dt.datetime
@@ -945,10 +941,6 @@ class OrjsonLogRecord:
     @cached_property
     def date(self) -> dt.date:
         return self.datetime.date()
-
-    @cached_property
-    def level_num(self) -> int:
-        return get_logging_level_number(self.level)
 
 
 def _get_log_records_one(
