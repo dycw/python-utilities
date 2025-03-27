@@ -69,14 +69,8 @@ class SlackHandler(Handler, QueueProcessor[str]):
     @override
     async def _run(self, item: str, /) -> None:
         """Run the handler."""
-        if 1:
-            items = list(chain([item], await self._get_items_nowait()))
-            text = "\n".join(items)
-        if 0:
-            items = list(
-                chain([item], await self._get_items_nowait())
-            )  # pragma: no cover
-            text = "\n".join(items)  # pragma: no cover
+        items = list(chain([item], await self._get_items_nowait()))
+        text = "\n".join(items)
         await send_to_slack(self.url, text, timeout=self.timeout)  # pragma: no cover
         if self.callback is not None:  # pragma: no cover
             self.callback()
