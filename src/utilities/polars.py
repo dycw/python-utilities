@@ -92,7 +92,6 @@ from utilities.math import (
 )
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel
-from utilities.types import Dataclass, MaybeIterable, StrMapping, TimeZoneLike
 from utilities.typing import (
     get_args,
     get_type_hints,
@@ -121,9 +120,16 @@ if TYPE_CHECKING:
         TimeUnit,  # pyright: ignore[reportPrivateImportUsage]
     )
 
+    from utilities.types import (
+        Dataclass,
+        MaybeIterable,
+        StrMapping,
+        TDataclass,
+        TimeZoneLike,
+    )
+
 
 _T = TypeVar("_T")
-_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 type ExprLike = Expr | str
 DatetimeHongKong = Datetime(time_zone="Asia/Hong_Kong")
 DatetimeTokyo = Datetime(time_zone="Asia/Tokyo")
@@ -1371,13 +1377,13 @@ def unique_element(column: ExprLike, /) -> Expr:
 
 def yield_rows_as_dataclasses(
     df: DataFrame,
-    cls: type[_TDataclass],
+    cls: type[TDataclass],
     /,
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     check_types: Literal["none", "first", "all"] = "first",
-) -> Iterator[_TDataclass]:
+) -> Iterator[TDataclass]:
     """Yield the rows of a DataFrame as dataclasses."""
     from dacite import from_dict
     from dacite.exceptions import WrongTypeError
@@ -1424,8 +1430,8 @@ def yield_rows_as_dataclasses(
 
 
 def _yield_rows_as_dataclasses_no_check_types(
-    rows: Iterator[dict[str, Any]], cls: type[_TDataclass], /
-) -> Iterator[_TDataclass]:
+    rows: Iterator[dict[str, Any]], cls: type[TDataclass], /
+) -> Iterator[TDataclass]:
     """Yield the rows of a DataFrame as dataclasses without type checking."""
     from dacite import Config, from_dict
 
@@ -1531,32 +1537,32 @@ class _YieldStructSeriesElementsNullElementsError(YieldStructSeriesElementsError
 @overload
 def yield_struct_series_dataclasses(
     series: Series,
-    cls: type[_TDataclass],
+    cls: type[TDataclass],
     /,
     *,
     forward_references: dict[str, Any] | None = None,
     check_types: bool = True,
     strict: Literal[True],
-) -> Iterator[_TDataclass]: ...
+) -> Iterator[TDataclass]: ...
 @overload
 def yield_struct_series_dataclasses(
     series: Series,
-    cls: type[_TDataclass],
+    cls: type[TDataclass],
     /,
     *,
     forward_references: dict[str, Any] | None = None,
     check_types: bool = True,
     strict: bool = False,
-) -> Iterator[_TDataclass | None]: ...
+) -> Iterator[TDataclass | None]: ...
 def yield_struct_series_dataclasses(
     series: Series,
-    cls: type[_TDataclass],
+    cls: type[TDataclass],
     /,
     *,
     forward_references: dict[str, Any] | None = None,
     check_types: bool = True,
     strict: bool = False,
-) -> Iterator[_TDataclass | None]:
+) -> Iterator[TDataclass | None]:
     """Yield the elements of a struct-dtype Series as dataclasses."""
     from dacite import Config, from_dict
 
