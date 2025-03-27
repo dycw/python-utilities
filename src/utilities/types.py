@@ -56,16 +56,6 @@ type EnumOrStr[_TEnum: Enum] = _TEnum | str
 TEnum = TypeVar("TEnum", bound=Enum)
 
 
-# exceptions
-TBaseException = TypeVar("TBaseException", bound=BaseException)
-
-
-# hashable
-THashable = TypeVar("THashable", bound=Hashable)
-THashable1 = TypeVar("THashable1", bound=Hashable)
-THashable2 = TypeVar("THashable2", bound=Hashable)
-
-
 # hashable
 THashable = TypeVar("THashable", bound=Hashable)
 THashable1 = TypeVar("THashable1", bound=Hashable)
@@ -162,6 +152,7 @@ __all__ = [
     "SupportsRichComparison",
     "TCallable",
     "TDataclass",
+    "TEnum",
     "THashable",
     "THashable1",
     "THashable2",
