@@ -16,10 +16,6 @@ from utilities.slack_sdk import SlackHandler, _get_client, send_to_slack
 if TYPE_CHECKING:
     from pathlib import Path
 
-url = (
-    "https://hooks.slack.com/services/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"
-)
-
 
 class TestGetClient:
     def test_main(self) -> None:
