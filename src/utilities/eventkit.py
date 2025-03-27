@@ -6,13 +6,20 @@ from typing import TYPE_CHECKING, Any, cast
 
 from utilities.functions import apply_decorators
 from utilities.iterables import always_iterable
+from utilities.logging import get_logger
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from eventkit import Event
 
-    from utilities.types import Coroutine1, MaybeCoroutine1, MaybeIterable, TCallable
+    from utilities.types import (
+        Coroutine1,
+        LoggerOrName,
+        MaybeCoroutine1,
+        MaybeIterable,
+        TCallable,
+    )
 
 
 def add_listener(
@@ -22,48 +29,87 @@ def add_listener(
     *,
     error: Callable[[Event, Exception], MaybeCoroutine1[None]] | None = None,
     error_ignore: type[Exception] | tuple[type[Exception], ...] | None = None,
+    error_logger: LoggerOrName | None = None,
     error_decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
     done: Callable[..., Any] | None = None,
     keep_ref: bool = False,
 ) -> Event:
     """Connect a listener to an event."""
-    if error is None:
-        listener_use = listener
-    elif (not iscoroutinefunction(listener)) and iscoroutinefunction(error):
-        raise ValueError
-    elif not iscoroutinefunction(listener):
-        listener_typed = cast("Callable[..., None]", listener)
-        error_typed = cast("Callable[[Event, Exception], None]", error)
+    logger = get_logger(logger=error_logger)
+    match error, bool(iscoroutinefunction(listener)):
+        case None, False:
+            listener_typed = cast("Callable[..., None]", listener)
 
-        @wraps(listener)
-        def listener_sync(*args: Any, **kwargs: Any) -> None:
-            try:
-                return listener_typed(*args, **kwargs)
-            except Exception as exc:  # noqa: BLE001
-                if (error_ignore is not None) and isinstance(exc, error_ignore):
-                    return None
-                return error_typed(event, exc)
+            @wraps(listener)
+            def listener_no_error_sync(*args: Any, **kwargs: Any) -> None:
+                try:
+                    return listener_typed(*args, **kwargs)
+                except Exception as exc:
+                    if (error_ignore is not None) and isinstance(exc, error_ignore):
+                        return None
+                    logger.exception("")
 
-        listener_use = listener_sync
-    else:
-        listener_typed = cast("Callable[..., Coroutine1[None]]", listener)
+            listener_use = listener_no_error_sync
 
-        @wraps(listener)
-        async def listener_async(*args: Any, **kwargs: Any) -> None:
-            try:
-                return await listener_typed(*args, **kwargs)
-            except Exception as exc:  # noqa: BLE001
-                if (error_ignore is not None) and isinstance(exc, error_ignore):
-                    return None
-                if iscoroutinefunction(error):
-                    error_typed = cast(
-                        "Callable[[Event, Exception], Coroutine1[None]]", error
-                    )
-                    return await error_typed(event, exc)
-                error_typed = cast("Callable[[Event, Exception], None]", error)
-                return error_typed(event, exc)
+        case None, True:
+            listener_typed = cast("Callable[..., Coroutine1[None]]", listener)
 
-        listener_use = listener_async
+            @wraps(listener)
+            async def listener_no_error_async(*args: Any, **kwargs: Any) -> None:
+                try:
+                    return await listener_typed(*args, **kwargs)
+                except Exception as exc:
+                    if (error_ignore is not None) and isinstance(exc, error_ignore):
+                        return None
+                    logger.exception("")
+
+            listener_use = listener_no_error_async
+        case _, _:
+            match bool(iscoroutinefunction(listener)), bool(iscoroutinefunction(error)):
+                case False, False:
+                    listener_typed = cast("Callable[..., None]", listener)
+                    error_typed = cast("Callable[[Event, Exception], None]", error)
+
+                    @wraps(listener)
+                    def listener_have_error_sync(*args: Any, **kwargs: Any) -> None:
+                        try:
+                            return listener_typed(*args, **kwargs)
+                        except Exception as exc:  # noqa: BLE001
+                            if (error_ignore is not None) and isinstance(
+                                exc, error_ignore
+                            ):
+                                return None
+                            return error_typed(event, exc)
+
+                    listener_use = listener_have_error_sync
+                case False, True:
+                    raise ValueError
+                case True, _:
+                    listener_typed = cast("Callable[..., Coroutine1[None]]", listener)
+
+                    @wraps(listener)
+                    async def listener_have_error_async(
+                        *args: Any, **kwargs: Any
+                    ) -> None:
+                        try:
+                            return await listener_typed(*args, **kwargs)
+                        except Exception as exc:  # noqa: BLE001
+                            if (error_ignore is not None) and isinstance(
+                                exc, error_ignore
+                            ):
+                                return None
+                            if iscoroutinefunction(error):
+                                error_typed = cast(
+                                    "Callable[[Event, Exception], Coroutine1[None]]",
+                                    error,
+                                )
+                                return await error_typed(event, exc)
+                            error_typed = cast(
+                                "Callable[[Event, Exception], None]", error
+                            )
+                            return error_typed(event, exc)
+
+                    listener_use = listener_have_error_async
 
     if error_decorators is not None:
         listener_use = apply_decorators(
