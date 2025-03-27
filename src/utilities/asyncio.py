@@ -16,7 +16,6 @@ from asyncio import (
     sleep,
     timeout,
 )
-from collections.abc import AsyncIterator, Hashable
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from io import StringIO
@@ -26,22 +25,18 @@ from typing import TYPE_CHECKING, Any, Generic, Self, TextIO, TypeVar, cast, ove
 
 from utilities.datetime import datetime_duration_to_float
 from utilities.functions import ensure_int, ensure_not_none
-from utilities.types import SupportsRichComparison
+from utilities.types import THashable, TSupportsRichComparison
 
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
     from asyncio.subprocess import Process
-    from collections.abc import Sequence
+    from collections.abc import AsyncIterator, Sequence
     from contextvars import Context
     from types import TracebackType
 
     from utilities.types import Duration
 
 _T = TypeVar("_T")
-_THashable = TypeVar("_THashable", bound=Hashable)
-_TSupportsRichComparison = TypeVar(
-    "_TSupportsRichComparison", bound=SupportsRichComparison
-)
 
 
 class BoundedTaskGroup(TaskGroup):
@@ -196,45 +191,45 @@ class QueueProcessor(ABC, Generic[_T]):
 ##
 
 
-class UniquePriorityQueue(PriorityQueue[tuple[_TSupportsRichComparison, _THashable]]):
+class UniquePriorityQueue(PriorityQueue[tuple[TSupportsRichComparison, THashable]]):
     """Priority queue with unique tasks."""
 
     @override
     def __init__(self, maxsize: int = 0) -> None:
         super().__init__(maxsize)
-        self._set: set[_THashable] = set()
+        self._set: set[THashable] = set()
 
     @override
-    def _get(self) -> tuple[_TSupportsRichComparison, _THashable]:
+    def _get(self) -> tuple[TSupportsRichComparison, THashable]:
         item = super()._get()
         _, value = item
         self._set.remove(value)
         return item
 
     @override
-    def _put(self, item: tuple[_TSupportsRichComparison, _THashable]) -> None:
+    def _put(self, item: tuple[TSupportsRichComparison, THashable]) -> None:
         _, value = item
         if value not in self._set:
             super()._put(item)
             self._set.add(value)
 
 
-class UniqueQueue(Queue[_THashable]):
+class UniqueQueue(Queue[THashable]):
     """Queue with unique tasks."""
 
     @override
     def __init__(self, maxsize: int = 0) -> None:
         super().__init__(maxsize)
-        self._set: set[_THashable] = set()
+        self._set: set[THashable] = set()
 
     @override
-    def _get(self) -> _THashable:
+    def _get(self) -> THashable:
         item = super()._get()
         self._set.remove(item)
         return item
 
     @override
-    def _put(self, item: _THashable) -> None:
+    def _put(self, item: THashable) -> None:
         if item not in self._set:
             super()._put(item)
             self._set.add(item)

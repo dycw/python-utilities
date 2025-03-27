@@ -45,7 +45,7 @@ from utilities.math import (
 )
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import SupportsAdd
+from utilities.types import THashable, THashable2, TSupportsAdd
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -64,9 +64,7 @@ _T2 = TypeVar("_T2")
 _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
-_THashable = TypeVar("_THashable", bound=Hashable)
-_UHashable = TypeVar("_UHashable", bound=Hashable)
-_TSupportsAdd = TypeVar("_TSupportsAdd", bound=SupportsAdd)
+
 
 ##
 
@@ -222,9 +220,9 @@ def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckBijectionError(Exception, Generic[_THashable]):
-    mapping: Mapping[Any, _THashable]
-    counts: Mapping[_THashable, int]
+class CheckBijectionError(Exception, Generic[THashable]):
+    mapping: Mapping[Any, THashable]
+    counts: Mapping[THashable, int]
 
     @override
     def __str__(self) -> str:
@@ -242,9 +240,9 @@ def check_duplicates(iterable: Iterable[Hashable], /) -> None:
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckDuplicatesError(Exception, Generic[_THashable]):
-    iterable: Iterable[_THashable]
-    counts: Mapping[_THashable, int]
+class CheckDuplicatesError(Exception, Generic[THashable]):
+    iterable: Iterable[THashable]
+    counts: Mapping[THashable, int]
 
     @override
     def __str__(self) -> str:
@@ -706,50 +704,48 @@ def chunked(iterable: Iterable[_T], n: int, /) -> Iterator[Sequence[_T]]:
 ##
 
 
-class Collection(frozenset[_THashable]):
+class Collection(frozenset[THashable]):
     """A collection of hashable, sortable items."""
 
-    def __new__(cls, *item_or_items: MaybeIterable[_THashable]) -> Self:
+    def __new__(cls, *item_or_items: MaybeIterable[THashable]) -> Self:
         items = list(chain(*map(always_iterable, item_or_items)))
         cls.check_items(items)
         return super().__new__(cls, items)
 
-    def __init__(self, *item_or_items: MaybeIterable[_THashable]) -> None:
+    def __init__(self, *item_or_items: MaybeIterable[THashable]) -> None:
         super().__init__()
         _ = item_or_items
 
     @override
-    def __and__(self, other: MaybeIterable[_THashable], /) -> Self:
+    def __and__(self, other: MaybeIterable[THashable], /) -> Self:
         if isinstance(other, type(self)):
             return type(self)(super().__and__(other))
         return self.__and__(type(self)(other))
 
     @override
-    def __or__(self, other: MaybeIterable[_THashable], /) -> Self:
+    def __or__(self, other: MaybeIterable[THashable], /) -> Self:
         if isinstance(other, type(self)):
             return type(self)(super().__or__(other))
         return self.__or__(type(self)(other))
 
     @override
-    def __sub__(self, other: MaybeIterable[_THashable], /) -> Self:
+    def __sub__(self, other: MaybeIterable[THashable], /) -> Self:
         if isinstance(other, type(self)):
             return type(self)(super().__sub__(other))
         return self.__sub__(type(self)(other))
 
     @classmethod
-    def check_items(cls, items: Iterable[_THashable], /) -> None:
+    def check_items(cls, items: Iterable[THashable], /) -> None:
         _ = items
 
-    def filter(self, func: Callable[[_THashable], bool], /) -> Self:
+    def filter(self, func: Callable[[THashable], bool], /) -> Self:
         return type(self)(filter(func, self))
 
-    def map(
-        self, func: Callable[[_THashable], _UHashable], /
-    ) -> Collection[_UHashable]:
+    def map(self, func: Callable[[THashable], THashable2], /) -> Collection[THashable2]:
         values = cast("Any", map(func, self))
         return cast("Any", type(self)(values))
 
-    def partition(self, func: Callable[[_THashable], bool], /) -> tuple[Self, Self]:
+    def partition(self, func: Callable[[THashable], bool], /) -> tuple[Self, Self]:
         from more_itertools import partition
 
         is_false, is_true = partition(func, self)
@@ -888,7 +884,7 @@ def groupby_lists(
 ##
 
 
-def hashable_to_iterable(obj: _THashable | None, /) -> tuple[_THashable, ...] | None:
+def hashable_to_iterable(obj: THashable | None, /) -> tuple[THashable, ...] | None:
     """Lift a hashable singleton to an iterable of hashables."""
     return None if obj is None else (obj,)
 
@@ -1125,7 +1121,7 @@ class _OneStrNonUniqueError(OneStrError):
 ##
 
 
-def one_unique(*iterables: Iterable[_THashable]) -> _THashable:
+def one_unique(*iterables: Iterable[THashable]) -> THashable:
     """Return the set-unique value in a set of iterables."""
     try:
         return one(set(chain(*iterables)))
@@ -1149,10 +1145,10 @@ class OneUniqueEmptyError(OneUniqueError):
 
 
 @dataclass(kw_only=True, slots=True)
-class OneUniqueNonUniqueError(OneUniqueError, Generic[_THashable]):
-    iterables: tuple[MaybeIterable[_THashable], ...]
-    first: _THashable
-    second: _THashable
+class OneUniqueNonUniqueError(OneUniqueError, Generic[THashable]):
+    iterables: tuple[MaybeIterable[THashable], ...]
+    first: THashable
+    second: THashable
 
     @override
     def __str__(self) -> str:
@@ -1357,7 +1353,7 @@ def _sort_iterable_cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
 ##
 
 
-def sum_mappings(*mappings: Mapping[_K, _TSupportsAdd]) -> Mapping[_K, _TSupportsAdd]:
+def sum_mappings(*mappings: Mapping[_K, TSupportsAdd]) -> Mapping[_K, TSupportsAdd]:
     """Sum the values of a set of mappings."""
     return reduce_mappings(add, mappings, initial=0)
 

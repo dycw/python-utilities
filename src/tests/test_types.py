@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime as dt
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TypeVar
 from zoneinfo import available_timezones
 
 from hypothesis import given
@@ -12,14 +11,12 @@ from pytest import mark, param
 
 from utilities.datetime import ZERO_TIME
 from utilities.platform import SYSTEM
-from utilities.types import Dataclass, Duration, Number, PathLike, TimeZone
+from utilities.types import Duration, Number, PathLike, TDataclass, TimeZone
 from utilities.typing import get_args
 
 
 class TestDataClassProtocol:
     def test_main(self) -> None:
-        TDataclass = TypeVar("TDataclass", bound=Dataclass)
-
         def identity(x: TDataclass, /) -> TDataclass:
             return x
 

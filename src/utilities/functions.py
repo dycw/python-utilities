@@ -34,7 +34,8 @@ from utilities.types import (
     Dataclass,
     Number,
     StrMapping,
-    SupportsRichComparison,
+    TCallable,
+    TSupportsRichComparison,
     TupleOrStrMapping,
 )
 
@@ -42,7 +43,6 @@ if TYPE_CHECKING:
     from collections.abc import Container, Hashable, Sized
 
 
-_F = TypeVar("_F", bound=Callable[..., Any])
 _P = ParamSpec("_P")
 _T = TypeVar("_T")
 _T1 = TypeVar("_T1")
@@ -50,21 +50,22 @@ _T2 = TypeVar("_T2")
 _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
-_TSupportsRichComparison = TypeVar(
-    "_TSupportsRichComparison", bound=SupportsRichComparison
-)
 _U = TypeVar("_U")
 
 
 ##
 
 
-def apply_decorators(func: _F, /, *decorators: Callable[[_F], _F]) -> _F:
+def apply_decorators(
+    func: TCallable, /, *decorators: Callable[[TCallable], TCallable]
+) -> TCallable:
     """Apply a set of decorators to a function."""
     return reduce(_apply_decorators_one, decorators, func)
 
 
-def _apply_decorators_one(acc: _F, el: Callable[[_F], _F], /) -> _F:
+def _apply_decorators_one(
+    acc: TCallable, el: Callable[[TCallable], TCallable], /
+) -> TCallable:
     return el(acc)
 
 
@@ -832,18 +833,18 @@ def map_object(
 
 @overload
 def min_nullable(
-    iterable: Iterable[_TSupportsRichComparison | None], /, *, default: Sentinel = ...
-) -> _TSupportsRichComparison: ...
+    iterable: Iterable[TSupportsRichComparison | None], /, *, default: Sentinel = ...
+) -> TSupportsRichComparison: ...
 @overload
 def min_nullable(
-    iterable: Iterable[_TSupportsRichComparison | None], /, *, default: _U = ...
-) -> _TSupportsRichComparison | _U: ...
+    iterable: Iterable[TSupportsRichComparison | None], /, *, default: _U = ...
+) -> TSupportsRichComparison | _U: ...
 def min_nullable(
-    iterable: Iterable[_TSupportsRichComparison | None],
+    iterable: Iterable[TSupportsRichComparison | None],
     /,
     *,
     default: _U | Sentinel = sentinel,
-) -> _TSupportsRichComparison | _U:
+) -> TSupportsRichComparison | _U:
     """Compute the minimum of a set of values; ignoring nulls."""
     values = (i for i in iterable if i is not None)
     if isinstance(default, Sentinel):
@@ -855,8 +856,8 @@ def min_nullable(
 
 
 @dataclass(kw_only=True, slots=True)
-class MinNullableError(Exception, Generic[_TSupportsRichComparison]):
-    values: Iterable[_TSupportsRichComparison]
+class MinNullableError(Exception, Generic[TSupportsRichComparison]):
+    values: Iterable[TSupportsRichComparison]
 
     @override
     def __str__(self) -> str:
@@ -865,18 +866,18 @@ class MinNullableError(Exception, Generic[_TSupportsRichComparison]):
 
 @overload
 def max_nullable(
-    iterable: Iterable[_TSupportsRichComparison | None], /, *, default: Sentinel = ...
-) -> _TSupportsRichComparison: ...
+    iterable: Iterable[TSupportsRichComparison | None], /, *, default: Sentinel = ...
+) -> TSupportsRichComparison: ...
 @overload
 def max_nullable(
-    iterable: Iterable[_TSupportsRichComparison | None], /, *, default: _U = ...
-) -> _TSupportsRichComparison | _U: ...
+    iterable: Iterable[TSupportsRichComparison | None], /, *, default: _U = ...
+) -> TSupportsRichComparison | _U: ...
 def max_nullable(
-    iterable: Iterable[_TSupportsRichComparison | None],
+    iterable: Iterable[TSupportsRichComparison | None],
     /,
     *,
     default: _U | Sentinel = sentinel,
-) -> _TSupportsRichComparison | _U:
+) -> TSupportsRichComparison | _U:
     """Compute the maximum of a set of values; ignoring nulls."""
     values = (i for i in iterable if i is not None)
     if isinstance(default, Sentinel):
@@ -888,8 +889,8 @@ def max_nullable(
 
 
 @dataclass(kw_only=True, slots=True)
-class MaxNullableError(Exception, Generic[_TSupportsRichComparison]):
-    values: Iterable[_TSupportsRichComparison]
+class MaxNullableError(Exception, Generic[TSupportsRichComparison]):
+    values: Iterable[TSupportsRichComparison]
 
     @override
     def __str__(self) -> str:

@@ -7,7 +7,7 @@ from functools import partial
 from os import environ
 from pathlib import Path
 from re import IGNORECASE, search
-from typing import TYPE_CHECKING, Any, TypeVar, override
+from typing import TYPE_CHECKING, Any, override
 
 from dotenv import dotenv_values
 
@@ -22,25 +22,22 @@ from utilities.git import get_repo_root
 from utilities.iterables import MergeStrMappingsError, merge_str_mappings, one_str
 from utilities.pathlib import PWD
 from utilities.reprlib import get_repr
-from utilities.types import Dataclass
 from utilities.typing import get_args, is_literal_type
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from utilities.types import PathLike, StrMapping
-
-_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
+    from utilities.types import PathLike, StrMapping, TDataclass
 
 
 def load_settings(
-    cls: type[_TDataclass],
+    cls: type[TDataclass],
     /,
     *,
     cwd: PathLike = PWD,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-) -> _TDataclass:
+) -> TDataclass:
     """Load a set of settings from the `.env` file."""
     path = get_repo_root(cwd=cwd).joinpath(".env")
     if not path.exists():

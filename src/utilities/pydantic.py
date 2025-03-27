@@ -9,7 +9,7 @@ from pydantic import BaseModel
 if TYPE_CHECKING:
     from utilities.types import PathLike
 
-_BM = TypeVar("_BM", bound=BaseModel)
+_TBaseModel = TypeVar("_TBaseModel", bound=BaseModel)
 
 
 class HashableBaseModel(BaseModel):
@@ -20,7 +20,7 @@ class HashableBaseModel(BaseModel):
         return hash((type(self), *self.__dict__.values()))
 
 
-def load_model(model: type[_BM], path: PathLike, /) -> _BM:
+def load_model(model: type[_TBaseModel], path: PathLike, /) -> _TBaseModel:
     path = Path(path)
     try:
         with path.open() as fh:

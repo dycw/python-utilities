@@ -28,6 +28,13 @@ type MaybeAwaitable[_T] = _T | Awaitable[_T]
 type MaybeCoroutine1[_T] = _T | Coroutine1[_T]
 
 
+# callable
+TCallable = TypeVar("TCallable", bound=Callable[..., Any])
+TCallableMaybeCoroutine1None = TypeVar(
+    "TCallableMaybeCoroutine1None", bound=Callable[..., MaybeCoroutine1[None]]
+)
+
+
 # concurrent
 type Parallelism = Literal["processes", "threads"]
 
@@ -40,12 +47,26 @@ class Dataclass(Protocol):
     __dataclass_fields__: ClassVar[dict[str, Any]]
 
 
+TDataclass = TypeVar("TDataclass", bound=Dataclass)
+
+
 # datetime
 type DateOrDateTime = dt.date | dt.datetime
 
 
 # enum
 type EnumOrStr[_TEnum: Enum] = _TEnum | str
+TEnum = TypeVar("TEnum", bound=Enum)
+
+
+# exceptions
+TBaseException = TypeVar("TBaseException", bound=BaseException)
+
+
+# hashable
+THashable = TypeVar("THashable", bound=Hashable)
+THashable1 = TypeVar("THashable1", bound=Hashable)
+THashable2 = TypeVar("THashable2", bound=Hashable)
 
 
 # iterables
@@ -70,6 +91,9 @@ class SupportsAdd(Protocol[_T_contra, _T_co]):  # from typeshed
     def __add__(self, x: _T_contra, /) -> _T_co: ...  # pragma: no cover
 
 
+TSupportsAdd = TypeVar("TSupportsAdd", bound=SupportsAdd)
+
+
 class SupportsDunderLT(Protocol[_T_contra]):  # from typeshed
     def __lt__(self, other: _T_contra, /) -> bool: ...  # pragma: no cover
 
@@ -79,6 +103,9 @@ class SupportsDunderGT(Protocol[_T_contra]):  # from typeshed
 
 
 SupportsRichComparison = SupportsDunderLT[Any] | SupportsDunderGT[Any]
+TSupportsRichComparison = TypeVar(
+    "TSupportsRichComparison", bound=SupportsRichComparison
+)
 
 
 # pathlib
@@ -130,6 +157,16 @@ __all__ = [
     "SupportsDunderGT",
     "SupportsDunderLT",
     "SupportsRichComparison",
+    "TBaseException",
+    "TCallable",
+    "TCallableMaybeCoroutine1None",
+    "TDataclass",
+    "TEnum",
+    "THashable",
+    "THashable1",
+    "THashable2",
+    "TSupportsAdd",
+    "TSupportsRichComparison",
     "TimeZone",
     "TimeZoneLike",
     "TupleOrStrMapping",

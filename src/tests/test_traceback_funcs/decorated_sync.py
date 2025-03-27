@@ -1,21 +1,25 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from functools import wraps
 from itertools import chain
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, ParamSpec, TypeVar
 
 from utilities.traceback import trace
 
-_F = TypeVar("_F", bound=Callable[..., Any])
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
-def other_decorator(func: _F, /) -> _F:
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+
+
+def other_decorator(func: Callable[_P, _R], /) -> Callable[_P, _R]:
     @wraps(func)
-    def wrapped(*args: Any, **kwargs: Any) -> Any:
+    def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _R:
         return func(*args, **kwargs)
 
-    return cast("_F", wrapped)
+    return wrapped
 
 
 @trace

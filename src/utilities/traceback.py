@@ -48,6 +48,7 @@ from utilities.rich import (
     yield_call_args_repr,
     yield_mapping_repr,
 )
+from utilities.types import TBaseException
 from utilities.version import get_version
 from utilities.whenever import serialize_zoned_datetime
 
@@ -62,7 +63,6 @@ if TYPE_CHECKING:
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 _T = TypeVar("_T")
-_TBaseExc = TypeVar("_TBaseExc", bound=BaseException)
 _CALL_ARGS = "_CALL_ARGS"
 _INDENT = 4 * " "
 
@@ -217,22 +217,22 @@ class _HasExceptionPath(Protocol):
 
 
 @dataclass(kw_only=True, slots=True)
-class ExcChainTB(Generic[_TBaseExc]):
+class ExcChainTB(Generic[TBaseException]):
     """A rich traceback for an exception chain."""
 
-    errors: list[ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc] = field(
-        default_factory=list
-    )
+    errors: list[
+        ExcGroupTB[TBaseException] | ExcTB[TBaseException] | TBaseException
+    ] = field(default_factory=list)
     git_ref: str = field(default=MASTER, repr=False)
 
     def __getitem__(
         self, i: int, /
-    ) -> ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc:
+    ) -> ExcGroupTB[TBaseException] | ExcTB[TBaseException] | TBaseException:
         return self.errors[i]
 
     def __iter__(
         self,
-    ) -> Iterator[ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc]:
+    ) -> Iterator[ExcGroupTB[TBaseException] | ExcTB[TBaseException] | TBaseException]:
         yield from self.errors
 
     def __len__(self) -> int:
@@ -285,13 +285,13 @@ class ExcChainTB(Generic[_TBaseExc]):
 
 
 @dataclass(kw_only=True, slots=True)
-class ExcGroupTB(Generic[_TBaseExc]):
+class ExcGroupTB(Generic[TBaseException]):
     """A rich traceback for an exception group."""
 
     exc_group: ExcTB[ExceptionGroup[Any]] | ExceptionGroup[Any]
-    errors: list[ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc] = field(
-        default_factory=list
-    )
+    errors: list[
+        ExcGroupTB[TBaseException] | ExcTB[TBaseException] | TBaseException
+    ] = field(default_factory=list)
     git_ref: str = field(default=MASTER, repr=False)
 
     @override
@@ -351,11 +351,11 @@ class ExcGroupTB(Generic[_TBaseExc]):
 
 
 @dataclass(kw_only=True, slots=True)
-class ExcTB(Generic[_TBaseExc]):
+class ExcTB(Generic[TBaseException]):
     """A rich traceback for a single exception."""
 
     frames: list[_Frame] = field(default_factory=list)
-    error: _TBaseExc
+    error: TBaseException
     git_ref: str = field(default=MASTER, repr=False)
 
     def __getitem__(self, i: int, /) -> _Frame:
@@ -482,17 +482,22 @@ class _Frame:
 
 
 def get_rich_traceback(
-    error: _TBaseExc, /, *, git_ref: str = MASTER
-) -> ExcChainTB[_TBaseExc] | ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc:
+    error: TBaseException, /, *, git_ref: str = MASTER
+) -> (
+    ExcChainTB[TBaseException]
+    | ExcGroupTB[TBaseException]
+    | ExcTB[TBaseException]
+    | TBaseException
+):
     """Get a rich traceback."""
     match list(yield_exceptions(error)):
         case []:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{error}"])
         case [err]:
-            err_recast = cast("_TBaseExc", err)
+            err_recast = cast("TBaseException", err)
             return _get_rich_traceback_non_chain(err_recast, git_ref=git_ref)
         case errs:
-            errs_recast = cast("list[_TBaseExc]", errs)
+            errs_recast = cast("list[TBaseException]", errs)
             return ExcChainTB(
                 errors=[
                     _get_rich_traceback_non_chain(e, git_ref=git_ref)
@@ -503,8 +508,8 @@ def get_rich_traceback(
 
 
 def _get_rich_traceback_non_chain(
-    error: ExceptionGroup[Any] | _TBaseExc, /, *, git_ref: str = MASTER
-) -> ExcGroupTB[_TBaseExc] | ExcTB[_TBaseExc] | _TBaseExc:
+    error: ExceptionGroup[Any] | TBaseException, /, *, git_ref: str = MASTER
+) -> ExcGroupTB[TBaseException] | ExcTB[TBaseException] | TBaseException:
     """Get a rich traceback, for a non-chained error."""
     match error:
         case ExceptionGroup() as exc_group:  # skipif-ci
@@ -523,8 +528,8 @@ def _get_rich_traceback_non_chain(
 
 
 def _get_rich_traceback_base_one(
-    error: _TBaseExc, /, *, git_ref: str = MASTER
-) -> ExcTB[_TBaseExc] | _TBaseExc:
+    error: TBaseException, /, *, git_ref: str = MASTER
+) -> ExcTB[TBaseException] | TBaseException:
     """Get a rich traceback, for a single exception."""
     if isinstance(error, _HasExceptionPath):
         frames = [
