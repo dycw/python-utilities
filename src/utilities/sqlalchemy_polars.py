@@ -233,7 +233,7 @@ async def select_to_dataframe(
     *,
     snake: bool = False,
     time_zone: TimeZoneLike = UTC,
-    batch_size: None,
+    batch_size: None = None,
     in_clauses: tuple[Column[Any], Iterable[Any]] | None = None,
     in_clauses_chunk_size: int | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
