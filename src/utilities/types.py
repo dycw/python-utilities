@@ -48,6 +48,10 @@ type DateOrDateTime = dt.date | dt.datetime
 type EnumOrStr[_TEnum: Enum] = _TEnum | str
 
 
+# hashable
+THashable = TypeVar("THashable", bound=Hashable)
+
+
 # iterables
 type MaybeIterable[_T] = _T | Iterable[_T]
 type IterableHashable[_THashable: Hashable] = (
@@ -133,6 +137,7 @@ __all__ = [
     "SupportsDunderGT",
     "SupportsDunderLT",
     "SupportsRichComparison",
+    "THashable",
     "TSupportsRichComparison",
     "TimeZone",
     "TimeZoneLike",
