@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, dataclass_transform, overload
 
 from pyrsistent import PRecord as _PRecord
 from pyrsistent import field as _field
-from pyrsistent._field_common import (  # pyright: ignore[reportPrivateImportUsage]
+from pyrsistent._field_common import (
     PFIELD_NO_FACTORY,  # pyright: ignore[reportPrivateImportUsage]
     PFIELD_NO_INITIAL,  # pyright: ignore[reportPrivateImportUsage]
     PFIELD_NO_INVARIANT,  # pyright: ignore[reportPrivateImportUsage]
