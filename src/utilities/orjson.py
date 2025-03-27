@@ -2,18 +2,18 @@ from __future__ import annotations
 
 import datetime as dt
 import re
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextlib import suppress
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum, unique
-from functools import partial, reduce
+from functools import cached_property, partial, reduce
 from itertools import chain
 from logging import Formatter, LogRecord
 from math import isinf, isnan
 from operator import or_
 from pathlib import Path
-from re import Pattern
-from typing import TYPE_CHECKING, Any, Literal, assert_never, overload, override
+from re import Pattern, search
+from typing import TYPE_CHECKING, Any, Literal, Self, assert_never, overload, override
 from uuid import UUID
 
 from orjson import (
@@ -27,9 +27,18 @@ from orjson import (
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import dataclass_to_dict
 from utilities.functions import ensure_class, is_string_mapping
-from utilities.iterables import OneEmptyError, one
+from utilities.iterables import OneEmptyError, always_iterable, one, one_unique
+from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.types import Dataclass, PathLike, StrMapping
+from utilities.types import (
+    Dataclass,
+    DateOrDateTime,
+    LogLevel,
+    MaybeIterable,
+    PathLike,
+    StrMapping,
+)
+from utilities.tzlocal import get_local_time_zone
 from utilities.uuid import UUID_PATTERN
 from utilities.version import GetVersionError, Version, parse_version
 from utilities.whenever import (
@@ -44,6 +53,7 @@ from utilities.whenever import (
     serialize_timedelta,
     serialize_zoned_datetime,
 )
+from utilities.zoneinfo import ensure_time_zone
 
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
@@ -609,6 +619,7 @@ class _DeserializeObjectNotFoundError(DeserializeError):
 
 # logging
 
+
 _LOG_RECORD_DEFAULT_ATTRS = {
     "args",
     "asctime",
@@ -652,13 +663,15 @@ class OrjsonFormatter(Formatter):
         before: Callable[[Any], Any] | None = None,
         globalns: StrMapping | None = None,
         localns: StrMapping | None = None,
-        dataclass_final_hook: _DataclassHook | None = None,
+        dataclass_hook: _DataclassHook | None = None,
+        dataclass_defaults: bool = False,
     ) -> None:
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
         self._before = before
         self._globalns = globalns
         self._localns = localns
-        self._dataclass_final_hook = dataclass_final_hook
+        self._dataclass_hook = dataclass_hook
+        self._dataclass_defaults = dataclass_defaults
 
     @override
     def format(self, record: LogRecord) -> str:
@@ -686,7 +699,8 @@ class OrjsonFormatter(Formatter):
             before=self._before,
             globalns=self._globalns,
             localns=self._localns,
-            dataclass_hook=self._dataclass_final_hook,
+            dataclass_hook=self._dataclass_hook,
+            dataclass_defaults=self._dataclass_defaults,
         ).decode()
 
 
@@ -714,6 +728,11 @@ def get_log_records(
         outputs = concurrent_map(func, files, parallelism=parallelism)
     else:
         outputs = pqdm_map(func, files, parallelism=parallelism)
+    records = sorted(
+        chain.from_iterable(o.records for o in outputs), key=lambda r: r.datetime
+    )
+    for i, record in enumerate(records):
+        record.index = i
     return GetLogRecordsOutput(
         path=path,
         files=files,
@@ -724,15 +743,13 @@ def get_log_records(
         num_lines_ok=sum(o.num_lines_ok for o in outputs),
         num_lines_blank=sum(o.num_lines_blank for o in outputs),
         num_lines_error=sum(o.num_lines_error for o in outputs),
-        records=sorted(
-            chain.from_iterable(o.records for o in outputs), key=lambda r: r.datetime
-        ),
+        records=records,
         missing=set(reduce(or_, (o.missing for o in outputs), set())),
         other_errors=list(chain.from_iterable(o.other_errors for o in outputs)),
     )
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class GetLogRecordsOutput:
     """A collection of outputs."""
 
@@ -745,7 +762,7 @@ class GetLogRecordsOutput:
     num_lines_ok: int = 0
     num_lines_blank: int = 0
     num_lines_error: int = 0
-    records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
+    records: list[IndexedOrjsonLogRecord] = field(default_factory=list, repr=False)
     missing: set[str] = field(default_factory=set)
     other_errors: list[Exception] = field(default_factory=list)
 
@@ -757,6 +774,193 @@ class GetLogRecordsOutput:
         self, item: int | slice, /
     ) -> OrjsonLogRecord | Sequence[OrjsonLogRecord]:
         return self.records[item]
+
+    def __len__(self) -> int:
+        return len(self.records)
+
+    @cached_property
+    def dataframe(self) -> Any:
+        from polars import DataFrame, Object, String, UInt64
+
+        from utilities.polars import zoned_datetime
+
+        records = [
+            replace(
+                r,
+                path_name=str(r.path_name),
+                log_file=None if r.log_file is None else str(r.log_file),
+            )
+            for r in self.records
+        ]
+        if len(records) >= 1:
+            time_zone = one_unique(ensure_time_zone(r.datetime) for r in records)
+        else:
+            time_zone = get_local_time_zone()
+        return DataFrame(
+            data=[dataclass_to_dict(r, recursive=False) for r in records],
+            schema={
+                "index": UInt64,
+                "name": String,
+                "message": String,
+                "level": UInt64,
+                "path_name": String,
+                "line_num": UInt64,
+                "datetime": zoned_datetime(time_zone=time_zone),
+                "func_name": String,
+                "stack_info": String,
+                "extra": Object,
+                "log_file": String,
+                "log_file_line_num": UInt64,
+            },
+        )
+
+    def filter(
+        self,
+        *,
+        index: int | None = None,
+        min_index: int | None = None,
+        max_index: int | None = None,
+        name: str | None = None,
+        message: str | None = None,
+        level: LogLevel | None = None,
+        min_level: LogLevel | None = None,
+        max_level: LogLevel | None = None,
+        date_or_datetime: DateOrDateTime | None = None,
+        min_date_or_datetime: DateOrDateTime | None = None,
+        max_date_or_datetime: DateOrDateTime | None = None,
+        func_name: bool | str | None = None,
+        extra: bool | MaybeIterable[str] | None = None,
+        log_file: bool | PathLike | None = None,
+        log_file_line_num: bool | int | None = None,
+        min_log_file_line_num: int | None = None,
+        max_log_file_line_num: int | None = None,
+    ) -> Self:
+        records = self.records
+        if index is not None:
+            records = [r for r in records if r.index == index]
+        if min_index is not None:
+            records = [r for r in records if r.index >= min_index]
+        if max_index is not None:
+            records = [r for r in records if r.index <= max_index]
+        if name is not None:
+            records = [r for r in records if search(name, r.name)]
+        if message is not None:
+            records = [r for r in records if search(message, r.message)]
+        if level is not None:
+            records = [r for r in records if r.level == get_logging_level_number(level)]
+        if min_level is not None:
+            records = [
+                r for r in records if r.level >= get_logging_level_number(min_level)
+            ]
+        if max_level is not None:
+            records = [
+                r for r in records if r.level <= get_logging_level_number(max_level)
+            ]
+        if level is not None:
+            records = [r for r in records if r.level == get_logging_level_number(level)]
+        if min_level is not None:
+            records = [
+                r for r in records if r.level >= get_logging_level_number(min_level)
+            ]
+        if max_level is not None:
+            records = [
+                r for r in records if r.level <= get_logging_level_number(max_level)
+            ]
+        if date_or_datetime is not None:
+            match date_or_datetime:
+                case dt.datetime() as datetime:
+                    records = [r for r in records if r.datetime == datetime]
+                case dt.date() as date:
+                    records = [r for r in records if r.date == date]
+                case _ as never:
+                    assert_never(never)
+        if min_date_or_datetime is not None:
+            match min_date_or_datetime:
+                case dt.datetime() as min_datetime:
+                    records = [r for r in records if r.datetime >= min_datetime]
+                case dt.date() as min_date:
+                    records = [r for r in records if r.date >= min_date]
+                case _ as never:
+                    assert_never(never)
+        if max_date_or_datetime is not None:
+            match max_date_or_datetime:
+                case dt.datetime() as max_datetime:
+                    records = [r for r in records if r.datetime <= max_datetime]
+                case dt.date() as max_date:
+                    records = [r for r in records if r.date <= max_date]
+                case _ as never:
+                    assert_never(never)
+        if func_name is not None:
+            match func_name:
+                case bool() as has_func_name:
+                    records = [
+                        r for r in records if (r.func_name is not None) is has_func_name
+                    ]
+                case str():
+                    records = [
+                        r
+                        for r in records
+                        if (r.func_name is not None) and search(func_name, r.func_name)
+                    ]
+                case _ as never:
+                    assert_never(never)
+        if extra is not None:
+            match extra:
+                case bool() as has_extra:
+                    records = [r for r in records if (r.extra is not None) is has_extra]
+                case str() | Iterable() as keys:
+                    records = [
+                        r
+                        for r in records
+                        if (r.extra is not None)
+                        and set(r.extra).issuperset(always_iterable(keys))
+                    ]
+                case _ as never:
+                    assert_never(never)
+        if log_file is not None:
+            match log_file:
+                case bool() as has_log_file:
+                    records = [
+                        r for r in records if (r.log_file is not None) is has_log_file
+                    ]
+                case Path() | str():
+                    records = [
+                        r
+                        for r in records
+                        if (r.log_file is not None)
+                        and search(str(log_file), str(r.log_file))
+                    ]
+                case _ as never:
+                    assert_never(never)
+        if log_file_line_num is not None:
+            match log_file_line_num:
+                case bool() as has_log_file_line_num:
+                    records = [
+                        r
+                        for r in records
+                        if (r.log_file_line_num is not None) is has_log_file_line_num
+                    ]
+                case int():
+                    records = [
+                        r for r in records if r.log_file_line_num == log_file_line_num
+                    ]
+                case _ as never:
+                    assert_never(never)
+        if min_log_file_line_num is not None:
+            records = [
+                r
+                for r in records
+                if (r.log_file_line_num is not None)
+                and (r.log_file_line_num >= min_log_file_line_num)
+            ]
+        if max_log_file_line_num is not None:
+            records = [
+                r
+                for r in records
+                if (r.log_file_line_num is not None)
+                and (r.log_file_line_num >= max_log_file_line_num)
+            ]
+        return replace(self, records=records)
 
     @property
     def frac_files_ok(self) -> float:
@@ -779,7 +983,7 @@ class GetLogRecordsOutput:
         return self.num_lines_error / self.num_lines
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, kw_only=True)
 class OrjsonLogRecord:
     """The log record as a dataclass."""
 
@@ -794,6 +998,17 @@ class OrjsonLogRecord:
     extra: StrMapping | None = None
     log_file: Path | None = None
     log_file_line_num: int | None = None
+
+    @cached_property
+    def date(self) -> dt.date:
+        return self.datetime.date()
+
+
+@dataclass(order=True, kw_only=True)
+class IndexedOrjsonLogRecord(OrjsonLogRecord):
+    """An indexed log record."""
+
+    index: int
 
 
 def _get_log_records_one(
@@ -812,7 +1027,7 @@ def _get_log_records_one(
         return _GetLogRecordsOneOutput(path=path, file_ok=False, other_errors=[error])
     num_lines_blank, num_lines_error = 0, 0
     missing: set[str] = set()
-    records: list[OrjsonLogRecord] = []
+    records: list[IndexedOrjsonLogRecord] = []
     errors: list[Exception] = []
     objects_use = {OrjsonLogRecord} | (set() if objects is None else objects)
     for i, line in enumerate(lines, start=1):
@@ -841,7 +1056,21 @@ def _get_log_records_one(
             else:
                 record.log_file = path
                 record.log_file_line_num = i
-                records.append(record)
+                indexed = IndexedOrjsonLogRecord(
+                    index=len(records),
+                    name=record.name,
+                    message=record.message,
+                    level=record.level,
+                    path_name=record.path_name,
+                    line_num=record.line_num,
+                    datetime=record.datetime,
+                    func_name=record.func_name,
+                    stack_info=record.stack_info,
+                    extra=record.extra,
+                    log_file=record.log_file,
+                    log_file_line_num=record.log_file_line_num,
+                )
+                records.append(indexed)
     return _GetLogRecordsOneOutput(
         path=path,
         file_ok=True,
@@ -863,7 +1092,7 @@ class _GetLogRecordsOneOutput:
     num_lines_ok: int = 0
     num_lines_blank: int = 0
     num_lines_error: int = 0
-    records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
+    records: list[IndexedOrjsonLogRecord] = field(default_factory=list, repr=False)
     missing: set[str] = field(default_factory=set)
     other_errors: list[Exception] = field(default_factory=list, repr=False)
 
