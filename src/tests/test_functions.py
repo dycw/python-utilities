@@ -99,6 +99,7 @@ if TYPE_CHECKING:
 
     from utilities.types import Number
 
+
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 _T = TypeVar("_T")
