@@ -65,8 +65,8 @@ def apply_decorators(
 
 
 def _apply_decorators_one(
-    acc: TCallable1, el: Callable[[TCallable2], TCallable2], /
-) -> TCallable1:
+    acc: TCallable1, el: Callable[[TCallable1], TCallable2], /
+) -> TCallable2:
     return el(acc)
 
 
