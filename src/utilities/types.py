@@ -50,6 +50,8 @@ type EnumOrStr[_TEnum: Enum] = _TEnum | str
 
 # hashable
 THashable = TypeVar("THashable", bound=Hashable)
+THashable1 = TypeVar("THashable1", bound=Hashable)
+THashable2 = TypeVar("THashable2", bound=Hashable)
 
 
 # iterables
@@ -138,6 +140,8 @@ __all__ = [
     "SupportsDunderLT",
     "SupportsRichComparison",
     "THashable",
+    "THashable1",
+    "THashable2",
     "TSupportsRichComparison",
     "TimeZone",
     "TimeZoneLike",
