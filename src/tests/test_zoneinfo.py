@@ -25,6 +25,7 @@ from utilities.zoneinfo import (
 if TYPE_CHECKING:
     from utilities.types import TimeZone
 
+
 class TestEnsureTimeZone:
     @given(
         data=data(),
