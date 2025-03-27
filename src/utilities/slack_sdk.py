@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, override
 
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
-from utilities.asyncio import QueueProcessor
+from utilities.asyncio import QueueProcessor, sleep_dur
 from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float
 from utilities.functools import cache
 from utilities.math import safe_round
@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from slack_sdk.webhook import WebhookResponse
 
     from utilities.types import Duration
+
 
 _TIMEOUT = MINUTE
 _SLEEP = SECOND
@@ -43,8 +44,8 @@ class SlackHandler(Handler, QueueProcessor[str]):
         queue_type: type[Queue[str]] = Queue,
         queue_max_size: int | None = None,
         timeout: Duration = _TIMEOUT,
-        freq: Duration = _SLEEP,
         callback: Callable[[], None] | None = None,
+        sleep: Duration = _SLEEP,
     ) -> None:
         QueueProcessor.__init__(  # QueueProcessor first
             self, queue_type=queue_type, queue_max_size=queue_max_size
@@ -53,8 +54,8 @@ class SlackHandler(Handler, QueueProcessor[str]):
         Handler.__init__(self, level=level)
         self.url = url
         self.timeout = timeout
-        self.freq = freq
         self.callback = callback
+        self.sleep = sleep
 
     @override
     def emit(self, record: LogRecord) -> None:
@@ -68,11 +69,18 @@ class SlackHandler(Handler, QueueProcessor[str]):
     @override
     async def _run(self, item: str, /) -> None:
         """Run the handler."""
-        items = list(chain([item], await self._get_items_nowait()))  # pragma: no cover
-        text = "\n".join(items)  # pragma: no cover
+        if 1:
+            items = list(chain([item], await self._get_items_nowait()))
+            text = "\n".join(items)
+        if 0:
+            items = list(
+                chain([item], await self._get_items_nowait())
+            )  # pragma: no cover
+            text = "\n".join(items)  # pragma: no cover
         await send_to_slack(self.url, text, timeout=self.timeout)  # pragma: no cover
         if self.callback is not None:  # pragma: no cover
             self.callback()
+        await sleep_dur(duration=self.sleep)
 
 
 ##

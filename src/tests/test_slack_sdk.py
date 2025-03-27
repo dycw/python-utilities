@@ -51,6 +51,7 @@ class TestSlackHandler:
         handler = SlackHandler("url")
         handler.setLevel(DEBUG)
         logger.addHandler(handler)
+        await handler.start()
         logger.debug("message from %s", TestSlackHandler.test_main.__qualname__)
         await sleep(0.1)
 
