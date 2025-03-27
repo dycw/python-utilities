@@ -73,9 +73,9 @@ def get_env_var(
     /,
     *,
     case_sensitive: bool = True,
-    default: str | None = None,
-    nullable: Literal[True],
-) -> str | None: ...
+    default: None = None,
+    nullable: Literal[False] = False,
+) -> str: ...
 @overload
 def get_env_var(
     key: str,
