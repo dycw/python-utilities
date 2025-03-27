@@ -34,6 +34,7 @@ from utilities.types import (
     Dataclass,
     Number,
     StrMapping,
+    TCallable,
     TSupportsRichComparison,
     TupleOrStrMapping,
 )
