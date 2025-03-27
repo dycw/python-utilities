@@ -6,7 +6,6 @@ from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import asdict, dataclass
-from datetime import timezone
 from functools import partial, reduce
 from itertools import chain
 from math import ceil, log
@@ -93,7 +92,7 @@ from utilities.math import (
 )
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel
-from utilities.types import Dataclass, MaybeIterable, StrMapping, ZoneInfoLike
+from utilities.types import Dataclass, MaybeIterable, StrMapping, TimeZoneLike
 from utilities.typing import (
     get_args,
     get_type_hints,
@@ -539,23 +538,23 @@ def concat_series(*series: Series) -> DataFrame:
 
 
 @overload
-def convert_time_zone(obj: Series, /, *, time_zone: ZoneInfoLike = UTC) -> Series: ...
+def convert_time_zone(obj: Series, /, *, time_zone: TimeZoneLike = UTC) -> Series: ...
 @overload
 def convert_time_zone(
-    obj: DataFrame, /, *, time_zone: ZoneInfoLike = UTC
+    obj: DataFrame, /, *, time_zone: TimeZoneLike = UTC
 ) -> DataFrame: ...
 @overload
 def convert_time_zone(
-    obj: Series | DataFrame, /, *, time_zone: ZoneInfoLike = UTC
+    obj: Series | DataFrame, /, *, time_zone: TimeZoneLike = UTC
 ) -> Series | DataFrame: ...
 def convert_time_zone(
-    obj: Series | DataFrame, /, *, time_zone: ZoneInfoLike = UTC
+    obj: Series | DataFrame, /, *, time_zone: TimeZoneLike = UTC
 ) -> Series | DataFrame:
     """Convert the time zone(s) of a Series or Dataframe."""
     return map_over_columns(partial(_convert_time_zone_one, time_zone=time_zone), obj)
 
 
-def _convert_time_zone_one(sr: Series, /, *, time_zone: ZoneInfoLike = UTC) -> Series:
+def _convert_time_zone_one(sr: Series, /, *, time_zone: TimeZoneLike = UTC) -> Series:
     if isinstance(sr.dtype, Datetime):
         return sr.dt.convert_time_zone(get_time_zone_name(time_zone))
     return sr
@@ -1229,25 +1228,25 @@ def nan_sum_cols(
 
 @overload
 def replace_time_zone(
-    obj: Series, /, *, time_zone: ZoneInfoLike | None = UTC
+    obj: Series, /, *, time_zone: TimeZoneLike | None = UTC
 ) -> Series: ...
 @overload
 def replace_time_zone(
-    obj: DataFrame, /, *, time_zone: ZoneInfoLike | None = UTC
+    obj: DataFrame, /, *, time_zone: TimeZoneLike | None = UTC
 ) -> DataFrame: ...
 @overload
 def replace_time_zone(
-    obj: Series | DataFrame, /, *, time_zone: ZoneInfoLike | None = UTC
+    obj: Series | DataFrame, /, *, time_zone: TimeZoneLike | None = UTC
 ) -> Series | DataFrame: ...
 def replace_time_zone(
-    obj: Series | DataFrame, /, *, time_zone: ZoneInfoLike | None = UTC
+    obj: Series | DataFrame, /, *, time_zone: TimeZoneLike | None = UTC
 ) -> Series | DataFrame:
     """Replace the time zone(s) of a Series or Dataframe."""
     return map_over_columns(partial(_replace_time_zone_one, time_zone=time_zone), obj)
 
 
 def _replace_time_zone_one(
-    sr: Series, /, *, time_zone: ZoneInfoLike | None = UTC
+    sr: Series, /, *, time_zone: TimeZoneLike | None = UTC
 ) -> Series:
     if isinstance(sr.dtype, Datetime):
         time_zone_use = None if time_zone is None else get_time_zone_name(time_zone)
@@ -1294,7 +1293,7 @@ def struct_from_dataclass(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-    time_zone: ZoneInfoLike | None = None,
+    time_zone: TimeZoneLike | None = None,
 ) -> Struct:
     """Construct the Struct data type for a dataclass."""
     if not is_dataclass_class(cls):
@@ -1307,7 +1306,7 @@ def struct_from_dataclass(
 
 
 def _struct_from_dataclass_one(
-    ann: Any, /, *, time_zone: ZoneInfoLike | None = None
+    ann: Any, /, *, time_zone: TimeZoneLike | None = None
 ) -> PolarsDataType:
     mapping = {bool: Boolean, dt.date: Date, float: Float64, int: Int64, str: String}
     with suppress(KeyError):
@@ -1575,7 +1574,7 @@ def yield_struct_series_dataclasses(
 
 
 def zoned_datetime(
-    *, time_unit: TimeUnit = "us", time_zone: ZoneInfoLike | timezone = UTC
+    *, time_unit: TimeUnit = "us", time_zone: TimeZoneLike = UTC
 ) -> Datetime:
     """Create a zoned datetime data type."""
     return Datetime(time_unit=time_unit, time_zone=get_time_zone_name(time_zone))

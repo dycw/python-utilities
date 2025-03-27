@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, assert_never, override
+from typing import TYPE_CHECKING, assert_never, cast, override
 from zoneinfo import ZoneInfo
 
 if TYPE_CHECKING:
-    from utilities.types import ZoneInfoLike
+    from utilities.types import TimeZone, TimeZoneLike
 
 HongKong = ZoneInfo("Asia/Hong_Kong")
 Tokyo = ZoneInfo("Asia/Tokyo")
@@ -14,12 +14,18 @@ USCentral = ZoneInfo("US/Central")
 USEastern = ZoneInfo("US/Eastern")
 UTC = ZoneInfo("UTC")
 
+##
 
-def ensure_time_zone(obj: ZoneInfoLike | dt.tzinfo | dt.datetime, /) -> ZoneInfo:
+
+def ensure_time_zone(obj: TimeZoneLike, /) -> ZoneInfo:
     """Ensure the object is a time zone."""
     match obj:
         case ZoneInfo() as zone_info:
             return zone_info
+        case "local":
+            from utilities.tzlocal import get_local_time_zone
+
+            return get_local_time_zone()
         case str() as key:
             return ZoneInfo(key)
         case dt.tzinfo() as tzinfo:
@@ -56,9 +62,12 @@ class _EnsureTimeZoneLocalDateTimeError(EnsureTimeZoneError):
         return f"Local datetime: {self.datetime}"
 
 
-def get_time_zone_name(time_zone: ZoneInfoLike | dt.tzinfo | dt.datetime, /) -> str:
+##
+
+
+def get_time_zone_name(time_zone: TimeZoneLike, /) -> TimeZone:
     """Get the name of a time zone."""
-    return ensure_time_zone(time_zone).key
+    return cast("TimeZone", ensure_time_zone(time_zone).key)
 
 
 __all__ = [
