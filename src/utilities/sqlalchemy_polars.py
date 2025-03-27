@@ -61,7 +61,10 @@ if TYPE_CHECKING:
         Mapping,
     )
 
-    from polars._typing import PolarsDataType, SchemaDict
+    from polars._typing import (
+        PolarsDataType,  # pyright: ignore[reportPrivateImportUsage]
+        SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
+    )
     from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
     from tenacity.retry import RetryBaseT as SyncRetryBaseT
@@ -207,12 +210,15 @@ def _insert_dataframe_check_df_and_db_types(
     dtype: PolarsDataType, db_col_type: type, /
 ) -> bool:
     return (
-        (dtype == pl.Boolean and issubclass(db_col_type, bool))
-        or (dtype == Date and is_subclass_date_not_datetime(db_col_type))
-        or (dtype == Datetime and issubclass(db_col_type, dt.datetime))
-        or (dtype == Float64 and issubclass(db_col_type, float))
-        or (dtype in {Int32, Int64, UInt32, UInt64} and issubclass(db_col_type, int))
-        or (dtype == String and issubclass(db_col_type, str))
+        ((dtype == pl.Boolean) and issubclass(db_col_type, bool))
+        or ((dtype == Date) and is_subclass_date_not_datetime(db_col_type))
+        or ((dtype == Datetime) and issubclass(db_col_type, dt.datetime))
+        or ((dtype == Float64) and issubclass(db_col_type, float))
+        or ((dtype == Int32) and issubclass(db_col_type, int))
+        or ((dtype == Int64) and issubclass(db_col_type, int))
+        or ((dtype == UInt32) and issubclass(db_col_type, int))
+        or ((dtype == UInt64) and issubclass(db_col_type, int))
+        or ((dtype == String) and issubclass(db_col_type, str))
     )
 
 

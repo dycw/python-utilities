@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING, Any, TypeVar, dataclass_transform, overload
 from pyrsistent import PRecord as _PRecord
 from pyrsistent import field as _field
 from pyrsistent._field_common import (
-    PFIELD_NO_FACTORY,
-    PFIELD_NO_INITIAL,
-    PFIELD_NO_INVARIANT,
-    PFIELD_NO_SERIALIZER,
-    PFIELD_NO_TYPE,
+    PFIELD_NO_FACTORY,  # pyright: ignore[reportPrivateImportUsage]
+    PFIELD_NO_INITIAL,  # pyright: ignore[reportPrivateImportUsage]
+    PFIELD_NO_INVARIANT,  # pyright: ignore[reportPrivateImportUsage]
+    PFIELD_NO_SERIALIZER,  # pyright: ignore[reportPrivateImportUsage]
+    PFIELD_NO_TYPE,  # pyright: ignore[reportPrivateImportUsage]
 )
 
 if TYPE_CHECKING:

@@ -19,7 +19,7 @@ from utilities.pytest import (
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from _pytest.legacypath import Testdir
+    from _pytest.legacypath import Testdir  # pyright: ignore[reportPrivateImportUsage]
 
 
 _ = random_state
