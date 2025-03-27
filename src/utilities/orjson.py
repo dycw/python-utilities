@@ -30,6 +30,7 @@ from utilities.functions import ensure_class, is_string_mapping
 from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
+from utilities.polars import zoned_datetime
 from utilities.types import (
     Dataclass,
     DateOrDateTime,
@@ -38,6 +39,7 @@ from utilities.types import (
     PathLike,
     StrMapping,
 )
+from utilities.tzlocal import get_local_time_zone
 from utilities.uuid import UUID_PATTERN
 from utilities.version import GetVersionError, Version, parse_version
 from utilities.whenever import (
@@ -52,6 +54,7 @@ from utilities.whenever import (
     serialize_timedelta,
     serialize_zoned_datetime,
 )
+from utilities.zoneinfo import ensure_time_zone
 
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
@@ -744,7 +747,7 @@ def get_log_records(
     )
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class GetLogRecordsOutput:
     """A collection of outputs."""
 
@@ -769,6 +772,42 @@ class GetLogRecordsOutput:
         self, item: int | slice, /
     ) -> OrjsonLogRecord | Sequence[OrjsonLogRecord]:
         return self.records[item]
+
+    def __len__(self) -> int:
+        return len(self.records)
+
+    @cached_property
+    def dataframe(self) -> Any:
+        from polars import DataFrame, Int64, Object, String, UInt64
+
+        records = [
+            replace(
+                r,
+                path_name=str(r.path_name),
+                log_file=None if r.log_file is None else str(r.log_file),
+            )
+            for r in self.records
+        ]
+        if len(records) >= 1:
+            time_zone = one(ensure_time_zone(r.datetime) for r in records)
+        else:
+            time_zone = get_local_time_zone()
+        return DataFrame(
+            data=[dataclass_to_dict(r, recursive=False) for r in records],
+            schema={
+                "name": String,
+                "message": String,
+                "level": UInt64,
+                "path_name": String,
+                "line_num": UInt64,
+                "datetime": zoned_datetime(time_zone=time_zone),
+                "func_name": String,
+                "stack_info": String,
+                "extra": String,
+                "log_file": String,
+                "log_file_line_num": UInt64,
+            },
+        )
 
     def filter(
         self,

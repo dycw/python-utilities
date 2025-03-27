@@ -5,9 +5,10 @@ from io import StringIO
 from logging import DEBUG, FileHandler, StreamHandler, getLogger
 from pathlib import Path
 from re import search
+from time import sleep
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import given
+from hypothesis import given, reproduce_failure
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -21,6 +22,7 @@ from hypothesis.strategies import (
     tuples,
 )
 from orjson import JSONDecodeError
+from polars import String, UInt64
 from pytest import approx, mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
@@ -50,6 +52,7 @@ from utilities.datetime import MINUTE, SECOND, get_now
 from utilities.functions import is_sequence_of
 from utilities.hypothesis import (
     assume_does_not_raise,
+    int64s,
     paths,
     temp_paths,
     text_ascii,
@@ -72,9 +75,11 @@ from utilities.orjson import (
     get_log_records,
     serialize,
 )
+from utilities.polars import check_polars_dataframe, zoned_datetime
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import DateOrDateTime, LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args
+from utilities.tzlocal import get_local_time_zone
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -128,8 +133,53 @@ class TestGetLogRecords:
         assert record.log_file == file
         assert record.log_file_line_num == 1
 
-        # slicing
+        # magic methods
+        assert isinstance(output[0], OrjsonLogRecord)
         assert is_sequence_of(output[:], OrjsonLogRecord)
+        assert len(output) == 1
+
+    @given(
+        items=lists(
+            tuples(
+                sampled_from(get_args(LogLevel)),
+                text_ascii(),
+                dictionaries(text_ascii(), int64s()),
+            ),
+        ),
+        root=temp_paths(),
+    )
+    def test_dataframe(
+        self,
+        *,
+        root: Path,
+        items: Sequence[tuple[LogLevel, str, StrMapping]],
+    ) -> None:
+        logger = getLogger(str(root))
+        logger.setLevel(DEBUG)
+        handler = FileHandler(root.joinpath("log"))
+        handler.setFormatter(OrjsonFormatter())
+        handler.setLevel(DEBUG)
+        logger.addHandler(handler)
+        for level_, message_, extra_ in items:
+            logger.log(get_logging_level_number(level_), message_, extra=extra_)
+        output = get_log_records(root, parallelism="threads")
+        check_polars_dataframe(
+            output.dataframe,
+            height=len(items),
+            schema={
+                "name": String,
+                "message": String,
+                "level": UInt64,
+                "path_name": String,
+                "line_num": UInt64,
+                "datetime": zoned_datetime(time_zone="local"),
+                "func_name": String,
+                "stack_info": String,
+                "extra": String,
+                "log_file": String,
+                "log_file_line_num": UInt64,
+            },
+        )
 
     @given(
         items=lists(
@@ -183,7 +233,8 @@ class TestGetLogRecords:
         logger.addHandler(handler)
         for level_, message_, extra_ in items:
             logger.log(get_logging_level_number(level_), message_, extra=extra_)
-        output = get_log_records(root, parallelism="threads").filter(
+        output = get_log_records(root, parallelism="threads")
+        output = output.filter(
             name=name,
             message=message,
             level=level,
