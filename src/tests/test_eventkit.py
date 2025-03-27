@@ -4,12 +4,12 @@ from asyncio import sleep
 from io import StringIO
 from logging import DEBUG, StreamHandler, getLogger
 from re import search
-from typing import TYPE_CHECKING, Literal, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Literal
 
 from eventkit import Event
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import integers, sampled_from
-from pytest import CaptureFixture, mark
+from pytest import CaptureFixture
 
 from utilities.eventkit import add_listener
 from utilities.functions import identity
@@ -21,10 +21,7 @@ if TYPE_CHECKING:
     from pytest import CaptureFixture
 
 
-_P = ParamSpec("_P")
-_R = TypeVar("_R")
-
-    @mark.only
+class TestAddListener:
     @given(sync_or_async=sampled_from(["sync", "async"]), n=integers())
     async def test_main(
         self, *, sync_or_async: Literal["sync", "async"], n: int
@@ -54,7 +51,6 @@ _R = TypeVar("_R")
 
     @given(root=temp_paths(), sync_or_async=sampled_from(["sync", "async"]))
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    @mark.only
     async def test_no_error_handler_but_run_into_error(
         self, *, root: Path, sync_or_async: Literal["sync", "async"]
     ) -> None:
@@ -85,7 +81,6 @@ _R = TypeVar("_R")
         assert search(pattern, contents)
 
     @given(name=text_ascii(min_size=1), n=integers(min_value=1))
-    @mark.only
     def test_with_error_handler(self, *, name: str, n: int) -> None:
         event = Event(name=name)
         assert event.name() == name
