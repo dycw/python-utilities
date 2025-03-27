@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from asyncio import iscoroutinefunction
 from functools import wraps
-from typing import TYPE_CHECKING, Any, assert_never, cast
+from typing import TYPE_CHECKING, Any, assert_never, cast, override
+
+from attr import dataclass
 
 from utilities.functions import apply_decorators
 from utilities.iterables import always_iterable
@@ -73,7 +75,11 @@ def add_listener(
 
                     listener_use = listener_have_error_sync
                 case False, True:
-                    raise ValueError
+                    listener_typed = cast("Callable[..., None]", listener)
+                    error_typed = cast(
+                        "Callable[[Event, Exception], Coroutine1[None]]", error
+                    )
+                    raise AddListenerError(listener=listener_typed, error=error_typed)
                 case True, _:
                     listener_typed = cast("Callable[..., Coroutine1[None]]", listener)
 
@@ -108,4 +114,14 @@ def add_listener(
     return event.connect(listener_use, done=done, keep_ref=keep_ref)
 
 
-__all__ = ["add_listener"]
+@dataclass(kw_only=True, slots=True)
+class AddListenerError(Exception):
+    listener: Callable[..., None]
+    error: Callable[[Event, Exception], Coroutine1[None]]
+
+    @override
+    def __str__(self) -> str:
+        return f"Synchronous listener {self.listener} cannot be paired with an asynchronous error handler {self.error}"
+
+
+__all__ = ["AddListenerError", "add_listener"]
