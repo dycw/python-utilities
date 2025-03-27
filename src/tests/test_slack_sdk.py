@@ -34,7 +34,7 @@ class TestSendToSlack:
 
     @mark.skipif(
         get_env_var("SLACK", case_sensitive=False, nullable=True) is None,
-        reason='"SLACK" not set',
+        reason="'SLACK' not set",
     )
     @throttle(duration=5 * MINUTE)
     async def test_real(self) -> None:
@@ -56,7 +56,7 @@ class TestSlackHandler:
 
     @mark.skipif(
         get_env_var("SLACK", case_sensitive=False, nullable=True) is None,
-        reason='"SLACK" not set',
+        reason="'SLACK' not set",
     )
     @throttle(duration=5 * MINUTE)
     async def test_real(self, *, tmp_path: Path) -> None:
