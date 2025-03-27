@@ -27,10 +27,17 @@ from orjson import (
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import dataclass_to_dict
 from utilities.functions import ensure_class, is_string_mapping
-from utilities.iterables import OneEmptyError, one
+from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.types import Dataclass, DateOrDateTime, LogLevel, PathLike, StrMapping
+from utilities.types import (
+    Dataclass,
+    DateOrDateTime,
+    LogLevel,
+    MaybeIterable,
+    PathLike,
+    StrMapping,
+)
 from utilities.uuid import UUID_PATTERN
 from utilities.version import GetVersionError, Version, parse_version
 from utilities.whenever import (
@@ -774,6 +781,12 @@ class GetLogRecordsOutput:
         date_or_datetime: DateOrDateTime | None = None,
         min_date_or_datetime: DateOrDateTime | None = None,
         max_date_or_datetime: DateOrDateTime | None = None,
+        func_name: bool | str | None = None,
+        extra: bool | MaybeIterable[str] | None = None,
+        log_file: bool | PathLike | None = None,
+        log_file_line_num: bool | int | None = None,
+        min_log_file_line_num: int | None = None,
+        max_log_file_line_num: int | None = None,
     ) -> Self:
         records = self.records
         if name is not None:
@@ -828,6 +841,68 @@ class GetLogRecordsOutput:
                     records = [r for r in records if r.date <= max_date]
                 case _ as never:
                     assert_never(never)
+        if func_name is not None:
+            match func_name:
+                case bool() as has_func_name:
+                    records = [
+                        r for r in records if (r.func_name is not None) is has_func_name
+                    ]
+                case str():
+                    records = [
+                        r
+                        for r in records
+                        if (r.func_name is not None) and search(func_name, r.func_name)
+                    ]
+        if extra is not None:
+            match extra:
+                case bool() as has_extra:
+                    records = [r for r in records if (r.extra is not None) is has_extra]
+                case _ as keys:
+                    records = [
+                        r
+                        for r in records
+                        if (r.extra is not None)
+                        and set(r.extra).issuperset(always_iterable(keys))
+                    ]
+        if log_file is not None:
+            match log_file:
+                case bool() as has_log_file:
+                    records = [
+                        r for r in records if (r.log_file is not None) is has_log_file
+                    ]
+                case Path() | str():
+                    records = [
+                        r
+                        for r in records
+                        if (r.log_file is not None)
+                        and search(str(log_file), str(r.log_file))
+                    ]
+        if log_file_line_num is not None:
+            match log_file_line_num:
+                case bool() as has_log_file_line_num:
+                    records = [
+                        r
+                        for r in records
+                        if (r.log_file_line_num is not None) is has_log_file_line_num
+                    ]
+                case int():
+                    records = [
+                        r for r in records if r.log_file_line_num == log_file_line_num
+                    ]
+        if min_log_file_line_num is not None:
+            records = [
+                r
+                for r in records
+                if (r.log_file_line_num is not None)
+                and (r.log_file_line_num >= min_log_file_line_num)
+            ]
+        if max_log_file_line_num is not None:
+            records = [
+                r
+                for r in records
+                if (r.log_file_line_num is not None)
+                and (r.log_file_line_num >= max_log_file_line_num)
+            ]
         return replace(self, records=records)
 
     @property

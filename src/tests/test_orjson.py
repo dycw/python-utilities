@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from hypothesis import given
 from hypothesis.strategies import (
+    booleans,
     builds,
     dates,
     dictionaries,
@@ -16,6 +17,7 @@ from hypothesis.strategies import (
     lists,
     none,
     sampled_from,
+    sets,
     tuples,
 )
 from orjson import JSONDecodeError
@@ -48,12 +50,13 @@ from utilities.datetime import MINUTE, SECOND, get_now
 from utilities.functions import is_sequence_of
 from utilities.hypothesis import (
     assume_does_not_raise,
+    paths,
     temp_paths,
     text_ascii,
     text_printable,
     zoned_datetimes,
 )
-from utilities.iterables import one
+from utilities.iterables import always_iterable, one
 from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.operator import IsEqualError, is_equal
@@ -70,7 +73,7 @@ from utilities.orjson import (
     serialize,
 )
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import DateOrDateTime, LogLevel
+from utilities.types import DateOrDateTime, LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args
 from utilities.zoneinfo import UTC
 
@@ -145,6 +148,12 @@ class TestGetLogRecords:
         date_or_datetime=dates() | zoned_datetimes() | none(),
         min_date_or_datetime=dates() | zoned_datetimes() | none(),
         max_date_or_datetime=dates() | zoned_datetimes() | none(),
+        func_name=booleans() | text_ascii() | none(),
+        extra=booleans() | text_ascii() | sets(text_ascii()) | none(),
+        log_file=booleans() | paths() | text_ascii() | none(),
+        log_file_line_num=booleans() | integers() | none(),
+        min_log_file_line_num=integers() | none(),
+        max_log_file_line_num=integers() | none(),
     )
     def test_filter(
         self,
@@ -159,6 +168,12 @@ class TestGetLogRecords:
         date_or_datetime: DateOrDateTime | None,
         min_date_or_datetime: DateOrDateTime | None,
         max_date_or_datetime: DateOrDateTime | None,
+        func_name: bool | str | None,
+        extra: bool | MaybeIterable[str] | None,
+        log_file: bool | PathLike | None,
+        log_file_line_num: bool | int | None,
+        min_log_file_line_num: int | None,
+        max_log_file_line_num: int | None,
     ) -> None:
         logger = getLogger(str(root))
         logger.setLevel(DEBUG)
@@ -166,8 +181,8 @@ class TestGetLogRecords:
         handler.setFormatter(OrjsonFormatter())
         handler.setLevel(DEBUG)
         logger.addHandler(handler)
-        for level_, message_, extra in items:
-            logger.log(get_logging_level_number(level_), message_, extra=extra)
+        for level_, message_, extra_ in items:
+            logger.log(get_logging_level_number(level_), message_, extra=extra_)
         output = get_log_records(root, parallelism="threads").filter(
             name=name,
             message=message,
@@ -177,6 +192,12 @@ class TestGetLogRecords:
             date_or_datetime=date_or_datetime,
             min_date_or_datetime=min_date_or_datetime,
             max_date_or_datetime=max_date_or_datetime,
+            func_name=func_name,
+            extra=extra,
+            log_file=log_file,
+            log_file_line_num=log_file_line_num,
+            min_log_file_line_num=min_log_file_line_num,
+            max_log_file_line_num=max_log_file_line_num,
         )
         records = output.records
         if name is not None:
@@ -211,6 +232,62 @@ class TestGetLogRecords:
                     assert all(r.datetime <= max_datetime for r in records)
                 case dt.date() as max_date:
                     assert all(r.date <= max_date for r in records)
+        if func_name is not None:
+            match func_name:
+                case bool() as has_func_name:
+                    assert all(
+                        (r.func_name is not None) is has_func_name for r in records
+                    )
+                case str():
+                    assert all(
+                        (r.func_name is not None) and search(func_name, r.func_name)
+                        for r in records
+                    )
+        if extra is not None:
+            match extra:
+                case bool() as has_extra:
+                    assert all((r.extra is not None) is has_extra for r in records)
+                case _ as keys:
+                    assert all(
+                        (r.extra is not None)
+                        and set(r.extra).issuperset(always_iterable(keys))
+                        for r in records
+                    )
+        if log_file is not None:
+            match log_file:
+                case bool() as has_log_file:
+                    assert all(
+                        (r.log_file is not None) is has_log_file for r in records
+                    )
+                case Path() | str():
+                    assert all(
+                        (r.log_file is not None)
+                        and search(str(log_file), str(r.log_file))
+                        for r in records
+                    )
+        if log_file_line_num is not None:
+            match log_file_line_num:
+                case bool() as has_log_file_line_num:
+                    assert all(
+                        (r.log_file_line_num is not None) is has_log_file_line_num
+                        for r in records
+                    )
+                case int():
+                    assert all(
+                        r.log_file_line_num == log_file_line_num for r in records
+                    )
+        if min_log_file_line_num is not None:
+            assert all(
+                (r.log_file_line_num is not None)
+                and (r.log_file_line_num >= min_log_file_line_num)
+                for r in records
+            )
+        if max_log_file_line_num is not None:
+            assert all(
+                (r.log_file_line_num is not None)
+                and (r.log_file_line_num <= max_log_file_line_num)
+                for r in records
+            )
 
     def test_skip_blank_lines(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
