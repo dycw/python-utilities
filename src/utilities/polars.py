@@ -1574,7 +1574,7 @@ def yield_struct_series_dataclasses(
 
 
 def zoned_datetime(
-    *, time_unit: TimeUnit = "us", time_zone: TimeZoneLike = UTC
+    *, time_unit: TimeUnit = "us", time_zone: TimeZoneLike | timezone = UTC
 ) -> Datetime:
     """Create a zoned datetime data type."""
     return Datetime(time_unit=time_unit, time_zone=get_time_zone_name(time_zone))

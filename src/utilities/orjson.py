@@ -778,7 +778,7 @@ class GetLogRecordsOutput:
 
     @cached_property
     def dataframe(self) -> Any:
-        from polars import DataFrame, Int64, Object, String, UInt64
+        from polars import DataFrame, String, UInt64
 
         records = [
             replace(
