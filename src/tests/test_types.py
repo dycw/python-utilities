@@ -11,6 +11,7 @@ from hypothesis.strategies import sampled_from
 from pytest import mark, param
 
 from utilities.datetime import ZERO_TIME
+from utilities.platform import SYSTEM
 from utilities.types import Dataclass, Duration, Number, PathLike, TimeZone
 from utilities.typing import get_args
 
@@ -58,4 +59,10 @@ class TestPathLike:
 
 class TestTimeZone:
     def test_main(self) -> None:
-        assert set(get_args(TimeZone)).issubset(available_timezones())
+        result = set(get_args(TimeZone))
+        expected = available_timezones()
+        match SYSTEM:
+            case "windows" | "mac":
+                assert result == expected
+            case "linux":
+                assert result | {"localtime"} == expected
