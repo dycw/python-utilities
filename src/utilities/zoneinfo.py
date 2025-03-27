@@ -65,9 +65,7 @@ class _EnsureTimeZoneLocalDateTimeError(EnsureTimeZoneError):
 ##
 
 
-def get_time_zone_name(
-    time_zone: TimeZoneLike | dt.tzinfo | dt.datetime, /
-) -> TimeZone:
+def get_time_zone_name(time_zone: TimeZoneLike, /) -> TimeZone:
     """Get the name of a time zone."""
     return ensure_time_zone(time_zone).key
 
