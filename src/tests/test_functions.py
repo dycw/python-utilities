@@ -6,7 +6,7 @@ from functools import cache, cached_property, lru_cache, partial, wraps
 from itertools import chain
 from operator import neg
 from types import NoneType
-from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, TypeVar, cast
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -44,6 +44,7 @@ from utilities.functions import (
     EnsureTimeError,
     MaxNullableError,
     MinNullableError,
+    apply_decorators,
     ensure_bool,
     ensure_bytes,
     ensure_class,
@@ -98,8 +99,34 @@ if TYPE_CHECKING:
 
     from utilities.types import Number
 
-
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 _T = TypeVar("_T")
+
+
+class TestApplyDecorators:
+    @given(n=integers())
+    def test_main(self, *, n: int) -> None:
+        counter = 0
+
+        def negate(x: int, /) -> int:
+            return -x
+
+        def increment(func: Callable[_P, _R], /) -> Callable[_P, _R]:
+            @wraps(func)
+            def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+                nonlocal counter
+                counter += 1
+                return func(*args, **kwargs)
+
+            return wrapped
+
+        decorated = apply_decorators(negate, increment)
+        assert counter == 0
+        assert negate(n) == -n
+        assert counter == 0
+        assert decorated(n) == -n
+        assert counter == 1
 
 
 class TestEnsureBytes:
