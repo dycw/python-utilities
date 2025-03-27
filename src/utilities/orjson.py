@@ -794,8 +794,12 @@ class GetLogRecordsOutput:
         else:
             time_zone = get_local_time_zone()
         return DataFrame(
-            data=[dataclass_to_dict(r, recursive=False) for r in records],
+            data=[
+                {"i": i, **dataclass_to_dict(r, recursive=False)}
+                for i, r in enumerate(records)
+            ],
             schema={
+                "i": UInt64,
                 "name": String,
                 "message": String,
                 "level": UInt64,
