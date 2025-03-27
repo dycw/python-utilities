@@ -53,7 +53,7 @@ from utilities.version import get_version
 from utilities.whenever import serialize_zoned_datetime
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Iterable, Iterator
+    from collections.abc import Callable, Iterable, Iterator
     from logging import _FormatStyle
     from types import FrameType, TracebackType
 
@@ -570,7 +570,7 @@ def trace(
 
         return trace_sync
 
-    func_typed = cast("Callable[_P, Awaitable[_R]]", func)
+    func_typed = cast("Callable[_P, Coroutine1[_R]]", func)
 
     @wraps(func)
     async def trace_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
