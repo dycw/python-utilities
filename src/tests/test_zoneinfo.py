@@ -84,7 +84,9 @@ class TestGetTimeZoneName:
         ]),
     )
     def test_main(self, *, data: DataObject, time_zone: TimeZone) -> None:
-        zone_info_or_str = data.draw(sampled_from([ZoneInfo(time_zone), time_zone]))
+        zone_info_or_str: ZoneInfo | TimeZone = data.draw(
+            sampled_from([ZoneInfo(time_zone), time_zone])
+        )
         result = get_time_zone_name(zone_info_or_str)
         assert result == time_zone
 
