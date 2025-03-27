@@ -728,6 +728,11 @@ def get_log_records(
         outputs = concurrent_map(func, files, parallelism=parallelism)
     else:
         outputs = pqdm_map(func, files, parallelism=parallelism)
+    records = sorted(
+        chain.from_iterable(o.records for o in outputs), key=lambda r: r.datetime
+    )
+    for i, record in enumerate(records):
+        record.index = i
     return GetLogRecordsOutput(
         path=path,
         files=files,
@@ -738,9 +743,7 @@ def get_log_records(
         num_lines_ok=sum(o.num_lines_ok for o in outputs),
         num_lines_blank=sum(o.num_lines_blank for o in outputs),
         num_lines_error=sum(o.num_lines_error for o in outputs),
-        records=sorted(
-            chain.from_iterable(o.records for o in outputs), key=lambda r: r.datetime
-        ),
+        records=records,
         missing=set(reduce(or_, (o.missing for o in outputs), set())),
         other_errors=list(chain.from_iterable(o.other_errors for o in outputs)),
     )
@@ -1081,7 +1084,7 @@ class _GetLogRecordsOneOutput:
     num_lines_ok: int = 0
     num_lines_blank: int = 0
     num_lines_error: int = 0
-    records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
+    records: list[IndexedOrjsonLogRecord] = field(default_factory=list, repr=False)
     missing: set[str] = field(default_factory=set)
     other_errors: list[Exception] = field(default_factory=list, repr=False)
 
