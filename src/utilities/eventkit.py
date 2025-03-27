@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from asyncio import iscoroutinefunction
+from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, assert_never, cast, override
-
-from attr import dataclass
 
 from utilities.functions import apply_decorators
 from utilities.iterables import always_iterable
