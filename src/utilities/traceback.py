@@ -48,7 +48,7 @@ from utilities.rich import (
     yield_call_args_repr,
     yield_mapping_repr,
 )
-from utilities.types import TBaseException
+from utilities.types import TBaseException, TCallable
 from utilities.version import get_version
 from utilities.whenever import serialize_zoned_datetime
 
@@ -57,7 +57,7 @@ if TYPE_CHECKING:
     from logging import _FormatStyle
     from types import FrameType, TracebackType
 
-    from utilities.types import Coroutine1, MaybeCoroutine1, StrMapping
+    from utilities.types import Coroutine1, StrMapping
 
 
 _P = ParamSpec("_P")
@@ -548,19 +548,13 @@ def _get_rich_traceback_base_one(
     return error
 
 
-@overload
-def trace(func: Callable[_P, Coroutine1[_R]], /) -> Callable[_P, Coroutine1[_R]]: ...
-@overload
-def trace(func: Callable[_P, _R], /) -> Callable[_P, _R]: ...
-def trace(
-    func: Callable[_P, MaybeCoroutine1[_R]], /
-) -> Callable[_P, MaybeCoroutine1[_R]]:
+def trace(func: TCallable, /) -> TCallable:
     """Trace a function call."""
     if not iscoroutinefunction(func):
-        func_typed = cast("Callable[_P, _R]", func)
+        func_typed = cast("Callable[..., Any]", func)
 
         @wraps(func)
-        def trace_sync(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+        def trace_sync(*args: Any, **kwargs: Any) -> Any:
             locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
             try:
                 return func_typed(*args, **kwargs)
@@ -568,9 +562,9 @@ def trace(
                 cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
                 raise
 
-        return trace_sync
+        return cast("TCallable", trace_sync)
 
-    func_typed = cast("Callable[_P, Coroutine1[_R]]", func)
+    func_typed = cast("Callable[..., Coroutine1[Any]]", func)
 
     @wraps(func)
     async def trace_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
@@ -581,7 +575,7 @@ def trace(
             cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
             raise
 
-    return trace_async
+    return cast("TCallable", trace_async)
 
 
 @overload
