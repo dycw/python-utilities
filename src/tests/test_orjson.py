@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Iterable
 from io import StringIO
 from logging import DEBUG, FileHandler, StreamHandler, getLogger
 from pathlib import Path
@@ -305,7 +306,7 @@ class TestGetLogRecords:
             match extra:
                 case bool() as has_extra:
                     assert all((r.extra is not None) is has_extra for r in records)
-                case _ as keys:
+                case str() | Iterable() as keys:
                     assert all(
                         (r.extra is not None)
                         and set(r.extra).issuperset(always_iterable(keys))
