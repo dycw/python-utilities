@@ -178,7 +178,7 @@ class TestAddListener:
             case "no/sync":
                 _ = add_listener(event, listener_sync, ignore=ValueError)
             case "no/async":
-                _ = add_listener(event, listener_sync, ignore=ValueError)
+                _ = add_listener(event, listener_async, ignore=ValueError)
             case "have/sync":
                 _ = add_listener(
                     event, listener_sync, error=error_sync, ignore=ValueError
