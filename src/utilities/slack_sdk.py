@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from asyncio import CancelledError, Lock, Queue, QueueEmpty, Task, get_event_loop
+from asyncio import Queue
 from dataclasses import dataclass
 from http import HTTPStatus
-from logging import NOTSET, Handler, LogRecord, getLogger
+from itertools import chain
+from logging import NOTSET, Handler, LogRecord
 from typing import TYPE_CHECKING, override
 
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
-from utilities.asyncio import sleep_dur
+from utilities.asyncio import QueueProcessor
 from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float
 from utilities.functools import cache
 from utilities.math import safe_round
@@ -21,20 +22,16 @@ if TYPE_CHECKING:
 
     from utilities.types import Duration
 
-_LOGGER = getLogger(__name__)
 _TIMEOUT = MINUTE
-_FREQ = SECOND
+_SLEEP = SECOND
 
 
-class SlackHandler(Handler):
+##
+
+
+@dataclass(init=False, order=True, unsafe_hash=True)
+class SlackHandler(Handler, QueueProcessor[str]):
     """Handler for sending messages to Slack."""
-
-    _url: str
-    _timeout: Duration
-    _lock: Lock
-    _callback: Callable[[], None] | None
-    _queue: Queue[str]
-    _task: Task[None]
 
     @override
     def __init__(
@@ -43,63 +40,42 @@ class SlackHandler(Handler):
         /,
         *,
         level: int = NOTSET,
+        queue_type: type[Queue[str]] = Queue,
+        queue_max_size: int | None = None,
         timeout: Duration = _TIMEOUT,
-        freq: Duration = _FREQ,
+        freq: Duration = _SLEEP,
         callback: Callable[[], None] | None = None,
     ) -> None:
-        super().__init__(level=level)
-        self._url = url
-        self._timeout = timeout
-        self._freq = freq
-        self._callback = callback
-        self._lock = Lock()
-        self._queue = Queue()
-        self._task = get_event_loop().create_task(self._loop_send())
-
-    def __del__(self) -> None:
-        _ = self._task.cancel()  # pragma: no cover
+        QueueProcessor.__init__(  # QueueProcessor first
+            self, queue_type=queue_type, queue_max_size=queue_max_size
+        )
+        self.__post_init__()
+        Handler.__init__(self, level=level)
+        self.url = url
+        self.timeout = timeout
+        self.freq = freq
+        self.callback = callback
 
     @override
     def emit(self, record: LogRecord) -> None:
         try:
-            self._queue.put_nowait(self.format(record))
+            self.enqueue(self.format(record))
         except GetVersionError:  # pragma: no cover
             raise
         except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
-    async def send(self, *, cancel: bool = False) -> None:
-        """Send the queued messages to Slack."""
-        try:
-            async with self._lock:
-                messages: list[str] = []
-                while True:
-                    try:
-                        message = self._queue.get_nowait()
-                    except QueueEmpty:
-                        break
-                    else:
-                        messages.append(message)
-            if len(messages) >= 1:
-                _LOGGER.debug("Sending %s messages(s)", len(messages))
-                text = "\n".join(messages)
-                try:
-                    await send_to_slack(self._url, text, timeout=self._timeout)
-                except CancelledError:
-                    return  # pragma: no cover
-                except Exception:
-                    _LOGGER.exception("Slack handler error")
-                else:
-                    if self._callback is not None:  # pragma: no cover
-                        self._callback()
-        finally:
-            if cancel:
-                _ = self._task.cancel()
+    @override
+    async def _run(self, item: str, /) -> None:
+        """Run the handler."""
+        items = list(chain([item], await self._get_items_nowait()))  # pragma: no cover
+        text = "\n".join(items)  # pragma: no cover
+        await send_to_slack(self.url, text, timeout=self.timeout)  # pragma: no cover
+        if self.callback is not None:  # pragma: no cover
+            self.callback()
 
-    async def _loop_send(self) -> None:
-        while True:
-            await self.send()
-            await sleep_dur(duration=self._freq)
+
+##
 
 
 async def send_to_slack(
