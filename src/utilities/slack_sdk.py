@@ -74,7 +74,7 @@ class SlackHandler(Handler, QueueProcessor[str]):
         await send_to_slack(self.url, text, timeout=self.timeout)  # pragma: no cover
         if self.callback is not None:  # pragma: no cover
             self.callback()
-        await sleep_dur(duration=self.sleep)
+        await sleep_dur(duration=self.sleep)  # pragma: no cover
 
 
 ##
