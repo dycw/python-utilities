@@ -170,6 +170,7 @@ __all__ = [
     "SupportsDunderGT",
     "SupportsDunderLT",
     "SupportsRichComparison",
+    "TimeZone",
     "TimeZoneLike",
     "TupleOrStrMapping",
 ]
