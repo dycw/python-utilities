@@ -1,18 +1,21 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from functools import cache as _cache
 from functools import lru_cache as _lru_cache
 from functools import partial as _partial
-from typing import Any, TypeVar, cast, overload, override
+from typing import TYPE_CHECKING, Any, TypeVar, cast, overload, override
 
-_F = TypeVar("_F", bound=Callable[..., Any])
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from utilities.types import TCallable
+
 _T = TypeVar("_T")
 
 
-def cache(func: _F, /) -> _F:
+def cache(func: TCallable, /) -> TCallable:
     """Typed version of `cache`."""
-    typed_cache = cast("Callable[[_F], _F]", _cache)
+    typed_cache = cast("Callable[[TCallable], TCallable]", _cache)
     return typed_cache(func)
 
 
@@ -20,18 +23,20 @@ def cache(func: _F, /) -> _F:
 
 
 @overload
-def lru_cache(func: _F, /, *, max_size: int = ..., typed: bool = ...) -> _F: ...
+def lru_cache(
+    func: TCallable, /, *, max_size: int = ..., typed: bool = ...
+) -> TCallable: ...
 @overload
 def lru_cache(
     func: None = None, /, *, max_size: int = ..., typed: bool = ...
-) -> Callable[[_F], _F]: ...
+) -> Callable[[TCallable], TCallable]: ...
 def lru_cache(
-    func: _F | None = None, /, *, max_size: int = 128, typed: bool = False
-) -> _F | Callable[[_F], _F]:
+    func: TCallable | None = None, /, *, max_size: int = 128, typed: bool = False
+) -> TCallable | Callable[[TCallable], TCallable]:
     """Typed version of `lru_cache`."""
     if func is None:
         result = partial(lru_cache, max_size=max_size, typed=typed)
-        return cast("Callable[[_F], _F]", result)
+        return cast("Callable[[TCallable], TCallable]", result)
     wrapped = _lru_cache(maxsize=max_size, typed=typed)(func)
     return cast("Any", wrapped)
 

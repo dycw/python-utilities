@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import builtins
-from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import islice
 from textwrap import indent
 from typing import (
+    TYPE_CHECKING,
     Any,
     Generic,
     Literal,
@@ -23,26 +23,30 @@ from more_itertools import peekable as _peekable
 from utilities.functions import get_class_name
 from utilities.sentinel import Sentinel, sentinel
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+
+    from utilities.types import THashable
+
 _T = TypeVar("_T")
-_THashable = TypeVar("_THashable", bound=Hashable)
 _U = TypeVar("_U")
 
 
 @overload
 def bucket_mapping(
-    iterable: Iterable[_T], func: Callable[[_T], _THashable], /, *, list: Literal[True]
-) -> Mapping[_THashable, Sequence[_T]]: ...
+    iterable: Iterable[_T], func: Callable[[_T], THashable], /, *, list: Literal[True]
+) -> Mapping[THashable, Sequence[_T]]: ...
 @overload
 def bucket_mapping(
-    iterable: Iterable[_T], func: Callable[[_T], _THashable], /, *, list: bool = False
-) -> Mapping[_THashable, Iterator[_T]]: ...
+    iterable: Iterable[_T], func: Callable[[_T], THashable], /, *, list: bool = False
+) -> Mapping[THashable, Iterator[_T]]: ...
 def bucket_mapping(
     iterable: Iterable[_T],
-    func: Callable[[_T], _THashable],
+    func: Callable[[_T], THashable],
     /,
     *,
     list: bool = False,  # noqa: A002
-) -> Mapping[_THashable, Iterator[_T]] | Mapping[_THashable, Sequence[_T]]:
+) -> Mapping[THashable, Iterator[_T]] | Mapping[THashable, Sequence[_T]]:
     """Bucket the values of iterable into a mapping."""
     b = bucket(iterable, func)
     mapping = {key: b[key] for key in b}

@@ -34,6 +34,7 @@ from utilities.types import (
     Dataclass,
     Number,
     StrMapping,
+    TCallable,
     TSupportsRichComparison,
     TupleOrStrMapping,
 )
@@ -42,7 +43,6 @@ if TYPE_CHECKING:
     from collections.abc import Container, Hashable, Sized
 
 
-_F = TypeVar("_F", bound=Callable[..., Any])
 _P = ParamSpec("_P")
 _T = TypeVar("_T")
 _T1 = TypeVar("_T1")
@@ -56,12 +56,16 @@ _U = TypeVar("_U")
 ##
 
 
-def apply_decorators(func: _F, /, *decorators: Callable[[_F], _F]) -> _F:
+def apply_decorators(
+    func: TCallable, /, *decorators: Callable[[TCallable], TCallable]
+) -> TCallable:
     """Apply a set of decorators to a function."""
     return reduce(_apply_decorators_one, decorators, func)
 
 
-def _apply_decorators_one(acc: _F, el: Callable[[_F], _F], /) -> _F:
+def _apply_decorators_one(
+    acc: TCallable, el: Callable[[TCallable], TCallable], /
+) -> TCallable:
     return el(acc)
 
 
