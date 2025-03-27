@@ -162,7 +162,7 @@ class TestGetLogRecords:
             output.dataframe,
             height=len(items),
             schema_list={
-                "i": UInt64,
+                "index": UInt64,
                 "name": String,
                 "message": String,
                 "level": UInt64,

@@ -759,7 +759,7 @@ class GetLogRecordsOutput:
     num_lines_ok: int = 0
     num_lines_blank: int = 0
     num_lines_error: int = 0
-    records: list[OrjsonLogRecord] = field(default_factory=list, repr=False)
+    records: list[IndexedOrjsonLogRecord] = field(default_factory=list, repr=False)
     missing: set[str] = field(default_factory=set)
     other_errors: list[Exception] = field(default_factory=list)
 
@@ -794,12 +794,9 @@ class GetLogRecordsOutput:
         else:
             time_zone = get_local_time_zone()
         return DataFrame(
-            data=[
-                {"i": i, **dataclass_to_dict(r, recursive=False)}
-                for i, r in enumerate(records)
-            ],
+            data=[dataclass_to_dict(r, recursive=False) for r in records],
             schema={
-                "i": UInt64,
+                "index": UInt64,
                 "name": String,
                 "message": String,
                 "level": UInt64,
@@ -987,6 +984,13 @@ class OrjsonLogRecord:
         return self.datetime.date()
 
 
+@dataclass(order=True, kw_only=True)
+class IndexedOrjsonLogRecord(OrjsonLogRecord):
+    """An indexed log record."""
+
+    index: int
+
+
 def _get_log_records_one(
     path: Path,
     /,
@@ -1003,7 +1007,7 @@ def _get_log_records_one(
         return _GetLogRecordsOneOutput(path=path, file_ok=False, other_errors=[error])
     num_lines_blank, num_lines_error = 0, 0
     missing: set[str] = set()
-    records: list[OrjsonLogRecord] = []
+    records: list[IndexedOrjsonLogRecord] = []
     errors: list[Exception] = []
     objects_use = {OrjsonLogRecord} | (set() if objects is None else objects)
     for i, line in enumerate(lines, start=1):
@@ -1032,7 +1036,21 @@ def _get_log_records_one(
             else:
                 record.log_file = path
                 record.log_file_line_num = i
-                records.append(record)
+                indexed = IndexedOrjsonLogRecord(
+                    index=len(records),
+                    name=record.name,
+                    message=record.message,
+                    level=record.level,
+                    path_name=record.path_name,
+                    line_num=record.line_num,
+                    datetime=record.datetime,
+                    func_name=record.func_name,
+                    stack_info=record.stack_info,
+                    extra=record.extra,
+                    log_file=record.log_file,
+                    log_file_line_num=record.log_file_line_num,
+                )
+                records.append(indexed)
     return _GetLogRecordsOneOutput(
         path=path,
         file_ok=True,
