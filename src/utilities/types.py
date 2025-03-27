@@ -40,6 +40,8 @@ class Dataclass(Protocol):
     __dataclass_fields__: ClassVar[dict[str, Any]]
 
 
+TDataclass = TypeVar("TDataclass", bound=Dataclass)
+
 # datetime
 type DateOrDateTime = dt.date | dt.datetime
 
@@ -142,6 +144,7 @@ __all__ = [
     "SupportsDunderGT",
     "SupportsDunderLT",
     "SupportsRichComparison",
+    "TDataclass",
     "THashable",
     "THashable1",
     "THashable2",
