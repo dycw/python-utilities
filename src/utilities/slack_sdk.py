@@ -50,7 +50,7 @@ class SlackHandler(Handler, QueueProcessor[str]):
         QueueProcessor.__init__(  # QueueProcessor first
             self, queue_type=queue_type, queue_max_size=queue_max_size
         )
-        QueueProcessor.__post_init__()
+        QueueProcessor.__post_init__(self)
         Handler.__init__(self, level=level)
         self.url = url
         self.timeout = timeout
