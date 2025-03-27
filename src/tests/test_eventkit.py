@@ -1,92 +1,245 @@
 from __future__ import annotations
 
 from asyncio import sleep
+from functools import wraps
+from io import StringIO
+from logging import DEBUG, StreamHandler, getLogger
 from re import search
-from typing import TYPE_CHECKING, ClassVar, Literal
+from typing import TYPE_CHECKING, Literal, ParamSpec, TypeVar
 
 from eventkit import Event
-from hypothesis import HealthCheck, given
-from hypothesis.strategies import integers, sampled_from
-from pytest import CaptureFixture
+from hypothesis import given
+from hypothesis.strategies import sampled_from
+from pytest import raises
 
-from utilities.eventkit import add_listener
-from utilities.functions import identity
-from utilities.hypothesis import settings_with_reduced_examples
+from utilities.eventkit import AddListenerError, add_listener
+from utilities.hypothesis import temp_paths, text_ascii
 
 if TYPE_CHECKING:
-    from pytest import CaptureFixture
+    from collections.abc import Callable
+    from pathlib import Path
+
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 
 
 class TestAddListener:
-    datetime: ClassVar[str] = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
-
-    @given(sync_or_async=sampled_from(["sync", "async"]), n=integers())
-    async def test_main(
-        self, *, sync_or_async: Literal["sync", "async"], n: int
-    ) -> None:
+    @given(sync_or_async=sampled_from(["sync", "async"]))
+    async def test_main(self, *, sync_or_async: Literal["sync", "async"]) -> None:
         event = Event()
+        called = False
         match sync_or_async:
             case "sync":
 
-                def listener_sync(n: int, /) -> None:
-                    print(f"n={n}")  # noqa: T201
+                def listener_sync() -> None:
+                    nonlocal called
+                    called |= True
 
                 _ = add_listener(event, listener_sync)
             case "async":
 
-                async def listener_async(n: int, /) -> None:
+                async def listener_async() -> None:
+                    nonlocal called
+                    called |= True
                     await sleep(0.01)
-                    print(f"n={n}")  # noqa: T201
 
                 _ = add_listener(event, listener_async)
 
-        event.emit(n)
+        event.emit()
+        await sleep(0.01)
+        assert called
 
-    @given(n=integers())
-    @settings_with_reduced_examples(
-        suppress_health_check={HealthCheck.function_scoped_fixture}
-    )
-    def test_custom_error_handler(self, *, capsys: CaptureFixture, n: int) -> None:
+    @given(root=temp_paths(), sync_or_async=sampled_from(["sync", "async"]))
+    async def test_no_error_handler_but_run_into_error(
+        self, *, root: Path, sync_or_async: Literal["sync", "async"]
+    ) -> None:
+        logger = getLogger(str(root))
+        logger.setLevel(DEBUG)
+        handler = StreamHandler(buffer := StringIO())
+        handler.setLevel(DEBUG)
+        logger.addHandler(handler)
         event = Event()
 
-        def error(event: Event, exception: Exception, /) -> None:
-            _ = (event, exception)
-            print("Custom handler")  # noqa: T201
+        match sync_or_async:
+            case "sync":
 
-        _ = add_listener(event, identity, error=error)
-        event.emit(n, n)
-        out = capsys.readouterr().out
-        *_, line = out.splitlines()
-        assert line == "Custom handler"
+                def listener_sync() -> None: ...
 
-    @given(n=integers())
-    @settings_with_reduced_examples(
-        suppress_health_check={HealthCheck.function_scoped_fixture}
+                _ = add_listener(event, listener_sync, logger=str(root))
+            case "async":
+
+                async def listener_async() -> None:
+                    await sleep(0.01)
+
+                _ = add_listener(event, listener_async, logger=str(root))
+
+        event.emit(None)
+        await sleep(0.01)
+        pattern = r"listener_a?sync\(\) takes 0 positional arguments but 1 was given"
+        contents = buffer.getvalue()
+        assert search(pattern, contents)
+
+    @given(
+        name=text_ascii(min_size=1), case=sampled_from(["sync", "async/sync", "async"])
     )
-    async def test_error_stdout(self, *, capsys: CaptureFixture, n: int) -> None:
-        event = Event()
-        _ = add_listener(event, identity)
-        event.emit(n, n)
-        out = capsys.readouterr().out
-        (line1, line2, line3) = out.splitlines()
-        assert line1 == "Raised a TypeError whilst running 'Event':"
-        pattern2 = (
-            r"^event=Event<Event, \[\[None, None, <function identity at .*>\]\]>$"
-        )
-        assert search(pattern2, line2)
-        assert (
-            line3
-            == "exception=TypeError('identity() takes 1 positional argument but 2 were given')"
-        )
+    async def test_with_error_handler(
+        self, *, name: str, case: Literal["sync", "async/sync", "async"]
+    ) -> None:
+        event = Event(name=name)
+        assert event.name() == name
+        called = False
+        log: set[tuple[str, type[Exception]]] = set()
 
-    @given(n=integers())
-    @settings_with_reduced_examples(
-        suppress_health_check={HealthCheck.function_scoped_fixture}
+        def listener_sync(is_success: bool, /) -> None:  # noqa: FBT001
+            if is_success:
+                nonlocal called
+                called |= True
+            else:
+                raise ValueError
+
+        def error_sync(event: Event, exception: Exception, /) -> None:
+            nonlocal log
+            log.add((event.name(), type(exception)))
+
+        async def listener_async(is_success: bool, /) -> None:  # noqa: FBT001
+            if is_success:
+                nonlocal called
+                called |= True
+                await sleep(0.01)
+            else:
+                raise ValueError
+
+        async def error_async(event: Event, exception: Exception, /) -> None:
+            nonlocal log
+            log.add((event.name(), type(exception)))
+            await sleep(0.01)
+
+        match case:
+            case "sync":
+                _ = add_listener(event, listener_sync, error=error_sync)
+            case "async/sync":
+                _ = add_listener(event, listener_async, error=error_sync)
+            case "async":
+                _ = add_listener(event, listener_async, error=error_async)
+        event.emit(True)  # noqa: FBT003
+        await sleep(0.01)
+        assert called
+        assert log == set()
+        event.emit(False)  # noqa: FBT003
+        await sleep(0.01)
+        assert log == {(name, ValueError)}
+
+    @given(
+        case=sampled_from([
+            "no/sync",
+            "no/async",
+            "have/sync",
+            "have/async/sync",
+            "have/async",
+        ])
     )
-    async def test_error_ignore(self, *, capsys: CaptureFixture, n: int) -> None:
+    async def test_ignore(
+        self,
+        *,
+        case: Literal[
+            "no/sync", "no/async", "have/sync", "have/async/sync", "have/async"
+        ],
+    ) -> None:
         event = Event()
-        _ = add_listener(event, identity, error_ignore=TypeError)
-        event.emit(n, n)
-        out = capsys.readouterr().out
-        expected = ""
-        assert out == expected
+        called = False
+        log: set[tuple[str, type[Exception]]] = set()
+
+        def listener_sync(is_success: bool, /) -> None:  # noqa: FBT001
+            if is_success:
+                nonlocal called
+                called |= True
+            else:
+                raise ValueError
+
+        def error_sync(event: Event, exception: Exception, /) -> None:
+            nonlocal log
+            log.add((event.name(), type(exception)))
+
+        async def listener_async(is_success: bool, /) -> None:  # noqa: FBT001
+            if is_success:
+                nonlocal called
+                called |= True
+                await sleep(0.01)
+            else:
+                raise ValueError
+
+        async def error_async(event: Event, exception: Exception, /) -> None:
+            nonlocal log
+            log.add((event.name(), type(exception)))
+            await sleep(0.01)
+
+        match case:
+            case "no/sync":
+                _ = add_listener(event, listener_sync, ignore=ValueError)
+            case "no/async":
+                _ = add_listener(event, listener_async, ignore=ValueError)
+            case "have/sync":
+                _ = add_listener(
+                    event, listener_sync, error=error_sync, ignore=ValueError
+                )
+            case "have/async/sync":
+                _ = add_listener(
+                    event, listener_async, error=error_sync, ignore=ValueError
+                )
+            case "have/async":
+                _ = add_listener(
+                    event, listener_async, error=error_async, ignore=ValueError
+                )
+        event.emit(True)  # noqa: FBT003
+        await sleep(0.01)
+        assert called
+        assert log == set()
+        event.emit(False)  # noqa: FBT003
+        await sleep(0.01)
+        assert log == set()
+
+    def test_decorators(self) -> None:
+        event = Event()
+        counter = 0
+
+        def listener() -> None:
+            nonlocal counter
+            counter += 1
+
+        def increment(func: Callable[_P, _R], /) -> Callable[_P, _R]:
+            @wraps(func)
+            def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+                nonlocal counter
+                counter += 1
+                return func(*args, **kwargs)
+
+            return wrapped
+
+        _ = add_listener(event, listener, decorators=increment)
+        event.emit()
+        assert counter == 2
+
+    def test_error(self) -> None:
+        event = Event()
+        counter = 0
+        log: set[tuple[str, type[Exception]]] = set()
+
+        def listener(n: int, /) -> None:
+            if n >= 0:
+                nonlocal counter
+                counter += n
+            else:
+                msg = "'n' must be non-negative"
+                raise ValueError(msg)
+
+        async def error(event: Event, exception: Exception, /) -> None:
+            nonlocal log
+            log.add((event.name(), type(exception)))
+            await sleep(0.01)
+
+        with raises(
+            AddListenerError,
+            match="Synchronous listener .* cannot be paired with an asynchronous error handler .*",
+        ):
+            _ = add_listener(event, listener, error=error)

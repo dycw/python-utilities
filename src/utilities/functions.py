@@ -34,7 +34,8 @@ from utilities.types import (
     Dataclass,
     Number,
     StrMapping,
-    TCallable,
+    TCallable1,
+    TCallable2,
     TSupportsRichComparison,
     TupleOrStrMapping,
 )
@@ -57,15 +58,15 @@ _U = TypeVar("_U")
 
 
 def apply_decorators(
-    func: TCallable, /, *decorators: Callable[[TCallable], TCallable]
-) -> TCallable:
+    func: TCallable1, /, *decorators: Callable[[TCallable2], TCallable2]
+) -> TCallable1:
     """Apply a set of decorators to a function."""
     return reduce(_apply_decorators_one, decorators, func)
 
 
 def _apply_decorators_one(
-    acc: TCallable, el: Callable[[TCallable], TCallable], /
-) -> TCallable:
+    acc: TCallable1, el: Callable[[TCallable2], TCallable2], /
+) -> TCallable1:
     return el(acc)
 
 
