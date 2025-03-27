@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, assert_never, override
+from typing import TYPE_CHECKING, assert_never, cast, override
 from zoneinfo import ZoneInfo
 
 if TYPE_CHECKING:
@@ -67,7 +67,7 @@ class _EnsureTimeZoneLocalDateTimeError(EnsureTimeZoneError):
 
 def get_time_zone_name(time_zone: TimeZoneLike, /) -> TimeZone:
     """Get the name of a time zone."""
-    return ensure_time_zone(time_zone).key
+    return cast("TimeZone", ensure_time_zone(time_zone).key)
 
 
 __all__ = [

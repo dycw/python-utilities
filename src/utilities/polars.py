@@ -6,7 +6,6 @@ from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import asdict, dataclass
-from datetime import timezone
 from functools import partial, reduce
 from itertools import chain
 from math import ceil, log
@@ -1575,7 +1574,7 @@ def yield_struct_series_dataclasses(
 
 
 def zoned_datetime(
-    *, time_unit: TimeUnit = "us", time_zone: TimeZoneLike | timezone = UTC
+    *, time_unit: TimeUnit = "us", time_zone: TimeZoneLike = UTC
 ) -> Datetime:
     """Create a zoned datetime data type."""
     return Datetime(time_unit=time_unit, time_zone=get_time_zone_name(time_zone))
