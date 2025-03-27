@@ -34,6 +34,7 @@ from utilities.types import (
     Dataclass,
     Number,
     StrMapping,
+    TCallable,
     TCallable1,
     TCallable2,
     TSupportsRichComparison,
@@ -61,12 +62,10 @@ def apply_decorators(
     func: TCallable1, /, *decorators: Callable[[TCallable2], TCallable2]
 ) -> TCallable1:
     """Apply a set of decorators to a function."""
-    return reduce(_apply_decorators_one, decorators, func)
+    return cast("TCallable1", reduce(_apply_decorators_one, decorators, func))
 
 
-def _apply_decorators_one(
-    acc: TCallable1, el: Callable[[TCallable1], TCallable2], /
-) -> TCallable2:
+def _apply_decorators_one(acc: TCallable, el: Callable[[Any], Any], /) -> TCallable:
     return el(acc)
 
 
