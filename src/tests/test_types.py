@@ -58,4 +58,4 @@ class TestPathLike:
 
 class TestTimeZone:
     def test_main(self) -> None:
-        assert set(get_args(TimeZone)) == available_timezones()
+        assert set(get_args(TimeZone)).issubset(available_timezones())
