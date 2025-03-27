@@ -30,11 +30,6 @@ type MaybeCoroutine1[_T] = _T | Coroutine1[_T]
 
 # callable
 TCallable = TypeVar("TCallable", bound=Callable[..., Any])
-TCallable1 = TypeVar("TCallable1", bound=Callable[..., Any])
-TCallable2 = TypeVar("TCallable2", bound=Callable[..., Any])
-TCallableMaybeCoroutine1None = TypeVar(
-    "TCallableMaybeCoroutine1None", bound=Callable[..., MaybeCoroutine1[None]]
-)
 
 
 # concurrent
@@ -50,6 +45,7 @@ class Dataclass(Protocol):
 
 
 TDataclass = TypeVar("TDataclass", bound=Dataclass)
+
 
 # datetime
 type DateOrDateTime = dt.date | dt.datetime
@@ -164,6 +160,7 @@ __all__ = [
     "SupportsDunderGT",
     "SupportsDunderLT",
     "SupportsRichComparison",
+    "TCallable",
     "TDataclass",
     "THashable",
     "THashable1",
