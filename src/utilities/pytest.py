@@ -5,7 +5,7 @@ from functools import partial, wraps
 from inspect import iscoroutinefunction
 from os import environ
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast, overload, override
+from typing import TYPE_CHECKING, Any, ParamSpec, cast, overload, override
 
 from pytest import fixture
 
@@ -22,14 +22,19 @@ from utilities.platform import (
     IS_WINDOWS,
 )
 from utilities.random import get_state
-from utilities.types import Coroutine1, MaybeCoroutine1
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Callable, Iterable, Sequence
     from random import Random
 
-    from utilities.types import Duration, PathLike
+    from utilities.types import (
+        Coroutine1,
+        Duration,
+        MaybeCoroutine1,
+        PathLike,
+        TCallableMaybeCoroutine1None,
+    )
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config  # pyright: ignore[reportPrivateImportUsage]
@@ -55,7 +60,6 @@ else:
     skipif_not_linux = mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
 
 
-_F = TypeVar("_F", bound=Callable[..., MaybeCoroutine1[None]])
 _P = ParamSpec("_P")
 
 
@@ -169,7 +173,7 @@ def random_state(*, seed: int) -> Random:
 
 def throttle(
     *, root: PathLike | None = None, duration: Duration = 1.0, on_try: bool = False
-) -> Callable[[_F], _F]:
+) -> Callable[[TCallableMaybeCoroutine1None], TCallableMaybeCoroutine1None]:
     """Throttle a test. On success by default, on try otherwise."""
     root_use = Path(".pytest_cache", "throttle") if root is None else Path(root)
     return cast(
