@@ -49,7 +49,6 @@ class Dataclass(Protocol):
 
 TDataclass = TypeVar("TDataclass", bound=Dataclass)
 
-
 # datetime
 type DateOrDateTime = dt.date | dt.datetime
 
@@ -163,6 +162,7 @@ __all__ = [
     "SupportsDunderGT",
     "SupportsDunderLT",
     "SupportsRichComparison",
+    "TDataclass",
     "THashable",
     "THashable1",
     "THashable2",
