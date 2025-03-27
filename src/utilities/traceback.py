@@ -57,7 +57,7 @@ if TYPE_CHECKING:
     from logging import _FormatStyle
     from types import FrameType, TracebackType
 
-    from utilities.types import MaybeAwaitable, StrMapping
+    from utilities.types import Coroutine1, MaybeCoroutine1, StrMapping
 
 
 _P = ParamSpec("_P")
@@ -549,12 +549,12 @@ def _get_rich_traceback_base_one(
 
 
 @overload
-def trace(func: Callable[_P, Awaitable[_R]], /) -> Callable[_P, Awaitable[_R]]: ...
+def trace(func: Callable[_P, Coroutine1[_R]], /) -> Callable[_P, Coroutine1[_R]]: ...
 @overload
 def trace(func: Callable[_P, _R], /) -> Callable[_P, _R]: ...
 def trace(
-    func: Callable[_P, MaybeAwaitable[_R]], /
-) -> Callable[_P, MaybeAwaitable[_R]]:
+    func: Callable[_P, MaybeCoroutine1[_R]], /
+) -> Callable[_P, MaybeCoroutine1[_R]]:
     """Trace a function call."""
     if not iscoroutinefunction(func):
         func_typed = cast("Callable[_P, _R]", func)
