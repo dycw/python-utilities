@@ -43,10 +43,10 @@ def add_listener(
             @wraps(listener)
             def listener_no_error_sync(*args: Any, **kwargs: Any) -> None:
                 try:
-                    return listener_typed(*args, **kwargs)
+                    listener_typed(*args, **kwargs)
                 except Exception as exc:
                     if (error_ignore is not None) and isinstance(exc, error_ignore):
-                        return None
+                        return
                     logger.exception("")
 
             listener_use = listener_no_error_sync
@@ -57,10 +57,10 @@ def add_listener(
             @wraps(listener)
             async def listener_no_error_async(*args: Any, **kwargs: Any) -> None:
                 try:
-                    return await listener_typed(*args, **kwargs)
+                    await listener_typed(*args, **kwargs)
                 except Exception as exc:
                     if (error_ignore is not None) and isinstance(exc, error_ignore):
-                        return None
+                        return
                     logger.exception("")
 
             listener_use = listener_no_error_async
@@ -73,13 +73,13 @@ def add_listener(
                     @wraps(listener)
                     def listener_have_error_sync(*args: Any, **kwargs: Any) -> None:
                         try:
-                            return listener_typed(*args, **kwargs)
+                            listener_typed(*args, **kwargs)
                         except Exception as exc:  # noqa: BLE001
                             if (error_ignore is not None) and isinstance(
                                 exc, error_ignore
                             ):
-                                return None
-                            return error_typed(event, exc)
+                                return
+                            error_typed(event, exc)
 
                     listener_use = listener_have_error_sync
                 case False, True:
@@ -92,22 +92,23 @@ def add_listener(
                         *args: Any, **kwargs: Any
                     ) -> None:
                         try:
-                            return await listener_typed(*args, **kwargs)
+                            await listener_typed(*args, **kwargs)
                         except Exception as exc:  # noqa: BLE001
                             if (error_ignore is not None) and isinstance(
                                 exc, error_ignore
                             ):
-                                return None
+                                return
                             if iscoroutinefunction(error):
                                 error_typed = cast(
                                     "Callable[[Event, Exception], Coroutine1[None]]",
                                     error,
                                 )
-                                return await error_typed(event, exc)
-                            error_typed = cast(
-                                "Callable[[Event, Exception], None]", error
-                            )
-                            return error_typed(event, exc)
+                                await error_typed(event, exc)
+                            else:
+                                error_typed = cast(
+                                    "Callable[[Event, Exception], None]", error
+                                )
+                                error_typed(event, exc)
 
                     listener_use = listener_have_error_async
 
