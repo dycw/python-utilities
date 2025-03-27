@@ -8,12 +8,13 @@ from re import search
 from typing import TYPE_CHECKING, Literal, ParamSpec, TypeVar
 
 from eventkit import Event
-from hypothesis import given
-from hypothesis.strategies import sampled_from
-from pytest import raises
+from hypothesis import HealthCheck, given
+from hypothesis.strategies import integers, sampled_from
+from pytest import CaptureFixture, mark
 
-from utilities.eventkit import AddListenerError, add_listener
-from utilities.hypothesis import temp_paths, text_ascii
+from utilities.eventkit import add_listener
+from utilities.functions import identity
+from utilities.hypothesis import settings_with_reduced_examples, text_ascii
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -23,62 +24,61 @@ if TYPE_CHECKING:
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
-
-class TestAddListener:
-    @given(sync_or_async=sampled_from(["sync", "async"]))
-    async def test_main(self, *, sync_or_async: Literal["sync", "async"]) -> None:
+    @mark.only
+    @given(sync_or_async=sampled_from(["sync", "async"]), n=integers())
+    async def test_main(
+        self, *, sync_or_async: Literal["sync", "async"], n: int
+    ) -> None:
         event = Event()
-        called = False
+        counter = 0
         match sync_or_async:
             case "sync":
 
-                def listener_sync() -> None:
-                    nonlocal called
-                    called |= True
+                def listener_sync(n: int, /) -> None:
+                    nonlocal counter
+                    counter += n
 
                 _ = add_listener(event, listener_sync)
             case "async":
 
-                async def listener_async() -> None:
-                    nonlocal called
-                    called |= True
+                async def listener_async(n: int, /) -> None:
+                    nonlocal counter
+                    counter += n
                     await sleep(0.01)
 
                 _ = add_listener(event, listener_async)
 
-        event.emit()
+        event.emit(n)
         await sleep(0.01)
-        assert called
+        assert counter == n
 
-    @given(root=temp_paths(), sync_or_async=sampled_from(["sync", "async"]))
-    async def test_no_error_handler_but_run_into_error(
-        self, *, root: Path, sync_or_async: Literal["sync", "async"]
-    ) -> None:
-        logger = getLogger(str(root))
-        logger.setLevel(DEBUG)
-        handler = StreamHandler(buffer := StringIO())
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
-        event = Event()
+    @given(name=text_ascii(min_size=1), n=integers(min_value=1))
+    @mark.only
+    def test_custom_error_handler(self, *, name: str, n: int) -> None:
+        event = Event(name=name)
+        assert event.name() == name
+        counter = 0
+        log: set[tuple[str, type[Exception]]] = set()
 
-        match sync_or_async:
-            case "sync":
+        def listener(n: int, /) -> None:
+            if n >= 0:
+                nonlocal counter
+                counter += n
+            else:
+                msg = "'n' must be non-negative"
+                raise ValueError(msg)
 
-                def listener_sync() -> None: ...
+        def error(event: Event, exception: Exception, /) -> None:
+            nonlocal log
+            log.add((event.name(), type(exception)))
 
-                _ = add_listener(event, listener_sync, logger=str(root))
-            case "async":
-
-                async def listener_async() -> None:
-                    await sleep(0.01)
-
-                _ = add_listener(event, listener_async, logger=str(root))
-
-        event.emit(None)
-        await sleep(0.01)
-        pattern = r"listener_a?sync\(\) takes 0 positional arguments but 1 was given"
-        contents = buffer.getvalue()
-        assert search(pattern, contents)
+        _ = add_listener(event, listener, error=error)
+        event.emit(n)
+        assert counter == n
+        assert log == set()
+        event.emit(-n)
+        assert counter == n
+        assert log == {(name, ValueError)}
 
     @given(
         name=text_ascii(min_size=1), case=sampled_from(["sync", "async/sync", "async"])
