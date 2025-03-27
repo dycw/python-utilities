@@ -22,7 +22,7 @@ from utilities.platform import (
     IS_WINDOWS,
 )
 from utilities.random import get_state
-from utilities.types import Coroutine1, MaybeAwaitable, MaybeCoroutine1
+from utilities.types import Coroutine1, MaybeCoroutine1
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -55,7 +55,7 @@ else:
     skipif_not_linux = mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
 
 
-_F = TypeVar("_F", bound=Callable[..., MaybeAwaitable[None]])
+_F = TypeVar("_F", bound=Callable[..., MaybeCoroutine1[None]])
 _P = ParamSpec("_P")
 
 
