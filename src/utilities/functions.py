@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import asdict, dataclass, is_dataclass
-from functools import _lru_cache_wrapper, cached_property, partial, wraps
+from functools import _lru_cache_wrapper, cached_property, partial, reduce, wraps
 from inspect import getattr_static
 from re import findall
 from types import (
@@ -39,9 +39,10 @@ from utilities.types import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Container, Hashable, Sized
+    from collections.abc import Container, Hashable, Sized
 
 
+_F = TypeVar("_F", bound=Callable[..., Any])
 _P = ParamSpec("_P")
 _T = TypeVar("_T")
 _T1 = TypeVar("_T1")
@@ -53,6 +54,18 @@ _TSupportsRichComparison = TypeVar(
     "_TSupportsRichComparison", bound=SupportsRichComparison
 )
 _U = TypeVar("_U")
+
+
+##
+
+
+def apply_decorators(func: _F, /, *decorators: Callable[[_F], _F]) -> _F:
+    """Apply a set of decorators to a function."""
+    return reduce(_apply_decorators_one, decorators, func)
+
+
+def _apply_decorators_one(acc: _F, el: Callable[[_F], _F], /) -> _F:
+    return el(acc)
 
 
 ##
@@ -970,6 +983,7 @@ __all__ = [
     "EnsureTimeError",
     "MaxNullableError",
     "MinNullableError",
+    "apply_decorators",
     "ensure_bool",
     "ensure_bytes",
     "ensure_class",
