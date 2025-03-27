@@ -79,6 +79,9 @@ class SupportsDunderGT(Protocol[_T_contra]):  # from typeshed
 
 
 SupportsRichComparison = SupportsDunderLT[Any] | SupportsDunderGT[Any]
+TSupportsRichComparison = TypeVar(
+    "TSupportsRichComparison", bound=SupportsRichComparison
+)
 
 
 # pathlib
@@ -130,6 +133,7 @@ __all__ = [
     "SupportsDunderGT",
     "SupportsDunderLT",
     "SupportsRichComparison",
+    "TSupportsRichComparison",
     "TimeZone",
     "TimeZoneLike",
     "TupleOrStrMapping",
