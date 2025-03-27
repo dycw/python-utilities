@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import re
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
 from enum import Enum, unique
@@ -908,13 +908,15 @@ class GetLogRecordsOutput:
             match extra:
                 case bool() as has_extra:
                     records = [r for r in records if (r.extra is not None) is has_extra]
-                case _ as keys:
+                case str() | Iterable() as keys:
                     records = [
                         r
                         for r in records
                         if (r.extra is not None)
                         and set(r.extra).issuperset(always_iterable(keys))
                     ]
+                case _ as never:
+                    assert_never(never)
         if log_file is not None:
             match log_file:
                 case bool() as has_log_file:
