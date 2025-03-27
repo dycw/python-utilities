@@ -20,6 +20,10 @@ def ensure_time_zone(obj: ZoneInfoLike | dt.tzinfo | dt.datetime, /) -> ZoneInfo
     match obj:
         case ZoneInfo() as zone_info:
             return zone_info
+        case "local":
+            from utilities.tzlocal import get_local_time_zone
+
+            return get_local_time_zone()
         case str() as key:
             return ZoneInfo(key)
         case dt.tzinfo() as tzinfo:

@@ -28,12 +28,7 @@ from utilities.zoneinfo import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import (
-        DateOrDateTime,
-        Duration,
-        LocalOrZoneInfoLike,
-        ZoneInfoLike,
-    )
+    from utilities.types import DateOrDateTime, Duration, ZoneInfoLike
 
 
 _DAYS_PER_YEAR = 365.25
@@ -451,15 +446,9 @@ MONTH = get_months(n=1)
 ##
 
 
-def get_now(*, time_zone: LocalOrZoneInfoLike = UTC) -> dt.datetime:
+def get_now(*, time_zone: ZoneInfoLike = UTC) -> dt.datetime:
     """Get the current, timezone-aware time."""
-    if time_zone == "local":
-        from utilities.tzlocal import get_local_time_zone
-
-        time_zone_use = get_local_time_zone()
-    else:
-        time_zone_use = ensure_time_zone(time_zone)
-    return dt.datetime.now(tz=time_zone_use)
+    return dt.datetime.now(tz=ensure_time_zone(time_zone))
 
 
 NOW_UTC = get_now(time_zone=UTC)
@@ -502,7 +491,7 @@ QUARTER = get_quarters(n=1)
 ##
 
 
-def get_today(*, time_zone: LocalOrZoneInfoLike = UTC) -> dt.date:
+def get_today(*, time_zone: ZoneInfoLike = UTC) -> dt.date:
     """Get the current, timezone-aware date."""
     return get_now(time_zone=time_zone).date()
 

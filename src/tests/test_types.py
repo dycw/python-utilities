@@ -4,13 +4,15 @@ import datetime as dt
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeVar
+from zoneinfo import available_timezones
 
 from hypothesis import given
 from hypothesis.strategies import sampled_from
 from pytest import mark, param
 
 from utilities.datetime import ZERO_TIME
-from utilities.types import Dataclass, Duration, Number, PathLike
+from utilities.types import Dataclass, Duration, Number, PathLike, TimeZone
+from utilities.typing import get_args
 
 
 class TestDataClassProtocol:
@@ -52,3 +54,8 @@ class TestPathLike:
 
     def test_error(self) -> None:
         assert not isinstance(None, Path | str)
+
+
+class TestTimeZone:
+    def test_main(self) -> None:
+        assert set(get_args(TimeZone)) == available_timezones()
