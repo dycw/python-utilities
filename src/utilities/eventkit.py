@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from asyncio import iscoroutinefunction
 from functools import wraps
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, assert_never, cast
 
 from utilities.functions import apply_decorators
 from utilities.iterables import always_iterable
@@ -28,14 +28,12 @@ def add_listener(
     /,
     *,
     error: Callable[[Event, Exception], MaybeCoroutine1[None]] | None = None,
-    error_ignore: type[Exception] | tuple[type[Exception], ...] | None = None,
-    error_logger: LoggerOrName | None = None,
-    error_decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
+    logger: LoggerOrName | None = None,
+    decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
     done: Callable[..., Any] | None = None,
     keep_ref: bool = False,
 ) -> Event:
     """Connect a listener to an event."""
-    logger = get_logger(logger=error_logger)
     match error, bool(iscoroutinefunction(listener)):
         case None, False:
             listener_typed = cast("Callable[..., None]", listener)
@@ -44,10 +42,8 @@ def add_listener(
             def listener_no_error_sync(*args: Any, **kwargs: Any) -> None:
                 try:
                     listener_typed(*args, **kwargs)
-                except Exception as exc:
-                    if (error_ignore is not None) and isinstance(exc, error_ignore):
-                        return
-                    logger.exception("")
+                except Exception:  # noqa: BLE001
+                    get_logger(logger=logger).exception("")
 
             listener_use = listener_no_error_sync
 
@@ -58,10 +54,8 @@ def add_listener(
             async def listener_no_error_async(*args: Any, **kwargs: Any) -> None:
                 try:
                     await listener_typed(*args, **kwargs)
-                except Exception as exc:
-                    if (error_ignore is not None) and isinstance(exc, error_ignore):
-                        return
-                    logger.exception("")
+                except Exception:  # noqa: BLE001
+                    get_logger(logger=logger).exception("")
 
             listener_use = listener_no_error_async
         case _, _:
@@ -75,10 +69,6 @@ def add_listener(
                         try:
                             listener_typed(*args, **kwargs)
                         except Exception as exc:  # noqa: BLE001
-                            if (error_ignore is not None) and isinstance(
-                                exc, error_ignore
-                            ):
-                                return
                             error_typed(event, exc)
 
                     listener_use = listener_have_error_sync
@@ -94,10 +84,6 @@ def add_listener(
                         try:
                             await listener_typed(*args, **kwargs)
                         except Exception as exc:  # noqa: BLE001
-                            if (error_ignore is not None) and isinstance(
-                                exc, error_ignore
-                            ):
-                                return
                             if iscoroutinefunction(error):
                                 error_typed = cast(
                                     "Callable[[Event, Exception], Coroutine1[None]]",
@@ -111,11 +97,13 @@ def add_listener(
                                 error_typed(event, exc)
 
                     listener_use = listener_have_error_async
+                case _ as never:
+                    assert_never(never)
+        case _ as never:
+            assert_never(never)
 
-    if error_decorators is not None:
-        listener_use = apply_decorators(
-            listener_use, *always_iterable(error_decorators)
-        )
+    if decorators is not None:
+        listener_use = apply_decorators(listener_use, *always_iterable(decorators))
 
     return event.connect(listener_use, done=done, keep_ref=keep_ref)
 

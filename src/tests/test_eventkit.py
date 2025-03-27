@@ -7,18 +7,14 @@ from re import search
 from typing import TYPE_CHECKING, Literal
 
 from eventkit import Event
-from hypothesis import HealthCheck, given, settings
+from hypothesis import given
 from hypothesis.strategies import integers, sampled_from
-from pytest import CaptureFixture
 
 from utilities.eventkit import add_listener
-from utilities.functions import identity
-from utilities.hypothesis import settings_with_reduced_examples, temp_paths, text_ascii
+from utilities.hypothesis import temp_paths, text_ascii
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from pytest import CaptureFixture
 
 
 class TestAddListener:
@@ -50,7 +46,6 @@ class TestAddListener:
         assert counter == n
 
     @given(root=temp_paths(), sync_or_async=sampled_from(["sync", "async"]))
-    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_no_error_handler_but_run_into_error(
         self, *, root: Path, sync_or_async: Literal["sync", "async"]
     ) -> None:
@@ -66,13 +61,13 @@ class TestAddListener:
 
                 def listener_sync() -> None: ...
 
-                _ = add_listener(event, listener_sync, error_logger=str(root))
+                _ = add_listener(event, listener_sync, logger=str(root))
             case "async":
 
                 async def listener_async() -> None:
                     await sleep(0.01)
 
-                _ = add_listener(event, listener_async, error_logger=str(root))
+                _ = add_listener(event, listener_async, logger=str(root))
 
         event.emit(None)
         await sleep(0.01)
@@ -80,14 +75,20 @@ class TestAddListener:
         contents = buffer.getvalue()
         assert search(pattern, contents)
 
-    @given(name=text_ascii(min_size=1), n=integers(min_value=1))
-    def test_with_error_handler(self, *, name: str, n: int) -> None:
+    @given(
+        name=text_ascii(min_size=1),
+        case=sampled_from(["sync", "async/sync", "async"]),
+        n=integers(min_value=1),
+    )
+    async def test_with_error_handler(
+        self, *, name: str, case: Literal["sync", "async/sync", "async"], n: int
+    ) -> None:
         event = Event(name=name)
         assert event.name() == name
         counter = 0
         log: set[tuple[str, type[Exception]]] = set()
 
-        def listener(n: int, /) -> None:
+        def listener_sync(n: int, /) -> None:
             if n >= 0:
                 nonlocal counter
                 counter += n
@@ -95,26 +96,36 @@ class TestAddListener:
                 msg = "'n' must be non-negative"
                 raise ValueError(msg)
 
-        def error(event: Event, exception: Exception, /) -> None:
+        def error_sync(event: Event, exception: Exception, /) -> None:
             nonlocal log
             log.add((event.name(), type(exception)))
 
-        _ = add_listener(event, listener, error=error)
+        async def listener_async(n: int, /) -> None:
+            if n >= 0:
+                nonlocal counter
+                counter += n
+                await sleep(0.01)
+            else:
+                msg = "'n' must be non-negative"
+                raise ValueError(msg)
+
+        async def error_async(event: Event, exception: Exception, /) -> None:
+            nonlocal log
+            log.add((event.name(), type(exception)))
+            await sleep(0.01)
+
+        match case:
+            case "sync":
+                _ = add_listener(event, listener_sync, error=error_sync)
+            case "async/sync":
+                _ = add_listener(event, listener_async, error=error_sync)
+            case "async":
+                _ = add_listener(event, listener_async, error=error_async)
         event.emit(n)
+        await sleep(0.01)
         assert counter == n
         assert log == set()
         event.emit(-n)
+        await sleep(0.01)
         assert counter == n
         assert log == {(name, ValueError)}
-
-    @given(n=integers())
-    @settings_with_reduced_examples(
-        suppress_health_check={HealthCheck.function_scoped_fixture}
-    )
-    async def test_error_ignore(self, *, capsys: CaptureFixture, n: int) -> None:
-        event = Event()
-        _ = add_listener(event, identity, error_ignore=TypeError)
-        event.emit(n, n)
-        out = capsys.readouterr().out
-        expected = ""
-        assert out == expected
