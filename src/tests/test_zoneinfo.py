@@ -42,7 +42,7 @@ class TestEnsureTimeZone:
         self, *, data: DataObject, case: tuple[ZoneInfo | dt.timezone, ZoneInfo]
     ) -> None:
         time_zone, expected = case
-        zone_info_or_str = data.draw(
+        zone_info_or_str: ZoneInfo | dt.timezone | TimeZone = data.draw(
             sampled_from([time_zone, get_time_zone_name(time_zone)])
         )
         result = ensure_time_zone(zone_info_or_str)

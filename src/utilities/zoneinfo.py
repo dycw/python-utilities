@@ -14,8 +14,10 @@ USCentral = ZoneInfo("US/Central")
 USEastern = ZoneInfo("US/Eastern")
 UTC = ZoneInfo("UTC")
 
+##
 
-def ensure_time_zone(obj: TimeZoneLike | dt.tzinfo | dt.datetime, /) -> ZoneInfo:
+
+def ensure_time_zone(obj: TimeZoneLike, /) -> ZoneInfo:
     """Ensure the object is a time zone."""
     match obj:
         case ZoneInfo() as zone_info:
@@ -58,6 +60,9 @@ class _EnsureTimeZoneLocalDateTimeError(EnsureTimeZoneError):
     @override
     def __str__(self) -> str:
         return f"Local datetime: {self.datetime}"
+
+
+##
 
 
 def get_time_zone_name(
