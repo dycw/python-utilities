@@ -30,6 +30,8 @@ type MaybeCoroutine1[_T] = _T | Coroutine1[_T]
 
 # callable
 TCallable = TypeVar("TCallable", bound=Callable[..., Any])
+TCallable1 = TypeVar("TCallable1", bound=Callable[..., Any])
+TCallable2 = TypeVar("TCallable2", bound=Callable[..., Any])
 TCallableMaybeCoroutine1None = TypeVar(
     "TCallableMaybeCoroutine1None", bound=Callable[..., MaybeCoroutine1[None]]
 )
@@ -159,6 +161,8 @@ __all__ = [
     "SupportsRichComparison",
     "TBaseException",
     "TCallable",
+    "TCallable1",
+    "TCallable2",
     "TCallableMaybeCoroutine1None",
     "TDataclass",
     "TEnum",
