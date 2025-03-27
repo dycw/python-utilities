@@ -13,16 +13,16 @@ from utilities.iterables import _OneStrEmptyError, _OneStrNonUniqueError, one_st
 from utilities.operator import is_equal
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import Dataclass, StrMapping
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping
 
+    from utilities.types import Dataclass, StrMapping, TDataclass
+
 
 _T = TypeVar("_T")
 _U = TypeVar("_U")
-_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 
 
 ##
@@ -170,7 +170,7 @@ def dataclass_to_dict(
 
 
 def mapping_to_dataclass(
-    cls: type[_TDataclass],
+    cls: type[TDataclass],
     mapping: StrMapping,
     /,
     *,
@@ -178,7 +178,7 @@ def mapping_to_dataclass(
     localns: StrMapping | None = None,
     case_sensitive: bool = True,
     post: Callable[[_YieldFieldsClass[Any], Any], Any] | None = None,
-) -> _TDataclass:
+) -> TDataclass:
     """Construct a dataclass from a mapping."""
     fields = yield_fields(cls, globalns=globalns, localns=localns)
     mapping_use = {
@@ -251,15 +251,15 @@ def replace_non_sentinel(
 ) -> None: ...
 @overload
 def replace_non_sentinel(
-    obj: _TDataclass, /, *, in_place: Literal[False] = False, **kwargs: Any
-) -> _TDataclass: ...
+    obj: TDataclass, /, *, in_place: Literal[False] = False, **kwargs: Any
+) -> TDataclass: ...
 @overload
 def replace_non_sentinel(
-    obj: _TDataclass, /, *, in_place: bool = False, **kwargs: Any
-) -> _TDataclass | None: ...
+    obj: TDataclass, /, *, in_place: bool = False, **kwargs: Any
+) -> TDataclass | None: ...
 def replace_non_sentinel(
-    obj: _TDataclass, /, *, in_place: bool = False, **kwargs: Any
-) -> _TDataclass | None:
+    obj: TDataclass, /, *, in_place: bool = False, **kwargs: Any
+) -> TDataclass | None:
     """Replace attributes on a dataclass, filtering out sentinel values."""
     if in_place:
         for k, v in kwargs.items():
