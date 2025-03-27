@@ -5,7 +5,7 @@ from functools import partial, wraps
 from inspect import iscoroutinefunction
 from os import environ
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ParamSpec, cast, overload, override
+from typing import TYPE_CHECKING, Any, ParamSpec, assert_never, cast, override
 
 from pytest import fixture
 
@@ -25,16 +25,10 @@ from utilities.random import get_state
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Sequence
+    from collections.abc import Awaitable, Callable, Iterable, Sequence
     from random import Random
 
-    from utilities.types import (
-        Coroutine1,
-        Duration,
-        MaybeCoroutine1,
-        PathLike,
-        TCallableMaybeCoroutine1None,
-    )
+    from utilities.types import Duration, MaybeAwaitable, PathLike
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config  # pyright: ignore[reportPrivateImportUsage]
@@ -180,62 +174,43 @@ def throttle(
         "Any", partial(_throttle_inner, root=root_use, duration=duration, on_try=on_try)
     )
 
+    def wrapper(func: Callable[_P, MaybeAwaitable[None]], /) -> Callable[..., Any]:
+        """Throttle a test function/method."""
+        match iscoroutinefunction(func):
+            case False:
+                func_typed = cast("Callable[_P, None]", func)
 
-@overload
-def _throttle_inner(
-    func: Callable[_P, Coroutine1[None]],
-    /,
-    *,
-    root: Path,
-    duration: Duration = 1.0,
-    on_try: bool = False,
-) -> Callable[_P, Coroutine1[None]]: ...
-@overload
-def _throttle_inner(
-    func: Callable[_P, None],
-    /,
-    *,
-    root: Path,
-    duration: Duration = 1.0,
-    on_try: bool = False,
-) -> Callable[_P, None]: ...
-def _throttle_inner(
-    func: Callable[_P, MaybeCoroutine1[None]],
-    /,
-    *,
-    root: Path,
-    duration: Duration = 1.0,
-    on_try: bool = False,
-) -> Callable[_P, MaybeCoroutine1[None]]:
-    """Throttle a test function/method."""
-    if not iscoroutinefunction(func):
-        func_typed = cast("Callable[_P, None]", func)
+                @wraps(func)
+                def throttle_sync(*args: _P.args, **kwargs: _P.kwargs) -> None:
+                    """Call the throttled sync test function/method."""
+                    path, now = _throttle_path_and_now(root_use, duration=duration)
+                    if on_try:
+                        _throttle_write(path, now)
+                        return func_typed(*args, **kwargs)
+                    func_typed(*args, **kwargs)
+                    _throttle_write(path, now)
+                    return None
 
-        @wraps(func)
-        def throttle_sync(*args: _P.args, **kwargs: _P.kwargs) -> None:
-            """Call the throttled sync test function/method."""
-            path, now = _throttle_path_and_now(root, duration=duration)
-            if on_try:
-                _throttle_write(path, now)
-                return func_typed(*args, **kwargs)
-            func_typed(*args, **kwargs)
-            _throttle_write(path, now)
-            return None
+                return throttle_sync
 
-        return throttle_sync
+            case True:
+                func_typed = cast("Callable[_P, Awaitable[None]]", func)
 
-    func_typed = cast("Callable[_P, Coroutine1[None]]", func)
+                @wraps(func)
+                async def throttle_async(*args: Any, **kwargs: Any) -> Any:
+                    """Call the throttled async test function/method."""
+                    path, now = _throttle_path_and_now(root_use, duration=duration)
+                    if on_try:
+                        _throttle_write(path, now)
+                        return await func(*args, **kwargs)
+                    out = await func(*args, **kwargs)
+                    _throttle_write(path, now)
+                    return out
 
-    @wraps(func)
-    async def throttle_async(*args: _P.args, **kwargs: _P.kwargs) -> None:
-        """Call the throttled async test function/method."""
-        path, now = _throttle_path_and_now(root, duration=duration)
-        if on_try:
-            _throttle_write(path, now)
-            return await func_typed(*args, **kwargs)
-        await func_typed(*args, **kwargs)
-        _throttle_write(path, now)
-        return None
+                return throttle_async
+
+            case _ as never:
+                assert_never(never)
 
     return throttle_async
 
