@@ -165,6 +165,7 @@ __all__ = [
     "THashable",
     "THashable1",
     "THashable2",
+    "TSupportsAdd",
     "TSupportsRichComparison",
     "TimeZone",
     "TimeZoneLike",
