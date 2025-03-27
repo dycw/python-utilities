@@ -9,8 +9,9 @@ from typing import TYPE_CHECKING, Literal
 from eventkit import Event
 from hypothesis import given
 from hypothesis.strategies import integers, sampled_from
+from pytest import raises
 
-from utilities.eventkit import add_listener
+from utilities.eventkit import AddListenerError, add_listener
 from utilities.hypothesis import temp_paths, text_ascii
 
 if TYPE_CHECKING:
@@ -129,3 +130,24 @@ class TestAddListener:
         await sleep(0.01)
         assert counter == n
         assert log == {(name, ValueError)}
+
+    def test_error(self) -> None:
+        event = Event()
+        counter = 0
+        log: set[tuple[str, type[Exception]]] = set()
+
+        def listener(n: int, /) -> None:
+            if n >= 0:
+                nonlocal counter
+                counter += n
+            else:
+                msg = "'n' must be non-negative"
+                raise ValueError(msg)
+
+        async def error(event: Event, exception: Exception, /) -> None:
+            nonlocal log
+            log.add((event.name(), type(exception)))
+            await sleep(0.01)
+
+        with raises(AddListenerError, match="asdf"):
+            _ = add_listener(event, listener, error=error)
