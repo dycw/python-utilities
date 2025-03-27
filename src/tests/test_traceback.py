@@ -16,15 +16,6 @@ from tests.test_traceback_funcs.error_bind import (
 )
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.recursive import func_recursive
-from tests.test_traceback_funcs.runtime_async import (
-    disable_trace_for_func_runtime_async,
-    func_runtime_async,
-)
-from tests.test_traceback_funcs.runtime_sync import (
-    disable_trace_for_func_runtime_sync,
-    func_runtime_sync,
-)
-from tests.test_traceback_funcs.setup import func_setup
 from tests.test_traceback_funcs.task_group_one import func_task_group_one_first
 from tests.test_traceback_funcs.task_group_two import func_task_group_two_first
 from tests.test_traceback_funcs.two import func_two_first
@@ -251,43 +242,6 @@ class TestGetRichTraceback:
         assert frame2.locals["args"] == (12, 16)
         assert frame2.locals["kwargs"] == {"d": 24, "e": 28}
         assert isinstance(exc_tb.error, AssertionError)
-
-    def test_func_runtime_sync(self, *, git_ref: str) -> None:
-        with raises(AssertionError) as exc_info1:
-            _ = func_runtime_sync(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_tb1 = get_rich_traceback(exc_info1.value, git_ref=git_ref)
-        assert isinstance(exc_tb1, ExcTB)
-        with disable_trace_for_func_runtime_sync():
-            with raises(AssertionError) as exc_info2:
-                _ = func_runtime_sync(1, 2, 3, 4, c=5, d=6, e=7)
-            exc_tb2 = get_rich_traceback(exc_info2.value, git_ref=git_ref)
-            assert isinstance(exc_tb2, AssertionError)
-        with raises(AssertionError) as exc_info3:
-            _ = func_runtime_sync(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_tb3 = get_rich_traceback(exc_info3.value, git_ref=git_ref)
-        assert isinstance(exc_tb3, ExcTB)
-
-    @SKIPIF_CI
-    async def test_func_runtime_async(self, *, git_ref: str) -> None:
-        with raises(AssertionError) as exc_info1:
-            _ = await func_runtime_async(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_tb1 = get_rich_traceback(exc_info1.value, git_ref=git_ref)
-        assert isinstance(exc_tb1, ExcTB)
-        with disable_trace_for_func_runtime_async():
-            with raises(AssertionError) as exc_info2:
-                _ = await func_runtime_async(1, 2, 3, 4, c=5, d=6, e=7)
-            exc_tb2 = get_rich_traceback(exc_info2.value, git_ref=git_ref)
-            assert isinstance(exc_tb2, AssertionError)
-        with raises(AssertionError) as exc_info3:
-            _ = await func_runtime_async(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_tb3 = get_rich_traceback(exc_info3.value, git_ref=git_ref)
-        assert isinstance(exc_tb3, ExcTB)
-
-    def test_func_setup(self, *, git_ref: str) -> None:
-        with raises(AssertionError) as exc_info1:
-            _ = func_setup(1, 2, 3, 4, c=5, d=6, e=7)
-        assertion_error = get_rich_traceback(exc_info1.value, git_ref=git_ref)
-        assert isinstance(assertion_error, AssertionError)
 
     @SKIPIF_CI
     async def test_func_task_group_one(
