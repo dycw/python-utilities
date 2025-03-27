@@ -25,7 +25,6 @@ from utilities.zoneinfo import (
 if TYPE_CHECKING:
     from utilities.types import TimeZone
 
-
 class TestEnsureTimeZone:
     @given(
         data=data(),
@@ -83,10 +82,8 @@ class TestGetTimeZoneName:
             "UTC",
         ]),
     )
-    def test_main(self, *, data: DataObject, time_zone: TimeZone) -> None:
-        zone_info_or_str: ZoneInfo | TimeZone = data.draw(
-            sampled_from([ZoneInfo(time_zone), time_zone])
-        )
+    def test_main(self, *, data: DataObject, time_zone: str) -> None:
+        zone_info_or_str = data.draw(sampled_from([ZoneInfo(time_zone), time_zone]))
         result = get_time_zone_name(zone_info_or_str)
         assert result == time_zone
 

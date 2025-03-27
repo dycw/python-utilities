@@ -5,10 +5,9 @@ from io import StringIO
 from logging import DEBUG, FileHandler, StreamHandler, getLogger
 from pathlib import Path
 from re import search
-from time import sleep
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import given, reproduce_failure
+from hypothesis import given
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -79,7 +78,6 @@ from utilities.polars import check_polars_dataframe, zoned_datetime
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import DateOrDateTime, LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args
-from utilities.tzlocal import get_local_time_zone
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -144,15 +142,12 @@ class TestGetLogRecords:
                 sampled_from(get_args(LogLevel)),
                 text_ascii(),
                 dictionaries(text_ascii(), int64s()),
-            ),
+            )
         ),
         root=temp_paths(),
     )
     def test_dataframe(
-        self,
-        *,
-        root: Path,
-        items: Sequence[tuple[LogLevel, str, StrMapping]],
+        self, *, root: Path, items: Sequence[tuple[LogLevel, str, StrMapping]]
     ) -> None:
         logger = getLogger(str(root))
         logger.setLevel(DEBUG)

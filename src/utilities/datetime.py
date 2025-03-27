@@ -28,7 +28,7 @@ from utilities.zoneinfo import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import DateOrDateTime, Duration, TimeZoneLike
+    from utilities.types import DateOrDateTime, Duration, LocalOrZoneInfoLike
 
 
 _DAYS_PER_YEAR = 365.25
@@ -215,7 +215,11 @@ class CheckDateNotDateTimeError(Exception):
 
 
 def date_to_datetime(
-    date: dt.date, /, *, time: dt.time | None = None, time_zone: TimeZoneLike = UTC
+    date: dt.date,
+    /,
+    *,
+    time: dt.time | None = None,
+    time_zone: LocalOrZoneInfoLike = UTC,
 ) -> dt.datetime:
     """Expand a date into a datetime."""
     check_date_not_datetime(date)
@@ -910,7 +914,7 @@ class ParseDateCompactError(Exception):
 
 
 def parse_datetime_compact(
-    text: str, /, *, time_zone: TimeZoneLike = UTC
+    text: str, /, *, time_zone: LocalOrZoneInfoLike = UTC
 ) -> dt.datetime:
     """Parse a compact string into a datetime."""
     time_zone = ensure_time_zone(time_zone)
