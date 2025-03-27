@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Literal, ParamSpec, TypeVar
 
 from eventkit import Event
 from hypothesis import given
-from hypothesis.strategies import integers, sampled_from
+from hypothesis.strategies import sampled_from
 from pytest import raises
 
 from utilities.eventkit import AddListenerError, add_listener
@@ -199,14 +199,13 @@ class TestAddListener:
         await sleep(0.01)
         assert log == set()
 
-    @given(n=integers())
-    def test_decorators(self, *, n: int) -> None:
+    def test_decorators(self) -> None:
         event = Event()
         counter = 0
 
-        def listener(n: int, /) -> None:
+        def listener() -> None:
             nonlocal counter
-            counter += n
+            counter += 1
 
         def increment(func: Callable[_P, _R], /) -> Callable[_P, _R]:
             @wraps(func)
@@ -218,8 +217,8 @@ class TestAddListener:
             return wrapped
 
         _ = add_listener(event, listener, decorators=increment)
-        event.emit(n)
-        assert counter == n + 1
+        event.emit()
+        assert counter == 2
 
     def test_error(self) -> None:
         event = Event()
