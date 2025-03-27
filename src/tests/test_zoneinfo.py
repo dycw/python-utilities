@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
@@ -20,6 +21,9 @@ from utilities.zoneinfo import (
     ensure_time_zone,
     get_time_zone_name,
 )
+
+if TYPE_CHECKING:
+    from utilities.types import TimeZone
 
 
 class TestEnsureTimeZone:
@@ -79,7 +83,7 @@ class TestGetTimeZoneName:
             "UTC",
         ]),
     )
-    def test_main(self, *, data: DataObject, time_zone: str) -> None:
+    def test_main(self, *, data: DataObject, time_zone: TimeZone) -> None:
         zone_info_or_str = data.draw(sampled_from([ZoneInfo(time_zone), time_zone]))
         result = get_time_zone_name(zone_info_or_str)
         assert result == time_zone

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, assert_never, override
 from zoneinfo import ZoneInfo
 
 if TYPE_CHECKING:
-    from utilities.types import TimeZoneLike
+    from utilities.types import TimeZone, TimeZoneLike
 
 HongKong = ZoneInfo("Asia/Hong_Kong")
 Tokyo = ZoneInfo("Asia/Tokyo")
@@ -60,7 +60,9 @@ class _EnsureTimeZoneLocalDateTimeError(EnsureTimeZoneError):
         return f"Local datetime: {self.datetime}"
 
 
-def get_time_zone_name(time_zone: TimeZoneLike | dt.tzinfo | dt.datetime, /) -> str:
+def get_time_zone_name(
+    time_zone: TimeZoneLike | dt.tzinfo | dt.datetime, /
+) -> TimeZone:
     """Get the name of a time zone."""
     return ensure_time_zone(time_zone).key
 
