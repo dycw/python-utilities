@@ -28,6 +28,10 @@ type MaybeAwaitable[_T] = _T | Awaitable[_T]
 type MaybeCoroutine1[_T] = _T | Coroutine1[_T]
 
 
+# callable
+TCallable = TypeVar("TCallable", bound=Callable[..., Any])
+
+
 # concurrent
 type Parallelism = Literal["processes", "threads"]
 
@@ -41,6 +45,7 @@ class Dataclass(Protocol):
 
 
 TDataclass = TypeVar("TDataclass", bound=Dataclass)
+
 
 # datetime
 type DateOrDateTime = dt.date | dt.datetime
@@ -144,6 +149,7 @@ __all__ = [
     "SupportsDunderGT",
     "SupportsDunderLT",
     "SupportsRichComparison",
+    "TCallable",
     "TDataclass",
     "THashable",
     "THashable1",
