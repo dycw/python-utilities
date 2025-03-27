@@ -161,7 +161,7 @@ class TestGetLogRecords:
         check_polars_dataframe(
             output.dataframe,
             height=len(items),
-            schema={
+            schema_list={
                 "name": String,
                 "message": String,
                 "level": UInt64,
