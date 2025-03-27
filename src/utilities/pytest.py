@@ -23,11 +23,11 @@ from utilities.platform import (
     IS_WINDOWS,
 )
 from utilities.random import get_state
-from utilities.types import MaybeAwaitable
+from utilities.types import Coroutine1, MaybeAwaitable, MaybeCoroutine1
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Iterable, Sequence
+    from collections.abc import Iterable, Sequence
     from random import Random
 
     from utilities.types import Duration, PathLike
@@ -180,13 +180,13 @@ def throttle(
 
 @overload
 def _throttle_inner(
-    func: Callable[_P, Awaitable[None]],
+    func: Callable[_P, Coroutine1[None]],
     /,
     *,
     root: Path,
     duration: Duration = 1.0,
     on_try: bool = False,
-) -> Callable[_P, Awaitable[None]]: ...
+) -> Callable[_P, Coroutine1[None]]: ...
 @overload
 def _throttle_inner(
     func: Callable[_P, None],
@@ -197,13 +197,13 @@ def _throttle_inner(
     on_try: bool = False,
 ) -> Callable[_P, None]: ...
 def _throttle_inner(
-    func: Callable[_P, MaybeAwaitable[None]],
+    func: Callable[_P, MaybeCoroutine1[None]],
     /,
     *,
     root: Path,
     duration: Duration = 1.0,
     on_try: bool = False,
-) -> Callable[_P, MaybeAwaitable[None]]:
+) -> Callable[_P, MaybeCoroutine1[None]]:
     """Throttle a test function/method."""
     if not iscoroutinefunction(func):
         func_typed = cast("Callable[_P, None]", func)
@@ -221,7 +221,7 @@ def _throttle_inner(
 
         return throttle_sync
 
-    func_typed = cast("Callable[_P, Awaitable[None]]", func)
+    func_typed = cast("Callable[_P, Coroutine1[None]]", func)
 
     @wraps(func)
     async def throttle_async(*args: _P.args, **kwargs: _P.kwargs) -> None:
