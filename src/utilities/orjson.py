@@ -915,8 +915,6 @@ class GetLogRecordsOutput:
                         if (r.extra is not None)
                         and set(r.extra).issuperset(always_iterable(keys))
                     ]
-                case _ as never:
-                    assert_never(never)
         if log_file is not None:
             match log_file:
                 case bool() as has_log_file:
