@@ -30,6 +30,7 @@ def add_listener(
     /,
     *,
     error: Callable[[Event, Exception], MaybeCoroutine1[None]] | None = None,
+    ignore: type[Exception] | tuple[type[Exception], ...] | None = None,
     logger: LoggerOrName | None = None,
     decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
     done: Callable[..., Any] | None = None,
@@ -44,7 +45,9 @@ def add_listener(
             def listener_no_error_sync(*args: Any, **kwargs: Any) -> None:
                 try:
                     listener_typed(*args, **kwargs)
-                except Exception:  # noqa: BLE001
+                except Exception as exc:  # noqa: BLE001
+                    if (ignore is not None) and isinstance(exc, ignore):
+                        return
                     get_logger(logger=logger).exception("")
 
             listener_use = listener_no_error_sync
@@ -56,7 +59,9 @@ def add_listener(
             async def listener_no_error_async(*args: Any, **kwargs: Any) -> None:
                 try:
                     await listener_typed(*args, **kwargs)
-                except Exception:  # noqa: BLE001
+                except Exception as exc:  # noqa: BLE001
+                    if (ignore is not None) and isinstance(exc, ignore):
+                        return
                     get_logger(logger=logger).exception("")
 
             listener_use = listener_no_error_async
@@ -71,6 +76,8 @@ def add_listener(
                         try:
                             listener_typed(*args, **kwargs)
                         except Exception as exc:  # noqa: BLE001
+                            if (ignore is not None) and isinstance(exc, ignore):
+                                return
                             error_typed(event, exc)
 
                     listener_use = listener_have_error_sync
@@ -90,17 +97,18 @@ def add_listener(
                         try:
                             await listener_typed(*args, **kwargs)
                         except Exception as exc:  # noqa: BLE001
+                            if (ignore is not None) and isinstance(exc, ignore):
+                                return None
                             if iscoroutinefunction(error):
                                 error_typed = cast(
                                     "Callable[[Event, Exception], Coroutine1[None]]",
                                     error,
                                 )
-                                await error_typed(event, exc)
-                            else:
-                                error_typed = cast(
-                                    "Callable[[Event, Exception], None]", error
-                                )
-                                error_typed(event, exc)
+                                return await error_typed(event, exc)
+                            error_typed = cast(
+                                "Callable[[Event, Exception], None]", error
+                            )
+                            error_typed(event, exc)
 
                     listener_use = listener_have_error_async
                 case _ as never:

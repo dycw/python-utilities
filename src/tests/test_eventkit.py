@@ -25,32 +25,30 @@ _R = TypeVar("_R")
 
 
 class TestAddListener:
-    @given(sync_or_async=sampled_from(["sync", "async"]), n=integers())
-    async def test_main(
-        self, *, sync_or_async: Literal["sync", "async"], n: int
-    ) -> None:
+    @given(sync_or_async=sampled_from(["sync", "async"]))
+    async def test_main(self, *, sync_or_async: Literal["sync", "async"]) -> None:
         event = Event()
-        counter = 0
+        called = False
         match sync_or_async:
             case "sync":
 
-                def listener_sync(n: int, /) -> None:
-                    nonlocal counter
-                    counter += n
+                def listener_sync() -> None:
+                    nonlocal called
+                    called |= True
 
                 _ = add_listener(event, listener_sync)
             case "async":
 
-                async def listener_async(n: int, /) -> None:
-                    nonlocal counter
-                    counter += n
+                async def listener_async() -> None:
+                    nonlocal called
+                    called |= True
                     await sleep(0.01)
 
                 _ = add_listener(event, listener_async)
 
-        event.emit(n)
+        event.emit()
         await sleep(0.01)
-        assert counter == n
+        assert called
 
     @given(root=temp_paths(), sync_or_async=sampled_from(["sync", "async"]))
     async def test_no_error_handler_but_run_into_error(
@@ -83,38 +81,34 @@ class TestAddListener:
         assert search(pattern, contents)
 
     @given(
-        name=text_ascii(min_size=1),
-        case=sampled_from(["sync", "async/sync", "async"]),
-        n=integers(min_value=1),
+        name=text_ascii(min_size=1), case=sampled_from(["sync", "async/sync", "async"])
     )
     async def test_with_error_handler(
-        self, *, name: str, case: Literal["sync", "async/sync", "async"], n: int
+        self, *, name: str, case: Literal["sync", "async/sync", "async"]
     ) -> None:
         event = Event(name=name)
         assert event.name() == name
-        counter = 0
+        called = False
         log: set[tuple[str, type[Exception]]] = set()
 
-        def listener_sync(n: int, /) -> None:
-            if n >= 0:
-                nonlocal counter
-                counter += n
+        def listener_sync(is_success: bool, /) -> None:  # noqa: FBT001
+            if is_success:
+                nonlocal called
+                called |= True
             else:
-                msg = "'n' must be non-negative"
-                raise ValueError(msg)
+                raise ValueError
 
         def error_sync(event: Event, exception: Exception, /) -> None:
             nonlocal log
             log.add((event.name(), type(exception)))
 
-        async def listener_async(n: int, /) -> None:
-            if n >= 0:
-                nonlocal counter
-                counter += n
+        async def listener_async(is_success: bool, /) -> None:  # noqa: FBT001
+            if is_success:
+                nonlocal called
+                called |= True
                 await sleep(0.01)
             else:
-                msg = "'n' must be non-negative"
-                raise ValueError(msg)
+                raise ValueError
 
         async def error_async(event: Event, exception: Exception, /) -> None:
             nonlocal log
@@ -128,14 +122,82 @@ class TestAddListener:
                 _ = add_listener(event, listener_async, error=error_sync)
             case "async":
                 _ = add_listener(event, listener_async, error=error_async)
-        event.emit(n)
+        event.emit(True)  # noqa: FBT003
         await sleep(0.01)
-        assert counter == n
+        assert called
         assert log == set()
-        event.emit(-n)
+        event.emit(False)  # noqa: FBT003
         await sleep(0.01)
-        assert counter == n
         assert log == {(name, ValueError)}
+
+    @given(
+        case=sampled_from([
+            "no/sync",
+            "no/async",
+            "have/sync",
+            "have/async/sync",
+            "have/async",
+        ])
+    )
+    async def test_ignore(
+        self,
+        *,
+        case: Literal[
+            "no/sync", "no/async", "have/sync", "have/async/sync", "have/async"
+        ],
+    ) -> None:
+        event = Event()
+        called = False
+        log: set[tuple[str, type[Exception]]] = set()
+
+        def listener_sync(is_success: bool, /) -> None:  # noqa: FBT001
+            if is_success:
+                nonlocal called
+                called |= True
+            else:
+                raise ValueError
+
+        def error_sync(event: Event, exception: Exception, /) -> None:
+            nonlocal log
+            log.add((event.name(), type(exception)))
+
+        async def listener_async(is_success: bool, /) -> None:  # noqa: FBT001
+            if is_success:
+                nonlocal called
+                called |= True
+                await sleep(0.01)
+            else:
+                raise ValueError
+
+        async def error_async(event: Event, exception: Exception, /) -> None:
+            nonlocal log
+            log.add((event.name(), type(exception)))
+            await sleep(0.01)
+
+        match case:
+            case "no/sync":
+                _ = add_listener(event, listener_sync, ignore=ValueError)
+            case "no/async":
+                _ = add_listener(event, listener_sync, ignore=ValueError)
+            case "have/sync":
+                _ = add_listener(
+                    event, listener_sync, error=error_sync, ignore=ValueError
+                )
+            case "have/async/sync":
+                _ = add_listener(
+                    event, listener_async, error=error_sync, ignore=ValueError
+                )
+            case "have/async":
+                _ = add_listener(
+                    event, listener_async, error=error_async, ignore=ValueError
+                )
+        event.emit(True)  # noqa: FBT003
+        await sleep(0.01)
+        assert called
+        assert log == set()
+        event.emit(False)  # noqa: FBT003
+        await sleep(0.01)
+        assert log == set()
 
     @given(n=integers())
     def test_decorators(self, *, n: int) -> None:
