@@ -544,44 +544,39 @@ def _get_rich_traceback_base_one(
 
 
 @overload
-def trace(func: Callable[_P, _R], /) -> Callable[_P, _R]: ...
-@overload
 def trace(func: Callable[_P, Awaitable[_R]], /) -> Callable[_P, Awaitable[_R]]: ...
+@overload
+def trace(func: Callable[_P, _R], /) -> Callable[_P, _R]: ...
 def trace(
     func: Callable[_P, MaybeAwaitable[_R]], /
 ) -> Callable[_P, MaybeAwaitable[_R]]:
     """Trace a function call."""
-    match iscoroutinefunction(func):
-        case False:
-            func_typed = cast("Callable[_P, _R]", func)
+    if not iscoroutinefunction(func):
+        func_typed = cast("Callable[_P, _R]", func)
 
-            @wraps(func)
-            def trace_sync(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
-                try:
-                    return func_typed(*args, **kwargs)
-                except Exception as error:
-                    cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
-                    raise
+        @wraps(func)
+        def trace_sync(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
+            try:
+                return func_typed(*args, **kwargs)
+            except Exception as error:
+                cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
+                raise
 
-            return trace_sync
+        return trace_sync
 
-        case True:
-            func_typed = cast("Callable[_P, Awaitable[_R]]", func)
+    func_typed = cast("Callable[_P, Awaitable[_R]]", func)
 
-            @wraps(func)
-            async def trace_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
-                try:  # skipif-ci
-                    return await func_typed(*args, **kwargs)
-                except Exception as error:  # skipif-ci
-                    cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
-                    raise
+    @wraps(func)
+    async def trace_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+        locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
+        try:  # skipif-ci
+            return await func_typed(*args, **kwargs)
+        except Exception as error:  # skipif-ci
+            cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
+            raise
 
-            return trace_async
-
-        case _ as never:
-            assert_never(never)
+    return trace_async
 
 
 @overload
