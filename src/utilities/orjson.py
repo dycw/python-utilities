@@ -814,6 +814,9 @@ class GetLogRecordsOutput:
     def filter(
         self,
         *,
+        index: int | None = None,
+        min_index: int | None = None,
+        max_index: int | None = None,
         name: str | None = None,
         message: str | None = None,
         level: LogLevel | None = None,
@@ -830,6 +833,12 @@ class GetLogRecordsOutput:
         max_log_file_line_num: int | None = None,
     ) -> Self:
         records = self.records
+        if index is not None:
+            records = [r for r in records if r.index == index]
+        if min_index is not None:
+            records = [r for r in records if r.index >= min_index]
+        if max_index is not None:
+            records = [r for r in records if r.index <= max_index]
         if name is not None:
             records = [r for r in records if search(name, r.name)]
         if message is not None:

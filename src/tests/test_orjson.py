@@ -186,6 +186,9 @@ class TestGetLogRecords:
             )
         ),
         root=temp_paths(),
+        index=integers() | none(),
+        min_index=integers() | none(),
+        max_index=integers() | none(),
         name=text_ascii() | none(),
         message=text_ascii() | none(),
         level=sampled_from(get_args(LogLevel)) | none(),
@@ -206,6 +209,9 @@ class TestGetLogRecords:
         *,
         root: Path,
         items: Sequence[tuple[LogLevel, str, StrMapping]],
+        index: int | None,
+        min_index: int | None,
+        max_index: int | None,
         name: str | None,
         message: str | None,
         level: LogLevel | None,
@@ -231,6 +237,9 @@ class TestGetLogRecords:
             logger.log(get_logging_level_number(level_), message_, extra=extra_)
         output = get_log_records(root, parallelism="threads")
         output = output.filter(
+            index=index,
+            min_index=min_index,
+            max_index=max_index,
             name=name,
             message=message,
             level=level,
@@ -247,6 +256,12 @@ class TestGetLogRecords:
             max_log_file_line_num=max_log_file_line_num,
         )
         records = output.records
+        if index is not None:
+            assert all(r.index == index for r in records)
+        if min_index is not None:
+            assert all(r.index >= min_index for r in records)
+        if max_index is not None:
+            assert all(r.index <= max_index for r in records)
         if name is not None:
             assert all(search(name, r.name) for r in records)
         if message is not None:
