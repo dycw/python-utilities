@@ -71,6 +71,10 @@ THashable1 = TypeVar("THashable1", bound=Hashable)
 THashable2 = TypeVar("THashable2", bound=Hashable)
 
 
+# hashable
+THashable = TypeVar("THashable", bound=Hashable)
+
+
 # iterables
 type MaybeIterable[_T] = _T | Iterable[_T]
 type IterableHashable[_THashable: Hashable] = (
@@ -159,6 +163,7 @@ __all__ = [
     "SupportsDunderGT",
     "SupportsDunderLT",
     "SupportsRichComparison",
+    "THashable",
     "TSupportsRichComparison",
     "TimeZone",
     "TimeZoneLike",
