@@ -27,6 +27,7 @@ repos:
         name: prettier
         entry: prettier
         language: system
+        files: \.json$
         types: [json]
         args: [--write]
   # linters
