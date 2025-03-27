@@ -5,7 +5,7 @@ from functools import partial, wraps
 from inspect import iscoroutinefunction
 from os import environ
 from pathlib import Path
-from typing import TYPE_CHECKING, ParamSpec, cast, overload, override
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast, overload, override
 
 from pytest import fixture
 
@@ -22,13 +22,14 @@ from utilities.platform import (
     IS_WINDOWS,
 )
 from utilities.random import get_state
+from utilities.types import MaybeAwaitable
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Iterable, Sequence
+    from collections.abc import Awaitable, Iterable, Sequence
     from random import Random
 
-    from utilities.types import Duration, MaybeAwaitable, PathLike
+    from utilities.types import Duration, PathLike
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config  # pyright: ignore[reportPrivateImportUsage]
@@ -54,6 +55,7 @@ else:
     skipif_not_linux = mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
 
 
+_F = TypeVar("_F", bound=Callable[..., MaybeAwaitable[None]])
 _P = ParamSpec("_P")
 
 
@@ -167,18 +169,32 @@ def random_state(*, seed: int) -> Random:
 
 def throttle(
     *, root: PathLike | None = None, duration: Duration = 1.0, on_try: bool = False
-) -> Callable[[Callable[_P, MaybeAwaitable[None]]], Callable[_P, MaybeAwaitable[None]]]:
+) -> Callable[[_F], _F]:
     """Throttle a test. On success by default, on try otherwise."""
     root_use = Path(".pytest_cache", "throttle") if root is None else Path(root)
-    return partial(_throttle_inner, root=root_use, duration=duration, on_try=on_try)
+    return cast(
+        "Any", partial(_throttle_inner, root=root_use, duration=duration, on_try=on_try)
+    )
 
 
 @overload
 def _throttle_inner(
-    func: Callable[_P, Awaitable[None]], /
+    func: Callable[_P, Awaitable[None]],
+    /,
+    *,
+    root: Path,
+    duration: Duration = 1.0,
+    on_try: bool = False,
 ) -> Callable[_P, Awaitable[None]]: ...
 @overload
-def _throttle_inner(func: Callable[_P, None], /) -> Callable[_P, None]: ...
+def _throttle_inner(
+    func: Callable[_P, None],
+    /,
+    *,
+    root: Path,
+    duration: Duration = 1.0,
+    on_try: bool = False,
+) -> Callable[_P, None]: ...
 def _throttle_inner(
     func: Callable[_P, MaybeAwaitable[None]],
     /,
