@@ -547,32 +547,35 @@ def _get_rich_traceback_base_one(
 
 def trace(func: TCallable, /) -> TCallable:
     """Trace a function call."""
-    if not iscoroutinefunction(func):
-        func_typed = cast("Callable[..., Any]", func)
+    match bool(iscoroutinefunction(func)):
+        case False:
+            func_typed = cast("Callable[..., Any]", func)
 
-        @wraps(func)
-        def trace_sync(*args: Any, **kwargs: Any) -> Any:
-            locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
-            try:
-                return func_typed(*args, **kwargs)
-            except Exception as error:
-                cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
-                raise
+            @wraps(func)
+            def trace_sync(*args: Any, **kwargs: Any) -> Any:
+                locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
+                try:
+                    return func_typed(*args, **kwargs)
+                except Exception as error:
+                    cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
+                    raise
 
-        return cast("TCallable", trace_sync)
+            return cast("TCallable", trace_sync)
+        case True:
+            func_typed = cast("Callable[..., Coroutine1[Any]]", func)
 
-    func_typed = cast("Callable[..., Coroutine1[Any]]", func)
+            @wraps(func)
+            async def trace_async(*args: Any, **kwargs: Any) -> Any:
+                locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
+                try:  # skipif-ci
+                    return await func_typed(*args, **kwargs)
+                except Exception as error:  # skipif-ci
+                    cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
+                    raise
 
-    @wraps(func)
-    async def trace_async(*args: Any, **kwargs: Any) -> Any:
-        locals()[_CALL_ARGS] = _CallArgs.create(func, *args, **kwargs)
-        try:  # skipif-ci
-            return await func_typed(*args, **kwargs)
-        except Exception as error:  # skipif-ci
-            cast("Any", error).exc_tb = _get_rich_traceback_internal(error)
-            raise
-
-    return cast("TCallable", trace_async)
+            return cast("TCallable", trace_async)
+        case _ as never:
+            assert_never(never)
 
 
 @overload
