@@ -64,7 +64,6 @@ _T2 = TypeVar("_T2")
 _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
-_THashable = TypeVar("_THashable", bound=Hashable)
 _TSupportsAdd = TypeVar("_TSupportsAdd", bound=SupportsAdd)
 
 ##
