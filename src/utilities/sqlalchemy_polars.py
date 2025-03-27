@@ -279,6 +279,24 @@ async def select_to_dataframe(
     timeout: utilities.types.Duration | None = None,
     **kwargs: Any,
 ) -> AsyncIterable[DataFrame]: ...
+@overload
+async def select_to_dataframe(
+    sel: Select[Any],
+    engine: AsyncEngine,
+    /,
+    *,
+    snake: bool = False,
+    time_zone: TimeZoneLike = UTC,
+    batch_size: int | None = None,
+    in_clauses: tuple[Column[Any], Iterable[Any]] | None = None,
+    in_clauses_chunk_size: int | None = None,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    stop: StopBaseT | None = None,
+    wait: WaitBaseT | None = None,
+    retry: SyncRetryBaseT | None = None,
+    timeout: utilities.types.Duration | None = None,
+    **kwargs: Any,
+) -> DataFrame | Iterable[DataFrame] | AsyncIterable[DataFrame]: ...
 async def select_to_dataframe(
     sel: Select[Any],
     engine: AsyncEngine,
