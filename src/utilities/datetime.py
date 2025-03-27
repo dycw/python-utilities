@@ -28,7 +28,7 @@ from utilities.zoneinfo import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import DateOrDateTime, Duration, ZoneInfoLike
+    from utilities.types import DateOrDateTime, Duration, TimeZoneLike
 
 
 _DAYS_PER_YEAR = 365.25
@@ -215,7 +215,7 @@ class CheckDateNotDateTimeError(Exception):
 
 
 def date_to_datetime(
-    date: dt.date, /, *, time: dt.time | None = None, time_zone: ZoneInfoLike = UTC
+    date: dt.date, /, *, time: dt.time | None = None, time_zone: TimeZoneLike = UTC
 ) -> dt.datetime:
     """Expand a date into a datetime."""
     check_date_not_datetime(date)
@@ -446,7 +446,7 @@ MONTH = get_months(n=1)
 ##
 
 
-def get_now(*, time_zone: ZoneInfoLike = UTC) -> dt.datetime:
+def get_now(*, time_zone: TimeZoneLike = UTC) -> dt.datetime:
     """Get the current, timezone-aware time."""
     return dt.datetime.now(tz=ensure_time_zone(time_zone))
 
@@ -491,7 +491,7 @@ QUARTER = get_quarters(n=1)
 ##
 
 
-def get_today(*, time_zone: ZoneInfoLike = UTC) -> dt.date:
+def get_today(*, time_zone: TimeZoneLike = UTC) -> dt.date:
     """Get the current, timezone-aware date."""
     return get_now(time_zone=time_zone).date()
 
@@ -910,7 +910,7 @@ class ParseDateCompactError(Exception):
 
 
 def parse_datetime_compact(
-    text: str, /, *, time_zone: ZoneInfoLike = UTC
+    text: str, /, *, time_zone: TimeZoneLike = UTC
 ) -> dt.datetime:
     """Parse a compact string into a datetime."""
     time_zone = ensure_time_zone(time_zone)
