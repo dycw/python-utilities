@@ -61,7 +61,10 @@ if TYPE_CHECKING:
         Mapping,
     )
 
-    from polars._typing import PolarsDataType, SchemaDict
+    from polars._typing import (
+        PolarsDataType,  # pyright: ignore[reportPrivateImportUsage]
+        SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
+    )
     from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
     from tenacity.retry import RetryBaseT as SyncRetryBaseT

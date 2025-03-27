@@ -32,8 +32,8 @@ if TYPE_CHECKING:
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config  # pyright: ignore[reportPrivateImportUsage]
-    from _pytest.config.argparsing import (  # pyright: ignore[reportPrivateImportUsage]
-        Parser,
+    from _pytest.config.argparsing import (
+        Parser,  # pyright: ignore[reportPrivateImportUsage]
     )
     from _pytest.python import Function  # pyright: ignore[reportPrivateImportUsage]
     from pytest import mark, skip

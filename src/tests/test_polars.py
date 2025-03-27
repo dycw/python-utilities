@@ -151,7 +151,10 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
     from zoneinfo import ZoneInfo
 
-    from polars._typing import IntoExprColumn, SchemaDict
+    from polars._typing import (
+        IntoExprColumn,  # pyright: ignore[reportPrivateImportUsage]
+        SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
+    )
     from polars.datatypes import DataTypeClass
 
     from utilities.types import MaybeType, StrMapping
