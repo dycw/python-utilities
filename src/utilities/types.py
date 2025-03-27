@@ -53,6 +53,7 @@ type DateOrDateTime = dt.date | dt.datetime
 
 # enum
 type EnumOrStr[_TEnum: Enum] = _TEnum | str
+TEnum = TypeVar("TEnum", bound=Enum)
 
 
 # hashable
@@ -151,6 +152,7 @@ __all__ = [
     "SupportsRichComparison",
     "TCallable",
     "TDataclass",
+    "TEnum",
     "THashable",
     "THashable1",
     "THashable2",

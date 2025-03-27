@@ -11,9 +11,8 @@ from cachetools.func import ttl_cache
 from utilities.datetime import datetime_duration_to_float
 
 if TYPE_CHECKING:
-    from utilities.types import Duration
+    from utilities.types import Duration, TCallable
 
-_F = TypeVar("_F", bound=Callable[..., Any])
 _K = TypeVar("_K")
 _T = TypeVar("_T")
 _V = TypeVar("_V")
@@ -107,7 +106,7 @@ def cache(
     max_duration: Duration | None = None,
     timer: Callable[[], float] = monotonic,
     typed_: bool = False,
-) -> Callable[[_F], _F]:
+) -> Callable[[TCallable], TCallable]:
     """Decorate a function with `max_size` and/or `ttl` settings."""
     return ttl_cache(
         maxsize=inf if max_size is None else max_size,

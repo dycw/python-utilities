@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-import enum
 import pathlib
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, override
 from uuid import UUID
@@ -24,6 +23,7 @@ from utilities.functions import get_class_name
 from utilities.iterables import is_iterable_not_str
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
+from utilities.types import TEnum
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -89,13 +89,10 @@ class Duration(ParamType):
             self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
 
 
-_E = TypeVar("_E", bound=enum.Enum)
-
-
-class Enum(ParamType, Generic[_E]):
+class Enum(ParamType, Generic[TEnum]):
     """An enum-valued parameter."""
 
-    def __init__(self, enum: type[_E], /, *, case_sensitive: bool = False) -> None:
+    def __init__(self, enum: type[TEnum], /, *, case_sensitive: bool = False) -> None:
         cls = get_class_name(enum)
         self.name = f"ENUM[{cls}]"
         self._enum = enum
@@ -108,7 +105,9 @@ class Enum(ParamType, Generic[_E]):
         return f"ENUM[{cls}]"
 
     @override
-    def convert(self, value: Any, param: Parameter | None, ctx: Context | None) -> _E:
+    def convert(
+        self, value: Any, param: Parameter | None, ctx: Context | None
+    ) -> TEnum:
         """Convert a value into the `Enum` type."""
         try:
             return ensure_enum(value, self._enum, case_sensitive=self._case_sensitive)
@@ -305,12 +304,12 @@ class FrozenSetChoices(FrozenSetParameter[Choice, str]):
         )
 
 
-class FrozenSetEnums(FrozenSetParameter[Enum[_E], _E]):
+class FrozenSetEnums(FrozenSetParameter[Enum[TEnum], TEnum]):
     """A frozenset-of-enums-valued parameter."""
 
     def __init__(
         self,
-        enum: type[_E],
+        enum: type[TEnum],
         /,
         *,
         case_sensitive: bool = False,
@@ -414,12 +413,12 @@ class ListDates(ListParameter[Date, dt.date]):
         super().__init__(Date(), separator=separator, empty=empty)
 
 
-class ListEnums(ListParameter[Enum[_E], _E]):
+class ListEnums(ListParameter[Enum[TEnum], TEnum]):
     """A list-of-enums-valued parameter."""
 
     def __init__(
         self,
-        enum: type[_E],
+        enum: type[TEnum],
         /,
         *,
         case_sensitive: bool = False,
