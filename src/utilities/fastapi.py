@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import InitVar, dataclass, field
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING, Any, Literal, override
 
 from fastapi import FastAPI
 from uvicorn import Config, Server
@@ -53,7 +53,7 @@ class PingReceiver(AsyncService):
     @classmethod
     async def ping(
         cls, port: int, /, *, host: str = _LOCALHOST, timeout: Duration = _TIMEOUT
-    ) -> bool:
+    ) -> str | Literal[False]:
         """Ping the receiver."""
         from httpx import AsyncClient, ConnectError  # skipif-ci
 
@@ -64,10 +64,7 @@ class PingReceiver(AsyncService):
                 response = await client.get(url, timeout=timeout_use)
         except ConnectError:  # skipif-ci
             return False
-        else:  # skipif-ci
-            if response.status_code != 200:
-                return False
-            return response.text
+        return response.text if response.status_code == 200 else False  # skipif-ci
 
     @override
     async def _start_core(self) -> None:
