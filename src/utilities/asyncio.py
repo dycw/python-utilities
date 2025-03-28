@@ -215,7 +215,7 @@ class QueueProcessor(AsyncService, Generic[_T]):
 
     @override
     async def _start_core(self) -> None:
-        """Start the queue processor, assuming no task is present."""
+        """Start the processor, assuming no task is present."""
         while True:
             try:
                 await self._get_and_run()
