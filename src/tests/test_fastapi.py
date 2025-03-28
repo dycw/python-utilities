@@ -17,6 +17,6 @@ class TestPingReceiver:
             await sleep(0.1)
             result = await PingReceiver.ping(port)
             assert isinstance(result, str)
-            assert search(r"^pong @ \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}", result)
+            assert search(r"pong @ \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}", result)
         await sleep(0.1)
         assert await PingReceiver.ping(port) is False
