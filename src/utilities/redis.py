@@ -18,6 +18,7 @@ from uuid import UUID, uuid4
 
 from redis.asyncio import Redis
 
+from utilities.asyncio import timeout_dur
 from utilities.datetime import (
     MILLISECOND,
     SECOND,
@@ -61,6 +62,9 @@ _V2 = TypeVar("_V2")
 _V3 = TypeVar("_V3")
 
 
+##
+
+
 class _RedisMessageSubscribe(TypedDict):
     type: Literal["subscribe", "psubscribe", "message", "pmessage"]
     pattern: str | None
@@ -75,14 +79,11 @@ class _RedisMessageUnsubscribe(TypedDict):
     data: int
 
 
-_HOST = "localhost"
-_PORT = 6379
-_SUBSCRIBE_TIMEOUT = SECOND
-_SUBSCRIBE_SLEEP = 10 * MILLISECOND
+##
 
 
 @dataclass(kw_only=True)
-class _RedisHashMapKey(Generic[_K, _V]):
+class RedisHashMapKey(Generic[_K, _V]):
     """A hashmap key in a redis store."""
 
     name: str
@@ -194,7 +195,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K, _V]: ...
+) -> RedisHashMapKey[_K, _V]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -210,7 +211,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K, _V1 | _V2]: ...
+) -> RedisHashMapKey[_K, _V1 | _V2]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -226,7 +227,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K, _V1 | _V2 | _V3]: ...
+) -> RedisHashMapKey[_K, _V1 | _V2 | _V3]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -242,7 +243,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K1 | _K2, _V]: ...
+) -> RedisHashMapKey[_K1 | _K2, _V]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -258,7 +259,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K1 | _K2, _V1 | _V2]: ...
+) -> RedisHashMapKey[_K1 | _K2, _V1 | _V2]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -274,7 +275,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K1 | _K2, _V1 | _V2 | _V3]: ...
+) -> RedisHashMapKey[_K1 | _K2, _V1 | _V2 | _V3]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -290,7 +291,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V]: ...
+) -> RedisHashMapKey[_K1 | _K2 | _K3, _V]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -306,7 +307,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2]: ...
+) -> RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -322,7 +323,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2 | _V3]: ...
+) -> RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2 | _V3]: ...
 def redis_hash_map_key(
     name: str,
     key: Any,
@@ -337,9 +338,9 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = None,
     timeout: Duration | None = None,
     ttl: Duration | None = None,
-) -> _RedisHashMapKey[Any, Any]:
+) -> RedisHashMapKey[Any, Any]:
     """Create a redis key."""
-    return _RedisHashMapKey(  # skipif-ci-and-not-linux
+    return RedisHashMapKey(  # skipif-ci-and-not-linux
         name=name,
         key=key,
         key_serializer=key_serializer,
@@ -354,8 +355,11 @@ def redis_hash_map_key(
     )
 
 
+##
+
+
 @dataclass(kw_only=True)
-class _RedisKey(Generic[_T]):
+class RedisKey(Generic[_T]):
     """A key in a redis store."""
 
     name: str
@@ -456,7 +460,7 @@ def redis_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisKey[_T]: ...
+) -> RedisKey[_T]: ...
 @overload
 def redis_key(
     name: str,
@@ -470,7 +474,7 @@ def redis_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisKey[_T1 | _T2]: ...
+) -> RedisKey[_T1 | _T2]: ...
 @overload
 def redis_key(
     name: str,
@@ -484,7 +488,7 @@ def redis_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisKey[_T1 | _T2 | _T3]: ...
+) -> RedisKey[_T1 | _T2 | _T3]: ...
 @overload
 def redis_key(
     name: str,
@@ -498,7 +502,7 @@ def redis_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisKey[_T1 | _T2 | _T3 | _T4]: ...
+) -> RedisKey[_T1 | _T2 | _T3 | _T4]: ...
 @overload
 def redis_key(
     name: str,
@@ -512,7 +516,7 @@ def redis_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisKey[_T1 | _T2 | _T3 | _T4 | _T5]: ...
+) -> RedisKey[_T1 | _T2 | _T3 | _T4 | _T5]: ...
 def redis_key(
     name: str,
     type_: Any,
@@ -525,9 +529,9 @@ def redis_key(
     retry: RetryBaseT | None = None,
     timeout: Duration | None = None,
     ttl: Duration | None = None,
-) -> _RedisKey[Any]:
+) -> RedisKey[Any]:
     """Create a redis key."""
-    return _RedisKey(  # skipif-ci-and-not-linux
+    return RedisKey(  # skipif-ci-and-not-linux
         name=name,
         type=type_,
         serializer=serializer,
@@ -540,9 +544,21 @@ def redis_key(
     )
 
 
+##
+
+
+_PUBLISH_TIMEOUT: Duration = SECOND
+
+
 @overload
 async def publish(
-    redis: Redis, channel: str, data: _T, /, *, serializer: Callable[[_T], EncodableT]
+    redis: Redis,
+    channel: str,
+    data: _T,
+    /,
+    *,
+    serializer: Callable[[_T], EncodableT],
+    timeout: Duration = _PUBLISH_TIMEOUT,
 ) -> ResponseT: ...
 @overload
 async def publish(
@@ -552,6 +568,7 @@ async def publish(
     /,
     *,
     serializer: Callable[[EncodableT], EncodableT] | None = None,
+    timeout: Duration = _PUBLISH_TIMEOUT,
 ) -> ResponseT: ...
 async def publish(
     redis: Redis,
@@ -560,12 +577,21 @@ async def publish(
     /,
     *,
     serializer: Callable[[Any], EncodableT] | None = None,
+    timeout: Duration = _PUBLISH_TIMEOUT,
 ) -> ResponseT:
     """Publish an object to a channel."""
     data_use = (  # skipif-ci-and-not-linux
         cast("EncodableT", data) if serializer is None else serializer(data)
     )
-    return await redis.publish(channel, data_use)  # skipif-ci-and-not-linux
+    async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
+        return await redis.publish(channel, data_use)  # skipif-ci-and-not-linux
+
+
+##
+
+
+_SUBSCRIBE_TIMEOUT: Duration = SECOND
+_SUBSCRIBE_SLEEP: Duration = 10 * MILLISECOND
 
 
 @overload
@@ -643,6 +669,13 @@ async def subscribe_messages(
             await asyncio.sleep(sleep_use)
 
 
+##
+
+
+_HOST = "localhost"
+_PORT = 6379
+
+
 @asynccontextmanager
 async def yield_redis(
     *,
@@ -678,6 +711,9 @@ async def yield_redis(
         await redis.aclose()
 
 
+##
+
+
 @dataclass(repr=False, kw_only=True, slots=True)
 class _TestRedis:
     """A container for a redis client; for testing purposes only."""
@@ -692,6 +728,8 @@ _ = _TestRedis
 
 
 __all__ = [
+    "RedisHashMapKey",
+    "RedisKey",
     "publish",
     "redis_hash_map_key",
     "redis_key",
