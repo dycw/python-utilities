@@ -12,7 +12,8 @@ class TestPingReceiver:
         port = 5465
         assert not await PingReceiver.ping(port)
         await sleep(0.1)
-        async with PingReceiver(port=port):
+        receiver = PingReceiver(port=port)
+        async with receiver:
             await sleep(0.1)
             assert await PingReceiver.ping(port)
         await sleep(0.1)
