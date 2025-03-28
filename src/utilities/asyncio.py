@@ -152,6 +152,10 @@ class AsyncLoopingService(AsyncService):
         while True:
             await self._run()
 
+    @override
+    async def _stop_core(self) -> None:
+        """Stop the service, assuming the task has just been cancelled."""
+
 
 ##
 
