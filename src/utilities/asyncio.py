@@ -95,7 +95,7 @@ class AsyncService(ABC):
 
     async def start(self) -> None:
         """Start the service."""
-        if (self._task is None) or (self._task.done()):
+        if self._task is None:
             self._task = create_task(self._start_core())
 
     @abstractmethod

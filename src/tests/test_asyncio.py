@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from gc import collect
 from itertools import chain
 from re import search
-from typing import TYPE_CHECKING, Literal, Self, override
+from typing import TYPE_CHECKING, Self, override
 
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
@@ -64,10 +64,7 @@ class TestAsyncLoopingService:
 
 
 class TestAsyncService:
-    @given(start_or_stop=sampled_from(["start", "stop"]))
-    async def test_start_and_stop(
-        self, *, start_or_stop: Literal["start", "stop"]
-    ) -> None:
+    async def test_start_and_stop(self) -> None:
         @dataclass(kw_only=True)
         class Example(AsyncService):
             running: bool = False
@@ -85,27 +82,17 @@ class TestAsyncService:
             assert not service.running
             assert service._task is None
 
-            await service.start()
-            await sleep(0.01)
-            assert service.running
-            assert service._task is not None
+            for _ in range(2):
+                await service.start()
+                await sleep(0.01)
+                assert service.running
+                assert service._task is not None
 
-            match start_or_stop:
-                case "start":
-                    await service.start()
-                    await sleep(0.01)
-                    assert service.running
-                    assert service._task is not None
-                case "stop":
-                    await service.stop()
-                    await sleep(0.01)
-                    assert not service.running
-                    assert service._task is None
-
-            await service.stop()
-            await sleep(0.01)
-            assert not service.running
-            assert service._task is None
+            for _ in range(2):
+                await service.stop()
+                await sleep(0.01)
+                assert not service.running
+                assert service._task is None
 
     async def test_context_manager(self) -> None:
         @dataclass(kw_only=True)
