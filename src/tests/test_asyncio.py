@@ -23,6 +23,7 @@ from pytest import approx, mark, raises
 from utilities.asyncio import (
     AsyncLoopingService,
     AsyncService,
+    AsyncServiceError,
     BoundedTaskGroup,
     ExceptionProcessor,
     QueueProcessor,
@@ -93,6 +94,40 @@ class TestAsyncService:
                 await sleep(0.01)
                 assert not service.running
                 assert service._task is None
+
+    async def test_await_with_task(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(AsyncService):
+            running: bool = False
+
+            @override
+            async def _start_core(self) -> None:
+                self.running = True
+
+            @override
+            async def _stop_core(self) -> None:
+                self.running = False
+
+        service = Example()
+        await service.start()
+        assert await service is None
+
+    async def test_await_without_task(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(AsyncService):
+            running: bool = False
+
+            @override
+            async def _start_core(self) -> None:
+                self.running = True
+
+            @override
+            async def _stop_core(self) -> None:
+                self.running = False
+
+        service = Example()
+        with raises(AsyncServiceError, match=".* is not running"):
+            _ = await service
 
     async def test_context_manager(self) -> None:
         @dataclass(kw_only=True)
