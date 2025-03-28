@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from gc import collect
 from itertools import chain
 from re import search
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, Literal, override
 
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
@@ -21,6 +21,7 @@ from hypothesis.strategies import (
 from pytest import mark, raises
 
 from utilities.asyncio import (
+    AsyncService,
     BoundedTaskGroup,
     QueueProcessor,
     UniquePriorityQueue,
@@ -39,6 +40,167 @@ from utilities.timer import Timer
 
 if TYPE_CHECKING:
     from utilities.types import Duration
+
+
+class TestAsyncService:
+    @given(start_or_stop=sampled_from(["start", "stop"]))
+    async def test_start_and_stop(
+        self, *, start_or_stop: Literal["start", "stop"]
+    ) -> None:
+        @dataclass(kw_only=True)
+        class Example(AsyncService):
+            running: bool = False
+
+            @override
+            async def _start_core(self) -> None:
+                self.running = True
+
+            @override
+            async def _stop_core(self) -> None:
+                self.running = False
+
+        service = Example()
+        for _ in range(2):
+            assert not service.running
+            assert service._task is None
+
+            await service.start()
+            await sleep(0.01)
+            assert service.running
+            assert service._task is not None
+
+            match start_or_stop:
+                case "start":
+                    await service.start()
+                    await sleep(0.01)
+                    assert service.running
+                    assert service._task is not None
+                case "stop":
+                    await service.stop()
+                    await sleep(0.01)
+                    assert not service.running
+                    assert service._task is None
+
+            await service.stop()
+            await sleep(0.01)
+            assert not service.running
+            assert service._task is None
+
+    async def test_context_manager(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(AsyncService):
+            running: bool = False
+
+            @override
+            async def _start_core(self) -> None:
+                self.running = True
+
+            @override
+            async def _stop_core(self) -> None:
+                self.running = False
+
+        service = Example()
+        for _ in range(2):
+            async with service:
+                assert not service.running
+
+                await service.start()
+                await sleep(0.01)
+                assert service.running
+
+                await service.stop()
+                await sleep(0.01)
+                assert not service.running
+
+    async def test_del_with_task(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(AsyncService):
+            running: bool = False
+
+            @override
+            async def _start_core(self) -> None:
+                self.running = True
+
+            @override
+            async def _stop_core(self) -> None:
+                self.running = False
+
+        service = Example()
+        assert service._task is None
+
+        await service.start()
+        await sleep(0.01)
+        assert service._task is not None
+
+        del service
+        _ = collect()
+
+    async def test_del_with_task_equal_to_none(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(AsyncService):
+            running: bool = False
+
+            @override
+            async def _start_core(self) -> None:
+                self.running = True
+
+            @override
+            async def _stop_core(self) -> None:
+                self.running = False
+
+        service = Example()
+        assert service._task is None
+
+        del service
+        _ = collect()
+
+    async def test_del_without_task_attribute(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(AsyncService):
+            x: int
+
+            @override
+            async def _start_core(self) -> None:
+                self.running = True
+
+            @override
+            async def _stop_core(self) -> None:
+                self.running = False
+
+        with raises(TypeError, match="missing 1 required keyword-only argument: 'x'"):
+            _ = Example()  # pyright: ignore[reportCallIssue]
+
+    async def test_new(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(AsyncService):
+            running: bool = False
+
+            @override
+            async def _start_core(self) -> None:
+                self.running = True
+
+            @override
+            async def _stop_core(self) -> None:
+                self.running = False
+
+        service = await Example.new()
+        await sleep(0.01)
+        assert service.running
+
+    def test_repr(self) -> None:
+        class Example(AsyncService):
+            @override
+            async def _start_core(self) -> None:
+                await sleep(0.01)
+
+            @override
+            async def _stop_core(self) -> None:
+                await sleep(0.01)
+
+        service = Example()
+        result = repr(service)
+        expected = "TestAsyncService.test_repr.<locals>.Example()"
+        assert result == expected
 
 
 class TestBoundedTaskGroup:
@@ -221,23 +383,6 @@ class TestQueueProcessor:
         assert len(first.output) == n
         assert len(second.output) == n
 
-    @given(n=integers(0, 10))
-    async def test_context_manager(self, *, n: int) -> None:
-        @dataclass(kw_only=True)
-        class Example(QueueProcessor[int]):
-            output: set[int] = field(default_factory=set)
-
-            @override
-            async def _run(self, item: int, /) -> None:
-                self.output.add(item)
-
-        processor = Example()
-        processor.enqueue(*range(n))
-        assert len(processor.output) == 0
-        async with processor:
-            pass
-        assert len(processor.output) == n
-
     async def test_del_with_task(self) -> None:
         class Example(QueueProcessor[int]):
             @override
@@ -341,17 +486,6 @@ class TestQueueProcessor:
         await processor._get_and_run()
         result = one(processor.output)
         assert result == texts[0]
-
-    def test_repr(self) -> None:
-        class Example(QueueProcessor[int]):
-            @override
-            async def _run(self, item: int) -> None:
-                _ = item
-
-        queue = Example()
-        result = repr(queue)
-        expected = "TestQueueProcessor.test_repr.<locals>.Example()"
-        assert result == expected
 
     async def test_start_with_task(self) -> None:
         class Example(QueueProcessor[int]):

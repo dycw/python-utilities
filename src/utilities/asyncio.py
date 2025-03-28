@@ -78,6 +78,13 @@ class AsyncService(ABC):
         with suppress(RuntimeError):
             _ = task.cancel()
 
+    @classmethod
+    async def new(cls, **kwargs: Any) -> Self:
+        """Create and start the service."""
+        self = cls(**kwargs)
+        await self.start()
+        return self
+
     async def start(self) -> None:
         """Start the service."""
         if self._task is None:
@@ -168,12 +175,12 @@ class QueueProcessor(AsyncService, Generic[_T]):
             self._queue.put_nowait(item)
 
     @classmethod
+    @override
     async def new(cls, *args: _T, **kwargs: Any) -> Self:
-        """Create and start ."""
-        self = cls(**kwargs)
-        self.enqueue(*args)
-        await self.start()
-        return self
+        """Create and start the processor."""
+        processor = await super().new(**kwargs)
+        processor.enqueue(*args)
+        return processor
 
     async def run_until_empty(self) -> None:
         """Run the processor until the queue is empty."""
