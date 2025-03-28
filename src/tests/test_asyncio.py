@@ -345,7 +345,6 @@ class TestExceptionProcessor:
         with raises(ExceptionGroup) as exc_info:  # noqa: PT012
             async with TaskGroup() as tg:
                 _ = tg.create_task(yield_tasks())
-                _ = tg.create_task(processor.start())
                 _ = tg.create_task(processor())
 
         assert len(exc_info.value.exceptions) == 1
