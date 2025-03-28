@@ -56,6 +56,10 @@ class TestAsyncLoopingService:
                 self.counter += 1
                 await sleep(0.01)
 
+            @override
+            async def _stop_core(self) -> None:
+                self.counter = 0
+
         service = Example()
         assert service.counter == 0
 
