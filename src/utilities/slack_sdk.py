@@ -67,8 +67,8 @@ class SlackHandler(Handler, QueueProcessor[str]):
             self.handleError(record)
 
     @override
-    async def _run(self, item: str, /) -> None:
-        """Run the handler."""
+    async def _process_item(self, item: str, /) -> None:
+        """Process the first item."""
         items = list(chain([item], await self._get_items_nowait()))
         text = "\n".join(items)
         await send_to_slack(self.url, text, timeout=self.timeout)  # pragma: no cover
