@@ -18,11 +18,13 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import mark, raises
+from pytest import approx, mark, raises
 
 from utilities.asyncio import (
+    AsyncLoopingService,
     AsyncService,
     BoundedTaskGroup,
+    ExceptionProcessor,
     QueueProcessor,
     UniquePriorityQueue,
     UniqueQueue,
@@ -40,6 +42,25 @@ from utilities.timer import Timer
 
 if TYPE_CHECKING:
     from utilities.types import Duration
+
+
+class TestAsyncLoopingService:
+    async def test_start_and_stop(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(AsyncLoopingService):
+            counter: int = 0
+
+            @override
+            async def _run(self) -> None:
+                self.counter += 1
+                await sleep(0.01)
+
+        service = Example()
+        assert service.counter == 0
+
+        await service.start()
+        await sleep(0.1)
+        assert service.counter == approx(10, rel=0.1)
 
 
 class TestAsyncService:
@@ -262,6 +283,19 @@ class TestBoundedTaskGroup:
         assert timer <= 0.05
 
 
+class TestExceptionProcessor:
+    async def test_main(self) -> None:
+        processor = ExceptionProcessor()
+        await processor.start()
+
+        class CustomError(Exception): ...
+
+        processor.enqueue(CustomError)
+
+        with raises(CustomError):
+            await processor
+
+
 class TestGetItems:
     @given(
         xs=lists(integers(), min_size=1),
@@ -339,7 +373,7 @@ class TestQueueProcessor:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _run(self, item: int, /) -> None:
+            async def _process_item(self, item: int, /) -> None:
                 self.output.add(item)
 
         processor = Example()
@@ -365,7 +399,7 @@ class TestQueueProcessor:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _run(self, item: int, /) -> None:
+            async def _process_item(self, item: int, /) -> None:
                 self.output.add(item)
                 await sleep(0.01)
 
@@ -383,7 +417,7 @@ class TestQueueProcessor:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _run(self, item: int, /) -> None:
+            async def _process_item(self, item: int, /) -> None:
                 self.output.add(item)
 
         processor = Example()
@@ -401,7 +435,7 @@ class TestQueueProcessor:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _run(self, item: int, /) -> None:
+            async def _process_item(self, item: int, /) -> None:
                 self.second.enqueue(item)
                 self.output.add(item)
 
@@ -410,7 +444,7 @@ class TestQueueProcessor:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _run(self, item: int, /) -> None:
+            async def _process_item(self, item: int, /) -> None:
                 self.output.add(item)
 
         second = await Second.new()
@@ -429,7 +463,7 @@ class TestQueueProcessor:
     async def test_empty(self) -> None:
         class Example(QueueProcessor[int]):
             @override
-            async def _run(self, item: int, /) -> None:
+            async def _process_item(self, item: int, /) -> None:
                 _ = item
 
         processor = Example()
@@ -444,13 +478,13 @@ class TestQueueProcessor:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _run(self, _: int, /) -> None:
+            async def _process_item(self, _: int, /) -> None:
                 items = await self._get_items_nowait()
                 self.output.add(len(items))
 
         processor = Example()
         processor.enqueue(*range(n + 1))
-        await processor._get_and_run()
+        await processor._run()
         result = one(processor.output)
         assert result == n
 
@@ -458,7 +492,7 @@ class TestQueueProcessor:
     async def test_len(self, *, n: int) -> None:
         class Example(QueueProcessor[int]):
             @override
-            async def _run(self, item: int) -> None:
+            async def _process_item(self, item: int) -> None:
                 _ = item
 
         processor = Example()
@@ -473,14 +507,14 @@ class TestQueueProcessor:
             output: set[str] = field(default_factory=set)
 
             @override
-            async def _run(self, item: tuple[int, str]) -> None:
+            async def _process_item(self, item: tuple[int, str]) -> None:
                 _, text = item
                 self.output.add(text)
 
         processor = Example(queue_type=PriorityQueue)
         items = data.draw(permutations(list(enumerate(texts))))
         processor.enqueue(*items)
-        await processor._get_and_run()
+        await processor._run()
         result = one(processor.output)
         assert result == texts[0]
 

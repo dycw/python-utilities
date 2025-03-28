@@ -30,7 +30,7 @@ from utilities.types import THashable, TSupportsRichComparison
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
     from asyncio.subprocess import Process
-    from collections.abc import AsyncIterator, Sequence
+    from collections.abc import AsyncIterator, Generator, Sequence
     from contextvars import Context
     from types import TracebackType
 
@@ -71,6 +71,11 @@ class AsyncService(ABC):
         _ = await self._stack.__aexit__(exc_type, exc_value, traceback)
         await self.stop()
 
+    def __await__(self) -> Generator[Any, None, None]:
+        if self._task is None:
+            raise AsyncServiceError(service=self)
+        return self._task.__await__()
+
     def __del__(self) -> None:
         try:
             task = self._task
@@ -90,7 +95,7 @@ class AsyncService(ABC):
 
     async def start(self) -> None:
         """Start the service."""
-        if self._task is None:
+        if (self._task is None) or (self._task.done()):
             self._task = create_task(self._start_core())
 
     @abstractmethod
@@ -112,6 +117,38 @@ class AsyncService(ABC):
     async def _stop_core(self) -> None:
         """Stop the service, assuming the task has just been cancelled."""
         raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class AsyncServiceError(Exception):
+    service: AsyncService
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.service} is not running"
+
+
+##
+
+
+@dataclass(kw_only=True)
+class AsyncLoopingService(AsyncService):
+    """A long-running, asynchronous service which loops a core function."""
+
+    @abstractmethod
+    async def _run(self) -> None:
+        """Run the core function once."""
+        raise NotImplementedError  # pragma: no cover
+
+    @override
+    async def _start_core(self) -> None:
+        """Start the service, assuming no task is present."""
+        while True:
+            await self._run()
+
+    @override
+    async def _stop_core(self) -> None:
+        """Stop the service, assuming the task has just been cancelled."""
 
 
 ##
@@ -151,7 +188,7 @@ class BoundedTaskGroup(TaskGroup):
 
 
 @dataclass(kw_only=True)
-class QueueProcessor(AsyncService, Generic[_T]):
+class QueueProcessor(AsyncLoopingService, Generic[_T]):
     """Process a set of items in a queue."""
 
     queue_type: type[Queue[_T]] = field(default=Queue, repr=False)
@@ -188,12 +225,7 @@ class QueueProcessor(AsyncService, Generic[_T]):
     async def run_until_empty(self) -> None:
         """Run the processor until the queue is empty."""
         while not self.empty():
-            _ = await self._get_and_run()
-
-    async def _get_and_run(self) -> None:
-        """Get the next item and run the processor."""
-        (item,) = await self._get_items(max_size=1)
-        await self._run(item)
+            _ = await self._run()
 
     async def _get_items(self, *, max_size: int | None = None) -> Sequence[_T]:
         """Get items from the queue; if empty then wait."""
@@ -209,25 +241,35 @@ class QueueProcessor(AsyncService, Generic[_T]):
         return await get_items_nowait(self._queue, max_size=max_size, lock=self._lock)
 
     @abstractmethod
-    async def _run(self, item: _T, /) -> None:
-        """Run the processor on the first item."""
+    async def _process_item(self, item: _T, /) -> None:
+        """Process the first item."""
         raise NotImplementedError(item)  # pragma: no cover
 
     @override
-    async def _start_core(self) -> None:
-        """Start the processor, assuming no task is present."""
-        while True:
-            try:
-                await self._get_and_run()
-            except RuntimeError as error:  # pragma: no cover
-                if error.args[0] == "Event loop is closed":
-                    return
-                raise
+    async def _run(self) -> None:
+        """Run the core service."""
+        (item,) = await self._get_items(max_size=1)
+        await self._process_item(item)
 
     @override
     async def _stop_core(self) -> None:
         """Stop the processor, assuming the task has just been cancelled."""
         await self.run_until_empty()
+
+
+##
+
+
+@dataclass(kw_only=True)
+class ExceptionProcessor(QueueProcessor[Exception | type[Exception]]):
+    """Raise an exception in a queue."""
+
+    queue_max_size: int | None = field(default=1, repr=False)
+
+    @override
+    async def _process_item(self, item: Exception | type[Exception], /) -> None:
+        """Run the processor on the first item."""
+        raise item
 
 
 ##
@@ -406,7 +448,11 @@ async def timeout_dur(
 
 
 __all__ = [
+    "AsyncLoopingService",
+    "AsyncService",
+    "AsyncServiceError",
     "BoundedTaskGroup",
+    "ExceptionProcessor",
     "QueueProcessor",
     "StreamCommandOutput",
     "UniquePriorityQueue",
