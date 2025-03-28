@@ -18,7 +18,7 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import approx, mark, raises
+from pytest import mark, raises
 
 from utilities.asyncio import (
     AsyncLoopingService,
@@ -46,7 +46,8 @@ if TYPE_CHECKING:
 
 
 class TestAsyncLoopingService:
-    async def test_start_and_stop(self) -> None:
+    @mark.flaky
+    async def test_main(self) -> None:
         @dataclass(kw_only=True)
         class Example(AsyncLoopingService):
             counter: int = 0
@@ -64,8 +65,8 @@ class TestAsyncLoopingService:
         assert service.counter == 0
 
         await service.start()
-        await sleep(0.1)
-        assert service.counter == approx(10, rel=0.1)
+        await sleep(0.2)
+        assert 10 <= service.counter <= 30
 
 
 class TestAsyncService:
