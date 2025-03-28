@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, Any, Generic, Self, TextIO, TypeVar, cast, ove
 
 from utilities.datetime import datetime_duration_to_float
 from utilities.functions import ensure_int, ensure_not_none
-from utilities.types import THashable, TSupportsRichComparison
+from utilities.types import Coroutine1, THashable, TSupportsRichComparison
 
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
@@ -75,6 +75,12 @@ class AsyncService(ABC):
         if self._task is None:
             raise AsyncServiceError(service=self)
         return self._task.__await__()
+
+    def __call__(self) -> Coroutine1[None]:
+        async def coroutine() -> None:
+            return await self
+
+        return coroutine()
 
     def __del__(self) -> None:
         try:

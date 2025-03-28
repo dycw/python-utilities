@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from gc import collect
 from itertools import chain
 from re import search
-from typing import TYPE_CHECKING, Self, override
+from typing import TYPE_CHECKING, Literal, Self, override
 
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
@@ -95,7 +95,10 @@ class TestAsyncService:
                 assert not service.running
                 assert service._task is None
 
-    async def test_await_with_task(self) -> None:
+    @given(case=sampled_from(["await", "call"]))
+    async def test_await_and_call_with_task(
+        self, *, case: Literal["await", "call"]
+    ) -> None:
         @dataclass(kw_only=True)
         class Example(AsyncService):
             running: bool = False
@@ -110,9 +113,16 @@ class TestAsyncService:
 
         service = Example()
         await service.start()
-        assert await service is None
+        match case:
+            case "await":
+                assert await service is None
+            case "call":
+                assert await service() is None
 
-    async def test_await_without_task(self) -> None:
+    @given(case=sampled_from(["await", "call"]))
+    async def test_await_and_call_without_task(
+        self, *, case: Literal["await", "call"]
+    ) -> None:
         @dataclass(kw_only=True)
         class Example(AsyncService):
             running: bool = False
@@ -126,8 +136,13 @@ class TestAsyncService:
                 self.running = False
 
         service = Example()
-        with raises(AsyncServiceError, match=".* is not running"):
-            _ = await service
+        match case:
+            case "await":
+                with raises(AsyncServiceError, match=".* is not running"):
+                    await service
+            case "call":
+                with raises(AsyncServiceError, match=".* is not running"):
+                    await service()
 
     async def test_context_manager(self) -> None:
         @dataclass(kw_only=True)
@@ -306,7 +321,7 @@ class TestBoundedTaskGroup:
 
 
 class TestExceptionProcessor:
-    async def test_main(self) -> None:
+    async def test_direct(self) -> None:
         processor = ExceptionProcessor()
         await processor.start()
 
@@ -316,6 +331,26 @@ class TestExceptionProcessor:
 
         with raises(CustomError):
             await processor
+
+    async def test_in_task_group(self) -> None:
+        processor = ExceptionProcessor()
+        await processor.start()
+
+        class CustomError(Exception): ...
+
+        async def yield_tasks() -> None:
+            await sleep(0.01)
+            processor.enqueue(CustomError)
+
+        with raises(ExceptionGroup) as exc_info:  # noqa: PT012
+            async with TaskGroup() as tg:
+                _ = tg.create_task(yield_tasks())
+                _ = tg.create_task(processor.start())
+                _ = tg.create_task(processor())
+
+        assert len(exc_info.value.exceptions) == 1
+        exception = one(exc_info.value.exceptions)
+        assert isinstance(exception, CustomError)
 
 
 class TestGetItems:
