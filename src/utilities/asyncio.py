@@ -93,7 +93,7 @@ class AsyncService(ABC):
     @abstractmethod
     async def _start_core(self) -> None:
         """Start the service, assuming no task is present."""
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     async def stop(self) -> None:
         """Stop the service."""
@@ -108,7 +108,7 @@ class AsyncService(ABC):
     @abstractmethod
     async def _stop_core(self) -> None:
         """Stop the service, assuming the task has just been cancelled."""
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
 
 ##
