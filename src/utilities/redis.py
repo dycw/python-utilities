@@ -83,7 +83,7 @@ class _RedisMessageUnsubscribe(TypedDict):
 
 
 @dataclass(kw_only=True)
-class _RedisHashMapKey(Generic[_K, _V]):
+class RedisHashMapKey(Generic[_K, _V]):
     """A hashmap key in a redis store."""
 
     name: str
@@ -195,7 +195,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K, _V]: ...
+) -> RedisHashMapKey[_K, _V]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -211,7 +211,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K, _V1 | _V2]: ...
+) -> RedisHashMapKey[_K, _V1 | _V2]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -227,7 +227,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K, _V1 | _V2 | _V3]: ...
+) -> RedisHashMapKey[_K, _V1 | _V2 | _V3]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -243,7 +243,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K1 | _K2, _V]: ...
+) -> RedisHashMapKey[_K1 | _K2, _V]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -259,7 +259,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K1 | _K2, _V1 | _V2]: ...
+) -> RedisHashMapKey[_K1 | _K2, _V1 | _V2]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -275,7 +275,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K1 | _K2, _V1 | _V2 | _V3]: ...
+) -> RedisHashMapKey[_K1 | _K2, _V1 | _V2 | _V3]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -291,7 +291,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V]: ...
+) -> RedisHashMapKey[_K1 | _K2 | _K3, _V]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -307,7 +307,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2]: ...
+) -> RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2]: ...
 @overload
 def redis_hash_map_key(
     name: str,
@@ -323,7 +323,7 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = ...,
     timeout: Duration | None = ...,
     ttl: Duration | None = ...,
-) -> _RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2 | _V3]: ...
+) -> RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2 | _V3]: ...
 def redis_hash_map_key(
     name: str,
     key: Any,
@@ -338,9 +338,9 @@ def redis_hash_map_key(
     retry: RetryBaseT | None = None,
     timeout: Duration | None = None,
     ttl: Duration | None = None,
-) -> _RedisHashMapKey[Any, Any]:
+) -> RedisHashMapKey[Any, Any]:
     """Create a redis key."""
-    return _RedisHashMapKey(  # skipif-ci-and-not-linux
+    return RedisHashMapKey(  # skipif-ci-and-not-linux
         name=name,
         key=key,
         key_serializer=key_serializer,
@@ -728,6 +728,8 @@ _ = _TestRedis
 
 
 __all__ = [
+    "RedisHashMapKey",
+    "RedisKey",
     "publish",
     "redis_hash_map_key",
     "redis_key",
