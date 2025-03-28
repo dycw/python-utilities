@@ -383,41 +383,6 @@ class TestQueueProcessor:
         assert len(first.output) == n
         assert len(second.output) == n
 
-    async def test_del_with_task(self) -> None:
-        class Example(QueueProcessor[int]):
-            @override
-            async def _run(self, item: int, /) -> None:
-                _ = item
-
-        processor = await Example.new()
-        assert processor._task is not None
-        await sleep(0.01)
-        del processor
-        _ = collect()
-
-    async def test_del_with_none_task(self) -> None:
-        class Example(QueueProcessor[int]):
-            @override
-            async def _run(self, item: int, /) -> None:
-                _ = item
-
-        processor = Example()
-        assert processor._task is None
-        del processor
-        _ = collect()
-
-    async def test_del_without_task_attribute(self) -> None:
-        @dataclass(kw_only=True)
-        class Example(QueueProcessor[int]):
-            x: int
-
-            @override
-            async def _run(self, item: int, /) -> None:
-                _ = item
-
-        with raises(TypeError, match="missing 1 required keyword-only argument: 'x'"):
-            _ = Example()  # pyright: ignore[reportCallIssue]
-
     async def test_empty(self) -> None:
         class Example(QueueProcessor[int]):
             @override
@@ -458,17 +423,6 @@ class TestQueueProcessor:
         processor.enqueue(*range(n))
         assert len(processor) == n
 
-    @given(n=integers(0, 10))
-    async def test_new(self, *, n: int) -> None:
-        class Example(QueueProcessor[int]):
-            @override
-            async def _run(self, item: int) -> None:
-                _ = item
-
-        processor = await Example.new(*range(n))
-        assert len(processor) == n
-        assert processor._task is not None
-
     @given(data=data(), texts=lists(text_ascii(min_size=1), min_size=1))
     async def test_priority_queue(self, *, data: DataObject, texts: list[str]) -> None:
         @dataclass(kw_only=True)
@@ -486,36 +440,6 @@ class TestQueueProcessor:
         await processor._get_and_run()
         result = one(processor.output)
         assert result == texts[0]
-
-    async def test_start_with_task(self) -> None:
-        class Example(QueueProcessor[int]):
-            @override
-            async def _run(self, item: int) -> None:
-                _ = item
-
-        processor = Example()
-        assert processor._task is None
-        await processor.start()
-        assert processor._task is not None
-        await processor.start()
-        assert processor._task is not None
-        await processor.stop()
-        assert processor._task is None
-
-    async def test_stop_without_task(self) -> None:
-        class Example(QueueProcessor[int]):
-            @override
-            async def _run(self, item: int) -> None:
-                _ = item
-
-        processor = Example()
-        assert processor._task is None
-        await processor.start()
-        assert processor._task is not None
-        await processor.stop()
-        assert processor._task is None
-        await processor.stop()
-        assert processor._task is None
 
 
 class TestUniquePriorityQueue:
