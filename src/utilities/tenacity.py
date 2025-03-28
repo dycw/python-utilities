@@ -25,7 +25,7 @@ from utilities.datetime import datetime_duration_to_float
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable
 
-    from tenacity.retry import RetryBaseT as SyncRetryBaseT
+    from tenacity.retry import RetryBaseT
     from tenacity.stop import StopBaseT
     from tenacity.wait import WaitBaseT
 
@@ -60,7 +60,7 @@ async def yield_attempts(
     sleep: Callable[[int | float], MaybeAwaitable[None]] | None = None,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     before: Callable[[RetryCallState], MaybeAwaitable[None]] | None = None,
     after: Callable[[RetryCallState], MaybeAwaitable[None]] | None = None,
     before_sleep: Callable[[RetryCallState], MaybeAwaitable[None]] | None = None,
@@ -103,7 +103,7 @@ async def yield_timeout_attempts(
     sleep: Callable[[int | float], MaybeAwaitable[None]] | None = None,
     stop: StopBaseT | None = None,
     wait: WaitBaseT | None = None,
-    retry: SyncRetryBaseT | None = None,
+    retry: RetryBaseT | None = None,
     before: Callable[[RetryCallState], MaybeAwaitable[None]] | None = None,
     after: Callable[[RetryCallState], MaybeAwaitable[None]] | None = None,
     before_sleep: Callable[[RetryCallState], MaybeAwaitable[None]] | None = None,
