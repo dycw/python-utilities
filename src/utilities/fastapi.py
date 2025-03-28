@@ -1,17 +1,20 @@
 from __future__ import annotations
 
-from asyncio import Task, create_task
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Self, override
+from dataclasses import InitVar, dataclass, field
+from typing import TYPE_CHECKING, Any, override
 
 from fastapi import FastAPI
 from uvicorn import Config, Server
 
+from utilities.asyncio import AsyncService
+from utilities.datetime import SECOND, datetime_duration_to_float
+
 if TYPE_CHECKING:
-    from types import TracebackType
+    from utilities.types import Duration
 
 
-_LOCALHOST = "localhost"
+_LOCALHOST: str = "localhost"
+_TIMEOUT: Duration = SECOND
 
 
 class _PingerReceiverApp(FastAPI):
@@ -28,49 +31,46 @@ class _PingerReceiverApp(FastAPI):
         _ = ping  # skipif-ci
 
 
-@dataclass(kw_only=True, slots=True)
-class PingReceiver:
+@dataclass(kw_only=True)
+class PingReceiver(AsyncService):
     """A ping receiver."""
 
-    host: str = "localhost"
-    port: int
-    _app: _PingerReceiverApp = field(default_factory=_PingerReceiverApp)
-    _config: Config = field(init=False)
-    _server: Server = field(init=False)
-    _task: Task[None] | None = None
+    host: InitVar[str] = _LOCALHOST
+    port: InitVar[int]
+    _app: _PingerReceiverApp = field(
+        default_factory=_PingerReceiverApp, init=False, repr=False
+    )
+    _server: Server = field(init=False, repr=False)
 
-    def __post_init__(self) -> None:
-        self._config = Config(self._app, host=self.host, port=self.port)  # skipif-ci
-        self._server = Server(self._config)  # skipif-ci
+    @override
+    def __post_init__(self, host: str, port: int, /) -> None:
+        super().__post_init__()  # skipif-ci
+        self._server = Server(Config(self._app, host=host, port=port))  # skipif-ci
 
     @classmethod
-    async def ping(cls, port: int, *, host: str = _LOCALHOST) -> bool:
+    async def ping(
+        cls, port: int, /, *, host: str = _LOCALHOST, timeout: Duration = _TIMEOUT
+    ) -> bool:
         """Ping the receiver."""
         from httpx import AsyncClient, ConnectError  # skipif-ci
 
         url = f"http://{host}:{port}/ping"  # skipif-ci
+        timeout_use = datetime_duration_to_float(timeout)  # skipif-ci
         try:  # skipif-ci
             async with AsyncClient() as client:
-                response = await client.get(url)
+                response = await client.get(url, timeout=timeout_use)
         except ConnectError:  # skipif-ci
             return False
         else:  # skipif-ci
             return response.status_code == 200
 
-    async def __aenter__(self) -> Self:
-        """Start the server."""
-        self._task = create_task(self._server.serve())  # skipif-ci
-        return self  # skipif-ci
+    @override
+    async def _start_core(self) -> None:
+        await self._server.serve()  # skipif-ci
 
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None = None,
-        exc_value: BaseException | None = None,
-        traceback: TracebackType | None = None,
-    ) -> None:
-        """Stop the server."""
-        _ = (exc_type, exc_value, traceback)  # skipif-ci
-        self._server.should_exit = True  # skipif-ci
+    @override
+    async def _stop_core(self) -> None:
+        await self._server.shutdown()  # skipif-ci
 
 
 __all__ = ["PingReceiver"]
