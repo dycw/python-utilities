@@ -16,7 +16,7 @@ from asyncio import (
     sleep,
     timeout,
 )
-from contextlib import asynccontextmanager, suppress
+from contextlib import AsyncExitStack, asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from io import StringIO
 from subprocess import PIPE
@@ -47,14 +47,17 @@ class AsyncService(ABC):
     """A long-running, asynchronous service."""
 
     _lock: Lock = field(init=False, repr=False)
+    _stack: AsyncExitStack = field(init=False, repr=False)
     _task: Task[None] | None = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._lock = Lock()
+        self._stack = AsyncExitStack()
         self._task = None
 
     async def __aenter__(self) -> Self:
         """Start the service."""
+        _ = await self._stack.__aenter__()
         await self.start()
         return self
 
@@ -65,7 +68,7 @@ class AsyncService(ABC):
         traceback: TracebackType | None = None,
     ) -> None:
         """Stop the service."""
-        _ = (exc_type, exc_value, traceback)
+        _ = await self._stack.__aexit__(exc_type, exc_value, traceback)
         await self.stop()
 
     def __del__(self) -> None:

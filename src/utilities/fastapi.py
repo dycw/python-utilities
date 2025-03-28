@@ -44,7 +44,7 @@ class PingReceiver(AsyncService):
 
     @override
     def __post_init__(self, host: str, port: int, /) -> None:
-        super().__post_init__()
+        super().__post_init__()  # skipif-ci
         self._server = Server(Config(self._app, host=host, port=port))  # skipif-ci
 
     @classmethod

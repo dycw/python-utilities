@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from gc import collect
 from itertools import chain
 from re import search
-from typing import TYPE_CHECKING, Literal, override
+from typing import TYPE_CHECKING, Literal, Self, override
 
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
@@ -101,16 +101,14 @@ class TestAsyncService:
 
         service = Example()
         for _ in range(2):
-            async with service:
-                assert not service.running
+            assert not service.running
 
-                await service.start()
+            async with service:
                 await sleep(0.01)
                 assert service.running
 
-                await service.stop()
-                await sleep(0.01)
-                assert not service.running
+            await sleep(0.01)
+            assert not service.running
 
     async def test_del_with_task(self) -> None:
         @dataclass(kw_only=True)
@@ -169,6 +167,51 @@ class TestAsyncService:
 
         with raises(TypeError, match="missing 1 required keyword-only argument: 'x'"):
             _ = Example()  # pyright: ignore[reportCallIssue]
+
+    async def test_extra_context_managers(self) -> None:
+        @dataclass(kw_only=True)
+        class Inner(AsyncService):
+            running: bool = False
+
+            @override
+            async def _start_core(self) -> None:
+                self.running = True
+
+            @override
+            async def _stop_core(self) -> None:
+                self.running = False
+
+        @dataclass(kw_only=True)
+        class Outer(AsyncService):
+            running: bool = False
+            inner: Inner = field(default_factory=Inner, init=False, repr=False)
+
+            @override
+            async def __aenter__(self) -> Self:
+                _ = await self._stack.enter_async_context(self.inner)
+                return await super().__aenter__()
+
+            @override
+            async def _start_core(self) -> None:
+                self.running = True
+
+            @override
+            async def _stop_core(self) -> None:
+                self.running = False
+
+        outer = Outer()
+        for _ in range(2):
+            assert not outer.running
+            assert not outer.inner.running
+
+            async with outer:
+                await sleep(0.01)
+                assert outer.running
+                assert outer.inner.running
+
+            await sleep(0.01)
+            assert not outer.running
+            assert not outer.inner.running
 
     async def test_new(self) -> None:
         @dataclass(kw_only=True)
