@@ -65,7 +65,9 @@ class PingReceiver(AsyncService):
         except ConnectError:  # skipif-ci
             return False
         else:  # skipif-ci
-            return response.status_code == 200
+            if response.status_code != 200:
+                return False
+            return response.text
 
     @override
     async def _start_core(self) -> None:
