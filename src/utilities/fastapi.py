@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import InitVar, dataclass, field
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING, Any, Literal, override
 
 from fastapi import FastAPI
 from uvicorn import Config, Server
 
 from utilities.asyncio import AsyncService
-from utilities.datetime import SECOND, datetime_duration_to_float
+from utilities.datetime import SECOND, datetime_duration_to_float, get_now_local
 
 if TYPE_CHECKING:
     from utilities.types import Duration
@@ -26,7 +26,10 @@ class _PingerReceiverApp(FastAPI):
 
         @self.get("/ping")  # skipif-ci
         def ping() -> str:
-            return "pong"  # skipif-ci
+            from utilities.whenever import serialize_zoned_datetime  # skipif-ci
+
+            now = serialize_zoned_datetime(get_now_local())  # skipif-ci
+            return f"pong @ {now}"  # skipif-ci
 
         _ = ping  # skipif-ci
 
@@ -50,7 +53,7 @@ class PingReceiver(AsyncService):
     @classmethod
     async def ping(
         cls, port: int, /, *, host: str = _LOCALHOST, timeout: Duration = _TIMEOUT
-    ) -> bool:
+    ) -> str | Literal[False]:
         """Ping the receiver."""
         from httpx import AsyncClient, ConnectError  # skipif-ci
 
@@ -61,8 +64,7 @@ class PingReceiver(AsyncService):
                 response = await client.get(url, timeout=timeout_use)
         except ConnectError:  # skipif-ci
             return False
-        else:  # skipif-ci
-            return response.status_code == 200
+        return response.text if response.status_code == 200 else False  # skipif-ci
 
     @override
     async def _start_core(self) -> None:
