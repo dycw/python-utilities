@@ -23,8 +23,8 @@ if TYPE_CHECKING:
     from utilities.types import Duration
 
 
-_TIMEOUT = MINUTE
-_SLEEP = SECOND
+_TIMEOUT: Duration = MINUTE
+_SLEEP: Duration = SECOND
 
 
 ##
