@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Iterable
 from io import StringIO
-from logging import DEBUG, INFO, FileHandler, StreamHandler, getLogger
+from logging import DEBUG, INFO, WARNING, FileHandler, StreamHandler, getLogger
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any
@@ -345,11 +345,10 @@ class TestGetLogRecords:
     def test_skip_blank_lines(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := FileHandler(file := tmp_path.joinpath("log")))
-        logger.setLevel(INFO)
         handler.setFormatter(OrjsonFormatter())
         with file.open(mode="w") as fh:
             _ = fh.write("\n")
-        logger.info("", extra={"a": 1, "b": 2, "_ignored": 3})
+        logger.warning("", extra={"a": 1, "b": 2, "_ignored": 3})
         result = get_log_records(tmp_path, parallelism="threads")
         assert result.path == tmp_path
         assert result.num_lines == 2
@@ -383,9 +382,8 @@ class TestGetLogRecords:
     def test_error_deserialize_due_to_missing(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := FileHandler(file := tmp_path.joinpath("log")))
-        logger.setLevel(INFO)
         handler.setFormatter(OrjsonFormatter())
-        logger.info("", extra={"obj": DataClassFutureIntDefault()})
+        logger.warning("", extra={"obj": DataClassFutureIntDefault()})
         result = get_log_records(tmp_path, parallelism="threads")
         assert result.path == tmp_path
         assert result.files == [file]
@@ -414,14 +412,13 @@ class TestOrjsonFormatter:
     def test_main(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
-        logger.setLevel(INFO)
         handler.setFormatter(OrjsonFormatter())
-        logger.info("message", extra={"a": 1, "b": 2, "_ignored": 3})
+        logger.warning("message", extra={"a": 1, "b": 2, "_ignored": 3})
         record = deserialize(buffer.getvalue().encode(), objects={OrjsonLogRecord})
         assert isinstance(record, OrjsonLogRecord)
         assert record.name == str(tmp_path)
         assert record.message == "message"
-        assert record.level == INFO
+        assert record.level == WARNING
         assert record.path_name == Path(__file__)
         assert abs(record.datetime - get_now(time_zone="local")) <= SECOND
         assert record.func_name == TestOrjsonFormatter.test_main.__name__
