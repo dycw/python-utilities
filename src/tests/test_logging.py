@@ -215,6 +215,10 @@ class TestFilterForKey:
         result = buffer.getvalue() != ""
         assert result is expected
 
+    def test_error(self) -> None:
+        with raises(FilterForKeyError, match="Invalid key: 'msg'"):
+            _ = filter_for_key("msg")
+
 
 class TestGetDefaultLoggingPath:
     def test_main(self) -> None:
