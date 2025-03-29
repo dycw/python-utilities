@@ -466,11 +466,12 @@ class TestSizeAndTimeRotatingFileHandler:
     @skipif_windows
     def test_size(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
-        handler = SizeAndTimeRotatingFileHandler(
-            filename=tmp_path.joinpath("log.txt"), maxBytes=100, backupCount=3
+        logger.addHandler(
+            SizeAndTimeRotatingFileHandler(
+                filename=tmp_path.joinpath("log.txt"), maxBytes=100, backupCount=3
+            )
         )
-        logger.addHandler(handler)
-        logger.setLevel(DEBUG)
+        logger.setLevel(INFO)
 
         for i in range(1, 3):
             logger.info("message %d", i)
