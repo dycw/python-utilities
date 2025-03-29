@@ -194,10 +194,10 @@ class TestGetLogger:
         result = get_logger(logger=logger)
         assert result is logger
 
-    def test_str(self) -> None:
-        result = get_logger(logger=__name__)
+    def test_str(self, *, tmp_path: Path) -> None:
+        result = get_logger(logger=str(tmp_path))
         assert isinstance(result, Logger)
-        assert result.name == __name__
+        assert result.name == str(tmp_path)
 
     def test_none(self) -> None:
         result = get_logger()
@@ -456,9 +456,8 @@ class TestSizeAndTimeRotatingFileHandler:
     def test_handlers(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         filename = tmp_path.joinpath("log")
-        handler = SizeAndTimeRotatingFileHandler(filename=filename)
-        logger.addHandler(handler)
-        logger.setLevel(DEBUG)
+        logger.addHandler(SizeAndTimeRotatingFileHandler(filename=filename))
+        logger.setLevel(INFO)
         logger.info("message")
         with filename.open() as fh:
             content = fh.read()
