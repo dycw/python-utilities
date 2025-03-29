@@ -410,13 +410,10 @@ class StandaloneFileHandler(Handler):
 ##
 
 
-def add_filters(
-    handler: Handler, /, *, filters: MaybeIterable[_FilterType] | None = None
-) -> None:
+def add_filters(handler: Handler, /, *filters: _FilterType) -> None:
     """Add a set of filters to a handler."""
-    if filters is not None:
-        for filter_i in always_iterable(filters):
-            handler.addFilter(filter_i)
+    for filter_i in filters:
+        handler.addFilter(filter_i)
 
 
 ##
