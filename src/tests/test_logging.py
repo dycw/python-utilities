@@ -509,6 +509,7 @@ class TestSizeAndTimeRotatingFileHandler:
                 filename=tmp_path.joinpath("log.txt"), maxBytes=100, backupCount=3
             )
         )
+        logger.setLevel(INFO)
 
         for i in range(1, 3):
             logger.warning("message %d", i)
