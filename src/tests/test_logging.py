@@ -420,9 +420,9 @@ class TestSetupLogging:
         name = str(tmp_path)
 
         def extra(logger: LoggerOrName | None, /) -> None:
-            handler = FileHandler(tmp_path.joinpath("extra.log"))
-            handler.setLevel(DEBUG)
-            get_logger(logger=logger).addHandler(handler)
+            get_logger(logger=logger).addHandler(
+                FileHandler(tmp_path.joinpath("extra.log"))
+            )
 
         setup_logging(logger=name, git_ref=git_ref, files_dir=tmp_path, extra=extra)
         logger = getLogger(name)

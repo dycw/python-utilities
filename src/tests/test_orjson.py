@@ -344,14 +344,13 @@ class TestGetLogRecords:
 
     def test_skip_blank_lines(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
-        logger.setLevel(DEBUG)
-        handler = FileHandler(file := tmp_path.joinpath("log"))
+        logger.addHandler(handler := FileHandler(file := tmp_path.joinpath("log")))
+        logger.setLevel(INFO)
         with file.open(mode="w") as fh:
             _ = fh.write("\n")
         handler.setFormatter(OrjsonFormatter())
-        handler.setLevel(DEBUG)
         logger.addHandler(handler)
-        logger.debug("", extra={"a": 1, "b": 2, "_ignored": 3})
+        logger.info("", extra={"a": 1, "b": 2, "_ignored": 3})
         result = get_log_records(tmp_path, parallelism="threads")
         assert result.path == tmp_path
         assert result.num_lines == 2
