@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from io import StringIO
-from logging import DEBUG, INFO, NOTSET, FileHandler, Logger, StreamHandler, getLogger
+from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from pathlib import Path
 from re import search
 from time import sleep
@@ -49,10 +49,9 @@ class TestAddFilters:
     def test_main(self, *, expected: bool, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
-        logger.setLevel(INFO)
         add_filters(handler, lambda _: expected)
         assert len(handler.filters) == 1
-        logger.info("message")
+        logger.warning("message")
         result = buffer.getvalue() != ""
         assert result is expected
 
@@ -457,8 +456,7 @@ class TestSizeAndTimeRotatingFileHandler:
         logger = getLogger(str(tmp_path))
         filename = tmp_path.joinpath("log")
         logger.addHandler(SizeAndTimeRotatingFileHandler(filename=filename))
-        logger.setLevel(INFO)
-        logger.info("message")
+        logger.warning("message")
         with filename.open() as fh:
             content = fh.read()
         assert content == "message\n"
@@ -471,7 +469,6 @@ class TestSizeAndTimeRotatingFileHandler:
                 filename=tmp_path.joinpath("log.txt"), maxBytes=100, backupCount=3
             )
         )
-        logger.setLevel(INFO)
 
         for i in range(1, 3):
             logger.warning("message %d", i)
