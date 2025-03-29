@@ -48,7 +48,6 @@ from utilities.rich import (
     yield_mapping_repr,
 )
 from utilities.types import TBaseException, TCallable
-from utilities.version import get_version
 from utilities.whenever import serialize_zoned_datetime
 
 if TYPE_CHECKING:
@@ -693,7 +692,6 @@ def _yield_header_lines(*, git_ref: str = MASTER) -> Iterator[str]:
     yield f"Date/time | {serialize_zoned_datetime(get_now(time_zone='local'))}"
     yield f"User      | {getuser()}"
     yield f"Host      | {gethostname()}"
-    yield f"Version   | {get_version(ref=git_ref)}"
     yield ""
 
 
