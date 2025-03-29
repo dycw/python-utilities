@@ -439,7 +439,7 @@ def filter_for_key(
     key: str, /, *, default: bool = False
 ) -> Callable[[LogRecord], bool]:
     """Make a filter for a given attribute."""
-    if key == "":
+    if (key in dir(LogRecord)) or key.startswith("_"):
         raise FilterForKeyError(key=key)
 
     def filter_(record: LogRecord, /) -> bool:
