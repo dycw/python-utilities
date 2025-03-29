@@ -110,7 +110,7 @@ class AsyncService(ABC):
         try:
             await self._start_core()
         except CancelledError:
-            await self.stop()
+            await self._stop_core()
 
     @abstractmethod
     async def _start_core(self) -> None:
@@ -127,10 +127,9 @@ class AsyncService(ABC):
             await self._task
         self._task = None
 
-    @abstractmethod
     async def _stop_core(self) -> None:
-        """Stop the service, assuming the task has just been cancelled."""
-        raise NotImplementedError  # pragma: no cover
+        """Handle a cancellation."""
+        await self.stop()
 
 
 @dataclass(kw_only=True, slots=True)
@@ -267,8 +266,9 @@ class QueueProcessor(AsyncLoopingService, Generic[_T]):
 
     @override
     async def _stop_core(self) -> None:
-        """Stop the processor, assuming the task has just been cancelled."""
+        """Stop the service, assuming the task has just been cancelled."""
         await self.run_until_empty()
+        await super()._stop_core()
 
 
 ##

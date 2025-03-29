@@ -35,7 +35,8 @@ async def populate(processor: Processor, /) -> None:
 
 
 async def _main() -> None:
-    await (processor := Processor()).start()
-    await populate(processor)
+    processor = Processor()
     with suppress(CancelledError):
+        await processor.start()
+        await populate(processor)
         _ = await Event().wait()
