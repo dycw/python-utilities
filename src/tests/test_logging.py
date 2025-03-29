@@ -7,7 +7,7 @@ from re import search
 from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-from hypothesis import given, settings
+from hypothesis import given
 from hypothesis.strategies import booleans, integers, none
 from pytest import LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
@@ -193,12 +193,10 @@ class TestComputeRolloverActions:
 class TestFilterForKey:
     @given(
         root=temp_paths(),
-        key=text_ascii(max_size=20),
+        key=text_ascii(),
         value=booleans() | none(),
         default=booleans(),
     )
-    @mark.only
-    @settings(max_examples=1000)
     def test_main(
         self, *, root: Path, key: str, value: bool | None, default: bool
     ) -> None:
