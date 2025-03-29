@@ -49,7 +49,7 @@ from utilities.datetime import (
 )
 from utilities.errors import ImpossibleCaseError
 from utilities.git import MASTER, get_repo_root
-from utilities.iterables import OneEmptyError, one
+from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.pathlib import ensure_suffix, resolve_path
 from utilities.sentinel import Sentinel, sentinel
 from utilities.traceback import RichTracebackFormatter
@@ -60,7 +60,13 @@ if TYPE_CHECKING:
     from logging import _FilterType
     from zoneinfo import ZoneInfo
 
-    from utilities.types import LoggerOrName, LogLevel, PathLike, PathLikeOrCallable
+    from utilities.types import (
+        LoggerOrName,
+        LogLevel,
+        MaybeIterable,
+        PathLike,
+        PathLikeOrCallable,
+    )
 
 try:
     from whenever import ZonedDateTime
@@ -404,12 +410,12 @@ class StandaloneFileHandler(Handler):
 
 
 def add_filters(
-    handler: Handler, /, *, filters: Iterable[_FilterType] | None = None
+    handler: Handler, /, *, filters: MaybeIterable[_FilterType] | None = None
 ) -> None:
     """Add a set of filters to a handler."""
     if filters is not None:
-        for filter_ in filters:
-            handler.addFilter(filter_)
+        for filter_i in always_iterable(filters):
+            handler.addFilter(filter_i)
 
 
 ##

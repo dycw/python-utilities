@@ -44,11 +44,18 @@ if TYPE_CHECKING:
 
 
 class TestAddFilters:
-    def test_main(self) -> None:
-        handler = StreamHandler()
-        assert len(handler.filters) == 0
-        add_filters(handler, filters=[lambda _: True])
+    @mark.parametrize("expected", [param(True), param(False)])
+    def test_main(
+        self, *, caplog: LogCaptureFixture, expected: bool, tmp_path: Path
+    ) -> None:
+        logger = getLogger(str(tmp_path))
+        logger.setLevel(DEBUG)
+        logger.addHandler(handler := StreamHandler())
+        add_filters(handler, filters=[lambda _: expected])
         assert len(handler.filters) == 1
+        with caplog.filtering(one(handler.filters)):
+            logger.debug("message")
+        assert len(caplog.records) == int(expected)
 
     def test_no_handlers(self) -> None:
         handler = StreamHandler()
