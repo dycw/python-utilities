@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Iterable
 from io import StringIO
-from logging import DEBUG, WARNING, FileHandler, StreamHandler, getLogger
+from logging import DEBUG, INFO, FileHandler, StreamHandler, getLogger
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any
@@ -94,8 +94,9 @@ class TestGetLogRecords:
     def test_main(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := FileHandler(file := tmp_path.joinpath("log")))
+        logger.setLevel(INFO)
         handler.setFormatter(OrjsonFormatter())
-        logger.warning("", extra={"a": 1, "b": 2, "_ignored": 3})
+        logger.info("", extra={"a": 1, "b": 2, "_ignored": 3})
         output = get_log_records(tmp_path, parallelism="threads")
         assert output.path == tmp_path
         assert output.files == [file]
@@ -120,7 +121,7 @@ class TestGetLogRecords:
         record = one(output.records)
         assert record.name == str(tmp_path)
         assert record.message == ""
-        assert record.level == WARNING
+        assert record.level == INFO
         assert record.line_num == approx(92, rel=0.1)
         assert abs(record.datetime - get_now()) <= MINUTE
         assert record.func_name == "test_main"
