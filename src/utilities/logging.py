@@ -436,18 +436,29 @@ def basic_config(
 
 
 def filter_for_key(
-    name: str, /, *, default: bool = False
+    key: str, /, *, default: bool = False
 ) -> Callable[[LogRecord], bool]:
     """Make a filter for a given attribute."""
+    if key == "":
+        raise FilterForKeyError(key=key)
 
     def filter_(record: LogRecord, /) -> bool:
         try:
-            value = getattr(record, name)
+            value = getattr(record, key)
         except AttributeError:
             return default
         return bool(value)
 
     return filter_
+
+
+@dataclass(kw_only=True, slots=True)
+class FilterForKeyError(Exception):
+    key: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid key: {self.key!r}"
 
 
 ##
@@ -749,6 +760,7 @@ def _ansi_wrap_red(text: str, /) -> str:
 
 
 __all__ = [
+    "FilterForKeyError",
     "GetLoggingLevelNumberError",
     "SizeAndTimeRotatingFileHandler",
     "StandaloneFileHandler",
