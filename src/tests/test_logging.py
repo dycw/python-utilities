@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from io import StringIO
-from logging import DEBUG, INFO, NOTSET, FileHandler, Logger, StreamHandler, getLogger
+from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from pathlib import Path
 from re import search
 from time import sleep
@@ -49,10 +49,9 @@ class TestAddFilters:
     def test_main(self, *, expected: bool, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
-        logger.setLevel(INFO)
         add_filters(handler, lambda _: expected)
         assert len(handler.filters) == 1
-        logger.info("message")
+        logger.warning("message")
         result = buffer.getvalue() != ""
         assert result is expected
 
@@ -457,8 +456,7 @@ class TestSizeAndTimeRotatingFileHandler:
         logger = getLogger(str(tmp_path))
         filename = tmp_path.joinpath("log")
         logger.addHandler(SizeAndTimeRotatingFileHandler(filename=filename))
-        logger.setLevel(INFO)
-        logger.info("message")
+        logger.warning("message")
         with filename.open() as fh:
             content = fh.read()
         assert content == "message\n"
@@ -471,22 +469,21 @@ class TestSizeAndTimeRotatingFileHandler:
                 filename=tmp_path.joinpath("log.txt"), maxBytes=100, backupCount=3
             )
         )
-        logger.setLevel(INFO)
 
         for i in range(1, 3):
-            logger.info("message %d", i)
+            logger.warning("message %d", i)
             files = list(tmp_path.iterdir())
             assert len(files) == 1
             assert any(p for p in files if search(r"^log\.txt$", p.name))
 
-        logger.info(10 * "message 3")
+        logger.warning(10 * "message 3")
         files = list(tmp_path.iterdir())
         assert len(files) == 2
         assert any(p for p in files if search(r"^log\.txt$", p.name))
         assert any(p for p in files if search(r"^log\.1__[\dT]+\.txt$", p.name))
 
         for i in range(4, 6):
-            logger.info("message %d", i)
+            logger.warning("message %d", i)
             files = list(tmp_path.iterdir())
             assert len(files) == 3
             assert any(p for p in files if search(r"^log\.txt$", p.name))
@@ -495,7 +492,7 @@ class TestSizeAndTimeRotatingFileHandler:
             )
             assert any(p for p in files if search(r"^log\.2__[\dT]+\.txt$", p.name))
 
-        logger.info(10 * "message 6")
+        logger.warning(10 * "message 6")
         files = list(tmp_path.iterdir())
         assert len(files) == 4
         assert any(p for p in files if search(r"^log\.txt$", p.name))
@@ -505,7 +502,7 @@ class TestSizeAndTimeRotatingFileHandler:
 
         for _ in range(2):
             for i in range(7, 9):
-                logger.info("message %d", i)
+                logger.warning("message %d", i)
                 files = list(tmp_path.iterdir())
                 assert len(files) == 4
                 assert any(p for p in files if search(r"^log\.txt$", p.name))
@@ -519,7 +516,7 @@ class TestSizeAndTimeRotatingFileHandler:
                     p for p in files if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
                 )
 
-            logger.info("message 9")
+            logger.warning("message 9")
             files = list(tmp_path.iterdir())
             assert len(files) == 4
             assert any(p for p in files if search(r"^log\.txt$", p.name))
@@ -536,24 +533,27 @@ class TestSizeAndTimeRotatingFileHandler:
     @skipif_windows
     def test_time(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
-        handler = SizeAndTimeRotatingFileHandler(
-            filename=tmp_path.joinpath("log.txt"), backupCount=3, when="S", interval=1
+        logger.addHandler(
+            SizeAndTimeRotatingFileHandler(
+                filename=tmp_path.joinpath("log.txt"),
+                backupCount=3,
+                when="S",
+                interval=1,
+            )
         )
-        logger.addHandler(handler)
-        logger.setLevel(DEBUG)
 
         files = list(tmp_path.iterdir())
         assert len(files) == 1
         assert any(p for p in files if search(r"^log\.txt$", p.name))
 
-        logger.info("message 1")
+        logger.warning("message 1")
         files = list(tmp_path.iterdir())
         assert len(files) == 1
         assert any(p for p in files if search(r"^log\.txt$", p.name))
 
         sleep(1.01)
         for i in range(2, 4):
-            logger.info("message %d", i)
+            logger.warning("message %d", i)
             files = list(tmp_path.iterdir())
             assert len(files) == 2
             assert any(p for p in files if search(r"^log\.txt$", p.name))
@@ -561,7 +561,7 @@ class TestSizeAndTimeRotatingFileHandler:
 
         sleep(1.01)
         for i in range(4, 6):
-            logger.info("message %d", i)
+            logger.warning("message %d", i)
             files = list(tmp_path.iterdir())
             assert len(files) == 3
             assert any(p for p in files if search(r"^log\.txt$", p.name))
@@ -572,7 +572,7 @@ class TestSizeAndTimeRotatingFileHandler:
 
         sleep(1.01)
         for i in range(6, 8):
-            logger.info("message %d", i)
+            logger.warning("message %d", i)
             files = list(tmp_path.iterdir())
             assert len(files) == 4
             assert any(p for p in files if search(r"^log\.txt$", p.name))
@@ -587,7 +587,7 @@ class TestSizeAndTimeRotatingFileHandler:
         for _ in range(2):
             sleep(1.01)
             for i in range(8, 10):
-                logger.info("message %d", i)
+                logger.warning("message %d", i)
                 files = list(tmp_path.iterdir())
                 assert len(files) == 4
                 assert any(p for p in files if search(r"^log\.txt$", p.name))
@@ -607,10 +607,10 @@ class TestSizeAndTimeRotatingFileHandler:
     ) -> None:
         logger = getLogger(str(tmp_path))
         path = tmp_path.joinpath("log")
-        handler = SizeAndTimeRotatingFileHandler(filename=path, maxBytes=1)
-        logger.addHandler(handler)
-        logger.setLevel(DEBUG)
-        logger.info("message")
+        logger.addHandler(
+            handler := SizeAndTimeRotatingFileHandler(filename=path, maxBytes=1)
+        )
+        logger.warning("message")
         record = one(caplog.records)
         path.unlink()
         assert not handler._should_rollover(record)
@@ -620,11 +620,9 @@ class TestStandaloneFileHandler:
     @skipif_windows
     def test_main(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
-        handler = StandaloneFileHandler(level=DEBUG, path=tmp_path)
-        logger.addHandler(handler)
-        logger.setLevel(DEBUG)
+        logger.addHandler(StandaloneFileHandler(level=DEBUG, path=tmp_path))
         assert len(list(tmp_path.iterdir())) == 0
-        logger.info("message")
+        logger.warning("message")
         files = list(tmp_path.iterdir())
         assert len(files) == 1
         with one(files).open() as fh:
