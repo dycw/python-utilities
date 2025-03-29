@@ -130,6 +130,7 @@ class AsyncService(ABC):
     @abstractmethod
     async def _stop_core(self) -> None:
         """Stop the service, assuming the task has just been cancelled."""
+        raise NotImplementedError  # pragma: no cover
 
 
 @dataclass(kw_only=True, slots=True)
