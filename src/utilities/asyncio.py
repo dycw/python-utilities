@@ -78,6 +78,7 @@ class AsyncService(ABC):
 
     def __call__(self) -> Coroutine1[None]:
         async def coroutine() -> None:
+            await self.start()
             return await self
 
         return coroutine()
