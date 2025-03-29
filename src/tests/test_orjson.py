@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Iterable
 from io import StringIO
-from logging import DEBUG, FileHandler, StreamHandler, getLogger
+from logging import DEBUG, WARNING, FileHandler, StreamHandler, getLogger
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any
@@ -93,12 +93,9 @@ if TYPE_CHECKING:
 class TestGetLogRecords:
     def test_main(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
-        logger.setLevel(DEBUG)
-        handler = FileHandler(file := tmp_path.joinpath("log"))
+        logger.addHandler(handler := FileHandler(file := tmp_path.joinpath("log")))
         handler.setFormatter(OrjsonFormatter())
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
-        logger.debug("", extra={"a": 1, "b": 2, "_ignored": 3})
+        logger.warning("", extra={"a": 1, "b": 2, "_ignored": 3})
         output = get_log_records(tmp_path, parallelism="threads")
         assert output.path == tmp_path
         assert output.files == [file]
@@ -123,7 +120,7 @@ class TestGetLogRecords:
         record = one(output.records)
         assert record.name == str(tmp_path)
         assert record.message == ""
-        assert record.level == DEBUG
+        assert record.level == WARNING
         assert record.line_num == approx(92, rel=0.1)
         assert abs(record.datetime - get_now()) <= MINUTE
         assert record.func_name == "test_main"
@@ -151,11 +148,9 @@ class TestGetLogRecords:
         self, *, root: Path, items: Sequence[tuple[LogLevel, str, StrMapping]]
     ) -> None:
         logger = getLogger(str(root))
+        logger.addHandler(handler := FileHandler(root.joinpath("log")))
         logger.setLevel(DEBUG)
-        handler = FileHandler(root.joinpath("log"))
         handler.setFormatter(OrjsonFormatter())
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
         for level_, message_, extra_ in items:
             logger.log(get_logging_level_number(level_), message_, extra=extra_)
         output = get_log_records(root, parallelism="threads")
@@ -229,11 +224,9 @@ class TestGetLogRecords:
         max_log_file_line_num: int | None,
     ) -> None:
         logger = getLogger(str(root))
+        logger.addHandler(handler := FileHandler(root.joinpath("log")))
         logger.setLevel(DEBUG)
-        handler = FileHandler(root.joinpath("log"))
         handler.setFormatter(OrjsonFormatter())
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
         for level_, message_, extra_ in items:
             logger.log(get_logging_level_number(level_), message_, extra=extra_)
         output = get_log_records(root, parallelism="threads")
@@ -350,14 +343,11 @@ class TestGetLogRecords:
 
     def test_skip_blank_lines(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
-        logger.setLevel(DEBUG)
-        handler = FileHandler(file := tmp_path.joinpath("log"))
+        logger.addHandler(handler := FileHandler(file := tmp_path.joinpath("log")))
+        handler.setFormatter(OrjsonFormatter())
         with file.open(mode="w") as fh:
             _ = fh.write("\n")
-        handler.setFormatter(OrjsonFormatter())
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
-        logger.debug("", extra={"a": 1, "b": 2, "_ignored": 3})
+        logger.warning("", extra={"a": 1, "b": 2, "_ignored": 3})
         result = get_log_records(tmp_path, parallelism="threads")
         assert result.path == tmp_path
         assert result.num_lines == 2
@@ -390,12 +380,9 @@ class TestGetLogRecords:
 
     def test_error_deserialize_due_to_missing(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
-        logger.setLevel(DEBUG)
-        handler = FileHandler(file := tmp_path.joinpath("log"))
+        logger.addHandler(handler := FileHandler(file := tmp_path.joinpath("log")))
         handler.setFormatter(OrjsonFormatter())
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
-        logger.debug("", extra={"obj": DataClassFutureIntDefault()})
+        logger.warning("", extra={"obj": DataClassFutureIntDefault()})
         result = get_log_records(tmp_path, parallelism="threads")
         assert result.path == tmp_path
         assert result.files == [file]
@@ -422,19 +409,15 @@ class TestGetLogRecords:
 
 class TestOrjsonFormatter:
     def test_main(self, *, tmp_path: Path) -> None:
-        name = str(tmp_path)
-        logger = getLogger(name)
-        logger.setLevel(DEBUG)
-        handler = StreamHandler(buffer := StringIO())
+        logger = getLogger(str(tmp_path))
+        logger.addHandler(handler := StreamHandler(buffer := StringIO()))
         handler.setFormatter(OrjsonFormatter())
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
-        logger.debug("message", extra={"a": 1, "b": 2, "_ignored": 3})
+        logger.warning("message", extra={"a": 1, "b": 2, "_ignored": 3})
         record = deserialize(buffer.getvalue().encode(), objects={OrjsonLogRecord})
         assert isinstance(record, OrjsonLogRecord)
-        assert record.name == name
+        assert record.name == str(tmp_path)
         assert record.message == "message"
-        assert record.level == DEBUG
+        assert record.level == WARNING
         assert record.path_name == Path(__file__)
         assert abs(record.datetime - get_now(time_zone="local")) <= SECOND
         assert record.func_name == TestOrjsonFormatter.test_main.__name__

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from io import StringIO
-from logging import DEBUG, ERROR, StreamHandler, getLogger
+from logging import StreamHandler, getLogger
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 from pytest import raises
@@ -451,11 +451,8 @@ class TestRichTracebackFormatter:
         self, *, tmp_path: Path, git_ref: str, traceback_func_one: Pattern[str]
     ) -> None:
         logger = getLogger(str(tmp_path))
-        logger.setLevel(DEBUG)
-        handler = StreamHandler(buffer := StringIO())
+        logger.addHandler(handler := StreamHandler(buffer := StringIO()))
         handler.setFormatter(RichTracebackFormatter(git_ref=git_ref, detail=True))
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
@@ -467,11 +464,8 @@ class TestRichTracebackFormatter:
         self, *, tmp_path: Path, git_ref: str, traceback_func_untraced: Pattern[str]
     ) -> None:
         logger = getLogger(str(tmp_path))
-        logger.setLevel(DEBUG)
-        handler = StreamHandler(buffer := StringIO())
+        logger.addHandler(handler := StreamHandler(buffer := StringIO()))
         handler.setFormatter(RichTracebackFormatter(git_ref=git_ref, detail=True))
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
         try:
             _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
@@ -487,11 +481,8 @@ class TestRichTracebackFormatter:
 
     def test_no_logging(self, *, tmp_path: Path, git_ref: str) -> None:
         logger = getLogger(str(tmp_path))
-        logger.setLevel(ERROR)
-        handler = StreamHandler(buffer := StringIO())
+        logger.addHandler(handler := StreamHandler(buffer := StringIO()))
         handler.setFormatter(RichTracebackFormatter(git_ref=git_ref, detail=True))
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
         logger.error("message")
         result = buffer.getvalue()
         expected = "ERROR: record.exc_info=None\n"
@@ -499,15 +490,12 @@ class TestRichTracebackFormatter:
 
     def test_post(self, *, tmp_path: Path, git_ref: str) -> None:
         logger = getLogger(str(tmp_path))
-        logger.setLevel(DEBUG)
-        handler = StreamHandler(buffer := StringIO())
+        logger.addHandler(handler := StreamHandler(buffer := StringIO()))
         handler.setFormatter(
             RichTracebackFormatter(
                 git_ref=git_ref, detail=True, post=lambda x: f"> {x}"
             )
         )
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:

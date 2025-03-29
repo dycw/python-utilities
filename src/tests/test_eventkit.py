@@ -3,7 +3,7 @@ from __future__ import annotations
 from asyncio import sleep
 from functools import wraps
 from io import StringIO
-from logging import DEBUG, StreamHandler, getLogger
+from logging import StreamHandler, getLogger
 from re import search
 from typing import TYPE_CHECKING, Literal, ParamSpec, TypeVar
 
@@ -55,10 +55,7 @@ class TestAddListener:
         self, *, root: Path, sync_or_async: Literal["sync", "async"]
     ) -> None:
         logger = getLogger(str(root))
-        logger.setLevel(DEBUG)
-        handler = StreamHandler(buffer := StringIO())
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
+        logger.addHandler(StreamHandler(buffer := StringIO()))
         event = Event()
 
         match sync_or_async:
