@@ -33,7 +33,7 @@ _SLEEP: Duration = SECOND
 
 
 async def _send_adapter(url: str, text: str, /) -> None:
-    await send_to_slack(url, text)
+    await send_to_slack(url, text)  # pragma: no cover
 
 
 @dataclass(init=False, order=True, unsafe_hash=True)
