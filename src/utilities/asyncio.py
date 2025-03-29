@@ -267,7 +267,7 @@ class QueueProcessor(AsyncLoopingService, Generic[_T]):
 
     @override
     async def _stop_core(self) -> None:
-        """Stop the service, assuming the task has just been cancelled."""
+        """Stop the processor, assuming the task has just been cancelled."""
         await self.run_until_empty()
         await super()._stop_core()
 
