@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, override
 
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
-from utilities.asyncio import QueueProcessor, sleep_dur
+from utilities.asyncio import QueueProcessor, sleep_dur, timeout_dur
 from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float
 from utilities.functools import cache
 from utilities.math import safe_round
@@ -44,7 +44,9 @@ class SlackHandler(Handler, QueueProcessor[str]):
         queue_type: type[Queue[str]] = Queue,
         queue_max_size: int | None = None,
         timeout: Duration = _TIMEOUT,
-        callback: Callable[[], None] | None = None,
+        callback_failure: Callable[[], None] | None = None,
+        callback_success: Callable[[], None] | None = None,
+        callback_final: Callable[[], None] | None = None,
         sleep: Duration = _SLEEP,
     ) -> None:
         QueueProcessor.__init__(  # QueueProcessor first
@@ -54,7 +56,9 @@ class SlackHandler(Handler, QueueProcessor[str]):
         Handler.__init__(self, level=level)
         self.url = url
         self.timeout = timeout
-        self.callback = callback
+        self.callback_failure = callback_failure
+        self.callback_success = callback_success
+        self.callback_final = callback_final
         self.sleep = sleep
 
     @override
@@ -71,10 +75,18 @@ class SlackHandler(Handler, QueueProcessor[str]):
         """Process the first item."""
         items = list(chain([item], await self._get_items_nowait()))
         text = "\n".join(items)
-        await send_to_slack(self.url, text, timeout=self.timeout)  # pragma: no cover
-        if self.callback is not None:  # pragma: no cover
-            self.callback()
-        await sleep_dur(duration=self.sleep)  # pragma: no cover
+        try:  # pragma: no cover
+            await send_to_slack(self.url, text, timeout=self.timeout)
+        except TimeoutError:  # pragma: no cover
+            if self.callback_failure is not None:
+                self.callback_failure()
+        else:  # pragma: no cover
+            if self.callback_success is not None:
+                self.callback_success()
+        finally:  # pragma: no cover
+            if self.callback_final is not None:
+                self.callback_final()
+            await sleep_dur(duration=self.sleep)
 
 
 ##
@@ -85,7 +97,8 @@ async def send_to_slack(
 ) -> None:
     """Send a message via Slack."""
     client = _get_client(url, timeout=timeout)
-    response = await client.send(text=text)
+    async with timeout_dur(duration=timeout):
+        response = await client.send(text=text)
     if response.status_code != HTTPStatus.OK:  # pragma: no cover
         raise SendToSlackError(text=text, response=response)
 
