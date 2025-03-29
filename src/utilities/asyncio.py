@@ -103,7 +103,14 @@ class AsyncService(ABC):
     async def start(self) -> None:
         """Start the service."""
         if self._task is None:
-            self._task = create_task(self._start_core())
+            self._task = create_task(self._start_runner())
+
+    async def _start_runner(self) -> None:
+        """Coroutine to start the service."""
+        try:
+            await self._start_core()
+        except CancelledError:
+            await self._stop_core()
 
     @abstractmethod
     async def _start_core(self) -> None:
@@ -262,6 +269,7 @@ class QueueProcessor(AsyncLoopingService, Generic[_T]):
     async def _stop_core(self) -> None:
         """Stop the processor, assuming the task has just been cancelled."""
         await self.run_until_empty()
+        await super()._stop_core()
 
 
 ##

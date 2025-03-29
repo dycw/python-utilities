@@ -422,13 +422,14 @@ def add_filters(handler: Handler, /, *filters: _FilterType) -> None:
 def basic_config(
     *,
     format: str = "{asctime} | {name} | {levelname:8} | {message}",  # noqa: A002
+    level: LogLevel = "INFO",
 ) -> None:
     """Do the basic config."""
     basicConfig(
         format=format,
         datefmt=maybe_sub_pct_y("%Y-%m-%d %H:%M:%S"),
         style="{",
-        level="DEBUG",
+        level=level,
     )
 
 

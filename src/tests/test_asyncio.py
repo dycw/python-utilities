@@ -11,6 +11,7 @@ from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
     data,
+    floats,
     integers,
     just,
     lists,
@@ -36,7 +37,7 @@ from utilities.asyncio import (
     timeout_dur,
 )
 from utilities.datetime import MILLISECOND, datetime_duration_to_timedelta
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import settings_with_reduced_examples, text_ascii
 from utilities.iterables import one, unique_everseen
 from utilities.pytest import skipif_windows
 from utilities.timer import Timer
@@ -528,6 +529,25 @@ class TestQueueProcessor:
 
         assert len(first.output) == n
         assert len(second.output) == n
+
+    @given(n=integers(0, 10), duration=floats(0.0, 0.2))
+    @settings_with_reduced_examples()
+    async def test_cancellation(self, *, n: int, duration: float) -> None:
+        @dataclass(kw_only=True)
+        class Example(QueueProcessor[int]):
+            output: set[int] = field(default_factory=set)
+
+            @override
+            async def _process_item(self, item: int, /) -> None:
+                self.output.add(item)
+                await sleep(0.01)
+
+        processor = Example()
+        await processor.start()
+        processor.enqueue(*range(n))
+        async with timeout_dur(duration=duration):
+            await processor
+        assert processor.output == set(range(n))
 
     async def test_empty(self) -> None:
         class Example(QueueProcessor[int]):
