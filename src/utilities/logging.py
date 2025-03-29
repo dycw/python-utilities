@@ -53,7 +53,6 @@ from utilities.iterables import OneEmptyError, one
 from utilities.pathlib import ensure_suffix, resolve_path
 from utilities.sentinel import Sentinel, sentinel
 from utilities.traceback import RichTracebackFormatter
-from utilities.types import LogLevel, PathLike
 from utilities.version import GetVersionError
 
 if TYPE_CHECKING:
@@ -61,7 +60,7 @@ if TYPE_CHECKING:
     from logging import _FilterType
     from zoneinfo import ZoneInfo
 
-    from utilities.types import LoggerOrName, PathLikeOrCallable
+    from utilities.types import LoggerOrName, LogLevel, PathLike, PathLikeOrCallable
 
 try:
     from whenever import ZonedDateTime
@@ -727,7 +726,6 @@ def _ansi_wrap_red(text: str, /) -> str:
 
 __all__ = [
     "GetLoggingLevelNumberError",
-    "LogLevel",
     "SizeAndTimeRotatingFileHandler",
     "StandaloneFileHandler",
     "add_filters",
