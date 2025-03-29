@@ -127,9 +127,9 @@ class AsyncService(ABC):
             await self._task
         self._task = None
 
+    @abstractmethod
     async def _stop_core(self) -> None:
-        """Handle a cancellation."""
-        await self.stop()
+        """Stop the service, assuming the task has just been cancelled."""
 
 
 @dataclass(kw_only=True, slots=True)
