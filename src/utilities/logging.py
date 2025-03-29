@@ -550,7 +550,7 @@ def setup_logging(
         add_filters(console_low_handler, *console_filters)
         add_filters(console_low_handler, *filters)
         console_low_handler.setFormatter(console_formatter)
-        console_low_handler.setLevel(get_logging_level_number(console_level))
+        console_low_handler.setLevel(console_level)
         logger_use.addHandler(console_low_handler)
 
         console_high_handler = StreamHandler(stream=stdout)
