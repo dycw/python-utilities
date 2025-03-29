@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from functools import cached_property
 from itertools import product
 from logging import (
+    DEBUG,
     ERROR,
     NOTSET,
     FileHandler,
@@ -511,7 +512,7 @@ def setup_logging(
 
     # logger
     logger_use = get_logger(logger=logger)  # skipif-ci-and-windows
-    logger_use.setLevel(get_logging_level_number("DEBUG"))  # skipif-ci-and-windows
+    logger_use.setLevel(DEBUG)  # skipif-ci-and-windows
 
     # filters
     console_filters = (  # skipif-ci-and-windows
