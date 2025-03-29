@@ -457,7 +457,8 @@ class TestSizeAndTimeRotatingFileHandler:
         logger = getLogger(str(tmp_path))
         filename = tmp_path.joinpath("log")
         logger.addHandler(SizeAndTimeRotatingFileHandler(filename=filename))
-        logger.warning("message")
+        logger.setLevel(INFO)
+        logger.info("message")
         with filename.open() as fh:
             content = fh.read()
         assert content == "message\n"
