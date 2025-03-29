@@ -8,7 +8,7 @@ from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from hypothesis import given
-from hypothesis.strategies import booleans, integers, none
+from hypothesis.strategies import booleans, integers, none, sampled_from
 from pytest import LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
 
@@ -215,9 +215,13 @@ class TestFilterForKey:
         result = buffer.getvalue() != ""
         assert result is expected
 
-    def test_error(self) -> None:
-        with raises(FilterForKeyError, match="Invalid key: 'msg'"):
-            _ = filter_for_key("msg")
+    def test_sunder(self) -> None:
+        _ = filter_for_key("_key")
+
+    @given(key=sampled_from(["msg", "__dunder__"]))
+    def test_error(self, *, key: str) -> None:
+        with raises(FilterForKeyError, match="Invalid key: '.*'"):
+            _ = filter_for_key(key)
 
 
 class TestGetDefaultLoggingPath:
