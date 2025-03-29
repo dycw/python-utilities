@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, override
 
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
-from utilities.asyncio import QueueProcessor, sleep_dur
+from utilities.asyncio import QueueProcessor, sleep_dur, timeout_dur
 from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float
 from utilities.functools import cache
 from utilities.math import safe_round
@@ -20,14 +20,20 @@ if TYPE_CHECKING:
 
     from slack_sdk.webhook import WebhookResponse
 
-    from utilities.types import Duration
+    from utilities.types import Coroutine1, Duration
 
 
 _TIMEOUT: Duration = MINUTE
-_SLEEP: Duration = SECOND
 
 
 ##
+
+
+_SLEEP: Duration = SECOND
+
+
+async def _send_adapter(url: str, text: str, /) -> None:
+    await send_to_slack(url, text)  # pragma: no cover
 
 
 @dataclass(init=False, order=True, unsafe_hash=True)
@@ -43,8 +49,11 @@ class SlackHandler(Handler, QueueProcessor[str]):
         level: int = NOTSET,
         queue_type: type[Queue[str]] = Queue,
         queue_max_size: int | None = None,
+        sender: Callable[[str, str], Coroutine1[None]] = _send_adapter,
         timeout: Duration = _TIMEOUT,
-        callback: Callable[[], None] | None = None,
+        callback_failure: Callable[[str, Exception], None] | None = None,
+        callback_success: Callable[[str], None] | None = None,
+        callback_final: Callable[[str], None] | None = None,
         sleep: Duration = _SLEEP,
     ) -> None:
         QueueProcessor.__init__(  # QueueProcessor first
@@ -53,8 +62,11 @@ class SlackHandler(Handler, QueueProcessor[str]):
         QueueProcessor.__post_init__(self)
         Handler.__init__(self, level=level)
         self.url = url
+        self.sender = sender
         self.timeout = timeout
-        self.callback = callback
+        self.callback_failure = callback_failure
+        self.callback_success = callback_success
+        self.callback_final = callback_final
         self.sleep = sleep
 
     @override
@@ -71,10 +83,19 @@ class SlackHandler(Handler, QueueProcessor[str]):
         """Process the first item."""
         items = list(chain([item], await self._get_items_nowait()))
         text = "\n".join(items)
-        await send_to_slack(self.url, text, timeout=self.timeout)  # pragma: no cover
-        if self.callback is not None:  # pragma: no cover
-            self.callback()
-        await sleep_dur(duration=self.sleep)  # pragma: no cover
+        try:
+            async with timeout_dur(duration=self.timeout):
+                await self.sender(self.url, text)
+        except Exception as error:  # noqa: BLE001
+            if self.callback_failure is not None:
+                self.callback_failure(text, error)
+        else:
+            if self.callback_success is not None:
+                self.callback_success(text)
+        finally:
+            if self.callback_final is not None:
+                self.callback_final(text)
+            await sleep_dur(duration=self.sleep)
 
 
 ##
@@ -85,7 +106,8 @@ async def send_to_slack(
 ) -> None:
     """Send a message via Slack."""
     client = _get_client(url, timeout=timeout)
-    response = await client.send(text=text)
+    async with timeout_dur(duration=timeout):
+        response = await client.send(text=text)
     if response.status_code != HTTPStatus.OK:  # pragma: no cover
         raise SendToSlackError(text=text, response=response)
 
