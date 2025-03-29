@@ -8,14 +8,14 @@ from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from hypothesis import given
-from hypothesis.strategies import integers
+from hypothesis.strategies import booleans, integers, none
 from pytest import LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
 
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.untraced import func_untraced
 from utilities.datetime import NOW_UTC, SECOND, serialize_compact
-from utilities.hypothesis import pairs, temp_paths, zoned_datetimes
+from utilities.hypothesis import pairs, temp_paths, text_ascii, zoned_datetimes
 from utilities.iterables import one
 from utilities.logging import (
     GetLoggingLevelNumberError,
@@ -26,6 +26,7 @@ from utilities.logging import (
     _RotatingLogFile,
     add_filters,
     basic_config,
+    filter_for_key,
     get_default_logging_path,
     get_logger,
     get_logging_level_number,
@@ -45,9 +46,9 @@ if TYPE_CHECKING:
 
 
 class TestAddFilters:
-    @mark.parametrize("expected", [param(True), param(False)])
-    def test_main(self, *, expected: bool, tmp_path: Path) -> None:
-        logger = getLogger(str(tmp_path))
+    @given(root=temp_paths(), expected=booleans())
+    def test_main(self, *, root: Path, expected: bool) -> None:
+        logger = getLogger(str(root))
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
         add_filters(handler, lambda _: expected)
         assert len(handler.filters) == 1
@@ -180,6 +181,31 @@ class TestComputeRolloverActions:
         assert any(
             p for p in files if search(r"^log\.1\__[\dT]+__[\dT]+\.txt$", p.name)
         )
+
+
+class TestFilterForKey:
+    @given(
+        root=temp_paths(),
+        key=text_ascii(),
+        value=booleans() | none(),
+        default=booleans(),
+    )
+    def test_main(
+        self, *, root: Path, key: str, value: bool | None, default: bool
+    ) -> None:
+        logger = getLogger(str(root))
+        logger.addHandler(handler := StreamHandler(buffer := StringIO()))
+        add_filters(handler, filter_for_key(key, default=default))
+        assert len(handler.filters) == 1
+        match value:
+            case bool():
+                logger.warning("message", extra={key: value})
+                expected = value
+            case None:
+                logger.warning("message")
+                expected = None
+        result = buffer.getvalue() != ""
+        assert result is expected
 
 
 class TestGetDefaultLoggingPath:

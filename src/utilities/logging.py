@@ -435,6 +435,24 @@ def basic_config(
 ##
 
 
+def filter_for_key(
+    name: str, /, *, default: bool = False
+) -> Callable[[LogRecord], bool]:
+    """Make a filter for a given attribute."""
+
+    def filter_(record: LogRecord, /) -> bool:
+        try:
+            value = getattr(record, name)
+        except AttributeError:
+            return default
+        return bool(value)
+
+    return filter_
+
+
+##
+
+
 def get_default_logging_path() -> Path:
     """Get the logging default path."""
     return get_repo_root().joinpath(".logs")
@@ -736,6 +754,7 @@ __all__ = [
     "StandaloneFileHandler",
     "add_filters",
     "basic_config",
+    "filter_for_key",
     "get_default_logging_path",
     "get_logger",
     "get_logging_level_number",
