@@ -16,8 +16,7 @@ if TYPE_CHECKING:
 
     from luigi.execution_summary import LuigiRunResult
 
-    from utilities.logging import LogLevel
-    from utilities.types import PathLike
+    from utilities.types import LogLevel, PathLike
 
 
 # parameters

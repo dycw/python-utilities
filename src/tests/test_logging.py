@@ -18,7 +18,6 @@ from utilities.hypothesis import pairs, temp_paths, zoned_datetimes
 from utilities.iterables import one
 from utilities.logging import (
     GetLoggingLevelNumberError,
-    LogLevel,
     SizeAndTimeRotatingFileHandler,
     StandaloneFileHandler,
     _AdvancedLogRecord,
@@ -34,6 +33,7 @@ from utilities.logging import (
     temp_logger,
 )
 from utilities.pytest import skipif_windows
+from utilities.types import LogLevel
 from utilities.typing import get_args
 
 if TYPE_CHECKING:
