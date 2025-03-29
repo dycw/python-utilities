@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from io import StringIO
-from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
+from logging import DEBUG, INFO, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from pathlib import Path
 from re import search
 from time import sleep
@@ -56,13 +56,13 @@ class TestAddFilters:
     @mark.parametrize("expected", [param(True), param(False)])
     def test_main(self, *, expected: bool, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
-        logger.setLevel(DEBUG)
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
-        handler.setLevel(DEBUG)
+        logger.setLevel(INFO)
         add_filters(handler, lambda _: expected)
         assert len(handler.filters) == 1
-        logger.debug("message")
-        assert (buffer.getvalue() != "") is expected
+        logger.info("message")
+        result = buffer.getvalue() != ""
+        assert result is expected
 
     def test_no_handlers(self) -> None:
         handler = StreamHandler()
