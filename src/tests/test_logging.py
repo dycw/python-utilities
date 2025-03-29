@@ -46,14 +46,17 @@ if TYPE_CHECKING:
 
 class TestAddFilters:
     @mark.parametrize("expected", [param(True), param(False)])
-    def test_main(self, *, expected: bool, tmp_path: Path) -> None:
+    def test_main(
+        self, *, caplog: LogCaptureFixture, expected: bool, tmp_path: Path
+    ) -> None:
         logger = getLogger(str(tmp_path))
-        logger.addHandler(handler := StreamHandler(buffer := StringIO()))
-        add_filters(handler, lambda _: expected)
+        logger.setLevel(DEBUG)
+        logger.addHandler(handler := StreamHandler())
+        add_filters(handler, filters=[lambda _: expected])
         assert len(handler.filters) == 1
-        logger.warning("message")
-        result = buffer.getvalue() != ""
-        assert result is expected
+        with caplog.filtering(one(handler.filters)):
+            logger.debug("message")
+        assert len(caplog.records) == int(expected)
 
     def test_no_handlers(self) -> None:
         handler = StreamHandler()
