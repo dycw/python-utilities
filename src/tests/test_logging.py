@@ -7,7 +7,7 @@ from re import search
 from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import booleans, integers, none
 from pytest import LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
@@ -15,7 +15,13 @@ from whenever import ZonedDateTime
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.untraced import func_untraced
 from utilities.datetime import NOW_UTC, SECOND, serialize_compact
-from utilities.hypothesis import pairs, temp_paths, text_ascii, zoned_datetimes
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    pairs,
+    temp_paths,
+    text_ascii,
+    zoned_datetimes,
+)
 from utilities.iterables import one
 from utilities.logging import (
     FilterForKeyError,
@@ -187,24 +193,27 @@ class TestComputeRolloverActions:
 class TestFilterForKey:
     @given(
         root=temp_paths(),
-        key=text_ascii(),
+        key=text_ascii(max_size=20),
         value=booleans() | none(),
         default=booleans(),
     )
+    @mark.only
+    @settings(max_examples=1000)
     def test_main(
         self, *, root: Path, key: str, value: bool | None, default: bool
     ) -> None:
         logger = getLogger(str(root))
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
-        add_filters(handler, filter_for_key(key, default=default))
-        assert len(handler.filters) == 1
+        with assume_does_not_raise(FilterForKeyError):
+            filter_ = filter_for_key(key, default=default)
+        add_filters(handler, filter_)
         match value:
             case bool():
                 logger.warning("message", extra={key: value})
                 expected = value
             case None:
                 logger.warning("message")
-                expected = None
+                expected = default
         result = buffer.getvalue() != ""
         assert result is expected
 
