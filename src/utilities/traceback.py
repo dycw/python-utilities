@@ -47,7 +47,6 @@ from utilities.rich import (
     yield_mapping_repr,
 )
 from utilities.types import TBaseException, TCallable
-from utilities.version import get_version
 from utilities.whenever import serialize_zoned_datetime
 
 if TYPE_CHECKING:
@@ -698,8 +697,6 @@ def _yield_header_lines(
     yield f"Date/time | {serialize_zoned_datetime(get_now(time_zone='local'))}"
     yield f"User      | {getuser()}"
     yield f"Host      | {gethostname()}"
-    version_use = "" if version is None else get_version(version=version)
-    yield f"Version   | {version_use}"
     yield ""
 
 
