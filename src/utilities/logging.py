@@ -435,32 +435,6 @@ def basic_config(
 ##
 
 
-_LOG_RECORD_ATTRIBUTES = {
-    "args",
-    "created",
-    "exc_info",
-    "exc_text",
-    "filename",
-    "funcName",
-    "getMessage",
-    "levelname",
-    "levelno",
-    "lineno",
-    "module",
-    "msecs",
-    "msg",
-    "name",
-    "pathname",
-    "process",
-    "processName",
-    "relativeCreated",
-    "stack_info",
-    "taskName",
-    "thread",
-    "threadName",
-}
-
-
 def filter_for_key(
     key: str, /, *, default: bool = False
 ) -> Callable[[LogRecord], bool]:
@@ -476,6 +450,13 @@ def filter_for_key(
         return bool(value)
 
     return filter_
+
+
+# fmt: off
+_LOG_RECORD_ATTRIBUTES = {
+    "args", "created", "exc_info", "exc_text", "filename", "funcName", "getMessage", "levelname", "levelno", "lineno", "module", "msecs", "msg", "name", "pathname", "process", "processName", "relativeCreated", "stack_info", "taskName", "thread", "threadName"
+}
+# fmt: on
 
 
 @dataclass(kw_only=True, slots=True)
