@@ -5,12 +5,26 @@ from re import search
 from typing import TYPE_CHECKING
 
 from hypothesis import given
-from hypothesis.strategies import integers, iterables, just
+from hypothesis.strategies import integers, iterables, just, sampled_from
 
-from utilities.random import SYSTEM_RANDOM, get_docker_name, get_state, shuffle
+from utilities.random import (
+    SYSTEM_RANDOM,
+    bernoulli,
+    get_docker_name,
+    get_state,
+    shuffle,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+
+class TestBernoulli:
+    @given(case=sampled_from([(0.0, False), (1.0, True)]))
+    def test_main(self, *, case: tuple[float, bool]) -> None:
+        true, expected = case
+        result = bernoulli(true=true)
+        assert result is expected
 
 
 class TestGetDockerName:
