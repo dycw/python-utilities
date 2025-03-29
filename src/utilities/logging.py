@@ -409,13 +409,10 @@ class StandaloneFileHandler(Handler):
 ##
 
 
-def add_filters(
-    handler: Handler, /, *, filters: MaybeIterable[_FilterType] | None = None
-) -> None:
+def add_filters(handler: Handler, /, *filters: _FilterType) -> None:
     """Add a set of filters to a handler."""
-    if filters is not None:
-        for filter_i in always_iterable(filters):
-            handler.addFilter(filter_i)
+    for filter_i in filters:
+        handler.addFilter(filter_i)
 
 
 ##
@@ -494,7 +491,7 @@ def setup_logging(
     files_max_bytes: int = 10 * 1024**2,
     files_filters: Iterable[_FilterType] | None = None,
     files_fmt: str = "{_zoned_datetime_str} | {name}:{funcName}:{lineno} | {levelname:8} | {message}",
-    filters: Iterable[_FilterType] | None = None,
+    filters: MaybeIterable[_FilterType] | None = None,
     extra: Callable[[LoggerOrName | None], None] | None = None,
 ) -> None:
     """Set up logger."""
@@ -518,12 +515,14 @@ def setup_logging(
 
     # filters
     console_filters = (  # skipif-ci-and-windows
-        None if console_filters is None else list(console_filters)
+        [] if console_filters is None else list(console_filters)
     )
     files_filters = (  # skipif-ci-and-windows
-        None if files_filters is None else list(files_filters)
+        [] if files_filters is None else list(files_filters)
     )
-    filters = None if filters is None else list(filters)  # skipif-ci-and-windows
+    filters = (  # skipif-ci-and-windows
+        [] if filters is None else list(always_iterable(filters))
+    )
 
     # formatters
     try:  # skipif-ci-and-windows
@@ -546,16 +545,16 @@ def setup_logging(
     # console
     if console_level is not None:  # skipif-ci-and-windows
         console_low_handler = StreamHandler(stream=stdout)
-        add_filters(console_low_handler, filters=[lambda x: x.levelno < ERROR])
-        add_filters(console_low_handler, filters=console_filters)
-        add_filters(console_low_handler, filters=filters)
+        add_filters(console_low_handler, lambda x: x.levelno < ERROR)
+        add_filters(console_low_handler, *console_filters)
+        add_filters(console_low_handler, *filters)
         console_low_handler.setFormatter(console_formatter)
         console_low_handler.setLevel(get_logging_level_number(console_level))
         logger_use.addHandler(console_low_handler)
 
         console_high_handler = StreamHandler(stream=stdout)
-        add_filters(console_high_handler, filters=console_filters)
-        add_filters(console_high_handler, filters=filters)
+        add_filters(console_high_handler, *console_filters)
+        add_filters(console_high_handler, *filters)
         _ = RichTracebackFormatter.create_and_set(
             console_high_handler, git_ref=git_ref, detail=True, post=_ansi_wrap_red
         )
@@ -579,8 +578,8 @@ def setup_logging(
             backupCount=files_backup_count,
             maxBytes=files_max_bytes,
         )
-        add_filters(file_handler, filters=files_filters)
-        add_filters(file_handler, filters=filters)
+        add_filters(file_handler, *files_filters)
+        add_filters(file_handler, *filters)
         file_handler.setFormatter(files_or_plain_formatter)
         file_handler.setLevel(level)
         logger_use.addHandler(file_handler)
@@ -589,7 +588,7 @@ def setup_logging(
     standalone_file_handler = StandaloneFileHandler(  # skipif-ci-and-windows
         level=ERROR, path=directory.joinpath("errors")
     )
-    add_filters(standalone_file_handler, filters=[lambda x: x.exc_info is not None])
+    add_filters(standalone_file_handler, lambda x: x.exc_info is not None)
     standalone_file_handler.setFormatter(
         RichTracebackFormatter(git_ref=git_ref, detail=True)
     )

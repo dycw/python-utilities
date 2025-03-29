@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
+from logging import DEBUG, NOTSET, FileHandler, Filter, Logger, StreamHandler, getLogger
 from pathlib import Path
 from re import search
 from time import sleep
@@ -51,9 +51,10 @@ class TestAddFilters:
         logger = getLogger(str(tmp_path))
         logger.setLevel(DEBUG)
         logger.addHandler(handler := StreamHandler())
-        add_filters(handler, filters=[lambda _: expected])
+        add_filters(handler, lambda _: expected)
         assert len(handler.filters) == 1
-        with caplog.filtering(one(handler.filters)):
+        filter_ = one(handler.filters)
+        with caplog.filtering(cast("Filter", filter_)):
             logger.debug("message")
         assert len(caplog.records) == int(expected)
 
