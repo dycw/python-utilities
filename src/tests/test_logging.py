@@ -15,13 +15,7 @@ from whenever import ZonedDateTime
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.untraced import func_untraced
 from utilities.datetime import NOW_UTC, SECOND, serialize_compact
-from utilities.hypothesis import (
-    assume_does_not_raise,
-    pairs,
-    temp_paths,
-    text_ascii,
-    zoned_datetimes,
-)
+from utilities.hypothesis import pairs, temp_paths, text_ascii, zoned_datetimes
 from utilities.iterables import one
 from utilities.logging import (
     FilterForKeyError,
@@ -53,9 +47,9 @@ if TYPE_CHECKING:
 
 
 class TestAddFilters:
-    @mark.parametrize("expected", [param(True), param(False)])
-    def test_main(self, *, expected: bool, tmp_path: Path) -> None:
-        logger = getLogger(str(tmp_path))
+    @given(root=temp_paths(), expected=booleans())
+    def test_main(self, *, root: Path, expected: bool) -> None:
+        logger = getLogger(str(root))
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
         add_filters(handler, lambda _: expected)
         assert len(handler.filters) == 1
@@ -202,22 +196,17 @@ class TestFilterForKey:
     ) -> None:
         logger = getLogger(str(root))
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
-        with assume_does_not_raise(FilterForKeyError):
-            filter_ = filter_for_key(key, default=default)
-        add_filters(handler, filter_)
+        add_filters(handler, filter_for_key(key, default=default))
+        assert len(handler.filters) == 1
         match value:
             case bool():
                 logger.warning("message", extra={key: value})
                 expected = value
             case None:
                 logger.warning("message")
-                expected = default
+                expected = None
         result = buffer.getvalue() != ""
         assert result is expected
-
-    def test_error(self) -> None:
-        with raises(FilterForKeyError, match="Invalid key: 'msg'"):
-            _ = filter_for_key("msg")
 
 
 class TestGetDefaultLoggingPath:

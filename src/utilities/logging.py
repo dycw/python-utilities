@@ -436,36 +436,18 @@ def basic_config(
 
 
 def filter_for_key(
-    key: str, /, *, default: bool = False
+    name: str, /, *, default: bool = False
 ) -> Callable[[LogRecord], bool]:
     """Make a filter for a given attribute."""
-    if (key in _FILTER_FOR_KEY_BLACKLIST) or key.startswith("_"):
-        raise FilterForKeyError(key=key)
 
     def filter_(record: LogRecord, /) -> bool:
         try:
-            value = getattr(record, key)
+            value = getattr(record, name)
         except AttributeError:
             return default
         return bool(value)
 
     return filter_
-
-
-# fmt: off
-_FILTER_FOR_KEY_BLACKLIST = {
-    "args", "created", "exc_info", "exc_text", "filename", "funcName", "getMessage", "levelname", "levelno", "lineno", "module", "msecs", "msg", "name", "pathname", "process", "processName", "relativeCreated", "stack_info", "taskName", "thread", "threadName"
-}
-# fmt: on
-
-
-@dataclass(kw_only=True, slots=True)
-class FilterForKeyError(Exception):
-    key: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid key: {self.key!r}"
 
 
 ##
