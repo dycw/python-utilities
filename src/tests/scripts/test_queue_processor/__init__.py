@@ -15,7 +15,7 @@ _LOGGER = getLogger(__name__)
 class Processor(QueueProcessor[int]):
     @override
     async def _process_item(self, item: int, /) -> None:
-        _LOGGER.info("Processing %d...", item)
+        _LOGGER.info("Processing %d; %d left...", item, len(self))
         await sleep(1)
 
 
@@ -26,11 +26,12 @@ def main() -> None:
 
 
 async def populate(processor: Processor, /) -> None:
-    init = len(processor)
-    processor.enqueue(SYSTEM_RANDOM.randint(0, 9))
-    post = len(processor)
-    _LOGGER.info("%d items -> %d items", init, post)
-    await sleep(SYSTEM_RANDOM.random(0.1, 0.5))
+    while len(processor) <= 10:
+        init = len(processor)
+        processor.enqueue(SYSTEM_RANDOM.randint(0, 9))
+        post = len(processor)
+        _LOGGER.info("%d -> %d items", init, post)
+        await sleep(0.1 + 0.4 * SYSTEM_RANDOM.random())
 
 
 async def _main() -> None:
