@@ -439,7 +439,7 @@ def filter_for_key(
     key: str, /, *, default: bool = False
 ) -> Callable[[LogRecord], bool]:
     """Make a filter for a given attribute."""
-    if (key in _LOG_RECORD_ATTRIBUTES) or key.startswith("_"):
+    if (key in _FILTER_FOR_KEY_BLACKLIST) or key.startswith("_"):
         raise FilterForKeyError(key=key)
 
     def filter_(record: LogRecord, /) -> bool:
@@ -453,7 +453,7 @@ def filter_for_key(
 
 
 # fmt: off
-_LOG_RECORD_ATTRIBUTES = {
+_FILTER_FOR_KEY_BLACKLIST = {
     "args", "created", "exc_info", "exc_text", "filename", "funcName", "getMessage", "levelname", "levelno", "lineno", "module", "msecs", "msg", "name", "pathname", "process", "processName", "relativeCreated", "stack_info", "taskName", "thread", "threadName"
 }
 # fmt: on
