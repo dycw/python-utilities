@@ -346,10 +346,9 @@ class TestGetLogRecords:
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := FileHandler(file := tmp_path.joinpath("log")))
         logger.setLevel(INFO)
+        handler.setFormatter(OrjsonFormatter())
         with file.open(mode="w") as fh:
             _ = fh.write("\n")
-        handler.setFormatter(OrjsonFormatter())
-        logger.addHandler(handler)
         logger.info("", extra={"a": 1, "b": 2, "_ignored": 3})
         result = get_log_records(tmp_path, parallelism="threads")
         assert result.path == tmp_path
@@ -383,12 +382,10 @@ class TestGetLogRecords:
 
     def test_error_deserialize_due_to_missing(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
-        logger.setLevel(DEBUG)
-        handler = FileHandler(file := tmp_path.joinpath("log"))
+        logger.addHandler(handler := FileHandler(file := tmp_path.joinpath("log")))
+        logger.setLevel(INFO)
         handler.setFormatter(OrjsonFormatter())
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
-        logger.debug("", extra={"obj": DataClassFutureIntDefault()})
+        logger.info("", extra={"obj": DataClassFutureIntDefault()})
         result = get_log_records(tmp_path, parallelism="threads")
         assert result.path == tmp_path
         assert result.files == [file]
@@ -415,19 +412,16 @@ class TestGetLogRecords:
 
 class TestOrjsonFormatter:
     def test_main(self, *, tmp_path: Path) -> None:
-        name = str(tmp_path)
-        logger = getLogger(name)
-        logger.setLevel(DEBUG)
-        handler = StreamHandler(buffer := StringIO())
+        logger = getLogger(str(tmp_path))
+        logger.addHandler(handler := StreamHandler(buffer := StringIO()))
+        logger.setLevel(INFO)
         handler.setFormatter(OrjsonFormatter())
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
-        logger.debug("message", extra={"a": 1, "b": 2, "_ignored": 3})
+        logger.info("message", extra={"a": 1, "b": 2, "_ignored": 3})
         record = deserialize(buffer.getvalue().encode(), objects={OrjsonLogRecord})
         assert isinstance(record, OrjsonLogRecord)
-        assert record.name == name
+        assert record.name == str(tmp_path)
         assert record.message == "message"
-        assert record.level == DEBUG
+        assert record.level == INFO
         assert record.path_name == Path(__file__)
         assert abs(record.datetime - get_now(time_zone="local")) <= SECOND
         assert record.func_name == TestOrjsonFormatter.test_main.__name__
