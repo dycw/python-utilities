@@ -1,0 +1,40 @@
+from __future__ import annotations
+
+from asyncio import CancelledError, Event, run, sleep
+from contextlib import suppress
+from logging import getLogger
+from typing import override
+
+from utilities.asyncio import QueueProcessor
+from utilities.logging import basic_config
+from utilities.random import SYSTEM_RANDOM
+
+_LOGGER = getLogger(__name__)
+
+
+class Processor(QueueProcessor[int]):
+    @override
+    async def _process_item(self, item: int, /) -> None:
+        _LOGGER.info("Processing %d...", item)
+        await sleep(1)
+
+
+def main() -> None:
+    basic_config()
+    _LOGGER.info("Running script...")
+    run(_main())
+
+
+async def populate(processor: Processor, /) -> None:
+    init = len(processor)
+    processor.enqueue(SYSTEM_RANDOM.randint(0, 9))
+    post = len(processor)
+    _LOGGER.info("%d items -> %d items", init, post)
+    await sleep(SYSTEM_RANDOM.random(0.1, 0.5))
+
+
+async def _main() -> None:
+    await (processor := Processor()).start()
+    await populate(processor)
+    with suppress(CancelledError):
+        _ = await Event().wait()

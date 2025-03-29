@@ -11,10 +11,10 @@ from utilities.logging import basic_config
 _LOGGER = getLogger(__name__)
 
 
-class Parent(AsyncLoopingService):
+class Service(AsyncLoopingService):
     @override
     async def _run(self) -> None:
-        _LOGGER.info("Running parent...")
+        _LOGGER.info("Running service...")
         await sleep(1)
 
 
@@ -25,6 +25,6 @@ def main() -> None:
 
 
 async def _main() -> None:
-    await Parent().start()
+    await Service().start()
     with suppress(CancelledError):
         _ = await Event().wait()
