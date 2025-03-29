@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from logging import DEBUG, NOTSET, FileHandler, Filter, Logger, StreamHandler, getLogger
+from io import StringIO
+from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
 from pathlib import Path
 from re import search
 from time import sleep
@@ -53,18 +54,15 @@ if TYPE_CHECKING:
 
 class TestAddFilters:
     @mark.parametrize("expected", [param(True), param(False)])
-    def test_main(
-        self, *, caplog: LogCaptureFixture, expected: bool, tmp_path: Path
-    ) -> None:
+    def test_main(self, *, expected: bool, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.setLevel(DEBUG)
-        logger.addHandler(handler := StreamHandler())
+        logger.addHandler(handler := StreamHandler(buffer := StringIO()))
+        handler.setLevel(DEBUG)
         add_filters(handler, lambda _: expected)
         assert len(handler.filters) == 1
-        filter_ = one(handler.filters)
-        with caplog.filtering(cast("Filter", filter_)):
-            logger.debug("message")
-        assert len(caplog.records) == int(expected)
+        logger.debug("message")
+        assert (buffer.getvalue() != "") is expected
 
     def test_no_handlers(self) -> None:
         handler = StreamHandler()
