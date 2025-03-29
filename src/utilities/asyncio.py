@@ -103,7 +103,14 @@ class AsyncService(ABC):
     async def start(self) -> None:
         """Start the service."""
         if self._task is None:
-            self._task = create_task(self._start_core())
+            self._task = create_task(self._start_runner())
+
+    async def _start_runner(self) -> None:
+        """Coroutine to start the service."""
+        try:
+            await self._start_core()
+        except CancelledError:
+            await self.stop()
 
     @abstractmethod
     async def _start_core(self) -> None:
