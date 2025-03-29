@@ -149,11 +149,9 @@ class TestGetLogRecords:
         self, *, root: Path, items: Sequence[tuple[LogLevel, str, StrMapping]]
     ) -> None:
         logger = getLogger(str(root))
+        logger.addHandler(handler := FileHandler(root.joinpath("log")))
         logger.setLevel(DEBUG)
-        handler = FileHandler(root.joinpath("log"))
         handler.setFormatter(OrjsonFormatter())
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
         for level_, message_, extra_ in items:
             logger.log(get_logging_level_number(level_), message_, extra=extra_)
         output = get_log_records(root, parallelism="threads")
@@ -227,11 +225,9 @@ class TestGetLogRecords:
         max_log_file_line_num: int | None,
     ) -> None:
         logger = getLogger(str(root))
+        logger.addHandler(handler := FileHandler(root.joinpath("log")))
         logger.setLevel(DEBUG)
-        handler = FileHandler(root.joinpath("log"))
         handler.setFormatter(OrjsonFormatter())
-        handler.setLevel(DEBUG)
-        logger.addHandler(handler)
         for level_, message_, extra_ in items:
             logger.log(get_logging_level_number(level_), message_, extra=extra_)
         output = get_log_records(root, parallelism="threads")
