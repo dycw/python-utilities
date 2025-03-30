@@ -33,6 +33,7 @@ if TYPE_CHECKING:
         DateOrDateTime,
         Duration,
         MaybeCallableDate,
+        MaybeCallableDateTime,
         TimeZoneLike,
     )
 
@@ -439,6 +440,26 @@ def get_date(*, date: MaybeCallableDate | None = None) -> dt.date | None:
             return date
         case Callable() as func:
             return get_date(date=func())
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
+@overload
+def get_datetime(*, datetime: MaybeCallableDateTime) -> dt.datetime: ...
+@overload
+def get_datetime(*, datetime: None = None) -> None: ...
+def get_datetime(
+    *, datetime: MaybeCallableDateTime | None = None
+) -> dt.datetime | None:
+    """Get the datetime."""
+    match datetime:
+        case dt.datetime() | None:
+            return datetime
+        case Callable() as func:
+            return get_datetime(datetime=func())
         case _ as never:
             assert_never(never)
 
@@ -1227,6 +1248,7 @@ __all__ = [
     "days_since_epoch_to_date",
     "ensure_month",
     "format_datetime_local_and_utc",
+    "get_date",
     "get_half_years",
     "get_months",
     "get_now",
