@@ -509,8 +509,8 @@ NOW_HK = get_now_hk()
 
 def get_now_local() -> dt.datetime:
     """Get the current time in local."""
-    # don't define `NOW_LOCAL` as this would require `tzlocal`
     return get_now(time_zone="local")
+    # don't define `NOW_LOCAL` as this would require `tzlocal`
 
 
 def get_now_tokyo() -> dt.datetime:
