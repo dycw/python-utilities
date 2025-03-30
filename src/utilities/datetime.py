@@ -554,7 +554,7 @@ TODAY_HK = get_today_hk()
 
 def get_today_local() -> dt.date:
     """Get the current, timezone-aware local date."""
-    return get_now(time_zone="local").date()
+    return get_now_local().date()
 
 
 def get_today_tokyo() -> dt.date:
