@@ -30,6 +30,7 @@ def get_branch_name(*, cwd: PathLike = PWD) -> str:
 
 _GIT_REV_PARSE_ABBREV_REV_HEAD = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
 
+
 ##
 
 
@@ -41,6 +42,7 @@ def get_ref_tags(ref: str, /, *, cwd: PathLike = PWD) -> list[str]:
 
 _GIT_TAG_POINTS_AT = ["git", "tag", "--points-at"]
 
+
 ##
 
 
@@ -51,6 +53,7 @@ def get_repo_name(*, cwd: PathLike = PWD) -> str:
 
 
 _GIT_REMOTE_GET_URL_ORIGIN = ["git", "remote", "get-url", "origin"]
+
 
 ##
 
