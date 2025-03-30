@@ -16,7 +16,12 @@ from asyncio import (
     sleep,
     timeout,
 )
-from contextlib import AsyncExitStack, asynccontextmanager, suppress
+from contextlib import (
+    AsyncExitStack,
+    _AsyncGeneratorContextManager,
+    asynccontextmanager,
+    suppress,
+)
 from dataclasses import dataclass, field
 from io import StringIO
 from subprocess import PIPE
@@ -201,6 +206,69 @@ class BoundedTaskGroup(TaskGroup):
 ##
 
 
+class EnhancedTaskGroup(TaskGroup):
+    """Task group with enhanced features."""
+
+    _semaphore: Semaphore | None
+    _timeout: Duration | None
+    _error: type[Exception]
+    _timeout_cm: _AsyncGeneratorContextManager[None] | None
+
+    @override
+    def __init__(
+        self,
+        *,
+        max_tasks: int | None = None,
+        timeout: Duration | None = None,
+        error: type[Exception] = TimeoutError,
+    ) -> None:
+        super().__init__()
+        self._semaphore = None if max_tasks is None else Semaphore(max_tasks)
+        self._timeout = timeout
+        self._error = error
+        self._timeout_cm = None
+
+    @override
+    async def __aenter__(self) -> Self:
+        self._timeout_cm = timeout_dur(duration=self._timeout)
+        await self._timeout_cm.__aenter__()
+        return await super().__aenter__()
+
+    @override
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        if self._timeout_cm is not None:
+            _ = await self._timeout_cm.__aexit__(exc_type, exc_value, traceback)
+        return await super().__aexit__(exc_type, exc_value, traceback)
+
+    @override
+    def create_task(
+        self,
+        coro: _CoroutineLike[_T],
+        *,
+        name: str | None = None,
+        context: Context | None = None,
+    ) -> Task[_T]:
+        if self._semaphore is None:
+            coroutine = coro
+        else:
+            coroutine = self._wrap_with_semaphore(self._semaphore, coro)
+        return super().create_task(coroutine, name=name, context=context)
+
+    async def _wrap_with_semaphore(
+        self, semaphore: Semaphore, coroutine: _CoroutineLike[_T], /
+    ) -> _T:
+        async with semaphore:
+            return await coroutine
+
+
+##
+
+
 @dataclass(kw_only=True)
 class QueueProcessor(AsyncLoopingService, Generic[_T]):
     """Process a set of items in a queue."""
@@ -270,9 +338,6 @@ class QueueProcessor(AsyncLoopingService, Generic[_T]):
         """Stop the processor, assuming the task has just been cancelled."""
         await self.run_until_empty()
         await super()._stop_core()
-
-
-##
 
 
 @dataclass(kw_only=True)
@@ -467,6 +532,7 @@ __all__ = [
     "AsyncService",
     "AsyncServiceError",
     "BoundedTaskGroup",
+    "EnhancedTaskGroup",
     "ExceptionProcessor",
     "QueueProcessor",
     "StreamCommandOutput",

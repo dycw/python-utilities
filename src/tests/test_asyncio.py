@@ -26,6 +26,7 @@ from utilities.asyncio import (
     AsyncService,
     AsyncServiceError,
     BoundedTaskGroup,
+    EnhancedTaskGroup,
     ExceptionProcessor,
     QueueProcessor,
     UniquePriorityQueue,
@@ -330,20 +331,20 @@ class TestAsyncService:
         assert result == expected
 
 
-class TestBoundedTaskGroup:
-    async def test_with(self) -> None:
-        with Timer() as timer:
-            async with BoundedTaskGroup(max_tasks=2) as tg:
-                for _ in range(10):
-                    _ = tg.create_task(sleep(0.01))
-        assert timer >= 0.05
-
-    async def test_without(self) -> None:
+class TestEnhancedTaskGroup:
+    async def test_max_tasks_disabled(self) -> None:
         with Timer() as timer:
             async with BoundedTaskGroup() as tg:
                 for _ in range(10):
                     _ = tg.create_task(sleep(0.01))
         assert timer <= 0.05
+
+    async def test_max_tasks_enabled(self) -> None:
+        with Timer() as timer:
+            async with EnhancedTaskGroup(max_tasks=2) as tg:
+                for _ in range(10):
+                    _ = tg.create_task(sleep(0.01))
+        assert timer >= 0.05
 
 
 class TestExceptionProcessor:
