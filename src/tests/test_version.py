@@ -29,6 +29,10 @@ class TestGetVersion:
     def test_version(self, *, version: Version) -> None:
         assert get_version(version=version) == version
 
+    @given(version=versions())
+    def test_callable(self, *, version: Version) -> None:
+        assert get_version(version=lambda: version) == version
+
 
 class TestParseVersion:
     @given(version=versions())
