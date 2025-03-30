@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import datetime as dt
+from dataclasses import dataclass, field
 from math import isclose
 from operator import eq, gt, lt
 from re import search
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, assume, given, settings
@@ -24,6 +25,7 @@ from hypothesis.strategies import (
 )
 from pytest import mark, param, raises
 
+from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
     _MICROSECONDS_PER_MILLISECOND,
     DAY,
@@ -144,13 +146,14 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.math import MAX_INT32, MIN_INT32, is_integral, round_to_float
+from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import UTC, HongKong, Tokyo
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from utilities.sentinel import Sentinel
-    from utilities.types import DateOrDateTime, Number
+    from utilities.types import DateOrDateTime, MaybeCallableDate, Number
 
 
 class TestAddDuration:
@@ -615,9 +618,24 @@ class TestGetDate:
     def test_date(self, *, date: dt.date) -> None:
         assert get_date(date=date) == date
 
-    @given(version=none() | sentinels())
-    def test_none_or_sentinel(self, *, version: None | Sentinel) -> None:
-        assert get_date(version=version) is version
+    @given(date=none() | sentinels())
+    def test_none_or_sentinel(self, *, date: None | Sentinel) -> None:
+        assert get_date(date=date) is date
+
+    @given(date=dates())
+    def test_replace_non_sentinel(self, *, date: dt.date) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            date: dt.date = field(default_factory=get_today)
+
+            def replace(self, *, date: MaybeCallableDate | Sentinel = sentinel) -> Self:
+                return replace_non_sentinel(self, date=date)
+
+        obj = Example(date=date)
+        assert obj.date == date
+        new = obj.replace()
+        assert new.date == date
+        assert get_date(date=date) is date
 
     @given(date=dates())
     def test_callable(self, *, date: dt.date) -> None:
@@ -629,9 +647,9 @@ class TestGetDateTime:
     def test_datetime(self, *, datetime: dt.datetime) -> None:
         assert get_datetime(datetime=datetime) == datetime
 
-    @given(version=none() | sentinels())
-    def test_none_or_sentinel(self, *, version: None | Sentinel) -> None:
-        assert get_datetime(version=version) is version
+    @given(datetime=none() | sentinels())
+    def test_none_or_sentinel(self, *, datetime: None | Sentinel) -> None:
+        assert get_datetime(datetime=datetime) is datetime
 
     @given(datetime=zoned_datetimes())
     def test_callable(self, *, datetime: dt.datetime) -> None:
