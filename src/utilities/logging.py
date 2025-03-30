@@ -49,12 +49,11 @@ from utilities.datetime import (
     serialize_compact,
 )
 from utilities.errors import ImpossibleCaseError
-from utilities.git import MASTER, get_repo_root
+from utilities.git import get_repo_root
 from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.pathlib import ensure_suffix, resolve_path
 from utilities.sentinel import Sentinel, sentinel
 from utilities.traceback import RichTracebackFormatter
-from utilities.version import GetVersionError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
@@ -68,11 +67,13 @@ if TYPE_CHECKING:
         PathLike,
         PathLikeOrCallable,
     )
+    from utilities.version import MaybeCallableVersionLike
 
 try:
     from whenever import ZonedDateTime
 except ModuleNotFoundError:  # pragma: no cover
     ZonedDateTime = None
+
 
 ##
 
@@ -129,8 +130,6 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
             if (self._backup_count is not None) and self._should_rollover(record):
                 self._do_rollover(backup_count=self._backup_count)
             FileHandler.emit(self, record)
-        except GetVersionError:  # pragma: no cover
-            raise
         except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
@@ -401,8 +400,6 @@ class StandaloneFileHandler(Handler):
             formatted = self.format(record)
             with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
                 _ = fh.write(formatted)
-        except GetVersionError:  # pragma: no cover
-            raise
         except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
@@ -521,7 +518,6 @@ def setup_logging(
     console_level: LogLevel | None = "INFO",
     console_filters: Iterable[_FilterType] | None = None,
     console_fmt: str = "❯ {_zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
-    git_ref: str = MASTER,
     files_dir: PathLikeOrCallable | None = get_default_logging_path,
     files_when: _When = "D",
     files_interval: int = 1,
@@ -530,6 +526,7 @@ def setup_logging(
     files_filters: Iterable[_FilterType] | None = None,
     files_fmt: str = "{_zoned_datetime_str} | {name}:{funcName}:{lineno} | {levelname:8} | {message}",
     filters: MaybeIterable[_FilterType] | None = None,
+    version: MaybeCallableVersionLike | None = None,
     extra: Callable[[LoggerOrName | None], None] | None = None,
 ) -> None:
     """Set up logger."""
@@ -594,7 +591,7 @@ def setup_logging(
         add_filters(console_high_handler, *console_filters)
         add_filters(console_high_handler, *filters)
         _ = RichTracebackFormatter.create_and_set(
-            console_high_handler, git_ref=git_ref, detail=True, post=_ansi_wrap_red
+            console_high_handler, version=version, detail=True, post=_ansi_wrap_red
         )
         console_high_handler.setLevel(
             max(get_logging_level_number(console_level), ERROR)
@@ -628,7 +625,7 @@ def setup_logging(
     )
     add_filters(standalone_file_handler, lambda x: x.exc_info is not None)
     standalone_file_handler.setFormatter(
-        RichTracebackFormatter(git_ref=git_ref, detail=True)
+        RichTracebackFormatter(version=version, detail=True)
     )
     logger_use.addHandler(standalone_file_handler)  # skipif-ci-and-windows
 

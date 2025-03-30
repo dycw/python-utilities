@@ -11,15 +11,6 @@ from utilities.pathlib import PWD
 if TYPE_CHECKING:
     from utilities.types import PathLike
 
-MASTER = "master"
-ORIGIN_MASTER = "origin/master"
-_GIT_REMOTE_GET_URL_ORIGIN = ["git", "remote", "get-url", "origin"]
-_GIT_REV_PARSE_ABBREV_REV_HEAD = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
-_GIT_TAG_POINTS_AT = ["git", "tag", "--points-at"]
-
-
-##
-
 
 def fetch_all_tags(*, cwd: PathLike = PWD) -> None:
     """Fetch the tags."""
@@ -37,6 +28,9 @@ def get_branch_name(*, cwd: PathLike = PWD) -> str:
     return output.strip("\n")
 
 
+_GIT_REV_PARSE_ABBREV_REV_HEAD = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+
+
 ##
 
 
@@ -46,6 +40,9 @@ def get_ref_tags(ref: str, /, *, cwd: PathLike = PWD) -> list[str]:
     return output.strip("\n").splitlines()
 
 
+_GIT_TAG_POINTS_AT = ["git", "tag", "--points-at"]
+
+
 ##
 
 
@@ -53,6 +50,9 @@ def get_repo_name(*, cwd: PathLike = PWD) -> str:
     """Get the repo name."""
     output = check_output(_GIT_REMOTE_GET_URL_ORIGIN, stderr=PIPE, cwd=cwd, text=True)
     return Path(output.strip("\n")).stem  # not valid_path
+
+
+_GIT_REMOTE_GET_URL_ORIGIN = ["git", "remote", "get-url", "origin"]
 
 
 ##
@@ -84,8 +84,6 @@ class GetRepoRootError(Exception):
 
 
 __all__ = [
-    "MASTER",
-    "ORIGIN_MASTER",
     "GetRepoRootError",
     "fetch_all_tags",
     "get_branch_name",

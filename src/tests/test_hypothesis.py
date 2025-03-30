@@ -45,12 +45,7 @@ from utilities.datetime import (
     parse_two_digit_year,
 )
 from utilities.functions import ensure_int
-from utilities.git import (
-    _GIT_REMOTE_GET_URL_ORIGIN,
-    _GIT_REV_PARSE_ABBREV_REV_HEAD,
-    _GIT_TAG_POINTS_AT,
-    MASTER,
-)
+from utilities.git import _GIT_REMOTE_GET_URL_ORIGIN, _GIT_REV_PARSE_ABBREV_REV_HEAD
 from utilities.hypothesis import (
     _SQLALCHEMY_ENGINE_DIALECTS,
     LocalDateTimesError,
@@ -128,7 +123,7 @@ from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sentinel import Sentinel
 from utilities.sqlalchemy import Dialect, _get_dialect
-from utilities.version import Version, get_pyproject_version
+from utilities.version import Version
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
@@ -598,16 +593,7 @@ class TestGitRepos:
     def test_main(self, *, data: DataObject) -> None:
         branch = data.draw(text_ascii(min_size=1) | none())
         remote = data.draw(text_ascii(min_size=1) | none())
-        git_version = data.draw(versions() | none())
-        pyproject_version = data.draw(versions() | none())
-        root = data.draw(
-            git_repos(
-                branch=branch,
-                remote=remote,
-                git_version=git_version,
-                pyproject_version=pyproject_version,
-            )
-        )
+        root = data.draw(git_repos(branch=branch, remote=remote))
         files = set(root.iterdir())
         assert Path(root, ".git") in files
         if branch is not None:
@@ -620,22 +606,6 @@ class TestGitRepos:
                 _GIT_REMOTE_GET_URL_ORIGIN, stderr=PIPE, cwd=root, text=True
             )
             assert output.strip("\n") == remote
-        if git_version is not None:
-            output = check_output(
-                [*_GIT_TAG_POINTS_AT, MASTER], stderr=PIPE, cwd=root, text=True
-            )
-            assert output.strip("\n") == str(git_version)
-        if pyproject_version is not None:
-            output = get_pyproject_version(cwd=root)
-            assert output == pyproject_version
-
-    @given(data=data())
-    @settings(max_examples=1)
-    def test_hatch_version_001(self, *, data: DataObject) -> None:
-        root = data.draw(git_repos(pyproject_version=Version(0, 0, 1)))
-        output = get_pyproject_version(cwd=root)
-        expected = Version(major=0, minor=0, patch=1)
-        assert output == expected
 
 
 class TestHashables:

@@ -19,6 +19,7 @@ type Number = int | float
 type Duration = Number | dt.timedelta
 type StrMapping = Mapping[str, Any]
 type TupleOrStrMapping = tuple[Any, ...] | StrMapping
+type MaybeCallable[_T] = _T | Callable[[], _T]
 type MaybeType[_T] = _T | type[_T]
 
 
@@ -144,6 +145,7 @@ __all__ = [
     "LogLevel",
     "LoggerOrName",
     "MaybeAwaitable",
+    "MaybeCallable",
     "MaybeCoroutine1",
     "MaybeIterable",
     "MaybeIterableHashable",

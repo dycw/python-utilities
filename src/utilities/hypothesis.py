@@ -528,8 +528,6 @@ def git_repos(
     *,
     branch: MaybeSearchStrategy[str | None] = None,
     remote: MaybeSearchStrategy[str | None] = None,
-    git_version: MaybeSearchStrategy[Version | None] = None,
-    pyproject_version: MaybeSearchStrategy[Version | None] = None,
 ) -> Path:
     path = draw(temp_paths())
     with temp_cwd(path):
@@ -547,17 +545,6 @@ def git_repos(
             _ = check_call(["git", "checkout", "-b", branch_])
         if (remote_ := draw2(draw, remote)) is not None:
             _ = check_call(["git", "remote", "add", "origin", remote_])
-        if (git_version_ := draw2(draw, git_version)) is not None:
-            _ = check_call(["git", "tag", str(git_version_), "master"])
-        if (pyproject_version_ := draw2(draw, pyproject_version)) is not None:
-            from tomlkit import document, dump, table
-
-            doc = document()
-            table = table()
-            table["version"] = str(pyproject_version_)
-            doc["project"] = table
-            with path.joinpath("pyproject.toml").open(mode="w") as fh:
-                dump(doc, fh)
     return path
 
 

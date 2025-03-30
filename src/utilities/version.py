@@ -1,20 +1,15 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from functools import total_ordering
-from tomllib import loads
-from typing import TYPE_CHECKING, Any, Self, override
+from typing import Any, Self, assert_never, overload, override
 
-from utilities.git import MASTER, fetch_all_tags, get_ref_tags, get_repo_root
-from utilities.iterables import OneEmptyError, one
-from utilities.pathlib import PWD
+from utilities.types import MaybeCallable
 
-if TYPE_CHECKING:
-    from utilities.types import PathLike
-
-
-_PATTERN = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-(\w+))?")
+type VersionLike = Version | str
+type MaybeCallableVersionLike = MaybeCallable[VersionLike]
 
 
 ##
@@ -135,62 +130,21 @@ class _VersionEmptySuffixError(VersionError):
 ##
 
 
-def get_git_version(*, cwd: PathLike = PWD, ref: str = MASTER) -> Version:
-    """Get the version according to the `git`."""
-    fetch_all_tags(cwd=cwd)
-    tags = get_ref_tags(ref, cwd=cwd)
-    try:
-        tag = one(tags)
-    except OneEmptyError:
-        raise GetGitVersionError(cwd=cwd) from None
-    return parse_version(tag)
-
-
-@dataclass(kw_only=True, slots=True)
-class GetGitVersionError(Exception):
-    cwd: PathLike
-    ref: str = MASTER
-
-    @override
-    def __str__(self) -> str:
-        return f"Reference {self.ref!r} at {str(self.cwd)!r} has no tags"
-
-
-##
-
-
-def get_pyproject_version(*, cwd: PathLike = PWD) -> Version:
-    """Get the version according to `pyproject.toml`."""
-    path = get_repo_root(cwd=cwd).joinpath("pyproject.toml")
-    with path.open() as fh:
-        contents = loads(fh.read())
-    return parse_version(contents["project"]["version"])
-
-
-##
-
-
-def get_version(*, cwd: PathLike = PWD, ref: str = MASTER) -> Version:
+@overload
+def get_version(*, version: MaybeCallableVersionLike) -> Version: ...
+@overload
+def get_version(*, version: None = None) -> None: ...
+def get_version(*, version: MaybeCallableVersionLike | None = None) -> Version | None:
     """Get the version."""
-    git = get_git_version(cwd=cwd, ref=ref)
-    pyproject = get_pyproject_version(cwd=cwd)
-    if pyproject < git:
-        return pyproject.with_suffix(suffix="behind")
-    if pyproject == git:
-        return pyproject
-    if pyproject in {git.bump_major(), git.bump_minor(), git.bump_patch()}:
-        return pyproject.with_suffix(suffix="dirty")
-    raise GetVersionError(git=git, pyproject=pyproject)
-
-
-@dataclass(kw_only=True, slots=True)
-class GetVersionError(Exception):
-    git: Version
-    pyproject: Version
-
-    @override
-    def __str__(self) -> str:
-        return f"`pyproject` version is ahead of `git` version in an incompatible way; got {self.pyproject} and {self.git}"
+    match version:
+        case Version() | None:
+            return version
+        case str():
+            return parse_version(version)
+        case Callable() as func:
+            return get_version(version=func())
+        case _ as never:
+            assert_never(never)
 
 
 ##
@@ -198,11 +152,16 @@ class GetVersionError(Exception):
 
 def parse_version(version: str, /) -> Version:
     """Parse a string into a version object."""
-    result = _PATTERN.search(version)
-    if not result:
-        raise ParseVersionError(version=version)
-    major_str, minor_str, patch_str, suffix = result.groups()
-    return Version(int(major_str), int(minor_str), int(patch_str), suffix=suffix)
+    try:
+        ((major, minor, patch, suffix),) = _PARSE_VERSION_PATTERN.findall(version)
+    except ValueError:
+        raise ParseVersionError(version=version) from None
+    return Version(
+        int(major), int(minor), int(patch), suffix=None if suffix == "" else suffix
+    )
+
+
+_PARSE_VERSION_PATTERN = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-(\w+))?")
 
 
 @dataclass(kw_only=True, slots=True)
@@ -215,13 +174,10 @@ class ParseVersionError(Exception):
 
 
 __all__ = [
-    "GetGitVersionError",
-    "GetVersionError",
     "ParseVersionError",
     "Version",
     "VersionError",
-    "get_git_version",
-    "get_pyproject_version",
+    "VersionLike",
     "get_version",
     "parse_version",
 ]

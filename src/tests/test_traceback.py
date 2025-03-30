@@ -101,10 +101,10 @@ class TestFrame:
 
 
 class TestGetRichTraceback:
-    def test_func_one(self, *, git_ref: str, traceback_func_one: Pattern[str]) -> None:
+    def test_func_one(self, *, traceback_func_one: Pattern[str]) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        exc_tb = get_rich_traceback(exc_info.value)
         assert isinstance(exc_tb, ExcTB)
         assert len(exc_tb) == 1
         frame = exc_tb[0]  # to hit coverage
@@ -124,10 +124,10 @@ class TestGetRichTraceback:
 
         assert traceback_func_one.search(repr(exc_tb))
 
-    def test_func_two(self, *, git_ref: str, traceback_func_two: Pattern[str]) -> None:
+    def test_func_two(self, *, traceback_func_two: Pattern[str]) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_two_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        exc_tb = get_rich_traceback(exc_info.value)
         assert isinstance(exc_tb, ExcTB)
         assert len(exc_tb) == 2
         frame1, frame2 = exc_tb
@@ -156,12 +156,10 @@ class TestGetRichTraceback:
 
         assert traceback_func_two.search(repr(exc_tb))
 
-    def test_func_chain(
-        self, *, git_ref: str, traceback_func_chain: Pattern[str]
-    ) -> None:
+    def test_func_chain(self, *, traceback_func_chain: Pattern[str]) -> None:
         with raises(ValueError, match=".*") as exc_info:
             _ = func_chain_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_chain_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        exc_chain_tb = get_rich_traceback(exc_info.value)
         assert isinstance(exc_chain_tb, ExcChainTB)
         assert len(exc_chain_tb) == 2
         for i in range(2):
@@ -197,26 +195,26 @@ class TestGetRichTraceback:
 
         assert traceback_func_chain.search(repr(exc_chain_tb))
 
-    def test_func_decorated_sync(self, *, git_ref: str) -> None:
+    def test_func_decorated_sync(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_decorated_sync_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        exc_tb = get_rich_traceback(exc_info.value)
         assert isinstance(exc_tb, ExcTB)
         self._assert_decorated(exc_tb, "sync")
         assert len(exc_tb) == 5
 
     @SKIPIF_CI
-    async def test_func_decorated_async(self, *, git_ref: str) -> None:
+    async def test_func_decorated_async(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = await func_decorated_async_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        exc_tb = get_rich_traceback(exc_info.value)
         assert isinstance(exc_tb, ExcTB)
         self._assert_decorated(exc_tb, "async")
 
-    def test_func_recursive(self, *, git_ref: str) -> None:
+    def test_func_recursive(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_recursive(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        exc_tb = get_rich_traceback(exc_info.value)
         assert isinstance(exc_tb, ExcTB)
         assert len(exc_tb) == 2
         frame1, frame2 = exc_tb
@@ -245,11 +243,11 @@ class TestGetRichTraceback:
 
     @SKIPIF_CI
     async def test_func_task_group_one(
-        self, *, git_ref: str, traceback_func_task_group_one: Pattern[str]
+        self, *, traceback_func_task_group_one: Pattern[str]
     ) -> None:
         with raises(ExceptionGroup) as exc_info:
             await func_task_group_one_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_group_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        exc_group_tb = get_rich_traceback(exc_info.value)
         assert isinstance(exc_group_tb, ExcGroupTB)
         assert isinstance(exc_group_tb.exc_group, ExcTB)
         assert len(exc_group_tb.exc_group) == 1
@@ -288,10 +286,10 @@ class TestGetRichTraceback:
         assert traceback_func_task_group_one.search(res_group)
 
     @SKIPIF_CI
-    async def test_func_task_group_two(self, *, git_ref: str) -> None:
+    async def test_func_task_group_two(self) -> None:
         with raises(ExceptionGroup) as exc_info:
             await func_task_group_two_first(1, 2, 3, 4, c=5, d=6, e=7)
-        exc_group_tb = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        exc_group_tb = get_rich_traceback(exc_info.value)
         assert isinstance(exc_group_tb, ExcGroupTB)
         assert isinstance(exc_group_tb.exc_group, ExcTB)
         assert len(exc_group_tb.exc_group) == 1
@@ -341,20 +339,20 @@ class TestGetRichTraceback:
         assert frame_inner2.locals["kwargs"] == {"d": 26, "e": 30}
         assert isinstance(exc_group_tb.errors[1].error, AssertionError)
 
-    def test_func_untraced(self, *, git_ref: str) -> None:
+    def test_func_untraced(self) -> None:
         with raises(AssertionError) as exc_info:
             _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
-        error = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        error = get_rich_traceback(exc_info.value)
         assert isinstance(error, AssertionError)
 
-    def test_custom_error(self, *, git_ref: str) -> None:
+    def test_custom_error(self) -> None:
         @trace
         def raises_custom_error() -> bool:
             return one([True, False])
 
         with raises(OneNonUniqueError) as exc_info:
             _ = raises_custom_error()
-        exc_path = get_rich_traceback(exc_info.value, git_ref=git_ref)
+        exc_path = get_rich_traceback(exc_info.value)
         assert isinstance(exc_path, ExcTB)
         assert exc_path.error.first is True
         assert exc_path.error.second is False
@@ -448,11 +446,11 @@ class TestGetRichTraceback:
 
 class TestRichTracebackFormatter:
     def test_decorated(
-        self, *, tmp_path: Path, git_ref: str, traceback_func_one: Pattern[str]
+        self, *, tmp_path: Path, traceback_func_one: Pattern[str]
     ) -> None:
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
-        handler.setFormatter(RichTracebackFormatter(git_ref=git_ref, detail=True))
+        handler.setFormatter(RichTracebackFormatter(detail=True))
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
@@ -461,11 +459,11 @@ class TestRichTracebackFormatter:
         assert traceback_func_one.search(result)
 
     def test_undecorated(
-        self, *, tmp_path: Path, git_ref: str, traceback_func_untraced: Pattern[str]
+        self, *, tmp_path: Path, traceback_func_untraced: Pattern[str]
     ) -> None:
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
-        handler.setFormatter(RichTracebackFormatter(git_ref=git_ref, detail=True))
+        handler.setFormatter(RichTracebackFormatter(detail=True))
         try:
             _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError:
@@ -473,28 +471,26 @@ class TestRichTracebackFormatter:
         result = buffer.getvalue()
         assert traceback_func_untraced.search(result)
 
-    def test_create_and_set(self, *, git_ref: str) -> None:
+    def test_create_and_set(self) -> None:
         handler = StreamHandler()
         assert len(handler.filters) == 0
-        _ = RichTracebackFormatter.create_and_set(handler, git_ref=git_ref)
+        _ = RichTracebackFormatter.create_and_set(handler)
         assert len(handler.filters) == 1
 
-    def test_no_logging(self, *, tmp_path: Path, git_ref: str) -> None:
+    def test_no_logging(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
-        handler.setFormatter(RichTracebackFormatter(git_ref=git_ref, detail=True))
+        handler.setFormatter(RichTracebackFormatter(detail=True))
         logger.error("message")
         result = buffer.getvalue()
         expected = "ERROR: record.exc_info=None\n"
         assert result == expected
 
-    def test_post(self, *, tmp_path: Path, git_ref: str) -> None:
+    def test_post(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
         handler.setFormatter(
-            RichTracebackFormatter(
-                git_ref=git_ref, detail=True, post=lambda x: f"> {x}"
-            )
+            RichTracebackFormatter(detail=True, post=lambda x: f"> {x}")
         )
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
