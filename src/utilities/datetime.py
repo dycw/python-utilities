@@ -1249,6 +1249,7 @@ __all__ = [
     "ensure_month",
     "format_datetime_local_and_utc",
     "get_date",
+    "get_datetime",
     "get_half_years",
     "get_months",
     "get_now",
