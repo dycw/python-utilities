@@ -22,7 +22,6 @@ from utilities.platform import (
     IS_WINDOWS,
 )
 from utilities.random import get_state
-from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
@@ -235,7 +234,7 @@ def _throttle_path_and_now(
         prev = float(contents)
     else:
         prev = None
-    now = get_now(time_zone=UTC).timestamp()
+    now = get_now().timestamp()
     if (
         (skip is not None)
         and (prev is not None)
