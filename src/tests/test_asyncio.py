@@ -25,7 +25,7 @@ from utilities.asyncio import (
     AsyncLoopingService,
     AsyncService,
     AsyncServiceError,
-    BoundedTaskGroup,
+    EnhancedTaskGroup,
     ExceptionProcessor,
     QueueProcessor,
     UniquePriorityQueue,
@@ -330,20 +330,42 @@ class TestAsyncService:
         assert result == expected
 
 
-class TestBoundedTaskGroup:
-    async def test_with(self) -> None:
+class TestEnhancedTaskGroup:
+    async def test_max_tasks_disabled(self) -> None:
         with Timer() as timer:
-            async with BoundedTaskGroup(max_tasks=2) as tg:
+            async with EnhancedTaskGroup() as tg:
+                for _ in range(10):
+                    _ = tg.create_task(sleep(0.01))
+        assert timer <= 0.05
+
+    async def test_max_tasks_enabled(self) -> None:
+        with Timer() as timer:
+            async with EnhancedTaskGroup(max_tasks=2) as tg:
                 for _ in range(10):
                     _ = tg.create_task(sleep(0.01))
         assert timer >= 0.05
 
-    async def test_without(self) -> None:
-        with Timer() as timer:
-            async with BoundedTaskGroup() as tg:
-                for _ in range(10):
-                    _ = tg.create_task(sleep(0.01))
-        assert timer <= 0.05
+    async def test_timeout_pass(self) -> None:
+        async with EnhancedTaskGroup(timeout=0.2) as tg:
+            _ = tg.create_task(sleep_dur(duration=0.1))
+
+    async def test_timeout_fail(self) -> None:
+        with raises(ExceptionGroup) as exc_info:
+            async with EnhancedTaskGroup(timeout=0.05) as tg:
+                _ = tg.create_task(sleep_dur(duration=0.1))
+        assert len(exc_info.value.exceptions) == 1
+        error = one(exc_info.value.exceptions)
+        assert isinstance(error, TimeoutError)
+
+    async def test_custom_error(self) -> None:
+        class CustomError(Exception): ...
+
+        with raises(ExceptionGroup) as exc_info:
+            async with EnhancedTaskGroup(timeout=0.05, error=CustomError) as tg:
+                _ = tg.create_task(sleep_dur(duration=0.1))
+        assert len(exc_info.value.exceptions) == 1
+        error = one(exc_info.value.exceptions)
+        assert isinstance(error, CustomError)
 
 
 class TestExceptionProcessor:
@@ -676,15 +698,15 @@ class TestStreamCommand:
 
 
 class TestTimeoutDur:
-    @given(duration=sampled_from([0.01, 5 * MILLISECOND]))
-    @mark.flaky
-    @settings(phases={Phase.generate})
-    async def test_main(self, *, duration: Duration) -> None:
-        with raises(TimeoutError):
-            async with timeout_dur(duration=duration):
-                await sleep_dur(duration=2 * duration)
+    async def test_pass(self) -> None:
+        async with timeout_dur(duration=0.2):
+            await sleep_dur(duration=0.1)
 
-    @mark.flaky
+    async def test_fail(self) -> None:
+        with raises(TimeoutError):
+            async with timeout_dur(duration=0.05):
+                await sleep_dur(duration=0.1)
+
     async def test_custom_error(self) -> None:
         class CustomError(Exception): ...
 
