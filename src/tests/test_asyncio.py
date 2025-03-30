@@ -346,6 +346,28 @@ class TestEnhancedTaskGroup:
                     _ = tg.create_task(sleep(0.01))
         assert timer >= 0.05
 
+    async def test_timeout_pass(self) -> None:
+        async with EnhancedTaskGroup(timeout=0.2) as tg:
+            _ = tg.create_task(sleep_dur(duration=0.1))
+
+    async def test_timeout_fail(self) -> None:
+        with raises(ExceptionGroup) as exc_info:
+            async with EnhancedTaskGroup(timeout=0.05) as tg:
+                _ = tg.create_task(sleep_dur(duration=0.1))
+        assert len(exc_info.value.exceptions) == 1
+        error = one(exc_info.value.exceptions)
+        assert isinstance(error, TimeoutError)
+
+    async def test_custom_error(self) -> None:
+        class CustomError(Exception): ...
+
+        with raises(ExceptionGroup) as exc_info:
+            async with EnhancedTaskGroup(timeout=0.05, error=CustomError) as tg:
+                _ = tg.create_task(sleep_dur(duration=0.1))
+        assert len(exc_info.value.exceptions) == 1
+        error = one(exc_info.value.exceptions)
+        assert isinstance(error, CustomError)
+
 
 class TestExceptionProcessor:
     async def test_main(self) -> None:
@@ -677,15 +699,15 @@ class TestStreamCommand:
 
 
 class TestTimeoutDur:
-    @given(duration=sampled_from([0.01, 5 * MILLISECOND]))
-    @mark.flaky
-    @settings(phases={Phase.generate})
-    async def test_main(self, *, duration: Duration) -> None:
-        with raises(TimeoutError):
-            async with timeout_dur(duration=duration):
-                await sleep_dur(duration=2 * duration)
+    async def test_pass(self) -> None:
+        async with timeout_dur(duration=0.2):
+            await sleep_dur(duration=0.1)
 
-    @mark.flaky
+    async def test_fail(self) -> None:
+        with raises(TimeoutError):
+            async with timeout_dur(duration=0.05):
+                await sleep_dur(duration=0.1)
+
     async def test_custom_error(self) -> None:
         class CustomError(Exception): ...
 

@@ -229,23 +229,6 @@ class EnhancedTaskGroup(TaskGroup):
         self._timeout_cm = None
 
     @override
-    async def __aenter__(self) -> Self:
-        self._timeout_cm = timeout_dur(duration=self._timeout)
-        await self._timeout_cm.__aenter__()
-        return await super().__aenter__()
-
-    @override
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
-        traceback: TracebackType | None,
-    ) -> None:
-        if self._timeout_cm is not None:
-            _ = await self._timeout_cm.__aexit__(exc_type, exc_value, traceback)
-        return await super().__aexit__(exc_type, exc_value, traceback)
-
-    @override
     def create_task(
         self,
         coro: _CoroutineLike[_T],
@@ -257,12 +240,17 @@ class EnhancedTaskGroup(TaskGroup):
             coroutine = coro
         else:
             coroutine = self._wrap_with_semaphore(self._semaphore, coro)
+        coroutine = self._wrap_with_timeout(coroutine)
         return super().create_task(coroutine, name=name, context=context)
 
     async def _wrap_with_semaphore(
         self, semaphore: Semaphore, coroutine: _CoroutineLike[_T], /
     ) -> _T:
         async with semaphore:
+            return await coroutine
+
+    async def _wrap_with_timeout(self, coroutine: _CoroutineLike[_T], /) -> _T:
+        async with timeout_dur(duration=self._timeout):
             return await coroutine
 
 
