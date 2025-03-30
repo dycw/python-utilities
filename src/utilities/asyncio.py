@@ -250,7 +250,7 @@ class EnhancedTaskGroup(TaskGroup):
             return await coroutine
 
     async def _wrap_with_timeout(self, coroutine: _CoroutineLike[_T], /) -> _T:
-        async with timeout_dur(duration=self._timeout):
+        async with timeout_dur(duration=self._timeout, error=self._error):
             return await coroutine
 
 
