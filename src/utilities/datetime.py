@@ -472,7 +472,7 @@ def get_datetime(
 ) -> dt.datetime | None | Sentinel: ...
 def get_datetime(
     *, datetime: MaybeCallableDateTime | None | Sentinel = sentinel
-) -> dt.datetime | None:
+) -> dt.datetime | None | Sentinel:
     """Get the datetime."""
     match datetime:
         case dt.datetime() | None | Sentinel():
