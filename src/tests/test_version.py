@@ -1,24 +1,13 @@
 from __future__ import annotations
 
 from re import search
-from typing import TYPE_CHECKING
 
-from hypothesis import assume, given, settings
-from hypothesis.strategies import (
-    DataObject,
-    booleans,
-    data,
-    integers,
-    none,
-    sampled_from,
-)
+from hypothesis import given
+from hypothesis.strategies import booleans, integers, none
 from pytest import raises
 
-from utilities.git import MASTER
-from utilities.hypothesis import git_repos, pairs, text_ascii, versions
+from utilities.hypothesis import text_ascii, versions
 from utilities.version import (
-    GetGitVersionError,
-    GetVersionError,
     ParseVersionError,
     Version,
     _VersionEmptySuffixError,
@@ -26,85 +15,19 @@ from utilities.version import (
     _VersionNegativeMinorVersionError,
     _VersionNegativePatchVersionError,
     _VersionZeroError,
-    get_git_version,
-    get_pyproject_version,
     get_version,
     parse_version,
 )
 
-if TYPE_CHECKING:
-    from pathlib import Path
-
-
-class TestGetGitVersion:
-    @given(data=data(), version=versions())
-    @settings(max_examples=1)
-    def test_main(self, *, data: DataObject, version: Version) -> None:
-        repo = data.draw(git_repos(git_version=version))
-        result = get_git_version(cwd=repo, ref=MASTER)
-        assert result == version
-
-    @given(repo=git_repos())
-    @settings(max_examples=1)
-    def test_error(self, *, repo: Path) -> None:
-        with raises(GetGitVersionError, match="Reference '.*' at '.*' has no tags"):
-            _ = get_git_version(cwd=repo, ref=MASTER)
-
-
-class TestGetPyProjectVersion:
-    @given(data=data(), version=versions())
-    @settings(max_examples=1)
-    def test_main(self, *, data: DataObject, version: Version) -> None:
-        repo = data.draw(git_repos(pyproject_version=version))
-        result = get_pyproject_version(cwd=repo)
-        assert result == version
-
 
 class TestGetVersion:
-    @given(data=data(), version=versions())
-    @settings(max_examples=1)
-    def test_equal(self, *, data: DataObject, version: Version) -> None:
-        repo = data.draw(git_repos(git_version=version, pyproject_version=version))
-        result = get_version(cwd=repo, ref=MASTER)
-        assert result == version
+    @given(version=versions())
+    def test_str(self, *, version: Version) -> None:
+        assert get_version(version=str(version)) == version
 
-    @given(data=data(), versions=pairs(versions(), unique=True, sorted=True))
-    @settings(max_examples=1)
-    def test_behind(
-        self, *, data: DataObject, versions: tuple[Version, Version]
-    ) -> None:
-        pyproject, git = versions
-        repo = data.draw(git_repos(git_version=git, pyproject_version=pyproject))
-        result = get_version(cwd=repo, ref=MASTER)
-        expected = pyproject.with_suffix(suffix="behind")
-        assert result == expected
-
-    @given(data=data(), git=versions())
-    @settings(max_examples=1)
-    def test_dirty(self, *, data: DataObject, git: Version) -> None:
-        pyproject = data.draw(
-            sampled_from([git.bump_major(), git.bump_minor(), git.bump_patch()])
-        )
-        repo = data.draw(git_repos(git_version=git, pyproject_version=pyproject))
-        result = get_version(cwd=repo, ref=MASTER)
-        expected = pyproject.with_suffix(suffix="dirty")
-        assert result == expected
-
-    @given(data=data(), versions=pairs(versions(), unique=True, sorted=True))
-    @settings(max_examples=1)
-    def test_error(
-        self, *, data: DataObject, versions: tuple[Version, Version]
-    ) -> None:
-        git, pyproject = versions
-        _ = assume(
-            pyproject not in [git.bump_major(), git.bump_minor(), git.bump_patch()]
-        )
-        repo = data.draw(git_repos(git_version=git, pyproject_version=pyproject))
-        with raises(
-            GetVersionError,
-            match="`pyproject` version is ahead of `git` version in an incompatible way; got .* and .*",
-        ):
-            _ = get_version(cwd=repo, ref=MASTER)
+    @given(version=versions())
+    def test_version(self, *, version: Version) -> None:
+        assert get_version(version=version) == version
 
 
 class TestParseVersion:

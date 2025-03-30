@@ -383,7 +383,7 @@ class TestSetupLogging:
         self, *, tmp_path: Path, git_ref: str, traceback_func_one: Pattern[str]
     ) -> None:
         name = str(tmp_path)
-        setup_logging(logger=name, git_ref=git_ref, files_dir=tmp_path)
+        setup_logging(logger=name, version=git_ref, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 7
         self.assert_files(tmp_path, "init")
@@ -398,7 +398,7 @@ class TestSetupLogging:
         self, *, tmp_path: Path, git_ref: str, traceback_func_untraced: Pattern[str]
     ) -> None:
         name = str(tmp_path)
-        setup_logging(logger=name, git_ref=git_ref, files_dir=tmp_path)
+        setup_logging(logger=name, version=git_ref, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 7
         self.assert_files(tmp_path, "init")
@@ -413,7 +413,7 @@ class TestSetupLogging:
         self, *, tmp_path: Path, git_ref: str, caplog: LogCaptureFixture
     ) -> None:
         name = str(tmp_path)
-        setup_logging(logger=name, git_ref=git_ref, files_dir=tmp_path)
+        setup_logging(logger=name, version=git_ref, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("int: %d, float: %.2f", 1, 12.3456)
         record = one(caplog.records)
@@ -426,7 +426,7 @@ class TestSetupLogging:
         self, *, tmp_path: Path, git_ref: str, caplog: LogCaptureFixture
     ) -> None:
         name = str(tmp_path)
-        setup_logging(logger=name, git_ref=git_ref, files_dir=tmp_path)
+        setup_logging(logger=name, version=git_ref, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("int: {:d}, float: {:.2f}, percent: {:.2%}", 1, 12.3456, 0.123456)
         record = one(caplog.records)
@@ -438,7 +438,7 @@ class TestSetupLogging:
     def test_no_console(self, *, tmp_path: Path, git_ref: str) -> None:
         name = str(tmp_path)
         setup_logging(
-            logger=name, console_level=None, git_ref=git_ref, files_dir=tmp_path
+            logger=name, console_level=None, version=git_ref, files_dir=tmp_path
         )
         logger = getLogger(name)
         assert len(logger.handlers) == 5
@@ -448,7 +448,7 @@ class TestSetupLogging:
         self, *, tmp_path: Path, git_ref: str, caplog: LogCaptureFixture
     ) -> None:
         name = str(tmp_path)
-        setup_logging(logger=name, git_ref=git_ref, files_dir=tmp_path)
+        setup_logging(logger=name, version=git_ref, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("")
         record = one(caplog.records)
@@ -465,7 +465,7 @@ class TestSetupLogging:
                 FileHandler(tmp_path.joinpath("extra.log"))
             )
 
-        setup_logging(logger=name, git_ref=git_ref, files_dir=tmp_path, extra=extra)
+        setup_logging(logger=name, version=git_ref, files_dir=tmp_path, extra=extra)
         logger = getLogger(name)
         logger.info("")
         files = list(tmp_path.iterdir())

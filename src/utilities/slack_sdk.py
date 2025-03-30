@@ -13,7 +13,6 @@ from utilities.asyncio import QueueProcessor, sleep_dur, timeout_dur
 from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float
 from utilities.functools import cache
 from utilities.math import safe_round
-from utilities.version import GetVersionError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -73,8 +72,6 @@ class SlackHandler(Handler, QueueProcessor[str]):
     def emit(self, record: LogRecord) -> None:
         try:
             self.enqueue(self.format(record))
-        except GetVersionError:  # pragma: no cover
-            raise
         except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
