@@ -4,7 +4,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from functools import total_ordering
-from typing import Any, Self, assert_never, overload, override
+from typing import Any, Self, overload, override
 
 from utilities.types import MaybeCallable
 
@@ -143,8 +143,6 @@ def get_version(*, version: MaybeCallableVersionLike | None = None) -> Version |
             return parse_version(version)
         case Callable() as func:
             return get_version(version=func())
-        case _ as never:
-            assert_never(never)
 
 
 ##

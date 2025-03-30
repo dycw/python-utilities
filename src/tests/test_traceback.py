@@ -474,7 +474,7 @@ class TestRichTracebackFormatter:
     def test_create_and_set(self) -> None:
         handler = StreamHandler()
         assert len(handler.filters) == 0
-        _ = RichTracebackFormatter.create_and_set(handler)
+        _ = RichTracebackFormatter.create_and_set(handler, version=git_ref)
         assert len(handler.filters) == 1
 
     def test_no_logging(self, *, tmp_path: Path) -> None:
