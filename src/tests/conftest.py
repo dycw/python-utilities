@@ -34,11 +34,6 @@ else:
 
 
 @fixture
-def git_ref() -> str:
-    return "origin/master" if IS_CI else "master"
-
-
-@fixture
 def traceback_func_chain() -> Pattern[str]:
     return re.compile(
         strip_and_dedent(
@@ -46,7 +41,7 @@ def traceback_func_chain() -> Pattern[str]:
             Date/time \| .+
             User      \| .+
             Host      \| .+
-            Version   \| .+
+            Version   \|\s
 
             Exception chain 1/2:
                 Frame 1/1: func_chain_first \(tests\.test_traceback_funcs\.chain\)
@@ -105,7 +100,7 @@ def traceback_func_one() -> Pattern[str]:
             Date/time \| .+
             User      \| .+
             Host      \| .+
-            Version   \| .+
+            Version   \|\s
 
             Frame 1/1: func_one \(tests\.test_traceback_funcs\.one\)
                 Inputs:
@@ -141,7 +136,7 @@ def traceback_func_task_group_one() -> Pattern[str]:
             Date/time \| .+
             User      \| .+
             Host      \| .+
-            Version   \| .+
+            Version   \|\s
 
             Exception group:
                 Frame 1/1: func_task_group_one_first \(tests\.test_traceback_funcs\.task_group_one\)
@@ -200,7 +195,7 @@ def traceback_func_two() -> Pattern[str]:
             Date/time \| .+
             User      \| .+
             Host      \| .+
-            Version   \| .+
+            Version   \|\s
 
             Frame 1/2: func_two_first \(tests\.test_traceback_funcs\.two\)
                 Inputs:

@@ -698,7 +698,9 @@ def _yield_header_lines(
     yield f"Date/time | {serialize_zoned_datetime(get_now(time_zone='local'))}"
     yield f"User      | {getuser()}"
     yield f"Host      | {gethostname()}"
-    yield f"Version   | {get_version(version=version)}"
+    version_use = "" if version is None else get_version(version=version)
+    yield f"Version   | {version_use}"
+    yield ""
 
 
 __all__ = [
