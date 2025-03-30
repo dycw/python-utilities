@@ -153,7 +153,12 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from utilities.sentinel import Sentinel
-    from utilities.types import DateOrDateTime, MaybeCallableDate, Number
+    from utilities.types import (
+        DateOrDateTime,
+        MaybeCallableDate,
+        MaybeCallableDateTime,
+        Number,
+    )
 
 
 class TestAddDuration:
@@ -622,20 +627,20 @@ class TestGetDate:
     def test_none_or_sentinel(self, *, date: None | Sentinel) -> None:
         assert get_date(date=date) is date
 
-    @given(date=dates())
-    def test_replace_non_sentinel(self, *, date: dt.date) -> None:
+    @given(date1=dates(), date2=dates())
+    def test_replace_non_sentinel(self, *, date1: dt.date, date2: dt.date) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             date: dt.date = field(default_factory=get_today)
 
             def replace(self, *, date: MaybeCallableDate | Sentinel = sentinel) -> Self:
-                return replace_non_sentinel(self, date=date)
+                return replace_non_sentinel(self, date=get_date(date=date))
 
-        obj = Example(date=date)
-        assert obj.date == date
-        new = obj.replace()
-        assert new.date == date
-        assert get_date(date=date) is date
+        obj = Example(date=date1)
+        assert obj.date == date1
+        assert obj.replace().date == date1
+        assert obj.replace(date=date2).date == date2
+        assert obj.replace(date=get_today).date == get_today()
 
     @given(date=dates())
     def test_callable(self, *, date: dt.date) -> None:
@@ -650,6 +655,27 @@ class TestGetDateTime:
     @given(datetime=none() | sentinels())
     def test_none_or_sentinel(self, *, datetime: None | Sentinel) -> None:
         assert get_datetime(datetime=datetime) is datetime
+
+    @given(datetime1=datetimes(), datetime2=datetimes())
+    def test_replace_non_sentinel(
+        self, *, datetime1: dt.datetime, datetime2: dt.datetime
+    ) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            datetime: dt.datetime = field(default_factory=get_now)
+
+            def replace(
+                self, *, datetime: MaybeCallableDateTime | Sentinel = sentinel
+            ) -> Self:
+                return replace_non_sentinel(
+                    self, datetime=get_datetime(datetime=datetime)
+                )
+
+        obj = Example(datetime=datetime1)
+        assert obj.datetime == datetime1
+        assert obj.replace().datetime == datetime1
+        assert obj.replace(datetime=datetime2).datetime == datetime2
+        assert abs(obj.replace(datetime=get_now).datetime - get_now()) <= SECOND
 
     @given(datetime=zoned_datetimes())
     def test_callable(self, *, datetime: dt.datetime) -> None:
