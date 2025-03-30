@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 from io import StringIO
 from subprocess import PIPE
 from sys import stderr, stdout
-from typing import TYPE_CHECKING, Any, Generic, Self, TextIO, TypeVar, cast, override
+from typing import TYPE_CHECKING, Any, Generic, Self, TextIO, TypeVar, override
 
 from utilities.datetime import datetime_duration_to_float
 from utilities.functions import ensure_int, ensure_not_none
@@ -168,39 +168,6 @@ class AsyncLoopingService(AsyncService):
     @override
     async def _stop_core(self) -> None:
         """Stop the service, assuming the task has just been cancelled."""
-
-
-##
-
-
-class BoundedTaskGroup(TaskGroup):
-    """Task group with an internal limiter."""
-
-    _semaphore: Semaphore | None
-
-    @override
-    def __init__(self, *, max_tasks: int | None = None) -> None:
-        super().__init__()
-        self._semaphore = None if max_tasks is None else Semaphore(max_tasks)
-
-    @override
-    def create_task(
-        self,
-        coro: _CoroutineLike[_T],
-        *,
-        name: str | None = None,
-        context: Context | None = None,
-    ) -> Task[_T]:
-        if self._semaphore is None:
-            return super().create_task(coro, name=name, context=context)
-
-        async def wrapped(semaphore: Semaphore, coro: _CoroutineLike[_T], /) -> _T:
-            async with semaphore:
-                return await cast("Any", coro)
-
-        return super().create_task(
-            wrapped(self._semaphore, coro), name=name, context=context
-        )
 
 
 ##
@@ -519,7 +486,6 @@ __all__ = [
     "AsyncLoopingService",
     "AsyncService",
     "AsyncServiceError",
-    "BoundedTaskGroup",
     "EnhancedTaskGroup",
     "ExceptionProcessor",
     "QueueProcessor",
