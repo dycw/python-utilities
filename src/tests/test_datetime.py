@@ -89,6 +89,7 @@ from utilities.datetime import (
     ensure_month,
     format_datetime_local_and_utc,
     get_date,
+    get_datetime,
     get_half_years,
     get_months,
     get_now,
@@ -617,13 +618,13 @@ class TestGetDate:
 
 
 class TestGetDateTime:
-    @given(date=zoned_datetimes())
-    def test_date(self, *, date: dt.date) -> None:
-        assert get_date(date=date) == date
+    @given(datetime=zoned_datetimes())
+    def test_datetime(self, *, datetime: dt.datetime) -> None:
+        assert get_datetime(datetime=datetime) == datetime
 
-    @given(date=zoned_datetimes())
-    def test_callable(self, *, date: dt.date) -> None:
-        assert get_date(date=lambda: date) == date
+    @given(datetime=zoned_datetimes())
+    def test_callable(self, *, datetime: dt.datetime) -> None:
+        assert get_datetime(datetime=lambda: datetime) == datetime
 
 
 class TestGetNow:
