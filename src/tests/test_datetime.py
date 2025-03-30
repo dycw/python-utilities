@@ -16,6 +16,7 @@ from hypothesis.strategies import (
     datetimes,
     floats,
     integers,
+    none,
     permutations,
     sampled_from,
     timedeltas,
@@ -138,6 +139,7 @@ from utilities.hypothesis import (
     int32s,
     months,
     pairs,
+    sentinels,
     text_clean,
     zoned_datetimes,
 )
@@ -147,6 +149,7 @@ from utilities.zoneinfo import UTC, HongKong, Tokyo
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from utilities.sentinel import Sentinel
     from utilities.types import DateOrDateTime, Number
 
 
@@ -612,6 +615,10 @@ class TestGetDate:
     def test_date(self, *, date: dt.date) -> None:
         assert get_date(date=date) == date
 
+    @given(version=none() | sentinels())
+    def test_none_or_sentinel(self, *, version: None | Sentinel) -> None:
+        assert get_date(version=version) is version
+
     @given(date=dates())
     def test_callable(self, *, date: dt.date) -> None:
         assert get_date(date=lambda: date) == date
@@ -621,6 +628,10 @@ class TestGetDateTime:
     @given(datetime=zoned_datetimes())
     def test_datetime(self, *, datetime: dt.datetime) -> None:
         assert get_datetime(datetime=datetime) == datetime
+
+    @given(version=none() | sentinels())
+    def test_none_or_sentinel(self, *, version: None | Sentinel) -> None:
+        assert get_datetime(version=version) is version
 
     @given(datetime=zoned_datetimes())
     def test_callable(self, *, datetime: dt.datetime) -> None:

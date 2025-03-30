@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from re import search
+from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import booleans, integers, none
 from pytest import raises
 
-from utilities.hypothesis import text_ascii, versions
+from utilities.hypothesis import sentinels, text_ascii, versions
 from utilities.version import (
     ParseVersionError,
     Version,
@@ -19,15 +20,22 @@ from utilities.version import (
     parse_version,
 )
 
+if TYPE_CHECKING:
+    from utilities.sentinel import Sentinel
+
 
 class TestGetVersion:
+    @given(version=versions())
+    def test_version(self, *, version: Version) -> None:
+        assert get_version(version=version) == version
+
     @given(version=versions())
     def test_str(self, *, version: Version) -> None:
         assert get_version(version=str(version)) == version
 
-    @given(version=versions())
-    def test_version(self, *, version: Version) -> None:
-        assert get_version(version=version) == version
+    @given(version=none() | sentinels())
+    def test_none_or_sentinel(self, *, version: None | Sentinel) -> None:
+        assert get_version(version=version) is version
 
     @given(version=versions())
     def test_callable(self, *, version: Version) -> None:
