@@ -88,6 +88,8 @@ from utilities.datetime import (
     days_since_epoch_to_date,
     ensure_month,
     format_datetime_local_and_utc,
+    get_date,
+    get_datetime,
     get_half_years,
     get_months,
     get_now,
@@ -603,6 +605,26 @@ class TestFormatDateTimeLocalAndUTC:
     def test_main(self, *, datetime: dt.datetime, expected: str) -> None:
         result = format_datetime_local_and_utc(datetime)
         assert result == expected
+
+
+class TestGetDate:
+    @given(date=dates())
+    def test_date(self, *, date: dt.date) -> None:
+        assert get_date(date=date) == date
+
+    @given(date=dates())
+    def test_callable(self, *, date: dt.date) -> None:
+        assert get_date(date=lambda: date) == date
+
+
+class TestGetDateTime:
+    @given(datetime=zoned_datetimes())
+    def test_datetime(self, *, datetime: dt.datetime) -> None:
+        assert get_datetime(datetime=datetime) == datetime
+
+    @given(datetime=zoned_datetimes())
+    def test_callable(self, *, datetime: dt.datetime) -> None:
+        assert get_datetime(datetime=lambda: datetime) == datetime
 
 
 class TestGetNow:

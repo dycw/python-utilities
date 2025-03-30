@@ -26,7 +26,7 @@ from typing import (
     runtime_checkable,
 )
 
-from utilities.datetime import get_now
+from utilities.datetime import get_now_local
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     ensure_not_none,
@@ -695,7 +695,7 @@ def _yield_header_lines(
     *, version: MaybeCallableVersionLike | None = None
 ) -> Iterator[str]:
     """Yield the header lines."""
-    yield f"Date/time | {serialize_zoned_datetime(get_now(time_zone='local'))}"
+    yield f"Date/time | {serialize_zoned_datetime(get_now_local())}"
     yield f"User      | {getuser()}"
     yield f"Host      | {gethostname()}"
     version_use = "" if version is None else get_version(version=version)

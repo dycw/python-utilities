@@ -55,6 +55,8 @@ TDataclass = TypeVar("TDataclass", bound=Dataclass)
 
 # datetime
 type DateOrDateTime = dt.date | dt.datetime
+type MaybeCallableDate = MaybeCallable[dt.date]
+type MaybeCallableDateTime = MaybeCallable[dt.datetime]
 
 
 # enum
@@ -146,6 +148,8 @@ __all__ = [
     "LoggerOrName",
     "MaybeAwaitable",
     "MaybeCallable",
+    "MaybeCallableDate",
+    "MaybeCallableDateTime",
     "MaybeCoroutine1",
     "MaybeIterable",
     "MaybeIterableHashable",

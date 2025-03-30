@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from re import search, sub
 from typing import (
@@ -28,7 +29,13 @@ from utilities.zoneinfo import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import DateOrDateTime, Duration, TimeZoneLike
+    from utilities.types import (
+        DateOrDateTime,
+        Duration,
+        MaybeCallableDate,
+        MaybeCallableDateTime,
+        TimeZoneLike,
+    )
 
 
 _DAYS_PER_YEAR = 365.25
@@ -422,6 +429,44 @@ def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
 ##
 
 
+@overload
+def get_date(*, date: MaybeCallableDate) -> dt.date: ...
+@overload
+def get_date(*, date: None = None) -> None: ...
+def get_date(*, date: MaybeCallableDate | None = None) -> dt.date | None:
+    """Get the date."""
+    match date:
+        case dt.date() | None:
+            return date
+        case Callable() as func:
+            return get_date(date=func())
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
+@overload
+def get_datetime(*, datetime: MaybeCallableDateTime) -> dt.datetime: ...
+@overload
+def get_datetime(*, datetime: None = None) -> None: ...
+def get_datetime(
+    *, datetime: MaybeCallableDateTime | None = None
+) -> dt.datetime | None:
+    """Get the datetime."""
+    match datetime:
+        case dt.datetime() | None:
+            return datetime
+        case Callable() as func:
+            return get_datetime(datetime=func())
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
 def get_half_years(*, n: int = 1) -> dt.timedelta:
     """Get a number of half-years as a timedelta."""
     days_per_half_year = _DAYS_PER_YEAR / 2
@@ -464,8 +509,8 @@ NOW_HK = get_now_hk()
 
 def get_now_local() -> dt.datetime:
     """Get the current time in local."""
-    # don't define `NOW_LOCAL` as this would require `tzlocal`
     return get_now(time_zone="local")
+    # don't define `NOW_LOCAL` as this would require `tzlocal`
 
 
 def get_now_tokyo() -> dt.datetime:
@@ -509,7 +554,7 @@ TODAY_HK = get_today_hk()
 
 def get_today_local() -> dt.date:
     """Get the current, timezone-aware local date."""
-    return get_now(time_zone="local").date()
+    return get_now_local().date()
 
 
 def get_today_tokyo() -> dt.date:
@@ -1203,6 +1248,8 @@ __all__ = [
     "days_since_epoch_to_date",
     "ensure_month",
     "format_datetime_local_and_utc",
+    "get_date",
+    "get_datetime",
     "get_half_years",
     "get_months",
     "get_now",

@@ -48,7 +48,7 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureNestedOuterFirstOuter,
     DataClassFutureNone,
 )
-from utilities.datetime import MINUTE, SECOND, get_now
+from utilities.datetime import MINUTE, SECOND, get_now, get_now_local
 from utilities.functions import is_sequence_of
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -419,7 +419,7 @@ class TestOrjsonFormatter:
         assert record.message == "message"
         assert record.level == WARNING
         assert record.path_name == Path(__file__)
-        assert abs(record.datetime - get_now(time_zone="local")) <= SECOND
+        assert abs(record.datetime - get_now_local()) <= SECOND
         assert record.func_name == TestOrjsonFormatter.test_main.__name__
         assert record.stack_info is None
         assert record.extra == {"a": 1, "b": 2}
