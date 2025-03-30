@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from re import search, sub
 from typing import (
@@ -28,7 +29,12 @@ from utilities.zoneinfo import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import DateOrDateTime, Duration, TimeZoneLike
+    from utilities.types import (
+        DateOrDateTime,
+        Duration,
+        MaybeCallableDate,
+        TimeZoneLike,
+    )
 
 
 _DAYS_PER_YEAR = 365.25
@@ -417,6 +423,24 @@ def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
             f"{datetime:%Y-%m-%d %H:%M:%S (%a}, {local}, {as_utc:%m-%d %H:%M:%S} UTC)"
         )
     return f"{datetime:%Y-%m-%d %H:%M:%S (%a}, {local}, {as_utc:%H:%M:%S} UTC)"
+
+
+##
+
+
+@overload
+def get_date(*, date: MaybeCallableDate) -> dt.date: ...
+@overload
+def get_date(*, date: None = None) -> None: ...
+def get_date(*, date: MaybeCallableDate | None = None) -> dt.date | None:
+    """Get the date."""
+    match date:
+        case dt.date() | None:
+            return date
+        case Callable() as func:
+            return get_date(date=func())
+        case _ as never:
+            assert_never(never)
 
 
 ##
