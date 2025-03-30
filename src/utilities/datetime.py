@@ -18,6 +18,7 @@ from typing import (
 from utilities.iterables import OneEmptyError, one
 from utilities.math import SafeRoundError, _RoundMode, round_, safe_round
 from utilities.platform import SYSTEM
+from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import (
     UTC,
     HongKong,
@@ -432,11 +433,21 @@ def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
 @overload
 def get_date(*, date: MaybeCallableDate) -> dt.date: ...
 @overload
-def get_date(*, date: None = None) -> None: ...
-def get_date(*, date: MaybeCallableDate | None = None) -> dt.date | None:
+def get_date(*, date: None) -> None: ...
+@overload
+def get_date(*, date: Sentinel) -> Sentinel: ...
+@overload
+def get_date(*, date: MaybeCallableDate | Sentinel) -> dt.date | Sentinel: ...
+@overload
+def get_date(
+    *, date: MaybeCallableDate | None | Sentinel = sentinel
+) -> dt.date | None | Sentinel: ...
+def get_date(
+    *, date: MaybeCallableDate | None | Sentinel = sentinel
+) -> dt.date | None | Sentinel:
     """Get the date."""
     match date:
-        case dt.date() | None:
+        case dt.date() | None | Sentinel():
             return date
         case Callable() as func:
             return get_date(date=func())
@@ -450,13 +461,23 @@ def get_date(*, date: MaybeCallableDate | None = None) -> dt.date | None:
 @overload
 def get_datetime(*, datetime: MaybeCallableDateTime) -> dt.datetime: ...
 @overload
-def get_datetime(*, datetime: None = None) -> None: ...
+def get_datetime(*, datetime: None) -> None: ...
+@overload
+def get_datetime(*, datetime: Sentinel) -> Sentinel: ...
+@overload
 def get_datetime(
-    *, datetime: MaybeCallableDateTime | None = None
-) -> dt.datetime | None:
+    *, datetime: MaybeCallableDateTime | Sentinel
+) -> dt.datetime | Sentinel: ...
+@overload
+def get_datetime(
+    *, datetime: MaybeCallableDateTime | None | Sentinel = sentinel
+) -> dt.datetime | None | Sentinel: ...
+def get_datetime(
+    *, datetime: MaybeCallableDateTime | None | Sentinel = sentinel
+) -> dt.datetime | None | Sentinel:
     """Get the datetime."""
     match datetime:
-        case dt.datetime() | None:
+        case dt.datetime() | None | Sentinel():
             return datetime
         case Callable() as func:
             return get_datetime(datetime=func())

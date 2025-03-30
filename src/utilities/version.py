@@ -6,6 +6,7 @@ from dataclasses import dataclass, field, replace
 from functools import total_ordering
 from typing import Any, Self, assert_never, overload, override
 
+from utilities.sentinel import Sentinel, sentinel
 from utilities.types import MaybeCallable
 
 type VersionLike = Version | str
@@ -133,11 +134,23 @@ class _VersionEmptySuffixError(VersionError):
 @overload
 def get_version(*, version: MaybeCallableVersionLike) -> Version: ...
 @overload
-def get_version(*, version: None = None) -> None: ...
-def get_version(*, version: MaybeCallableVersionLike | None = None) -> Version | None:
+def get_version(*, version: None) -> None: ...
+@overload
+def get_version(*, version: Sentinel) -> Sentinel: ...
+@overload
+def get_version(
+    *, version: MaybeCallableVersionLike | Sentinel
+) -> Version | Sentinel: ...
+@overload
+def get_version(
+    *, version: MaybeCallableVersionLike | None | Sentinel = sentinel
+) -> Version | None | Sentinel: ...
+def get_version(
+    *, version: MaybeCallableVersionLike | None | Sentinel = sentinel
+) -> Version | None | Sentinel:
     """Get the version."""
     match version:
-        case Version() | None:
+        case Version() | None | Sentinel():
             return version
         case str():
             return parse_version(version)
