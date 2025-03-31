@@ -53,9 +53,8 @@ class TestSlackHandler:
 
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := SlackHandler("url", sender=sender))
-        await handler._start()
-        logger.warning("message")
-        await sleep(0.1)
+        async with handler:
+            logger.warning("message")
         assert messages == ["message"]
 
     async def test_callback_failure(self, *, tmp_path: Path) -> None:
@@ -75,9 +74,8 @@ class TestSlackHandler:
                 "url", sender=sender, timeout=0.01, callback_failure=callback
             )
         )
-        await handler._start()
-        logger.warning("message")
-        await sleep(0.1)
+        async with handler:
+            logger.warning("message")
         assert messages == []
         assert len(failures) == 1
         failure = one(failures)
@@ -99,9 +97,8 @@ class TestSlackHandler:
         logger.addHandler(
             handler := SlackHandler("url", sender=sender, callback_success=callback)
         )
-        await handler._start()
-        logger.warning("message")
-        await sleep(0.1)
+        async with handler:
+            logger.warning("message")
         assert messages == ["message"]
         assert successes == ["message"]
 
@@ -125,11 +122,10 @@ class TestSlackHandler:
                 "url", sender=sender, timeout=0.05, callback_final=callback, sleep=0.01
             )
         )
-        await handler._start()
-        logger.warning("fast message")
-        await sleep(0.1)
-        logger.warning("slow message")
-        await sleep(0.1)
+        async with handler:
+            logger.warning("fast message")
+            await sleep(0.1)
+            logger.warning("slow message")
         assert messages == ["fast message"]
         assert finals == ["fast message", "slow message"]
 
@@ -142,9 +138,9 @@ class TestSlackHandler:
         url = get_env_var("SLACK", case_sensitive=False)
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := SlackHandler(url))
-        await handler._start()
-        for i in range(10):
-            logger.warning(
-                "message %d from %s", i, TestSlackHandler.test_real.__qualname__
-            )
+        async with handler:
+            for i in range(10):
+                logger.warning(
+                    "message %d from %s", i, TestSlackHandler.test_real.__qualname__
+                )
         await sleep(0.1)
