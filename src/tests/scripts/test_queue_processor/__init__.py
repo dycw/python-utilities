@@ -21,9 +21,6 @@ class Processor(QueueProcessor[int]):
             msg = "Encountered a random failure!"
             raise ValueError(msg)
         await sleep(1)
-        if len(self) == 0:
-            _LOGGER.info("Stopping...")
-            await self._stop()
 
 
 def main() -> None:
@@ -34,7 +31,7 @@ def main() -> None:
 
 
 async def populate(processor: Processor, /) -> None:
-    while len(processor) <= 10:
+    while len(processor) <= 4:
         init = len(processor)
         processor.enqueue(SYSTEM_RANDOM.randint(0, 9))
         post = len(processor)
@@ -42,11 +39,11 @@ async def populate(processor: Processor, /) -> None:
         await sleep(0.1 + 0.4 * SYSTEM_RANDOM.random())
 
 
-async def _main() -> None:
-    def callback(item: int, error: Exception, /) -> None:
-        _LOGGER.error("Failed to process %d because of %s", item, get_class_name(error))
+async def stop_when_finished(processor: Processor, /) -> None:
+    await sleep(1.0)
+    await processor.run_until_empty()
 
-    processor = Processor(process_item_failure=callback)
-    await processor._start()
-    with suppress(CancelledError):
+
+async def _main() -> None:
+    async with Processor() as processor:
         await populate(processor)
