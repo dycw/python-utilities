@@ -212,7 +212,6 @@ class QueueProcessor(AsyncService, Generic[_T]):
 
     queue_type: type[Queue[_T]] = field(default=Queue, repr=False)
     queue_max_size: int | None = field(default=None, repr=False)
-    run_failure: Callable[[Exception], None] | None = None
     sleep: Duration = MILLISECOND
     _await_upon_aenter: bool = field(default=False, init=False, repr=False)
     _queue: Queue[_T] = field(init=False, repr=False)
@@ -274,8 +273,6 @@ class QueueProcessor(AsyncService, Generic[_T]):
             await self._process_item(item)
         except Exception as error:  # noqa: BLE001
             await self._process_item_failure(item, error)
-            # if self.process_item_failure is not None:
-            #     self.process_item_failure(item, error)
 
     @override
     async def _start(self) -> None:
@@ -288,10 +285,6 @@ class QueueProcessor(AsyncService, Generic[_T]):
             except CancelledError:
                 await self.stop()
                 break
-            except Exception as error:  # noqa: BLE001
-                if self.run_failure is not None:
-                    self.run_failure(error)
-                await sleep_dur(duration=self.sleep)
             else:
                 await sleep_dur(duration=self.sleep)
 
@@ -312,24 +305,6 @@ class ExceptionProcessor(QueueProcessor[Exception | type[Exception]]):
     async def _process_item(self, item: Exception | type[Exception], /) -> None:
         """Run the processor on the first item."""
         raise item
-
-    @override
-    async def _start(self) -> None:
-        """Start the processor."""
-        while True:
-            try:
-                await self._run()
-            except QueueEmpty:
-                await sleep_dur(duration=self.sleep)
-            except CancelledError:
-                await self.stop()
-                break
-            except Exception as error:
-                if self.run_failure is not None:
-                    self.run_failure(error)
-                raise
-            else:
-                await sleep_dur(duration=self.sleep)
 
 
 ##
