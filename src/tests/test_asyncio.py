@@ -1,21 +1,12 @@
 from __future__ import annotations
 
-from asyncio import (
-    CancelledError,
-    Lock,
-    PriorityQueue,
-    Queue,
-    TaskGroup,
-    run,
-    sleep,
-    timeout,
-)
+from asyncio import Lock, PriorityQueue, Queue, TaskGroup, run, sleep, timeout
 from dataclasses import dataclass, field
 from itertools import chain
 from re import search
 from typing import TYPE_CHECKING, override
 
-from hypothesis import Phase, given, reproduce_failure, settings
+from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
     data,
@@ -27,7 +18,7 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import mark, param, raises
+from pytest import mark, raises
 
 from utilities.asyncio import (
     AsyncLoopingService,
@@ -43,7 +34,6 @@ from utilities.asyncio import (
     stream_command,
     timeout_dur,
 )
-from utilities.contextvars import set_global_breakpoint
 from utilities.datetime import MILLISECOND, datetime_duration_to_timedelta
 from utilities.hypothesis import settings_with_reduced_examples, text_ascii
 from utilities.iterables import one, unique_everseen
@@ -62,18 +52,12 @@ class TestAsyncLoopingService:
 
             @override
             async def _run(self) -> None:
-                print("_run")
                 self.counter += 1
-
-        print("welcome")
 
         service = Example(duration=0.1, sleep=0.01)
         assert service.counter == 0
         async with service:
-            print("enter")
-            print("enter")
-            print("enter")
-            print("enter")
+            pass
         assert 5 <= service.counter <= 15
 
 
@@ -88,8 +72,9 @@ class TestAsyncService:
                 self.running = True
 
             @override
-            async def _stop(self) -> None:
+            async def stop(self) -> None:
                 self.running = False
+                await super().stop()
 
         service = Example(duration=0.1)
         for _ in range(2):
@@ -111,8 +96,9 @@ class TestAsyncService:
                 self.running = True
 
             @override
-            async def _stop(self) -> None:
+            async def stop(self) -> None:
                 self.running = False
+                await super().stop()
 
         service = Example()
         try:
@@ -132,8 +118,9 @@ class TestAsyncService:
                 self.running = True
 
             @override
-            async def _stop(self) -> None:
+            async def stop(self) -> None:
                 self.running = False
+                await super().stop()
 
         @dataclass(kw_only=True)
         class Outer(AsyncServiceTrad):
@@ -147,8 +134,9 @@ class TestAsyncService:
                 _ = await self._stack.enter_async_context(self.inner)
 
             @override
-            async def _stop(self) -> None:
+            async def stop(self) -> None:
                 self.running = False
+                await super().stop()
 
         outer = Outer()
         for _ in range(2):
@@ -311,17 +299,10 @@ class TestQueueProcessor:
 
             @override
             async def _process_item(self, item: int, /) -> None:
-                print(f"process item: {len(self)=}")
                 self.output.add(item)
 
-        print("starting test...")
-        print("starting test...")
-        print("starting test...")
-        print("starting test...")
-        print("OK?")
         async with Example() as processor:
             # async with Example(sleep=0.01) as processor:
-            print("started CM now")
 
             async def add_tasks() -> None:
                 for i in range(10):
@@ -346,7 +327,6 @@ class TestQueueProcessor:
             @override
             async def _process_item(self, item: int, /) -> None:
                 self.output.add(item)
-                print(f"Proceessed {item=}")
                 await sleep(0.01)
 
         # async with Example(sleep=0.1) as processor:
@@ -364,7 +344,6 @@ class TestQueueProcessor:
             @override
             async def _process_item(self, item: int, /) -> None:
                 self.output.add(item)
-                print("Proceessed, ")
 
         processor = Example()
         await processor._start()

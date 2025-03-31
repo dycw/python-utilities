@@ -27,14 +27,9 @@ from dataclasses import dataclass, field
 from io import StringIO
 from subprocess import PIPE
 from sys import stderr, stdout
-from typing import TYPE_CHECKING, Any, Generic, Self, TextIO, TypeVar, override
+from typing import TYPE_CHECKING, Generic, Self, TextIO, TypeVar, override
 
-from utilities.datetime import (
-    MICROSECOND,
-    MILLISECOND,
-    datetime_duration_to_float,
-    microseconds_since_epoch,
-)
+from utilities.datetime import MILLISECOND, datetime_duration_to_float
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, ensure_not_none
 from utilities.types import THashable, TSupportsRichComparison
@@ -42,7 +37,7 @@ from utilities.types import THashable, TSupportsRichComparison
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
     from asyncio.subprocess import Process
-    from collections.abc import AsyncIterator, Callable, Generator, Sequence
+    from collections.abc import AsyncIterator, Callable, Sequence
     from contextvars import Context
     from types import TracebackType
 
@@ -86,11 +81,10 @@ class BaseAsyncService(ABC):
         self._depth -= 1
         if self._depth == 0:
             _ = await self._stack.__aexit__(exc_type, exc_value, traceback)
-            _ = self._task.cancel()
-            # with suppress(CancelledError):
-            await self._task
+            await self.stop()
+            with suppress(CancelledError):
+                await self._task
             self._task = None
-            await self._stop()
 
     @abstractmethod
     async def _start(self) -> None:
@@ -99,23 +93,20 @@ class BaseAsyncService(ABC):
     async def _start_runner(self) -> None:
         """Coroutine to start the service."""
         if self.duration is None:
-            try:
-                _ = await self._start()
-                _ = await self._event.wait()
-            except CancelledError:
-                # await self._stop()
-                pass
+            _ = await self._start()
+            _ = await self._event.wait()
         else:
             try:
                 async with timeout_dur(duration=self.duration):
                     _ = await self._start()
-            except (CancelledError, TimeoutError):
-                await self._stop()
+            except TimeoutError:
+                await self.stop()
 
-    @abstractmethod
-    async def _stop(self) -> None:
+    async def stop(self) -> None:
         """Stop the service."""
-        raise NotImplementedError
+        if self._task is not None:
+            with suppress(CancelledError):
+                _ = self._task.cancel()
 
 
 @dataclass(kw_only=True)
@@ -128,7 +119,8 @@ class AsyncServiceTrad(BaseAsyncService):
         if (self._task is None) and (self._depth == 0):
             _ = await self._stack.__aenter__()
             self._task = create_task(self._start_runner())
-            await self._task
+            with suppress(CancelledError):
+                await self._task
         elif (self._task is not None) and (self._depth >= 1):
             ...
         else:
@@ -164,25 +156,17 @@ class AsyncLoopingService(AsyncServiceTrad):
     @override
     async def _start(self) -> None:
         """Start the service, assuming no task is present."""
-        print("AsyncLoopingService _start")
         while True:
             try:
-                print("AsyncLoopingService _run???")
                 await self._run()
             except CancelledError:
-                await self._stop()
+                await self.stop()
                 break
             except Exception as error:  # noqa: BLE001
-                print("break???")
                 if self.run_failure is not None:
                     self.run_failure(error)
             finally:
-                print("sleep")
                 await sleep_dur(duration=self.sleep)
-
-    @override
-    async def _stop(self) -> None:
-        """Stop the service, assuming the task has just been cancelled."""
 
 
 ##
@@ -278,7 +262,6 @@ class QueueProcessor(BaseAsyncService, Generic[_T]):
 
     def enqueue(self, *items: _T) -> None:
         """Enqueue a set items."""
-        print(f"enqueue {items=}")
         for item in items:
             self._queue.put_nowait(item)
 
@@ -309,15 +292,12 @@ class QueueProcessor(BaseAsyncService, Generic[_T]):
     @override
     async def _run(self) -> None:
         """Run the core service."""
-        print(f"QueueProcessor._run, {len(self)=}")
         try:
             (item,) = await self._get_items_nowait(max_size=1)
         except ValueError:
             raise QueueEmpty from None
         try:
-            print(f"QueueProcessor._run, processing...; {len(self)=}")
             await self._process_item(item)
-            print(f"QueueProcessor._run, processed; {len(self)=}")
         except Exception as error:
             if self.process_item_failure is not None:
                 self.process_item_failure(item, error)
@@ -331,10 +311,9 @@ class QueueProcessor(BaseAsyncService, Generic[_T]):
             except QueueEmpty:
                 await sleep_dur(duration=self.sleep)
             except CancelledError:
-                await self._stop()
+                await self.stop()
                 break
             except Exception as error:  # noqa: BLE001
-                print(f"QueueProcessor got {error}")
                 if self.run_failure is not None:
                     self.run_failure(error)
                 await sleep_dur(duration=self.sleep)
@@ -342,11 +321,10 @@ class QueueProcessor(BaseAsyncService, Generic[_T]):
                 await sleep_dur(duration=self.sleep)
 
     @override
-    async def _stop(self) -> None:
+    async def stop(self) -> None:
         """Stop the processor, assuming the task has just been cancelled."""
         await self.run_until_empty()
-        if self._task is not None:
-            self._task.cancel()
+        return await super().stop()
 
 
 @dataclass(kw_only=True)

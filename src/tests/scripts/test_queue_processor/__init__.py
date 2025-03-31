@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from asyncio import CancelledError, run, sleep
-from contextlib import suppress
+from asyncio import run, sleep
 from logging import getLogger
 from typing import override
 
@@ -37,11 +36,6 @@ async def populate(processor: Processor, /) -> None:
         post = len(processor)
         _LOGGER.info("%d -> %d items", init, post)
         await sleep(0.1 + 0.4 * SYSTEM_RANDOM.random())
-
-
-async def stop_when_finished(processor: Processor, /) -> None:
-    await sleep(1.0)
-    await processor.run_until_empty()
 
 
 async def _main() -> None:

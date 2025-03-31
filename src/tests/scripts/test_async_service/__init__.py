@@ -18,17 +18,18 @@ class Service(AsyncServiceTrad):
         _LOGGER.info("Starting service...")
 
         async def coroutine() -> None:
-            for i in range(5):
-                _LOGGER.info("Coroutine running %d...", i)
+            for i in range(1, 6):
+                _LOGGER.info("Run #%d...", i)
                 await sleep(0.1 + 0.4 * SYSTEM_RANDOM.random())
-            _LOGGER.info("Raising...")
+            _LOGGER.info("Cancelling...")
             raise CancelledError
 
         await coroutine()
 
     @override
-    async def _stop(self) -> None:
+    async def stop(self) -> None:
         _LOGGER.info("Stopping service...")
+        await super().stop()
 
 
 def main() -> None:
@@ -40,5 +41,5 @@ def main() -> None:
 
 async def _main() -> None:
     with suppress(CancelledError):
-        async with Service() as service:
-            _ = await service
+        async with Service():
+            ...
