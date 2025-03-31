@@ -23,7 +23,6 @@ class Service(AsyncService):
                 await sleep(0.1 + 0.4 * SYSTEM_RANDOM.random())
             _LOGGER.info("Raising...")
             raise CancelledError
-            _LOGGER.info("Raised...")
 
         await coroutine()
 

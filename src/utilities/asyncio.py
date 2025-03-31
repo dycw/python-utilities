@@ -104,9 +104,8 @@ class AsyncService(ABC):
     async def _start_runner(self) -> None:
         """Coroutine to start the service."""
         try:
-            async with TaskGroup() as tg:
-                _ = tg.create_task(self._event.wait())
-                _ = tg.create_task(self._start())
+            _ = await self._start()
+            _ = await self._event.wait()
         except CancelledError:
             await self._stop()
 

@@ -57,7 +57,7 @@ class TestAsyncLoopingService:
         service = Example(sleep=0.01)
         assert service.counter == 0
         async with timeout_dur(duration=0.2), service:
-            await service
+            ...
         assert 10 <= service.counter <= 30
 
 
