@@ -43,11 +43,10 @@ class PingReceiver(AsyncService):
     _app: _PingerReceiverApp = field(
         default_factory=_PingerReceiverApp, init=False, repr=False
     )
+    _await_upon_aenter: bool = field(default=False, init=False, repr=False)
     _server: Server = field(init=False, repr=False)
 
-    @override
     def __post_init__(self, host: str, port: int, /) -> None:
-        super().__post_init__()  # skipif-ci
         self._server = Server(Config(self._app, host=host, port=port))  # skipif-ci
 
     @classmethod
@@ -67,12 +66,13 @@ class PingReceiver(AsyncService):
         return response.text if response.status_code == 200 else False  # skipif-ci
 
     @override
-    async def _start_core(self) -> None:
+    async def _start(self) -> None:
         await self._server.serve()  # skipif-ci
 
     @override
-    async def _stop_core(self) -> None:
+    async def stop(self) -> None:
         await self._server.shutdown()  # skipif-ci
+        await super().stop()  # skipif-ci
 
 
 __all__ = ["PingReceiver"]
