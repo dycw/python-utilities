@@ -156,7 +156,6 @@ class AsyncLoopingService(AsyncService):
                 break
             except Exception as error:  # noqa: BLE001
                 await self._run_failure(error)
-                await sleep_dur(duration=self.sleep)
 
 
 ##

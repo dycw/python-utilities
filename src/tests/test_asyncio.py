@@ -80,15 +80,9 @@ class TestAsyncLoopingService:
                 if self.counter >= 5:
                     raise CustomError
 
-            @override
-            async def _run_failure(self, error: Exception, /) -> None:
-                if isinstance(error, CustomError):
-                    self.failed = True
-                    raise CancelledError
-
-        async with Example(sleep=0.1) as service:
-            pass
-        assert service.failed
+        with raises(CustomError):
+            async with Example(sleep=0.1):
+                pass
 
 
 class TestAsyncService:
