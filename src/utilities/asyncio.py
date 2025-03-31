@@ -240,13 +240,11 @@ class QueueProcessor(AsyncService, Generic[_T]):
         for item in items:
             self._queue.put_nowait(item)
 
-    async def run_until_empty(self, *, exit_upon_empty: bool = False) -> None:
+    async def run_until_empty(self) -> None:
         """Run the processor until the queue is empty."""
         while not self.empty():
             await self._run()
             await sleep_dur(duration=self.sleep)
-            if exit_upon_empty:
-                await self.stop()
 
     async def _get_items_nowait(self, *, max_size: int | None = None) -> Sequence[_T]:
         """Get items from the queue; no waiting."""

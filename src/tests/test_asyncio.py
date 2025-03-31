@@ -491,47 +491,6 @@ class TestQueueProcessor:
         result = one(processor.output)
         assert result == texts[0]
 
-    async def test_run_until_empty_with_exit_upon_empty(self) -> None:
-        @dataclass(kw_only=True)
-        class Example(QueueProcessor[int]):
-            output: set[int] = field(default_factory=set)
-
-            @override
-            async def _process_item(self, item: int, /) -> None:
-                self.output.add(item)
-                await sleep(0.1)
-
-        async with Example() as processor:
-            processor.enqueue(*range(10))
-            await processor.run_until_empty(exit_upon_empty=True)
-            assert processor.output == set(range(10))
-            await sleep(2.0)
-            processor.enqueue(*range(10, 20))
-            await processor.run_until_empty(exit_upon_empty=True)
-            assert processor.output == set(range(10))
-
-        assert processor.output == set(range(10))
-
-    async def test_run_until_empty_without_exit_upon_empty(self) -> None:
-        @dataclass(kw_only=True)
-        class Example(QueueProcessor[int]):
-            output: set[int] = field(default_factory=set)
-
-            @override
-            async def _process_item(self, item: int, /) -> None:
-                self.output.add(item)
-                await sleep(0.1)
-
-        async with Example() as processor:
-            processor.enqueue(*range(10))
-            await processor.run_until_empty()
-            await sleep(2.0)
-            processor.enqueue(*range(10, 20))
-            await processor.run_until_empty()
-            assert processor.output == set(range(20))
-
-        assert processor.output == set(range(20))
-
 
 class TestUniquePriorityQueue:
     @given(data=data(), texts=lists(text_ascii(min_size=1), min_size=1, unique=True))
