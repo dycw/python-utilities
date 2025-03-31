@@ -37,7 +37,7 @@ from utilities.types import THashable, TSupportsRichComparison
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
     from asyncio.subprocess import Process
-    from collections.abc import AsyncIterator, Callable, Sequence
+    from collections.abc import AsyncIterator, Sequence
     from contextvars import Context
     from types import TracebackType
 
@@ -74,7 +74,9 @@ class AsyncService(ABC):
         elif (self._task is not None) and (self._depth >= 1):
             ...
         else:
-            raise ImpossibleCaseError(case=[f"{self._task=}", f"{self._depth=}"])
+            raise ImpossibleCaseError(  # pragma: no cover
+                case=[f"{self._task=}", f"{self._depth=}"]
+            )
         self._depth += 1
         return self
 
@@ -87,7 +89,9 @@ class AsyncService(ABC):
         """Context manager exit."""
         _ = (exc_type, exc_value, traceback)
         if (self._task is None) or (self._depth == 0):
-            raise ImpossibleCaseError(case=[f"{self._task=}", f"{self._depth=}"])
+            raise ImpossibleCaseError(  # pragma: no cover
+                case=[f"{self._task=}", f"{self._depth=}"]
+            )
         self._state = False
         self._depth -= 1
         if self._depth == 0:
@@ -115,9 +119,10 @@ class AsyncService(ABC):
 
     async def stop(self) -> None:
         """Stop the service."""
-        if self._task is not None:
-            with suppress(CancelledError):
-                _ = self._task.cancel()
+        if self._task is None:
+            raise ImpossibleCaseError(case=[f"{self._task=}"])  # pragma: no cover
+        with suppress(CancelledError):
+            _ = self._task.cancel()
 
 
 ##
@@ -127,7 +132,6 @@ class AsyncService(ABC):
 class AsyncLoopingService(AsyncService):
     """A long-running, asynchronous service which loops a core function."""
 
-    run_failure: Callable[[Exception], None] | None = None
     sleep: Duration | None = None
     _await_upon_aenter: bool = field(default=True, init=False, repr=False)
 
@@ -136,19 +140,22 @@ class AsyncLoopingService(AsyncService):
         """Run the core function once."""
         raise NotImplementedError  # pragma: no cover
 
+    async def _run_failure(self, error: Exception, /) -> None:
+        """Process the failure."""
+        raise error
+
     @override
     async def _start(self) -> None:
         """Start the service, assuming no task is present."""
         while True:
             try:
                 await self._run()
+                await sleep_dur(duration=self.sleep)
             except CancelledError:
                 await self.stop()
                 break
             except Exception as error:  # noqa: BLE001
-                if self.run_failure is not None:
-                    self.run_failure(error)
-            finally:
+                await self._run_failure(error)
                 await sleep_dur(duration=self.sleep)
 
 
@@ -239,15 +246,6 @@ class QueueProcessor(AsyncService, Generic[_T]):
         while not self.empty():
             await self._run()
             await sleep_dur(duration=self.sleep)
-
-    async def _get_items(self, *, max_size: int | None = None) -> Sequence[_T]:
-        """Get items from the queue; if empty then wait."""
-        try:
-            return await get_items(self._queue, max_size=max_size, lock=self._lock)
-        except RuntimeError as error:  # pragma: no cover
-            if error.args[0] == "Event loop is closed":
-                return []
-            raise
 
     async def _get_items_nowait(self, *, max_size: int | None = None) -> Sequence[_T]:
         """Get items from the queue; no waiting."""
