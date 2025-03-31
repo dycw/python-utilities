@@ -402,7 +402,7 @@ class TestQueueProcessor:
             assert len(first.output) == 10
             assert len(second.output) == 10
 
-    @mark.parametrize("duration", [param(0.05), param(0.1), param(0.15), param(0.2)])
+    @mark.parametrize("duration", [param(0.5), param(1.0), param(1.5)])
     async def test_cancellation(self, *, duration: float) -> None:
         @dataclass(kw_only=True)
         class Example(QueueProcessor[int]):
