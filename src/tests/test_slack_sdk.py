@@ -53,7 +53,7 @@ class TestSlackHandler:
 
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := SlackHandler("url", sender=sender))
-        await handler.start()
+        await handler._start()
         logger.warning("message")
         await sleep(0.1)
         assert messages == ["message"]
@@ -75,7 +75,7 @@ class TestSlackHandler:
                 "url", sender=sender, timeout=0.01, callback_failure=callback
             )
         )
-        await handler.start()
+        await handler._start()
         logger.warning("message")
         await sleep(0.1)
         assert messages == []
@@ -99,7 +99,7 @@ class TestSlackHandler:
         logger.addHandler(
             handler := SlackHandler("url", sender=sender, callback_success=callback)
         )
-        await handler.start()
+        await handler._start()
         logger.warning("message")
         await sleep(0.1)
         assert messages == ["message"]
@@ -125,7 +125,7 @@ class TestSlackHandler:
                 "url", sender=sender, timeout=0.05, callback_final=callback, sleep=0.01
             )
         )
-        await handler.start()
+        await handler._start()
         logger.warning("fast message")
         await sleep(0.1)
         logger.warning("slow message")
@@ -142,7 +142,7 @@ class TestSlackHandler:
         url = get_env_var("SLACK", case_sensitive=False)
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := SlackHandler(url))
-        await handler.start()
+        await handler._start()
         for i in range(10):
             logger.warning(
                 "message %d from %s", i, TestSlackHandler.test_real.__qualname__
