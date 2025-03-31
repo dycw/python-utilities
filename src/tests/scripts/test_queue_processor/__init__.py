@@ -32,7 +32,8 @@ class Processor(QueueProcessor[int]):
 def main() -> None:
     basic_config()
     _LOGGER.info("Running script...")
-    run(_main())
+    with suppress(CancelledError):
+        run(_main())
     _LOGGER.info("Finished script")
 
 
@@ -46,6 +47,5 @@ async def populate(processor: Processor, /) -> None:
 
 
 async def _main() -> None:
-    with suppress(CancelledError):
-        async with Processor() as processor:
-            await populate(processor)
+    async with Processor() as processor:
+        await populate(processor)

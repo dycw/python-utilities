@@ -35,11 +35,11 @@ class Service(AsyncService):
 def main() -> None:
     basic_config()
     _LOGGER.info("Running script...")
-    run(_main())
+    with suppress(CancelledError):
+        run(_main())
     _LOGGER.info("Finished script")
 
 
 async def _main() -> None:
-    with suppress(CancelledError):
-        async with Service():
-            ...
+    async with Service():
+        ...
