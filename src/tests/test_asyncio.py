@@ -62,11 +62,33 @@ class TestAsyncLoopingService:
             async def _run(self) -> None:
                 self.counter += 1
 
-        service = Example(duration=0.1, sleep=0.01)
-        assert service.counter == 0
-        async with service:
+        async with Example(duration=1.0, sleep=0.1) as service:
             pass
         assert 5 <= service.counter <= 15
+
+    async def test_failure(self) -> None:
+        class CustomError(Exception): ...
+
+        @dataclass(kw_only=True)
+        class Example(AsyncLoopingService):
+            counter: int = 0
+            failed: bool = False
+
+            @override
+            async def _run(self) -> None:
+                self.counter += 1
+                if self.counter >= 5:
+                    raise CustomError
+
+            @override
+            async def _run_failure(self, error: Exception, /) -> None:
+                if isinstance(error, CustomError):
+                    self.failed = True
+                    raise CancelledError
+
+        async with Example(sleep=0.1) as service:
+            pass
+        assert service.failed
 
 
 class TestAsyncService:

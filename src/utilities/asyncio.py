@@ -132,7 +132,7 @@ class AsyncService(ABC):
 class AsyncLoopingService(AsyncService):
     """A long-running, asynchronous service which loops a core function."""
 
-    sleep: Duration | None = None
+    sleep: Duration = MILLISECOND
     _await_upon_aenter: bool = field(default=True, init=False, repr=False)
 
     @abstractmethod
