@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal, override
 from fastapi import FastAPI
 from uvicorn import Config, Server
 
-from utilities.asyncio import AsyncServiceTrad
+from utilities.asyncio import AsyncService
 from utilities.datetime import SECOND, datetime_duration_to_float, get_now_local
 
 if TYPE_CHECKING:
@@ -35,7 +35,7 @@ class _PingerReceiverApp(FastAPI):
 
 
 @dataclass(kw_only=True)
-class PingReceiver(AsyncServiceTrad):
+class PingReceiver(AsyncService):
     """A ping receiver."""
 
     host: InitVar[str] = _LOCALHOST
@@ -47,7 +47,6 @@ class PingReceiver(AsyncServiceTrad):
 
     @override
     def __post_init__(self, host: str, port: int, /) -> None:
-        super().__post_init__()  # skipif-ci
         self._server = Server(Config(self._app, host=host, port=port))  # skipif-ci
 
     @classmethod
@@ -71,8 +70,9 @@ class PingReceiver(AsyncServiceTrad):
         await self._server.serve()  # skipif-ci
 
     @override
-    async def _stop_core(self) -> None:
+    async def stop(self) -> None:
         await self._server.shutdown()  # skipif-ci
+        await super().stop()  # skipif-ci
 
 
 __all__ = ["PingReceiver"]
