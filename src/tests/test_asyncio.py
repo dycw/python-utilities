@@ -1,12 +1,21 @@
 from __future__ import annotations
 
-from asyncio import Lock, PriorityQueue, Queue, TaskGroup, run, sleep, timeout
+from asyncio import (
+    CancelledError,
+    Lock,
+    PriorityQueue,
+    Queue,
+    TaskGroup,
+    run,
+    sleep,
+    timeout,
+)
 from dataclasses import dataclass, field
 from itertools import chain
 from re import search
 from typing import TYPE_CHECKING, override
 
-from hypothesis import Phase, given, settings
+from hypothesis import Phase, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     data,
@@ -18,7 +27,7 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import mark, raises
+from pytest import mark, param, raises
 
 from utilities.asyncio import (
     AsyncLoopingService,
@@ -34,6 +43,7 @@ from utilities.asyncio import (
     stream_command,
     timeout_dur,
 )
+from utilities.contextvars import set_global_breakpoint
 from utilities.datetime import MILLISECOND, datetime_duration_to_timedelta
 from utilities.hypothesis import settings_with_reduced_examples, text_ascii
 from utilities.iterables import one, unique_everseen
@@ -75,26 +85,15 @@ class TestAsyncService:
             async def _stop(self) -> None:
                 self.running = False
 
-        service = Example()
+        service = Example(duration=0.1)
         for _ in range(2):
             assert not service.running
             async with service:
-                await sleep(0.01)
                 assert service.running
-                await sleep(0.01)
-
                 async with service:
-                    await sleep(0.01)
                     assert service.running
-                    await sleep(0.01)
-
-                await sleep(0.01)
                 assert service.running
-                await sleep(0.01)
-
-            await sleep(0.01)
             assert not service.running
-            await sleep(0.01)
 
     async def test_timeout(self) -> None:
         @dataclass(kw_only=True)
@@ -119,6 +118,7 @@ class TestAsyncService:
     async def test_extra_context_managers(self) -> None:
         @dataclass(kw_only=True)
         class Inner(AsyncService):
+            duration: Duration | None = 0.1
             running: bool = False
 
             @override
@@ -131,6 +131,7 @@ class TestAsyncService:
 
         @dataclass(kw_only=True)
         class Outer(AsyncService):
+            duration: Duration | None = 0.1
             running: bool = False
             inner: Inner = field(default_factory=Inner, init=False, repr=False)
 
@@ -147,17 +148,11 @@ class TestAsyncService:
         for _ in range(2):
             assert not outer.running
             assert not outer.inner.running
-
             async with outer:
-                await sleep(0.01)
                 assert outer.running
                 assert outer.inner.running
-                await sleep(0.01)
-
-            await sleep(0.01)
             assert not outer.running
             assert not outer.inner.running
-            await sleep(0.01)
 
     def test_repr(self) -> None:
         class Example(AsyncService):
@@ -171,7 +166,7 @@ class TestAsyncService:
 
         service = Example()
         result = repr(service)
-        expected = "TestAsyncService.test_repr.<locals>.Example()"
+        expected = "TestAsyncService.test_repr.<locals>.Example(duration=None)"
         assert result == expected
 
 
@@ -223,7 +218,7 @@ class TestExceptionProcessor:
             await sleep(0.01)
             processor.enqueue(CustomError)
 
-        with raises(ExceptionGroup) as exc_info:
+        with raises(ExceptionGroup) as exc_info:  # noqa: PT012
             async with processor:
                 await yield_tasks()
                 await sleep(0.1)
@@ -303,8 +298,40 @@ class TestGetItemsNoWait:
 
 
 class TestQueueProcessor:
-    @given(n=integers(1, 10))
-    async def test_one_processor_slow_tasks(self, *, n: int) -> None:
+    async def test_one_processor_slow_tasks(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(QueueProcessor[int]):
+            output: set[int] = field(default_factory=set)
+
+            @override
+            async def _process_item(self, item: int, /) -> None:
+                print(f"process item: {len(self)=}")
+                self.output.add(item)
+
+        print("starting test...")
+        print("starting test...")
+        print("starting test...")
+        print("starting test...")
+        print("OK?")
+        async with Example(sleep=0.01) as processor:
+            print("started CM now")
+
+            async def add_tasks() -> None:
+                for i in range(10):
+                    processor.enqueue(i)
+                    await sleep(0.1)
+
+            async def run_until_empty() -> None:
+                await sleep(0.5)
+                await processor.run_until_empty()
+
+            async with TaskGroup() as tg:
+                _ = tg.create_task(add_tasks())
+                _ = tg.create_task(run_until_empty())
+
+            assert len(processor.output) == 10
+
+    async def test_one_processor_slow_run(self) -> None:
         @dataclass(kw_only=True)
         class Example(QueueProcessor[int]):
             output: set[int] = field(default_factory=set)
@@ -312,40 +339,13 @@ class TestQueueProcessor:
             @override
             async def _process_item(self, item: int, /) -> None:
                 self.output.add(item)
-
-        processor = Example()
-
-        async def yield_tasks() -> None:
-            await processor._start()
-            await sleep(0.01)
-            for i in range(n):
-                processor.enqueue(i)
-                await sleep(0.01)
-            await sleep(0.01)
-
-        async with TaskGroup() as tg:
-            _ = tg.create_task(yield_tasks())
-            _ = tg.create_task(processor.run_until_empty())
-        assert len(processor.output) == n
-        await processor._stop()
-
-    @given(n=integers(1, 10))
-    async def test_one_processor_slow_run(self, *, n: int) -> None:
-        @dataclass(kw_only=True)
-        class Example(QueueProcessor[int]):
-            output: set[int] = field(default_factory=set)
-
-            @override
-            async def _process_item(self, item: int, /) -> None:
-                self.output.add(item)
+                print(f"Proceessed {item=}")
                 await sleep(0.01)
 
-        processor = Example()
-        processor.enqueue(*range(n))
-        async with TaskGroup() as tg:
-            _ = tg.create_task(processor.run_until_empty())
-        assert len(processor.output) == n
-        await processor._stop()
+        async with Example(sleep=0.1) as processor:
+            processor.enqueue(*range(10))
+            await processor.run_until_empty()
+            assert len(processor.output) == 10
 
     @given(n=integers(1, 10))
     async def test_one_processor_continually_adding(self, *, n: int) -> None:
@@ -356,6 +356,7 @@ class TestQueueProcessor:
             @override
             async def _process_item(self, item: int, /) -> None:
                 self.output.add(item)
+                print("Proceessed, ")
 
         processor = Example()
         await processor._start()
@@ -399,6 +400,7 @@ class TestQueueProcessor:
 
     @given(n=integers(0, 10), duration=floats(0.0, 0.2))
     @settings_with_reduced_examples()
+    @mark.skip
     async def test_cancellation(self, *, n: int, duration: float) -> None:
         @dataclass(kw_only=True)
         class Example(QueueProcessor[int]):

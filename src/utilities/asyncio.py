@@ -53,6 +53,7 @@ _T = TypeVar("_T")
 class AsyncService(ABC):
     """A long-running, asynchronous service."""
 
+    duration: Duration | None = None
     _event: Event = field(default_factory=Event, init=False, repr=False)
     _stack: AsyncExitStack = field(
         default_factory=AsyncExitStack, init=False, repr=False
@@ -65,12 +66,14 @@ class AsyncService(ABC):
         if (self._task is None) and (self._depth == 0):
             _ = await self._stack.__aenter__()
             self._task = create_task(self._start_runner())
+            # print("aenter... about to await self.task")
+            # await self._task
+            # print("aenter... done with await self.task")
         elif (self._task is not None) and (self._depth >= 1):
             ...
         else:
             raise ImpossibleCaseError(case=[f"{self._task=}", f"{self._depth=}"])
         self._depth += 1
-        await self._task
         return self
 
     async def __aexit__(
@@ -103,11 +106,18 @@ class AsyncService(ABC):
 
     async def _start_runner(self) -> None:
         """Coroutine to start the service."""
-        try:
-            _ = await self._start()
-            _ = await self._event.wait()
-        except CancelledError:
-            await self._stop()
+        if self.duration is None:
+            try:
+                _ = await self._start()
+                _ = await self._event.wait()
+            except CancelledError:
+                await self._stop()
+        else:
+            try:
+                async with timeout_dur(duration=self.duration):
+                    _ = await self._start()
+            except (CancelledError, TimeoutError):
+                await self._stop()
 
     @abstractmethod
     async def _stop(self) -> None:
@@ -141,13 +151,20 @@ class AsyncLoopingService(AsyncService):
     @override
     async def _start(self) -> None:
         """Start the service, assuming no task is present."""
+        print("AsyncLoopingService _start")
         while True:
             try:
+                print("AsyncLoopingService _run???")
                 await self._run()
+            except CancelledError:
+                await self._stop()
+                break
             except Exception as error:  # noqa: BLE001
+                print("break???")
                 if self.run_failure is not None:
                     self.run_failure(error)
             finally:
+                print("sleep")
                 await sleep_dur(duration=self.sleep)
 
     @override
@@ -233,6 +250,7 @@ class QueueProcessor(AsyncLoopingService, Generic[_T]):
 
     def enqueue(self, *items: _T) -> None:
         """Enqueue a set items."""
+        print(f"enqueue {items=}")
         for item in items:
             self._queue.put_nowait(item)
 
@@ -262,12 +280,41 @@ class QueueProcessor(AsyncLoopingService, Generic[_T]):
     @override
     async def _run(self) -> None:
         """Run the core service."""
+        print(f"QueueProcessor._run, {len(self)=}")
+        if self.empty():
+            raise QueueEmpty
         (item,) = await self._get_items(max_size=1)
         try:
+            print("QueueProcessor._run, processing...")
             await self._process_item(item)
-        except Exception as error:  # noqa: BLE001
+            print("QueueProcessor._run, processed")
+        except Exception as error:
+            print("QueueProcessor run exception")
             if self.process_item_failure is not None:
                 self.process_item_failure(item, error)
+            raise
+
+    @override
+    async def _start(self) -> None:
+        """Start the service, assuming no task is present."""
+        print(f"QueueProcessor _start; {len(self)=}")
+        while True:
+            try:
+                print("QueueProcessor _run???")
+                await self._run()
+            except QueueEmpty:
+                print("QueueProcessor queue empty")
+                await sleep_dur(duration=self.sleep)
+            except CancelledError:
+                await self._stop()
+                break
+            except Exception as error:  # noqa: BLE001
+                print(f"QueueProcessor got {error}")
+                if self.run_failure is not None:
+                    self.run_failure(error)
+            finally:
+                print(f"sleep for {self.sleep=}")
+                await sleep_dur(duration=self.sleep)
 
     @override
     async def _stop(self) -> None:
