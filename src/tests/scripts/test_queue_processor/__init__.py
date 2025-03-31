@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from asyncio import CancelledError, run, sleep
+from contextlib import suppress
 from logging import getLogger
 from typing import override
 
@@ -45,5 +46,6 @@ async def populate(processor: Processor, /) -> None:
 
 
 async def _main() -> None:
-    async with Processor() as processor:
-        await populate(processor)
+    with suppress(CancelledError):
+        async with Processor() as processor:
+            await populate(processor)
