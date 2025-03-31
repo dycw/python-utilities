@@ -31,7 +31,7 @@ from pytest import mark, param, raises
 
 from utilities.asyncio import (
     AsyncLoopingService,
-    AsyncService,
+    AsyncServiceTrad,
     EnhancedTaskGroup,
     ExceptionProcessor,
     QueueProcessor,
@@ -62,19 +62,25 @@ class TestAsyncLoopingService:
 
             @override
             async def _run(self) -> None:
+                print("_run")
                 self.counter += 1
 
-        service = Example(sleep=0.01)
+        print("welcome")
+
+        service = Example(duration=0.1, sleep=0.01)
         assert service.counter == 0
-        async with timeout_dur(duration=0.2), service:
-            ...
-        assert 10 <= service.counter <= 30
+        async with service:
+            print("enter")
+            print("enter")
+            print("enter")
+            print("enter")
+        assert 5 <= service.counter <= 15
 
 
 class TestAsyncService:
     async def test_main(self) -> None:
         @dataclass(kw_only=True)
-        class Example(AsyncService):
+        class Example(AsyncServiceTrad):
             running: bool = False
 
             @override
@@ -97,7 +103,7 @@ class TestAsyncService:
 
     async def test_timeout(self) -> None:
         @dataclass(kw_only=True)
-        class Example(AsyncService):
+        class Example(AsyncServiceTrad):
             running: bool = False
 
             @override
@@ -117,7 +123,7 @@ class TestAsyncService:
 
     async def test_extra_context_managers(self) -> None:
         @dataclass(kw_only=True)
-        class Inner(AsyncService):
+        class Inner(AsyncServiceTrad):
             duration: Duration | None = 0.1
             running: bool = False
 
@@ -130,7 +136,7 @@ class TestAsyncService:
                 self.running = False
 
         @dataclass(kw_only=True)
-        class Outer(AsyncService):
+        class Outer(AsyncServiceTrad):
             duration: Duration | None = 0.1
             running: bool = False
             inner: Inner = field(default_factory=Inner, init=False, repr=False)
@@ -155,7 +161,7 @@ class TestAsyncService:
             assert not outer.inner.running
 
     def test_repr(self) -> None:
-        class Example(AsyncService):
+        class Example(AsyncServiceTrad):
             @override
             async def _start(self) -> None:
                 await sleep(0.01)
@@ -313,7 +319,8 @@ class TestQueueProcessor:
         print("starting test...")
         print("starting test...")
         print("OK?")
-        async with Example(sleep=0.01) as processor:
+        async with Example() as processor:
+            # async with Example(sleep=0.01) as processor:
             print("started CM now")
 
             async def add_tasks() -> None:
@@ -342,7 +349,8 @@ class TestQueueProcessor:
                 print(f"Proceessed {item=}")
                 await sleep(0.01)
 
-        async with Example(sleep=0.1) as processor:
+        # async with Example(sleep=0.1) as processor:
+        async with Example() as processor:
             processor.enqueue(*range(10))
             await processor.run_until_empty()
             assert len(processor.output) == 10

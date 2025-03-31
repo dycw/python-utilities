@@ -29,7 +29,12 @@ from subprocess import PIPE
 from sys import stderr, stdout
 from typing import TYPE_CHECKING, Any, Generic, Self, TextIO, TypeVar, override
 
-from utilities.datetime import datetime_duration_to_float
+from utilities.datetime import (
+    MICROSECOND,
+    MILLISECOND,
+    datetime_duration_to_float,
+    microseconds_since_epoch,
+)
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, ensure_not_none
 from utilities.types import THashable, TSupportsRichComparison
@@ -50,7 +55,7 @@ _T = TypeVar("_T")
 
 
 @dataclass(kw_only=True)
-class AsyncService(ABC):
+class BaseAsyncService(ABC):
     """A long-running, asynchronous service."""
 
     duration: Duration | None = None
@@ -58,23 +63,14 @@ class AsyncService(ABC):
     _stack: AsyncExitStack = field(
         default_factory=AsyncExitStack, init=False, repr=False
     )
+    _state: bool = field(default=False, init=False, repr=False)
     _task: Task[None] | None = field(default=None, init=False, repr=False)
     _depth: int = field(default=0, init=False, repr=False)
 
+    @abstractmethod
     async def __aenter__(self) -> Self:
         """Start the service."""
-        if (self._task is None) and (self._depth == 0):
-            _ = await self._stack.__aenter__()
-            self._task = create_task(self._start_runner())
-            # print("aenter... about to await self.task")
-            # await self._task
-            # print("aenter... done with await self.task")
-        elif (self._task is not None) and (self._depth >= 1):
-            ...
-        else:
-            raise ImpossibleCaseError(case=[f"{self._task=}", f"{self._depth=}"])
-        self._depth += 1
-        return self
+        raise NotImplementedError
 
     async def __aexit__(
         self,
@@ -86,6 +82,7 @@ class AsyncService(ABC):
         _ = (exc_type, exc_value, traceback)
         if (self._task is None) or (self._depth == 0):
             raise ImpossibleCaseError(case=[f"{self._task=}", f"{self._depth=}"])
+        self._state = False
         self._depth -= 1
         if self._depth == 0:
             _ = await self._stack.__aexit__(exc_type, exc_value, traceback)
@@ -94,11 +91,6 @@ class AsyncService(ABC):
                 await self._task
             self._task = None
             await self._stop()
-
-    def __await__(self) -> Generator[Any, None, None]:
-        if self._task is None:
-            raise AsyncServiceError(service=self)
-        return self._task.__await__()
 
     @abstractmethod
     async def _start(self) -> None:
@@ -122,11 +114,31 @@ class AsyncService(ABC):
     @abstractmethod
     async def _stop(self) -> None:
         """Stop the service."""
+        raise NotImplementedError
+
+
+@dataclass(kw_only=True)
+class AsyncServiceTrad(BaseAsyncService):
+    """A long-running, asynchronous service."""
+
+    @override
+    async def __aenter__(self) -> Self:
+        """Start the service."""
+        if (self._task is None) and (self._depth == 0):
+            _ = await self._stack.__aenter__()
+            self._task = create_task(self._start_runner())
+            await self._task
+        elif (self._task is not None) and (self._depth >= 1):
+            ...
+        else:
+            raise ImpossibleCaseError(case=[f"{self._task=}", f"{self._depth=}"])
+        self._depth += 1
+        return self
 
 
 @dataclass(kw_only=True, slots=True)
 class AsyncServiceError(Exception):
-    service: AsyncService
+    service: AsyncServiceTrad
 
     @override
     def __str__(self) -> str:
@@ -137,7 +149,7 @@ class AsyncServiceError(Exception):
 
 
 @dataclass(kw_only=True)
-class AsyncLoopingService(AsyncService):
+class AsyncLoopingService(AsyncServiceTrad):
     """A long-running, asynchronous service which loops a core function."""
 
     run_failure: Callable[[Exception], None] | None = None
@@ -227,12 +239,14 @@ class EnhancedTaskGroup(TaskGroup):
 
 
 @dataclass(kw_only=True)
-class QueueProcessor(AsyncLoopingService, Generic[_T]):
+class QueueProcessor(BaseAsyncService, Generic[_T]):
     """Process a set of items in a queue."""
 
     queue_type: type[Queue[_T]] = field(default=Queue, repr=False)
     queue_max_size: int | None = field(default=None, repr=False)
     process_item_failure: Callable[[_T, Exception], None] | None = None
+    run_failure: Callable[[Exception], None] | None = None
+    sleep: Duration = MICROSECOND
     _queue: Queue[_T] = field(init=False, repr=False)
     _lock: Lock = field(default_factory=Lock, init=False, repr=False)
 
@@ -240,6 +254,19 @@ class QueueProcessor(AsyncLoopingService, Generic[_T]):
         self._queue = self.queue_type(
             maxsize=0 if self.queue_max_size is None else self.queue_max_size
         )
+
+    @override
+    async def __aenter__(self) -> Self:
+        """Start the service."""
+        if (self._task is None) and (self._depth == 0):
+            _ = await self._stack.__aenter__()
+            self._task = create_task(self._start_runner())
+        elif (self._task is not None) and (self._depth >= 1):
+            ...
+        else:
+            raise ImpossibleCaseError(case=[f"{self._task=}", f"{self._depth=}"])
+        self._depth += 1
+        return self
 
     def __len__(self) -> int:
         return self._queue.qsize()
@@ -257,7 +284,8 @@ class QueueProcessor(AsyncLoopingService, Generic[_T]):
     async def run_until_empty(self) -> None:
         """Run the processor until the queue is empty."""
         while not self.empty():
-            _ = await self._run()
+            await self._run()
+            await sleep_dur(duration=self.sleep)
 
     async def _get_items(self, *, max_size: int | None = None) -> Sequence[_T]:
         """Get items from the queue; if empty then wait."""
@@ -281,13 +309,11 @@ class QueueProcessor(AsyncLoopingService, Generic[_T]):
     async def _run(self) -> None:
         """Run the core service."""
         print(f"QueueProcessor._run, {len(self)=}")
-        if self.empty():
-            raise QueueEmpty
-        (item,) = await self._get_items(max_size=1)
+        (item,) = await self._get_items_nowait(max_size=1)
         try:
-            print("QueueProcessor._run, processing...")
+            print(f"QueueProcessor._run, processing...; {len(self)=}")
             await self._process_item(item)
-            print("QueueProcessor._run, processed")
+            print(f"QueueProcessor._run, processed; {len(self)=}")
         except Exception as error:
             print("QueueProcessor run exception")
             if self.process_item_failure is not None:
@@ -312,9 +338,10 @@ class QueueProcessor(AsyncLoopingService, Generic[_T]):
                 print(f"QueueProcessor got {error}")
                 if self.run_failure is not None:
                     self.run_failure(error)
-            finally:
-                print(f"sleep for {self.sleep=}")
                 await sleep_dur(duration=self.sleep)
+            # finally:
+            #     print(f"sleep for {self.sleep=}")
+            #     await sleep_dur(duration=self.sleep)
 
     @override
     async def _stop(self) -> None:
@@ -511,8 +538,8 @@ async def timeout_dur(
 
 __all__ = [
     "AsyncLoopingService",
-    "AsyncService",
     "AsyncServiceError",
+    "AsyncServiceTrad",
     "EnhancedTaskGroup",
     "ExceptionProcessor",
     "QueueProcessor",
