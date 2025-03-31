@@ -212,7 +212,6 @@ class QueueProcessor(AsyncService, Generic[_T]):
 
     queue_type: type[Queue[_T]] = field(default=Queue, repr=False)
     queue_max_size: int | None = field(default=None, repr=False)
-    process_item_failure: Callable[[_T, Exception], None] | None = None
     run_failure: Callable[[Exception], None] | None = None
     sleep: Duration = MILLISECOND
     _await_upon_aenter: bool = field(default=False, init=False, repr=False)
@@ -260,6 +259,11 @@ class QueueProcessor(AsyncService, Generic[_T]):
         """Process the first item."""
         raise NotImplementedError(item)  # pragma: no cover
 
+    async def _process_item_failure(self, item: _T, error: Exception, /) -> None:
+        """Process the failure."""
+        _ = item
+        raise error
+
     async def _run(self) -> None:
         """Run the processer."""
         try:
@@ -269,8 +273,9 @@ class QueueProcessor(AsyncService, Generic[_T]):
         try:
             await self._process_item(item)
         except Exception as error:  # noqa: BLE001
-            if self.process_item_failure is not None:
-                self.process_item_failure(item, error)
+            await self._process_item_failure(item, error)
+            # if self.process_item_failure is not None:
+            #     self.process_item_failure(item, error)
 
     @override
     async def _start(self) -> None:
@@ -307,6 +312,24 @@ class ExceptionProcessor(QueueProcessor[Exception | type[Exception]]):
     async def _process_item(self, item: Exception | type[Exception], /) -> None:
         """Run the processor on the first item."""
         raise item
+
+    @override
+    async def _start(self) -> None:
+        """Start the processor."""
+        while True:
+            try:
+                await self._run()
+            except QueueEmpty:
+                await sleep_dur(duration=self.sleep)
+            except CancelledError:
+                await self.stop()
+                break
+            except Exception as error:
+                if self.run_failure is not None:
+                    self.run_failure(error)
+                raise
+            else:
+                await sleep_dur(duration=self.sleep)
 
 
 ##

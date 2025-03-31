@@ -203,18 +203,10 @@ class TestExceptionProcessor:
 
         class CustomError(Exception): ...
 
-        async def yield_tasks() -> None:
-            await sleep(0.01)
-            processor.enqueue(CustomError)
-
-        with raises(ExceptionGroup) as exc_info:  # noqa: PT012
+        with raises(CustomError):  # noqa: PT012
             async with processor:
-                await yield_tasks()
+                processor.enqueue(CustomError)
                 await sleep(0.1)
-
-        assert len(exc_info.value.exceptions) == 1
-        exception = one(exc_info.value.exceptions)
-        assert isinstance(exception, CustomError)
 
 
 class TestGetItems:

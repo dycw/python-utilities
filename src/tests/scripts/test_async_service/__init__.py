@@ -5,14 +5,14 @@ from contextlib import suppress
 from logging import getLogger
 from typing import override
 
-from utilities.asyncio import AsyncLoopingService, AsyncServiceTrad
+from utilities.asyncio import AsyncService
 from utilities.logging import basic_config
 from utilities.random import SYSTEM_RANDOM
 
 _LOGGER = getLogger(__name__)
 
 
-class Service(AsyncServiceTrad):
+class Service(AsyncService):
     @override
     async def _start(self) -> None:
         _LOGGER.info("Starting service...")

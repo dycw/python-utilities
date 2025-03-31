@@ -23,6 +23,10 @@ class Processor(QueueProcessor[int]):
         if self.empty():
             raise CancelledError
 
+    @override
+    async def _process_item_failure(self, item: int, error: Exception, /) -> None:
+        _LOGGER.error("%s - %s", item, get_class_name(error))
+
 
 def main() -> None:
     basic_config()
@@ -40,10 +44,6 @@ async def populate(processor: Processor, /) -> None:
         await sleep(0.1 + 0.4 * SYSTEM_RANDOM.random())
 
 
-def callback(_: int, error: Exception, /) -> None:
-    _LOGGER.error(get_class_name(error))
-
-
 async def _main() -> None:
-    async with Processor(process_item_failure=callback) as processor:
+    async with Processor() as processor:
         await populate(processor)
