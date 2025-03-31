@@ -43,6 +43,7 @@ class PingReceiver(AsyncService):
     _app: _PingerReceiverApp = field(
         default_factory=_PingerReceiverApp, init=False, repr=False
     )
+    _await_upon_aenter: bool = field(default=False, init=False, repr=False)
     _server: Server = field(init=False, repr=False)
 
     def __post_init__(self, host: str, port: int, /) -> None:
