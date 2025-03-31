@@ -26,7 +26,7 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import mark, param, raises
+from pytest import approx, mark, param, raises
 
 from utilities.asyncio import (
     AsyncLoopingService,
@@ -115,7 +115,18 @@ class TestAsyncService:
         except TimeoutError:
             assert not service.running
 
-    async def test_cancellation(self) -> None:
+    @mark.parametrize(
+        ("duration", "expected"),
+        [
+            param(0.5, approx(5, abs=1)),
+            param(1.0, approx(10, abs=1)),
+            param(1.5, 10),
+            param(None, 10),
+        ],
+    )
+    async def test_cancellation(
+        self, *, duration: Duration | None, expected: int
+    ) -> None:
         class Example(AsyncService):
             counter: int = 0
 
@@ -126,9 +137,9 @@ class TestAsyncService:
                     await sleep(0.1)
                 raise CancelledError
 
-        async with Example() as service:
+        async with Example(duration=duration) as service:
             ...
-        assert service.counter == 10
+        assert service.counter == expected
 
     async def test_extra_context_managers(self) -> None:
         @dataclass(kw_only=True)
