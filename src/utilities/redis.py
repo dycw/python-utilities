@@ -13,12 +13,14 @@ from typing import (
     TypeVar,
     cast,
     overload,
+    override,
 )
 from uuid import UUID, uuid4
 
 from redis.asyncio import Redis
+from redis.typing import EncodableT
 
-from utilities.asyncio import timeout_dur
+from utilities.asyncio import QueueProcessor, timeout_dur
 from utilities.datetime import (
     MILLISECOND,
     SECOND,
@@ -37,7 +39,7 @@ if TYPE_CHECKING:
 
     from redis.asyncio import ConnectionPool
     from redis.asyncio.client import PubSub
-    from redis.typing import EncodableT, ResponseT
+    from redis.typing import ResponseT
     from tenacity.retry import RetryBaseT
     from tenacity.stop import StopBaseT
     from tenacity.wait import WaitBaseT
@@ -60,23 +62,6 @@ _V = TypeVar("_V")
 _V1 = TypeVar("_V1")
 _V2 = TypeVar("_V2")
 _V3 = TypeVar("_V3")
-
-
-##
-
-
-class _RedisMessageSubscribe(TypedDict):
-    type: Literal["subscribe", "psubscribe", "message", "pmessage"]
-    pattern: str | None
-    channel: bytes
-    data: bytes
-
-
-class _RedisMessageUnsubscribe(TypedDict):
-    type: Literal["unsubscribe", "punsubscribe"]
-    pattern: str | None
-    channel: bytes
-    data: int
 
 
 ##
@@ -590,6 +575,25 @@ async def publish(
 ##
 
 
+@dataclass(kw_only=True)
+class Publisher(QueueProcessor[tuple[str, EncodableT]]):
+    """Publish a set of messages to Redis."""
+
+    redis: Redis
+    serializer: Callable[[Any], EncodableT] | None = None
+    timeout: Duration = _PUBLISH_TIMEOUT
+
+    @override
+    async def _process_item(self, item: tuple[str, EncodableT], /) -> None:
+        channel, data = item  # skipif-ci-and-not-linux
+        _ = await publish(  # skipif-ci-and-not-linux
+            self.redis, channel, data, serializer=self.serializer, timeout=self.timeout
+        )
+
+
+##
+
+
 _SUBSCRIBE_TIMEOUT: Duration = SECOND
 _SUBSCRIBE_SLEEP: Duration = 10 * MILLISECOND
 
@@ -669,6 +673,20 @@ async def subscribe_messages(
             await asyncio.sleep(sleep_use)
 
 
+class _RedisMessageSubscribe(TypedDict):
+    type: Literal["subscribe", "psubscribe", "message", "pmessage"]
+    pattern: str | None
+    channel: bytes
+    data: bytes
+
+
+class _RedisMessageUnsubscribe(TypedDict):
+    type: Literal["unsubscribe", "punsubscribe"]
+    pattern: str | None
+    channel: bytes
+    data: int
+
+
 ##
 
 
@@ -728,6 +746,7 @@ _ = _TestRedis
 
 
 __all__ = [
+    "Publisher",
     "RedisHashMapKey",
     "RedisKey",
     "publish",
