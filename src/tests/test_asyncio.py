@@ -121,13 +121,10 @@ class TestAsyncService:
 
             @override
             async def _start(self) -> None:
-                async def coroutine() -> None:
-                    for _ in range(10):
-                        self.counter += 1
-                        await sleep(0.1)
-                    raise CancelledError
-
-                await coroutine()
+                for _ in range(10):
+                    self.counter += 1
+                    await sleep(0.1)
+                raise CancelledError
 
         async with Example() as service:
             ...
