@@ -1,6 +1,15 @@
 from __future__ import annotations
 
-from asyncio import Lock, PriorityQueue, Queue, TaskGroup, run, sleep, timeout
+from asyncio import (
+    CancelledError,
+    Lock,
+    PriorityQueue,
+    Queue,
+    TaskGroup,
+    run,
+    sleep,
+    timeout,
+)
 from dataclasses import dataclass, field
 from itertools import chain
 from re import search
@@ -105,6 +114,24 @@ class TestAsyncService:
                 await sleep(0.1)
         except TimeoutError:
             assert not service.running
+
+    async def test_cancellation(self) -> None:
+        class Example(AsyncService):
+            counter: int = 0
+
+            @override
+            async def _start(self) -> None:
+                async def coroutine() -> None:
+                    for _ in range(10):
+                        self.counter += 1
+                        await sleep(0.1)
+                    raise CancelledError
+
+                await coroutine()
+
+        async with Example() as service:
+            ...
+        assert service.counter == 10
 
     async def test_extra_context_managers(self) -> None:
         @dataclass(kw_only=True)
