@@ -86,7 +86,7 @@ class TestAddListener:
         event = Event(name=name)
         assert event.name() == name
         called = False
-        log: set[tuple[str, type[Exception]]] = set()
+        log: set[tuple[str, type[BaseException]]] = set()
 
         def listener_sync(is_success: bool, /) -> None:  # noqa: FBT001
             if is_success:
@@ -95,7 +95,7 @@ class TestAddListener:
             else:
                 raise ValueError
 
-        def error_sync(event: Event, exception: Exception, /) -> None:
+        def error_sync(event: Event, exception: BaseException, /) -> None:
             nonlocal log
             log.add((event.name(), type(exception)))
 
@@ -107,7 +107,7 @@ class TestAddListener:
             else:
                 raise ValueError
 
-        async def error_async(event: Event, exception: Exception, /) -> None:
+        async def error_async(event: Event, exception: BaseException, /) -> None:
             nonlocal log
             log.add((event.name(), type(exception)))
             await sleep(0.01)
@@ -145,7 +145,7 @@ class TestAddListener:
     ) -> None:
         event = Event()
         called = False
-        log: set[tuple[str, type[Exception]]] = set()
+        log: set[tuple[str, type[BaseException]]] = set()
 
         def listener_sync(is_success: bool, /) -> None:  # noqa: FBT001
             if is_success:
@@ -154,7 +154,7 @@ class TestAddListener:
             else:
                 raise ValueError
 
-        def error_sync(event: Event, exception: Exception, /) -> None:
+        def error_sync(event: Event, exception: BaseException, /) -> None:
             nonlocal log
             log.add((event.name(), type(exception)))
 
@@ -166,7 +166,7 @@ class TestAddListener:
             else:
                 raise ValueError
 
-        async def error_async(event: Event, exception: Exception, /) -> None:
+        async def error_async(event: Event, exception: BaseException, /) -> None:
             nonlocal log
             log.add((event.name(), type(exception)))
             await sleep(0.01)
@@ -220,7 +220,7 @@ class TestAddListener:
     def test_error(self) -> None:
         event = Event()
         counter = 0
-        log: set[tuple[str, type[Exception]]] = set()
+        log: set[tuple[str, type[BaseException]]] = set()
 
         def listener(n: int, /) -> None:
             if n >= 0:
@@ -230,7 +230,7 @@ class TestAddListener:
                 msg = "'n' must be non-negative"
                 raise ValueError(msg)
 
-        async def error(event: Event, exception: Exception, /) -> None:
+        async def error(event: Event, exception: BaseException, /) -> None:
             nonlocal log
             log.add((event.name(), type(exception)))
             await sleep(0.01)

@@ -36,16 +36,15 @@ from utilities.functions import (
     get_func_qualname,
 )
 from utilities.iterables import always_iterable, one
-from utilities.rich import (
-    EXPAND_ALL,
-    INDENT_SIZE,
-    MAX_DEPTH,
-    MAX_LENGTH,
-    MAX_STRING,
-    MAX_WIDTH,
-    yield_call_args_repr,
-    yield_mapping_repr,
+from utilities.reprlib import (
+    RICH_EXPAND_ALL,
+    RICH_INDENT_SIZE,
+    RICH_MAX_DEPTH,
+    RICH_MAX_LENGTH,
+    RICH_MAX_STRING,
+    RICH_MAX_WIDTH,
 )
+from utilities.rich import yield_call_args_repr, yield_mapping_repr
 from utilities.types import TBaseException, TCallable
 from utilities.version import get_version
 from utilities.whenever import serialize_zoned_datetime
@@ -78,11 +77,23 @@ class RichTracebackFormatter(Formatter):
         *,
         defaults: StrMapping | None = None,
         version: MaybeCallableVersionLike | None = None,
+        max_width: int = RICH_MAX_WIDTH,
+        indent_size: int = RICH_INDENT_SIZE,
+        max_length: int | None = RICH_MAX_LENGTH,
+        max_string: int | None = RICH_MAX_STRING,
+        max_depth: int | None = RICH_MAX_DEPTH,
+        expand_all: bool = RICH_EXPAND_ALL,
         detail: bool = False,
         post: Callable[[str], str] | None = None,
     ) -> None:
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
         self._version = version
+        self._max_width = max_width
+        self._indent_size = indent_size
+        self._max_length = max_length
+        self._max_string = max_string
+        self._max_depth = max_depth
+        self._expand_all = expand_all
         self._detail = detail
         self._post = post
 
@@ -93,7 +104,16 @@ class RichTracebackFormatter(Formatter):
             return f"ERROR: {record.exc_info=}"
         _, exc_value, _ = record.exc_info
         exc_value = ensure_not_none(exc_value, desc="exc_value")
-        error = get_rich_traceback(exc_value, version=self._version)
+        error = get_rich_traceback(
+            exc_value,
+            version=self._version,
+            max_width=self._max_width,
+            indent_size=self._indent_size,
+            max_length=self._max_length,
+            max_string=self._max_string,
+            max_depth=self._max_depth,
+            expand_all=self._expand_all,
+        )
         match error:
             case ExcChainTB() | ExcGroupTB() | ExcTB():
                 text = error.format(header=True, detail=self._detail)
@@ -117,6 +137,12 @@ class RichTracebackFormatter(Formatter):
         validate: bool = True,
         defaults: StrMapping | None = None,
         version: MaybeCallableVersionLike | None = None,
+        max_width: int = RICH_MAX_WIDTH,
+        indent_size: int = RICH_INDENT_SIZE,
+        max_length: int | None = RICH_MAX_LENGTH,
+        max_string: int | None = RICH_MAX_STRING,
+        max_depth: int | None = RICH_MAX_DEPTH,
+        expand_all: bool = RICH_EXPAND_ALL,
         detail: bool = False,
         post: Callable[[str], str] | None = None,
     ) -> Self:
@@ -128,6 +154,12 @@ class RichTracebackFormatter(Formatter):
             validate,
             defaults=defaults,
             version=version,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
             detail=detail,
             post=post,
         )
@@ -221,6 +253,12 @@ class ExcChainTB(Generic[TBaseException]):
         ExcGroupTB[TBaseException] | ExcTB[TBaseException] | TBaseException
     ] = field(default_factory=list)
     version: MaybeCallableVersionLike | None = field(default=None, repr=False)
+    max_width: int = RICH_MAX_WIDTH
+    indent_size: int = RICH_INDENT_SIZE
+    max_length: int | None = RICH_MAX_LENGTH
+    max_string: int | None = RICH_MAX_STRING
+    max_depth: int | None = RICH_MAX_DEPTH
+    expand_all: bool = RICH_EXPAND_ALL
 
     def __getitem__(
         self, i: int, /
@@ -239,18 +277,7 @@ class ExcChainTB(Generic[TBaseException]):
     def __repr__(self) -> str:
         return self.format(header=True, detail=True)
 
-    def format(
-        self,
-        *,
-        header: bool = False,
-        detail: bool = False,
-        max_width: int = MAX_WIDTH,
-        indent_size: int = INDENT_SIZE,
-        max_length: int | None = MAX_LENGTH,
-        max_string: int | None = MAX_STRING,
-        max_depth: int | None = MAX_DEPTH,
-        expand_all: bool = EXPAND_ALL,
-    ) -> str:
+    def format(self, *, header: bool = False, detail: bool = False) -> str:
         """Format the traceback."""
         lines: list[str] = []
         if header:  # pragma: no cover
@@ -260,19 +287,7 @@ class ExcChainTB(Generic[TBaseException]):
             lines.append(f"Exception chain {i}/{total}:")
             match errors:
                 case ExcGroupTB() | ExcTB():
-                    lines.append(
-                        errors.format(
-                            header=False,
-                            detail=detail,
-                            max_width=max_width,
-                            indent_size=indent_size,
-                            max_length=max_length,
-                            max_string=max_string,
-                            max_depth=max_depth,
-                            expand_all=expand_all,
-                            depth=1,
-                        )
-                    )
+                    lines.append(errors.format(header=False, detail=detail, depth=1))
                 case BaseException():  # pragma: no cover
                     lines.append(_format_exception(errors, depth=1))
                 case _ as never:
@@ -290,23 +305,19 @@ class ExcGroupTB(Generic[TBaseException]):
         ExcGroupTB[TBaseException] | ExcTB[TBaseException] | TBaseException
     ] = field(default_factory=list)
     version: MaybeCallableVersionLike | None = field(default=None, repr=False)
+    max_width: int = RICH_MAX_WIDTH
+    indent_size: int = RICH_INDENT_SIZE
+    max_length: int | None = RICH_MAX_LENGTH
+    max_string: int | None = RICH_MAX_STRING
+    max_depth: int | None = RICH_MAX_DEPTH
+    expand_all: bool = RICH_EXPAND_ALL
 
     @override
     def __repr__(self) -> str:
         return self.format(header=True, detail=True)  # skipif-ci
 
     def format(
-        self,
-        *,
-        header: bool = False,
-        detail: bool = False,
-        max_width: int = MAX_WIDTH,
-        indent_size: int = INDENT_SIZE,
-        max_length: int | None = MAX_LENGTH,
-        max_string: int | None = MAX_STRING,
-        max_depth: int | None = MAX_DEPTH,
-        expand_all: bool = EXPAND_ALL,
-        depth: int = 0,
+        self, *, header: bool = False, detail: bool = False, depth: int = 0
     ) -> str:
         """Format the traceback."""
         lines: list[str] = []  # skipif-ci
@@ -326,19 +337,7 @@ class ExcGroupTB(Generic[TBaseException]):
             lines.append(indent(f"Exception group error {i}/{total}:", _INDENT))
             match errors:
                 case ExcGroupTB() | ExcTB():  # pragma: no cover
-                    lines.append(
-                        errors.format(
-                            header=False,
-                            detail=detail,
-                            max_width=max_width,
-                            indent_size=indent_size,
-                            max_length=max_length,
-                            max_string=max_string,
-                            max_depth=max_depth,
-                            expand_all=expand_all,
-                            depth=2,
-                        )
-                    )
+                    lines.append(errors.format(header=False, detail=detail, depth=2))
                 case BaseException():  # pragma: no cover
                     lines.append(_format_exception(errors, depth=2))
                 case _ as never:
@@ -354,6 +353,12 @@ class ExcTB(Generic[TBaseException]):
     frames: list[_Frame] = field(default_factory=list)
     error: TBaseException
     version: MaybeCallableVersionLike | None = field(default=None, repr=False)
+    max_width: int = RICH_MAX_WIDTH
+    indent_size: int = RICH_INDENT_SIZE
+    max_length: int | None = RICH_MAX_LENGTH
+    max_string: int | None = RICH_MAX_STRING
+    max_depth: int | None = RICH_MAX_DEPTH
+    expand_all: bool = RICH_EXPAND_ALL
 
     def __getitem__(self, i: int, /) -> _Frame:
         return self.frames[i]
@@ -369,17 +374,7 @@ class ExcTB(Generic[TBaseException]):
         return self.format(header=True, detail=True)
 
     def format(
-        self,
-        *,
-        header: bool = False,
-        detail: bool = False,
-        max_width: int = MAX_WIDTH,
-        indent_size: int = INDENT_SIZE,
-        max_length: int | None = MAX_LENGTH,
-        max_string: int | None = MAX_STRING,
-        max_depth: int | None = MAX_DEPTH,
-        expand_all: bool = EXPAND_ALL,
-        depth: int = 0,
+        self, *, header: bool = False, detail: bool = False, depth: int = 0
     ) -> str:
         """Format the traceback."""
         total = len(self)
@@ -394,12 +389,6 @@ class ExcTB(Generic[TBaseException]):
                     total=total,
                     detail=detail,
                     error=None if is_head else self.error,
-                    max_width=max_width,
-                    indent_size=indent_size,
-                    max_length=max_length,
-                    max_string=max_string,
-                    max_depth=max_depth,
-                    expand_all=expand_all,
                 )
             )
             if detail and is_head:
@@ -416,6 +405,12 @@ class _Frame:
     args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
     locals: dict[str, Any] = field(default_factory=dict)
+    max_width: int = RICH_MAX_WIDTH
+    indent_size: int = RICH_INDENT_SIZE
+    max_length: int | None = RICH_MAX_LENGTH
+    max_string: int | None = RICH_MAX_STRING
+    max_depth: int | None = RICH_MAX_DEPTH
+    expand_all: bool = RICH_EXPAND_ALL
 
     @override
     def __repr__(self) -> str:
@@ -429,12 +424,6 @@ class _Frame:
         detail: bool = False,
         error: BaseException | None = None,
         depth: int = 0,
-        max_width: int = MAX_WIDTH,
-        indent_size: int = INDENT_SIZE,
-        max_length: int | None = MAX_LENGTH,
-        max_string: int | None = MAX_STRING,
-        max_depth: int | None = MAX_DEPTH,
-        expand_all: bool = EXPAND_ALL,
     ) -> str:
         """Format the traceback."""
         lines: list[str] = [f"Frame {index + 1}/{total}: {self.name} ({self.module})"]
@@ -444,12 +433,12 @@ class _Frame:
                 indent(line, 2 * _INDENT)
                 for line in yield_call_args_repr(
                     *self.args,
-                    _max_width=max_width,
-                    _indent_size=indent_size,
-                    _max_length=max_length,
-                    _max_string=max_string,
-                    _max_depth=max_depth,
-                    _expand_all=expand_all,
+                    _max_width=self.max_width,
+                    _indent_size=self.indent_size,
+                    _max_length=self.max_length,
+                    _max_string=self.max_string,
+                    _max_depth=self.max_depth,
+                    _expand_all=self.expand_all,
                     **self.kwargs,
                 )
             )
@@ -457,12 +446,12 @@ class _Frame:
             lines.extend(
                 indent(line, 2 * _INDENT)
                 for line in yield_mapping_repr(
-                    _max_width=max_width,
-                    _indent_size=indent_size,
-                    _max_length=max_length,
-                    _max_string=max_string,
-                    _max_depth=max_depth,
-                    _expand_all=expand_all,
+                    _max_width=self.max_width,
+                    _indent_size=self.indent_size,
+                    _max_length=self.max_length,
+                    _max_string=self.max_string,
+                    _max_depth=self.max_depth,
+                    _expand_all=self.expand_all,
                     **self.locals,
                 )
             )
@@ -479,7 +468,16 @@ class _Frame:
 
 
 def get_rich_traceback(
-    error: TBaseException, /, *, version: MaybeCallableVersionLike | None = None
+    error: TBaseException,
+    /,
+    *,
+    version: MaybeCallableVersionLike | None = None,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
 ) -> (
     ExcChainTB[TBaseException]
     | ExcGroupTB[TBaseException]
@@ -492,15 +490,39 @@ def get_rich_traceback(
             raise ImpossibleCaseError(case=[f"{error}"])
         case [err]:
             err_recast = cast("TBaseException", err)
-            return _get_rich_traceback_non_chain(err_recast, version=version)
+            return _get_rich_traceback_non_chain(
+                err_recast,
+                version=version,
+                max_width=max_width,
+                indent_size=indent_size,
+                max_length=max_length,
+                max_string=max_string,
+                max_depth=max_depth,
+                expand_all=expand_all,
+            )
         case errs:
             errs_recast = cast("list[TBaseException]", errs)
             return ExcChainTB(
                 errors=[
-                    _get_rich_traceback_non_chain(e, version=version)
+                    _get_rich_traceback_non_chain(
+                        e,
+                        version=version,
+                        max_width=max_width,
+                        indent_size=indent_size,
+                        max_length=max_length,
+                        max_string=max_string,
+                        max_depth=max_depth,
+                        expand_all=expand_all,
+                    )
                     for e in errs_recast
                 ],
                 version=version,
+                max_width=max_width,
+                indent_size=indent_size,
+                max_length=max_length,
+                max_string=max_string,
+                max_depth=max_depth,
+                expand_all=expand_all,
             )
 
 
@@ -509,26 +531,75 @@ def _get_rich_traceback_non_chain(
     /,
     *,
     version: MaybeCallableVersionLike | None = None,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
 ) -> ExcGroupTB[TBaseException] | ExcTB[TBaseException] | TBaseException:
     """Get a rich traceback, for a non-chained error."""
     match error:
         case ExceptionGroup() as exc_group:  # skipif-ci
-            exc_group_or_exc_tb = _get_rich_traceback_base_one(exc_group)
+            exc_group_or_exc_tb = _get_rich_traceback_base_one(
+                exc_group,
+                max_width=max_width,
+                indent_size=indent_size,
+                max_length=max_length,
+                max_string=max_string,
+                max_depth=max_depth,
+                expand_all=expand_all,
+            )
             errors = [
-                _get_rich_traceback_non_chain(e, version=version)
+                _get_rich_traceback_non_chain(
+                    e,
+                    version=version,
+                    max_width=max_width,
+                    indent_size=indent_size,
+                    max_length=max_length,
+                    max_string=max_string,
+                    max_depth=max_depth,
+                    expand_all=expand_all,
+                )
                 for e in always_iterable(exc_group.exceptions)
             ]
             return ExcGroupTB(
-                exc_group=exc_group_or_exc_tb, errors=errors, version=version
+                exc_group=exc_group_or_exc_tb,
+                errors=errors,
+                version=version,
+                max_width=max_width,
+                indent_size=indent_size,
+                max_length=max_length,
+                max_string=max_string,
+                max_depth=max_depth,
+                expand_all=expand_all,
             )
         case BaseException() as base_exc:
-            return _get_rich_traceback_base_one(base_exc, version=version)
+            return _get_rich_traceback_base_one(
+                base_exc,
+                version=version,
+                max_width=max_width,
+                indent_size=indent_size,
+                max_length=max_length,
+                max_string=max_string,
+                max_depth=max_depth,
+                expand_all=expand_all,
+            )
         case _ as never:
             assert_never(never)
 
 
 def _get_rich_traceback_base_one(
-    error: TBaseException, /, *, version: MaybeCallableVersionLike | None = None
+    error: TBaseException,
+    /,
+    *,
+    version: MaybeCallableVersionLike | None = None,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
 ) -> ExcTB[TBaseException] | TBaseException:
     """Get a rich traceback, for a single exception."""
     if isinstance(error, _HasExceptionPath):
@@ -541,10 +612,26 @@ def _get_rich_traceback_base_one(
                 args=f.extra.args,
                 kwargs=f.extra.kwargs,
                 locals=f.locals,
+                max_width=max_width,
+                indent_size=indent_size,
+                max_length=max_length,
+                max_string=max_string,
+                max_depth=max_depth,
+                expand_all=expand_all,
             )
             for f in error.exc_tb.frames
         ]
-        return ExcTB(frames=frames, error=error, version=version)
+        return ExcTB(
+            frames=frames,
+            error=error,
+            version=version,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
+        )
     return error
 
 
