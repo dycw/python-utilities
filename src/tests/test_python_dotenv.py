@@ -303,7 +303,10 @@ class TestLoadSettings:
 
         if value is None:
             if data.draw(booleans()):
-                value_use = data.draw(sampled_from(["", "none", "None", "NONE"]))
+                str_ = str(None)
+                value_use = data.draw(
+                    sampled_from(["", str_, str_.lower(), str_.upper()])
+                )
                 line = f"key = {value_use}"
             else:
                 line = ""
