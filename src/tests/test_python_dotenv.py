@@ -17,7 +17,7 @@ from hypothesis.strategies import (
     none,
     sampled_from,
 )
-from pytest import mark, raises
+from pytest import raises
 
 from utilities.errors import ImpossibleCaseError
 from utilities.hypothesis import (
@@ -298,7 +298,6 @@ class TestLoadSettings:
 
     @given(data=data(), root=git_repos(), value=integers() | none())
     @settings_with_reduced_examples()
-    @mark.only
     def test_nullable_int_value(
         self, *, data: DataObject, root: Path, value: int | None
     ) -> None:
@@ -323,7 +322,6 @@ class TestLoadSettings:
 
     @given(root=git_repos())
     @settings_with_reduced_examples()
-    @mark.only
     def test_nullable_int_value_error(self, *, root: Path) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
