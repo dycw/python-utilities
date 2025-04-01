@@ -14,6 +14,7 @@ from tests.test_traceback_funcs.error_bind import (
     func_error_bind_async,
     func_error_bind_sync,
 )
+from tests.test_traceback_funcs.many import func_many
 from tests.test_traceback_funcs.one import func_one
 from tests.test_traceback_funcs.recursive import func_recursive
 from tests.test_traceback_funcs.task_group_one import func_task_group_one_first
@@ -210,6 +211,24 @@ class TestGetRichTraceback:
         exc_tb = get_rich_traceback(exc_info.value)
         assert isinstance(exc_tb, ExcTB)
         self._assert_decorated(exc_tb, "async")
+
+    def test_func_many(
+        self,
+        *,
+        traceback_func_many_long: Pattern[str],
+        traceback_func_many_short: Pattern[str],
+    ) -> None:
+        with raises(AssertionError) as exc_info:
+            _ = func_many(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_tb_long = get_rich_traceback(exc_info.value)
+        assert isinstance(exc_tb_long, ExcTB)
+        assert traceback_func_many_long.search(repr(exc_tb_long))
+
+        with raises(AssertionError) as exc_info:
+            _ = func_many(1, 2, 3, 4, c=5, d=6, e=7)
+        exc_tb_short = get_rich_traceback(exc_info.value, max_length=5)
+        assert isinstance(exc_tb_short, ExcTB)
+        assert traceback_func_many_short.search(repr(exc_tb_short))
 
     def test_func_recursive(self) -> None:
         with raises(AssertionError) as exc_info:

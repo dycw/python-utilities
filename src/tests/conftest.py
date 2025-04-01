@@ -129,6 +129,100 @@ def traceback_func_one() -> Pattern[str]:
 
 
 @fixture
+def traceback_func_many_long() -> Pattern[str]:
+    return re.compile(
+        strip_and_dedent(
+            r"""
+            Date/time \| .+
+            User      \| .+
+            Host      \| .+
+            Version   \|\s
+
+            Frame 1/1: func_many \(tests.test_traceback_funcs.many\)
+                Inputs:
+                    args\[0\] = 1
+                    args\[1\] = 2
+                    args\[2\] = 3
+                    args\[3\] = 4
+                    kwargs\[c\] = 5
+                    kwargs\[d\] = 6
+                    kwargs\[e\] = 7
+                Locals:
+                    a = 2
+                    b = 4
+                    c = 10
+                    args = \(
+                        6,
+                        8,
+                        0,
+                        2,
+                        4,
+                        6,
+                        8,
+                        10,
+                        12,
+                        14,
+                        16,
+                        18,
+                        20,
+                        22,
+                        24,
+                        26,
+                        28,
+                        30,
+                        32,
+                        34,
+                        ... \+82
+                    \)
+                    kwargs = {'d': 12, 'e': 14}
+                    result = 9956
+                Line 16:
+                    assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"
+                Raised:
+                    builtins\.AssertionError\(Result \(9956\) must be divisible by 10\)
+            """
+        ),
+        flags=MULTILINE,
+    )
+
+
+@fixture
+def traceback_func_many_short() -> Pattern[str]:
+    return re.compile(
+        strip_and_dedent(
+            r"""
+            Date/time \| .+
+            User      \| .+
+            Host      \| .+
+            Version   \|\s
+
+            Frame 1/1: func_many \(tests.test_traceback_funcs.many\)
+                Inputs:
+                    args\[0\] = 1
+                    args\[1\] = 2
+                    args\[2\] = 3
+                    args\[3\] = 4
+                    kwargs\[c\] = 5
+                    kwargs\[d\] = 6
+                    kwargs\[e\] = 7
+                Locals:
+                    a = 2
+                    b = 4
+                    c = 10
+                    args = \(6, 8, 0, 2, 4, ... \+97\)
+                    kwargs = {'d': 12, 'e': 14}
+                    result = 9956
+                Line 16:
+                    assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"
+                Raised:
+                    builtins\.AssertionError\(Result \(9956\) must be divisible by 10\)
+            """
+        ),
+        flags=MULTILINE,
+    )
+
+
+@fixture
 def traceback_func_task_group_one() -> Pattern[str]:
     return re.compile(
         strip_and_dedent(
