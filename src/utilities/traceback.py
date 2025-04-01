@@ -36,16 +36,15 @@ from utilities.functions import (
     get_func_qualname,
 )
 from utilities.iterables import always_iterable, one
-from utilities.rich import (
-    EXPAND_ALL,
-    INDENT_SIZE,
-    MAX_DEPTH,
-    MAX_LENGTH,
-    MAX_STRING,
-    MAX_WIDTH,
-    yield_call_args_repr,
-    yield_mapping_repr,
+from utilities.reprlib import (
+    RICH_EXPAND_ALL,
+    RICH_INDENT_SIZE,
+    RICH_MAX_DEPTH,
+    RICH_MAX_LENGTH,
+    RICH_MAX_STRING,
+    RICH_MAX_WIDTH,
 )
+from utilities.rich import yield_call_args_repr, yield_mapping_repr
 from utilities.types import TBaseException, TCallable
 from utilities.version import get_version
 from utilities.whenever import serialize_zoned_datetime
@@ -78,12 +77,12 @@ class RichTracebackFormatter(Formatter):
         *,
         defaults: StrMapping | None = None,
         version: MaybeCallableVersionLike | None = None,
-        max_width: int = MAX_WIDTH,
-        indent_size: int = INDENT_SIZE,
-        max_length: int | None = MAX_LENGTH,
-        max_string: int | None = MAX_STRING,
-        max_depth: int | None = MAX_DEPTH,
-        expand_all: bool = EXPAND_ALL,
+        max_width: int = RICH_MAX_WIDTH,
+        indent_size: int = RICH_INDENT_SIZE,
+        max_length: int | None = RICH_MAX_LENGTH,
+        max_string: int | None = RICH_MAX_STRING,
+        max_depth: int | None = RICH_MAX_DEPTH,
+        expand_all: bool = RICH_EXPAND_ALL,
         detail: bool = False,
         post: Callable[[str], str] | None = None,
     ) -> None:
@@ -138,12 +137,12 @@ class RichTracebackFormatter(Formatter):
         validate: bool = True,
         defaults: StrMapping | None = None,
         version: MaybeCallableVersionLike | None = None,
-        max_width: int = MAX_WIDTH,
-        indent_size: int = INDENT_SIZE,
-        max_length: int | None = MAX_LENGTH,
-        max_string: int | None = MAX_STRING,
-        max_depth: int | None = MAX_DEPTH,
-        expand_all: bool = EXPAND_ALL,
+        max_width: int = RICH_MAX_WIDTH,
+        indent_size: int = RICH_INDENT_SIZE,
+        max_length: int | None = RICH_MAX_LENGTH,
+        max_string: int | None = RICH_MAX_STRING,
+        max_depth: int | None = RICH_MAX_DEPTH,
+        expand_all: bool = RICH_EXPAND_ALL,
         detail: bool = False,
         post: Callable[[str], str] | None = None,
     ) -> Self:
@@ -254,12 +253,12 @@ class ExcChainTB(Generic[TBaseException]):
         ExcGroupTB[TBaseException] | ExcTB[TBaseException] | TBaseException
     ] = field(default_factory=list)
     version: MaybeCallableVersionLike | None = field(default=None, repr=False)
-    max_width: int = MAX_WIDTH
-    indent_size: int = INDENT_SIZE
-    max_length: int | None = MAX_LENGTH
-    max_string: int | None = MAX_STRING
-    max_depth: int | None = MAX_DEPTH
-    expand_all: bool = EXPAND_ALL
+    max_width: int = RICH_MAX_WIDTH
+    indent_size: int = RICH_INDENT_SIZE
+    max_length: int | None = RICH_MAX_LENGTH
+    max_string: int | None = RICH_MAX_STRING
+    max_depth: int | None = RICH_MAX_DEPTH
+    expand_all: bool = RICH_EXPAND_ALL
 
     def __getitem__(
         self, i: int, /
@@ -306,12 +305,12 @@ class ExcGroupTB(Generic[TBaseException]):
         ExcGroupTB[TBaseException] | ExcTB[TBaseException] | TBaseException
     ] = field(default_factory=list)
     version: MaybeCallableVersionLike | None = field(default=None, repr=False)
-    max_width: int = MAX_WIDTH
-    indent_size: int = INDENT_SIZE
-    max_length: int | None = MAX_LENGTH
-    max_string: int | None = MAX_STRING
-    max_depth: int | None = MAX_DEPTH
-    expand_all: bool = EXPAND_ALL
+    max_width: int = RICH_MAX_WIDTH
+    indent_size: int = RICH_INDENT_SIZE
+    max_length: int | None = RICH_MAX_LENGTH
+    max_string: int | None = RICH_MAX_STRING
+    max_depth: int | None = RICH_MAX_DEPTH
+    expand_all: bool = RICH_EXPAND_ALL
 
     @override
     def __repr__(self) -> str:
@@ -354,12 +353,12 @@ class ExcTB(Generic[TBaseException]):
     frames: list[_Frame] = field(default_factory=list)
     error: TBaseException
     version: MaybeCallableVersionLike | None = field(default=None, repr=False)
-    max_width: int = MAX_WIDTH
-    indent_size: int = INDENT_SIZE
-    max_length: int | None = MAX_LENGTH
-    max_string: int | None = MAX_STRING
-    max_depth: int | None = MAX_DEPTH
-    expand_all: bool = EXPAND_ALL
+    max_width: int = RICH_MAX_WIDTH
+    indent_size: int = RICH_INDENT_SIZE
+    max_length: int | None = RICH_MAX_LENGTH
+    max_string: int | None = RICH_MAX_STRING
+    max_depth: int | None = RICH_MAX_DEPTH
+    expand_all: bool = RICH_EXPAND_ALL
 
     def __getitem__(self, i: int, /) -> _Frame:
         return self.frames[i]
@@ -406,12 +405,12 @@ class _Frame:
     args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
     locals: dict[str, Any] = field(default_factory=dict)
-    max_width: int = MAX_WIDTH
-    indent_size: int = INDENT_SIZE
-    max_length: int | None = MAX_LENGTH
-    max_string: int | None = MAX_STRING
-    max_depth: int | None = MAX_DEPTH
-    expand_all: bool = EXPAND_ALL
+    max_width: int = RICH_MAX_WIDTH
+    indent_size: int = RICH_INDENT_SIZE
+    max_length: int | None = RICH_MAX_LENGTH
+    max_string: int | None = RICH_MAX_STRING
+    max_depth: int | None = RICH_MAX_DEPTH
+    expand_all: bool = RICH_EXPAND_ALL
 
     @override
     def __repr__(self) -> str:
@@ -473,12 +472,12 @@ def get_rich_traceback(
     /,
     *,
     version: MaybeCallableVersionLike | None = None,
-    max_width: int = MAX_WIDTH,
-    indent_size: int = INDENT_SIZE,
-    max_length: int | None = MAX_LENGTH,
-    max_string: int | None = MAX_STRING,
-    max_depth: int | None = MAX_DEPTH,
-    expand_all: bool = EXPAND_ALL,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
 ) -> (
     ExcChainTB[TBaseException]
     | ExcGroupTB[TBaseException]
@@ -532,12 +531,12 @@ def _get_rich_traceback_non_chain(
     /,
     *,
     version: MaybeCallableVersionLike | None = None,
-    max_width: int = MAX_WIDTH,
-    indent_size: int = INDENT_SIZE,
-    max_length: int | None = MAX_LENGTH,
-    max_string: int | None = MAX_STRING,
-    max_depth: int | None = MAX_DEPTH,
-    expand_all: bool = EXPAND_ALL,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
 ) -> ExcGroupTB[TBaseException] | ExcTB[TBaseException] | TBaseException:
     """Get a rich traceback, for a non-chained error."""
     match error:
@@ -595,12 +594,12 @@ def _get_rich_traceback_base_one(
     /,
     *,
     version: MaybeCallableVersionLike | None = None,
-    max_width: int = MAX_WIDTH,
-    indent_size: int = INDENT_SIZE,
-    max_length: int | None = MAX_LENGTH,
-    max_string: int | None = MAX_STRING,
-    max_depth: int | None = MAX_DEPTH,
-    expand_all: bool = EXPAND_ALL,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
 ) -> ExcTB[TBaseException] | TBaseException:
     """Get a rich traceback, for a single exception."""
     if isinstance(error, _HasExceptionPath):
