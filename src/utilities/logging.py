@@ -648,7 +648,16 @@ def setup_logging(
     )
     add_filters(standalone_file_handler, lambda x: x.exc_info is not None)
     standalone_file_handler.setFormatter(
-        RichTracebackFormatter(version=formatter_version, detail=True)
+        RichTracebackFormatter(
+            version=formatter_version,
+            max_width=formatter_max_width,
+            indent_size=formatter_indent_size,
+            max_length=formatter_max_length,
+            max_string=formatter_max_string,
+            max_depth=formatter_max_depth,
+            expand_all=formatter_expand_all,
+            detail=True,
+        )
     )
     logger_use.addHandler(standalone_file_handler)  # skipif-ci-and-windows
 
