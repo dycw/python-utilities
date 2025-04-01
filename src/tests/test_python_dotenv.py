@@ -120,13 +120,9 @@ class TestLoadSettings:
         class Settings:
             key: bool
 
+        str_ = str(value)
         value_use = data.draw(
-            sampled_from([
-                int(value),
-                str(value),
-                str(value).lower(),
-                str(value).upper(),
-            ])
+            sampled_from([int(value), str_, str_.lower(), str_.upper()])
         )
         with root.joinpath(".env").open(mode="w") as fh:
             _ = fh.write(f"key = {value_use}\n")
