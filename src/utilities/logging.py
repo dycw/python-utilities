@@ -52,13 +52,13 @@ from utilities.errors import ImpossibleCaseError
 from utilities.git import get_repo_root
 from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.pathlib import ensure_suffix, resolve_path
-from utilities.rich import (
-    EXPAND_ALL,
-    INDENT_SIZE,
-    MAX_DEPTH,
-    MAX_LENGTH,
-    MAX_STRING,
-    MAX_WIDTH,
+from utilities.reprlib import (
+    RICH_EXPAND_ALL,
+    RICH_INDENT_SIZE,
+    RICH_MAX_DEPTH,
+    RICH_MAX_LENGTH,
+    RICH_MAX_STRING,
+    RICH_MAX_WIDTH,
 )
 from utilities.sentinel import Sentinel, sentinel
 from utilities.traceback import RichTracebackFormatter
@@ -535,12 +535,12 @@ def setup_logging(
     files_fmt: str = "{_zoned_datetime_str} | {name}:{funcName}:{lineno} | {levelname:8} | {message}",
     filters: MaybeIterable[_FilterType] | None = None,
     formatter_version: MaybeCallableVersionLike | None = None,
-    formatter_max_width: int = MAX_WIDTH,
-    formatter_indent_size: int = INDENT_SIZE,
-    formatter_max_length: int | None = MAX_LENGTH,
-    formatter_max_string: int | None = MAX_STRING,
-    formatter_max_depth: int | None = MAX_DEPTH,
-    formatter_expand_all: bool = EXPAND_ALL,
+    formatter_max_width: int = RICH_MAX_WIDTH,
+    formatter_indent_size: int = RICH_INDENT_SIZE,
+    formatter_max_length: int | None = RICH_MAX_LENGTH,
+    formatter_max_string: int | None = RICH_MAX_STRING,
+    formatter_max_depth: int | None = RICH_MAX_DEPTH,
+    formatter_expand_all: bool = RICH_EXPAND_ALL,
     extra: Callable[[LoggerOrName | None], None] | None = None,
 ) -> None:
     """Set up logger."""
