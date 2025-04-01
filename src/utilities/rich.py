@@ -16,6 +16,7 @@ from utilities.reprlib import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
+
 MAX_WIDTH: int = RICH_MAX_WIDTH
 INDENT_SIZE: int = RICH_INDENT_SIZE
 MAX_LENGTH: int | None = RICH_MAX_LENGTH
