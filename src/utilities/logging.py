@@ -52,6 +52,14 @@ from utilities.errors import ImpossibleCaseError
 from utilities.git import get_repo_root
 from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.pathlib import ensure_suffix, resolve_path
+from utilities.rich import (
+    EXPAND_ALL,
+    INDENT_SIZE,
+    MAX_DEPTH,
+    MAX_LENGTH,
+    MAX_STRING,
+    MAX_WIDTH,
+)
 from utilities.sentinel import Sentinel, sentinel
 from utilities.traceback import RichTracebackFormatter
 
@@ -526,7 +534,13 @@ def setup_logging(
     files_filters: Iterable[_FilterType] | None = None,
     files_fmt: str = "{_zoned_datetime_str} | {name}:{funcName}:{lineno} | {levelname:8} | {message}",
     filters: MaybeIterable[_FilterType] | None = None,
-    version: MaybeCallableVersionLike | None = None,
+    formatter_version: MaybeCallableVersionLike | None = None,
+    formatter_max_width: int = MAX_WIDTH,
+    formatter_indent_size: int = INDENT_SIZE,
+    formatter_max_length: int | None = MAX_LENGTH,
+    formatter_max_string: int | None = MAX_STRING,
+    formatter_max_depth: int | None = MAX_DEPTH,
+    formatter_expand_all: bool = EXPAND_ALL,
     extra: Callable[[LoggerOrName | None], None] | None = None,
 ) -> None:
     """Set up logger."""
@@ -591,7 +605,16 @@ def setup_logging(
         add_filters(console_high_handler, *console_filters)
         add_filters(console_high_handler, *filters)
         _ = RichTracebackFormatter.create_and_set(
-            console_high_handler, version=version, detail=True, post=_ansi_wrap_red
+            console_high_handler,
+            version=formatter_version,
+            max_width=formatter_max_width,
+            indent_size=formatter_indent_size,
+            max_length=formatter_max_length,
+            max_string=formatter_max_string,
+            max_depth=formatter_max_depth,
+            expand_all=formatter_expand_all,
+            detail=True,
+            post=_ansi_wrap_red,
         )
         console_high_handler.setLevel(
             max(get_logging_level_number(console_level), ERROR)
@@ -625,7 +648,7 @@ def setup_logging(
     )
     add_filters(standalone_file_handler, lambda x: x.exc_info is not None)
     standalone_file_handler.setFormatter(
-        RichTracebackFormatter(version=version, detail=True)
+        RichTracebackFormatter(version=formatter_version, detail=True)
     )
     logger_use.addHandler(standalone_file_handler)  # skipif-ci-and-windows
 
