@@ -24,6 +24,9 @@ MAX_DEPTH: int | None = RICH_MAX_DEPTH
 EXPAND_ALL: bool = RICH_EXPAND_ALL
 
 
+##
+
+
 def yield_call_args_repr(
     *args: Any,
     _max_width: int = MAX_WIDTH,
@@ -47,6 +50,9 @@ def yield_call_args_repr(
         _expand_all=_expand_all,
         **mapping,
     )
+
+
+##
 
 
 def yield_mapping_repr(
