@@ -120,7 +120,7 @@ class TestLoadSettings:
         class Settings:
             key: bool
 
-        value_write = data.draw(
+        value_use = data.draw(
             sampled_from([
                 int(value),
                 str(value),
@@ -129,7 +129,7 @@ class TestLoadSettings:
             ])
         )
         with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write(f"key = {value_write}\n")
+            _ = fh.write(f"key = {value_use}\n")
 
         settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)
