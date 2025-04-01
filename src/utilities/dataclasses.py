@@ -201,14 +201,20 @@ def _mapping_to_dataclass_one(
     try:
         key = one_str(mapping, field.name, case_sensitive=case_sensitive)
     except _OneStrEmptyError:
-        raise _MappingToDataclassEmptyError(
-            mapping=mapping, field=field.name, case_sensitive=case_sensitive
-        ) from None
+        if not isinstance(field.default, Sentinel):
+            value = field.default
+        elif not isinstance(field.default_factory, Sentinel):
+            value = field.default_factory()
+        else:
+            raise _MappingToDataclassEmptyError(
+                mapping=mapping, field=field.name, case_sensitive=case_sensitive
+            ) from None
     except _OneStrNonUniqueError as error:
         raise _MappingToDataclassCaseInsensitiveNonUniqueError(
             mapping=mapping, field=field.name, first=error.first, second=error.second
         ) from None
-    value = mapping[key]
+    else:
+        value = mapping[key]
     if post is not None:
         value = post(field, value)
     return value

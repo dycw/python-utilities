@@ -8,7 +8,15 @@ from types import NoneType
 from typing import Any, Literal, cast, override
 
 from hypothesis import given
-from hypothesis.strategies import booleans, integers, lists, sampled_from
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    integers,
+    lists,
+    none,
+    sampled_from,
+)
 from polars import DataFrame
 from pytest import raises
 
@@ -19,6 +27,7 @@ from tests.test_typing_funcs.no_future import (
 from tests.test_typing_funcs.with_future import (
     DataClassFutureInt,
     DataClassFutureIntDefault,
+    DataClassFutureIntNullable,
     DataClassFutureListInts,
     DataClassFutureListIntsDefault,
     DataClassFutureLiteral,
@@ -27,6 +36,8 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureNestedOuterFirstOuter,
     DataClassFutureNone,
     DataClassFutureNoneDefault,
+    DataClassFuturePath,
+    DataClassFutureStr,
     DataClassFutureTypeLiteral,
     DataClassFutureTypeLiteralNullable,
 )
@@ -220,86 +231,86 @@ class TestDataclassToDictAndDataclassRepr:
 
 
 class TestMappingToDataclass:
-    @given(value=integers())
-    def test_case_sensitive(self, *, value: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
-
-        obj = mapping_to_dataclass(Example, {"x": value})
-        expected = Example(x=value)
+    @given(int_=integers())
+    def test_int_case_sensitive(self, *, int_: int) -> None:
+        obj = mapping_to_dataclass(DataClassFutureInt, {"int_": int_})
+        expected = DataClassFutureInt(int_=int_)
         assert obj == expected
 
-    @given(key=sampled_from(["x", "X"]), value=integers())
-    def test_case_insensitive(self, *, key: str, value: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
+    @given(key=sampled_from(["int_", "INT_"]), int_=integers())
+    def test_int_case_insensitive(self, *, key: str, int_: int) -> None:
+        obj = mapping_to_dataclass(
+            DataClassFutureInt, {key: int_}, case_sensitive=False
+        )
+        expected = DataClassFutureInt(int_=int_)
+        assert obj == expected
 
-        obj = mapping_to_dataclass(Example, {key: value}, case_sensitive=False)
-        expected = Example(x=value)
+    @given(data=data(), int_=integers() | none())
+    def test_int_nullable(self, *, data: DataObject, int_: int | None) -> None:
+        if int_ is None:
+            mapping = data.draw(sampled_from([{"int_": int_}, {}]))
+        else:
+            mapping = {"int_": int_}
+        obj = mapping_to_dataclass(DataClassFutureIntNullable, mapping)
+        expected = DataClassFutureIntNullable(int_=int_)
+        assert obj == expected
+
+    @given(data=data(), ints=lists(integers()))
+    def test_list_ints_nullable(self, *, data: DataObject, ints: list[int]) -> None:
+        if len(ints) == 0:
+            mapping = data.draw(sampled_from([{"ints": ints}, {}]))
+        else:
+            mapping = {"ints": ints}
+        obj = mapping_to_dataclass(DataClassFutureListIntsDefault, mapping)
+        expected = DataClassFutureListIntsDefault(ints=ints)
         assert obj == expected
 
     @given(value=paths())
     def test_path(self, *, value: Path) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: Path
-
-        obj = mapping_to_dataclass(Example, {"x": value})
-        expected = Example(x=value)
+        obj = mapping_to_dataclass(DataClassFuturePath, {"path": value})
+        expected = DataClassFuturePath(path=value)
         assert obj == expected
 
     @given(value=text_ascii())
     def test_post(self, *, value: str) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: str
-
-        obj = mapping_to_dataclass(Example, {"x": value}, post=lambda _, x: x.upper())
-        expected = Example(x=value.upper())
+        obj = mapping_to_dataclass(
+            DataClassFutureStr, {"str_": value}, post=lambda _, x: x.upper()
+        )
+        expected = DataClassFutureStr(str_=value.upper())
         assert obj == expected
 
     @given(value=integers())
     def test_error_case_sensitive_empty_error(self, *, value: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
-
         with raises(
-            _MappingToDataclassEmptyError, match=r"Mapping .* does not contain 'x'"
+            _MappingToDataclassEmptyError, match=r"Mapping .* does not contain 'int_'"
         ):
-            _ = mapping_to_dataclass(Example, {"X": value})
+            _ = mapping_to_dataclass(DataClassFutureInt, {"INT_": value})
 
     @given(value=integers())
     def test_error_case_insensitive_empty_error(self, *, value: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
-
         with raises(
             _MappingToDataclassEmptyError,
-            match=r"Mapping .* does not contain 'x' \(modulo case\)",
+            match=r"Mapping .* does not contain 'int_' \(modulo case\)",
         ):
-            _ = mapping_to_dataclass(Example, {"y": value}, case_sensitive=False)
+            _ = mapping_to_dataclass(
+                DataClassFutureInt, {"other": value}, case_sensitive=False
+            )
 
     @given(value1=integers(), value2=integers())
     def test_error_case_insensitive_non_unique_error(
         self, *, value1: int, value2: int
     ) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int
-
         with raises(
             _MappingToDataclassCaseInsensitiveNonUniqueError,
             match=re.compile(
-                r"Mapping .* must contain 'x' exactly once \(modulo case\); got 'x', 'X' and perhaps more",
+                r"Mapping .* must contain 'int_' exactly once \(modulo case\); got 'int_', 'INT_' and perhaps more",
                 flags=DOTALL,
             ),
         ):
             _ = mapping_to_dataclass(
-                Example, {"x": value1, "X": value2}, case_sensitive=False
+                DataClassFutureInt,
+                {"int_": value1, "INT_": value2},
+                case_sensitive=False,
             )
 
 

@@ -19,10 +19,10 @@ from utilities.dataclasses import (
 from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import get_class_name
 from utilities.git import get_repo_root
-from utilities.iterables import MergeStrMappingsError, merge_str_mappings, one_str
+from utilities.iterables import MergeStrMappingsError, merge_str_mappings, one, one_str
 from utilities.pathlib import PWD
 from utilities.reprlib import get_repr
-from utilities.typing import get_args, is_literal_type
+from utilities.typing import get_args, is_literal_type, is_optional_type
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -124,6 +124,15 @@ def _load_settings_post(
             ) from None
     if is_literal_type(type_):
         return one_str(get_args(type_), value, case_sensitive=False)
+    if is_optional_type(type_) and (one(get_args(type_)) is int):
+        if (value is None) or (value == "") or search("none", value, flags=IGNORECASE):
+            return None
+        try:
+            return int(value)
+        except ValueError:
+            raise _LoadSettingsInvalidNullableIntError(
+                path=path, values=values, field=field.name, value=value
+            ) from None
     raise _LoadSettingsTypeError(path=path, field=field.name, type=type_)
 
 
@@ -214,6 +223,17 @@ class _LoadSettingsInvalidIntError(LoadSettingsError):
     @override
     def __str__(self) -> str:
         return f"Field {self.field!r} must contain a valid integer; got {self.value!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _LoadSettingsInvalidNullableIntError(LoadSettingsError):
+    values: StrMapping
+    field: str
+    value: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Field {self.field!r} must contain a valid nullable integer; got {self.value!r}"
 
 
 @dataclass(kw_only=True, slots=True)

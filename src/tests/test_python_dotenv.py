@@ -14,6 +14,7 @@ from hypothesis.strategies import (
     data,
     dates,
     integers,
+    none,
     sampled_from,
 )
 from pytest import raises
@@ -37,6 +38,7 @@ from utilities.python_dotenv import (
     _LoadSettingsInvalidEnumError,
     _LoadSettingsInvalidFloatError,
     _LoadSettingsInvalidIntError,
+    _LoadSettingsInvalidNullableIntError,
     _LoadSettingsInvalidTimeDeltaError,
     _LoadSettingsTypeError,
     load_settings,
@@ -118,16 +120,12 @@ class TestLoadSettings:
         class Settings:
             key: bool
 
-        value_write = data.draw(
-            sampled_from([
-                int(value),
-                str(value),
-                str(value).lower(),
-                str(value).upper(),
-            ])
+        str_ = str(value)
+        value_use = data.draw(
+            sampled_from([int(value), str_, str_.lower(), str_.upper()])
         )
         with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write(f"key = {value_write}\n")
+            _ = fh.write(f"key = {value_use}\n")
 
         settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)
@@ -293,6 +291,49 @@ class TestLoadSettings:
         settings = load_settings(Settings, cwd=root, localns={"Literal": Literal})
         expected = Settings(key=value)
         assert settings == expected
+
+    @given(data=data(), root=git_repos(), value=integers() | none())
+    @settings_with_reduced_examples()
+    def test_nullable_int_value(
+        self, *, data: DataObject, root: Path, value: int | None
+    ) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: int | None = None
+
+        if value is None:
+            if data.draw(booleans()):
+                str_ = str(None)
+                value_use = data.draw(
+                    sampled_from(["", str_, str_.lower(), str_.upper()])
+                )
+                line = f"key = {value_use}"
+            else:
+                line = ""
+        else:
+            line = f"key = {value}"
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"{line}\n")
+
+        settings = load_settings(Settings, cwd=root)
+        expected = Settings(key=value)
+        assert settings == expected
+
+    @given(root=git_repos())
+    @settings_with_reduced_examples()
+    def test_nullable_int_value_error(self, *, root: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: int | None = None
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write("key = '...'\n")
+
+        with raises(
+            _LoadSettingsInvalidNullableIntError,
+            match=r"Field 'key' must contain a valid nullable integer; got '...'",
+        ):
+            _ = load_settings(Settings, cwd=root)
 
     @given(root=git_repos(), value=paths())
     @settings_with_reduced_examples()
