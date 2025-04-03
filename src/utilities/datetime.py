@@ -17,7 +17,7 @@ from typing import (
 )
 
 from utilities.iterables import OneEmptyError, one
-from utilities.math import SafeRoundError, _RoundMode, round_, safe_round
+from utilities.math import SafeRoundError, round_, safe_round
 from utilities.platform import SYSTEM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import (
@@ -899,7 +899,7 @@ def round_datetime(
     timedelta: dt.timedelta,
     /,
     *,
-    mode: _RoundMode = "standard",
+    mode: RoundMode = "standard",
     rel_tol: float | None = None,
     abs_tol: float | None = None,
 ) -> dt.datetime:
