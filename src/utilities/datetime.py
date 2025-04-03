@@ -4,7 +4,7 @@ import datetime as dt
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
 from re import search, sub
-from statistics import StatisticsError, fmean
+from statistics import fmean
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -690,13 +690,18 @@ def mean_datetime(
 ) -> dt.datetime:
     """Compute the mean of a set of datetimes."""
     datetimes = list(datetimes)
-    microseconds = list(map(microseconds_since_epoch, datetimes))
-    try:
-        mean_float = fmean(microseconds, weights=weights)
-    except StatisticsError:
-        raise MeanDateTimeError from None
-    mean_int = round_(mean_float, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
-    return microseconds_since_epoch_to_datetime(mean_int, time_zone=datetimes[0].tzinfo)
+    match len(datetimes):
+        case 0:
+            raise MeanDateTimeError from None
+        case 1:
+            return one(datetimes)
+        case _:
+            microseconds = list(map(microseconds_since_epoch, datetimes))
+            mean_float = fmean(microseconds, weights=weights)
+            mean_int = round_(mean_float, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
+            return microseconds_since_epoch_to_datetime(
+                mean_int, time_zone=datetimes[0].tzinfo
+            )
 
 
 @dataclass(kw_only=True, slots=True)
@@ -719,13 +724,17 @@ def mean_timedelta(
     abs_tol: float | None = None,
 ) -> dt.timedelta:
     """Compute the mean of a set of timedeltas."""
-    microseconds = list(map(timedelta_to_microseconds, timedeltas))
-    try:
-        mean_float = fmean(microseconds, weights=weights)
-    except StatisticsError:
-        raise MeanTimeDeltaError from None
-    mean_int = round_(mean_float, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
-    return microseconds_to_timedelta(mean_int)
+    timedeltas = list(timedeltas)
+    match len(timedeltas):
+        case 0:
+            raise MeanTimeDeltaError from None
+        case 1:
+            return one(timedeltas)
+        case _:
+            microseconds = list(map(timedelta_to_microseconds, timedeltas))
+            mean_float = fmean(microseconds, weights=weights)
+            mean_int = round_(mean_float, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
+            return microseconds_to_timedelta(mean_int)
 
 
 @dataclass(kw_only=True, slots=True)
