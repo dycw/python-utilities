@@ -43,7 +43,6 @@ from utilities.math import (
     _EWMParametersCOMError,
     _EWMParametersHalfLifeError,
     _EWMParametersSpanError,
-    _RoundMode,
     check_integer,
     ewm_parameters,
     is_at_least,
@@ -101,7 +100,7 @@ from utilities.math import (
 )
 
 if TYPE_CHECKING:
-    from utilities.types import Number
+    from utilities.types import Number, RoundMode
 
 
 class TestCheckInteger:
@@ -1055,7 +1054,7 @@ class TestRound:
         ])
     )
     @settings(max_examples=1000)
-    def test_main(self, *, case: tuple[_RoundMode, float, int]) -> None:
+    def test_main(self, *, case: tuple[RoundMode, float, int]) -> None:
         mode, x, expected = case
         result = round_(x, mode=mode)
         assert isinstance(result, int)

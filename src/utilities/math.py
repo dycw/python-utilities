@@ -4,9 +4,12 @@ import re
 from dataclasses import dataclass
 from math import ceil, exp, floor, isclose, isfinite, isinf, isnan, log, log10, modf
 from re import Match, search
-from typing import Literal, assert_never, overload, override
+from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.errors import ImpossibleCaseError
+
+if TYPE_CHECKING:
+    from utilities.types import RoundMode
 
 MIN_FLOAT32, MAX_FLOAT32 = -3.4028234663852886e38, 3.4028234663852886e38
 MIN_FLOAT64, MAX_FLOAT64 = -1.7976931348623157e308, 1.7976931348623157e308
@@ -678,24 +681,11 @@ def order_of_magnitude(x: float, /, *, round_: bool = False) -> float:
 ##
 
 
-type _RoundMode = Literal[
-    "standard",
-    "floor",
-    "ceil",
-    "toward-zero",
-    "away-zero",
-    "standard-tie-floor",
-    "standard-tie-ceil",
-    "standard-tie-toward-zero",
-    "standard-tie-away-zero",
-]
-
-
 def round_(
     x: float,
     /,
     *,
-    mode: _RoundMode = "standard",
+    mode: RoundMode = "standard",
     rel_tol: float | None = None,
     abs_tol: float | None = None,
 ) -> int:
@@ -735,7 +725,7 @@ def round_(
 
 def _round_tie_standard(
     x: float,
-    mode: _RoundMode,
+    mode: RoundMode,
     /,
     *,
     rel_tol: float | None = None,
@@ -744,9 +734,9 @@ def _round_tie_standard(
     """Round a float to an integer using the standard method."""
     frac, _ = modf(x)
     if _is_close(abs(frac), 0.5, rel_tol=rel_tol, abs_tol=abs_tol):
-        mode_use: _RoundMode = mode
+        mode_use: RoundMode = mode
     else:
-        mode_use: _RoundMode = "standard"
+        mode_use: RoundMode = "standard"
     return round_(x, mode=mode_use)
 
 
@@ -810,7 +800,7 @@ def round_to_float(
     y: float,
     /,
     *,
-    mode: _RoundMode = "standard",
+    mode: RoundMode = "standard",
     rel_tol: float | None = None,
     abs_tol: float | None = None,
 ) -> float:

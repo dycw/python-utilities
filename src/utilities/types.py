@@ -7,7 +7,15 @@ from logging import Logger
 from pathlib import Path
 from random import Random
 from types import TracebackType
-from typing import Any, ClassVar, Literal, Protocol, TypeVar, runtime_checkable
+from typing import (
+    Any,
+    ClassVar,
+    Literal,
+    Protocol,
+    TypeVar,
+    overload,
+    runtime_checkable,
+)
 from zoneinfo import ZoneInfo
 
 _T_co = TypeVar("_T_co", covariant=True)
@@ -89,28 +97,107 @@ type LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 type LoggerOrName = Logger | str
 
 
+# math
+type RoundMode = Literal[
+    "standard",
+    "floor",
+    "ceil",
+    "toward-zero",
+    "away-zero",
+    "standard-tie-floor",
+    "standard-tie-ceil",
+    "standard-tie-toward-zero",
+    "standard-tie-away-zero",
+]
+
+
 # operator
 
 
-class SupportsAdd(Protocol[_T_contra, _T_co]):  # from typeshed
+@runtime_checkable
+class SupportsAbs(Protocol[_T_co]):
+    def __abs__(self) -> _T_co: ...  # pragma: no cover
+
+
+TSupportsAbs = TypeVar("TSupportsAbs", bound=SupportsAbs)
+
+
+@runtime_checkable
+class SupportsAdd(Protocol[_T_contra, _T_co]):
     def __add__(self, x: _T_contra, /) -> _T_co: ...  # pragma: no cover
 
 
 TSupportsAdd = TypeVar("TSupportsAdd", bound=SupportsAdd)
 
 
-class SupportsDunderLT(Protocol[_T_contra]):  # from typeshed
-    def __lt__(self, other: _T_contra, /) -> bool: ...  # pragma: no cover
+@runtime_checkable
+class SupportsBytes(Protocol):
+    def __bytes__(self) -> bytes: ...  # pragma: no cover
 
 
-class SupportsDunderGT(Protocol[_T_contra]):  # from typeshed
+TSupportsBytes = TypeVar("TSupportsBytes", bound=SupportsBytes)
+
+
+@runtime_checkable
+class SupportsComplex(Protocol):
+    def __complex__(self) -> complex: ...  # pragma: no cover
+
+
+TSupportsComplex = TypeVar("TSupportsComplex", bound=SupportsComplex)
+
+
+@runtime_checkable
+class SupportsFloat(Protocol):
+    def __float__(self) -> float: ...  # pragma: no cover
+
+
+TSupportsFloat = TypeVar("TSupportsFloat", bound=SupportsFloat)
+
+
+@runtime_checkable
+class SupportsGT(Protocol[_T_contra]):
     def __gt__(self, other: _T_contra, /) -> bool: ...  # pragma: no cover
 
 
-SupportsRichComparison = SupportsDunderLT[Any] | SupportsDunderGT[Any]
+TSupportsGT = TypeVar("TSupportsGT", bound=SupportsGT)
+
+
+@runtime_checkable
+class SupportsIndex(Protocol):
+    def __index__(self) -> int: ...  # pragma: no cover
+
+
+TSupportsIndex = TypeVar("TSupportsIndex", bound=SupportsIndex)
+
+
+@runtime_checkable
+class SupportsInt(Protocol):
+    def __int__(self) -> int: ...  # pragma: no cover
+
+
+TSupportsInt = TypeVar("TSupportsInt", bound=SupportsInt)
+
+
+@runtime_checkable
+class SupportsLT(Protocol[_T_contra]):
+    def __lt__(self, other: _T_contra, /) -> bool: ...  # pragma: no cover
+
+
+TSupportsLT = TypeVar("TSupportsLT", bound=SupportsLT)
+
+
+SupportsRichComparison = SupportsLT[Any] | SupportsGT[Any]
 TSupportsRichComparison = TypeVar(
     "TSupportsRichComparison", bound=SupportsRichComparison
 )
+
+
+@runtime_checkable
+class SupportsRound(Protocol[_T_co]):
+    @overload
+    def __round__(self) -> int: ...
+    @overload
+    def __round__(self, ndigits: int, /) -> _T_co: ...
 
 
 # pathlib
@@ -159,12 +246,20 @@ __all__ = [
     "Parallelism",
     "PathLike",
     "PathLikeOrCallable",
+    "RoundMode",
     "Seed",
     "StrMapping",
+    "SupportsAbs",
     "SupportsAdd",
-    "SupportsDunderGT",
-    "SupportsDunderLT",
+    "SupportsBytes",
+    "SupportsComplex",
+    "SupportsFloat",
+    "SupportsGT",
+    "SupportsInt",
+    "SupportsInt",
+    "SupportsLT",
     "SupportsRichComparison",
+    "SupportsRound",
     "TBaseException",
     "TCallable",
     "TCallable1",
@@ -175,7 +270,14 @@ __all__ = [
     "THashable",
     "THashable1",
     "THashable2",
+    "TSupportsAbs",
     "TSupportsAdd",
+    "TSupportsBytes",
+    "TSupportsComplex",
+    "TSupportsGT",
+    "TSupportsIndex",
+    "TSupportsInt",
+    "TSupportsLT",
     "TSupportsRichComparison",
     "TimeZone",
     "TimeZoneLike",

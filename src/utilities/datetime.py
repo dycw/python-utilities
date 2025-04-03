@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
 from re import search, sub
+from statistics import StatisticsError, fmean
 from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
     Self,
+    SupportsFloat,
     TypeGuard,
     assert_never,
     overload,
@@ -16,7 +18,7 @@ from typing import (
 )
 
 from utilities.iterables import OneEmptyError, one
-from utilities.math import SafeRoundError, _RoundMode, round_, safe_round
+from utilities.math import SafeRoundError, round_, safe_round
 from utilities.platform import SYSTEM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import (
@@ -35,6 +37,7 @@ if TYPE_CHECKING:
         Duration,
         MaybeCallableDate,
         MaybeCallableDateTime,
+        RoundMode,
         TimeZoneLike,
     )
 
@@ -676,6 +679,65 @@ def maybe_sub_pct_y(text: str, /) -> str:
 ##
 
 
+def mean_datetime(
+    datetimes: Iterable[dt.datetime],
+    /,
+    *,
+    weights: Iterable[SupportsFloat] | None = None,
+    mode: RoundMode = "standard",
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+) -> dt.datetime:
+    """Compute the mean of a set of datetimes."""
+    datetimes = list(datetimes)
+    microseconds = list(map(microseconds_since_epoch, datetimes))
+    try:
+        mean_float = fmean(microseconds, weights=weights)
+    except StatisticsError:
+        raise MeanDateTimeError from None
+    mean_int = round_(mean_float, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
+    return microseconds_since_epoch_to_datetime(mean_int, time_zone=datetimes[0].tzinfo)
+
+
+@dataclass(kw_only=True, slots=True)
+class MeanDateTimeError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "Mean requires at least 1 datetime"
+
+
+##
+
+
+def mean_timedelta(
+    timedeltas: Iterable[dt.timedelta],
+    /,
+    *,
+    weights: Iterable[SupportsFloat] | None = None,
+    mode: RoundMode = "standard",
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+) -> dt.timedelta:
+    """Compute the mean of a set of timedeltas."""
+    microseconds = list(map(timedelta_to_microseconds, timedeltas))
+    try:
+        mean_float = fmean(microseconds, weights=weights)
+    except StatisticsError:
+        raise MeanTimeDeltaError from None
+    mean_int = round_(mean_float, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
+    return microseconds_to_timedelta(mean_int)
+
+
+@dataclass(kw_only=True, slots=True)
+class MeanTimeDeltaError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "Mean requires at least 1 timedelta"
+
+
+##
+
+
 def microseconds_since_epoch(datetime: dt.datetime, /) -> int:
     """Compute the number of microseconds since the epoch."""
     return timedelta_to_microseconds(timedelta_since_epoch(datetime))
@@ -879,7 +941,7 @@ def round_datetime(
     timedelta: dt.timedelta,
     /,
     *,
-    mode: _RoundMode = "standard",
+    mode: RoundMode = "standard",
     rel_tol: float | None = None,
     abs_tol: float | None = None,
 ) -> dt.datetime:
@@ -1239,6 +1301,8 @@ __all__ = [
     "CheckDateNotDateTimeError",
     "DateOrMonth",
     "EnsureMonthError",
+    "MeanDateTimeError",
+    "MeanTimeDeltaError",
     "MillisecondsSinceEpochError",
     "Month",
     "MonthError",
@@ -1291,6 +1355,8 @@ __all__ = [
     "is_zero_time",
     "is_zoned_datetime",
     "maybe_sub_pct_y",
+    "mean_datetime",
+    "mean_timedelta",
     "microseconds_since_epoch",
     "microseconds_since_epoch_to_datetime",
     "microseconds_to_timedelta",

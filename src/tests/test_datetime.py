@@ -55,6 +55,8 @@ from utilities.datetime import (
     AreEqualDateTimesError,
     CheckDateNotDateTimeError,
     EnsureMonthError,
+    MeanDateTimeError,
+    MeanTimeDeltaError,
     MillisecondsSinceEpochError,
     Month,
     MonthError,
@@ -113,6 +115,8 @@ from utilities.datetime import (
     is_zero_time,
     is_zoned_datetime,
     maybe_sub_pct_y,
+    mean_datetime,
+    mean_timedelta,
     microseconds_since_epoch,
     microseconds_since_epoch_to_datetime,
     microseconds_to_timedelta,
@@ -837,6 +841,38 @@ class TestMaybeSubPctY:
         result = maybe_sub_pct_y(text)
         _ = assume(not search("%Y", result))
         assert not search("%Y", result)
+
+
+class TestMeanDateTime:
+    def test_one(self) -> None:
+        assert mean_datetime([NOW_UTC]) == NOW_UTC
+
+    def test_many(self) -> None:
+        assert mean_datetime([NOW_UTC, NOW_UTC + MINUTE]) == (NOW_UTC + 30 * SECOND)
+
+    def test_weights(self) -> None:
+        assert mean_datetime([NOW_UTC, NOW_UTC + MINUTE], weights=[1, 3]) == (
+            NOW_UTC + 45 * SECOND
+        )
+
+    def test_error(self) -> None:
+        with raises(MeanDateTimeError, match="Mean requires at least 1 datetime"):
+            _ = mean_datetime([])
+
+
+class TestMeanTimeDelta:
+    def test_one(self) -> None:
+        assert mean_timedelta([MINUTE]) == MINUTE
+
+    def test_many(self) -> None:
+        assert mean_timedelta([MINUTE, 2 * MINUTE]) == 1.5 * MINUTE
+
+    def test_weights(self) -> None:
+        assert mean_timedelta([MINUTE, 2 * MINUTE], weights=[1, 3]) == 1.75 * MINUTE
+
+    def test_error(self) -> None:
+        with raises(MeanTimeDeltaError, match="Mean requires at least 1 timedelta"):
+            _ = mean_timedelta([])
 
 
 class TestMicrosecondsOrMillisecondsSinceEpoch:
