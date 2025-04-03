@@ -678,6 +678,35 @@ def maybe_sub_pct_y(text: str, /) -> str:
 ##
 
 
+def mean_datetime(
+    datetimes: Iterable[dt.datetime],
+    /,
+    *,
+    mode: RoundMode = "standard",
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+) -> dt.datetime:
+    """Compute the mean of a set of datetimes."""
+    datetimes = list(datetimes)
+    microseconds = list(map(microseconds_since_epoch, datetimes))
+    try:
+        mean_float = mean(microseconds)
+    except StatisticsError:
+        raise MeanDateTimeError from None
+    mean_int = round_(mean_float, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
+    return microseconds_since_epoch_to_datetime(mean_int, time_zone=datetimes[0].tzinfo)
+
+
+@dataclass(kw_only=True, slots=True)
+class MeanDateTimeError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "Mean requires at least 1 datetime"
+
+
+##
+
+
 def mean_timedelta(
     timedeltas: Iterable[dt.timedelta],
     /,
@@ -1269,6 +1298,7 @@ __all__ = [
     "CheckDateNotDateTimeError",
     "DateOrMonth",
     "EnsureMonthError",
+    "MeanDateTimeError",
     "MeanTimeDeltaError",
     "MillisecondsSinceEpochError",
     "Month",
@@ -1322,6 +1352,8 @@ __all__ = [
     "is_zero_time",
     "is_zoned_datetime",
     "maybe_sub_pct_y",
+    "mean_datetime",
+    "mean_timedelta",
     "microseconds_since_epoch",
     "microseconds_since_epoch_to_datetime",
     "microseconds_to_timedelta",
