@@ -848,7 +848,12 @@ class TestMeanDateTime:
         assert mean_datetime([NOW_UTC]) == NOW_UTC
 
     def test_many(self) -> None:
-        assert mean_datetime([NOW_UTC, NOW_UTC + HOUR]) == (NOW_UTC + 30 * MINUTE)
+        assert mean_datetime([NOW_UTC, NOW_UTC + MINUTE]) == (NOW_UTC + 30 * SECOND)
+
+    def test_weights(self) -> None:
+        assert mean_datetime([NOW_UTC, NOW_UTC + MINUTE], weights=[1, 3]) == (
+            NOW_UTC + 45 * SECOND
+        )
 
     def test_error(self) -> None:
         with raises(MeanDateTimeError, match="Mean requires at least 1 datetime"):
@@ -857,10 +862,13 @@ class TestMeanDateTime:
 
 class TestMeanTimeDelta:
     def test_one(self) -> None:
-        assert mean_timedelta([HOUR]) == HOUR
+        assert mean_timedelta([MINUTE]) == MINUTE
 
     def test_many(self) -> None:
-        assert mean_timedelta([HOUR, MINUTE]) == (30 * MINUTE + 30 * SECOND)
+        assert mean_timedelta([MINUTE, 2 * MINUTE]) == 1.5 * MINUTE
+
+    def test_weights(self) -> None:
+        assert mean_timedelta([MINUTE, 2 * MINUTE], weights=[1, 3]) == 1.75 * MINUTE
 
     def test_error(self) -> None:
         with raises(MeanTimeDeltaError, match="Mean requires at least 1 timedelta"):
