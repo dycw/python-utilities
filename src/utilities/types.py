@@ -89,6 +89,20 @@ type LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 type LoggerOrName = Logger | str
 
 
+# math
+type RoundMode = Literal[
+    "standard",
+    "floor",
+    "ceil",
+    "toward-zero",
+    "away-zero",
+    "standard-tie-floor",
+    "standard-tie-ceil",
+    "standard-tie-toward-zero",
+    "standard-tie-away-zero",
+]
+
+
 # operator
 
 
@@ -159,6 +173,7 @@ __all__ = [
     "Parallelism",
     "PathLike",
     "PathLikeOrCallable",
+    "RoundMode",
     "Seed",
     "StrMapping",
     "SupportsAdd",

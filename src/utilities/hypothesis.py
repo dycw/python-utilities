@@ -86,7 +86,6 @@ from utilities.math import (
     MIN_INT64,
     MIN_UINT32,
     MIN_UINT64,
-    _RoundMode,
     is_zero,
 )
 from utilities.os import get_env_var
@@ -116,7 +115,7 @@ if TYPE_CHECKING:
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.redis import _TestRedis
     from utilities.sqlalchemy import Dialect, TableOrORMInstOrClass
-    from utilities.types import Duration, Number
+    from utilities.types import Duration, Number, RoundMode
 
 
 _T = TypeVar("_T")
@@ -651,7 +650,7 @@ def local_datetimes(
     *,
     min_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MIN_NAIVE,
     max_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MAX_NAIVE,
-    round_: _RoundMode | None = None,
+    round_: RoundMode | None = None,
     timedelta: dt.timedelta | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
@@ -671,7 +670,7 @@ def local_datetimes(
 
 @dataclass(kw_only=True, slots=True)
 class LocalDateTimesError(Exception):
-    round_: _RoundMode
+    round_: RoundMode
 
     @override
     def __str__(self) -> str:
@@ -689,7 +688,7 @@ def min_and_max_datetimes(
     min_value: MaybeSearchStrategy[dt.datetime | None] = None,
     max_value: MaybeSearchStrategy[dt.datetime | None] = None,
     time_zone: MaybeSearchStrategy[ZoneInfo | timezone] = UTC,
-    round_: _RoundMode | None = None,
+    round_: RoundMode | None = None,
     timedelta: dt.timedelta | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
@@ -768,7 +767,7 @@ def min_and_maybe_max_datetimes(
     min_value: MaybeSearchStrategy[dt.datetime | None] = None,
     max_value: MaybeSearchStrategy[dt.datetime | None | Sentinel] = sentinel,
     time_zone: MaybeSearchStrategy[ZoneInfo | timezone] = UTC,
-    round_: _RoundMode | None = None,
+    round_: RoundMode | None = None,
     timedelta: dt.timedelta | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
@@ -1473,7 +1472,7 @@ def zoned_datetimes(
     min_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MIN_UTC + DAY,
     max_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MAX_UTC - DAY,
     time_zone: MaybeSearchStrategy[ZoneInfo | timezone] = UTC,
-    round_: _RoundMode | None = None,
+    round_: RoundMode | None = None,
     timedelta: dt.timedelta | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
@@ -1522,7 +1521,7 @@ def zoned_datetimes(
 
 @dataclass(kw_only=True, slots=True)
 class ZonedDateTimesError(Exception):
-    round_: _RoundMode
+    round_: RoundMode
 
     @override
     def __str__(self) -> str:

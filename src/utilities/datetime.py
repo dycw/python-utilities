@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
 from re import search, sub
+from statistics import mean
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -35,6 +36,7 @@ if TYPE_CHECKING:
         Duration,
         MaybeCallableDate,
         MaybeCallableDateTime,
+        RoundMode,
         TimeZoneLike,
     )
 
@@ -671,6 +673,24 @@ def maybe_sub_pct_y(text: str, /) -> str:
             return sub("%Y", "%4Y", text)
         case _ as never:
             assert_never(never)
+
+
+##
+
+
+def mean_timedelta(
+    timedeltas: Iterable[dt.timedelta],
+    /,
+    *,
+    mode: RoundMode = "standard",
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+) -> dt.timedelta:
+    """Compute the mean of a set of timedeltas."""
+    microseconds = list(map(timedelta_to_microseconds, timedeltas))
+    mean_float = mean(microseconds)
+    mean_int = round_(mean_float, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
+    return microseconds_to_timedelta(mean_int)
 
 
 ##
