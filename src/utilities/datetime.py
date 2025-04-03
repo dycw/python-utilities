@@ -4,12 +4,13 @@ import datetime as dt
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
 from re import search, sub
-from statistics import StatisticsError, mean
+from statistics import StatisticsError, fmean
 from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
     Self,
+    SupportsFloat,
     TypeGuard,
     assert_never,
     overload,
@@ -682,6 +683,7 @@ def mean_datetime(
     datetimes: Iterable[dt.datetime],
     /,
     *,
+    weights: Iterable[SupportsFloat] | None = None,
     mode: RoundMode = "standard",
     rel_tol: float | None = None,
     abs_tol: float | None = None,
@@ -690,7 +692,7 @@ def mean_datetime(
     datetimes = list(datetimes)
     microseconds = list(map(microseconds_since_epoch, datetimes))
     try:
-        mean_float = mean(microseconds)
+        mean_float = fmean(microseconds, weights=weights)
     except StatisticsError:
         raise MeanDateTimeError from None
     mean_int = round_(mean_float, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
@@ -711,6 +713,7 @@ def mean_timedelta(
     timedeltas: Iterable[dt.timedelta],
     /,
     *,
+    weights: Iterable[SupportsFloat] | None = None,
     mode: RoundMode = "standard",
     rel_tol: float | None = None,
     abs_tol: float | None = None,
@@ -718,7 +721,7 @@ def mean_timedelta(
     """Compute the mean of a set of timedeltas."""
     microseconds = list(map(timedelta_to_microseconds, timedeltas))
     try:
-        mean_float = mean(microseconds)
+        mean_float = fmean(microseconds, weights=weights)
     except StatisticsError:
         raise MeanTimeDeltaError from None
     mean_int = round_(mean_float, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
