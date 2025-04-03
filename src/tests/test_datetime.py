@@ -844,8 +844,9 @@ class TestMaybeSubPctY:
 
 
 class TestMeanDateTime:
-    def test_one(self) -> None:
-        assert mean_datetime([NOW_UTC]) == NOW_UTC
+    @given(datetime=zoned_datetimes())
+    def test_one(self, *, datetime: dt.datetime) -> None:
+        assert mean_datetime([datetime]) == datetime
 
     def test_many(self) -> None:
         assert mean_datetime([NOW_UTC, NOW_UTC + MINUTE]) == (NOW_UTC + 30 * SECOND)
@@ -861,8 +862,9 @@ class TestMeanDateTime:
 
 
 class TestMeanTimeDelta:
-    def test_one(self) -> None:
-        assert mean_timedelta([MINUTE]) == MINUTE
+    @given(timedelta=timedeltas())
+    def test_one(self, *, timedelta: dt.timedelta) -> None:
+        assert mean_timedelta([timedelta]) == timedelta
 
     def test_many(self) -> None:
         assert mean_timedelta([MINUTE, 2 * MINUTE]) == 1.5 * MINUTE
