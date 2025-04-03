@@ -4,7 +4,7 @@ import datetime as dt
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
 from re import search, sub
-from statistics import mean
+from statistics import StatisticsError, mean
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -688,9 +688,19 @@ def mean_timedelta(
 ) -> dt.timedelta:
     """Compute the mean of a set of timedeltas."""
     microseconds = list(map(timedelta_to_microseconds, timedeltas))
-    mean_float = mean(microseconds)
+    try:
+        mean_float = mean(microseconds)
+    except StatisticsError:
+        raise MeanTimeDeltaError from None
     mean_int = round_(mean_float, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
     return microseconds_to_timedelta(mean_int)
+
+
+@dataclass(kw_only=True, slots=True)
+class MeanTimeDeltaError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "Mean requires at least 1 timedelta"
 
 
 ##
@@ -1259,6 +1269,7 @@ __all__ = [
     "CheckDateNotDateTimeError",
     "DateOrMonth",
     "EnsureMonthError",
+    "MeanTimeDeltaError",
     "MillisecondsSinceEpochError",
     "Month",
     "MonthError",
