@@ -6,11 +6,10 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
 from enum import Enum, unique
-from functools import cached_property, partial, reduce
+from functools import cached_property, partial
 from itertools import chain
 from logging import Formatter, LogRecord
 from math import isinf, isnan
-from operator import or_
 from pathlib import Path
 from re import Pattern, search
 from typing import TYPE_CHECKING, Any, Literal, Self, assert_never, overload, override
@@ -27,7 +26,13 @@ from orjson import (
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import dataclass_to_dict
 from utilities.functions import ensure_class, is_string_mapping
-from utilities.iterables import OneEmptyError, always_iterable, one, one_unique
+from utilities.iterables import (
+    OneEmptyError,
+    always_iterable,
+    merge_sets,
+    one,
+    one_unique,
+)
 from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import (
@@ -744,7 +749,7 @@ def get_log_records(
         num_lines_blank=sum(o.num_lines_blank for o in outputs),
         num_lines_error=sum(o.num_lines_error for o in outputs),
         records=records,
-        missing=set(reduce(or_, (o.missing for o in outputs), set())),
+        missing=merge_sets(*(o.missing for o in outputs)),
         other_errors=list(chain.from_iterable(o.other_errors for o in outputs)),
     )
 
