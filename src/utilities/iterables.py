@@ -19,7 +19,7 @@ from enum import Enum
 from functools import cmp_to_key, partial, reduce
 from itertools import accumulate, chain, groupby, islice, pairwise, product
 from math import isnan
-from operator import add
+from operator import add, or_
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -932,13 +932,15 @@ def map_mapping(
 
 def merge_mappings(*mappings: Mapping[_K, _V]) -> Mapping[_K, _V]:
     """Merge a set of mappings."""
-    return reduce(_merge_mappings_one, mappings, {})
+    return reduce(or_, map(dict, mappings), {})
 
 
-def _merge_mappings_one(
-    acc: Mapping[_K, _V], el: Mapping[_K, _V], /
-) -> Mapping[_K, _V]:
-    return dict(acc) | dict(el)
+##
+
+
+def merge_sets(*iterables: Iterable[_T]) -> AbstractSet[_T]:
+    """Merge a set of sets."""
+    return reduce(or_, map(set, iterables), set())
 
 
 ##
@@ -1481,6 +1483,7 @@ __all__ = [
     "is_iterable_not_str",
     "map_mapping",
     "merge_mappings",
+    "merge_sets",
     "merge_str_mappings",
     "one",
     "one_maybe",

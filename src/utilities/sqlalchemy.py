@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from functools import partial, reduce
 from itertools import chain
 from math import floor
-from operator import ge, le, or_
+from operator import ge, le
 from re import search
 from typing import (
     TYPE_CHECKING,
@@ -75,6 +75,8 @@ from utilities.iterables import (
     check_length,
     check_subset,
     chunked,
+    merge_sets,
+    merge_str_mappings,
     one,
 )
 from utilities.reprlib import get_repr
@@ -770,7 +772,7 @@ def _upsert_items_build(
     selected_or_all: Literal["selected", "all"] = "selected",
 ) -> Insert:
     values = list(values)
-    keys = set(reduce(or_, values))
+    keys = merge_sets(*values)
     dict_nones = dict.fromkeys(keys)
     values = [{**dict_nones, **v} for v in values]
     match _get_dialect(engine):
@@ -799,7 +801,7 @@ def _upsert_items_apply_on_conflict_do_update(
 ) -> Insert:
     match selected_or_all:
         case "selected":
-            columns = set(reduce(or_, values))
+            columns = merge_sets(*values)
         case "all":
             columns = {c.name for c in insert.excluded}
         case _ as never:
@@ -1110,7 +1112,7 @@ def _prepare_insert_or_upsert_items_merge_items(
             mapping[pkey].append(rest)
         else:
             unchanged.append(item)
-    merged = {k: cast("StrMapping", reduce(or_, v)) for k, v in mapping.items()}
+    merged = {k: merge_str_mappings(*v) for k, v in mapping.items()}
     return [
         dict(zip(col_names, k, strict=True)) | dict(v) for k, v in merged.items()
     ] + unchanged

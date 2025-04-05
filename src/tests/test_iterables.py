@@ -102,6 +102,7 @@ from utilities.iterables import (
     is_iterable_not_str,
     map_mapping,
     merge_mappings,
+    merge_sets,
     merge_str_mappings,
     one,
     one_maybe,
@@ -973,14 +974,36 @@ class TestMapMappings:
 class TestMergeMappings:
     def test_main(self) -> None:
         mapping1 = {"x": 1, "y": 2}
-        mapping2 = {"X": 3, "z": 4}
+        mapping2 = {"y": 3, "z": 4}
         result = merge_mappings(mapping1, mapping2)
-        expected = {"x": 1, "y": 2, "X": 3, "z": 4}
+        expected = {"x": 1, "y": 3, "z": 4}
         assert result == expected
 
     def test_empty(self) -> None:
         result = merge_str_mappings()
         expected = {}
+        assert result == expected
+
+
+class TestMergeSets:
+    @given(data=data())
+    def test_lists(self, *, data: DataObject) -> None:
+        list1 = data.draw(permutations(["x", "y"]))
+        list2 = data.draw(permutations(["y", "z"]))
+        result = merge_sets(list1, list2)
+        expected = {"x", "y", "z"}
+        assert result == expected
+
+    def test_sets(self) -> None:
+        set1 = {"x", "y"}
+        set2 = {"y", "z"}
+        result = merge_sets(set1, set2)
+        expected = {"x", "y", "z"}
+        assert result == expected
+
+    def test_empty(self) -> None:
+        result = merge_sets()
+        expected = set()
         assert result == expected
 
 
