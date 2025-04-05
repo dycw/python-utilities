@@ -10,8 +10,6 @@ if TYPE_CHECKING:
 
 HongKong = ZoneInfo("Asia/Hong_Kong")
 Tokyo = ZoneInfo("Asia/Tokyo")
-USCentral = ZoneInfo("US/Central")
-USEastern = ZoneInfo("US/Eastern")
 UTC = ZoneInfo("UTC")
 
 ##
@@ -75,8 +73,6 @@ __all__ = [
     "EnsureTimeZoneError",
     "HongKong",
     "Tokyo",
-    "USCentral",
-    "USEastern",
     "ensure_time_zone",
     "get_time_zone_name",
 ]

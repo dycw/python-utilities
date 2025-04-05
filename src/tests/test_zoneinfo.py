@@ -14,8 +14,6 @@ from utilities.zoneinfo import (
     UTC,
     HongKong,
     Tokyo,
-    USCentral,
-    USEastern,
     _EnsureTimeZoneInvalidTZInfoError,
     _EnsureTimeZoneLocalDateTimeError,
     ensure_time_zone,
@@ -32,8 +30,6 @@ class TestEnsureTimeZone:
         case=sampled_from([
             (HongKong, HongKong),
             (Tokyo, Tokyo),
-            (USCentral, USCentral),
-            (USEastern, USEastern),
             (UTC, UTC),
             (dt.UTC, UTC),
         ]),
@@ -73,16 +69,7 @@ class TestEnsureTimeZone:
 
 
 class TestGetTimeZoneName:
-    @given(
-        data=data(),
-        time_zone=sampled_from([
-            "Asia/Hong_Kong",
-            "Asia/Tokyo",
-            "US/Central",
-            "US/Eastern",
-            "UTC",
-        ]),
-    )
+    @given(data=data(), time_zone=sampled_from(["Asia/Hong_Kong", "Asia/Tokyo", "UTC"]))
     def test_main(self, *, data: DataObject, time_zone: TimeZone) -> None:
         zone_info_or_str: ZoneInfo | TimeZone = data.draw(
             sampled_from([ZoneInfo(time_zone), time_zone])
@@ -97,6 +84,6 @@ class TestGetTimeZoneName:
 
 
 class TestTimeZones:
-    @given(time_zone=sampled_from([HongKong, Tokyo, USCentral, USEastern]))
+    @given(time_zone=sampled_from([HongKong, Tokyo, UTC]))
     def test_main(self, *, time_zone: ZoneInfo) -> None:
         assert isinstance(time_zone, ZoneInfo)
