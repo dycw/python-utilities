@@ -75,8 +75,8 @@ from utilities.iterables import (
     check_length,
     check_subset,
     chunked,
-    merge_mappings,
     merge_sets,
+    merge_str_mappings,
     one,
 )
 from utilities.reprlib import get_repr
@@ -1112,7 +1112,7 @@ def _prepare_insert_or_upsert_items_merge_items(
             mapping[pkey].append(rest)
         else:
             unchanged.append(item)
-    merged = {k: merge_mappings(*v) for k, v in mapping.items()}
+    merged = {k: merge_str_mappings(*v) for k, v in mapping.items()}
     return [
         dict(zip(col_names, k, strict=True)) | dict(v) for k, v in merged.items()
     ] + unchanged
