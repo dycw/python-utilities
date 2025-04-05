@@ -935,12 +935,6 @@ def merge_mappings(*mappings: Mapping[_K, _V]) -> Mapping[_K, _V]:
     return reduce(or_, map(dict, mappings), {})
 
 
-def _merge_mappings_one(
-    acc: Mapping[_K, _V], el: Mapping[_K, _V], /
-) -> Mapping[_K, _V]:
-    return dict(acc) | dict(el)
-
-
 ##
 
 
