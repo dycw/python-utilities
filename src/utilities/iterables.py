@@ -932,7 +932,7 @@ def map_mapping(
 
 def merge_mappings(*mappings: Mapping[_K, _V]) -> Mapping[_K, _V]:
     """Merge a set of mappings."""
-    return reduce(_merge_mappings_one, mappings, {})
+    return reduce(or_, map(dict, mappings), {})
 
 
 def _merge_mappings_one(
