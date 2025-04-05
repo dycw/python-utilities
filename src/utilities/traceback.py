@@ -101,14 +101,10 @@ class RichTracebackFormatter(Formatter):
     def format(self, record: LogRecord) -> str:
         """Format the record."""
         if record.exc_info is None:
-            msg = f"ERROR: record.exc_info is None\n{record=}"
-            print(msg)  # noqa: T201
-            return msg
+            return f"ERROR: record.exc_info is None\n{record=}"
         _, exc_value, _ = record.exc_info
         if exc_value is None:
-            msg = f"ERROR: record.exc_info[1] is None\n{record=}"
-            print(msg)  # noqa: T201
-            return msg
+            return f"ERROR: record.exc_info[1] is None\n{record=}"  # pragma: no cover
         exc_value = ensure_not_none(exc_value, desc="exc_value")
         error = get_rich_traceback(
             exc_value,

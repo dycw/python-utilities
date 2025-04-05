@@ -501,8 +501,8 @@ class TestRichTracebackFormatter:
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
         handler.setFormatter(RichTracebackFormatter(detail=True))
         logger.error("message")
-        result = buffer.getvalue()
-        expected = "ERROR: record.exc_info=None\n"
+        result, _ = buffer.getvalue().splitlines()
+        expected = "ERROR: record.exc_info is None"
         assert result == expected
 
     def test_post(self, *, tmp_path: Path) -> None:
