@@ -25,7 +25,7 @@ from orjson import (
 
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import dataclass_to_dict
-from utilities.functions import ensure_class, get_class_name, is_string_mapping
+from utilities.functions import ensure_class, is_string_mapping
 from utilities.iterables import (
     OneEmptyError,
     always_iterable,
@@ -76,7 +76,8 @@ class _Prefixes(Enum):
     date = "d"
     datetime = "dt"
     enum = "e"
-    exception = "ex"
+    exception_class = "exc"
+    exception_instance = "exi"
     float_ = "fl"
     frozenset_ = "fr"
     list_ = "l"
@@ -173,7 +174,11 @@ def _pre_process(
         case dt.timedelta() as timedelta:
             return f"[{_Prefixes.timedelta.value}]{serialize_timedelta(timedelta)}"
         case Exception() as error_:
-            return f"[{_Prefixes.exception.value}]{get_class_name(error_)}"
+            return {
+                f"[{_Prefixes.exception_instance.value}|{type(error_).__qualname__}]": pre(
+                    error_.args
+                )
+            }
         case float() as float_:
             if isinf(float_) or isnan(float_):
                 return f"[{_Prefixes.float_.value}]{float_}"
@@ -189,7 +194,7 @@ def _pre_process(
         case str() as str_:
             return str_
         case type() as error_cls if issubclass(error_cls, Exception):
-            return f"[{_Prefixes.exception.value}]{get_class_name(error_cls)}"
+            return f"[{_Prefixes.exception_class.value}|{error_cls.__qualname__}]"
         case Version() as version:
             return f"[{_Prefixes.version.value}]{version!s}"
         # contains
@@ -379,6 +384,8 @@ def _make_container_pattern(prefix: _Prefixes, /) -> Pattern[str]:
 (
     _DATACLASS_PATTERN,
     _ENUM_PATTERN,
+    _EXCEPTION_CLASS_PATTERN,
+    _EXCEPTION_INSTANCE_PATTERN,
     _FROZENSET_PATTERN,
     _LIST_PATTERN,
     _SET_PATTERN,
@@ -388,6 +395,8 @@ def _make_container_pattern(prefix: _Prefixes, /) -> Pattern[str]:
     [
         _Prefixes.dataclass,
         _Prefixes.enum,
+        _Prefixes.exception_class,
+        _Prefixes.exception_instance,
         _Prefixes.frozenset_,
         _Prefixes.list_,
         _Prefixes.set_,
@@ -397,7 +406,7 @@ def _make_container_pattern(prefix: _Prefixes, /) -> Pattern[str]:
 
 
 def _object_hook(
-    obj: bool | float | str | dict[str, Any] | list[Any] | Dataclass | None,  # noqa: FBT001
+    obj: bool | float | str | list[Any] | StrMapping | Dataclass | None,  # noqa: FBT001
     /,
     *,
     data: bytes,
@@ -433,6 +442,12 @@ def _object_hook(
                 return parse_zoned_datetime(
                     match.group(1).replace("dt.UTC", "UTC")
                 ).replace(tzinfo=dt.UTC)
+            if (
+                exc_class := _object_hook_exception_class(
+                    text, data=data, objects=objects, redirects=redirects
+                )
+            ) is not None:
+                return exc_class
             return text
         case list() as list_:
             return [
@@ -445,7 +460,7 @@ def _object_hook(
                 )
                 for i in list_
             ]
-        case dict() as mapping:
+        case Mapping() as mapping:
             if len(mapping) == 1:
                 key, value = one(mapping.items())
                 for cls, pattern in [
@@ -454,34 +469,50 @@ def _object_hook(
                     (set, _SET_PATTERN),
                     (tuple, _TUPLE_PATTERN),
                 ]:
-                    result = _object_hook_container(
-                        key,
-                        value,
-                        cls,
-                        pattern,
-                        data=data,
-                        dataclass_hook=dataclass_hook,
-                        objects=objects,
-                        redirects=redirects,
+                    if (
+                        container := _object_hook_container(
+                            key,
+                            value,
+                            cls,
+                            pattern,
+                            data=data,
+                            dataclass_hook=dataclass_hook,
+                            objects=objects,
+                            redirects=redirects,
+                        )
+                    ) is not None:
+                        return container
+                if (
+                    is_string_mapping(value)
+                    and (
+                        dataclass := _object_hook_dataclass(
+                            key,
+                            value,
+                            data=data,
+                            hook=dataclass_hook,
+                            objects=objects,
+                            redirects=redirects,
+                        )
                     )
-                    if result is not None:
-                        return result
-                if is_string_mapping(value):
-                    result = _object_hook_dataclass(
-                        key,
-                        value,
-                        data=data,
-                        hook=dataclass_hook,
-                        objects=objects,
-                        redirects=redirects,
+                    is not None
+                ):
+                    return dataclass
+                if (
+                    enum := _object_hook_enum(
+                        key, value, data=data, objects=objects, redirects=redirects
                     )
-                    if result is not None:
-                        return result
-                result = _object_hook_enum(
-                    key, value, data=data, objects=objects, redirects=redirects
-                )
-                if result is not None:
-                    return result
+                ) is not None:
+                    return enum
+                if (
+                    is_string_mapping(value)
+                    and (
+                        exc_instance := _object_hook_exception_instance(
+                            key, value, data=data, objects=objects, redirects=redirects
+                        )
+                    )
+                    is not None
+                ):
+                    return exc_instance
             return {
                 k: _object_hook(
                     v,
@@ -526,27 +557,6 @@ def _object_hook_container(
         )
         for v in value
     )
-
-
-def _object_hook_get_object(
-    qualname: str,
-    /,
-    *,
-    data: bytes = b"",
-    objects: AbstractSet[type[Any]] | None = None,
-    redirects: Mapping[str, type[Any]] | None = None,
-) -> type[Any]:
-    if qualname == Unserializable.__qualname__:
-        return Unserializable
-    if (objects is None) and (redirects is None):
-        raise _DeserializeNoObjectsError(data=data, qualname=qualname)
-    if objects is not None:
-        with suppress(OneEmptyError):
-            return one(o for o in objects if o.__qualname__ == qualname)
-    if redirects:
-        with suppress(KeyError):
-            return redirects[qualname]
-    raise _DeserializeObjectNotFoundError(data=data, qualname=qualname)
 
 
 def _object_hook_dataclass(
@@ -598,6 +608,60 @@ def _object_hook_enum(
         redirects=redirects,
     )
     return one(i for i in cls if i.value == value_use)
+
+
+def _object_hook_exception_class(
+    qualname: str,
+    /,
+    *,
+    data: bytes = b"",
+    objects: AbstractSet[type[Any]] | None = None,
+    redirects: Mapping[str, type[Any]] | None = None,
+) -> type[Exception] | None:
+    if not (match := _EXCEPTION_CLASS_PATTERN.search(qualname)):
+        return None
+    return _object_hook_get_object(
+        match.group(1), data=data, objects=objects, redirects=redirects
+    )
+
+
+def _object_hook_exception_instance(
+    key: str,
+    value: StrMapping,
+    /,
+    *,
+    data: bytes = b"",
+    objects: AbstractSet[type[Any]] | None = None,
+    redirects: Mapping[str, type[Any]] | None = None,
+) -> Exception | None:
+    if not (match := _EXCEPTION_INSTANCE_PATTERN.search(key)):
+        return None
+    cls = _object_hook_get_object(
+        match.group(1), data=data, objects=objects, redirects=redirects
+    )
+    items = _object_hook(value, data=data, objects=objects, redirects=redirects)
+    return cls(*items)
+
+
+def _object_hook_get_object(
+    qualname: str,
+    /,
+    *,
+    data: bytes = b"",
+    objects: AbstractSet[type[Any]] | None = None,
+    redirects: Mapping[str, type[Any]] | None = None,
+) -> type[Any]:
+    if qualname == Unserializable.__qualname__:
+        return Unserializable
+    if (objects is None) and (redirects is None):
+        raise _DeserializeNoObjectsError(data=data, qualname=qualname)
+    if objects is not None:
+        with suppress(OneEmptyError):
+            return one(o for o in objects if o.__qualname__ == qualname)
+    if redirects:
+        with suppress(KeyError):
+            return redirects[qualname]
+    raise _DeserializeObjectNotFoundError(data=data, qualname=qualname)
 
 
 @dataclass(kw_only=True, slots=True)

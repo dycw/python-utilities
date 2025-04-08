@@ -27,6 +27,7 @@ from pytest import approx, mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from tests.test_operator import (
+    CustomError,
     SubFrozenSet,
     SubList,
     SubSet,
@@ -439,6 +440,8 @@ class TestSerializeAndDeserialize:
             dataclass_nested=True,
             dataclass_none=True,
             enum=True,
+            exception_class=True,
+            exception_instance=True,
             sub_frozenset=True,
             sub_list=True,
             sub_set=True,
@@ -451,6 +454,7 @@ class TestSerializeAndDeserialize:
         result = deserialize(
             ser,
             objects={
+                CustomError,
                 DataClassFutureCustomEquality,
                 DataClassFutureInt,
                 DataClassFutureIntDefault,
@@ -593,6 +597,18 @@ class TestSerializeAndDeserialize:
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
+    @given(obj=make_objects(exception_class=True))
+    def test_exception_class(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={CustomError})
+        with assume_does_not_raise(IsEqualError):
+            assert is_equal(result, obj)
+
+    @given(obj=make_objects(exception_instance=True))
+    def test_exception_instance(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={CustomError})
+        with assume_does_not_raise(IsEqualError):
+            assert is_equal(result, obj)
+
     def test_none(self) -> None:
         result = deserialize(serialize(None))
         assert result is None
@@ -686,14 +702,14 @@ class TestSerialize:
         class CustomError(Exception): ...
 
         result = serialize(CustomError)
-        expected = b'"[ex]CustomError"'
+        expected = b'"[exc|TestSerialize.test_exception_class.<locals>.CustomError]"'
         assert result == expected
 
     def test_exception_instance(self) -> None:
         class CustomError(Exception): ...
 
-        result = serialize(CustomError())
-        expected = b'"[ex]CustomError"'
+        result = serialize(CustomError(1, 2, 3))
+        expected = b'{"[exi|TestSerialize.test_exception_instance.<locals>.CustomError]":{"[tu]":[1,2,3]}}'
         assert result == expected
 
     @given(x=sampled_from([MIN_INT64 - 1, MAX_INT64 + 1]))
