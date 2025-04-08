@@ -173,7 +173,7 @@ def _pre_process(
         case dt.timedelta() as timedelta:
             return f"[{_Prefixes.timedelta.value}]{serialize_timedelta(timedelta)}"
         case Exception() as error_:
-            return f"[{_Prefixes.exception.value}]{get_class_name(error_, qual=True)}"
+            return f"[{_Prefixes.exception.value}]{get_class_name(error_)}"
         case float() as float_:
             if isinf(float_) or isnan(float_):
                 return f"[{_Prefixes.float_.value}]{float_}"
@@ -189,9 +189,7 @@ def _pre_process(
         case str() as str_:
             return str_
         case type() as error_cls if issubclass(error_cls, Exception):
-            return (
-                f"[{_Prefixes.exception.value}]{get_class_name(error_cls, qual=True)}"
-            )
+            return f"[{_Prefixes.exception.value}]{get_class_name(error_cls)}"
         case Version() as version:
             return f"[{_Prefixes.version.value}]{version!s}"
         # contains

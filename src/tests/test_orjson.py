@@ -686,14 +686,14 @@ class TestSerialize:
         class CustomError(Exception): ...
 
         result = serialize(CustomError)
-        expected = b'"[ex]tests.test_orjson.TestSerialize.test_exception_class.<locals>.CustomError"'
+        expected = b'"[ex]CustomError"'
         assert result == expected
 
     def test_exception_instance(self) -> None:
         class CustomError(Exception): ...
 
         result = serialize(CustomError())
-        expected = b'"[ex]tests.test_orjson.TestSerialize.test_exception_instance.<locals>.CustomError"'
+        expected = b'"[ex]CustomError"'
         assert result == expected
 
     @given(x=sampled_from([MIN_INT64 - 1, MAX_INT64 + 1]))
