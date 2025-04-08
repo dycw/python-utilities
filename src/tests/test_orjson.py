@@ -677,6 +677,25 @@ class TestSerialize:
         expected = b'{"[dc|DataClassFutureDefaultInInitChild]":{}}'
         assert result == expected
 
+    def test_enum(self) -> None:
+        result = serialize(TruthEnum.true)
+        expected = b'{"[e|TruthEnum]":1}'
+        assert result == expected
+
+    def test_exception_class(self) -> None:
+        class CustomError(Exception): ...
+
+        result = serialize(CustomError)
+        expected = b'"[ex]CustomError"'
+        assert result == expected
+
+    def test_exception_instance(self) -> None:
+        class CustomError(Exception): ...
+
+        result = serialize(CustomError())
+        expected = b'"[ex]CustomError"'
+        assert result == expected
+
     @given(x=sampled_from([MIN_INT64 - 1, MAX_INT64 + 1]))
     def test_pre_process(self, *, x: int) -> None:
         with raises(_SerializeIntegerError, match="Integer .* is out of range"):
