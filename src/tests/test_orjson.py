@@ -27,6 +27,7 @@ from pytest import approx, mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from tests.test_operator import (
+    CustomError,
     SubFrozenSet,
     SubList,
     SubSet,
@@ -439,6 +440,8 @@ class TestSerializeAndDeserialize:
             dataclass_nested=True,
             dataclass_none=True,
             enum=True,
+            exception_class=True,
+            exception_instance=True,
             sub_frozenset=True,
             sub_list=True,
             sub_set=True,
@@ -590,6 +593,18 @@ class TestSerializeAndDeserialize:
     @given(obj=make_objects(enum=True))
     def test_enum(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={TruthEnum})
+        with assume_does_not_raise(IsEqualError):
+            assert is_equal(result, obj)
+
+    @given(obj=make_objects(exception_class=True))
+    def test_exception_class(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={CustomError})
+        with assume_does_not_raise(IsEqualError):
+            assert is_equal(result, obj)
+
+    @given(obj=make_objects(exception_instance=True))
+    def test_exception_instance(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={CustomError})
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 

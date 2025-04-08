@@ -60,6 +60,8 @@ from utilities.operator import IsEqualError
 from utilities.polars import are_frames_equal
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from utilities.types import DateOrDateTime, Number
     from utilities.typing import StrMapping
 
@@ -75,6 +77,8 @@ def base_objects(
     dataclass_nested: bool = False,
     dataclass_none: bool = False,
     enum: bool = False,
+    exception_class: bool = False,
+    exception_instance: bool = False,
     floats_min_value: Number | None = None,
     floats_max_value: Number | None = None,
     floats_allow_nan: bool | None = None,
@@ -130,6 +134,10 @@ def base_objects(
         base |= builds(DataClassFutureNone)
     if enum:
         base |= sampled_from(TruthEnum)
+    if exception_class:
+        base |= just(CustomError)
+    if exception_instance:
+        base |= builds(CustomError, int64s())
     return base
 
 
@@ -144,6 +152,8 @@ def make_objects(
     dataclass_nested: bool = False,
     dataclass_none: bool = False,
     enum: bool = False,
+    exception_class: bool = False,
+    exception_instance: bool = False,
     floats_min_value: Number | None = None,
     floats_max_value: Number | None = None,
     floats_allow_nan: bool | None = None,
@@ -164,6 +174,8 @@ def make_objects(
         dataclass_nested=dataclass_nested,
         dataclass_none=dataclass_none,
         enum=enum,
+        exception_class=exception_class,
+        exception_instance=exception_instance,
         floats_min_value=floats_min_value,
         floats_max_value=floats_max_value,
         floats_allow_nan=floats_allow_nan,
@@ -220,6 +232,9 @@ def _is_int64(n: int, /) -> bool:
 def _into_set(elements: list[Any], /) -> set[Any]:
     with assume_does_not_raise(TypeError, match="unhashable type"):
         return set(elements)
+
+
+class CustomError(Exception): ...
 
 
 class SubFrozenSet(frozenset):
@@ -317,6 +332,15 @@ class TestIsEqual:
     def test_dates_or_datetimes(self, *, x: DateOrDateTime, y: DateOrDateTime) -> None:
         result = utilities.operator.is_equal(x, y)
         assert isinstance(result, bool)
+
+    def test_exception_class(self) -> None:
+        assert utilities.operator.is_equal(CustomError, CustomError)
+
+    @given(x=lists(integers()), y=lists(integers()))
+    def test_exception_instance(self, *, x: Sequence[int], y: Sequence[int]) -> None:
+        result = utilities.operator.is_equal(CustomError(*x), CustomError(*y))
+        expected = x == y
+        assert result is expected
 
     def test_float_vs_int(self) -> None:
         x, y = 0, 1e-16
