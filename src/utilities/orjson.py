@@ -25,7 +25,7 @@ from orjson import (
 
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import dataclass_to_dict
-from utilities.functions import ensure_class, is_string_mapping
+from utilities.functions import ensure_class, get_class_name, is_string_mapping
 from utilities.iterables import (
     OneEmptyError,
     always_iterable,
@@ -76,6 +76,7 @@ class _Prefixes(Enum):
     date = "d"
     datetime = "dt"
     enum = "e"
+    exception = "ex"
     float_ = "fl"
     frozenset_ = "fr"
     list_ = "l"
@@ -157,60 +158,59 @@ def _pre_process(
         # singletons
         case None:
             return f"[{_Prefixes.none.value}]"
-        case dt.datetime():
-            if obj.tzinfo is None:
-                ser = serialize_local_datetime(obj)
-            elif obj.tzinfo is dt.UTC:
-                ser = serialize_zoned_datetime(obj).replace("UTC", "dt.UTC")
+        case dt.datetime() as datetime:
+            if datetime.tzinfo is None:
+                ser = serialize_local_datetime(datetime)
+            elif datetime.tzinfo is dt.UTC:
+                ser = serialize_zoned_datetime(datetime).replace("UTC", "dt.UTC")
             else:
-                ser = serialize_zoned_datetime(obj)
+                ser = serialize_zoned_datetime(datetime)
             return f"[{_Prefixes.datetime.value}]{ser}"
-        case dt.date():  # after datetime
-            ser = serialize_date(obj)
-            return f"[{_Prefixes.date.value}]{ser}"
-        case dt.time():
-            ser = serialize_time(obj)
-            return f"[{_Prefixes.time.value}]{ser}"
-        case dt.timedelta():
-            ser = serialize_timedelta(obj)
-            return f"[{_Prefixes.timedelta.value}]{ser}"
-        case float():
-            if isinf(obj) or isnan(obj):
-                return f"[{_Prefixes.float_.value}]{obj}"
-            return obj
-        case int():
-            if MIN_INT64 <= obj <= MAX_INT64:
-                return obj
-            raise _SerializeIntegerError(obj=obj)
-        case UUID():
-            return f"[{_Prefixes.uuid.value}]{obj}"
-        case Path():
-            ser = str(obj)
-            return f"[{_Prefixes.path.value}]{ser}"
-        case str():
-            return obj
-        case Version():
-            ser = str(obj)
-            return f"[{_Prefixes.version.value}]{ser}"
+        case dt.date() as date:  # after datetime
+            return f"[{_Prefixes.date.value}]{serialize_date(date)}"
+        case dt.time() as time:
+            return f"[{_Prefixes.time.value}]{serialize_time(time)}"
+        case dt.timedelta() as timedelta:
+            return f"[{_Prefixes.timedelta.value}]{serialize_timedelta(timedelta)}"
+        case Exception() as error_:
+            return f"[{_Prefixes.exception.value}]{get_class_name(error_, qual=True)}"
+        case float() as float_:
+            if isinf(float_) or isnan(float_):
+                return f"[{_Prefixes.float_.value}]{float_}"
+            return float_
+        case int() as int_:
+            if MIN_INT64 <= int_ <= MAX_INT64:
+                return int_
+            raise _SerializeIntegerError(obj=int_)
+        case UUID() as uuid:
+            return f"[{_Prefixes.uuid.value}]{uuid}"
+        case Path() as path:
+            return f"[{_Prefixes.path.value}]{path!s}"
+        case str() as str_:
+            return str_
+        case type() as error_cls if issubclass(error_cls, Exception):
+            return (
+                f"[{_Prefixes.exception.value}]{get_class_name(error_cls, qual=True)}"
+            )
+        case Version() as version:
+            return f"[{_Prefixes.version.value}]{version!s}"
         # contains
-        case Dataclass():
-            obj_as_dict = dataclass_to_dict(
-                obj,
+        case Dataclass() as dataclass:
+            asdict = dataclass_to_dict(
+                dataclass,
                 globalns=globalns,
                 localns=localns,
                 final=partial(_dataclass_final, hook=dataclass_hook),
                 defaults=dataclass_defaults,
             )
-            return pre(obj_as_dict)
-        case dict():
-            return {k: pre(v) for k, v in obj.items()}
-        case Enum():
+            return pre(asdict)
+        case Enum() as enum:
             return {
-                f"[{_Prefixes.enum.value}|{type(obj).__qualname__}]": pre(obj.value)
+                f"[{_Prefixes.enum.value}|{type(enum).__qualname__}]": pre(enum.value)
             }
-        case frozenset():
+        case frozenset() as frozenset_:
             return _pre_process_container(
-                obj,
+                frozenset_,
                 frozenset,
                 _Prefixes.frozenset_,
                 before=before,
@@ -218,9 +218,9 @@ def _pre_process(
                 localns=localns,
                 dataclass_hook=dataclass_hook,
             )
-        case list():
+        case list() as list_:
             return _pre_process_container(
-                obj,
+                list_,
                 list,
                 _Prefixes.list_,
                 before=before,
@@ -228,9 +228,11 @@ def _pre_process(
                 localns=localns,
                 dataclass_hook=dataclass_hook,
             )
-        case set():
+        case Mapping() as mapping:
+            return {k: pre(v) for k, v in mapping.items()}
+        case set() as set_:
             return _pre_process_container(
-                obj,
+                set_,
                 set,
                 _Prefixes.set_,
                 before=before,
@@ -238,9 +240,9 @@ def _pre_process(
                 localns=localns,
                 dataclass_hook=dataclass_hook,
             )
-        case tuple():
+        case tuple() as tuple_:
             return _pre_process_container(
-                obj,
+                tuple_,
                 tuple,
                 _Prefixes.tuple_,
                 before=before,
@@ -768,7 +770,7 @@ class GetLogRecordsOutput:
     num_lines_blank: int = 0
     num_lines_error: int = 0
     records: list[IndexedOrjsonLogRecord] = field(default_factory=list, repr=False)
-    missing: set[str] = field(default_factory=set)
+    missing: AbstractSet[str] = field(default_factory=set)
     other_errors: list[Exception] = field(default_factory=list)
 
     @overload
