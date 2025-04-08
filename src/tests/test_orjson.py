@@ -454,6 +454,7 @@ class TestSerializeAndDeserialize:
         result = deserialize(
             ser,
             objects={
+                CustomError,
                 DataClassFutureCustomEquality,
                 DataClassFutureInt,
                 DataClassFutureIntDefault,
@@ -701,14 +702,14 @@ class TestSerialize:
         class CustomError(Exception): ...
 
         result = serialize(CustomError)
-        expected = b'"[ex]CustomError"'
+        expected = b'"[exc|TestSerialize.test_exception_class.<locals>.CustomError]"'
         assert result == expected
 
     def test_exception_instance(self) -> None:
         class CustomError(Exception): ...
 
-        result = serialize(CustomError())
-        expected = b'"[ex]CustomError"'
+        result = serialize(CustomError(1, 2, 3))
+        expected = b'{"[exi|TestSerialize.test_exception_instance.<locals>.CustomError]":{"[tu]":[1,2,3]}}'
         assert result == expected
 
     @given(x=sampled_from([MIN_INT64 - 1, MAX_INT64 + 1]))
