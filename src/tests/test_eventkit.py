@@ -13,7 +13,7 @@ from hypothesis import given
 from hypothesis.strategies import sampled_from
 from pytest import raises
 
-from utilities.eventkit import AddListenerError, EnhancedEvent, add_listener
+from utilities.eventkit import AddListenerError, LiftedEvent, TypedEvent, add_listener
 from utilities.hypothesis import temp_paths, text_ascii
 
 if TYPE_CHECKING:
@@ -242,9 +242,38 @@ class TestAddListener:
             _ = add_listener(event, listener, error=error)
 
 
+class TestLiftedEvent:
+    def test_main(self) -> None:
+        event1 = Event()
+        counter = 0
+
+        def listener(n: int, /) -> None:
+            nonlocal counter
+            counter += n
+
+        _ = event1.connect(listener)
+        event1.emit(1)
+        assert counter == 1
+
+        event2 = Event()
+
+        class Example(LiftedEvent[Callable[[int], None]]): ...
+
+        lifted = Example(event=event2)
+        _ = lifted.connect(listener)
+        lifted.emit(1)
+        assert counter == 2
+
+        def incorrect(x: int, y: int, /) -> None:
+            assert x >= 0
+            assert y >= 0
+
+        _ = lifted.connect(incorrect)  # pyright: ignore[reportArgumentType]
+
+
 class TestTypedEvent:
     def test_main(self) -> None:
-        class Example(EnhancedEvent[Callable[[int], None]]): ...
+        class Example(TypedEvent[Callable[[int], None]]): ...
 
         event = Example()
 

@@ -14,7 +14,27 @@ from typing import (
     override,
 )
 
-from eventkit import Event
+from eventkit import (
+    Constant,
+    Count,
+    DropWhile,
+    Enumerate,
+    Event,
+    Filter,
+    Fork,
+    Iterate,
+    Map,
+    Pack,
+    Partial,
+    PartialRight,
+    Pluck,
+    Skip,
+    Star,
+    Take,
+    TakeUntil,
+    TakeWhile,
+    Timestamp,
+)
 
 from utilities.functions import apply_decorators
 from utilities.iterables import always_iterable
@@ -42,7 +62,7 @@ def add_listener(
     ignore: type[BaseException] | tuple[type[BaseException], ...] | None = None,
     logger: LoggerOrName | None = None,
     decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
-    done: Callable[..., Any] | None = None,
+    done: Callable[..., MaybeCoroutine1[None]] | None = None,
     keep_ref: bool = False,
 ) -> _TEvent:
     """Connect a listener to an event."""
@@ -70,8 +90,184 @@ class AddListenerError(Exception):
 ##
 
 
-class EnhancedEvent(Event, Generic[TCallableMaybeCoroutine1None]):
-    """An enhanced version of `Event`."""
+@dataclass(repr=False, kw_only=True)
+class LiftedEvent(Generic[TCallableMaybeCoroutine1None]):
+    """A lifted version of `Event`."""
+
+    event: Event
+
+    def name(self) -> str:
+        return self.event.name()  # pragma: no cover
+
+    def done(self) -> bool:
+        return self.event.done()  # pragma: no cover
+
+    def set_done(self) -> None:
+        self.event.set_done()  # pragma: no cover
+
+    def value(self) -> Any:
+        return self.event.value()  # pragma: no cover
+
+    def connect(
+        self,
+        listener: TCallableMaybeCoroutine1None,
+        /,
+        *,
+        error: Callable[[Event, BaseException], MaybeCoroutine1[None]] | None = None,
+        ignore: type[BaseException] | tuple[type[BaseException], ...] | None = None,
+        logger: LoggerOrName | None = None,
+        decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
+        done: Callable[..., MaybeCoroutine1[None]] | None = None,
+        keep_ref: bool = False,
+    ) -> Event:
+        return add_listener(
+            self.event,
+            listener,
+            error=error,
+            ignore=ignore,
+            logger=logger,
+            decorators=decorators,
+            done=done,
+            keep_ref=keep_ref,
+        )
+
+    def disconnect(
+        self, listener: Any, /, *, error: Any = None, done: Any = None
+    ) -> Any:
+        return self.event.disconnect(  # pragma: no cover
+            listener, error=error, done=done
+        )
+
+    def disconnect_obj(self, obj: Any, /) -> None:
+        self.event.disconnect_obj(obj)  # pragma: no cover
+
+    def emit(self, *args: Any) -> None:
+        self.event.emit(*args)  # pragma: no cover
+
+    def emit_threadsafe(self, *args: Any) -> None:
+        self.event.emit_threadsafe(*args)  # pragma: no cover
+
+    def clear(self) -> None:
+        self.event.clear()  # pragma: no cover
+
+    def run(self) -> list[Any]:
+        return self.event.run()  # pragma: no cover
+
+    def pipe(self, *targets: Event) -> Event:
+        return self.event.pipe(*targets)  # pragma: no cover
+
+    def fork(self, *targets: Event) -> Fork:
+        return self.event.fork(*targets)  # pragma: no cover
+
+    def set_source(self, source: Any, /) -> None:
+        self.event.set_source(source)  # pragma: no cover
+
+    def _onFinalize(self, ref: Any) -> None:  # noqa: N802
+        self.event._onFinalize(ref)  # noqa: SLF001 # pragma: no cover
+
+    async def aiter(self, *, skip_to_last: bool = False, tuples: bool = False) -> Any:
+        async for i in self.event.aiter(  # pragma: no cover
+            skip_to_last=skip_to_last, tuples=tuples
+        ):
+            yield i
+
+    __iadd__ = connect
+    __isub__ = disconnect
+    __call__ = emit
+    __or__ = pipe
+
+    @override
+    def __repr__(self) -> str:
+        return self.event.__repr__()  # pragma: no cover
+
+    def __len__(self) -> int:
+        return self.event.__len__()  # pragma: no cover
+
+    def __bool__(self) -> bool:
+        return self.event.__bool__()  # pragma: no cover
+
+    def __getitem__(self, fork_targets: Any, /) -> Fork:
+        return self.event.__getitem__(fork_targets)  # pragma: no cover
+
+    def __await__(self) -> Any:
+        return self.event.__await__()  # pragma: no cover
+
+    __aiter__ = aiter
+
+    def __contains__(self, c: Any, /) -> bool:
+        return self.event.__contains__(c)  # pragma: no cover
+
+    @override
+    def __reduce__(self) -> Any:
+        return self.event.__reduce__()  # pragma: no cover
+
+    def filter(self, *, predicate: Any = bool) -> Filter:
+        return self.event.filter(predicate=predicate)  # pragma: no cover
+
+    def skip(self, *, count: int = 1) -> Skip:
+        return self.event.skip(count=count)  # pragma: no cover
+
+    def take(self, *, count: int = 1) -> Take:
+        return self.event.take(count=count)  # pragma: no cover
+
+    def takewhile(self, *, predicate: Any = bool) -> TakeWhile:
+        return self.event.takewhile(predicate=predicate)  # pragma: no cover
+
+    def dropwhile(self, *, predicate: Any = lambda x: not x) -> DropWhile:  # pyright: ignore[reportUnknownLambdaType]
+        return self.event.dropwhile(predicate=predicate)  # pragma: no cover
+
+    def takeuntil(self, notifier: Event, /) -> TakeUntil:
+        return self.event.takeuntil(notifier)  # pragma: no cover
+
+    def constant(self, constant: Any, /) -> Constant:
+        return self.event.constant(constant)  # pragma: no cover
+
+    def iterate(self, it: Any, /) -> Iterate:
+        return self.event.iterate(it)  # pragma: no cover
+
+    def count(self, *, start: int = 0, step: int = 1) -> Count:
+        return self.event.count(start=start, step=step)  # pragma: no cover
+
+    def enumerate(self, *, start: int = 0, step: int = 1) -> Enumerate:
+        return self.event.enumerate(start=start, step=step)  # pragma: no cover
+
+    def timestamp(self) -> Timestamp:
+        return self.event.timestamp()  # pragma: no cover
+
+    def partial(self, *left_args: Any) -> Partial:
+        return self.event.partial(*left_args)  # pragma: no cover
+
+    def partial_right(self, *right_args: Any) -> PartialRight:
+        return self.event.partial_right(*right_args)  # pragma: no cover
+
+    def star(self) -> Star:
+        return self.event.star()  # pragma: no cover
+
+    def pack(self) -> Pack:
+        return self.event.pack()  # pragma: no cover
+
+    def pluck(self, *selections: int | str) -> Pluck:
+        return self.event.pluck(*selections)  # pragma: no cover
+
+    def map(
+        self,
+        func: Any,
+        /,
+        *,
+        timeout: float | None = None,
+        ordered: bool = True,
+        task_limit: int | None = None,
+    ) -> Map:
+        return self.event.map(  # pragma: no cover
+            func, timeout=timeout, ordered=ordered, task_limit=task_limit
+        )
+
+
+##
+
+
+class TypedEvent(Event, Generic[TCallableMaybeCoroutine1None]):
+    """A typed version of `Event`."""
 
     @override
     def connect(
@@ -197,4 +393,4 @@ def _lift_listener(
     return lifted
 
 
-__all__ = ["AddListenerError", "EnhancedEvent", "add_listener"]
+__all__ = ["AddListenerError", "TypedEvent", "add_listener"]
