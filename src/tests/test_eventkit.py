@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from asyncio import sleep
+from collections.abc import Callable
 from functools import wraps
 from io import StringIO
 from logging import StreamHandler, getLogger
@@ -12,11 +13,16 @@ from hypothesis import given
 from hypothesis.strategies import sampled_from
 from pytest import raises
 
-from utilities.eventkit import AddListenerError, add_listener
+from utilities.eventkit import (
+    LiftedEvent,
+    LiftListenerError,
+    TypedEvent,
+    add_listener,
+    lift_listener,
+)
 from utilities.hypothesis import temp_paths, text_ascii
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from pathlib import Path
 
 
@@ -217,26 +223,64 @@ class TestAddListener:
         event.emit()
         assert counter == 2
 
-    def test_error(self) -> None:
-        event = Event()
-        counter = 0
-        log: set[tuple[str, type[BaseException]]] = set()
 
-        def listener(n: int, /) -> None:
-            if n >= 0:
-                nonlocal counter
-                counter += n
-            else:
-                msg = "'n' must be non-negative"
-                raise ValueError(msg)
+class TestLiftListener:
+    def test_error(self) -> None:
+        def listener() -> None:
+            pass
 
         async def error(event: Event, exception: BaseException, /) -> None:
-            nonlocal log
-            log.add((event.name(), type(exception)))
+            _ = (event, exception)
             await sleep(0.01)
 
         with raises(
-            AddListenerError,
+            LiftListenerError,
             match="Synchronous listener .* cannot be paired with an asynchronous error handler .*",
         ):
-            _ = add_listener(event, listener, error=error)
+            _ = lift_listener(listener, Event(), error=error)
+
+
+class TestLiftedEvent:
+    def test_main(self) -> None:
+        event1 = Event()
+        counter = 0
+
+        def listener() -> None:
+            nonlocal counter
+            counter += 1
+
+        _ = event1.connect(listener)
+        event1.emit()
+        assert counter == 1
+
+        event2 = Event()
+
+        class Example(LiftedEvent[Callable[[], None]]): ...
+
+        lifted = Example(event=event2)
+        _ = lifted.connect(listener)
+        lifted.emit()
+        assert counter == 2
+
+        def incorrect(x: int, /) -> None:
+            assert x >= 0
+
+        _ = lifted.connect(incorrect)  # pyright: ignore[reportArgumentType]
+
+
+class TestTypedEvent:
+    def test_main(self) -> None:
+        class Example(TypedEvent[Callable[[int], None]]): ...
+
+        event = Example()
+
+        def correct(x: int, /) -> None:
+            assert x >= 0
+
+        _ = event.connect(correct)
+
+        def incorrect(x: int, y: int, /) -> None:
+            assert x >= 0
+            assert y >= 0
+
+        _ = event.connect(incorrect)  # pyright: ignore[reportArgumentType]
