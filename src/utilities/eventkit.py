@@ -46,7 +46,7 @@ def add_listener(
     keep_ref: bool = False,
 ) -> _TEvent:
     """Connect a listener to an event."""
-    lifted = lift_listener(
+    lifted = _lift_listener(
         listener,
         event,
         error=error,
@@ -85,7 +85,7 @@ class EnhancedEvent(Event, Generic[TCallableMaybeCoroutine1None]):
         logger: LoggerOrName | None = None,
         decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
     ) -> Self:
-        lifted = lift_listener(
+        lifted = _lift_listener(
             listener,
             self,
             error=cast(
@@ -100,7 +100,10 @@ class EnhancedEvent(Event, Generic[TCallableMaybeCoroutine1None]):
         )
 
 
-def lift_listener(
+##
+
+
+def _lift_listener(
     listener: Callable[..., MaybeCoroutine1[None]],
     event: Event,
     /,
