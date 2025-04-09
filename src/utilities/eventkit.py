@@ -393,4 +393,10 @@ class LiftListenerError(Exception):
         return f"Synchronous listener {self.listener} cannot be paired with an asynchronous error handler {self.error}"
 
 
-__all__ = ["LiftListenerError", "TypedEvent", "add_listener", "lift_listener"]
+__all__ = [
+    "LiftListenerError",
+    "LiftedEvent",
+    "TypedEvent",
+    "add_listener",
+    "lift_listener",
+]
