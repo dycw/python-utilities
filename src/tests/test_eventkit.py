@@ -227,16 +227,10 @@ class TestAddListener:
 class TestLiftListener:
     def test_error(self) -> None:
         event = Event()
-        counter = 0
         log: set[tuple[str, type[BaseException]]] = set()
 
-        def listener(n: int, /) -> None:
-            if n >= 0:
-                nonlocal counter
-                counter += n
-            else:
-                msg = "'n' must be non-negative"
-                raise ValueError(msg)
+        def listener() -> None:
+            pass
 
         async def error(event: Event, exception: BaseException, /) -> None:
             nonlocal log
