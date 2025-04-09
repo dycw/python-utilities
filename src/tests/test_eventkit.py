@@ -226,22 +226,18 @@ class TestAddListener:
 
 class TestLiftListener:
     def test_error(self) -> None:
-        event = Event()
-        log: set[tuple[str, type[BaseException]]] = set()
-
         def listener() -> None:
             pass
 
         async def error(event: Event, exception: BaseException, /) -> None:
-            nonlocal log
-            log.add((event.name(), type(exception)))
+            _ = (event, exception)
             await sleep(0.01)
 
         with raises(
             LiftListenerError,
             match="Synchronous listener .* cannot be paired with an asynchronous error handler .*",
         ):
-            _ = lift_listener(listener, event, error=error)
+            _ = lift_listener(listener, Event(), error=error)
 
 
 class TestLiftedEvent:
@@ -249,26 +245,25 @@ class TestLiftedEvent:
         event1 = Event()
         counter = 0
 
-        def listener(n: int, /) -> None:
+        def listener() -> None:
             nonlocal counter
-            counter += n
+            counter += 1
 
         _ = event1.connect(listener)
-        event1.emit(1)
+        event1.emit()
         assert counter == 1
 
         event2 = Event()
 
-        class Example(LiftedEvent[Callable[[int], None]]): ...
+        class Example(LiftedEvent[Callable[[], None]]): ...
 
         lifted = Example(event=event2)
         _ = lifted.connect(listener)
-        lifted.emit(1)
+        lifted.emit()
         assert counter == 2
 
-        def incorrect(x: int, y: int, /) -> None:
+        def incorrect(x: int, /) -> None:
             assert x >= 0
-            assert y >= 0
 
         _ = lifted.connect(incorrect)  # pyright: ignore[reportArgumentType]
 
