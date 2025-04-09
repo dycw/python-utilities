@@ -13,7 +13,13 @@ from hypothesis import given
 from hypothesis.strategies import sampled_from
 from pytest import raises
 
-from utilities.eventkit import AddListenerError, LiftedEvent, TypedEvent, add_listener
+from utilities.eventkit import (
+    LiftedEvent,
+    LiftListenerError,
+    TypedEvent,
+    add_listener,
+    lift_listener,
+)
 from utilities.hypothesis import temp_paths, text_ascii
 
 if TYPE_CHECKING:
@@ -217,6 +223,8 @@ class TestAddListener:
         event.emit()
         assert counter == 2
 
+
+class TestLiftListener:
     def test_error(self) -> None:
         event = Event()
         counter = 0
@@ -236,10 +244,10 @@ class TestAddListener:
             await sleep(0.01)
 
         with raises(
-            AddListenerError,
+            LiftListenerError,
             match="Synchronous listener .* cannot be paired with an asynchronous error handler .*",
         ):
-            _ = add_listener(event, listener, error=error)
+            _ = lift_listener(listener, event, error=error)
 
 
 class TestLiftedEvent:

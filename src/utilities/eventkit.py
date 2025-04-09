@@ -66,7 +66,7 @@ def add_listener(
     keep_ref: bool = False,
 ) -> _TEvent:
     """Connect a listener to an event."""
-    lifted = _lift_listener(
+    lifted = lift_listener(
         listener,
         event,
         error=error,
@@ -75,16 +75,6 @@ def add_listener(
         decorators=decorators,
     )
     return cast("_TEvent", event.connect(lifted, done=done, keep_ref=keep_ref))
-
-
-@dataclass(kw_only=True, slots=True)
-class AddListenerError(Exception):
-    listener: Callable[..., None]
-    error: Callable[[Event, Exception], Coroutine1[None]]
-
-    @override
-    def __str__(self) -> str:
-        return f"Synchronous listener {self.listener} cannot be paired with an asynchronous error handler {self.error}"
 
 
 ##
@@ -281,7 +271,7 @@ class TypedEvent(Event, Generic[TCallableMaybeCoroutine1None]):
         logger: LoggerOrName | None = None,
         decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
     ) -> Self:
-        lifted = _lift_listener(
+        lifted = lift_listener(
             listener,
             self,
             error=cast(
@@ -299,7 +289,7 @@ class TypedEvent(Event, Generic[TCallableMaybeCoroutine1None]):
 ##
 
 
-def _lift_listener(
+def lift_listener(
     listener: Callable[..., MaybeCoroutine1[None]],
     event: Event,
     /,
@@ -358,7 +348,7 @@ def _lift_listener(
                     error_typed = cast(
                         "Callable[[Event, Exception], Coroutine1[None]]", error
                     )
-                    raise AddListenerError(listener=listener_typed, error=error_typed)
+                    raise LiftListenerError(listener=listener_typed, error=error_typed)
                 case True, _:
                     listener_typed = cast("Callable[..., Coroutine1[None]]", listener)
 
@@ -393,4 +383,14 @@ def _lift_listener(
     return lifted
 
 
-__all__ = ["AddListenerError", "TypedEvent", "add_listener"]
+@dataclass(kw_only=True, slots=True)
+class LiftListenerError(Exception):
+    listener: Callable[..., None]
+    error: Callable[[Event, Exception], Coroutine1[None]]
+
+    @override
+    def __str__(self) -> str:
+        return f"Synchronous listener {self.listener} cannot be paired with an asynchronous error handler {self.error}"
+
+
+__all__ = ["LiftListenerError", "TypedEvent", "add_listener", "lift_listener"]
