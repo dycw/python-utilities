@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from asyncio import sleep
+from collections.abc import Callable
 from functools import wraps
 from io import StringIO
 from logging import StreamHandler, getLogger
@@ -12,11 +13,10 @@ from hypothesis import given
 from hypothesis.strategies import sampled_from
 from pytest import raises
 
-from utilities.eventkit import AddListenerError, add_listener
+from utilities.eventkit import AddListenerError, TypedEvent, add_listener
 from utilities.hypothesis import temp_paths, text_ascii
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from pathlib import Path
 
 
@@ -240,3 +240,35 @@ class TestAddListener:
             match="Synchronous listener .* cannot be paired with an asynchronous error handler .*",
         ):
             _ = add_listener(event, listener, error=error)
+
+
+class TestTypedEvent:
+    def test_main(self) -> None:
+        class Example(TypedEvent[Callable[[bool], None]]): ...
+
+        event = Example()
+
+        def correct(x: bool, /) -> None:  # noqa: FBT001
+            assert x
+
+        _ = event.connect(correct)
+
+        def incorrect(x: str, /) -> None:
+            assert x
+
+        _ = event.connect(incorrect)  # pyright: ignore[reportArgumentType]
+
+    def test_add_listener(self) -> None:
+        class Example(TypedEvent[Callable[[bool], None]]): ...
+
+        event = Example()
+
+        def correct(x: bool, /) -> None:  # noqa: FBT001
+            assert x
+
+        _ = add_listener(event, correct)
+
+        def incorrect(x: str, /) -> None:
+            assert x
+
+        _ = add_listener(event, incorrect)

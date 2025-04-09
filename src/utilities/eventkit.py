@@ -3,26 +3,59 @@ from __future__ import annotations
 from asyncio import iscoroutinefunction
 from dataclasses import dataclass
 from functools import wraps
-from typing import TYPE_CHECKING, Any, assert_never, cast, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Self,
+    assert_never,
+    cast,
+    overload,
+    override,
+)
+
+from eventkit import Event
 
 from utilities.functions import apply_decorators
 from utilities.iterables import always_iterable
 from utilities.logging import get_logger
+from utilities.types import TCallable, TCallableMaybeCoroutine1None
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from eventkit import Event
-
-    from utilities.types import (
-        Coroutine1,
-        LoggerOrName,
-        MaybeCoroutine1,
-        MaybeIterable,
-        TCallable,
-    )
+    from utilities.types import Coroutine1, LoggerOrName, MaybeCoroutine1, MaybeIterable
 
 
+##
+
+
+@overload
+def add_listener(
+    event: TypedEvent[TCallableMaybeCoroutine1None],
+    listener: TCallableMaybeCoroutine1None,
+    /,
+    *,
+    error: Callable[[Event, BaseException], MaybeCoroutine1[None]] | None = None,
+    ignore: type[BaseException] | tuple[type[BaseException], ...] | None = None,
+    logger: LoggerOrName | None = None,
+    decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
+    done: Callable[..., Any] | None = None,
+    keep_ref: bool = False,
+) -> TypedEvent[TCallableMaybeCoroutine1None]: ...
+@overload
+def add_listener(
+    event: Event,
+    listener: Callable[..., MaybeCoroutine1[None]],
+    /,
+    *,
+    error: Callable[[Event, BaseException], MaybeCoroutine1[None]] | None = None,
+    ignore: type[BaseException] | tuple[type[BaseException], ...] | None = None,
+    logger: LoggerOrName | None = None,
+    decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
+    done: Callable[..., Any] | None = None,
+    keep_ref: bool = False,
+) -> Event: ...
 def add_listener(
     event: Event,
     listener: Callable[..., MaybeCoroutine1[None]],
@@ -131,4 +164,21 @@ class AddListenerError(Exception):
         return f"Synchronous listener {self.listener} cannot be paired with an asynchronous error handler {self.error}"
 
 
-__all__ = ["AddListenerError", "add_listener"]
+##
+
+
+class TypedEvent(Event, Generic[TCallableMaybeCoroutine1None]):
+    """A typed version of `Event`."""
+
+    @override
+    def connect(
+        self,
+        listener: TCallableMaybeCoroutine1None,
+        error: Callable[[Self, Exception], MaybeCoroutine1[None]] | None = None,
+        done: Callable[[Self], MaybeCoroutine1[None]] | None = None,
+        keep_ref: bool = False,
+    ) -> Event:
+        return super().connect(listener, error, done, keep_ref)
+
+
+__all__ = ["AddListenerError", "TypedEvent", "add_listener"]
