@@ -4,9 +4,12 @@ from contextlib import suppress
 from pathlib import Path
 from re import escape
 
+from hypothesis import given
+from hypothesis.strategies import sampled_from
 from pytest import mark, param, raises
 
-from utilities.atomicwrites import DirectoryExistsError, WriterError, writer
+from utilities.atomicwrites import _WriterDirectoryExistsError, _WriterTypeError, writer
+from utilities.hypothesis import temp_paths
 from utilities.platform import IS_WINDOWS
 
 
@@ -61,7 +64,7 @@ class TestWriter:
         path = Path(tmp_path, "dir")
         with writer(path) as temp1:
             temp1.mkdir()
-        with raises(DirectoryExistsError), writer(path) as temp2:
+        with raises(_WriterDirectoryExistsError), writer(path) as temp2:
             temp2.mkdir()
 
     def test_dir_overwrite(self, *, tmp_path: Path) -> None:
@@ -76,11 +79,15 @@ class TestWriter:
                 Path(temp2, f"file{i}").touch()
         assert len(list(path.iterdir())) == 3
 
-    @mark.parametrize("error", [param(KeyboardInterrupt), param(ValueError)])
+    @given(
+        root=temp_paths(),
+        case=sampled_from([(KeyboardInterrupt, False), (ValueError, True)]),
+    )
     def test_error_during_write(
-        self, *, tmp_path: Path, error: type[Exception]
+        self, *, root: Path, case: tuple[type[Exception], bool]
     ) -> None:
-        path = Path(tmp_path, "file.txt")
+        error, expected = case
+        path = Path(root, "file.txt")
 
         def raise_error() -> None:
             raise error
@@ -88,10 +95,10 @@ class TestWriter:
         with writer(path) as temp1, temp1.open(mode="w") as fh, suppress(Exception):
             _ = fh.write("contents")
             raise_error()
-        expected = int(not issubclass(error, KeyboardInterrupt))
-        assert len(list(tmp_path.iterdir())) == expected
+        is_non_empty = len(list(root.iterdir())) >= 1
+        assert is_non_empty is expected
 
     def test_writer(self, *, tmp_path: Path) -> None:
         path = Path(tmp_path, "file.txt")
-        with raises(WriterError), writer(path):
+        with raises(_WriterTypeError), writer(path):
             pass

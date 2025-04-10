@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
 from shutil import move, rmtree
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from atomicwrites import move_atomic, replace_atomic
 
@@ -13,9 +14,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from utilities.types import PathLike
-
-
-class DirectoryExistsError(Exception): ...
 
 
 @contextmanager
@@ -33,20 +31,38 @@ def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
             rmtree(temp_dir)
         else:
             if temp_path.is_file():
-                src, dest = map(str, [temp_path, path])
                 if overwrite:
-                    return replace_atomic(src, dest)
-                return move_atomic(src, dest)
+                    return replace_atomic(temp_path, path)
+                return move_atomic(temp_path, path)
             if temp_path.is_dir():
-                if (not path.exists()) or overwrite:
-                    return move(temp_path, path)
-                msg = f"{temp_dir=}, {path=}"
-                raise DirectoryExistsError(msg)
-            msg = f"{temp_path=}"
-            raise WriterError(msg)
+                if path.exists() and not overwrite:
+                    raise _WriterDirectoryExistsError(
+                        temp_path=temp_path, destination=path
+                    )
+                return move(temp_path, path)
+            raise _WriterTypeError(temp_path=temp_path)
 
 
-class WriterError(Exception): ...
+@dataclass(kw_only=True, slots=True)
+class WriterError(Exception):
+    temp_path: Path
 
 
-__all__ = ["DirectoryExistsError", "WriterError", "writer"]
+@dataclass(kw_only=True, slots=True)
+class _WriterDirectoryExistsError(WriterError):
+    destination: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot move temporary directory {str(self.temp_path)!r} to {str(self.destination)!r} without `overwrite`"
+
+
+class _WriterTypeError(WriterError):
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Temporary path {str(self.temp_path)!r} is neither a file nor a directory"
+        )
+
+
+__all__ = ["WriterError", "writer"]
