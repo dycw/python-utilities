@@ -60,13 +60,6 @@ class TestWriter:
                 Path(temp, f"file{i}").touch()
         assert len(list(path.iterdir())) == 2
 
-    def test_dir_exists_error(self, *, tmp_path: Path) -> None:
-        path = Path(tmp_path, "dir")
-        with writer(path) as temp1:
-            temp1.mkdir()
-        with raises(_WriterDirectoryExistsError), writer(path) as temp2:
-            temp2.mkdir()
-
     def test_dir_overwrite(self, *, tmp_path: Path) -> None:
         path = Path(tmp_path, "dir")
         with writer(path) as temp1:
@@ -98,7 +91,14 @@ class TestWriter:
         is_non_empty = len(list(root.iterdir())) >= 1
         assert is_non_empty is expected
 
-    def test_writer(self, *, tmp_path: Path) -> None:
+    def test_error_directory_exists(self, *, tmp_path: Path) -> None:
+        path = Path(tmp_path, "dir")
+        with writer(path) as temp1:
+            temp1.mkdir()
+        with raises(_WriterDirectoryExistsError), writer(path) as temp2:
+            temp2.mkdir()
+
+    def test_error_type(self, *, tmp_path: Path) -> None:
         path = Path(tmp_path, "file.txt")
         with raises(_WriterTypeError), writer(path):
             pass
