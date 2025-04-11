@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from contextlib import suppress
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from hypothesis import given
@@ -14,13 +13,15 @@ from utilities.atomicwrites import (
     _MoveSourceNotFoundError,
     _WriterDirectoryExistsError,
     _WriterFileExistsError,
-    _WriterSourceNotFoundError,
+    _WriterTemporaryPathEmptyError,
     move,
     writer,
 )
 from utilities.hypothesis import temp_paths
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from utilities.types import OpenMode
 
 
@@ -142,38 +143,48 @@ class TestWriter:
         self, *, root: Path, case: tuple[OpenMode, OpenMode, str | bytes]
     ) -> None:
         write_mode, read_mode, contents = case
-        path = Path(root, "file.txt")
+        path = root.joinpath("file.txt")
         with writer(path) as temp, temp.open(mode=write_mode) as fh1:
             _ = fh1.write(contents)
         with path.open(mode=read_mode) as fh2:
             assert fh2.read() == contents
 
-    def test_error_file_exists(self, *, tmp_path: Path) -> None:
-        path = Path(tmp_path, "file.txt")
-        with writer(path) as temp1, temp1.open(mode="w") as fh1:
-            _ = fh1.write("contents")
+    @given(root=temp_paths())
+    def test_error_temporary_path_empty(self, *, root: Path) -> None:
+        with (
+            raises(
+                _WriterTemporaryPathEmptyError, match="Temporary path '.*' is empty"
+            ),
+            writer(root),
+        ):
+            pass
+
+    @given(root=temp_paths())
+    def test_error_file_exists(self, *, root: Path) -> None:
+        path = root.joinpath("file.txt")
+        path.touch()
         with (
             raises(
                 _WriterFileExistsError,
                 match="Cannot write to '.*' as file already exists",
             ),
-            writer(path) as temp2,
-            temp2.open(mode="w") as fh2,
+            writer(path) as temp,
+            temp.open(mode="w") as fh,
         ):
-            _ = fh2.write("new contents")
+            _ = fh.write("new contents")
 
-    def test_error_directory_exists(self, *, tmp_path: Path) -> None:
-        path = Path(tmp_path, "dir")
-        with writer(path) as temp1:
-            temp1.mkdir()
+    @given(root=temp_paths())
+    def test_error_directory_exists(self, *, root: Path) -> None:
+        path = root.joinpath("dir")
+        path.mkdir()
         with (
             raises(
                 _WriterDirectoryExistsError,
                 match="Cannot write to '.*' as directory already exists",
             ),
-            writer(path) as temp2,
+            writer(path) as temp,
         ):
-            temp2.mkdir()
+            temp.mkdir()
 
     @given(
         root=temp_paths(),
@@ -183,7 +194,7 @@ class TestWriter:
         self, *, root: Path, case: tuple[type[Exception], bool]
     ) -> None:
         error, expected = case
-        path = Path(root, "file.txt")
+        path = root.joinpath("file.txt")
 
         def raise_error() -> None:
             raise error
@@ -193,8 +204,3 @@ class TestWriter:
             raise_error()
         is_non_empty = len(list(root.iterdir())) >= 1
         assert is_non_empty is expected
-
-    def test_error_type(self, *, tmp_path: Path) -> None:
-        path = Path(tmp_path, "file.txt")
-        with raises(_WriterSourceNotFoundError), writer(path):
-            pass

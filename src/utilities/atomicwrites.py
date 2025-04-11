@@ -140,7 +140,7 @@ def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
             try:
                 move(temp_path, path, overwrite=overwrite)
             except _MoveSourceNotFoundError as error:
-                raise _WriterSourceNotFoundError(temp_path=error.source) from None
+                raise _WriterTemporaryPathEmptyError(temp_path=error.source) from None
             except _MoveFileExistsError as error:
                 raise _WriterFileExistsError(destination=error.destination) from None
             except _MoveDirectoryExistsError as error:
@@ -154,12 +154,12 @@ class WriterError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
-class _WriterSourceNotFoundError(WriterError):
+class _WriterTemporaryPathEmptyError(WriterError):
     temp_path: Path
 
     @override
     def __str__(self) -> str:
-        return f"Source {str(self.temp_path)!r} does not exist"
+        return f"Temporary path {str(self.temp_path)!r} is empty"
 
 
 @dataclass(kw_only=True, slots=True)
