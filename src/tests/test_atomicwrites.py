@@ -3,28 +3,33 @@ from __future__ import annotations
 from contextlib import suppress
 from pathlib import Path
 from re import escape
+from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import sampled_from
-from pytest import mark, param, raises
+from pytest import raises
 
 from utilities.atomicwrites import _WriterDirectoryExistsError, _WriterTypeError, writer
 from utilities.hypothesis import temp_paths
 from utilities.platform import IS_WINDOWS
 
+if TYPE_CHECKING:
+    from utilities.types import OpenMode
+
 
 class TestWriter:
-    @mark.parametrize(
-        ("is_binary", "contents"),
-        [param(False, "contents", id="text"), param(True, b"contents", id="binary")],
+    @given(
+        root=temp_paths(),
+        case=sampled_from([("w", "r", "contents"), ("wb", "rb", b"contents")]),
     )
     def test_file_writing(
-        self, *, tmp_path: Path, is_binary: bool, contents: str | bytes
+        self, *, root: Path, case: tuple[OpenMode, OpenMode, str | bytes]
     ) -> None:
-        path = Path(tmp_path, "file.txt")
-        with writer(path) as temp, temp.open(mode="wb" if is_binary else "w") as fh1:
+        write_mode, read_mode, contents = case
+        path = Path(root, "file.txt")
+        with writer(path) as temp, temp.open(mode=write_mode) as fh1:
             _ = fh1.write(contents)
-        with path.open(mode="rb" if is_binary else "r") as fh2:
+        with path.open(mode=read_mode) as fh2:
             assert fh2.read() == contents
 
     def test_file_exists_error(self, *, tmp_path: Path) -> None:
