@@ -24,7 +24,6 @@ from logging import (
 from logging.handlers import BaseRotatingHandler, TimedRotatingFileHandler
 from pathlib import Path
 from re import Pattern, search
-from shutil import move
 from sys import stdout
 from time import time
 from typing import (
@@ -38,7 +37,7 @@ from typing import (
     override,
 )
 
-from utilities.atomicwrites import writer
+from utilities.atomicwrites import move_many, writer
 from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
     SECOND,
@@ -247,10 +246,9 @@ class _RolloverActions:
     def do(self) -> None:
         for deletion in self.deletions:  # skipif-ci-and-windows
             deletion.delete()
-        for rotation in sorted(  # skipif-ci-and-windows
-            self.rotations, key=lambda r: r.index, reverse=True
-        ):
-            rotation.rotate()
+        move_many(  # skipif-ci-and-windows
+            *((r.file.path, r.destination) for r in self.rotations)
+        )
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -373,15 +371,6 @@ class _Rotation:
         return self.file.replace(  # skipif-ci-and-windows
             index=self.index, start=self.start, end=self.end
         ).path
-
-    def rotate(self) -> None:
-        try:  # skipif-ci-and-windows
-            from utilities.atomicwrites import writer
-        except ModuleNotFoundError:  # pragma: no cover
-            move(self.file.path, self.destination)
-        else:  # skipif-ci-and-windows
-            with writer(self.destination) as tmp_path:
-                move(self.file.path, tmp_path)
 
 
 ##
