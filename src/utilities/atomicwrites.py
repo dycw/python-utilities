@@ -47,6 +47,7 @@ def move(
             rmtree(destination, ignore_errors=True)
             return shutil.move(source, destination)
         case False, True, _, _, _:
+            destination.unlink(missing_ok=True)
             return shutil.move(source, destination)
         case True, True, _, _, _:
             raise _MoveTypeError(source=source)
