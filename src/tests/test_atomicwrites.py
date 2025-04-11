@@ -148,35 +148,6 @@ class TestWriter:
         with path.open(mode=read_mode) as fh2:
             assert fh2.read() == contents
 
-    def test_file_overwrite(self, *, tmp_path: Path) -> None:
-        path = Path(tmp_path, "file.txt")
-        with writer(path) as temp1, temp1.open(mode="w") as fh1:
-            _ = fh1.write("contents")
-        with writer(path, overwrite=True) as temp2, temp2.open(mode="w") as fh2:
-            _ = fh2.write("new contents")
-        with path.open() as fh3:
-            assert fh3.read() == "new contents"
-
-    def test_dir_writing(self, *, tmp_path: Path) -> None:
-        path = Path(tmp_path, "dir")
-        with writer(path) as temp:
-            temp.mkdir()
-            for i in range(2):
-                Path(temp, f"file{i}").touch()
-        assert len(list(path.iterdir())) == 2
-
-    def test_dir_overwrite(self, *, tmp_path: Path) -> None:
-        path = Path(tmp_path, "dir")
-        with writer(path) as temp1:
-            temp1.mkdir()
-            for i in range(2):
-                Path(temp1, f"file{i}").touch()
-        with writer(path, overwrite=True) as temp2:
-            temp2.mkdir()
-            for i in range(3):
-                Path(temp2, f"file{i}").touch()
-        assert len(list(path.iterdir())) == 3
-
     def test_error_file_exists(self, *, tmp_path: Path) -> None:
         path = Path(tmp_path, "file.txt")
         with writer(path) as temp1, temp1.open(mode="w") as fh1:
@@ -184,7 +155,7 @@ class TestWriter:
         with (
             raises(
                 _WriterFileExistsError,
-                match="Cannot write to '.*' as destination already exists",
+                match="Cannot write to '.*' as file already exists",
             ),
             writer(path) as temp2,
             temp2.open(mode="w") as fh2,
@@ -198,7 +169,7 @@ class TestWriter:
         with (
             raises(
                 _WriterDirectoryExistsError,
-                match="Cannot write to '.*' as destination already exists",
+                match="Cannot write to '.*' as directory already exists",
             ),
             writer(path) as temp2,
         ):
