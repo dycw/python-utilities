@@ -150,12 +150,14 @@ class AsyncLoopingService(AsyncService):
         while True:
             try:
                 await self._run()
-                await sleep_dur(duration=self.sleep)
             except CancelledError:
                 await self.stop()
                 break
             except Exception as error:  # noqa: BLE001
                 await self._run_failure(error)
+                await sleep_dur(duration=self.sleep)
+            else:
+                await sleep_dur(duration=self.sleep)
 
 
 ##
