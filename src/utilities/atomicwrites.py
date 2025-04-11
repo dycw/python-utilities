@@ -5,7 +5,7 @@ from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from shutil import rmtree
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, assert_never, override
 
 from atomicwrites import move_atomic, replace_atomic
 
@@ -50,6 +50,8 @@ def move(
             return shutil.move(source, destination)
         case True, True, _, _, _:
             raise _MoveTypeError(source=source)
+        case _ as never:
+            assert_never(never)
 
 
 @dataclass(kw_only=True, slots=True)
