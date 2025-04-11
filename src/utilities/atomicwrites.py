@@ -38,9 +38,9 @@ def move(
             raise _MoveFileExistsError(source=source, destination=destination) from None
         case True, False, False, True, _:
             rmtree(destination, ignore_errors=True)
-            return replace_atomic(source, destination)
+            return replace_atomic(str(source), str(destination))  # must be `str`s
         case True, False, _, _, _:
-            return replace_atomic(source, destination)
+            return replace_atomic(str(source), str(destination))  # must be `str`s
         # directories
         case (False, True, True, False, False) | (False, True, False, True, False):
             raise _MoveDirectoryExistsError(source=source, destination=destination)
