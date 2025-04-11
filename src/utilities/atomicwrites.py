@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from shutil import move, rmtree
@@ -8,12 +8,25 @@ from typing import TYPE_CHECKING, override
 
 from atomicwrites import move_atomic, replace_atomic
 
+from utilities.iterables import transpose
 from utilities.tempfile import TemporaryDirectory
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from utilities.types import PathLike
+
+
+def move_atomic_concurrent(*paths: tuple[PathLike, PathLike]) -> None:
+    """Move a set of files concurrently."""
+    sources, destinations = transpose(paths)
+    sources, destinations = map(Path, [sources, destinations])
+    len(paths)
+    with ExitStack():
+        pass
+
+
+##
 
 
 @contextmanager
