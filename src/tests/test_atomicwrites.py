@@ -2,16 +2,19 @@ from __future__ import annotations
 
 from contextlib import suppress
 from pathlib import Path
-from re import escape
 from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import sampled_from
 from pytest import raises
 
-from utilities.atomicwrites import _WriterDirectoryExistsError, _WriterTypeError, writer
+from utilities.atomicwrites import (
+    _WriterDirectoryExistsError,
+    _WriterFileExistsError,
+    _WriterTypeError,
+    writer,
+)
 from utilities.hypothesis import temp_paths
-from utilities.platform import IS_WINDOWS
 
 if TYPE_CHECKING:
     from utilities.types import OpenMode
@@ -31,22 +34,6 @@ class TestWriter:
             _ = fh1.write(contents)
         with path.open(mode=read_mode) as fh2:
             assert fh2.read() == contents
-
-    def test_file_exists_error(self, *, tmp_path: Path) -> None:
-        path = Path(tmp_path, "file.txt")
-        with writer(path) as temp1, temp1.open(mode="w") as fh1:
-            _ = fh1.write("contents")
-        match = (
-            "Cannot create a file when that file already exists"
-            if IS_WINDOWS
-            else escape(str(path))
-        )
-        with (
-            raises(FileExistsError, match=match),
-            writer(path) as temp2,
-            temp2.open(mode="w") as fh2,
-        ):
-            _ = fh2.write("new contents")
 
     def test_file_overwrite(self, *, tmp_path: Path) -> None:
         path = Path(tmp_path, "file.txt")
@@ -77,6 +64,33 @@ class TestWriter:
                 Path(temp2, f"file{i}").touch()
         assert len(list(path.iterdir())) == 3
 
+    def test_error_file_exists(self, *, tmp_path: Path) -> None:
+        path = Path(tmp_path, "file.txt")
+        with writer(path) as temp1, temp1.open(mode="w") as fh1:
+            _ = fh1.write("contents")
+        with (
+            raises(
+                _WriterFileExistsError,
+                match="Cannot write to '.*' as file already exists",
+            ),
+            writer(path) as temp2,
+            temp2.open(mode="w") as fh2,
+        ):
+            _ = fh2.write("new contents")
+
+    def test_error_directory_exists(self, *, tmp_path: Path) -> None:
+        path = Path(tmp_path, "dir")
+        with writer(path) as temp1:
+            temp1.mkdir()
+        with (
+            raises(
+                _WriterDirectoryExistsError,
+                match="Cannot write to '.*' as directory already exists",
+            ),
+            writer(path) as temp2,
+        ):
+            temp2.mkdir()
+
     @given(
         root=temp_paths(),
         case=sampled_from([(KeyboardInterrupt, False), (ValueError, True)]),
@@ -95,13 +109,6 @@ class TestWriter:
             raise_error()
         is_non_empty = len(list(root.iterdir())) >= 1
         assert is_non_empty is expected
-
-    def test_error_directory_exists(self, *, tmp_path: Path) -> None:
-        path = Path(tmp_path, "dir")
-        with writer(path) as temp1:
-            temp1.mkdir()
-        with raises(_WriterDirectoryExistsError), writer(path) as temp2:
-            temp2.mkdir()
 
     def test_error_type(self, *, tmp_path: Path) -> None:
         path = Path(tmp_path, "file.txt")

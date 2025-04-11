@@ -30,22 +30,32 @@ def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
         except KeyboardInterrupt:
             rmtree(temp_dir)
         else:
-            if temp_path.is_file():
-                if overwrite:
-                    return replace_atomic(temp_path, path)
-                return move_atomic(temp_path, path)
-            if temp_path.is_dir():
-                if path.exists() and not overwrite:
-                    raise _WriterDirectoryExistsError(
-                        temp_path=temp_path, destination=path
-                    )
+            is_file, is_dir = temp_path.is_file(), temp_path.is_dir()
+            if is_file and overwrite:
+                return replace_atomic(temp_path, path)
+            if is_file and not overwrite:
+                try:
+                    return move_atomic(temp_path, path)
+                except FileExistsError:
+                    raise _WriterFileExistsError(destination=path) from None
+            if is_dir and ((not path.exists()) or overwrite):
                 return move(temp_path, path)
+            if is_dir and path.exists() and not overwrite:
+                raise _WriterDirectoryExistsError(destination=path)
             raise _WriterTypeError(temp_path=temp_path)
 
 
 @dataclass(kw_only=True, slots=True)
-class WriterError(Exception):
-    temp_path: Path
+class WriterError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _WriterFileExistsError(WriterError):
+    destination: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot write to {str(self.destination)!r} as file already exists"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -54,10 +64,13 @@ class _WriterDirectoryExistsError(WriterError):
 
     @override
     def __str__(self) -> str:
-        return f"Cannot move temporary directory {str(self.temp_path)!r} to {str(self.destination)!r} without `overwrite`"
+        return f"Cannot write to {str(self.destination)!r} as directory already exists"
 
 
+@dataclass(kw_only=True, slots=True)
 class _WriterTypeError(WriterError):
+    temp_path: Path
+
     @override
     def __str__(self) -> str:
         return (
