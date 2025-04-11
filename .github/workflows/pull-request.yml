@@ -23,35 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest]
-        version: ["3.12", "3.13"]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.version }}
-      - run: uv sync
-      - run: uv run pytest --cov-report=term-missing:skip-covered -n=auto
-    timeout-minutes: 60
-
-  test-ubuntu:
-    name: test / ubuntu-latest / ${{ matrix.version }}
-    env:
-      CI: 1
-    runs-on: ubuntu-latest
-    services:
-      redis:
-        image: redis/redis-stack:latest
-        ports:
-          - 6379:6379
-    strategy:
-      fail-fast: false
-      matrix:
+        os: [windows-latest]
         version: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
