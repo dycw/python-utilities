@@ -67,6 +67,21 @@ class TestAsyncLoopingService:
             pass
         assert 5 <= service.counter <= 15
 
+    async def test_cancel(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(AsyncLoopingService):
+            counter: int = 0
+
+            @override
+            async def _run(self) -> None:
+                self.counter += 1
+                if self.counter >= 10:
+                    raise CancelledError
+
+        async with Example(sleep=0.1) as service:
+            pass
+        assert 5 <= service.counter <= 15
+
     async def test_sleep_after_failure(self) -> None:
         @dataclass(kw_only=True)
         class Example(AsyncLoopingService):
