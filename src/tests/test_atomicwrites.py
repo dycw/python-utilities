@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
@@ -15,9 +16,10 @@ from utilities.atomicwrites import (
     _WriterFileExistsError,
     _WriterTemporaryPathEmptyError,
     move,
+    move_many,
     writer,
 )
-from utilities.hypothesis import temp_paths
+from utilities.hypothesis import settings_with_reduced_examples, temp_paths
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -132,6 +134,21 @@ class TestMove:
             match="Cannot move directory '.*' as destination '.*' already exists",
         ):
             move(source, destination)
+
+
+class TestMoveMany:
+    @given(root=temp_paths())
+    @settings_with_reduced_examples()
+    def test_many(self, *, root: Path) -> None:
+        n = 10
+        files = [root.joinpath(f"file{i}") for i in range(n + 1)]
+        for i in range(n):
+            with files[i].open(mode="w") as fh:
+                _ = fh.write(str(i))
+        move_many(*itertools.pairwise(files), overwrite=True)
+        for i in range(1, n + 1):
+            with files[i].open() as fh:
+                assert fh.read() == str(i - 1)
 
 
 class TestWriter:

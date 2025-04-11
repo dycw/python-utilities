@@ -7,7 +7,7 @@ from pathlib import Path
 from shutil import rmtree
 from typing import TYPE_CHECKING, assert_never, override
 
-from atomicwrites import move_atomic, replace_atomic
+from atomicwrites import replace_atomic
 
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import transpose
@@ -94,30 +94,15 @@ class _MoveDirectoryExistsError(MoveError):
 ##
 
 
-def move_atomic_concurrent(*paths: tuple[PathLike, PathLike]) -> None:
-    """Move a set of files concurrently."""
-    _move_or_replace_atomic_concurrent(*paths, overwrite=False)
-
-
-def replace_atomic_concurrent(*paths: tuple[PathLike, PathLike]) -> None:
-    """Replace a set of files concurrently."""
-    _move_or_replace_atomic_concurrent(*paths, overwrite=True)
-
-
-def _move_or_replace_atomic_concurrent(
-    *paths: tuple[PathLike, PathLike], overwrite: bool = False
-) -> None:
+def move_many(*paths: tuple[PathLike, PathLike], overwrite: bool = False) -> None:
     """Move a set of files concurrently."""
     sources, destinations = transpose(paths)
-    sources, destinations = [
-        list(map(Path, paths)) for paths in [sources, destinations]
-    ]
     with ExitStack() as stack:
         temp_paths = [
             stack.enter_context(writer(p, overwrite=overwrite)) for p in destinations
         ]
         for source, temp_path in zip(sources, temp_paths, strict=True):
-            move_atomic(source, temp_path)
+            move(source, temp_path, overwrite=overwrite)
 
 
 ##
@@ -180,4 +165,4 @@ class _WriterDirectoryExistsError(WriterError):
         return f"Cannot write to {str(self.destination)!r} as directory already exists"
 
 
-__all__ = ["MoveError", "WriterError", "move", "move", "writer"]
+__all__ = ["MoveError", "WriterError", "move", "move", "move_many", "writer"]
