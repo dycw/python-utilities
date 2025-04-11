@@ -36,5 +36,5 @@ jobs:
         with:
           python-version: ${{ matrix.version }}
       - run: uv sync
-      - run: uv run pytest --cov-report=term-missing:skip-covered -n=auto
+      - run: uv run pytest
     timeout-minutes: 60
