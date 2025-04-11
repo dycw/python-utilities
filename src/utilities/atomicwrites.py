@@ -149,11 +149,20 @@ def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
                 return shutil.move(temp_path, path)
             if is_dir and path.exists() and not overwrite:
                 raise _WriterDirectoryExistsError(destination=path)
-            raise _WriterTypeError(temp_path=temp_path)
+            raise _WriterSourceNotFoundError(temp_path=temp_path)
 
 
 @dataclass(kw_only=True, slots=True)
 class WriterError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _WriterSourceNotFoundError(WriterError):
+    temp_path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Source {str(self.temp_path)!r} does not exist"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -162,7 +171,9 @@ class _WriterFileExistsError(WriterError):
 
     @override
     def __str__(self) -> str:
-        return f"Cannot write to {str(self.destination)!r} as file already exists"
+        return (
+            f"Cannot write to {str(self.destination)!r} as destination already exists"
+        )
 
 
 @dataclass(kw_only=True, slots=True)
@@ -172,17 +183,6 @@ class _WriterDirectoryExistsError(WriterError):
     @override
     def __str__(self) -> str:
         return f"Cannot write to {str(self.destination)!r} as directory already exists"
-
-
-@dataclass(kw_only=True, slots=True)
-class _WriterTypeError(WriterError):
-    temp_path: Path
-
-    @override
-    def __str__(self) -> str:
-        return (
-            f"Temporary path {str(self.temp_path)!r} is neither a file nor a directory"
-        )
 
 
 __all__ = ["MoveError", "WriterError", "move", "move", "writer"]

@@ -14,7 +14,7 @@ from utilities.atomicwrites import (
     _MoveSourceNotFoundError,
     _WriterDirectoryExistsError,
     _WriterFileExistsError,
-    _WriterTypeError,
+    _WriterSourceNotFoundError,
     move,
     writer,
 )
@@ -184,7 +184,7 @@ class TestWriter:
         with (
             raises(
                 _WriterFileExistsError,
-                match="Cannot write to '.*' as file already exists",
+                match="Cannot write to '.*' as destination already exists",
             ),
             writer(path) as temp2,
             temp2.open(mode="w") as fh2,
@@ -198,7 +198,7 @@ class TestWriter:
         with (
             raises(
                 _WriterDirectoryExistsError,
-                match="Cannot write to '.*' as directory already exists",
+                match="Cannot write to '.*' as destination already exists",
             ),
             writer(path) as temp2,
         ):
@@ -225,5 +225,5 @@ class TestWriter:
 
     def test_error_type(self, *, tmp_path: Path) -> None:
         path = Path(tmp_path, "file.txt")
-        with raises(_WriterTypeError), writer(path):
+        with raises(_WriterSourceNotFoundError), writer(path):
             pass
