@@ -10,6 +10,7 @@ from asyncio import (
     sleep,
     timeout,
 )
+from collections import Counter
 from dataclasses import dataclass, field
 from itertools import chain
 from re import search
@@ -65,6 +66,42 @@ class TestAsyncLoopingService:
         async with Example(duration=1.0, sleep=0.1) as service:
             pass
         assert 5 <= service.counter <= 15
+
+    async def test_cancel(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(AsyncLoopingService):
+            counter: int = 0
+
+            @override
+            async def _run(self) -> None:
+                self.counter += 1
+                if self.counter >= 10:
+                    raise CancelledError
+
+        async with Example(sleep=0.1) as service:
+            pass
+        assert 5 <= service.counter <= 15
+
+    async def test_sleep_after_failure(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(AsyncLoopingService):
+            counter: int = 0
+            errors: Counter[type[Exception]] = field(default_factory=Counter)
+
+            @override
+            async def _run(self) -> None:
+                self.counter += 1
+                if self.counter % 2 == 0:
+                    raise ValueError
+
+            @override
+            async def _run_failure(self, error: Exception, /) -> None:
+                self.errors.update([type(error)])
+
+        async with Example(duration=1.0, sleep=0.1) as service:
+            pass
+        assert 5 <= service.counter <= 15
+        assert 3 <= service.errors[ValueError] <= 7
 
     async def test_failure(self) -> None:
         class CustomError(Exception): ...
