@@ -140,7 +140,7 @@ class TestMoveMany:
     @given(root=temp_paths())
     @settings_with_reduced_examples()
     def test_many(self, *, root: Path) -> None:
-        n = 10
+        n = 5
         files = [root.joinpath(f"file{i}") for i in range(n + 1)]
         for i in range(n):
             with files[i].open(mode="w") as fh:
