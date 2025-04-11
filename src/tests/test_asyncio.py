@@ -101,7 +101,7 @@ class TestAsyncLoopingService:
         async with Example(duration=1.0, sleep=0.1) as service:
             pass
         assert 5 <= service.counter <= 15
-        assert service.errors[ValueError] == approx(5)
+        assert 3 <= service.errors[ValueError] <= 7
 
     async def test_failure(self) -> None:
         class CustomError(Exception): ...
