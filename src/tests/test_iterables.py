@@ -1419,7 +1419,7 @@ class TestTranspose:
         assert is_sequence_of(second, str)
         assert is_sequence_of(third, int)
         assert is_sequence_of(fourth, str)
-        assert is_sequence_of(fifth, str)
+        assert is_sequence_of(fifth, int)
         zipped = list(zip(*result, strict=True))
         assert zipped == sequence
 
