@@ -25,6 +25,28 @@ _T_contra = TypeVar("_T_contra", contravariant=True)
 # basic
 type Number = int | float
 type Duration = Number | dt.timedelta
+type OpenMode = Literal[
+    "r",
+    "w",
+    "x",
+    "a",
+    "rb",
+    "wb",
+    "xb",
+    "ab",
+    "r+",
+    "w+",
+    "x+",
+    "a+",
+    "rb+",
+    "wb+",
+    "xb+",
+    "ab+",
+    "r+b",
+    "w+b",
+    "x+b",
+    "a+b",
+]
 type StrMapping = Mapping[str, Any]
 type TupleOrStrMapping = tuple[Any, ...] | StrMapping
 type MaybeCallable[_T] = _T | Callable[[], _T]
@@ -242,6 +264,7 @@ __all__ = [
     "MaybeIterableHashable",
     "MaybeType",
     "Number",
+    "OpenMode",
     "OptExcInfo",
     "Parallelism",
     "PathLike",
