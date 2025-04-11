@@ -165,4 +165,4 @@ class _WriterDirectoryExistsError(WriterError):
         return f"Cannot write to {str(self.destination)!r} as directory already exists"
 
 
-__all__ = ["MoveError", "WriterError", "move", "move", "move_many", "writer"]
+__all__ = ["MoveError", "WriterError", "move", "move_many", "writer"]
