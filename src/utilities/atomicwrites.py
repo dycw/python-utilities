@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, assert_never, override
 
 from atomicwrites import move_atomic, replace_atomic
 
+from utilities.errors import ImpossibleCaseError
 from utilities.iterables import transpose
 from utilities.tempfile import TemporaryDirectory
 
@@ -49,8 +50,10 @@ def move(
         case False, True, _, _, _:
             destination.unlink(missing_ok=True)
             return shutil.move(source, destination)
-        case True, True, _, _, _:
-            raise _MoveTypeError(source=source)
+        case True, True, _, _, _:  # pragma: no cover
+            raise ImpossibleCaseError(
+                case=[f"{source.is_file()=}", f"{source.is_dir()=}"]
+            )
         case _ as never:
             assert_never(never)
 
@@ -86,15 +89,6 @@ class _MoveDirectoryExistsError(MoveError):
     @override
     def __str__(self) -> str:
         return f"Cannot move directory {str(self.source)!r} as destination {str(self.destination)!r} already exists"
-
-
-@dataclass(kw_only=True, slots=True)
-class _MoveTypeError(MoveError):
-    source: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Source {str(self.source)!r} is neither a file nor a directory"
 
 
 ##
