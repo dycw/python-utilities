@@ -1389,7 +1389,7 @@ def transpose(
 def transpose(
     iterable: Iterable[tuple[_T1, _T2, _T3, _T4, _T5]], /
 ) -> tuple[list[_T1], list[_T2], list[_T3], list[_T4], list[_T5]]: ...
-def transpose(iterable: Iterable[tuple[Any]]) -> tuple[list[Any], ...]:
+def transpose(iterable: Iterable[tuple[Any]]) -> tuple[list[Any], ...]:  # pyright: ignore[reportInconsistentOverload]
     """Typed verison of `transpose`."""
     return tuple(map(list, tuple(zip(*iterable, strict=True))))
 

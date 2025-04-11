@@ -27,10 +27,12 @@ from hypothesis.strategies import (
     sampled_from,
     sets,
     text,
+    tuples,
 )
 from pytest import mark, param, raises
 
 from tests.test_operator import make_objects
+from utilities.functions import is_sequence_of
 from utilities.hypothesis import (
     sentinels,
     sets_fixed_length,
@@ -1340,64 +1342,86 @@ class TestTake:
 
 
 class TestTranspose:
-    @given(n=integers(1, 10))
-    def test_singles(self, *, n: int) -> None:
-        iterable = ((i,) for i in range(n))
-        result = transpose(iterable)
+    @given(sequence=lists(tuples(integers()), min_size=1))
+    def test_singles(self, *, sequence: Sequence[tuple[int]]) -> None:
+        result = transpose(sequence)
         assert isinstance(result, tuple)
+        for list_i in result:
+            assert isinstance(list_i, list)
+            assert len(list_i) == len(sequence)
         (first,) = result
-        assert isinstance(first, list)
-        assert len(first) == n
-        for i in first:
-            assert isinstance(i, int)
+        assert is_sequence_of(first, int)
+        zipped = list(zip(*result, strict=True))
+        assert zipped == sequence
 
-    @given(n=integers(1, 10))
-    def test_pairs(self, *, n: int) -> None:
-        iterable = ((i, i) for i in range(n))
-        result = transpose(iterable)
+    @given(sequence=lists(tuples(integers(), text_ascii()), min_size=1))
+    def test_pairs(self, *, sequence: Sequence[tuple[int, str]]) -> None:
+        result = transpose(sequence)
         assert isinstance(result, tuple)
+        for list_i in result:
+            assert isinstance(list_i, list)
+            assert len(list_i) == len(sequence)
         first, second = result
-        for part in [first, second]:
-            assert isinstance(part, list)
-            assert len(part) == n
-            for i in part:
-                assert isinstance(i, int)
+        assert is_sequence_of(first, int)
+        assert is_sequence_of(second, str)
+        zipped = list(zip(*result, strict=True))
+        assert zipped == sequence
 
-    @given(n=integers(1, 10))
-    def test_triples(self, *, n: int) -> None:
-        iterable = ((i, i, i) for i in range(n))
-        result = transpose(iterable)
+    @given(sequence=lists(tuples(integers(), text_ascii(), integers()), min_size=1))
+    def test_triples(self, *, sequence: Sequence[tuple[int, str, int]]) -> None:
+        result = transpose(sequence)
         assert isinstance(result, tuple)
+        for list_i in result:
+            assert isinstance(list_i, list)
+            assert len(list_i) == len(sequence)
         first, second, third = result
-        for part in [first, second, third]:
-            assert isinstance(part, list)
-            assert len(part) == n
-            for i in part:
-                assert isinstance(i, int)
+        assert is_sequence_of(first, int)
+        assert is_sequence_of(second, str)
+        assert is_sequence_of(third, int)
+        zipped = list(zip(*result, strict=True))
+        assert zipped == sequence
 
-    @given(n=integers(1, 10))
-    def test_quadruples(self, *, n: int) -> None:
-        iterable = ((i, i, i, i) for i in range(n))
-        result = transpose(iterable)
+    @given(
+        sequence=lists(
+            tuples(integers(), text_ascii(), integers(), text_ascii()), min_size=1
+        )
+    )
+    def test_quadruples(self, *, sequence: Sequence[tuple[int, str, int, str]]) -> None:
+        result = transpose(sequence)
         assert isinstance(result, tuple)
+        for list_i in result:
+            assert isinstance(list_i, list)
+            assert len(list_i) == len(sequence)
         first, second, third, fourth = result
-        for part in [first, second, third, fourth]:
-            assert isinstance(part, list)
-            assert len(part) == n
-            for i in part:
-                assert isinstance(i, int)
+        assert is_sequence_of(first, int)
+        assert is_sequence_of(second, str)
+        assert is_sequence_of(third, int)
+        assert is_sequence_of(fourth, str)
+        zipped = list(zip(*result, strict=True))
+        assert zipped == sequence
 
-    @given(n=integers(1, 10))
-    def test_quintuples(self, *, n: int) -> None:
-        iterable = ((i, i, i, i, i) for i in range(n))
-        result = transpose(iterable)
+    @given(
+        sequence=lists(
+            tuples(integers(), text_ascii(), integers(), text_ascii(), integers()),
+            min_size=1,
+        )
+    )
+    def test_quintuples(
+        self, *, sequence: Sequence[tuple[int, str, int, str, int]]
+    ) -> None:
+        result = transpose(sequence)
         assert isinstance(result, tuple)
+        for list_i in result:
+            assert isinstance(list_i, list)
+            assert len(list_i) == len(sequence)
         first, second, third, fourth, fifth = result
-        for part in [first, second, third, fourth, fifth]:
-            assert isinstance(part, list)
-            assert len(part) == n
-            for i in part:
-                assert isinstance(i, int)
+        assert is_sequence_of(first, int)
+        assert is_sequence_of(second, str)
+        assert is_sequence_of(third, int)
+        assert is_sequence_of(fourth, str)
+        assert is_sequence_of(fifth, str)
+        zipped = list(zip(*result, strict=True))
+        assert zipped == sequence
 
 
 class TestUniqueEverseen:
