@@ -1346,7 +1346,7 @@ class TestTranspose:
         result = transpose(iterable)
         assert isinstance(result, tuple)
         (first,) = result
-        assert isinstance(first, tuple)
+        assert isinstance(first, list)
         assert len(first) == n
         for i in first:
             assert isinstance(i, int)
@@ -1358,6 +1358,7 @@ class TestTranspose:
         assert isinstance(result, tuple)
         first, second = result
         for part in [first, second]:
+            assert isinstance(part, list)
             assert len(part) == n
             for i in part:
                 assert isinstance(i, int)
@@ -1369,6 +1370,7 @@ class TestTranspose:
         assert isinstance(result, tuple)
         first, second, third = result
         for part in [first, second, third]:
+            assert isinstance(part, list)
             assert len(part) == n
             for i in part:
                 assert isinstance(i, int)
@@ -1380,6 +1382,7 @@ class TestTranspose:
         assert isinstance(result, tuple)
         first, second, third, fourth = result
         for part in [first, second, third, fourth]:
+            assert isinstance(part, list)
             assert len(part) == n
             for i in part:
                 assert isinstance(i, int)
@@ -1391,6 +1394,7 @@ class TestTranspose:
         assert isinstance(result, tuple)
         first, second, third, fourth, fifth = result
         for part in [first, second, third, fourth, fifth]:
+            assert isinstance(part, list)
             assert len(part) == n
             for i in part:
                 assert isinstance(i, int)
