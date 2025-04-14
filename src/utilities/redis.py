@@ -651,7 +651,7 @@ def _serialize(obj: _T, /, *, serializer: Callable[[_T], bytes] | None = None) -
         from utilities.orjson import serialize as serializer_use
     else:  # skipif-ci-and-not-linux
         serializer_use = serializer
-    return serializer_use(obj)
+    return serializer_use(obj)  # skipif-ci-and-not-linux
 
 
 def _deserialize(
@@ -661,7 +661,7 @@ def _deserialize(
         from utilities.orjson import deserialize as deserializer_use
     else:  # skipif-ci-and-not-linux
         deserializer_use = deserializer
-    return deserializer_use(data)
+    return deserializer_use(data)  # skipif-ci-and-not-linux
 
 
 ##
