@@ -29,7 +29,6 @@ from sqlalchemy import (
     PrimaryKeyConstraint,
     Selectable,
     Table,
-    TextClause,
     and_,
     case,
     insert,
@@ -58,7 +57,7 @@ from sqlalchemy.orm import (
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
-from utilities.asyncio import QueueProcessor
+from utilities.asyncio import QueueProcessor, timeout_dur
 from utilities.functions import (
     ensure_str,
     get_class_name,
@@ -104,10 +103,8 @@ async def check_engine(
     engine: AsyncEngine,
     /,
     *,
-    stop: StopBaseT | None = None,
-    wait: WaitBaseT | None = None,
-    retry: RetryBaseT | None = None,
     timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
     num_tables: int | tuple[int, float] | None = None,
 ) -> None:
     """Check that an engine can connect.
@@ -125,28 +122,14 @@ async def check_engine(
         case _ as never:
             assert_never(never)
     statement = text(query)
-    async for attempt in yield_timeout_attempts(
-        stop=stop, wait=wait, retry=retry, timeout=timeout
-    ):
-        async with attempt:
-            await _check_engine_core(engine, statement, num_tables=num_tables)
-
-
-async def _check_engine_core(
-    engine: AsyncEngine,
-    statement: TextClause,
-    /,
-    *,
-    num_tables: int | tuple[int, float] | None = None,
-) -> None:
-    async with engine.begin() as conn:
+    async with timeout_dur(duration=timeout, error=error), engine.begin() as conn:
         rows = (await conn.execute(statement)).all()
     if num_tables is not None:
         try:
             check_length(rows, equal_or_approx=num_tables)
-        except CheckLengthError as error:
+        except CheckLengthError as err:
             raise CheckEngineError(
-                engine=engine, rows=error.obj, expected=num_tables
+                engine=engine, rows=err.obj, expected=num_tables
             ) from None
 
 
