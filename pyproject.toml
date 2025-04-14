@@ -20,7 +20,7 @@ dev = [
   "coloredlogs >= 15.0.1, < 15.1",
   "concurrent-log-handler >= 0.9.25, < 0.10",
   "cryptography >= 44.0.2, < 44.1",
-  "cvxpy >= 1.6.4, < 1.7",
+  "cvxpy >= 1.6.5, < 1.7",
   "dacite >= 1.9.2, < 1.10",
   "eventkit >= 1.0.3, < 1.1",
   "fastapi >= 0.115.11, < 0.116",
@@ -58,7 +58,7 @@ dev = [
   "tomlkit >= 0.13.2, < 0.14",
   "tzdata >= 2025.2, < 2025.3",
   "tzlocal >= 5.3.1, < 5.4",
-  "uvicorn >= 0.34.0, < 0.35",
+  "uvicorn >= 0.34.1, < 0.35",
   "vegafusion >= 2.0.2, < 2.1",
   "vegafusion-python-embed >= 1.6.9, < 1.7",
   "vl-convert-python >= 1.7.0, < 1.8",
@@ -131,7 +131,7 @@ zzz-test-click = [
 zzz-test-contextlib = []
 zzz-test-contextvars = []
 zzz-test-cryptography = ["cryptography >= 44.0.2, < 44.1"]
-zzz-test-cvxpy = ["cvxpy >= 1.6.4, < 1.7"]
+zzz-test-cvxpy = ["cvxpy >= 1.6.5, < 1.7"]
 zzz-test-dataclasses = [
   "orjson >= 3.10.15, < 3.11",
   "polars-lts-cpu >= 1.27.1, < 1.28",
@@ -147,7 +147,7 @@ zzz-test-eventkit = ["eventkit >= 1.0.3, < 1.1"]
 zzz-test-fastapi = [
   "fastapi >= 0.115.11, < 0.116",
   "httpx >= 0.28.1, < 0.29",
-  "uvicorn >= 0.34.0, < 0.35",
+  "uvicorn >= 0.34.1, < 0.35",
 ]
 zzz-test-fpdf2 = [
   "fpdf2 >= 2.8.2, < 2.9",
