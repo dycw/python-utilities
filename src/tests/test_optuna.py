@@ -1,11 +1,27 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from optuna import Trial, create_study
 from pytest import approx
 
-from utilities.optuna import get_best_params, make_objective, suggest_bool
+from utilities.optuna import (
+    create_sqlite_study,
+    get_best_params,
+    make_objective,
+    suggest_bool,
+)
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+
+class TestCreateSQLiteStudy:
+    def test_main(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("dir", "db.sqlite")
+        _ = create_sqlite_study(path)
+        assert path.is_file()
 
 
 class TestGetBestParams:
