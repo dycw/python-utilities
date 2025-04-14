@@ -1,24 +1,24 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence, Sized
+from collections.abc import (
+    AsyncIterator,
+    Callable,
+    Hashable,
+    Iterable,
+    Iterator,
+    Sequence,
+    Sized,
+)
 from collections.abc import Set as AbstractSet
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from functools import partial, reduce
 from itertools import chain
 from math import floor
 from operator import ge, le
 from re import search
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    TypeGuard,
-    TypeVar,
-    assert_never,
-    cast,
-    override,
-)
+from typing import Any, Literal, TypeGuard, TypeVar, assert_never, cast, override
 
 from sqlalchemy import (
     URL,
@@ -29,7 +29,6 @@ from sqlalchemy import (
     PrimaryKeyConstraint,
     Selectable,
     Table,
-    TextClause,
     and_,
     case,
     insert,
@@ -58,7 +57,7 @@ from sqlalchemy.orm import (
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
-from utilities.asyncio import QueueProcessor
+from utilities.asyncio import QueueProcessor, timeout_dur
 from utilities.functions import (
     ensure_str,
     get_class_name,
@@ -80,14 +79,8 @@ from utilities.iterables import (
     one,
 )
 from utilities.reprlib import get_repr
-from utilities.tenacity import yield_timeout_attempts
 from utilities.text import snake_case
 from utilities.types import Duration, MaybeIterable, StrMapping, TupleOrStrMapping
-
-if TYPE_CHECKING:
-    from tenacity.retry import RetryBaseT
-    from tenacity.stop import StopBaseT
-    from tenacity.wait import WaitBaseT
 
 _T = TypeVar("_T")
 type _EngineOrConnectionOrAsync = Engine | Connection | AsyncEngine | AsyncConnection
@@ -104,10 +97,8 @@ async def check_engine(
     engine: AsyncEngine,
     /,
     *,
-    stop: StopBaseT | None = None,
-    wait: WaitBaseT | None = None,
-    retry: RetryBaseT | None = None,
     timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
     num_tables: int | tuple[int, float] | None = None,
 ) -> None:
     """Check that an engine can connect.
@@ -125,28 +116,14 @@ async def check_engine(
         case _ as never:
             assert_never(never)
     statement = text(query)
-    async for attempt in yield_timeout_attempts(
-        stop=stop, wait=wait, retry=retry, timeout=timeout
-    ):
-        async with attempt:
-            await _check_engine_core(engine, statement, num_tables=num_tables)
-
-
-async def _check_engine_core(
-    engine: AsyncEngine,
-    statement: TextClause,
-    /,
-    *,
-    num_tables: int | tuple[int, float] | None = None,
-) -> None:
-    async with engine.begin() as conn:
+    async with yield_connection(engine, timeout=timeout, error=error) as conn:
         rows = (await conn.execute(statement)).all()
     if num_tables is not None:
         try:
             check_length(rows, equal_or_approx=num_tables)
-        except CheckLengthError as error:
+        except CheckLengthError as err:
             raise CheckEngineError(
-                engine=engine, rows=error.obj, expected=num_tables
+                engine=engine, rows=err.obj, expected=num_tables
             ) from None
 
 
@@ -244,10 +221,8 @@ async def ensure_tables_created(
     engine: AsyncEngine,
     /,
     *tables_or_orms: TableOrORMInstOrClass,
-    stop: StopBaseT | None = None,
-    wait: WaitBaseT | None = None,
-    retry: RetryBaseT | None = None,
     timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
 ) -> None:
     """Ensure a table/set of tables is/are created."""
     tables = set(map(get_table, tables_or_orms))
@@ -264,24 +239,19 @@ async def ensure_tables_created(
             match = "table .* already exists"
         case _ as never:
             assert_never(never)
-    async for attempt in yield_timeout_attempts(
-        stop=stop, wait=wait, retry=retry, timeout=timeout
-    ):
-        async with attempt, engine.begin() as conn:
-            for table in tables:
-                try:
-                    await conn.run_sync(table.create)
-                except DatabaseError as error:
-                    _ensure_tables_maybe_reraise(error, match)
+    async with yield_connection(engine, timeout=timeout, error=error) as conn:
+        for table in tables:
+            try:
+                await conn.run_sync(table.create)
+            except DatabaseError as err:
+                _ensure_tables_maybe_reraise(err, match)
 
 
 async def ensure_tables_dropped(
     engine: AsyncEngine,
     *tables_or_orms: TableOrORMInstOrClass,
-    stop: StopBaseT | None = None,
-    wait: WaitBaseT | None = None,
-    retry: RetryBaseT | None = None,
     timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
     tables = set(map(get_table, tables_or_orms))
@@ -298,15 +268,12 @@ async def ensure_tables_dropped(
             match = "no such table"
         case _ as never:
             assert_never(never)
-    async for attempt in yield_timeout_attempts(
-        stop=stop, wait=wait, retry=retry, timeout=timeout
-    ):
-        async with attempt, engine.begin() as conn:
-            for table in tables:
-                try:
-                    await conn.run_sync(table.drop)
-                except DatabaseError as error:
-                    _ensure_tables_maybe_reraise(error, match)
+    async with yield_connection(engine, timeout=timeout, error=error) as conn:
+        for table in tables:
+            try:
+                await conn.run_sync(table.drop)
+            except DatabaseError as err:
+                _ensure_tables_maybe_reraise(err, match)
 
 
 ##
@@ -409,11 +376,10 @@ async def insert_items(
     snake: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
-    stop: StopBaseT | None = None,
-    wait: WaitBaseT | None = None,
-    retry: RetryBaseT | None = None,
     timeout_create: Duration | None = None,
+    error_create: type[Exception] = TimeoutError,
     timeout_insert: Duration | None = None,
+    error_insert: type[Exception] = TimeoutError,
 ) -> None:
     """Insert a set of items into a database.
 
@@ -459,20 +425,13 @@ async def insert_items(
         raise InsertItemsError(item=error.item) from None
     if not assume_tables_exist:
         await ensure_tables_created(
-            engine,
-            *prepared.tables,
-            stop=stop,
-            wait=wait,
-            retry=retry,
-            timeout=timeout_create,
+            engine, *prepared.tables, timeout=timeout_create, error=error_create
         )
-    async for attempt in yield_timeout_attempts(
-        stop=stop, wait=wait, retry=retry, timeout=timeout_insert
-    ):
-        async with attempt:
-            for ins, parameters in prepared.yield_pairs():
-                async with engine.begin() as conn:
-                    _ = await conn.execute(ins, parameters=parameters)
+    for ins, parameters in prepared.yield_pairs():
+        async with yield_connection(
+            engine, timeout=timeout_insert, error=error_insert
+        ) as conn:
+            _ = await conn.execute(ins, parameters=parameters)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -518,11 +477,10 @@ async def migrate_data(
     table_or_orm_to: TableOrORMInstOrClass | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
-    stop: StopBaseT | None = None,
-    wait: WaitBaseT | None = None,
-    retry: RetryBaseT | None = None,
     timeout_create: Duration | None = None,
+    error_create: type[Exception] = TimeoutError,
     timeout_insert: Duration | None = None,
+    error_insert: type[Exception] = TimeoutError,
 ) -> None:
     """Migrate the contents of a table from one database to another."""
     table_from = get_table(table_or_orm_from)
@@ -536,11 +494,10 @@ async def migrate_data(
         items,
         chunk_size_frac=chunk_size_frac,
         assume_tables_exist=assume_tables_exist,
-        stop=stop,
-        wait=wait,
-        retry=retry,
         timeout_create=timeout_create,
+        error_create=error_create,
         timeout_insert=timeout_insert,
+        error_insert=error_insert,
     )
 
 
@@ -654,11 +611,10 @@ class Upserter(QueueProcessor[_InsertItem]):
     selected_or_all: _SelectedOrAll = "selected"
     chunk_size_frac: float = CHUNK_SIZE_FRAC
     assume_tables_exist: bool = False
-    stop_: StopBaseT | None = None
-    wait: WaitBaseT | None = None
-    retry: RetryBaseT | None = None
     timeout_create: Duration | None = None
+    error_create: type[Exception] = TimeoutError
     timeout_insert: Duration | None = None
+    error_insert: type[Exception] = TimeoutError
 
     async def _pre_upsert(self, items: Sequence[_InsertItem], /) -> None:
         """Pre-upsert coroutine."""
@@ -680,11 +636,10 @@ class Upserter(QueueProcessor[_InsertItem]):
             selected_or_all=self.selected_or_all,
             chunk_size_frac=self.chunk_size_frac,
             assume_tables_exist=self.assume_tables_exist,
-            stop=self.stop_,
-            wait=self.wait,
-            retry=self.retry,
             timeout_create=self.timeout_create,
+            error_create=self.error_create,
             timeout_insert=self.timeout_insert,
+            error_insert=self.error_insert,
         )
         await self._post_upsert(items)
 
@@ -703,11 +658,10 @@ async def upsert_items(
     selected_or_all: _SelectedOrAll = "selected",
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
-    stop: StopBaseT | None = None,
-    wait: WaitBaseT | None = None,
-    retry: RetryBaseT | None = None,
     timeout_create: Duration | None = None,
+    error_create: type[Exception] = TimeoutError,
     timeout_insert: Duration | None = None,
+    error_insert: type[Exception] = TimeoutError,
 ) -> None:
     """Upsert a set of items into a database.
 
@@ -747,20 +701,13 @@ async def upsert_items(
         raise UpsertItemsError(item=error.item) from None
     if not assume_tables_exist:
         await ensure_tables_created(
-            engine,
-            *prepared.tables,
-            stop=stop,
-            wait=wait,
-            retry=retry,
-            timeout=timeout_create,
+            engine, *prepared.tables, timeout=timeout_create, error=error_create
         )
-    async for attempt in yield_timeout_attempts(
-        stop=stop, wait=wait, retry=retry, timeout=timeout_insert
-    ):
-        async with attempt:
-            for ups, _ in prepared.yield_pairs():
-                async with engine.begin() as conn:
-                    _ = await conn.execute(ups)
+    for ups, _ in prepared.yield_pairs():
+        async with yield_connection(
+            engine, timeout=timeout_insert, error=error_insert
+        ) as conn:
+            _ = await conn.execute(ups)
 
 
 def _upsert_items_build(
@@ -823,6 +770,22 @@ class UpsertItemsError(Exception):
     @override
     def __str__(self) -> str:
         return f"Item must be valid; got {self.item}"
+
+
+##
+
+
+@asynccontextmanager
+async def yield_connection(
+    engine: AsyncEngine,
+    /,
+    *,
+    timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
+) -> AsyncIterator[AsyncConnection]:
+    """Yield an async connection."""
+    async with timeout_dur(duration=timeout, error=error), engine.begin() as conn:
+        yield conn
 
 
 ##
@@ -1155,5 +1118,6 @@ __all__ = [
     "migrate_data",
     "selectable_to_string",
     "upsert_items",
+    "yield_connection",
     "yield_primary_key_columns",
 ]

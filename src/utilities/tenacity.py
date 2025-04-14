@@ -15,7 +15,7 @@ from tenacity import (
     wait_none,
 )
 from tenacity import wait_exponential_jitter as _wait_exponential_jitter
-from tenacity._utils import MAX_WAIT  # pyright: ignore[reportPrivateImportUsage]
+from tenacity._utils import MAX_WAIT
 from tenacity.asyncio import _portable_async_sleep
 
 from utilities.asyncio import timeout_dur

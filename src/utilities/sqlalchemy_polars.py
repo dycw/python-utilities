@@ -27,8 +27,8 @@ from sqlalchemy import Column, Select, select
 from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
+from utilities.asyncio import timeout_dur
 from utilities.datetime import is_subclass_date_not_datetime
-from utilities.errors import ImpossibleCaseError
 from utilities.functions import identity
 from utilities.iterables import (
     CheckDuplicatesError,
@@ -48,7 +48,6 @@ from utilities.sqlalchemy import (
     insert_items,
     upsert_items,
 )
-from utilities.tenacity import yield_timeout_attempts
 from utilities.text import snake_case
 from utilities.zoneinfo import UTC
 
@@ -85,11 +84,10 @@ async def insert_dataframe(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     upsert: Literal["selected", "all"] | None = None,
-    stop: StopBaseT | None = None,
-    wait: WaitBaseT | None = None,
-    retry: RetryBaseT | None = None,
     timeout_create: utilities.types.Duration | None = None,
+    error_create: type[Exception] = TimeoutError,
     timeout_insert: utilities.types.Duration | None = None,
+    error_insert: type[Exception] = TimeoutError,
 ) -> None:
     """Insert/upsert a DataFrame into a database."""
     mapping = _insert_dataframe_map_df_schema_to_table(
@@ -101,12 +99,7 @@ async def insert_dataframe(
             raise InsertDataFrameError(df=df)
         if not assume_tables_exist:
             await ensure_tables_created(
-                engine,
-                table_or_orm,
-                stop=stop,
-                wait=wait,
-                retry=retry,
-                timeout=timeout_create,
+                engine, table_or_orm, timeout=timeout_create, error=error_create
             )
         return
     match upsert:
@@ -117,11 +110,10 @@ async def insert_dataframe(
                 snake=snake,
                 chunk_size_frac=chunk_size_frac,
                 assume_tables_exist=assume_tables_exist,
-                stop=stop,
-                wait=wait,
-                retry=retry,
                 timeout_create=timeout_create,
+                error_create=error_create,
                 timeout_insert=timeout_insert,
+                error_insert=error_insert,
             )
         case "selected" | "all" as selected_or_all:  # skipif-ci-and-not-linux
             await upsert_items(
@@ -131,11 +123,10 @@ async def insert_dataframe(
                 chunk_size_frac=chunk_size_frac,
                 selected_or_all=selected_or_all,
                 assume_tables_exist=assume_tables_exist,
-                stop=stop,
-                wait=wait,
-                retry=retry,
                 timeout_create=timeout_create,
+                error_create=error_create,
                 timeout_insert=timeout_insert,
+                error_insert=error_insert,
             )
         case _ as never:
             assert_never(never)
@@ -314,10 +305,8 @@ async def select_to_dataframe(
     in_clauses: tuple[Column[Any], Iterable[Any]] | None = None,
     in_clauses_chunk_size: int | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    stop: StopBaseT | None = None,
-    wait: WaitBaseT | None = None,
-    retry: RetryBaseT | None = None,
     timeout: utilities.types.Duration | None = None,
+    error: type[Exception] = TimeoutError,
     **kwargs: Any,
 ) -> DataFrame | Iterable[DataFrame] | AsyncIterable[DataFrame]:
     """Read a table from a database into a DataFrame."""
@@ -333,30 +322,23 @@ async def select_to_dataframe(
             in_clauses=in_clauses,
             in_clauses_chunk_size=in_clauses_chunk_size,
             chunk_size_frac=chunk_size_frac,
-            stop=stop,
-            wait=wait,
-            retry=retry,
             timeout=timeout,
+            error=error,
             **kwargs,
         )
     if snake:
         sel = _select_to_dataframe_apply_snake(sel)
     schema = _select_to_dataframe_map_select_to_df_schema(sel, time_zone=time_zone)
     if in_clauses is None:
-        async for attempt in yield_timeout_attempts(
-            stop=stop, wait=wait, retry=retry, timeout=timeout
-        ):
-            async with attempt:
-                return read_database(
-                    sel,
-                    cast("Any", engine),
-                    iter_batches=batch_size is not None,
-                    batch_size=batch_size,
-                    schema_overrides=schema,
-                    **kwargs,
-                )
-        raise ImpossibleCaseError(case=[f"{locals()=}"])  # pragma: no cover
-
+        async with timeout_dur(duration=timeout, error=error):
+            return read_database(
+                sel,
+                cast("Any", engine),
+                iter_batches=batch_size is not None,
+                batch_size=batch_size,
+                schema_overrides=schema,
+                **kwargs,
+            )
     sels = _select_to_dataframe_yield_selects_with_in_clauses(
         sel,
         engine,
@@ -365,51 +347,42 @@ async def select_to_dataframe(
         chunk_size_frac=chunk_size_frac,
     )
     if batch_size is None:
-        async for attempt in yield_timeout_attempts(
-            stop=stop, wait=wait, retry=retry, timeout=timeout
-        ):
-            async with attempt:
-                dfs = [
-                    await select_to_dataframe(
-                        sel,
-                        engine,
-                        snake=snake,
-                        time_zone=time_zone,
-                        batch_size=None,
-                        in_clauses=None,
-                        stop=stop,
-                        wait=wait,
-                        retry=retry,
-                        **kwargs,
-                    )
-                    for sel in sels
-                ]
-                try:
-                    return concat(dfs)
-                except ValueError:
-                    return DataFrame(schema=schema)
-        raise ImpossibleCaseError(case=[f"{locals()=}"])  # pragma: no cover
+        async with timeout_dur(duration=timeout, error=error):
+            dfs = [
+                await select_to_dataframe(
+                    sel,
+                    engine,
+                    snake=snake,
+                    time_zone=time_zone,
+                    batch_size=None,
+                    in_clauses=None,
+                    timeout=timeout,
+                    error=error,
+                    **kwargs,
+                )
+                for sel in sels
+            ]
+        try:
+            return concat(dfs)
+        except ValueError:
+            return DataFrame(schema=schema)
 
     async def yield_dfs() -> AsyncIterator[DataFrame]:
-        async for attempt in yield_timeout_attempts(
-            stop=stop, wait=wait, retry=retry, timeout=timeout
-        ):
-            async with attempt:
-                for sel_i in sels:
-                    for df in await select_to_dataframe(  # skipif-ci-and-not-linux
-                        sel_i,
-                        engine,
-                        snake=snake,
-                        time_zone=time_zone,
-                        batch_size=batch_size,
-                        in_clauses=None,
-                        chunk_size_frac=chunk_size_frac,
-                        stop=stop,
-                        wait=wait,
-                        retry=retry,
-                        **kwargs,
-                    ):
-                        yield df
+        async with timeout_dur(duration=timeout, error=error):
+            for sel_i in sels:
+                for df in await select_to_dataframe(
+                    sel_i,
+                    engine,
+                    snake=snake,
+                    time_zone=time_zone,
+                    batch_size=batch_size,
+                    in_clauses=None,
+                    chunk_size_frac=chunk_size_frac,
+                    timeout=timeout,
+                    error=error,
+                    **kwargs,
+                ):
+                    yield df
 
     return yield_dfs()
 
