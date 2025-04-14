@@ -36,7 +36,7 @@ dev = [
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "nox >= 2025.2.9, < 2025.3",
   "numpy >= 2.2.4, < 2.3",
-  "optuna >= 4.2.1, < 4.3",
+  "optuna >= 4.3.0, < 4.4",
   "orjson >= 3.10.16, < 3.11",
   "pathvalidate >= 3.2.3, < 3.3",
   "polars-lts-cpu >= 1.27.1, < 1.28",
@@ -214,7 +214,7 @@ zzz-test-operator = [
   "polars-lts-cpu >= 1.27.1, < 1.28",
   "whenever >= 0.7.3, < 0.8",
 ]
-zzz-test-optuna = ["optuna >= 4.2.1, < 4.3"]
+zzz-test-optuna = ["optuna >= 4.3.0, < 4.4"]
 zzz-test-orjson = [
   "orjson >= 3.10.15, < 3.11",
   "polars-lts-cpu >= 1.27.1, < 1.28",
