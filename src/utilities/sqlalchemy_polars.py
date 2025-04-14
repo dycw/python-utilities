@@ -84,9 +84,6 @@ async def insert_dataframe(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     upsert: Literal["selected", "all"] | None = None,
-    stop: StopBaseT | None = None,
-    wait: WaitBaseT | None = None,
-    retry: RetryBaseT | None = None,
     timeout_create: utilities.types.Duration | None = None,
     error_create: type[Exception] = TimeoutError,
     timeout_insert: utilities.types.Duration | None = None,
@@ -102,7 +99,7 @@ async def insert_dataframe(
             raise InsertDataFrameError(df=df)
         if not assume_tables_exist:
             await ensure_tables_created(
-                engine, table_or_orm, timeout=timeout_create, error=timeout_create
+                engine, table_or_orm, timeout=timeout_create, error=error_create
             )
         return
     match upsert:
@@ -126,9 +123,6 @@ async def insert_dataframe(
                 chunk_size_frac=chunk_size_frac,
                 selected_or_all=selected_or_all,
                 assume_tables_exist=assume_tables_exist,
-                stop=stop,
-                wait=wait,
-                retry=retry,
                 timeout_create=timeout_create,
                 error_create=error_create,
                 timeout_insert=timeout_insert,

@@ -18,16 +18,7 @@ from itertools import chain
 from math import floor
 from operator import ge, le
 from re import search
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    TypeGuard,
-    TypeVar,
-    assert_never,
-    cast,
-    override,
-)
+from typing import Any, Literal, TypeGuard, TypeVar, assert_never, cast, override
 
 from sqlalchemy import (
     URL,
@@ -90,11 +81,6 @@ from utilities.iterables import (
 from utilities.reprlib import get_repr
 from utilities.text import snake_case
 from utilities.types import Duration, MaybeIterable, StrMapping, TupleOrStrMapping
-
-if TYPE_CHECKING:
-    from tenacity.retry import RetryBaseT
-    from tenacity.stop import StopBaseT
-    from tenacity.wait import WaitBaseT
 
 _T = TypeVar("_T")
 type _EngineOrConnectionOrAsync = Engine | Connection | AsyncEngine | AsyncConnection
@@ -625,11 +611,10 @@ class Upserter(QueueProcessor[_InsertItem]):
     selected_or_all: _SelectedOrAll = "selected"
     chunk_size_frac: float = CHUNK_SIZE_FRAC
     assume_tables_exist: bool = False
-    stop_: StopBaseT | None = None
-    wait: WaitBaseT | None = None
-    retry: RetryBaseT | None = None
     timeout_create: Duration | None = None
+    error_create: type[Exception] = TimeoutError
     timeout_insert: Duration | None = None
+    error_insert: type[Exception] = TimeoutError
 
     async def _pre_upsert(self, items: Sequence[_InsertItem], /) -> None:
         """Pre-upsert coroutine."""
@@ -651,11 +636,10 @@ class Upserter(QueueProcessor[_InsertItem]):
             selected_or_all=self.selected_or_all,
             chunk_size_frac=self.chunk_size_frac,
             assume_tables_exist=self.assume_tables_exist,
-            stop=self.stop_,
-            wait=self.wait,
-            retry=self.retry,
             timeout_create=self.timeout_create,
+            error_create=self.error_create,
             timeout_insert=self.timeout_insert,
+            error_insert=self.error_insert,
         )
         await self._post_upsert(items)
 
