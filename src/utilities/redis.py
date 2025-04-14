@@ -11,6 +11,7 @@ from typing import (
     Literal,
     TypedDict,
     TypeVar,
+    assert_never,
     cast,
     overload,
     override,
@@ -77,42 +78,36 @@ class RedisHashMapKey(Generic[_K, _V]):
     value: type[_V]
     value_serializer: Callable[[_V], bytes] | None = None
     value_deserializer: Callable[[bytes], _V] | None = None
-    stop: StopBaseT | None = None
-    wait: WaitBaseT | None = None
-    retry: RetryBaseT | None = None
     timeout: Duration | None = None
+    error: type[Exception] = TimeoutError
     ttl: Duration | None = None
 
     async def delete(self, redis: Redis, key: _K, /) -> int:
         """Delete a key from a hashmap in `redis`."""
-        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
-            async with attempt:
-                return await cast(
-                    "Awaitable[int]", redis.hdel(self.name, cast("str", key))
-                )
+        async with timeout_dur(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
+        ):
+            return await cast("Awaitable[int]", redis.hdel(self.name, cast("str", key)))
         raise ImpossibleCaseError(case=[f"{redis=}", f"{key=}"])  # pragma: no cover
 
     async def exists(self, redis: Redis, key: _K, /) -> bool:
         """Check if the key exists in a hashmap in `redis`."""
-        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
-            async with attempt:
-                return await cast(
-                    "Awaitable[bool]", redis.hexists(self.name, cast("str", key))
-                )
-        raise ImpossibleCaseError(case=[f"{redis=}", f"{key=}"])  # pragma: no cover
+        async with timeout_dur(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
+        ):
+            return await cast(
+                "Awaitable[bool]", redis.hexists(self.name, cast("str", key))
+            )
 
     async def get(self, redis: Redis, key: _K, /) -> _V | None:
         """Get a value from a hashmap in `redis`."""
-        ser_key = self._serialize_key(key)  # skipif-ci-and-not-linux
-        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
-            async with attempt:
-                return await self._get_core(redis, cast("Any", ser_key))
-        raise ImpossibleCaseError(case=[f"{redis=}", f"{key=}"])  # pragma: no cover
-
-    async def _get_core(self, redis: Redis, ser_key: bytes, /) -> _V | None:
-        result = await cast(  # skipif-ci-and-not-linux
-            "Awaitable[Any]", redis.hget(self.name, cast("Any", ser_key))
-        )
+        async with timeout_dur(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
+        ):
+            result = await cast(  # skipif-ci-and-not-linux
+                "Awaitable[bytes | None]",
+                redis.hget(self.name, cast("Any", self._serialize_key(key))),
+            )
         match result:  # skipif-ci-and-not-linux
             case None:
                 return None
@@ -122,33 +117,30 @@ class RedisHashMapKey(Generic[_K, _V]):
 
                     return deserialize(data)
                 return self.value_deserializer(data)
-            case _:  # pragma: no cover
-                raise ImpossibleCaseError(case=[f"{result=}"])
+            case _ as never:
+                assert_never(never)
 
     async def set(self, redis: Redis, key: _K, value: _V, /) -> int:
         """Set a value in a hashmap in `redis`."""
-        ser_key = self._serialize_key(key)  # skipif-ci-and-not-linux
         if self.value_serializer is None:  # skipif-ci-and-not-linux
             from utilities.orjson import serialize
 
             ser_value = serialize(value)
         else:  # skipif-ci-and-not-linux
             ser_value = self.value_serializer(value)
-
-        async for attempt in self._yield_timeout_attempts():  # skipif-ci-and-not-linux
-            async with attempt:
-                return await self._set_core(redis, ser_key, ser_value)
-        raise ImpossibleCaseError(case=[f"{self=}"])  # pragma: no cover
-
-    async def _set_core(self, redis: Redis, ser_key: bytes, ser_value: bytes, /) -> int:
-        result = await cast(  # skipif-ci-and-not-linux
-            "Awaitable[int]",
-            redis.hset(
-                self.name, key=cast("Any", ser_key), value=cast("Any", ser_value)
-            ),
-        )
-        if self.ttl is not None:  # skipif-ci-and-not-linux
-            await redis.pexpire(self.name, datetime_duration_to_timedelta(self.ttl))
+        async with timeout_dur(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
+        ):
+            result = await cast(
+                "Awaitable[int]",
+                redis.hset(
+                    self.name,
+                    key=cast("Any", self._serialize_key(key)),
+                    value=cast("Any", ser_value),
+                ),
+            )
+            if self.ttl is not None:
+                await redis.pexpire(self.name, datetime_duration_to_timedelta(self.ttl))
         return result  # skipif-ci-and-not-linux
 
     def _serialize_key(self, key: _K, /) -> bytes:
@@ -159,11 +151,6 @@ class RedisHashMapKey(Generic[_K, _V]):
             return serialize(key)
         return self.key_serializer(key)  # skipif-ci-and-not-linux
 
-    def _yield_timeout_attempts(self) -> AsyncIterator[MaybeAttemptContextManager]:
-        return yield_timeout_attempts(  # skipif-ci-and-not-linux
-            stop=self.stop, wait=self.wait, retry=self.retry, timeout=self.timeout
-        )
-
 
 @overload
 def redis_hash_map_key(
@@ -172,14 +159,12 @@ def redis_hash_map_key(
     value: type[_V],
     /,
     *,
-    key_serializer: Callable[[_K], bytes] | None = ...,
-    value_serializer: Callable[[_V], bytes] | None = ...,
-    value_deserializer: Callable[[bytes], _V] | None = ...,
-    stop: StopBaseT | None = ...,
-    wait: WaitBaseT | None = ...,
-    retry: RetryBaseT | None = ...,
-    timeout: Duration | None = ...,
-    ttl: Duration | None = ...,
+    key_serializer: Callable[[_K], bytes] | None = None,
+    value_serializer: Callable[[_V], bytes] | None = None,
+    value_deserializer: Callable[[bytes], _V] | None = None,
+    timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[_K, _V]: ...
 @overload
 def redis_hash_map_key(
@@ -188,14 +173,12 @@ def redis_hash_map_key(
     value: tuple[type[_V1], type[_V2]],
     /,
     *,
-    key_serializer: Callable[[_K], bytes] | None = ...,
-    value_serializer: Callable[[_V1 | _V2], bytes] | None = ...,
-    value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
-    stop: StopBaseT | None = ...,
-    wait: WaitBaseT | None = ...,
-    retry: RetryBaseT | None = ...,
-    timeout: Duration | None = ...,
-    ttl: Duration | None = ...,
+    key_serializer: Callable[[_K], bytes] | None = None,
+    value_serializer: Callable[[_V1 | _V2], bytes] | None = None,
+    value_deserializer: Callable[[bytes], _V1 | _V2] | None = None,
+    timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[_K, _V1 | _V2]: ...
 @overload
 def redis_hash_map_key(
@@ -204,14 +187,12 @@ def redis_hash_map_key(
     value: tuple[type[_V1], type[_V2], type[_V3]],
     /,
     *,
-    key_serializer: Callable[[_K], bytes] | None = ...,
-    value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = ...,
-    value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
-    stop: StopBaseT | None = ...,
-    wait: WaitBaseT | None = ...,
-    retry: RetryBaseT | None = ...,
-    timeout: Duration | None = ...,
-    ttl: Duration | None = ...,
+    key_serializer: Callable[[_K], bytes] | None = None,
+    value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = None,
+    value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = None,
+    timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[_K, _V1 | _V2 | _V3]: ...
 @overload
 def redis_hash_map_key(
@@ -220,14 +201,12 @@ def redis_hash_map_key(
     value: type[_V],
     /,
     *,
-    key_serializer: Callable[[_K1 | _K2], bytes] | None = ...,
-    value_serializer: Callable[[_V], bytes] | None = ...,
-    value_deserializer: Callable[[bytes], _V] | None = ...,
-    stop: StopBaseT | None = ...,
-    wait: WaitBaseT | None = ...,
-    retry: RetryBaseT | None = ...,
-    timeout: Duration | None = ...,
-    ttl: Duration | None = ...,
+    key_serializer: Callable[[_K1 | _K2], bytes] | None = None,
+    value_serializer: Callable[[_V], bytes] | None = None,
+    value_deserializer: Callable[[bytes], _V] | None = None,
+    timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[_K1 | _K2, _V]: ...
 @overload
 def redis_hash_map_key(
@@ -236,14 +215,12 @@ def redis_hash_map_key(
     value: tuple[type[_V1], type[_V2]],
     /,
     *,
-    key_serializer: Callable[[_K1 | _K2], bytes] | None = ...,
-    value_serializer: Callable[[_V1 | _V2], bytes] | None = ...,
-    value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
-    stop: StopBaseT | None = ...,
-    wait: WaitBaseT | None = ...,
-    retry: RetryBaseT | None = ...,
-    timeout: Duration | None = ...,
-    ttl: Duration | None = ...,
+    key_serializer: Callable[[_K1 | _K2], bytes] | None = None,
+    value_serializer: Callable[[_V1 | _V2], bytes] | None = None,
+    value_deserializer: Callable[[bytes], _V1 | _V2] | None = None,
+    timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[_K1 | _K2, _V1 | _V2]: ...
 @overload
 def redis_hash_map_key(
@@ -252,14 +229,12 @@ def redis_hash_map_key(
     value: tuple[type[_V1], type[_V2], type[_V3]],
     /,
     *,
-    key_serializer: Callable[[_K1 | _K2], bytes] | None = ...,
-    value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = ...,
-    value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
-    stop: StopBaseT | None = ...,
-    wait: WaitBaseT | None = ...,
-    retry: RetryBaseT | None = ...,
-    timeout: Duration | None = ...,
-    ttl: Duration | None = ...,
+    key_serializer: Callable[[_K1 | _K2], bytes] | None = None,
+    value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = None,
+    value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = None,
+    timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[_K1 | _K2, _V1 | _V2 | _V3]: ...
 @overload
 def redis_hash_map_key(
@@ -268,14 +243,12 @@ def redis_hash_map_key(
     value: type[_V],
     /,
     *,
-    key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = ...,
-    value_serializer: Callable[[_V], bytes] | None = ...,
-    value_deserializer: Callable[[bytes], _V] | None = ...,
-    stop: StopBaseT | None = ...,
-    wait: WaitBaseT | None = ...,
-    retry: RetryBaseT | None = ...,
-    timeout: Duration | None = ...,
-    ttl: Duration | None = ...,
+    key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = None,
+    value_serializer: Callable[[_V], bytes] | None = None,
+    value_deserializer: Callable[[bytes], _V] | None = None,
+    timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[_K1 | _K2 | _K3, _V]: ...
 @overload
 def redis_hash_map_key(
@@ -284,14 +257,12 @@ def redis_hash_map_key(
     value: tuple[type[_V1], type[_V2]],
     /,
     *,
-    key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = ...,
-    value_serializer: Callable[[_V1 | _V2], bytes] | None = ...,
-    value_deserializer: Callable[[bytes], _V1 | _V2] | None = ...,
-    stop: StopBaseT | None = ...,
-    wait: WaitBaseT | None = ...,
-    retry: RetryBaseT | None = ...,
-    timeout: Duration | None = ...,
-    ttl: Duration | None = ...,
+    key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = None,
+    value_serializer: Callable[[_V1 | _V2], bytes] | None = None,
+    value_deserializer: Callable[[bytes], _V1 | _V2] | None = None,
+    timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2]: ...
 @overload
 def redis_hash_map_key(
@@ -300,14 +271,12 @@ def redis_hash_map_key(
     value: tuple[type[_V1], type[_V2], type[_V3]],
     /,
     *,
-    key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = ...,
-    value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = ...,
-    value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = ...,
-    stop: StopBaseT | None = ...,
-    wait: WaitBaseT | None = ...,
-    retry: RetryBaseT | None = ...,
-    timeout: Duration | None = ...,
-    ttl: Duration | None = ...,
+    key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = None,
+    value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = None,
+    value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = None,
+    timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2 | _V3]: ...
 def redis_hash_map_key(
     name: str,
@@ -318,11 +287,9 @@ def redis_hash_map_key(
     key_serializer: Callable[[Any], bytes] | None = None,
     value_serializer: Callable[[Any], bytes] | None = None,
     value_deserializer: Callable[[bytes], Any] | None = None,
-    stop: StopBaseT | None = None,
-    wait: WaitBaseT | None = None,
-    retry: RetryBaseT | None = None,
     timeout: Duration | None = None,
     ttl: Duration | None = None,
+    error: type[Exception] = TimeoutError,
 ) -> RedisHashMapKey[Any, Any]:
     """Create a redis key."""
     return RedisHashMapKey(  # skipif-ci-and-not-linux
@@ -332,10 +299,8 @@ def redis_hash_map_key(
         value=value,
         value_serializer=value_serializer,
         value_deserializer=value_deserializer,
-        stop=stop,
-        wait=wait,
-        retry=retry,
         timeout=timeout,
+        error=error,
         ttl=ttl,
     )
 
@@ -351,10 +316,8 @@ class RedisKey(Generic[_T]):
     type: type[_T]
     serializer: Callable[[_T], bytes] | None = None
     deserializer: Callable[[bytes], _T] | None = None
-    stop: StopBaseT | None = None
-    wait: WaitBaseT | None = None
-    retry: RetryBaseT | None = None
     timeout: Duration | None = None
+    error: type[Exception] = TimeoutError
     ttl: Duration | None = None
 
     async def delete(self, redis: Redis, /) -> int:
