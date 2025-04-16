@@ -47,7 +47,7 @@ from polars import (
     lit,
 )
 from polars.testing import assert_frame_equal, assert_series_equal
-from pytest import mark, raises
+from pytest import raises
 
 from utilities.datetime import get_now, get_today
 from utilities.hypothesis import (
@@ -1671,7 +1671,6 @@ class TestUniqueElement:
 
 
 class TestWeekDay:
-    @mark.only
     @given(
         case=sampled_from([
             (
