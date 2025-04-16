@@ -48,7 +48,7 @@ from polars import (
     lit,
 )
 from polars.testing import assert_frame_equal, assert_series_equal
-from pytest import mark, raises
+from pytest import raises
 
 from utilities.datetime import get_now, get_today
 from utilities.hypothesis import (
@@ -653,7 +653,6 @@ class TestCrossOrTouch:
         expected = Series(name="result", values=exp_values, dtype=Boolean)
         assert_series_equal(df["result"], expected)
 
-    @mark.only
     def test_example(self) -> None:
         close = Series(name="close", values=[8, 7, 8, 5, 0], dtype=Int64)
         mid = Series(name="mid", values=[1, 2, 3, 4, 6], dtype=Int64)
