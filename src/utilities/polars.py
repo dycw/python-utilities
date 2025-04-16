@@ -574,7 +574,7 @@ def _convert_time_zone_one(sr: Series, /, *, time_zone: TimeZoneLike = UTC) -> S
 @overload
 def cross(
     expr: ExprLike, up_or_down: Literal["up", "down"], other: Number | ExprLike, /
-) -> Series: ...
+) -> Expr: ...
 @overload
 def cross(
     expr: Series, up_or_down: Literal["up", "down"], other: Number | Series, /
@@ -585,7 +585,7 @@ def cross(
     up_or_down: Literal["up", "down"],
     other: Number | IntoExprColumn,
     /,
-) -> Series: ...
+) -> Expr | Series: ...
 def cross(
     expr: IntoExprColumn,
     up_or_down: Literal["up", "down"],
@@ -599,7 +599,7 @@ def cross(
 @overload
 def touch(
     expr: ExprLike, up_or_down: Literal["up", "down"], other: Number | ExprLike, /
-) -> Series: ...
+) -> Expr: ...
 @overload
 def touch(
     expr: Series, up_or_down: Literal["up", "down"], other: Number | Series, /
@@ -610,7 +610,7 @@ def touch(
     up_or_down: Literal["up", "down"],
     other: Number | IntoExprColumn,
     /,
-) -> Series: ...
+) -> Expr | Series: ...
 def touch(
     expr: IntoExprColumn,
     up_or_down: Literal["up", "down"],
