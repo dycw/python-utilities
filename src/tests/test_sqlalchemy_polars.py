@@ -111,7 +111,9 @@ from utilities.sqlalchemy_polars import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
 
-    from polars._typing import PolarsDataType
+    from polars._typing import (
+        PolarsDataType,  # pyright: ignore[reportPrivateImportUsage]
+    )
     from polars.datatypes import DataTypeClass
     from sqlalchemy.ext.asyncio import AsyncEngine
 
