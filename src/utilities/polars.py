@@ -111,13 +111,13 @@ if TYPE_CHECKING:
 
     from dacite.data import Data
     from polars._typing import (
-        IntoExpr,  # pyright: ignore[reportPrivateImportUsage]
-        IntoExprColumn,  # pyright: ignore[reportPrivateImportUsage]
-        JoinStrategy,  # pyright: ignore[reportPrivateImportUsage]
-        JoinValidation,  # pyright: ignore[reportPrivateImportUsage]
-        PolarsDataType,  # pyright: ignore[reportPrivateImportUsage]
-        SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
-        TimeUnit,  # pyright: ignore[reportPrivateImportUsage]
+        IntoExpr,
+        IntoExprColumn,
+        JoinStrategy,
+        JoinValidation,
+        PolarsDataType,
+        SchemaDict,
+        TimeUnit,
     )
 
     from utilities.types import (
