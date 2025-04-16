@@ -87,6 +87,7 @@ TDataclass = TypeVar("TDataclass", bound=Dataclass)
 type DateOrDateTime = dt.date | dt.datetime
 type MaybeCallableDate = MaybeCallable[dt.date]
 type MaybeCallableDateTime = MaybeCallable[dt.datetime]
+type WeekDay = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 
 # enum
@@ -305,4 +306,5 @@ __all__ = [
     "TimeZone",
     "TimeZoneLike",
     "TupleOrStrMapping",
+    "WeekDay",
 ]

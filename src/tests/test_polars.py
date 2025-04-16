@@ -4,6 +4,7 @@ import datetime as dt
 import enum
 from dataclasses import dataclass, field
 from enum import auto
+from itertools import chain, repeat
 from math import isfinite, nan
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
@@ -32,6 +33,7 @@ from polars import (
     Datetime,
     Expr,
     Float64,
+    Int32,
     Int64,
     List,
     Object,
@@ -39,6 +41,7 @@ from polars import (
     String,
     Struct,
     col,
+    date_range,
     datetime_range,
     int_range,
     lit,
@@ -131,6 +134,7 @@ from utilities.polars import (
     struct_dtype,
     struct_from_dataclass,
     unique_element,
+    week_num,
     yield_rows_as_dataclasses,
     yield_struct_series_dataclasses,
     yield_struct_series_elements,
@@ -142,7 +146,7 @@ from utilities.tzdata import USCentral, USEastern
 from utilities.zoneinfo import UTC, HongKong, Tokyo, get_time_zone_name
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
+    from collections.abc import Callable, Mapping, Sequence
     from zoneinfo import ZoneInfo
 
     from polars._typing import (
@@ -151,7 +155,7 @@ if TYPE_CHECKING:
     )
     from polars.datatypes import DataTypeClass
 
-    from utilities.types import MaybeType, StrMapping
+    from utilities.types import MaybeType, StrMapping, WeekDay
 
 
 TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
@@ -1663,6 +1667,88 @@ class TestUniqueElement:
         )
         result = series.to_frame().with_columns(y=unique_element("x"))["y"]
         expected = Series(name="y", values=[None, 1, None, None], dtype=Int64)
+        assert_series_equal(result, expected)
+
+
+class TestWeekNum:
+    @given(
+        case=sampled_from([
+            (
+                "mon",
+                list(
+                    chain(
+                        repeat(2868, 7),
+                        repeat(2869, 7),
+                        repeat(2870, 7),
+                        repeat(2871, 7),
+                        repeat(2872, 7),
+                    )
+                ),
+            ),
+            (
+                "tue",
+                list(
+                    chain(
+                        repeat(2867, 1),
+                        repeat(2868, 7),
+                        repeat(2869, 7),
+                        repeat(2870, 7),
+                        repeat(2871, 7),
+                        repeat(2872, 6),
+                    )
+                ),
+            ),
+            (
+                "wed",
+                list(
+                    chain(
+                        repeat(2867, 2),
+                        repeat(2868, 7),
+                        repeat(2869, 7),
+                        repeat(2870, 7),
+                        repeat(2871, 7),
+                        repeat(2872, 5),
+                    )
+                ),
+            ),
+            (
+                "sat",
+                list(
+                    chain(
+                        repeat(2867, 5),
+                        repeat(2868, 7),
+                        repeat(2869, 7),
+                        repeat(2870, 7),
+                        repeat(2871, 7),
+                        repeat(2872, 2),
+                    )
+                ),
+            ),
+            (
+                "sun",
+                list(
+                    chain(
+                        repeat(2867, 6),
+                        repeat(2868, 7),
+                        repeat(2869, 7),
+                        repeat(2870, 7),
+                        repeat(2871, 7),
+                        repeat(2872, 1),
+                    )
+                ),
+            ),
+        ])
+    )
+    def test_main(self, *, case: tuple[WeekDay, Sequence[int]]) -> None:
+        start, exp_values = case
+        series = date_range(
+            dt.date(2024, 12, 16),  # Mon
+            dt.date(2025, 1, 19),  # Sun
+            interval="1d",
+            eager=True,
+        ).alias("date")
+        result = series.to_frame().with_columns(wn=week_num("date", start=start))["wn"]
+        expected = Series(name="wn", values=exp_values, dtype=Int32)
         assert_series_equal(result, expected)
 
 

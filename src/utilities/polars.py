@@ -92,6 +92,7 @@ from utilities.math import (
 )
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel
+from utilities.types import WeekDay
 from utilities.typing import (
     get_args,
     get_type_hints,
@@ -111,13 +112,13 @@ if TYPE_CHECKING:
 
     from dacite.data import Data
     from polars._typing import (
-        IntoExpr,  # pyright: ignore[reportPrivateImportUsage]
-        IntoExprColumn,  # pyright: ignore[reportPrivateImportUsage]
-        JoinStrategy,  # pyright: ignore[reportPrivateImportUsage]
-        JoinValidation,  # pyright: ignore[reportPrivateImportUsage]
-        PolarsDataType,  # pyright: ignore[reportPrivateImportUsage]
-        SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
-        TimeUnit,  # pyright: ignore[reportPrivateImportUsage]
+        IntoExpr,
+        IntoExprColumn,
+        JoinStrategy,
+        JoinValidation,
+        PolarsDataType,
+        SchemaDict,
+        TimeUnit,
     )
 
     from utilities.types import (
@@ -1370,6 +1371,23 @@ def unique_element(column: ExprLike, /) -> Expr:
     """Get the unique element in a list."""
     column = ensure_expr_or_series(column)
     return when(column.list.len() == 1).then(column.list.first())
+
+
+##
+
+
+@overload
+def week_num(column: ExprLike, /, *, start: WeekDay = "mon") -> Expr: ...
+@overload
+def week_num(column: Series, /, *, start: WeekDay = "mon") -> Series: ...
+@overload
+def week_num(column: IntoExprColumn, /, *, start: WeekDay = "mon") -> Expr | Series: ...
+def week_num(column: IntoExprColumn, /, *, start: WeekDay = "mon") -> Expr | Series:
+    """Compute the week number of a date column."""
+    column = ensure_expr_or_series(column)
+    epoch = column.dt.epoch(time_unit="d").alias("epoch")
+    offset = get_args(WeekDay).index(start)
+    return (epoch + 3 - offset) // 7
 
 
 ##
