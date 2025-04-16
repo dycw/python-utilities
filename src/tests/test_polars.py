@@ -1670,7 +1670,7 @@ class TestUniqueElement:
         assert_series_equal(result, expected)
 
 
-class TestWeekDay:
+class TestWeekNum:
     @given(
         case=sampled_from([
             (
