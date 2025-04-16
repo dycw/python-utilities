@@ -610,7 +610,6 @@ class TestConvertTimeZone:
 
 
 class TestCrossOrTouch:
-    @mark.only
     @given(
         case=sampled_from([
             ("cross", "x", "up", [None, False, False, False, True, False, False]),
@@ -639,18 +638,18 @@ class TestCrossOrTouch:
             int_range(6, -1, -1, eager=True).alias("y"),
             pl.repeat(3, 7, eager=True).alias("z"),
         )
-        expr = data.draw(sampled_from([column, self.df[column]]))
+        expr = data.draw(sampled_from([column, df[column]]))
         match other:
             case 3:
                 other_use = other
             case str():
-                other_use = data.draw(sampled_from([other, self.df[other]]))
+                other_use = data.draw(sampled_from([other, df[other]]))
         match cross_or_touch:
             case "cross":
                 result = cross(expr, up_or_down, other_use)
             case "touch":
                 result = touch(expr, up_or_down, other_use)
-        df = self.df.with_columns(result.alias("result"))
+        df = df.with_columns(result.alias("result"))
         expected = Series(name="result", values=exp_values, dtype=Boolean)
         assert_series_equal(df["result"], expected)
 
