@@ -42,6 +42,7 @@ from polars import (
     all_horizontal,
     col,
     concat,
+    int_range,
     lit,
     struct,
     when,
@@ -92,7 +93,7 @@ from utilities.math import (
 )
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel
-from utilities.types import WeekDay
+from utilities.types import Number, WeekDay
 from utilities.typing import (
     get_args,
     get_type_hints,
@@ -565,6 +566,96 @@ def _convert_time_zone_one(sr: Series, /, *, time_zone: TimeZoneLike = UTC) -> S
     if isinstance(sr.dtype, Datetime):
         return sr.dt.convert_time_zone(get_time_zone_name(time_zone))
     return sr
+
+
+##
+
+
+@overload
+def cross(
+    expr: ExprLike, up_or_down: Literal["up", "down"], other: Number | ExprLike, /
+) -> Series: ...
+@overload
+def cross(
+    expr: Series, up_or_down: Literal["up", "down"], other: Number | Series, /
+) -> Series: ...
+@overload
+def cross(
+    expr: IntoExprColumn,
+    up_or_down: Literal["up", "down"],
+    other: Number | IntoExprColumn,
+    /,
+) -> Series: ...
+def cross(
+    expr: IntoExprColumn,
+    up_or_down: Literal["up", "down"],
+    other: Number | IntoExprColumn,
+    /,
+) -> Expr | Series:
+    """Compute when a cross occurs."""
+    return _cross_or_touch(expr, "cross", up_or_down, other)
+
+
+@overload
+def touch(
+    expr: ExprLike, up_or_down: Literal["up", "down"], other: Number | ExprLike, /
+) -> Series: ...
+@overload
+def touch(
+    expr: Series, up_or_down: Literal["up", "down"], other: Number | Series, /
+) -> Series: ...
+@overload
+def touch(
+    expr: IntoExprColumn,
+    up_or_down: Literal["up", "down"],
+    other: Number | IntoExprColumn,
+    /,
+) -> Series: ...
+def touch(
+    expr: IntoExprColumn,
+    up_or_down: Literal["up", "down"],
+    other: Number | IntoExprColumn,
+    /,
+) -> Expr | Series:
+    """Compute when a touch occurs."""
+    return _cross_or_touch(expr, "touch", up_or_down, other)
+
+
+def _cross_or_touch(
+    expr: IntoExprColumn,
+    cross_or_touch: Literal["cross", "touch"],
+    up_or_down: Literal["up", "down"],
+    other: Number | IntoExprColumn,
+    /,
+) -> Expr | Series:
+    """Compute when a column crosses/touches a threshold."""
+    expr = ensure_expr_or_series(expr)
+    match other:
+        case int() | float():
+            ...
+        case str() | Expr() | Series():
+            other = ensure_expr_or_series(other)
+        case _ as never:
+            assert_never(never)
+    enough = int_range(end=pl.len()) >= 1
+    match cross_or_touch, up_or_down:
+        case "cross", "up":
+            current = expr > other
+        case "cross", "down":
+            current = expr < other
+        case "touch", "up":
+            current = expr >= other
+        case "touch", "down":
+            current = expr <= other
+        case _ as never:
+            assert_never(never)
+    prev = current.shift()
+    result = when(enough & expr.is_finite()).then(current & ~prev)
+    match expr, other:
+        case Series(), int() | float() | Series():
+            return expr.to_frame().with_columns(result.alias(expr.name))[expr.name]
+        case _:
+            return result
 
 
 ##
@@ -1633,6 +1724,7 @@ __all__ = [
     "columns_to_dict",
     "concat_series",
     "convert_time_zone",
+    "cross",
     "dataclass_to_dataframe",
     "dataclass_to_schema",
     "drop_null_struct_series",
@@ -1655,6 +1747,7 @@ __all__ = [
     "set_first_row_as_columns",
     "struct_dtype",
     "struct_from_dataclass",
+    "touch",
     "unique_element",
     "yield_rows_as_dataclasses",
     "yield_struct_series_dataclasses",

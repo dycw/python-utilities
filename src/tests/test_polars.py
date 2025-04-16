@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import datetime as dt
 import enum
+import itertools
 from dataclasses import dataclass, field
 from enum import auto
-from itertools import chain, repeat
+from itertools import chain
 from math import isfinite, nan
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
@@ -47,7 +48,7 @@ from polars import (
     lit,
 )
 from polars.testing import assert_frame_equal, assert_series_equal
-from pytest import raises
+from pytest import mark, raises
 
 from utilities.datetime import get_now, get_today
 from utilities.hypothesis import (
@@ -111,6 +112,7 @@ from utilities.polars import (
     columns_to_dict,
     concat_series,
     convert_time_zone,
+    cross,
     dataclass_to_dataframe,
     dataclass_to_schema,
     drop_null_struct_series,
@@ -133,6 +135,7 @@ from utilities.polars import (
     set_first_row_as_columns,
     struct_dtype,
     struct_from_dataclass,
+    touch,
     unique_element,
     week_num,
     yield_rows_as_dataclasses,
@@ -604,6 +607,62 @@ class TestConvertTimeZone:
         series = Series(values=[True], dtype=Boolean)
         result = convert_time_zone(series, time_zone=HongKong)
         assert_series_equal(result, series)
+
+
+class TestCrossOrTouch:
+    @mark.only
+    @given(
+        case=sampled_from([
+            ("cross", "x", "up", [None, False, False, False, True, False, False]),
+            ("cross", "y", "down", [None, False, False, False, True, False, False]),
+            ("touch", "x", "up", [None, False, False, True, False, False, False]),
+            ("touch", "y", "down", [None, False, False, True, False, False, False]),
+        ]),
+        data=data(),
+        other=sampled_from([3, "z"]),
+    )
+    def test_main(
+        self,
+        *,
+        case: tuple[
+            Literal["cross", "touch"],
+            Literal["x", "y"],
+            Literal["up", "down"],
+            list[bool | None],
+        ],
+        data: DataObject,
+        other: Literal[3, "z"],
+    ) -> None:
+        cross_or_touch, column, up_or_down, exp_values = case
+        df = concat_series(
+            int_range(0, 7, eager=True).alias("x"),
+            int_range(6, -1, -1, eager=True).alias("y"),
+            pl.repeat(3, 7, eager=True).alias("z"),
+        )
+        expr = data.draw(sampled_from([column, self.df[column]]))
+        match other:
+            case 3:
+                other_use = other
+            case str():
+                other_use = data.draw(sampled_from([other, self.df[other]]))
+        match cross_or_touch:
+            case "cross":
+                result = cross(expr, up_or_down, other_use)
+            case "touch":
+                result = touch(expr, up_or_down, other_use)
+        df = self.df.with_columns(result.alias("result"))
+        expected = Series(name="result", values=exp_values, dtype=Boolean)
+        assert_series_equal(df["result"], expected)
+
+    @mark.only
+    def test_example(self) -> None:
+        close = Series(name="close", values=[8, 7, 8, 5, 0], dtype=Int64)
+        mid = Series(name="mid", values=[1, 2, 3, 4, 6], dtype=Int64)
+        result = cross(close, "down", mid).alias("result")
+        expected = Series(
+            name="result", values=[None, False, False, False, True], dtype=Boolean
+        )
+        assert_series_equal(result, expected)
 
 
 class TestDataClassToDataFrame:
@@ -1677,11 +1736,11 @@ class TestWeekNum:
                 "mon",
                 list(
                     chain(
-                        repeat(2868, 7),
-                        repeat(2869, 7),
-                        repeat(2870, 7),
-                        repeat(2871, 7),
-                        repeat(2872, 7),
+                        itertools.repeat(2868, 7),
+                        itertools.repeat(2869, 7),
+                        itertools.repeat(2870, 7),
+                        itertools.repeat(2871, 7),
+                        itertools.repeat(2872, 7),
                     )
                 ),
             ),
@@ -1689,12 +1748,12 @@ class TestWeekNum:
                 "tue",
                 list(
                     chain(
-                        repeat(2867, 1),
-                        repeat(2868, 7),
-                        repeat(2869, 7),
-                        repeat(2870, 7),
-                        repeat(2871, 7),
-                        repeat(2872, 6),
+                        itertools.repeat(2867, 1),
+                        itertools.repeat(2868, 7),
+                        itertools.repeat(2869, 7),
+                        itertools.repeat(2870, 7),
+                        itertools.repeat(2871, 7),
+                        itertools.repeat(2872, 6),
                     )
                 ),
             ),
@@ -1702,12 +1761,12 @@ class TestWeekNum:
                 "wed",
                 list(
                     chain(
-                        repeat(2867, 2),
-                        repeat(2868, 7),
-                        repeat(2869, 7),
-                        repeat(2870, 7),
-                        repeat(2871, 7),
-                        repeat(2872, 5),
+                        itertools.repeat(2867, 2),
+                        itertools.repeat(2868, 7),
+                        itertools.repeat(2869, 7),
+                        itertools.repeat(2870, 7),
+                        itertools.repeat(2871, 7),
+                        itertools.repeat(2872, 5),
                     )
                 ),
             ),
@@ -1715,12 +1774,12 @@ class TestWeekNum:
                 "sat",
                 list(
                     chain(
-                        repeat(2867, 5),
-                        repeat(2868, 7),
-                        repeat(2869, 7),
-                        repeat(2870, 7),
-                        repeat(2871, 7),
-                        repeat(2872, 2),
+                        itertools.repeat(2867, 5),
+                        itertools.repeat(2868, 7),
+                        itertools.repeat(2869, 7),
+                        itertools.repeat(2870, 7),
+                        itertools.repeat(2871, 7),
+                        itertools.repeat(2872, 2),
                     )
                 ),
             ),
@@ -1728,12 +1787,12 @@ class TestWeekNum:
                 "sun",
                 list(
                     chain(
-                        repeat(2867, 6),
-                        repeat(2868, 7),
-                        repeat(2869, 7),
-                        repeat(2870, 7),
-                        repeat(2871, 7),
-                        repeat(2872, 1),
+                        itertools.repeat(2867, 6),
+                        itertools.repeat(2868, 7),
+                        itertools.repeat(2869, 7),
+                        itertools.repeat(2870, 7),
+                        itertools.repeat(2871, 7),
+                        itertools.repeat(2872, 1),
                     )
                 ),
             ),
