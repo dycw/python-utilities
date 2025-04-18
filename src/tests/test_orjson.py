@@ -8,7 +8,7 @@ from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -65,6 +65,7 @@ from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.operator import IsEqualError, is_equal
 from utilities.orjson import (
+    _LOG_RECORD_DEFAULT_ATTRS,
     OrjsonFormatter,
     OrjsonLogRecord,
     Unserializable,
@@ -153,6 +154,7 @@ class TestGetLogRecords:
         logger.setLevel(DEBUG)
         handler.setFormatter(OrjsonFormatter())
         for level_, message_, extra_ in items:
+            _ = assume(set(extra_) & set(_LOG_RECORD_DEFAULT_ATTRS) == set())
             logger.log(get_logging_level_number(level_), message_, extra=extra_)
         output = get_log_records(root, parallelism="threads")
         check_polars_dataframe(
@@ -229,6 +231,7 @@ class TestGetLogRecords:
         logger.setLevel(DEBUG)
         handler.setFormatter(OrjsonFormatter())
         for level_, message_, extra_ in items:
+            _ = assume(set(extra_) & set(_LOG_RECORD_DEFAULT_ATTRS) == set())
             logger.log(get_logging_level_number(level_), message_, extra=extra_)
         output = get_log_records(root, parallelism="threads")
         output = output.filter(
