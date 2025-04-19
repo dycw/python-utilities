@@ -632,6 +632,14 @@ def is_hashable(obj: Any, /) -> TypeGuard[Hashable]:
 ##
 
 
+def is_instance_int_not_bool(obj: Any, /) -> TypeGuard[int]:
+    """Check if an object is an integer, and not a boolean."""
+    return isinstance(obj, int) and not isinstance(obj, bool)
+
+
+##
+
+
 @overload
 def is_iterable_of(obj: Any, cls: type[_T], /) -> TypeGuard[Iterable[_T]]: ...
 @overload
@@ -742,9 +750,9 @@ def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
 ##
 
 
-def is_subclass_except_bool_int(x: type[Any], y: type[Any], /) -> bool:
-    """Check for the subclass relation, except bool < int."""
-    return issubclass(x, y) and not (issubclass(x, bool) and issubclass(int, y))
+def is_subclass_int_not_bool(cls: type[Any], /) -> TypeGuard[type[int]]:
+    """Check if a class is an integer, and not a boolean."""
+    return issubclass(cls, int) and not issubclass(cls, bool)
 
 
 ##
@@ -1010,6 +1018,7 @@ __all__ = [
     "is_dataclass_class",
     "is_dataclass_instance",
     "is_hashable",
+    "is_instance_int_not_bool",
     "is_iterable_of",
     "is_none",
     "is_not_none",
@@ -1017,7 +1026,7 @@ __all__ = [
     "is_sized",
     "is_sized_not_str",
     "is_string_mapping",
-    "is_subclass_except_bool_int",
+    "is_subclass_int_not_bool",
     "is_tuple",
     "is_tuple_or_str_mapping",
     "make_isinstance",
