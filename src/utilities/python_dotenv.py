@@ -60,10 +60,8 @@ def load_settings(
 
 
 def _load_settings_post(
-    field: _YieldFieldsClass[Any], value: Any, /, *, path: Path, values: StrMapping
+    field: _YieldFieldsClass[Any], value: str, /, *, path: Path, values: StrMapping
 ) -> Any:
-    if not isinstance(value, str):
-        return value
     try:
         return parse_text(field.type_, value)
     except ParseTextError:
