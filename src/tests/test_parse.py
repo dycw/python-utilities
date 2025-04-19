@@ -4,18 +4,10 @@ import datetime as dt
 from dataclasses import dataclass
 from pathlib import Path
 from types import NoneType
-from typing import Literal
+from typing import Any, Literal
 
 from hypothesis import given
-from hypothesis.strategies import (
-    booleans,
-    dates,
-    floats,
-    integers,
-    sampled_from,
-    times,
-    timezones,
-)
+from hypothesis.strategies import booleans, dates, floats, integers, sampled_from, times
 from pytest import raises
 
 from tests.test_operator import TruthEnum
@@ -52,7 +44,7 @@ class TestParseText:
         result = parse_text(dt.date, text)
         assert result == date
 
-    @given(datetime=local_datetimes() | zoned_datetimes(time_zone=timezones()))
+    @given(datetime=local_datetimes() | zoned_datetimes())
     def test_datetime(self, *, datetime: dt.datetime) -> None:
         text = serialize_datetime(datetime)
         result = parse_text(dt.datetime, text)
@@ -190,6 +182,12 @@ class TestParseText:
         ):
             _ = parse_text(int | None, "invalid")
 
+    def test_error_nullable_unknown(self) -> None:
+        with raises(
+            ParseTextError, match=r"Unable to parse typing\.Any \| None; got 'invalid'"
+        ):
+            _ = parse_text(Any | None, "invalid")
+
     def test_error_sentinel(self) -> None:
         with raises(
             ParseTextError,
@@ -211,14 +209,18 @@ class TestParseText:
         ):
             _ = parse_text(dt.timedelta, "invalid")
 
-    def test_error_unknown(self) -> None:
+    def test_error_unknown_annotation(self) -> None:
+        with raises(ParseTextError, match=r"Unable to parse int \| str; got 'invalid'"):
+            _ = parse_text(int | str, "invalid")
+
+    def test_error_unknown_type(self) -> None:
         @dataclass(kw_only=True)
         class Example:
             pass
 
         with raises(
             ParseTextError,
-            match=r"Unable to parse <class 'tests\.test_parse\.TestParseText\.test_error_unknown\.<locals>\.Example'>; got 'invalid'",
+            match=r"Unable to parse <class 'tests\.test_parse\.TestParseText\.test_error_unknown_type\.<locals>\.Example'>; got 'invalid'",
         ):
             _ = parse_text(Example, "invalid")
 
