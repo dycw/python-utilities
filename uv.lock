@@ -732,7 +732,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.106.4"
+version = "0.107.0"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },
@@ -1579,15 +1579,15 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.131.3"
+version = "6.131.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bb/e5/f3cdc165bf6da8c505fe20484e1649aa62d19bda445ad5b7becb442228ab/hypothesis-6.131.3.tar.gz", hash = "sha256:918ead92a9cdebbb62baa33a5ad19ff32f73d67f02c7255175c0c3322da37c2d", size = 431554 }
+sdist = { url = "https://files.pythonhosted.org/packages/6c/3f/cc1970629319aeaea0032e57ac64949051490ef7adf6ffeb26b6b7dbaf1d/hypothesis-6.131.6.tar.gz", hash = "sha256:3d7ceb300be5f47b4023021bcf0e6e0c7b7e8dcf304a381dd10238a1cfbd0ba2", size = 433891 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/77/db/0885e3032023d5de632e0a26663769c0e3f5026b9467d6ee76f19543da79/hypothesis-6.131.3-py3-none-any.whl", hash = "sha256:803337d49b317472e5f7a85c112090e84c83e4f161c09e2aad389e6701ed1998", size = 496750 },
+    { url = "https://files.pythonhosted.org/packages/7c/7f/89ab317843631e71d9f60bb465dc6d16ed3c48c61eda736af06d9ea79dab/hypothesis-6.131.6-py3-none-any.whl", hash = "sha256:c15e09a0698f89d9431b97a9e1645ac8ed73167d0fb97b3589bbce6d15cb5296", size = 498454 },
 ]
 
 [[package]]

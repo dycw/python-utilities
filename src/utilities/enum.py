@@ -13,11 +13,11 @@ from utilities.types import EnumOrStr, TEnum
 
 @overload
 def ensure_enum(
-    value: None, enum: type[TEnum], /, *, case_sensitive: bool = ...
+    value: None, enum: type[TEnum], /, *, case_sensitive: bool = False
 ) -> None: ...
 @overload
 def ensure_enum(
-    value: EnumOrStr[TEnum], enum: type[TEnum], /, *, case_sensitive: bool = ...
+    value: EnumOrStr[TEnum], enum: type[TEnum], /, *, case_sensitive: bool = False
 ) -> TEnum: ...
 def ensure_enum(
     value: EnumOrStr[TEnum] | None,

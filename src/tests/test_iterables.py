@@ -1034,7 +1034,7 @@ class TestMergeStrMappings:
             MergeStrMappingsError,
             match=r"Mapping .* keys must not contain duplicates \(modulo case\); got .*",
         ):
-            _ = merge_str_mappings({"x": 1, "X": 2}, case_sensitive=False)
+            _ = merge_str_mappings({"x": 1, "X": 2})
 
 
 class TestOne:
@@ -1093,7 +1093,7 @@ class TestOneMaybe:
 class TestOneStr:
     @given(text=sampled_from(["a", "b", "c"]))
     def test_case_sensitive(self, *, text: str) -> None:
-        assert one_str(["a", "b", "c"], text) == text
+        assert one_str(["a", "b", "c"], text, case_sensitive=True) == text
 
     @given(text=sampled_from(["a", "b", "c"]), case=sampled_from(["lower", "upper"]))
     def test_case_insensitive(
@@ -1104,31 +1104,31 @@ class TestOneStr:
                 text_use = text.lower()
             case "upper":
                 text_use = text.upper()
-        assert one_str(["a", "b", "c"], text_use, case_sensitive=False) == text
+        assert one_str(["a", "b", "c"], text_use) == text
 
     def test_error_case_sensitive_empty_error(self) -> None:
         with raises(_OneStrEmptyError, match=r"Iterable .* does not contain 'A'"):
-            _ = one_str(["a", "b", "c"], "A")
+            _ = one_str(["a", "b", "c"], "A", case_sensitive=True)
 
     def test_error_case_sensitive_non_unique(self) -> None:
         with raises(
             _OneStrNonUniqueError,
             match=r"Iterable .* must contain 'a' exactly once; got at least 2 instances",
         ):
-            _ = one_str(["a", "a"], "a")
+            _ = one_str(["a", "a"], "a", case_sensitive=True)
 
     def test_error_case_insensitive_empty_error(self) -> None:
         with raises(
             _OneStrEmptyError, match=r"Iterable .* does not contain 'd' \(modulo case\)"
         ):
-            _ = one_str(["a", "b", "c"], "d", case_sensitive=False)
+            _ = one_str(["a", "b", "c"], "d")
 
     def test_error_case_insensitive_non_unique_error(self) -> None:
         with raises(
             _OneStrNonUniqueError,
             match=r"Iterable .* must contain 'a' exactly once \(modulo case\); got 'a', 'A' and perhaps more",
         ):
-            _ = one_str(["a", "A"], "a", case_sensitive=False)
+            _ = one_str(["a", "A"], "a")
 
 
 class TestOneUnique:

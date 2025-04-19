@@ -947,7 +947,7 @@ def merge_sets(*iterables: Iterable[_T]) -> AbstractSet[_T]:
 
 
 def merge_str_mappings(
-    *mappings: StrMapping, case_sensitive: bool = True
+    *mappings: StrMapping, case_sensitive: bool = False
 ) -> StrMapping:
     """Merge a set of string mappings."""
     if case_sensitive:
@@ -963,7 +963,7 @@ def _merge_str_mappings_one(acc: StrMapping, el: StrMapping, /) -> StrMapping:
         raise MergeStrMappingsError(mapping=el, counts=error.counts) from None
     for key_add, value in el.items():
         try:
-            key_del = one_str(out, key_add, case_sensitive=False)
+            key_del = one_str(out, key_add)
         except _OneStrEmptyError:
             pass
         else:
@@ -1062,7 +1062,7 @@ class OneMaybeNonUniqueError(OneMaybeError, Generic[_T]):
 
 
 def one_str(
-    iterable: Iterable[str], text: str, /, *, case_sensitive: bool = True
+    iterable: Iterable[str], text: str, /, *, case_sensitive: bool = False
 ) -> str:
     """Find the unique string in an iterable."""
     as_list = list(iterable)
@@ -1090,7 +1090,7 @@ def one_str(
 class OneStrError(Exception):
     iterable: Iterable[str]
     text: str
-    case_sensitive: bool = True
+    case_sensitive: bool = False
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1111,13 +1111,9 @@ class _OneStrNonUniqueError(OneStrError):
     @override
     def __str__(self) -> str:
         desc = f"Iterable {get_repr(self.iterable)} must contain {self.text!r} exactly once"
-        match self.case_sensitive:
-            case True:
-                return f"{desc}; got at least 2 instances"
-            case False:
-                return f"{desc} (modulo case); got {self.first!r}, {self.second!r} and perhaps more"
-            case _ as never:
-                assert_never(never)
+        if self.case_sensitive:
+            return f"{desc}; got at least 2 instances"
+        return f"{desc} (modulo case); got {self.first!r}, {self.second!r} and perhaps more"
 
 
 ##

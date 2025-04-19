@@ -1077,9 +1077,7 @@ def setup_hypothesis_profiles(
             suppress_health_check=suppress_health_check,
             verbosity=profile.verbosity,
         )
-    profile = get_env_var(
-        "HYPOTHESIS_PROFILE", case_sensitive=False, default=Profile.default.name
-    )
+    profile = get_env_var("HYPOTHESIS_PROFILE", default=Profile.default.name)
     settings.load_profile(profile)
 
 
