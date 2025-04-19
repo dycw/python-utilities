@@ -44,6 +44,7 @@ from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
     CheckValidZonedDateimeError,
+    EnsureDateError,
     EnsureDurationError,
     EnsureLocalDateTimeError,
     EnsureTimeError,
@@ -64,6 +65,7 @@ from utilities.whenever import (
     _to_datetime_delta,
     _ToDateTimeDeltaError,
     check_valid_zoned_datetime,
+    ensure_date,
     ensure_duration,
     ensure_local_datetime,
     ensure_time,
@@ -138,6 +140,16 @@ class TestParseAndSerializeDate:
     def test_error_parse(self) -> None:
         with raises(ParseDateError, match="Unable to parse date; got 'invalid'"):
             _ = parse_date("invalid")
+
+    @given(data=data(), date=dates())
+    def test_ensure(self, *, data: DataObject, date: dt.date) -> None:
+        str_or_value = data.draw(sampled_from([date, serialize_date(date)]))
+        result = ensure_date(str_or_value)
+        assert result == date
+
+    def test_error_ensure(self) -> None:
+        with raises(EnsureDateError, match="Unable to ensure date; got 'invalid'"):
+            _ = ensure_date("invalid")
 
 
 class TestParseAndSerializeDuration:
