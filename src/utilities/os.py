@@ -117,9 +117,7 @@ class GetEnvVarError(Exception):
     @override
     def __str__(self) -> str:
         desc = f"No environment variable {self.key!r}"
-        if not self.case_sensitive:
-            desc += " (modulo case)"
-        return desc
+        return desc if self.case_sensitive else f"{desc} (modulo case)"
 
 
 ##

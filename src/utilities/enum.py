@@ -161,9 +161,7 @@ class _ParseEnumGenericEnumEmptyError(ParseEnumError):
     @override
     def __str__(self) -> str:
         desc = f"Enum {self.enum.__name__!r} member {self.names_or_values} do not contain {self.value!r}"
-        if not self.case_sensitive:
-            desc += " (modulo case)"
-        return desc
+        return desc if self.case_sensitive else f"{desc} (modulo case)"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -173,9 +171,7 @@ class _ParseEnumStrEnumEmptyError(ParseEnumError):
     @override
     def __str__(self) -> str:
         desc = f"StrEnum {self.enum.__name__!r} member names and values do not contain {self.value!r}"
-        if not self.case_sensitive:
-            desc += " (modulo case)"
-        return desc
+        return desc if self.case_sensitive else f"{desc} (modulo case)"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -186,10 +182,11 @@ class _ParseEnumStrEnumNonUniqueError(ParseEnumError):
 
     @override
     def __str__(self) -> str:
-        desc = f"StrEnum {self.enum.__name__!r} member names and values must contain {self.value!r} exactly once"
-        if not self.case_sensitive:
-            desc += " (modulo case)"
-        return f"{desc}; got {self.by_name!r} by name and {self.by_value!r} by value"
+        head = f"StrEnum {self.enum.__name__!r} member names and values must contain {self.value!r} exactly once"
+        mid = "" if self.case_sensitive else " (modulo case)"
+        return (
+            f"{head}{mid}; got {self.by_name!r} by name and {self.by_value!r} by value"
+        )
 
 
 __all__ = [
