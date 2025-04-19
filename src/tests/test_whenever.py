@@ -45,6 +45,7 @@ from utilities.whenever import (
     MIN_SERIALIZABLE_TIMEDELTA,
     CheckValidZonedDateimeError,
     EnsureDateError,
+    EnsureDateTimeError,
     EnsureDurationError,
     EnsureLocalDateTimeError,
     EnsureTimeError,
@@ -67,6 +68,7 @@ from utilities.whenever import (
     _ToDateTimeDeltaError,
     check_valid_zoned_datetime,
     ensure_date,
+    ensure_datetime,
     ensure_duration,
     ensure_local_datetime,
     ensure_time,
@@ -140,7 +142,7 @@ class TestParseAndSerializeDate:
         assert result == date
 
     def test_error_parse(self) -> None:
-        with raises(ParseDateError, match="Unable to parse 'invalid' into a date"):
+        with raises(ParseDateError, match="Unable to parse date; got 'invalid'"):
             _ = parse_date("invalid")
 
     @given(data=data(), date=dates())
