@@ -9,7 +9,7 @@ from operator import add, neg, sub
 from re import DOTALL
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, override
 
-from hypothesis import Phase, given, reproduce_failure, settings
+from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     binary,
@@ -32,7 +32,6 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 
 from tests.test_operator import make_objects
-from utilities.contextvars import set_global_breakpoint
 from utilities.functions import is_sequence_of
 from utilities.hypothesis import (
     sentinels,
@@ -1091,11 +1090,8 @@ class TestOneMaybe:
             _ = one_maybe(iterable)
 
 
+@mark.only
 class TestOneStr:
-    @given(text=sampled_from(["a", "b", "c"]))
-    def test_exact_match_case_sensitive(self, *, text: str) -> None:
-        assert one_str(["a", "b", "c"], text) == text
-
     @given(
         text=sampled_from(["a", "b", "c"]),
         lower_or_upper=sampled_from(["lower", "upper"]),
@@ -1110,23 +1106,24 @@ class TestOneStr:
                 text_use = text.upper()
         assert one_str(["a", "b", "c"], text_use) == text
 
+    @given(text=sampled_from(["a", "b", "c"]))
+    def test_exact_match_case_sensitive(self, *, text: str) -> None:
+        assert one_str(["a", "b", "c"], text, case_sensitive=True) == text
+
     @given(case=sampled_from([("ab", "abc"), ("ad", "ade"), ("af", "afg")]))
-    @mark.only
     def test_head_case_sensitive(self, *, case: tuple[str, str]) -> None:
         head, expected = case
-        assert one_str(["abc", "ade", "afg"], head, head=True) == expected
+        assert (
+            one_str(["abc", "ade", "afg"], head, head=True, case_sensitive=True)
+            == expected
+        )
 
     @given(
         case=sampled_from([("ab", "abc"), ("ad", "ade"), ("af", "afg")]),
         lower_or_upper=sampled_from(["lower", "upper"]),
     )
-    @mark.only
     def test_head_case_insensitive(
-        self,
-        *,
-        text: str,
-        case: tuple[str, str],
-        lower_or_upper: Literal["lower", "upper"],
+        self, *, case: tuple[str, str], lower_or_upper: Literal["lower", "upper"]
     ) -> None:
         head, expected = case
         match lower_or_upper:
@@ -1134,31 +1131,59 @@ class TestOneStr:
                 head_use = head.lower()
             case "upper":
                 head_use = head.upper()
-        assert one_str(["abc", "ade", "afg"], head_use, case_sensitive=False) == head
+        assert one_str(["abc", "ade", "afg"], head_use, head=True) == expected
 
-    def test_error_case_sensitive_empty_error(self) -> None:
+    def test_error_exact_match_case_sensitive_empty_error(self) -> None:
         with raises(_OneStrEmptyError, match=r"Iterable .* does not contain 'A'"):
             _ = one_str(["a", "b", "c"], "A", case_sensitive=True)
 
-    def test_error_case_sensitive_non_unique(self) -> None:
+    def test_error_exact_match_case_sensitive_non_unique(self) -> None:
         with raises(
             _OneStrNonUniqueError,
-            match=r"Iterable .* must contain 'a' exactly once; got at least 2 instances",
+            match=r"Iterable .* must contain 'a' exactly once; got 'a', 'a' and perhaps more",
         ):
             _ = one_str(["a", "a"], "a", case_sensitive=True)
 
-    def test_error_case_insensitive_empty_error(self) -> None:
+    def test_error_exact_match_case_insensitive_empty_error(self) -> None:
         with raises(
             _OneStrEmptyError, match=r"Iterable .* does not contain 'd' \(modulo case\)"
         ):
             _ = one_str(["a", "b", "c"], "d")
 
-    def test_error_case_insensitive_non_unique_error(self) -> None:
+    def test_error_exact_match_case_insensitive_non_unique_error(self) -> None:
         with raises(
             _OneStrNonUniqueError,
             match=r"Iterable .* must contain 'a' exactly once \(modulo case\); got 'a', 'A' and perhaps more",
         ):
             _ = one_str(["a", "A"], "a")
+
+    def test_error_head_case_sensitive_empty_error(self) -> None:
+        with raises(
+            _OneStrEmptyError,
+            match=r"Iterable .* does not contain any string starting with 'AB'",
+        ):
+            _ = one_str(["abc", "ade", "afg"], "AB", head=True, case_sensitive=True)
+
+    def test_error_head_case_sensitive_non_unique(self) -> None:
+        with raises(
+            _OneStrNonUniqueError,
+            match=r"Iterable .* must contain exactly one string starting with 'ab'; got 'abc', 'abd' and perhaps more",
+        ):
+            _ = one_str(["abc", "abd"], "ab", head=True, case_sensitive=True)
+
+    def test_error_head_case_insensitive_empty_error(self) -> None:
+        with raises(
+            _OneStrEmptyError,
+            match=r"Iterable .* does not contain any string starting with 'ac' \(modulo case\)",
+        ):
+            _ = one_str(["abc", "ade", "afg"], "ac", head=True)
+
+    def test_error_head_case_insensitive_non_unique_error(self) -> None:
+        with raises(
+            _OneStrNonUniqueError,
+            match=r"Iterable .* must contain exactly one string starting with 'ab' \(modulo case\); got 'abc', 'ABC' and perhaps more",
+        ):
+            _ = one_str(["abc", "ABC"], "ab", head=True)
 
 
 class TestOneUnique:

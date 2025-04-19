@@ -1066,8 +1066,8 @@ def one_str(
     text: str,
     /,
     *,
-    case_sensitive: bool = True,
     head: bool = False,
+    case_sensitive: bool = False,
 ) -> str:
     """Find the unique string in an iterable."""
     as_list = list(iterable)
@@ -1079,21 +1079,21 @@ def one_str(
         case True, True:
             it = (t for t in as_list if t.startswith(text))
         case True, False:
-            raise NotImplementedError
+            it = (t for t in as_list if t.lower().startswith(text.lower()))
         case _ as never:
             assert_never(never)
     try:
         return one(it)
     except OneEmptyError:
         raise _OneStrEmptyError(
-            iterable=as_list, text=text, case_sensitive=case_sensitive, head=head
+            iterable=as_list, text=text, head=head, case_sensitive=case_sensitive
         ) from None
     except OneNonUniqueError as error:
         raise _OneStrNonUniqueError(
             iterable=as_list,
             text=text,
-            case_sensitive=case_sensitive,
             head=head,
+            case_sensitive=case_sensitive,
             first=error.first,
             second=error.second,
         ) from None
@@ -1103,6 +1103,7 @@ def one_str(
 class OneStrError(Exception):
     iterable: Iterable[str]
     text: str
+    head: bool = False
     case_sensitive: bool = False
 
 
@@ -1110,10 +1111,19 @@ class OneStrError(Exception):
 class _OneStrEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
-        desc = f"Iterable {get_repr(self.iterable)} does not contain {self.text!r}"
-        if not self.case_sensitive:
-            desc += " (modulo case)"
-        return desc
+        head = f"Iterable {get_repr(self.iterable)} does not contain"
+        match self.head, self.case_sensitive:
+            case False, True:
+                tail = repr(self.text)
+            case False, False:
+                tail = f"{self.text!r} (modulo case)"
+            case True, True:
+                tail = f"any string starting with {self.text!r}"
+            case True, False:
+                tail = f"any string starting with {self.text!r} (modulo case)"
+            case _ as never:
+                assert_never(never)
+        return f"{head} {tail}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1123,10 +1133,19 @@ class _OneStrNonUniqueError(OneStrError):
 
     @override
     def __str__(self) -> str:
-        desc = f"Iterable {get_repr(self.iterable)} must contain {self.text!r} exactly once"
-        if self.case_sensitive:
-            return f"{desc}; got at least 2 instances"
-        return f"{desc} (modulo case); got {self.first!r}, {self.second!r} and perhaps more"
+        head = f"Iterable {get_repr(self.iterable)} must contain"
+        match self.head, self.case_sensitive:
+            case False, True:
+                mid = f"{self.text!r} exactly once"
+            case False, False:
+                mid = f"{self.text!r} exactly once (modulo case)"
+            case True, True:
+                mid = f"exactly one string starting with {self.text!r}"
+            case True, False:
+                mid = f"exactly one string starting with {self.text!r} (modulo case)"
+            case _ as never:
+                assert_never(never)
+        return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
 
 
 ##
