@@ -17,8 +17,6 @@ from utilities.iterables import MergeStrMappingsError, merge_str_mappings
 from utilities.parse import ParseTextError, parse_text
 from utilities.pathlib import PWD
 from utilities.reprlib import get_repr
-from utilities.text import ParseBoolError, parse_bool
-from utilities.typing import get_args, is_literal_type, is_optional_type
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -64,69 +62,14 @@ def load_settings(
 def _load_settings_post(
     field: _YieldFieldsClass[Any], text: str, /, *, path: Path, values: StrMapping
 ) -> Any:
-    type_ = field.type_
-    if type_ is str:
+    if not isinstance(value, str):
         return value
-    if type_ is bool:
-        try:
-            return parse_bool(value)
-        except ParseBoolError:
-            raise _LoadSettingsInvalidBoolError(
-                path=path, values=values, field=field.name, value=value
-            ) from None
-    if type_ is float:
-        try:
-            return float(value)
-        except ValueError:
-            raise _LoadSettingsInvalidFloatError(
-                path=path, values=values, field=field.name, value=value
-            ) from None
-    if type_ is int:
-        try:
-            return int(value)
-        except ValueError:
-            raise _LoadSettingsInvalidIntError(
-                path=path, values=values, field=field.name, value=value
-            ) from None
-    if type_ is Path:
-        return Path(value).expanduser()
-    if type_ is dt.date:
-        from utilities.whenever import ParseDateError, parse_date
-
-        try:
-            return parse_date(value)
-        except ParseDateError:
-            raise _LoadSettingsInvalidDateError(
-                path=path, values=values, field=field.name, value=value
-            ) from None
-    if type_ is dt.timedelta:
-        from utilities.whenever import ParseTimedeltaError, parse_timedelta
-
-        try:
-            return parse_timedelta(value)
-        except ParseTimedeltaError:
-            raise _LoadSettingsInvalidTimeDeltaError(
-                path=path, values=values, field=field.name, value=value
-            ) from None
-    if isinstance(type_, type) and issubclass(type_, Enum):
-        try:
-            return ensure_enum(value, type_)
-        except EnsureEnumError:
-            raise _LoadSettingsInvalidEnumError(
-                path=path, values=values, field=field.name, type_=type_, value=value
-            ) from None
-    if is_literal_type(type_):
-        return one_str(get_args(type_), value)
-    if is_optional_type(type_) and (one(get_args(type_)) is int):
-        if (value is None) or (value == "") or search("none", value, flags=IGNORECASE):
-            return None
-        try:
-            return int(value)
-        except ValueError:
-            raise _LoadSettingsInvalidNullableIntError(
-                path=path, values=values, field=field.name, value=value
-            ) from None
-    raise _LoadSettingsTypeError(path=path, field=field.name, type=type_)
+    try:
+        return parse_text(field.type_, value)
+    except ParseTextError:
+        raise _LoadSettingsParseTextError(
+            path=path, values=values, field=field, text=value
+        ) from None
 
 
 @dataclass(kw_only=True, slots=True)
