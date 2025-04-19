@@ -1090,7 +1090,6 @@ class TestOneMaybe:
             _ = one_maybe(iterable)
 
 
-@mark.only
 class TestOneStr:
     @given(
         text=sampled_from(["a", "b", "c"]),
