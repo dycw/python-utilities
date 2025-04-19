@@ -240,7 +240,7 @@ class ParseDateError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to parse date; got {self.date!r}"
+        return f"Unable to {self.date!r} into a date"
 
 
 ##
@@ -463,11 +463,9 @@ def serialize_date(date: dt.date, /) -> str:
 
 
 def serialize_datetime(datetime: dt.datetime, /) -> str:
-    """Serialize a datetime."""
-    try:
-        return serialize_local_datetime(datetime)
-    except SerializeLocalDateTimeError:
-        return serialize_zoned_datetime(datetime)
+    """Serialize a local/zoned datetime."""
+    check_date_not_datetime(datetime)
+    return Date.from_py_date(datetime).format_common_iso()
 
 
 ##

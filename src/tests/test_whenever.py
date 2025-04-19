@@ -140,7 +140,7 @@ class TestParseAndSerializeDate:
         assert result == date
 
     def test_error_parse(self) -> None:
-        with raises(ParseDateError, match="Unable to parse date; got 'invalid'"):
+        with raises(ParseDateError, match="Unable to parse 'invalid' into a date"):
             _ = parse_date("invalid")
 
     @given(data=data(), date=dates())
