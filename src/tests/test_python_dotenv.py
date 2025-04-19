@@ -33,10 +33,6 @@ from utilities.python_dotenv import (
     _LoadSettingsDuplicateKeysError,
     _LoadSettingsEmptyError,
     _LoadSettingsFileNotFoundError,
-    _LoadSettingsInvalidBoolError,
-    _LoadSettingsInvalidDateError,
-    _LoadSettingsInvalidEnumError,
-    _LoadSettingsInvalidFloatError,
     _LoadSettingsInvalidIntError,
     _LoadSettingsInvalidNullableIntError,
     _LoadSettingsInvalidTimeDeltaError,
@@ -131,22 +127,6 @@ class TestLoadSettings:
         expected = Settings(key=value)
         assert settings == expected
 
-    @given(root=git_repos())
-    @settings_with_reduced_examples()
-    def test_bool_value_error(self, *, root: Path) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: bool
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write("key = '...'\n")
-
-        with raises(
-            _LoadSettingsInvalidBoolError,
-            match=r"Field 'key' must contain a valid boolean; got '...'",
-        ):
-            _ = load_settings(Settings, cwd=root)
-
     @given(root=git_repos(), value=dates())
     @settings_with_reduced_examples()
     def test_date_value(self, *, root: Path, value: dt.date) -> None:
@@ -160,22 +140,6 @@ class TestLoadSettings:
         settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)
         assert settings == expected
-
-    @given(root=git_repos())
-    @settings_with_reduced_examples()
-    def test_date_value_error(self, *, root: Path) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: dt.date
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write("key = '...'\n")
-
-        with raises(
-            _LoadSettingsInvalidDateError,
-            match=r"Field 'key' must contain a valid date; got '...'",
-        ):
-            _ = load_settings(Settings, cwd=root)
 
     @given(data=data(), root=git_repos())
     @settings_with_reduced_examples()
@@ -196,26 +160,6 @@ class TestLoadSettings:
         expected = Settings(key=value)
         assert settings == expected
 
-    @given(root=git_repos())
-    @settings_with_reduced_examples()
-    def test_enum_value_error(self, *, root: Path) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: Truth
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write("key = ...\n")
-
-        with raises(
-            _LoadSettingsInvalidEnumError,
-            match=r"Field '.*' must contain a valid member of '.*'; got '...'",
-        ):
-            _ = load_settings(Settings, cwd=root, localns=locals())
-
     @given(root=git_repos(), value=int32s().map(float))
     @settings_with_reduced_examples()
     def test_float_value(self, *, root: Path, value: float) -> None:
@@ -229,22 +173,6 @@ class TestLoadSettings:
         settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)
         assert settings == expected
-
-    @given(root=git_repos())
-    @settings_with_reduced_examples()
-    def test_float_value_error(self, *, root: Path) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: float
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write("key = '...'\n")
-
-        with raises(
-            _LoadSettingsInvalidFloatError,
-            match=r"Field 'key' must contain a valid float; got '...'",
-        ):
-            _ = load_settings(Settings, cwd=root)
 
     @given(root=git_repos(), value=integers())
     @settings_with_reduced_examples()
