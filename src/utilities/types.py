@@ -23,8 +23,6 @@ _T_contra = TypeVar("_T_contra", contravariant=True)
 
 
 # basic
-type Number = int | float
-type Duration = Number | dt.timedelta
 type OpenMode = Literal[
     "r",
     "w",
@@ -85,14 +83,20 @@ TDataclass = TypeVar("TDataclass", bound=Dataclass)
 
 
 # datetime
+type DateLike = MaybeStr[dt.date]
+type DateTimeLike = MaybeStr[dt.datetime]
 type DateOrDateTime = dt.date | dt.datetime
+type Duration = Number | dt.timedelta
+type DurationLike = MaybeStr[Duration]
 type MaybeCallableDate = MaybeCallable[dt.date]
 type MaybeCallableDateTime = MaybeCallable[dt.datetime]
+type TimeLike = MaybeStr[dt.time]
+type TimeDeltaLike = MaybeStr[dt.timedelta]
 type WeekDay = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 
 # enum
-type EnumOrStr[_TEnum: Enum] = MaybeStr[_TEnum]
+type EnumLike[_TEnum: Enum] = MaybeStr[_TEnum]
 TEnum = TypeVar("TEnum", bound=Enum)
 
 
@@ -122,6 +126,7 @@ type LoggerOrName = MaybeStr[Logger]
 
 
 # math
+type Number = int | float
 type RoundMode = Literal[
     "standard",
     "floor",
@@ -250,9 +255,12 @@ type TimeZoneLike = ZoneInfo | Literal["local"] | TimeZone | dt.tzinfo | dt.date
 __all__ = [
     "Coroutine1",
     "Dataclass",
+    "DateLike",
     "DateOrDateTime",
+    "DateTimeLike",
     "Duration",
-    "EnumOrStr",
+    "DurationLike",
+    "EnumLike",
     "ExcInfo",
     "IterableHashable",
     "LogLevel",
@@ -305,6 +313,8 @@ __all__ = [
     "TSupportsInt",
     "TSupportsLT",
     "TSupportsRichComparison",
+    "TimeDeltaLike",
+    "TimeLike",
     "TimeZone",
     "TimeZoneLike",
     "TupleOrStrMapping",

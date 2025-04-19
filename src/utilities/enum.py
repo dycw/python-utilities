@@ -6,7 +6,7 @@ from typing import Generic, Literal, assert_never, overload, override
 
 from utilities.functions import ensure_str
 from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
-from utilities.types import EnumOrStr, TEnum
+from utilities.types import EnumLike, TEnum
 
 ##
 
@@ -17,14 +17,10 @@ def ensure_enum(
 ) -> None: ...
 @overload
 def ensure_enum(
-    value: EnumOrStr[TEnum], enum: type[TEnum], /, *, case_sensitive: bool = False
+    value: EnumLike[TEnum], enum: type[TEnum], /, *, case_sensitive: bool = False
 ) -> TEnum: ...
 def ensure_enum(
-    value: EnumOrStr[TEnum] | None,
-    enum: type[TEnum],
-    /,
-    *,
-    case_sensitive: bool = False,
+    value: EnumLike[TEnum] | None, enum: type[TEnum], /, *, case_sensitive: bool = False
 ) -> TEnum | None:
     """Ensure the object is a member of the enum."""
     if value is None:
@@ -41,7 +37,7 @@ def ensure_enum(
 
 @dataclass(kw_only=True, slots=True)
 class EnsureEnumError(Exception, Generic[TEnum]):
-    value: EnumOrStr[TEnum]
+    value: EnumLike[TEnum]
     enum: type[TEnum]
 
 
@@ -189,10 +185,4 @@ class _ParseEnumStrEnumNonUniqueError(ParseEnumError):
         )
 
 
-__all__ = [
-    "EnsureEnumError",
-    "EnumOrStr",
-    "ParseEnumError",
-    "ensure_enum",
-    "parse_enum",
-]
+__all__ = ["EnsureEnumError", "ParseEnumError", "ensure_enum", "parse_enum"]

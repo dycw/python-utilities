@@ -93,7 +93,7 @@ from utilities.math import (
 )
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel
-from utilities.types import Number, WeekDay
+from utilities.types import MaybeStr, Number, WeekDay
 from utilities.typing import (
     get_args,
     get_type_hints,
@@ -132,7 +132,7 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
-type ExprLike = Expr | str
+type ExprLike = MaybeStr[Expr]
 DatetimeHongKong = Datetime(time_zone="Asia/Hong_Kong")
 DatetimeTokyo = Datetime(time_zone="Asia/Tokyo")
 DatetimeUSCentral = Datetime(time_zone="US/Central")

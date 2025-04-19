@@ -19,7 +19,7 @@ from utilities.enum import (
 )
 
 if TYPE_CHECKING:
-    from utilities.types import EnumOrStr
+    from utilities.types import EnumLike
 
 
 class TestParseEnum:
@@ -185,7 +185,7 @@ class TestParseEnum:
             false = auto()
 
         truth: Truth = data.draw(sampled_from(Truth))
-        input_: EnumOrStr[Truth] = data.draw(sampled_from([truth, truth.name]))
+        input_: EnumLike[Truth] = data.draw(sampled_from([truth, truth.name]))
         result = ensure_enum(input_, Truth)
         assert result is truth
 

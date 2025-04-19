@@ -21,6 +21,7 @@ from utilities.iterables import OneEmptyError, one
 from utilities.math import SafeRoundError, round_, safe_round
 from utilities.platform import SYSTEM
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import MaybeStr
 from utilities.zoneinfo import (
     UTC,
     HongKong,
@@ -392,7 +393,7 @@ def days_since_epoch_to_date(days: int, /) -> dt.date:
 ##
 
 
-def ensure_month(month: Month | str, /) -> Month:
+def ensure_month(month: MonthLike, /) -> Month:
     """Ensure the object is a month."""
     if isinstance(month, Month):
         return month
@@ -627,9 +628,9 @@ def is_local_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
 ##
 
 
-def is_subclass_date_not_datetime(obj: type[Any], /) -> TypeGuard[type[dt.date]]:
+def is_subclass_date_not_datetime(cls: type[Any], /) -> TypeGuard[type[dt.date]]:
     """Check if a class is a date, and not a datetime."""
-    return issubclass(obj, dt.date) and not issubclass(obj, dt.datetime)
+    return issubclass(cls, dt.date) and not issubclass(cls, dt.datetime)
 
 
 ##
@@ -885,6 +886,7 @@ class MonthError(Exception):
 
 
 type DateOrMonth = dt.date | Month
+type MonthLike = MaybeStr[Month]
 MIN_MONTH = Month(dt.date.min.year, dt.date.min.month)
 MAX_MONTH = Month(dt.date.max.year, dt.date.max.month)
 
@@ -1315,6 +1317,7 @@ __all__ = [
     "MillisecondsSinceEpochError",
     "Month",
     "MonthError",
+    "MonthLike",
     "ParseDateCompactError",
     "ParseDateTimeCompactError",
     "ParseMonthError",
