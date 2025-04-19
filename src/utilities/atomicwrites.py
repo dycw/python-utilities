@@ -46,16 +46,19 @@ def move(
             raise _MoveDirectoryExistsError(source=source, destination=destination)
         case False, True, False, True, _:
             rmtree(destination, ignore_errors=True)
-            return shutil.move(source, destination)
+            _ = shutil.move(source, destination)
+            return None
         case False, True, _, _, _:
             destination.unlink(missing_ok=True)
-            return shutil.move(source, destination)
+            _ = shutil.move(source, destination)
+            return None
         case True, True, _, _, _:  # pragma: no cover
             raise ImpossibleCaseError(
                 case=[f"{source.is_file()=}", f"{source.is_dir()=}"]
             )
         case _ as never:
             assert_never(never)
+    return None
 
 
 @dataclass(kw_only=True, slots=True)
