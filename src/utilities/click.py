@@ -84,18 +84,12 @@ class Duration(ParamType):
         ctx: Context | None,
     ) -> utilities.types.Duration:
         """Convert a value into the `Duration` type."""
-        match value:
-            case int() | float() | dt.timedelta() as duration:
-                return duration
-            case str() as text:
-                from utilities.whenever import ParseDurationError, parse_duration
+        from utilities.whenever import EnsureDurationError, ensure_duration
 
-                try:
-                    return parse_duration(text)
-                except ParseDurationError as error:
-                    return self.fail(str(error), param=param, ctx=ctx)
-            case _ as never:
-                assert_never(never)
+        try:
+            return ensure_duration(value)
+        except EnsureDurationError as error:
+            self.fail(str(error), param, ctx)
 
 
 class Enum(ParamType, Generic[TEnum]):
