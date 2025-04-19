@@ -1115,20 +1115,20 @@ class TestOneStr:
             _OneStrNonUniqueError,
             match=r"Iterable .* must contain 'a' exactly once; got at least 2 instances",
         ):
-            _ = one_str(["a", "a"], "a")
+            _ = one_str(["a", "a"], "a", case_sensitive=True)
 
     def test_error_case_insensitive_empty_error(self) -> None:
         with raises(
             _OneStrEmptyError, match=r"Iterable .* does not contain 'd' \(modulo case\)"
         ):
-            _ = one_str(["a", "b", "c"], "d", case_sensitive=False)
+            _ = one_str(["a", "b", "c"], "d")
 
     def test_error_case_insensitive_non_unique_error(self) -> None:
         with raises(
             _OneStrNonUniqueError,
             match=r"Iterable .* must contain 'a' exactly once \(modulo case\); got 'a', 'A' and perhaps more",
         ):
-            _ = one_str(["a", "A"], "a", case_sensitive=False)
+            _ = one_str(["a", "A"], "a")
 
 
 class TestOneUnique:
