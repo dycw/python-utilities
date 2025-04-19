@@ -26,7 +26,7 @@ from utilities.text import split_str
 from utilities.types import MaybeStr, TEnum
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
 
 _T = TypeVar("_T")
 _TParam = TypeVar("_TParam", bound=ParamType)
@@ -56,15 +56,21 @@ class Date(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: MaybeStr[dt.date], param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Date` type."""
-        from utilities.whenever import EnsureDateError, ensure_date
+        match value:
+            case dt.date() as date:
+                return date
+            case str() as text:
+                from utilities.whenever import ParseDateError, parse_date
 
-        try:
-            return ensure_date(value)
-        except EnsureDateError:
-            self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+                try:
+                    return parse_date(text)
+                except ParseDateError as error:
+                    return self.fail(str(error), param=param, ctx=ctx)
+            case _ as never:
+                assert_never(never)
 
 
 class Duration(ParamType):
@@ -78,15 +84,24 @@ class Duration(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self,
+        value: MaybeStr[utilities.types.Duration],
+        param: Parameter | None,
+        ctx: Context | None,
     ) -> utilities.types.Duration:
         """Convert a value into the `Duration` type."""
-        from utilities.whenever import EnsureDurationError, ensure_duration
+        match value:
+            case int() | float() | dt.timedelta() as duration:
+                return duration
+            case str() as text:
+                from utilities.whenever import ParseDurationError, parse_duration
 
-        try:
-            return ensure_duration(value)
-        except EnsureDurationError:
-            self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+                try:
+                    return parse_duration(text)
+                except ParseDurationError as error:
+                    return self.fail(str(error), param=param, ctx=ctx)
+            case _ as never:
+                assert_never(never)
 
 
 class Enum(ParamType, Generic[TEnum]):
@@ -219,7 +234,10 @@ class Timedelta(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self,
+        value: MaybeStr[dt.timedelta],
+        param: Parameter | None,
+        ctx: Context | None,
     ) -> dt.timedelta:
         """Convert a value into the `Timedelta` type."""
         match value:
@@ -247,15 +265,24 @@ class ZonedDateTime(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: MaybeStr[dt.datetime], param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `DateTime` type."""
-        from utilities.whenever import EnsureZonedDateTimeError, ensure_zoned_datetime
+        match value:
+            case dt.datetime() as datetime:
+                return datetime
+            case str() as text:
+                from utilities.whenever import (
+                    ParseZonedDateTimeError,
+                    parse_zoned_datetime,
+                )
 
-        try:
-            return ensure_zoned_datetime(value)
-        except EnsureZonedDateTimeError:
-            self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+                try:
+                    return parse_zoned_datetime(text)
+                except ParseZonedDateTimeError as error:
+                    return self.fail(str(error), param=param, ctx=ctx)
+            case _ as never:
+                assert_never(never)
 
 
 # parameters - frozenset
@@ -280,7 +307,10 @@ class FrozenSetParameter(ParamType, Generic[_TParam, _T]):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self,
+        value: MaybeStr[Iterable[_T]],
+        param: Parameter | None,
+        ctx: Context | None,
     ) -> frozenset[_T]:
         """Convert a value into the `ListDates` type."""
         if is_iterable_not_str(value):
@@ -410,7 +440,7 @@ class ListParameter(ParamType, Generic[_TParam, _T]):
     def convert(
         self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> list[_T]:
-        """Convert a value into the `ListDates` type."""
+        """Convert a value into the `List` type."""
         if is_iterable_not_str(value):
             return list(value)
         if isinstance(value, str):
