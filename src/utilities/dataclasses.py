@@ -23,12 +23,13 @@ from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import TDataclass
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
 
-    from utilities.types import Dataclass, StrMapping, TDataclass
+    from utilities.types import Dataclass, StrMapping
 
 
 _T = TypeVar("_T")
@@ -243,9 +244,7 @@ class _MappingToDataclassEmptyError(MappingToDataclassError):
     @override
     def __str__(self) -> str:
         desc = f"Mapping {get_repr(self.mapping)} does not contain {self.field!r}"
-        if not self.case_sensitive:
-            desc += " (modulo case)"
-        return desc
+        return desc if self.case_sensitive else f"{desc} (modulo case)"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -319,7 +318,8 @@ def text_to_dataclass(
 
 
 @dataclass(kw_only=True, slots=True)
-class TextToDataClassError(Exception): ...
+class TextToDataClassError(Exception, Generic[TDataclass]):
+    cls: type[TDataclass]
 
 
 def _text_to_dataclass_parse_text(
@@ -329,49 +329,71 @@ def _text_to_dataclass_parse_text(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-    case_sensitive: bool = True,
+    case_sensitive: bool = False,
 ) -> StrMapping:
-    list(yield_fields(cls, globalns=globalns, localns=localns))
-    [t for t in text.split(",") if t != ""]
-    settings = cls.settings_cls()(**settings_kwargs)
-    return cls(**strategy_kwargs, settings=settings)
+    pairs = list(
+        map(
+            _text_to_dataclass_split_key_value_pair,
+            (t for t in text.split(",") if t != ""),
+        )
+    )
+    fields = list(yield_fields(cls, globalns=globalns, localns=localns))
+    [
+        _text_to_dataclass_parse_key_value_pair(
+            fields, key, value, cls, case_sensitive=case_sensitive
+        )
+        for key, value in pairs
+    ]
+    try:
+        return dict(
+            _text_to_dataclass_parse_key_value_pair(
+                p, fields, case_sensitive=case_sensitive
+            )
+            for p in pairs
+        )
+    except ValueError:
+        raise NotImplementedError from None
 
 
-def _text_to_dataclass_parse_key_value_pair(
-    text: str, fields: Iterable[_YieldFieldsClass[Any]], /
-) -> tuple[_YieldFieldsClass[Any], Any]:
+def _text_to_dataclass_split_key_value_pair(text: str, /) -> tuple[str, str]:
     try:
         key, value = text.split("=")
     except ValueError:
-        raise _TextToDataClassParseKeyValuePairSplitError(text=text) from None
-    {f.name: f for f in fields}
+        raise _TextToDataClassSplitKeyValuePairError(text=text) from None
+    return key, value
+
+
+def _text_to_dataclass_parse_key_value_pair(
+    fields: Iterable[_YieldFieldsClass[Any]],
+    key: str,
+    value: str,
+    cls: type[TDataclass],
+    /,
+    *,
+    case_sensitive: bool = False,
+) -> tuple[str, Any]:
+    mapping = {f.name: f for f in fields}
     try:
-        key = one(n for n in strategy_keys if key in n)
-    except OneEmptyError:
-        try:
-            key = one(n for n in settings_keys if key in n)
-        except OneEmptyError:
-            raise _Strategy_FromStr_InvalidKeyError(*[f"{key=}"]) from None
-        except OneNonUniqueError as error:
-            raise _Strategy_FromStr_AmbiguousKeyError(*[
-                f"{key=}",
-                f"{error.first=}",
-                f"{error.second=}",
-            ]) from None
-        else:
-            settings_kwargs[key] = cls.settings_cls().from_str(key, value)
-    except OneNonUniqueError as error:
-        raise _Strategy_FromStr_AmbiguousKeyError(*[
-            f"{key=}",
-            f"{error.first=}",
-            f"{error.second=}",
-        ]) from None
-    else:
-        strategy_kwargs[key] = cls._from_str_one(key, value)
+        name = one_str(mapping, key, head=True, case_sensitive=case_sensitive)
+    except OneStrEmptyError:
+        raise _TextToDataClassParseKeyValuePairEmptyError(
+            cls=cls, key=key, case_sensitive=case_sensitive
+        ) from None
+    except OneStrNonUniqueError as error:
+        raise _TextToDataClassParseKeyValuePairNonUniqueError(
+            cls=cls,
+            key=key,
+            case_sensitive=case_sensitive,
+            first=error.first,
+            second=error.second,
+        ) from None
+    field = mapping[name]
+    parsed = _text_to_dataclass_convert_value(field, value)
+    return key, parsed
 
 
 @dataclass(kw_only=True, slots=True)
-class _TextToDataClassParseKeyValuePairSplitError(Exception):
+class _TextToDataClassSplitKeyValuePairError(TextToDataClassError):
     text: str
 
     @override
@@ -379,7 +401,32 @@ class _TextToDataClassParseKeyValuePairSplitError(Exception):
         return f"Unable to split key-value pair {self.text!r}"
 
 
-def _text_to_dataclass_core(
+@dataclass(kw_only=True, slots=True)
+class _TextToDataClassParseKeyValuePairEmptyError(TextToDataClassError[TDataclass]):
+    key: str
+    case_sensitive: bool = False
+
+    @override
+    def __str__(self) -> str:
+        desc = f"Dataclass {get_class_name(self.cls)!r} does not contain any field starting with {self.key!r}"
+        return desc if self.case_sensitive else f"{desc} (modulo case)"
+
+
+@dataclass(kw_only=True, slots=True)
+class _TextToDataClassParseKeyValuePairNonUniqueError(TextToDataClassError[TDataclass]):
+    key: str
+    case_sensitive: bool = False
+    first: str
+    second: str
+
+    @override
+    def __str__(self) -> str:
+        head = f"Dataclass {get_class_name(self.cls)!r} must contain exactly one field starting with {self.key!r}"
+        mid = "" if self.case_sensitive else " (modulo case)"
+        return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
+
+
+def _text_to_dataclass_convert_value(
     field: _YieldFieldsClass[Any], value: Any, /, *, path: Path, values: StrMapping
 ) -> Any:
     type_ = field.type_
