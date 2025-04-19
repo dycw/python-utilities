@@ -27,6 +27,7 @@ from utilities.hypothesis import (
 )
 from utilities.math import is_equal
 from utilities.parse import ParseTextError, parse_text
+from utilities.sentinel import Sentinel, sentinel
 from utilities.version import Version
 from utilities.whenever import (
     serialize_date,
@@ -88,6 +89,11 @@ class TestParseText:
         text = str(None)
         result = parse_text(NoneType, text)
         assert result is None
+
+    def test_sentinel(self) -> None:
+        text = str(sentinel)
+        result = parse_text(Sentinel, text)
+        assert result is sentinel
 
     @given(text=text_ascii())
     def test_str(self, *, text: str) -> None:
@@ -159,6 +165,13 @@ class TestParseText:
             ParseTextError, match="Unable to parse <class 'NoneType'>; got 'invalid'"
         ):
             _ = parse_text(NoneType, "invalid")
+
+    def test_error_sentinel(self) -> None:
+        with raises(
+            ParseTextError,
+            match=r"Unable to parse <class 'utilities\.sentinel\.Sentinel'>; got 'invalid'",
+        ):
+            _ = parse_text(Sentinel, "invalid")
 
     def test_error_time(self) -> None:
         with raises(
