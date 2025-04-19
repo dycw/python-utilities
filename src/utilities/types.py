@@ -92,7 +92,7 @@ type WeekDay = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 
 # enum
-type EnumOrStr[_TEnum: Enum] = _TEnum | str
+type EnumOrStr[_TEnum: Enum] = MaybeStr[_TEnum]
 TEnum = TypeVar("TEnum", bound=Enum)
 
 
@@ -118,7 +118,7 @@ type MaybeIterableHashable[_THashable: Hashable] = (
 
 # logging
 type LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-type LoggerOrName = Logger | str
+type LoggerOrName = MaybeStr[Logger]
 
 
 # math
@@ -225,7 +225,7 @@ class SupportsRound(Protocol[_T_co]):
 
 
 # pathlib
-type PathLike = Path | str
+type PathLike = MaybeStr[Path]
 type PathLikeOrCallable = PathLike | Callable[[], PathLike]
 
 

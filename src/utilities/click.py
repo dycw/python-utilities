@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import pathlib
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, assert_never, override
+from typing import TYPE_CHECKING, Generic, TypeVar, assert_never, override
 from uuid import UUID
 
 import click
@@ -18,12 +18,12 @@ from click.types import (
 import utilities.datetime
 import utilities.types
 from utilities.datetime import ParseMonthError, parse_month
-from utilities.enum import EnsureEnumError, ensure_enum
-from utilities.functions import get_class_name
+from utilities.enum import ParseEnumError, parse_enum
+from utilities.functions import ensure_str, get_class_name
 from utilities.iterables import is_iterable_not_str
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
-from utilities.types import MaybeStr, TEnum
+from utilities.types import EnumOrStr, MaybeStr, TEnum
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -121,13 +121,16 @@ class Enum(ParamType, Generic[TEnum]):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: EnumOrStr[TEnum], param: Parameter | None, ctx: Context | None
     ) -> TEnum:
         """Convert a value into the `Enum` type."""
+        if isinstance(value, self._enum):
+            return value
+        text = ensure_str(value)
         try:
-            return ensure_enum(value, self._enum, case_sensitive=self._case_sensitive)
-        except EnsureEnumError:
-            self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+            return parse_enum(text, self._enum, case_sensitive=self._case_sensitive)
+        except ParseEnumError as error:
+            return self.fail(str(error), param=param, ctx=ctx)
 
     @override
     def get_metavar(self, param: Parameter) -> str | None:
@@ -438,15 +441,17 @@ class ListParameter(ParamType, Generic[_TParam, _T]):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self,
+        value: MaybeStr[Iterable[_T]],
+        param: Parameter | None,
+        ctx: Context | None,
     ) -> list[_T]:
         """Convert a value into the `List` type."""
         if is_iterable_not_str(value):
             return list(value)
-        if isinstance(value, str):
-            values = split_str(value, separator=self._separator, empty=self._empty)
-            return [self._param.convert(v, param, ctx) for v in values]
-        return self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+        text = ensure_str(value)
+        values = split_str(text, separator=self._separator, empty=self._empty)
+        return [self._param.convert(v, param, ctx) for v in values]
 
     @override
     def get_metavar(self, param: Parameter) -> str | None:
