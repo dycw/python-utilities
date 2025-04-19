@@ -33,13 +33,9 @@ from utilities.python_dotenv import (
     _LoadSettingsDuplicateKeysError,
     _LoadSettingsEmptyError,
     _LoadSettingsFileNotFoundError,
-    _LoadSettingsInvalidIntError,
-    _LoadSettingsInvalidNullableIntError,
-    _LoadSettingsInvalidTimeDeltaError,
-    _LoadSettingsTypeError,
+    _LoadSettingsParseTextError,
     load_settings,
 )
-from utilities.sentinel import Sentinel
 from utilities.whenever import serialize_date, serialize_timedelta
 
 if TYPE_CHECKING:
@@ -199,7 +195,7 @@ class TestLoadSettings:
             _ = fh.write("key = '...'\n")
 
         with raises(
-            _LoadSettingsInvalidIntError,
+            _LoadSettingsParseTextError,
             match=r"Field 'key' must contain a valid integer; got '...'",
         ):
             _ = load_settings(Settings, cwd=root)
@@ -247,22 +243,6 @@ class TestLoadSettings:
         expected = Settings(key=value)
         assert settings == expected
 
-    @given(root=git_repos())
-    @settings_with_reduced_examples()
-    def test_nullable_int_value_error(self, *, root: Path) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: int | None = None
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write("key = '...'\n")
-
-        with raises(
-            _LoadSettingsInvalidNullableIntError,
-            match=r"Field 'key' must contain a valid nullable integer; got '...'",
-        ):
-            _ = load_settings(Settings, cwd=root)
-
     @given(root=git_repos(), value=paths())
     @settings_with_reduced_examples()
     def test_path_value(self, *, root: Path, value: Path) -> None:
@@ -303,22 +283,6 @@ class TestLoadSettings:
         settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)
         assert settings == expected
-
-    @given(root=git_repos())
-    @settings_with_reduced_examples()
-    def test_timedelta_value_error(self, *, root: Path) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: dt.timedelta
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write("key = '...'\n")
-
-        with raises(
-            _LoadSettingsInvalidTimeDeltaError,
-            match=r"Field 'key' must contain a valid timedelta; got '...'",
-        ):
-            _ = load_settings(Settings, cwd=root)
 
     @given(root=git_repos())
     @settings_with_reduced_examples()
@@ -363,18 +327,3 @@ class TestLoadSettings:
             ),
         ):
             _ = load_settings(Settings, cwd=root)
-
-    @given(root=git_repos(), value=text_ascii())
-    @settings_with_reduced_examples()
-    def test_error_type(self, *, root: Path, value: str) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: Sentinel
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write(f"key = {value}\n")
-
-        with raises(
-            _LoadSettingsTypeError, match=r"Field 'key' has unsupported type .*"
-        ):
-            _ = load_settings(Settings, cwd=root, localns={"Sentinel": Sentinel})

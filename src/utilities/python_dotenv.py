@@ -65,7 +65,7 @@ def _load_settings_post(
     try:
         return parse_text(field.type_, text)
     except ParseTextError:
-        raise _LoadSettingsInvalidIntError(
+        raise _LoadSettingsParseTextError(
             path=path, values=values, field=field.name, text=text
         ) from None
 
@@ -103,7 +103,7 @@ class _LoadSettingsEmptyError(LoadSettingsError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _LoadSettingsInvalidIntError(LoadSettingsError):
+class _LoadSettingsParseTextError(LoadSettingsError):
     values: StrMapping
     field: str
     text: str
