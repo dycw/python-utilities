@@ -70,6 +70,7 @@ from utilities.functions import (
     is_dataclass_class,
     is_dataclass_instance,
     is_hashable,
+    is_instance_int_not_bool,
     is_iterable_of,
     is_none,
     is_not_none,
@@ -78,7 +79,7 @@ from utilities.functions import (
     is_sized,
     is_sized_not_str,
     is_string_mapping,
-    is_subclass_except_bool_int,
+    is_subclass_int_not_bool,
     is_tuple,
     is_tuple_or_str_mapping,
     make_isinstance,
@@ -599,6 +600,16 @@ class TestIsHashable:
         assert is_hashable(obj) is expected
 
 
+class TestIsInstanceIntNotBool:
+    @given(int_=integers())
+    def test_int(self, *, int_: int) -> None:
+        assert is_instance_int_not_bool(int_)
+
+    @given(bool_=booleans())
+    def test_bool(self, *, bool_: bool) -> None:
+        assert not is_instance_int_not_bool(bool_)
+
+
 class TestIsIterableOf:
     @given(
         case=sampled_from([
@@ -719,18 +730,11 @@ class TestIsStringMapping:
         assert result is expected
 
 
-class TestIsSubclassExceptBoolInt:
-    @given(
-        case=sampled_from([(bool, bool, True), (bool, int, False), (int, int, True)])
-    )
-    def test_main(self, *, case: tuple[type[Any], type[Any], bool]) -> None:
-        x, y, expected = case
-        assert is_subclass_except_bool_int(x, y) is expected
-
-    def test_subclass_of_int(self) -> None:
-        class MyInt(int): ...
-
-        assert not is_subclass_except_bool_int(bool, MyInt)
+class TestIsSubclassIntNotBool:
+    @given(case=sampled_from([(int, True), (bool, False)]))
+    def test_main(self, *, case: tuple[type[Any], bool]) -> None:
+        type_, expected = case
+        assert is_subclass_int_not_bool(type_) is expected
 
 
 class TestIsTuple:
