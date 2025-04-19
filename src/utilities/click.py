@@ -59,12 +59,18 @@ class Date(ParamType):
         self, value: DateLike, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Date` type."""
-        from utilities.whenever import EnsureDateError, ensure_date
+        match value:
+            case dt.date() as date:
+                return date
+            case str() as text:
+                from utilities.whenever import ParseDateError, parse_date
 
-        try:
-            return ensure_date(value)
-        except EnsureDateError as error:
-            self.fail(str(error), param, ctx)
+                try:
+                    return parse_date(text)
+                except ParseDateError as error:
+                    return self.fail(str(error), param=param, ctx=ctx)
+            case _ as never:
+                assert_never(never)
 
 
 class Duration(ParamType):
@@ -84,12 +90,18 @@ class Duration(ParamType):
         ctx: Context | None,
     ) -> utilities.types.Duration:
         """Convert a value into the `Duration` type."""
-        from utilities.whenever import EnsureDurationError, ensure_duration
+        match value:
+            case int() | float() | dt.timedelta() as duration:
+                return duration
+            case str() as text:
+                from utilities.whenever import ParseDurationError, parse_duration
 
-        try:
-            return ensure_duration(value)
-        except EnsureDurationError as error:
-            self.fail(str(error), param, ctx)
+                try:
+                    return parse_duration(text)
+                except ParseDurationError as error:
+                    return self.fail(str(error), param=param, ctx=ctx)
+            case _ as never:
+                assert_never(never)
 
 
 class Enum(ParamType, Generic[TEnum]):
@@ -250,12 +262,21 @@ class ZonedDateTime(ParamType):
         self, value: DateTimeLike, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `DateTime` type."""
-        from utilities.whenever import EnsureZonedDateTimeError, ensure_zoned_datetime
+        match value:
+            case dt.datetime() as datetime:
+                return datetime
+            case str() as text:
+                from utilities.whenever import (
+                    ParseZonedDateTimeError,
+                    parse_zoned_datetime,
+                )
 
-        try:
-            return ensure_zoned_datetime(value)
-        except EnsureZonedDateTimeError as error:
-            self.fail(str(error), param, ctx)
+                try:
+                    return parse_zoned_datetime(text)
+                except ParseZonedDateTimeError as error:
+                    return self.fail(str(error), param=param, ctx=ctx)
+            case _ as never:
+                assert_never(never)
 
 
 # parameters - frozenset
