@@ -17,7 +17,7 @@ from click.types import (
 
 import utilities.datetime
 import utilities.types
-from utilities.datetime import ParseMonthError, parse_month
+from utilities.datetime import EnsureMonthError, ensure_month
 from utilities.enum import ParseEnumError, parse_enum
 from utilities.functions import ensure_str, get_class_name
 from utilities.iterables import is_iterable_not_str
@@ -186,16 +186,10 @@ class Month(ParamType):
         ctx: Context | None,
     ) -> utilities.datetime.Month:
         """Convert a value into the `Month` type."""
-        match value:
-            case utilities.datetime.Month() as month:
-                return month
-            case str() as text:
-                try:
-                    return parse_month(text)
-                except ParseMonthError as error:
-                    return self.fail(str(error), param=param, ctx=ctx)
-            case _ as never:
-                assert_never(never)
+        try:
+            return ensure_month(value)
+        except EnsureMonthError as error:
+            self.fail(str(error), param, ctx)
 
 
 class Time(ParamType):
