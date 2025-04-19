@@ -95,7 +95,7 @@ class EnsureDateError(Exception):
 def ensure_datetime(datetime: DateTimeLike, /) -> dt.datetime:
     """Ensure the object is a datetime."""
     if isinstance(datetime, dt.datetime):
-        return datetime
+        return datetime  # skipif-ci-and-windows
     try:
         return parse_datetime(datetime)
     except ParseDateTimeError as error:
@@ -270,27 +270,6 @@ class ParseDateError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to parse date; got {self.date!r}"
-
-
-##
-
-
-def parse_datetime(datetime: str, /) -> dt.datetime:
-    """Parse a string into a datetime."""
-    with suppress(ParseLocalDateTimeError):
-        return parse_local_datetime(datetime)
-    with suppress(ParseZonedDateTimeError):
-        return parse_zoned_datetime(datetime)
-    raise ParseDateTimeError(datetime=datetime) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseDateTimeError(Exception):
-    datetime: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse datetime; got {self.datetime!r}"
 
 
 ##
