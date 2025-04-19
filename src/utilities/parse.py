@@ -20,6 +20,8 @@ def parse_text(
     obj: Any, text: str, /, *, case_sensitive: bool = False, head: bool = False
 ) -> Any:
     """Parse text."""
+    if obj is None:
+        return _parse_text_type(obj, text, case_sensitive=case_sensitive)
     if isinstance(obj, type):
         return _parse_text_type(obj, text, case_sensitive=case_sensitive)
     if is_literal_type(obj):

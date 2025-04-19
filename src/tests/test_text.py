@@ -16,8 +16,10 @@ from utilities.hypothesis import text_ascii
 from utilities.sentinel import sentinel
 from utilities.text import (
     ParseBoolError,
+    ParseNoneError,
     join_strs,
     parse_bool,
+    parse_none,
     repr_encode,
     snake_case,
     split_str,
@@ -29,16 +31,31 @@ from utilities.text import (
 class TestParseBool:
     @given(data=data(), value=booleans())
     def test_main(self, *, data: DataObject, value: bool) -> None:
-        text = data.draw(sampled_from([str(value), str(int(value))]))
-        text = data.draw(sampled_from([text, text.lower(), text.upper()]))
-        result = parse_bool(text)
+        text = str(value)
+        text_use = data.draw(
+            sampled_from([str(int(value)), text, text.lower(), text.upper()])
+        )
+        result = parse_bool(text_use)
         assert result is value
 
     def test_error(self) -> None:
         with raises(
-            ParseBoolError, match="Unable to parse 'invalid' into a boolean value"
+            ParseBoolError, match="Unable to parse boolean value; got 'invalid'"
         ):
             _ = parse_bool("invalid")
+
+
+class TestParseNone:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        text = str(None)
+        text_use = data.draw(sampled_from(["", text, text.lower(), text.upper()]))
+        result = parse_none(text_use)
+        assert result is None
+
+    def test_error(self) -> None:
+        with raises(ParseNoneError, match="Unable to parse null value; got 'invalid'"):
+            _ = parse_none("invalid")
 
 
 class TestReprEncode:

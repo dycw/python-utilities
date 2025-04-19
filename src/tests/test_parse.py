@@ -78,6 +78,11 @@ class TestParseText:
         result = parse_text(Path, text)
         assert result == path
 
+    def test_none(self) -> None:
+        text = str(None)
+        result = parse_text(None, text)
+        assert result is None
+
     @given(text=text_ascii())
     def test_str(self, *, text: str) -> None:
         result = parse_text(str, text)
