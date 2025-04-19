@@ -191,15 +191,21 @@ class Time(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: MaybeStr[dt.time], param: Parameter | None, ctx: Context | None
     ) -> dt.time:
         """Convert a value into the `Time` type."""
-        from utilities.whenever import EnsureTimeError, ensure_time
+        match value:
+            case dt.time() as time:
+                return time
+            case str() as text:
+                from utilities.whenever import ParseTimeError, parse_time
 
-        try:
-            return ensure_time(value)
-        except EnsureTimeError:
-            self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+                try:
+                    return parse_time(text)
+                except ParseTimeError as error:
+                    return self.fail(str(error), param=param, ctx=ctx)
+            case _ as never:
+                assert_never(never)
 
 
 class Timedelta(ParamType):
