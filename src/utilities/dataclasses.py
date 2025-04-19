@@ -9,7 +9,7 @@ from utilities.functions import (
     is_dataclass_class,
     is_dataclass_instance,
 )
-from utilities.iterables import _OneStrEmptyError, _OneStrNonUniqueError, one_str
+from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
@@ -200,7 +200,7 @@ def _mapping_to_dataclass_one(
 ) -> Any:
     try:
         key = one_str(mapping, field.name, case_sensitive=case_sensitive)
-    except _OneStrEmptyError:
+    except OneStrEmptyError:
         if not isinstance(field.default, Sentinel):
             value = field.default
         elif not isinstance(field.default_factory, Sentinel):
@@ -209,7 +209,7 @@ def _mapping_to_dataclass_one(
             raise _MappingToDataclassEmptyError(
                 mapping=mapping, field=field.name, case_sensitive=case_sensitive
             ) from None
-    except _OneStrNonUniqueError as error:
+    except OneStrNonUniqueError as error:
         raise _MappingToDataclassCaseInsensitiveNonUniqueError(
             mapping=mapping, field=field.name, first=error.first, second=error.second
         ) from None

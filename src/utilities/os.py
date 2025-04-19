@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from os import cpu_count, environ, getenv
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
-from utilities.iterables import _OneStrEmptyError, one_str
+from utilities.iterables import OneStrEmptyError, one_str
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
@@ -96,7 +96,7 @@ def get_env_var(
     """Get an environment variable."""
     try:
         key_use = one_str(environ, key, case_sensitive=case_sensitive)
-    except _OneStrEmptyError:
+    except OneStrEmptyError:
         match default, nullable:
             case None, False:
                 raise GetEnvVarError(key=key, case_sensitive=case_sensitive) from None
@@ -117,9 +117,7 @@ class GetEnvVarError(Exception):
     @override
     def __str__(self) -> str:
         desc = f"No environment variable {self.key!r}"
-        if not self.case_sensitive:
-            desc += " (modulo case)"
-        return desc
+        return desc if self.case_sensitive else f"{desc} (modulo case)"
 
 
 ##

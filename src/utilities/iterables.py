@@ -964,7 +964,7 @@ def _merge_str_mappings_one(acc: StrMapping, el: StrMapping, /) -> StrMapping:
     for key_add, value in el.items():
         try:
             key_del = one_str(out, key_add)
-        except _OneStrEmptyError:
+        except OneStrEmptyError:
             pass
         else:
             del out[key_del]
@@ -1085,11 +1085,11 @@ def one_str(
     try:
         return one(it)
     except OneEmptyError:
-        raise _OneStrEmptyError(
+        raise OneStrEmptyError(
             iterable=as_list, text=text, head=head, case_sensitive=case_sensitive
         ) from None
     except OneNonUniqueError as error:
-        raise _OneStrNonUniqueError(
+        raise OneStrNonUniqueError(
             iterable=as_list,
             text=text,
             head=head,
@@ -1108,7 +1108,7 @@ class OneStrError(Exception):
 
 
 @dataclass(kw_only=True, slots=True)
-class _OneStrEmptyError(OneStrError):
+class OneStrEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
         head = f"Iterable {get_repr(self.iterable)} does not contain"
@@ -1127,7 +1127,7 @@ class _OneStrEmptyError(OneStrError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _OneStrNonUniqueError(OneStrError):
+class OneStrNonUniqueError(OneStrError):
     first: str
     second: str
 
@@ -1471,7 +1471,9 @@ __all__ = [
     "OneMaybeError",
     "OneMaybeNonUniqueError",
     "OneNonUniqueError",
+    "OneStrEmptyError",
     "OneStrError",
+    "OneStrNonUniqueError",
     "OneUniqueEmptyError",
     "OneUniqueError",
     "OneUniqueNonUniqueError",

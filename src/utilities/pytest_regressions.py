@@ -38,7 +38,7 @@ class OrjsonRegressionFixture:
         original_datadir = path.parent
         data_dir = tmp_path.joinpath(ensure_str(request.fixturename))
         with suppress(FileNotFoundError):
-            copytree(original_datadir, data_dir)
+            _ = copytree(original_datadir, data_dir)
         self._fixture = FileRegressionFixture(
             datadir=data_dir, original_datadir=original_datadir, request=request
         )
