@@ -314,11 +314,7 @@ def text_to_dataclass(
         case _ as never:
             assert_never(never)
     return mapping_to_dataclass(
-        cls,
-        mapping,
-        globalns=globalns,
-        localns=localns,
-        case_sensitive=case_sensitive,
+        cls, mapping, globalns=globalns, localns=localns, case_sensitive=case_sensitive
     )
 
 
@@ -335,9 +331,8 @@ def _text_to_dataclass_parse_text(
     localns: StrMapping | None = None,
     case_sensitive: bool = True,
 ) -> StrMapping:
-    out: StrMapping = {}
-    fields = list(yield_fields(cls, globalns=globalns, localns=localns))
-    splits = [t for t in text.split(",") if t != ""]
+    list(yield_fields(cls, globalns=globalns, localns=localns))
+    [t for t in text.split(",") if t != ""]
     settings = cls.settings_cls()(**settings_kwargs)
     return cls(**strategy_kwargs, settings=settings)
 
@@ -349,7 +344,7 @@ def _text_to_dataclass_parse_key_value_pair(
         key, value = text.split("=")
     except ValueError:
         raise _TextToDataClassParseKeyValuePairSplitError(text=text) from None
-    mapping = {f.name: f for f in fields}
+    {f.name: f for f in fields}
     try:
         key = one(n for n in strategy_keys if key in n)
     except OneEmptyError:
