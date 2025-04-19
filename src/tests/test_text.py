@@ -1,19 +1,44 @@
 from __future__ import annotations
 
 from hypothesis import given
-from hypothesis.strategies import integers, lists, sampled_from, sets
-from pytest import mark, param
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    integers,
+    lists,
+    sampled_from,
+    sets,
+)
+from pytest import mark, param, raises
 
 from utilities.hypothesis import text_ascii
 from utilities.sentinel import sentinel
 from utilities.text import (
+    ParseBoolError,
     join_strs,
+    parse_bool,
     repr_encode,
     snake_case,
     split_str,
     str_encode,
     strip_and_dedent,
 )
+
+
+class TestParseBool:
+    @given(data=data(), value=booleans())
+    def test_main(self, *, data: DataObject, value: bool) -> None:
+        text = data.draw(sampled_from([str(value), str(int(value))]))
+        text = data.draw(sampled_from([text, text.lower(), text.upper()]))
+        result = parse_bool(text)
+        assert result is value
+
+    def test_error(self) -> None:
+        with raises(
+            ParseBoolError, match="Unable to parse 'invalid' into a boolean value"
+        ):
+            _ = parse_bool("invalid")
 
 
 class TestReprEncode:
