@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
     from luigi.execution_summary import LuigiRunResult
 
-    from utilities.types import LogLevel, PathLike
+    from utilities.types import LogLevel, MaybeStr, PathLike
 
 
 # parameters
@@ -29,7 +29,7 @@ class DateHourParameter(luigi.DateHourParameter):
         super().__init__(interval, EPOCH_UTC, **kwargs)
 
     @override
-    def normalize(self, dt: dt.datetime | str) -> dt.datetime:
+    def normalize(self, dt: MaybeStr[dt.datetime]) -> dt.datetime:
         from utilities.whenever import ensure_zoned_datetime
 
         return ensure_zoned_datetime(dt)
@@ -54,7 +54,7 @@ class DateMinuteParameter(luigi.DateMinuteParameter):
         super().__init__(interval=interval, start=EPOCH_UTC, **kwargs)
 
     @override
-    def normalize(self, dt: dt.datetime | str) -> dt.datetime:
+    def normalize(self, dt: MaybeStr[dt.datetime]) -> dt.datetime:
         from utilities.whenever import ensure_zoned_datetime
 
         return ensure_zoned_datetime(dt)
@@ -79,7 +79,7 @@ class DateSecondParameter(luigi.DateSecondParameter):
         super().__init__(interval, EPOCH_UTC, **kwargs)
 
     @override
-    def normalize(self, dt: dt.datetime | str) -> dt.datetime:
+    def normalize(self, dt: MaybeStr[dt.datetime]) -> dt.datetime:
         from utilities.whenever import ensure_zoned_datetime
 
         return ensure_zoned_datetime(dt)
@@ -101,7 +101,7 @@ class TimeParameter(Parameter):
     """A parameter which takes the value of a `dt.time`."""
 
     @override
-    def normalize(self, x: dt.time | str) -> dt.time:
+    def normalize(self, x: MaybeStr[dt.time]) -> dt.time:
         from utilities.whenever import ensure_time
 
         return ensure_time(x)

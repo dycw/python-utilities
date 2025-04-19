@@ -4,7 +4,7 @@ import datetime as dt
 import re
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, assert_never, override
 from zoneinfo import ZoneInfo
 
 from whenever import Date, DateTimeDelta, LocalDateTime, Time, ZonedDateTime
@@ -26,7 +26,7 @@ from utilities.re import (
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
-    from utilities.types import Duration
+    from utilities.types import Duration, MaybeStr
 
 MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3659635, microseconds=-1)
 MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
@@ -62,81 +62,18 @@ class CheckValidZonedDateimeError(Exception):
 ##
 
 
-def ensure_date(date: dt.date | str, /) -> dt.date:
-    """Ensure the object is a date."""
-    if isinstance(date, dt.date):
-        check_date_not_datetime(date)
-        return date
-    try:
-        return parse_date(date)
-    except ParseDateError as error:
-        raise EnsureDateError(date=error.date) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class EnsureDateError(Exception):
-    date: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to ensure date; got {self.date!r}"
-
-
-##
-
-
-def ensure_duration(duration: Duration | str, /) -> Duration:
-    """Ensure the object is a Duration."""
-    if isinstance(duration, int | float | dt.timedelta):
-        return duration
-    try:
-        return parse_duration(duration)
-    except ParseDurationError as error:
-        raise EnsureDurationError(duration=error.duration) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class EnsureDurationError(Exception):
-    duration: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to ensure duration; got {self.duration!r}"
-
-
-##
-
-
-def ensure_local_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
-    """Ensure the object is a local datetime."""
-    if isinstance(datetime, dt.datetime):
-        return datetime
-    try:
-        return parse_local_datetime(datetime)
-    except ParseLocalDateTimeError as error:
-        raise EnsureLocalDateTimeError(datetime=error.datetime) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class EnsureLocalDateTimeError(Exception):
-    datetime: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to ensure local datetime; got {self.datetime!r}"
-
-
-##
-
-
-def ensure_time(time: dt.time | str, /) -> dt.time:
+def ensure_time(time: MaybeStr[dt.time], /) -> dt.time:
     """Ensure the object is a time."""
-    if isinstance(time, dt.time):
-        return time
-    try:
-        return parse_time(time)
-    except ParseTimeError as error:
-        raise EnsureTimeError(time=error.time) from None
+    match time:
+        case dt.time():
+            return time
+        case str() as text:
+            try:
+                return parse_time(text)
+            except ParseTimeError as error:
+                raise EnsureTimeError(time=error.time) from None
+        case _ as never:
+            assert_never(never)
 
 
 @dataclass(kw_only=True, slots=True)

@@ -212,18 +212,12 @@ class Time(ParamType):
         self, value: MaybeStr[dt.time], param: Parameter | None, ctx: Context | None
     ) -> dt.time:
         """Convert a value into the `Time` type."""
-        match value:
-            case dt.time() as time:
-                return time
-            case str() as text:
-                from utilities.whenever import ParseTimeError, parse_time
+        from utilities.whenever import EnsureTimeError, ensure_time
 
-                try:
-                    return parse_time(text)
-                except ParseTimeError as error:
-                    return self.fail(str(error), param=param, ctx=ctx)
-            case _ as never:
-                assert_never(never)
+        try:
+            return ensure_time(value)
+        except EnsureTimeError as error:
+            return self.fail(str(error), param=param, ctx=ctx)
 
 
 class Timedelta(ParamType):
@@ -271,21 +265,12 @@ class ZonedDateTime(ParamType):
         self, value: MaybeStr[dt.datetime], param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `DateTime` type."""
-        match value:
-            case dt.datetime() as datetime:
-                return datetime
-            case str() as text:
-                from utilities.whenever import (
-                    ParseZonedDateTimeError,
-                    parse_zoned_datetime,
-                )
+        from utilities.whenever import EnsureZonedDateTimeError, ensure_zoned_datetime
 
-                try:
-                    return parse_zoned_datetime(text)
-                except ParseZonedDateTimeError as error:
-                    return self.fail(str(error), param=param, ctx=ctx)
-            case _ as never:
-                assert_never(never)
+        try:
+            return ensure_zoned_datetime(value)
+        except EnsureZonedDateTimeError as error:
+            self.fail(str(error), param, ctx)
 
 
 # parameters - frozenset
