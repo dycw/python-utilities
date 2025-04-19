@@ -65,14 +65,14 @@ class GetCPUUseError(Exception):
 
 @overload
 def get_env_var(
-    key: str, /, *, case_sensitive: bool = True, default: str, nullable: bool = False
+    key: str, /, *, case_sensitive: bool = False, default: str, nullable: bool = False
 ) -> str: ...
 @overload
 def get_env_var(
     key: str,
     /,
     *,
-    case_sensitive: bool = True,
+    case_sensitive: bool = False,
     default: None = None,
     nullable: Literal[False] = False,
 ) -> str: ...
@@ -81,7 +81,7 @@ def get_env_var(
     key: str,
     /,
     *,
-    case_sensitive: bool = True,
+    case_sensitive: bool = False,
     default: str | None = None,
     nullable: bool = False,
 ) -> str | None: ...
@@ -89,7 +89,7 @@ def get_env_var(
     key: str,
     /,
     *,
-    case_sensitive: bool = True,
+    case_sensitive: bool = False,
     default: str | None = None,
     nullable: bool = False,
 ) -> str | None:
@@ -112,7 +112,7 @@ def get_env_var(
 @dataclass(kw_only=True, slots=True)
 class GetEnvVarError(Exception):
     key: str
-    case_sensitive: bool = True
+    case_sensitive: bool = False
 
     @override
     def __str__(self) -> str:

@@ -44,9 +44,7 @@ def load_settings(
         raise _LoadSettingsFileNotFoundError(path=path) from None
     maybe_values_dotenv = dotenv_values(path)
     try:
-        maybe_values = merge_str_mappings(
-            maybe_values_dotenv, environ, case_sensitive=False
-        )
+        maybe_values = merge_str_mappings(maybe_values_dotenv, environ)
     except MergeStrMappingsError as error:
         raise _LoadSettingsDuplicateKeysError(
             path=path, values=error.mapping, counts=error.counts
@@ -58,7 +56,6 @@ def load_settings(
             values,
             globalns=globalns,
             localns=localns,
-            case_sensitive=False,
             post=partial(_load_settings_post, path=path, values=values),
         )
     except _MappingToDataclassEmptyError as error:
@@ -123,7 +120,7 @@ def _load_settings_post(
                 path=path, values=values, field=field.name, type_=type_, value=value
             ) from None
     if is_literal_type(type_):
-        return one_str(get_args(type_), value, case_sensitive=False)
+        return one_str(get_args(type_), value)
     if is_optional_type(type_) and (one(get_args(type_)) is int):
         if (value is None) or (value == "") or search("none", value, flags=IGNORECASE):
             return None

@@ -284,7 +284,9 @@ class TestMappingToDataclass:
         with raises(
             _MappingToDataclassEmptyError, match=r"Mapping .* does not contain 'int_'"
         ):
-            _ = mapping_to_dataclass(DataClassFutureInt, {"INT_": value})
+            _ = mapping_to_dataclass(
+                DataClassFutureInt, {"INT_": value}, case_sensitive=True
+            )
 
     @given(value=integers())
     def test_error_case_insensitive_empty_error(self, *, value: int) -> None:
@@ -292,9 +294,7 @@ class TestMappingToDataclass:
             _MappingToDataclassEmptyError,
             match=r"Mapping .* does not contain 'int_' \(modulo case\)",
         ):
-            _ = mapping_to_dataclass(
-                DataClassFutureInt, {"other": value}, case_sensitive=False
-            )
+            _ = mapping_to_dataclass(DataClassFutureInt, {"other": value})
 
     @given(value1=integers(), value2=integers())
     def test_error_case_insensitive_non_unique_error(

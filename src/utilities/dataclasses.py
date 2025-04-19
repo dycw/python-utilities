@@ -176,7 +176,7 @@ def mapping_to_dataclass(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-    case_sensitive: bool = True,
+    case_sensitive: bool = False,
     post: Callable[[_YieldFieldsClass[Any], Any], Any] | None = None,
 ) -> TDataclass:
     """Construct a dataclass from a mapping."""
@@ -195,7 +195,7 @@ def _mapping_to_dataclass_one(
     mapping: StrMapping,
     /,
     *,
-    case_sensitive: bool = True,
+    case_sensitive: bool = False,
     post: Callable[[_YieldFieldsClass[Any], Any], Any] | None = None,
 ) -> Any:
     try:
@@ -228,7 +228,7 @@ class MappingToDataclassError(Exception):
 
 @dataclass(kw_only=True, slots=True)
 class _MappingToDataclassEmptyError(MappingToDataclassError):
-    case_sensitive: bool = True
+    case_sensitive: bool = False
 
     @override
     def __str__(self) -> str:
