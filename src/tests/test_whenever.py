@@ -411,6 +411,15 @@ class TestParseAndSerializeZonedDateTime:
         result = parse_zoned_datetime(serialized)
         assert result == datetime
 
+    @given(datetime=local_datetimes())
+    def test_utc(self, *, datetime: dt.datetime) -> None:
+        datetime1, datetime2 = [datetime.astimezone(tz) for tz in [UTC, dt.UTC]]
+        serialized1, serialized2 = map(serialize_zoned_datetime, [datetime1, datetime2])
+        assert serialized1 == serialized2
+        parsed = parse_zoned_datetime(serialized1)
+        assert parsed == datetime1 == datetime2
+        assert parsed.tzinfo is UTC
+
     def test_error_parse(self) -> None:
         with raises(
             ParseZonedDateTimeError,

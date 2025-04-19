@@ -53,10 +53,9 @@ from utilities.whenever import (
     parse_timedelta,
     parse_zoned_datetime,
     serialize_date,
-    serialize_local_datetime,
+    serialize_datetime,
     serialize_time,
     serialize_timedelta,
-    serialize_zoned_datetime,
 )
 from utilities.zoneinfo import ensure_time_zone
 
@@ -160,13 +159,7 @@ def _pre_process(
         case None:
             return f"[{_Prefixes.none.value}]"
         case dt.datetime() as datetime:
-            if datetime.tzinfo is None:
-                ser = serialize_local_datetime(datetime)
-            elif datetime.tzinfo is dt.UTC:
-                ser = serialize_zoned_datetime(datetime).replace("UTC", "dt.UTC")
-            else:
-                ser = serialize_zoned_datetime(datetime)
-            return f"[{_Prefixes.datetime.value}]{ser}"
+            return f"[{_Prefixes.datetime.value}]{serialize_datetime(datetime)}"
         case dt.date() as date:  # after datetime
             return f"[{_Prefixes.date.value}]{serialize_date(date)}"
         case dt.time() as time:
