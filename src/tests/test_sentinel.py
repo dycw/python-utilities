@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-class TestParseSentinelj:
+class TestParseSentinel:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
         text = str(sentinel)

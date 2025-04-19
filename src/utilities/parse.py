@@ -12,6 +12,7 @@ from utilities.datetime import is_subclass_date_not_datetime
 from utilities.enum import ParseEnumError, parse_enum
 from utilities.functions import is_subclass_int_not_bool
 from utilities.iterables import one, one_str
+from utilities.sentinel import ParseSentinelError, Sentinel, parse_sentinel
 from utilities.text import ParseBoolError, ParseNoneError, parse_bool, parse_none
 from utilities.typing import is_literal_type, is_optional_type
 from utilities.version import ParseVersionError, Version, parse_version
@@ -71,6 +72,11 @@ def _parse_text_type(
             raise ParseTextError(obj=cls, text=text) from None
     if issubclass(cls, Path):
         return Path(text).expanduser()
+    if issubclass(cls, Sentinel):
+        try:
+            return parse_sentinel(text)
+        except ParseSentinelError:
+            raise ParseTextError(obj=cls, text=text) from None
     if issubclass(cls, Version):
         try:
             return parse_version(text)
