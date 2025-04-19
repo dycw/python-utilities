@@ -58,7 +58,6 @@ def move(
             )
         case _ as never:
             assert_never(never)
-    return None
 
 
 @dataclass(kw_only=True, slots=True)
