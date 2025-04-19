@@ -7,7 +7,7 @@ from itertools import chain, repeat
 from math import isfinite, isinf, isnan
 from operator import add, neg, sub
 from re import DOTALL
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, override
+from typing import TYPE_CHECKING, Any, ClassVar, override
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -1091,44 +1091,84 @@ class TestOneMaybe:
 
 
 class TestOneStr:
-    @given(text=sampled_from(["a", "b", "c"]))
-    def test_case_sensitive(self, *, text: str) -> None:
-        assert one_str(["a", "b", "c"], text, case_sensitive=True) == text
-
-    @given(text=sampled_from(["a", "b", "c"]), case=sampled_from(["lower", "upper"]))
-    def test_case_insensitive(
-        self, *, text: str, case: Literal["lower", "upper"]
-    ) -> None:
-        match case:
-            case "lower":
-                text_use = text.lower()
-            case "upper":
-                text_use = text.upper()
+    @given(data=data(), text=sampled_from(["a", "b", "c"]))
+    def test_exact_match_case_insensitive(self, *, data: DataObject, text: str) -> None:
+        text_use = data.draw(sampled_from([text.lower(), text.upper()]))
         assert one_str(["a", "b", "c"], text_use) == text
 
-    def test_error_case_sensitive_empty_error(self) -> None:
-        with raises(_OneStrEmptyError, match=r"Iterable .* does not contain 'A'"):
-            _ = one_str(["a", "b", "c"], "A", case_sensitive=True)
+    @given(
+        data=data(), case=sampled_from([("ab", "abc"), ("ad", "ade"), ("af", "afg")])
+    )
+    def test_head_case_insensitive(
+        self, *, data: DataObject, case: tuple[str, str]
+    ) -> None:
+        head, expected = case
+        head_use = data.draw(sampled_from([head.lower(), head.upper()]))
+        assert one_str(["abc", "ade", "afg"], head_use, head=True) == expected
 
-    def test_error_case_sensitive_non_unique(self) -> None:
-        with raises(
-            _OneStrNonUniqueError,
-            match=r"Iterable .* must contain 'a' exactly once; got at least 2 instances",
-        ):
-            _ = one_str(["a", "a"], "a", case_sensitive=True)
+    @given(text=sampled_from(["a", "b", "c"]))
+    def test_exact_match_case_sensitive(self, *, text: str) -> None:
+        assert one_str(["a", "b", "c"], text, case_sensitive=True) == text
 
-    def test_error_case_insensitive_empty_error(self) -> None:
+    @given(case=sampled_from([("ab", "abc"), ("ad", "ade"), ("af", "afg")]))
+    def test_head_case_sensitive(self, *, case: tuple[str, str]) -> None:
+        head, expected = case
+        assert (
+            one_str(["abc", "ade", "afg"], head, head=True, case_sensitive=True)
+            == expected
+        )
+
+    def test_error_exact_match_case_insensitive_empty_error(self) -> None:
         with raises(
             _OneStrEmptyError, match=r"Iterable .* does not contain 'd' \(modulo case\)"
         ):
             _ = one_str(["a", "b", "c"], "d")
 
-    def test_error_case_insensitive_non_unique_error(self) -> None:
+    def test_error_exact_match_case_insensitive_non_unique_error(self) -> None:
         with raises(
             _OneStrNonUniqueError,
             match=r"Iterable .* must contain 'a' exactly once \(modulo case\); got 'a', 'A' and perhaps more",
         ):
             _ = one_str(["a", "A"], "a")
+
+    def test_error_head_case_insensitive_empty_error(self) -> None:
+        with raises(
+            _OneStrEmptyError,
+            match=r"Iterable .* does not contain any string starting with 'ac' \(modulo case\)",
+        ):
+            _ = one_str(["abc", "ade", "afg"], "ac", head=True)
+
+    def test_error_head_case_insensitive_non_unique_error(self) -> None:
+        with raises(
+            _OneStrNonUniqueError,
+            match=r"Iterable .* must contain exactly one string starting with 'ab' \(modulo case\); got 'abc', 'ABC' and perhaps more",
+        ):
+            _ = one_str(["abc", "ABC"], "ab", head=True)
+
+    def test_error_exact_match_case_sensitive_empty_error(self) -> None:
+        with raises(_OneStrEmptyError, match=r"Iterable .* does not contain 'A'"):
+            _ = one_str(["a", "b", "c"], "A", case_sensitive=True)
+
+    def test_error_exact_match_case_sensitive_non_unique(self) -> None:
+        with raises(
+            _OneStrNonUniqueError,
+            match=r"Iterable .* must contain 'a' exactly once; got 'a', 'a' and perhaps more",
+        ):
+            _ = one_str(["a", "a"], "a", case_sensitive=True)
+
+    def test_error_head_case_sensitive_empty_error(self) -> None:
+        with raises(
+            _OneStrEmptyError,
+            match=r"Iterable .* does not contain any string starting with 'AB'",
+        ):
+            _ = one_str(["abc", "ade", "afg"], "AB", head=True, case_sensitive=True)
+
+    def test_error_head_case_sensitive_non_unique(self) -> None:
+        with raises(
+            _OneStrNonUniqueError,
+            match=r"Iterable .* must contain exactly one string starting with 'ab'; got 'abc', 'abd' and perhaps more",
+        ):
+            _ = one_str(["abc", "abd"], "ab", head=True, case_sensitive=True)
 
 
 class TestOneUnique:
