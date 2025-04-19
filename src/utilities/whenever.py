@@ -95,7 +95,7 @@ class EnsureDateError(Exception):
 def ensure_datetime(datetime: DateTimeLike, /) -> dt.datetime:
     """Ensure the object is a datetime."""
     if isinstance(datetime, dt.datetime):
-        return datetime
+        return datetime  # skipif-ci-and-windows
     try:
         return parse_datetime(datetime)
     except ParseDateTimeError as error:
