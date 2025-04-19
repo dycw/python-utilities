@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import pathlib
-from typing import TYPE_CHECKING, Generic, TypeVar, assert_never, override
+from typing import TYPE_CHECKING, Generic, TypeVar, override
 from uuid import UUID
 
 import click
@@ -18,7 +18,7 @@ from click.types import (
 import utilities.datetime
 import utilities.types
 from utilities.datetime import EnsureMonthError, ensure_month
-from utilities.enum import ParseEnumError, parse_enum
+from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import ensure_str, get_class_name
 from utilities.iterables import is_iterable_not_str
 from utilities.sentinel import SENTINEL_REPR
@@ -112,13 +112,10 @@ class Enum(ParamType, Generic[TEnum]):
         self, value: EnumOrStr[TEnum], param: Parameter | None, ctx: Context | None
     ) -> TEnum:
         """Convert a value into the `Enum` type."""
-        if isinstance(value, self._enum):
-            return value
-        text = ensure_str(value)
         try:
-            return parse_enum(text, self._enum, case_sensitive=self._case_sensitive)
-        except ParseEnumError as error:
-            return self.fail(str(error), param=param, ctx=ctx)
+            return ensure_enum(value, self._enum, case_sensitive=self._case_sensitive)
+        except EnsureEnumError as error:
+            self.fail(str(error), param, ctx)
 
     @override
     def get_metavar(self, param: Parameter) -> str | None:
@@ -140,21 +137,12 @@ class LocalDateTime(ParamType):
         self, value: MaybeStr[dt.datetime], param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `LocalDateTime` type."""
-        match value:
-            case dt.datetime() as datetime:
-                return datetime
-            case str() as text:
-                from utilities.whenever import (
-                    ParseLocalDateTimeError,
-                    parse_local_datetime,
-                )
+        from utilities.whenever import EnsureLocalDateTimeError, ensure_local_datetime
 
-                try:
-                    return parse_local_datetime(text)
-                except ParseLocalDateTimeError as error:
-                    return self.fail(str(error), param=param, ctx=ctx)
-            case _ as never:
-                assert_never(never)
+        try:
+            return ensure_local_datetime(value)
+        except EnsureLocalDateTimeError as error:
+            self.fail(str(error), param, ctx)
 
 
 class Month(ParamType):
