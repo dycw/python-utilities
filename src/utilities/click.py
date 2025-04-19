@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import pathlib
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, override
+from typing import TYPE_CHECKING, Generic, TypeVar, override
 from uuid import UUID
 
 import click
@@ -19,14 +19,14 @@ import utilities.datetime
 import utilities.types
 from utilities.datetime import EnsureMonthError, ensure_month
 from utilities.enum import EnsureEnumError, ensure_enum
-from utilities.functions import get_class_name
+from utilities.functions import EnsureStrError, ensure_str, get_class_name
 from utilities.iterables import is_iterable_not_str
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
-from utilities.types import TEnum
+from utilities.types import EnumOrStr, MaybeStr, TEnum
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
 
 _T = TypeVar("_T")
 _TParam = TypeVar("_TParam", bound=ParamType)
@@ -56,15 +56,15 @@ class Date(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: MaybeStr[dt.date], param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Date` type."""
         from utilities.whenever import EnsureDateError, ensure_date
 
         try:
             return ensure_date(value)
-        except EnsureDateError:
-            self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+        except EnsureDateError as error:
+            self.fail(str(error), param, ctx)
 
 
 class Duration(ParamType):
@@ -78,15 +78,18 @@ class Duration(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self,
+        value: MaybeStr[utilities.types.Duration],
+        param: Parameter | None,
+        ctx: Context | None,
     ) -> utilities.types.Duration:
         """Convert a value into the `Duration` type."""
         from utilities.whenever import EnsureDurationError, ensure_duration
 
         try:
             return ensure_duration(value)
-        except EnsureDurationError:
-            self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+        except EnsureDurationError as error:
+            self.fail(str(error), param, ctx)
 
 
 class Enum(ParamType, Generic[TEnum]):
@@ -106,13 +109,13 @@ class Enum(ParamType, Generic[TEnum]):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: EnumOrStr[TEnum], param: Parameter | None, ctx: Context | None
     ) -> TEnum:
         """Convert a value into the `Enum` type."""
         try:
             return ensure_enum(value, self._enum, case_sensitive=self._case_sensitive)
-        except EnsureEnumError:
-            self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+        except EnsureEnumError as error:
+            self.fail(str(error), param, ctx)
 
     @override
     def get_metavar(self, param: Parameter) -> str | None:
@@ -131,15 +134,15 @@ class LocalDateTime(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: MaybeStr[dt.datetime], param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `LocalDateTime` type."""
         from utilities.whenever import EnsureLocalDateTimeError, ensure_local_datetime
 
         try:
             return ensure_local_datetime(value)
-        except EnsureLocalDateTimeError:
-            self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+        except EnsureLocalDateTimeError as error:
+            self.fail(str(error), param, ctx)
 
 
 class Month(ParamType):
@@ -153,13 +156,16 @@ class Month(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self,
+        value: MaybeStr[utilities.datetime.Month],
+        param: Parameter | None,
+        ctx: Context | None,
     ) -> utilities.datetime.Month:
         """Convert a value into the `Month` type."""
         try:
             return ensure_month(value)
-        except EnsureMonthError:
-            self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+        except EnsureMonthError as error:
+            self.fail(str(error), param, ctx)
 
 
 class Time(ParamType):
@@ -173,15 +179,15 @@ class Time(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: MaybeStr[dt.time], param: Parameter | None, ctx: Context | None
     ) -> dt.time:
         """Convert a value into the `Time` type."""
         from utilities.whenever import EnsureTimeError, ensure_time
 
         try:
             return ensure_time(value)
-        except EnsureTimeError:
-            self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+        except EnsureTimeError as error:
+            return self.fail(str(error), param=param, ctx=ctx)
 
 
 class Timedelta(ParamType):
@@ -195,15 +201,18 @@ class Timedelta(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self,
+        value: MaybeStr[dt.timedelta],
+        param: Parameter | None,
+        ctx: Context | None,
     ) -> dt.timedelta:
         """Convert a value into the `Timedelta` type."""
         from utilities.whenever import EnsureTimedeltaError, ensure_timedelta
 
         try:
             return ensure_timedelta(value)
-        except EnsureTimedeltaError:
-            self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+        except EnsureTimedeltaError as error:
+            self.fail(str(error), param, ctx)
 
 
 class ZonedDateTime(ParamType):
@@ -217,15 +226,15 @@ class ZonedDateTime(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: MaybeStr[dt.datetime], param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `DateTime` type."""
         from utilities.whenever import EnsureZonedDateTimeError, ensure_zoned_datetime
 
         try:
             return ensure_zoned_datetime(value)
-        except EnsureZonedDateTimeError:
-            self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+        except EnsureZonedDateTimeError as error:
+            self.fail(str(error), param, ctx)
 
 
 # parameters - frozenset
@@ -250,15 +259,20 @@ class FrozenSetParameter(ParamType, Generic[_TParam, _T]):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self,
+        value: MaybeStr[Iterable[_T]],
+        param: Parameter | None,
+        ctx: Context | None,
     ) -> frozenset[_T]:
         """Convert a value into the `ListDates` type."""
         if is_iterable_not_str(value):
             return frozenset(value)
-        if isinstance(value, str):
-            values = split_str(value, separator=self._separator, empty=self._empty)
-            return frozenset(self._param.convert(v, param, ctx) for v in values)
-        return self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+        try:
+            text = ensure_str(value)
+        except EnsureStrError as error:
+            return self.fail(str(error), param=param, ctx=ctx)
+        values = split_str(text, separator=self._separator, empty=self._empty)
+        return frozenset(self._param.convert(v, param, ctx) for v in values)
 
     @override
     def get_metavar(self, param: Parameter) -> str | None:
@@ -378,15 +392,20 @@ class ListParameter(ParamType, Generic[_TParam, _T]):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self,
+        value: MaybeStr[Iterable[_T]],
+        param: Parameter | None,
+        ctx: Context | None,
     ) -> list[_T]:
-        """Convert a value into the `ListDates` type."""
+        """Convert a value into the `List` type."""
         if is_iterable_not_str(value):
             return list(value)
-        if isinstance(value, str):
-            values = split_str(value, separator=self._separator, empty=self._empty)
-            return [self._param.convert(v, param, ctx) for v in values]
-        return self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+        try:
+            text = ensure_str(value)
+        except EnsureStrError as error:
+            return self.fail(str(error), param=param, ctx=ctx)
+        values = split_str(text, separator=self._separator, empty=self._empty)
+        return [self._param.convert(v, param, ctx) for v in values]
 
     @override
     def get_metavar(self, param: Parameter) -> str | None:

@@ -64,7 +64,7 @@ class _EnsureEnumParseError(EnsureEnumError):
 
 def parse_enum(
     value: str, enum: type[TEnum], /, *, case_sensitive: bool = False
-) -> TEnum | None:
+) -> TEnum:
     """Parse a string into the enum."""
     by_name = _parse_enum_one(value, enum, "names", case_sensitive=case_sensitive)
     if not issubclass(enum, StrEnum):

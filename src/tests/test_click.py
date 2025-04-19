@@ -393,7 +393,7 @@ class TestParameters:
         result = CliRunner().invoke(cli)
         assert result.exit_code == 2
         assert search(
-            "Invalid value for '--value': Unable to parse 0 of type <class 'int'>",
+            "Invalid value for '--value': Object '0' of type 'int' must be a string",
             result.stdout,
         )
 
