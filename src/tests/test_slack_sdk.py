@@ -31,13 +31,10 @@ class TestSendToSlack:
         with raises(InvalidUrlClientError, match="url"):
             await send_to_slack("url", "message")
 
-    @mark.skipif(
-        get_env_var("SLACK", case_sensitive=False, nullable=True) is None,
-        reason="'SLACK' not set",
-    )
+    @mark.skipif(get_env_var("SLACK", nullable=True) is None, reason="'SLACK' not set")
     @throttle(duration=5 * MINUTE)
     async def test_real(self) -> None:
-        url = get_env_var("SLACK", case_sensitive=False)
+        url = get_env_var("SLACK")
         await send_to_slack(
             url, f"message from {TestSendToSlack.test_real.__qualname__}"
         )
@@ -129,13 +126,10 @@ class TestSlackHandler:
         assert messages == ["fast message"]
         assert finals == ["fast message", "slow message"]
 
-    @mark.skipif(
-        get_env_var("SLACK", case_sensitive=False, nullable=True) is None,
-        reason="'SLACK' not set",
-    )
+    @mark.skipif(get_env_var("SLACK", nullable=True) is None, reason="'SLACK' not set")
     @throttle(duration=5 * MINUTE)
     async def test_real(self, *, tmp_path: Path) -> None:
-        url = get_env_var("SLACK", case_sensitive=False)
+        url = get_env_var("SLACK")
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := SlackHandler(url))
         async with handler:

@@ -963,7 +963,7 @@ def _merge_str_mappings_one(acc: StrMapping, el: StrMapping, /) -> StrMapping:
         raise MergeStrMappingsError(mapping=el, counts=error.counts) from None
     for key_add, value in el.items():
         try:
-            key_del = one_str(out, key_add, case_sensitive=False)
+            key_del = one_str(out, key_add)
         except _OneStrEmptyError:
             pass
         else:

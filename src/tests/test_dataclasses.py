@@ -239,9 +239,7 @@ class TestMappingToDataclass:
 
     @given(key=sampled_from(["int_", "INT_"]), int_=integers())
     def test_int_case_insensitive(self, *, key: str, int_: int) -> None:
-        obj = mapping_to_dataclass(
-            DataClassFutureInt, {key: int_}, case_sensitive=False
-        )
+        obj = mapping_to_dataclass(DataClassFutureInt, {key: int_})
         expected = DataClassFutureInt(int_=int_)
         assert obj == expected
 
@@ -308,9 +306,7 @@ class TestMappingToDataclass:
             ),
         ):
             _ = mapping_to_dataclass(
-                DataClassFutureInt,
-                {"int_": value1, "INT_": value2},
-                case_sensitive=False,
+                DataClassFutureInt, {"int_": value1, "INT_": value2}
             )
 
 

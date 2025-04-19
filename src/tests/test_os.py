@@ -87,9 +87,7 @@ class TestGetEnvVar:
     ) -> None:
         key_use = data.draw(sampled_from([key, key.lower(), key.upper()]))
         with temp_environ({key: value}):
-            result = get_env_var(
-                key_use, case_sensitive=False, default=default, nullable=nullable
-            )
+            result = get_env_var(key_use, default=default, nullable=nullable)
         assert result == value
 
     @given(
