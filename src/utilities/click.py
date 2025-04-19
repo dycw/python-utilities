@@ -219,18 +219,12 @@ class Timedelta(ParamType):
         self, value: TimeDeltaLike, param: Parameter | None, ctx: Context | None
     ) -> dt.timedelta:
         """Convert a value into the `Timedelta` type."""
-        match value:
-            case dt.timedelta() as timedelta:
-                return timedelta
-            case str() as text:
-                from utilities.whenever import ParseTimedeltaError, parse_timedelta
+        from utilities.whenever import EnsureTimedeltaError, ensure_timedelta
 
-                try:
-                    return parse_timedelta(text)
-                except ParseTimedeltaError as error:
-                    return self.fail(str(error), param=param, ctx=ctx)
-            case _ as never:
-                assert_never(never)
+        try:
+            return ensure_timedelta(value)
+        except EnsureTimedeltaError as error:
+            self.fail(str(error), param, ctx)
 
 
 class ZonedDateTime(ParamType):
