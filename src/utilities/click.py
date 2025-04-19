@@ -267,10 +267,12 @@ class FrozenSetParameter(ParamType, Generic[_TParam, _T]):
         """Convert a value into the `ListDates` type."""
         if is_iterable_not_str(value):
             return frozenset(value)
-        if isinstance(value, str):
-            values = split_str(value, separator=self._separator, empty=self._empty)
-            return frozenset(self._param.convert(v, param, ctx) for v in values)
-        return self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+        try:
+            text = ensure_str(value)
+        except EnsureStrError as error:
+            return self.fail(str(error), param=param, ctx=ctx)
+        values = split_str(text, separator=self._separator, empty=self._empty)
+        return frozenset(self._param.convert(v, param, ctx) for v in values)
 
     @override
     def get_metavar(self, param: Parameter) -> str | None:
