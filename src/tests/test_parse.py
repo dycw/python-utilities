@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from pathlib import Path
+from types import NoneType
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -83,6 +84,11 @@ class TestParseText:
         result = parse_text(None, text)
         assert result is None
 
+    def test_none_type(self) -> None:
+        text = str(None)
+        result = parse_text(NoneType, text)
+        assert result is None
+
     @given(text=text_ascii())
     def test_str(self, *, text: str) -> None:
         result = parse_text(str, text)
@@ -143,6 +149,16 @@ class TestParseText:
             ParseTextError, match="Unable to parse <class 'int'>; got 'invalid'"
         ):
             _ = parse_text(int, "invalid")
+
+    def test_error_none(self) -> None:
+        with raises(ParseTextError, match="Unable to parse None; got 'invalid'"):
+            _ = parse_text(None, "invalid")
+
+    def test_error_none_type(self) -> None:
+        with raises(
+            ParseTextError, match="Unable to parse <class 'NoneType'>; got 'invalid'"
+        ):
+            _ = parse_text(NoneType, "invalid")
 
     def test_error_time(self) -> None:
         with raises(
