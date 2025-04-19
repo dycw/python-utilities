@@ -22,6 +22,7 @@ from utilities.git import get_repo_root
 from utilities.iterables import MergeStrMappingsError, merge_str_mappings, one, one_str
 from utilities.pathlib import PWD
 from utilities.reprlib import get_repr
+from utilities.text import ParseBoolError, parse_bool
 from utilities.typing import get_args, is_literal_type, is_optional_type
 
 if TYPE_CHECKING:
@@ -71,13 +72,12 @@ def _load_settings_post(
     if type_ is str:
         return value
     if type_ is bool:
-        if value == "0" or search("false", value, flags=IGNORECASE):
-            return False
-        if value == "1" or search("true", value, flags=IGNORECASE):
-            return True
-        raise _LoadSettingsInvalidBoolError(
-            path=path, values=values, field=field.name, value=value
-        )
+        try:
+            return parse_bool(value)
+        except ParseBoolError:
+            raise _LoadSettingsInvalidBoolError(
+                path=path, values=values, field=field.name, value=value
+            ) from None
     if type_ is float:
         try:
             return float(value)
