@@ -34,6 +34,7 @@ def parse_text(
     if is_optional_type(obj):
         with suppress(ParseNoneError):
             return parse_none(text)
+        inner = one(arg for arg in get_args(obj) if arg is not NoneType)
         if isinstance(
             inner := one(arg for arg in get_args(obj) if arg is not NoneType), type
         ):

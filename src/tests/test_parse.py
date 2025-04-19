@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from types import NoneType
-from typing import Any, Literal
+from typing import Literal
 
 from hypothesis import given
 from hypothesis.strategies import booleans, dates, floats, integers, sampled_from, times
@@ -182,11 +183,12 @@ class TestParseText:
         ):
             _ = parse_text(int | None, "invalid")
 
-    def test_error_nullable_unknown(self) -> None:
+    def test_error_nullable_not_type(self) -> None:
         with raises(
-            ParseTextError, match=r"Unable to parse typing\.Any \| None; got 'invalid'"
+            ParseTextError,
+            match=r"Unable to parse collections\.abc\.Iterable\[None\] \| None; got 'invalid'",
         ):
-            _ = parse_text(Any | None, "invalid")
+            _ = parse_text(Iterable[None] | None, "invalid")
 
     def test_error_sentinel(self) -> None:
         with raises(
