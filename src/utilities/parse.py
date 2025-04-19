@@ -21,15 +21,20 @@ def _parse_text_type(cls: type[Any], text: str, /) -> Any:
     """Parse text."""
     if issubclass(cls, str):
         return text
-    if is_subclass_int_not_bool(cls, bool):
+    if issubclass(cls, bool):
         try:
             return parse_bool(text)
         except ParseBoolError:
             raise ParseTextError(cls=cls, text=text) from None
-    if issubclass(cls, int):
+    if is_subclass_int_not_bool(cls):
         try:
-            return parse_bool(text)
-        except ParseBoolError:
+            return int(text)
+        except ValueError:
+            raise ParseTextError(cls=cls, text=text) from None
+    if issubclass(cls, float):
+        try:
+            return float(text)
+        except ValueError:
             raise ParseTextError(cls=cls, text=text) from None
     if is_subclass_date_not_datetime(cls):
         from utilities.whenever import parse_date
@@ -45,8 +50,21 @@ def _parse_text_type(cls: type[Any], text: str, /) -> Any:
             return parse_datetime(text)
         except ParseDateTimeError:
             raise ParseTextError(cls=cls, text=text) from None
-    if issubclass(cls, bool):
-        return parse_bool(text)
+    if issubclass(cls, dt.time):
+        from utilities.whenever import ParseTimeError, parse_time
+
+        try:
+            return parse_time(text)
+        except ParseTimeError:
+            raise ParseTextError(cls=cls, text=text) from None
+    if issubclass(cls, dt.timedelta):
+        from utilities.whenever import ParseTimedeltaError, parse_timedelta
+
+        try:
+            return parse_timedelta(text)
+        except ParseTimedeltaError:
+            raise ParseTextError(cls=cls, text=text) from None
+
     return None
 
 
