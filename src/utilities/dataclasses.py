@@ -1,7 +1,17 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import MISSING, dataclass, field, fields, replace
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Literal,
+    TypeVar,
+    assert_never,
+    overload,
+    override,
+)
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
@@ -16,7 +26,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Mapping
+    from collections.abc import Callable, Iterable, Iterator
 
     from utilities.types import Dataclass, StrMapping, TDataclass
 
@@ -118,7 +128,7 @@ def dataclass_to_dict(
     recursive: bool = False,
 ) -> StrMapping:
     """Convert a dataclass to a dictionary."""
-    out: dict[str, Any] = {}
+    out: StrMapping = {}
     for fld in yield_fields(obj, globalns=globalns, localns=localns):
         if fld.keep(
             include=include,
@@ -280,6 +290,172 @@ def replace_non_sentinel(
 ##
 
 
+def text_to_dataclass(
+    text_or_mapping: str | Mapping[str, str],
+    cls: type[TDataclass],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    case_sensitive: bool = True,
+) -> TDataclass:
+    """Construct a dataclass from a string or a mapping or strings."""
+    match text_or_mapping:
+        case str() as text:
+            mapping = _text_to_dataclass_parse_text(
+                text,
+                cls,
+                globalns=globalns,
+                localns=localns,
+                case_sensitive=case_sensitive,
+            )
+        case Mapping() as mapping:
+            pass
+        case _ as never:
+            assert_never(never)
+    return mapping_to_dataclass(
+        cls,
+        mapping,
+        globalns=globalns,
+        localns=localns,
+        case_sensitive=case_sensitive,
+    )
+
+
+@dataclass(kw_only=True, slots=True)
+class TextToDataClassError(Exception): ...
+
+
+def _text_to_dataclass_parse_text(
+    text: str,
+    cls: type[TDataclass],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    case_sensitive: bool = True,
+) -> StrMapping:
+    out: StrMapping = {}
+    fields = list(yield_fields(cls, globalns=globalns, localns=localns))
+    splits = [t for t in text.split(",") if t != ""]
+    settings = cls.settings_cls()(**settings_kwargs)
+    return cls(**strategy_kwargs, settings=settings)
+
+
+def _text_to_dataclass_parse_key_value_pair(
+    text: str, fields: Iterable[_YieldFieldsClass[Any]], /
+) -> tuple[_YieldFieldsClass[Any], Any]:
+    try:
+        key, value = text.split("=")
+    except ValueError:
+        raise _TextToDataClassParseKeyValuePairSplitError(text=text) from None
+    mapping = {f.name: f for f in fields}
+    try:
+        key = one(n for n in strategy_keys if key in n)
+    except OneEmptyError:
+        try:
+            key = one(n for n in settings_keys if key in n)
+        except OneEmptyError:
+            raise _Strategy_FromStr_InvalidKeyError(*[f"{key=}"]) from None
+        except OneNonUniqueError as error:
+            raise _Strategy_FromStr_AmbiguousKeyError(*[
+                f"{key=}",
+                f"{error.first=}",
+                f"{error.second=}",
+            ]) from None
+        else:
+            settings_kwargs[key] = cls.settings_cls().from_str(key, value)
+    except OneNonUniqueError as error:
+        raise _Strategy_FromStr_AmbiguousKeyError(*[
+            f"{key=}",
+            f"{error.first=}",
+            f"{error.second=}",
+        ]) from None
+    else:
+        strategy_kwargs[key] = cls._from_str_one(key, value)
+
+
+@dataclass(kw_only=True, slots=True)
+class _TextToDataClassParseKeyValuePairSplitError(Exception):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to split key-value pair {self.text!r}"
+
+
+def _text_to_dataclass_core(
+    field: _YieldFieldsClass[Any], value: Any, /, *, path: Path, values: StrMapping
+) -> Any:
+    type_ = field.type_
+    if type_ is str:
+        return value
+    if type_ is bool:
+        if value == "0" or search("false", value, flags=IGNORECASE):
+            return False
+        if value == "1" or search("true", value, flags=IGNORECASE):
+            return True
+        raise _LoadSettingsInvalidBoolError(
+            path=path, values=values, field=field.name, value=value
+        )
+    if type_ is float:
+        try:
+            return float(value)
+        except ValueError:
+            raise _LoadSettingsInvalidFloatError(
+                path=path, values=values, field=field.name, value=value
+            ) from None
+    if type_ is int:
+        try:
+            return int(value)
+        except ValueError:
+            raise _LoadSettingsInvalidIntError(
+                path=path, values=values, field=field.name, value=value
+            ) from None
+    if type_ is Path:
+        return Path(value).expanduser()
+    if type_ is dt.date:
+        from utilities.whenever import ParseDateError, parse_date
+
+        try:
+            return parse_date(value)
+        except ParseDateError:
+            raise _LoadSettingsInvalidDateError(
+                path=path, values=values, field=field.name, value=value
+            ) from None
+    if type_ is dt.timedelta:
+        from utilities.whenever import ParseTimedeltaError, parse_timedelta
+
+        try:
+            return parse_timedelta(value)
+        except ParseTimedeltaError:
+            raise _LoadSettingsInvalidTimeDeltaError(
+                path=path, values=values, field=field.name, value=value
+            ) from None
+    if isinstance(type_, type) and issubclass(type_, Enum):
+        try:
+            return ensure_enum(value, type_)
+        except EnsureEnumError:
+            raise _LoadSettingsInvalidEnumError(
+                path=path, values=values, field=field.name, type_=type_, value=value
+            ) from None
+    if is_literal_type(type_):
+        return one_str(get_args(type_), value, case_sensitive=False)
+    if is_optional_type(type_) and (one(get_args(type_)) is int):
+        if (value is None) or (value == "") or search("none", value, flags=IGNORECASE):
+            return None
+        try:
+            return int(value)
+        except ValueError:
+            raise _LoadSettingsInvalidNullableIntError(
+                path=path, values=values, field=field.name, value=value
+            ) from None
+    raise _LoadSettingsTypeError(path=path, field=field.name, type=type_)
+
+
+##
+
+
 @overload
 def yield_fields(
     obj: Dataclass,
@@ -434,10 +610,12 @@ class YieldFieldsError(Exception):
 
 __all__ = [
     "MappingToDataclassError",
+    "TextToDataClassError",
     "YieldFieldsError",
     "dataclass_repr",
     "dataclass_to_dict",
     "mapping_to_dataclass",
     "replace_non_sentinel",
+    "text_to_dataclass",
     "yield_fields",
 ]
