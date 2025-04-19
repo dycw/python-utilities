@@ -26,7 +26,14 @@ from utilities.re import (
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
-    from utilities.types import Duration
+    from utilities.types import (
+        DateLike,
+        DateTimeLike,
+        Duration,
+        DurationLike,
+        TimeDeltaLike,
+        TimeLike,
+    )
 
 MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3659635, microseconds=-1)
 MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
@@ -62,7 +69,7 @@ class CheckValidZonedDateimeError(Exception):
 ##
 
 
-def ensure_date(date: dt.date | str, /) -> dt.date:
+def ensure_date(date: DateLike, /) -> dt.date:
     """Ensure the object is a date."""
     if isinstance(date, dt.date):
         check_date_not_datetime(date)
@@ -85,7 +92,7 @@ class EnsureDateError(Exception):
 ##
 
 
-def ensure_duration(duration: Duration | str, /) -> Duration:
+def ensure_duration(duration: DurationLike, /) -> Duration:
     """Ensure the object is a Duration."""
     if isinstance(duration, int | float | dt.timedelta):
         return duration
@@ -107,7 +114,7 @@ class EnsureDurationError(Exception):
 ##
 
 
-def ensure_local_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
+def ensure_local_datetime(datetime: DateTimeLike, /) -> dt.datetime:
     """Ensure the object is a local datetime."""
     if isinstance(datetime, dt.datetime):
         return datetime
@@ -129,7 +136,7 @@ class EnsureLocalDateTimeError(Exception):
 ##
 
 
-def ensure_time(time: dt.time | str, /) -> dt.time:
+def ensure_time(time: TimeLike, /) -> dt.time:
     """Ensure the object is a time."""
     if isinstance(time, dt.time):
         return time
@@ -151,7 +158,7 @@ class EnsureTimeError(Exception):
 ##
 
 
-def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
+def ensure_timedelta(timedelta: TimeDeltaLike, /) -> dt.timedelta:
     """Ensure the object is a timedelta."""
     if isinstance(timedelta, dt.timedelta):
         return timedelta
@@ -189,7 +196,7 @@ class _EnsureTimedeltaNanosecondError(EnsureTimedeltaError):
 ##
 
 
-def ensure_zoned_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
+def ensure_zoned_datetime(datetime: DateTimeLike, /) -> dt.datetime:
     """Ensure the object is a zoned datetime."""
     if isinstance(datetime, dt.datetime):
         return datetime
@@ -240,7 +247,7 @@ class ParseDateError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to parse date; got {self.date!r}"
+        return f"Unable to {self.date!r} into a date"
 
 
 ##

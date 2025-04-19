@@ -7,9 +7,9 @@ from functools import total_ordering
 from typing import Any, Self, assert_never, overload, override
 
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import MaybeCallable
+from utilities.types import MaybeCallable, MaybeStr
 
-type VersionLike = Version | str
+type VersionLike = MaybeStr[Version]
 type MaybeCallableVersionLike = MaybeCallable[VersionLike]
 
 
@@ -187,6 +187,7 @@ class ParseVersionError(Exception):
 
 
 __all__ = [
+    "MaybeCallableVersionLike",
     "ParseVersionError",
     "Version",
     "VersionError",
