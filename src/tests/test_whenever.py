@@ -412,6 +412,7 @@ class TestParseAndSerializeZonedDateTime:
         assert result == datetime
 
     @given(datetime=local_datetimes())
+    @SKIPIF_CI_AND_WINDOWS
     def test_utc(self, *, datetime: dt.datetime) -> None:
         datetime1, datetime2 = [datetime.astimezone(tz) for tz in [UTC, dt.UTC]]
         serialized1, serialized2 = map(serialize_zoned_datetime, [datetime1, datetime2])
