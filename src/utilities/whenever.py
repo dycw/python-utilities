@@ -92,6 +92,28 @@ class EnsureDateError(Exception):
 ##
 
 
+def ensure_datetime(datetime: DateTimeLike, /) -> dt.datetime:
+    """Ensure the object is a datetime."""
+    if isinstance(datetime, dt.datetime):
+        return datetime  # skipif-ci-and-windows
+    try:
+        return parse_datetime(datetime)
+    except ParseDateTimeError as error:
+        raise EnsureDateTimeError(datetime=error.datetime) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class EnsureDateTimeError(Exception):
+    datetime: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure datetime; got {self.datetime!r}"
+
+
+##
+
+
 def ensure_duration(duration: DurationLike, /) -> Duration:
     """Ensure the object is a Duration."""
     if isinstance(duration, int | float | dt.timedelta):
@@ -253,6 +275,27 @@ class ParseDateError(Exception):
 ##
 
 
+def parse_datetime(datetime: str, /) -> dt.datetime:
+    """Parse a string into a datetime."""
+    with suppress(ParseLocalDateTimeError):
+        return parse_local_datetime(datetime)
+    with suppress(ParseZonedDateTimeError):
+        return parse_zoned_datetime(datetime)
+    raise ParseDateTimeError(datetime=datetime) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseDateTimeError(Exception):
+    datetime: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse datetime; got {self.datetime!r}"
+
+
+##
+
+
 def parse_duration(duration: str, /) -> Duration:
     """Parse a string into a Duration."""
     with suppress(ValueError):
@@ -393,7 +436,7 @@ class _ParseTimedeltaNanosecondError(ParseTimedeltaError):
 
 
 _PARSE_ZONED_DATETIME_REGEX = re.compile(
-    r"^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})\.?(\d{6})?\[([\w/]+)\]$"
+    r"^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})\.?(\d{6})?\[([\w\+\-/]+)\]$"
 )
 
 
@@ -443,6 +486,17 @@ def serialize_date(date: dt.date, /) -> str:
     """Serialize a date."""
     check_date_not_datetime(date)
     return Date.from_py_date(date).format_common_iso()
+
+
+##
+
+
+def serialize_datetime(datetime: dt.datetime, /) -> str:
+    """Serialize a datetime."""
+    try:
+        return serialize_local_datetime(datetime)
+    except SerializeLocalDateTimeError:
+        return serialize_zoned_datetime(datetime)
 
 
 ##
@@ -578,11 +632,13 @@ __all__ = [
     "MIN_SERIALIZABLE_TIMEDELTA",
     "CheckValidZonedDateimeError",
     "EnsureDateError",
+    "EnsureDateTimeError",
     "EnsureLocalDateTimeError",
     "EnsureTimeError",
     "EnsureTimedeltaError",
     "EnsureZonedDateTimeError",
     "ParseDateError",
+    "ParseDateTimeError",
     "ParseDurationError",
     "ParseLocalDateTimeError",
     "ParseTimeError",
@@ -594,18 +650,21 @@ __all__ = [
     "SerializeZonedDateTimeError",
     "check_valid_zoned_datetime",
     "ensure_date",
+    "ensure_datetime",
     "ensure_duration",
     "ensure_local_datetime",
     "ensure_time",
     "ensure_timedelta",
     "ensure_zoned_datetime",
     "parse_date",
+    "parse_datetime",
     "parse_duration",
     "parse_local_datetime",
     "parse_time",
     "parse_timedelta",
     "parse_zoned_datetime",
     "serialize_date",
+    "serialize_datetime",
     "serialize_duration",
     "serialize_local_datetime",
     "serialize_time",

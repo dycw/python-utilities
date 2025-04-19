@@ -53,10 +53,9 @@ from utilities.whenever import (
     parse_timedelta,
     parse_zoned_datetime,
     serialize_date,
-    serialize_local_datetime,
+    serialize_datetime,
     serialize_time,
     serialize_timedelta,
-    serialize_zoned_datetime,
 )
 from utilities.zoneinfo import ensure_time_zone
 
@@ -160,13 +159,7 @@ def _pre_process(
         case None:
             return f"[{_Prefixes.none.value}]"
         case dt.datetime() as datetime:
-            if datetime.tzinfo is None:
-                ser = serialize_local_datetime(datetime)
-            elif datetime.tzinfo is dt.UTC:
-                ser = serialize_zoned_datetime(datetime).replace("UTC", "dt.UTC")
-            else:
-                ser = serialize_zoned_datetime(datetime)
-            return f"[{_Prefixes.datetime.value}]{ser}"
+            return f"[{_Prefixes.datetime.value}]{serialize_datetime(datetime)}"
         case dt.date() as date:  # after datetime
             return f"[{_Prefixes.date.value}]{serialize_date(date)}"
         case dt.time() as time:
@@ -346,11 +339,6 @@ _ZONED_DATETIME_PATTERN = re.compile(
     + _Prefixes.datetime.value
     + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?[\+\-]\d{2}:\d{2}(?::\d{2})?\[(?!(?:dt\.)).+?\])$"
 )
-_ZONED_DATETIME_ALTERNATIVE_PATTERN = re.compile(
-    r"^\["
-    + _Prefixes.datetime.value
-    + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?\+00:00\[dt\.UTC\])$"
-)
 
 
 def _make_unit_pattern(prefix: _Prefixes, /) -> Pattern[str]:
@@ -438,10 +426,6 @@ def _object_hook(
                 return parse_version(match.group(1))
             if match := _ZONED_DATETIME_PATTERN.search(text):
                 return parse_zoned_datetime(match.group(1))
-            if match := _ZONED_DATETIME_ALTERNATIVE_PATTERN.search(text):
-                return parse_zoned_datetime(
-                    match.group(1).replace("dt.UTC", "UTC")
-                ).replace(tzinfo=dt.UTC)
             if (
                 exc_class := _object_hook_exception_class(
                     text, data=data, objects=objects, redirects=redirects

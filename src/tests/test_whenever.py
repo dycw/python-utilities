@@ -19,7 +19,7 @@ from hypothesis.strategies import (
     times,
     timezones,
 )
-from pytest import mark, param, raises
+from pytest import raises
 from whenever import DateTimeDelta
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
@@ -45,11 +45,13 @@ from utilities.whenever import (
     MIN_SERIALIZABLE_TIMEDELTA,
     CheckValidZonedDateimeError,
     EnsureDateError,
+    EnsureDateTimeError,
     EnsureDurationError,
     EnsureLocalDateTimeError,
     EnsureTimeError,
     EnsureZonedDateTimeError,
     ParseDateError,
+    ParseDateTimeError,
     ParseDurationError,
     ParseLocalDateTimeError,
     ParseTimeError,
@@ -66,18 +68,21 @@ from utilities.whenever import (
     _ToDateTimeDeltaError,
     check_valid_zoned_datetime,
     ensure_date,
+    ensure_datetime,
     ensure_duration,
     ensure_local_datetime,
     ensure_time,
     ensure_timedelta,
     ensure_zoned_datetime,
     parse_date,
+    parse_datetime,
     parse_duration,
     parse_local_datetime,
     parse_time,
     parse_timedelta,
     parse_zoned_datetime,
     serialize_date,
+    serialize_datetime,
     serialize_duration,
     serialize_local_datetime,
     serialize_time,
@@ -95,12 +100,11 @@ _TIMEDELTA_OVERFLOW = dt.timedelta(days=106751991, seconds=14454, microseconds=7
 
 @SKIPIF_CI_AND_WINDOWS
 class TestCheckValidZonedDateTime:
-    @mark.parametrize(
-        "datetime",
-        [
-            param(dt.datetime(1951, 4, 1, 3, tzinfo=HongKong)),
-            param(dt.datetime(1951, 4, 1, 5, tzinfo=HongKong)),
-        ],
+    @given(
+        datetime=sampled_from([
+            dt.datetime(1951, 4, 1, 3, tzinfo=HongKong),
+            dt.datetime(1951, 4, 1, 5, tzinfo=HongKong),
+        ])
     )
     def test_main(self, *, datetime: dt.datetime) -> None:
         check_valid_zoned_datetime(datetime)
@@ -152,6 +156,41 @@ class TestParseAndSerializeDate:
             _ = ensure_date("invalid")
 
 
+class TestParseAndSerializeDateTime:
+    @given(
+        datetime=local_datetimes()
+        | zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
+    )
+    @SKIPIF_CI_AND_WINDOWS
+    def test_main(self, *, datetime: dt.datetime) -> None:
+        serialized = serialize_datetime(datetime)
+        result = parse_datetime(serialized)
+        assert result == datetime
+
+    def test_error_parse(self) -> None:
+        with raises(
+            ParseDateTimeError, match="Unable to parse datetime; got 'invalid'"
+        ):
+            _ = parse_datetime("invalid")
+
+    @given(
+        data=data(),
+        datetime=local_datetimes()
+        | zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True),
+    )
+    @SKIPIF_CI_AND_WINDOWS
+    def test_ensure(self, *, data: DataObject, datetime: dt.datetime) -> None:
+        str_or_value = data.draw(sampled_from([datetime, serialize_datetime(datetime)]))
+        result = ensure_datetime(str_or_value)
+        assert result == datetime
+
+    def test_error_ensure(self) -> None:
+        with raises(
+            EnsureDateTimeError, match="Unable to ensure datetime; got 'invalid'"
+        ):
+            _ = ensure_datetime("invalid")
+
+
 class TestParseAndSerializeDuration:
     @given(duration=datetime_durations())
     def test_main(self, *, duration: Duration) -> None:
@@ -167,9 +206,7 @@ class TestParseAndSerializeDuration:
         ):
             _ = parse_duration("invalid")
 
-    @mark.parametrize(
-        "duration", [param(_TIMEDELTA_MICROSECONDS), param(_TIMEDELTA_OVERFLOW)]
-    )
+    @given(duration=sampled_from([_TIMEDELTA_MICROSECONDS, _TIMEDELTA_OVERFLOW]))
     def test_error_serialize(self, *, duration: Duration) -> None:
         with raises(
             SerializeDurationError, match="Unable to serialize duration; got .*"
@@ -307,9 +344,7 @@ class TestParseAndSerializeTimedelta:
         ):
             _ = parse_timedelta("PT0.111222333S")
 
-    @mark.parametrize(
-        "timedelta", [param(_TIMEDELTA_MICROSECONDS), param(_TIMEDELTA_OVERFLOW)]
-    )
+    @given(timedelta=sampled_from([_TIMEDELTA_MICROSECONDS, _TIMEDELTA_OVERFLOW]))
     def test_error_serialize(self, *, timedelta: dt.timedelta) -> None:
         with raises(
             SerializeTimeDeltaError, match="Unable to serialize timedelta; got .*"
@@ -349,7 +384,7 @@ class TestParseAndSerializeZonedDateTime:
 
     @given(
         datetime=zoned_datetimes(
-            time_zone=sampled_from([HongKong, UTC, dt.UTC]),
+            time_zone=timezones() | just(dt.UTC),
             round_="standard",
             timedelta=SECOND,
             valid=True,
@@ -365,11 +400,7 @@ class TestParseAndSerializeZonedDateTime:
         result = parse_zoned_datetime(serialized)
         assert result == datetime
 
-    @given(
-        datetime=zoned_datetimes(
-            time_zone=sampled_from([HongKong, UTC, dt.UTC]), valid=True
-        )
-    )
+    @given(datetime=zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True))
     @SKIPIF_CI_AND_WINDOWS
     def test_compact_with_microseconds(self, *, datetime: dt.datetime) -> None:
         _ = assume(datetime.microsecond != 0)
@@ -379,6 +410,16 @@ class TestParseAndSerializeZonedDateTime:
         serialized = f"{part1}[{part2}]"
         result = parse_zoned_datetime(serialized)
         assert result == datetime
+
+    @given(datetime=local_datetimes())
+    @SKIPIF_CI_AND_WINDOWS
+    def test_utc(self, *, datetime: dt.datetime) -> None:
+        datetime1, datetime2 = [datetime.astimezone(tz) for tz in [UTC, dt.UTC]]
+        serialized1, serialized2 = map(serialize_zoned_datetime, [datetime1, datetime2])
+        assert serialized1 == serialized2
+        parsed = parse_zoned_datetime(serialized1)
+        assert parsed == datetime1 == datetime2
+        assert parsed.tzinfo is UTC
 
     def test_error_parse(self) -> None:
         with raises(
@@ -397,9 +438,7 @@ class TestParseAndSerializeZonedDateTime:
 
     @given(
         data=data(),
-        datetime=zoned_datetimes(
-            time_zone=sampled_from([HongKong, UTC, dt.UTC]), valid=True
-        ),
+        datetime=zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True),
     )
     @SKIPIF_CI_AND_WINDOWS
     def test_ensure(self, *, data: DataObject, datetime: dt.datetime) -> None:
@@ -448,9 +487,7 @@ class TestToDateTimeDelta:
         expected = DateTimeDelta(days=104250, microseconds=1)
         assert result == expected
 
-    @mark.parametrize(
-        "timedelta", [param(_TIMEDELTA_MICROSECONDS), param(_TIMEDELTA_OVERFLOW)]
-    )
+    @given(timedelta=sampled_from([_TIMEDELTA_MICROSECONDS, _TIMEDELTA_OVERFLOW]))
     def test_error(self, *, timedelta: dt.timedelta) -> None:
         with raises(
             _ToDateTimeDeltaError, match="Unable to create DateTimeDelta; got .*"
