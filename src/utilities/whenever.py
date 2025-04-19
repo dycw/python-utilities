@@ -247,7 +247,7 @@ class ParseDateError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to {self.date!r} into a date"
+        return f"Unable to parse date; got {self.date!r}"
 
 
 ##
