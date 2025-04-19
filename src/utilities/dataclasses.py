@@ -21,9 +21,9 @@ from utilities.functions import (
 )
 from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
+from utilities.parse import ParseTextError, parse_text
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
-from utilities.text import ParseBoolError, parse_bool
 from utilities.types import TDataclass
 from utilities.typing import get_type_hints
 
@@ -297,7 +297,8 @@ def text_to_dataclass(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-    case_sensitive: bool = True,
+    case_sensitive: bool = False,
+    head: bool = True,
 ) -> TDataclass:
     """Construct a dataclass from a string or a mapping or strings."""
     match text_or_mapping:
@@ -308,6 +309,7 @@ def text_to_dataclass(
                 globalns=globalns,
                 localns=localns,
                 case_sensitive=case_sensitive,
+                head=head,
             )
         case Mapping() as mapping:
             pass
@@ -318,11 +320,6 @@ def text_to_dataclass(
     )
 
 
-@dataclass(kw_only=True, slots=True)
-class TextToDataClassError(Exception, Generic[TDataclass]):
-    cls: type[TDataclass]
-
-
 def _text_to_dataclass_parse_text(
     text: str,
     cls: type[TDataclass],
@@ -331,13 +328,14 @@ def _text_to_dataclass_parse_text(
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     case_sensitive: bool = False,
+    head: bool = True,
 ) -> StrMapping:
     pairs = (t for t in text.split(",") if t != "")
     pairs = [_text_to_dataclass_split_key_value_pair(pair, cls) for pair in pairs]
     fields = list(yield_fields(cls, globalns=globalns, localns=localns))
     return dict(
         _text_to_dataclass_parse_key_value_pair(
-            fields, key, value, cls, case_sensitive=case_sensitive
+            fields, key, value, cls, case_sensitive=case_sensitive, head=head
         )
         for key, value in pairs
     )
@@ -353,15 +351,6 @@ def _text_to_dataclass_split_key_value_pair(
     return key, value
 
 
-@dataclass(kw_only=True, slots=True)
-class _TextToDataClassSplitKeyValuePairError(TextToDataClassError):
-    text: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to construct {get_class_name(self.cls)!r}; failed to split key-value pair {self.text!r}"
-
-
 def _text_to_dataclass_parse_key_value_pair(
     fields: Iterable[_YieldFieldsClass[Any]],
     key: str,
@@ -370,6 +359,7 @@ def _text_to_dataclass_parse_key_value_pair(
     /,
     *,
     case_sensitive: bool = False,
+    head: bool = True,
 ) -> tuple[str, Any]:
     mapping = {f.name: f for f in fields}
     try:
@@ -387,8 +377,29 @@ def _text_to_dataclass_parse_key_value_pair(
             second=error.second,
         ) from None
     field = mapping[name]
-    parsed = _text_to_dataclass_convert_value(field, value, cls)
+    try:
+        parsed = parse_text(
+            field.type_, value, case_sensitive=case_sensitive, head=head
+        )
+    except ParseTextError:
+        raise _TextToDataClassParseValueError(
+            cls=cls, field=field, text=value
+        ) from None
     return key, parsed
+
+
+@dataclass(kw_only=True, slots=True)
+class TextToDataClassError(Exception, Generic[TDataclass]):
+    cls: type[TDataclass]
+
+
+@dataclass(kw_only=True, slots=True)
+class _TextToDataClassSplitKeyValuePairError(TextToDataClassError):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to construct {get_class_name(self.cls)!r}; failed to split key-value pair {self.text!r}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -416,84 +427,14 @@ class _TextToDataClassParseKeyValuePairNonUniqueError(TextToDataClassError[TData
         return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
 
 
-def _text_to_dataclass_convert_value(
-    field: _YieldFieldsClass[Any], text: str, cls: type[TDataclass], /
-) -> Any:
-    type_ = field.type_
-    if type_ is str:
-        return text
-    if type_ is bool:
-        try:
-            return parse_bool(text)
-        except ParseBoolError:
-            raise _TextToDataClassParseValueBoolError(cls=cls, text=text) from None
-    if type_ is float:
-        try:
-            return float(text)
-        except ValueError:
-            raise _TextToDataClassParseValueFloatError(cls=cls, text=text) from None
-    if type_ is int:
-        try:
-            return int(text)
-        except ValueError:
-            raise _TextToDataClassParseValueIntError(cls=cls, text=text) from None
-    if type_ is Path:
-        return Path(text).expanduser()
-    if type_ is dt.date:
-        from utilities.whenever import ParseDateError, parse_date
-
-        try:
-            return parse_date(text)
-        except ParseDateError:
-            raise _LoadSettingsInvalidDateError(
-                path=path, values=values, field=field.name, value=text
-            ) from None
-    if type_ is dt.timedelta:
-        from utilities.whenever import ParseTimedeltaError, parse_timedelta
-
-        try:
-            return parse_timedelta(text)
-        except ParseTimedeltaError:
-            raise _LoadSettingsInvalidTimeDeltaError(
-                path=path, values=values, field=field.name, value=text
-            ) from None
-    if isinstance(type_, type) and issubclass(type_, Enum):
-        try:
-            return ensure_enum(text, type_)
-        except EnsureEnumError:
-            raise _LoadSettingsInvalidEnumError(
-                path=path, values=values, field=field.name, type_=type_, value=text
-            ) from None
-    if is_literal_type(type_):
-        return one_str(get_args(type_), text, case_sensitive=False)
-    if is_optional_type(type_) and (one(get_args(type_)) is int):
-        if (text is None) or (text == "") or search("none", text, flags=IGNORECASE):
-            return None
-        try:
-            return int(text)
-        except ValueError:
-            raise _LoadSettingsInvalidNullableIntError(
-                path=path, values=values, field=field.name, value=text
-            ) from None
-    raise _LoadSettingsTypeError(path=path, field=field.name, type=type_)
-
-
 @dataclass(kw_only=True, slots=True)
-class _TextToDataClassParseValueBoolError(TextToDataClassError):
+class _TextToDataClassParseValueError(TextToDataClassError[TDataclass]):
+    field: _YieldFieldsClass[Any]
     text: str
 
     @override
     def __str__(self) -> str:
-        return f"Unable to construct {get_class_name(self.cls)!r}; failed to parse {self.text!r} into a boolean value"
-
-
-@dataclass(kw_only=True, slots=True)
-class _TextToDataClassParseValueFloatError(TextToDataClassError):
-    text: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to construct {get_class_name(self.cls)!r}; failed to parse {self.text!r} into a float value"
+        return f"Unable to construct {get_class_name(self.cls)!r}; unable to parse field {self.field.name!r} or type {self.field.type_!r}; got {self.text!r} "
 
 
 ##
