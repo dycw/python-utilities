@@ -59,10 +59,7 @@ def _parse_text_type(
         except ParseEnumError:
             raise ParseTextError(obj=cls, text=text) from None
     if issubclass(cls, Path):
-        try:
-            return Path(text).expanduser()
-        except TypeError:
-            raise ParseTextError(obj=cls, text=text) from None
+        return Path(text).expanduser()
     if issubclass(cls, Version):
         try:
             return parse_version(text)
