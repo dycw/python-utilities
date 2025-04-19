@@ -112,7 +112,7 @@ class _LoadSettingsParseTextError(LoadSettingsError):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to parse {self.field.name!r} of type {self.field.type_!r}; got {self.text!r}"
+        return f"Unable to parse field {self.field.name!r} of type {self.field.type_!r}; got {self.text!r}"
 
 
 __all__ = ["LoadSettingsError", "load_settings"]
