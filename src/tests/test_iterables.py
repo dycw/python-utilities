@@ -7,7 +7,7 @@ from itertools import chain, repeat
 from math import isfinite, isinf, isnan
 from operator import add, neg, sub
 from re import DOTALL
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, override
+from typing import TYPE_CHECKING, Any, ClassVar, override
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -1091,33 +1091,19 @@ class TestOneMaybe:
 
 
 class TestOneStr:
-    @given(
-        text=sampled_from(["a", "b", "c"]),
-        lower_or_upper=sampled_from(["lower", "upper"]),
-    )
-    def test_exact_match_case_insensitive(
-        self, *, text: str, lower_or_upper: Literal["lower", "upper"]
-    ) -> None:
-        match lower_or_upper:
-            case "lower":
-                text_use = text.lower()
-            case "upper":
-                text_use = text.upper()
+    @given(data=data(), text=sampled_from(["a", "b", "c"]))
+    def test_exact_match_case_insensitive(self, *, data: DataObject, text: str) -> None:
+        text_use = data.draw(sampled_from([text.lower(), text.upper()]))
         assert one_str(["a", "b", "c"], text_use) == text
 
     @given(
-        case=sampled_from([("ab", "abc"), ("ad", "ade"), ("af", "afg")]),
-        lower_or_upper=sampled_from(["lower", "upper"]),
+        data=data(), case=sampled_from([("ab", "abc"), ("ad", "ade"), ("af", "afg")])
     )
     def test_head_case_insensitive(
-        self, *, case: tuple[str, str], lower_or_upper: Literal["lower", "upper"]
+        self, *, data: DataObject, case: tuple[str, str]
     ) -> None:
         head, expected = case
-        match lower_or_upper:
-            case "lower":
-                head_use = head.lower()
-            case "upper":
-                head_use = head.upper()
+        head_use = data.draw(sampled_from([head.lower(), head.upper()]))
         assert one_str(["abc", "ade", "afg"], head_use, head=True) == expected
 
     @given(text=sampled_from(["a", "b", "c"]))
