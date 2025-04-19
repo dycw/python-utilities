@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from re import IGNORECASE, search
 from typing import Any, override
 
 
@@ -33,4 +35,29 @@ class Sentinel(metaclass=_Meta):
 sentinel = Sentinel()
 
 
-__all__ = ["SENTINEL_REPR", "Sentinel", "sentinel"]
+##
+
+
+def parse_sentinel(text: str, /) -> Sentinel:
+    """Parse text into the Sentinel value."""
+    if text == "" or search("Sentinel", text, flags=IGNORECASE):
+        return sentinel
+    raise ParseSentinelError(text=text)
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseSentinelError(Exception):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse sentinel value; got {self.text!r}"
+
+
+__all__ = [
+    "SENTINEL_REPR",
+    "ParseSentinelError",
+    "Sentinel",
+    "parse_sentinel",
+    "sentinel",
+]

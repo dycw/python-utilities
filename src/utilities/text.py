@@ -45,7 +45,26 @@ class ParseBoolError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to parse {self.text!r} into a boolean value"
+        return f"Unable to parse boolean value; got {self.text!r}"
+
+
+##
+
+
+def parse_none(text: str, /) -> None:
+    """Parse text into the None value."""
+    if text == "" or search("None", text, flags=IGNORECASE):
+        return
+    raise ParseNoneError(text=text)
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseNoneError(Exception):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse null value; got {self.text!r}"
 
 
 ##
@@ -108,8 +127,10 @@ def strip_and_dedent(text: str, /, *, trailing: bool = False) -> str:
 
 __all__ = [
     "ParseBoolError",
+    "ParseNoneError",
     "join_strs",
     "parse_bool",
+    "parse_none",
     "repr_encode",
     "snake_case",
     "split_str",
