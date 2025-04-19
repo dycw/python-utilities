@@ -9,7 +9,7 @@ from operator import add, neg, sub
 from re import DOTALL
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, override
 
-from hypothesis import given
+from hypothesis import Phase, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     binary,
@@ -32,6 +32,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 
 from tests.test_operator import make_objects
+from utilities.contextvars import set_global_breakpoint
 from utilities.functions import is_sequence_of
 from utilities.hypothesis import (
     sentinels,
@@ -1092,19 +1093,48 @@ class TestOneMaybe:
 
 class TestOneStr:
     @given(text=sampled_from(["a", "b", "c"]))
-    def test_case_sensitive(self, *, text: str) -> None:
-        assert one_str(["a", "b", "c"], text, case_sensitive=True) == text
+    def test_exact_match_case_sensitive(self, *, text: str) -> None:
+        assert one_str(["a", "b", "c"], text) == text
 
-    @given(text=sampled_from(["a", "b", "c"]), case=sampled_from(["lower", "upper"]))
-    def test_case_insensitive(
-        self, *, text: str, case: Literal["lower", "upper"]
+    @given(
+        text=sampled_from(["a", "b", "c"]),
+        lower_or_upper=sampled_from(["lower", "upper"]),
+    )
+    def test_exact_match_case_insensitive(
+        self, *, text: str, lower_or_upper: Literal["lower", "upper"]
     ) -> None:
-        match case:
+        match lower_or_upper:
             case "lower":
                 text_use = text.lower()
             case "upper":
                 text_use = text.upper()
         assert one_str(["a", "b", "c"], text_use) == text
+
+    @given(case=sampled_from([("ab", "abc"), ("ad", "ade"), ("af", "afg")]))
+    @mark.only
+    def test_head_case_sensitive(self, *, case: tuple[str, str]) -> None:
+        head, expected = case
+        assert one_str(["abc", "ade", "afg"], head, head=True) == expected
+
+    @given(
+        case=sampled_from([("ab", "abc"), ("ad", "ade"), ("af", "afg")]),
+        lower_or_upper=sampled_from(["lower", "upper"]),
+    )
+    @mark.only
+    def test_head_case_insensitive(
+        self,
+        *,
+        text: str,
+        case: tuple[str, str],
+        lower_or_upper: Literal["lower", "upper"],
+    ) -> None:
+        head, expected = case
+        match lower_or_upper:
+            case "lower":
+                head_use = head.lower()
+            case "upper":
+                head_use = head.upper()
+        assert one_str(["abc", "ade", "afg"], head_use, case_sensitive=False) == head
 
     def test_error_case_sensitive_empty_error(self) -> None:
         with raises(_OneStrEmptyError, match=r"Iterable .* does not contain 'A'"):

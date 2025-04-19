@@ -1062,25 +1062,38 @@ class OneMaybeNonUniqueError(OneMaybeError, Generic[_T]):
 
 
 def one_str(
-    iterable: Iterable[str], text: str, /, *, case_sensitive: bool = False
+    iterable: Iterable[str],
+    text: str,
+    /,
+    *,
+    case_sensitive: bool = True,
+    head: bool = False,
 ) -> str:
     """Find the unique string in an iterable."""
     as_list = list(iterable)
-    if case_sensitive:
-        it = (t for t in as_list if t == text)
-    else:
-        it = (t for t in as_list if t.lower() == text.lower())
+    match head, case_sensitive:
+        case False, True:
+            it = (t for t in as_list if t == text)
+        case False, False:
+            it = (t for t in as_list if t.lower() == text.lower())
+        case True, True:
+            it = (t for t in as_list if t.startswith(text))
+        case True, False:
+            raise NotImplementedError
+        case _ as never:
+            assert_never(never)
     try:
         return one(it)
     except OneEmptyError:
         raise _OneStrEmptyError(
-            iterable=as_list, text=text, case_sensitive=case_sensitive
+            iterable=as_list, text=text, case_sensitive=case_sensitive, head=head
         ) from None
     except OneNonUniqueError as error:
         raise _OneStrNonUniqueError(
             iterable=as_list,
             text=text,
             case_sensitive=case_sensitive,
+            head=head,
             first=error.first,
             second=error.second,
         ) from None
