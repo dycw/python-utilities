@@ -5,7 +5,7 @@ from enum import Enum, StrEnum
 from typing import Generic, Literal, assert_never, overload, override
 
 from utilities.functions import ensure_str
-from utilities.iterables import _OneStrEmptyError, _OneStrNonUniqueError, one_str
+from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.types import EnumOrStr, TEnum
 
 ##
@@ -121,9 +121,9 @@ def _parse_enum_one(
             assert_never(never)
     try:
         name = one_str(names, value, case_sensitive=case_sensitive)
-    except _OneStrEmptyError:
+    except OneStrEmptyError:
         return None
-    except _OneStrNonUniqueError as error:
+    except OneStrNonUniqueError as error:
         raise _ParseEnumByKindNonUniqueError(
             value=value,
             enum=enum,
