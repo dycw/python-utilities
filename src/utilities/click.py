@@ -59,18 +59,12 @@ class Date(ParamType):
         self, value: MaybeStr[dt.date], param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Date` type."""
-        match value:
-            case dt.date() as date:
-                return date
-            case str() as text:
-                from utilities.whenever import ParseDateError, parse_date
+        from utilities.whenever import EnsureDateError, ensure_date
 
-                try:
-                    return parse_date(text)
-                except ParseDateError as error:
-                    return self.fail(str(error), param=param, ctx=ctx)
-            case _ as never:
-                assert_never(never)
+        try:
+            return ensure_date(value)
+        except EnsureDateError as error:
+            self.fail(str(error), param, ctx)
 
 
 class Duration(ParamType):
