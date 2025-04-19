@@ -795,13 +795,10 @@ class TestIsLocalDateTime:
 
 
 class TestIsSubClassDateNotDateTime:
-    @given(date=dates())
-    def test_date(self, *, date: dt.date) -> None:
-        assert is_subclass_date_not_datetime(type(date))
-
-    @given(datetime=datetimes())
-    def test_datetime(self, *, datetime: dt.datetime) -> None:
-        assert not is_subclass_date_not_datetime(type(datetime))
+    @given(case=sampled_from([(dt.date, True), (dt.datetime, False)]))
+    def test_date(self, *, case: tuple[type[Any], bool]) -> None:
+        type_, expected = case
+        assert is_subclass_date_not_datetime(type_) is expected
 
 
 class TestIsWeekday:
