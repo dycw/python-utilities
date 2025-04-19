@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import pathlib
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, override
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, assert_never, override
 from uuid import UUID
 
 import click
@@ -17,13 +17,13 @@ from click.types import (
 
 import utilities.datetime
 import utilities.types
-from utilities.datetime import EnsureMonthError, ensure_month
+from utilities.datetime import ParseMonthError, parse_month
 from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import get_class_name
 from utilities.iterables import is_iterable_not_str
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
-from utilities.types import TEnum
+from utilities.types import MaybeStr, TEnum
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -131,15 +131,24 @@ class LocalDateTime(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: MaybeStr[dt.datetime], param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `LocalDateTime` type."""
-        from utilities.whenever import EnsureLocalDateTimeError, ensure_local_datetime
+        match value:
+            case dt.datetime() as datetime:
+                return datetime
+            case str() as text:
+                from utilities.whenever import (
+                    ParseLocalDateTimeError,
+                    parse_local_datetime,
+                )
 
-        try:
-            return ensure_local_datetime(value)
-        except EnsureLocalDateTimeError:
-            self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+                try:
+                    return parse_local_datetime(text)
+                except ParseLocalDateTimeError as error:
+                    return self.fail(str(error), param=param, ctx=ctx)
+            case _ as never:
+                assert_never(never)
 
 
 class Month(ParamType):
@@ -153,13 +162,22 @@ class Month(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self,
+        value: MaybeStr[utilities.datetime.Month],
+        param: Parameter | None,
+        ctx: Context | None,
     ) -> utilities.datetime.Month:
         """Convert a value into the `Month` type."""
-        try:
-            return ensure_month(value)
-        except EnsureMonthError:
-            self.fail(f"Unable to parse {value} of type {type(value)}", param, ctx)
+        match value:
+            case utilities.datetime.Month() as month:
+                return month
+            case str() as text:
+                try:
+                    return parse_month(text)
+                except ParseMonthError as error:
+                    return self.fail(str(error), param=param, ctx=ctx)
+            case _ as never:
+                assert_never(never)
 
 
 class Time(ParamType):

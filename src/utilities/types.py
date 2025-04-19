@@ -50,6 +50,7 @@ type OpenMode = Literal[
 type StrMapping = Mapping[str, Any]
 type TupleOrStrMapping = tuple[Any, ...] | StrMapping
 type MaybeCallable[_T] = _T | Callable[[], _T]
+type MaybeStr[_T] = _T | str
 type MaybeType[_T] = _T | type[_T]
 
 
@@ -263,6 +264,7 @@ __all__ = [
     "MaybeCoroutine1",
     "MaybeIterable",
     "MaybeIterableHashable",
+    "MaybeStr",
     "MaybeType",
     "Number",
     "OpenMode",
