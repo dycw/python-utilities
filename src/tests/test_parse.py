@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import datetime as dt
+from dataclasses import dataclass
 from pathlib import Path
 from types import NoneType
+from typing import Literal
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -74,11 +76,21 @@ class TestParseText:
         result = parse_text(int, text)
         assert result == value
 
-    @given(path=paths())
-    def test_path(self, *, path: Path) -> None:
-        text = str(path)
-        result = parse_text(Path, text)
-        assert result == path
+    @given(truth=sampled_from(["true", "false"]))
+    def test_literal(self, *, truth: Literal["true", "false"]) -> None:
+        result = parse_text(Literal["true", "false"], truth)
+        assert result == truth
+
+    def test_nullable_int_none(self) -> None:
+        text = str(None)
+        result = parse_text(int | None, text)
+        assert result is None
+
+    @given(value=integers())
+    def test_nullable_int_int(self, *, value: int) -> None:
+        text = str(value)
+        result = parse_text(int | None, text)
+        assert result == value
 
     def test_none(self) -> None:
         text = str(None)
@@ -89,6 +101,12 @@ class TestParseText:
         text = str(None)
         result = parse_text(NoneType, text)
         assert result is None
+
+    @given(path=paths())
+    def test_path(self, *, path: Path) -> None:
+        text = str(path)
+        result = parse_text(Path, text)
+        assert result == path
 
     def test_sentinel(self) -> None:
         text = str(sentinel)
@@ -166,6 +184,12 @@ class TestParseText:
         ):
             _ = parse_text(NoneType, "invalid")
 
+    def test_error_nullable_int(self) -> None:
+        with raises(
+            ParseTextError, match=r"Unable to parse int \| None; got 'invalid'"
+        ):
+            _ = parse_text(int | None, "invalid")
+
     def test_error_sentinel(self) -> None:
         with raises(
             ParseTextError,
@@ -186,6 +210,17 @@ class TestParseText:
             match=r"Unable to parse <class 'datetime\.timedelta'>; got 'invalid'",
         ):
             _ = parse_text(dt.timedelta, "invalid")
+
+    def test_error_unknown(self) -> None:
+        @dataclass(kw_only=True)
+        class Example:
+            pass
+
+        with raises(
+            ParseTextError,
+            match=r"Unable to parse <class 'tests\.test_parse\.TestParseText\.test_error_unknown\.<locals>\.Example'>; got 'invalid'",
+        ):
+            _ = parse_text(Example, "invalid")
 
     def test_error_version(self) -> None:
         with raises(

@@ -34,8 +34,13 @@ def parse_text(
     if is_optional_type(obj):
         with suppress(ParseNoneError):
             return parse_none(text)
-        if isinstance(inner := one(get_args(obj)), type):
-            return _parse_text_type(inner, text, case_sensitive=case_sensitive)
+        if isinstance(
+            inner := one(arg for arg in get_args(obj) if arg is not NoneType), type
+        ):
+            try:
+                return _parse_text_type(inner, text, case_sensitive=case_sensitive)
+            except ParseTextError:
+                raise ParseTextError(obj=obj, text=text) from None
     raise ParseTextError(obj=obj, text=text) from None
 
 
