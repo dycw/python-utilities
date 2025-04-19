@@ -12,6 +12,7 @@ from hypothesis.strategies import booleans, dates, floats, integers, sampled_fro
 from pytest import raises
 
 from tests.test_operator import TruthEnum
+from utilities.functions import ensure_path
 from utilities.hypothesis import (
     local_datetimes,
     paths,
@@ -100,6 +101,13 @@ class TestParseText:
         text = str(path)
         result = parse_text(Path, text)
         assert result == path
+
+    @given(path=paths())
+    def test_path_expanded(self, *, path: Path) -> None:
+        path_use = Path("~", path)
+        text = str(path_use)
+        result = ensure_path(parse_text(Path, text))
+        assert result == result.expanduser()
 
     def test_sentinel(self) -> None:
         text = str(sentinel)
