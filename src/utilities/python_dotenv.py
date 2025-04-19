@@ -60,26 +60,21 @@ def load_settings(
 
 
 def _load_settings_post(
-    field: _YieldFieldsClass[Any], text: str, /, *, path: Path, values: StrMapping
+    field: _YieldFieldsClass[Any], value: Any, /, *, path: Path, values: StrMapping
 ) -> Any:
+    if not isinstance(value, str):
+        return value
     try:
-        return parse_text(field.type_, text)
+        return parse_text(field.type_, value)
     except ParseTextError:
         raise _LoadSettingsParseTextError(
-            path=path, values=values, field=field.name, text=text
+            path=path, values=values, field=field, text=value
         ) from None
 
 
 @dataclass(kw_only=True, slots=True)
 class LoadSettingsError(Exception):
     path: Path
-
-
-@dataclass(kw_only=True, slots=True)
-class _LoadSettingsFileNotFoundError(LoadSettingsError):
-    @override
-    def __str__(self) -> str:
-        return f"Path {str(self.path)!r} must exist"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -103,14 +98,21 @@ class _LoadSettingsEmptyError(LoadSettingsError):
 
 
 @dataclass(kw_only=True, slots=True)
+class _LoadSettingsFileNotFoundError(LoadSettingsError):
+    @override
+    def __str__(self) -> str:
+        return f"Path {str(self.path)!r} must exist"
+
+
+@dataclass(kw_only=True, slots=True)
 class _LoadSettingsParseTextError(LoadSettingsError):
     values: StrMapping
-    field: str
+    field: _YieldFieldsClass[Any]
     text: str
 
     @override
     def __str__(self) -> str:
-        return f"Field {self.field!r} must contain a valid integer; got {self.text!r}"
+        return f"Unable to parse {self.field.name!r} of type {self.field.type_!r}; got {self.text!r}"
 
 
 __all__ = ["LoadSettingsError", "load_settings"]

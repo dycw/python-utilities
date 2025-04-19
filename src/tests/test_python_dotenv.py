@@ -184,22 +184,6 @@ class TestLoadSettings:
         expected = Settings(key=value)
         assert settings == expected
 
-    @given(root=git_repos())
-    @settings_with_reduced_examples()
-    def test_int_value_error(self, *, root: Path) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: int
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write("key = '...'\n")
-
-        with raises(
-            _LoadSettingsParseTextError,
-            match=r"Field 'key' must contain a valid integer; got '...'",
-        ):
-            _ = load_settings(Settings, cwd=root)
-
     @given(root=git_repos(), value=sampled_from(["true", "false"]))
     @settings_with_reduced_examples()
     def test_literal_value(
@@ -294,20 +278,6 @@ class TestLoadSettings:
         with raises(_LoadSettingsFileNotFoundError, match=r"Path '.*' must exist"):
             _ = load_settings(Settings, cwd=root)
 
-    @given(root=git_repos())
-    @settings_with_reduced_examples()
-    def test_error_field_missing(self, *, root: Path) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: str
-
-        root.joinpath(".env").touch()
-
-        with raises(
-            _LoadSettingsEmptyError, match=r"Field 'key' must exist \(modulo case\)"
-        ):
-            _ = load_settings(Settings, cwd=root)
-
     @given(root=git_repos(), value=integers())
     @settings_with_reduced_examples()
     def test_error_duplicate_keys(self, *, root: Path, value: int) -> None:
@@ -325,5 +295,35 @@ class TestLoadSettings:
                 r"Mapping .* keys must not contain duplicates \(modulo case\); got .*",
                 flags=DOTALL,
             ),
+        ):
+            _ = load_settings(Settings, cwd=root)
+
+    @given(root=git_repos())
+    @settings_with_reduced_examples()
+    def test_error_field_missing(self, *, root: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: str
+
+        root.joinpath(".env").touch()
+
+        with raises(
+            _LoadSettingsEmptyError, match=r"Field 'key' must exist \(modulo case\)"
+        ):
+            _ = load_settings(Settings, cwd=root)
+
+    @given(root=git_repos())
+    @settings_with_reduced_examples()
+    def test_error_parse_text(self, *, root: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: int
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write("key = '...'\n")
+
+        with raises(
+            _LoadSettingsParseTextError,
+            match=r"Unable to parse field 'key' of type <class 'int'>; got '...'",
         ):
             _ = load_settings(Settings, cwd=root)
