@@ -19,7 +19,7 @@ import utilities.datetime
 import utilities.types
 from utilities.datetime import EnsureMonthError, ensure_month
 from utilities.enum import EnsureEnumError, ensure_enum
-from utilities.functions import ensure_str, get_class_name
+from utilities.functions import EnsureStrError, ensure_str, get_class_name
 from utilities.iterables import is_iterable_not_str
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
@@ -398,7 +398,10 @@ class ListParameter(ParamType, Generic[_TParam, _T]):
         """Convert a value into the `List` type."""
         if is_iterable_not_str(value):
             return list(value)
-        text = ensure_str(value)
+        try:
+            text = ensure_str(value)
+        except EnsureStrError as error:
+            return self.fail(str(error), param=param, ctx=ctx)
         values = split_str(text, separator=self._separator, empty=self._empty)
         return [self._param.convert(v, param, ctx) for v in values]
 
