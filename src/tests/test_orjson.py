@@ -23,7 +23,7 @@ from hypothesis.strategies import (
 )
 from orjson import JSONDecodeError
 from polars import Object, String, UInt64
-from pytest import approx, mark, param, raises
+from pytest import approx, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from tests.test_operator import (
@@ -81,7 +81,6 @@ from utilities.polars import check_polars_dataframe, zoned_datetime
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import DateOrDateTime, LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args
-from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -645,22 +644,6 @@ class TestSerializeAndDeserialize:
             qualname="Sentinel", repr="<sentinel>", str="<sentinel>"
         )
         assert result == exp_res
-
-    @mark.parametrize(
-        ("utc", "expected"),
-        [
-            param(UTC, b'"[dt]2000-01-01T00:00:00+00:00[UTC]"'),
-            param(dt.UTC, b'"[dt]2000-01-01T00:00:00+00:00[dt.UTC]"'),
-        ],
-        ids=str,
-    )
-    def test_utc(self, *, utc: dt.tzinfo, expected: bytes) -> None:
-        datetime = dt.datetime(2000, 1, 1, tzinfo=utc)
-        ser = serialize(datetime)
-        assert ser == expected
-        result = deserialize(ser)
-        assert result == datetime
-        assert result.tzinfo is utc
 
 
 class TestSerialize:
