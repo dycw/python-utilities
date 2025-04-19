@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import re
-from re import Match, search
+from dataclasses import dataclass
+from re import IGNORECASE, Match, search
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from utilities.sentinel import SENTINEL_REPR
 
@@ -24,6 +25,27 @@ def join_strs(
     if len(texts) >= 1:
         return separator.join(texts)
     return empty
+
+
+##
+
+
+def parse_bool(text: str, /) -> bool:
+    """Parse text into a boolean value."""
+    if text == "0" or search("false", text, flags=IGNORECASE):
+        return False
+    if text == "1" or search("true", text, flags=IGNORECASE):
+        return True
+    raise ParseBoolError(text=text)
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseBoolError(Exception):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse {self.text!r} into a boolean value"
 
 
 ##
@@ -85,7 +107,9 @@ def strip_and_dedent(text: str, /, *, trailing: bool = False) -> str:
 
 
 __all__ = [
+    "ParseBoolError",
     "join_strs",
+    "parse_bool",
     "repr_encode",
     "snake_case",
     "split_str",
