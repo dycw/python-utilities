@@ -17,13 +17,21 @@ from click.types import (
 
 import utilities.datetime
 import utilities.types
-from utilities.datetime import EnsureMonthError, ensure_month
+from utilities.datetime import EnsureMonthError, MonthLike, ensure_month
 from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import EnsureStrError, ensure_str, get_class_name
 from utilities.iterables import is_iterable_not_str
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
-from utilities.types import EnumOrStr, MaybeStr, TEnum
+from utilities.types import (
+    DateLike,
+    DateTimeLike,
+    EnumLike,
+    MaybeStr,
+    TEnum,
+    TimeDeltaLike,
+    TimeLike,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -56,7 +64,7 @@ class Date(ParamType):
 
     @override
     def convert(
-        self, value: MaybeStr[dt.date], param: Parameter | None, ctx: Context | None
+        self, value: DateLike, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Date` type."""
         from utilities.whenever import EnsureDateError, ensure_date
@@ -109,7 +117,7 @@ class Enum(ParamType, Generic[TEnum]):
 
     @override
     def convert(
-        self, value: EnumOrStr[TEnum], param: Parameter | None, ctx: Context | None
+        self, value: EnumLike[TEnum], param: Parameter | None, ctx: Context | None
     ) -> TEnum:
         """Convert a value into the `Enum` type."""
         try:
@@ -134,7 +142,7 @@ class LocalDateTime(ParamType):
 
     @override
     def convert(
-        self, value: MaybeStr[dt.datetime], param: Parameter | None, ctx: Context | None
+        self, value: DateTimeLike, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `LocalDateTime` type."""
         from utilities.whenever import EnsureLocalDateTimeError, ensure_local_datetime
@@ -156,10 +164,7 @@ class Month(ParamType):
 
     @override
     def convert(
-        self,
-        value: MaybeStr[utilities.datetime.Month],
-        param: Parameter | None,
-        ctx: Context | None,
+        self, value: MonthLike, param: Parameter | None, ctx: Context | None
     ) -> utilities.datetime.Month:
         """Convert a value into the `Month` type."""
         try:
@@ -179,7 +184,7 @@ class Time(ParamType):
 
     @override
     def convert(
-        self, value: MaybeStr[dt.time], param: Parameter | None, ctx: Context | None
+        self, value: TimeLike, param: Parameter | None, ctx: Context | None
     ) -> dt.time:
         """Convert a value into the `Time` type."""
         from utilities.whenever import EnsureTimeError, ensure_time
@@ -201,10 +206,7 @@ class Timedelta(ParamType):
 
     @override
     def convert(
-        self,
-        value: MaybeStr[dt.timedelta],
-        param: Parameter | None,
-        ctx: Context | None,
+        self, value: TimeDeltaLike, param: Parameter | None, ctx: Context | None
     ) -> dt.timedelta:
         """Convert a value into the `Timedelta` type."""
         from utilities.whenever import EnsureTimedeltaError, ensure_timedelta
@@ -226,7 +228,7 @@ class ZonedDateTime(ParamType):
 
     @override
     def convert(
-        self, value: MaybeStr[dt.datetime], param: Parameter | None, ctx: Context | None
+        self, value: DateTimeLike, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `DateTime` type."""
         from utilities.whenever import EnsureZonedDateTimeError, ensure_zoned_datetime
