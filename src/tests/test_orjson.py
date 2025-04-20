@@ -465,6 +465,7 @@ class TestSerializeAndDeserialize:
                 DataClassFutureCustomEquality,
                 DataClassFutureInt,
                 DataClassFutureIntDefault,
+                DataClassFutureDefaultInInitChild,
                 DataClassFutureLiteral,
                 DataClassFutureLiteralNullable,
                 DataClassFutureNestedInnerFirstInner,
