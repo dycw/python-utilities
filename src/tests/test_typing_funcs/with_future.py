@@ -6,13 +6,10 @@ from typing import TYPE_CHECKING, override
 if TYPE_CHECKING:
     import datetime as dt
     from pathlib import Path
-    from typing import Literal
     from uuid import UUID
 
+    from tests.test_typing import TrueOrFalseLit, TrueOrFalseLitType
     from utilities.sentinel import Sentinel
-
-
-type TruthLit = Literal["true", "false"]
 
 
 @dataclass(order=True, kw_only=True)
@@ -71,12 +68,12 @@ class DataClassFutureListIntsDefault:
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureLiteral:
-    truth: Literal["true", "false"]
+    truth: TrueOrFalseLit
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureLiteralNullable:
-    truth: Literal["true", "false"] | None = None
+    truth: TrueOrFalseLit | None = None
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -131,12 +128,12 @@ class DataClassFutureTimeDelta:
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureTypeLiteral:
-    truth: TruthLit
+    truth: TrueOrFalseLitType
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureTypeLiteralNullable:
-    truth: TruthLit | None = None
+    truth: TrueOrFalseLitType | None = None
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)

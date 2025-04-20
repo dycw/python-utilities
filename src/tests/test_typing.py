@@ -59,6 +59,10 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
+TrueOrFalseLit = Literal["true", "false"]
+type TrueOrFalseTypeLit = Literal["true", "false"]
+
+
 class TestContainsSelf:
     @mark.parametrize("obj", [param(Self), param(Self | None)])
     def test_main(self, *, obj: Any) -> None:

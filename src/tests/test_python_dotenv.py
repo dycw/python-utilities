@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from re import DOTALL
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data, integers, sampled_from
@@ -82,6 +82,22 @@ class TestLoadSettings:
         with root.joinpath(".env").open(mode="w") as fh:
             _ = fh.write(f"key = {value}\n")
             _ = fh.write(f"other = {value}\n")
+
+        settings = load_settings(Settings, cwd=root)
+        expected = Settings(key=value)
+        assert settings == expected
+
+    @given(root=git_repos(), value=sampled_from(["true", "false"]))
+    @settings_with_reduced_examples()
+    def test_literal_value(
+        self, *, root: Path, value: Literal["true", "false"]
+    ) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: Literal["true", "false"]
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"key = {value}\n")
 
         settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)

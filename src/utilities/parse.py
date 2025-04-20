@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from types import NoneType
-from typing import Any, get_args, override
+from typing import Any, override
 
 from utilities.datetime import is_subclass_date_not_datetime
 from utilities.enum import ParseEnumError, parse_enum
@@ -14,7 +14,7 @@ from utilities.functions import is_subclass_int_not_bool
 from utilities.iterables import one, one_str
 from utilities.sentinel import ParseSentinelError, Sentinel, parse_sentinel
 from utilities.text import ParseBoolError, ParseNoneError, parse_bool, parse_none
-from utilities.typing import is_literal_type, is_optional_type
+from utilities.typing import get_args, is_literal_type, is_optional_type
 from utilities.version import ParseVersionError, Version, parse_version
 
 
