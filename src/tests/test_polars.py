@@ -102,8 +102,6 @@ from utilities.polars import (
     _InsertBetweenMissingColumnsError,
     _InsertBetweenNonConsecutiveError,
     _yield_struct_series_element_remove_nulls,
-    _YieldRowsAsDataClassesColumnsSuperSetError,
-    _YieldRowsAsDataClassesWrongTypeError,
     append_dataclass,
     are_frames_equal,
     ceil_datetime,
@@ -138,7 +136,6 @@ from utilities.polars import (
     touch,
     unique_element,
     week_num,
-    yield_rows_as_dataclasses,
     yield_struct_series_dataclasses,
     yield_struct_series_elements,
     zoned_datetime,
@@ -158,7 +155,6 @@ if TYPE_CHECKING:
     )
     from polars.datatypes import DataTypeClass
 
-    from tests.test_typing_funcs.with_future import TrueOrFalseFutureLit
     from utilities.types import MaybeType, StrMapping, WeekDay
 
 
@@ -1805,184 +1801,6 @@ class TestWeekNum:
         result = series.to_frame().with_columns(wn=week_num("date", start=start))["wn"]
         expected = Series(name="wn", values=exp_values, dtype=Int32)
         assert_series_equal(result, expected)
-
-
-class TestYieldRowsAsDataclasses:
-    @given(check_types=sampled_from(["none", "first", "all"]))
-    def test_main(self, *, check_types: Literal["none", "first", "all"]) -> None:
-        df = DataFrame(data=[(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
-
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            x: int
-
-        result = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
-        expected = [Row(x=1), Row(x=2), Row(x=3)]
-        assert result == expected
-
-    def test_none(self) -> None:
-        df = DataFrame(data=[(1,), (2,), (3,)], schema={"x": int}, orient="row")
-
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            x: str
-
-        result = list(yield_rows_as_dataclasses(df, Row, check_types="none"))
-        expected = [Row(x=cast("Any", 1)), Row(x=cast("Any", 2)), Row(x=cast("Any", 3))]
-        assert result == expected
-
-    def test_first(self) -> None:
-        df = DataFrame(data=[(1,), (None,), (None,)], schema={"x": int}, orient="row")
-
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            x: int
-
-        result = list(yield_rows_as_dataclasses(df, Row, check_types="first"))
-        expected = [Row(x=1), Row(x=cast("Any", None)), Row(x=cast("Any", None))]
-        assert result == expected
-
-    @given(check_types=sampled_from(["none", "first", "all"]))
-    def test_missing_columns_for_fields_with_defaults(
-        self, *, check_types: Literal["none", "first", "all"]
-    ) -> None:
-        df = DataFrame(data=[(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
-
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            x: int
-            y: int | None = None
-
-        result = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
-        expected = [Row(x=1), Row(x=2), Row(x=3)]
-        assert result == expected
-
-    @given(check_types=sampled_from(["none", "first", "all"]))
-    def test_literal(self, *, check_types: Literal["none", "first", "all"]) -> None:
-        df = DataFrame(
-            data=[("true",), ("false",), ("true",)], schema={"x": String}, orient="row"
-        )
-
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            x: Literal["true", "false"]
-
-        result = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
-        expected = [Row(x="true"), Row(x="false"), Row(x="true")]
-        assert result == expected
-
-    @given(check_types=sampled_from(["none", "first", "all"]))
-    def test_literal_nullable(
-        self, *, check_types: Literal["none", "first", "all"]
-    ) -> None:
-        df = DataFrame(
-            data=[("true",), ("false",), (None,)], schema={"x": String}, orient="row"
-        )
-
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            x: Literal["true", "false"] | None = None
-
-        result = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
-        expected = [Row(x="true"), Row(x="false"), Row()]
-        assert result == expected
-
-    @given(check_types=sampled_from(["none", "first", "all"]))
-    def test_literal_type(
-        self, *, check_types: Literal["none", "first", "all"]
-    ) -> None:
-        df = DataFrame(
-            data=[("true",), ("false",), ("true",)], schema={"x": String}, orient="row"
-        )
-
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            x: TrueOrFalseFutureLit
-
-        result = list(
-            yield_rows_as_dataclasses(
-                df, Row, check_types=check_types, globalns=globals()
-            )
-        )
-        expected = [Row(x="true"), Row(x="false"), Row(x="true")]
-        assert result == expected
-
-    @given(check_types=sampled_from(["none", "first", "all"]))
-    def test_literal_type_nullable(
-        self, *, check_types: Literal["none", "first", "all"]
-    ) -> None:
-        df = DataFrame(
-            data=[("true",), ("false",), (None,)], schema={"x": String}, orient="row"
-        )
-
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            x: TrueOrFalseFutureLit | None = None
-
-        result = list(
-            yield_rows_as_dataclasses(
-                df, Row, globalns=globals(), check_types=check_types
-            )
-        )
-        expected = [Row(x="true"), Row(x="false"), Row()]
-        assert result == expected
-
-    @given(check_types=sampled_from(["none", "first", "all"]))
-    def test_empty(self, *, check_types: Literal["none", "first", "all"]) -> None:
-        df = DataFrame(data=[], schema={"x": Int64}, orient="row")
-
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            x: int
-
-        result = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
-        expected = []
-        assert result == expected
-
-    @given(check_types=sampled_from(["none", "first", "all"]))
-    def test_error_superset(
-        self, *, check_types: Literal["none", "first", "all"]
-    ) -> None:
-        df = DataFrame(data=[(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
-
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            y: int
-
-        with raises(
-            _YieldRowsAsDataClassesColumnsSuperSetError,
-            match="DataFrame columns .* must be a superset of dataclass fields .*; dataclass had extra fields .*",
-        ):
-            _ = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
-
-    @given(check_types=sampled_from(["first", "all"]))
-    def test_error_first_or_all_wrong_type(
-        self, *, check_types: Literal["first", "all"]
-    ) -> None:
-        df = DataFrame(data=[(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
-
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            x: str
-
-        with raises(
-            _YieldRowsAsDataClassesWrongTypeError,
-            match='wrong value type for field "x" - should be "str" instead of value "1" of type "int"',
-        ):
-            _ = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
-
-    def test_error_all_wrong_type(self) -> None:
-        df = DataFrame(data=[(1,), (None,), (3,)], schema={"x": Int64}, orient="row")
-
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            x: int
-
-        with raises(
-            _YieldRowsAsDataClassesWrongTypeError,
-            match='wrong value type for field "x" - should be "int" instead of value "None" of type "NoneType"',
-        ):
-            _ = list(yield_rows_as_dataclasses(df, Row, check_types="all"))
 
 
 class TestYieldStructSeriesDataclasses:

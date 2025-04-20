@@ -71,7 +71,6 @@ from utilities.iterables import (
     CheckMappingsEqualError,
     CheckSubSetError,
     CheckSuperMappingError,
-    CheckSuperSetError,
     OneEmptyError,
     OneNonUniqueError,
     always_iterable,
@@ -79,7 +78,6 @@ from utilities.iterables import (
     check_mappings_equal,
     check_subset,
     check_supermapping,
-    check_superset,
     is_iterable_not_str,
     one,
 )
@@ -92,7 +90,6 @@ from utilities.math import (
     number_of_decimals,
 )
 from utilities.reprlib import get_repr
-from utilities.sentinel import Sentinel
 from utilities.types import MaybeStr, Number, WeekDay
 from utilities.typing import (
     get_args,
@@ -1484,100 +1481,6 @@ def week_num(column: IntoExprColumn, /, *, start: WeekDay = "mon") -> Expr | Ser
 ##
 
 
-def yield_rows_as_dataclasses(
-    df: DataFrame,
-    cls: type[TDataclass],
-    /,
-    *,
-    globalns: StrMapping | None = None,
-    localns: StrMapping | None = None,
-    check_types: Literal["none", "first", "all"] = "first",
-) -> Iterator[TDataclass]:
-    """Yield the rows of a DataFrame as dataclasses."""
-    from dacite import from_dict
-    from dacite.exceptions import WrongTypeError
-
-    columns = df.columns
-    required: set[str] = set()
-    for field in yield_fields(cls, globalns=globalns, localns=localns):
-        if isinstance(field.default, Sentinel) and isinstance(
-            field.default_factory, Sentinel
-        ):
-            required.add(field.name)
-    try:
-        check_superset(columns, required)
-    except CheckSuperSetError as error:
-        raise _YieldRowsAsDataClassesColumnsSuperSetError(
-            df=df, cls=cls, left=error.left, right=error.right, extra=error.extra
-        ) from None
-    rows = df.iter_rows(named=True)
-    match check_types:
-        case "none":
-            yield from _yield_rows_as_dataclasses_no_check_types(rows, cls)
-        case "first":
-            try:
-                first = next(rows)
-            except StopIteration:
-                return
-            try:
-                yield from_dict(cls, cast("Data", first))
-            except WrongTypeError as error:
-                raise _YieldRowsAsDataClassesWrongTypeError(
-                    df=df, cls=cls, msg=str(error)
-                ) from None
-            yield from _yield_rows_as_dataclasses_no_check_types(rows, cls)
-        case "all":
-            try:
-                for row in rows:
-                    yield from_dict(cls, cast("Data", row))
-            except WrongTypeError as error:
-                raise _YieldRowsAsDataClassesWrongTypeError(
-                    df=df, cls=cls, msg=str(error)
-                ) from None
-        case _ as never:
-            assert_never(never)
-
-
-def _yield_rows_as_dataclasses_no_check_types(
-    rows: Iterator[dict[str, Any]], cls: type[TDataclass], /
-) -> Iterator[TDataclass]:
-    """Yield the rows of a DataFrame as dataclasses without type checking."""
-    from dacite import Config, from_dict
-
-    config = Config(check_types=False)
-    for row in rows:
-        yield from_dict(cls, cast("Data", row), config=config)
-
-
-@dataclass(kw_only=True, slots=True)
-class YieldRowsAsDataClassesError(Exception):
-    df: DataFrame
-    cls: type[Dataclass]
-
-
-@dataclass(kw_only=True, slots=True)
-class _YieldRowsAsDataClassesColumnsSuperSetError(YieldRowsAsDataClassesError):
-    left: AbstractSet[str]
-    right: AbstractSet[str]
-    extra: AbstractSet[str]
-
-    @override
-    def __str__(self) -> str:
-        return f"DataFrame columns {get_repr(self.left)} must be a superset of dataclass fields {get_repr(self.right)}; dataclass had extra fields {get_repr(self.extra)}."
-
-
-@dataclass(kw_only=True, slots=True)
-class _YieldRowsAsDataClassesWrongTypeError(YieldRowsAsDataClassesError):
-    msg: str
-
-    @override
-    def __str__(self) -> str:
-        return self.msg
-
-
-##
-
-
 @overload
 def yield_struct_series_elements(
     series: Series, /, *, strict: Literal[True]
@@ -1714,7 +1617,6 @@ __all__ = [
     "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
     "StructFromDataClassError",
-    "YieldRowsAsDataClassesError",
     "YieldStructSeriesElementsError",
     "append_dataclass",
     "are_frames_equal",
@@ -1749,7 +1651,6 @@ __all__ = [
     "struct_from_dataclass",
     "touch",
     "unique_element",
-    "yield_rows_as_dataclasses",
     "yield_struct_series_dataclasses",
     "yield_struct_series_elements",
     "zoned_datetime",
