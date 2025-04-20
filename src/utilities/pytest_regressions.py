@@ -51,6 +51,7 @@ class OrjsonRegressionFixture:
         *,
         globalns: StrMapping | None = None,
         localns: StrMapping | None = None,
+        warn_name_errors: bool = False,
         dataclass_defaults: bool = False,
         suffix: str | None = None,
     ) -> None:
@@ -61,6 +62,7 @@ class OrjsonRegressionFixture:
             obj,
             globalns=globalns,
             localns=localns,
+            warn_name_errors=warn_name_errors,
             dataclass_defaults=dataclass_defaults,
         )
         basename = self._basename

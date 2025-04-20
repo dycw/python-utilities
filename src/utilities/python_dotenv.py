@@ -27,6 +27,7 @@ def load_settings(
     cwd: PathLike = PWD,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
     head: bool = False,
     case_sensitive: bool = False,
 ) -> TDataclass:
@@ -53,6 +54,7 @@ def load_settings(
             cls,
             globalns=globalns,
             localns=localns,
+            warn_name_errors=warn_name_errors,
             head=head,
             case_sensitive=case_sensitive,
             allow_extra=True,

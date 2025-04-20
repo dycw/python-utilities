@@ -114,6 +114,7 @@ def serialize(
     before: Callable[[Any], Any] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
     dataclass_hook: _DataclassHook | None = None,
     dataclass_defaults: bool = False,
 ) -> bytes:
@@ -123,6 +124,7 @@ def serialize(
         before=before,
         globalns=globalns,
         localns=localns,
+        warn_name_errors=warn_name_errors,
         dataclass_hook=dataclass_hook,
         dataclass_defaults=dataclass_defaults,
     )
@@ -139,6 +141,7 @@ def _pre_process(
     before: Callable[[Any], Any] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
     dataclass_hook: _DataclassHook | None = None,
     dataclass_defaults: bool = False,
     error: _ErrorMode = "raise",
@@ -150,6 +153,7 @@ def _pre_process(
         before=before,
         globalns=globalns,
         localns=localns,
+        warn_name_errors=warn_name_errors,
         dataclass_hook=dataclass_hook,
         dataclass_defaults=dataclass_defaults,
         error=error,
@@ -196,6 +200,7 @@ def _pre_process(
                 dataclass,
                 globalns=globalns,
                 localns=localns,
+                warn_name_errors=warn_name_errors,
                 final=partial(_dataclass_final, hook=dataclass_hook),
                 defaults=dataclass_defaults,
             )
@@ -212,6 +217,7 @@ def _pre_process(
                 before=before,
                 globalns=globalns,
                 localns=localns,
+                warn_name_errors=warn_name_errors,
                 dataclass_hook=dataclass_hook,
             )
         case list() as list_:
@@ -222,6 +228,7 @@ def _pre_process(
                 before=before,
                 globalns=globalns,
                 localns=localns,
+                warn_name_errors=warn_name_errors,
                 dataclass_hook=dataclass_hook,
             )
         case Mapping() as mapping:
@@ -234,6 +241,7 @@ def _pre_process(
                 before=before,
                 globalns=globalns,
                 localns=localns,
+                warn_name_errors=warn_name_errors,
                 dataclass_hook=dataclass_hook,
             )
         case tuple() as tuple_:
@@ -244,6 +252,7 @@ def _pre_process(
                 before=before,
                 globalns=globalns,
                 localns=localns,
+                warn_name_errors=warn_name_errors,
                 dataclass_hook=dataclass_hook,
             )
         # other
@@ -263,6 +272,7 @@ def _pre_process_container(
     before: Callable[[Any], Any] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
     dataclass_hook: _DataclassHook | None = None,
     dataclass_include_defaults: bool = False,
 ) -> Any:
@@ -272,6 +282,7 @@ def _pre_process_container(
             before=before,
             globalns=globalns,
             localns=localns,
+            warn_name_errors=warn_name_errors,
             dataclass_hook=dataclass_hook,
             dataclass_defaults=dataclass_include_defaults,
         )
@@ -716,6 +727,7 @@ class OrjsonFormatter(Formatter):
         before: Callable[[Any], Any] | None = None,
         globalns: StrMapping | None = None,
         localns: StrMapping | None = None,
+        warn_name_errors: bool = False,
         dataclass_hook: _DataclassHook | None = None,
         dataclass_defaults: bool = False,
     ) -> None:
@@ -723,6 +735,7 @@ class OrjsonFormatter(Formatter):
         self._before = before
         self._globalns = globalns
         self._localns = localns
+        self._warn_name_errors = warn_name_errors
         self._dataclass_hook = dataclass_hook
         self._dataclass_defaults = dataclass_defaults
 
@@ -752,6 +765,7 @@ class OrjsonFormatter(Formatter):
             before=self._before,
             globalns=self._globalns,
             localns=self._localns,
+            warn_name_errors=self._warn_name_errors,
             dataclass_hook=self._dataclass_hook,
             dataclass_defaults=self._dataclass_defaults,
         ).decode()
