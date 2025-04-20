@@ -48,6 +48,8 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureNestedOuterFirstInner,
     DataClassFutureNestedOuterFirstOuter,
     DataClassFutureNone,
+    DataClassFutureTypeLiteral,
+    DataClassFutureTypeLiteralNullable,
 )
 from utilities.datetime import MINUTE, SECOND, get_now, get_now_local
 from utilities.functions import is_sequence_of
@@ -435,12 +437,15 @@ class TestSerializeAndDeserialize:
     @given(
         obj=make_objects(
             dataclass_custom_equality=True,
+            dataclass_default_in_init_child=True,
             dataclass_int=True,
             dataclass_int_default=True,
             dataclass_literal=True,
             dataclass_literal_nullable=True,
             dataclass_nested=True,
             dataclass_none=True,
+            dataclass_type_literal=True,
+            dataclass_type_literal_nullable=True,
             enum=True,
             exception_class=True,
             exception_instance=True,
@@ -467,6 +472,8 @@ class TestSerializeAndDeserialize:
                 DataClassFutureNestedOuterFirstInner,
                 DataClassFutureNestedOuterFirstOuter,
                 DataClassFutureNone,
+                DataClassFutureTypeLiteral,
+                DataClassFutureTypeLiteralNullable,
                 SubFrozenSet,
                 SubList,
                 SubSet,
@@ -558,6 +565,17 @@ class TestSerializeAndDeserialize:
         ser = serialize(obj, globalns=globals())
         result = deserialize(ser, objects={DataClassFutureNone})
         assert is_equal(result, obj)
+
+    @given(obj=make_objects(dataclass_type_literal=True))
+    def test_dataclass_type_literal(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={DataClassFutureTypeLiteral})
+        assert is_equal(result, obj)
+
+    @given(obj=make_objects(dataclass_type_literal_nullable=True))
+    def test_dataclass_type_literal_nullable(self, *, obj: Any) -> None:
+        result = deserialize(serialize(obj), objects={DataClassFutureLiteralNullable})
+        with assume_does_not_raise(IsEqualError):
+            assert is_equal(result, obj)
 
     @given(obj=builds(DataClassFutureNone))
     def test_dataclass_no_objects_error(self, *, obj: DataClassFutureNone) -> None:
