@@ -12,6 +12,10 @@ from hypothesis.strategies import booleans, dates, floats, integers, sampled_fro
 from pytest import raises
 
 from tests.test_operator import TruthEnum
+from tests.test_typing_funcs.with_future import (
+    TrueOrFalseFutureLit,
+    TrueOrFalseFutureTypeLit,
+)
 from utilities.functions import ensure_path
 from utilities.hypothesis import (
     local_datetimes,
@@ -72,7 +76,7 @@ class TestParseText:
 
     @given(truth=sampled_from(["true", "false"]))
     def test_literal(self, *, truth: Literal["true", "false"]) -> None:
-        result = parse_text(Literal["true", "false"], truth)
+        result = parse_text(TrueOrFalseFutureLit, truth)
         assert result == truth
 
     def test_nullable_int_none(self) -> None:
@@ -130,6 +134,11 @@ class TestParseText:
         text = serialize_timedelta(timedelta)
         result = parse_text(dt.timedelta, text)
         assert result == timedelta
+
+    @given(truth=sampled_from(["true", "false"]))
+    def test_type_literal(self, *, truth: Literal["true", "false"]) -> None:
+        result = parse_text(TrueOrFalseFutureTypeLit, truth)
+        assert result == truth
 
     @given(version=versions())
     def test_version(self, *, version: Version) -> None:

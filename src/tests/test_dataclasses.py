@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from re import DOTALL
 from types import NoneType
-from typing import Any, Literal, cast, override
+from typing import Any, cast, override
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -40,6 +40,8 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureStr,
     DataClassFutureTypeLiteral,
     DataClassFutureTypeLiteralNullable,
+    TrueOrFalseFutureLit,
+    TrueOrFalseFutureTypeLit,
 )
 from utilities.dataclasses import (
     YieldFieldsError,
@@ -66,8 +68,6 @@ from utilities.polars import are_frames_equal
 from utilities.sentinel import sentinel
 from utilities.types import Dataclass, StrMapping
 from utilities.typing import get_args, is_list_type, is_literal_type, is_optional_type
-
-TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
 
 
 class TestDataClassRepr:
@@ -462,21 +462,23 @@ class TestYieldFields:
         assert get_args(result.type_) == (int,)
 
     def test_class_future_literal(self) -> None:
-        result = one(yield_fields(DataClassFutureLiteral))
-        expected = _YieldFieldsClass(name="truth", type_=TruthLit, kw_only=True)
+        result = one(yield_fields(DataClassFutureLiteral, globalns=globals()))
+        expected = _YieldFieldsClass(
+            name="truth", type_=TrueOrFalseFutureLit, kw_only=True
+        )
         assert result == expected
         assert is_literal_type(result.type_)
         assert get_args(result.type_) == ("true", "false")
 
     def test_class_future_literal_nullable(self) -> None:
-        result = one(yield_fields(DataClassFutureLiteralNullable))
+        result = one(yield_fields(DataClassFutureLiteralNullable, globalns=globals()))
         expected = _YieldFieldsClass(
-            name="truth", type_=TruthLit | None, default=None, kw_only=True
+            name="truth", type_=TrueOrFalseFutureLit | None, default=None, kw_only=True
         )
         assert result == expected
         assert is_optional_type(result.type_)
         args = get_args(result.type_)
-        assert args == (Literal["true", "false"],)
+        assert args == (TrueOrFalseFutureLit,)
         arg = one(args)
         assert get_args(arg) == ("true", "false")
 
@@ -491,8 +493,14 @@ class TestYieldFields:
         assert result.type_ is DataClassFutureNestedOuterFirstInner
 
     def test_class_future_type_literal(self) -> None:
-        result = one(yield_fields(DataClassFutureTypeLiteral, globalns=globals()))
-        expected = _YieldFieldsClass(name="truth", type_=TruthLit, kw_only=True)
+        result = one(
+            yield_fields(
+                DataClassFutureTypeLiteral, globalns=globals(), localns=locals()
+            )
+        )
+        expected = _YieldFieldsClass(
+            name="truth", type_=TrueOrFalseFutureTypeLit, kw_only=True
+        )
         assert result == expected
         assert is_literal_type(result.type_)
         assert get_args(result.type_) == ("true", "false")
@@ -502,12 +510,15 @@ class TestYieldFields:
             yield_fields(DataClassFutureTypeLiteralNullable, globalns=globals())
         )
         expected = _YieldFieldsClass(
-            name="truth", type_=TruthLit | None, default=None, kw_only=True
+            name="truth",
+            type_=TrueOrFalseFutureTypeLit | None,
+            default=None,
+            kw_only=True,
         )
         assert result == expected
         assert is_optional_type(result.type_)
         args = get_args(result.type_)
-        assert args == (Literal["true", "false"],)
+        assert args == (TrueOrFalseFutureTypeLit,)
         arg = one(args)
         assert get_args(arg) == ("true", "false")
 

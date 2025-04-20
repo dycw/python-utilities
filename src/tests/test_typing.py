@@ -33,7 +33,10 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureSentinel,
     DataClassFutureStr,
     DataClassFutureTimeDelta,
+    DataClassFutureTypeLiteral,
     DataClassFutureUUID,
+    TrueOrFalseFutureLit,
+    TrueOrFalseFutureTypeLit,
 )
 from utilities.sentinel import Sentinel
 from utilities.types import LogLevel, Parallelism
@@ -163,6 +166,18 @@ class TestGetTypeHints:
         expected = {"ints": list[int]}
         assert hints == expected
 
+    @given(data=data())
+    def test_literal(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            truth: TrueOrFalseFutureLit
+
+        cls = data.draw(sampled_from([Example, DataClassFutureLiteral]))
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globals(), localns=localns)
+        expected = {"truth": TrueOrFalseFutureLit}
+        assert hints == expected
+
     def test_nested_local(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Outer:
@@ -198,19 +213,6 @@ class TestGetTypeHints:
     def test_nested_with_future_outer_then_inner(self) -> None:
         hints = get_type_hints(DataClassFutureNestedOuterFirstOuter, globalns=globals())
         expected = {"inner": DataClassFutureNestedOuterFirstInner}
-        assert hints == expected
-
-    @given(data=data())
-    def test_literal(self, *, data: DataObject) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            truth: Literal["true", "false"]
-
-        cls = data.draw(sampled_from([Example, DataClassFutureLiteral]))
-        globalns = data.draw(just(globals()) | none())
-        localns = data.draw(just(locals()) | none())
-        hints = get_type_hints(cls, globalns=globalns, localns=localns)
-        expected = {"truth": Literal["true", "false"]}
         assert hints == expected
 
     @given(data=data())
@@ -276,6 +278,18 @@ class TestGetTypeHints:
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
         expected = {"timedelta": dt.timedelta}
+        assert hints == expected
+
+    @given(data=data())
+    def test_type_literal(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            truth: TrueOrFalseFutureTypeLit
+
+        cls = data.draw(sampled_from([Example, DataClassFutureTypeLiteral]))
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globals(), localns=localns)
+        expected = {"truth": TrueOrFalseFutureTypeLit}
         assert hints == expected
 
     @given(data=data())

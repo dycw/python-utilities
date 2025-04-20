@@ -43,6 +43,8 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureNestedInnerFirstOuter,
     DataClassFutureNestedOuterFirstOuter,
     DataClassFutureNone,
+    DataClassFutureTypeLiteral,
+    DataClassFutureTypeLiteralNullable,
 )
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -76,6 +78,8 @@ def base_objects(
     dataclass_literal_nullable: bool = False,
     dataclass_nested: bool = False,
     dataclass_none: bool = False,
+    dataclass_type_literal: bool = False,
+    dataclass_type_literal_nullable: bool = False,
     enum: bool = False,
     exception_class: bool = False,
     exception_instance: bool = False,
@@ -132,6 +136,15 @@ def base_objects(
         )
     if dataclass_none:
         base |= builds(DataClassFutureNone)
+    if dataclass_type_literal:
+        base |= builds(
+            DataClassFutureTypeLiteral, truth=sampled_from(["true", "false"])
+        )
+    if dataclass_type_literal_nullable:
+        base |= builds(
+            DataClassFutureTypeLiteralNullable,
+            truth=sampled_from(["true", "false"]) | none(),
+        )
     if enum:
         base |= sampled_from(TruthEnum)
     if exception_class:
@@ -151,6 +164,8 @@ def make_objects(
     dataclass_literal_nullable: bool = False,
     dataclass_nested: bool = False,
     dataclass_none: bool = False,
+    dataclass_type_literal: bool = False,
+    dataclass_type_literal_nullable: bool = False,
     enum: bool = False,
     exception_class: bool = False,
     exception_instance: bool = False,
@@ -173,6 +188,8 @@ def make_objects(
         dataclass_literal_nullable=dataclass_literal_nullable,
         dataclass_nested=dataclass_nested,
         dataclass_none=dataclass_none,
+        dataclass_type_literal=dataclass_type_literal,
+        dataclass_type_literal_nullable=dataclass_type_literal_nullable,
         enum=enum,
         exception_class=exception_class,
         exception_instance=exception_instance,
@@ -272,6 +289,8 @@ class TestIsEqual:
             dataclass_literal_nullable=True,
             dataclass_nested=True,
             dataclass_none=True,
+            dataclass_type_literal=True,
+            dataclass_type_literal_nullable=True,
             enum=True,
             sub_frozenset=True,
             sub_list=True,
@@ -287,12 +306,15 @@ class TestIsEqual:
         objs=pairs(
             make_objects(
                 dataclass_custom_equality=True,
+                dataclass_default_in_init_child=True,
                 dataclass_int=True,
                 dataclass_int_default=True,
                 dataclass_literal=True,
                 dataclass_literal_nullable=True,
                 dataclass_nested=True,
                 dataclass_none=True,
+                dataclass_type_literal=True,
+                dataclass_type_literal_nullable=True,
                 enum=True,
                 sub_frozenset=True,
                 sub_list=True,

@@ -1,4 +1,8 @@
 from dataclasses import dataclass
+from typing import Literal
+
+TrueOrFalseNoFutureLit = Literal["true", "false"]
+type TrueOrFalseNoFutureTypeLit = Literal["true", "false"]
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
