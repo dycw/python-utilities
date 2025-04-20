@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from uuid import UUID
 
-    from tests.test_typing import TrueOrFalseLit, TrueOrFalseLitType
+    from tests.test_typing import TrueOrFalseLit, TrueOrFalseTypeLit
     from utilities.sentinel import Sentinel
 
 
@@ -128,12 +128,12 @@ class DataClassFutureTimeDelta:
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureTypeLiteral:
-    truth: TrueOrFalseLitType
+    truth: TrueOrFalseTypeLit
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureTypeLiteralNullable:
-    truth: TrueOrFalseLitType | None = None
+    truth: TrueOrFalseTypeLit | None = None
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)

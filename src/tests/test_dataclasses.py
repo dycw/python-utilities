@@ -18,7 +18,7 @@ from hypothesis.strategies import (
     sampled_from,
 )
 from polars import DataFrame
-from pytest import raises
+from pytest import mark, raises
 
 from tests.test_typing import TrueOrFalseLit, TrueOrFalseTypeLit
 from tests.test_typing_funcs.no_future import (
@@ -489,8 +489,14 @@ class TestYieldFields:
         assert result == expected
         assert result.type_ is DataClassFutureNestedOuterFirstInner
 
+    @mark.only
     def test_class_future_type_literal(self) -> None:
-        result = one(yield_fields(DataClassFutureTypeLiteral, globalns=globals()))
+        _ = TrueOrFalseTypeLit
+        result = one(
+            yield_fields(
+                DataClassFutureTypeLiteral, globalns=globals(), localns=locals()
+            )
+        )
         expected = _YieldFieldsClass(
             name="truth", type_=TrueOrFalseTypeLit, kw_only=True
         )
