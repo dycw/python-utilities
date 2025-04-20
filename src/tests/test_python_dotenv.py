@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from re import DOTALL
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data, integers, sampled_from
@@ -14,9 +14,8 @@ from utilities.hypothesis import git_repos, settings_with_reduced_examples, text
 from utilities.os import temp_environ
 from utilities.python_dotenv import (
     _LoadSettingsDuplicateKeysError,
-    _LoadSettingsEmptyError,
     _LoadSettingsFileNotFoundError,
-    _LoadSettingsParseTextError,
+    _LoadSettingsMissingKeysError,
     load_settings,
 )
 
@@ -87,22 +86,6 @@ class TestLoadSettings:
         expected = Settings(key=value)
         assert settings == expected
 
-    @given(root=git_repos(), value=sampled_from(["true", "false"]))
-    @settings_with_reduced_examples()
-    def test_literal_value(
-        self, *, root: Path, value: Literal["true", "false"]
-    ) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: Literal["true", "false"]
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write(f"key = {value}\n")
-
-        settings = load_settings(Settings, cwd=root)
-        expected = Settings(key=value)
-        assert settings == expected
-
     @given(root=git_repos())
     @settings_with_reduced_examples()
     def test_error_file_not_found(self, *, root: Path) -> None:
@@ -135,7 +118,7 @@ class TestLoadSettings:
 
     @given(root=git_repos())
     @settings_with_reduced_examples()
-    def test_error_field_missing(self, *, root: Path) -> None:
+    def test_error_missing_keys(self, *, root: Path) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
             key: str
@@ -143,22 +126,7 @@ class TestLoadSettings:
         root.joinpath(".env").touch()
 
         with raises(
-            _LoadSettingsEmptyError, match=r"Field 'key' must exist \(modulo case\)"
-        ):
-            _ = load_settings(Settings, cwd=root)
-
-    @given(root=git_repos())
-    @settings_with_reduced_examples()
-    def test_error_parse_text(self, *, root: Path) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: int
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write("key = '...'\n")
-
-        with raises(
-            _LoadSettingsParseTextError,
-            match=r"Unable to parse field 'key' of type <class 'int'>; got '...'",
+            _LoadSettingsMissingKeysError,
+            match=r"Unable to load '.*'; missing value\(s\) for 'key'",
         ):
             _ = load_settings(Settings, cwd=root)
