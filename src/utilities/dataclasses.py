@@ -192,50 +192,16 @@ def mapping_to_dataclass(
     allow_extra: bool = False,
 ) -> TDataclass:
     """Construct a dataclass from a mapping."""
-    fields = list(yield_fields(cls, globalns=globalns, localns=localns))
-    keys_to_fields: Mapping[str, _YieldFieldsClass[Any]] = {}
-    for key in mapping:
-        try:
-            keys_to_fields[key] = one_field(
-                cls,
-                key,
-                fields=fields,
-                globalns=globalns,
-                localns=localns,
-                head=head,
-                case_sensitive=case_sensitive,
-            )
-        except OneFieldEmptyError:
-            if not allow_extra:
-                raise MappingToDataclassError(
-                    cls=cls, key=key, head=head, case_sensitive=case_sensitive
-                ) from None
-    mapping_use = {field.name: mapping[key] for key, field in keys_to_fields.items()}
-    return cls(**mapping_use)
-
-
-@dataclass(kw_only=True, slots=True)
-class MappingToDataclassError(Exception):
-    cls: type[Dataclass]
-    key: str
-    head: bool = False
-    case_sensitive: bool = False
-
-    @override
-    def __str__(self) -> str:
-        head = f"Dataclass {get_class_name(self.cls)!r} does not contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                tail = f"a field {self.key!r}"
-            case False, False:
-                tail = f"a field {self.key!r} (modulo case)"
-            case True, True:
-                tail = f"any field starting with {self.key!r}"
-            case True, False:
-                tail = f"any field starting with {self.key!r} (modulo case)"
-            case _ as never:
-                assert_never(never)
-        return f"{head} {tail}"
+    field_mapping = str_mapping_to_field_mapping(
+        cls,
+        mapping,
+        globalns=globalns,
+        localns=localns,
+        head=head,
+        case_sensitive=case_sensitive,
+        allow_extra=allow_extra,
+    )
+    return cls(**{f.name: v for f, v in field_mapping.items()})
 
 
 ##
@@ -431,7 +397,6 @@ def text_to_dataclass(
     allow_extra: bool = False,
 ) -> TDataclass:
     """Construct a dataclass from a string or a mapping or strings."""
-    fields = list(yield_fields(cls, globalns=globalns, localns=localns))
     match text_or_mapping:
         case str() as text:
             text_mapping = _text_to_dataclass_split_text(text, cls)
@@ -439,19 +404,20 @@ def text_to_dataclass(
             ...
         case _ as never:
             assert_never(never)
-    value_mapping = dict(
-        _text_to_dataclass_get_and_parse(
-            fields, key, value, cls, case_sensitive=case_sensitive
-        )
-        for key, value in text_mapping.items()
-    )
-    return mapping_to_dataclass(
+    field_to_text_mapping = str_mapping_to_field_mapping(
         cls,
-        value_mapping,
+        text_mapping,
         globalns=globalns,
         localns=localns,
+        head=head,
         case_sensitive=case_sensitive,
+        allow_extra=allow_extra,
     )
+    field_to_value_mapping = {
+        f: _text_to_dataclass_parse(f, t, cls, case_sensitive=case_sensitive)
+        for f, t in field_to_text_mapping.items()
+    }
+    return cls(**{f.name: v for f, v in field_to_value_mapping.items()})
 
 
 def _text_to_dataclass_split_text(
@@ -471,38 +437,18 @@ def _text_to_dataclass_split_key_value_pair(
     return key, value
 
 
-def _text_to_dataclass_get_and_parse(
-    fields: Iterable[_YieldFieldsClass[Any]],
-    key: str,
-    value: str,
+def _text_to_dataclass_parse(
+    field: _YieldFieldsClass[Any],
+    text: str,
     cls: type[Dataclass],
     /,
     *,
     case_sensitive: bool = False,
-) -> tuple[str, Any]:
-    mapping = {f.name: f for f in fields}
+) -> Any:
     try:
-        name = one_str(mapping, key, head=True, case_sensitive=case_sensitive)
-    except OneStrEmptyError:
-        raise _TextToDataClassGetFieldEmptyError(
-            cls=cls, key=key, case_sensitive=case_sensitive
-        ) from None
-    except OneStrNonUniqueError as error:
-        raise _TextToDataClassGetFieldNonUniqueError(
-            cls=cls,
-            key=key,
-            case_sensitive=case_sensitive,
-            first=error.first,
-            second=error.second,
-        ) from None
-    field = mapping[name]
-    try:
-        parsed = parse_text(field.type_, value, case_sensitive=case_sensitive)
+        return parse_text(field.type_, text, case_sensitive=case_sensitive)
     except ParseTextError:
-        raise _TextToDataClassParseValueError(
-            cls=cls, field=field, text=value
-        ) from None
-    return key, parsed
+        raise _TextToDataClassParseValueError(cls=cls, field=field, text=text) from None
 
 
 @dataclass(kw_only=True, slots=True)
@@ -685,7 +631,6 @@ class YieldFieldsError(Exception):
 ##
 
 __all__ = [
-    "MappingToDataclassError",
     "OneFieldEmptyError",
     "OneFieldError",
     "OneFieldNonUniqueError",

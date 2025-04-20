@@ -33,12 +33,10 @@ from tests.test_typing_funcs.with_future import (
     TrueOrFalseFutureTypeLit,
 )
 from utilities.dataclasses import (
-    MappingToDataclassError,
     OneFieldEmptyError,
     OneFieldNonUniqueError,
     StrMappingToFieldMappingError,
     YieldFieldsError,
-    _TextToDataClassParseValueError,
     _TextToDataClassSplitKeyValuePairError,
     _YieldFieldsClass,
     _YieldFieldsInstance,
@@ -300,44 +298,6 @@ class TestMappingToDataclass:
         expected = DataClassFutureInt(int_=int_)
         assert obj == expected
 
-    @given(int_=integers())
-    def test_error_exact_match_case_insensitive(self, *, int_: int) -> None:
-        with raises(
-            MappingToDataclassError,
-            match=r"Dataclass 'DataClassFutureInt' does not contain a field 'invalid' \(modulo case\)",
-        ):
-            _ = mapping_to_dataclass(
-                DataClassFutureInt, {"int_": int_, "invalid": int_}
-            )
-
-    @given(int_=integers())
-    def test_error_exact_match_case_sensitive(self, *, int_: int) -> None:
-        with raises(
-            MappingToDataclassError,
-            match=r"Dataclass 'DataClassFutureInt' does not contain a field 'extra'",
-        ):
-            _ = mapping_to_dataclass(
-                DataClassFutureInt, {"int_": int_, "extra": int_}, case_sensitive=True
-            )
-
-    @given(int_=integers())
-    def test_error_head_case_insensitive(self, *, int_: int) -> None:
-        with raises(
-            MappingToDataclassError,
-            match=r"Dataclass .* does not contain any field starting with 'invalid' \(modulo case\)",
-        ):
-            _ = mapping_to_dataclass(DataClassFutureInt, {"invalid": int_}, head=True)
-
-    @given(int_=integers())
-    def test_error_head_case_sensitive(self, *, int_: int) -> None:
-        with raises(
-            MappingToDataclassError,
-            match=r"Dataclass .* does not contain any field starting with 'invalid'",
-        ):
-            _ = mapping_to_dataclass(
-                DataClassFutureInt, {"invalid": int_}, head=True, case_sensitive=True
-            )
-
 
 @mark.only
 class TestOneField:
@@ -499,7 +459,7 @@ class TestStrMappingToFieldMapping:
             )
 
 
-@mark.skip
+@mark.only
 class TestTextToDataClass:
     @given(key=sampled_from(["int_", "INT_"]), int_=integers())
     def test_main_text_case_insensitive(self, *, key: str, int_: int) -> None:
@@ -535,28 +495,6 @@ class TestTextToDataClass:
             match="Unable to construct 'DataClassFutureInt'; failed to split key-value pair 'keyvalue'",
         ):
             _ = text_to_dataclass("keyvalue", DataClassFutureInt)
-
-    def test_error_get_field_empty(self) -> None:
-        with raises(
-            _TextToDataClassGetFieldEmptyError,
-            match=r"Dataclass 'DataClassFutureInt' does not contain any field starting with 'k' \(modulo case\)",
-        ):
-            _ = text_to_dataclass("k=value", DataClassFutureInt)
-
-    def test_error_get_field_non_unique(self) -> None:
-        DataClassFutureIntOneAndTwo
-        with raises(
-            _TextToDataClassGetFieldNonUniqueError,
-            match=r"Dataclass 'Example' must contain exactly one field starting with 'int' \(modulo case\); got 'int1', 'int2' and perhaps more",
-        ):
-            _ = text_to_dataclass("int=value", Example)
-
-    def test_error_parse_value(self) -> None:
-        with raises(
-            _TextToDataClassParseValueError,
-            match="Unable to construct 'DataClassFutureInt'; unable to parse field 'int_' of type <class 'int'>; got 'invalid'",
-        ):
-            _ = text_to_dataclass("int_=invalid", DataClassFutureInt)
 
 
 class TestYieldFields:

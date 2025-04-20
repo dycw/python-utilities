@@ -26,6 +26,7 @@ def load_settings(
     cwd: PathLike = PWD,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    head: bool = False,
     case_sensitive: bool = False,
 ) -> TDataclass:
     """Load a set of settings from the `.env` file."""
@@ -43,7 +44,13 @@ def load_settings(
         ) from None
     values = {k: v for k, v in maybe_values.items() if v is not None}
     return text_to_dataclass(
-        values, cls, globalns=globalns, localns=localns, case_sensitive=case_sensitive
+        values,
+        cls,
+        globalns=globalns,
+        localns=localns,
+        head=head,
+        case_sensitive=case_sensitive,
+        allow_extra=True,
     )
 
 
