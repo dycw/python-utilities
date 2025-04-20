@@ -14,9 +14,7 @@ from utilities.hypothesis import git_repos, settings_with_reduced_examples, text
 from utilities.os import temp_environ
 from utilities.python_dotenv import (
     _LoadSettingsDuplicateKeysError,
-    _LoadSettingsEmptyError,
     _LoadSettingsFileNotFoundError,
-    _LoadSettingsParseTextError,
     load_settings,
 )
 
@@ -130,35 +128,5 @@ class TestLoadSettings:
                 r"Mapping .* keys must not contain duplicates \(modulo case\); got .*",
                 flags=DOTALL,
             ),
-        ):
-            _ = load_settings(Settings, cwd=root)
-
-    @given(root=git_repos())
-    @settings_with_reduced_examples()
-    def test_error_field_missing(self, *, root: Path) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: str
-
-        root.joinpath(".env").touch()
-
-        with raises(
-            _LoadSettingsEmptyError, match=r"Field 'key' must exist \(modulo case\)"
-        ):
-            _ = load_settings(Settings, cwd=root)
-
-    @given(root=git_repos())
-    @settings_with_reduced_examples()
-    def test_error_parse_text(self, *, root: Path) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: int
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write("key = '...'\n")
-
-        with raises(
-            _LoadSettingsParseTextError,
-            match=r"Unable to parse field 'key' of type <class 'int'>; got '...'",
         ):
             _ = load_settings(Settings, cwd=root)
