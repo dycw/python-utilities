@@ -35,6 +35,8 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureTimeDelta,
     DataClassFutureTypeLiteral,
     DataClassFutureUUID,
+    TrueOrFalseFutureLit,
+    TrueOrFalseFutureTypeLit,
 )
 from utilities.sentinel import Sentinel
 from utilities.types import LogLevel, Parallelism
@@ -58,10 +60,6 @@ from utilities.typing import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-
-TrueOrFalseLit = Literal["true", "false"]
-type TrueOrFalseTypeLit = Literal["true", "false"]
 
 
 class TestContainsSelf:
@@ -172,12 +170,12 @@ class TestGetTypeHints:
     def test_literal(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            truth: TrueOrFalseLit
+            truth: TrueOrFalseFutureLit
 
         cls = data.draw(sampled_from([Example, DataClassFutureLiteral]))
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globals(), localns=localns)
-        expected = {"truth": Literal["true", "false"]}
+        expected = {"truth": TrueOrFalseFutureLit}
         assert hints == expected
 
     def test_nested_local(self) -> None:
@@ -284,16 +282,14 @@ class TestGetTypeHints:
 
     @given(data=data())
     def test_type_literal(self, *, data: DataObject) -> None:
-        _ = {TrueOrFalseTypeLit}
-
         @dataclass(kw_only=True, slots=True)
         class Example:
-            truth: TrueOrFalseTypeLit
+            truth: TrueOrFalseFutureTypeLit
 
         cls = data.draw(sampled_from([Example, DataClassFutureTypeLiteral]))
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globals(), localns=localns)
-        expected = {"truth": TrueOrFalseTypeLit}
+        expected = {"truth": TrueOrFalseFutureTypeLit}
         assert hints == expected
 
     @given(data=data())
