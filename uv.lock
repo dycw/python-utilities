@@ -732,7 +732,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.108.3"
+version = "0.108.4"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },
@@ -1068,7 +1068,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", marker = "extra == 'zzz-test-slack-sdk'", specifier = ">=3.11.16,<3.12" },
+    { name = "aiohttp", marker = "extra == 'zzz-test-slack-sdk'", specifier = ">=3.11.17,<3.12" },
     { name = "aiosqlite", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=0.21.0,<0.22" },
     { name = "aiosqlite", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=0.21.0,<0.22" },
     { name = "aiosqlite", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=0.21.0,<0.22" },
@@ -1113,9 +1113,9 @@ requires-dist = [
     { name = "more-itertools", marker = "extra == 'zzz-test-more-itertools'", specifier = ">=10.6.0,<10.7" },
     { name = "nest-asyncio", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=1.6.0,<1.7" },
     { name = "nest-asyncio", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=1.6.0,<1.7" },
-    { name = "numpy", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=2.2.4,<2.3" },
-    { name = "numpy", marker = "extra == 'zzz-test-math'", specifier = ">=2.2.4,<2.3" },
-    { name = "numpy", marker = "extra == 'zzz-test-numpy'", specifier = ">=2.2.4,<2.3" },
+    { name = "numpy", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=2.2.5,<2.3" },
+    { name = "numpy", marker = "extra == 'zzz-test-math'", specifier = ">=2.2.5,<2.3" },
+    { name = "numpy", marker = "extra == 'zzz-test-numpy'", specifier = ">=2.2.5,<2.3" },
     { name = "optuna", marker = "extra == 'zzz-test-optuna'", specifier = ">=4.3.0,<4.4" },
     { name = "orjson", marker = "extra == 'zzz-test-dataclasses'", specifier = ">=3.10.15,<3.11" },
     { name = "orjson", marker = "extra == 'zzz-test-hashlib'", specifier = ">=3.10.15,<3.11" },
@@ -1220,7 +1220,7 @@ provides-extras = ["test", "zzz-test-altair", "zzz-test-astor", "zzz-test-asynci
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "aiohttp", specifier = ">=3.11.16,<3.12" },
+    { name = "aiohttp", specifier = ">=3.11.17,<3.12" },
     { name = "aiosqlite", specifier = ">=0.21.0,<0.22" },
     { name = "altair", specifier = ">=5.5.0,<5.6" },
     { name = "astor", specifier = ">=0.8.1,<0.9" },
@@ -1248,7 +1248,7 @@ dev = [
     { name = "more-itertools", specifier = ">=10.6.0,<10.7" },
     { name = "nest-asyncio", specifier = ">=1.6.0,<1.7" },
     { name = "nox", specifier = ">=2025.2.9,<2025.3" },
-    { name = "numpy", specifier = ">=2.2.4,<2.3" },
+    { name = "numpy", specifier = ">=2.2.5,<2.3" },
     { name = "optuna", specifier = ">=4.3.0,<4.4" },
     { name = "orjson", specifier = ">=3.10.16,<3.11" },
     { name = "pathvalidate", specifier = ">=3.2.3,<3.3" },

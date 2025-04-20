@@ -1,7 +1,17 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import MISSING, dataclass, field, fields, replace
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Literal,
+    TypeVar,
+    assert_never,
+    overload,
+    override,
+)
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
@@ -11,14 +21,16 @@ from utilities.functions import (
 )
 from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
+from utilities.parse import ParseTextError, parse_text
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import TDataclass
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Mapping
+    from collections.abc import Callable, Iterable, Iterator
 
-    from utilities.types import Dataclass, StrMapping, TDataclass
+    from utilities.types import Dataclass, StrMapping
 
 
 _T = TypeVar("_T")
@@ -118,7 +130,7 @@ def dataclass_to_dict(
     recursive: bool = False,
 ) -> StrMapping:
     """Convert a dataclass to a dictionary."""
-    out: dict[str, Any] = {}
+    out: StrMapping = {}
     for fld in yield_fields(obj, globalns=globalns, localns=localns):
         if fld.keep(
             include=include,
@@ -233,9 +245,7 @@ class _MappingToDataclassEmptyError(MappingToDataclassError):
     @override
     def __str__(self) -> str:
         desc = f"Mapping {get_repr(self.mapping)} does not contain {self.field!r}"
-        if not self.case_sensitive:
-            desc += " (modulo case)"
-        return desc
+        return desc if self.case_sensitive else f"{desc} (modulo case)"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -275,6 +285,142 @@ def replace_non_sentinel(
     return replace(
         obj, **{k: v for k, v in kwargs.items() if not isinstance(v, Sentinel)}
     )
+
+
+##
+
+
+def text_to_dataclass(
+    text_or_mapping: str | Mapping[str, str],
+    cls: type[TDataclass],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    case_sensitive: bool = False,
+) -> TDataclass:
+    """Construct a dataclass from a string or a mapping or strings."""
+    fields = list(yield_fields(cls, globalns=globalns, localns=localns))
+    match text_or_mapping:
+        case str() as text:
+            text_mapping = _text_to_dataclass_split_text(text, cls)
+        case Mapping() as text_mapping:
+            ...
+        case _ as never:
+            assert_never(never)
+    value_mapping = dict(
+        _text_to_dataclass_get_and_parse(
+            fields, key, value, cls, case_sensitive=case_sensitive
+        )
+        for key, value in text_mapping.items()
+    )
+    return mapping_to_dataclass(
+        cls,
+        value_mapping,
+        globalns=globalns,
+        localns=localns,
+        case_sensitive=case_sensitive,
+    )
+
+
+def _text_to_dataclass_split_text(
+    text: str, cls: type[TDataclass], /
+) -> Mapping[str, str]:
+    pairs = (t for t in text.split(",") if t != "")
+    return dict(_text_to_dataclass_split_key_value_pair(pair, cls) for pair in pairs)
+
+
+def _text_to_dataclass_split_key_value_pair(
+    text: str, cls: type[Dataclass], /
+) -> tuple[str, str]:
+    try:
+        key, value = text.split("=")
+    except ValueError:
+        raise _TextToDataClassSplitKeyValuePairError(cls=cls, text=text) from None
+    return key, value
+
+
+def _text_to_dataclass_get_and_parse(
+    fields: Iterable[_YieldFieldsClass[Any]],
+    key: str,
+    value: str,
+    cls: type[Dataclass],
+    /,
+    *,
+    case_sensitive: bool = False,
+) -> tuple[str, Any]:
+    mapping = {f.name: f for f in fields}
+    try:
+        name = one_str(mapping, key, head=True, case_sensitive=case_sensitive)
+    except OneStrEmptyError:
+        raise _TextToDataClassGetFieldEmptyError(
+            cls=cls, key=key, case_sensitive=case_sensitive
+        ) from None
+    except OneStrNonUniqueError as error:
+        raise _TextToDataClassGetFieldNonUniqueError(
+            cls=cls,
+            key=key,
+            case_sensitive=case_sensitive,
+            first=error.first,
+            second=error.second,
+        ) from None
+    field = mapping[name]
+    try:
+        parsed = parse_text(field.type_, value, case_sensitive=case_sensitive)
+    except ParseTextError:
+        raise _TextToDataClassParseValueError(
+            cls=cls, field=field, text=value
+        ) from None
+    return key, parsed
+
+
+@dataclass(kw_only=True, slots=True)
+class TextToDataClassError(Exception, Generic[TDataclass]):
+    cls: type[TDataclass]
+
+
+@dataclass(kw_only=True, slots=True)
+class _TextToDataClassSplitKeyValuePairError(TextToDataClassError):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to construct {get_class_name(self.cls)!r}; failed to split key-value pair {self.text!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _TextToDataClassGetFieldEmptyError(TextToDataClassError[TDataclass]):
+    key: str
+    case_sensitive: bool = False
+
+    @override
+    def __str__(self) -> str:
+        desc = f"Dataclass {get_class_name(self.cls)!r} does not contain any field starting with {self.key!r}"
+        return desc if self.case_sensitive else f"{desc} (modulo case)"
+
+
+@dataclass(kw_only=True, slots=True)
+class _TextToDataClassGetFieldNonUniqueError(TextToDataClassError[TDataclass]):
+    key: str
+    case_sensitive: bool = False
+    first: str
+    second: str
+
+    @override
+    def __str__(self) -> str:
+        head = f"Dataclass {get_class_name(self.cls)!r} must contain exactly one field starting with {self.key!r}"
+        mid = "" if self.case_sensitive else " (modulo case)"
+        return f"{head}{mid}; got {self.first!r}, {self.second!r} and perhaps more"
+
+
+@dataclass(kw_only=True, slots=True)
+class _TextToDataClassParseValueError(TextToDataClassError[TDataclass]):
+    field: _YieldFieldsClass[Any]
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to construct {get_class_name(self.cls)!r}; unable to parse field {self.field.name!r} of type {self.field.type_!r}; got {self.text!r}"
 
 
 ##
@@ -346,18 +492,18 @@ def yield_fields(
         raise YieldFieldsError(obj=obj)
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
 class _YieldFieldsInstance(Generic[_T]):
     name: str
-    value: _T
-    type_: Any
-    default: _T | Sentinel = sentinel
-    default_factory: Callable[[], _T] | Sentinel = sentinel
+    value: _T = field(hash=False)
+    type_: Any = field(hash=False)
+    default: _T | Sentinel = field(default=sentinel, hash=False)
+    default_factory: Callable[[], _T] | Sentinel = field(default=sentinel, hash=False)
     repr: bool = True
     hash_: bool | None = None
     init: bool = True
     compare: bool = True
-    metadata: StrMapping = field(default_factory=dict)
+    metadata: StrMapping = field(default_factory=dict, hash=False)
     kw_only: bool | Sentinel = sentinel
 
     def equals_default(
@@ -407,17 +553,17 @@ class _YieldFieldsInstance(Generic[_T]):
         return (defaults and equal) or not equal
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
 class _YieldFieldsClass(Generic[_T]):
     name: str
-    type_: Any
-    default: _T | Sentinel = sentinel
-    default_factory: Callable[[], _T] | Sentinel = sentinel
+    type_: Any = field(hash=False)
+    default: _T | Sentinel = field(default=sentinel, hash=False)
+    default_factory: Callable[[], _T] | Sentinel = field(default=sentinel, hash=False)
     repr: bool = True
     hash_: bool | None = None
     init: bool = True
     compare: bool = True
-    metadata: StrMapping = field(default_factory=dict)
+    metadata: StrMapping = field(default_factory=dict, hash=False)
     kw_only: bool | Sentinel = sentinel
 
 
@@ -434,10 +580,12 @@ class YieldFieldsError(Exception):
 
 __all__ = [
     "MappingToDataclassError",
+    "TextToDataClassError",
     "YieldFieldsError",
     "dataclass_repr",
     "dataclass_to_dict",
     "mapping_to_dataclass",
     "replace_non_sentinel",
+    "text_to_dataclass",
     "yield_fields",
 ]

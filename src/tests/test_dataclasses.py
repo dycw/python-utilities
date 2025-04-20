@@ -45,12 +45,17 @@ from utilities.dataclasses import (
     YieldFieldsError,
     _MappingToDataclassCaseInsensitiveNonUniqueError,
     _MappingToDataclassEmptyError,
+    _TextToDataClassGetFieldEmptyError,
+    _TextToDataClassGetFieldNonUniqueError,
+    _TextToDataClassParseValueError,
+    _TextToDataClassSplitKeyValuePairError,
     _YieldFieldsClass,
     _YieldFieldsInstance,
     dataclass_repr,
     dataclass_to_dict,
     mapping_to_dataclass,
     replace_non_sentinel,
+    text_to_dataclass,
     yield_fields,
 )
 from utilities.functions import get_class_name
@@ -63,6 +68,43 @@ from utilities.types import Dataclass, StrMapping
 from utilities.typing import get_args, is_list_type, is_literal_type, is_optional_type
 
 TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
+
+
+class TestDataClassRepr:
+    def test_overriding_repr(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example(DataClassFutureIntDefault):
+            @override
+            def __repr__(self) -> str:
+                return dataclass_repr(self)
+
+        obj = Example()
+        result = repr(obj)
+        expected = "Example()"
+        assert result == expected
+
+    def test_overriding_repr_defaults(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(DataClassFutureIntDefault):
+            @override
+            def __repr__(self) -> str:
+                return dataclass_repr(self, defaults=True)
+
+        obj = Example()
+        result = repr(obj)
+        expected = "Example(int_=0)"
+        assert result == expected
+
+    @given(x=integers())
+    def test_non_repr_field(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = field(default=0, repr=False)
+
+        obj = Example(x=x)
+        result = dataclass_repr(obj)
+        expected = "Example()"
+        assert result == expected
 
 
 class TestDataclassToDictAndDataclassRepr:
@@ -328,31 +370,51 @@ class TestReplaceNonSentinel:
         assert obj.int_ == 1
 
 
-class TestReprWithoutDefaults:
-    def test_overriding_repr(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int = 0
-
-            @override
-            def __repr__(self) -> str:
-                return dataclass_repr(self)
-
-        obj = Example()
-        result = repr(obj)
-        expected = "Example()"
+class TestTextToDataClass:
+    @given(int_=integers())
+    def test_main_text(self, *, int_: int) -> None:
+        result = text_to_dataclass(f"int_={int_}", DataClassFutureInt)
+        expected = DataClassFutureInt(int_=int_)
         assert result == expected
 
-    @given(x=integers())
-    def test_non_repr_field(self, *, x: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int = field(default=0, repr=False)
-
-        obj = Example(x=x)
-        result = dataclass_repr(obj)
-        expected = "Example()"
+    @given(int_=integers())
+    def test_main_mapping(self, *, int_: int) -> None:
+        result = text_to_dataclass({"int_": str(int_)}, DataClassFutureInt)
+        expected = DataClassFutureInt(int_=int_)
         assert result == expected
+
+    def test_error_split_key_value_pair(self) -> None:
+        with raises(
+            _TextToDataClassSplitKeyValuePairError,
+            match="Unable to construct 'DataClassFutureInt'; failed to split key-value pair 'keyvalue'",
+        ):
+            _ = text_to_dataclass("keyvalue", DataClassFutureInt)
+
+    def test_error_get_field_empty(self) -> None:
+        with raises(
+            _TextToDataClassGetFieldEmptyError,
+            match=r"Dataclass 'DataClassFutureInt' does not contain any field starting with 'k' \(modulo case\)",
+        ):
+            _ = text_to_dataclass("k=value", DataClassFutureInt)
+
+    def test_error_get_field_non_unique(self) -> None:
+        @dataclass(order=True, unsafe_hash=True, kw_only=True)
+        class Example:
+            int1: int
+            int2: int
+
+        with raises(
+            _TextToDataClassGetFieldNonUniqueError,
+            match=r"Dataclass 'Example' must contain exactly one field starting with 'int' \(modulo case\); got 'int1', 'int2' and perhaps more",
+        ):
+            _ = text_to_dataclass("int=value", Example)
+
+    def test_error_parse_value(self) -> None:
+        with raises(
+            _TextToDataClassParseValueError,
+            match="Unable to construct 'DataClassFutureInt'; unable to parse field 'int_' of type <class 'int'>; got 'invalid'",
+        ):
+            _ = text_to_dataclass("int_=invalid", DataClassFutureInt)
 
 
 class TestYieldFields:
