@@ -359,6 +359,66 @@ def replace_non_sentinel(
 ##
 
 
+def str_mapping_to_field_mapping(
+    cls: type[TDataclass],
+    mapping: Mapping[str, _T],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    head: bool = False,
+    case_sensitive: bool = False,
+    allow_extra: bool = False,
+) -> Mapping[_YieldFieldsClass[Any], _T]:
+    """Convert a string-mapping into a field-mapping."""
+    fields = list(yield_fields(cls, globalns=globalns, localns=localns))
+    keys_to_fields: Mapping[str, _YieldFieldsClass[Any]] = {}
+    for key in mapping:
+        try:
+            keys_to_fields[key] = one_field(
+                cls,
+                key,
+                fields=fields,
+                globalns=globalns,
+                localns=localns,
+                head=head,
+                case_sensitive=case_sensitive,
+            )
+        except OneFieldEmptyError:
+            if not allow_extra:
+                raise StrMappingToFieldMappingError(
+                    cls=cls, key=key, head=head, case_sensitive=case_sensitive
+                ) from None
+    return {field: mapping[key] for key, field in keys_to_fields.items()}
+
+
+@dataclass(kw_only=True, slots=True)
+class StrMappingToFieldMappingError(Exception):
+    cls: type[Dataclass]
+    key: str
+    head: bool = False
+    case_sensitive: bool = False
+
+    @override
+    def __str__(self) -> str:
+        head = f"Dataclass {get_class_name(self.cls)!r} does not contain"
+        match self.head, self.case_sensitive:
+            case False, True:
+                tail = f"a field {self.key!r}"
+            case False, False:
+                tail = f"a field {self.key!r} (modulo case)"
+            case True, True:
+                tail = f"any field starting with {self.key!r}"
+            case True, False:
+                tail = f"any field starting with {self.key!r} (modulo case)"
+            case _ as never:
+                assert_never(never)
+        return f"{head} {tail}"
+
+
+##
+
+
 def text_to_dataclass(
     text_or_mapping: str | Mapping[str, str],
     cls: type[TDataclass],
@@ -366,7 +426,9 @@ def text_to_dataclass(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    head: bool = False,
     case_sensitive: bool = False,
+    allow_extra: bool = False,
 ) -> TDataclass:
     """Construct a dataclass from a string or a mapping or strings."""
     fields = list(yield_fields(cls, globalns=globalns, localns=localns))
@@ -627,6 +689,7 @@ __all__ = [
     "OneFieldEmptyError",
     "OneFieldError",
     "OneFieldNonUniqueError",
+    "StrMappingToFieldMappingError",
     "TextToDataClassError",
     "YieldFieldsError",
     "dataclass_repr",
@@ -634,6 +697,7 @@ __all__ = [
     "mapping_to_dataclass",
     "one_field",
     "replace_non_sentinel",
+    "str_mapping_to_field_mapping",
     "text_to_dataclass",
     "yield_fields",
 ]
