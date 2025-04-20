@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from re import DOTALL
 from types import NoneType
 from typing import Any, cast, override
 
@@ -19,6 +17,8 @@ from tests.test_typing_funcs.no_future import (
 from tests.test_typing_funcs.with_future import (
     DataClassFutureInt,
     DataClassFutureIntDefault,
+    DataClassFutureIntLowerAndUpper,
+    DataClassFutureIntOneAndTwo,
     DataClassFutureListInts,
     DataClassFutureListIntsDefault,
     DataClassFutureLiteral,
@@ -34,6 +34,8 @@ from tests.test_typing_funcs.with_future import (
 )
 from utilities.dataclasses import (
     MappingToDataclassError,
+    OneFieldEmptyError,
+    OneFieldNonUniqueError,
     YieldFieldsError,
     _TextToDataClassParseValueError,
     _TextToDataClassSplitKeyValuePairError,
@@ -42,6 +44,7 @@ from utilities.dataclasses import (
     dataclass_repr,
     dataclass_to_dict,
     mapping_to_dataclass,
+    one_field,
     replace_non_sentinel,
     text_to_dataclass,
     yield_fields,
@@ -326,39 +329,26 @@ class TestMappingToDataclass:
 
 @mark.only
 class TestOneField:
-    @given(value=integers())
-    def test_error_exact_match_case_insensitive_empty_error(
-        self, *, value: int
-    ) -> None:
+    def test_error_exact_match_case_insensitive_empty_error(self) -> None:
         with raises(
-            _MappingToDataclassEmptyError,
-            match=r"Mapping .* does not contain 'int_' \(modulo case\)",
+            OneFieldEmptyError,
+            match=r"Dataclass 'DataClassFutureInt' does not contain field 'int' \(modulo case\)",
         ):
-            _ = mapping_to_dataclass(DataClassFutureInt, {"other": value})
+            _ = one_field(DataClassFutureInt, "int")
 
-    @given(value1=integers(), value2=integers())
-    def test_error_exact_match_case_insensitive_non_unique_error(
-        self, *, value1: int, value2: int
-    ) -> None:
+    def test_error_exact_match_case_insensitive_non_unique_error(self) -> None:
         with raises(
-            _MappingToDataclassNonUniqueError,
-            match=re.compile(
-                r"Mapping .* must contain 'int_' exactly once \(modulo case\); got 'int_', 'INT_' and perhaps more",
-                flags=DOTALL,
-            ),
+            OneFieldNonUniqueError,
+            match=r"Dataclass 'DataClassFutureIntLowerAndUpper' must contain field 'int_' exactly once \(modulo case\); got 'int_', 'INT_' and perhaps more",
         ):
-            _ = mapping_to_dataclass(
-                DataClassFutureInt, {"int_": value1, "INT_": value2}
-            )
+            _ = one_field(DataClassFutureIntLowerAndUpper, "int_")
 
-    @given(value=integers())
-    def test_error_exact_match_case_sensitive_empty_error(self, *, value: int) -> None:
+    def test_error_exact_match_case_sensitive_empty_error(self) -> None:
         with raises(
-            _MappingToDataclassEmptyError, match=r"Mapping .* does not contain 'int_'"
+            OneFieldEmptyError,
+            match=r"Dataclass 'DataClassFutureInt' does not contain field 'INT_'",
         ):
-            _ = mapping_to_dataclass(
-                DataClassFutureInt, {"INT_": value}, case_sensitive=True
-            )
+            _ = one_field(DataClassFutureInt, "INT_", case_sensitive=True)
 
     # there is no head=False, case_sensitive=True, non-unique case
 
@@ -425,11 +415,7 @@ class TestTextToDataClass:
             _ = text_to_dataclass("k=value", DataClassFutureInt)
 
     def test_error_get_field_non_unique(self) -> None:
-        @dataclass(order=True, unsafe_hash=True, kw_only=True)
-        class Example:
-            int1: int
-            int2: int
-
+        DataClassFutureIntOneAndTwo
         with raises(
             _TextToDataClassGetFieldNonUniqueError,
             match=r"Dataclass 'Example' must contain exactly one field starting with 'int' \(modulo case\); got 'int1', 'int2' and perhaps more",

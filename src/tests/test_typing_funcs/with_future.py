@@ -34,11 +34,6 @@ class DataClassFutureDate:
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassFutureInt:
-    int_: int
-
-
-@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureDefaultInInitParent:
     int_: int
 
@@ -50,6 +45,11 @@ class DataClassFutureDefaultInInitChild(DataClassFutureDefaultInInitParent):
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureInt:
+    int_: int
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureIntDefault:
     int_: int = 0
 
@@ -57,6 +57,18 @@ class DataClassFutureIntDefault:
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureIntNullable:
     int_: int | None = None
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureIntLowerAndUpper:
+    int_: int
+    INT_: int
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureIntOneAndTwo:
+    int1: int
+    int2: int
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)

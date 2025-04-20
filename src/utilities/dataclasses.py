@@ -317,11 +317,11 @@ class OneFieldNonUniqueError(OneFieldError[TDataclass]):
                     case=[f"{self.head=}", f"{self.case_sensitive=}"]
                 )
             case False, False:
-                mid = f"{self.key!r} exactly once (modulo case)"
+                mid = f"field {self.key!r} exactly once (modulo case)"
             case True, True:
-                mid = f"exactly one field matching {self.key!r}"
+                mid = f"exactly one field starting with {self.key!r}"
             case True, False:
-                mid = f"exactly one field matching {self.key!r} (modulo case)"
+                mid = f"exactly one field starting with {self.key!r} (modulo case)"
             case _ as never:
                 assert_never(never)
         return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
