@@ -5,6 +5,7 @@ from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import asdict, dataclass, is_dataclass
 from functools import _lru_cache_wrapper, cached_property, partial, reduce, wraps
 from inspect import getattr_static
+from pathlib import Path
 from re import findall
 from types import (
     BuiltinFunctionType,
@@ -400,6 +401,31 @@ class EnsureNumberError(Exception):
     @override
     def __str__(self) -> str:
         return _make_error_msg(self.obj, "a number", nullable=self.nullable)
+
+
+##
+
+
+@overload
+def ensure_path(obj: Any, /, *, nullable: bool) -> Path | None: ...
+@overload
+def ensure_path(obj: Any, /, *, nullable: Literal[False] = False) -> Path: ...
+def ensure_path(obj: Any, /, *, nullable: bool = False) -> Path | None:
+    """Ensure an object is a Path."""
+    try:
+        return ensure_class(obj, Path, nullable=nullable)
+    except EnsureClassError as error:
+        raise EnsurePathError(obj=error.obj, nullable=nullable) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class EnsurePathError(Exception):
+    obj: Any
+    nullable: bool
+
+    @override
+    def __str__(self) -> str:
+        return _make_error_msg(self.obj, "a Path", nullable=self.nullable)
 
 
 ##
@@ -985,6 +1011,7 @@ __all__ = [
     "EnsureMemberError",
     "EnsureNotNoneError",
     "EnsureNumberError",
+    "EnsurePathError",
     "EnsureSizedError",
     "EnsureSizedNotStrError",
     "EnsureStrError",
@@ -1004,6 +1031,7 @@ __all__ = [
     "ensure_member",
     "ensure_not_none",
     "ensure_number",
+    "ensure_path",
     "ensure_sized",
     "ensure_sized_not_str",
     "ensure_str",

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from functools import cache, cached_property, lru_cache, partial, wraps
 from itertools import chain
 from operator import neg
+from pathlib import Path
 from types import NoneType
 from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, TypeVar, cast
 
@@ -37,6 +38,7 @@ from utilities.functions import (
     EnsureMemberError,
     EnsureNotNoneError,
     EnsureNumberError,
+    EnsurePathError,
     EnsureSizedError,
     EnsureSizedNotStrError,
     EnsureStrError,
@@ -56,6 +58,7 @@ from utilities.functions import (
     ensure_member,
     ensure_not_none,
     ensure_number,
+    ensure_path,
     ensure_sized,
     ensure_sized_not_str,
     ensure_str,
@@ -334,6 +337,24 @@ class TestEnsureNumber:
         nullable, match = case
         with raises(EnsureNumberError, match=match):
             _ = ensure_number(sentinel, nullable=nullable)
+
+
+class TestEnsurePath:
+    @given(case=sampled_from([(Path.home(), False), (Path.home(), True), (None, True)]))
+    def test_main(self, *, case: tuple[int | None, bool]) -> None:
+        obj, nullable = case
+        _ = ensure_path(obj, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object '.*' of type '.*' must be a Path"),
+            (True, "Object '.*' of type '.*' must be a Path or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsurePathError, match=match):
+            _ = ensure_path(sentinel, nullable=nullable)
 
 
 class TestEnsureSized:
