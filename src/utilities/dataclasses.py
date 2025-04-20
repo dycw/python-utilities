@@ -218,7 +218,7 @@ def one_field(
     head: bool = False,
     case_sensitive: bool = False,
 ) -> _YieldFieldsClass[Any]:
-    """Get the unique field matching a key matches to."""
+    """Get the unique field a key matches to."""
     if fields is None:
         fields_use = yield_fields(cls, globalns=globalns, localns=localns)
     else:
