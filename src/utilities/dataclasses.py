@@ -297,48 +297,38 @@ def text_to_dataclass(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-    case_sensitive: bool = False,
     head: bool = True,
+    case_sensitive: bool = False,
 ) -> TDataclass:
     """Construct a dataclass from a string or a mapping or strings."""
+    fields = list(yield_fields(cls, globalns=globalns, localns=localns))
     match text_or_mapping:
         case str() as text:
-            mapping = _text_to_dataclass_parse_text(
-                text,
-                cls,
-                globalns=globalns,
-                localns=localns,
-                case_sensitive=case_sensitive,
-                head=head,
-            )
-        case Mapping() as mapping:
-            pass
+            text_mapping = _text_to_dataclass_split_text(text, cls)
+        case Mapping() as text_mapping:
+            ...
         case _ as never:
             assert_never(never)
-    return mapping_to_dataclass(
-        cls, mapping, globalns=globalns, localns=localns, case_sensitive=case_sensitive
-    )
-
-
-def _text_to_dataclass_parse_text(
-    text: str,
-    cls: type[TDataclass],
-    /,
-    *,
-    globalns: StrMapping | None = None,
-    localns: StrMapping | None = None,
-    case_sensitive: bool = False,
-    head: bool = True,
-) -> StrMapping:
-    pairs = (t for t in text.split(",") if t != "")
-    pairs = [_text_to_dataclass_split_key_value_pair(pair, cls) for pair in pairs]
-    fields = list(yield_fields(cls, globalns=globalns, localns=localns))
-    return dict(
-        _text_to_dataclass_parse_key_value_pair(
-            fields, key, value, cls, case_sensitive=case_sensitive, head=head
+    value_mapping = dict(
+        _text_to_dataclass_get_and_parse(
+            fields, key, value, cls, head=head, case_sensitive=case_sensitive
         )
-        for key, value in pairs
+        for key, value in text_mapping.items()
     )
+    return mapping_to_dataclass(
+        cls,
+        value_mapping,
+        globalns=globalns,
+        localns=localns,
+        case_sensitive=case_sensitive,
+    )
+
+
+def _text_to_dataclass_split_text(
+    text: str, cls: type[TDataclass], /
+) -> Mapping[str, str]:
+    pairs = (t for t in text.split(",") if t != "")
+    return dict(_text_to_dataclass_split_key_value_pair(pair, cls) for pair in pairs)
 
 
 def _text_to_dataclass_split_key_value_pair(
@@ -351,25 +341,25 @@ def _text_to_dataclass_split_key_value_pair(
     return key, value
 
 
-def _text_to_dataclass_parse_key_value_pair(
+def _text_to_dataclass_get_and_parse(
     fields: Iterable[_YieldFieldsClass[Any]],
     key: str,
     value: str,
     cls: type[Dataclass],
     /,
     *,
-    case_sensitive: bool = False,
     head: bool = True,
+    case_sensitive: bool = False,
 ) -> tuple[str, Any]:
     mapping = {f.name: f for f in fields}
     try:
-        name = one_str(mapping, key, head=True, case_sensitive=case_sensitive)
+        name = one_str(mapping, key, head=head, case_sensitive=case_sensitive)
     except OneStrEmptyError:
-        raise _TextToDataClassParseKeyValuePairEmptyError(
+        raise _TextToDataClassGetFieldEmptyError(
             cls=cls, key=key, case_sensitive=case_sensitive
         ) from None
     except OneStrNonUniqueError as error:
-        raise _TextToDataClassParseKeyValuePairNonUniqueError(
+        raise _TextToDataClassGetFieldNonUniqueError(
             cls=cls,
             key=key,
             case_sensitive=case_sensitive,
@@ -403,7 +393,7 @@ class _TextToDataClassSplitKeyValuePairError(TextToDataClassError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _TextToDataClassParseKeyValuePairEmptyError(TextToDataClassError[TDataclass]):
+class _TextToDataClassGetFieldEmptyError(TextToDataClassError[TDataclass]):
     key: str
     case_sensitive: bool = False
 
@@ -414,7 +404,7 @@ class _TextToDataClassParseKeyValuePairEmptyError(TextToDataClassError[TDataclas
 
 
 @dataclass(kw_only=True, slots=True)
-class _TextToDataClassParseKeyValuePairNonUniqueError(TextToDataClassError[TDataclass]):
+class _TextToDataClassGetFieldNonUniqueError(TextToDataClassError[TDataclass]):
     key: str
     case_sensitive: bool = False
     first: str
@@ -567,17 +557,17 @@ class _YieldFieldsInstance(Generic[_T]):
         return (defaults and equal) or not equal
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
 class _YieldFieldsClass(Generic[_T]):
     name: str
-    type_: Any
-    default: _T | Sentinel = sentinel
-    default_factory: Callable[[], _T] | Sentinel = sentinel
+    type_: Any = field(hash=False)
+    default: _T | Sentinel = field(default=sentinel, hash=False)
+    default_factory: Callable[[], _T] | Sentinel = field(default=sentinel, hash=False)
     repr: bool = True
     hash_: bool | None = None
     init: bool = True
     compare: bool = True
-    metadata: StrMapping = field(default_factory=dict)
+    metadata: StrMapping = field(default_factory=dict, hash=False)
     kw_only: bool | Sentinel = sentinel
 
 

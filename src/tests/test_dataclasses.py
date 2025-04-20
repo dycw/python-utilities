@@ -18,7 +18,7 @@ from hypothesis.strategies import (
     sampled_from,
 )
 from polars import DataFrame
-from pytest import raises
+from pytest import mark, raises
 
 from tests.test_typing_funcs.no_future import (
     DataClassNoFutureInt,
@@ -51,6 +51,7 @@ from utilities.dataclasses import (
     dataclass_to_dict,
     mapping_to_dataclass,
     replace_non_sentinel,
+    text_to_dataclass,
     yield_fields,
 )
 from utilities.functions import get_class_name
@@ -63,6 +64,43 @@ from utilities.types import Dataclass, StrMapping
 from utilities.typing import get_args, is_list_type, is_literal_type, is_optional_type
 
 TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
+
+
+class TestDataClassRepr:
+    def test_overriding_repr(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example(DataClassFutureIntDefault):
+            @override
+            def __repr__(self) -> str:
+                return dataclass_repr(self)
+
+        obj = Example()
+        result = repr(obj)
+        expected = "Example()"
+        assert result == expected
+
+    def test_overriding_repr_defaults(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(DataClassFutureIntDefault):
+            @override
+            def __repr__(self) -> str:
+                return dataclass_repr(self, defaults=True)
+
+        obj = Example()
+        result = repr(obj)
+        expected = "Example(int_=0)"
+        assert result == expected
+
+    @given(x=integers())
+    def test_non_repr_field(self, *, x: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: int = field(default=0, repr=False)
+
+        obj = Example(x=x)
+        result = dataclass_repr(obj)
+        expected = "Example()"
+        assert result == expected
 
 
 class TestDataclassToDictAndDataclassRepr:
@@ -328,30 +366,18 @@ class TestReplaceNonSentinel:
         assert obj.int_ == 1
 
 
-class TestReprWithoutDefaults:
-    def test_overriding_repr(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int = 0
-
-            @override
-            def __repr__(self) -> str:
-                return dataclass_repr(self)
-
-        obj = Example()
-        result = repr(obj)
-        expected = "Example()"
+@mark.only
+class TestTextToDataClass:
+    @given(int_=integers())
+    def test_main_text(self, *, int_: int) -> None:
+        result = text_to_dataclass(f"int_={int_}", DataClassFutureInt)
+        expected = DataClassFutureInt(int_=int_)
         assert result == expected
 
-    @given(x=integers())
-    def test_non_repr_field(self, *, x: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int = field(default=0, repr=False)
-
-        obj = Example(x=x)
-        result = dataclass_repr(obj)
-        expected = "Example()"
+    @given(int_=integers())
+    def test_main_mapping(self, *, int_: int) -> None:
+        result = text_to_dataclass({"int_": str(int_)}, DataClassFutureInt)
+        expected = DataClassFutureInt(int_=int_)
         assert result == expected
 
 
