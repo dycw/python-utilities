@@ -573,7 +573,9 @@ class TestSerializeAndDeserialize:
 
     @given(obj=make_objects(dataclass_type_literal_nullable=True))
     def test_dataclass_type_literal_nullable(self, *, obj: Any) -> None:
-        result = deserialize(serialize(obj), objects={DataClassFutureLiteralNullable})
+        result = deserialize(
+            serialize(obj), objects={DataClassFutureTypeLiteralNullable}
+        )
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
