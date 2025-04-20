@@ -37,6 +37,7 @@ from utilities.dataclasses import (
     OneFieldNonUniqueError,
     StrMappingToFieldMappingError,
     YieldFieldsError,
+    _TextToDataClassParseValueError,
     _TextToDataClassSplitKeyValuePairError,
     _YieldFieldsClass,
     _YieldFieldsInstance,
@@ -491,6 +492,13 @@ class TestTextToDataClass:
             match="Unable to construct 'DataClassFutureInt'; failed to split key-value pair 'keyvalue'",
         ):
             _ = text_to_dataclass("keyvalue", DataClassFutureInt)
+
+    def test_error_parse_value(self) -> None:
+        with raises(
+            _TextToDataClassParseValueError,
+            match="Unable to construct 'DataClassFutureInt'; unable to parse field 'int_' of type <class 'int'>; got 'invalid'",
+        ):
+            _ = text_to_dataclass("int_=invalid", DataClassFutureInt)
 
 
 class TestYieldFields:
