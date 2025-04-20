@@ -81,7 +81,7 @@ class TestLoadSettings:
             _ = fh.write(f"key = {value}\n")
             _ = fh.write(f"other = {value}\n")
 
-        settings = load_settings(Settings, cwd=root, allow_extra=True)
+        settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)
         assert settings == expected
 
