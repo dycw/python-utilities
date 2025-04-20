@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, Literal, override
 
 if TYPE_CHECKING:
     import datetime as dt
     from pathlib import Path
     from uuid import UUID
 
-    from tests.test_typing import TrueOrFalseLit, TrueOrFalseTypeLit
     from utilities.sentinel import Sentinel
+
+
+TrueOrFalseFutureLit = Literal["true", "false"]
+type TrueOrFalseFutureTypeLit = Literal["true", "false"]
 
 
 @dataclass(order=True, kw_only=True)
@@ -68,12 +71,12 @@ class DataClassFutureListIntsDefault:
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureLiteral:
-    truth: TrueOrFalseLit
+    truth: TrueOrFalseFutureLit
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureLiteralNullable:
-    truth: TrueOrFalseLit | None = None
+    truth: TrueOrFalseFutureLit | None = None
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -128,12 +131,12 @@ class DataClassFutureTimeDelta:
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureTypeLiteral:
-    truth: TrueOrFalseTypeLit
+    truth: TrueOrFalseFutureTypeLit
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureTypeLiteralNullable:
-    truth: TrueOrFalseTypeLit | None = None
+    truth: TrueOrFalseFutureTypeLit | None = None
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
