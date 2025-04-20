@@ -8,7 +8,7 @@ from typing import Any, cast, override
 from hypothesis import given
 from hypothesis.strategies import booleans, integers, lists, sampled_from
 from polars import DataFrame
-from pytest import mark, raises
+from pytest import raises
 
 from tests.test_typing_funcs.no_future import (
     DataClassNoFutureInt,
@@ -260,7 +260,6 @@ class TestDataclassToDictAndDataclassRepr:
         assert repr_res == repr_exp
 
 
-@mark.only
 class TestMappingToDataclass:
     @given(key=sampled_from(["int_", "INT_"]), int_=integers())
     def test_exact_match_case_insensitive(self, *, key: str, int_: int) -> None:
@@ -299,7 +298,6 @@ class TestMappingToDataclass:
         assert obj == expected
 
 
-@mark.only
 class TestOneField:
     def test_error_exact_match_case_insensitive_empty_error(self) -> None:
         with raises(
@@ -373,7 +371,6 @@ class TestReplaceNonSentinel:
         assert obj.int_ == 1
 
 
-@mark.only
 class TestStrMappingToFieldMapping:
     @given(key=sampled_from(["int_", "INT_"]), int_=integers())
     def test_main_text_case_insensitive(self, *, key: str, int_: int) -> None:
@@ -459,7 +456,6 @@ class TestStrMappingToFieldMapping:
             )
 
 
-@mark.only
 class TestTextToDataClass:
     @given(key=sampled_from(["int_", "INT_"]), int_=integers())
     def test_main_text_case_insensitive(self, *, key: str, int_: int) -> None:
