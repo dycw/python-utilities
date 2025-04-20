@@ -18,7 +18,7 @@ from hypothesis.strategies import (
     sampled_from,
 )
 from polars import DataFrame
-from pytest import mark, raises
+from pytest import raises
 
 from tests.test_typing_funcs.no_future import (
     DataClassNoFutureInt,
@@ -370,7 +370,6 @@ class TestReplaceNonSentinel:
         assert obj.int_ == 1
 
 
-@mark.only
 class TestTextToDataClass:
     @given(int_=integers())
     def test_main_text(self, *, int_: int) -> None:
