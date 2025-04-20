@@ -45,6 +45,10 @@ from utilities.dataclasses import (
     YieldFieldsError,
     _MappingToDataclassCaseInsensitiveNonUniqueError,
     _MappingToDataclassEmptyError,
+    _TextToDataClassGetFieldEmptyError,
+    _TextToDataClassGetFieldNonUniqueError,
+    _TextToDataClassParseValueError,
+    _TextToDataClassSplitKeyValuePairError,
     _YieldFieldsClass,
     _YieldFieldsInstance,
     dataclass_repr,
@@ -379,6 +383,39 @@ class TestTextToDataClass:
         result = text_to_dataclass({"int_": str(int_)}, DataClassFutureInt)
         expected = DataClassFutureInt(int_=int_)
         assert result == expected
+
+    def test_error_split_key_value_pair(self) -> None:
+        with raises(
+            _TextToDataClassSplitKeyValuePairError,
+            match="Unable to construct 'DataClassFutureInt'; failed to split key-value pair 'keyvalue'",
+        ):
+            _ = text_to_dataclass("keyvalue", DataClassFutureInt)
+
+    def test_error_get_field_empty(self) -> None:
+        with raises(
+            _TextToDataClassGetFieldEmptyError,
+            match=r"Dataclass 'DataClassFutureInt' does not contain any field starting with 'k' \(modulo case\)",
+        ):
+            _ = text_to_dataclass("k=value", DataClassFutureInt)
+
+    def test_error_get_field_non_unique(self) -> None:
+        @dataclass(order=True, unsafe_hash=True, kw_only=True)
+        class Example:
+            int1: int
+            int2: int
+
+        with raises(
+            _TextToDataClassGetFieldNonUniqueError,
+            match=r"Dataclass 'Example' must contain exactly one field starting with 'int' \(modulo case\); got 'int1', 'int2' and perhaps more",
+        ):
+            _ = text_to_dataclass("int=value", Example)
+
+    def test_error_parse_value(self) -> None:
+        with raises(
+            _TextToDataClassParseValueError,
+            match="Unable to construct 'DataClassFutureInt'; unable to parse field 'int_' of type <class 'int'>; got 'invalid'",
+        ):
+            _ = text_to_dataclass("int_=invalid", DataClassFutureInt)
 
 
 class TestYieldFields:

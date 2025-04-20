@@ -297,7 +297,6 @@ def text_to_dataclass(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-    head: bool = True,
     case_sensitive: bool = False,
 ) -> TDataclass:
     """Construct a dataclass from a string or a mapping or strings."""
@@ -311,7 +310,7 @@ def text_to_dataclass(
             assert_never(never)
     value_mapping = dict(
         _text_to_dataclass_get_and_parse(
-            fields, key, value, cls, head=head, case_sensitive=case_sensitive
+            fields, key, value, cls, case_sensitive=case_sensitive
         )
         for key, value in text_mapping.items()
     )
@@ -348,12 +347,11 @@ def _text_to_dataclass_get_and_parse(
     cls: type[Dataclass],
     /,
     *,
-    head: bool = True,
     case_sensitive: bool = False,
 ) -> tuple[str, Any]:
     mapping = {f.name: f for f in fields}
     try:
-        name = one_str(mapping, key, head=head, case_sensitive=case_sensitive)
+        name = one_str(mapping, key, head=True, case_sensitive=case_sensitive)
     except OneStrEmptyError:
         raise _TextToDataClassGetFieldEmptyError(
             cls=cls, key=key, case_sensitive=case_sensitive
@@ -368,9 +366,7 @@ def _text_to_dataclass_get_and_parse(
         ) from None
     field = mapping[name]
     try:
-        parsed = parse_text(
-            field.type_, value, case_sensitive=case_sensitive, head=head
-        )
+        parsed = parse_text(field.type_, value, case_sensitive=case_sensitive)
     except ParseTextError:
         raise _TextToDataClassParseValueError(
             cls=cls, field=field, text=value
@@ -414,7 +410,7 @@ class _TextToDataClassGetFieldNonUniqueError(TextToDataClassError[TDataclass]):
     def __str__(self) -> str:
         head = f"Dataclass {get_class_name(self.cls)!r} must contain exactly one field starting with {self.key!r}"
         mid = "" if self.case_sensitive else " (modulo case)"
-        return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
+        return f"{head}{mid}; got {self.first!r}, {self.second!r} and perhaps more"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -424,7 +420,7 @@ class _TextToDataClassParseValueError(TextToDataClassError[TDataclass]):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to construct {get_class_name(self.cls)!r}; unable to parse field {self.field.name!r} or type {self.field.type_!r}; got {self.text!r} "
+        return f"Unable to construct {get_class_name(self.cls)!r}; unable to parse field {self.field.name!r} of type {self.field.type_!r}; got {self.text!r}"
 
 
 ##
