@@ -189,14 +189,11 @@ def mapping_to_dataclass(
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     case_sensitive: bool = False,
-    post: Callable[[_YieldFieldsClass[Any], Any], Any] | None = None,
 ) -> TDataclass:
     """Construct a dataclass from a mapping."""
     fields = yield_fields(cls, globalns=globalns, localns=localns)
     mapping_use = {
-        f.name: _mapping_to_dataclass_one(
-            f, mapping, case_sensitive=case_sensitive, post=post
-        )
+        f.name: _mapping_to_dataclass_one(f, mapping, case_sensitive=case_sensitive)
         for f in fields
     }
     return cls(**mapping_use)
@@ -208,7 +205,6 @@ def _mapping_to_dataclass_one(
     /,
     *,
     case_sensitive: bool = False,
-    post: Callable[[_YieldFieldsClass[Any], Any], Any] | None = None,
 ) -> Any:
     try:
         key = one_str(mapping, field.name, case_sensitive=case_sensitive)
@@ -227,8 +223,6 @@ def _mapping_to_dataclass_one(
         ) from None
     else:
         value = mapping[key]
-    if post is not None:
-        value = post(field, value)
     return value
 
 

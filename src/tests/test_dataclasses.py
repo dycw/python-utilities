@@ -37,7 +37,6 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureNone,
     DataClassFutureNoneDefault,
     DataClassFuturePath,
-    DataClassFutureStr,
     DataClassFutureTypeLiteral,
     DataClassFutureTypeLiteralNullable,
     TrueOrFalseFutureLit,
@@ -61,7 +60,7 @@ from utilities.dataclasses import (
     yield_fields,
 )
 from utilities.functions import get_class_name
-from utilities.hypothesis import paths, text_ascii
+from utilities.hypothesis import paths
 from utilities.iterables import one
 from utilities.orjson import OrjsonLogRecord
 from utilities.polars import are_frames_equal
@@ -309,14 +308,6 @@ class TestMappingToDataclass:
     def test_path(self, *, value: Path) -> None:
         obj = mapping_to_dataclass(DataClassFuturePath, {"path": value})
         expected = DataClassFuturePath(path=value)
-        assert obj == expected
-
-    @given(value=text_ascii())
-    def test_post(self, *, value: str) -> None:
-        obj = mapping_to_dataclass(
-            DataClassFutureStr, {"str_": value}, post=lambda _, x: x.upper()
-        )
-        expected = DataClassFutureStr(str_=value.upper())
         assert obj == expected
 
     @given(value=integers())
