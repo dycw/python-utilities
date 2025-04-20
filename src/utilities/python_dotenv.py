@@ -36,7 +36,7 @@ def load_settings(
     maybe_values_dotenv = dotenv_values(path)
     try:
         maybe_values: Mapping[str, str | None] = merge_str_mappings(
-            maybe_values_dotenv, environ
+            maybe_values_dotenv, environ, case_sensitive=case_sensitive
         )
     except MergeStrMappingsError as error:
         raise _LoadSettingsDuplicateKeysError(
