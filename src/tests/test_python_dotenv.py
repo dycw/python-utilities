@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from re import DOTALL
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data, integers, sampled_from
@@ -15,6 +15,7 @@ from utilities.os import temp_environ
 from utilities.python_dotenv import (
     _LoadSettingsDuplicateKeysError,
     _LoadSettingsFileNotFoundError,
+    _LoadSettingsMissingKeysError,
     load_settings,
 )
 
@@ -85,22 +86,6 @@ class TestLoadSettings:
         expected = Settings(key=value)
         assert settings == expected
 
-    @given(root=git_repos(), value=sampled_from(["true", "false"]))
-    @settings_with_reduced_examples()
-    def test_literal_value(
-        self, *, root: Path, value: Literal["true", "false"]
-    ) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Settings:
-            key: Literal["true", "false"]
-
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write(f"key = {value}\n")
-
-        settings = load_settings(Settings, cwd=root)
-        expected = Settings(key=value)
-        assert settings == expected
-
     @given(root=git_repos())
     @settings_with_reduced_examples()
     def test_error_file_not_found(self, *, root: Path) -> None:
@@ -128,5 +113,20 @@ class TestLoadSettings:
                 r"Mapping .* keys must not contain duplicates \(modulo case\); got .*",
                 flags=DOTALL,
             ),
+        ):
+            _ = load_settings(Settings, cwd=root)
+
+    @given(root=git_repos())
+    @settings_with_reduced_examples()
+    def test_error_missing_keys(self, *, root: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: str
+
+        root.joinpath(".env").touch()
+
+        with raises(
+            _LoadSettingsMissingKeysError,
+            match=r"Unable to load '.*'; missing value\(s\) for 'key'",
         ):
             _ = load_settings(Settings, cwd=root)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from collections.abc import Set as AbstractSet
 from dataclasses import MISSING, dataclass, field, fields, replace
 from typing import (
     TYPE_CHECKING,
@@ -185,6 +186,7 @@ def mapping_to_dataclass(
     mapping: StrMapping,
     /,
     *,
+    fields: Iterable[_YieldFieldsClass[Any]] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     head: bool = False,
@@ -192,16 +194,43 @@ def mapping_to_dataclass(
     allow_extra: bool = False,
 ) -> TDataclass:
     """Construct a dataclass from a mapping."""
-    field_mapping = str_mapping_to_field_mapping(
+    if fields is None:
+        fields_use = list(yield_fields(cls, globalns=globalns, localns=localns))
+    else:
+        fields_use = fields
+    fields_to_values = str_mapping_to_field_mapping(
         cls,
         mapping,
+        fields=fields_use,
         globalns=globalns,
         localns=localns,
         head=head,
         case_sensitive=case_sensitive,
         allow_extra=allow_extra,
     )
-    return cls(**{f.name: v for f, v in field_mapping.items()})
+    field_names_to_values = {f.name: v for f, v in fields_to_values.items()}
+    default = {
+        f.name
+        for f in fields_use
+        if (not isinstance(f.default, Sentinel))
+        or (not isinstance(f.default_factory, Sentinel))
+    }
+    have = set(field_names_to_values) | default
+    missing = {f.name for f in fields_use} - have
+    if len(missing) >= 1:
+        raise MappingToDataclassError(cls=cls, fields=missing)
+    return cls(**field_names_to_values)
+
+
+@dataclass(kw_only=True, slots=True)
+class MappingToDataclassError(Exception, Generic[TDataclass]):
+    cls: type[TDataclass]
+    fields: AbstractSet[str]
+
+    @override
+    def __str__(self) -> str:
+        desc = ", ".join(map(repr, sorted(self.fields)))
+        return f"Unable to construct {get_class_name(self.cls)!r}; missing values for {desc}"
 
 
 ##
@@ -220,7 +249,7 @@ def one_field(
 ) -> _YieldFieldsClass[Any]:
     """Get the unique field a key matches to."""
     if fields is None:
-        fields_use = yield_fields(cls, globalns=globalns, localns=localns)
+        fields_use = list(yield_fields(cls, globalns=globalns, localns=localns))
     else:
         fields_use = fields
     mapping = {f.name: f for f in fields_use}
@@ -330,6 +359,7 @@ def str_mapping_to_field_mapping(
     mapping: Mapping[str, _T],
     /,
     *,
+    fields: Iterable[_YieldFieldsClass[Any]] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     head: bool = False,
@@ -337,7 +367,6 @@ def str_mapping_to_field_mapping(
     allow_extra: bool = False,
 ) -> Mapping[_YieldFieldsClass[Any], _T]:
     """Convert a string-mapping into a field-mapping."""
-    fields = list(yield_fields(cls, globalns=globalns, localns=localns))
     keys_to_fields: Mapping[str, _YieldFieldsClass[Any]] = {}
     for key in mapping:
         try:
@@ -399,25 +428,36 @@ def text_to_dataclass(
     """Construct a dataclass from a string or a mapping or strings."""
     match text_or_mapping:
         case str() as text:
-            text_mapping = _text_to_dataclass_split_text(text, cls)
-        case Mapping() as text_mapping:
+            keys_to_serializes = _text_to_dataclass_split_text(text, cls)
+        case Mapping() as keys_to_serializes:
             ...
         case _ as never:
             assert_never(never)
-    field_to_text_mapping = str_mapping_to_field_mapping(
+    fields = list(yield_fields(cls, globalns=globalns, localns=localns))
+    fields_to_serializes = str_mapping_to_field_mapping(
         cls,
-        text_mapping,
+        keys_to_serializes,
+        fields=fields,
         globalns=globalns,
         localns=localns,
         head=head,
         case_sensitive=case_sensitive,
         allow_extra=allow_extra,
     )
-    field_to_value_mapping = {
-        f: _text_to_dataclass_parse(f, t, cls, case_sensitive=case_sensitive)
-        for f, t in field_to_text_mapping.items()
+    field_names_to_values = {
+        f.name: _text_to_dataclass_parse(f, t, cls, case_sensitive=case_sensitive)
+        for f, t in fields_to_serializes.items()
     }
-    return cls(**{f.name: v for f, v in field_to_value_mapping.items()})
+    return mapping_to_dataclass(
+        cls,
+        field_names_to_values,
+        fields=fields,
+        globalns=globalns,
+        localns=localns,
+        head=head,
+        case_sensitive=case_sensitive,
+        allow_extra=allow_extra,
+    )
 
 
 def _text_to_dataclass_split_text(
@@ -631,6 +671,7 @@ class YieldFieldsError(Exception):
 ##
 
 __all__ = [
+    "MappingToDataclassError",
     "OneFieldEmptyError",
     "OneFieldError",
     "OneFieldNonUniqueError",

@@ -33,6 +33,7 @@ from tests.test_typing_funcs.with_future import (
     TrueOrFalseFutureTypeLit,
 )
 from utilities.dataclasses import (
+    MappingToDataclassError,
     OneFieldEmptyError,
     OneFieldNonUniqueError,
     StrMappingToFieldMappingError,
@@ -297,6 +298,13 @@ class TestMappingToDataclass:
         )
         expected = DataClassFutureInt(int_=int_)
         assert obj == expected
+
+    def test_error(self) -> None:
+        with raises(
+            MappingToDataclassError,
+            match="Unable to construct 'DataClassFutureInt'; missing values for 'int_'",
+        ):
+            _ = mapping_to_dataclass(DataClassFutureInt, {})
 
 
 class TestOneField:

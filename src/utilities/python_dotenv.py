@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, override
 
 from dotenv import dotenv_values
 
-from utilities.dataclasses import text_to_dataclass
+from utilities.dataclasses import MappingToDataclassError, text_to_dataclass
 from utilities.git import get_repo_root
 from utilities.iterables import MergeStrMappingsError, merge_str_mappings
 from utilities.pathlib import PWD
@@ -14,6 +14,7 @@ from utilities.reprlib import get_repr
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+    from collections.abc import Set as AbstractSet
     from pathlib import Path
 
     from utilities.types import PathLike, StrMapping, TDataclass
@@ -40,18 +41,24 @@ def load_settings(
         )
     except MergeStrMappingsError as error:
         raise _LoadSettingsDuplicateKeysError(
-            path=path, values=error.mapping, counts=error.counts
+            path=path,
+            values=error.mapping,
+            counts=error.counts,
+            case_sensitive=case_sensitive,
         ) from None
     values = {k: v for k, v in maybe_values.items() if v is not None}
-    return text_to_dataclass(
-        values,
-        cls,
-        globalns=globalns,
-        localns=localns,
-        head=head,
-        case_sensitive=case_sensitive,
-        allow_extra=True,
-    )
+    try:
+        return text_to_dataclass(
+            values,
+            cls,
+            globalns=globalns,
+            localns=localns,
+            head=head,
+            case_sensitive=case_sensitive,
+            allow_extra=True,
+        )
+    except MappingToDataclassError as error:
+        raise _LoadSettingsMissingKeysError(path=path, fields=error.fields) from None
 
 
 @dataclass(kw_only=True, slots=True)
@@ -63,6 +70,7 @@ class LoadSettingsError(Exception):
 class _LoadSettingsDuplicateKeysError(LoadSettingsError):
     values: StrMapping
     counts: Mapping[str, int]
+    case_sensitive: bool = False
 
     @override
     def __str__(self) -> str:
@@ -74,6 +82,16 @@ class _LoadSettingsFileNotFoundError(LoadSettingsError):
     @override
     def __str__(self) -> str:
         return f"Path {str(self.path)!r} must exist"
+
+
+@dataclass(kw_only=True, slots=True)
+class _LoadSettingsMissingKeysError(LoadSettingsError):
+    fields: AbstractSet[str]
+
+    @override
+    def __str__(self) -> str:
+        desc = ", ".join(map(repr, sorted(self.fields)))
+        return f"Unable to load {str(self.path)!r}; missing value(s) for {desc}"
 
 
 __all__ = ["LoadSettingsError", "load_settings"]
