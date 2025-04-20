@@ -226,9 +226,9 @@ class MappingToDataclassError(Exception):
         head = f"Dataclass {get_class_name(self.cls)!r} does not contain"
         match self.head, self.case_sensitive:
             case False, True:
-                tail = f"field {self.key!r}"
+                tail = f"a field {self.key!r}"
             case False, False:
-                tail = f"field {self.key!r} (modulo case)"
+                tail = f"a field {self.key!r} (modulo case)"
             case True, True:
                 tail = f"any field starting with {self.key!r}"
             case True, False:
@@ -288,16 +288,16 @@ class OneFieldError(Exception, Generic[TDataclass]):
 class OneFieldEmptyError(OneFieldError[TDataclass]):
     @override
     def __str__(self) -> str:
-        head = f"Dataclass {get_class_name(self.cls)!r} does not contain field"
+        head = f"Dataclass {get_class_name(self.cls)!r} does not contain"
         match self.head, self.case_sensitive:
             case False, True:
-                tail = repr(self.key)
+                tail = f"a field {self.key!r}"
             case False, False:
-                tail = f"{self.key!r} (modulo case)"
+                tail = f"a field {self.key!r} (modulo case)"
             case True, True:
-                tail = f"starting with {self.key!r}"
+                tail = f"any field starting with {self.key!r}"
             case True, False:
-                tail = f"starting with {self.key!r} (modulo case)"
+                tail = f"any field starting with {self.key!r} (modulo case)"
             case _ as never:
                 assert_never(never)
         return f"{head} {tail}"

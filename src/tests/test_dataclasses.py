@@ -290,19 +290,21 @@ class TestMappingToDataclass:
         expected = DataClassFutureInt(int_=int_)
         assert obj == expected
 
-    @given(key=sampled_from(["extra", "EXTRA"]), int_=integers())
-    def test_error_exact_match_case_insensitive(self, *, key: str, int_: int) -> None:
+    @given(int_=integers())
+    def test_error_exact_match_case_insensitive(self, *, int_: int) -> None:
         with raises(
             MappingToDataclassError,
-            match=r"Dataclass .* does not contain field '(extra|EXTRA)' \(modulo case\)",
+            match=r"Dataclass 'DataClassFutureInt' does not contain a field 'invalid' \(modulo case\)",
         ):
-            _ = mapping_to_dataclass(DataClassFutureInt, {"int_": int_, key: int_})
+            _ = mapping_to_dataclass(
+                DataClassFutureInt, {"int_": int_, "invalid": int_}
+            )
 
     @given(int_=integers())
     def test_error_exact_match_case_sensitive(self, *, int_: int) -> None:
         with raises(
             MappingToDataclassError,
-            match=r"Dataclass .* does not contain field 'extra'",
+            match=r"Dataclass 'DataClassFutureInt' does not contain a field 'extra'",
         ):
             _ = mapping_to_dataclass(
                 DataClassFutureInt, {"int_": int_, "extra": int_}, case_sensitive=True
@@ -332,9 +334,9 @@ class TestOneField:
     def test_error_exact_match_case_insensitive_empty_error(self) -> None:
         with raises(
             OneFieldEmptyError,
-            match=r"Dataclass 'DataClassFutureInt' does not contain field 'int' \(modulo case\)",
+            match=r"Dataclass 'DataClassFutureInt' does not contain a field 'invalid' \(modulo case\)",
         ):
-            _ = one_field(DataClassFutureInt, "int")
+            _ = one_field(DataClassFutureInt, "invalid")
 
     def test_error_exact_match_case_insensitive_non_unique_error(self) -> None:
         with raises(
@@ -343,10 +345,17 @@ class TestOneField:
         ):
             _ = one_field(DataClassFutureIntLowerAndUpper, "int_")
 
+    def test_error_head_case_insensitive_empty_error(self) -> None:
+        with raises(
+            OneFieldEmptyError,
+            match=r"Dataclass 'DataClassFutureInt' does not contain any field starting with 'inv' \(modulo case\)",
+        ):
+            _ = one_field(DataClassFutureInt, "inv", head=True)
+
     def test_error_exact_match_case_sensitive_empty_error(self) -> None:
         with raises(
             OneFieldEmptyError,
-            match=r"Dataclass 'DataClassFutureInt' does not contain field 'INT_'",
+            match=r"Dataclass 'DataClassFutureInt' does not contain a field 'INT_'",
         ):
             _ = one_field(DataClassFutureInt, "INT_", case_sensitive=True)
 
