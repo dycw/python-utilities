@@ -726,10 +726,13 @@ def dataclass_to_schema(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
 ) -> SchemaDict:
     """Cast a dataclass as a schema dict."""
     out: dict[str, Any] = {}
-    for field in yield_fields(obj, globalns=globalns, localns=localns):
+    for field in yield_fields(
+        obj, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
+    ):
         if is_dataclass_instance(field.value):
             dtypes = dataclass_to_schema(
                 field.value, globalns=globalns, localns=localns
@@ -1388,12 +1391,15 @@ def struct_from_dataclass(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
     time_zone: TimeZoneLike | None = None,
 ) -> Struct:
     """Construct the Struct data type for a dataclass."""
     if not is_dataclass_class(cls):
         raise _StructFromDataClassNotADataclassError(cls=cls)
-    anns = get_type_hints(cls, globalns=globalns, localns=localns)
+    anns = get_type_hints(
+        cls, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
+    )
     data_types = {
         k: _struct_from_dataclass_one(v, time_zone=time_zone) for k, v in anns.items()
     }
