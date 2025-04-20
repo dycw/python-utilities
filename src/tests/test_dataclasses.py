@@ -8,17 +8,9 @@ from types import NoneType
 from typing import Any, cast, override
 
 from hypothesis import given
-from hypothesis.strategies import (
-    DataObject,
-    booleans,
-    data,
-    integers,
-    lists,
-    none,
-    sampled_from,
-)
+from hypothesis.strategies import booleans, integers, lists, sampled_from
 from polars import DataFrame
-from pytest import raises
+from pytest import mark, raises
 
 from tests.test_typing_funcs.no_future import (
     DataClassNoFutureInt,
@@ -27,7 +19,6 @@ from tests.test_typing_funcs.no_future import (
 from tests.test_typing_funcs.with_future import (
     DataClassFutureInt,
     DataClassFutureIntDefault,
-    DataClassFutureIntNullable,
     DataClassFutureListInts,
     DataClassFutureListIntsDefault,
     DataClassFutureLiteral,
@@ -36,18 +27,14 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureNestedOuterFirstOuter,
     DataClassFutureNone,
     DataClassFutureNoneDefault,
-    DataClassFuturePath,
     DataClassFutureTypeLiteral,
     DataClassFutureTypeLiteralNullable,
     TrueOrFalseFutureLit,
     TrueOrFalseFutureTypeLit,
 )
 from utilities.dataclasses import (
+    MappingToDataclassError,
     YieldFieldsError,
-    _MappingToDataclassCaseInsensitiveNonUniqueError,
-    _MappingToDataclassEmptyError,
-    _TextToDataClassGetFieldEmptyError,
-    _TextToDataClassGetFieldNonUniqueError,
     _TextToDataClassParseValueError,
     _TextToDataClassSplitKeyValuePairError,
     _YieldFieldsClass,
@@ -60,7 +47,6 @@ from utilities.dataclasses import (
     yield_fields,
 )
 from utilities.functions import get_class_name
-from utilities.hypothesis import paths
 from utilities.iterables import one
 from utilities.orjson import OrjsonLogRecord
 from utilities.polars import are_frames_equal
@@ -271,56 +257,79 @@ class TestDataclassToDictAndDataclassRepr:
         assert repr_res == repr_exp
 
 
+@mark.only
 class TestMappingToDataclass:
-    @given(int_=integers())
-    def test_int_case_sensitive(self, *, int_: int) -> None:
-        obj = mapping_to_dataclass(DataClassFutureInt, {"int_": int_})
-        expected = DataClassFutureInt(int_=int_)
-        assert obj == expected
-
     @given(key=sampled_from(["int_", "INT_"]), int_=integers())
-    def test_int_case_insensitive(self, *, key: str, int_: int) -> None:
+    def test_exact_match_case_insensitive(self, *, key: str, int_: int) -> None:
         obj = mapping_to_dataclass(DataClassFutureInt, {key: int_})
         expected = DataClassFutureInt(int_=int_)
         assert obj == expected
 
-    @given(data=data(), int_=integers() | none())
-    def test_int_nullable(self, *, data: DataObject, int_: int | None) -> None:
-        if int_ is None:
-            mapping = data.draw(sampled_from([{"int_": int_}, {}]))
-        else:
-            mapping = {"int_": int_}
-        obj = mapping_to_dataclass(DataClassFutureIntNullable, mapping)
-        expected = DataClassFutureIntNullable(int_=int_)
+    @given(key=sampled_from(["in", "IN"]), int_=integers())
+    def test_head_case_insensitive(self, *, key: str, int_: int) -> None:
+        obj = mapping_to_dataclass(DataClassFutureInt, {key: int_}, head=True)
+        expected = DataClassFutureInt(int_=int_)
         assert obj == expected
 
-    @given(data=data(), ints=lists(integers()))
-    def test_list_ints_nullable(self, *, data: DataObject, ints: list[int]) -> None:
-        if len(ints) == 0:
-            mapping = data.draw(sampled_from([{"ints": ints}, {}]))
-        else:
-            mapping = {"ints": ints}
-        obj = mapping_to_dataclass(DataClassFutureListIntsDefault, mapping)
-        expected = DataClassFutureListIntsDefault(ints=ints)
+    @given(int_=integers())
+    def test_exact_match_case_sensitive(self, *, int_: int) -> None:
+        obj = mapping_to_dataclass(
+            DataClassFutureInt, {"int_": int_}, case_sensitive=True
+        )
+        expected = DataClassFutureInt(int_=int_)
         assert obj == expected
 
-    @given(value=paths())
-    def test_path(self, *, value: Path) -> None:
-        obj = mapping_to_dataclass(DataClassFuturePath, {"path": value})
-        expected = DataClassFuturePath(path=value)
+    @given(int_=integers())
+    def test_extra_key(self, *, int_: int) -> None:
+        obj = mapping_to_dataclass(
+            DataClassFutureInt, {"int_": int_, "extra": int_}, allow_extra=True
+        )
+        expected = DataClassFutureInt(int_=int_)
         assert obj == expected
 
-    @given(value=integers())
-    def test_error_case_sensitive_empty_error(self, *, value: int) -> None:
+    @given(key=sampled_from(["extra", "EXTRA"]), int_=integers())
+    def test_error_exact_match_case_insensitive(self, *, key: str, int_: int) -> None:
         with raises(
-            _MappingToDataclassEmptyError, match=r"Mapping .* does not contain 'int_'"
+            MappingToDataclassError,
+            match=r"Dataclass .* does not contain field '(extra|EXTRA)' \(modulo case\)",
+        ):
+            _ = mapping_to_dataclass(DataClassFutureInt, {"int_": int_, key: int_})
+
+    @given(int_=integers())
+    def test_error_exact_match_case_sensitive(self, *, int_: int) -> None:
+        with raises(
+            MappingToDataclassError,
+            match=r"Dataclass .* does not contain field 'extra'",
         ):
             _ = mapping_to_dataclass(
-                DataClassFutureInt, {"INT_": value}, case_sensitive=True
+                DataClassFutureInt, {"int_": int_, "extra": int_}, case_sensitive=True
             )
 
+    @given(int_=integers())
+    def test_error_head_case_insensitive(self, *, int_: int) -> None:
+        with raises(
+            MappingToDataclassError,
+            match=r"Dataclass .* does not contain any field starting with 'invalid' \(modulo case\)",
+        ):
+            _ = mapping_to_dataclass(DataClassFutureInt, {"invalid": int_}, head=True)
+
+    @given(int_=integers())
+    def test_error_head_case_sensitive(self, *, int_: int) -> None:
+        with raises(
+            MappingToDataclassError,
+            match=r"Dataclass .* does not contain any field starting with 'invalid'",
+        ):
+            _ = mapping_to_dataclass(
+                DataClassFutureInt, {"invalid": int_}, head=True, case_sensitive=True
+            )
+
+
+@mark.only
+class TestOneField:
     @given(value=integers())
-    def test_error_case_insensitive_empty_error(self, *, value: int) -> None:
+    def test_error_exact_match_case_insensitive_empty_error(
+        self, *, value: int
+    ) -> None:
         with raises(
             _MappingToDataclassEmptyError,
             match=r"Mapping .* does not contain 'int_' \(modulo case\)",
@@ -328,11 +337,11 @@ class TestMappingToDataclass:
             _ = mapping_to_dataclass(DataClassFutureInt, {"other": value})
 
     @given(value1=integers(), value2=integers())
-    def test_error_case_insensitive_non_unique_error(
+    def test_error_exact_match_case_insensitive_non_unique_error(
         self, *, value1: int, value2: int
     ) -> None:
         with raises(
-            _MappingToDataclassCaseInsensitiveNonUniqueError,
+            _MappingToDataclassNonUniqueError,
             match=re.compile(
                 r"Mapping .* must contain 'int_' exactly once \(modulo case\); got 'int_', 'INT_' and perhaps more",
                 flags=DOTALL,
@@ -341,6 +350,17 @@ class TestMappingToDataclass:
             _ = mapping_to_dataclass(
                 DataClassFutureInt, {"int_": value1, "INT_": value2}
             )
+
+    @given(value=integers())
+    def test_error_exact_match_case_sensitive_empty_error(self, *, value: int) -> None:
+        with raises(
+            _MappingToDataclassEmptyError, match=r"Mapping .* does not contain 'int_'"
+        ):
+            _ = mapping_to_dataclass(
+                DataClassFutureInt, {"INT_": value}, case_sensitive=True
+            )
+
+    # there is no head=False, case_sensitive=True, non-unique case
 
 
 class TestReplaceNonSentinel:
@@ -362,15 +382,31 @@ class TestReplaceNonSentinel:
 
 
 class TestTextToDataClass:
-    @given(int_=integers())
-    def test_main_text(self, *, int_: int) -> None:
-        result = text_to_dataclass(f"int_={int_}", DataClassFutureInt)
+    @given(key=sampled_from(["int_", "INT_"]), int_=integers())
+    def test_main_text_case_insensitive(self, *, key: str, int_: int) -> None:
+        result = text_to_dataclass(f"{key}={int_}", DataClassFutureInt)
         expected = DataClassFutureInt(int_=int_)
         assert result == expected
 
     @given(int_=integers())
-    def test_main_mapping(self, *, int_: int) -> None:
-        result = text_to_dataclass({"int_": str(int_)}, DataClassFutureInt)
+    def test_main_text_case_sensitive(self, *, int_: int) -> None:
+        result = text_to_dataclass(
+            f"int_={int_}", DataClassFutureInt, case_sensitive=True
+        )
+        expected = DataClassFutureInt(int_=int_)
+        assert result == expected
+
+    @given(key=sampled_from(["int_", "INT_"]), int_=integers())
+    def test_main_mapping_case_insensitive(self, *, key: str, int_: int) -> None:
+        result = text_to_dataclass({key: str(int_)}, DataClassFutureInt)
+        expected = DataClassFutureInt(int_=int_)
+        assert result == expected
+
+    @given(int_=integers())
+    def test_main_mapping_case_sensitive(self, *, int_: int) -> None:
+        result = text_to_dataclass(
+            {"int_": str(int_)}, DataClassFutureInt, case_sensitive=True
+        )
         expected = DataClassFutureInt(int_=int_)
         assert result == expected
 
