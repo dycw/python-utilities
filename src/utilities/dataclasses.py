@@ -279,7 +279,7 @@ class OneFieldNonUniqueError(OneFieldError[TDataclass]):
         head = f"Dataclass {get_class_name(self.cls)!r} must contain"
         match self.head, self.case_sensitive:
             case False, True:
-                raise ImpossibleCaseError(
+                raise ImpossibleCaseError(  # pragma: no cover
                     case=[f"{self.head=}", f"{self.case_sensitive=}"]
                 )
             case False, False:
