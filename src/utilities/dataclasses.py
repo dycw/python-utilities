@@ -492,18 +492,18 @@ def yield_fields(
         raise YieldFieldsError(obj=obj)
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
 class _YieldFieldsInstance(Generic[_T]):
     name: str
-    value: _T
-    type_: Any
-    default: _T | Sentinel = sentinel
-    default_factory: Callable[[], _T] | Sentinel = sentinel
+    value: _T = field(hash=False)
+    type_: Any = field(hash=False)
+    default: _T | Sentinel = field(default=sentinel, hash=False)
+    default_factory: Callable[[], _T] | Sentinel = field(default=sentinel, hash=False)
     repr: bool = True
     hash_: bool | None = None
     init: bool = True
     compare: bool = True
-    metadata: StrMapping = field(default_factory=dict)
+    metadata: StrMapping = field(default_factory=dict, hash=False)
     kw_only: bool | Sentinel = sentinel
 
     def equals_default(
