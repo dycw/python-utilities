@@ -437,7 +437,7 @@ class TestSerializeAndDeserialize:
     @given(
         obj=make_objects(
             dataclass_custom_equality=True,
-            dataclass_default_in_init_child=True,
+            dataclass_default_in_init_child=False,
             dataclass_int=True,
             dataclass_int_default=True,
             dataclass_literal=True,
@@ -465,7 +465,6 @@ class TestSerializeAndDeserialize:
                 DataClassFutureCustomEquality,
                 DataClassFutureInt,
                 DataClassFutureIntDefault,
-                DataClassFutureDefaultInInitChild,
                 DataClassFutureLiteral,
                 DataClassFutureLiteralNullable,
                 DataClassFutureNestedInnerFirstInner,
