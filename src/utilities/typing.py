@@ -19,6 +19,7 @@ from typing import (
 from typing import get_args as _get_args
 from typing import get_type_hints as _get_type_hints
 from uuid import UUID
+from warnings import warn
 
 from utilities.iterables import unique_everseen
 from utilities.sentinel import Sentinel
@@ -68,16 +69,18 @@ def get_type_hints(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
 ) -> dict[str, Any]:
     """Get the type hints of an object."""
     result: dict[str, Any] = cls.__annotations__
     _ = {Literal, Path, Sentinel, StrMapping, UUID, dt}
-    globalns = globals() | ({} if globalns is None else dict(globalns))
-    localns = {} if localns is None else dict(localns)
+    globalns_use = globals() | ({} if globalns is None else dict(globalns))
+    localns_use = {} if localns is None else dict(localns)
     try:
-        hints = _get_type_hints(cls, globalns=globalns, localns=localns)
-    except NameError:
-        pass
+        hints = _get_type_hints(cls, globalns=globalns_use, localns=localns_use)
+    except NameError as error:
+        if warn_name_errors:
+            warn(f"Error getting type hints for {cls!r}; {error}", stacklevel=2)
     else:
         result.update({
             key: value

@@ -48,6 +48,7 @@ def dataclass_repr(
     exclude: Iterable[str] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
     extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
@@ -56,7 +57,9 @@ def dataclass_repr(
 ) -> str:
     """Repr a dataclass, without its defaults."""
     out: dict[str, str] = {}
-    for fld in yield_fields(obj, globalns=globalns, localns=localns):
+    for fld in yield_fields(
+        obj, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
+    ):
         if (
             fld.keep(
                 include=include,
@@ -76,6 +79,7 @@ def dataclass_repr(
                         exclude=exclude,
                         globalns=globalns,
                         localns=localns,
+                        warn_name_errors=warn_name_errors,
                         rel_tol=rel_tol,
                         abs_tol=abs_tol,
                         extra=extra,
@@ -90,6 +94,7 @@ def dataclass_repr(
                             exclude=exclude,
                             globalns=globalns,
                             localns=localns,
+                            warn_name_errors=warn_name_errors,
                             rel_tol=rel_tol,
                             abs_tol=abs_tol,
                             extra=extra,
@@ -122,6 +127,7 @@ def dataclass_to_dict(
     exclude: Iterable[str] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
     extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
@@ -131,7 +137,9 @@ def dataclass_to_dict(
 ) -> StrMapping:
     """Convert a dataclass to a dictionary."""
     out: StrMapping = {}
-    for fld in yield_fields(obj, globalns=globalns, localns=localns):
+    for fld in yield_fields(
+        obj, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
+    ):
         if fld.keep(
             include=include,
             exclude=exclude,
@@ -146,6 +154,7 @@ def dataclass_to_dict(
                         fld.value,
                         globalns=globalns,
                         localns=localns,
+                        warn_name_errors=warn_name_errors,
                         rel_tol=rel_tol,
                         abs_tol=abs_tol,
                         extra=extra,
@@ -159,6 +168,7 @@ def dataclass_to_dict(
                             v,
                             globalns=globalns,
                             localns=localns,
+                            warn_name_errors=warn_name_errors,
                             rel_tol=rel_tol,
                             abs_tol=abs_tol,
                             extra=extra,
@@ -189,13 +199,21 @@ def mapping_to_dataclass(
     fields: Iterable[_YieldFieldsClass[Any]] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
     head: bool = False,
     case_sensitive: bool = False,
     allow_extra: bool = False,
 ) -> TDataclass:
     """Construct a dataclass from a mapping."""
     if fields is None:
-        fields_use = list(yield_fields(cls, globalns=globalns, localns=localns))
+        fields_use = list(
+            yield_fields(
+                cls,
+                globalns=globalns,
+                localns=localns,
+                warn_name_errors=warn_name_errors,
+            )
+        )
     else:
         fields_use = fields
     fields_to_values = str_mapping_to_field_mapping(
@@ -204,6 +222,7 @@ def mapping_to_dataclass(
         fields=fields_use,
         globalns=globalns,
         localns=localns,
+        warn_name_errors=warn_name_errors,
         head=head,
         case_sensitive=case_sensitive,
         allow_extra=allow_extra,
@@ -244,12 +263,20 @@ def one_field(
     fields: Iterable[_YieldFieldsClass[Any]] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
     head: bool = False,
     case_sensitive: bool = False,
 ) -> _YieldFieldsClass[Any]:
     """Get the unique field a key matches to."""
     if fields is None:
-        fields_use = list(yield_fields(cls, globalns=globalns, localns=localns))
+        fields_use = list(
+            yield_fields(
+                cls,
+                globalns=globalns,
+                localns=localns,
+                warn_name_errors=warn_name_errors,
+            )
+        )
     else:
         fields_use = fields
     mapping = {f.name: f for f in fields_use}
@@ -362,6 +389,7 @@ def str_mapping_to_field_mapping(
     fields: Iterable[_YieldFieldsClass[Any]] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
     head: bool = False,
     case_sensitive: bool = False,
     allow_extra: bool = False,
@@ -376,6 +404,7 @@ def str_mapping_to_field_mapping(
                 fields=fields,
                 globalns=globalns,
                 localns=localns,
+                warn_name_errors=warn_name_errors,
                 head=head,
                 case_sensitive=case_sensitive,
             )
@@ -421,6 +450,7 @@ def text_to_dataclass(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
     head: bool = False,
     case_sensitive: bool = False,
     allow_extra: bool = False,
@@ -433,13 +463,18 @@ def text_to_dataclass(
             ...
         case _ as never:
             assert_never(never)
-    fields = list(yield_fields(cls, globalns=globalns, localns=localns))
+    fields = list(
+        yield_fields(
+            cls, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
+        )
+    )
     fields_to_serializes = str_mapping_to_field_mapping(
         cls,
         keys_to_serializes,
         fields=fields,
         globalns=globalns,
         localns=localns,
+        warn_name_errors=warn_name_errors,
         head=head,
         case_sensitive=case_sensitive,
         allow_extra=allow_extra,
@@ -454,6 +489,7 @@ def text_to_dataclass(
         fields=fields,
         globalns=globalns,
         localns=localns,
+        warn_name_errors=warn_name_errors,
         head=head,
         case_sensitive=case_sensitive,
         allow_extra=allow_extra,
@@ -525,6 +561,7 @@ def yield_fields(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
 ) -> Iterator[_YieldFieldsInstance[Any]]: ...
 @overload
 def yield_fields(
@@ -533,6 +570,7 @@ def yield_fields(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
 ) -> Iterator[_YieldFieldsClass[Any]]: ...
 def yield_fields(
     obj: Dataclass | type[Dataclass],
@@ -540,10 +578,16 @@ def yield_fields(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
 ) -> Iterator[_YieldFieldsInstance[Any]] | Iterator[_YieldFieldsClass[Any]]:
     """Yield the fields of a dataclass."""
     if is_dataclass_instance(obj):
-        for field in yield_fields(type(obj), globalns=globalns, localns=localns):
+        for field in yield_fields(
+            type(obj),
+            globalns=globalns,
+            localns=localns,
+            warn_name_errors=warn_name_errors,
+        ):
             yield _YieldFieldsInstance(
                 name=field.name,
                 value=getattr(obj, field.name),
@@ -558,7 +602,9 @@ def yield_fields(
                 kw_only=field.kw_only,
             )
     elif is_dataclass_class(obj):
-        hints = get_type_hints(obj, globalns=globalns, localns=localns)
+        hints = get_type_hints(
+            obj, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
+        )
         for field in fields(obj):
             if isinstance(field.type, type):
                 type_ = field.type

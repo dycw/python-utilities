@@ -10,7 +10,7 @@ from uuid import UUID
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, just, none, sampled_from
-from pytest import mark, param
+from pytest import mark, param, raises
 
 from tests.test_typing_funcs.no_future import (
     DataClassNoFutureNestedInnerFirstInner,
@@ -317,6 +317,21 @@ class TestGetTypeHints:
         hints = get_type_hints(Outer)
         expected = {"inner": "Inner"}
         assert hints == expected
+
+    def test_warning(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Outer:
+            inner: Inner
+
+        @dataclass(kw_only=True, slots=True)
+        class Inner:
+            int_: int
+
+        with raises(
+            UserWarning,
+            match="Error getting type hints for <.*>; name 'Inner' is not defined",
+        ):
+            _ = get_type_hints(Outer, warn_name_errors=True)
 
 
 class TestIsAnnotationOfType:
