@@ -158,10 +158,8 @@ if TYPE_CHECKING:
     )
     from polars.datatypes import DataTypeClass
 
+    from tests.test_typing_funcs.with_future import TrueOrFalseFutureLit
     from utilities.types import MaybeType, StrMapping, WeekDay
-
-
-TruthLit = Literal["true", "false"]  # in 3.12, use type TruthLit = ...
 
 
 class TestAppendDataClass:
@@ -1899,7 +1897,7 @@ class TestYieldRowsAsDataclasses:
 
         @dataclass(kw_only=True, slots=True)
         class Row:
-            x: TruthLit
+            x: TrueOrFalseFutureLit
 
         result = list(
             yield_rows_as_dataclasses(
@@ -1919,7 +1917,7 @@ class TestYieldRowsAsDataclasses:
 
         @dataclass(kw_only=True, slots=True)
         class Row:
-            x: TruthLit | None = None
+            x: TrueOrFalseFutureLit | None = None
 
         result = list(
             yield_rows_as_dataclasses(
