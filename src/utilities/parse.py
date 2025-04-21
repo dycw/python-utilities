@@ -7,7 +7,7 @@ from enum import Enum
 from pathlib import Path
 from re import DOTALL
 from types import NoneType
-from typing import TYPE_CHECKING, Any, TypeVar, override
+from typing import TYPE_CHECKING, Any, override
 
 from utilities.datetime import is_subclass_date_not_datetime
 from utilities.enum import ParseEnumError, parse_enum
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
 
-_T = TypeVar("_T")
+type _Extra = Mapping[Any, Callable[[str], Any]]
 
 
 def parse_text(
@@ -41,7 +41,7 @@ def parse_text(
     *,
     head: bool = False,
     case_sensitive: bool = False,
-    extra: Mapping[type[_T], Callable[[str], _T]] | None = None,
+    extra: _Extra | None = None,
 ) -> Any:
     """Parse text."""
     if obj is None:
@@ -76,7 +76,7 @@ def parse_text(
             for arg, text in zip(args, texts, strict=True)
         )
     if is_union_type(obj):
-        return _parse_text_union_type(obj, text)
+        return _parse_text_union_type(obj, text, extra=extra)
     raise _ParseTextParseError(obj=obj, text=text) from None
 
 
@@ -86,7 +86,7 @@ def _parse_text_type(
     /,
     *,
     case_sensitive: bool = False,
-    extra: Mapping[type[_T], Callable[[str], _T]] | None = None,
+    extra: _Extra | None = None,
 ) -> Any:
     """Parse text."""
     if issubclass(cls, NoneType):
@@ -170,7 +170,9 @@ def _parse_text_type(
     raise _ParseTextParseError(obj=cls, text=text) from None
 
 
-def _parse_text_union_type(obj: Any, text: str, /) -> Any:
+def _parse_text_union_type(
+    obj: Any, text: str, /, *, extra: _Extra | None = None
+) -> Any:
     if obj is Number:
         try:
             return parse_number(text)
@@ -183,6 +185,13 @@ def _parse_text_union_type(obj: Any, text: str, /) -> Any:
             return parse_duration(text)
         except ParseDurationError:
             raise _ParseTextParseError(obj=obj, text=text) from None
+    if extra is not None:
+        try:
+            parser = one(p for c, p in extra.items() if c is obj)
+        except OneEmptyError:
+            pass
+        else:
+            return parser(text)
     raise _ParseTextParseError(obj=obj, text=text) from None
 
 

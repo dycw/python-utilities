@@ -61,7 +61,7 @@ class DataClassFutureIntEven:
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureIntOdd:
-    even_int: int
+    odd_int: int
 
 
 DataClassFutureIntEvenOrOddUnion = DataClassFutureIntEven | DataClassFutureIntOdd
