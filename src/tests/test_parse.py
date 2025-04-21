@@ -105,28 +105,6 @@ class TestParseText:
         result = parse_text(TrueOrFalseFutureLit, truth)
         assert result == truth
 
-    def test_nullable_duration_none(self) -> None:
-        text = str(None)
-        result = parse_text(Duration | None, text)
-        assert result is None
-
-    @given(duration=datetime_durations(two_way=True))
-    def test_nullable_duration_duration(self, *, duration: Duration) -> None:
-        text = serialize_duration(duration)
-        result = parse_text(Duration | None, text)
-        assert result == duration
-
-    def test_nullable_int_none(self) -> None:
-        text = str(None)
-        result = parse_text(int | None, text)
-        assert result is None
-
-    @given(value=integers())
-    def test_nullable_int_int(self, *, value: int) -> None:
-        text = str(value)
-        result = parse_text(int | None, text)
-        assert result == value
-
     def test_none(self) -> None:
         text = str(None)
         result = parse_text(None, text)
@@ -155,6 +133,39 @@ class TestParseText:
         text = str(path_use)
         result = ensure_path(parse_text(Path, text))
         assert result == result.expanduser()
+
+    def test_nullable_number_none(self) -> None:
+        text = str(None)
+        result = parse_text(Number | None, text)
+        assert result is None
+
+    @given(number=numbers())
+    def test_nullable_number_number(self, *, number: Number) -> None:
+        text = str(number)
+        result = parse_text(Number | None, text)
+        assert result == number
+
+    def test_nullable_duration_none(self) -> None:
+        text = str(None)
+        result = parse_text(Duration | None, text)
+        assert result is None
+
+    @given(duration=datetime_durations(two_way=True))
+    def test_nullable_duration_duration(self, *, duration: Duration) -> None:
+        text = serialize_duration(duration)
+        result = parse_text(Duration | None, text)
+        assert result == duration
+
+    def test_nullable_int_none(self) -> None:
+        text = str(None)
+        result = parse_text(int | None, text)
+        assert result is None
+
+    @given(value=integers())
+    def test_nullable_int_int(self, *, value: int) -> None:
+        text = str(value)
+        result = parse_text(int | None, text)
+        assert result == value
 
     def test_sentinel(self) -> None:
         text = str(sentinel)
