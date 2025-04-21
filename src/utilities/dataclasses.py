@@ -454,7 +454,7 @@ def text_to_dataclass(
     head: bool = False,
     case_sensitive: bool = False,
     allow_extra_keys: bool = False,
-    extra_parsers: Mapping[type[_T], Callable[[str], _T]] | None = None,
+    extra_parsers: _Extra | None = None,
 ) -> TDataclass:
     """Construct a dataclass from a string or a mapping or strings."""
     match text_or_mapping:
