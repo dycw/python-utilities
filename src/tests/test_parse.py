@@ -14,6 +14,9 @@ from pytest import raises
 from tests.test_operator import TruthEnum
 from tests.test_typing_funcs.with_future import (
     DataClassFutureInt,
+    DataClassFutureIntEven,
+    DataClassFutureIntEvenOrOddUnion,
+    DataClassFutureIntOdd,
     TrueOrFalseFutureLit,
     TrueOrFalseFutureTypeLit,
 )
@@ -78,7 +81,7 @@ class TestParseText:
         assert result is truth
 
     @given(value=integers())
-    def test_extra(self, *, value: int) -> None:
+    def test_extra_type(self, *, value: int) -> None:
         text = str(value)
         result = parse_text(
             DataClassFutureInt,
@@ -86,6 +89,29 @@ class TestParseText:
             extra={DataClassFutureInt: lambda text: DataClassFutureInt(int_=int(text))},
         )
         expected = DataClassFutureInt(int_=value)
+        assert result == expected
+
+    @given(value=integers())
+    def test_extra_union(self, *, value: int) -> None:
+        def parse_even_or_odd(text: str, /) -> DataClassFutureIntEvenOrOddUnion:
+            value = int(text)
+            match value % 2:
+                case 0:
+                    return DataClassFutureIntEven(even_int=value)
+                case 1:
+                    return DataClassFutureIntOdd(odd_int=value)
+
+        text = str(value)
+        result = parse_text(
+            DataClassFutureIntEvenOrOddUnion,
+            text,
+            extra={DataClassFutureIntEvenOrOddUnion: parse_even_or_odd},
+        )
+        match value % 2:
+            case 0:
+                expected = DataClassFutureIntEven(even_int=value)
+            case 1:
+                expected = DataClassFutureIntOdd(odd_int=value)
         assert result == expected
 
     @given(value=floats())
