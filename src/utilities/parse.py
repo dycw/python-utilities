@@ -13,10 +13,11 @@ from utilities.datetime import is_subclass_date_not_datetime
 from utilities.enum import ParseEnumError, parse_enum
 from utilities.functions import is_subclass_int_not_bool
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one, one_str
+from utilities.math import ParseNumberError, parse_number
 from utilities.re import ExtractGroupError, extract_group
 from utilities.sentinel import ParseSentinelError, Sentinel, parse_sentinel
 from utilities.text import ParseBoolError, ParseNoneError, parse_bool, parse_none
-from utilities.types import Duration
+from utilities.types import Duration, Number
 from utilities.typing import (
     get_args,
     is_literal_type,
@@ -38,8 +39,8 @@ def parse_text(
     text: str,
     /,
     *,
-    case_sensitive: bool = False,
     head: bool = False,
+    case_sensitive: bool = False,
     extra: Mapping[type[_T], Callable[[str], _T]] | None = None,
 ) -> Any:
     """Parse text."""
@@ -56,13 +57,12 @@ def parse_text(
         with suppress(ParseNoneError):
             return parse_none(text)
         inner = one(arg for arg in get_args(obj) if arg is not NoneType)
-        if isinstance(
-            inner := one(arg for arg in get_args(obj) if arg is not NoneType), type
-        ):
-            try:
-                return _parse_text_type(inner, text, case_sensitive=case_sensitive)
-            except _ParseTextParseError:
-                raise _ParseTextParseError(obj=obj, text=text) from None
+        try:
+            return parse_text(
+                inner, text, head=head, case_sensitive=case_sensitive, extra=extra
+            )
+        except _ParseTextParseError:
+            raise _ParseTextParseError(obj=obj, text=text) from None
     if is_tuple_type(obj):
         args = get_args(obj)
         try:
@@ -72,16 +72,11 @@ def parse_text(
         if len(args) != len(texts):
             raise _ParseTextParseError(obj=obj, text=text)
         return tuple(
-            parse_text(arg, text, case_sensitive=case_sensitive, head=head)
+            parse_text(arg, text, head=head, case_sensitive=case_sensitive, extra=extra)
             for arg, text in zip(args, texts, strict=True)
         )
-    if is_union_type(obj) and (obj is Duration):
-        from utilities.whenever import ParseDurationError, parse_duration
-
-        try:
-            return parse_duration(text)
-        except ParseDurationError:
-            raise _ParseTextParseError(obj=obj, text=text) from None
+    if is_union_type(obj):
+        return _parse_text_union_type(obj, text)
     raise _ParseTextParseError(obj=obj, text=text) from None
 
 
@@ -173,6 +168,22 @@ def _parse_text_type(
         else:
             return parser(text)
     raise _ParseTextParseError(obj=cls, text=text) from None
+
+
+def _parse_text_union_type(obj: Any, text: str, /) -> Any:
+    if obj is Number:
+        try:
+            return parse_number(text)
+        except ParseNumberError:
+            raise _ParseTextParseError(obj=obj, text=text) from None
+    if obj is Duration:
+        from utilities.whenever import ParseDurationError, parse_duration
+
+        try:
+            return parse_duration(text)
+        except ParseDurationError:
+            raise _ParseTextParseError(obj=obj, text=text) from None
+    raise _ParseTextParseError(obj=obj, text=text) from None
 
 
 @dataclass

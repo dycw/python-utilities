@@ -17,6 +17,7 @@ from utilities.datetime import (
     parse_two_digit_year,
     timedelta_to_microseconds,
 )
+from utilities.math import ParseNumberError, parse_number
 from utilities.re import (
     ExtractGroupError,
     ExtractGroupsError,
@@ -298,10 +299,8 @@ class ParseDateTimeError(Exception):
 
 def parse_duration(duration: str, /) -> Duration:
     """Parse a string into a Duration."""
-    with suppress(ValueError):
-        return int(duration)
-    with suppress(ValueError):
-        return float(duration)
+    with suppress(ParseNumberError):
+        return parse_number(duration)
     try:
         return parse_timedelta(duration)
     except ParseTimedeltaError:

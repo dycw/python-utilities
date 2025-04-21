@@ -21,6 +21,7 @@ from utilities.functions import ensure_path
 from utilities.hypothesis import (
     datetime_durations,
     local_datetimes,
+    numbers,
     paths,
     text_ascii,
     timedeltas_2w,
@@ -34,7 +35,7 @@ from utilities.parse import (
     parse_text,
 )
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import Duration
+from utilities.types import Duration, Number
 from utilities.version import Version
 from utilities.whenever import (
     serialize_date,
@@ -104,6 +105,17 @@ class TestParseText:
         result = parse_text(TrueOrFalseFutureLit, truth)
         assert result == truth
 
+    def test_nullable_duration_none(self) -> None:
+        text = str(None)
+        result = parse_text(Duration | None, text)
+        assert result is None
+
+    @given(duration=datetime_durations(two_way=True))
+    def test_nullable_duration_duration(self, *, duration: Duration) -> None:
+        text = serialize_duration(duration)
+        result = parse_text(Duration | None, text)
+        assert result == duration
+
     def test_nullable_int_none(self) -> None:
         text = str(None)
         result = parse_text(int | None, text)
@@ -124,6 +136,12 @@ class TestParseText:
         text = str(None)
         result = parse_text(NoneType, text)
         assert result is None
+
+    @given(number=numbers())
+    def test_number(self, *, number: Number) -> None:
+        text = str(number)
+        result = parse_text(Number, text)
+        assert result == number
 
     @given(path=paths())
     def test_path(self, *, path: Path) -> None:
