@@ -331,6 +331,13 @@ class TestParseText:
                 },
             )
 
+    def test_error_union_type_extra(self) -> None:
+        with raises(
+            _ParseTextParseError,
+            match=r"Unable to parse tests\.test_typing_funcs\.with_future\.DataClassFutureIntEven \| tests\.test_typing_funcs\.with_future\.DataClassFutureIntOdd; got 'invalid'",
+        ):
+            _ = parse_text(DataClassFutureIntEvenOrOddUnion, "invalid", extra={})
+
     def test_error_float(self) -> None:
         with raises(
             _ParseTextParseError, match="Unable to parse <class 'float'>; got 'invalid'"
@@ -423,9 +430,10 @@ class TestParseText:
 
     def test_error_unknown_union_type(self) -> None:
         with raises(
-            _ParseTextParseError, match=r"Unable to parse <class '.*'>; got 'invalid'"
+            _ParseTextParseError,
+            match=r"Unable to parse tests\.test_typing_funcs\.with_future\.DataClassFutureIntEven \| tests\.test_typing_funcs\.with_future\.DataClassFutureIntOdd; got 'invalid'",
         ):
-            _ = parse_text(DataClassFutureInt | DataClassFutureInt, "invalid")
+            _ = parse_text(DataClassFutureIntEvenOrOddUnion, "invalid")
 
     def test_error_version(self) -> None:
         with raises(
