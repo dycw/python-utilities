@@ -22,7 +22,7 @@ from utilities.functions import (
 )
 from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
-from utilities.parse import ParseTextError, parse_text
+from utilities.parse import ParseTextError, _Extra, parse_text
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import TDataclass
 from utilities.typing import get_type_hints
@@ -524,7 +524,7 @@ def _text_to_dataclass_parse(
     *,
     head: bool = False,
     case_sensitive: bool = False,
-    extra: Mapping[type[_T], Callable[[str], _T]] | None = None,
+    extra: _Extra | None = None,
 ) -> Any:
     try:
         return parse_text(
