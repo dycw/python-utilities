@@ -55,6 +55,22 @@ class DataClassFutureIntDefault:
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureIntEven:
+    even_int: int
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureIntOdd:
+    odd_int: int
+
+
+DataClassFutureIntEvenOrOddUnion = DataClassFutureIntEven | DataClassFutureIntOdd
+type DataClassFutureIntEvenOrOddTypeUnion = (
+    DataClassFutureIntEven | DataClassFutureIntOdd
+)
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureIntNullable:
     int_: int | None = None
 

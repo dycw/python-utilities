@@ -24,7 +24,7 @@ from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
 from utilities.parse import ParseTextError, parse_text
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import TDataclass
+from utilities.types import ParseTextExtra, TDataclass
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
@@ -454,7 +454,7 @@ def text_to_dataclass(
     head: bool = False,
     case_sensitive: bool = False,
     allow_extra_keys: bool = False,
-    extra_parsers: Mapping[type[_T], Callable[[str], _T]] | None = None,
+    extra_parsers: ParseTextExtra | None = None,
 ) -> TDataclass:
     """Construct a dataclass from a string or a mapping or strings."""
     match text_or_mapping:
@@ -524,7 +524,7 @@ def _text_to_dataclass_parse(
     *,
     head: bool = False,
     case_sensitive: bool = False,
-    extra: Mapping[type[_T], Callable[[str], _T]] | None = None,
+    extra: ParseTextExtra | None = None,
 ) -> Any:
     try:
         return parse_text(

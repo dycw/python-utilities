@@ -14,9 +14,14 @@ from pytest import raises
 from tests.test_operator import TruthEnum
 from tests.test_typing_funcs.with_future import (
     DataClassFutureInt,
+    DataClassFutureIntEven,
+    DataClassFutureIntEvenOrOddTypeUnion,
+    DataClassFutureIntEvenOrOddUnion,
+    DataClassFutureIntOdd,
     TrueOrFalseFutureLit,
     TrueOrFalseFutureTypeLit,
 )
+from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_path
 from utilities.hypothesis import (
     datetime_durations,
@@ -78,7 +83,7 @@ class TestParseText:
         assert result is truth
 
     @given(value=integers())
-    def test_extra(self, *, value: int) -> None:
+    def test_extra_type(self, *, value: int) -> None:
         text = str(value)
         result = parse_text(
             DataClassFutureInt,
@@ -200,6 +205,60 @@ class TestParseText:
         result = parse_text(TrueOrFalseFutureTypeLit, truth)
         assert result == truth
 
+    @given(value=integers())
+    def test_type_union_with_extra(self, *, value: int) -> None:
+        def parse_even_or_odd(text: str, /) -> DataClassFutureIntEvenOrOddTypeUnion:
+            value = int(text)
+            match value % 2:
+                case 0:
+                    return DataClassFutureIntEven(even_int=value)
+                case 1:
+                    return DataClassFutureIntOdd(odd_int=value)
+                case _:
+                    raise ImpossibleCaseError(case=[f"{value=}"])
+
+        text = str(value)
+        result = parse_text(
+            DataClassFutureIntEvenOrOddTypeUnion,
+            text,
+            extra={DataClassFutureIntEvenOrOddTypeUnion: parse_even_or_odd},
+        )
+        match value % 2:
+            case 0:
+                expected = DataClassFutureIntEven(even_int=value)
+            case 1:
+                expected = DataClassFutureIntOdd(odd_int=value)
+            case _:
+                raise ImpossibleCaseError(case=[f"{value=}"])
+        assert result == expected
+
+    @given(value=integers())
+    def test_union_with_extra(self, *, value: int) -> None:
+        def parse_even_or_odd(text: str, /) -> DataClassFutureIntEvenOrOddUnion:
+            value = int(text)
+            match value % 2:
+                case 0:
+                    return DataClassFutureIntEven(even_int=value)
+                case 1:
+                    return DataClassFutureIntOdd(odd_int=value)
+                case _:
+                    raise ImpossibleCaseError(case=[f"{value=}"])
+
+        text = str(value)
+        result = parse_text(
+            DataClassFutureIntEvenOrOddUnion,
+            text,
+            extra={DataClassFutureIntEvenOrOddUnion: parse_even_or_odd},
+        )
+        match value % 2:
+            case 0:
+                expected = DataClassFutureIntEven(even_int=value)
+            case 1:
+                expected = DataClassFutureIntOdd(odd_int=value)
+            case _:
+                raise ImpossibleCaseError(case=[f"{value=}"])
+        assert result == expected
+
     @given(version=versions())
     def test_version(self, *, version: Version) -> None:
         text = str(version)
@@ -271,6 +330,13 @@ class TestParseText:
                     Parent2: lambda text: Child(y=int(text)),
                 },
             )
+
+    def test_error_union_type_extra(self) -> None:
+        with raises(
+            _ParseTextParseError,
+            match=r"Unable to parse tests\.test_typing_funcs\.with_future\.DataClassFutureIntEven \| tests\.test_typing_funcs\.with_future\.DataClassFutureIntOdd; got 'invalid'",
+        ):
+            _ = parse_text(DataClassFutureIntEvenOrOddUnion, "invalid", extra={})
 
     def test_error_float(self) -> None:
         with raises(
@@ -364,9 +430,10 @@ class TestParseText:
 
     def test_error_unknown_union_type(self) -> None:
         with raises(
-            _ParseTextParseError, match=r"Unable to parse <class '.*'>; got 'invalid'"
+            _ParseTextParseError,
+            match=r"Unable to parse tests\.test_typing_funcs\.with_future\.DataClassFutureIntEven \| tests\.test_typing_funcs\.with_future\.DataClassFutureIntOdd; got 'invalid'",
         ):
-            _ = parse_text(DataClassFutureInt | DataClassFutureInt, "invalid")
+            _ = parse_text(DataClassFutureIntEvenOrOddUnion, "invalid")
 
     def test_error_version(self) -> None:
         with raises(
