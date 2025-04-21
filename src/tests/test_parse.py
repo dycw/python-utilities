@@ -308,6 +308,12 @@ class TestParseText:
         ):
             _ = parse_text(Iterable[None] | None, "invalid")
 
+    def test_error_number(self) -> None:
+        with raises(
+            _ParseTextParseError, match=r"Unable to parse Number; got 'invalid'"
+        ):
+            _ = parse_text(Number, "invalid")
+
     def test_error_sentinel(self) -> None:
         with raises(
             _ParseTextParseError,
