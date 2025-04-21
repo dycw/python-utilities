@@ -5,6 +5,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from re import DOTALL
 from types import NoneType
 from typing import Any, override
 
@@ -12,9 +13,10 @@ from utilities.datetime import is_subclass_date_not_datetime
 from utilities.enum import ParseEnumError, parse_enum
 from utilities.functions import is_subclass_int_not_bool
 from utilities.iterables import one, one_str
+from utilities.re import ExtractGroupError, extract_group
 from utilities.sentinel import ParseSentinelError, Sentinel, parse_sentinel
 from utilities.text import ParseBoolError, ParseNoneError, parse_bool, parse_none
-from utilities.typing import get_args, is_literal_type, is_optional_type
+from utilities.typing import get_args, is_literal_type, is_optional_type, is_tuple_type
 from utilities.version import ParseVersionError, Version, parse_version
 
 
@@ -42,6 +44,18 @@ def parse_text(
                 return _parse_text_type(inner, text, case_sensitive=case_sensitive)
             except ParseTextError:
                 raise ParseTextError(obj=obj, text=text) from None
+    if is_tuple_type(obj):
+        args = get_args(obj)
+        try:
+            texts = extract_group(r"^\((.*)\)$", text, flags=DOTALL).split(", ")
+        except ExtractGroupError:
+            raise ParseTextError(obj=obj, text=text) from None
+        if len(args) != len(texts):
+            raise ParseTextError(obj=obj, text=text)
+        return tuple(
+            parse_text(arg, text, case_sensitive=case_sensitive, head=head)
+            for arg, text in zip(args, texts, strict=True)
+        )
     raise ParseTextError(obj=obj, text=text) from None
 
 

@@ -135,6 +135,12 @@ class TestParseText:
         result = parse_text(dt.timedelta, text)
         assert result == timedelta
 
+    @given(x=integers(), y=integers())
+    def test_tuple(self, *, x: int, y: int) -> None:
+        text = f"({x}, {y})"
+        result = parse_text(tuple[int, int], text)
+        assert result == (x, y)
+
     @given(truth=sampled_from(["true", "false"]))
     def test_type_literal(self, *, truth: Literal["true", "false"]) -> None:
         result = parse_text(TrueOrFalseFutureTypeLit, truth)
@@ -227,6 +233,19 @@ class TestParseText:
             match=r"Unable to parse <class 'datetime\.timedelta'>; got 'invalid'",
         ):
             _ = parse_text(dt.timedelta, "invalid")
+
+    def test_error_tuple_invalid_text(self) -> None:
+        with raises(
+            ParseTextError, match=r"Unable to parse tuple\[int, int\]; got 'invalid'"
+        ):
+            _ = parse_text(tuple[int, int], "invalid")
+
+    def test_error_tuple_inconsistent_args_and_texts(self) -> None:
+        with raises(
+            ParseTextError,
+            match=r"Unable to parse tuple\[int, int\]; got '\(text1, text2, text3\)'",
+        ):
+            _ = parse_text(tuple[int, int], "(text1, text2, text3)")
 
     def test_error_unknown_annotation(self) -> None:
         with raises(ParseTextError, match=r"Unable to parse int \| str; got 'invalid'"):

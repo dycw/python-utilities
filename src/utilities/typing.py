@@ -182,6 +182,14 @@ def is_set_type(obj: Any, /) -> bool:
 ##
 
 
+def is_tuple_type(obj: Any, /) -> bool:
+    """Check if an object is a tuple type annotation."""
+    return _is_annotation_of_type(obj, tuple)
+
+
+##
+
+
 def is_union_type(obj: Any, /) -> bool:
     """Check if an object is a union type annotation."""
     is_old_union = _is_annotation_of_type(obj, Union)  # pyright: ignore[reportDeprecated]
@@ -212,5 +220,6 @@ __all__ = [
     "is_optional_type",
     "is_sequence_type",
     "is_set_type",
+    "is_tuple_type",
     "is_union_type",
 ]
