@@ -350,15 +350,17 @@ class TestParseText:
             _ = parse_text(int | str, "invalid")
 
     def test_error_unknown_type(self) -> None:
-        @dataclass(kw_only=True)
-        class Example:
-            pass
-
         with raises(
             _ParseTextParseError,
-            match=r"Unable to parse <class 'tests\.test_parse\.TestParseText\.test_error_unknown_type\.<locals>\.Example'>; got 'invalid'",
+            match=r"Unable to parse <class 'tests\.test_typing_funcs\.with_future\.DataClassFutureInt'>; got 'invalid'",
         ):
-            _ = parse_text(Example, "invalid")
+            _ = parse_text(DataClassFutureInt, "invalid")
+
+    def test_error_unknown_union_type(self) -> None:
+        with raises(
+            _ParseTextParseError, match=r"Unable to parse <class '.*'>; got 'invalid'"
+        ):
+            _ = parse_text(DataClassFutureInt | DataClassFutureInt, "invalid")
 
     def test_error_version(self) -> None:
         with raises(
