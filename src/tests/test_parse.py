@@ -19,6 +19,7 @@ from tests.test_typing_funcs.with_future import (
 )
 from utilities.functions import ensure_path
 from utilities.hypothesis import (
+    datetime_durations,
     local_datetimes,
     paths,
     text_ascii,
@@ -33,10 +34,12 @@ from utilities.parse import (
     parse_text,
 )
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import Duration
 from utilities.version import Version
 from utilities.whenever import (
     serialize_date,
     serialize_datetime,
+    serialize_duration,
     serialize_time,
     serialize_timedelta,
 )
@@ -60,6 +63,12 @@ class TestParseText:
         text = serialize_datetime(datetime)
         result = parse_text(dt.datetime, text)
         assert result == datetime
+
+    @given(duration=datetime_durations(two_way=True))
+    def test_duration(self, *, duration: Duration) -> None:
+        text = serialize_duration(duration)
+        result = parse_text(Duration, text)
+        assert result == duration
 
     @given(truth=sampled_from(TruthEnum))
     def test_enum(self, *, truth: TruthEnum) -> None:
@@ -187,6 +196,12 @@ class TestParseText:
             match=r"Unable to parse <class 'datetime\.datetime'>; got 'invalid'",
         ):
             _ = parse_text(dt.datetime, "invalid")
+
+    def test_error_duration(self) -> None:
+        with raises(
+            _ParseTextParseError, match=r"Unable to parse Duration; got 'invalid'"
+        ):
+            _ = parse_text(Duration, "invalid")
 
     def test_error_enum(self) -> None:
         with raises(

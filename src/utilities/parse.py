@@ -16,7 +16,14 @@ from utilities.iterables import OneEmptyError, OneNonUniqueError, one, one_str
 from utilities.re import ExtractGroupError, extract_group
 from utilities.sentinel import ParseSentinelError, Sentinel, parse_sentinel
 from utilities.text import ParseBoolError, ParseNoneError, parse_bool, parse_none
-from utilities.typing import get_args, is_literal_type, is_optional_type, is_tuple_type
+from utilities.types import Duration
+from utilities.typing import (
+    get_args,
+    is_literal_type,
+    is_optional_type,
+    is_tuple_type,
+    is_union_type,
+)
 from utilities.version import ParseVersionError, Version, parse_version
 
 if TYPE_CHECKING:
@@ -68,6 +75,13 @@ def parse_text(
             parse_text(arg, text, case_sensitive=case_sensitive, head=head)
             for arg, text in zip(args, texts, strict=True)
         )
+    if is_union_type(obj) and (obj is Duration):
+        from utilities.whenever import ParseDurationError, parse_duration
+
+        try:
+            return parse_duration(text)
+        except ParseDurationError:
+            raise _ParseTextParseError(obj=obj, text=text) from None
     raise _ParseTextParseError(obj=obj, text=text) from None
 
 
