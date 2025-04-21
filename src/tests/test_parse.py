@@ -13,6 +13,7 @@ from pytest import raises
 
 from tests.test_operator import TruthEnum
 from tests.test_typing_funcs.with_future import (
+    DataClassFutureInt,
     TrueOrFalseFutureLit,
     TrueOrFalseFutureTypeLit,
 )
@@ -26,7 +27,11 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.math import is_equal
-from utilities.parse import ParseTextError, parse_text
+from utilities.parse import (
+    _ParseTextExtraNonUniqueError,
+    _ParseTextParseError,
+    parse_text,
+)
 from utilities.sentinel import Sentinel, sentinel
 from utilities.version import Version
 from utilities.whenever import (
@@ -61,6 +66,17 @@ class TestParseText:
         text = truth.name
         result = parse_text(TruthEnum, text)
         assert result is truth
+
+    @given(value=integers())
+    def test_extra(self, *, value: int) -> None:
+        text = str(value)
+        result = parse_text(
+            DataClassFutureInt,
+            text,
+            extra={DataClassFutureInt: lambda text: DataClassFutureInt(int_=int(text))},
+        )
+        expected = DataClassFutureInt(int_=value)
+        assert result == expected
 
     @given(value=floats())
     def test_float(self, *, value: float) -> None:
@@ -154,101 +170,139 @@ class TestParseText:
 
     def test_error_bool(self) -> None:
         with raises(
-            ParseTextError, match="Unable to parse <class 'bool'>; got 'invalid'"
+            _ParseTextParseError, match="Unable to parse <class 'bool'>; got 'invalid'"
         ):
             _ = parse_text(bool, "invalid")
 
     def test_error_date(self) -> None:
         with raises(
-            ParseTextError,
+            _ParseTextParseError,
             match=r"Unable to parse <class 'datetime\.date'>; got 'invalid'",
         ):
             _ = parse_text(dt.date, "invalid")
 
     def test_error_datetime(self) -> None:
         with raises(
-            ParseTextError,
+            _ParseTextParseError,
             match=r"Unable to parse <class 'datetime\.datetime'>; got 'invalid'",
         ):
             _ = parse_text(dt.datetime, "invalid")
 
     def test_error_enum(self) -> None:
         with raises(
-            ParseTextError, match="Unable to parse <enum 'TruthEnum'>; got 'invalid'"
+            _ParseTextParseError,
+            match="Unable to parse <enum 'TruthEnum'>; got 'invalid'",
         ):
             _ = parse_text(TruthEnum, "invalid")
 
+    def test_error_extra_empty(self) -> None:
+        with raises(
+            _ParseTextParseError,
+            match="Unable to parse <class 'tests.test_typing_funcs.with_future.DataClassFutureInt'>; got 'invalid'",
+        ):
+            _ = parse_text(DataClassFutureInt, "invalid", extra={})
+
+    @given(value=integers())
+    def test_error_extra_non_unique(self, *, value: int) -> None:
+        @dataclass(kw_only=True)
+        class Parent1:
+            x: int = 0
+
+        @dataclass(kw_only=True)
+        class Parent2:
+            y: int = 0
+
+        @dataclass(kw_only=True)
+        class Child(Parent1, Parent2): ...
+
+        with raises(
+            _ParseTextExtraNonUniqueError,
+            match="Unable to parse <class '.*'> since `extra` must contain exactly one parent class; got <function .*>, <function .*> and perhaps more",
+        ):
+            _ = parse_text(
+                Child,
+                str(value),
+                extra={
+                    Parent1: lambda text: Child(x=int(text)),
+                    Parent2: lambda text: Child(y=int(text)),
+                },
+            )
+
     def test_error_float(self) -> None:
         with raises(
-            ParseTextError, match="Unable to parse <class 'float'>; got 'invalid'"
+            _ParseTextParseError, match="Unable to parse <class 'float'>; got 'invalid'"
         ):
             _ = parse_text(float, "invalid")
 
     def test_error_int(self) -> None:
         with raises(
-            ParseTextError, match="Unable to parse <class 'int'>; got 'invalid'"
+            _ParseTextParseError, match="Unable to parse <class 'int'>; got 'invalid'"
         ):
             _ = parse_text(int, "invalid")
 
     def test_error_none(self) -> None:
-        with raises(ParseTextError, match="Unable to parse None; got 'invalid'"):
+        with raises(_ParseTextParseError, match="Unable to parse None; got 'invalid'"):
             _ = parse_text(None, "invalid")
 
     def test_error_none_type(self) -> None:
         with raises(
-            ParseTextError, match="Unable to parse <class 'NoneType'>; got 'invalid'"
+            _ParseTextParseError,
+            match="Unable to parse <class 'NoneType'>; got 'invalid'",
         ):
             _ = parse_text(NoneType, "invalid")
 
     def test_error_nullable_int(self) -> None:
         with raises(
-            ParseTextError, match=r"Unable to parse int \| None; got 'invalid'"
+            _ParseTextParseError, match=r"Unable to parse int \| None; got 'invalid'"
         ):
             _ = parse_text(int | None, "invalid")
 
     def test_error_nullable_not_type(self) -> None:
         with raises(
-            ParseTextError,
+            _ParseTextParseError,
             match=r"Unable to parse collections\.abc\.Iterable\[None\] \| None; got 'invalid'",
         ):
             _ = parse_text(Iterable[None] | None, "invalid")
 
     def test_error_sentinel(self) -> None:
         with raises(
-            ParseTextError,
+            _ParseTextParseError,
             match=r"Unable to parse <class 'utilities\.sentinel\.Sentinel'>; got 'invalid'",
         ):
             _ = parse_text(Sentinel, "invalid")
 
     def test_error_time(self) -> None:
         with raises(
-            ParseTextError,
+            _ParseTextParseError,
             match=r"Unable to parse <class 'datetime\.time'>; got 'invalid'",
         ):
             _ = parse_text(dt.time, "invalid")
 
     def test_error_timedelta(self) -> None:
         with raises(
-            ParseTextError,
+            _ParseTextParseError,
             match=r"Unable to parse <class 'datetime\.timedelta'>; got 'invalid'",
         ):
             _ = parse_text(dt.timedelta, "invalid")
 
     def test_error_tuple_invalid_text(self) -> None:
         with raises(
-            ParseTextError, match=r"Unable to parse tuple\[int, int\]; got 'invalid'"
+            _ParseTextParseError,
+            match=r"Unable to parse tuple\[int, int\]; got 'invalid'",
         ):
             _ = parse_text(tuple[int, int], "invalid")
 
     def test_error_tuple_inconsistent_args_and_texts(self) -> None:
         with raises(
-            ParseTextError,
+            _ParseTextParseError,
             match=r"Unable to parse tuple\[int, int\]; got '\(text1, text2, text3\)'",
         ):
             _ = parse_text(tuple[int, int], "(text1, text2, text3)")
 
     def test_error_unknown_annotation(self) -> None:
-        with raises(ParseTextError, match=r"Unable to parse int \| str; got 'invalid'"):
+        with raises(
+            _ParseTextParseError, match=r"Unable to parse int \| str; got 'invalid'"
+        ):
             _ = parse_text(int | str, "invalid")
 
     def test_error_unknown_type(self) -> None:
@@ -257,14 +311,14 @@ class TestParseText:
             pass
 
         with raises(
-            ParseTextError,
+            _ParseTextParseError,
             match=r"Unable to parse <class 'tests\.test_parse\.TestParseText\.test_error_unknown_type\.<locals>\.Example'>; got 'invalid'",
         ):
             _ = parse_text(Example, "invalid")
 
     def test_error_version(self) -> None:
         with raises(
-            ParseTextError,
+            _ParseTextParseError,
             match=r"Unable to parse <class 'utilities\.version\.Version'>; got 'invalid'",
         ):
             _ = parse_text(Version, "invalid")
