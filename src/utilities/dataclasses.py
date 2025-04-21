@@ -453,7 +453,8 @@ def text_to_dataclass(
     warn_name_errors: bool = False,
     head: bool = False,
     case_sensitive: bool = False,
-    allow_extra: bool = False,
+    allow_extra_keys: bool = False,
+    extra_parsers: Mapping[type[_T], Callable[[str], _T]] | None = None,
 ) -> TDataclass:
     """Construct a dataclass from a string or a mapping or strings."""
     match text_or_mapping:
@@ -477,10 +478,12 @@ def text_to_dataclass(
         warn_name_errors=warn_name_errors,
         head=head,
         case_sensitive=case_sensitive,
-        allow_extra=allow_extra,
+        allow_extra=allow_extra_keys,
     )
     field_names_to_values = {
-        f.name: _text_to_dataclass_parse(f, t, cls, case_sensitive=case_sensitive)
+        f.name: _text_to_dataclass_parse(
+            f, t, cls, head=head, case_sensitive=case_sensitive, extra=extra_parsers
+        )
         for f, t in fields_to_serializes.items()
     }
     return mapping_to_dataclass(
@@ -492,7 +495,7 @@ def text_to_dataclass(
         warn_name_errors=warn_name_errors,
         head=head,
         case_sensitive=case_sensitive,
-        allow_extra=allow_extra,
+        allow_extra=allow_extra_keys,
     )
 
 
@@ -519,10 +522,14 @@ def _text_to_dataclass_parse(
     cls: type[Dataclass],
     /,
     *,
+    head: bool = False,
     case_sensitive: bool = False,
+    extra: Mapping[type[_T], Callable[[str], _T]] | None = None,
 ) -> Any:
     try:
-        return parse_text(field.type_, text, case_sensitive=case_sensitive)
+        return parse_text(
+            field.type_, text, head=head, case_sensitive=case_sensitive, extra=extra
+        )
     except ParseTextError:
         raise _TextToDataClassParseValueError(cls=cls, field=field, text=text) from None
 
