@@ -229,6 +229,10 @@ class SupportsRound(Protocol[_T_co]):
     def __round__(self, ndigits: int, /) -> _T_co: ...
 
 
+# parse
+type ParseTextExtra = Mapping[Any, Callable[[str], Any]]
+
+
 # pathlib
 type PathLike = MaybeStr[Path]
 type PathLikeOrCallable = PathLike | Callable[[], PathLike]
@@ -278,6 +282,7 @@ __all__ = [
     "OpenMode",
     "OptExcInfo",
     "Parallelism",
+    "ParseTextExtra",
     "PathLike",
     "PathLikeOrCallable",
     "RoundMode",

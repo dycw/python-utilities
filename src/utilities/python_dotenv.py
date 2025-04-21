@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from os import environ
-from typing import TYPE_CHECKING, TypeVar, override
+from typing import TYPE_CHECKING, override
 
 from dotenv import dotenv_values
 
@@ -13,14 +13,12 @@ from utilities.pathlib import PWD
 from utilities.reprlib import get_repr
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
+    from collections.abc import Mapping
     from collections.abc import Set as AbstractSet
     from pathlib import Path
 
+    from utilities.parse import _Extra
     from utilities.types import PathLike, StrMapping, TDataclass
-
-
-_T = TypeVar("_T")
 
 
 def load_settings(
@@ -33,7 +31,7 @@ def load_settings(
     warn_name_errors: bool = False,
     head: bool = False,
     case_sensitive: bool = False,
-    extra_parsers: Mapping[type[_T], Callable[[str], _T]] | None = None,
+    extra_parsers: _Extra | None = None,
 ) -> TDataclass:
     """Load a set of settings from the `.env` file."""
     path = get_repo_root(cwd=cwd).joinpath(".env")

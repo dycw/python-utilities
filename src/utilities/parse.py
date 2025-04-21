@@ -7,7 +7,7 @@ from enum import Enum
 from pathlib import Path
 from re import DOTALL
 from types import NoneType
-from typing import TYPE_CHECKING, Any, override
+from typing import Any, override
 
 from utilities.datetime import is_subclass_date_not_datetime
 from utilities.enum import ParseEnumError, parse_enum
@@ -17,7 +17,7 @@ from utilities.math import ParseNumberError, parse_number
 from utilities.re import ExtractGroupError, extract_group
 from utilities.sentinel import ParseSentinelError, Sentinel, parse_sentinel
 from utilities.text import ParseBoolError, ParseNoneError, parse_bool, parse_none
-from utilities.types import Duration, Number
+from utilities.types import Duration, Number, ParseTextExtra
 from utilities.typing import (
     get_args,
     is_literal_type,
@@ -27,12 +27,6 @@ from utilities.typing import (
 )
 from utilities.version import ParseVersionError, Version, parse_version
 
-if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
-
-
-type _Extra = Mapping[Any, Callable[[str], Any]]
-
 
 def parse_text(
     obj: Any,
@@ -41,7 +35,7 @@ def parse_text(
     *,
     head: bool = False,
     case_sensitive: bool = False,
-    extra: _Extra | None = None,
+    extra: ParseTextExtra | None = None,
 ) -> Any:
     """Parse text."""
     if obj is None:
@@ -86,7 +80,7 @@ def _parse_text_type(
     /,
     *,
     case_sensitive: bool = False,
-    extra: _Extra | None = None,
+    extra: ParseTextExtra | None = None,
 ) -> Any:
     """Parse text."""
     if issubclass(cls, NoneType):
@@ -171,7 +165,7 @@ def _parse_text_type(
 
 
 def _parse_text_union_type(
-    obj: Any, text: str, /, *, extra: _Extra | None = None
+    obj: Any, text: str, /, *, extra: ParseTextExtra | None = None
 ) -> Any:
     if obj is Number:
         try:
