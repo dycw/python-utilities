@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from contextlib import suppress
 from dataclasses import dataclass
 from math import ceil, exp, floor, isclose, isfinite, isinf, isnan, log, log10, modf
 from re import Match, search
@@ -9,7 +10,8 @@ from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 from utilities.errors import ImpossibleCaseError
 
 if TYPE_CHECKING:
-    from utilities.types import RoundMode
+    from utilities.types import Number, RoundMode
+
 
 MIN_FLOAT32, MAX_FLOAT32 = -3.4028234663852886e38, 3.4028234663852886e38
 MIN_FLOAT64, MAX_FLOAT64 = -1.7976931348623157e308, 1.7976931348623157e308
@@ -681,6 +683,27 @@ def order_of_magnitude(x: float, /, *, round_: bool = False) -> float:
 ##
 
 
+def parse_number(number: str, /) -> Number:
+    """Convert text into a number."""
+    with suppress(ValueError):
+        return int(number)
+    with suppress(ValueError):
+        return float(number)
+    raise ParseNumberError(number=number)
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseNumberError(Exception):
+    number: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse number; got {self.number!r}"
+
+
+##
+
+
 def round_(
     x: float,
     /,
@@ -887,6 +910,7 @@ __all__ = [
     "MIN_UINT64",
     "CheckIntegerError",
     "EWMParametersError",
+    "ParseNumberError",
     "SafeRoundError",
     "check_integer",
     "ewm_parameters",
@@ -934,6 +958,7 @@ __all__ = [
     "is_zero_or_non_micro_or_nan",
     "number_of_decimals",
     "order_of_magnitude",
+    "parse_number",
     "round_",
     "round_float_imprecisions",
     "round_to_float",

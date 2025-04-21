@@ -19,7 +19,9 @@ from tests.test_typing_funcs.with_future import (
 )
 from utilities.functions import ensure_path
 from utilities.hypothesis import (
+    datetime_durations,
     local_datetimes,
+    numbers,
     paths,
     text_ascii,
     timedeltas_2w,
@@ -33,10 +35,12 @@ from utilities.parse import (
     parse_text,
 )
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import Duration, Number
 from utilities.version import Version
 from utilities.whenever import (
     serialize_date,
     serialize_datetime,
+    serialize_duration,
     serialize_time,
     serialize_timedelta,
 )
@@ -60,6 +64,12 @@ class TestParseText:
         text = serialize_datetime(datetime)
         result = parse_text(dt.datetime, text)
         assert result == datetime
+
+    @given(duration=datetime_durations(two_way=True))
+    def test_duration(self, *, duration: Duration) -> None:
+        text = serialize_duration(duration)
+        result = parse_text(Duration, text)
+        assert result == duration
 
     @given(truth=sampled_from(TruthEnum))
     def test_enum(self, *, truth: TruthEnum) -> None:
@@ -95,17 +105,6 @@ class TestParseText:
         result = parse_text(TrueOrFalseFutureLit, truth)
         assert result == truth
 
-    def test_nullable_int_none(self) -> None:
-        text = str(None)
-        result = parse_text(int | None, text)
-        assert result is None
-
-    @given(value=integers())
-    def test_nullable_int_int(self, *, value: int) -> None:
-        text = str(value)
-        result = parse_text(int | None, text)
-        assert result == value
-
     def test_none(self) -> None:
         text = str(None)
         result = parse_text(None, text)
@@ -115,6 +114,12 @@ class TestParseText:
         text = str(None)
         result = parse_text(NoneType, text)
         assert result is None
+
+    @given(number=numbers())
+    def test_number(self, *, number: Number) -> None:
+        text = str(number)
+        result = parse_text(Number, text)
+        assert result == number
 
     @given(path=paths())
     def test_path(self, *, path: Path) -> None:
@@ -128,6 +133,39 @@ class TestParseText:
         text = str(path_use)
         result = ensure_path(parse_text(Path, text))
         assert result == result.expanduser()
+
+    def test_nullable_number_none(self) -> None:
+        text = str(None)
+        result = parse_text(Number | None, text)
+        assert result is None
+
+    @given(number=numbers())
+    def test_nullable_number_number(self, *, number: Number) -> None:
+        text = str(number)
+        result = parse_text(Number | None, text)
+        assert result == number
+
+    def test_nullable_duration_none(self) -> None:
+        text = str(None)
+        result = parse_text(Duration | None, text)
+        assert result is None
+
+    @given(duration=datetime_durations(two_way=True))
+    def test_nullable_duration_duration(self, *, duration: Duration) -> None:
+        text = serialize_duration(duration)
+        result = parse_text(Duration | None, text)
+        assert result == duration
+
+    def test_nullable_int_none(self) -> None:
+        text = str(None)
+        result = parse_text(int | None, text)
+        assert result is None
+
+    @given(value=integers())
+    def test_nullable_int_int(self, *, value: int) -> None:
+        text = str(value)
+        result = parse_text(int | None, text)
+        assert result == value
 
     def test_sentinel(self) -> None:
         text = str(sentinel)
@@ -187,6 +225,12 @@ class TestParseText:
             match=r"Unable to parse <class 'datetime\.datetime'>; got 'invalid'",
         ):
             _ = parse_text(dt.datetime, "invalid")
+
+    def test_error_duration(self) -> None:
+        with raises(
+            _ParseTextParseError, match=r"Unable to parse Duration; got 'invalid'"
+        ):
+            _ = parse_text(Duration, "invalid")
 
     def test_error_enum(self) -> None:
         with raises(
@@ -264,6 +308,12 @@ class TestParseText:
         ):
             _ = parse_text(Iterable[None] | None, "invalid")
 
+    def test_error_number(self) -> None:
+        with raises(
+            _ParseTextParseError, match=r"Unable to parse Number; got 'invalid'"
+        ):
+            _ = parse_text(Number, "invalid")
+
     def test_error_sentinel(self) -> None:
         with raises(
             _ParseTextParseError,
@@ -306,15 +356,17 @@ class TestParseText:
             _ = parse_text(int | str, "invalid")
 
     def test_error_unknown_type(self) -> None:
-        @dataclass(kw_only=True)
-        class Example:
-            pass
-
         with raises(
             _ParseTextParseError,
-            match=r"Unable to parse <class 'tests\.test_parse\.TestParseText\.test_error_unknown_type\.<locals>\.Example'>; got 'invalid'",
+            match=r"Unable to parse <class 'tests\.test_typing_funcs\.with_future\.DataClassFutureInt'>; got 'invalid'",
         ):
-            _ = parse_text(Example, "invalid")
+            _ = parse_text(DataClassFutureInt, "invalid")
+
+    def test_error_unknown_union_type(self) -> None:
+        with raises(
+            _ParseTextParseError, match=r"Unable to parse <class '.*'>; got 'invalid'"
+        ):
+            _ = parse_text(DataClassFutureInt | DataClassFutureInt, "invalid")
 
     def test_error_version(self) -> None:
         with raises(

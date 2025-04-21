@@ -16,7 +16,7 @@ from hypothesis.strategies import (
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
 from pytest import approx, raises
 
-from utilities.hypothesis import int32s, pairs
+from utilities.hypothesis import int32s, numbers, pairs
 from utilities.math import (
     MAX_INT8,
     MAX_INT16,
@@ -36,6 +36,7 @@ from utilities.math import (
     MIN_UINT64,
     CheckIntegerError,
     NumberOfDecimalsError,
+    ParseNumberError,
     SafeRoundError,
     _EWMParameters,
     _EWMParametersAlphaError,
@@ -91,6 +92,7 @@ from utilities.math import (
     is_zero_or_non_micro_or_nan,
     number_of_decimals,
     order_of_magnitude,
+    parse_number,
     round_,
     round_float_imprecisions,
     round_to_float,
@@ -893,6 +895,18 @@ class TestOrderOfMagnitude:
         assert res_float == approx(exp_float)
         res_int = order_of_magnitude(x_use, round_=True)
         assert res_int == exp_int
+
+
+class TestParseNumber:
+    @given(number=numbers())
+    def test_main(self, *, number: Number) -> None:
+        serialized = str(number)
+        result = parse_number(serialized)
+        assert result == number
+
+    def test_error(self) -> None:
+        with raises(ParseNumberError, match="Unable to parse number; got 'invalid'"):
+            _ = parse_number("invalid")
 
 
 class TestRound:
