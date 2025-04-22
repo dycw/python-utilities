@@ -54,6 +54,7 @@ from utilities.parse import (
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import Duration, Number
 from utilities.version import Version
+from utilities.whenever import serialize_duration, serialize_time, serialize_timedelta
 
 
 class TestToAndParseText:

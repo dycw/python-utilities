@@ -381,6 +381,13 @@ def replace_non_sentinel(
 ##
 
 
+def serialize_dataclass() -> str:
+    """Serialize a Dataclass."""
+
+
+##
+
+
 def str_mapping_to_field_mapping(
     cls: type[TDataclass],
     mapping: Mapping[str, _T],
