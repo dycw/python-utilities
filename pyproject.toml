@@ -40,6 +40,7 @@ dev = [
   "orjson >= 3.10.16, < 3.11",
   "pathvalidate >= 3.2.3, < 3.3",
   "polars-lts-cpu >= 1.27.1, < 1.28",
+  "polars-ols >= 0.3.5, < 0.4",
   "pqdm >= 0.2.0, < 0.3",
   "psycopg2-binary >= 2.9.10, < 2.10",  # for sqlalchemy
   "pydantic >= 2.11.2, < 2.12",
@@ -84,12 +85,13 @@ dev = [
 [project]
 authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
 dependencies = [
+  "polars-ols>=0.3.5",
   "typing-extensions >= 4.13.1, < 4.14",
 ]
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.109.9"
+version = "0.109.10"
 
 [project.optional-dependencies]
 test = [
@@ -332,7 +334,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.109.9"
+current_version = "0.109.10"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
