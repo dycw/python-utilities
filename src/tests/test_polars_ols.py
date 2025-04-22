@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from hypothesis import given
 from hypothesis.strategies import sampled_from
+from numpy import isclose
 from polars import DataFrame, Float64, Struct, UInt32, col
 from polars.testing import assert_frame_equal
 from sklearn.linear_model import LinearRegression
@@ -78,10 +79,10 @@ class TestComputeRollingOLS:
         y = df.select("y").to_numpy()
         model = LinearRegression()
         model = model.fit(X, y)
-        assert (model.coef_ == coeffs).all()
-        assert model.intercept_ == intercept
-        assert (model.predict(X)[-1] == prediction).all()
-        assert model.score(X, y) == r2
+        assert isclose(model.coef_, coeffs).all()
+        assert isclose(model.intercept_, intercept)
+        assert isclose(model.predict(X)[-1], prediction).all()
+        assert isclose(model.score(X, y), r2)
 
     @property
     def _df(self) -> DataFrame:
