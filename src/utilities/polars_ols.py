@@ -60,10 +60,12 @@ def compute_rolling_ols(
     ).alias("residuals")
     ssr = (residuals**2).rolling_sum(window_size, min_samples=min_periods).alias("SSR")
     sst = (
-        (target - target.rolling_mean(window_size, min_samples=min_periods)) ** 2
-    ).alias("SST")
+        ((target - target.rolling_mean(window_size, min_samples=min_periods)) ** 2)
+        .rolling_sum(window_size, min_samples=min_periods)
+        .alias("SST")
+    )
     r2 = (1 - ssr / sst).alias("R2")
-    return struct(coefficients, predictions, residuals, r2)
+    return struct(coefficients, predictions, residuals, r2).alias("ols")
 
 
 __all__ = ["compute_rolling_ols"]

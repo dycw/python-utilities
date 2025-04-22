@@ -51,6 +51,7 @@ dev = [
   "python-dotenv >= 1.1.0, < 1.2",
   "redis >= 5.2.1, < 5.3",
   "rich >= 14.0.0, < 14.1",
+  "scikit-learn >= 1.6.1, < 1.7",
   "scipy >= 1.15.2, < 1.16",
   "slack-sdk >= 3.35.0, < 3.36",
   "sqlalchemy >= 2.0.40, < 2.1",
