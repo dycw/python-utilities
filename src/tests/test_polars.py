@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 from uuid import UUID, uuid4
 
+import hypothesis.strategies
 import polars as pl
 from hypothesis import given
 from hypothesis.strategies import (
@@ -20,7 +21,6 @@ from hypothesis.strategies import (
     data,
     fixed_dictionaries,
     floats,
-    integers,
     lists,
     none,
     sampled_from,
@@ -50,6 +50,7 @@ from polars import (
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import raises
 
+import utilities.polars
 from utilities.datetime import get_now, get_today
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -1210,7 +1211,7 @@ class TestGetDataTypeOrSeriesTimeZone:
 
 
 class TestGetSeriesNumberOfDecimals:
-    @given(data=data(), n=integers(1, 10), nullable=booleans())
+    @given(data=data(), n=hypothesis.strategies.integers(1, 10), nullable=booleans())
     def test_main(self, *, data: DataObject, n: int, nullable: bool) -> None:
         strategy = int64s() | none() if nullable else int64s()
         ints_or_none = data.draw(lists(strategy, min_size=1, max_size=10))
@@ -1310,6 +1311,37 @@ class TestInsertBetween:
             match="DataFrame columns 'a' and 'c' must be consecutive; got indices 0 and 2",
         ):
             _ = insert_between(self.df, "a", "c", lit(None).alias("new"))
+
+
+class TestIntegers:
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        high=hypothesis.strategies.integers(1, 10),
+    )
+    def test_int(self, *, length: int, high: int) -> None:
+        series = utilities.polars.integers(length, high)
+        assert series.len() == length
+        assert series.is_between(0, high, closed="left").all()
+
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        high=hypothesis.strategies.integers(1, 10),
+    )
+    def test_series(self, *, length: int, high: int) -> None:
+        orig = int_range(end=length, eager=True)
+        series = utilities.polars.integers(orig, high)
+        assert series.len() == length
+        assert series.is_between(0, high, closed="left").all()
+
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        high=hypothesis.strategies.integers(1, 10),
+    )
+    def test_dataframe(self, *, length: int, high: int) -> None:
+        df = int_range(end=length, eager=True).to_frame()
+        series = utilities.polars.integers(df, high)
+        assert series.len() == length
+        assert series.is_between(0, high, closed="left").all()
 
 
 class TestIsNullAndIsNotNullStructSeries:
