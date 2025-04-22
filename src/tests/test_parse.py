@@ -13,11 +13,8 @@ from hypothesis.strategies import (
     dates,
     dictionaries,
     floats,
-    frozensets,
     integers,
-    lists,
     sampled_from,
-    sets,
     times,
 )
 from pytest import raises

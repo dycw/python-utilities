@@ -32,8 +32,6 @@ from utilities.types import Duration, Number, ParseTextExtra
 from utilities.typing import (
     get_args,
     is_dict_type,
-    is_frozenset_type,
-    is_list_type,
     is_literal_type,
     is_optional_type,
     is_set_type,
@@ -66,6 +64,8 @@ def parse_text(
             raise _ParseTextParseError(type_=type_, text=text) from None
     if isinstance(type_, type):
         return _parse_text_type(type_, text, case_sensitive=case_sensitive, extra=extra)
+    if is_dict_type(type_):
+        return _parse_text_dict_type(type_, text, case_sensitive=case_sensitive)
     if is_literal_type(type_):
         return one_str(get_args(type_), text, head=head, case_sensitive=case_sensitive)
     if is_optional_type(type_):
@@ -85,16 +85,8 @@ def parse_text(
         except _ParseTextParseError:
             raise _ParseTextParseError(type_=type_, text=text) from None
     if is_tuple_type(type_):
-        args = get_args(type_)
-        try:
-            texts = extract_group(r"^\((.*)\)$", text, flags=DOTALL).split(", ")
-        except ExtractGroupError:
-            raise _ParseTextParseError(type_=type_, text=text) from None
-        if len(args) != len(texts):
-            raise _ParseTextParseError(type_=type_, text=text)
-        return tuple(
-            parse_text(arg, text, head=head, case_sensitive=case_sensitive, extra=extra)
-            for arg, text in zip(args, texts, strict=True)
+        return _parse_text_tuple_type(
+            type_, text, head=head, case_sensitive=case_sensitive, extra=extra
         )
     if is_union_type(type_):
         return _parse_text_union_type(type_, text, extra=extra)
@@ -191,6 +183,26 @@ def _parse_text_type(
     raise _ParseTextParseError(type_=cls, text=text) from None
 
 
+def _parse_text_dict_type(
+    type_: Any,
+    text: str,
+    /,
+    *,
+    head: bool = False,
+    case_sensitive: bool = False,
+    extra: ParseTextExtra | None = None,
+) -> dict[Any, Any]:
+    key, value = get_args(type_)
+    try:
+        inner = extract_group(r"^{(.*)}$", text, flags=DOTALL)
+    except ExtractGroupError:
+        raise _ParseTextParseError(type_=type_, text=text) from None
+    texts = inner.split(",")
+    pairs = map(_parse_text_split_key_value_pair, text)
+
+    z
+
+
 def _parse_text_union_type(
     type_: Any, text: str, /, *, extra: ParseTextExtra | None = None
 ) -> Any:
@@ -198,14 +210,14 @@ def _parse_text_union_type(
         try:
             return parse_number(text)
         except ParseNumberError:
-            raise _ParseTextParseError(type_=obj, text=text) from None
-    if obj is Duration:
+            raise _ParseTextParseError(type_=type_, text=text) from None
+    if type_ is Duration:
         from utilities.whenever import ParseDurationError, parse_duration
 
         try:
             return parse_duration(text)
         except ParseDurationError:
-            raise _ParseTextParseError(type_=obj, text=text) from None
+            raise _ParseTextParseError(type_=type_, text=text) from None
     if extra is not None:
         try:
             parser = one(p for c, p in extra.items() if c is type_)
@@ -213,7 +225,33 @@ def _parse_text_union_type(
             pass
         else:
             return parser(text)
-    raise _ParseTextParseError(type_=obj, text=text) from None
+    raise _ParseTextParseError(type_=type_, text=text) from None
+
+
+def _parse_text_tuple_type(
+    type_: Any,
+    text: str,
+    /,
+    *,
+    head: bool = False,
+    case_sensitive: bool = False,
+    extra: ParseTextExtra | None = None,
+) -> tuple[Any, ...]:
+    args = get_args(type_)
+    try:
+        inner = extract_group(r"^\((.*)\)$", text, flags=DOTALL)
+    except ExtractGroupError:
+        raise _ParseTextParseError(type_=type_, text=text) from None
+    texts = inner.split(",")
+    if len(args) != len(texts):
+        raise _ParseTextParseError(type_=type_, text=text)
+    try:
+        return tuple(
+            parse_text(arg, text, head=head, case_sensitive=case_sensitive, extra=extra)
+            for arg, text in zip(args, texts, strict=True)
+        )
+    except _ParseTextParseError:
+        raise _ParseTextParseError(type_=type_, text=text) from None
 
 
 @dataclass
@@ -266,6 +304,9 @@ def to_text(obj: Any, /) -> str:
         return serialize_timedelta(obj)
     if isinstance(obj, Enum):
         return obj.name
+    if isinstance(obj, dict):
+        joined = ",".join(f"{to_text(k)}:{to_text(v)}" for k, v in obj.items())
+        return f"{{{joined}}}"
     raise NotImplementedError(obj)
 
 
