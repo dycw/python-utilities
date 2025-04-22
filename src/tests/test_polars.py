@@ -55,6 +55,7 @@ from utilities.datetime import get_now, get_today
 from utilities.hypothesis import (
     assume_does_not_raise,
     int64s,
+    pairs,
     text_ascii,
     zoned_datetimes,
 )
@@ -130,11 +131,13 @@ from utilities.polars import (
     map_over_columns,
     nan_sum_agg,
     nan_sum_cols,
+    normal,
     replace_time_zone,
     set_first_row_as_columns,
     struct_dtype,
     struct_from_dataclass,
     touch,
+    uniform,
     unique_element,
     week_num,
     yield_struct_series_dataclasses,
@@ -1558,6 +1561,31 @@ class TestNanSumCols:
         assert df["z"].item() == expected
 
 
+class TestNormal:
+    @given(length=hypothesis.strategies.integers(0, 10))
+    def test_int(self, *, length: int) -> None:
+        series = normal(length)
+        assert series.len() == length
+        assert series.is_finite().all()
+
+    @given(length=hypothesis.strategies.integers(0, 10))
+    def test_series(self, *, length: int) -> None:
+        orig = int_range(end=length, eager=True)
+        series = normal(orig)
+        assert series.len() == length
+        assert series.is_finite().all()
+
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        high=hypothesis.strategies.integers(1, 10),
+    )
+    def test_dataframe(self, *, length: int) -> None:
+        df = int_range(end=length, eager=True).to_frame()
+        series = normal(df)
+        assert series.len() == length
+        assert series.is_finite().all()
+
+
 class TestReplaceTimeZone:
     def test_datetime(self) -> None:
         now_utc = get_now()
@@ -1741,6 +1769,40 @@ class TestStructFromDataClass:
             StructFromDataClassError, match="Unsupported type: <class 'NoneType'>"
         ):
             _ = struct_from_dataclass(Example)
+
+
+class TestUniform:
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        bounds=pairs(floats(0.0, 1.0), sorted=True),
+    )
+    def test_int(self, *, length: int, bounds: tuple[float, float]) -> None:
+        low, high = bounds
+        series = uniform(length, low=low, high=high)
+        assert series.len() == length
+        assert series.is_between(low, high).all()
+
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        bounds=pairs(floats(0.0, 1.0), sorted=True),
+    )
+    def test_series(self, *, length: int, bounds: tuple[float, float]) -> None:
+        low, high = bounds
+        orig = int_range(end=length, eager=True)
+        series = uniform(orig, low=low, high=high)
+        assert series.len() == length
+        assert series.is_between(low, high).all()
+
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        bounds=pairs(floats(0.0, 1.0), sorted=True),
+    )
+    def test_dataframe(self, *, length: int, bounds: tuple[float, float]) -> None:
+        low, high = bounds
+        df = int_range(end=length, eager=True).to_frame()
+        series = uniform(df, low=low, high=high)
+        assert series.len() == length
+        assert series.is_between(low, high).all()
 
 
 class TestUniqueElement:
