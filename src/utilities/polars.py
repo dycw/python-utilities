@@ -1165,6 +1165,52 @@ class _InsertBetweenNonConsecutiveError(InsertBetweenError):
 ##
 
 
+def integers(
+    obj: int | Series | DataFrame,
+    low: int,
+    /,
+    *,
+    high: int | None = None,
+    seed: int | None = None,
+    endpoint: bool = False,
+    name: str | None = None,
+    dtype: PolarsDataType = Int64,
+) -> Series:
+    """Construct a series of normally-distributed numbers."""
+    match obj:
+        case int() as height:
+            from numpy.random import default_rng
+
+            rng = default_rng(seed=seed)
+            values = rng.integers(low, high=high, size=height, endpoint=endpoint)
+            return Series(name=name, values=values, dtype=dtype)
+        case Series() as series:
+            return integers(
+                series.len(),
+                low,
+                high=high,
+                seed=seed,
+                endpoint=endpoint,
+                name=name,
+                dtype=dtype,
+            )
+        case DataFrame() as df:
+            return integers(
+                df.height,
+                low,
+                high=high,
+                seed=seed,
+                endpoint=endpoint,
+                name=name,
+                dtype=dtype,
+            )
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
 def is_not_null_struct_series(series: Series, /) -> Series:
     """Check if a struct-dtype Series is not null as per the <= 1.1 definition."""
     try:
@@ -1324,6 +1370,39 @@ def nan_sum_cols(
 ##
 
 
+def normal(
+    obj: int | Series | DataFrame,
+    /,
+    *,
+    loc: float = 0.0,
+    scale: float = 1.0,
+    seed: int | None = None,
+    name: str | None = None,
+    dtype: PolarsDataType = Float64,
+) -> Series:
+    """Construct a series of normally-distributed numbers."""
+    match obj:
+        case int() as height:
+            from numpy.random import default_rng
+
+            rng = default_rng(seed=seed)
+            values = rng.normal(loc=loc, scale=scale, size=height)
+            return Series(name=name, values=values, dtype=dtype)
+        case Series() as series:
+            return normal(
+                series.len(), loc=loc, scale=scale, seed=seed, name=name, dtype=dtype
+            )
+        case DataFrame() as df:
+            return normal(
+                df.height, loc=loc, scale=scale, seed=seed, name=name, dtype=dtype
+            )
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
 @overload
 def replace_time_zone(
     obj: Series, /, *, time_zone: TimeZoneLike | None = UTC
@@ -1456,6 +1535,39 @@ class _StructFromDataClassTypeError(StructFromDataClassError):
     @override
     def __str__(self) -> str:
         return f"Unsupported type: {self.ann}"
+
+
+##
+
+
+def uniform(
+    obj: int | Series | DataFrame,
+    /,
+    *,
+    low: float = 0.0,
+    high: float = 1.0,
+    seed: int | None = None,
+    name: str | None = None,
+    dtype: PolarsDataType = Float64,
+) -> Series:
+    """Construct a series of uniformly-distributed numbers."""
+    match obj:
+        case int() as height:
+            from numpy.random import default_rng
+
+            rng = default_rng(seed=seed)
+            values = rng.uniform(low=low, high=high, size=height)
+            return Series(name=name, values=values, dtype=dtype)
+        case Series() as series:
+            return uniform(
+                series.len(), low=low, high=high, seed=seed, name=name, dtype=dtype
+            )
+        case DataFrame() as df:
+            return uniform(
+                df.height, low=low, high=high, seed=seed, name=name, dtype=dtype
+            )
+        case _ as never:
+            assert_never(never)
 
 
 ##
@@ -1645,17 +1757,20 @@ __all__ = [
     "insert_after",
     "insert_before",
     "insert_between",
+    "integers",
     "is_not_null_struct_series",
     "is_null_struct_series",
     "join",
     "map_over_columns",
     "nan_sum_agg",
     "nan_sum_cols",
+    "normal",
     "replace_time_zone",
     "set_first_row_as_columns",
     "struct_dtype",
     "struct_from_dataclass",
     "touch",
+    "uniform",
     "unique_element",
     "yield_struct_series_dataclasses",
     "yield_struct_series_elements",
