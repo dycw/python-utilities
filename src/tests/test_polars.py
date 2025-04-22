@@ -1575,10 +1575,7 @@ class TestNormal:
         assert series.len() == length
         assert series.is_finite().all()
 
-    @given(
-        length=hypothesis.strategies.integers(0, 10),
-        high=hypothesis.strategies.integers(1, 10),
-    )
+    @given(length=hypothesis.strategies.integers(0, 10))
     def test_dataframe(self, *, length: int) -> None:
         df = int_range(end=length, eager=True).to_frame()
         series = normal(df)
