@@ -732,10 +732,9 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.109.10"
+version = "0.109.11"
 source = { editable = "." }
 dependencies = [
-    { name = "polars-ols" },
     { name = "typing-extensions" },
 ]
 
@@ -1139,7 +1138,6 @@ requires-dist = [
     { name = "polars-lts-cpu", marker = "extra == 'zzz-test-redis'", specifier = ">=1.27.1,<1.28" },
     { name = "polars-lts-cpu", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=1.27.1,<1.28" },
     { name = "polars-lts-cpu", marker = "extra == 'zzz-test-typing'", specifier = ">=1.27.1,<1.28" },
-    { name = "polars-ols", specifier = ">=0.3.5" },
     { name = "pqdm", marker = "extra == 'zzz-test-pqdm'", specifier = ">=0.2.0,<0.3" },
     { name = "pydantic", marker = "extra == 'zzz-test-pydantic'", specifier = ">=2.11.2,<2.12" },
     { name = "pyinstrument", marker = "extra == 'zzz-test-pyinstrument'", specifier = ">=5.0.0,<5.1" },
