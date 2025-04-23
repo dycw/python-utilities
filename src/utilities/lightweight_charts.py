@@ -4,8 +4,6 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, override
 
-from polars import col
-
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 from utilities.reprlib import get_repr
 
@@ -41,7 +39,7 @@ def save_chart(chart: Chart, path: PathLike, /, *, overwrite: bool = False) -> N
 
 def set_dataframe(df: DataFrame, obj: AbstractChart | SeriesCommon, /) -> None:
     """Set a `polars` DataFrame onto a Chart."""
-    from polars import Date, Datetime  # pragma: no cover
+    from polars import Date, Datetime, col  # pragma: no cover
 
     try:
         name = one(k for k, v in df.schema.items() if isinstance(v, Date | Datetime))
