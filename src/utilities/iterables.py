@@ -861,14 +861,12 @@ def filter_include_and_exclude(
 ##
 
 
-def group_consecutive_integers(iterable: Iterable[int], /) -> Sequence[tuple[int, int]]:
+def group_consecutive_integers(iterable: Iterable[int], /) -> Iterable[tuple[int, int]]:
     """Group consecutive integers."""
     integers = sorted(iterable)
-    ranges: Sequence[tuple[int, int]] = []
-    for _, g in groupby(enumerate(integers), key=lambda x: x[1] - x[0]):
-        group = list(map(itemgetter(1), g))
-        ranges.append((group[0], group[-1]))
-    return ranges
+    for _, group in groupby(enumerate(integers), key=lambda x: x[1] - x[0]):
+        as_list = list(map(itemgetter(1), group))
+        yield as_list[0], as_list[-1]
 
 
 def ungroup_consecutive_integers(
