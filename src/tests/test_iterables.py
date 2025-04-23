@@ -898,6 +898,11 @@ class TestGroupAndUngroupConsecutiveIntegers:
         result = list(ungroup_consecutive_integers(group_consecutive_integers(xs)))
         assert result == xs
 
+    def test_example(self) -> None:
+        result = list(group_consecutive_integers([1, 2, 3, 6, 7, 10, 11, 12]))
+        expected = [(1, 3), (6, 7), (10, 12)]
+        assert result == expected
+
 
 class TestGroupbyLists:
     iterable: ClassVar[str] = "AAAABBBCCDAABB"
