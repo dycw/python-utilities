@@ -29,6 +29,7 @@ dev = [
   "httpx >= 0.28.1, < 0.29",  # for fastapi
   "hypothesis >= 6.131.7, < 6.132",
   "img2pdf >= 0.6.0, < 0.7",
+  "lightweight-charts >= 2.1, < 2.2",
   "loguru >= 0.7.3, < 0.8",
   "luigi >= 3.6.0, < 3.7",
   "memory-profiler >= 0.61.0, < 0.62",
@@ -91,7 +92,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.109.13"
+version = "0.109.14"
 
 [project.optional-dependencies]
 test = [
@@ -334,7 +335,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.109.13"
+current_version = "0.109.14"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"

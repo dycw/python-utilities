@@ -1009,7 +1009,7 @@ def one(*iterables: Iterable[_T]) -> _T:
     try:
         first = next(it)
     except StopIteration:
-        raise OneEmptyError from None
+        raise OneEmptyError(iterables=iterables) from None
     try:
         second = next(it)
     except StopIteration:
@@ -1018,19 +1018,19 @@ def one(*iterables: Iterable[_T]) -> _T:
 
 
 @dataclass(kw_only=True, slots=True)
-class OneError(Exception): ...
+class OneError(Exception, Generic[_T]):
+    iterables: tuple[Iterable[_T], ...]
 
 
 @dataclass(kw_only=True, slots=True)
-class OneEmptyError(OneError):
+class OneEmptyError(OneError[_T]):
     @override
     def __str__(self) -> str:
-        return "Iterable(s) must not be empty"
+        return f"Iterable(s) {get_repr(self.iterables)} must not be empty"
 
 
 @dataclass(kw_only=True, slots=True)
 class OneNonUniqueError(OneError, Generic[_T]):
-    iterables: tuple[Iterable[_T], ...]
     first: _T
     second: _T
 
