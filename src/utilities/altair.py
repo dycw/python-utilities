@@ -62,6 +62,7 @@ def plot_dataframes(
     height: int = _HEIGHT,
     width: int = _WIDTH,
     interpolate: Any = Undefined,
+    title: str | None = None,
 ) -> VConcatChart:
     """Plot a DataFrame as a set of time series, with a multi-line tooltip."""
     import polars as pl
@@ -143,9 +144,12 @@ def plot_dataframes(
         for line, pts, rls, spec in zip(lines, points, rules, specs, strict=True)
     ]
     zoom = selection_interval(bind="scales", encodings=["x"])
-    return (
+    chart = (
         vconcat(*layers).add_params(zoom).resolve_scale(color="independent", x="shared")
     )
+    if title is not None:
+        chart = chart.properties(title=title)
+    return chart
 
 
 def _plot_dataframes_get_spec(

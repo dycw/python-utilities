@@ -31,7 +31,7 @@ from utilities.altair import (
 )
 from utilities.datetime import get_now
 from utilities.functions import ensure_class
-from utilities.hypothesis import zoned_datetimes
+from utilities.hypothesis import text_ascii, zoned_datetimes
 from utilities.polars import DatetimeUTC, zoned_datetime
 from utilities.zoneinfo import UTC, HongKong, Tokyo
 
@@ -71,6 +71,7 @@ class TestPlotDataFrames:
         | none(),
         height=integers(1, 100),
         width=integers(1, 100),
+        title=text_ascii() | none(),
     )
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     def test_main(
@@ -85,8 +86,11 @@ class TestPlotDataFrames:
         | None,
         height: int,
         width: int,
+        title: str | None,
     ) -> None:
-        _ = plot_dataframes(time_series, x=x, y=y, height=height, width=width)
+        _ = plot_dataframes(
+            time_series, x=x, y=y, height=height, width=width, title=title
+        )
 
     @given(time_zone=sampled_from([UTC, HongKong, Tokyo]))
     def test_auto_localization(self, *, time_zone: ZoneInfo) -> None:
