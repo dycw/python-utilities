@@ -97,6 +97,7 @@ from utilities.iterables import (
     ensure_iterable_not_str,
     expanding_window,
     filter_include_and_exclude,
+    group_consecutive_integers,
     groupby_lists,
     hashable_to_iterable,
     is_iterable,
@@ -118,6 +119,7 @@ from utilities.iterables import (
     sum_mappings,
     take,
     transpose,
+    ungroup_consecutive_integers,
     unique_everseen,
 )
 from utilities.sentinel import Sentinel, sentinel
@@ -887,6 +889,18 @@ class TestFilterIncludeAndExclude:
             )
         )
         expected = [Example(n=n) for n in [3, 4]]
+        assert result == expected
+
+
+class TestGroupAndUngroupConsecutiveIntegers:
+    @given(xs=lists(integers(), unique=True).map(sorted))
+    def test_main(self, *, xs: list[int]) -> None:
+        result = list(ungroup_consecutive_integers(group_consecutive_integers(xs)))
+        assert result == xs
+
+    def test_example(self) -> None:
+        result = list(group_consecutive_integers([1, 2, 3, 6, 7, 10, 11, 12]))
+        expected = [(1, 3), (6, 7), (10, 12)]
         assert result == expected
 
 

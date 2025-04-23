@@ -19,7 +19,7 @@ from enum import Enum
 from functools import cmp_to_key, partial, reduce
 from itertools import accumulate, chain, groupby, islice, pairwise, product
 from math import isnan
-from operator import add, or_
+from operator import add, itemgetter, or_
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -861,6 +861,24 @@ def filter_include_and_exclude(
 ##
 
 
+def group_consecutive_integers(iterable: Iterable[int], /) -> Iterable[tuple[int, int]]:
+    """Group consecutive integers."""
+    integers = sorted(iterable)
+    for _, group in groupby(enumerate(integers), key=lambda x: x[1] - x[0]):
+        as_list = list(map(itemgetter(1), group))
+        yield as_list[0], as_list[-1]
+
+
+def ungroup_consecutive_integers(
+    iterable: Iterable[tuple[int, int]], /
+) -> Iterable[int]:
+    """Ungroup consecutive integers."""
+    return chain.from_iterable(range(start, end + 1) for start, end in iterable)
+
+
+##
+
+
 @overload
 def groupby_lists(
     iterable: Iterable[_T], /, *, key: None = None
@@ -1504,6 +1522,7 @@ __all__ = [
     "ensure_iterable_not_str",
     "expanding_window",
     "filter_include_and_exclude",
+    "group_consecutive_integers",
     "groupby_lists",
     "hashable_to_iterable",
     "is_iterable",
@@ -1525,5 +1544,6 @@ __all__ = [
     "sum_mappings",
     "take",
     "transpose",
+    "ungroup_consecutive_integers",
     "unique_everseen",
 ]
