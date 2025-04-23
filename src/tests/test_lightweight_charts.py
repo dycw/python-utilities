@@ -3,10 +3,14 @@ from __future__ import annotations
 import datetime as dt
 
 from lightweight_charts import Chart
-from polars import DataFrame, Date, Float64, Int64
-from pytest import fixture
+from polars import DataFrame, Date, Float64, Int64, col
+from pytest import fixture, raises
 
-from utilities.lightweight_charts import set_dataframe
+from utilities.lightweight_charts import (
+    _SetDataFrameEmptyError,
+    _SetDataFrameNonUniqueError,
+    set_dataframe,
+)
 
 
 @fixture
@@ -41,3 +45,21 @@ class TestSetDataFrame:
     def test_main(self, *, df: DataFrame) -> None:
         chart = Chart()
         set_dataframe(df, chart)
+
+    def test_error_empty(self, *, df: DataFrame) -> None:
+        chart = Chart()
+        df = df.drop("date")
+        with raises(
+            _SetDataFrameEmptyError,
+            match="At least 1 column must be of date/datetime type; got 0",
+        ):
+            set_dataframe(df, chart)
+
+    def test_error_non_unique(self, *, df: DataFrame) -> None:
+        chart = Chart()
+        df = df.with_columns(col("date").alias("date2"))
+        with raises(
+            _SetDataFrameNonUniqueError,
+            match=r"Schema\(.*\) must contain exactly 1 date/datetime column; got 'date', 'date2' and perhaps more",
+        ):
+            set_dataframe(df, chart)

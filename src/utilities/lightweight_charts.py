@@ -25,12 +25,15 @@ if TYPE_CHECKING:
 
 def save_chart(chart: Chart, path: PathLike, /, *, overwrite: bool = False) -> None:
     """Atomically save a chart to disk."""
-    from utilities.atomicwrites import writer
+    from utilities.atomicwrites import writer  # pragma: no cover
 
-    chart.show(block=False)
-    with writer(path, overwrite=overwrite) as temp, temp.open(mode="wb") as fh:
+    chart.show(block=False)  # pragma: no cover
+    with (  # pragma: no cover
+        writer(path, overwrite=overwrite) as temp,
+        temp.open(mode="wb") as fh,
+    ):
         _ = fh.write(chart.screenshot())
-    chart.exit()
+    chart.exit()  # pragma: no cover
 
 
 ##
@@ -38,7 +41,7 @@ def save_chart(chart: Chart, path: PathLike, /, *, overwrite: bool = False) -> N
 
 def set_dataframe(df: DataFrame, obj: AbstractChart | SeriesCommon, /) -> None:
     """Set a `polars` DataFrame onto a Chart."""
-    from polars import Date, Datetime
+    from polars import Date, Datetime  # pragma: no cover
 
     try:
         name = one(k for k, v in df.schema.items() if isinstance(v, Date | Datetime))
@@ -48,13 +51,6 @@ def set_dataframe(df: DataFrame, obj: AbstractChart | SeriesCommon, /) -> None:
         raise _SetDataFrameNonUniqueError(
             schema=df.schema, first=error.first, second=error.second
         ) from None
-    # dtype = df[name].dtype
-    # if isinstance(dtype, Datetime) and (dtype.time_zone is not None):
-    #     df = df.with_columns(
-    #         col(name)
-    #         .dt.convert_time_zone(spec.time_zone.key)
-    #         .dt.replace_time_zone(None)
-    #     )
     return obj.set(
         df.select(
             col(name).alias("date").dt.strftime("iso"),
@@ -72,7 +68,7 @@ class SetDataFrameError(Exception):
 class _SetDataFrameEmptyError(SetDataFrameError):
     @override
     def __str__(self) -> str:
-        return "At least 1 column must have date/datetime type; got 0"
+        return "At least 1 column must be of date/datetime type; got 0"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -82,7 +78,7 @@ class _SetDataFrameNonUniqueError(SetDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"Schema {get_repr(self.schema)} must contain exactly 1 date/datetime column; got {self.first}, {self.second} and perhaps more"
+        return f"{get_repr(self.schema)} must contain exactly 1 date/datetime column; got {self.first!r}, {self.second!r} and perhaps more"
 
 
 ##
@@ -91,11 +87,11 @@ class _SetDataFrameNonUniqueError(SetDataFrameError):
 @asynccontextmanager
 async def yield_chart(chart: Chart, /) -> AsyncIterator[None]:
     """Yield a chart for visualization in a notebook."""
-    try:
+    try:  # pragma: no cover
         yield await chart.show_async()
-    except BaseException:  # noqa: BLE001, S110
+    except BaseException:  # pragma: no cover  # noqa: BLE001, S110
         pass
-    finally:
+    finally:  # pragma: no cover
         chart.exit()
 
 
