@@ -755,7 +755,7 @@ class TestDataClassToDataFrame:
 
         with raises(
             _DataClassToDataFrameNonUniqueError,
-            match="Iterable .* must contain exactly one class; got .*, .* and perhaps more",
+            match="Iterable .* must contain exactly 1 class; got .*, .* and perhaps more",
         ):
             _ = dataclass_to_dataframe([Example1(), Example2()])
 

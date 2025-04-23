@@ -1058,7 +1058,7 @@ class TestOne:
 
     @given(args=sampled_from([([],), ([], []), ([], [], [])]))
     def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
-        with raises(OneEmptyError, match=r"Iterable\(s\) must not be empty"):
+        with raises(OneEmptyError, match=r"Iterable\(s\) .* must not be empty"):
             _ = one(*args)
 
     @given(iterable=sets(integers(), min_size=2))

@@ -22,7 +22,6 @@ from altair import (
     vconcat,
 )
 from altair.utils.schemapi import Undefined
-from polars import Date, Datetime
 
 from utilities.functions import ensure_bytes, ensure_number
 from utilities.iterables import always_iterable
@@ -66,7 +65,7 @@ def plot_dataframes(
 ) -> VConcatChart:
     """Plot a DataFrame as a set of time series, with a multi-line tooltip."""
     import polars as pl
-    from polars import int_range
+    from polars import Date, Datetime, int_range
 
     from utilities.polars import replace_time_zone
 

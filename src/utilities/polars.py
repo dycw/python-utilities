@@ -714,7 +714,7 @@ class _DataClassToDataFrameNonUniqueError(DataClassToDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {get_repr(self.objs)} must contain exactly one class; got {self.first}, {self.second} and perhaps more"
+        return f"Iterable {get_repr(self.objs)} must contain exactly 1 class; got {self.first}, {self.second} and perhaps more"
 
 
 ##
