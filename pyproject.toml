@@ -24,15 +24,15 @@ dev = [
   "dacite >= 1.9.2, < 1.10",
   "eventkit >= 1.0.3, < 1.1",
   "fastapi >= 0.115.11, < 0.116",
-  "fpdf2 >= 2.8.2, < 2.9",
+  "fpdf2 >= 2.8.3, < 2.9",
   "greenlet >= 3.2.0, < 3.3",  # for sqlalchemy async
   "httpx >= 0.28.1, < 0.29",  # for fastapi
-  "hypothesis >= 6.131.6, < 6.132",
+  "hypothesis >= 6.131.7, < 6.132",
   "img2pdf >= 0.6.0, < 0.7",
   "loguru >= 0.7.3, < 0.8",
   "luigi >= 3.6.0, < 3.7",
   "memory-profiler >= 0.61.0, < 0.62",
-  "more-itertools >= 10.6.0, < 10.7",
+  "more-itertools >= 10.7.0, < 10.8",
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "nox >= 2025.2.9, < 2025.3",
   "numpy >= 2.2.5, < 2.3",
@@ -91,11 +91,11 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.109.11"
+version = "0.109.12"
 
 [project.optional-dependencies]
 test = [
-  "hypothesis >= 6.131.6, < 6.132",
+  "hypothesis >= 6.131.7, < 6.132",
   "pytest >= 8.3.5, < 8.4",
   "pytest-asyncio >= 0.26.0, < 0.27",
   "pytest-cov >= 6.1.1, < 6.2",
@@ -152,7 +152,7 @@ zzz-test-fastapi = [
   "uvicorn >= 0.34.1, < 0.35",
 ]
 zzz-test-fpdf2 = [
-  "fpdf2 >= 2.8.2, < 2.9",
+  "fpdf2 >= 2.8.3, < 2.9",
   "tzlocal >= 5.3.1, < 5.4",
 ]
 zzz-test-functions = []
@@ -173,7 +173,7 @@ zzz-test-hypothesis = [
   "aiosqlite >= 0.21.0, < 0.22",
   "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
   "greenlet >= 3.2.0, < 3.3",  # for sqlalchemy async
-  "hypothesis >= 6.131.6, < 6.132",
+  "hypothesis >= 6.131.7, < 6.132",
   "luigi >= 3.6.0, < 3.7",
   "numpy >= 2.2.5, < 2.3",
   "pathvalidate >= 3.2.3, < 3.3",
@@ -210,7 +210,7 @@ zzz-test-luigi = [
 zzz-test-math = ["numpy >= 2.2.5, < 2.3"]
 zzz-test-memory-profiler = ["memory-profiler >= 0.61.0, < 0.62"]
 zzz-test-modules = []
-zzz-test-more-itertools = ["more-itertools >= 10.6.0, < 10.7"]
+zzz-test-more-itertools = ["more-itertools >= 10.7.0, < 10.8"]
 zzz-test-numpy = ["numpy >= 2.2.5, < 2.3"]
 zzz-test-operator = [
   "polars-lts-cpu >= 1.27.1, < 1.28",
@@ -334,7 +334,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.109.11"
+current_version = "0.109.12"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
