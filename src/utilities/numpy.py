@@ -14,6 +14,7 @@ from numpy import (
     digitize,
     dtype,
     errstate,
+    exp,
     flatnonzero,
     float64,
     floating,
@@ -128,6 +129,65 @@ def as_int(
 
 
 class AsIntError(Exception): ...
+
+
+##
+
+
+def boxcar(
+    array: NDArray[floating[Any]],
+    /,
+    *,
+    loc_low: float = -1.0,
+    slope_low: float = 1.0,
+    loc_high: float = 1.0,
+    slope_high: float = 1.0,
+    rtol: float | None = None,
+    atol: float | None = None,
+) -> NDArray[floating[Any]]:
+    """Construct a boxcar function."""
+    if not is_at_most(loc_low, loc_high, rtol=rtol, atol=atol):
+        raise _BoxCarLocationsError(low=loc_low, high=loc_high)
+    if not is_positive(slope_low, rtol=rtol, atol=atol):
+        raise _BoxCarLowerBoundSlopeError(slope=slope_low)
+    if not is_positive(slope_high, rtol=rtol, atol=atol):
+        raise _BoxCarUpperBoundSlopeError(slope=slope_high)
+    return (
+        sigmoid(array, loc=loc_low, slope=slope_low)
+        + sigmoid(array, loc=loc_high, slope=-slope_high)
+    ) / 2
+
+
+@dataclass(kw_only=True, slots=True)
+class BoxCarError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _BoxCarLocationsError(BoxCarError):
+    low: float
+    high: float
+
+    @override
+    def __str__(self) -> str:
+        return f"Location parameters must be consistent; got {self.low} and {self.high}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _BoxCarLowerBoundSlopeError(BoxCarError):
+    slope: float
+
+    @override
+    def __str__(self) -> str:
+        return f"Lower-bound slope parameter must be positive; got {self.slope}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _BoxCarUpperBoundSlopeError(BoxCarError):
+    slope: float
+
+    @override
+    def __str__(self) -> str:
+        return f"Upper-bound slope parameter must be positive; got {self.slope}"
 
 
 ##
@@ -847,6 +907,31 @@ def shift_bool(
 ##
 
 
+def sigmoid(
+    array: NDArray[floating[Any]],
+    /,
+    *,
+    loc: float = 0.0,
+    slope: float = 1.0,
+    rtol: float | None = None,
+    atol: float | None = None,
+) -> NDArray[floating[Any]]:
+    """Construct a sigmoid function."""
+    if is_zero(slope, rtol=rtol, atol=atol):
+        raise SigmoidError
+    return 1 / (1 + exp(-slope * (array - loc)))
+
+
+@dataclass(kw_only=True, slots=True)
+class SigmoidError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "Slope must be non-zero"
+
+
+##
+
+
 def _is_close(
     x: Any,
     y: Any,
@@ -869,6 +954,7 @@ def _is_close(
 __all__ = [
     "DEFAULT_RNG",
     "AsIntError",
+    "BoxCarError",
     "FlatN0EmptyError",
     "FlatN0Error",
     "FlatN0MultipleError",
@@ -878,8 +964,10 @@ __all__ = [
     "NDArrayI",
     "NDArrayO",
     "ShiftError",
+    "SigmoidError",
     "array_indexer",
     "as_int",
+    "boxcar",
     "datetime64D",
     "datetime64M",
     "datetime64W",
@@ -948,4 +1036,5 @@ __all__ = [
     "maximum",
     "minimum",
     "shift_bool",
+    "sigmoid",
 ]
