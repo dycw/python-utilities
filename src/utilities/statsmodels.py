@@ -18,12 +18,12 @@ def acf(
     *,
     adjusted: bool = False,
     nlags: int | None = None,
-    qstat: Literal[True],
+    qstat: Literal[False] = False,
     fft: bool = True,
-    alpha: float,
+    alpha: None = None,
     bartlett_confint: bool = True,
     missing: ACFMissing = "none",
-) -> tuple[NDArrayF, NDArrayF, NDArrayF, NDArrayF]: ...
+) -> NDArrayF: ...
 @overload
 def acf(
     array: NDArrayF,
@@ -31,7 +31,7 @@ def acf(
     *,
     adjusted: bool = False,
     nlags: int | None = None,
-    qstat: bool = False,
+    qstat: Literal[False] = False,
     fft: bool = True,
     alpha: float,
     bartlett_confint: bool = True,
@@ -46,7 +46,20 @@ def acf(
     nlags: int | None = None,
     qstat: Literal[True],
     fft: bool = True,
-    alpha: float | None = None,
+    alpha: float,
+    bartlett_confint: bool = True,
+    missing: ACFMissing = "none",
+) -> tuple[NDArrayF, NDArrayF, NDArrayF, NDArrayF]: ...
+@overload
+def acf(
+    array: NDArrayF,
+    /,
+    *,
+    adjusted: bool = False,
+    nlags: int | None = None,
+    qstat: Literal[True],
+    fft: bool = True,
+    alpha: None = None,
     bartlett_confint: bool = True,
     missing: ACFMissing = "none",
 ) -> tuple[NDArrayF, NDArrayF, NDArrayF]: ...
@@ -62,7 +75,12 @@ def acf(
     alpha: float | None = None,
     bartlett_confint: bool = True,
     missing: ACFMissing = "none",
-) -> NDArrayF: ...
+) -> (
+    NDArrayF
+    | tuple[NDArrayF, NDArrayF]
+    | tuple[NDArrayF, NDArrayF, NDArrayF]
+    | tuple[NDArrayF, NDArrayF, NDArrayF, NDArrayF]
+): ...
 def acf(
     array: NDArrayF,
     /,

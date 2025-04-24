@@ -121,6 +121,7 @@ if TYPE_CHECKING:
     )
 
     from utilities.numpy import NDArrayB, NDArrayF
+    from utilities.statsmodels import ACFMissing
     from utilities.types import (
         Dataclass,
         MaybeIterable,
@@ -153,29 +154,70 @@ def acf(
     fft: bool = True,
     alpha: float | None = None,
     bartlett_confint: bool = True,
-    missing: Literal["none", "raise", "conservative", "drop"] = "none",
+    missing: ACFMissing = "none",
 ) -> DataFrame:
     """Compute the autocorrelations of a series."""
-    import statsmodels.tsa.stattools
+    from numpy import ndarray
+
+    import utilities.statsmodels
 
     array = series.to_numpy()
-    statsmodels.tsa.stattools.acf(
+    result = utilities.statsmodels.acf(
         array,
-        adjusted=False,
-        nlags=None,
-        qstat=False,
-        fft=True,
-        alpha=None,
-        bartlett_confint=True,
-        missing="none",
+        adjusted=adjusted,
+        nlags=nlags,
+        qstat=qstat,
+        fft=fft,
+        alpha=alpha,
+        bartlett_confint=bartlett_confint,
+        missing=missing,
     )
+    match result:
+        case ndarray() as acfs:
+            return _acf_process_acfs(acfs)
+        case ndarray() as acfs, ndarray() as confints:
+            df_acfs = _acf_process_acfs(acfs)
+            df_confints = _acf_process_confints(confints)
+            return df_acfs.join(df_confints, on=["lag"])
+        case ndarray() as acfs, ndarray() as qstats, ndarray() as pvalues:
+            df_acfs = _acf_process_acfs(acfs)
+            df_qstats_pvalues = _acf_process_qstats_pvalues(qstats, pvalues)
+            return df_acfs.join(df_qstats_pvalues, on=["lag"], how="left")
+        case (
+            ndarray() as acfs,
+            ndarray() as confints,
+            ndarray() as qstats,
+            ndarray() as pvalues,
+        ):
+            df_acfs = _acf_process_acfs(acfs)
+            df_confints = _acf_process_confints(confints)
+            df_qstats_pvalues = _acf_process_qstats_pvalues(qstats, pvalues)
+            return join(df_acfs, df_confints, df_qstats_pvalues, on=["lag"], how="left")
+        case _ as never:
+            assert_never(never)
+
+
+def _acf_process_acfs(acfs: NDArrayF, /) -> DataFrame:
     return (
-        Series(
-            name="autocorrelation", values=acf(x.to_numpy(), nlags=500), dtype=Float64
-        )
+        Series(name="autocorrelation", values=acfs, dtype=Float64)
         .to_frame()
         .with_row_index(name="lag")
     )
+
+
+def _acf_process_confints(confints: NDArrayF, /) -> DataFrame:
+    return DataFrame(
+        data=confints, schema={"lower": Float64, "upper": Float64}
+    ).with_row_index(name="lag")
+
+
+def _acf_process_qstats_pvalues(qstats: NDArrayF, pvalues: NDArrayF, /) -> DataFrame:
+    from numpy import hstack
+
+    data = hstack([qstats.reshape(-1, 1), pvalues.reshape(-1, 1)])
+    return DataFrame(
+        data=data, schema={"qstat": Float64, "pvalue": Float64}
+    ).with_row_index(name="lag", offset=1)
 
 
 ##
