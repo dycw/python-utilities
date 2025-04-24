@@ -164,16 +164,6 @@ def fillna(array: NDArrayF, /, *, value: float = 0.0) -> NDArrayF:
 ##
 
 
-def get_frequency_spectrum(array: NDArrayF, /, *, d: int = 1) -> NDArray[floating[Any]]:
-    """Get the frequency spectrum."""
-    (n,) = array.shape
-    fft_vals = fft(array)
-    freqs = fftfreq(n, d=d)
-    amplitudes = np.abs(fft_vals)
-    data = np.hstack([freqs.reshape(-1, 1), amplitudes.reshape(-1, 1)])
-    return data[argsort(data[:, 0])]
-
-
 def filter_frequencies(
     array: NDArrayF,
     /,
@@ -229,6 +219,19 @@ class FlatN0MultipleError(FlatN0Error):
     @override
     def __str__(self) -> str:
         return f"Array {self.array} must contain at most one True."
+
+
+##
+
+
+def get_frequency_spectrum(array: NDArrayF, /, *, d: int = 1) -> NDArray[floating[Any]]:
+    """Get the frequency spectrum."""
+    (n,) = array.shape
+    fft_vals = fft(array)
+    freqs = fftfreq(n, d=d)
+    amplitudes = np.abs(fft_vals)
+    data = np.hstack([freqs.reshape(-1, 1), amplitudes.reshape(-1, 1)])
+    return data[argsort(data[:, 0])]
 
 
 ##

@@ -3,6 +3,7 @@ from __future__ import annotations
 from re import escape
 from typing import TYPE_CHECKING, Any, Literal
 
+import numpy as np
 from hypothesis import assume, given
 from hypothesis.strategies import DataObject, data, floats, integers, none
 from numpy import (
@@ -12,13 +13,16 @@ from numpy import (
     full,
     inf,
     isclose,
+    linspace,
     median,
     nan,
     ndarray,
     ones,
+    pi,
     zeros,
     zeros_like,
 )
+from numpy.fft import fft, fftfreq
 from numpy.random import Generator
 from numpy.testing import assert_equal
 from pytest import mark, param, raises
@@ -36,7 +40,9 @@ from utilities.numpy import (
     as_int,
     discretize,
     fillna,
+    filter_frequencies,
     flatn0,
+    get_frequency_spectrum,
     has_dtype,
     is_at_least,
     is_at_least_or_nan,
@@ -269,25 +275,16 @@ class TestFillNa:
 
 
 class TestFilterFrequencies:
-    @mark.parametrize(
-        ("init", "value", "expected_v"),
-        [
-            param(0.0, 0.0, 0.0),
-            param(0.0, nan, 0.0),
-            param(0.0, inf, 0.0),
-            param(nan, 0.0, 0.0),
-            param(nan, nan, nan),
-            param(nan, inf, inf),
-            param(inf, 0.0, inf),
-            param(inf, nan, inf),
-            param(inf, inf, inf),
-        ],
-    )
-    def test_main(self, *, init: float, value: float, expected_v: float) -> None:
-        arr = array([init], dtype=float)
-        result = fillna(arr, value=value)
-        expected = array([expected_v], dtype=float)
-        assert_equal(result, expected)
+    def test_main(self) -> None:
+        n = 1000
+        x = linspace(0, 2 * pi, n)
+        noise = DEFAULT_RNG.normal(scale=0.25, size=n)
+        y = x + noise
+        result = filter_frequencies(y, lambda f: np.abs(f) <= 0.02)
+        assert result.shape == (n,)
+        fft_vals = fft(result)
+        freqs = fftfreq(n)
+        assert np.allclose(fft_vals[np.abs(freqs) > 0.02], 0.0)
 
 
 class TestFlatN0:
@@ -308,6 +305,18 @@ class TestFlatN0:
             match=escape("Array [ True  True] must contain at most one True."),
         ):
             _ = flatn0(ones(2, dtype=bool))
+
+
+class TestGetFrequencySpectrum:
+    def test_main(self) -> None:
+        n = 1000
+        x = linspace(0, 2 * pi, n)
+        noise = DEFAULT_RNG.normal(scale=0.25, size=n)
+        y = x + noise
+        y2 = filter_frequencies(y, lambda f: np.abs(f) <= 0.02)
+        result = get_frequency_spectrum(y2)
+        assert result.shape == (n, 2)
+        assert np.allclose(result[result[:, 0] > 0.02, 1], 0.0)
 
 
 class TestHasDtype:
