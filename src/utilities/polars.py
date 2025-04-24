@@ -683,7 +683,7 @@ def _cross_or_touch(
 
 @overload
 def cross_rolling_quantile(
-    expr: IntoExprColumn,
+    expr: ExprLike,
     up_or_down: Literal["up", "down"],
     quantile: float,
     /,
