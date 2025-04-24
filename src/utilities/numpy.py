@@ -1,19 +1,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import reduce
+from functools import partial, reduce
 from itertools import repeat
 from typing import TYPE_CHECKING, Any, overload, override
 
 import numpy as np
 from numpy import (
+    argsort,
     array,
     bool_,
+    complex128,
     digitize,
     dtype,
     errstate,
     flatnonzero,
     float64,
+    floating,
     full_like,
     inf,
     int64,
@@ -30,6 +33,7 @@ from numpy import (
     roll,
     where,
 )
+from numpy.fft import fft, fftfreq, ifft
 from numpy.linalg import det, eig
 from numpy.random import default_rng
 from numpy.typing import NDArray
@@ -37,7 +41,7 @@ from numpy.typing import NDArray
 from utilities.iterables import is_iterable_not_str
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
 
 
 ##
@@ -160,6 +164,33 @@ def fillna(array: NDArrayF, /, *, value: float = 0.0) -> NDArrayF:
 ##
 
 
+def filter_frequencies(
+    array: NDArrayF,
+    /,
+    *filters: Callable[[NDArray[floating[Any]]], NDArrayB],
+    d: int = 1,
+) -> NDArrayF:
+    """Filter an array by the frequencies of its FFT."""
+    (n,) = array.shape
+    fft_vals = fft(array)
+    freqs = fftfreq(n, d=d)
+    reduced = reduce(partial(_filter_frequencies_one, freqs=freqs), filters, fft_vals)
+    return ifft(reduced).real
+
+
+def _filter_frequencies_one(
+    acc: NDArray[complex128],
+    el: Callable[[NDArray[floating[Any]]], NDArrayB],
+    /,
+    *,
+    freqs: NDArray[floating[Any]],
+) -> NDArray[complex128]:
+    return where(el(freqs), acc, 0.0)
+
+
+##
+
+
 def flatn0(array: NDArrayB, /) -> int:
     """Return the index of the unique True element."""
     if not array.any():
@@ -188,6 +219,19 @@ class FlatN0MultipleError(FlatN0Error):
     @override
     def __str__(self) -> str:
         return f"Array {self.array} must contain at most one True."
+
+
+##
+
+
+def get_frequency_spectrum(array: NDArrayF, /, *, d: int = 1) -> NDArray[floating[Any]]:
+    """Get the frequency spectrum."""
+    (n,) = array.shape
+    fft_vals = fft(array)
+    freqs = fftfreq(n, d=d)
+    amplitudes = np.abs(fft_vals)
+    data = np.hstack([freqs.reshape(-1, 1), amplitudes.reshape(-1, 1)])
+    return data[argsort(data[:, 0])]
 
 
 ##
@@ -851,7 +895,9 @@ __all__ = [
     "datetime64us",
     "discretize",
     "fillna",
+    "filter_frequencies",
     "flatn0",
+    "get_frequency_spectrum",
     "has_dtype",
     "is_at_least",
     "is_at_least_or_nan",

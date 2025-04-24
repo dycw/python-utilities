@@ -753,7 +753,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.109.15"
+version = "0.109.16"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },
@@ -1607,15 +1607,15 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.131.7"
+version = "6.131.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/db/13/74937d32321c8a53971c7858bc457672438b9a08c56649dda0436a84851c/hypothesis-6.131.7.tar.gz", hash = "sha256:40343da7bd6ee30a86587f06598820db555268d738f7cc06afd7721e45c247a9", size = 434512, upload_time = "2025-04-22T21:54:20.952Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1e/f7/61108d9984d44d5b89b2edd0de1f9f9b2a9ae4c0ac5eaf5daff1c4b337d8/hypothesis-6.131.8.tar.gz", hash = "sha256:68dab267df9e6e06e404c2ac5d5746438526d4687895e5a47ae9bade4a8ca4f3", size = 434908, upload_time = "2025-04-23T20:36:18.128Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/7f/a65cbbd52e51af4aaf7c8361e65f71237743465dd4bcdce3275b0b9ed2f5/hypothesis-6.131.7-py3-none-any.whl", hash = "sha256:467abe171fc83f539efa7aa95b9e25ce09bbe726baca3510116e93a2daf05de8", size = 498894, upload_time = "2025-04-22T21:54:17.44Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/04/d4bcbc4cd97128e78039266a07698ce4f1ae2bc4bbda38cca210a49a98c5/hypothesis-6.131.8-py3-none-any.whl", hash = "sha256:fdae34221ed072c6e631ff472fba98806f16d93a483a6ab270ba96ecfd767dd4", size = 499376, upload_time = "2025-04-23T20:36:13.909Z" },
 ]
 
 [[package]]
@@ -3662,11 +3662,11 @@ wheels = [
 
 [[package]]
 name = "setuptools"
-version = "79.0.0"
+version = "79.0.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/7d/19/fecb7e2825616270f34512b3394cdcf6f45a79b5b6d94fdbd86a509e67b5/setuptools-79.0.0.tar.gz", hash = "sha256:9828422e7541213b0aacb6e10bbf9dd8febeaa45a48570e09b6d100e063fc9f9", size = 1367685, upload_time = "2025-04-20T15:47:56.706Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bb/71/b6365e6325b3290e14957b2c3a804a529968c77a049b2ed40c095f749707/setuptools-79.0.1.tar.gz", hash = "sha256:128ce7b8f33c3079fd1b067ecbb4051a66e8526e7b65f6cec075dfc650ddfa88", size = 1367909, upload_time = "2025-04-23T22:20:59.241Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cc/ea/d53f2f8897c46a36df085964d07761ea4c2d1f2cf92019693b6742b7aabb/setuptools-79.0.0-py3-none-any.whl", hash = "sha256:b9ab3a104bedb292323f53797b00864e10e434a3ab3906813a7169e4745b912a", size = 1256065, upload_time = "2025-04-20T15:47:54.242Z" },
+    { url = "https://files.pythonhosted.org/packages/0d/6d/b4752b044bf94cb802d88a888dc7d288baaf77d7910b7dedda74b5ceea0c/setuptools-79.0.1-py3-none-any.whl", hash = "sha256:e147c0549f27767ba362f9da434eab9c5dc0045d5304feb602a0af001089fc51", size = 1256281, upload_time = "2025-04-23T22:20:56.768Z" },
 ]
 
 [[package]]
