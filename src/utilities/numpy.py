@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, overload, override
 
 import numpy as np
 from numpy import (
+    argsort,
     array,
     bool_,
     complex128,
@@ -163,8 +164,21 @@ def fillna(array: NDArrayF, /, *, value: float = 0.0) -> NDArrayF:
 ##
 
 
+def get_frequency_spectrum(array: NDArrayF, /, *, d: int = 1) -> NDArray[floating[Any]]:
+    """Get the frequency spectrum."""
+    (n,) = array.shape
+    fft_vals = fft(array)
+    freqs = fftfreq(n, d=d)
+    amplitudes = np.abs(fft_vals)
+    data = np.hstack([freqs.reshape(-1, 1), amplitudes.reshape(-1, 1)])
+    return data[argsort(data[:, 0])]
+
+
 def filter_frequencies(
-    array: NDArrayF, /, *filters: Callable[[NDArray[complex128]], NDArrayB], d: int = 1
+    array: NDArrayF,
+    /,
+    *filters: Callable[[NDArray[floating[Any]]], NDArrayB],
+    d: int = 1,
 ) -> NDArrayF:
     """Filter an array by the frequencies of its FFT."""
     (n,) = array.shape
@@ -176,7 +190,7 @@ def filter_frequencies(
 
 def _filter_frequencies_one(
     acc: NDArray[complex128],
-    el: Callable[[NDArray[complex128]], NDArrayB],
+    el: Callable[[NDArray[floating[Any]]], NDArrayB],
     /,
     *,
     freqs: NDArray[floating[Any]],
@@ -878,6 +892,7 @@ __all__ = [
     "datetime64us",
     "discretize",
     "fillna",
+    "filter_frequencies",
     "flatn0",
     "has_dtype",
     "is_at_least",

@@ -268,6 +268,28 @@ class TestFillNa:
         assert_equal(result, expected)
 
 
+class TestFilterFrequencies:
+    @mark.parametrize(
+        ("init", "value", "expected_v"),
+        [
+            param(0.0, 0.0, 0.0),
+            param(0.0, nan, 0.0),
+            param(0.0, inf, 0.0),
+            param(nan, 0.0, 0.0),
+            param(nan, nan, nan),
+            param(nan, inf, inf),
+            param(inf, 0.0, inf),
+            param(inf, nan, inf),
+            param(inf, inf, inf),
+        ],
+    )
+    def test_main(self, *, init: float, value: float, expected_v: float) -> None:
+        arr = array([init], dtype=float)
+        result = fillna(arr, value=value)
+        expected = array([expected_v], dtype=float)
+        assert_equal(result, expected)
+
+
 class TestFlatN0:
     @given(data=data(), n=integers(1, 10))
     def test_main(self, *, data: DataObject, n: int) -> None:
