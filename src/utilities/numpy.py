@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import reduce
+from functools import partial, reduce
 from itertools import repeat
 from typing import TYPE_CHECKING, Any, overload, override
 
@@ -9,11 +9,13 @@ import numpy as np
 from numpy import (
     array,
     bool_,
+    complex128,
     digitize,
     dtype,
     errstate,
     flatnonzero,
     float64,
+    floating,
     full_like,
     inf,
     int64,
@@ -30,6 +32,7 @@ from numpy import (
     roll,
     where,
 )
+from numpy.fft import fft, fftfreq, ifft
 from numpy.linalg import det, eig
 from numpy.random import default_rng
 from numpy.typing import NDArray
@@ -37,7 +40,7 @@ from numpy.typing import NDArray
 from utilities.iterables import is_iterable_not_str
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
 
 
 ##
@@ -155,6 +158,30 @@ def discretize(x: NDArrayF, bins: int | Iterable[float], /) -> NDArrayF:
 def fillna(array: NDArrayF, /, *, value: float = 0.0) -> NDArrayF:
     """Fill the null elements in an array."""
     return where(isnan(array), value, array)
+
+
+##
+
+
+def filter_frequencies(
+    array: NDArrayF, /, *filters: Callable[[NDArray[complex128]], NDArrayB], d: int = 1
+) -> NDArrayF:
+    """Filter an array by the frequencies of its FFT."""
+    (n,) = array.shape
+    fft_vals = fft(array)
+    freqs = fftfreq(n, d=d)
+    reduced = reduce(partial(_filter_frequencies_one, freqs=freqs), filters, fft_vals)
+    return ifft(reduced).real
+
+
+def _filter_frequencies_one(
+    acc: NDArray[complex128],
+    el: Callable[[NDArray[complex128]], NDArrayB],
+    /,
+    *,
+    freqs: NDArray[floating[Any]],
+) -> NDArray[complex128]:
+    return where(el(freqs), acc, 0.0)
 
 
 ##
