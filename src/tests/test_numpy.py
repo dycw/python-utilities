@@ -94,6 +94,7 @@ from utilities.numpy import (
     minimum,
     shift,
     shift_bool,
+    sigmoid,
 )
 
 if TYPE_CHECKING:
@@ -1078,3 +1079,17 @@ class TestShiftBool:
             [fill_value if e is None else e for e in expected_v], dtype=bool
         )
         assert_equal(result, expected)
+
+
+class TestSigmoid:
+    @given(
+        loc=floats(-10.0, 10.0),
+        slope=floats(-10.0, 0.0, exclude_max=True)
+        | floats(0.0, 10.0, exclude_min=True),
+    )
+    def test_main(self, *, loc: float, slope: float) -> None:
+        n = 1000
+        x = linspace(0, 2 * pi, n)
+        y = sigmoid(x, loc=loc, slope=slope)
+        assert y.shape == (n,)
+        assert is_between(y, 0.0, 1.0).all()
