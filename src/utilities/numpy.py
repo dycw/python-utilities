@@ -897,6 +897,7 @@ __all__ = [
     "fillna",
     "filter_frequencies",
     "flatn0",
+    "get_frequency_spectrum",
     "has_dtype",
     "is_at_least",
     "is_at_least_or_nan",
