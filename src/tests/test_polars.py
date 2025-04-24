@@ -117,6 +117,7 @@ from utilities.polars import (
     concat_series,
     convert_time_zone,
     cross,
+    cross_rolling_quantile,
     dataclass_to_dataframe,
     dataclass_to_schema,
     drop_null_struct_series,
@@ -665,6 +666,45 @@ class TestCrossOrTouch:
         df = df.with_columns(result.alias("result"))
         expected = Series(name="result", values=exp_values, dtype=Boolean)
         assert_series_equal(df["result"], expected)
+
+    def test_example(self) -> None:
+        close = Series(name="close", values=[8, 7, 8, 5, 0], dtype=Int64)
+        mid = Series(name="mid", values=[1, 2, 3, 4, 6], dtype=Int64)
+        result = cross(close, "down", mid).alias("result")
+        expected = Series(
+            name="result", values=[None, False, False, False, True], dtype=Boolean
+        )
+        assert_series_equal(result, expected)
+
+
+class TestCrossRollingQuantile:
+    def test_main(self) -> None:
+        df = DataFrame(
+            data=[
+                (4, None, None),
+                (5, None, None),
+                (7, None, None),
+                (9, None, None),
+                (0, 5.0, False),
+                (1, 5.0, False),
+                (8, 7.0, True),
+                (9, 8.0, False),
+                (2, 2.0, False),
+                (3, 3.0, False),
+            ],
+            schema={"x": Int64, "median": Float64, "cross": Boolean},
+            orient="row",
+        )
+        assert_series_equal(
+            df["x"].rolling_quantile(0.5, window_size=5),
+            df["median"],
+            check_names=False,
+        )
+        assert_series_equal(
+            cross_rolling_quantile(df["x"], "up", 0.5, window_size=5),
+            df["cross"],
+            check_names=False,
+        )
 
     def test_example(self) -> None:
         close = Series(name="close", values=[8, 7, 8, 5, 0], dtype=Int64)
