@@ -10,7 +10,9 @@ from utilities.functions import is_sequence_of
 from utilities.polars import concat_series, ensure_expr_or_series
 
 if TYPE_CHECKING:
-    from polars._typing import IntoExprColumn
+    from polars._typing import (
+        IntoExprColumn,  # pyright: ignore[reportPrivateImportUsage]
+    )
     from polars_ols import NullPolicy
 
     from utilities.polars import ExprLike
