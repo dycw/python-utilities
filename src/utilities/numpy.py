@@ -234,7 +234,7 @@ def adjust_frequencies(
     weights: MaybeIterable[Callable[[NDArrayF], NDArrayF]] | None = None,
     d: int = 1,
 ) -> NDArrayF:
-    """Filter an array by the frequencies of its FFT."""
+    """Adjust an array via its FFT frequencies."""
     (n,) = array.shape
     amplitudes = fft(array)
     freqs = fftfreq(n, d=d)

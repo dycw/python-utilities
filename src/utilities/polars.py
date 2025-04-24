@@ -119,6 +119,7 @@ if TYPE_CHECKING:
         TimeUnit,  # pyright: ignore[reportPrivateImportUsage]
     )
 
+    from utilities.numpy import NDArrayB, NDArrayF
     from utilities.types import (
         Dataclass,
         MaybeIterable,
@@ -136,6 +137,27 @@ DatetimeUSCentral = Datetime(time_zone="US/Central")
 DatetimeUSEastern = Datetime(time_zone="US/Eastern")
 DatetimeUTC = Datetime(time_zone="UTC")
 _FINITE_EWM_MIN_WEIGHT = 0.9999
+
+
+##
+
+
+def adjust_frequencies(
+    series: Series,
+    /,
+    *,
+    filters: MaybeIterable[Callable[[NDArrayF], NDArrayB]] | None = None,
+    weights: MaybeIterable[Callable[[NDArrayF], NDArrayF]] | None = None,
+    d: int = 1,
+) -> Series:
+    """Adjust a Series via its FFT frequencies."""
+    import utilities.numpy
+
+    array = series.to_numpy()
+    adjusted = utilities.numpy.adjust_frequencies(
+        array, filters=filters, weights=weights, d=d
+    )
+    return Series(name=series.name, values=adjusted, dtype=Float64)
 
 
 ##
@@ -1027,6 +1049,20 @@ class _GetDataTypeOrSeriesTimeZoneNotZonedError(GetDataTypeOrSeriesTimeZoneError
 ##
 
 
+def get_frequency_spectrum(series: Series, /, *, d: int = 1) -> DataFrame:
+    """Get the frequency spectrum."""
+    import utilities.numpy
+
+    array = series.to_numpy()
+    spectrum = utilities.numpy.get_frequency_spectrum(array, d=d)
+    return DataFrame(
+        data=spectrum, schema={"frequency": Float64, "amplitude": Float64}, orient="row"
+    )
+
+
+##
+
+
 @overload
 def get_series_number_of_decimals(
     series: Series, /, *, nullable: Literal[True]
@@ -1736,6 +1772,7 @@ __all__ = [
     "SetFirstRowAsColumnsError",
     "StructFromDataClassError",
     "YieldStructSeriesElementsError",
+    "adjust_frequencies",
     "append_dataclass",
     "are_frames_equal",
     "ceil_datetime",
@@ -1753,6 +1790,7 @@ __all__ = [
     "finite_ewm_mean",
     "floor_datetime",
     "get_data_type_or_series_time_zone",
+    "get_frequency_spectrum",
     "get_series_number_of_decimals",
     "insert_after",
     "insert_before",

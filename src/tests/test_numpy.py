@@ -386,7 +386,7 @@ class TestGetFrequencySpectrum:
         y2 = adjust_frequencies(y, filters=lambda f: np.abs(f) <= 0.02)
         result = get_frequency_spectrum(y2)
         assert result.shape == (n, 2)
-        assert np.allclose(result[result[:, 0] > 0.02, 1], 0.0)
+        assert np.allclose(result[np.abs(result[:, 0]) > 0.02, 1], 0.0)
 
 
 class TestHasDtype:
