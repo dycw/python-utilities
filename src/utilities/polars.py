@@ -115,6 +115,7 @@ if TYPE_CHECKING:
         JoinStrategy,  # pyright: ignore[reportPrivateImportUsage]
         JoinValidation,  # pyright: ignore[reportPrivateImportUsage]
         PolarsDataType,  # pyright: ignore[reportPrivateImportUsage]
+        RollingInterpolationMethod,  # pyright: ignore[reportPrivateImportUsage]
         SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
         TimeUnit,  # pyright: ignore[reportPrivateImportUsage]
     )
@@ -675,6 +676,73 @@ def _cross_or_touch(
             return expr.to_frame().with_columns(result.alias(expr.name))[expr.name]
         case _:
             return result
+
+
+##
+
+
+@overload
+def cross_rolling_quantile(
+    expr: IntoExprColumn,
+    up_or_down: Literal["up", "down"],
+    quantile: float,
+    /,
+    *,
+    interpolation: RollingInterpolationMethod = "nearest",
+    window_size: int = 2,
+    weights: list[float] | None = None,
+    min_samples: int | None = None,
+    center: bool = False,
+) -> Expr: ...
+@overload
+def cross_rolling_quantile(
+    expr: Series,
+    up_or_down: Literal["up", "down"],
+    quantile: float,
+    /,
+    *,
+    interpolation: RollingInterpolationMethod = "nearest",
+    window_size: int = 2,
+    weights: list[float] | None = None,
+    min_samples: int | None = None,
+    center: bool = False,
+) -> Series: ...
+@overload
+def cross_rolling_quantile(
+    expr: IntoExprColumn,
+    up_or_down: Literal["up", "down"],
+    quantile: float,
+    /,
+    *,
+    interpolation: RollingInterpolationMethod = "nearest",
+    window_size: int = 2,
+    weights: list[float] | None = None,
+    min_samples: int | None = None,
+    center: bool = False,
+) -> Expr | Series: ...
+def cross_rolling_quantile(
+    expr: IntoExprColumn,
+    up_or_down: Literal["up", "down"],
+    quantile: float,
+    /,
+    *,
+    interpolation: RollingInterpolationMethod = "nearest",
+    window_size: int = 2,
+    weights: list[float] | None = None,
+    min_samples: int | None = None,
+    center: bool = False,
+) -> Expr | Series:
+    """Compute when a column crosses its rolling quantile."""
+    expr = ensure_expr_or_series(expr)
+    rolling = expr.rolling_quantile(
+        quantile,
+        interpolation=interpolation,
+        window_size=window_size,
+        weights=weights,
+        min_samples=min_samples,
+        center=center,
+    )
+    return cross(expr, up_or_down, rolling)
 
 
 ##
