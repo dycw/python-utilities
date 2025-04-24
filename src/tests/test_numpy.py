@@ -36,6 +36,7 @@ from utilities.numpy import (
     NDArrayF,
     NDArrayI,
     ShiftError,
+    SigmoidError,
     array_indexer,
     as_int,
     discretize,
@@ -1082,14 +1083,16 @@ class TestShiftBool:
 
 
 class TestSigmoid:
-    @given(
-        loc=floats(-10.0, 10.0),
-        slope=floats(-10.0, 0.0, exclude_max=True)
-        | floats(0.0, 10.0, exclude_min=True),
-    )
+    @given(loc=floats(-10.0, 10.0), slope=floats(-10.0, -0.1) | floats(0.1, 10.0))
     def test_main(self, *, loc: float, slope: float) -> None:
         n = 1000
         x = linspace(0, 2 * pi, n)
         y = sigmoid(x, loc=loc, slope=slope)
         assert y.shape == (n,)
         assert is_between(y, 0.0, 1.0).all()
+
+    def test_error(self) -> None:
+        n = 1000
+        x = linspace(0, 2 * pi, n)
+        with raises(SigmoidError, match="Slope must be non-zero"):
+            _ = sigmoid(x, slope=0.0)
