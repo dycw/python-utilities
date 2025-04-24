@@ -43,6 +43,7 @@ from polars import (
     Series,
     String,
     Struct,
+    UInt32,
     col,
     date_range,
     datetime_range,
@@ -107,6 +108,7 @@ from utilities.polars import (
     _InsertBetweenMissingColumnsError,
     _InsertBetweenNonConsecutiveError,
     _yield_struct_series_element_remove_nulls,
+    acf,
     adjust_frequencies,
     append_dataclass,
     are_frames_equal,
@@ -166,6 +168,59 @@ if TYPE_CHECKING:
     from polars.datatypes import DataTypeClass
 
     from utilities.types import MaybeType, StrMapping, WeekDay
+
+
+class TestACF:
+    def test_main(self) -> None:
+        series = Series(linspace(0, 2 * pi, 1000))
+        df = acf(series)
+        check_polars_dataframe(
+            df, height=31, schema_list={"lag": UInt32, "autocorrelation": Float64}
+        )
+
+    def test_alpha(self) -> None:
+        series = Series(linspace(0, 2 * pi, 1000))
+        df = acf(series, alpha=0.5)
+        check_polars_dataframe(
+            df,
+            height=31,
+            schema_list={
+                "lag": UInt32,
+                "autocorrelation": Float64,
+                "lower": Float64,
+                "upper": Float64,
+            },
+        )
+
+    def test_qstat(self) -> None:
+        series = Series(linspace(0, 2 * pi, 1000))
+        df = acf(series, qstat=True)
+        check_polars_dataframe(
+            df,
+            height=31,
+            schema_list={
+                "lag": UInt32,
+                "autocorrelation": Float64,
+                "qstat": Float64,
+                "pvalue": Float64,
+            },
+        )
+
+    def test_alpha_and_qstat(self) -> None:
+        series = Series(linspace(0, 2 * pi, 1000))
+        df = acf(series, alpha=0.5, qstat=True)
+        check_polars_dataframe(
+            df,
+            height=31,
+            schema_list={
+                "lag": UInt32,
+                "autocorrelation": Float64,
+                "lower": Float64,
+                "upper": Float64,
+                "qstat": Float64,
+                "pvalue": Float64,
+            },
+        )
 
 
 class TestAdjustFrequencies:
