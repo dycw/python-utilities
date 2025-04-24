@@ -143,6 +143,44 @@ _FINITE_EWM_MIN_WEIGHT = 0.9999
 ##
 
 
+def acf(
+    series: Series,
+    /,
+    *,
+    adjusted: bool = False,
+    nlags: int | None = None,
+    qstat: bool = False,
+    fft: bool = True,
+    alpha: float | None = None,
+    bartlett_confint: bool = True,
+    missing: Literal["none", "raise", "conservative", "drop"] = "none",
+) -> DataFrame:
+    """Compute the autocorrelations of a series."""
+    import statsmodels.tsa.stattools
+
+    array = series.to_numpy()
+    statsmodels.tsa.stattools.acf(
+        array,
+        adjusted=False,
+        nlags=None,
+        qstat=False,
+        fft=True,
+        alpha=None,
+        bartlett_confint=True,
+        missing="none",
+    )
+    return (
+        Series(
+            name="autocorrelation", values=acf(x.to_numpy(), nlags=500), dtype=Float64
+        )
+        .to_frame()
+        .with_row_index(name="lag")
+    )
+
+
+##
+
+
 def adjust_frequencies(
     series: Series,
     /,
@@ -1840,6 +1878,7 @@ __all__ = [
     "SetFirstRowAsColumnsError",
     "StructFromDataClassError",
     "YieldStructSeriesElementsError",
+    "acf",
     "adjust_frequencies",
     "append_dataclass",
     "are_frames_equal",
