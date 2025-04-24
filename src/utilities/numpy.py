@@ -16,11 +16,10 @@ from numpy import (
     errstate,
     exp,
     flatnonzero,
-    float64,
     floating,
     full_like,
     inf,
-    int64,
+    integer,
     isclose,
     isfinite,
     isinf,
@@ -39,10 +38,12 @@ from numpy.linalg import det, eig
 from numpy.random import default_rng
 from numpy.typing import NDArray
 
-from utilities.iterables import is_iterable_not_str
+from utilities.iterables import always_iterable, is_iterable_not_str
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
+
+    from utilities.types import MaybeIterable
 
 
 ##
@@ -89,8 +90,9 @@ timedelta64as = dtype("timedelta64[as]")
 
 NDArrayA = NDArray[Any]
 NDArrayB = NDArray[bool_]
-NDArrayF = NDArray[float64]
-NDArrayI = NDArray[int64]
+NDArrayC128 = NDArray[complex128]
+NDArrayF = NDArray[floating[Any]]
+NDArrayI = NDArray[integer[Any]]
 NDArrayO = NDArray[object_]
 
 
@@ -135,7 +137,7 @@ class AsIntError(Exception): ...
 
 
 def boxcar(
-    array: NDArray[floating[Any]],
+    array: NDArrayF,
     /,
     *,
     loc_low: float = -1.0,
@@ -144,7 +146,7 @@ def boxcar(
     slope_high: float = 1.0,
     rtol: float | None = None,
     atol: float | None = None,
-) -> NDArray[floating[Any]]:
+) -> NDArrayF:
     """Construct a boxcar function."""
     if not is_at_most(loc_low, loc_high, rtol=rtol, atol=atol):
         raise _BoxCarLocationsError(low=loc_low, high=loc_high)
@@ -224,28 +226,43 @@ def fillna(array: NDArrayF, /, *, value: float = 0.0) -> NDArrayF:
 ##
 
 
-def filter_frequencies(
+def adjust_frequencies(
     array: NDArrayF,
     /,
-    *filters: Callable[[NDArray[floating[Any]]], NDArrayB],
+    *,
+    filters: MaybeIterable[Callable[[NDArrayF], NDArrayB]] | None = None,
+    weights: MaybeIterable[Callable[[NDArrayF], NDArrayF]] | None = None,
     d: int = 1,
 ) -> NDArrayF:
-    """Filter an array by the frequencies of its FFT."""
+    """Adjust an array via its FFT frequencies."""
     (n,) = array.shape
-    fft_vals = fft(array)
+    amplitudes = fft(array)
     freqs = fftfreq(n, d=d)
-    reduced = reduce(partial(_filter_frequencies_one, freqs=freqs), filters, fft_vals)
-    return ifft(reduced).real
+    if filters is not None:
+        amplitudes = reduce(
+            partial(_adjust_frequencies_filter_one, freqs=freqs),
+            always_iterable(filters),
+            amplitudes,
+        )
+    if weights is not None:
+        amplitudes = reduce(
+            partial(_adjust_frequencies_weight_one, freqs=freqs),
+            always_iterable(weights),
+            amplitudes,
+        )
+    return ifft(amplitudes).real
 
 
-def _filter_frequencies_one(
-    acc: NDArray[complex128],
-    el: Callable[[NDArray[floating[Any]]], NDArrayB],
-    /,
-    *,
-    freqs: NDArray[floating[Any]],
-) -> NDArray[complex128]:
+def _adjust_frequencies_filter_one(
+    acc: NDArrayC128, el: Callable[[NDArrayF], NDArrayB], /, *, freqs: NDArrayF
+) -> NDArrayC128:
     return where(el(freqs), acc, 0.0)
+
+
+def _adjust_frequencies_weight_one(
+    acc: NDArrayC128, el: Callable[[NDArrayF], NDArrayF], /, *, freqs: NDArrayF
+) -> NDArrayC128:
+    return acc * el(freqs)
 
 
 ##
@@ -284,12 +301,12 @@ class FlatN0MultipleError(FlatN0Error):
 ##
 
 
-def get_frequency_spectrum(array: NDArrayF, /, *, d: int = 1) -> NDArray[floating[Any]]:
+def get_frequency_spectrum(array: NDArrayF, /, *, d: int = 1) -> NDArrayF:
     """Get the frequency spectrum."""
     (n,) = array.shape
-    fft_vals = fft(array)
+    amplitudes = fft(array)
     freqs = fftfreq(n, d=d)
-    amplitudes = np.abs(fft_vals)
+    amplitudes = np.abs(amplitudes)
     data = np.hstack([freqs.reshape(-1, 1), amplitudes.reshape(-1, 1)])
     return data[argsort(data[:, 0])]
 
@@ -908,14 +925,14 @@ def shift_bool(
 
 
 def sigmoid(
-    array: NDArray[floating[Any]],
+    array: NDArrayF,
     /,
     *,
     loc: float = 0.0,
     slope: float = 1.0,
     rtol: float | None = None,
     atol: float | None = None,
-) -> NDArray[floating[Any]]:
+) -> NDArrayF:
     """Construct a sigmoid function."""
     if is_zero(slope, rtol=rtol, atol=atol):
         raise SigmoidError
@@ -965,6 +982,7 @@ __all__ = [
     "NDArrayO",
     "ShiftError",
     "SigmoidError",
+    "adjust_frequencies",
     "array_indexer",
     "as_int",
     "boxcar",
@@ -983,7 +1001,6 @@ __all__ = [
     "datetime64us",
     "discretize",
     "fillna",
-    "filter_frequencies",
     "flatn0",
     "get_frequency_spectrum",
     "has_dtype",

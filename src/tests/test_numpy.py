@@ -19,6 +19,7 @@ from numpy import (
     ndarray,
     ones,
     pi,
+    where,
     zeros,
     zeros_like,
 )
@@ -40,12 +41,12 @@ from utilities.numpy import (
     _BoxCarLocationsError,
     _BoxCarLowerBoundSlopeError,
     _BoxCarUpperBoundSlopeError,
+    adjust_frequencies,
     array_indexer,
     as_int,
     boxcar,
     discretize,
     fillna,
-    filter_frequencies,
     flatn0,
     get_frequency_spectrum,
     has_dtype,
@@ -104,6 +105,32 @@ from utilities.numpy import (
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+
+class TestAdjustFrequencies:
+    def test_filter(self) -> None:
+        n = 1000
+        x = linspace(0, 2 * pi, n)
+        noise = DEFAULT_RNG.normal(scale=0.25, size=n)
+        y = x + noise
+        result = adjust_frequencies(y, filters=lambda f: np.abs(f) <= 0.02)
+        assert result.shape == (n,)
+        amplitudes = fft(result)
+        freqs = fftfreq(n)
+        assert np.allclose(amplitudes[np.abs(freqs) > 0.02], 0.0)
+
+    def test_weight(self) -> None:
+        n = 1000
+        x = linspace(0, 2 * pi, n)
+        noise = DEFAULT_RNG.normal(scale=0.25, size=n)
+        y = x + noise
+        result = adjust_frequencies(
+            y, weights=lambda f: where(np.abs(f) <= 0.02, 1.0, 0.0)
+        )
+        assert result.shape == (n,)
+        amplitudes = fft(result)
+        freqs = fftfreq(n)
+        assert np.allclose(amplitudes[np.abs(freqs) > 0.02], 0.0)
 
 
 class TestArrayIndexer:
@@ -330,19 +357,6 @@ class TestFillNa:
         assert_equal(result, expected)
 
 
-class TestFilterFrequencies:
-    def test_main(self) -> None:
-        n = 1000
-        x = linspace(0, 2 * pi, n)
-        noise = DEFAULT_RNG.normal(scale=0.25, size=n)
-        y = x + noise
-        result = filter_frequencies(y, lambda f: np.abs(f) <= 0.02)
-        assert result.shape == (n,)
-        fft_vals = fft(result)
-        freqs = fftfreq(n)
-        assert np.allclose(fft_vals[np.abs(freqs) > 0.02], 0.0)
-
-
 class TestFlatN0:
     @given(data=data(), n=integers(1, 10))
     def test_main(self, *, data: DataObject, n: int) -> None:
@@ -369,10 +383,10 @@ class TestGetFrequencySpectrum:
         x = linspace(0, 2 * pi, n)
         noise = DEFAULT_RNG.normal(scale=0.25, size=n)
         y = x + noise
-        y2 = filter_frequencies(y, lambda f: np.abs(f) <= 0.02)
+        y2 = adjust_frequencies(y, filters=lambda f: np.abs(f) <= 0.02)
         result = get_frequency_spectrum(y2)
         assert result.shape == (n, 2)
-        assert np.allclose(result[result[:, 0] > 0.02, 1], 0.0)
+        assert np.allclose(result[np.abs(result[:, 0]) > 0.02, 1], 0.0)
 
 
 class TestHasDtype:

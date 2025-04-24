@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 from uuid import UUID, uuid4
 
 import hypothesis.strategies
+import numpy as np
 import polars as pl
 from hypothesis import given
 from hypothesis.strategies import (
@@ -26,6 +27,7 @@ from hypothesis.strategies import (
     sampled_from,
     timezones,
 )
+from numpy import allclose, linspace, pi
 from polars import (
     Boolean,
     DataFrame,
@@ -60,6 +62,7 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.math import number_of_decimals
+from utilities.numpy import DEFAULT_RNG
 from utilities.pathlib import PWD
 from utilities.polars import (
     AppendDataClassError,
@@ -104,6 +107,7 @@ from utilities.polars import (
     _InsertBetweenMissingColumnsError,
     _InsertBetweenNonConsecutiveError,
     _yield_struct_series_element_remove_nulls,
+    adjust_frequencies,
     append_dataclass,
     are_frames_equal,
     ceil_datetime,
@@ -121,6 +125,7 @@ from utilities.polars import (
     finite_ewm_mean,
     floor_datetime,
     get_data_type_or_series_time_zone,
+    get_frequency_spectrum,
     get_series_number_of_decimals,
     insert_after,
     insert_before,
@@ -160,6 +165,16 @@ if TYPE_CHECKING:
     from polars.datatypes import DataTypeClass
 
     from utilities.types import MaybeType, StrMapping, WeekDay
+
+
+class TestAdjustFrequencies:
+    def test_main(self) -> None:
+        n = 1000
+        x = linspace(0, 2 * pi, n)
+        noise = DEFAULT_RNG.normal(scale=0.25, size=n)
+        y = Series(values=x + noise)
+        result = adjust_frequencies(y, filters=lambda f: np.abs(f) <= 0.02)
+        assert isinstance(result, Series)
 
 
 class TestAppendDataClass:
@@ -1211,6 +1226,20 @@ class TestGetDataTypeOrSeriesTimeZone:
             match="Data type must be zoned; got .*",
         ):
             _ = get_data_type_or_series_time_zone(Datetime)
+
+
+class TestGetFrequencySpectrum:
+    def test_main(self) -> None:
+        n = 1000
+        x = linspace(0, 2 * pi, n)
+        noise = DEFAULT_RNG.normal(scale=0.25, size=n)
+        y = Series(x + noise)
+        y2 = adjust_frequencies(y, filters=lambda f: np.abs(f) <= 0.02)
+        result = get_frequency_spectrum(y2)
+        check_polars_dataframe(
+            result, height=n, schema_list={"frequency": Float64, "amplitude": Float64}
+        )
+        assert allclose(result.filter(col("frequency").abs() > 0.02)["amplitude"], 0.0)
 
 
 class TestGetSeriesNumberOfDecimals:
