@@ -135,7 +135,7 @@ class AsIntError(Exception): ...
 
 
 def boxcar(
-    array: NDArrayF,
+    array: NDArray[floating[Any]],
     /,
     *,
     loc_low: float = -1.0,
@@ -144,7 +144,7 @@ def boxcar(
     slope_high: float = 1.0,
     rtol: float | None = None,
     atol: float | None = None,
-) -> NDArrayF:
+) -> NDArray[floating[Any]]:
     """Construct a boxcar function."""
     if not is_at_most(loc_low, loc_high, rtol=rtol, atol=atol):
         raise _BoxCarLocationsError(low=loc_low, high=loc_high)
