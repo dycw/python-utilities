@@ -115,9 +115,9 @@ class TestAdjustFrequencies:
         y = x + noise
         result = adjust_frequencies(y, filters=lambda f: np.abs(f) <= 0.02)
         assert result.shape == (n,)
-        fft_vals = fft(result)
+        amplitudes = fft(result)
         freqs = fftfreq(n)
-        assert np.allclose(fft_vals[np.abs(freqs) > 0.02], 0.0)
+        assert np.allclose(amplitudes[np.abs(freqs) > 0.02], 0.0)
 
     def test_weight(self) -> None:
         n = 1000
@@ -128,9 +128,9 @@ class TestAdjustFrequencies:
             y, weights=lambda f: where(np.abs(f) <= 0.02, 1.0, 0.0)
         )
         assert result.shape == (n,)
-        fft_vals = fft(result)
+        amplitudes = fft(result)
         freqs = fftfreq(n)
-        assert np.allclose(fft_vals[np.abs(freqs) > 0.02], 0.0)
+        assert np.allclose(amplitudes[np.abs(freqs) > 0.02], 0.0)
 
 
 class TestArrayIndexer:
