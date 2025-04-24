@@ -27,7 +27,7 @@ from numpy.random import Generator
 from numpy.testing import assert_equal
 from pytest import mark, param, raises
 
-from utilities.hypothesis import float_arrays
+from utilities.hypothesis import float_arrays, pairs
 from utilities.numpy import (
     DEFAULT_RNG,
     AsIntError,
@@ -37,8 +37,12 @@ from utilities.numpy import (
     NDArrayI,
     ShiftError,
     SigmoidError,
+    _BoxCarLocationsError,
+    _BoxCarLowerBoundSlopeError,
+    _BoxCarUpperBoundSlopeError,
     array_indexer,
     as_int,
+    boxcar,
     discretize,
     fillna,
     filter_frequencies,
@@ -252,6 +256,56 @@ class TestDiscretize:
         result = discretize(arr, bins)
         expected = array(expected_v, dtype=float)
         assert_equal(result, expected)
+
+
+class TestBoxCar:
+    @given(
+        locs=pairs(floats(-10.0, 10.0), sorted=True),
+        slope_low=floats(0.1, 10.0),
+        slope_high=floats(0.1, 10.0),
+    )
+    def test_main(
+        self, *, locs: tuple[float, float], slope_low: float, slope_high: float
+    ) -> None:
+        loc_low, loc_high = locs
+        n = 1000
+        x = linspace(0, 2 * pi, n)
+        y = boxcar(
+            x,
+            loc_low=loc_low,
+            slope_low=slope_low,
+            loc_high=loc_high,
+            slope_high=slope_high,
+        )
+        assert y.shape == (n,)
+        assert is_between(y, 0.0, 1.0).all()
+
+    def test_error_locations(self) -> None:
+        n = 1000
+        x = linspace(0, 2 * pi, n)
+        with raises(
+            _BoxCarLocationsError,
+            match="Location parameters must be consistent; got 1.0 and -1.0",
+        ):
+            _ = boxcar(x, loc_low=1.0, loc_high=-1.0)
+
+    def test_error_lower_bound_slope(self) -> None:
+        n = 1000
+        x = linspace(0, 2 * pi, n)
+        with raises(
+            _BoxCarLowerBoundSlopeError,
+            match="Lower-bound slope parameter must be positive; got 0.0",
+        ):
+            _ = boxcar(x, slope_low=0.0)
+
+    def test_error_upper_bound_slope(self) -> None:
+        n = 1000
+        x = linspace(0, 2 * pi, n)
+        with raises(
+            _BoxCarUpperBoundSlopeError,
+            match="Upper-bound slope parameter must be positive; got 0.0",
+        ):
+            _ = boxcar(x, slope_high=0.0)
 
 
 class TestFillNa:

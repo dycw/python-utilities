@@ -147,11 +147,11 @@ def boxcar(
 ) -> NDArrayF:
     """Construct a boxcar function."""
     if not is_at_most(loc_low, loc_high, rtol=rtol, atol=atol):
-        raise _BoxCarLocError(low=loc_low, high=loc_high)
+        raise _BoxCarLocationsError(low=loc_low, high=loc_high)
     if not is_positive(slope_low, rtol=rtol, atol=atol):
-        raise _BoxCarLowSlopeError(slope=slope_low)
+        raise _BoxCarLowerBoundSlopeError(slope=slope_low)
     if not is_positive(slope_high, rtol=rtol, atol=atol):
-        raise _BoxCarLowSlopeError(slope=slope_high)
+        raise _BoxCarUpperBoundSlopeError(slope=slope_high)
     return (
         sigmoid(array, loc=loc_low, slope=slope_low)
         + sigmoid(array, loc=loc_high, slope=-slope_high)
@@ -163,17 +163,17 @@ class BoxCarError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
-class _BoxCarLocError(BoxCarError):
+class _BoxCarLocationsError(BoxCarError):
     low: float
     high: float
 
     @override
     def __str__(self) -> str:
-        return f"Location parameters must be consistent; got {self.low}, {self.high}"
+        return f"Location parameters must be consistent; got {self.low} and {self.high}"
 
 
 @dataclass(kw_only=True, slots=True)
-class _BoxCarLowSlopeError(BoxCarError):
+class _BoxCarLowerBoundSlopeError(BoxCarError):
     slope: float
 
     @override
@@ -182,7 +182,7 @@ class _BoxCarLowSlopeError(BoxCarError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _BoxCarUpperSlopeError(BoxCarError):
+class _BoxCarUpperBoundSlopeError(BoxCarError):
     slope: float
 
     @override
