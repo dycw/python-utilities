@@ -143,7 +143,7 @@ _FINITE_EWM_MIN_WEIGHT = 0.9999
 ##
 
 
-def acf_halflife(
+def ac_halflife(
     series: Series,
     /,
     *,
