@@ -109,6 +109,7 @@ from utilities.polars import (
     _InsertBetweenNonConsecutiveError,
     _yield_struct_series_element_remove_nulls,
     acf,
+    acf_halflife,
     adjust_frequencies,
     append_dataclass,
     are_frames_equal,
@@ -221,6 +222,13 @@ class TestACF:
                 "pvalue": Float64,
             },
         )
+
+
+class TestACHalfLife:
+    def test_main(self) -> None:
+        series = Series(linspace(0, 2 * pi, 1000))
+        halflife = acf_halflife(series)
+        assert halflife == 169.94
 
 
 class TestAdjustFrequencies:
