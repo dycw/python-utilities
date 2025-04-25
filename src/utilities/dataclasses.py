@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import MISSING, dataclass, field, fields, replace
 from typing import (
     TYPE_CHECKING,
@@ -20,12 +21,13 @@ from utilities.functions import (
 )
 from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
+from utilities.parse import ParseTextError, parse_text
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import TDataclass
+from utilities.types import ParseTextExtra, TDataclass
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Mapping
+    from collections.abc import Callable, Iterable, Iterator
     from collections.abc import Set as AbstractSet
 
     from utilities.types import Dataclass, StrMapping
@@ -381,6 +383,124 @@ def replace_non_sentinel(
 
 def serialize_dataclass() -> str:
     """Serialize a Dataclass."""
+
+
+def parse_dataclass(
+    text_or_mapping: str | Mapping[str, str],
+    cls: type[TDataclass],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+    head: bool = False,
+    case_sensitive: bool = False,
+    allow_extra_keys: bool = False,
+    extra_parsers: ParseTextExtra | None = None,
+) -> TDataclass:
+    """Construct a dataclass from a string or a mapping or strings."""
+    match text_or_mapping:
+        case str() as text:
+            keys_to_serializes = _text_to_dataclass_split_text(text, cls)
+        case Mapping() as keys_to_serializes:
+            ...
+        case _ as never:
+            assert_never(never)
+    fields = list(
+        yield_fields(
+            cls, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
+        )
+    )
+    fields_to_serializes = str_mapping_to_field_mapping(
+        cls,
+        keys_to_serializes,
+        fields=fields,
+        globalns=globalns,
+        localns=localns,
+        warn_name_errors=warn_name_errors,
+        head=head,
+        case_sensitive=case_sensitive,
+        allow_extra=allow_extra_keys,
+    )
+    field_names_to_values = {
+        f.name: _text_to_dataclass_parse(
+            f, t, cls, head=head, case_sensitive=case_sensitive, extra=extra_parsers
+        )
+        for f, t in fields_to_serializes.items()
+    }
+    return mapping_to_dataclass(
+        cls,
+        field_names_to_values,
+        fields=fields,
+        globalns=globalns,
+        localns=localns,
+        warn_name_errors=warn_name_errors,
+        head=head,
+        case_sensitive=case_sensitive,
+        allow_extra=allow_extra_keys,
+    )
+
+
+def _text_to_dataclass_split_text(
+    text: str, cls: type[TDataclass], /
+) -> Mapping[str, str]:
+    pairs = (t for t in text.split(",") if t != "")
+    return dict(_text_to_dataclass_split_key_value_pair(pair, cls) for pair in pairs)
+
+
+def _text_to_dataclass_split_key_value_pair(
+    text: str, cls: type[Dataclass], /
+) -> tuple[str, str]:
+    try:
+        key, value = text.split("=")
+    except ValueError:
+        raise _TextToDataClassSplitKeyValuePairError(cls=cls, text=text) from None
+    return key, value
+
+
+def _text_to_dataclass_parse(
+    field: _YieldFieldsClass[Any],
+    text: str,
+    cls: type[Dataclass],
+    /,
+    *,
+    head: bool = False,
+    case_sensitive: bool = False,
+    extra: ParseTextExtra | None = None,
+) -> Any:
+    try:
+        return parse_text(
+            field.type_, text, head=head, case_sensitive=case_sensitive, extra=extra
+        )
+    except ParseTextError:
+        raise _TextToDataClassParseValueError(cls=cls, field=field, text=text) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class TextToDataClassError(Exception, Generic[TDataclass]):
+    cls: type[TDataclass]
+
+
+@dataclass(kw_only=True, slots=True)
+class _TextToDataClassSplitKeyValuePairError(TextToDataClassError):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to construct {get_class_name(self.cls)!r}; failed to split key-value pair {self.text!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _TextToDataClassParseValueError(TextToDataClassError[TDataclass]):
+    field: _YieldFieldsClass[Any]
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to construct {get_class_name(self.cls)!r}; unable to parse field {self.field.name!r} of type {self.field.type_!r}; got {self.text!r}"
+
+
+##
 
 
 ##
