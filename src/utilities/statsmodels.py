@@ -12,6 +12,35 @@ if TYPE_CHECKING:
     from utilities.numpy import NDArrayF
 
 
+def ac_halflife(
+    array: NDArrayF,
+    /,
+    *,
+    adjusted: bool = False,
+    fft: bool = True,
+    bartlett_confint: bool = True,
+    missing: ACFMissing = "none",
+    step: float = 0.01,
+) -> float:
+    """Compute the autocorrelation halflife."""
+    (n,) = array.shape
+    acfs = acf(
+        array,
+        adjusted=adjusted,
+        nlags=n,
+        fft=fft,
+        bartlett_confint=bartlett_confint,
+        missing=missing,
+    )
+    lags = arange(0, n, step=step)
+    interp_acfs = interp(lags, arange(n), acfs)
+    is_half = (shift(interp_acfs) > 0.5) & (interp_acfs <= 0.5)
+    return lags[argmax(is_half)].item() if np.any(is_half) else nan
+
+
+##
+
+
 type ACFMissing = Literal["none", "raise", "conservative", "drop"]
 
 
@@ -118,33 +147,4 @@ def acf(
     )
 
 
-##
-
-
-def acf_halflife(
-    array: NDArrayF,
-    /,
-    *,
-    adjusted: bool = False,
-    fft: bool = True,
-    bartlett_confint: bool = True,
-    missing: ACFMissing = "none",
-    step: float = 0.01,
-) -> float:
-    """Compute the autocorrelation halflife."""
-    (n,) = array.shape
-    acfs = acf(
-        array,
-        adjusted=adjusted,
-        nlags=n,
-        fft=fft,
-        bartlett_confint=bartlett_confint,
-        missing=missing,
-    )
-    lags = arange(0, n, step=step)
-    interp_acfs = interp(lags, arange(n), acfs)
-    is_half = (shift(interp_acfs) > 0.5) & (interp_acfs <= 0.5)
-    return lags[argmax(is_half)].item() if np.any(is_half) else nan
-
-
-__all__ = ["ACFMissing", "acf"]
+__all__ = ["ACFMissing", "ac_halflife", "acf"]

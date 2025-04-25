@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from numpy import allclose, isclose, linspace, pi, sin
 
-from utilities.statsmodels import acf, acf_halflife
+from utilities.statsmodels import ac_halflife, acf
 
 
 class TestACF:
@@ -47,5 +47,5 @@ class TestACF:
 class TestACFHalfLife:
     def test_main(self) -> None:
         x = sin(linspace(0, 2 * pi, 1000))
-        halflife = acf_halflife(x)
+        halflife = ac_halflife(x)
         assert halflife == 178.35
