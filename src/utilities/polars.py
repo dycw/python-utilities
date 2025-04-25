@@ -223,6 +223,11 @@ def _acf_process_qstats_pvalues(qstats: NDArrayF, pvalues: NDArrayF, /) -> DataF
 ##
 
 
+# def acf_halflife(series: Series,/)
+
+##
+
+
 def adjust_frequencies(
     series: Series,
     /,
