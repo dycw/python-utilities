@@ -129,6 +129,7 @@ from utilities.polars import (
     finite_ewm_mean,
     floor_datetime,
     get_data_type_or_series_time_zone,
+    get_expr_name,
     get_frequency_spectrum,
     get_series_number_of_decimals,
     insert_after,
@@ -1329,6 +1330,22 @@ class TestGetDataTypeOrSeriesTimeZone:
             match="Data type must be zoned; got .*",
         ):
             _ = get_data_type_or_series_time_zone(Datetime)
+
+
+class TestGetExprName:
+    @given(n=hypothesis.strategies.integers(0, 10), name=text_ascii())
+    def test_series(self, *, n: int, name: str) -> None:
+        sr = int_range(n, eager=True)
+        expr = lit(None, dtype=Boolean).alias(name)
+        result = get_expr_name(sr, expr)
+        assert result == name
+
+    @given(n=hypothesis.strategies.integers(0, 10), name=text_ascii())
+    def test_df(self, *, n: int, name: str) -> None:
+        df = int_range(n, eager=True).to_frame()
+        expr = lit(None, dtype=Boolean).alias(name)
+        result = get_expr_name(df, expr)
+        assert result == name
 
 
 class TestGetFrequencySpectrum:

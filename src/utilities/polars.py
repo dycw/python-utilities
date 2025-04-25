@@ -1228,6 +1228,21 @@ class _GetDataTypeOrSeriesTimeZoneNotZonedError(GetDataTypeOrSeriesTimeZoneError
 ##
 
 
+def get_expr_name(obj: Series | DataFrame, expr: Expr, /) -> str:
+    """Get the name of an expression."""
+    match obj:
+        case Series() as series:
+            return get_expr_name(series.to_frame(), expr)
+        case DataFrame() as df:
+            selected = df.select(expr)
+            return one(selected.columns)
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
 def get_frequency_spectrum(series: Series, /, *, d: int = 1) -> DataFrame:
     """Get the frequency spectrum."""
     import utilities.numpy
@@ -1970,6 +1985,7 @@ __all__ = [
     "finite_ewm_mean",
     "floor_datetime",
     "get_data_type_or_series_time_zone",
+    "get_expr_name",
     "get_frequency_spectrum",
     "get_series_number_of_decimals",
     "insert_after",
