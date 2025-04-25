@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from numpy import allclose, isclose, linspace, pi
 
-from utilities.statsmodels import acf
+from utilities.statsmodels import ac_halflife, acf
 
 
 class TestACF:
@@ -42,3 +42,10 @@ class TestACF:
         assert isclose(qstat[-1], 27769.955439016478)
         assert pvalues.shape == (30,)
         assert isclose(pvalues[-1], 0.0)
+
+
+class TestACHalfLife:
+    def test_main(self) -> None:
+        x = linspace(0, 2 * pi, 1000)
+        halflife = ac_halflife(x)
+        assert halflife == 169.94

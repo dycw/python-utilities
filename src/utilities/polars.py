@@ -140,6 +140,32 @@ DatetimeUSEastern = Datetime(time_zone="US/Eastern")
 DatetimeUTC = Datetime(time_zone="UTC")
 _FINITE_EWM_MIN_WEIGHT = 0.9999
 
+##
+
+
+def ac_halflife(
+    series: Series,
+    /,
+    *,
+    adjusted: bool = False,
+    fft: bool = True,
+    bartlett_confint: bool = True,
+    missing: ACFMissing = "none",
+    step: float = 0.01,
+) -> float:
+    """Compute the autocorrelation halflife."""
+    import utilities.statsmodels
+
+    array = series.to_numpy()
+    return utilities.statsmodels.ac_halflife(
+        array,
+        adjusted=adjusted,
+        fft=fft,
+        bartlett_confint=bartlett_confint,
+        missing=missing,
+        step=step,
+    )
+
 
 ##
 
@@ -219,6 +245,11 @@ def _acf_process_qstats_pvalues(qstats: NDArrayF, pvalues: NDArrayF, /) -> DataF
         data=data, schema={"qstat": Float64, "pvalue": Float64}
     ).with_row_index(name="lag", offset=1)
 
+
+##
+
+
+# def acf_halflife(series: Series,/)
 
 ##
 

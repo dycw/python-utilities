@@ -753,7 +753,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.109.21"
+version = "0.109.22"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },
@@ -1126,8 +1126,8 @@ requires-dist = [
     { name = "greenlet", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=3.2.0,<3.3" },
     { name = "greenlet", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=3.2.0,<3.3" },
     { name = "httpx", marker = "extra == 'zzz-test-fastapi'", specifier = ">=0.28.1,<0.29" },
-    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.131.7,<6.132" },
-    { name = "hypothesis", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=6.131.7,<6.132" },
+    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.131.9,<6.132" },
+    { name = "hypothesis", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=6.131.9,<6.132" },
     { name = "img2pdf", marker = "extra == 'zzz-test-altair'", specifier = ">=0.6.0,<0.7" },
     { name = "ipython", marker = "extra == 'zzz-test-ipython'", specifier = ">=9.0.1,<9.1" },
     { name = "jupyterlab", marker = "extra == 'zzz-test-jupyter'", specifier = ">=4.2.0,<4.3" },
@@ -1265,7 +1265,7 @@ dev = [
     { name = "fpdf2", specifier = ">=2.8.3,<2.9" },
     { name = "greenlet", specifier = ">=3.2.0,<3.3" },
     { name = "httpx", specifier = ">=0.28.1,<0.29" },
-    { name = "hypothesis", specifier = ">=6.131.7,<6.132" },
+    { name = "hypothesis", specifier = ">=6.131.9,<6.132" },
     { name = "img2pdf", specifier = ">=0.6.0,<0.7" },
     { name = "lightweight-charts", specifier = ">=2.1,<2.2" },
     { name = "loguru", specifier = ">=0.7.3,<0.8" },
@@ -1609,15 +1609,15 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.131.8"
+version = "6.131.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1e/f7/61108d9984d44d5b89b2edd0de1f9f9b2a9ae4c0ac5eaf5daff1c4b337d8/hypothesis-6.131.8.tar.gz", hash = "sha256:68dab267df9e6e06e404c2ac5d5746438526d4687895e5a47ae9bade4a8ca4f3", size = 434908, upload_time = "2025-04-23T20:36:18.128Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/10/ff/217417d065aa8a4e6815ddc39acee1222f1b67bd0e4803b85de86a837873/hypothesis-6.131.9.tar.gz", hash = "sha256:ee9b0e1403e1121c91921dbdc79d7f509fdb96d457a0389222d2a68d6c8a8f8e", size = 435415, upload_time = "2025-04-25T05:54:46.64Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d8/04/d4bcbc4cd97128e78039266a07698ce4f1ae2bc4bbda38cca210a49a98c5/hypothesis-6.131.8-py3-none-any.whl", hash = "sha256:fdae34221ed072c6e631ff472fba98806f16d93a483a6ab270ba96ecfd767dd4", size = 499376, upload_time = "2025-04-23T20:36:13.909Z" },
+    { url = "https://files.pythonhosted.org/packages/bd/e5/41a6733bfe11997795669dec3b3d785c28918e06568a2540dcc29f0d3fa7/hypothesis-6.131.9-py3-none-any.whl", hash = "sha256:7c2d9d6382e98e5337b27bd34e5b223bac23956787a827e1d087e00d893561d6", size = 499853, upload_time = "2025-04-25T05:54:43.247Z" },
 ]
 
 [[package]]
