@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, override
 
 from dotenv import dotenv_values
 
-from utilities.dataclasses import MappingToDataclassError, text_to_dataclass
+from utilities.dataclasses import MappingToDataclassError, parse_dataclass
 from utilities.git import get_repo_root
 from utilities.iterables import MergeStrMappingsError, merge_str_mappings
 from utilities.pathlib import PWD
@@ -50,7 +50,7 @@ def load_settings(
         ) from None
     values = {k: v for k, v in maybe_values.items() if v is not None}
     try:
-        return text_to_dataclass(
+        return parse_dataclass(
             values,
             cls,
             globalns=globalns,

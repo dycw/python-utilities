@@ -450,8 +450,8 @@ class StrMappingToFieldMappingError(Exception):
 ##
 
 
-def text_to_dataclass(
-    text_or_mapping: str | StrStrMapping,
+def parse_dataclass(
+    text_or_mapping: str | Mapping[str, str],
     cls: type[TDataclass],
     /,
     *,
@@ -740,8 +740,8 @@ __all__ = [
     "dataclass_to_dict",
     "mapping_to_dataclass",
     "one_field",
+    "parse_dataclass",
     "replace_non_sentinel",
     "str_mapping_to_field_mapping",
-    "text_to_dataclass",
     "yield_fields",
 ]
