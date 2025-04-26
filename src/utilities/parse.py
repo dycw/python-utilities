@@ -509,7 +509,7 @@ def serialize_object(
         )
     if extra is not None:
         return _serialize_object_extra(obj, extra)
-    raise _ParseObjectSerializeError(obj=obj)
+    raise _SerializeObjectSerializeError(obj=obj)
 
 
 def _serialize_object_dict(
@@ -541,7 +541,7 @@ def _serialize_object_extra(obj: Any, extra: SerializeObjectExtra, /) -> str:
     try:
         serializer = one(s for c, s in extra.items() if isinstance(obj, c))
     except OneEmptyError:
-        raise _SerializeObjectError(obj=obj) from None
+        raise _SerializeObjectSerializeError(obj=obj) from None
     except OneNonUniqueError as error:
         raise _SerializeObjectExtraNonUniqueError(
             obj=obj, first=error.first, second=error.second
@@ -599,6 +599,27 @@ def _serialize_object_tuple(
     )
     joined = join_strs(items, separator=list_separator)
     return f"({joined})"
+
+
+@dataclass(kw_only=True, slots=True)
+class SerializeObjectError(Exception):
+    obj: Any
+
+
+class _SerializeObjectSerializeError(SerializeObjectError):
+    @override
+    def __str__(self) -> str:
+        return f"Unable to serialize object {self.obj!r}"
+
+
+@dataclass
+class _SerializeObjectExtraNonUniqueError(SerializeObjectError):
+    first: type[Any]
+    second: type[Any]
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to serialize object {self.obj!r} since `extra` must contain exactly one parent class; got {self.first!r}, {self.second!r} and perhaps more"
 
 
 __all__ = ["parse_object", "serialize_object"]
