@@ -275,7 +275,10 @@ def _parse_text_dict_type(
         )
         for v in pairs.values()
     )
-    return dict(zip(keys, values, strict=True))
+    try:
+        return dict(zip(keys, values, strict=True))
+    except _ParseTextParseError:
+        raise _ParseTextParseError(type_=type_, text=text) from None
 
 
 def _parse_text_frozenset_type(
@@ -295,18 +298,21 @@ def _parse_text_frozenset_type(
     except ExtractGroupError:
         raise _ParseTextParseError(type_=type_, text=text) from None
     texts = split_str(inner_text, separator=list_separator)
-    return frozenset({
-        parse_text(
-            inner_type,
-            t,
-            list_separator=list_separator,
-            pair_separator=pair_separator,
-            head=head,
-            case_sensitive=case_sensitive,
-            extra=extra,
-        )
-        for t in texts
-    })
+    try:
+        return frozenset({
+            parse_text(
+                inner_type,
+                t,
+                list_separator=list_separator,
+                pair_separator=pair_separator,
+                head=head,
+                case_sensitive=case_sensitive,
+                extra=extra,
+            )
+            for t in texts
+        })
+    except _ParseTextParseError:
+        raise _ParseTextParseError(type_=type_, text=text) from None
 
 
 def _parse_text_list_type(
@@ -326,18 +332,21 @@ def _parse_text_list_type(
     except ExtractGroupError:
         raise _ParseTextParseError(type_=type_, text=text) from None
     texts = split_str(inner_text, separator=list_separator)
-    return [
-        parse_text(
-            inner_type,
-            t,
-            list_separator=list_separator,
-            pair_separator=pair_separator,
-            head=head,
-            case_sensitive=case_sensitive,
-            extra=extra,
-        )
-        for t in texts
-    ]
+    try:
+        return [
+            parse_text(
+                inner_type,
+                t,
+                list_separator=list_separator,
+                pair_separator=pair_separator,
+                head=head,
+                case_sensitive=case_sensitive,
+                extra=extra,
+            )
+            for t in texts
+        ]
+    except _ParseTextParseError:
+        raise _ParseTextParseError(type_=type_, text=text) from None
 
 
 def _parse_text_set_type(
@@ -357,18 +366,21 @@ def _parse_text_set_type(
     except ExtractGroupError:
         raise _ParseTextParseError(type_=type_, text=text) from None
     texts = split_str(inner_text, separator=list_separator)
-    return {
-        parse_text(
-            inner_type,
-            t,
-            list_separator=list_separator,
-            pair_separator=pair_separator,
-            head=head,
-            case_sensitive=case_sensitive,
-            extra=extra,
-        )
-        for t in texts
-    }
+    try:
+        return {
+            parse_text(
+                inner_type,
+                t,
+                list_separator=list_separator,
+                pair_separator=pair_separator,
+                head=head,
+                case_sensitive=case_sensitive,
+                extra=extra,
+            )
+            for t in texts
+        }
+    except _ParseTextParseError:
+        raise _ParseTextParseError(type_=type_, text=text) from None
 
 
 def _parse_text_union_type(
