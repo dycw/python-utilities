@@ -20,6 +20,8 @@ from utilities.math import ParseNumberError, parse_number
 from utilities.re import ExtractGroupError, extract_group
 from utilities.sentinel import ParseSentinelError, Sentinel, parse_sentinel
 from utilities.text import (
+    LIST_SEPARATOR,
+    PAIR_SEPARATOR,
     ParseBoolError,
     ParseNoneError,
     join_strs,
@@ -45,10 +47,6 @@ from utilities.version import ParseVersionError, Version, parse_version
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
     from collections.abc import Set as AbstractSet
-
-
-LIST_SEPARATOR = ","
-PAIR_SEPARATOR = "="
 
 
 def parse_object(
@@ -569,4 +567,4 @@ def _serialize_object_tuple(
     return f"({joined})"
 
 
-__all__ = ["LIST_SEPARATOR", "PAIR_SEPARATOR", "parse_object", "serialize_object"]
+__all__ = ["parse_object", "serialize_object"]
