@@ -240,10 +240,8 @@ class TestSerializeAndParseObject:
 
     @given(value=integers())
     def test_type_union_with_extra(self, *, value: int) -> None:
-        def parse_even_or_odd(
-            serialized: str, /
-        ) -> DataClassFutureIntEvenOrOddTypeUnion:
-            value = int(serialized)
+        def parse_even_or_odd(text: str, /) -> DataClassFutureIntEvenOrOddTypeUnion:
+            value = int(text)
             match value % 2:
                 case 0:
                     return DataClassFutureIntEven(even_int=value)
@@ -301,7 +299,7 @@ class TestSerializeAndParseObject:
         assert result == version
 
 
-class TestParseserialized:
+class TestParseSerialized:
     def test_error_bool(self) -> None:
         with raises(
             _ParseObjectParseError,
