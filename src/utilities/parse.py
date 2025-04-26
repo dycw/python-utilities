@@ -396,7 +396,7 @@ def _parse_text_tuple_type(
         inner = extract_group(r"^\((.*)\)$", text, flags=DOTALL)
     except ExtractGroupError:
         raise _ParseTextParseError(type_=type_, text=text) from None
-    texts = inner.split(LIST_SEPARATOR)
+    texts = inner.split(list_separator)
     if len(args) != len(texts):
         raise _ParseTextParseError(type_=type_, text=text)
     try:
