@@ -176,7 +176,7 @@ class TestSplitAndJoinStr:
     def test_error_closing_bracket_mismatched(self) -> None:
         with raises(
             _SplitStrClosingBracketMismatchedError,
-            match=r"Unable to split '1,\(22,333'; got mismatched '\(' at position 2 and '}' at position 5",
+            match=r"Unable to split '1,\(22\},333'; got mismatched '\(' at position 2 and '}' at position 5",
         ):
             _ = split_str("1,(22},333", brackets=[("(", ")"), ("{", "}")])
 
