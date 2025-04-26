@@ -46,6 +46,7 @@ type OpenMode = Literal[
     "a+b",
 ]
 type StrMapping = Mapping[str, Any]
+type StrStrMapping = Mapping[str, str]
 type TupleOrStrMapping = tuple[Any, ...] | StrMapping
 type MaybeCallable[_T] = _T | Callable[[], _T]
 type MaybeStr[_T] = _T | str
@@ -288,6 +289,7 @@ __all__ = [
     "RoundMode",
     "Seed",
     "StrMapping",
+    "StrStrMapping",
     "SupportsAbs",
     "SupportsAdd",
     "SupportsBytes",
