@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections import deque
 from dataclasses import dataclass
 from itertools import chain
 from re import IGNORECASE, Match, escape, search
@@ -256,22 +257,36 @@ def _split_str_brackets(
     pattern = re.compile("|".join(escapes))
 
     results: Sequence[str] = []
-    stack: Sequence[str] = []
+    stack: deque[tuple[str, int]] = deque()
     last = 0
 
     for match in pattern.finditer(text):
         token, position = match.group(), match.start()
         if token in opens:
-            stack.append(token)
+            stack.append((token, position))
         elif token in closes:
-            if not stack or stack[-1] != close_to_open[token]:
-                raise _SplitStrBracketError(text=text, bracket=token, position=position)
-            _ = stack.pop()
-        elif token == separator and not stack:
+            if len(stack) == 0:
+                raise _SplitStrClosingBracketUnmatchedError(
+                    text=text, token=token, position=position
+                )
+            open_token, open_position = stack.pop()
+            if open_token != close_to_open[token]:
+                raise _SplitStrClosingBracketMismatchedError(
+                    text=text,
+                    opening_token=open_token,
+                    opening_position=open_position,
+                    closing_token=token,
+                    closing_position=position,
+                )
+        elif (token == separator) and (len(stack) == 0):
             results.append(text[last:position].strip())
             last = position + 1
-
     results.append(text[last:].strip())
+    if len(stack) >= 1:
+        token, position = stack.pop()
+        raise _SplitStrOpeningBracketUnmatchedError(
+            text=text, token=token, position=position
+        )
     return results
 
 
@@ -291,13 +306,35 @@ class _SplitStrCountError(SplitStrError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _SplitStrBracketError(SplitStrError):
-    bracket: str
+class _SplitStrClosingBracketMismatchedError(SplitStrError):
+    opening_token: str
+    opening_position: int
+    closing_token: str
+    closing_position: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to split {self.text!r}; got mismatched {self.opening_token!r} at position {self.opening_position} and {self.closing_token!r} at position {self.closing_position}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _SplitStrClosingBracketUnmatchedError(SplitStrError):
+    token: str
     position: int
 
     @override
     def __str__(self) -> str:
-        return f"Unable to split {self.text!r}; unmatched closing {self.bracket!r} at position {self.position}"
+        return f"Unable to split {self.text!r}; got unmatched {self.token!r} at position {self.position}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _SplitStrOpeningBracketUnmatchedError(SplitStrError):
+    token: str
+    position: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to split {self.text!r}; got unmatched {self.token!r} at position {self.position}"
 
 
 def join_strs(

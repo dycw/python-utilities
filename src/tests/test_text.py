@@ -20,9 +20,12 @@ from utilities.hypothesis import text_ascii
 from utilities.text import (
     ParseBoolError,
     ParseNoneError,
-    SplitStrError,
     _SplitKeyValuePairsDuplicateKeysError,
     _SplitKeyValuePairsSplitError,
+    _SplitStrClosingBracketMismatchedError,
+    _SplitStrClosingBracketUnmatchedError,
+    _SplitStrCountError,
+    _SplitStrOpeningBracketUnmatchedError,
     join_strs,
     parse_bool,
     parse_none,
@@ -170,11 +173,33 @@ class TestSplitAndJoinStr:
     def test_sort(self, *, texts: set[str]) -> None:
         assert split_str(join_strs(texts, sort=True)) == sorted(texts)
 
-    def test_error(self) -> None:
+    def test_error_closing_bracket_mismatched(self) -> None:
         with raises(
-            SplitStrError, match=r"Unable to split '1,22,333' into 4 part\(s\); got 3"
+            _SplitStrClosingBracketMismatchedError,
+            match=r"Unable to split '1,\(22,333'; got mismatched '\(' at position 2 and '}' at position 5",
+        ):
+            _ = split_str("1,(22},333", brackets=[("(", ")"), ("{", "}")])
+
+    def test_error_closing_bracket_unmatched(self) -> None:
+        with raises(
+            _SplitStrClosingBracketUnmatchedError,
+            match=r"Unable to split '1,22\),333'; got unmatched '\)' at position 4",
+        ):
+            _ = split_str("1,22),333", brackets=[("(", ")")])
+
+    def test_error_count(self) -> None:
+        with raises(
+            _SplitStrCountError,
+            match=r"Unable to split '1,22,333' into 4 part\(s\); got 3",
         ):
             _ = split_str("1,22,333", n=4)
+
+    def test_error_opening_bracket(self) -> None:
+        with raises(
+            _SplitStrOpeningBracketUnmatchedError,
+            match=r"Unable to split '1,\(22,333'; got unmatched '\(' at position 2",
+        ):
+            _ = split_str("1,(22,333", brackets=[("(", ")")])
 
 
 class TestSnakeCase:
