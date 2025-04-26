@@ -20,6 +20,7 @@ from utilities.math import ParseNumberError, parse_number
 from utilities.re import ExtractGroupError, extract_group
 from utilities.sentinel import ParseSentinelError, Sentinel, parse_sentinel
 from utilities.text import (
+    BRACKETS,
     LIST_SEPARATOR,
     PAIR_SEPARATOR,
     ParseBoolError,
@@ -45,7 +46,7 @@ from utilities.typing import (
 from utilities.version import ParseVersionError, Version, parse_version
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
     from collections.abc import Set as AbstractSet
 
 
@@ -56,6 +57,7 @@ def parse_object(
     *,
     list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
+    brackets: Iterable[tuple[str, str]] | None = BRACKETS,
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseObjectExtra | None = None,
@@ -76,6 +78,7 @@ def parse_object(
             text,
             list_separator=list_separator,
             pair_separator=pair_separator,
+            brackets=brackets,
             head=head,
             case_sensitive=case_sensitive,
             extra=extra,
@@ -87,6 +90,7 @@ def parse_object(
                 text,
                 list_separator=list_separator,
                 pair_separator=pair_separator,
+                brackets=brackets,
                 head=head,
                 case_sensitive=case_sensitive,
                 extra=extra,
@@ -98,6 +102,7 @@ def parse_object(
             text,
             list_separator=list_separator,
             pair_separator=pair_separator,
+            brackets=brackets,
             head=head,
             case_sensitive=case_sensitive,
             extra=extra,
@@ -114,6 +119,7 @@ def parse_object(
                 text,
                 list_separator=list_separator,
                 pair_separator=pair_separator,
+                brackets=brackets,
                 head=head,
                 case_sensitive=case_sensitive,
                 extra=extra,
@@ -126,6 +132,7 @@ def parse_object(
             text,
             list_separator=list_separator,
             pair_separator=pair_separator,
+            brackets=brackets,
             head=head,
             case_sensitive=case_sensitive,
             extra=extra,
@@ -136,6 +143,7 @@ def parse_object(
             text,
             list_separator=list_separator,
             pair_separator=pair_separator,
+            brackets=brackets,
             head=head,
             case_sensitive=case_sensitive,
             extra=extra,
@@ -242,6 +250,7 @@ def _parse_object_dict_type(
     *,
     list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
+    brackets: Iterable[tuple[str, str]] | None = BRACKETS,
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseObjectExtra | None = None,
@@ -255,6 +264,7 @@ def _parse_object_dict_type(
         inner_text,
         list_separator=list_separator,
         pair_separator=pair_separator,
+        brackets=brackets,
         mapping=True,
     )
     keys = (
@@ -263,6 +273,7 @@ def _parse_object_dict_type(
             k,
             list_separator=list_separator,
             pair_separator=pair_separator,
+            brackets=brackets,
             head=head,
             case_sensitive=case_sensitive,
             extra=extra,
@@ -275,6 +286,7 @@ def _parse_object_dict_type(
             v,
             list_separator=list_separator,
             pair_separator=pair_separator,
+            brackets=brackets,
             head=head,
             case_sensitive=case_sensitive,
             extra=extra,
@@ -294,6 +306,7 @@ def _parse_object_list_type(
     *,
     list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
+    brackets: Iterable[tuple[str, str]] | None = BRACKETS,
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseObjectExtra | None = None,
@@ -311,6 +324,7 @@ def _parse_object_list_type(
                 t,
                 list_separator=list_separator,
                 pair_separator=pair_separator,
+                brackets=brackets,
                 head=head,
                 case_sensitive=case_sensitive,
                 extra=extra,
@@ -328,6 +342,7 @@ def _parse_object_set_type(
     *,
     list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
+    brackets: Iterable[tuple[str, str]] | None = BRACKETS,
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseObjectExtra | None = None,
@@ -345,6 +360,7 @@ def _parse_object_set_type(
                 t,
                 list_separator=list_separator,
                 pair_separator=pair_separator,
+                brackets=brackets,
                 head=head,
                 case_sensitive=case_sensitive,
                 extra=extra,
@@ -387,6 +403,7 @@ def _parse_object_tuple_type(
     *,
     list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
+    brackets: Iterable[tuple[str, str]] | None = BRACKETS,
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseObjectExtra | None = None,
@@ -406,6 +423,7 @@ def _parse_object_tuple_type(
                 text,
                 list_separator=list_separator,
                 pair_separator=pair_separator,
+                brackets=brackets,
                 head=head,
                 case_sensitive=case_sensitive,
                 extra=extra,
