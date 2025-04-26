@@ -20,8 +20,9 @@ from utilities.hypothesis import text_ascii
 from utilities.text import (
     ParseBoolError,
     ParseNoneError,
-    SplitKeyValuePairsError,
     SplitStrError,
+    _SplitKeyValuePairsDuplicateKeysError,
+    _SplitKeyValuePairsSplitError,
     join_strs,
     parse_bool,
     parse_none,
@@ -98,9 +99,16 @@ class TestSplitKeyValuePairs:
         expected = {"a": "1", "b": "22", "c": "333"}
         assert result == expected
 
-    def test_error(self) -> None:
+    def test_error_split(self) -> None:
         with raises(
-            SplitKeyValuePairsError,
+            _SplitKeyValuePairsSplitError,
+            match=r"Unable to split 'a=1,b=22=22,c=333' into key-value pairs; got 'b=22=22'",
+        ):
+            _ = split_key_value_pairs("a=1,b=22=22,c=333")
+
+    def test_error_duplicate_keys(self) -> None:
+        with raises(
+            _SplitKeyValuePairsDuplicateKeysError,
             match=r"Unable to split 'a=1,a=22,a=333' into a mapping since there are duplicate keys; got \{'a': 3\}",
         ):
             _ = split_key_value_pairs("a=1,a=22,a=333", mapping=True)
