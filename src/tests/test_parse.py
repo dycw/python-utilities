@@ -49,7 +49,7 @@ from utilities.parse import (
     _ParseObjectExtraNonUniqueError,
     _ParseObjectParseError,
     parse_object,
-    to_text,
+    serialize_object,
 )
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import Duration, Number
@@ -59,43 +59,43 @@ from utilities.version import Version
 class TestToAndParseText:
     @given(value=booleans())
     def test_bool(self, *, value: bool) -> None:
-        text = to_text(value)
+        text = serialize_object(value)
         result = parse_object(bool, text)
         assert result is value
 
     @given(date=dates())
     def test_date(self, *, date: dt.date) -> None:
-        text = to_text(date)
+        text = serialize_object(date)
         result = parse_object(dt.date, text)
         assert result == date
 
     @given(datetime=local_datetimes() | zoned_datetimes())
     def test_datetime(self, *, datetime: dt.datetime) -> None:
-        text = to_text(datetime)
+        text = serialize_object(datetime)
         result = parse_object(dt.datetime, text)
         assert result == datetime
 
     @given(value=dictionaries(dates(), zoned_datetimes()))
     def test_dict(self, *, value: dict[dt.date, dt.datetime]) -> None:
-        text = to_text(value)
+        text = serialize_object(value)
         result = parse_object(dict[dt.date, dt.datetime], text)
         assert result == value
 
     @given(duration=datetime_durations(two_way=True))
     def test_duration(self, *, duration: Duration) -> None:
-        text = to_text(duration)
+        text = serialize_object(duration)
         result = parse_object(Duration, text)
         assert result == duration
 
     @given(truth=sampled_from(TruthEnum))
     def test_enum(self, *, truth: TruthEnum) -> None:
-        text = to_text(truth)
+        text = serialize_object(truth)
         result = parse_object(TruthEnum, text)
         assert result is truth
 
     @given(value=integers())
     def test_extra_type(self, *, value: int) -> None:
-        text = to_text(value)
+        text = serialize_object(value)
         result = parse_object(
             DataClassFutureInt,
             text,
@@ -106,25 +106,25 @@ class TestToAndParseText:
 
     @given(value=floats())
     def test_float(self, *, value: float) -> None:
-        text = to_text(value)
+        text = serialize_object(value)
         result = parse_object(float, text)
         assert is_equal(result, value)
 
     @given(values=frozensets(dates()))
     def test_frozenset(self, *, values: frozenset[dt.date]) -> None:
-        text = to_text(values)
+        text = serialize_object(values)
         result = parse_object(frozenset[dt.date], text)
         assert result == values
 
     @given(value=integers())
     def test_int(self, *, value: int) -> None:
-        text = to_text(value)
+        text = serialize_object(value)
         result = parse_object(int, text)
         assert result == value
 
     @given(values=lists(dates()))
     def test_list(self, *, values: list[dt.date]) -> None:
-        text = to_text(values)
+        text = serialize_object(values)
         result = parse_object(list[dt.date], text)
         assert result == values
 
@@ -134,75 +134,75 @@ class TestToAndParseText:
         assert result == truth
 
     def test_none(self) -> None:
-        text = to_text(None)
+        text = serialize_object(None)
         result = parse_object(None, text)
         assert result is None
 
     def test_none_type(self) -> None:
-        text = to_text(None)
+        text = serialize_object(None)
         result = parse_object(NoneType, text)
         assert result is None
 
     @given(number=numbers())
     def test_number(self, *, number: Number) -> None:
-        text = to_text(number)
+        text = serialize_object(number)
         result = parse_object(Number, text)
         assert result == number
 
     @given(path=paths())
     def test_path(self, *, path: Path) -> None:
-        text = to_text(path)
+        text = serialize_object(path)
         result = parse_object(Path, text)
         assert result == path
 
     @given(path=paths())
     def test_path_expanded(self, *, path: Path) -> None:
         path_use = Path("~", path)
-        text = to_text(path_use)
+        text = serialize_object(path_use)
         result = ensure_path(parse_object(Path, text))
         assert result == result.expanduser()
 
     def test_nullable_number_none(self) -> None:
-        text = to_text(None)
+        text = serialize_object(None)
         result = parse_object(Number | None, text)
         assert result is None
 
     @given(number=numbers())
     def test_nullable_number_number(self, *, number: Number) -> None:
-        text = to_text(number)
+        text = serialize_object(number)
         result = parse_object(Number | None, text)
         assert result == number
 
     def test_nullable_duration_none(self) -> None:
-        text = to_text(None)
+        text = serialize_object(None)
         result = parse_object(Duration | None, text)
         assert result is None
 
     @given(duration=datetime_durations(two_way=True))
     def test_nullable_duration_duration(self, *, duration: Duration) -> None:
-        text = to_text(duration)
+        text = serialize_object(duration)
         result = parse_object(Duration | None, text)
         assert result == duration
 
     def test_nullable_int_none(self) -> None:
-        text = to_text(None)
+        text = serialize_object(None)
         result = parse_object(int | None, text)
         assert result is None
 
     @given(value=integers())
     def test_nullable_int_int(self, *, value: int) -> None:
-        text = to_text(value)
+        text = serialize_object(value)
         result = parse_object(int | None, text)
         assert result == value
 
     def test_sentinel(self) -> None:
-        text = to_text(sentinel)
+        text = serialize_object(sentinel)
         result = parse_object(Sentinel, text)
         assert result is sentinel
 
     @given(values=sets(dates()))
     def test_set(self, *, values: set[dt.date]) -> None:
-        text = to_text(values)
+        text = serialize_object(values)
         result = parse_object(set[dt.date], text)
         assert result == values
 
@@ -213,19 +213,19 @@ class TestToAndParseText:
 
     @given(time=times())
     def test_time(self, *, time: dt.time) -> None:
-        text = to_text(time)
+        text = serialize_object(time)
         result = parse_object(dt.time, text)
         assert result == time
 
     @given(timedelta=timedeltas_2w())
     def test_timedelta(self, *, timedelta: dt.timedelta) -> None:
-        text = to_text(timedelta)
+        text = serialize_object(timedelta)
         result = parse_object(dt.timedelta, text)
         assert result == timedelta
 
     @given(x=integers(), y=integers())
     def test_tuple(self, *, x: int, y: int) -> None:
-        text = to_text((x, y))
+        text = serialize_object((x, y))
         result = parse_object(tuple[int, int], text)
         assert result == (x, y)
 
@@ -246,7 +246,7 @@ class TestToAndParseText:
                 case _:
                     raise ImpossibleCaseError(case=[f"{value=}"])
 
-        text = to_text(value)
+        text = serialize_object(value)
         result = parse_object(
             DataClassFutureIntEvenOrOddTypeUnion,
             text,
@@ -273,7 +273,7 @@ class TestToAndParseText:
                 case _:
                     raise ImpossibleCaseError(case=[f"{value=}"])
 
-        text = to_text(value)
+        text = serialize_object(value)
         result = parse_object(
             DataClassFutureIntEvenOrOddUnion,
             text,
@@ -290,7 +290,7 @@ class TestToAndParseText:
 
     @given(version=versions())
     def test_version(self, *, version: Version) -> None:
-        text = to_text(version)
+        text = serialize_object(version)
         result = parse_object(Version, text)
         assert result == version
 
@@ -370,7 +370,7 @@ class TestParseText:
         ):
             _ = parse_object(
                 Child,
-                to_text(value),
+                serialize_object(value),
                 extra={
                     Parent1: lambda text: Child(x=int(text)),
                     Parent2: lambda text: Child(y=int(text)),
@@ -536,4 +536,4 @@ class TestParseText:
 class TestToText:
     def test_error_not_implemented(self) -> None:
         with raises(NotImplementedError):
-            _ = to_text(Final)
+            _ = serialize_object(Final)

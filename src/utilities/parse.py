@@ -444,7 +444,7 @@ class _ParseObjectExtraNonUniqueError(ParseObjectError):
 ##
 
 
-def to_text(
+def serialize_object(
     obj: Any,
     /,
     *,
@@ -475,25 +475,25 @@ def to_text(
     if isinstance(obj, Enum):
         return obj.name
     if isinstance(obj, dict):
-        return _to_text_dict(
+        return _serialize_object_dict(
             obj, list_separator=list_separator, pair_separator=pair_separator
         )
     if isinstance(obj, list):
-        return _to_text_list(
+        return _serialize_object_list(
             obj, list_separator=list_separator, pair_separator=pair_separator
         )
     if isinstance(obj, tuple):
-        return _to_text_tuple(
+        return _serialize_object_tuple(
             obj, list_separator=list_separator, pair_separator=pair_separator
         )
     if isinstance(obj, set | frozenset):
-        return _to_text_set(
+        return _serialize_object_set(
             obj, list_separator=list_separator, pair_separator=pair_separator
         )
     raise NotImplementedError(obj)
 
 
-def _to_text_dict(
+def _serialize_object_dict(
     obj: Mapping[Any, Any],
     /,
     *,
@@ -501,11 +501,15 @@ def _to_text_dict(
     pair_separator: str = PAIR_SEPARATOR,
 ) -> str:
     keys = (
-        to_text(k, list_separator=list_separator, pair_separator=pair_separator)
+        serialize_object(
+            k, list_separator=list_separator, pair_separator=pair_separator
+        )
         for k in obj
     )
     values = (
-        to_text(v, list_separator=list_separator, pair_separator=pair_separator)
+        serialize_object(
+            v, list_separator=list_separator, pair_separator=pair_separator
+        )
         for v in obj.values()
     )
     items = zip(keys, values, strict=True)
@@ -514,7 +518,7 @@ def _to_text_dict(
     return f"{{{joined}}}"
 
 
-def _to_text_list(
+def _serialize_object_list(
     obj: Sequence[Any],
     /,
     *,
@@ -522,14 +526,16 @@ def _to_text_list(
     pair_separator: str = PAIR_SEPARATOR,
 ) -> str:
     items = (
-        to_text(i, list_separator=list_separator, pair_separator=pair_separator)
+        serialize_object(
+            i, list_separator=list_separator, pair_separator=pair_separator
+        )
         for i in obj
     )
     joined = join_strs(items, separator=list_separator)
     return f"[{joined}]"
 
 
-def _to_text_set(
+def _serialize_object_set(
     obj: AbstractSet[Any],
     /,
     *,
@@ -537,14 +543,16 @@ def _to_text_set(
     pair_separator: str = PAIR_SEPARATOR,
 ) -> str:
     items = (
-        to_text(i, list_separator=list_separator, pair_separator=pair_separator)
+        serialize_object(
+            i, list_separator=list_separator, pair_separator=pair_separator
+        )
         for i in obj
     )
     joined = join_strs(items, sort=True, separator=list_separator)
     return f"{{{joined}}}"
 
 
-def _to_text_tuple(
+def _serialize_object_tuple(
     obj: tuple[Any, ...],
     /,
     *,
@@ -552,11 +560,13 @@ def _to_text_tuple(
     pair_separator: str = PAIR_SEPARATOR,
 ) -> str:
     items = (
-        to_text(i, list_separator=list_separator, pair_separator=pair_separator)
+        serialize_object(
+            i, list_separator=list_separator, pair_separator=pair_separator
+        )
         for i in obj
     )
     joined = join_strs(items, separator=list_separator)
     return f"({joined})"
 
 
-__all__ = ["LIST_SEPARATOR", "PAIR_SEPARATOR", "parse_object", "to_text"]
+__all__ = ["LIST_SEPARATOR", "PAIR_SEPARATOR", "parse_object", "serialize_object"]

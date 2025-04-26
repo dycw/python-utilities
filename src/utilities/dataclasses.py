@@ -26,7 +26,7 @@ from utilities.parse import (
     PAIR_SEPARATOR,
     ParseObjectError,
     parse_object,
-    to_text,
+    serialize_object,
 )
 from utilities.sentinel import Sentinel, sentinel
 from utilities.text import (
@@ -35,7 +35,7 @@ from utilities.text import (
     join_strs,
     split_key_value_pairs,
 )
-from utilities.types import ParseTextExtra, StrStrMapping, TDataclass
+from utilities.types import ParseObjectExtra, StrStrMapping, TDataclass
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
@@ -429,7 +429,7 @@ def serialize_dataclass(
             extra=extra,
             defaults=defaults,
         ):
-            mapping[fld.name] = to_text(
+            mapping[fld.name] = serialize_object(
                 fld.value, list_separator=list_separator, pair_separator=pair_separator
             )
     joined_items = (
@@ -451,7 +451,7 @@ def parse_dataclass(
     head: bool = False,
     case_sensitive: bool = False,
     allow_extra_keys: bool = False,
-    extra_parsers: ParseTextExtra | None = None,
+    extra_parsers: ParseObjectExtra | None = None,
 ) -> TDataclass:
     """Construct a dataclass from a string or a mapping or strings."""
     match text_or_mapping:
@@ -533,7 +533,7 @@ def _parse_dataclass_parse_text(
     pair_separator: str = PAIR_SEPARATOR,
     head: bool = False,
     case_sensitive: bool = False,
-    extra: ParseTextExtra | None = None,
+    extra: ParseObjectExtra | None = None,
 ) -> Any:
     try:
         return parse_object(
