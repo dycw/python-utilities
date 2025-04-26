@@ -73,7 +73,7 @@ def parse_object(
             type_, text, case_sensitive=case_sensitive, extra=extra
         )
     if is_dict_type(type_):
-        return _parse_text_dict_type(
+        return _parse_object_dict_type(
             type_,
             text,
             list_separator=list_separator,
@@ -84,7 +84,7 @@ def parse_object(
         )
     if is_frozenset_type(type_):
         return frozenset(
-            _parse_text_set_type(
+            _parse_object_set_type(
                 type_,
                 text,
                 list_separator=list_separator,
@@ -95,7 +95,7 @@ def parse_object(
             )
         )
     if is_list_type(type_):
-        return _parse_text_list_type(
+        return _parse_object_list_type(
             type_,
             text,
             list_separator=list_separator,
@@ -123,7 +123,7 @@ def parse_object(
         except _ParseObjectParseError:
             raise _ParseObjectParseError(type_=type_, text=text) from None
     if is_set_type(type_):
-        return _parse_text_set_type(
+        return _parse_object_set_type(
             type_,
             text,
             list_separator=list_separator,
@@ -133,7 +133,7 @@ def parse_object(
             extra=extra,
         )
     if is_tuple_type(type_):
-        return _parse_text_tuple_type(
+        return _parse_object_tuple_type(
             type_,
             text,
             list_separator=list_separator,
@@ -143,7 +143,7 @@ def parse_object(
             extra=extra,
         )
     if is_union_type(type_):
-        return _parse_text_union_type(type_, text, extra=extra)
+        return _parse_object_union_type(type_, text, extra=extra)
     raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
@@ -237,7 +237,7 @@ def _parse_object_type(
     raise _ParseObjectParseError(type_=cls, text=text) from None
 
 
-def _parse_text_dict_type(
+def _parse_object_dict_type(
     type_: Any,
     text: str,
     /,
@@ -289,7 +289,7 @@ def _parse_text_dict_type(
         raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
-def _parse_text_list_type(
+def _parse_object_list_type(
     type_: Any,
     text: str,
     /,
@@ -323,7 +323,7 @@ def _parse_text_list_type(
         raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
-def _parse_text_set_type(
+def _parse_object_set_type(
     type_: Any,
     text: str,
     /,
@@ -357,7 +357,7 @@ def _parse_text_set_type(
         raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
-def _parse_text_union_type(
+def _parse_object_union_type(
     type_: Any, text: str, /, *, extra: ParseObjectExtra | None = None
 ) -> Any:
     if type_ is Number:
@@ -382,7 +382,7 @@ def _parse_text_union_type(
     raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
-def _parse_text_tuple_type(
+def _parse_object_tuple_type(
     type_: Any,
     text: str,
     /,
@@ -419,20 +419,20 @@ def _parse_text_tuple_type(
 
 
 @dataclass
-class ParseTextError(Exception):
+class ParseObjectError(Exception):
     type_: Any
     text: str
 
 
 @dataclass
-class _ParseObjectParseError(ParseTextError):
+class _ParseObjectParseError(ParseObjectError):
     @override
     def __str__(self) -> str:
         return f"Unable to parse {self.type_!r}; got {self.text!r}"
 
 
 @dataclass
-class _ParseObjectExtraNonUniqueError(ParseTextError):
+class _ParseObjectExtraNonUniqueError(ParseObjectError):
     first: type[Any]
     second: type[Any]
 
