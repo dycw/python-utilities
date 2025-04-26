@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from pathlib import Path
 
-    from utilities.types import ParseTextExtra, PathLike, StrMapping, TDataclass
+    from utilities.types import ParseObjectExtra, PathLike, StrMapping, TDataclass
 
 
 def load_settings(
@@ -30,7 +30,7 @@ def load_settings(
     warn_name_errors: bool = False,
     head: bool = False,
     case_sensitive: bool = False,
-    extra_parsers: ParseTextExtra | None = None,
+    extra_parsers: ParseObjectExtra | None = None,
 ) -> TDataclass:
     """Load a set of settings from the `.env` file."""
     path = get_repo_root(cwd=cwd).joinpath(".env")

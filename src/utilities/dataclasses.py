@@ -25,7 +25,7 @@ from utilities.parse import (
     LIST_SEPARATOR,
     PAIR_SEPARATOR,
     ParseTextError,
-    parse_text,
+    parse_object,
     to_text,
 )
 from utilities.sentinel import Sentinel, sentinel
@@ -35,7 +35,7 @@ from utilities.text import (
     join_strs,
     split_key_value_pairs,
 )
-from utilities.types import ParseTextExtra, StrStrMapping, TDataclass
+from utilities.types import ParseObjectExtra, StrStrMapping, TDataclass
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
@@ -451,7 +451,7 @@ def parse_dataclass(
     head: bool = False,
     case_sensitive: bool = False,
     allow_extra_keys: bool = False,
-    extra_parsers: ParseTextExtra | None = None,
+    extra_parsers: ParseObjectExtra | None = None,
 ) -> TDataclass:
     """Construct a dataclass from a string or a mapping or strings."""
     match text_or_mapping:
@@ -533,10 +533,10 @@ def _parse_dataclass_parse_text(
     pair_separator: str = PAIR_SEPARATOR,
     head: bool = False,
     case_sensitive: bool = False,
-    extra: ParseTextExtra | None = None,
+    extra: ParseObjectExtra | None = None,
 ) -> Any:
     try:
-        return parse_text(
+        return parse_object(
             field.type_,
             text,
             list_separator=list_separator,

@@ -28,7 +28,7 @@ from utilities.text import (
     split_key_value_pairs,
     split_str,
 )
-from utilities.types import Duration, Number, ParseTextExtra
+from utilities.types import Duration, Number, ParseObjectExtra
 from utilities.typing import (
     get_args,
     is_dict_type,
@@ -51,7 +51,7 @@ LIST_SEPARATOR = ","
 PAIR_SEPARATOR = "="
 
 
-def parse_text(
+def parse_object(
     type_: Any,
     text: str,
     /,
@@ -60,16 +60,18 @@ def parse_text(
     pair_separator: str = PAIR_SEPARATOR,
     head: bool = False,
     case_sensitive: bool = False,
-    extra: ParseTextExtra | None = None,
+    extra: ParseObjectExtra | None = None,
 ) -> Any:
     """Parse text."""
     if type_ is None:
         try:
             return parse_none(text)
         except ParseNoneError:
-            raise _ParseTextParseError(type_=type_, text=text) from None
+            raise _ParseObjectParseError(type_=type_, text=text) from None
     if isinstance(type_, type):
-        return _parse_text_type(type_, text, case_sensitive=case_sensitive, extra=extra)
+        return _parse_object_type(
+            type_, text, case_sensitive=case_sensitive, extra=extra
+        )
     if is_dict_type(type_):
         return _parse_text_dict_type(
             type_,
@@ -109,7 +111,7 @@ def parse_text(
             return parse_none(text)
         inner = one(arg for arg in get_args(type_) if arg is not NoneType)
         try:
-            return parse_text(
+            return parse_object(
                 inner,
                 text,
                 list_separator=list_separator,
@@ -118,8 +120,8 @@ def parse_text(
                 case_sensitive=case_sensitive,
                 extra=extra,
             )
-        except _ParseTextParseError:
-            raise _ParseTextParseError(type_=type_, text=text) from None
+        except _ParseObjectParseError:
+            raise _ParseObjectParseError(type_=type_, text=text) from None
     if is_set_type(type_):
         return _parse_text_set_type(
             type_,
@@ -142,97 +144,97 @@ def parse_text(
         )
     if is_union_type(type_):
         return _parse_text_union_type(type_, text, extra=extra)
-    raise _ParseTextParseError(type_=type_, text=text) from None
+    raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
-def _parse_text_type(
+def _parse_object_type(
     cls: type[Any],
     text: str,
     /,
     *,
     case_sensitive: bool = False,
-    extra: ParseTextExtra | None = None,
+    extra: ParseObjectExtra | None = None,
 ) -> Any:
     """Parse text."""
     if issubclass(cls, NoneType):
         try:
             return parse_none(text)
         except ParseNoneError:
-            raise _ParseTextParseError(type_=cls, text=text) from None
+            raise _ParseObjectParseError(type_=cls, text=text) from None
     if issubclass(cls, str):
         return text
     if issubclass(cls, bool):
         try:
             return parse_bool(text)
         except ParseBoolError:
-            raise _ParseTextParseError(type_=cls, text=text) from None
+            raise _ParseObjectParseError(type_=cls, text=text) from None
     if is_subclass_int_not_bool(cls):
         try:
             return int(text)
         except ValueError:
-            raise _ParseTextParseError(type_=cls, text=text) from None
+            raise _ParseObjectParseError(type_=cls, text=text) from None
     if issubclass(cls, float):
         try:
             return float(text)
         except ValueError:
-            raise _ParseTextParseError(type_=cls, text=text) from None
+            raise _ParseObjectParseError(type_=cls, text=text) from None
     if issubclass(cls, Enum):
         try:
             return parse_enum(text, cls, case_sensitive=case_sensitive)
         except ParseEnumError:
-            raise _ParseTextParseError(type_=cls, text=text) from None
+            raise _ParseObjectParseError(type_=cls, text=text) from None
     if issubclass(cls, Path):
         return Path(text).expanduser()
     if issubclass(cls, Sentinel):
         try:
             return parse_sentinel(text)
         except ParseSentinelError:
-            raise _ParseTextParseError(type_=cls, text=text) from None
+            raise _ParseObjectParseError(type_=cls, text=text) from None
     if issubclass(cls, Version):
         try:
             return parse_version(text)
         except ParseVersionError:
-            raise _ParseTextParseError(type_=cls, text=text) from None
+            raise _ParseObjectParseError(type_=cls, text=text) from None
     if is_subclass_date_not_datetime(cls):
         from utilities.whenever import ParseDateError, parse_date
 
         try:
             return parse_date(text)
         except ParseDateError:
-            raise _ParseTextParseError(type_=cls, text=text) from None
+            raise _ParseObjectParseError(type_=cls, text=text) from None
     if issubclass(cls, dt.datetime):
         from utilities.whenever import ParseDateTimeError, parse_datetime
 
         try:
             return parse_datetime(text)
         except ParseDateTimeError:
-            raise _ParseTextParseError(type_=cls, text=text) from None
+            raise _ParseObjectParseError(type_=cls, text=text) from None
     if issubclass(cls, dt.time):
         from utilities.whenever import ParseTimeError, parse_time
 
         try:
             return parse_time(text)
         except ParseTimeError:
-            raise _ParseTextParseError(type_=cls, text=text) from None
+            raise _ParseObjectParseError(type_=cls, text=text) from None
     if issubclass(cls, dt.timedelta):
         from utilities.whenever import ParseTimedeltaError, parse_timedelta
 
         try:
             return parse_timedelta(text)
         except ParseTimedeltaError:
-            raise _ParseTextParseError(type_=cls, text=text) from None
+            raise _ParseObjectParseError(type_=cls, text=text) from None
     if extra is not None:
         try:
             parser = one(p for c, p in extra.items() if issubclass(cls, c))
         except OneEmptyError:
             pass
         except OneNonUniqueError as error:
-            raise _ParseTextExtraNonUniqueError(
+            raise _ParseObjectExtraNonUniqueError(
                 type_=cls, text=text, first=error.first, second=error.second
             ) from None
         else:
             return parser(text)
-    raise _ParseTextParseError(type_=cls, text=text) from None
+    raise _ParseObjectParseError(type_=cls, text=text) from None
 
 
 def _parse_text_dict_type(
@@ -244,13 +246,13 @@ def _parse_text_dict_type(
     pair_separator: str = PAIR_SEPARATOR,
     head: bool = False,
     case_sensitive: bool = False,
-    extra: ParseTextExtra | None = None,
+    extra: ParseObjectExtra | None = None,
 ) -> dict[Any, Any]:
     key_type, value_type = get_args(type_)
     try:
         inner_text = extract_group(r"^{(.*)}$", text, flags=DOTALL)
     except ExtractGroupError:
-        raise _ParseTextParseError(type_=type_, text=text) from None
+        raise _ParseObjectParseError(type_=type_, text=text) from None
     pairs = split_key_value_pairs(
         inner_text,
         list_separator=list_separator,
@@ -258,7 +260,7 @@ def _parse_text_dict_type(
         mapping=True,
     )
     keys = (
-        parse_text(
+        parse_object(
             key_type,
             k,
             list_separator=list_separator,
@@ -270,7 +272,7 @@ def _parse_text_dict_type(
         for k in pairs
     )
     values = (
-        parse_text(
+        parse_object(
             value_type,
             v,
             list_separator=list_separator,
@@ -283,8 +285,8 @@ def _parse_text_dict_type(
     )
     try:
         return dict(zip(keys, values, strict=True))
-    except _ParseTextParseError:
-        raise _ParseTextParseError(type_=type_, text=text) from None
+    except _ParseObjectParseError:
+        raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
 def _parse_text_list_type(
@@ -296,17 +298,17 @@ def _parse_text_list_type(
     pair_separator: str = PAIR_SEPARATOR,
     head: bool = False,
     case_sensitive: bool = False,
-    extra: ParseTextExtra | None = None,
+    extra: ParseObjectExtra | None = None,
 ) -> list[Any]:
     inner_type = one(get_args(type_))
     try:
         inner_text = extract_group(r"^\[(.*)\]$", text, flags=DOTALL)
     except ExtractGroupError:
-        raise _ParseTextParseError(type_=type_, text=text) from None
+        raise _ParseObjectParseError(type_=type_, text=text) from None
     texts = split_str(inner_text, separator=list_separator)
     try:
         return [
-            parse_text(
+            parse_object(
                 inner_type,
                 t,
                 list_separator=list_separator,
@@ -317,8 +319,8 @@ def _parse_text_list_type(
             )
             for t in texts
         ]
-    except _ParseTextParseError:
-        raise _ParseTextParseError(type_=type_, text=text) from None
+    except _ParseObjectParseError:
+        raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
 def _parse_text_set_type(
@@ -330,17 +332,17 @@ def _parse_text_set_type(
     pair_separator: str = PAIR_SEPARATOR,
     head: bool = False,
     case_sensitive: bool = False,
-    extra: ParseTextExtra | None = None,
+    extra: ParseObjectExtra | None = None,
 ) -> set[Any]:
     inner_type = one(get_args(type_))
     try:
         inner_text = extract_group(r"^{(.*)}$", text, flags=DOTALL)
     except ExtractGroupError:
-        raise _ParseTextParseError(type_=type_, text=text) from None
+        raise _ParseObjectParseError(type_=type_, text=text) from None
     texts = split_str(inner_text, separator=list_separator)
     try:
         return {
-            parse_text(
+            parse_object(
                 inner_type,
                 t,
                 list_separator=list_separator,
@@ -351,25 +353,25 @@ def _parse_text_set_type(
             )
             for t in texts
         }
-    except _ParseTextParseError:
-        raise _ParseTextParseError(type_=type_, text=text) from None
+    except _ParseObjectParseError:
+        raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
 def _parse_text_union_type(
-    type_: Any, text: str, /, *, extra: ParseTextExtra | None = None
+    type_: Any, text: str, /, *, extra: ParseObjectExtra | None = None
 ) -> Any:
     if type_ is Number:
         try:
             return parse_number(text)
         except ParseNumberError:
-            raise _ParseTextParseError(type_=type_, text=text) from None
+            raise _ParseObjectParseError(type_=type_, text=text) from None
     if type_ is Duration:
         from utilities.whenever import ParseDurationError, parse_duration
 
         try:
             return parse_duration(text)
         except ParseDurationError:
-            raise _ParseTextParseError(type_=type_, text=text) from None
+            raise _ParseObjectParseError(type_=type_, text=text) from None
     if extra is not None:
         try:
             parser = one(p for c, p in extra.items() if c is type_)
@@ -377,7 +379,7 @@ def _parse_text_union_type(
             pass
         else:
             return parser(text)
-    raise _ParseTextParseError(type_=type_, text=text) from None
+    raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
 def _parse_text_tuple_type(
@@ -389,19 +391,19 @@ def _parse_text_tuple_type(
     pair_separator: str = PAIR_SEPARATOR,
     head: bool = False,
     case_sensitive: bool = False,
-    extra: ParseTextExtra | None = None,
+    extra: ParseObjectExtra | None = None,
 ) -> tuple[Any, ...]:
     args = get_args(type_)
     try:
         inner = extract_group(r"^\((.*)\)$", text, flags=DOTALL)
     except ExtractGroupError:
-        raise _ParseTextParseError(type_=type_, text=text) from None
+        raise _ParseObjectParseError(type_=type_, text=text) from None
     texts = inner.split(list_separator)
     if len(args) != len(texts):
-        raise _ParseTextParseError(type_=type_, text=text)
+        raise _ParseObjectParseError(type_=type_, text=text)
     try:
         return tuple(
-            parse_text(
+            parse_object(
                 arg,
                 text,
                 list_separator=list_separator,
@@ -412,8 +414,8 @@ def _parse_text_tuple_type(
             )
             for arg, text in zip(args, texts, strict=True)
         )
-    except _ParseTextParseError:
-        raise _ParseTextParseError(type_=type_, text=text) from None
+    except _ParseObjectParseError:
+        raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
 @dataclass
@@ -423,14 +425,14 @@ class ParseTextError(Exception):
 
 
 @dataclass
-class _ParseTextParseError(ParseTextError):
+class _ParseObjectParseError(ParseTextError):
     @override
     def __str__(self) -> str:
         return f"Unable to parse {self.type_!r}; got {self.text!r}"
 
 
 @dataclass
-class _ParseTextExtraNonUniqueError(ParseTextError):
+class _ParseObjectExtraNonUniqueError(ParseTextError):
     first: type[Any]
     second: type[Any]
 
@@ -557,4 +559,4 @@ def _to_text_tuple(
     return f"({joined})"
 
 
-__all__ = ["LIST_SEPARATOR", "PAIR_SEPARATOR", "parse_text", "to_text"]
+__all__ = ["LIST_SEPARATOR", "PAIR_SEPARATOR", "parse_object", "to_text"]
