@@ -197,8 +197,8 @@ def _parse_text_dict_type(
         inner = extract_group(r"^{(.*)}$", text, flags=DOTALL)
     except ExtractGroupError:
         raise _ParseTextParseError(type_=type_, text=text) from None
-    texts = inner.split(",")
-    pairs = map(_parse_text_split_key_value_pair, text)
+    inner.split(",")
+    map(_parse_text_split_key_value_pair, text)
 
     z
 
