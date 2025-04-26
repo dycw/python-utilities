@@ -75,7 +75,18 @@ class TestReprEncode:
 
 
 class TestSplitKeyValuePairs:
-    @given(case=sampled_from([("", [])]))
+    @given(
+        case=sampled_from([
+            ("", []),
+            ("a=1", [("a", "1")]),
+            ("=1", [("", "1")]),
+            ("a=", [("a", "")]),
+            ("a=1,b=22", [("a", "1"), ("b", "22")]),
+            ("a=1,=22,c=333", [("a", "1"), ("", "22"), ("c", "333")]),
+            ("a=1,b=,c=333", [("a", "1"), ("b", ""), ("c", "333")]),
+            ("a=1,b=22,c=333", [("a", "1"), ("b", "22"), ("c", "333")]),
+        ])
+    )
     def test_main(self, *, case: tuple[str, Sequence[tuple[str, str]]]) -> None:
         text, expected = case
         result = split_key_value_pairs(text)
