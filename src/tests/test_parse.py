@@ -61,11 +61,11 @@ from utilities.version import Version
 
 
 class TestSerializeAndParseObject:
-    @given(value=booleans())
-    def test_bool(self, *, value: bool) -> None:
-        serialized = serialize_object(value)
+    @given(bool_=booleans())
+    def test_bool(self, *, bool_: bool) -> None:
+        serialized = serialize_object(bool_)
         result = parse_object(bool, serialized)
-        assert result is value
+        assert result is bool_
 
     @given(date=dates())
     def test_date(self, *, date: dt.date) -> None:
@@ -79,11 +79,11 @@ class TestSerializeAndParseObject:
         result = parse_object(dt.datetime, serialized)
         assert result == datetime
 
-    @given(value=dictionaries(dates(), zoned_datetimes()))
-    def test_dict(self, *, value: dict[dt.date, dt.datetime]) -> None:
-        serialized = serialize_object(value)
+    @given(mapping=dictionaries(dates(), zoned_datetimes()))
+    def test_dict(self, *, mapping: dict[dt.date, dt.datetime]) -> None:
+        serialized = serialize_object(mapping)
         result = parse_object(dict[dt.date, dt.datetime], serialized)
-        assert result == value
+        assert result == mapping
 
     @given(duration=datetime_durations(two_way=True))
     def test_duration(self, *, duration: Duration) -> None:
@@ -97,15 +97,15 @@ class TestSerializeAndParseObject:
         result = parse_object(TruthEnum, serialized)
         assert result is truth
 
-    @given(value=integers())
-    def test_extra_type(self, *, value: int) -> None:
-        serialized = serialize_object(value)
+    @given(int_=integers())
+    def test_extra_type(self, *, int_: int) -> None:
+        serialized = serialize_object(int_)
         result = parse_object(
             DataClassFutureInt,
             serialized,
             extra={DataClassFutureInt: lambda text: DataClassFutureInt(int_=int(text))},
         )
-        expected = DataClassFutureInt(int_=value)
+        expected = DataClassFutureInt(int_=int_)
         assert result == expected
 
     @given(value=floats())
