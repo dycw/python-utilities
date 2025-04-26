@@ -47,13 +47,17 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
 
 
+LIST_SEPARATOR = ","
+PAIR_SEPARATOR = "="
+
+
 def parse_text(
     type_: Any,
     text: str,
     /,
     *,
-    list_separator: str = ",",
-    pair_separator: str = "=",
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
@@ -236,8 +240,8 @@ def _parse_text_dict_type(
     text: str,
     /,
     *,
-    list_separator: str = ",",
-    pair_separator: str = "=",
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
@@ -288,8 +292,8 @@ def _parse_text_list_type(
     text: str,
     /,
     *,
-    list_separator: str = ",",
-    pair_separator: str = "=",
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
@@ -322,8 +326,8 @@ def _parse_text_set_type(
     text: str,
     /,
     *,
-    list_separator: str = ",",
-    pair_separator: str = "=",
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
@@ -381,8 +385,8 @@ def _parse_text_tuple_type(
     text: str,
     /,
     *,
-    list_separator: str = ",",
-    pair_separator: str = "=",
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
@@ -392,7 +396,7 @@ def _parse_text_tuple_type(
         inner = extract_group(r"^\((.*)\)$", text, flags=DOTALL)
     except ExtractGroupError:
         raise _ParseTextParseError(type_=type_, text=text) from None
-    texts = inner.split(",")
+    texts = inner.split(LIST_SEPARATOR)
     if len(args) != len(texts):
         raise _ParseTextParseError(type_=type_, text=text)
     try:
@@ -439,7 +443,11 @@ class _ParseTextExtraNonUniqueError(ParseTextError):
 
 
 def to_text(
-    obj: Any, /, *, list_separator: str = ",", pair_separator: str = "="
+    obj: Any,
+    /,
+    *,
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
 ) -> str:
     """Convert an object to text."""
     if (obj is None) or isinstance(
@@ -484,7 +492,11 @@ def to_text(
 
 
 def _to_text_dict(
-    obj: Mapping[Any, Any], /, *, list_separator: str = ",", pair_separator: str = "="
+    obj: Mapping[Any, Any],
+    /,
+    *,
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
 ) -> str:
     keys = (
         to_text(k, list_separator=list_separator, pair_separator=pair_separator)
@@ -501,7 +513,11 @@ def _to_text_dict(
 
 
 def _to_text_list(
-    obj: Sequence[Any], /, *, list_separator: str = ",", pair_separator: str = "="
+    obj: Sequence[Any],
+    /,
+    *,
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
 ) -> str:
     items = (
         to_text(i, list_separator=list_separator, pair_separator=pair_separator)
@@ -512,7 +528,11 @@ def _to_text_list(
 
 
 def _to_text_set(
-    obj: AbstractSet[Any], /, *, list_separator: str = ",", pair_separator: str = "="
+    obj: AbstractSet[Any],
+    /,
+    *,
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
 ) -> str:
     items = (
         to_text(i, list_separator=list_separator, pair_separator=pair_separator)
@@ -523,7 +543,11 @@ def _to_text_set(
 
 
 def _to_text_tuple(
-    obj: tuple[Any, ...], /, *, list_separator: str = ",", pair_separator: str = "="
+    obj: tuple[Any, ...],
+    /,
+    *,
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
 ) -> str:
     items = (
         to_text(i, list_separator=list_separator, pair_separator=pair_separator)
@@ -533,4 +557,4 @@ def _to_text_tuple(
     return f"({joined})"
 
 
-__all__ = ["parse_text"]
+__all__ = ["LIST_SEPARATOR", "PAIR_SEPARATOR", "parse_text", "to_text"]

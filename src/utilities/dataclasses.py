@@ -21,14 +21,21 @@ from utilities.functions import (
 )
 from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
-from utilities.parse import ParseTextError, parse_text
+from utilities.parse import (
+    LIST_SEPARATOR,
+    PAIR_SEPARATOR,
+    ParseTextError,
+    parse_text,
+    to_text,
+)
 from utilities.sentinel import Sentinel, sentinel
 from utilities.text import (
     _SplitKeyValuePairsDuplicateKeysError,
     _SplitKeyValuePairsSplitError,
+    join_strs,
     split_key_value_pairs,
 )
-from utilities.types import ParseTextExtra, TDataclass
+from utilities.types import ParseTextExtra, StrStrMapping, TDataclass
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
@@ -49,11 +56,11 @@ def dataclass_repr(
     obj: Dataclass,
     /,
     *,
-    include: Iterable[str] | None = None,
-    exclude: Iterable[str] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     warn_name_errors: bool = False,
+    include: Iterable[str] | None = None,
+    exclude: Iterable[str] | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
     extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
@@ -80,11 +87,11 @@ def dataclass_repr(
                 if is_dataclass_instance(fld.value):
                     repr_ = dataclass_repr(
                         fld.value,
-                        include=include,
-                        exclude=exclude,
                         globalns=globalns,
                         localns=localns,
                         warn_name_errors=warn_name_errors,
+                        include=include,
+                        exclude=exclude,
                         rel_tol=rel_tol,
                         abs_tol=abs_tol,
                         extra=extra,
@@ -95,11 +102,11 @@ def dataclass_repr(
                     repr_ = [
                         dataclass_repr(
                             v,
-                            include=include,
-                            exclude=exclude,
                             globalns=globalns,
                             localns=localns,
                             warn_name_errors=warn_name_errors,
+                            include=include,
+                            exclude=exclude,
                             rel_tol=rel_tol,
                             abs_tol=abs_tol,
                             extra=extra,
@@ -128,11 +135,11 @@ def dataclass_to_dict(
     obj: Dataclass,
     /,
     *,
-    include: Iterable[str] | None = None,
-    exclude: Iterable[str] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     warn_name_errors: bool = False,
+    include: Iterable[str] | None = None,
+    exclude: Iterable[str] | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
     extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
@@ -160,6 +167,8 @@ def dataclass_to_dict(
                         globalns=globalns,
                         localns=localns,
                         warn_name_errors=warn_name_errors,
+                        include=include,
+                        exclude=exclude,
                         rel_tol=rel_tol,
                         abs_tol=abs_tol,
                         extra=extra,
@@ -174,6 +183,8 @@ def dataclass_to_dict(
                             globalns=globalns,
                             localns=localns,
                             warn_name_errors=warn_name_errors,
+                            include=include,
+                            exclude=exclude,
                             rel_tol=rel_tol,
                             abs_tol=abs_tol,
                             extra=extra,
@@ -390,13 +401,41 @@ def serialize_dataclass(
     obj: Dataclass,
     /,
     *,
-    add_class_name: bool = False,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
-    list_separator: str = ",",
-    pair_separator: str = "=",
+    warn_name_errors: bool = False,
+    include: Iterable[str] | None = None,
+    exclude: Iterable[str] | None = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+    extra: Mapping[type[_U], Callable[[_U, _U], bool]] | None = None,
+    defaults: bool = False,
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
 ) -> str:
     """Serialize a Dataclass."""
+    mapping: StrStrMapping = {}
+    fields = list(
+        yield_fields(
+            obj, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
+        )
+    )
+    for fld in fields:
+        if fld.keep(
+            include=include,
+            exclude=exclude,
+            rel_tol=rel_tol,
+            abs_tol=abs_tol,
+            extra=extra,
+            defaults=defaults,
+        ):
+            mapping[fld.name] = to_text(
+                fld.value, list_separator=list_separator, pair_separator=pair_separator
+            )
+    joined_items = (
+        join_strs(item, separator=pair_separator) for item in mapping.items()
+    )
+    return join_strs(joined_items, separator=list_separator)
 
 
 def parse_dataclass(
@@ -404,8 +443,8 @@ def parse_dataclass(
     cls: type[TDataclass],
     /,
     *,
-    list_separator: str = ",",
-    pair_separator: str = "=",
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     warn_name_errors: bool = False,
@@ -464,8 +503,8 @@ def _parse_dataclass_split_key_value_pairs(
     cls: type[TDataclass],
     /,
     *,
-    list_separator: str = ",",
-    pair_separator: str = "=",
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
 ) -> Mapping[str, str]:
     try:
         return split_key_value_pairs(
@@ -490,13 +529,21 @@ def _parse_dataclass_parse_text(
     cls: type[Dataclass],
     /,
     *,
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
 ) -> Any:
     try:
         return parse_text(
-            field.type_, text, head=head, case_sensitive=case_sensitive, extra=extra
+            field.type_,
+            text,
+            list_separator=list_separator,
+            pair_separator=pair_separator,
+            head=head,
+            case_sensitive=case_sensitive,
+            extra=extra,
         )
     except ParseTextError:
         raise _ParseDataClassParseValueError(cls=cls, field=field, text=text) from None
