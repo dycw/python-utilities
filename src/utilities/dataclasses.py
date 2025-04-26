@@ -23,6 +23,7 @@ from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
 from utilities.parse import ParseTextError, parse_text
 from utilities.sentinel import Sentinel, sentinel
+from utilities.text import split_key_value_pairs
 from utilities.types import ParseTextExtra, TDataclass
 from utilities.typing import get_type_hints
 
@@ -401,7 +402,7 @@ def parse_dataclass(
     """Construct a dataclass from a string or a mapping or strings."""
     match text_or_mapping:
         case str() as text:
-            keys_to_serializes = _text_to_dataclass_split_text(text, cls)
+            keys_to_serializes = _text_to_dataclass_split_key_value_pairs(text, cls)
         case Mapping() as keys_to_serializes:
             ...
         case _ as never:
@@ -441,9 +442,15 @@ def parse_dataclass(
     )
 
 
-def _text_to_dataclass_split_text(
+def _text_to_dataclass_split_key_value_pairs(
     text: str, cls: type[TDataclass], /
 ) -> Mapping[str, str]:
+    try:
+        return split_key_value_pairs(
+            text, list_separator=list_separator, pair_separator=pair_separator
+        )
+    except z:
+        pass
     pairs = (t for t in text.split(",") if t != "")
     return dict(_text_to_dataclass_split_key_value_pair(pair, cls) for pair in pairs)
 
