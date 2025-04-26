@@ -5,7 +5,7 @@ from pathlib import Path
 from types import NoneType
 from typing import Any, cast, override
 
-from hypothesis import given, reproduce_failure
+from hypothesis import given
 from hypothesis.strategies import booleans, integers, lists, sampled_from
 from polars import DataFrame
 from pytest import raises
@@ -406,7 +406,6 @@ class TestSerializeAndParseDataClass:
         assert result == obj
 
     @given(int_=integers())
-    @reproduce_failure("6.131.9", b"AEEA")
     def test_extra_type(self, *, int_: int) -> None:
         obj = DataClassFutureNestedOuterFirstOuter(
             inner=DataClassFutureNestedOuterFirstInner(int_=int_)
@@ -421,6 +420,7 @@ class TestSerializeAndParseDataClass:
         result = parse_dataclass(
             serialized,
             DataClassFutureNestedOuterFirstOuter,
+            globalns=globals(),
             extra_parsers={
                 DataClassFutureNestedOuterFirstInner: lambda text: parse_dataclass(
                     text, DataClassFutureNestedOuterFirstInner

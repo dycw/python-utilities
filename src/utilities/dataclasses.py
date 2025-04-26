@@ -32,6 +32,7 @@ from utilities.parse import (
 from utilities.re import ExtractGroupError, extract_group
 from utilities.sentinel import Sentinel, sentinel
 from utilities.text import (
+    BRACKETS,
     LIST_SEPARATOR,
     PAIR_SEPARATOR,
     _SplitKeyValuePairsDuplicateKeysError,
@@ -459,6 +460,7 @@ def parse_dataclass(
     *,
     list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
+    brackets: Iterable[tuple[str, str]] | None = BRACKETS,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     warn_name_errors: bool = False,
@@ -471,7 +473,11 @@ def parse_dataclass(
     match text_or_mapping:
         case str() as text:
             keys_to_serializes = _parse_dataclass_split_key_value_pairs(
-                text, cls, list_separator=list_separator, pair_separator=pair_separator
+                text,
+                cls,
+                list_separator=list_separator,
+                pair_separator=pair_separator,
+                brackets=brackets,
             )
         case Mapping() as keys_to_serializes:
             ...
@@ -495,7 +501,14 @@ def parse_dataclass(
     )
     field_names_to_values = {
         f.name: _parse_dataclass_parse_text(
-            f, t, cls, head=head, case_sensitive=case_sensitive, extra=extra_parsers
+            f,
+            t,
+            cls,
+            list_separator=list_separator,
+            pair_separator=pair_separator,
+            head=head,
+            case_sensitive=case_sensitive,
+            extra=extra_parsers,
         )
         for f, t in fields_to_serializes.items()
     }
@@ -519,6 +532,7 @@ def _parse_dataclass_split_key_value_pairs(
     *,
     list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
+    brackets: Iterable[tuple[str, str]] | None = BRACKETS,
 ) -> StrStrMapping:
     with suppress(ExtractGroupError):
         text = extract_group(r"^\{?(.*?)\}?$", text)
@@ -527,6 +541,7 @@ def _parse_dataclass_split_key_value_pairs(
             text,
             list_separator=list_separator,
             pair_separator=pair_separator,
+            brackets=brackets,
             mapping=True,
         )
     except _SplitKeyValuePairsSplitError as error:

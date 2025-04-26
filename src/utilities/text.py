@@ -144,7 +144,10 @@ def split_key_value_pairs(
     except SplitStrError as error:
         raise _SplitKeyValuePairsSplitError(text=text, inner=error.text) from None
     try:
-        pairs = [split_str(text_i, separator=pair_separator, n=2) for text_i in texts]
+        pairs = [
+            split_str(text_i, separator=pair_separator, brackets=brackets, n=2)
+            for text_i in texts
+        ]
     except SplitStrError as error:
         raise _SplitKeyValuePairsSplitError(text=text, inner=error.text) from None
     if not mapping:
