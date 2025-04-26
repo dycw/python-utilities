@@ -4,30 +4,10 @@ import re
 from dataclasses import dataclass
 from re import IGNORECASE, Match, search
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, override
-
-from utilities.sentinel import SENTINEL_REPR
+from typing import TYPE_CHECKING, Any, Literal, overload, override
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
-
-
-def join_strs(
-    texts: Iterable[str],
-    /,
-    *,
-    sort: bool = False,
-    separator: str = ",",
-    empty: str = SENTINEL_REPR,
-) -> str:
-    """Join a collection of strings, with a special provision for the empty list."""
-    texts = sorted(texts) if sort else list(texts)
-    if len(texts) >= 1:
-        return separator.join(texts)
-    return empty
-
-
-##
+    from collections.abc import Iterable, Sequence
 
 
 def parse_bool(text: str, /) -> bool:
@@ -101,11 +81,85 @@ def _snake_case_title(match: Match[str], /) -> str:
 ##
 
 
+def split_key_value_pairs(
+    text: str, /, *, list_separator: str = ",", pair_separator: str = "="
+) -> Sequence[tuple[str, str]]:
+    """Split a string into key-value pairs."""
+    return [
+        split_str(text_i, separator=pair_separator, n=2)
+        for text_i in split_str(text, separator=list_separator)
+    ]
+
+
+##
+
+
+@overload
+def split_str(text: str, /, *, separator: str = ",", n: Literal[1]) -> tuple[str]: ...
+@overload
 def split_str(
-    text: str, /, *, separator: str = ",", empty: str = SENTINEL_REPR
-) -> list[str]:
+    text: str, /, *, separator: str = ",", n: Literal[2]
+) -> tuple[str, str]: ...
+@overload
+def split_str(
+    text: str, /, *, separator: str = ",", n: Literal[3]
+) -> tuple[str, str, str]: ...
+@overload
+def split_str(
+    text: str, /, *, separator: str = ",", n: Literal[4]
+) -> tuple[str, str, str, str]: ...
+@overload
+def split_str(
+    text: str, /, *, separator: str = ",", n: Literal[5]
+) -> tuple[str, str, str, str, str]: ...
+@overload
+def split_str(
+    text: str, /, *, separator: str = ",", n: int | None = None
+) -> Sequence[str]: ...
+def split_str(
+    text: str, /, *, separator: str = ",", n: int | None = None
+) -> Sequence[str]:
     """Split a string, with a special provision for the empty string."""
-    return [] if text == empty else text.split(separator)
+    if text == "":
+        texts = []
+    elif text == _escape_separator(separator=separator):
+        texts = [""]
+    else:
+        texts = text.split(separator)
+    if n is None:
+        return texts
+    if len(texts) != n:
+        raise SplitStrError(text=text, n=n, texts=texts)
+    return tuple(texts)
+
+
+@dataclass(kw_only=True, slots=True)
+class SplitStrError(Exception):
+    text: str
+    n: int
+    texts: Sequence[str]
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to split {self.text!r} into {self.n} part(s); got {len(self.texts)}"
+
+
+def join_strs(
+    texts: Iterable[str], /, *, sort: bool = False, separator: str = ","
+) -> str:
+    """Join a collection of strings, with a special provision for the empty list."""
+    texts = list(texts)
+    if sort:
+        texts = sorted(texts)
+    if texts == []:
+        return ""
+    if texts == [""]:
+        return _escape_separator(separator=separator)
+    return separator.join(texts)
+
+
+def _escape_separator(*, separator: str = ",") -> str:
+    return f"\\{separator}"
 
 
 ##
@@ -128,11 +182,13 @@ def strip_and_dedent(text: str, /, *, trailing: bool = False) -> str:
 __all__ = [
     "ParseBoolError",
     "ParseNoneError",
+    "SplitStrError",
     "join_strs",
     "parse_bool",
     "parse_none",
     "repr_encode",
     "snake_case",
+    "split_key_value_pairs",
     "split_str",
     "str_encode",
     "strip_and_dedent",

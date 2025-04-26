@@ -21,7 +21,6 @@ from utilities.datetime import EnsureMonthError, MonthLike, ensure_month
 from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import EnsureStrError, ensure_str, get_class_name
 from utilities.iterables import is_iterable_not_str
-from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
 from utilities.types import (
     DateLike,
@@ -245,13 +244,10 @@ class ZonedDateTime(ParamType):
 class FrozenSetParameter(ParamType, Generic[_TParam, _T]):
     """A frozenset-valued parameter."""
 
-    def __init__(
-        self, param: _TParam, /, *, separator: str = ",", empty: str = SENTINEL_REPR
-    ) -> None:
+    def __init__(self, param: _TParam, /, *, separator: str = ",") -> None:
         self.name = f"FROZENSET[{param.name}]"
         self._param = param
         self._separator = separator
-        self._empty = empty
         super().__init__()
 
     @override
@@ -273,7 +269,7 @@ class FrozenSetParameter(ParamType, Generic[_TParam, _T]):
             text = ensure_str(value)
         except EnsureStrError as error:
             return self.fail(str(error), param=param, ctx=ctx)
-        values = split_str(text, separator=self._separator, empty=self._empty)
+        values = split_str(text, separator=self._separator)
         return frozenset(self._param.convert(v, param, ctx) for v in values)
 
     @override
@@ -290,15 +286,15 @@ class FrozenSetParameter(ParamType, Generic[_TParam, _T]):
 class FrozenSetBools(FrozenSetParameter[BoolParamType, str]):
     """A frozenset-of-bools-valued parameter."""
 
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        super().__init__(BoolParamType(), separator=separator, empty=empty)
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(BoolParamType(), separator=separator)
 
 
 class FrozenSetDates(FrozenSetParameter[Date, dt.date]):
     """A frozenset-of-dates-valued parameter."""
 
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        super().__init__(Date(), separator=separator, empty=empty)
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(Date(), separator=separator)
 
 
 class FrozenSetChoices(FrozenSetParameter[Choice, str]):
@@ -311,12 +307,9 @@ class FrozenSetChoices(FrozenSetParameter[Choice, str]):
         *,
         case_sensitive: bool = False,
         separator: str = ",",
-        empty: str = SENTINEL_REPR,
     ) -> None:
         super().__init__(
-            Choice(choices, case_sensitive=case_sensitive),
-            separator=separator,
-            empty=empty,
+            Choice(choices, case_sensitive=case_sensitive), separator=separator
         )
 
 
@@ -330,46 +323,43 @@ class FrozenSetEnums(FrozenSetParameter[Enum[TEnum], TEnum]):
         *,
         case_sensitive: bool = False,
         separator: str = ",",
-        empty: str = SENTINEL_REPR,
     ) -> None:
-        super().__init__(
-            Enum(enum, case_sensitive=case_sensitive), separator=separator, empty=empty
-        )
+        super().__init__(Enum(enum, case_sensitive=case_sensitive), separator=separator)
 
 
 class FrozenSetFloats(FrozenSetParameter[FloatParamType, float]):
     """A frozenset-of-floats-valued parameter."""
 
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        super().__init__(FloatParamType(), separator=separator, empty=empty)
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(FloatParamType(), separator=separator)
 
 
 class FrozenSetInts(FrozenSetParameter[IntParamType, int]):
     """A frozenset-of-ints-valued parameter."""
 
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        super().__init__(IntParamType(), separator=separator, empty=empty)
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(IntParamType(), separator=separator)
 
 
 class FrozenSetMonths(FrozenSetParameter[Month, utilities.datetime.Month]):
     """A frozenset-of-months-valued parameter."""
 
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        super().__init__(Month(), separator=separator, empty=empty)
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(Month(), separator=separator)
 
 
 class FrozenSetStrs(FrozenSetParameter[StringParamType, str]):
     """A frozenset-of-strs-valued parameter."""
 
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        super().__init__(StringParamType(), separator=separator, empty=empty)
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(StringParamType(), separator=separator)
 
 
 class FrozenSetUUIDs(FrozenSetParameter[UUIDParameterType, UUID]):
     """A frozenset-of-UUIDs-valued parameter."""
 
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        super().__init__(UUIDParameterType(), separator=separator, empty=empty)
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(UUIDParameterType(), separator=separator)
 
 
 # parameters - list
@@ -378,13 +368,10 @@ class FrozenSetUUIDs(FrozenSetParameter[UUIDParameterType, UUID]):
 class ListParameter(ParamType, Generic[_TParam, _T]):
     """A list-valued parameter."""
 
-    def __init__(
-        self, param: _TParam, /, *, separator: str = ",", empty: str = SENTINEL_REPR
-    ) -> None:
+    def __init__(self, param: _TParam, /, *, separator: str = ",") -> None:
         self.name = f"LIST[{param.name}]"
         self._param = param
         self._separator = separator
-        self._empty = empty
         super().__init__()
 
     @override
@@ -406,7 +393,7 @@ class ListParameter(ParamType, Generic[_TParam, _T]):
             text = ensure_str(value)
         except EnsureStrError as error:
             return self.fail(str(error), param=param, ctx=ctx)
-        values = split_str(text, separator=self._separator, empty=self._empty)
+        values = split_str(text, separator=self._separator)
         return [self._param.convert(v, param, ctx) for v in values]
 
     @override
@@ -423,15 +410,15 @@ class ListParameter(ParamType, Generic[_TParam, _T]):
 class ListBools(ListParameter[BoolParamType, str]):
     """A list-of-bools-valued parameter."""
 
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        super().__init__(BoolParamType(), separator=separator, empty=empty)
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(BoolParamType(), separator=separator)
 
 
 class ListDates(ListParameter[Date, dt.date]):
     """A list-of-dates-valued parameter."""
 
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        super().__init__(Date(), separator=separator, empty=empty)
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(Date(), separator=separator)
 
 
 class ListEnums(ListParameter[Enum[TEnum], TEnum]):
@@ -444,46 +431,43 @@ class ListEnums(ListParameter[Enum[TEnum], TEnum]):
         *,
         case_sensitive: bool = False,
         separator: str = ",",
-        empty: str = SENTINEL_REPR,
     ) -> None:
-        super().__init__(
-            Enum(enum, case_sensitive=case_sensitive), separator=separator, empty=empty
-        )
+        super().__init__(Enum(enum, case_sensitive=case_sensitive), separator=separator)
 
 
 class ListFloats(ListParameter[FloatParamType, float]):
     """A list-of-floats-valued parameter."""
 
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        super().__init__(FloatParamType(), separator=separator, empty=empty)
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(FloatParamType(), separator=separator)
 
 
 class ListInts(ListParameter[IntParamType, int]):
     """A list-of-ints-valued parameter."""
 
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        super().__init__(IntParamType(), separator=separator, empty=empty)
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(IntParamType(), separator=separator)
 
 
 class ListMonths(ListParameter[Month, utilities.datetime.Month]):
     """A list-of-months-valued parameter."""
 
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        super().__init__(Month(), separator=separator, empty=empty)
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(Month(), separator=separator)
 
 
 class ListStrs(ListParameter[StringParamType, str]):
     """A list-of-strs-valued parameter."""
 
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        super().__init__(StringParamType(), separator=separator, empty=empty)
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(StringParamType(), separator=separator)
 
 
 class ListUUIDs(ListParameter[UUIDParameterType, UUID]):
     """A list-of-UUIDs-valued parameter."""
 
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        super().__init__(UUIDParameterType(), separator=separator, empty=empty)
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(UUIDParameterType(), separator=separator)
 
 
 # private

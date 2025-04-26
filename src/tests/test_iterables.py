@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass, replace
 from enum import Enum, auto
 from itertools import chain, repeat
-from math import isfinite, isinf, isnan
+from math import isfinite, isinf, isnan, nan
 from operator import add, neg, sub
 from re import DOTALL
 from typing import TYPE_CHECKING, Any, ClassVar, override
@@ -1358,6 +1358,10 @@ class TestSortIterablesCmpFloats:
             assert result1 != result2
         if isnan(x) is not isnan(y):
             assert result1 != result2
+
+    def test_nan_vs_nan(self) -> None:
+        result = _sort_iterable_cmp_floats(nan, nan)
+        assert result == 0
 
 
 class TestSumMappings:
