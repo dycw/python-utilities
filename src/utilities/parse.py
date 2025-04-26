@@ -468,16 +468,16 @@ def to_text(
         return _to_text_dict(
             obj, list_separator=list_separator, pair_separator=pair_separator
         )
-    if isinstance(obj, set | frozenset):
-        return _to_text_set(
-            obj, list_separator=list_separator, pair_separator=pair_separator
-        )
     if isinstance(obj, list):
         return _to_text_list(
             obj, list_separator=list_separator, pair_separator=pair_separator
         )
     if isinstance(obj, tuple):
         return _to_text_tuple(
+            obj, list_separator=list_separator, pair_separator=pair_separator
+        )
+    if isinstance(obj, set | frozenset):
+        return _to_text_set(
             obj, list_separator=list_separator, pair_separator=pair_separator
         )
     raise NotImplementedError(obj)
