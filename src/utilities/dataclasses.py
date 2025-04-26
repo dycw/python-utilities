@@ -24,7 +24,7 @@ from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
 from utilities.parse import ParseTextError, parse_text
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import ParseTextExtra, TDataclass
+from utilities.types import ParseTextExtra, StrStrMapping, TDataclass
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
@@ -444,7 +444,7 @@ class StrMappingToFieldMappingError(Exception):
 
 
 def text_to_dataclass(
-    text_or_mapping: str | Mapping[str, str],
+    text_or_mapping: str | StrStrMapping,
     cls: type[TDataclass],
     /,
     *,
@@ -499,9 +499,7 @@ def text_to_dataclass(
     )
 
 
-def _text_to_dataclass_split_text(
-    text: str, cls: type[TDataclass], /
-) -> Mapping[str, str]:
+def _text_to_dataclass_split_text(text: str, cls: type[TDataclass], /) -> StrStrMapping:
     pairs = (t for t in text.split(",") if t != "")
     return dict(_text_to_dataclass_split_key_value_pair(pair, cls) for pair in pairs)
 

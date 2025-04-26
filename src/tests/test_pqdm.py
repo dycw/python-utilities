@@ -14,11 +14,11 @@ from utilities.hypothesis import int32s, pairs, settings_with_reduced_examples
 from utilities.iterables import transpose
 from utilities.pqdm import _get_desc, pqdm_map, pqdm_starmap
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import Parallelism
+from utilities.types import Parallelism, StrStrMapping
 from utilities.typing import get_args
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
+    from collections.abc import Callable
 
 
 class TestGetDesc:
@@ -36,7 +36,7 @@ class TestGetDesc:
         *,
         desc: str | None | Sentinel,
         func: Callable[..., Any],
-        expected: Mapping[str, str],
+        expected: StrStrMapping,
     ) -> None:
         assert _get_desc(desc, func) == expected
 
