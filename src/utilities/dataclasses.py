@@ -439,7 +439,7 @@ def serialize_dataclass(
 
 
 def parse_dataclass(
-    text_or_mapping: str | Mapping[str, str],
+    text_or_mapping: str | StrStrMapping,
     cls: type[TDataclass],
     /,
     *,
@@ -505,7 +505,7 @@ def _parse_dataclass_split_key_value_pairs(
     *,
     list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
-) -> Mapping[str, str]:
+) -> StrStrMapping:
     try:
         return split_key_value_pairs(
             text,
