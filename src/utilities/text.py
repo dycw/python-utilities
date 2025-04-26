@@ -188,6 +188,7 @@ __all__ = [
     "parse_none",
     "repr_encode",
     "snake_case",
+    "split_key_value_pairs",
     "split_str",
     "str_encode",
     "strip_and_dedent",
