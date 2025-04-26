@@ -22,13 +22,7 @@ from utilities.functions import (
 )
 from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
-from utilities.parse import (
-    LIST_SEPARATOR,
-    PAIR_SEPARATOR,
-    ParseObjectError,
-    parse_object,
-    serialize_object,
-)
+from utilities.parse import ParseObjectError, parse_object, serialize_object
 from utilities.re import ExtractGroupError, extract_group
 from utilities.sentinel import Sentinel, sentinel
 from utilities.text import (
