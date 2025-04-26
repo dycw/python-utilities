@@ -40,6 +40,7 @@ dev = [
   "optuna >= 4.3.0, < 4.4",
   "orjson >= 3.10.16, < 3.11",
   "pathvalidate >= 3.2.3, < 3.3",
+  "polars >= 1.28.0, < 1.29",
   "polars-lts-cpu >= 1.28.0, < 1.29",
   "polars-ols >= 0.3.5, < 0.4",
   "pqdm >= 0.2.0, < 0.3",
@@ -442,6 +443,7 @@ filterwarnings = [
   "error",
   "ignore:.*utcfromtimestamp.* is deprecated and scheduled for removal in a future version:DeprecationWarning",  # luigi
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
+  "ignore:Polars binary is missing:UserWarning",
   "ignore:ResourceTracker called reentrantly for resource cleanup, which is unsupported:UserWarning",
   "ignore:Task .* without outputs has no custom complete.* method:UserWarning",  # luigi
   "ignore:There is no current event loop:DeprecationWarning",  # eventkit
