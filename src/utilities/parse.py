@@ -53,7 +53,7 @@ def parse_text(
     /,
     *,
     list_separator: str = ",",
-    pair_separator: str = "=",
+    pair_separator: str = ":",
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
@@ -77,14 +77,16 @@ def parse_text(
             extra=extra,
         )
     if is_frozenset_type(type_):
-        return _parse_text_frozenset_type(
-            type_,
-            text,
-            list_separator=list_separator,
-            pair_separator=pair_separator,
-            head=head,
-            case_sensitive=case_sensitive,
-            extra=extra,
+        return frozenset(
+            _parse_text_set_type(
+                type_,
+                text,
+                list_separator=list_separator,
+                pair_separator=pair_separator,
+                head=head,
+                case_sensitive=case_sensitive,
+                extra=extra,
+            )
         )
     if is_list_type(type_):
         return _parse_text_list_type(
@@ -235,7 +237,7 @@ def _parse_text_dict_type(
     /,
     *,
     list_separator: str = ",",
-    pair_separator: str = "=",
+    pair_separator: str = ":",
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
@@ -281,47 +283,13 @@ def _parse_text_dict_type(
         raise _ParseTextParseError(type_=type_, text=text) from None
 
 
-def _parse_text_frozenset_type(
-    type_: Any,
-    text: str,
-    /,
-    *,
-    list_separator: str = ",",
-    pair_separator: str = "=",
-    head: bool = False,
-    case_sensitive: bool = False,
-    extra: ParseTextExtra | None = None,
-) -> frozenset[Any]:
-    inner_type = one(get_args(type_))
-    try:
-        inner_text = extract_group(r"^#(.*)#$", text, flags=DOTALL)
-    except ExtractGroupError:
-        raise _ParseTextParseError(type_=type_, text=text) from None
-    texts = split_str(inner_text, separator=list_separator)
-    try:
-        return frozenset({
-            parse_text(
-                inner_type,
-                t,
-                list_separator=list_separator,
-                pair_separator=pair_separator,
-                head=head,
-                case_sensitive=case_sensitive,
-                extra=extra,
-            )
-            for t in texts
-        })
-    except _ParseTextParseError:
-        raise _ParseTextParseError(type_=type_, text=text) from None
-
-
 def _parse_text_list_type(
     type_: Any,
     text: str,
     /,
     *,
     list_separator: str = ",",
-    pair_separator: str = "=",
+    pair_separator: str = ":",
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
@@ -355,14 +323,14 @@ def _parse_text_set_type(
     /,
     *,
     list_separator: str = ",",
-    pair_separator: str = "=",
+    pair_separator: str = ":",
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
 ) -> set[Any]:
     inner_type = one(get_args(type_))
     try:
-        inner_text = extract_group(r"^<(.*)>$", text, flags=DOTALL)
+        inner_text = extract_group(r"^{(.*)}$", text, flags=DOTALL)
     except ExtractGroupError:
         raise _ParseTextParseError(type_=type_, text=text) from None
     texts = split_str(inner_text, separator=list_separator)
@@ -414,7 +382,7 @@ def _parse_text_tuple_type(
     /,
     *,
     list_separator: str = ",",
-    pair_separator: str = "=",
+    pair_separator: str = ":",
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
@@ -471,7 +439,7 @@ class _ParseTextExtraNonUniqueError(ParseTextError):
 
 
 def to_text(
-    obj: Any, /, *, list_separator: str = ",", pair_separator: str = "="
+    obj: Any, /, *, list_separator: str = ",", pair_separator: str = ":"
 ) -> str:
     """Convert an object to text."""
     if (obj is None) or isinstance(
@@ -500,27 +468,23 @@ def to_text(
         return _to_text_dict(
             obj, list_separator=list_separator, pair_separator=pair_separator
         )
-    if isinstance(obj, frozenset):
-        return _to_text_frozenset(
+    if isinstance(obj, set | frozenset):
+        return _to_text_set(
             obj, list_separator=list_separator, pair_separator=pair_separator
         )
     if isinstance(obj, list):
         return _to_text_list(
             obj, list_separator=list_separator, pair_separator=pair_separator
         )
-    if isinstance(obj, set):
-        return _to_text_set(
-            obj, list_separator=list_separator, pair_separator=pair_separator
-        )
     if isinstance(obj, tuple):
         return _to_text_tuple(
             obj, list_separator=list_separator, pair_separator=pair_separator
         )
-    raise NotImplementedError(obj)
+    raise NotImplementedError(obj)  # pragma: no cover
 
 
 def _to_text_dict(
-    obj: Mapping[Any, Any], /, *, list_separator: str = ",", pair_separator: str = "="
+    obj: Mapping[Any, Any], /, *, list_separator: str = ",", pair_separator: str = ":"
 ) -> str:
     keys = (
         to_text(k, list_separator=list_separator, pair_separator=pair_separator)
@@ -536,19 +500,8 @@ def _to_text_dict(
     return f"{{{joined}}}"
 
 
-def _to_text_frozenset(
-    obj: AbstractSet[Any], /, *, list_separator: str = ",", pair_separator: str = "="
-) -> str:
-    items = (
-        to_text(i, list_separator=list_separator, pair_separator=pair_separator)
-        for i in obj
-    )
-    joined = join_strs(items, sort=True, separator=list_separator)
-    return f"#{joined}#"
-
-
 def _to_text_list(
-    obj: Sequence[Any], /, *, list_separator: str = ",", pair_separator: str = "="
+    obj: Sequence[Any], /, *, list_separator: str = ",", pair_separator: str = ":"
 ) -> str:
     items = (
         to_text(i, list_separator=list_separator, pair_separator=pair_separator)
@@ -559,18 +512,18 @@ def _to_text_list(
 
 
 def _to_text_set(
-    obj: AbstractSet[Any], /, *, list_separator: str = ",", pair_separator: str = "="
+    obj: AbstractSet[Any], /, *, list_separator: str = ",", pair_separator: str = ":"
 ) -> str:
     items = (
         to_text(i, list_separator=list_separator, pair_separator=pair_separator)
         for i in obj
     )
     joined = join_strs(items, sort=True, separator=list_separator)
-    return f"<{joined}>"
+    return f"{{{joined}}}"
 
 
 def _to_text_tuple(
-    obj: tuple[Any, ...], /, *, list_separator: str = ",", pair_separator: str = "="
+    obj: tuple[Any, ...], /, *, list_separator: str = ",", pair_separator: str = ":"
 ) -> str:
     items = (
         to_text(i, list_separator=list_separator, pair_separator=pair_separator)

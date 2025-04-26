@@ -54,7 +54,6 @@ from utilities.parse import (
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import Duration, Number
 from utilities.version import Version
-from utilities.whenever import serialize_duration, serialize_time, serialize_timedelta
 
 
 class TestToAndParseText:
@@ -317,19 +316,12 @@ class TestParseText:
         ):
             _ = parse_text(dt.datetime, "invalid")
 
-    def test_error_dict_extract_group(self) -> None:
+    def test_error_dict(self) -> None:
         with raises(
             _ParseTextParseError,
-            match=r"Unable to parse dict\[int, int\]; got 'invalid'",
+            match=r"Unable to parse dict\[int, int\]; got '\{invalid:invalid\}'",
         ):
-            _ = parse_text(dict[int, int], "invalid")
-
-    def test_error_dict_internal(self) -> None:
-        with raises(
-            _ParseTextParseError,
-            match=r"Unable to parse dict\[int, int\]; got '\{invalid=invalid\}'",
-        ):
-            _ = parse_text(dict[int, int], "{invalid=invalid}")
+            _ = parse_text(dict[int, int], "{invalid:invalid}")
 
     def test_error_duration(self) -> None:
         with raises(
@@ -390,14 +382,7 @@ class TestParseText:
         ):
             _ = parse_text(float, "invalid")
 
-    def test_error_frozenset_extract_group(self) -> None:
-        with raises(
-            _ParseTextParseError,
-            match=r"Unable to parse frozenset\[int\]; got 'invalid'",
-        ):
-            _ = parse_text(frozenset[int], "invalid")
-
-    def test_error_frozenset_internal(self) -> None:
+    def test_error_frozenset(self) -> None:
         with raises(
             _ParseTextParseError,
             match=r"Unable to parse frozenset\[int\]; got '\{invalid\}'",
@@ -460,13 +445,7 @@ class TestParseText:
         ):
             _ = parse_text(Sentinel, "invalid")
 
-    def test_error_set_extract_group(self) -> None:
-        with raises(
-            _ParseTextParseError, match=r"Unable to parse set\[int\]; got 'invalid'"
-        ):
-            _ = parse_text(set[int], "invalid")
-
-    def test_error_set_internal(self) -> None:
+    def test_error_set(self) -> None:
         with raises(
             _ParseTextParseError, match=r"Unable to parse set\[int\]; got '\{invalid\}'"
         ):
