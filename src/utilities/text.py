@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from os import sep
 from re import IGNORECASE, Match, search
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Literal, overload, override
@@ -167,29 +168,66 @@ class _SplitKeyValuePairsDuplicateKeysError(SplitKeyValuePairsError):
 
 
 @overload
-def split_str(text: str, /, *, separator: str = ",", n: Literal[1]) -> tuple[str]: ...
+def split_str(
+    text: str,
+    /,
+    *,
+    separator: str = ",",
+    brackets: Iterable[tuple[str, str]] | None = None,
+    n: Literal[1],
+) -> tuple[str]: ...
 @overload
 def split_str(
-    text: str, /, *, separator: str = ",", n: Literal[2]
+    text: str,
+    /,
+    *,
+    separator: str = ",",
+    brackets: Iterable[tuple[str, str]] | None = None,
+    n: Literal[2],
 ) -> tuple[str, str]: ...
 @overload
 def split_str(
-    text: str, /, *, separator: str = ",", n: Literal[3]
+    text: str,
+    /,
+    *,
+    separator: str = ",",
+    brackets: Iterable[tuple[str, str]] | None = None,
+    n: Literal[3],
 ) -> tuple[str, str, str]: ...
 @overload
 def split_str(
-    text: str, /, *, separator: str = ",", n: Literal[4]
+    text: str,
+    /,
+    *,
+    separator: str = ",",
+    brackets: Iterable[tuple[str, str]] | None = None,
+    n: Literal[4],
 ) -> tuple[str, str, str, str]: ...
 @overload
 def split_str(
-    text: str, /, *, separator: str = ",", n: Literal[5]
+    text: str,
+    /,
+    *,
+    separator: str = ",",
+    brackets: Iterable[tuple[str, str]] | None = None,
+    n: Literal[5],
 ) -> tuple[str, str, str, str, str]: ...
 @overload
 def split_str(
-    text: str, /, *, separator: str = ",", n: int | None = None
+    text: str,
+    /,
+    *,
+    separator: str = ",",
+    brackets: Iterable[tuple[str, str]] | None = None,
+    n: int | None = None,
 ) -> Sequence[str]: ...
 def split_str(
-    text: str, /, *, separator: str = ",", n: int | None = None
+    text: str,
+    /,
+    *,
+    separator: str = ",",
+    brackets: Iterable[tuple[str, str]] | None = None,
+    n: int | None = None,
 ) -> Sequence[str]:
     """Split a string, with a special provision for the empty string."""
     if text == "":
@@ -197,7 +235,10 @@ def split_str(
     elif text == _escape_separator(separator=separator):
         texts = [""]
     else:
-        texts = text.split(separator)
+        if brackets is None:
+            texts = text.split(separator)
+        else:
+            texts = _split_str_brackets(text, brackets, separator=separator)
     if n is None:
         return texts
     if len(texts) != n:

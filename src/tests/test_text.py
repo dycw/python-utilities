@@ -114,7 +114,7 @@ class TestSplitKeyValuePairs:
             _ = split_key_value_pairs("a=1,a=22,a=333", mapping=True)
 
 
-class TestSplitStrAndJoinStr:
+class TestSplitAndJoinStr:
     @given(
         data=data(),
         case=sampled_from([
@@ -126,12 +126,36 @@ class TestSplitStrAndJoinStr:
             ("1,22", 2, ["1", "22"]),
             ("1,22,333", 3, ["1", "22", "333"]),
             ("1,,333", 3, ["1", "", "333"]),
+            ("1,(22,22,22),333", 5, ["1", "(22", "22", "22)", "333"]),
         ]),
     )
-    def test_main(self, *, case: tuple[str, int, list[str]], data: DataObject) -> None:
+    def test_main(self, *, data: DataObject, case: tuple[str, int, list[str]]) -> None:
         text, n, expected = case
         n_use = data.draw(just(n) | none())
         result = split_str(text, n=n_use)
+        if n_use is None:
+            assert result == expected
+        else:
+            assert result == tuple(expected)
+        assert join_strs(result) == text
+
+    @given(
+        data=data(),
+        case=sampled_from([
+            ("1", 1, ["1"]),
+            ("1,22", 2, ["1", "22"]),
+            ("1,22,333", 3, ["1", "22", "333"]),
+            ("1,(22),333", 3, ["1", "(22)", "333"]),
+            ("1,(22,22),333", 3, ["1", "(22,22)", "333"]),
+            ("1,(22,22,22),333", 3, ["1", "(22,22,22)", "333"]),
+        ]),
+    )
+    def test_brackets(
+        self, *, data: DataObject, case: tuple[str, int, list[str]]
+    ) -> None:
+        text, n, expected = case
+        n_use = data.draw(just(n) | none())
+        result = split_str(text, brackets=[("(", ")")], n=n_use)
         if n_use is None:
             assert result == expected
         else:
