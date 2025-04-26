@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from os import sep
-from re import IGNORECASE, Match, search
+from itertools import chain
+from re import IGNORECASE, Match, escape, search
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Literal, overload, override
 
-from utilities.iterables import CheckDuplicatesError, check_duplicates
+from utilities.iterables import CheckDuplicatesError, check_duplicates, transpose
 from utilities.reprlib import get_repr
 
 if TYPE_CHECKING:
@@ -234,27 +234,70 @@ def split_str(
         texts = []
     elif text == _escape_separator(separator=separator):
         texts = [""]
+    elif brackets is None:
+        texts = text.split(separator)
     else:
-        if brackets is None:
-            texts = text.split(separator)
-        else:
-            texts = _split_str_brackets(text, brackets, separator=separator)
+        texts = _split_str_brackets(text, brackets, separator=separator)
     if n is None:
         return texts
     if len(texts) != n:
-        raise SplitStrError(text=text, n=n, texts=texts)
+        raise _SplitStrCountError(text=text, n=n, texts=texts)
     return tuple(texts)
+
+
+def _split_str_brackets(
+    text: str, brackets: Iterable[tuple[str, str]], /, *, separator: str = ","
+) -> Sequence[str]:
+    brackets = list(brackets)
+    opens, closes = transpose(brackets)
+    close_to_open = {close: open_ for open_, close in brackets}
+
+    escapes = map(escape, chain(chain.from_iterable(brackets), [separator]))
+    pattern = re.compile("|".join(escapes))
+
+    results: Sequence[str] = []
+    stack: Sequence[str] = []
+    last = 0
+
+    for match in pattern.finditer(text):
+        token, position = match.group(), match.start()
+        if token in opens:
+            stack.append(token)
+        elif token in closes:
+            if not stack or stack[-1] != close_to_open[token]:
+                raise _SplitStrBracketError(text=text, bracket=token, position=position)
+            _ = stack.pop()
+        elif token == separator and not stack:
+            results.append(text[last:position].strip())
+            last = position + 1
+
+    results.append(text[last:].strip())
+    return results
 
 
 @dataclass(kw_only=True, slots=True)
 class SplitStrError(Exception):
     text: str
+
+
+@dataclass(kw_only=True, slots=True)
+class _SplitStrCountError(SplitStrError):
     n: int
     texts: Sequence[str]
 
     @override
     def __str__(self) -> str:
         return f"Unable to split {self.text!r} into {self.n} part(s); got {len(self.texts)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _SplitStrBracketError(SplitStrError):
+    bracket: str
+    position: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to split {self.text!r}; unmatched closing {self.bracket!r} at position {self.position}"
 
 
 def join_strs(
