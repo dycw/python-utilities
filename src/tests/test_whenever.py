@@ -120,7 +120,7 @@ class TestCheckValidZonedDateTime:
             check_valid_zoned_datetime(datetime)
 
 
-class TestParseAndSerializeDate:
+class TestSerializeAndParseDate:
     @given(date=dates())
     def test_main(self, *, date: dt.date) -> None:
         serialized = serialize_date(date)
@@ -156,7 +156,7 @@ class TestParseAndSerializeDate:
             _ = ensure_date("invalid")
 
 
-class TestParseAndSerializeDateTime:
+class TestSerializeAndParseDateTime:
     @given(
         datetime=local_datetimes()
         | zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
@@ -191,7 +191,7 @@ class TestParseAndSerializeDateTime:
             _ = ensure_datetime("invalid")
 
 
-class TestParseAndSerializeDuration:
+class TestSerializeAndParseDuration:
     @given(duration=datetime_durations())
     def test_main(self, *, duration: Duration) -> None:
         with assume_does_not_raise(SerializeDurationError):
@@ -226,7 +226,7 @@ class TestParseAndSerializeDuration:
             _ = ensure_duration("invalid")
 
 
-class TestParseAndSerializeLocalDateTime:
+class TestSerializeAndParseLocalDateTime:
     @given(datetime=datetimes())
     def test_main(self, *, datetime: dt.datetime) -> None:
         serialized = serialize_local_datetime(datetime)
@@ -278,7 +278,7 @@ class TestParseAndSerializeLocalDateTime:
             _ = ensure_local_datetime("invalid")
 
 
-class TestParseAndSerializeTime:
+class TestSerializeAndParseTime:
     @given(time=times())
     def test_main(self, *, time: dt.time) -> None:
         serialized = serialize_time(time)
@@ -300,7 +300,7 @@ class TestParseAndSerializeTime:
             _ = ensure_time("invalid")
 
 
-class TestParseAndSerializeTimedelta:
+class TestSerializeAndParseTimedelta:
     @given(
         timedelta=timedeltas(
             min_value=MIN_SERIALIZABLE_TIMEDELTA, max_value=MAX_SERIALIZABLE_TIMEDELTA
@@ -374,7 +374,7 @@ class TestParseAndSerializeTimedelta:
             _ = ensure_timedelta("PT0.111222333S")
 
 
-class TestParseAndSerializeZonedDateTime:
+class TestSerializeAndParseZonedDateTime:
     @given(datetime=zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True))
     @SKIPIF_CI_AND_WINDOWS
     def test_main(self, *, datetime: dt.datetime) -> None:
