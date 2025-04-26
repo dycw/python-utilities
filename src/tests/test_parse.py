@@ -267,8 +267,8 @@ class TestSerializeAndParseObject:
 
     @given(value=integers())
     def test_union_with_extra(self, *, value: int) -> None:
-        def parse_even_or_odd(serialized: str, /) -> DataClassFutureIntEvenOrOddUnion:
-            value = int(serialized)
+        def parse_even_or_odd(text: str, /) -> DataClassFutureIntEvenOrOddUnion:
+            value = int(text)
             match value % 2:
                 case 0:
                     return DataClassFutureIntEven(even_int=value)
