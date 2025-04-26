@@ -386,7 +386,16 @@ def replace_non_sentinel(
 ##
 
 
-def serialize_dataclass() -> str:
+def serialize_dataclass(
+    obj: Dataclass,
+    /,
+    *,
+    add_class_name: bool = False,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    list_separator: str = ",",
+    pair_separator: str = "=",
+) -> str:
     """Serialize a Dataclass."""
 
 

@@ -466,7 +466,7 @@ class TestStrMappingToFieldMapping:
             )
 
 
-class TestTextToDataClass:
+class TestParseDataClass:
     @given(key=sampled_from(["int_", "INT_"]), int_=integers())
     def test_main_text_case_insensitive(self, *, key: str, int_: int) -> None:
         result = parse_dataclass(f"{key}={int_}", DataClassFutureInt)
