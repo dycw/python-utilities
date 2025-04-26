@@ -90,6 +90,7 @@ class TestSplitKeyValuePairs:
             ("a=", [("a", "")]),
             ("a=1,=22,c=333", [("a", "1"), ("", "22"), ("c", "333")]),
             ("a=1,b=,c=333", [("a", "1"), ("b", ""), ("c", "333")]),
+            ("a=1,b=(22,22,22),c=333", [("a", "1"), ("b", "(22,22,22)"), ("c", "333")]),
         ])
     )
     def test_main(self, *, case: tuple[str, Sequence[tuple[str, str]]]) -> None:
@@ -102,10 +103,17 @@ class TestSplitKeyValuePairs:
         expected = {"a": "1", "b": "22", "c": "333"}
         assert result == expected
 
-    def test_error_split(self) -> None:
+    def test_error_split_list(self) -> None:
         with raises(
             _SplitKeyValuePairsSplitError,
-            match=r"Unable to split 'a=1,b=22=22,c=333' into key-value pairs; got 'b=22=22'",
+            match=r"Unable to split 'a=1,b=\(c=22\],d=333' into key-value pairs",
+        ):
+            _ = split_key_value_pairs("a=1,b=(c=22],d=333")
+
+    def test_error_split_pair(self) -> None:
+        with raises(
+            _SplitKeyValuePairsSplitError,
+            match=r"Unable to split 'a=1,b=22=22,c=333' into key-value pairs",
         ):
             _ = split_key_value_pairs("a=1,b=22=22,c=333")
 
