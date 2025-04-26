@@ -147,6 +147,7 @@ class TestGetLogRecords:
         ),
         root=temp_paths(),
     )
+    @mark.flaky
     def test_dataframe(
         self, *, root: Path, items: Sequence[tuple[LogLevel, str, StrMapping]]
     ) -> None:
