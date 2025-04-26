@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, override
 
 from dotenv import dotenv_values
 
-from utilities.dataclasses import MappingToDataclassError, text_to_dataclass
+from utilities.dataclasses import MappingToDataclassError, parse_dataclass
 from utilities.git import get_repo_root
 from utilities.iterables import MergeStrMappingsError, merge_str_mappings
 from utilities.pathlib import PWD
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from pathlib import Path
 
-    from utilities.types import ParseTextExtra, PathLike, StrMapping, TDataclass
+    from utilities.types import ParseObjectExtra, PathLike, StrMapping, TDataclass
 
 
 def load_settings(
@@ -30,7 +30,7 @@ def load_settings(
     warn_name_errors: bool = False,
     head: bool = False,
     case_sensitive: bool = False,
-    extra_parsers: ParseTextExtra | None = None,
+    extra_parsers: ParseObjectExtra | None = None,
 ) -> TDataclass:
     """Load a set of settings from the `.env` file."""
     path = get_repo_root(cwd=cwd).joinpath(".env")
@@ -50,7 +50,7 @@ def load_settings(
         ) from None
     values = {k: v for k, v in maybe_values.items() if v is not None}
     try:
-        return text_to_dataclass(
+        return parse_dataclass(
             values,
             cls,
             globalns=globalns,

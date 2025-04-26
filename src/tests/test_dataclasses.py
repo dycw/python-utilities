@@ -38,17 +38,19 @@ from utilities.dataclasses import (
     OneFieldNonUniqueError,
     StrMappingToFieldMappingError,
     YieldFieldsError,
-    _TextToDataClassParseValueError,
-    _TextToDataClassSplitKeyValuePairError,
+    _ParseDataClassParseValueError,
+    _ParseDataClassSplitKeyValuePairsDuplicateKeysError,
+    _ParseDataClassSplitKeyValuePairsSplitError,
     _YieldFieldsClass,
     _YieldFieldsInstance,
     dataclass_repr,
     dataclass_to_dict,
     mapping_to_dataclass,
     one_field,
+    parse_dataclass,
     replace_non_sentinel,
+    serialize_dataclass,
     str_mapping_to_field_mapping,
-    text_to_dataclass,
     yield_fields,
 )
 from utilities.functions import get_class_name
@@ -465,48 +467,68 @@ class TestStrMappingToFieldMapping:
             )
 
 
-class TestTextToDataClass:
+class TestSerializeAndParseDataClass:
+    @given(int_=integers())
+    def test_main_future_int(self, *, int_: int) -> None:
+        obj = DataClassFutureInt(int_=int_)
+        serialized = serialize_dataclass(obj)
+        result = parse_dataclass(serialized, DataClassFutureInt)
+        assert result == obj
+
+    def test_main_future_int_default(self) -> None:
+        obj = DataClassFutureIntDefault()
+        serialized = serialize_dataclass(obj)
+        result = parse_dataclass(serialized, DataClassFutureIntDefault)
+        assert result == obj
+
     @given(key=sampled_from(["int_", "INT_"]), int_=integers())
-    def test_main_text_case_insensitive(self, *, key: str, int_: int) -> None:
-        result = text_to_dataclass(f"{key}={int_}", DataClassFutureInt)
+    def test_parse_text_case_insensitive(self, *, key: str, int_: int) -> None:
+        result = parse_dataclass(f"{key}={int_}", DataClassFutureInt)
         expected = DataClassFutureInt(int_=int_)
         assert result == expected
 
     @given(int_=integers())
-    def test_main_text_case_sensitive(self, *, int_: int) -> None:
-        result = text_to_dataclass(
+    def test_parse_text_case_sensitive(self, *, int_: int) -> None:
+        result = parse_dataclass(
             f"int_={int_}", DataClassFutureInt, case_sensitive=True
         )
         expected = DataClassFutureInt(int_=int_)
         assert result == expected
 
     @given(key=sampled_from(["int_", "INT_"]), int_=integers())
-    def test_main_mapping_case_insensitive(self, *, key: str, int_: int) -> None:
-        result = text_to_dataclass({key: str(int_)}, DataClassFutureInt)
+    def test_parse_mapping_case_insensitive(self, *, key: str, int_: int) -> None:
+        result = parse_dataclass({key: str(int_)}, DataClassFutureInt)
         expected = DataClassFutureInt(int_=int_)
         assert result == expected
 
     @given(int_=integers())
-    def test_main_mapping_case_sensitive(self, *, int_: int) -> None:
-        result = text_to_dataclass(
+    def test_parse_mapping_case_sensitive(self, *, int_: int) -> None:
+        result = parse_dataclass(
             {"int_": str(int_)}, DataClassFutureInt, case_sensitive=True
         )
         expected = DataClassFutureInt(int_=int_)
         assert result == expected
 
-    def test_error_split_key_value_pair(self) -> None:
+    def test_parser_split_key_value_pairs_split(self) -> None:
         with raises(
-            _TextToDataClassSplitKeyValuePairError,
-            match="Unable to construct 'DataClassFutureInt'; failed to split key-value pair 'keyvalue'",
+            _ParseDataClassSplitKeyValuePairsSplitError,
+            match="Unable to construct 'DataClassFutureInt'; failed to split key-value pair 'bbb'",
         ):
-            _ = text_to_dataclass("keyvalue", DataClassFutureInt)
+            _ = parse_dataclass("a=1,bbb,c=333", DataClassFutureInt)
+
+    def test_error_parse_split_key_value_pairs_duplicate(self) -> None:
+        with raises(
+            _ParseDataClassSplitKeyValuePairsDuplicateKeysError,
+            match=r"Unable to construct 'DataClassFutureInt' since there are duplicate keys; got \{'b': 2\}",
+        ):
+            _ = parse_dataclass("a=1,b=22a,b=22b,c=3", DataClassFutureInt)
 
     def test_error_parse_value(self) -> None:
         with raises(
-            _TextToDataClassParseValueError,
+            _ParseDataClassParseValueError,
             match="Unable to construct 'DataClassFutureInt'; unable to parse field 'int_' of type <class 'int'>; got 'invalid'",
         ):
-            _ = text_to_dataclass("int_=invalid", DataClassFutureInt)
+            _ = parse_dataclass("int_=invalid", DataClassFutureInt)
 
 
 class TestYieldFields:

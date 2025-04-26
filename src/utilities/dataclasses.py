@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from collections.abc import Set as AbstractSet
 from dataclasses import MISSING, dataclass, field, fields, replace
 from typing import (
     TYPE_CHECKING,
@@ -22,13 +21,26 @@ from utilities.functions import (
 )
 from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
-from utilities.parse import ParseTextError, parse_text
+from utilities.parse import (
+    LIST_SEPARATOR,
+    PAIR_SEPARATOR,
+    ParseObjectError,
+    parse_object,
+    serialize_object,
+)
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import ParseTextExtra, StrStrMapping, TDataclass
+from utilities.text import (
+    _SplitKeyValuePairsDuplicateKeysError,
+    _SplitKeyValuePairsSplitError,
+    join_strs,
+    split_key_value_pairs,
+)
+from utilities.types import ParseObjectExtra, StrStrMapping, TDataclass
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
+    from collections.abc import Set as AbstractSet
 
     from utilities.types import Dataclass, StrMapping
 
@@ -44,11 +56,11 @@ def dataclass_repr(
     obj: Dataclass,
     /,
     *,
-    include: Iterable[str] | None = None,
-    exclude: Iterable[str] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     warn_name_errors: bool = False,
+    include: Iterable[str] | None = None,
+    exclude: Iterable[str] | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
     extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
@@ -75,11 +87,11 @@ def dataclass_repr(
                 if is_dataclass_instance(fld.value):
                     repr_ = dataclass_repr(
                         fld.value,
-                        include=include,
-                        exclude=exclude,
                         globalns=globalns,
                         localns=localns,
                         warn_name_errors=warn_name_errors,
+                        include=include,
+                        exclude=exclude,
                         rel_tol=rel_tol,
                         abs_tol=abs_tol,
                         extra=extra,
@@ -90,11 +102,11 @@ def dataclass_repr(
                     repr_ = [
                         dataclass_repr(
                             v,
-                            include=include,
-                            exclude=exclude,
                             globalns=globalns,
                             localns=localns,
                             warn_name_errors=warn_name_errors,
+                            include=include,
+                            exclude=exclude,
                             rel_tol=rel_tol,
                             abs_tol=abs_tol,
                             extra=extra,
@@ -123,11 +135,11 @@ def dataclass_to_dict(
     obj: Dataclass,
     /,
     *,
-    include: Iterable[str] | None = None,
-    exclude: Iterable[str] | None = None,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     warn_name_errors: bool = False,
+    include: Iterable[str] | None = None,
+    exclude: Iterable[str] | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
     extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
@@ -155,6 +167,8 @@ def dataclass_to_dict(
                         globalns=globalns,
                         localns=localns,
                         warn_name_errors=warn_name_errors,
+                        include=include,
+                        exclude=exclude,
                         rel_tol=rel_tol,
                         abs_tol=abs_tol,
                         extra=extra,
@@ -169,6 +183,8 @@ def dataclass_to_dict(
                             globalns=globalns,
                             localns=localns,
                             warn_name_errors=warn_name_errors,
+                            include=include,
+                            exclude=exclude,
                             rel_tol=rel_tol,
                             abs_tol=abs_tol,
                             extra=extra,
@@ -381,6 +397,192 @@ def replace_non_sentinel(
 ##
 
 
+def serialize_dataclass(
+    obj: Dataclass,
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+    include: Iterable[str] | None = None,
+    exclude: Iterable[str] | None = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+    extra: Mapping[type[_U], Callable[[_U, _U], bool]] | None = None,
+    defaults: bool = False,
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
+) -> str:
+    """Serialize a Dataclass."""
+    mapping: StrStrMapping = {}
+    fields = list(
+        yield_fields(
+            obj, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
+        )
+    )
+    for fld in fields:
+        if fld.keep(
+            include=include,
+            exclude=exclude,
+            rel_tol=rel_tol,
+            abs_tol=abs_tol,
+            extra=extra,
+            defaults=defaults,
+        ):
+            mapping[fld.name] = serialize_object(
+                fld.value, list_separator=list_separator, pair_separator=pair_separator
+            )
+    joined_items = (
+        join_strs(item, separator=pair_separator) for item in mapping.items()
+    )
+    return join_strs(joined_items, separator=list_separator)
+
+
+def parse_dataclass(
+    text_or_mapping: str | Mapping[str, str],
+    cls: type[TDataclass],
+    /,
+    *,
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+    head: bool = False,
+    case_sensitive: bool = False,
+    allow_extra_keys: bool = False,
+    extra_parsers: ParseObjectExtra | None = None,
+) -> TDataclass:
+    """Construct a dataclass from a string or a mapping or strings."""
+    match text_or_mapping:
+        case str() as text:
+            keys_to_serializes = _parse_dataclass_split_key_value_pairs(
+                text, cls, list_separator=list_separator, pair_separator=pair_separator
+            )
+        case Mapping() as keys_to_serializes:
+            ...
+        case _ as never:
+            assert_never(never)
+    fields = list(
+        yield_fields(
+            cls, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
+        )
+    )
+    fields_to_serializes = str_mapping_to_field_mapping(
+        cls,
+        keys_to_serializes,
+        fields=fields,
+        globalns=globalns,
+        localns=localns,
+        warn_name_errors=warn_name_errors,
+        head=head,
+        case_sensitive=case_sensitive,
+        allow_extra=allow_extra_keys,
+    )
+    field_names_to_values = {
+        f.name: _parse_dataclass_parse_text(
+            f, t, cls, head=head, case_sensitive=case_sensitive, extra=extra_parsers
+        )
+        for f, t in fields_to_serializes.items()
+    }
+    return mapping_to_dataclass(
+        cls,
+        field_names_to_values,
+        fields=fields,
+        globalns=globalns,
+        localns=localns,
+        warn_name_errors=warn_name_errors,
+        head=head,
+        case_sensitive=case_sensitive,
+        allow_extra=allow_extra_keys,
+    )
+
+
+def _parse_dataclass_split_key_value_pairs(
+    text: str,
+    cls: type[TDataclass],
+    /,
+    *,
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
+) -> Mapping[str, str]:
+    try:
+        return split_key_value_pairs(
+            text,
+            list_separator=list_separator,
+            pair_separator=pair_separator,
+            mapping=True,
+        )
+    except _SplitKeyValuePairsSplitError as error:
+        raise _ParseDataClassSplitKeyValuePairsSplitError(
+            text=error.inner, cls=cls
+        ) from None
+    except _SplitKeyValuePairsDuplicateKeysError as error:
+        raise _ParseDataClassSplitKeyValuePairsDuplicateKeysError(
+            text=error.text, cls=cls, counts=error.counts
+        ) from None
+
+
+def _parse_dataclass_parse_text(
+    field: _YieldFieldsClass[Any],
+    text: str,
+    cls: type[Dataclass],
+    /,
+    *,
+    list_separator: str = LIST_SEPARATOR,
+    pair_separator: str = PAIR_SEPARATOR,
+    head: bool = False,
+    case_sensitive: bool = False,
+    extra: ParseObjectExtra | None = None,
+) -> Any:
+    try:
+        return parse_object(
+            field.type_,
+            text,
+            list_separator=list_separator,
+            pair_separator=pair_separator,
+            head=head,
+            case_sensitive=case_sensitive,
+            extra=extra,
+        )
+    except ParseObjectError:
+        raise _ParseDataClassParseValueError(cls=cls, field=field, text=text) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseDataClassError(Exception, Generic[TDataclass]):
+    text: str
+    cls: type[TDataclass]
+
+
+@dataclass(kw_only=True, slots=True)
+class _ParseDataClassSplitKeyValuePairsSplitError(ParseDataClassError):
+    @override
+    def __str__(self) -> str:
+        return f"Unable to construct {get_class_name(self.cls)!r}; failed to split key-value pair {self.text!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ParseDataClassSplitKeyValuePairsDuplicateKeysError(ParseDataClassError):
+    counts: Mapping[str, int]
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to construct {get_class_name(self.cls)!r} since there are duplicate keys; got {self.counts!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ParseDataClassParseValueError(ParseDataClassError[TDataclass]):
+    field: _YieldFieldsClass[Any]
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to construct {get_class_name(self.cls)!r}; unable to parse field {self.field.name!r} of type {self.field.type_!r}; got {self.text!r}"
+
+
+##
+
+
 def str_mapping_to_field_mapping(
     cls: type[TDataclass],
     mapping: Mapping[str, _T],
@@ -438,122 +640,6 @@ class StrMappingToFieldMappingError(Exception):
             case _ as never:
                 assert_never(never)
         return f"{head} {tail}"
-
-
-##
-
-
-def text_to_dataclass(
-    text_or_mapping: str | StrStrMapping,
-    cls: type[TDataclass],
-    /,
-    *,
-    globalns: StrMapping | None = None,
-    localns: StrMapping | None = None,
-    warn_name_errors: bool = False,
-    head: bool = False,
-    case_sensitive: bool = False,
-    allow_extra_keys: bool = False,
-    extra_parsers: ParseTextExtra | None = None,
-) -> TDataclass:
-    """Construct a dataclass from a string or a mapping or strings."""
-    match text_or_mapping:
-        case str() as text:
-            keys_to_serializes = _text_to_dataclass_split_text(text, cls)
-        case Mapping() as keys_to_serializes:
-            ...
-        case _ as never:
-            assert_never(never)
-    fields = list(
-        yield_fields(
-            cls, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
-        )
-    )
-    fields_to_serializes = str_mapping_to_field_mapping(
-        cls,
-        keys_to_serializes,
-        fields=fields,
-        globalns=globalns,
-        localns=localns,
-        warn_name_errors=warn_name_errors,
-        head=head,
-        case_sensitive=case_sensitive,
-        allow_extra=allow_extra_keys,
-    )
-    field_names_to_values = {
-        f.name: _text_to_dataclass_parse(
-            f, t, cls, head=head, case_sensitive=case_sensitive, extra=extra_parsers
-        )
-        for f, t in fields_to_serializes.items()
-    }
-    return mapping_to_dataclass(
-        cls,
-        field_names_to_values,
-        fields=fields,
-        globalns=globalns,
-        localns=localns,
-        warn_name_errors=warn_name_errors,
-        head=head,
-        case_sensitive=case_sensitive,
-        allow_extra=allow_extra_keys,
-    )
-
-
-def _text_to_dataclass_split_text(text: str, cls: type[TDataclass], /) -> StrStrMapping:
-    pairs = (t for t in text.split(",") if t != "")
-    return dict(_text_to_dataclass_split_key_value_pair(pair, cls) for pair in pairs)
-
-
-def _text_to_dataclass_split_key_value_pair(
-    text: str, cls: type[Dataclass], /
-) -> tuple[str, str]:
-    try:
-        key, value = text.split("=")
-    except ValueError:
-        raise _TextToDataClassSplitKeyValuePairError(cls=cls, text=text) from None
-    return key, value
-
-
-def _text_to_dataclass_parse(
-    field: _YieldFieldsClass[Any],
-    text: str,
-    cls: type[Dataclass],
-    /,
-    *,
-    head: bool = False,
-    case_sensitive: bool = False,
-    extra: ParseTextExtra | None = None,
-) -> Any:
-    try:
-        return parse_text(
-            field.type_, text, head=head, case_sensitive=case_sensitive, extra=extra
-        )
-    except ParseTextError:
-        raise _TextToDataClassParseValueError(cls=cls, field=field, text=text) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class TextToDataClassError(Exception, Generic[TDataclass]):
-    cls: type[TDataclass]
-
-
-@dataclass(kw_only=True, slots=True)
-class _TextToDataClassSplitKeyValuePairError(TextToDataClassError):
-    text: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to construct {get_class_name(self.cls)!r}; failed to split key-value pair {self.text!r}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _TextToDataClassParseValueError(TextToDataClassError[TDataclass]):
-    field: _YieldFieldsClass[Any]
-    text: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to construct {get_class_name(self.cls)!r}; unable to parse field {self.field.name!r} of type {self.field.type_!r}; got {self.text!r}"
 
 
 ##
@@ -726,15 +812,15 @@ __all__ = [
     "OneFieldEmptyError",
     "OneFieldError",
     "OneFieldNonUniqueError",
+    "ParseDataClassError",
     "StrMappingToFieldMappingError",
-    "TextToDataClassError",
     "YieldFieldsError",
     "dataclass_repr",
     "dataclass_to_dict",
     "mapping_to_dataclass",
     "one_field",
+    "parse_dataclass",
     "replace_non_sentinel",
     "str_mapping_to_field_mapping",
-    "text_to_dataclass",
     "yield_fields",
 ]
