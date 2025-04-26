@@ -39,7 +39,8 @@ from utilities.dataclasses import (
     StrMappingToFieldMappingError,
     YieldFieldsError,
     _ParseDataClassParseValueError,
-    _ParseDataClassSplitKeyValuePairError,
+    _ParseDataClassSplitKeyValuePairsDuplicateKeysError,
+    _ParseDataClassSplitKeyValuePairsSplitError,
     _YieldFieldsClass,
     _YieldFieldsInstance,
     dataclass_repr,
@@ -496,10 +497,17 @@ class TestTextToDataClass:
 
     def test_error_split_key_value_pair(self) -> None:
         with raises(
-            _ParseDataClassSplitKeyValuePairError,
-            match="Unable to construct 'DataClassFutureInt'; failed to split key-value pair 'keyvalue'",
+            _ParseDataClassSplitKeyValuePairsSplitError,
+            match="Unable to construct 'DataClassFutureInt'; failed to split key-value pair 'bbb'",
         ):
-            _ = parse_dataclass("keyvalue", DataClassFutureInt)
+            _ = parse_dataclass("a=1,bbb,c=333", DataClassFutureInt)
+
+    def test_error_split_key_value_pair2(self) -> None:
+        with raises(
+            _ParseDataClassSplitKeyValuePairsDuplicateKeysError,
+            match=r"Unable to construct 'DataClassFutureInt' since there are duplicate keys; got \{'b': 2\}",
+        ):
+            _ = parse_dataclass("a=1,b=22a,b=22b,c=3", DataClassFutureInt)
 
     def test_error_parse_value(self) -> None:
         with raises(

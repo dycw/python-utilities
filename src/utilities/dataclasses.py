@@ -23,7 +23,11 @@ from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
 from utilities.parse import ParseTextError, parse_text
 from utilities.sentinel import Sentinel, sentinel
-from utilities.text import SplitKeyValuePairsError, split_key_value_pairs
+from utilities.text import (
+    _SplitKeyValuePairsDuplicateKeysError,
+    _SplitKeyValuePairsSplitError,
+    split_key_value_pairs,
+)
 from utilities.types import ParseTextExtra, TDataclass
 from utilities.typing import get_type_hints
 
@@ -461,8 +465,14 @@ def _parse_dataclass_split_key_value_pairs(
             pair_separator=pair_separator,
             mapping=True,
         )
-    except SplitKeyValuePairsError:
-        raise _ParseDataClassSplitKeyValuePairError(text=text, cls=cls) from None
+    except _SplitKeyValuePairsSplitError as error:
+        raise _ParseDataClassSplitKeyValuePairsSplitError(
+            text=error.inner, cls=cls
+        ) from None
+    except _SplitKeyValuePairsDuplicateKeysError as error:
+        raise _ParseDataClassSplitKeyValuePairsDuplicateKeysError(
+            text=error.text, cls=cls, counts=error.counts
+        ) from None
 
 
 def _parse_dataclass_parse_text(
@@ -490,10 +500,19 @@ class ParseDataClassError(Exception, Generic[TDataclass]):
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseDataClassSplitKeyValuePairError(ParseDataClassError):
+class _ParseDataClassSplitKeyValuePairsSplitError(ParseDataClassError):
     @override
     def __str__(self) -> str:
-        return f"Unable to construct {get_class_name(self.cls)!r}; failed to split {self.text!r}"
+        return f"Unable to construct {get_class_name(self.cls)!r}; failed to split key-value pair {self.text!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ParseDataClassSplitKeyValuePairsDuplicateKeysError(ParseDataClassError):
+    counts: Mapping[str, int]
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to construct {get_class_name(self.cls)!r} since there are duplicate keys; got {self.counts!r}"
 
 
 @dataclass(kw_only=True, slots=True)
