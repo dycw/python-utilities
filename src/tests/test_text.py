@@ -20,9 +20,12 @@ from utilities.hypothesis import text_ascii
 from utilities.text import (
     ParseBoolError,
     ParseNoneError,
-    SplitStrError,
     _SplitKeyValuePairsDuplicateKeysError,
     _SplitKeyValuePairsSplitError,
+    _SplitStrClosingBracketMismatchedError,
+    _SplitStrClosingBracketUnmatchedError,
+    _SplitStrCountError,
+    _SplitStrOpeningBracketUnmatchedError,
     join_strs,
     parse_bool,
     parse_none,
@@ -114,7 +117,7 @@ class TestSplitKeyValuePairs:
             _ = split_key_value_pairs("a=1,a=22,a=333", mapping=True)
 
 
-class TestSplitStrAndJoinStr:
+class TestSplitAndJoinStr:
     @given(
         data=data(),
         case=sampled_from([
@@ -126,12 +129,36 @@ class TestSplitStrAndJoinStr:
             ("1,22", 2, ["1", "22"]),
             ("1,22,333", 3, ["1", "22", "333"]),
             ("1,,333", 3, ["1", "", "333"]),
+            ("1,(22,22,22),333", 5, ["1", "(22", "22", "22)", "333"]),
         ]),
     )
-    def test_main(self, *, case: tuple[str, int, list[str]], data: DataObject) -> None:
+    def test_main(self, *, data: DataObject, case: tuple[str, int, list[str]]) -> None:
         text, n, expected = case
         n_use = data.draw(just(n) | none())
         result = split_str(text, n=n_use)
+        if n_use is None:
+            assert result == expected
+        else:
+            assert result == tuple(expected)
+        assert join_strs(result) == text
+
+    @given(
+        data=data(),
+        case=sampled_from([
+            ("1", 1, ["1"]),
+            ("1,22", 2, ["1", "22"]),
+            ("1,22,333", 3, ["1", "22", "333"]),
+            ("1,(22),333", 3, ["1", "(22)", "333"]),
+            ("1,(22,22),333", 3, ["1", "(22,22)", "333"]),
+            ("1,(22,22,22),333", 3, ["1", "(22,22,22)", "333"]),
+        ]),
+    )
+    def test_brackets(
+        self, *, data: DataObject, case: tuple[str, int, list[str]]
+    ) -> None:
+        text, n, expected = case
+        n_use = data.draw(just(n) | none())
+        result = split_str(text, brackets=[("(", ")")], n=n_use)
         if n_use is None:
             assert result == expected
         else:
@@ -146,11 +173,33 @@ class TestSplitStrAndJoinStr:
     def test_sort(self, *, texts: set[str]) -> None:
         assert split_str(join_strs(texts, sort=True)) == sorted(texts)
 
-    def test_error(self) -> None:
+    def test_error_closing_bracket_mismatched(self) -> None:
         with raises(
-            SplitStrError, match=r"Unable to split '1,22,333' into 4 part\(s\); got 3"
+            _SplitStrClosingBracketMismatchedError,
+            match=r"Unable to split '1,\(22\},333'; got mismatched '\(' at position 2 and '}' at position 5",
+        ):
+            _ = split_str("1,(22},333", brackets=[("(", ")"), ("{", "}")])
+
+    def test_error_closing_bracket_unmatched(self) -> None:
+        with raises(
+            _SplitStrClosingBracketUnmatchedError,
+            match=r"Unable to split '1,22\),333'; got unmatched '\)' at position 4",
+        ):
+            _ = split_str("1,22),333", brackets=[("(", ")")])
+
+    def test_error_count(self) -> None:
+        with raises(
+            _SplitStrCountError,
+            match=r"Unable to split '1,22,333' into 4 part\(s\); got 3",
         ):
             _ = split_str("1,22,333", n=4)
+
+    def test_error_opening_bracket(self) -> None:
+        with raises(
+            _SplitStrOpeningBracketUnmatchedError,
+            match=r"Unable to split '1,\(22,333'; got unmatched '\(' at position 2",
+        ):
+            _ = split_str("1,(22,333", brackets=[("(", ")")])
 
 
 class TestSnakeCase:

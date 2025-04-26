@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import re
+from collections import deque
 from dataclasses import dataclass
-from re import IGNORECASE, Match, search
+from itertools import chain
+from re import IGNORECASE, Match, escape, search
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Literal, overload, override
 
-from utilities.iterables import CheckDuplicatesError, check_duplicates
+from utilities.iterables import CheckDuplicatesError, check_duplicates, transpose
 from utilities.reprlib import get_repr
 
 if TYPE_CHECKING:
@@ -167,53 +169,172 @@ class _SplitKeyValuePairsDuplicateKeysError(SplitKeyValuePairsError):
 
 
 @overload
-def split_str(text: str, /, *, separator: str = ",", n: Literal[1]) -> tuple[str]: ...
+def split_str(
+    text: str,
+    /,
+    *,
+    separator: str = ",",
+    brackets: Iterable[tuple[str, str]] | None = None,
+    n: Literal[1],
+) -> tuple[str]: ...
 @overload
 def split_str(
-    text: str, /, *, separator: str = ",", n: Literal[2]
+    text: str,
+    /,
+    *,
+    separator: str = ",",
+    brackets: Iterable[tuple[str, str]] | None = None,
+    n: Literal[2],
 ) -> tuple[str, str]: ...
 @overload
 def split_str(
-    text: str, /, *, separator: str = ",", n: Literal[3]
+    text: str,
+    /,
+    *,
+    separator: str = ",",
+    brackets: Iterable[tuple[str, str]] | None = None,
+    n: Literal[3],
 ) -> tuple[str, str, str]: ...
 @overload
 def split_str(
-    text: str, /, *, separator: str = ",", n: Literal[4]
+    text: str,
+    /,
+    *,
+    separator: str = ",",
+    brackets: Iterable[tuple[str, str]] | None = None,
+    n: Literal[4],
 ) -> tuple[str, str, str, str]: ...
 @overload
 def split_str(
-    text: str, /, *, separator: str = ",", n: Literal[5]
+    text: str,
+    /,
+    *,
+    separator: str = ",",
+    brackets: Iterable[tuple[str, str]] | None = None,
+    n: Literal[5],
 ) -> tuple[str, str, str, str, str]: ...
 @overload
 def split_str(
-    text: str, /, *, separator: str = ",", n: int | None = None
+    text: str,
+    /,
+    *,
+    separator: str = ",",
+    brackets: Iterable[tuple[str, str]] | None = None,
+    n: int | None = None,
 ) -> Sequence[str]: ...
 def split_str(
-    text: str, /, *, separator: str = ",", n: int | None = None
+    text: str,
+    /,
+    *,
+    separator: str = ",",
+    brackets: Iterable[tuple[str, str]] | None = None,
+    n: int | None = None,
 ) -> Sequence[str]:
     """Split a string, with a special provision for the empty string."""
     if text == "":
         texts = []
     elif text == _escape_separator(separator=separator):
         texts = [""]
-    else:
+    elif brackets is None:
         texts = text.split(separator)
+    else:
+        texts = _split_str_brackets(text, brackets, separator=separator)
     if n is None:
         return texts
     if len(texts) != n:
-        raise SplitStrError(text=text, n=n, texts=texts)
+        raise _SplitStrCountError(text=text, n=n, texts=texts)
     return tuple(texts)
+
+
+def _split_str_brackets(
+    text: str, brackets: Iterable[tuple[str, str]], /, *, separator: str = ","
+) -> Sequence[str]:
+    brackets = list(brackets)
+    opens, closes = transpose(brackets)
+    close_to_open = {close: open_ for open_, close in brackets}
+
+    escapes = map(escape, chain(chain.from_iterable(brackets), [separator]))
+    pattern = re.compile("|".join(escapes))
+
+    results: Sequence[str] = []
+    stack: deque[tuple[str, int]] = deque()
+    last = 0
+
+    for match in pattern.finditer(text):
+        token, position = match.group(), match.start()
+        if token in opens:
+            stack.append((token, position))
+        elif token in closes:
+            if len(stack) == 0:
+                raise _SplitStrClosingBracketUnmatchedError(
+                    text=text, token=token, position=position
+                )
+            open_token, open_position = stack.pop()
+            if open_token != close_to_open[token]:
+                raise _SplitStrClosingBracketMismatchedError(
+                    text=text,
+                    opening_token=open_token,
+                    opening_position=open_position,
+                    closing_token=token,
+                    closing_position=position,
+                )
+        elif (token == separator) and (len(stack) == 0):
+            results.append(text[last:position].strip())
+            last = position + 1
+    results.append(text[last:].strip())
+    if len(stack) >= 1:
+        token, position = stack.pop()
+        raise _SplitStrOpeningBracketUnmatchedError(
+            text=text, token=token, position=position
+        )
+    return results
 
 
 @dataclass(kw_only=True, slots=True)
 class SplitStrError(Exception):
     text: str
+
+
+@dataclass(kw_only=True, slots=True)
+class _SplitStrCountError(SplitStrError):
     n: int
     texts: Sequence[str]
 
     @override
     def __str__(self) -> str:
         return f"Unable to split {self.text!r} into {self.n} part(s); got {len(self.texts)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _SplitStrClosingBracketMismatchedError(SplitStrError):
+    opening_token: str
+    opening_position: int
+    closing_token: str
+    closing_position: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to split {self.text!r}; got mismatched {self.opening_token!r} at position {self.opening_position} and {self.closing_token!r} at position {self.closing_position}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _SplitStrClosingBracketUnmatchedError(SplitStrError):
+    token: str
+    position: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to split {self.text!r}; got unmatched {self.token!r} at position {self.position}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _SplitStrOpeningBracketUnmatchedError(SplitStrError):
+    token: str
+    position: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to split {self.text!r}; got unmatched {self.token!r} at position {self.position}"
 
 
 def join_strs(
