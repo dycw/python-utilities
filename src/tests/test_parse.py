@@ -13,9 +13,11 @@ from hypothesis.strategies import (
     dates,
     dictionaries,
     floats,
+    frozensets,
     integers,
     lists,
     sampled_from,
+    sets,
     times,
 )
 from pytest import raises
@@ -121,11 +123,11 @@ class TestToAndParseText:
         result = parse_text(int, text)
         assert result == value
 
-    @given(value=lists(dates()))
-    def test_list(self, *, value: list[dt.date]) -> None:
-        text = to_text(value)
+    @given(values=lists(dates()))
+    def test_list(self, *, values: list[dt.date]) -> None:
+        text = to_text(values)
         result = parse_text(list[dt.date], text)
-        assert result == value
+        assert result == values
 
     @given(truth=sampled_from(["true", "false"]))
     def test_literal(self, *, truth: Literal["true", "false"]) -> None:
