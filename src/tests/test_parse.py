@@ -14,6 +14,7 @@ from hypothesis.strategies import (
     dictionaries,
     floats,
     integers,
+    lists,
     sampled_from,
     times,
 )
@@ -120,11 +121,11 @@ class TestToAndParseText:
         result = parse_text(int, text)
         assert result == value
 
-    @given(values=lists(dates()))
-    def test_list(self, *, values: list[dt.date]) -> None:
-        text = to_text(values)
+    @given(value=lists(dates()))
+    def test_list(self, *, value: list[dt.date]) -> None:
+        text = to_text(value)
         result = parse_text(list[dt.date], text)
-        assert result == values
+        assert result == value
 
     @given(truth=sampled_from(["true", "false"]))
     def test_literal(self, *, truth: Literal["true", "false"]) -> None:
