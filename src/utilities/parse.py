@@ -539,7 +539,12 @@ def _serialize_object_dict(
 
 def _serialize_object_extra(obj: Any, extra: SerializeObjectExtra, /) -> str:
     try:
-        serializer = one(s for c, s in extra.items() if isinstance(obj, c))
+        serializer = one(
+            s
+            for c, s in extra.items()
+            if (isinstance(c, type) and isinstance(obj, c))
+            or isinstance(obj, get_args(c))
+        )
     except OneEmptyError:
         raise _SerializeObjectSerializeError(obj=obj) from None
     except OneNonUniqueError as error:
