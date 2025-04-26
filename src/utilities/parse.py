@@ -480,7 +480,7 @@ def to_text(
         return _to_text_tuple(
             obj, list_separator=list_separator, pair_separator=pair_separator
         )
-    raise NotImplementedError(obj)  # pragma: no cover
+    raise NotImplementedError(obj)
 
 
 def _to_text_dict(

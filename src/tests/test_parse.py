@@ -506,12 +506,11 @@ class TestParseText:
         ):
             _ = parse_text(tuple[int, int], "(invalid,invalid)")
 
-    def test_error_tuple_inconsistent_args_and_texts(self) -> None:
+    def test_error_to_text_type_not_implemented(self) -> None:
         with raises(
-            _ParseTextParseError,
-            match=r"Unable to parse tuple\[int, int\]; got '\(text1, text2, text3\)'",
+            _ParseTextParseError, match=r"Unable to parse typing\.Final; got 'invalid'"
         ):
-            _ = parse_text(tuple[int, int], "(text1, text2, text3)")
+            _ = parse_text(Final, "invalid")
 
     def test_error_type_not_implemented(self) -> None:
         with raises(
