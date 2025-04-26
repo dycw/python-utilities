@@ -53,7 +53,7 @@ def parse_text(
     /,
     *,
     list_separator: str = ",",
-    pair_separator: str = ":",
+    pair_separator: str = "=",
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
@@ -237,7 +237,7 @@ def _parse_text_dict_type(
     /,
     *,
     list_separator: str = ",",
-    pair_separator: str = ":",
+    pair_separator: str = "=",
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
@@ -289,7 +289,7 @@ def _parse_text_list_type(
     /,
     *,
     list_separator: str = ",",
-    pair_separator: str = ":",
+    pair_separator: str = "=",
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
@@ -323,7 +323,7 @@ def _parse_text_set_type(
     /,
     *,
     list_separator: str = ",",
-    pair_separator: str = ":",
+    pair_separator: str = "=",
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
@@ -382,7 +382,7 @@ def _parse_text_tuple_type(
     /,
     *,
     list_separator: str = ",",
-    pair_separator: str = ":",
+    pair_separator: str = "=",
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
@@ -439,7 +439,7 @@ class _ParseTextExtraNonUniqueError(ParseTextError):
 
 
 def to_text(
-    obj: Any, /, *, list_separator: str = ",", pair_separator: str = ":"
+    obj: Any, /, *, list_separator: str = ",", pair_separator: str = "="
 ) -> str:
     """Convert an object to text."""
     if (obj is None) or isinstance(
@@ -484,7 +484,7 @@ def to_text(
 
 
 def _to_text_dict(
-    obj: Mapping[Any, Any], /, *, list_separator: str = ",", pair_separator: str = ":"
+    obj: Mapping[Any, Any], /, *, list_separator: str = ",", pair_separator: str = "="
 ) -> str:
     keys = (
         to_text(k, list_separator=list_separator, pair_separator=pair_separator)
@@ -501,7 +501,7 @@ def _to_text_dict(
 
 
 def _to_text_list(
-    obj: Sequence[Any], /, *, list_separator: str = ",", pair_separator: str = ":"
+    obj: Sequence[Any], /, *, list_separator: str = ",", pair_separator: str = "="
 ) -> str:
     items = (
         to_text(i, list_separator=list_separator, pair_separator=pair_separator)
@@ -512,7 +512,7 @@ def _to_text_list(
 
 
 def _to_text_set(
-    obj: AbstractSet[Any], /, *, list_separator: str = ",", pair_separator: str = ":"
+    obj: AbstractSet[Any], /, *, list_separator: str = ",", pair_separator: str = "="
 ) -> str:
     items = (
         to_text(i, list_separator=list_separator, pair_separator=pair_separator)
@@ -523,7 +523,7 @@ def _to_text_set(
 
 
 def _to_text_tuple(
-    obj: tuple[Any, ...], /, *, list_separator: str = ",", pair_separator: str = ":"
+    obj: tuple[Any, ...], /, *, list_separator: str = ",", pair_separator: str = "="
 ) -> str:
     items = (
         to_text(i, list_separator=list_separator, pair_separator=pair_separator)
