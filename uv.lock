@@ -780,7 +780,7 @@ zzz-test-altair = [
     { name = "altair" },
     { name = "atomicwrites" },
     { name = "img2pdf" },
-    { name = "polars-lts-cpu" },
+    { name = "polars" },
     { name = "vl-convert-python" },
     { name = "whenever" },
 ]
@@ -809,7 +809,7 @@ zzz-test-cvxpy = [
 ]
 zzz-test-dataclasses = [
     { name = "orjson" },
-    { name = "polars-lts-cpu" },
+    { name = "polars" },
     { name = "whenever" },
 ]
 zzz-test-datetime = [
@@ -830,7 +830,7 @@ zzz-test-fpdf2 = [
 ]
 zzz-test-hashlib = [
     { name = "orjson" },
-    { name = "polars-lts-cpu" },
+    { name = "polars" },
     { name = "whenever" },
 ]
 zzz-test-http = [
@@ -856,13 +856,13 @@ zzz-test-ipython = [
     { name = "ipython" },
 ]
 zzz-test-iterables = [
-    { name = "polars-lts-cpu" },
+    { name = "polars" },
     { name = "whenever" },
 ]
 zzz-test-jupyter = [
     { name = "jupyterlab" },
     { name = "pandas" },
-    { name = "polars-lts-cpu" },
+    { name = "polars" },
 ]
 zzz-test-logging = [
     { name = "atomicwrites" },
@@ -893,7 +893,7 @@ zzz-test-numpy = [
     { name = "numpy" },
 ]
 zzz-test-operator = [
-    { name = "polars-lts-cpu" },
+    { name = "polars" },
     { name = "whenever" },
 ]
 zzz-test-optuna = [
@@ -901,7 +901,7 @@ zzz-test-optuna = [
 ]
 zzz-test-orjson = [
     { name = "orjson" },
-    { name = "polars-lts-cpu" },
+    { name = "polars" },
     { name = "rich" },
     { name = "tzlocal" },
     { name = "whenever" },
@@ -911,7 +911,7 @@ zzz-test-pickle = [
 ]
 zzz-test-polars = [
     { name = "dacite" },
-    { name = "polars-lts-cpu" },
+    { name = "polars" },
     { name = "whenever" },
 ]
 zzz-test-pqdm = [
@@ -943,7 +943,7 @@ zzz-test-python-dotenv = [
 ]
 zzz-test-redis = [
     { name = "orjson" },
-    { name = "polars-lts-cpu" },
+    { name = "polars" },
     { name = "redis" },
     { name = "rich" },
     { name = "tenacity" },
@@ -973,7 +973,7 @@ zzz-test-sqlalchemy-polars = [
     { name = "asyncpg" },
     { name = "greenlet" },
     { name = "nest-asyncio" },
-    { name = "polars-lts-cpu" },
+    { name = "polars" },
     { name = "sqlalchemy" },
     { name = "tenacity" },
     { name = "whenever" },
@@ -998,7 +998,7 @@ zzz-test-traceback = [
     { name = "whenever" },
 ]
 zzz-test-typing = [
-    { name = "polars-lts-cpu" },
+    { name = "polars" },
     { name = "whenever" },
 ]
 zzz-test-tzlocal = [
@@ -1051,7 +1051,6 @@ dev = [
     { name = "orjson" },
     { name = "pathvalidate" },
     { name = "polars" },
-    { name = "polars-lts-cpu" },
     { name = "polars-ols" },
     { name = "pqdm" },
     { name = "psycopg2-binary" },
@@ -1151,17 +1150,17 @@ requires-dist = [
     { name = "orjson", marker = "extra == 'zzz-test-redis'", specifier = ">=3.10.15,<3.11" },
     { name = "pandas", marker = "extra == 'zzz-test-jupyter'", specifier = ">=2.2.2,<2.3" },
     { name = "pathvalidate", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=3.2.3,<3.3" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-altair'", specifier = ">=1.28.0,<1.29" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-dataclasses'", specifier = ">=1.28.0,<1.29" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-hashlib'", specifier = ">=1.28.0,<1.29" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-iterables'", specifier = ">=1.28.0,<1.29" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-jupyter'", specifier = ">=1.28.0,<1.29" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-operator'", specifier = ">=1.28.0,<1.29" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-orjson'", specifier = ">=1.28.0,<1.29" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-polars'", specifier = ">=1.28.0,<1.29" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-redis'", specifier = ">=1.28.0,<1.29" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=1.28.0,<1.29" },
-    { name = "polars-lts-cpu", marker = "extra == 'zzz-test-typing'", specifier = ">=1.28.0,<1.29" },
+    { name = "polars", marker = "extra == 'zzz-test-altair'", specifier = ">=1.28.0,<1.29" },
+    { name = "polars", marker = "extra == 'zzz-test-dataclasses'", specifier = ">=1.28.0,<1.29" },
+    { name = "polars", marker = "extra == 'zzz-test-hashlib'", specifier = ">=1.28.0,<1.29" },
+    { name = "polars", marker = "extra == 'zzz-test-iterables'", specifier = ">=1.28.0,<1.29" },
+    { name = "polars", marker = "extra == 'zzz-test-jupyter'", specifier = ">=1.28.0,<1.29" },
+    { name = "polars", marker = "extra == 'zzz-test-operator'", specifier = ">=1.28.0,<1.29" },
+    { name = "polars", marker = "extra == 'zzz-test-orjson'", specifier = ">=1.28.0,<1.29" },
+    { name = "polars", marker = "extra == 'zzz-test-polars'", specifier = ">=1.28.0,<1.29" },
+    { name = "polars", marker = "extra == 'zzz-test-redis'", specifier = ">=1.28.0,<1.29" },
+    { name = "polars", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=1.28.0,<1.29" },
+    { name = "polars", marker = "extra == 'zzz-test-typing'", specifier = ">=1.28.0,<1.29" },
     { name = "pqdm", marker = "extra == 'zzz-test-pqdm'", specifier = ">=0.2.0,<0.3" },
     { name = "pydantic", marker = "extra == 'zzz-test-pydantic'", specifier = ">=2.11.2,<2.12" },
     { name = "pyinstrument", marker = "extra == 'zzz-test-pyinstrument'", specifier = ">=5.0.0,<5.1" },
@@ -1279,7 +1278,7 @@ dev = [
     { name = "optuna", specifier = ">=4.3.0,<4.4" },
     { name = "orjson", specifier = ">=3.10.16,<3.11" },
     { name = "pathvalidate", specifier = ">=3.2.3,<3.3" },
-    { name = "polars-lts-cpu", specifier = ">=1.28.0,<1.29" },
+    { name = "polars", specifier = ">=1.28.0,<1.29" },
     { name = "polars-ols", specifier = ">=0.3.5,<0.4" },
     { name = "pqdm", specifier = ">=0.2.0,<0.3" },
     { name = "psycopg2-binary", specifier = ">=2.9.10,<2.10" },
@@ -2644,20 +2643,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/8c/c0/c785fe21367fe468c61200c159fde635509d682953bc00b52699391e36a0/polars-1.28.0-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:f5f5871cc7a28d2fd60c069792e4c982cbf5f9f144ff9d26a6bb46550977f3f9", size = 32035309, upload_time = "2025-04-26T09:01:16.854Z" },
     { url = "https://files.pythonhosted.org/packages/cc/28/ba554e5681bd1b0a14191e59ac737dc16c01bdf74781b61fe392b75bc3be/polars-1.28.0-cp39-abi3-win_amd64.whl", hash = "sha256:7e1f528cd97f23c15f22ec673f1b0d59b6e2c27acf7837154084818472fb2881", size = 34954169, upload_time = "2025-04-26T09:01:20.799Z" },
     { url = "https://files.pythonhosted.org/packages/25/0f/6ac05533c90988be13c86bc806f896758e04efe5434bf13e55b3cc89a704/polars-1.28.0-cp39-abi3-win_arm64.whl", hash = "sha256:d5bbf7e2bd01b832788a65bc74bc262c6fb3ee7af0483f0eca7c6fb0e7ea1d6d", size = 31259540, upload_time = "2025-04-26T09:01:24.827Z" },
-]
-
-[[package]]
-name = "polars-lts-cpu"
-version = "1.28.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/85/8e/0e8b9077aec24d61d9c67f97e02927f89fa5eb9253e943caea4cada92cb3/polars_lts_cpu-1.28.0.tar.gz", hash = "sha256:9879505a8f8f25a8951933e41062b4a88401ef2a24a5636e450f83ccb91a5d0e", size = 4561050, upload_time = "2025-04-26T09:02:13.821Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c2/af/82a070ff014832f9d5b44c8e2ab851e243e5ec017332b1c61100f079ce72/polars_lts_cpu-1.28.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:2170d4a8a52a23d95a44a2cef750bc14db23e05ae5d0f17ab5f2ce2e91457992", size = 33832445, upload_time = "2025-04-26T09:01:28.275Z" },
-    { url = "https://files.pythonhosted.org/packages/62/c1/ebe9cbe941c08450ba0d38654b47b8bf0870599ce3757f51a11735e39a5c/polars_lts_cpu-1.28.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:df43794a982e0f23639cc3ff770be73fe142f48e453d9b26c4b965430dac67fc", size = 30949400, upload_time = "2025-04-26T09:01:32.097Z" },
-    { url = "https://files.pythonhosted.org/packages/ba/90/d33b50bf93f0ed25513de5063539d027bf6857eb93d54bee08618f26ceb8/polars_lts_cpu-1.28.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a38e807a5d67dd91b2cb8aebe1eeb3bb1b98253bddba42bbb36ed3ce394d5bcb", size = 34439217, upload_time = "2025-04-26T09:01:35.925Z" },
-    { url = "https://files.pythonhosted.org/packages/20/18/fecedaecc303a7b932499c73a97b32f20447808470ed75ca424f67ab3036/polars_lts_cpu-1.28.0-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:136e22dfe923ea6fa7f3349f6120ff73aa8663f81bbe635d383e8f05cb40874d", size = 32035386, upload_time = "2025-04-26T09:01:39.753Z" },
-    { url = "https://files.pythonhosted.org/packages/47/e5/428bbb840b8e4f35592d4173f16afee5c5f200bd65e143cc5b399772ddeb/polars_lts_cpu-1.28.0-cp39-abi3-win_amd64.whl", hash = "sha256:13acb87b22c395e740b9ea3b9a413ebf862019a31d900eee472b52f49a11b2b2", size = 34790279, upload_time = "2025-04-26T09:01:43.282Z" },
-    { url = "https://files.pythonhosted.org/packages/f9/f7/ee0e48c84fc4da8913ea2a85d2432906dcedd53d88281254e1b9c634d349/polars_lts_cpu-1.28.0-cp39-abi3-win_arm64.whl", hash = "sha256:d6496b1079cfa13f0af668f75f4e55a9dd619ab8c27247a47efa7daabdb3cdfd", size = 31259620, upload_time = "2025-04-26T09:01:46.749Z" },
 ]
 
 [[package]]
