@@ -99,11 +99,7 @@ class TestSerializeAndParseObject:
         result = parse_object(
             DataClassFutureInt,
             serialized,
-            extra={
-                DataClassFutureInt: lambda serialized: DataClassFutureInt(
-                    int_=int(serialized)
-                )
-            },
+            extra={DataClassFutureInt: lambda text: DataClassFutureInt(int_=int(text))},
         )
         expected = DataClassFutureInt(int_=value)
         assert result == expected
@@ -240,7 +236,7 @@ class TestSerializeAndParseObject:
 
     @given(value=integers())
     def test_type_union_with_extra(self, *, value: int) -> None:
-        def parse_even_or_odd(text: str, /) -> DataClassFutureIntEvenOrOddTypeUnion:
+        def parser(text: str, /) -> DataClassFutureIntEvenOrOddTypeUnion:
             value = int(text)
             match value % 2:
                 case 0:
@@ -254,7 +250,7 @@ class TestSerializeAndParseObject:
         result = parse_object(
             DataClassFutureIntEvenOrOddTypeUnion,
             serialized,
-            extra={DataClassFutureIntEvenOrOddTypeUnion: parse_even_or_odd},
+            extra={DataClassFutureIntEvenOrOddTypeUnion: parser},
         )
         match value % 2:
             case 0:
@@ -267,7 +263,7 @@ class TestSerializeAndParseObject:
 
     @given(value=integers())
     def test_union_with_extra(self, *, value: int) -> None:
-        def parse_even_or_odd(text: str, /) -> DataClassFutureIntEvenOrOddUnion:
+        def parser(text: str, /) -> DataClassFutureIntEvenOrOddUnion:
             value = int(text)
             match value % 2:
                 case 0:
@@ -281,7 +277,7 @@ class TestSerializeAndParseObject:
         result = parse_object(
             DataClassFutureIntEvenOrOddUnion,
             serialized,
-            extra={DataClassFutureIntEvenOrOddUnion: parse_even_or_odd},
+            extra={DataClassFutureIntEvenOrOddUnion: parser},
         )
         match value % 2:
             case 0:

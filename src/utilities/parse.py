@@ -31,7 +31,7 @@ from utilities.text import (
     split_key_value_pairs,
     split_str,
 )
-from utilities.types import Duration, Number, ParseObjectExtra
+from utilities.types import Duration, Number, ParseObjectExtra, SerializeObjectExtra
 from utilities.typing import (
     get_args,
     is_dict_type,
@@ -240,7 +240,7 @@ def _parse_object_type(
             ) from None
         else:
             return parser(text)
-    raise _ParseObjectParseError(type_=cls, text=text) from None
+    raise _ParseObjectParseError(type_=cls, text=text)
 
 
 def _parse_object_dict_type(
@@ -466,6 +466,7 @@ def serialize_object(
     *,
     list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
+    extra: SerializeObjectExtra | None = None,
 ) -> str:
     """Convert an object to text."""
     if (obj is None) or isinstance(
@@ -506,7 +507,9 @@ def serialize_object(
         return _serialize_object_set(
             obj, list_separator=list_separator, pair_separator=pair_separator
         )
-    raise NotImplementedError(obj)
+    if extra is not None:
+        return _serialize_object_extra(obj, extra)
+    raise _ParseObjectSerializeError(obj=obj)
 
 
 def _serialize_object_dict(
@@ -532,6 +535,19 @@ def _serialize_object_dict(
     joined_items = (join_strs(item, separator=pair_separator) for item in items)
     joined = join_strs(joined_items, separator=list_separator)
     return f"{{{joined}}}"
+
+
+def _serialize_object_extra(obj: Any, extra: SerializeObjectExtra, /) -> str:
+    try:
+        serializer = one(s for c, s in extra.items() if isinstance(obj, c))
+    except OneEmptyError:
+        raise _SerializeObjectError(obj=obj) from None
+    except OneNonUniqueError as error:
+        raise _SerializeObjectExtraNonUniqueError(
+            obj=obj, first=error.first, second=error.second
+        ) from None
+    else:
+        return serializer(obj)
 
 
 def _serialize_object_list(
