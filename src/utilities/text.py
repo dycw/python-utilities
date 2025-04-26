@@ -393,6 +393,7 @@ def strip_and_dedent(text: str, /, *, trailing: bool = False) -> str:
 
 
 __all__ = [
+    "BRACKETS",
     "DEFAULT_SEPARATOR",
     "LIST_SEPARATOR",
     "PAIR_SEPARATOR",
