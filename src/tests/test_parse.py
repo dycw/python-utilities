@@ -238,58 +238,58 @@ class TestSerializeAndParseObject:
         result = parse_object(TrueOrFalseFutureTypeLit, truth)
         assert result == truth
 
-    @given(value=integers())
-    def test_type_union_with_extra(self, *, value: int) -> None:
+    @given(int_=integers())
+    def test_type_union_with_extra(self, *, int_: int) -> None:
         def parser(text: str, /) -> DataClassFutureIntEvenOrOddTypeUnion:
-            value = int(text)
-            match value % 2:
+            int_ = int(text)
+            match int_ % 2:
                 case 0:
-                    return DataClassFutureIntEven(even_int=value)
+                    return DataClassFutureIntEven(even_int=int_)
                 case 1:
-                    return DataClassFutureIntOdd(odd_int=value)
+                    return DataClassFutureIntOdd(odd_int=int_)
                 case _:
-                    raise ImpossibleCaseError(case=[f"{value=}"])
+                    raise ImpossibleCaseError(case=[f"{int_=}"])
 
-        serialized = serialize_object(value)
+        serialized = serialize_object(int_)
         result = parse_object(
             DataClassFutureIntEvenOrOddTypeUnion,
             serialized,
             extra={DataClassFutureIntEvenOrOddTypeUnion: parser},
         )
-        match value % 2:
+        match int_ % 2:
             case 0:
-                expected = DataClassFutureIntEven(even_int=value)
+                expected = DataClassFutureIntEven(even_int=int_)
             case 1:
-                expected = DataClassFutureIntOdd(odd_int=value)
+                expected = DataClassFutureIntOdd(odd_int=int_)
             case _:
-                raise ImpossibleCaseError(case=[f"{value=}"])
+                raise ImpossibleCaseError(case=[f"{int_=}"])
         assert result == expected
 
-    @given(value=integers())
-    def test_union_with_extra(self, *, value: int) -> None:
+    @given(int_=integers())
+    def test_union_with_extra(self, *, int_: int) -> None:
         def parser(text: str, /) -> DataClassFutureIntEvenOrOddUnion:
-            value = int(text)
-            match value % 2:
+            int_ = int(text)
+            match int_ % 2:
                 case 0:
-                    return DataClassFutureIntEven(even_int=value)
+                    return DataClassFutureIntEven(even_int=int_)
                 case 1:
-                    return DataClassFutureIntOdd(odd_int=value)
+                    return DataClassFutureIntOdd(odd_int=int_)
                 case _:
-                    raise ImpossibleCaseError(case=[f"{value=}"])
+                    raise ImpossibleCaseError(case=[f"{int_=}"])
 
-        serialized = serialize_object(value)
+        serialized = serialize_object(int_)
         result = parse_object(
             DataClassFutureIntEvenOrOddUnion,
             serialized,
             extra={DataClassFutureIntEvenOrOddUnion: parser},
         )
-        match value % 2:
+        match int_ % 2:
             case 0:
-                expected = DataClassFutureIntEven(even_int=value)
+                expected = DataClassFutureIntEven(even_int=int_)
             case 1:
-                expected = DataClassFutureIntOdd(odd_int=value)
+                expected = DataClassFutureIntOdd(odd_int=int_)
             case _:
-                raise ImpossibleCaseError(case=[f"{value=}"])
+                raise ImpossibleCaseError(case=[f"{int_=}"])
         assert result == expected
 
     @given(version=versions())
@@ -531,6 +531,63 @@ class TestParseObject:
 
 
 class TestSerializeObject:
+    @given(int_=integers())
+    def test_type_with_extra(self, *, int_: int) -> None:
+        obj = DataClassFutureInt(int_=int_)
+
+        def serializer(obj: DataClassFutureInt, /) -> str:
+            return str(obj.int_)
+
+        serialized = serialize_object(obj, extra={DataClassFutureInt: serializer})
+        expected = str(int_)
+        assert serialized == expected
+
+    @given(int_=integers())
+    def test_type_union_with_extra(self, *, int_: int) -> None:
+        match int_ % 2:
+            case 0:
+                obj = DataClassFutureIntEven(even_int=int_)
+            case 1:
+                obj = DataClassFutureIntOdd(odd_int=int_)
+            case _:
+                raise ImpossibleCaseError(case=[f"{int_=}"])
+
+        def serializer(obj: DataClassFutureIntEvenOrOddTypeUnion, /) -> str:
+            match obj:
+                case DataClassFutureIntEven():
+                    return str(obj.even_int)
+                case DataClassFutureIntOdd():
+                    return str(obj.odd_int)
+
+        serialized = serialize_object(
+            obj, extra={DataClassFutureIntEvenOrOddTypeUnion: serializer}
+        )
+        expected = str(int_)
+        assert serialized == expected
+
+    @given(int_=integers())
+    def test_union_with_extra(self, *, int_: int) -> None:
+        match int_ % 2:
+            case 0:
+                obj = DataClassFutureIntEven(even_int=int_)
+            case 1:
+                obj = DataClassFutureIntOdd(odd_int=int_)
+            case _:
+                raise ImpossibleCaseError(case=[f"{int_=}"])
+
+        def serializer(obj: DataClassFutureIntEvenOrOddUnion, /) -> str:
+            match obj:
+                case DataClassFutureIntEven():
+                    return str(obj.even_int)
+                case DataClassFutureIntOdd():
+                    return str(obj.odd_int)
+
+        serialized = serialize_object(
+            obj, extra={DataClassFutureIntEvenOrOddUnion: serializer}
+        )
+        expected = str(int_)
+        assert serialized == expected
+
     def test_error_extra_empty(self) -> None:
         with raises(
             _SerializeObjectSerializeError,
