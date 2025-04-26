@@ -23,7 +23,7 @@ from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
 from utilities.parse import ParseTextError, parse_text
 from utilities.sentinel import Sentinel, sentinel
-from utilities.text import split_key_value_pairs
+from utilities.text import SplitKeyValuePairsError, split_key_value_pairs
 from utilities.types import ParseTextExtra, TDataclass
 from utilities.typing import get_type_hints
 
@@ -391,6 +391,8 @@ def parse_dataclass(
     cls: type[TDataclass],
     /,
     *,
+    list_separator: str = ",",
+    pair_separator: str = "=",
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     warn_name_errors: bool = False,
@@ -402,7 +404,9 @@ def parse_dataclass(
     """Construct a dataclass from a string or a mapping or strings."""
     match text_or_mapping:
         case str() as text:
-            keys_to_serializes = _text_to_dataclass_split_key_value_pairs(text, cls)
+            keys_to_serializes = _parse_dataclass_split_key_value_pairs(
+                text, cls, list_separator=list_separator, pair_separator=pair_separator
+            )
         case Mapping() as keys_to_serializes:
             ...
         case _ as never:
@@ -424,7 +428,7 @@ def parse_dataclass(
         allow_extra=allow_extra_keys,
     )
     field_names_to_values = {
-        f.name: _text_to_dataclass_parse(
+        f.name: _parse_dataclass_parse_text(
             f, t, cls, head=head, case_sensitive=case_sensitive, extra=extra_parsers
         )
         for f, t in fields_to_serializes.items()
@@ -442,30 +446,26 @@ def parse_dataclass(
     )
 
 
-def _text_to_dataclass_split_key_value_pairs(
-    text: str, cls: type[TDataclass], /
+def _parse_dataclass_split_key_value_pairs(
+    text: str,
+    cls: type[TDataclass],
+    /,
+    *,
+    list_separator: str = ",",
+    pair_separator: str = "=",
 ) -> Mapping[str, str]:
     try:
         return split_key_value_pairs(
-            text, list_separator=list_separator, pair_separator=pair_separator
+            text,
+            list_separator=list_separator,
+            pair_separator=pair_separator,
+            mapping=True,
         )
-    except z:
-        pass
-    pairs = (t for t in text.split(",") if t != "")
-    return dict(_text_to_dataclass_split_key_value_pair(pair, cls) for pair in pairs)
+    except SplitKeyValuePairsError:
+        raise _ParseDataClassSplitKeyValuePairError(text=text, cls=cls) from None
 
 
-def _text_to_dataclass_split_key_value_pair(
-    text: str, cls: type[Dataclass], /
-) -> tuple[str, str]:
-    try:
-        key, value = text.split("=")
-    except ValueError:
-        raise _TextToDataClassSplitKeyValuePairError(cls=cls, text=text) from None
-    return key, value
-
-
-def _text_to_dataclass_parse(
+def _parse_dataclass_parse_text(
     field: _YieldFieldsClass[Any],
     text: str,
     cls: type[Dataclass],
@@ -480,34 +480,29 @@ def _text_to_dataclass_parse(
             field.type_, text, head=head, case_sensitive=case_sensitive, extra=extra
         )
     except ParseTextError:
-        raise _TextToDataClassParseValueError(cls=cls, field=field, text=text) from None
+        raise _ParseDataClassParseValueError(cls=cls, field=field, text=text) from None
 
 
 @dataclass(kw_only=True, slots=True)
-class TextToDataClassError(Exception, Generic[TDataclass]):
+class ParseDataClassError(Exception, Generic[TDataclass]):
+    text: str
     cls: type[TDataclass]
 
 
 @dataclass(kw_only=True, slots=True)
-class _TextToDataClassSplitKeyValuePairError(TextToDataClassError):
-    text: str
-
+class _ParseDataClassSplitKeyValuePairError(ParseDataClassError):
     @override
     def __str__(self) -> str:
-        return f"Unable to construct {get_class_name(self.cls)!r}; failed to split key-value pair {self.text!r}"
+        return f"Unable to construct {get_class_name(self.cls)!r}; failed to split {self.text!r}"
 
 
 @dataclass(kw_only=True, slots=True)
-class _TextToDataClassParseValueError(TextToDataClassError[TDataclass]):
+class _ParseDataClassParseValueError(ParseDataClassError[TDataclass]):
     field: _YieldFieldsClass[Any]
-    text: str
 
     @override
     def __str__(self) -> str:
         return f"Unable to construct {get_class_name(self.cls)!r}; unable to parse field {self.field.name!r} of type {self.field.type_!r}; got {self.text!r}"
-
-
-##
 
 
 ##
@@ -742,8 +737,8 @@ __all__ = [
     "OneFieldEmptyError",
     "OneFieldError",
     "OneFieldNonUniqueError",
+    "ParseDataClassError",
     "StrMappingToFieldMappingError",
-    "TextToDataClassError",
     "YieldFieldsError",
     "dataclass_repr",
     "dataclass_to_dict",
