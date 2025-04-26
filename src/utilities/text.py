@@ -122,22 +122,40 @@ def split_key_value_pairs(
     mapping: bool = False,
 ) -> Sequence[tuple[str, str]] | StrStrMapping:
     """Split a string into key-value pairs."""
-    pairs = [
-        split_str(text_i, separator=pair_separator, n=2)
-        for text_i in split_str(text, separator=list_separator)
-    ]
+    try:
+        pairs = [
+            split_str(text_i, separator=pair_separator, n=2)
+            for text_i in split_str(text, separator=list_separator)
+        ]
+    except SplitStrError as error:
+        raise _SplitKeyValuePairsSplitError(text=text, inner=error.text) from None
     if not mapping:
         return pairs
     try:
         check_duplicates(k for k, _ in pairs)
     except CheckDuplicatesError as error:
-        raise SplitKeyValuePairsError(text=text, counts=error.counts) from None
+        raise _SplitKeyValuePairsDuplicateKeysError(
+            text=text, counts=error.counts
+        ) from None
     return dict(pairs)
 
 
 @dataclass(kw_only=True, slots=True)
 class SplitKeyValuePairsError(Exception):
     text: str
+
+
+@dataclass(kw_only=True, slots=True)
+class _SplitKeyValuePairsSplitError(SplitKeyValuePairsError):
+    inner: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to split {self.text!r} into key-value pairs; got {self.inner!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _SplitKeyValuePairsDuplicateKeysError(SplitKeyValuePairsError):
     counts: Mapping[str, int]
 
     @override
@@ -236,6 +254,7 @@ def strip_and_dedent(text: str, /, *, trailing: bool = False) -> str:
 __all__ = [
     "ParseBoolError",
     "ParseNoneError",
+    "SplitKeyValuePairsError",
     "SplitStrError",
     "join_strs",
     "parse_bool",
