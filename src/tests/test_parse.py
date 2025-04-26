@@ -316,12 +316,19 @@ class TestParseText:
         ):
             _ = parse_text(dt.datetime, "invalid")
 
-    def test_error_dict(self) -> None:
+    def test_error_dict_extract_group(self) -> None:
         with raises(
             _ParseTextParseError,
-            match=r"Unable to parse dict\[int, int\]; got '\{invalid:invalid\}'",
+            match=r"Unable to parse dict\[int, int\]; got 'invalid'",
         ):
-            _ = parse_text(dict[int, int], "{invalid:invalid}")
+            _ = parse_text(dict[int, int], "invalid")
+
+    def test_error_dict_internal(self) -> None:
+        with raises(
+            _ParseTextParseError,
+            match=r"Unable to parse dict\[int, int\]; got '\{invalid=invalid\}'",
+        ):
+            _ = parse_text(dict[int, int], "{invalid=invalid}")
 
     def test_error_duration(self) -> None:
         with raises(
@@ -382,7 +389,14 @@ class TestParseText:
         ):
             _ = parse_text(float, "invalid")
 
-    def test_error_frozenset(self) -> None:
+    def test_error_frozenset_extract_group(self) -> None:
+        with raises(
+            _ParseTextParseError,
+            match=r"Unable to parse frozenset\[int\]; got 'invalid'",
+        ):
+            _ = parse_text(frozenset[int], "invalid")
+
+    def test_error_frozenset_internal(self) -> None:
         with raises(
             _ParseTextParseError,
             match=r"Unable to parse frozenset\[int\]; got '\{invalid\}'",
@@ -445,7 +459,13 @@ class TestParseText:
         ):
             _ = parse_text(Sentinel, "invalid")
 
-    def test_error_set(self) -> None:
+    def test_error_set_extract_group(self) -> None:
+        with raises(
+            _ParseTextParseError, match=r"Unable to parse set\[int\]; got 'invalid'"
+        ):
+            _ = parse_text(set[int], "invalid")
+
+    def test_error_set_internal(self) -> None:
         with raises(
             _ParseTextParseError, match=r"Unable to parse set\[int\]; got '\{invalid\}'"
         ):
@@ -473,6 +493,13 @@ class TestParseText:
             _ = parse_text(tuple[int, int], "invalid")
 
     def test_error_tuple_internal(self) -> None:
+        with raises(
+            _ParseTextParseError,
+            match=r"Unable to parse tuple\[int, int\]; got '\(invalid,invalid\)'",
+        ):
+            _ = parse_text(tuple[int, int], "(invalid,invalid)")
+
+    def test_error_tuple_inconsistent_args_and_texts(self) -> None:
         with raises(
             _ParseTextParseError,
             match=r"Unable to parse tuple\[int, int\]; got '\(invalid,invalid\)'",
