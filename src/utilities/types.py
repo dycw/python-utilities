@@ -232,7 +232,7 @@ class SupportsRound(Protocol[_T_co]):
 
 # parse
 type ParseObjectExtra = Mapping[Any, Callable[[str], Any]]
-type SerializeObjectExtra = Mapping[type[Any], Callable[[Any], str]]
+type SerializeObjectExtra = Mapping[Any, Callable[[Any], str]]
 
 
 # pathlib
