@@ -995,7 +995,7 @@ class TestMonth:
             _ = Month(2000, 13)
 
 
-class TestParseAndSerializeMonth:
+class TestSerializeAndParseMonth:
     @given(month=months())
     def test_main(self, *, month: Month) -> None:
         serialized = serialize_month(month)
