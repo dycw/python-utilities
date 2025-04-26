@@ -6,8 +6,13 @@ from re import IGNORECASE, Match, search
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Literal, overload, override
 
+from utilities.iterables import CheckDuplicatesError, check_duplicates
+from utilities.reprlib import get_repr
+
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
+
+    from utilities.types import StrStrMapping
 
 
 def parse_bool(text: str, /) -> bool:
@@ -81,14 +86,63 @@ def _snake_case_title(match: Match[str], /) -> str:
 ##
 
 
+@overload
 def split_key_value_pairs(
-    text: str, /, *, list_separator: str = ",", pair_separator: str = "="
-) -> Sequence[tuple[str, str]]:
+    text: str,
+    /,
+    *,
+    list_separator: str = ",",
+    pair_separator: str = "=",
+    mapping: Literal[True],
+) -> StrStrMapping: ...
+@overload
+def split_key_value_pairs(
+    text: str,
+    /,
+    *,
+    list_separator: str = ",",
+    pair_separator: str = "=",
+    mapping: Literal[False] = False,
+) -> Sequence[tuple[str, str]]: ...
+@overload
+def split_key_value_pairs(
+    text: str,
+    /,
+    *,
+    list_separator: str = ",",
+    pair_separator: str = "=",
+    mapping: bool = False,
+) -> Sequence[tuple[str, str]] | StrStrMapping: ...
+def split_key_value_pairs(
+    text: str,
+    /,
+    *,
+    list_separator: str = ",",
+    pair_separator: str = "=",
+    mapping: bool = False,
+) -> Sequence[tuple[str, str]] | StrStrMapping:
     """Split a string into key-value pairs."""
-    return [
+    pairs = [
         split_str(text_i, separator=pair_separator, n=2)
         for text_i in split_str(text, separator=list_separator)
     ]
+    if not mapping:
+        return pairs
+    try:
+        check_duplicates(k for k, _ in pairs)
+    except CheckDuplicatesError as error:
+        raise SplitKeyValuePairsError(text=text, counts=error.counts) from None
+    return dict(pairs)
+
+
+@dataclass(kw_only=True, slots=True)
+class SplitKeyValuePairsError(Exception):
+    text: str
+    counts: Mapping[str, int]
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to split {self.text!r} into a mapping since there are duplicate keys; got {get_repr(self.counts)}"
 
 
 ##

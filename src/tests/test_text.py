@@ -20,6 +20,7 @@ from utilities.hypothesis import text_ascii
 from utilities.text import (
     ParseBoolError,
     ParseNoneError,
+    SplitKeyValuePairsError,
     SplitStrError,
     join_strs,
     parse_bool,
@@ -91,6 +92,18 @@ class TestSplitKeyValuePairs:
         text, expected = case
         result = split_key_value_pairs(text)
         assert result == expected
+
+    def test_mapping(self) -> None:
+        result = split_key_value_pairs("a=1,b=22,c=333", mapping=True)
+        expected = {"a": "1", "b": "22", "c": "333"}
+        assert result == expected
+
+    def test_error(self) -> None:
+        with raises(
+            SplitKeyValuePairsError,
+            match=r"Unable to split 'a=1,a=22,a=333' into a mapping since there are duplicate keys; got \{'a': 3\}",
+        ):
+            _ = split_key_value_pairs("a=1,a=22,a=333", mapping=True)
 
 
 class TestSplitStrAndJoinStr:
