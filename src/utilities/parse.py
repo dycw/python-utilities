@@ -26,7 +26,6 @@ from utilities.text import (
     parse_bool,
     parse_none,
     split_key_value_pairs,
-    split_str,
 )
 from utilities.types import Duration, Number, ParseTextExtra
 from utilities.typing import (
@@ -188,6 +187,8 @@ def _parse_text_dict_type(
     text: str,
     /,
     *,
+    list_separator: str = ",",
+    pair_separator: str = "=",
     head: bool = False,
     case_sensitive: bool = False,
     extra: ParseTextExtra | None = None,
@@ -197,10 +198,18 @@ def _parse_text_dict_type(
         inner = extract_group(r"^{(.*)}$", text, flags=DOTALL)
     except ExtractGroupError:
         raise _ParseTextParseError(type_=type_, text=text) from None
-    inner.split(",")
-    map(_parse_text_split_key_value_pair, text)
-
-    z
+    pairs = split_key_value_pairs(
+        inner,
+        list_separator=list_separator,
+        pair_separator=pair_separator,
+        mapping=True,
+    )
+    return {
+        parse_text(
+            key, k, head=head, case_sensitive=case_sensitive, extra=extra
+        ): parse_text(value, v, head=head, case_sensitive=case_sensitive, extra=extra)
+        for k, v in pairs.items()
+    }
 
 
 def _parse_text_union_type(
@@ -280,7 +289,9 @@ class _ParseTextExtraNonUniqueError(ParseTextError):
 ##
 
 
-def to_text(obj: Any, /) -> str:
+def to_text(
+    obj: Any, /, *, list_separator: str = ",", pair_separator: str = "="
+) -> str:
     """Convert an object to text."""
     if (obj is None) or isinstance(
         obj, bool | int | float | str | Path | Sentinel | Version
@@ -305,7 +316,19 @@ def to_text(obj: Any, /) -> str:
     if isinstance(obj, Enum):
         return obj.name
     if isinstance(obj, dict):
-        joined = ",".join(f"{to_text(k)}:{to_text(v)}" for k, v in obj.items())
+        items = (
+            (
+                to_text(
+                    k, list_separator=list_separator, pair_separator=pair_separator
+                ),
+                to_text(
+                    v, list_separator=list_separator, pair_separator=pair_separator
+                ),
+            )
+            for k, v in obj.items()
+        )
+        joined_items = (join_strs(item, separator=pair_separator) for item in items)
+        joined = join_strs(joined_items, separator=list_separator)
         return f"{{{joined}}}"
     raise NotImplementedError(obj)
 
