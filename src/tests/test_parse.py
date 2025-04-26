@@ -108,11 +108,11 @@ class TestSerializeAndParseObject:
         expected = DataClassFutureInt(int_=int_)
         assert result == expected
 
-    @given(value=floats())
-    def test_float(self, *, value: float) -> None:
-        serialized = serialize_object(value)
+    @given(float_=floats())
+    def test_float(self, *, float_: float) -> None:
+        serialized = serialize_object(float_)
         result = parse_object(float, serialized)
-        assert is_equal(result, value)
+        assert is_equal(result, float_)
 
     @given(values=frozensets(dates()))
     def test_frozenset(self, *, values: frozenset[dt.date]) -> None:
@@ -120,11 +120,11 @@ class TestSerializeAndParseObject:
         result = parse_object(frozenset[dt.date], serialized)
         assert result == values
 
-    @given(value=integers())
-    def test_int(self, *, value: int) -> None:
-        serialized = serialize_object(value)
+    @given(int_=integers())
+    def test_int(self, *, int_: int) -> None:
+        serialized = serialize_object(int_)
         result = parse_object(int, serialized)
-        assert result == value
+        assert result == int_
 
     @given(values=lists(dates()))
     def test_list(self, *, values: list[dt.date]) -> None:
@@ -193,11 +193,11 @@ class TestSerializeAndParseObject:
         result = parse_object(int | None, serialized)
         assert result is None
 
-    @given(value=integers())
-    def test_nullable_int_int(self, *, value: int) -> None:
-        serialized = serialize_object(value)
+    @given(int_=integers())
+    def test_nullable_int_int(self, *, int_: int) -> None:
+        serialized = serialize_object(int_)
         result = parse_object(int | None, serialized)
-        assert result == value
+        assert result == int_
 
     def test_sentinel(self) -> None:
         serialized = serialize_object(sentinel)
@@ -355,15 +355,15 @@ class TestParseObject:
         ):
             _ = parse_object(DataClassFutureInt, "invalid", extra={})
 
-    @given(value=integers())
-    def test_error_extra_non_unique(self, *, value: int) -> None:
+    @given(int_=integers())
+    def test_error_extra_non_unique(self, *, int_: int) -> None:
         with raises(
             _ParseObjectExtraNonUniqueError,
             match="Unable to parse <class '.*'> since `extra` must contain exactly one parent class; got <function .*>, <function .*> and perhaps more",
         ):
             _ = parse_object(
                 DataClassFutureIntChild,
-                serialize_object(value),
+                serialize_object(int_),
                 extra={
                     DataClassFutureIntParentFirst: lambda text: DataClassFutureIntChild(
                         int1=int(text), int2=0
