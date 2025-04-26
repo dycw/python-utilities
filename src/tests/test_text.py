@@ -1,31 +1,39 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     booleans,
     data,
     integers,
+    just,
     lists,
+    none,
     sampled_from,
     sets,
 )
 from pytest import mark, param, raises
 
 from utilities.hypothesis import text_ascii
-from utilities.sentinel import sentinel
 from utilities.text import (
     ParseBoolError,
     ParseNoneError,
+    SplitStrError,
     join_strs,
     parse_bool,
     parse_none,
     repr_encode,
     snake_case,
+    split_key_value_pairs,
     split_str,
     str_encode,
     strip_and_dedent,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class TestParseBool:
@@ -66,20 +74,37 @@ class TestReprEncode:
         assert result == expected
 
 
+class TestSplitKeyValuePairs:
+    @given(case=sampled_from([("", [])]))
+    def test_main(self, *, case: tuple[str, Sequence[tuple[str, str]]]) -> None:
+        text, expected = case
+        result = split_key_value_pairs(text)
+        assert result == expected
+
+
 class TestSplitStrAndJoinStr:
-    @mark.parametrize(
-        ("text", "texts"),
-        [
-            param("", [""]),
-            param("1", ["1"]),
-            param("1,2", ["1", "2"]),
-            param(",", ["", ""]),
-            param(str(sentinel), []),
-        ],
+    @given(
+        data=data(),
+        case=sampled_from([
+            ("", 0, []),
+            (r"\,", 1, [""]),
+            (",", 2, ["", ""]),
+            (",,", 3, ["", "", ""]),
+            ("1", 1, ["1"]),
+            ("1,22", 2, ["1", "22"]),
+            ("1,22,333", 3, ["1", "22", "333"]),
+            ("1,,333", 3, ["1", "", "333"]),
+        ]),
     )
-    def test_main(self, *, text: str, texts: list[str]) -> None:
-        assert split_str(text) == texts
-        assert join_strs(texts) == text
+    def test_main(self, *, case: tuple[str, int, list[str]], data: DataObject) -> None:
+        text, n, expected = case
+        n_use = data.draw(just(n) | none())
+        result = split_str(text, n=n_use)
+        if n_use is None:
+            assert result == expected
+        else:
+            assert result == tuple(expected)
+        assert join_strs(result) == text
 
     @given(texts=lists(text_ascii()))
     def test_generic(self, *, texts: list[str]) -> None:
@@ -88,6 +113,12 @@ class TestSplitStrAndJoinStr:
     @given(texts=sets(text_ascii()))
     def test_sort(self, *, texts: set[str]) -> None:
         assert split_str(join_strs(texts, sort=True)) == sorted(texts)
+
+    def test_error(self) -> None:
+        with raises(
+            SplitStrError, match=r"Unable to split '1,22,333' into 4 part\(s\); got 3"
+        ):
+            _ = split_str("1,22,333", n=4)
 
 
 class TestSnakeCase:
