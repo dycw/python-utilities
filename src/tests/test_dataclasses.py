@@ -38,6 +38,7 @@ from utilities.dataclasses import (
     OneFieldNonUniqueError,
     StrMappingToFieldMappingError,
     YieldFieldsError,
+    _parse_dataclass_split_key_value_pairs,
     _ParseDataClassParseValueError,
     _ParseDataClassSplitKeyValuePairsDuplicateKeysError,
     _ParseDataClassSplitKeyValuePairsSplitError,
@@ -364,6 +365,14 @@ class TestOneField:
             )
 
 
+class TestParseDataClassSplitKeyValuePairs:
+    @given(text=sampled_from(["a=1,b=22,c=333", "{a=1,b=22,c=333}"]))
+    def test_main(self, *, text: str) -> None:
+        result = _parse_dataclass_split_key_value_pairs(text, DataClassFutureInt)
+        expected = {"a": "1", "b": "22", "c": "333"}
+        assert result == expected
+
+
 class TestReplaceNonSentinel:
     def test_main(self) -> None:
         obj = DataClassFutureIntDefault()
@@ -380,6 +389,94 @@ class TestReplaceNonSentinel:
         assert obj.int_ == 1
         replace_non_sentinel(obj, int_=sentinel, in_place=True)
         assert obj.int_ == 1
+
+
+class TestSerializeAndParseDataClass:
+    @given(int_=integers())
+    def test_main_future_int(self, *, int_: int) -> None:
+        obj = DataClassFutureInt(int_=int_)
+        serialized = serialize_dataclass(obj)
+        result = parse_dataclass(serialized, DataClassFutureInt)
+        assert result == obj
+
+    def test_main_future_int_default(self) -> None:
+        obj = DataClassFutureIntDefault()
+        serialized = serialize_dataclass(obj)
+        result = parse_dataclass(serialized, DataClassFutureIntDefault)
+        assert result == obj
+
+    @given(int_=integers())
+    def test_extra_type(self, *, int_: int) -> None:
+        obj = DataClassFutureNestedOuterFirstOuter(
+            inner=DataClassFutureNestedOuterFirstInner(int_=int_)
+        )
+
+        def serializer(obj: DataClassFutureNestedOuterFirstInner, /) -> str:
+            return serialize_dataclass(obj)
+
+        serialized = serialize_dataclass(
+            obj, extra_serializers={DataClassFutureNestedOuterFirstInner: serializer}
+        )
+        result = parse_dataclass(
+            serialized,
+            DataClassFutureNestedOuterFirstOuter,
+            globalns=globals(),
+            extra_parsers={
+                DataClassFutureNestedOuterFirstInner: lambda text: parse_dataclass(
+                    text, DataClassFutureNestedOuterFirstInner
+                )
+            },
+        )
+        assert result == obj
+
+    @given(key=sampled_from(["int_", "INT_"]), int_=integers())
+    def test_parse_text_case_insensitive(self, *, key: str, int_: int) -> None:
+        result = parse_dataclass(f"{key}={int_}", DataClassFutureInt)
+        expected = DataClassFutureInt(int_=int_)
+        assert result == expected
+
+    @given(int_=integers())
+    def test_parse_text_case_sensitive(self, *, int_: int) -> None:
+        result = parse_dataclass(
+            f"int_={int_}", DataClassFutureInt, case_sensitive=True
+        )
+        expected = DataClassFutureInt(int_=int_)
+        assert result == expected
+
+    @given(key=sampled_from(["int_", "INT_"]), int_=integers())
+    def test_parse_mapping_case_insensitive(self, *, key: str, int_: int) -> None:
+        result = parse_dataclass({key: str(int_)}, DataClassFutureInt)
+        expected = DataClassFutureInt(int_=int_)
+        assert result == expected
+
+    @given(int_=integers())
+    def test_parse_mapping_case_sensitive(self, *, int_: int) -> None:
+        result = parse_dataclass(
+            {"int_": str(int_)}, DataClassFutureInt, case_sensitive=True
+        )
+        expected = DataClassFutureInt(int_=int_)
+        assert result == expected
+
+    def test_parser_split_key_value_pairs_split(self) -> None:
+        with raises(
+            _ParseDataClassSplitKeyValuePairsSplitError,
+            match="Unable to construct 'DataClassFutureInt'; failed to split key-value pair 'bbb'",
+        ):
+            _ = parse_dataclass("a=1,bbb,c=333", DataClassFutureInt)
+
+    def test_error_parse_split_key_value_pairs_duplicate(self) -> None:
+        with raises(
+            _ParseDataClassSplitKeyValuePairsDuplicateKeysError,
+            match=r"Unable to construct 'DataClassFutureInt' since there are duplicate keys; got \{'b': 2\}",
+        ):
+            _ = parse_dataclass("a=1,b=22a,b=22b,c=3", DataClassFutureInt)
+
+    def test_error_parse_value(self) -> None:
+        with raises(
+            _ParseDataClassParseValueError,
+            match="Unable to construct 'DataClassFutureInt'; unable to parse field 'int_' of type <class 'int'>; got 'invalid'",
+        ):
+            _ = parse_dataclass("int_=invalid", DataClassFutureInt)
 
 
 class TestStrMappingToFieldMapping:
@@ -465,70 +562,6 @@ class TestStrMappingToFieldMapping:
             _ = str_mapping_to_field_mapping(
                 DataClassFutureInt, {"invalid": int_}, head=True, case_sensitive=True
             )
-
-
-class TestSerializeAndParseDataClass:
-    @given(int_=integers())
-    def test_main_future_int(self, *, int_: int) -> None:
-        obj = DataClassFutureInt(int_=int_)
-        serialized = serialize_dataclass(obj)
-        result = parse_dataclass(serialized, DataClassFutureInt)
-        assert result == obj
-
-    def test_main_future_int_default(self) -> None:
-        obj = DataClassFutureIntDefault()
-        serialized = serialize_dataclass(obj)
-        result = parse_dataclass(serialized, DataClassFutureIntDefault)
-        assert result == obj
-
-    @given(key=sampled_from(["int_", "INT_"]), int_=integers())
-    def test_parse_text_case_insensitive(self, *, key: str, int_: int) -> None:
-        result = parse_dataclass(f"{key}={int_}", DataClassFutureInt)
-        expected = DataClassFutureInt(int_=int_)
-        assert result == expected
-
-    @given(int_=integers())
-    def test_parse_text_case_sensitive(self, *, int_: int) -> None:
-        result = parse_dataclass(
-            f"int_={int_}", DataClassFutureInt, case_sensitive=True
-        )
-        expected = DataClassFutureInt(int_=int_)
-        assert result == expected
-
-    @given(key=sampled_from(["int_", "INT_"]), int_=integers())
-    def test_parse_mapping_case_insensitive(self, *, key: str, int_: int) -> None:
-        result = parse_dataclass({key: str(int_)}, DataClassFutureInt)
-        expected = DataClassFutureInt(int_=int_)
-        assert result == expected
-
-    @given(int_=integers())
-    def test_parse_mapping_case_sensitive(self, *, int_: int) -> None:
-        result = parse_dataclass(
-            {"int_": str(int_)}, DataClassFutureInt, case_sensitive=True
-        )
-        expected = DataClassFutureInt(int_=int_)
-        assert result == expected
-
-    def test_parser_split_key_value_pairs_split(self) -> None:
-        with raises(
-            _ParseDataClassSplitKeyValuePairsSplitError,
-            match="Unable to construct 'DataClassFutureInt'; failed to split key-value pair 'bbb'",
-        ):
-            _ = parse_dataclass("a=1,bbb,c=333", DataClassFutureInt)
-
-    def test_error_parse_split_key_value_pairs_duplicate(self) -> None:
-        with raises(
-            _ParseDataClassSplitKeyValuePairsDuplicateKeysError,
-            match=r"Unable to construct 'DataClassFutureInt' since there are duplicate keys; got \{'b': 2\}",
-        ):
-            _ = parse_dataclass("a=1,b=22a,b=22b,c=3", DataClassFutureInt)
-
-    def test_error_parse_value(self) -> None:
-        with raises(
-            _ParseDataClassParseValueError,
-            match="Unable to construct 'DataClassFutureInt'; unable to parse field 'int_' of type <class 'int'>; got 'invalid'",
-        ):
-            _ = parse_dataclass("int_=invalid", DataClassFutureInt)
 
 
 class TestYieldFields:

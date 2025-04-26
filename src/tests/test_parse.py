@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Iterable
-from dataclasses import dataclass
 from pathlib import Path
 from types import NoneType
 from typing import Final, Literal
@@ -25,10 +24,13 @@ from pytest import raises
 from tests.test_operator import TruthEnum
 from tests.test_typing_funcs.with_future import (
     DataClassFutureInt,
+    DataClassFutureIntChild,
     DataClassFutureIntEven,
     DataClassFutureIntEvenOrOddTypeUnion,
     DataClassFutureIntEvenOrOddUnion,
     DataClassFutureIntOdd,
+    DataClassFutureIntParentFirst,
+    DataClassFutureIntParentSecond,
     TrueOrFalseFutureLit,
     TrueOrFalseFutureTypeLit,
 )
@@ -48,6 +50,8 @@ from utilities.math import is_equal
 from utilities.parse import (
     _ParseObjectExtraNonUniqueError,
     _ParseObjectParseError,
+    _SerializeObjectExtraNonUniqueError,
+    _SerializeObjectSerializeError,
     parse_object,
     serialize_object,
 )
@@ -99,11 +103,7 @@ class TestSerializeAndParseObject:
         result = parse_object(
             DataClassFutureInt,
             serialized,
-            extra={
-                DataClassFutureInt: lambda serialized: DataClassFutureInt(
-                    int_=int(serialized)
-                )
-            },
+            extra={DataClassFutureInt: lambda text: DataClassFutureInt(int_=int(text))},
         )
         expected = DataClassFutureInt(int_=value)
         assert result == expected
@@ -240,7 +240,7 @@ class TestSerializeAndParseObject:
 
     @given(value=integers())
     def test_type_union_with_extra(self, *, value: int) -> None:
-        def parse_even_or_odd(text: str, /) -> DataClassFutureIntEvenOrOddTypeUnion:
+        def parser(text: str, /) -> DataClassFutureIntEvenOrOddTypeUnion:
             value = int(text)
             match value % 2:
                 case 0:
@@ -254,7 +254,7 @@ class TestSerializeAndParseObject:
         result = parse_object(
             DataClassFutureIntEvenOrOddTypeUnion,
             serialized,
-            extra={DataClassFutureIntEvenOrOddTypeUnion: parse_even_or_odd},
+            extra={DataClassFutureIntEvenOrOddTypeUnion: parser},
         )
         match value % 2:
             case 0:
@@ -267,7 +267,7 @@ class TestSerializeAndParseObject:
 
     @given(value=integers())
     def test_union_with_extra(self, *, value: int) -> None:
-        def parse_even_or_odd(text: str, /) -> DataClassFutureIntEvenOrOddUnion:
+        def parser(text: str, /) -> DataClassFutureIntEvenOrOddUnion:
             value = int(text)
             match value % 2:
                 case 0:
@@ -281,7 +281,7 @@ class TestSerializeAndParseObject:
         result = parse_object(
             DataClassFutureIntEvenOrOddUnion,
             serialized,
-            extra={DataClassFutureIntEvenOrOddUnion: parse_even_or_odd},
+            extra={DataClassFutureIntEvenOrOddUnion: parser},
         )
         match value % 2:
             case 0:
@@ -299,7 +299,7 @@ class TestSerializeAndParseObject:
         assert result == version
 
 
-class TestParseSerialized:
+class TestParseObject:
     def test_error_bool(self) -> None:
         with raises(
             _ParseObjectParseError,
@@ -357,27 +357,20 @@ class TestParseSerialized:
 
     @given(value=integers())
     def test_error_extra_non_unique(self, *, value: int) -> None:
-        @dataclass(kw_only=True)
-        class Parent1:
-            x: int = 0
-
-        @dataclass(kw_only=True)
-        class Parent2:
-            y: int = 0
-
-        @dataclass(kw_only=True)
-        class Child(Parent1, Parent2): ...
-
         with raises(
             _ParseObjectExtraNonUniqueError,
             match="Unable to parse <class '.*'> since `extra` must contain exactly one parent class; got <function .*>, <function .*> and perhaps more",
         ):
             _ = parse_object(
-                Child,
+                DataClassFutureIntChild,
                 serialize_object(value),
                 extra={
-                    Parent1: lambda serialized: Child(x=int(serialized)),
-                    Parent2: lambda serialized: Child(y=int(serialized)),
+                    DataClassFutureIntParentFirst: lambda text: DataClassFutureIntChild(
+                        int1=int(text), int2=0
+                    ),
+                    DataClassFutureIntParentSecond: lambda text: DataClassFutureIntChild(
+                        int1=0, int2=int(text)
+                    ),
                 },
             )
 
@@ -538,6 +531,33 @@ class TestParseSerialized:
 
 
 class TestSerializeObject:
+    def test_error_extra_empty(self) -> None:
+        with raises(
+            _SerializeObjectSerializeError,
+            match=r"Unable to serialize object typing\.Final",
+        ):
+            _ = serialize_object(Final, extra={})
+
+    @given(int1=integers(), int2=integers())
+    def test_error_extra_non_unique(self, *, int1: int, int2: int) -> None:
+        def serializer1(obj: DataClassFutureIntParentFirst, /) -> str:
+            return str(obj.int1)
+
+        def serializer2(obj: DataClassFutureIntParentSecond, /) -> str:
+            return str(obj.int2)
+
+        with raises(
+            _SerializeObjectExtraNonUniqueError,
+            match=r"Unable to serialize object DataClassFutureIntChild\(.*\) since `extra` must contain exactly one parent class; got <function .*>, <function .*> and perhaps more",
+        ):
+            _ = serialize_object(
+                DataClassFutureIntChild(int1=int1, int2=int2),
+                extra={
+                    DataClassFutureIntParentFirst: serializer1,
+                    DataClassFutureIntParentSecond: serializer2,
+                },
+            )
+
     def test_error_not_implemented(self) -> None:
-        with raises(NotImplementedError):
+        with raises(_SerializeObjectSerializeError):
             _ = serialize_object(Final)

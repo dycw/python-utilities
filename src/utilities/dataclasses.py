@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from contextlib import suppress
 from dataclasses import MISSING, dataclass, field, fields, replace
 from typing import (
     TYPE_CHECKING,
@@ -22,16 +23,22 @@ from utilities.functions import (
 from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
 from utilities.parse import ParseObjectError, parse_object, serialize_object
+from utilities.re import ExtractGroupError, extract_group
 from utilities.sentinel import Sentinel, sentinel
 from utilities.text import (
+    BRACKETS,
     LIST_SEPARATOR,
     PAIR_SEPARATOR,
     _SplitKeyValuePairsDuplicateKeysError,
     _SplitKeyValuePairsSplitError,
-    join_strs,
     split_key_value_pairs,
 )
-from utilities.types import ParseObjectExtra, StrStrMapping, TDataclass
+from utilities.types import (
+    ParseObjectExtra,
+    SerializeObjectExtra,
+    StrStrMapping,
+    TDataclass,
+)
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
@@ -404,10 +411,11 @@ def serialize_dataclass(
     exclude: Iterable[str] | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
-    extra: Mapping[type[_U], Callable[[_U, _U], bool]] | None = None,
+    extra_equal: Mapping[type[_U], Callable[[_U, _U], bool]] | None = None,
     defaults: bool = False,
     list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
+    extra_serializers: SerializeObjectExtra | None = None,
 ) -> str:
     """Serialize a Dataclass."""
     mapping: StrStrMapping = {}
@@ -422,16 +430,21 @@ def serialize_dataclass(
             exclude=exclude,
             rel_tol=rel_tol,
             abs_tol=abs_tol,
-            extra=extra,
+            extra=extra_equal,
             defaults=defaults,
         ):
             mapping[fld.name] = serialize_object(
-                fld.value, list_separator=list_separator, pair_separator=pair_separator
+                fld.value,
+                list_separator=list_separator,
+                pair_separator=pair_separator,
+                extra=extra_serializers,
             )
-    joined_items = (
-        join_strs(item, separator=pair_separator) for item in mapping.items()
+    return serialize_object(
+        mapping,
+        list_separator=list_separator,
+        pair_separator=pair_separator,
+        extra=extra_serializers,
     )
-    return join_strs(joined_items, separator=list_separator)
 
 
 def parse_dataclass(
@@ -441,6 +454,7 @@ def parse_dataclass(
     *,
     list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
+    brackets: Iterable[tuple[str, str]] | None = BRACKETS,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     warn_name_errors: bool = False,
@@ -453,7 +467,11 @@ def parse_dataclass(
     match text_or_mapping:
         case str() as text:
             keys_to_serializes = _parse_dataclass_split_key_value_pairs(
-                text, cls, list_separator=list_separator, pair_separator=pair_separator
+                text,
+                cls,
+                list_separator=list_separator,
+                pair_separator=pair_separator,
+                brackets=brackets,
             )
         case Mapping() as keys_to_serializes:
             ...
@@ -477,7 +495,14 @@ def parse_dataclass(
     )
     field_names_to_values = {
         f.name: _parse_dataclass_parse_text(
-            f, t, cls, head=head, case_sensitive=case_sensitive, extra=extra_parsers
+            f,
+            t,
+            cls,
+            list_separator=list_separator,
+            pair_separator=pair_separator,
+            head=head,
+            case_sensitive=case_sensitive,
+            extra=extra_parsers,
         )
         for f, t in fields_to_serializes.items()
     }
@@ -501,12 +526,16 @@ def _parse_dataclass_split_key_value_pairs(
     *,
     list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
+    brackets: Iterable[tuple[str, str]] | None = BRACKETS,
 ) -> StrStrMapping:
+    with suppress(ExtractGroupError):
+        text = extract_group(r"^\{?(.*?)\}?$", text)
     try:
         return split_key_value_pairs(
             text,
             list_separator=list_separator,
             pair_separator=pair_separator,
+            brackets=brackets,
             mapping=True,
         )
     except _SplitKeyValuePairsSplitError as error:
