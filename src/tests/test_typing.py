@@ -525,7 +525,7 @@ class TestIsInstanceGen:
             (sampled_from([1, 2, 3]), Literal[1, 2], False),
         ]),
     )
-    @settings(phases={Phase.shrink})
+    @settings(phases={Phase.generate})
     def test_main(
         self, *, data: DataObject, case: tuple[SearchStrategy[Any], Any, bool]
     ) -> None:
