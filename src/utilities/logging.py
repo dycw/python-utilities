@@ -37,7 +37,6 @@ from typing import (
     override,
 )
 
-from utilities.atomicwrites import move_many, writer
 from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
     SECOND,
@@ -244,6 +243,8 @@ class _RolloverActions:
     rotations: set[_Rotation] = field(default_factory=set)
 
     def do(self) -> None:
+        from utilities.atomicwrites import move_many
+
         for deletion in self.deletions:  # skipif-ci-and-windows
             deletion.delete()
         move_many(  # skipif-ci-and-windows
@@ -388,6 +389,8 @@ class StandaloneFileHandler(Handler):
 
     @override
     def emit(self, record: LogRecord) -> None:
+        from utilities.atomicwrites import writer
+
         try:
             path = (
                 resolve_path(path=self._path)
