@@ -146,7 +146,7 @@ def parse_object(
             extra=extra,
         )
     if is_union_type(type_):
-        return _parse_object_union_type(type_, text, extra=extra)
+        return _parse_object_union_type(type_, text)
     raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
@@ -367,9 +367,7 @@ def _parse_object_set_type(
         raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
-def _parse_object_union_type(
-    type_: Any, text: str, /, *, extra: ParseObjectExtra | None = None
-) -> Any:
+def _parse_object_union_type(type_: Any, text: str, /) -> Any:
     if type_ is Number:
         try:
             return parse_number(text)
@@ -382,13 +380,6 @@ def _parse_object_union_type(
             return parse_duration(text)
         except ParseDurationError:
             raise _ParseObjectParseError(type_=type_, text=text) from None
-    if extra is not None:
-        try:
-            parser = one(p for c, p in extra.items() if c is type_)
-        except OneEmptyError:
-            pass
-        else:
-            return parser(text)
     raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
