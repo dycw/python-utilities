@@ -68,9 +68,7 @@ def parse_object(
         except ParseNoneError:
             raise _ParseObjectParseError(type_=type_, text=text) from None
     if isinstance(type_, type):
-        return _parse_object_type(
-            type_, text, case_sensitive=case_sensitive, extra=extra
-        )
+        return _parse_object_type(type_, text, case_sensitive=case_sensitive)
     if is_dict_type(type_):
         return _parse_object_dict_type(
             type_,
@@ -153,12 +151,7 @@ def parse_object(
 
 
 def _parse_object_type(
-    cls: type[Any],
-    text: str,
-    /,
-    *,
-    case_sensitive: bool = False,
-    extra: ParseObjectExtra | None = None,
+    cls: type[Any], text: str, /, *, case_sensitive: bool = False
 ) -> Any:
     """Parse text."""
     if issubclass(cls, NoneType):
@@ -228,17 +221,6 @@ def _parse_object_type(
             return parse_timedelta(text)
         except ParseTimedeltaError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
-    if extra is not None:
-        try:
-            parser = one(p for c, p in extra.items() if issubclass(cls, c))
-        except OneEmptyError:
-            pass
-        except OneNonUniqueError as error:
-            raise _ParseObjectExtraNonUniqueError(
-                type_=cls, text=text, first=error.first, second=error.second
-            ) from None
-        else:
-            return parser(text)
     raise _ParseObjectParseError(type_=cls, text=text)
 
 
@@ -300,7 +282,9 @@ def _parse_object_dict_type(
 
 def _parse_object_extra(cls: Any, text: str, extra: ParseObjectExtra, /) -> Any:
     try:
-        parser = one(p for c, p in extra.items() if is_subclass_gen(cls, c))
+        parser = one(
+            p for c, p in extra.items() if (cls is c) or is_subclass_gen(cls, c)
+        )
     except OneEmptyError:
         raise _ParseObjectParseError(type_=cls, text=text) from None
     except OneNonUniqueError as error:
@@ -554,7 +538,9 @@ def _serialize_object_dict(
 
 def _serialize_object_extra(obj: Any, extra: SerializeObjectExtra, /) -> str:
     try:
-        serializer = one(s for c, s in extra.items() if is_instance_gen(obj, c))
+        serializer = one(
+            s for c, s in extra.items() if (obj is c) or is_instance_gen(obj, c)
+        )
     except OneEmptyError:
         raise _SerializeObjectSerializeError(obj=obj) from None
     except OneNonUniqueError as error:

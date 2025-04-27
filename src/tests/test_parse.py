@@ -321,6 +321,22 @@ class TestParseObject:
                 raise ImpossibleCaseError(case=[f"{text=}"])
         assert bool_ is expected
 
+    @given(text=sampled_from(["F_a_l_s_e", "T_r_u_e"]))
+    def test_bool_extra_not_used(self, *, text: str) -> None:
+        def parser(text: str, /) -> bool:
+            match text:
+                case "F_a_l_s_e":
+                    return False
+                case "T_r_u_e":
+                    return True
+                case _:
+                    raise ImpossibleCaseError(case=[f"{text=}"])
+
+        with raises(
+            _ParseObjectParseError, match="Unable to parse <class 'bool'>; got '.*'"
+        ):
+            _ = parse_object(bool, text, extra={int: parser})
+
     def test_error_bool(self) -> None:
         with raises(
             _ParseObjectParseError,
