@@ -23,7 +23,7 @@ from hypothesis.strategies import (
 )
 from orjson import JSONDecodeError
 from polars import Object, String, UInt64
-from pytest import approx, mark, raises
+from pytest import approx, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from tests.test_operator import (
@@ -147,7 +147,6 @@ class TestGetLogRecords:
         ),
         root=temp_paths(),
     )
-    @mark.flaky
     def test_dataframe(
         self, *, root: Path, items: Sequence[tuple[LogLevel, str, StrMapping]]
     ) -> None:
@@ -205,7 +204,6 @@ class TestGetLogRecords:
         min_log_file_line_num=integers() | none(),
         max_log_file_line_num=integers() | none(),
     )
-    @mark.flaky
     def test_filter(
         self,
         *,
