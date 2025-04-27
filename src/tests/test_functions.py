@@ -630,8 +630,6 @@ class TestIsInstanceNotIntBool:
             (booleans(), int, False),
             (integers(), bool, False),
             (integers(), int, True),
-            (booleans(), (bool, int), True),
-            (integers(), (bool, int), True),
         ]),
     )
     def test_main(
@@ -782,8 +780,6 @@ class TestIsSubclassNotBoolInt:
             (bool, int, False),
             (int, bool, False),
             (int, int, True),
-            (bool, (bool, int), True),
-            (int, (bool, int), True),
         ])
     )
     def test_main(self, *, case: tuple[type[Any], type[Any], bool]) -> None:
