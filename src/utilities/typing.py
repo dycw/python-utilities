@@ -196,6 +196,20 @@ def is_frozenset_type(obj: Any, /) -> bool:
 ##
 
 
+def is_instance_gen(obj: Any, type_: Any, /) -> Any:
+    """Check if an instance relationship holds, except bool<int."""
+    return any(_is_instance_gen_one(obj, t) for t in get_type_classes(type_))
+
+
+def _is_instance_gen_one(obj: Any, type_: type[Any], /) -> bool:
+    return isinstance(obj, type_) and not (
+        isinstance(obj, bool) and issubclass(type_, int) and not issubclass(type_, bool)
+    )
+
+
+##
+
+
 def is_list_type(obj: Any, /) -> bool:
     """Check if an object is a list type annotation."""
     return _is_annotation_of_type(obj, list)
@@ -269,6 +283,22 @@ def is_set_type(obj: Any, /) -> bool:
 ##
 
 
+def is_subclass_gen(cls: type[Any], parent: Any, /) -> bool:
+    """Generalized `issubclass`."""
+    return any(_is_subclass_gen_one(cls, p) for p in get_type_classes(parent))
+
+
+def _is_subclass_gen_one(cls: type[Any], parent: type[Any], /) -> bool:
+    return issubclass(cls, parent) and not (
+        issubclass(cls, bool)
+        and issubclass(parent, int)
+        and not issubclass(parent, bool)
+    )
+
+
+##
+
+
 def is_tuple_type(obj: Any, /) -> bool:
     """Check if an object is a tuple type annotation."""
     return _is_annotation_of_type(obj, tuple)
@@ -303,6 +333,7 @@ __all__ = [
     "get_union_type_classes",
     "is_dict_type",
     "is_frozenset_type",
+    "is_instance_gen",
     "is_list_type",
     "is_literal_type",
     "is_mapping_type",
@@ -311,6 +342,7 @@ __all__ = [
     "is_optional_type",
     "is_sequence_type",
     "is_set_type",
+    "is_subclass_gen",
     "is_tuple_type",
     "is_union_type",
 ]

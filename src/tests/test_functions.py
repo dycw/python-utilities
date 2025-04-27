@@ -97,12 +97,11 @@ from utilities.functions import (
     yield_object_properties,
 )
 from utilities.sentinel import sentinel
+from utilities.types import Number
 
 if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import Callable, Iterable
-
-    from utilities.types import Number
 
 
 _P = ParamSpec("_P")
@@ -784,9 +783,12 @@ class TestIsSubclassNotBoolInt:
             (int, int, True),
             (bool, (bool, int), True),
             (int, (bool, int), True),
+            (bool, Number, False),
+            (int, Number, True),
+            (float, Number, True),
         ])
     )
-    def test_main(self, *, case: tuple[type[Any], type[Any], bool]) -> None:
+    def test_main(self, *, case: tuple[type[Any], Any, bool]) -> None:
         child, parent, expected = case
         assert is_subclass_not_bool_int(child, parent) is expected
 
