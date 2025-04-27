@@ -20,6 +20,7 @@ from hypothesis.strategies import (
     floats,
     integers,
     just,
+    lists,
     none,
     sampled_from,
     tuples,
@@ -533,12 +534,8 @@ class TestIsInstanceGen:
                 value = data.draw(strategy)
                 assert is_instance_gen(value, type_)
             case False:
-                is_instance = True
-                for _ in range(100):
-                    value = data.draw(strategy)
-                    if not is_instance_gen(value, type_):
-                        is_instance &= False
-                assert not is_instance
+                values = data.draw(lists(strategy, min_size=100))
+                assert not all(is_instance_gen(v, type_) for v in values)
 
     @given(bool_=booleans())
     def test_bool_value_vs_custom_int(self, *, bool_: bool) -> None:
