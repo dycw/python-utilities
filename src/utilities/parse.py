@@ -4,7 +4,6 @@ import datetime as dt
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
-from inspect import getargs
 from pathlib import Path
 from re import DOTALL
 from types import NoneType
@@ -300,12 +299,7 @@ def _parse_object_dict_type(
         raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
-def _parse_object_extra(
-    cls: Any,
-    text: str,
-    extra: ParseObjectExtra,
-    /,
-) -> Any:
+def _parse_object_extra(cls: Any, text: str, extra: ParseObjectExtra, /) -> Any:
     try:
         parser = one(
             p
