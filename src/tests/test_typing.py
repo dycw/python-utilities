@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from random import Random
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Self
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, Self
 from uuid import UUID
 
 from hypothesis import given
@@ -56,6 +56,7 @@ from tests.test_typing_funcs.with_future import (
 from utilities.sentinel import Sentinel
 from utilities.types import Duration, LogLevel, Number, Parallelism, Seed
 from utilities.typing import (
+    IsInstanceGenError,
     IsSubclassGenError,
     _GetTypeClassesTupleError,
     _GetTypeClassesTypeError,
@@ -500,34 +501,57 @@ class TestIsInstanceGen:
     @given(
         data=data(),
         case=sampled_from([
+            # types - bool/int
             (booleans(), bool, None, True),
             (booleans(), int, None, False),
             (integers(), bool, None, False),
             (integers(), int, None, True),
             (booleans(), (bool, int), None, True),
             (integers(), (bool, int), None, True),
+            # types - datetime/date
             (dates(), dt.date, None, True),
             (dates(), dt.datetime, None, False),
             (datetimes(), dt.date, None, False),
             (datetimes(), dt.datetime, None, True),
+            # parent union
             (booleans(), Number, None, False),
             (integers(), Number, None, True),
             (floats(), Number, None, True),
-            (tuples(booleans()), (bool,), None, True),
-            (tuples(booleans()), (int,), None, False),
-            (tuples(integers()), (bool,), None, False),
-            (tuples(integers()), (int,), None, True),
-            (tuples(integers()), (int, int), None, False),
-            (integers(), int | None, None, True),
-            (integers() | none(), int, None, False),
-            (integers() | none(), int | None, None, True),
+            # child tuple/union - skip
+            # literals
             (sampled_from([1, 2]), Literal[1, 2, 3], 2, True),
             (sampled_from([1, 2, 3]), Literal[1, 2, 3], 3, True),
             (sampled_from([1, 2, 3]), Literal[1, 2], 3, False),
-            (booleans(), Literal[1, 2, 3], None, False),
+            (sampled_from([1, 2, 3]), int, 3, True),
             (sampled_from([1, 2, 3]), bool, 3, False),
-            (tuples(booleans()), Literal[1, 2, 3], None, False),
-            (sampled_from([1, 2, 3]), (bool,), 3, False),
+            (sampled_from(["1", "2", "3"]), str, 3, True),
+            (sampled_from(["1", "2", "3"]), bool, 3, False),
+            (sampled_from([1, "2", 3]), int | str, 3, True),
+            (sampled_from([1, "2", 3]), int, 3, False),
+            (sampled_from([1, "2", 3]), str, 3, False),
+            (booleans(), Literal[1, 2, 3], None, False),
+            # tuple types
+            (tuples(booleans()), tuple[bool], None, True),
+            (tuples(booleans()), tuple[int], None, False),
+            (tuples(integers()), tuple[bool], None, False),
+            (tuples(integers()), tuple[int], None, True),
+            (tuples(booleans()), tuple[Number], None, False),
+            (tuples(integers()), tuple[Number], None, True),
+            (tuples(floats()), tuple[Number], None, True),
+            (tuples(booleans()), bool, None, False),
+            (tuples(just("a"), booleans()), tuple[Literal["a"], bool], None, True),
+            (tuples(just("a"), booleans()), tuple[Literal["a"], int], None, False),
+            (tuples(just("a"), integers()), tuple[Literal["a"], bool], None, False),
+            (tuples(just("a"), integers()), tuple[Literal["a"], int], None, True),
+            (tuples(just("a"), booleans()), tuple[Literal["a", "b"], bool], None, True),
+            (tuples(just("a"), booleans()), tuple[Literal["a", "b"], int], None, False),
+            (
+                tuples(just("a"), integers()),
+                tuple[Literal["a", "b"], bool],
+                None,
+                False,
+            ),
+            (tuples(just("a"), integers()), tuple[Literal["a", "b"], int], None, True),
         ]),
     )
     def test_main(
@@ -560,6 +584,12 @@ class TestIsInstanceGen:
         assert not is_instance_gen(int_, MyInt)
         assert is_instance_gen(MyInt(int_), MyInt)
 
+    def test_error(self) -> None:
+        with raises(
+            IsInstanceGenError, match=r"Invalid arguments; got None and typing\.Final"
+        ):
+            _ = is_instance_gen(None, Final)
+
 
 class TestIsNamedTuple:
     def test_main(self) -> None:
@@ -581,34 +611,63 @@ class TestIsNamedTuple:
 class TestIsSubclassGen:
     @given(
         case=sampled_from([
+            # types - bool/int
             (bool, bool, True),
             (bool, int, False),
             (int, bool, False),
             (int, int, True),
             (bool, (bool, int), True),
             (int, (bool, int), True),
+            # types - datetime/date
             (dt.date, dt.date, True),
             (dt.date, dt.datetime, False),
             (dt.datetime, dt.date, False),
             (dt.datetime, dt.datetime, True),
+            # parent union
             (bool, Number, False),
             (int, Number, True),
             (float, Number, True),
-            ((bool,), (bool,), True),
-            ((bool,), (int,), False),
-            ((int,), (bool,), False),
-            ((int,), (int,), True),
-            ((int,), (int, int), False),
-            (int, int | None, True),
-            (int | None, int, False),
-            (int | None, int | None, True),
+            # child tuple
+            ((bool,), bool, True),
+            ((bool,), int, False),
+            ((int,), bool, False),
+            ((int,), int, True),
+            ((bool, int), int, False),
+            ((bool, int), (bool, int), True),
+            ((bool, int), (bool, int, float), True),
+            # child union
+            (bool, bool | None, True),
+            (bool | None, bool, False),
+            (bool | None, bool | None, True),
+            # literals
             (Literal[1, 2], Literal[1, 2, 3], True),
             (Literal[1, 2, 3], Literal[1, 2, 3], True),
             (Literal[1, 2, 3], Literal[1, 2], False),
-            (bool, Literal[1, 2, 3], False),
+            (Literal[1, 2, 3], int, True),
             (Literal[1, 2, 3], bool, False),
-            ((bool,), Literal[1, 2, 3], False),
-            (Literal[1, 2, 3], (bool,), False),
+            (Literal["1", "2", "3"], str, True),
+            (Literal["1", "2", "3"], bool, False),
+            (Literal[1, "2", 3], int | str, True),
+            (Literal[1, "2", 3], int, False),
+            (Literal[1, "2", 3], str, False),
+            (bool, Literal[1, 2, 3], False),
+            # tuple types
+            (tuple[bool], tuple[bool], True),
+            (tuple[bool], tuple[int], False),
+            (tuple[int], tuple[bool], False),
+            (tuple[int], tuple[int], True),
+            (tuple[bool], tuple[Number], False),
+            (tuple[int], tuple[Number], True),
+            (tuple[float], tuple[Number], True),
+            (tuple[bool], bool, False),
+            (tuple[Literal["a"], bool], tuple[Literal["a"], bool], True),
+            (tuple[Literal["a"], bool], tuple[Literal["a"], int], False),
+            (tuple[Literal["a"], int], tuple[Literal["a"], bool], False),
+            (tuple[Literal["a"], int], tuple[Literal["a"], int], True),
+            (tuple[Literal["a"], bool], tuple[Literal["a", "b"], bool], True),
+            (tuple[Literal["a"], bool], tuple[Literal["a", "b"], int], False),
+            (tuple[Literal["a"], int], tuple[Literal["a", "b"], bool], False),
+            (tuple[Literal["a"], int], tuple[Literal["a", "b"], int], True),
         ])
     )
     def test_main(self, *, case: tuple[type[Any], Any, bool]) -> None:
