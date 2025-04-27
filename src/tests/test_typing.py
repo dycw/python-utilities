@@ -56,6 +56,7 @@ from tests.test_typing_funcs.with_future import (
 from utilities.sentinel import Sentinel
 from utilities.types import Duration, LogLevel, Number, Parallelism, Seed
 from utilities.typing import (
+    IsSubclassGenError,
     _GetTypeClassesTupleError,
     _GetTypeClassesTypeError,
     _GetUnionTypeClassesInternalTypeError,
@@ -622,3 +623,7 @@ class TestIsSubclassGen:
         assert not is_subclass_gen(int, MyInt)
         assert is_subclass_gen(MyInt, int)
         assert is_subclass_gen(MyInt, MyInt)
+
+    def test_error(self) -> None:
+        with raises(IsSubclassGenError, match="Argument must be a class; got None"):
+            _ = is_subclass_gen(None, NoneType)

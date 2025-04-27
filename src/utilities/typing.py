@@ -371,15 +371,13 @@ def is_subclass_gen(cls: Any, parent: Any, /) -> bool:
         return _is_subclass_gen_tuple(cls, parent)
     if is_literal_type(cls) and is_literal_type(parent):
         return _is_subclass_gen_literal(cls, parent)
-    if (is_literal_type(cls) and not is_literal_type(parent)) or (
-        not is_literal_type(cls) and is_literal_type(parent)
-    ):
+    if is_literal_type(cls) is not is_literal_type(parent):
         return False
     if is_union_type(cls):
         return _is_subclass_gen_union(cls, parent)
     if isinstance(cls, type):
         return any(_is_subclass_gen_type(cls, p) for p in get_type_classes(parent))
-    raise TypeError
+    raise IsSubclassGenError(cls=cls)
 
 
 def _is_subclass_gen_type(cls: type[Any], parent: type[_T], /) -> TypeGuard[type[_T]]:
@@ -412,6 +410,15 @@ def _is_subclass_gen_union(cls: Any, parent: Any, /) -> bool:
     return all(is_subclass_gen(a, parent) for a in get_args(cls))
 
 
+@dataclass(kw_only=True, slots=True)
+class IsSubclassGenError(Exception):
+    cls: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Argument must be a class; got {self.cls!r}"
+
+
 ##
 
 
@@ -442,6 +449,7 @@ def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:
 __all__ = [
     "GetTypeClassesError",
     "GetUnionTypeClassesError",
+    "IsSubclassGenError",
     "contains_self",
     "get_literal_elements",
     "get_type_classes",
