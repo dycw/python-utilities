@@ -22,6 +22,7 @@ from typing import (
     Literal,
     TypeGuard,
     TypeVar,
+    assert_never,
     cast,
     overload,
     override,
@@ -40,7 +41,6 @@ from utilities.types import (
     TCallable2,
     TSupportsRichComparison,
     TupleOrStrMapping,
-    TypeLike,
 )
 
 if TYPE_CHECKING:
@@ -182,7 +182,9 @@ def ensure_class(
     *,
     nullable: Literal[False] = False,
 ) -> _T1 | _T2 | _T3 | _T4 | _T5: ...
-def ensure_class(obj: Any, cls: TypeLike[_T], /, *, nullable: bool = False) -> Any:
+def ensure_class(
+    obj: Any, cls: type[_T] | tuple[type[_T], ...], /, *, nullable: bool = False
+) -> Any:
     """Ensure an object is of the required class."""
     if isinstance(obj, cls) or ((obj is None) and nullable):
         return obj
@@ -192,7 +194,7 @@ def ensure_class(obj: Any, cls: TypeLike[_T], /, *, nullable: bool = False) -> A
 @dataclass(kw_only=True, slots=True)
 class EnsureClassError(Exception):
     obj: Any
-    cls: TypeLike[Any]
+    cls: type[Any] | tuple[type[Any], ...]
     nullable: bool
 
     @override
@@ -657,9 +659,23 @@ def is_hashable(obj: Any, /) -> TypeGuard[Hashable]:
 ##
 
 
-def is_instance_int_not_bool(obj: Any, /) -> TypeGuard[int]:
-    """Check if an object is an integer, and not a boolean."""
-    return isinstance(obj, int) and not isinstance(obj, bool)
+def is_instance_not_bool_int(
+    obj: Any, class_or_tuple: type[Any] | tuple[type[Any], ...], /
+) -> TypeGuard[int]:
+    """Check if an instance relationship holds, except bool<int."""
+    match class_or_tuple:
+        case type() as type_:
+            return _is_instance_not_bool_int(obj, type_)
+        case tuple() as types:
+            return any(_is_instance_not_bool_int(obj, p) for p in types)
+        case _ as never:
+            assert_never(never)
+
+
+def _is_instance_not_bool_int(obj: Any, type_: type[Any], /) -> bool:
+    return isinstance(obj, type_) and not (
+        isinstance(obj, bool) and issubclass(type_, int) and not issubclass(type_, bool)
+    )
 
 
 ##
@@ -685,9 +701,7 @@ def is_iterable_of(
 def is_iterable_of(
     obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]], /
 ) -> TypeGuard[Iterable[_T1 | _T2 | _T3 | _T4 | _T5]]: ...
-@overload
-def is_iterable_of(obj: Any, cls: TypeLike[_T], /) -> TypeGuard[Iterable[_T]]: ...
-def is_iterable_of(obj: Any, cls: TypeLike[_T], /) -> TypeGuard[Iterable[_T]]:
+def is_iterable_of(obj: Any, cls: Any, /) -> TypeGuard[Iterable[Any]]:
     """Check if an object is a iterable of tuple or string mappings."""
     return isinstance(obj, Iterable) and all(map(make_isinstance(cls), obj))
 
@@ -731,9 +745,7 @@ def is_sequence_of(
 def is_sequence_of(
     obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]], /
 ) -> TypeGuard[Sequence[_T1 | _T2 | _T3 | _T4 | _T5]]: ...
-@overload
-def is_sequence_of(obj: Any, cls: TypeLike[_T], /) -> TypeGuard[Sequence[_T]]: ...
-def is_sequence_of(obj: Any, cls: TypeLike[_T], /) -> TypeGuard[Sequence[_T]]:
+def is_sequence_of(obj: Any, cls: Any, /) -> TypeGuard[Sequence[Any]]:
     """Check if an object is a sequence of tuple or string mappings."""
     return isinstance(obj, Sequence) and is_iterable_of(obj, cls)
 
@@ -779,9 +791,25 @@ def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
 ##
 
 
-def is_subclass_int_not_bool(cls: type[Any], /) -> TypeGuard[type[int]]:
-    """Check if a class is an integer, and not a boolean."""
-    return issubclass(cls, int) and not issubclass(cls, bool)
+def is_subclass_not_bool_int(
+    cls: type[Any], class_or_tuple: type[Any] | tuple[type[Any], ...], /
+) -> bool:
+    """Check if a subclass relationship holds, except bool<int."""
+    match class_or_tuple:
+        case type() as parent:
+            return _is_subclass_int_not_bool_one(cls, parent)
+        case tuple() as parents:
+            return any(_is_subclass_int_not_bool_one(cls, p) for p in parents)
+        case _ as never:
+            assert_never(never)
+
+
+def _is_subclass_int_not_bool_one(cls: type[Any], parent: type[Any], /) -> bool:
+    return issubclass(cls, parent) and not (
+        issubclass(cls, bool)
+        and issubclass(parent, int)
+        and not issubclass(parent, bool)
+    )
 
 
 ##
@@ -823,14 +851,19 @@ def make_isinstance(
 def make_isinstance(
     cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]], /
 ) -> Callable[[Any], TypeGuard[_T1 | _T2 | _T3 | _T4 | _T5]]: ...
-@overload
-def make_isinstance(cls: TypeLike[_T], /) -> Callable[[Any], TypeGuard[_T]]: ...
-def make_isinstance(cls: TypeLike[_T], /) -> Callable[[Any], TypeGuard[_T]]:
+def make_isinstance(
+    cls: type[_T] | tuple[type[_T], ...], /
+) -> Callable[[Any], TypeGuard[Any]]:
     """Make a curried `isinstance` function."""
     return partial(_make_instance_core, cls=cls)
 
 
-def _make_instance_core(obj: Any, /, *, cls: TypeLike[_T]) -> TypeGuard[_T]:
+##
+
+
+def _make_instance_core(
+    obj: Any, /, *, cls: type[_T] | tuple[type[_T], ...]
+) -> TypeGuard[_T]:
     return isinstance(obj, cls)
 
 
@@ -1044,7 +1077,7 @@ __all__ = [
     "is_dataclass_class",
     "is_dataclass_instance",
     "is_hashable",
-    "is_instance_int_not_bool",
+    "is_instance_not_bool_int",
     "is_iterable_of",
     "is_none",
     "is_not_none",
@@ -1052,7 +1085,7 @@ __all__ = [
     "is_sized",
     "is_sized_not_str",
     "is_string_mapping",
-    "is_subclass_int_not_bool",
+    "is_subclass_not_bool_int",
     "is_tuple",
     "is_tuple_or_str_mapping",
     "make_isinstance",
