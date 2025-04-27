@@ -773,6 +773,31 @@ def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
 ##
 
 
+def is_subclass_not_bool_int(
+    cls: type[Any], class_or_tuple: type[Any] | tuple[type[Any], ...], /
+) -> bool:
+    """Check if a subclass relationship holds, except bool<int."""
+    match class_or_tuple:
+        case type() as parent:
+            return _is_subclass_int_not_bool_one(cls, parent)
+        case tuple() as parents:
+            return any(_is_subclass_int_not_bool_one(cls, p) for p in parents)
+        case _ as never:
+            assert_never(never)
+
+
+def _is_subclass_int_not_bool_one(cls: type[Any], parent: type[Any], /) -> bool:
+    """Check if a class is an integer, and not a boolean."""
+    return issubclass(cls, parent) and not (
+        issubclass(cls, bool)
+        and issubclass(parent, int)
+        and not issubclass(parent, bool)
+    )
+
+
+##
+
+
 def is_tuple(obj: Any, /) -> TypeGuard[tuple[Any, ...]]:
     """Check if an object is a tuple or string mapping."""
     return make_isinstance(tuple)(obj)

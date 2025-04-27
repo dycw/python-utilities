@@ -171,7 +171,7 @@ def _parse_object_type(
             return parse_bool(text)
         except ParseBoolError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
-    if is_subclass_gen(cls, int):
+    if is_subclass_not_bool_int(cls):
         try:
             return int(text)
         except ValueError:
@@ -466,6 +466,8 @@ def serialize_object(
     extra: SerializeObjectExtra | None = None,
 ) -> str:
     """Convert an object to text."""
+    if extra is not None:
+        return _serialize_object_extra(obj, extra)
     if (obj is None) or isinstance(
         obj, bool | int | float | str | Path | Sentinel | Version
     ):

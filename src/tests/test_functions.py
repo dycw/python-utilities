@@ -739,6 +739,29 @@ class TestIsStringMapping:
         assert result is expected
 
 
+class TestIsSubclassIntNotBool:
+    @given(
+        case=sampled_from([
+            (bool, bool, True),
+            (bool, int, False),
+            (int, bool, False),
+            (int, int, True),
+        ])
+    )
+    def test_main(self, *, case: tuple[type[Any], type[Any], bool]) -> None:
+        child, parent, expected = case
+        assert is_subclass_not_bool_int(child, parent) is expected
+
+    def test_custom_int(self) -> None:
+        class MyInt(int): ...
+
+        assert not is_subclass_not_bool_int(bool, MyInt)
+        assert not is_subclass_not_bool_int(MyInt, bool)
+        assert not is_subclass_not_bool_int(int, MyInt)
+        assert is_subclass_not_bool_int(MyInt, int)
+        assert is_subclass_not_bool_int(MyInt, MyInt)
+
+
 class TestIsTuple:
     @given(case=sampled_from([(None, False), ((1, 2, 3), True), ([1, 2, 3], False)]))
     def test_main(self, *, case: tuple[Any, bool]) -> None:

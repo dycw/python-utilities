@@ -531,6 +531,32 @@ class TestParseObject:
 
 
 class TestSerializeObject:
+    @given(bool_=booleans())
+    def test_bool_custom(self, *, bool_: bool) -> None:
+        def serializer(bool_: bool, /) -> str:  # noqa: FBT001
+            match bool_:
+                case True:
+                    return "1"
+                case False:
+                    return "0"
+
+        serialized = serialize_object(bool_, extra={int: serializer})
+        match bool_:
+            case True:
+                expected = "1"
+            case False:
+                expected = "0"
+        assert serialized == expected
+
+    @given(bool_=booleans())
+    def test_bool_not_int(self, *, bool_: bool) -> None:
+        def serializer(int_: int, /) -> str:
+            return f"({int_})"
+
+        serialized = serialize_object(bool_, extra={int: serializer})
+        expected = str(bool_)
+        assert serialized == expected
+
     @given(int_=integers())
     def test_type_with_extra(self, *, int_: int) -> None:
         obj = DataClassFutureInt(int_=int_)
