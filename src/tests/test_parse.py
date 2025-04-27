@@ -300,6 +300,27 @@ class TestSerializeAndParseObject:
 
 
 class TestParseObject:
+    @given(text=sampled_from(["F_a_l_s_e", "T_r_u_e"]))
+    def test_bool_custom(self, *, text: str) -> None:
+        def parser(text: str, /) -> bool:
+            match text:
+                case "F_a_l_s_e":
+                    return False
+                case "T_r_u_e":
+                    return True
+                case _:
+                    raise ImpossibleCaseError(case=[f"{text=}"])
+
+        bool_ = parse_object(bool, text, extra={bool: parser})
+        match text:
+            case "F_a_l_s_e":
+                expected = False
+            case "T_r_u_e":
+                expected = True
+            case _:
+                raise ImpossibleCaseError(case=[f"{text=}"])
+        assert bool_ is expected
+
     def test_error_bool(self) -> None:
         with raises(
             _ParseObjectParseError,
@@ -532,7 +553,7 @@ class TestParseObject:
 
 class TestSerializeObject:
     @given(bool_=booleans())
-    def test_bool_extra_custom(self, *, bool_: bool) -> None:
+    def test_bool_custom(self, *, bool_: bool) -> None:
         def serializer(bool_: bool, /) -> str:  # noqa: FBT001
             match bool_:
                 case True:
@@ -540,7 +561,7 @@ class TestSerializeObject:
                 case False:
                     return "0"
 
-        serialized = serialize_object(bool_, extra={int: serializer})
+        serialized = serialize_object(bool_, extra={bool: serializer})
         match bool_:
             case True:
                 expected = "1"
@@ -549,7 +570,7 @@ class TestSerializeObject:
         assert serialized == expected
 
     @given(bool_=booleans())
-    def test_bool_extra_not_not_used(self, *, bool_: bool) -> None:
+    def test_bool_extra_not_used(self, *, bool_: bool) -> None:
         def serializer(int_: int, /) -> str:
             return f"({int_})"
 

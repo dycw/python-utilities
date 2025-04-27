@@ -4,6 +4,7 @@ import datetime as dt
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
+from inspect import getargs
 from pathlib import Path
 from re import DOTALL
 from types import NoneType
@@ -61,6 +62,8 @@ def parse_object(
     extra: ParseObjectExtra | None = None,
 ) -> Any:
     """Parse text."""
+    if extra is not None:
+        return _parse_object_extra(type_, text, extra)
     if type_ is None:
         try:
             return parse_none(text)
@@ -297,6 +300,29 @@ def _parse_object_dict_type(
         raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
+def _parse_object_extra(
+    cls: Any,
+    text: str,
+    extra: ParseObjectExtra,
+    /,
+) -> Any:
+    try:
+        parser = one(
+            p
+            for c, p in extra.items()
+            if (isinstance(c, type) and issubclass(cls, c))
+            or is_subclass_not_bool_int(cls, get_args(c))
+        )
+    except OneEmptyError:
+        raise _ParseObjectParseError(type_=cls, text=text) from None
+    except OneNonUniqueError as error:
+        raise _ParseObjectExtraNonUniqueError(
+            type_=cls, text=text, first=error.first, second=error.second
+        ) from None
+    else:
+        return parser(text)
+
+
 def _parse_object_list_type(
     type_: Any,
     text: str,
@@ -468,7 +494,8 @@ def serialize_object(
 ) -> str:
     """Convert an object to text."""
     if extra is not None:
-        return _serialize_object_extra(obj, extra)
+        with suppress(_SerializeObjectSerializeError):
+            return _serialize_object_extra(obj, extra)
     if (obj is None) or isinstance(
         obj, bool | int | float | str | Path | Sentinel | Version
     ):
