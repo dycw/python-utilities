@@ -91,7 +91,6 @@ class TestContainsSelf:
         assert contains_self(obj)
 
 
-@mark.only
 class TestGetArgs:
     @mark.parametrize(
         ("obj", "expected"),
@@ -489,7 +488,6 @@ class TestIsAnnotationOfType:
         assert func(obj) is expected
 
 
-@mark.only
 class TestIsInstanceGen:
     @given(
         data=data(),
@@ -567,7 +565,6 @@ class TestIsNamedTuple:
         assert not is_namedtuple_instance(Example(x=0))
 
 
-@mark.only
 class TestIsSubclassGen:
     @given(
         case=sampled_from([
