@@ -14,7 +14,6 @@ from utilities.datetime import (
     is_subclass_date_not_datetime,
 )
 from utilities.enum import ParseEnumError, parse_enum
-from utilities.functions import is_subclass_not_bool_int
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one, one_str
 from utilities.math import ParseNumberError, parse_number
 from utilities.re import ExtractGroupError, extract_group
@@ -40,6 +39,7 @@ from utilities.typing import (
     is_literal_type,
     is_optional_type,
     is_set_type,
+    is_subclass_gen,
     is_tuple_type,
     is_union_type,
 )
@@ -174,7 +174,7 @@ def _parse_object_type(
             return parse_bool(text)
         except ParseBoolError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
-    if is_subclass_not_bool_int(cls, int):
+    if is_subclass_gen(cls, int):
         try:
             return int(text)
         except ValueError:
