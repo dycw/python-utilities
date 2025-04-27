@@ -605,14 +605,6 @@ YEAR = get_years(n=1)
 ##
 
 
-def is_instance_date_not_datetime(obj: Any, /) -> TypeGuard[dt.date]:
-    """Check if an object is a date, and not a datetime."""
-    return isinstance(obj, dt.date) and not isinstance(obj, dt.datetime)
-
-
-##
-
-
 def is_integral_timedelta(timedelta: dt.timedelta, /) -> bool:
     """Check if a timedelta is integral."""
     return (timedelta.seconds == 0) and (timedelta.microseconds == 0)
