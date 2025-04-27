@@ -22,6 +22,7 @@ from utilities.math import SafeRoundError, round_, safe_round
 from utilities.platform import SYSTEM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import MaybeStr
+from utilities.typing import is_instance_gen
 from utilities.zoneinfo import (
     UTC,
     HongKong,
@@ -140,9 +141,9 @@ def are_equal_dates_or_datetimes(
     x: DateOrDateTime, y: DateOrDateTime, /, *, strict: bool = False
 ) -> bool:
     """Check if x == y for dates/datetimes."""
-    if is_instance_date_not_datetime(x) and is_instance_date_not_datetime(y):
+    if is_instance_gen(x, dt.date) and is_instance_gen(y, dt.date):
         return x == y
-    if isinstance(x, dt.datetime) and isinstance(y, dt.datetime):
+    if is_instance_gen(x, dt.datetime) and is_instance_gen(y, dt.datetime):
         return are_equal_datetimes(x, y, strict=strict)
     raise AreEqualDatesOrDateTimesError(x=x, y=y)
 
@@ -210,7 +211,7 @@ def are_equal_months(x: DateOrMonth, y: DateOrMonth, /) -> bool:
 
 def check_date_not_datetime(date: dt.date, /) -> None:
     """Check if a date is not a datetime."""
-    if not is_instance_date_not_datetime(date):
+    if not is_instance_gen(date, dt.date):
         raise CheckDateNotDateTimeError(date=date)
 
 
@@ -604,14 +605,6 @@ YEAR = get_years(n=1)
 ##
 
 
-def is_instance_date_not_datetime(obj: Any, /) -> TypeGuard[dt.date]:
-    """Check if an object is a date, and not a datetime."""
-    return isinstance(obj, dt.date) and not isinstance(obj, dt.datetime)
-
-
-##
-
-
 def is_integral_timedelta(timedelta: dt.timedelta, /) -> bool:
     """Check if a timedelta is integral."""
     return (timedelta.seconds == 0) and (timedelta.microseconds == 0)
@@ -623,14 +616,6 @@ def is_integral_timedelta(timedelta: dt.timedelta, /) -> bool:
 def is_local_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
     """Check if an object is a local datetime."""
     return isinstance(obj, dt.datetime) and (obj.tzinfo is None)
-
-
-##
-
-
-def is_subclass_date_not_datetime(cls: type[Any], /) -> TypeGuard[type[dt.date]]:
-    """Check if a class is a date, and not a datetime."""
-    return issubclass(cls, dt.date) and not issubclass(cls, dt.datetime)
 
 
 ##
@@ -1359,10 +1344,8 @@ __all__ = [
     "get_today_local",
     "get_today_tokyo",
     "get_years",
-    "is_instance_date_not_datetime",
     "is_integral_timedelta",
     "is_local_datetime",
-    "is_subclass_date_not_datetime",
     "is_weekday",
     "is_zero_time",
     "is_zoned_datetime",

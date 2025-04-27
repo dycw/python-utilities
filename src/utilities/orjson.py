@@ -692,6 +692,7 @@ _LOG_RECORD_DEFAULT_ATTRS = {
     "exc_text",
     "filename",
     "funcName",
+    "getMessage",
     "levelname",
     "levelno",
     "lineno",

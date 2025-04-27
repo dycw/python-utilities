@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from dataclasses import dataclass, field
 from functools import cached_property
+from itertools import permutations
 from typing import (
     TYPE_CHECKING,
     Generic,
@@ -15,10 +16,11 @@ from typing import (
     override,
 )
 
-from utilities.datetime import ZERO_TIME, is_instance_date_not_datetime
+from utilities.datetime import ZERO_TIME
 from utilities.functions import get_class_name
 from utilities.iterables import OneUniqueNonUniqueError, always_iterable, one_unique
 from utilities.sentinel import Sentinel, sentinel
+from utilities.typing import is_instance_gen
 from utilities.whenever import (
     serialize_date,
     serialize_local_datetime,
@@ -31,6 +33,7 @@ if TYPE_CHECKING:
 
     from utilities.iterables import MaybeIterable
     from utilities.types import DateOrDateTime
+
 
 type _DateOrDateTime = Literal["date", "datetime"]
 _TPeriod = TypeVar("_TPeriod", dt.date, dt.datetime)
@@ -54,9 +57,11 @@ class Period(Generic[_TPeriod]):
     max_duration: dt.timedelta | None = field(default=None, repr=False, kw_only=True)
 
     def __post_init__(self) -> None:
-        if is_instance_date_not_datetime(
-            self.start
-        ) is not is_instance_date_not_datetime(self.end):
+        if any(
+            is_instance_gen(left, cls) is not is_instance_gen(right, cls)
+            for left, right in permutations([self.start, self.end], 2)
+            for cls in [dt.date, dt.datetime]
+        ):
             raise _PeriodDateAndDateTimeMixedError(start=self.start, end=self.end)
         for date in [self.start, self.end]:
             if isinstance(date, dt.datetime):
@@ -166,7 +171,7 @@ class Period(Generic[_TPeriod]):
     @cached_property
     def kind(self) -> _DateOrDateTime:
         """The kind of the period."""
-        return "date" if is_instance_date_not_datetime(self.start) else "datetime"
+        return "date" if is_instance_gen(self.start, dt.date) else "datetime"
 
     def replace(
         self,

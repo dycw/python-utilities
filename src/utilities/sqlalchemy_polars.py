@@ -28,7 +28,6 @@ from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from utilities.asyncio import timeout_dur
-from utilities.datetime import is_subclass_date_not_datetime
 from utilities.functions import identity
 from utilities.iterables import (
     CheckDuplicatesError,
@@ -49,6 +48,7 @@ from utilities.sqlalchemy import (
     upsert_items,
 )
 from utilities.text import snake_case
+from utilities.typing import is_subclass_gen
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -201,14 +201,14 @@ def _insert_dataframe_check_df_and_db_types(
     dtype: PolarsDataType, db_col_type: type, /
 ) -> bool:
     return (
-        ((dtype == pl.Boolean) and issubclass(db_col_type, bool))
-        or ((dtype == Date) and is_subclass_date_not_datetime(db_col_type))
-        or ((dtype == Datetime) and issubclass(db_col_type, dt.datetime))
+        ((dtype == pl.Boolean) and is_subclass_gen(db_col_type, bool))
+        or ((dtype == Date) and is_subclass_gen(db_col_type, dt.date))
+        or ((dtype == Datetime) and is_subclass_gen(db_col_type, dt.datetime))
         or ((dtype == Float64) and issubclass(db_col_type, float))
-        or ((dtype == Int32) and issubclass(db_col_type, int))
-        or ((dtype == Int64) and issubclass(db_col_type, int))
-        or ((dtype == UInt32) and issubclass(db_col_type, int))
-        or ((dtype == UInt64) and issubclass(db_col_type, int))
+        or ((dtype == Int32) and is_subclass_gen(db_col_type, int))
+        or ((dtype == Int64) and is_subclass_gen(db_col_type, int))
+        or ((dtype == UInt32) and is_subclass_gen(db_col_type, int))
+        or ((dtype == UInt64) and is_subclass_gen(db_col_type, int))
         or ((dtype == String) and issubclass(db_col_type, str))
     )
 
@@ -414,15 +414,15 @@ def _select_to_dataframe_map_table_column_type_to_dtype(
     """Map a table column type to a polars type."""
     type_use = type_() if isinstance(type_, type) else type_
     py_type = type_use.python_type
-    if issubclass(py_type, bool):
+    if is_subclass_gen(py_type, bool):
         return pl.Boolean
     if issubclass(py_type, bytes):
         return Binary
     if issubclass(py_type, decimal.Decimal):
         return pl.Decimal
-    if issubclass(py_type, dt.date) and not issubclass(py_type, dt.datetime):
+    if is_subclass_gen(py_type, dt.date):
         return pl.Date
-    if issubclass(py_type, dt.datetime):
+    if is_subclass_gen(py_type, dt.datetime):
         has_tz: bool = type_use.timezone
         return zoned_datetime(time_zone=time_zone) if has_tz else Datetime()
     if issubclass(py_type, dt.time):
@@ -431,7 +431,7 @@ def _select_to_dataframe_map_table_column_type_to_dtype(
         return pl.Duration
     if issubclass(py_type, float):
         return Float64
-    if issubclass(py_type, int):
+    if is_subclass_gen(py_type, int):
         return Int64
     if issubclass(py_type, UUID | str):
         return String
