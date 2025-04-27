@@ -10,6 +10,7 @@ from types import NoneType
 from typing import TYPE_CHECKING, Any, override
 
 from utilities.enum import ParseEnumError, parse_enum
+from utilities.functions import is_instance_not_bool_int, is_subclass_not_bool_int
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one, one_str
 from utilities.math import ParseNumberError, parse_number
 from utilities.re import ExtractGroupError, extract_group
@@ -541,7 +542,7 @@ def _serialize_object_extra(obj: Any, extra: SerializeObjectExtra, /) -> str:
         serializer = one(
             s
             for c, s in extra.items()
-            if (isinstance(c, type) and isinstance(obj, c))
+            if (isinstance(c, type) and is_instance_not_bool_int(obj, c))
             or isinstance(obj, get_args(c))
         )
     except OneEmptyError:

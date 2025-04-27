@@ -629,7 +629,7 @@ class TestIsInstanceNotIntBool:
             (integers(), int, True),
         ]),
     )
-    def test_int(
+    def test_main(
         self, *, data: DataObject, case: tuple[SearchStrategy[Any], type[Any], bool]
     ) -> None:
         strategy, type_, expected = case
