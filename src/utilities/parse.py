@@ -497,8 +497,6 @@ def serialize_object(
         return _serialize_object_set(
             obj, list_separator=list_separator, pair_separator=pair_separator
         )
-    if extra is not None:
-        return _serialize_object_extra(obj, extra)
     raise _SerializeObjectSerializeError(obj=obj)
 
 
