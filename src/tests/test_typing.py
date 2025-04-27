@@ -4,6 +4,7 @@ import datetime as dt
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from random import Random
 from types import NoneType
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Self
 from uuid import UUID
@@ -39,12 +40,15 @@ from tests.test_typing_funcs.with_future import (
     TrueOrFalseFutureTypeLit,
 )
 from utilities.sentinel import Sentinel
-from utilities.types import LogLevel, Parallelism
+from utilities.types import Duration, LogLevel, Number, Parallelism, Seed
 from utilities.typing import (
+    _GetUnionTypeClassesNotATypeError,
+    _GetUnionTypeClassesNotAUnionTypeError,
     contains_self,
     get_args,
     get_literal_elements,
     get_type_hints,
+    get_union_type_classes,
     is_dict_type,
     is_frozenset_type,
     is_list_type,
@@ -333,6 +337,34 @@ class TestGetTypeHints:
             match="Error getting type hints for <.*>; name 'Inner' is not defined",
         ):
             _ = get_type_hints(Outer, warn_name_errors=True)
+
+
+class TestGetUnionTypeClasses:
+    @given(
+        case=sampled_from([
+            (Duration, (int, float, dt.timedelta)),
+            (Number, (int, float)),
+            (Seed, (int, float, str, bytes, bytearray, Random)),
+        ])
+    )
+    def test_main(self, *, case: tuple[Any, tuple[type[Any], ...]]) -> None:
+        obj, expected = case
+        result = get_union_type_classes(obj)
+        assert result == expected
+
+    def test_error_not_a_union_type(self) -> None:
+        with raises(
+            _GetUnionTypeClassesNotAUnionTypeError,
+            match="Object must be a Union type; got None",
+        ):
+            _ = get_union_type_classes(None)
+
+    def test_error_not_a_union_type2(self) -> None:
+        with raises(
+            _GetUnionTypeClassesNotATypeError,
+            match=r"Union type must contain types only; got typing\.Literal\[True\]",
+        ):
+            _ = get_union_type_classes(Literal[True] | None)
 
 
 class TestIsAnnotationOfType:
