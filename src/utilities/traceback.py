@@ -44,7 +44,6 @@ from utilities.reprlib import (
     RICH_MAX_STRING,
     RICH_MAX_WIDTH,
 )
-from utilities.rich import yield_call_args_repr, yield_mapping_repr
 from utilities.types import TBaseException, TCallable
 from utilities.version import get_version
 from utilities.whenever import serialize_zoned_datetime
@@ -192,6 +191,8 @@ class _CallArgs:
     @classmethod
     def create(cls, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Self:
         """Make the initial trace data."""
+        from utilities.rich import yield_call_args_repr
+
         sig = signature(func)
         try:
             bound_args = sig.bind(*args, **kwargs)
@@ -428,6 +429,8 @@ class _Frame:
         depth: int = 0,
     ) -> str:
         """Format the traceback."""
+        from utilities.rich import yield_call_args_repr, yield_mapping_repr
+
         lines: list[str] = [f"Frame {index + 1}/{total}: {self.name} ({self.module})"]
         if detail:
             lines.append(indent("Inputs:", _INDENT))
