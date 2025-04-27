@@ -1,14 +1,12 @@
 from __future__ import annotations
 
+import datetime as dt
 from logging import getLogger
 from typing import TYPE_CHECKING
 
 from tzlocal import get_localzone
 
-from utilities.datetime import get_now, get_today
-
 if TYPE_CHECKING:
-    import datetime as dt
     from zoneinfo import ZoneInfo
 
 
@@ -24,7 +22,7 @@ def get_local_time_zone() -> ZoneInfo:
 
 def get_now_local() -> dt.datetime:
     """Get the current local time."""
-    return get_now(time_zone="local")
+    return dt.datetime.now(tz=get_local_time_zone())
 
 
 NOW_LOCAL = get_now_local()
@@ -32,7 +30,7 @@ NOW_LOCAL = get_now_local()
 
 def get_today_local() -> dt.date:
     """Get the current, timezone-aware local date."""
-    return get_today(time_zone="local")
+    return get_now_local().date()
 
 
 TODAY_LOCAL = get_today_local()
