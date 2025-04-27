@@ -51,7 +51,7 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureTypeLiteral,
     DataClassFutureTypeLiteralNullable,
 )
-from utilities.datetime import MINUTE, SECOND, get_now, get_now_local
+from utilities.datetime import MINUTE, SECOND, get_now
 from utilities.functions import is_sequence_of
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -83,6 +83,7 @@ from utilities.polars import check_polars_dataframe, zoned_datetime
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import DateOrDateTime, LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args
+from utilities.tzlocal import get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
