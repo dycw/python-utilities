@@ -15,6 +15,7 @@ from hypothesis.strategies import (
     frozensets,
     integers,
     lists,
+    none,
     sampled_from,
     sets,
     times,
@@ -336,6 +337,18 @@ class TestParseObject:
             _ParseObjectParseError, match="Unable to parse <class 'bool'>; got '.*'"
         ):
             _ = parse_object(bool, text, extra={int: parser})
+
+    @given(value=text_ascii(min_size=10) | none())
+    def test_optional_type_with_union_extra_not_used(
+        self, *, value: str | None
+    ) -> None:
+        text = serialize_object(value)
+
+        def parser(text: str, /) -> Number:
+            return int(text)
+
+        result = parse_object(str | None, text, extra={Number: parser})
+        assert result == value
 
     def test_error_bool(self) -> None:
         with raises(
