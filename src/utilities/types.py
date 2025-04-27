@@ -50,7 +50,7 @@ type MaybeStr[_T] = _T | str
 type MaybeType[_T] = _T | type[_T]
 type StrMapping = Mapping[str, Any]
 type StrStrMapping = Mapping[str, str]
-type TypeLike = type[Any] | tuple[type[Any], ...]
+type TypeLike[_T] = type[_T] | tuple[type[_T], ...]
 type TupleOrStrMapping = tuple[Any, ...] | StrMapping
 
 
