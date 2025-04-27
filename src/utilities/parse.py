@@ -10,7 +10,6 @@ from types import NoneType
 from typing import TYPE_CHECKING, Any, override
 
 from utilities.enum import ParseEnumError, parse_enum
-from utilities.functions import is_instance_not_bool_int, is_subclass_not_bool_int
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one, one_str
 from utilities.math import ParseNumberError, parse_number
 from utilities.re import ExtractGroupError, extract_group
@@ -174,7 +173,7 @@ def _parse_object_type(
             return parse_bool(text)
         except ParseBoolError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
-    if is_subclass_not_bool_int(cls, int):
+    if is_subclass_gen(cls, int):
         try:
             return int(text)
         except ValueError:
@@ -301,12 +300,7 @@ def _parse_object_dict_type(
 
 def _parse_object_extra(cls: Any, text: str, extra: ParseObjectExtra, /) -> Any:
     try:
-        parser = one(
-            p
-            for c, p in extra.items()
-            if (isinstance(c, type) and issubclass(cls, c))
-            or is_subclass_not_bool_int(cls, get_args(c))
-        )
+        parser = one(p for c, p in extra.items() if is_subclass_gen(cls, c))
     except OneEmptyError:
         raise _ParseObjectParseError(type_=cls, text=text) from None
     except OneNonUniqueError as error:
@@ -560,12 +554,7 @@ def _serialize_object_dict(
 
 def _serialize_object_extra(obj: Any, extra: SerializeObjectExtra, /) -> str:
     try:
-        serializer = one(
-            s
-            for c, s in extra.items()
-            if (isinstance(c, type) and is_instance_not_bool_int(obj, c))
-            or isinstance(obj, get_args(c))
-        )
+        serializer = one(s for c, s in extra.items() if is_instance_gen(obj, c))
     except OneEmptyError:
         raise _SerializeObjectSerializeError(obj=obj) from None
     except OneNonUniqueError as error:
