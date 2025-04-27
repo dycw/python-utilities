@@ -753,7 +753,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.111.2"
+version = "0.112.0"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },
