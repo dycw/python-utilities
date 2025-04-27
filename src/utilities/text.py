@@ -25,9 +25,9 @@ DEFAULT_SEPARATOR = ","
 
 def parse_bool(text: str, /) -> bool:
     """Parse text into a boolean value."""
-    if text == "0" or search("false", text, flags=IGNORECASE):
+    if search(r"^(0|False)$", text, flags=IGNORECASE):
         return False
-    if text == "1" or search("true", text, flags=IGNORECASE):
+    if search(r"^(1|True)$", text, flags=IGNORECASE):
         return True
     raise ParseBoolError(text=text)
 
@@ -46,7 +46,7 @@ class ParseBoolError(Exception):
 
 def parse_none(text: str, /) -> None:
     """Parse text into the None value."""
-    if text == "" or search("None", text, flags=IGNORECASE):
+    if search(r"^(|None)$", text, flags=IGNORECASE):
         return
     raise ParseNoneError(text=text)
 

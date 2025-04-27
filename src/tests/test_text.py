@@ -51,11 +51,10 @@ class TestParseBool:
         result = parse_bool(text_use)
         assert result is value
 
-    def test_error(self) -> None:
-        with raises(
-            ParseBoolError, match="Unable to parse boolean value; got 'invalid'"
-        ):
-            _ = parse_bool("invalid")
+    @given(text=sampled_from(["invalid", "11", "00", "ttruee", "ffalsee"]))
+    def test_error(self, *, text: str) -> None:
+        with raises(ParseBoolError, match="Unable to parse boolean value; got '.*'"):
+            _ = parse_bool(text)
 
 
 class TestParseNone:
@@ -66,9 +65,10 @@ class TestParseNone:
         result = parse_none(text_use)
         assert result is None
 
-    def test_error(self) -> None:
-        with raises(ParseNoneError, match="Unable to parse null value; got 'invalid'"):
-            _ = parse_none("invalid")
+    @given(text=sampled_from(["invalid", "nnonee"]))
+    def test_error(self, *, text: str) -> None:
+        with raises(ParseNoneError, match="Unable to parse null value; got '.*'"):
+            _ = parse_none(text)
 
 
 class TestReprEncode:

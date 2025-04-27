@@ -941,10 +941,9 @@ def dataclass_to_schema(
             dtype = struct_dtype(**dtypes)
         elif field.type_ is dt.datetime:
             dtype = _dataclass_to_schema_datetime(field)
-        elif is_union_type(field.type_) and set(get_args(field.type_)) == {
-            dt.date,
-            dt.datetime,
-        }:
+        elif is_union_type(field.type_) and set(
+            get_args(field.type_, optional_drop_none=True)
+        ) == {dt.date, dt.datetime}:
             if is_instance_gen(field.value, dt.date):
                 dtype = Date
             else:
@@ -1002,7 +1001,7 @@ def _dataclass_to_schema_one(
     if is_literal_type(obj):
         return pl.Enum(get_args(obj))
     if is_optional_type(obj):
-        inner_type = one(get_args(obj))
+        inner_type = one(get_args(obj, optional_drop_none=True))
         return _dataclass_to_schema_one(inner_type, globalns=globalns, localns=localns)
     msg = f"{obj=}"
     raise NotImplementedError(msg)
@@ -1732,7 +1731,9 @@ def _struct_from_dataclass_one(
     ):
         return String
     if is_optional_type(ann):
-        return _struct_from_dataclass_one(one(get_args(ann)), time_zone=time_zone)
+        return _struct_from_dataclass_one(
+            one(get_args(ann, optional_drop_none=True)), time_zone=time_zone
+        )
     if is_frozenset_type(ann) or is_list_type(ann) or is_set_type(ann):
         return List(_struct_from_dataclass_one(one(get_args(ann)), time_zone=time_zone))
     raise _StructFromDataClassTypeError(ann=ann)

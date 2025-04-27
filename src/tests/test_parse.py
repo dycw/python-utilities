@@ -57,6 +57,7 @@ from utilities.parse import (
     serialize_object,
 )
 from utilities.sentinel import Sentinel, sentinel
+from utilities.text import parse_bool
 from utilities.types import Duration, Number
 from utilities.version import Version
 
@@ -98,28 +99,17 @@ class TestSerializeAndParseObject:
         result = parse_object(TruthEnum, serialized)
         assert result is truth
 
-    @given(int_=integers())
-    def test_extra_type(self, *, int_: int) -> None:
-        serialized = serialize_object(int_)
-        result = parse_object(
-            DataClassFutureInt,
-            serialized,
-            extra={DataClassFutureInt: lambda text: DataClassFutureInt(int_=int(text))},
-        )
-        expected = DataClassFutureInt(int_=int_)
-        assert result == expected
-
     @given(float_=floats())
     def test_float(self, *, float_: float) -> None:
         serialized = serialize_object(float_)
         result = parse_object(float, serialized)
         assert is_equal(result, float_)
 
-    @given(values=frozensets(dates()))
-    def test_frozenset(self, *, values: frozenset[dt.date]) -> None:
-        serialized = serialize_object(values)
+    @given(dates=frozensets(dates()))
+    def test_frozenset(self, *, dates: frozenset[dt.date]) -> None:
+        serialized = serialize_object(dates)
         result = parse_object(frozenset[dt.date], serialized)
-        assert result == values
+        assert result == dates
 
     @given(int_=integers())
     def test_int(self, *, int_: int) -> None:
@@ -127,11 +117,17 @@ class TestSerializeAndParseObject:
         result = parse_object(int, serialized)
         assert result == int_
 
-    @given(values=lists(dates()))
-    def test_list(self, *, values: list[dt.date]) -> None:
-        serialized = serialize_object(values)
+    @given(dates=lists(dates()))
+    def test_list(self, *, dates: list[dt.date]) -> None:
+        serialized = serialize_object(dates)
         result = parse_object(list[dt.date], serialized)
-        assert result == values
+        assert result == dates
+
+    @given(bool_=booleans())
+    def test_literal_extra(self, *, bool_: bool) -> None:
+        text = serialize_object(bool_)
+        result = parse_object(bool, text, extra={Literal["lit"]: parse_bool})
+        assert result is bool_
 
     @given(truth=sampled_from(["true", "false"]))
     def test_literal(self, *, truth: Literal["true", "false"]) -> None:
@@ -205,11 +201,11 @@ class TestSerializeAndParseObject:
         result = parse_object(Sentinel, serialized)
         assert result is sentinel
 
-    @given(values=sets(dates()))
-    def test_set(self, *, values: set[dt.date]) -> None:
-        serialized = serialize_object(values)
+    @given(dates=sets(dates()))
+    def test_set(self, *, dates: set[dt.date]) -> None:
+        serialized = serialize_object(dates)
         result = parse_object(set[dt.date], serialized)
-        assert result == values
+        assert result == dates
 
     @given(serialized=text_ascii())
     def test_to_serialized(self, *, serialized: str) -> None:
@@ -233,6 +229,17 @@ class TestSerializeAndParseObject:
         serialized = serialize_object((x, y))
         result = parse_object(tuple[int, int], serialized)
         assert result == (x, y)
+
+    @given(int_=integers())
+    def test_type_extra(self, *, int_: int) -> None:
+        serialized = serialize_object(int_)
+        result = parse_object(
+            DataClassFutureInt,
+            serialized,
+            extra={DataClassFutureInt: lambda text: DataClassFutureInt(int_=int(text))},
+        )
+        expected = DataClassFutureInt(int_=int_)
+        assert result == expected
 
     @given(truth=sampled_from(["true", "false"]))
     def test_type_literal(self, *, truth: Literal["true", "false"]) -> None:

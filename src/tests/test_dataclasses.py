@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import NoneType
-from typing import Any, cast, override
+from typing import Any, Literal, cast, override
 
 from hypothesis import given
 from hypothesis.strategies import booleans, integers, lists, sampled_from
@@ -406,7 +406,18 @@ class TestSerializeAndParseDataClass:
         assert result == obj
 
     @given(int_=integers())
-    def test_extra_type(self, *, int_: int) -> None:
+    def test_literal_type(self, *, int_: int) -> None:
+        obj = DataClassFutureInt(int_=int_)
+        serialized = serialize_dataclass(obj)
+        result = parse_dataclass(
+            serialized,
+            DataClassFutureInt,
+            extra_parsers={Literal["lit"]: NotImplementedError},
+        )
+        assert result == obj
+
+    @given(int_=integers())
+    def test_type_extra(self, *, int_: int) -> None:
         obj = DataClassFutureNestedOuterFirstOuter(
             inner=DataClassFutureNestedOuterFirstInner(int_=int_)
         )
@@ -625,9 +636,8 @@ class TestYieldFields:
         assert result == expected
         assert is_optional_type(result.type_)
         args = get_args(result.type_)
-        assert args == (TrueOrFalseFutureLit,)
-        arg = one(args)
-        assert get_args(arg) == ("true", "false")
+        assert args == (TrueOrFalseFutureLit, NoneType)
+        assert get_args(args[0]) == ("true", "false")
 
     def test_class_future_nested(self) -> None:
         result = one(
@@ -665,9 +675,8 @@ class TestYieldFields:
         assert result == expected
         assert is_optional_type(result.type_)
         args = get_args(result.type_)
-        assert args == (TrueOrFalseFutureTypeLit,)
-        arg = one(args)
-        assert get_args(arg) == ("true", "false")
+        assert args == (TrueOrFalseFutureTypeLit, NoneType)
+        assert get_args(args[0]) == ("true", "false")
 
     def test_class_orjson_log_record(self) -> None:
         result = list(yield_fields(OrjsonLogRecord, globalns=globals()))

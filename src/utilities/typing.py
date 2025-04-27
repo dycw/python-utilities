@@ -48,14 +48,14 @@ def contains_self(obj: Any, /) -> bool:
 ##
 
 
-def get_args(obj: Any, /) -> tuple[Any, ...]:
+def get_args(obj: Any, /, *, optional_drop_none: bool = False) -> tuple[Any, ...]:
     """Get the arguments of an annotation."""
     if isinstance(obj, TypeAliasType):
         return get_args(obj.__value__)
-    if is_optional_type(obj):
-        args = _get_args(obj)
-        return tuple(a for a in args if a is not NoneType)
-    return _get_args(obj)
+    args = _get_args(obj)
+    if is_optional_type(obj) and optional_drop_none:
+        args = tuple(a for a in args if a is not NoneType)
+    return args
 
 
 ##
@@ -230,10 +230,24 @@ def is_instance_gen(
 def is_instance_gen(obj: Any, type_: Any, /) -> bool: ...
 def is_instance_gen(obj: Any, type_: Any, /) -> bool:
     """Check if an instance relationship holds, except bool<int."""
-    return any(_is_instance_gen_one(obj, t) for t in get_type_classes(type_))
+    if isinstance(obj, tuple) and isinstance(type_, tuple):
+        return _is_instance_gen_tuple(obj, type_)
+    if is_literal_type(type_):
+        return _is_instance_gen_literal(obj, type_)
+    return any(_is_instance_gen_type(obj, t) for t in get_type_classes(type_))
 
 
-def _is_instance_gen_one(obj: Any, type_: type[_T], /) -> TypeGuard[_T]:
+def _is_instance_gen_tuple(obj: tuple[Any, ...], type_: tuple[Any, ...], /) -> bool:
+    return (len(obj) == len(type_)) and all(
+        is_instance_gen(o, t) for o, t in zip(obj, type_, strict=True)
+    )
+
+
+def _is_instance_gen_literal(obj: Any, type_: type[_T], /) -> TypeGuard[_T]:
+    return obj in get_args(type_)
+
+
+def _is_instance_gen_type(obj: Any, type_: type[_T], /) -> TypeGuard[_T]:
     return (
         isinstance(obj, type_)
         and not (
@@ -350,13 +364,23 @@ def is_subclass_gen(
     /,
 ) -> TypeGuard[type[_T1 | _T2 | _T3 | _T4 | _T5]]: ...
 @overload
-def is_subclass_gen(cls: type[Any], parent: Any, /) -> bool: ...
-def is_subclass_gen(cls: type[Any], parent: Any, /) -> bool:
+def is_subclass_gen(cls: Any, parent: Any, /) -> bool: ...
+def is_subclass_gen(cls: Any, parent: Any, /) -> bool:
     """Generalized `issubclass`."""
-    return any(_is_subclass_gen_one(cls, p) for p in get_type_classes(parent))
+    if isinstance(cls, tuple) and isinstance(parent, tuple):
+        return _is_subclass_gen_tuple(cls, parent)
+    if is_literal_type(cls) and is_literal_type(parent):
+        return _is_subclass_gen_literal(cls, parent)
+    if is_literal_type(cls) is not is_literal_type(parent):
+        return False
+    if is_union_type(cls):
+        return _is_subclass_gen_union(cls, parent)
+    if isinstance(cls, type):
+        return any(_is_subclass_gen_type(cls, p) for p in get_type_classes(parent))
+    raise IsSubclassGenError(cls=cls)
 
 
-def _is_subclass_gen_one(cls: type[Any], parent: type[_T], /) -> TypeGuard[type[_T]]:
+def _is_subclass_gen_type(cls: type[Any], parent: type[_T], /) -> TypeGuard[type[_T]]:
     return (
         issubclass(cls, parent)
         and not (
@@ -370,6 +394,29 @@ def _is_subclass_gen_one(cls: type[Any], parent: type[_T], /) -> TypeGuard[type[
             and not issubclass(parent, dt.datetime)
         )
     )
+
+
+def _is_subclass_gen_tuple(cls: tuple[Any, ...], parent: tuple[Any, ...], /) -> bool:
+    return (len(cls) == len(parent)) and all(
+        is_subclass_gen(c, p) for c, p in zip(cls, parent, strict=True)
+    )
+
+
+def _is_subclass_gen_literal(cls: Any, parent: Any, /) -> bool:
+    return set(get_args(cls)).issubset(get_args(parent))
+
+
+def _is_subclass_gen_union(cls: Any, parent: Any, /) -> bool:
+    return all(is_subclass_gen(a, parent) for a in get_args(cls))
+
+
+@dataclass(kw_only=True, slots=True)
+class IsSubclassGenError(Exception):
+    cls: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Argument must be a class; got {self.cls!r}"
 
 
 ##
@@ -402,6 +449,7 @@ def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:
 __all__ = [
     "GetTypeClassesError",
     "GetUnionTypeClassesError",
+    "IsSubclassGenError",
     "contains_self",
     "get_literal_elements",
     "get_type_classes",

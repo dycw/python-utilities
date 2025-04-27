@@ -40,7 +40,7 @@ sentinel = Sentinel()
 
 def parse_sentinel(text: str, /) -> Sentinel:
     """Parse text into the Sentinel value."""
-    if text == "" or search("Sentinel", text, flags=IGNORECASE):
+    if search("^(|sentinel|<sentinel>)$", text, flags=IGNORECASE):
         return sentinel
     raise ParseSentinelError(text=text)
 
