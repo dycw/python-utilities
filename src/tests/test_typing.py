@@ -15,6 +15,9 @@ from hypothesis.strategies import (
     SearchStrategy,
     booleans,
     data,
+    dates,
+    datetimes,
+    floats,
     integers,
     just,
     none,
@@ -494,10 +497,17 @@ class TestIsInstanceGen:
             (integers(), int, True),
             (booleans(), (bool, int), True),
             (integers(), (bool, int), True),
+            (dates(), dt.date, True),
+            (dates(), dt.datetime, False),
+            (datetimes(), dt.date, False),
+            (datetimes(), dt.datetime, True),
+            (booleans(), Number, False),
+            (integers(), Number, True),
+            (floats(), Number, True),
         ]),
     )
     def test_main(
-        self, *, data: DataObject, case: tuple[SearchStrategy[Any], type[Any], bool]
+        self, *, data: DataObject, case: tuple[SearchStrategy[Any], Any, bool]
     ) -> None:
         strategy, type_, expected = case
         value = data.draw(strategy)
@@ -543,6 +553,10 @@ class TestIsSubclassGen:
             (int, int, True),
             (bool, (bool, int), True),
             (int, (bool, int), True),
+            (dt.date, dt.date, True),
+            (dt.date, dt.datetime, False),
+            (dt.datetime, dt.date, False),
+            (dt.datetime, dt.datetime, True),
             (bool, Number, False),
             (int, Number, True),
             (float, Number, True),
