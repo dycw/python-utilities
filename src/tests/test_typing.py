@@ -614,6 +614,12 @@ class TestIsSubclassGen:
             (Literal[1, 2, 3], Literal[1, 2, 3], True),
             (Literal[1, 2, 3], Literal[1, 2], False),
             (Literal[1, 2, 3], int, True),
+            (Literal[1, 2, 3], bool, False),
+            (Literal["1", "2", "3"], str, True),
+            (Literal["1", "2", "3"], bool, False),
+            (Literal[1, "2", 3], int | str, True),
+            (Literal[1, "2", 3], int, False),
+            (Literal[1, "2", 3], str, False),
             (bool, Literal[1, 2, 3], False),
             (Literal[1, 2, 3], bool, False),
             # tuple types
