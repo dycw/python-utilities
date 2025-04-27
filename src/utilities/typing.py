@@ -230,21 +230,23 @@ def is_instance_gen(
 def is_instance_gen(obj: Any, type_: Any, /) -> bool: ...
 def is_instance_gen(obj: Any, type_: Any, /) -> bool:
     """Check if an instance relationship holds, except bool<int."""
-    if isinstance(obj, tuple) and isinstance(type_, tuple):
-        return _is_instance_gen_tuple(obj, type_)
+    # parent
+    if isinstance(type_, tuple):
+        return any(is_instance_gen(obj, t) for t in type_)
     if is_literal_type(type_):
-        return _is_instance_gen_literal(obj, type_)
-    return any(_is_instance_gen_type(obj, t) for t in get_type_classes(type_))
-
-
-def _is_instance_gen_tuple(obj: tuple[Any, ...], type_: tuple[Any, ...], /) -> bool:
-    return (len(obj) == len(type_)) and all(
-        is_instance_gen(o, t) for o, t in zip(obj, type_, strict=True)
-    )
-
-
-def _is_instance_gen_literal(obj: Any, type_: type[_T], /) -> TypeGuard[_T]:
-    return obj in get_args(type_)
+        return obj in get_args(type_)
+    if is_union_type(type_):
+        return any(is_instance_gen(obj, t) for t in get_args(type_))
+    # tuple vs tuple
+    if isinstance(obj, tuple) and is_tuple_type(type_):
+        type_args = get_args(type_)
+        return (len(obj) == len(type_args)) and all(
+            is_instance_gen(o, t) for o, t in zip(obj, type_args, strict=True)
+        )
+    # basic
+    if isinstance(type_, type):
+        return any(_is_instance_gen_type(obj, t) for t in get_type_classes(type_))
+    raise IsInstanceGenError(obj=obj, type_=type_)
 
 
 def _is_instance_gen_type(obj: Any, type_: type[_T], /) -> TypeGuard[_T]:
@@ -261,6 +263,16 @@ def _is_instance_gen_type(obj: Any, type_: type[_T], /) -> TypeGuard[_T]:
             and not issubclass(type_, dt.datetime)
         )
     )
+
+
+@dataclass(kw_only=True, slots=True)
+class IsInstanceGenError(Exception):
+    obj: Any
+    type_: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid arguments; got {self.obj!r} and {self.type_!r}"
 
 
 ##
@@ -453,6 +465,7 @@ def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:
 __all__ = [
     "GetTypeClassesError",
     "GetUnionTypeClassesError",
+    "IsInstanceGenError",
     "IsSubclassGenError",
     "contains_self",
     "get_literal_elements",
