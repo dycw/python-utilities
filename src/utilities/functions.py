@@ -41,6 +41,7 @@ from utilities.types import (
     TCallable2,
     TSupportsRichComparison,
     TupleOrStrMapping,
+    TypeLike,
 )
 
 if TYPE_CHECKING:
@@ -182,9 +183,9 @@ def ensure_class(
     *,
     nullable: Literal[False] = False,
 ) -> _T1 | _T2 | _T3 | _T4 | _T5: ...
-def ensure_class(
-    obj: Any, cls: type[_T] | tuple[type[_T], ...], /, *, nullable: bool = False
-) -> Any:
+@overload
+def ensure_class(obj: Any, cls: TypeLike[_T], /, *, nullable: bool = False) -> Any: ...
+def ensure_class(obj: Any, cls: TypeLike[_T], /, *, nullable: bool = False) -> Any:
     """Ensure an object is of the required class."""
     if isinstance(obj, cls) or ((obj is None) and nullable):
         return obj
@@ -194,7 +195,7 @@ def ensure_class(
 @dataclass(kw_only=True, slots=True)
 class EnsureClassError(Exception):
     obj: Any
-    cls: type[Any] | tuple[type[Any], ...]
+    cls: TypeLike[Any]
     nullable: bool
 
     @override
