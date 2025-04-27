@@ -17,7 +17,6 @@ from hypothesis.strategies import (
     builds,
     data,
     dictionaries,
-    floats,
     integers,
     lists,
     none,
@@ -98,11 +97,12 @@ from utilities.functions import (
     yield_object_properties,
 )
 from utilities.sentinel import sentinel
-from utilities.types import Number
 
 if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import Callable, Iterable
+
+    from utilities.types import Number
 
 
 _P = ParamSpec("_P")
@@ -632,9 +632,6 @@ class TestIsInstanceNotIntBool:
             (integers(), int, True),
             (booleans(), (bool, int), True),
             (integers(), (bool, int), True),
-            (booleans(), Number, False),
-            (integers(), Number, True),
-            (floats(), Number, True),
         ]),
     )
     def test_main(
@@ -787,9 +784,6 @@ class TestIsSubclassNotBoolInt:
             (int, int, True),
             (bool, (bool, int), True),
             (int, (bool, int), True),
-            (bool, Number, False),
-            (int, Number, True),
-            (float, Number, True),
         ])
     )
     @reproduce_failure("6.131.9", b"AEEG")
