@@ -44,8 +44,8 @@ from utilities.types import Duration, LogLevel, Number, Parallelism, Seed
 from utilities.typing import (
     _GetTypeClassesTupleError,
     _GetTypeClassesTypeError,
-    _GetUnionTypeClassesNotATypeError,
-    _GetUnionTypeClassesNotAUnionTypeError,
+    _GetUnionTypeClassesInternalTypeError,
+    _GetUnionTypeClassesUnionTypeError,
     contains_self,
     get_args,
     get_literal_elements,
@@ -138,7 +138,7 @@ class TestGetTypeClasses:
         result = get_type_classes(obj)
         assert result == expected
 
-    def test_error_invalid(self) -> None:
+    def test_error_type(self) -> None:
         with raises(
             _GetTypeClassesTypeError,
             match="Object must be a type, tuple or Union type; got None",
@@ -387,16 +387,16 @@ class TestGetUnionTypeClasses:
         result = get_union_type_classes(obj)
         assert result == expected
 
-    def test_error_not_a_union_type(self) -> None:
+    def test_error_union_type(self) -> None:
         with raises(
-            _GetUnionTypeClassesNotAUnionTypeError,
+            _GetUnionTypeClassesUnionTypeError,
             match="Object must be a Union type; got None",
         ):
             _ = get_union_type_classes(None)
 
-    def test_error_not_a_type(self) -> None:
+    def test_error_interal_type(self) -> None:
         with raises(
-            _GetUnionTypeClassesNotATypeError,
+            _GetUnionTypeClassesInternalTypeError,
             match=r"Union type must contain types only; got typing\.Literal\[True\]",
         ):
             _ = get_union_type_classes(Literal[True] | None)
