@@ -1731,7 +1731,9 @@ def _struct_from_dataclass_one(
     ):
         return String
     if is_optional_type(ann):
-        return _struct_from_dataclass_one(one(get_args(ann)), time_zone=time_zone)
+        return _struct_from_dataclass_one(
+            one(get_args(ann, optional_drop_none=True)), time_zone=time_zone
+        )
     if is_frozenset_type(ann) or is_list_type(ann) or is_set_type(ann):
         return List(_struct_from_dataclass_one(one(get_args(ann)), time_zone=time_zone))
     raise _StructFromDataClassTypeError(ann=ann)
