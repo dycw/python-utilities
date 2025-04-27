@@ -56,7 +56,6 @@ from polars.exceptions import (
 from polars.testing import assert_frame_equal
 
 from utilities.dataclasses import _YieldFieldsInstance, yield_fields
-from utilities.datetime import is_instance_date_not_datetime
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     EnsureIntError,
@@ -95,6 +94,7 @@ from utilities.typing import (
     get_args,
     get_type_hints,
     is_frozenset_type,
+    is_instance_gen,
     is_list_type,
     is_literal_type,
     is_optional_type,
@@ -945,7 +945,7 @@ def dataclass_to_schema(
             dt.date,
             dt.datetime,
         }:
-            if is_instance_date_not_datetime(field.value):
+            if is_instance_gen(field.value, dt.date):
                 dtype = Date
             else:
                 dtype = _dataclass_to_schema_datetime(field)

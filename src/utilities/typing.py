@@ -14,8 +14,10 @@ from typing import (
     Self,
     TypeAliasType,
     TypeGuard,
+    TypeVar,
     Union,  # pyright: ignore[reportDeprecated]
     get_origin,
+    overload,
     override,
 )
 from typing import get_args as _get_args
@@ -26,6 +28,16 @@ from warnings import warn
 from utilities.iterables import unique_everseen
 from utilities.sentinel import Sentinel
 from utilities.types import StrMapping
+
+_T = TypeVar("_T")
+_T1 = TypeVar("_T1")
+_T2 = TypeVar("_T2")
+_T3 = TypeVar("_T3")
+_T4 = TypeVar("_T4")
+_T5 = TypeVar("_T5")
+
+
+##
 
 
 def contains_self(obj: Any, /) -> bool:
@@ -196,6 +208,26 @@ def is_frozenset_type(obj: Any, /) -> bool:
 ##
 
 
+@overload
+def is_instance_gen(obj: Any, type_: type[_T], /) -> TypeGuard[_T]: ...
+@overload
+def is_instance_gen(obj: Any, type_: tuple[_T1], /) -> TypeGuard[_T1]: ...
+@overload
+def is_instance_gen(obj: Any, type_: tuple[_T1, _T2], /) -> TypeGuard[_T1 | _T2]: ...
+@overload
+def is_instance_gen(
+    obj: Any, type_: tuple[_T1, _T2, _T3], /
+) -> TypeGuard[_T1 | _T2 | _T3]: ...
+@overload
+def is_instance_gen(
+    obj: Any, type_: tuple[_T1, _T2, _T3, _T4], /
+) -> TypeGuard[_T1 | _T2 | _T3 | _T4]: ...
+@overload
+def is_instance_gen(
+    obj: Any, type_: tuple[_T1, _T2, _T3, _T4, _T5], /
+) -> TypeGuard[_T1 | _T2 | _T3 | _T4 | _T5]: ...
+@overload
+def is_instance_gen(obj: Any, type_: Any, /) -> Any: ...
 def is_instance_gen(obj: Any, type_: Any, /) -> Any:
     """Check if an instance relationship holds, except bool<int."""
     return any(_is_instance_gen_one(obj, t) for t in get_type_classes(type_))

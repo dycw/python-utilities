@@ -107,7 +107,6 @@ from utilities.datetime import (
     get_today_local,
     get_today_tokyo,
     get_years,
-    is_instance_date_not_datetime,
     is_integral_timedelta,
     is_local_datetime,
     is_weekday,
@@ -748,16 +747,6 @@ class TestGetToday:
     @given(today=sampled_from([TODAY_UTC, TODAY_HK, TODAY_TOKYO]))
     def test_constants(self, *, today: dt.date) -> None:
         assert isinstance(today, dt.date)
-
-
-class TestIsInstanceDateNotDateTime:
-    @given(date=dates())
-    def test_date(self, *, date: dt.date) -> None:
-        assert is_instance_date_not_datetime(date)
-
-    @given(datetime=datetimes())
-    def test_datetime(self, *, datetime: dt.datetime) -> None:
-        assert not is_instance_date_not_datetime(datetime)
 
 
 class TestIsIntegralTimeDelta:

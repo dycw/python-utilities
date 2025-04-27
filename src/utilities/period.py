@@ -15,10 +15,11 @@ from typing import (
     override,
 )
 
-from utilities.datetime import ZERO_TIME, is_instance_date_not_datetime
+from utilities.datetime import ZERO_TIME
 from utilities.functions import get_class_name
 from utilities.iterables import OneUniqueNonUniqueError, always_iterable, one_unique
 from utilities.sentinel import Sentinel, sentinel
+from utilities.typing import is_instance_gen
 from utilities.whenever import (
     serialize_date,
     serialize_local_datetime,
@@ -54,9 +55,9 @@ class Period(Generic[_TPeriod]):
     max_duration: dt.timedelta | None = field(default=None, repr=False, kw_only=True)
 
     def __post_init__(self) -> None:
-        if is_instance_date_not_datetime(
-            self.start
-        ) is not is_instance_date_not_datetime(self.end):
+        if is_instance_gen(self.start, dt.date) is not is_instance_gen(
+            self.end, dt.datetime
+        ):
             raise _PeriodDateAndDateTimeMixedError(start=self.start, end=self.end)
         for date in [self.start, self.end]:
             if isinstance(date, dt.datetime):
@@ -166,7 +167,7 @@ class Period(Generic[_TPeriod]):
     @cached_property
     def kind(self) -> _DateOrDateTime:
         """The kind of the period."""
-        return "date" if is_instance_date_not_datetime(self.start) else "datetime"
+        return "date" if is_instance_gen(self.start, dt.date) else "datetime"
 
     def replace(
         self,
