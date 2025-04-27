@@ -26,7 +26,6 @@ from typing import (
     runtime_checkable,
 )
 
-from utilities.datetime import get_now_local
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     ensure_not_none,
@@ -786,6 +785,7 @@ def _yield_header_lines(
     *, version: MaybeCallableVersionLike | None = None
 ) -> Iterator[str]:
     """Yield the header lines."""
+    from utilities.tzlocal import get_now_local
     from utilities.whenever import serialize_zoned_datetime
 
     yield f"Date/time | {serialize_zoned_datetime(get_now_local())}"
