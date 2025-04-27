@@ -42,11 +42,14 @@ from tests.test_typing_funcs.with_future import (
 from utilities.sentinel import Sentinel
 from utilities.types import Duration, LogLevel, Number, Parallelism, Seed
 from utilities.typing import (
+    _GetTypeClassesTupleError,
+    _GetTypeClassesTypeError,
     _GetUnionTypeClassesNotATypeError,
     _GetUnionTypeClassesNotAUnionTypeError,
     contains_self,
     get_args,
     get_literal_elements,
+    get_type_classes,
     get_type_hints,
     get_union_type_classes,
     is_dict_type,
@@ -116,6 +119,38 @@ class TestGetLiteralElements:
         obj, expected = case
         result = get_literal_elements(obj)
         assert result == expected
+
+
+class TestGetTypeClasses:
+    @given(
+        case=sampled_from([
+            (int, (int,)),
+            ((int, float), (int, float)),
+            (Duration, (int, float, dt.timedelta)),
+            (Number, (int, float)),
+            (Seed, (int, float, str, bytes, bytearray, Random)),
+            ((int, Number), (int, int, float)),
+            ((int, (Number,)), (int, int, float)),
+        ])
+    )
+    def test_main(self, *, case: tuple[Any, tuple[type[Any], ...]]) -> None:
+        obj, expected = case
+        result = get_type_classes(obj)
+        assert result == expected
+
+    def test_error_invalid(self) -> None:
+        with raises(
+            _GetTypeClassesTypeError,
+            match="Object must be a type, tuple or Union type; got None",
+        ):
+            _ = get_type_classes(None)
+
+    def test_error_tuple(self) -> None:
+        with raises(
+            _GetTypeClassesTupleError,
+            match="Tuple must contain types, tuples or Union types only; got None",
+        ):
+            _ = get_type_classes((None,))
 
 
 class TestGetTypeHints:

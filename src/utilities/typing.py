@@ -65,6 +65,52 @@ def _get_literal_elements_inner(obj: Any, /) -> list[Any]:
 ##
 
 
+def get_type_classes(obj: Any, /) -> tuple[type[Any], ...]:
+    """Get the type classes from a type/tuple/Union type."""
+    types: Sequence[type[Any]] = []
+    if isinstance(obj, type):
+        types.append(obj)
+    elif isinstance(obj, tuple):
+        for arg in obj:
+            if isinstance(arg, type):
+                types.append(arg)
+            elif isinstance(arg, tuple):
+                types.extend(get_type_classes(arg))
+            elif is_union_type(arg):
+                types.extend(get_union_type_classes(arg))
+            else:
+                raise _GetTypeClassesTupleError(obj=obj, inner=arg)
+    elif is_union_type(obj):
+        types.extend(get_union_type_classes(obj))
+    else:
+        raise _GetTypeClassesTypeError(obj=obj)
+    return tuple(types)
+
+
+@dataclass(kw_only=True, slots=True)
+class GetTypeClassesError(Exception):
+    obj: Any
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetTypeClassesTypeError(GetTypeClassesError):
+    @override
+    def __str__(self) -> str:
+        return f"Object must be a type, tuple or Union type; got {self.obj}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetTypeClassesTupleError(GetTypeClassesError):
+    inner: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Tuple must contain types, tuples or Union types only; got {self.inner}"
+
+
+##
+
+
 def get_type_hints(
     obj: Any,
     /,
@@ -96,6 +142,7 @@ def get_type_hints(
 
 
 def get_union_type_classes(obj: Any, /) -> tuple[type[Any], ...]:
+    """Get the type classes from a Union type."""
     if not is_union_type(obj):
         raise _GetUnionTypeClassesNotAUnionTypeError(obj=obj)
     types_: Sequence[type[Any]] = []
@@ -247,9 +294,11 @@ def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:
 
 
 __all__ = [
+    "GetTypeClassesError",
     "GetUnionTypeClassesError",
     "contains_self",
     "get_literal_elements",
+    "get_type_classes",
     "get_type_hints",
     "get_union_type_classes",
     "is_dict_type",
