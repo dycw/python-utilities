@@ -55,8 +55,12 @@ class Period(Generic[_TPeriod]):
     max_duration: dt.timedelta | None = field(default=None, repr=False, kw_only=True)
 
     def __post_init__(self) -> None:
-        if is_instance_gen(self.start, dt.date) is not is_instance_gen(
-            self.end, dt.datetime
+        if (
+            is_instance_gen(self.start, dt.date)
+            is not is_instance_gen(self.end, dt.date)
+        ) or (
+            is_instance_gen(self.start, dt.datetime)
+            or is_instance_gen(self.end, dt.datetime)
         ):
             raise _PeriodDateAndDateTimeMixedError(start=self.start, end=self.end)
         for date in [self.start, self.end]:
