@@ -33,7 +33,8 @@ from utilities.datetime import get_now
 from utilities.functions import ensure_class
 from utilities.hypothesis import text_ascii, zoned_datetimes
 from utilities.polars import DatetimeUTC, zoned_datetime
-from utilities.zoneinfo import UTC, HongKong, Tokyo
+from utilities.tzdata import HongKong, Tokyo
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from pathlib import Path

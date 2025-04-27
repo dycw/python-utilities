@@ -519,25 +519,6 @@ def get_now(*, time_zone: TimeZoneLike = UTC) -> dt.datetime:
 NOW_UTC = get_now(time_zone=UTC)
 
 
-def get_now_hong_kong() -> dt.datetime:
-    """Get the current time in Hong Kong."""
-    from utilities.tzdata import HongKong
-
-    return dt.datetime.now(tz=HongKong)
-
-
-def get_now_local() -> dt.datetime:
-    """Get the current time in local."""
-    return get_now(time_zone="local")
-
-
-def get_now_tokyo() -> dt.datetime:
-    """Get the current time in Tokyo."""
-    from utilities.tzdata import Tokyo
-
-    return dt.datetime.now(tz=Tokyo)
-
-
 ##
 
 
@@ -559,21 +540,6 @@ def get_today(*, time_zone: TimeZoneLike = UTC) -> dt.date:
 
 
 TODAY_UTC = get_today(time_zone=UTC)
-
-
-def get_today_hong_kong() -> dt.date:
-    """Get the current date in Hong Kong."""
-    return get_now_hong_kong().date()
-
-
-def get_today_local() -> dt.date:
-    """Get the current, timezone-aware local date."""
-    return get_now_local().date()
-
-
-def get_today_tokyo() -> dt.date:
-    """Get the current date in Tokyo."""
-    return get_now_tokyo().date()
 
 
 ##
@@ -1316,14 +1282,8 @@ __all__ = [
     "get_half_years",
     "get_months",
     "get_now",
-    "get_now_hong_kong",
-    "get_now_local",
-    "get_now_tokyo",
     "get_quarters",
     "get_today",
-    "get_today_hong_kong",
-    "get_today_local",
-    "get_today_tokyo",
     "get_years",
     "is_integral_timedelta",
     "is_local_datetime",
