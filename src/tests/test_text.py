@@ -65,9 +65,10 @@ class TestParseNone:
         result = parse_none(text_use)
         assert result is None
 
-    def test_error(self) -> None:
-        with raises(ParseNoneError, match="Unable to parse null value; got 'invalid'"):
-            _ = parse_none("invalid")
+    @given(text=sampled_from(["invalid", "nnonee"]))
+    def test_error(self, *, text: str) -> None:
+        with raises(ParseNoneError, match="Unable to parse null value; got '.*'"):
+            _ = parse_none(text)
 
 
 class TestReprEncode:
