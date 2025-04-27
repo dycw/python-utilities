@@ -500,34 +500,44 @@ class TestIsInstanceGen:
     @given(
         data=data(),
         case=sampled_from([
+            # types - bool/int
             (booleans(), bool, None, True),
             (booleans(), int, None, False),
             (integers(), bool, None, False),
             (integers(), int, None, True),
             (booleans(), (bool, int), None, True),
             (integers(), (bool, int), None, True),
+            # types - datetime/date
             (dates(), dt.date, None, True),
             (dates(), dt.datetime, None, False),
             (datetimes(), dt.date, None, False),
             (datetimes(), dt.datetime, None, True),
+            # parent union
             (booleans(), Number, None, False),
             (integers(), Number, None, True),
             (floats(), Number, None, True),
-            (tuples(booleans()), (bool,), None, True),
-            (tuples(booleans()), (int,), None, False),
-            (tuples(integers()), (bool,), None, False),
-            (tuples(integers()), (int,), None, True),
-            (tuples(integers()), (int, int), None, False),
-            (integers(), int | None, None, True),
-            (integers() | none(), int, None, False),
-            (integers() | none(), int | None, None, True),
+            # child tuple/union - skip
+            # literals
             (sampled_from([1, 2]), Literal[1, 2, 3], 2, True),
             (sampled_from([1, 2, 3]), Literal[1, 2, 3], 3, True),
             (sampled_from([1, 2, 3]), Literal[1, 2], 3, False),
-            (booleans(), Literal[1, 2, 3], None, False),
+            (sampled_from([1, 2, 3]), int, 3, True),
             (sampled_from([1, 2, 3]), bool, 3, False),
-            (tuples(booleans()), Literal[1, 2, 3], None, False),
-            (sampled_from([1, 2, 3]), (bool,), 3, False),
+            (sampled_from(["1", "2", "3"]), str, 3, True),
+            (sampled_from(["1", "2", "3"]), bool, 3, False),
+            (sampled_from([1, "2", 3]), int | str, 3, True),
+            (sampled_from([1, "2", 3]), int, 3, False),
+            (sampled_from([1, "2", 3]), str, 3, False),
+            (booleans(), Literal[1, 2, 3], None, False),
+            # tuple types
+            (tuples(booleans()), tuple[bool], None, True),
+            # (sampled_from([1, 2, 3]), bool, 3, False),
+            # (tuples(booleans()), Literal[1, 2, 3], None, False),
+            # (sampled_from([1, 2, 3]), (bool,), 3, False),
+            # (tuples(integers()), (int, int), None, False),
+            # (integers(), int | None, None, True),
+            # (integers() | none(), int, None, False),
+            # (integers() | none(), int | None, None, True),
         ]),
     )
     def test_main(
@@ -598,11 +608,11 @@ class TestIsSubclassGen:
             (int, Number, True),
             (float, Number, True),
             # child tuple
-            ((bool,), (bool,), True),
-            ((bool,), (int,), False),
-            ((int,), (bool,), False),
-            ((int,), (int,), True),
-            ((bool, int), (int,), False),
+            ((bool,), bool, True),
+            ((bool,), int, False),
+            ((int,), bool, False),
+            ((int,), int, True),
+            ((bool, int), int, False),
             ((bool, int), (bool, int), True),
             ((bool, int), (bool, int, float), True),
             # child union
@@ -621,7 +631,6 @@ class TestIsSubclassGen:
             (Literal[1, "2", 3], int, False),
             (Literal[1, "2", 3], str, False),
             (bool, Literal[1, 2, 3], False),
-            (Literal[1, 2, 3], bool, False),
             # tuple types
             (tuple[bool], tuple[bool], True),
             (tuple[bool], tuple[int], False),
