@@ -45,12 +45,13 @@ type OpenMode = Literal[
     "x+b",
     "a+b",
 ]
-type StrMapping = Mapping[str, Any]
-type StrStrMapping = Mapping[str, str]
-type TupleOrStrMapping = tuple[Any, ...] | StrMapping
 type MaybeCallable[_T] = _T | Callable[[], _T]
 type MaybeStr[_T] = _T | str
 type MaybeType[_T] = _T | type[_T]
+type StrMapping = Mapping[str, Any]
+type StrStrMapping = Mapping[str, str]
+type TypeLike[_T] = type[_T] | tuple[type[_T], ...]
+type TupleOrStrMapping = tuple[Any, ...] | StrMapping
 
 
 # asyncio
@@ -327,5 +328,6 @@ __all__ = [
     "TimeZone",
     "TimeZoneLike",
     "TupleOrStrMapping",
+    "TypeLike",
     "WeekDay",
 ]

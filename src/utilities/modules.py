@@ -11,6 +11,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
     from types import ModuleType
 
+    from utilities.types import TypeLike
+
 
 def is_installed(module: str, /) -> bool:
     """Check if a module is installed."""
@@ -63,7 +65,7 @@ def yield_module_contents(
     *,
     missing_ok: Iterable[str] | None = None,
     recursive: bool = False,
-    type: type[Any] | tuple[type[Any], ...] | None = None,  # noqa: A002
+    type: TypeLike[Any] | None = None,  # noqa: A002
     predicate: Callable[[Any], bool] | None = None,
 ) -> Iterator[Any]:
     """Yield all the module contents under a package.

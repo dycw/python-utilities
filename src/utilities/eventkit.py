@@ -39,7 +39,7 @@ from eventkit import (
 from utilities.functions import apply_decorators
 from utilities.iterables import always_iterable
 from utilities.logging import get_logger
-from utilities.types import TCallable, TCallableMaybeCoroutine1None
+from utilities.types import TCallable, TCallableMaybeCoroutine1None, TypeLike
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -59,7 +59,7 @@ def add_listener(
     /,
     *,
     error: Callable[[Event, BaseException], MaybeCoroutine1[None]] | None = None,
-    ignore: type[BaseException] | tuple[type[BaseException], ...] | None = None,
+    ignore: TypeLike[BaseException] | None = None,
     logger: LoggerOrName | None = None,
     decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
     done: Callable[..., MaybeCoroutine1[None]] | None = None,
@@ -104,7 +104,7 @@ class LiftedEvent(Generic[TCallableMaybeCoroutine1None]):
         /,
         *,
         error: Callable[[Event, BaseException], MaybeCoroutine1[None]] | None = None,
-        ignore: type[BaseException] | tuple[type[BaseException], ...] | None = None,
+        ignore: TypeLike[BaseException] | None = None,
         logger: LoggerOrName | None = None,
         decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
         done: Callable[..., MaybeCoroutine1[None]] | None = None,
@@ -267,7 +267,7 @@ class TypedEvent(Event, Generic[TCallableMaybeCoroutine1None]):
         done: Callable[[Self], MaybeCoroutine1[None]] | None = None,
         keep_ref: bool = False,
         *,
-        ignore: type[BaseException] | tuple[type[BaseException], ...] | None = None,
+        ignore: TypeLike[BaseException] | None = None,
         logger: LoggerOrName | None = None,
         decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
     ) -> Self:
@@ -295,7 +295,7 @@ def lift_listener(
     /,
     *,
     error: Callable[[Event, BaseException], MaybeCoroutine1[None]] | None = None,
-    ignore: type[BaseException] | tuple[type[BaseException], ...] | None = None,
+    ignore: TypeLike[BaseException] | None = None,
     logger: LoggerOrName | None = None,
     decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
 ) -> Callable[..., MaybeCoroutine1[None]]:

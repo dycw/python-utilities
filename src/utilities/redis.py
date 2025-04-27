@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from redis.typing import ResponseT
 
     from utilities.iterables import MaybeIterable
-    from utilities.types import Duration
+    from utilities.types import Duration, TypeLike
 
 
 _K = TypeVar("_K")
@@ -69,9 +69,9 @@ class RedisHashMapKey(Generic[_K, _V]):
     """A hashmap key in a redis store."""
 
     name: str
-    key: type[_K]
+    key: TypeLike[_K]
     key_serializer: Callable[[_K], bytes] | None = None
-    value: type[_V]
+    value: TypeLike[_V]
     value_serializer: Callable[[_V], bytes] | None = None
     value_deserializer: Callable[[bytes], _V] | None = None
     timeout: Duration | None = None
@@ -262,10 +262,24 @@ def redis_hash_map_key(
     error: type[Exception] = TimeoutError,
     ttl: Duration | None = None,
 ) -> RedisHashMapKey[_K1 | _K2 | _K3, _V1 | _V2 | _V3]: ...
+@overload
 def redis_hash_map_key(
     name: str,
-    key: Any,
-    value: Any,
+    key: TypeLike[_K],
+    value: TypeLike[_V],
+    /,
+    *,
+    key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = None,
+    value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = None,
+    value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = None,
+    timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
+    ttl: Duration | None = None,
+) -> RedisHashMapKey[_K, _V]: ...
+def redis_hash_map_key(
+    name: str,
+    key: TypeLike[_K],
+    value: TypeLike[_V],
     /,
     *,
     key_serializer: Callable[[Any], bytes] | None = None,
@@ -274,7 +288,7 @@ def redis_hash_map_key(
     timeout: Duration | None = None,
     ttl: Duration | None = None,
     error: type[Exception] = TimeoutError,
-) -> RedisHashMapKey[Any, Any]:
+) -> RedisHashMapKey[_K, _V]:
     """Create a redis key."""
     return RedisHashMapKey(  # skipif-ci-and-not-linux
         name=name,
@@ -297,7 +311,7 @@ class RedisKey(Generic[_T]):
     """A key in a redis store."""
 
     name: str
-    type: type[_T]
+    type: TypeLike[_T]
     serializer: Callable[[_T], bytes] | None = None
     deserializer: Callable[[bytes], _T] | None = None
     timeout: Duration | None = None
@@ -420,9 +434,21 @@ def redis_key(
     error: type[Exception] = TimeoutError,
     ttl: Duration | None = None,
 ) -> RedisKey[_T1 | _T2 | _T3 | _T4 | _T5]: ...
+@overload
 def redis_key(
     name: str,
-    type_: Any,
+    type_: TypeLike[_T],
+    /,
+    *,
+    serializer: Callable[[_T1 | _T2 | _T3 | _T4 | _T5], bytes] | None = None,
+    deserializer: Callable[[bytes], _T1 | _T2 | _T3 | _T4 | _T5] | None = None,
+    timeout: Duration | None = None,
+    error: type[Exception] = TimeoutError,
+    ttl: Duration | None = None,
+) -> RedisKey[_T]: ...
+def redis_key(
+    name: str,
+    type_: TypeLike[_T],
     /,
     *,
     serializer: Callable[[Any], bytes] | None = None,
@@ -430,7 +456,7 @@ def redis_key(
     timeout: Duration | None = None,
     error: type[Exception] = TimeoutError,
     ttl: Duration | None = None,
-) -> RedisKey[Any]:
+) -> RedisKey[_T]:
     """Create a redis key."""
     return RedisKey(  # skipif-ci-and-not-linux
         name=name,

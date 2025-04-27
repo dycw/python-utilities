@@ -15,6 +15,8 @@ from pyrsistent._field_common import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from utilities.types import TypeLike
+
 
 _T = TypeVar("_T")
 _U = TypeVar("_U")
@@ -62,7 +64,7 @@ def field(
 ) -> Any: ...
 def field(
     *,
-    type: type[_T] | tuple[type[_T], ...] = PFIELD_NO_TYPE,  # noqa: A002
+    type: TypeLike[_T] = PFIELD_NO_TYPE,  # noqa: A002
     invariant: Callable[[Any], tuple[bool, Any]] = PFIELD_NO_INVARIANT,
     default: Any = PFIELD_NO_INITIAL,
     mandatory: bool = False,

@@ -7,12 +7,12 @@ from warnings import catch_warnings, filterwarnings
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
+    from utilities.types import TypeLike
+
 
 @contextmanager
 def catch_warnings_as_errors(
-    *,
-    message: str = "",
-    category: type[Warning] | tuple[type[Warning], ...] | None = None,
+    *, message: str = "", category: TypeLike[Warning] | None = None
 ) -> Iterator[None]:
     """Catch warnings as errors."""
     with _handle_warnings("error", message=message, category=category):
@@ -21,9 +21,7 @@ def catch_warnings_as_errors(
 
 @contextmanager
 def suppress_warnings(
-    *,
-    message: str = "",
-    category: type[Warning] | tuple[type[Warning], ...] | None = None,
+    *, message: str = "", category: TypeLike[Warning] | None = None
 ) -> Iterator[None]:
     """Suppress warnings."""
     with _handle_warnings("ignore", message=message, category=category):
@@ -38,7 +36,7 @@ def _handle_warnings(
     /,
     *,
     message: str = "",
-    category: type[Warning] | tuple[type[Warning], ...] | None = None,
+    category: TypeLike[Warning] | None = None,
 ) -> ExitStack:
     """Handle a set of warnings."""
     stack = ExitStack()
