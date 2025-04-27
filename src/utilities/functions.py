@@ -661,7 +661,7 @@ def is_hashable(obj: Any, /) -> TypeGuard[Hashable]:
 
 
 def is_instance_not_bool_int(
-    obj: Any, class_or_tuple: type[Any] | tuple[type[Any], ...], /
+    obj: Any, class_or_tuple: TypeLike[Any], /
 ) -> TypeGuard[int]:
     """Check if an instance relationship holds, except bool<int."""
     match class_or_tuple:
@@ -796,9 +796,7 @@ def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
 ##
 
 
-def is_subclass_not_bool_int(
-    cls: type[Any], class_or_tuple: type[Any] | tuple[type[Any], ...], /
-) -> bool:
+def is_subclass_not_bool_int(cls: type[Any], class_or_tuple: TypeLike[Any], /) -> bool:
     """Check if a subclass relationship holds, except bool<int."""
     match class_or_tuple:
         case type() as parent:
