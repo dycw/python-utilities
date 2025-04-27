@@ -40,6 +40,7 @@ from utilities.hypothesis import (
     timedeltas_2w,
     zoned_datetimes,
 )
+from utilities.tzdata import HongKong
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
@@ -89,10 +90,11 @@ from utilities.whenever import (
     serialize_timedelta,
     serialize_zoned_datetime,
 )
-from utilities.zoneinfo import UTC, HongKong, get_time_zone_name
+from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
     from utilities.types import Duration
+
 
 _TIMEDELTA_MICROSECONDS = int(1e18) * MICROSECOND
 _TIMEDELTA_OVERFLOW = dt.timedelta(days=106751991, seconds=14454, microseconds=775808)
