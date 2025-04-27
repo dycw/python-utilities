@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, TypeVar, cast
 from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
-    SearchStrategy,
     booleans,
     builds,
     data,
@@ -74,7 +73,6 @@ from utilities.functions import (
     is_dataclass_class,
     is_dataclass_instance,
     is_hashable,
-    is_instance_not_bool_int,
     is_iterable_of,
     is_none,
     is_not_none,
@@ -83,7 +81,6 @@ from utilities.functions import (
     is_sized,
     is_sized_not_str,
     is_string_mapping,
-    is_subclass_not_bool_int,
     is_tuple,
     is_tuple_or_str_mapping,
     make_isinstance,
@@ -97,11 +94,12 @@ from utilities.functions import (
     yield_object_properties,
 )
 from utilities.sentinel import sentinel
-from utilities.types import Number
 
 if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import Callable, Iterable
+
+    from utilities.types import Number
 
 
 _P = ParamSpec("_P")
@@ -621,39 +619,6 @@ class TestIsHashable:
         assert is_hashable(obj) is expected
 
 
-class TestIsInstanceNotIntBool:
-    @given(
-        data=data(),
-        case=sampled_from([
-            (booleans(), bool, True),
-            (booleans(), int, False),
-            (integers(), bool, False),
-            (integers(), int, True),
-            (booleans(), (bool, int), True),
-            (integers(), (bool, int), True),
-        ]),
-    )
-    def test_main(
-        self, *, data: DataObject, case: tuple[SearchStrategy[Any], type[Any], bool]
-    ) -> None:
-        strategy, type_, expected = case
-        value = data.draw(strategy)
-        assert is_instance_not_bool_int(value, type_) is expected
-
-    @given(bool_=booleans())
-    def test_bool_value_vs_custom_int(self, *, bool_: bool) -> None:
-        class MyInt(int): ...
-
-        assert not is_instance_not_bool_int(bool_, MyInt)
-
-    @given(int_=integers())
-    def test_int_value_vs_custom_int(self, *, int_: int) -> None:
-        class MyInt(int): ...
-
-        assert not is_instance_not_bool_int(int_, MyInt)
-        assert is_instance_not_bool_int(MyInt(int_), MyInt)
-
-
 class TestIsIterableOf:
     @given(
         case=sampled_from([
@@ -772,34 +737,6 @@ class TestIsStringMapping:
         obj, expected = case
         result = is_string_mapping(obj)
         assert result is expected
-
-
-class TestIsSubclassNotBoolInt:
-    @given(
-        case=sampled_from([
-            (bool, bool, True),
-            (bool, int, False),
-            (int, bool, False),
-            (int, int, True),
-            (bool, (bool, int), True),
-            (int, (bool, int), True),
-            (bool, Number, False),
-            (int, Number, True),
-            (float, Number, True),
-        ])
-    )
-    def test_main(self, *, case: tuple[type[Any], Any, bool]) -> None:
-        child, parent, expected = case
-        assert is_subclass_not_bool_int(child, parent) is expected
-
-    def test_custom_int(self) -> None:
-        class MyInt(int): ...
-
-        assert not is_subclass_not_bool_int(bool, MyInt)
-        assert not is_subclass_not_bool_int(MyInt, bool)
-        assert not is_subclass_not_bool_int(int, MyInt)
-        assert is_subclass_not_bool_int(MyInt, int)
-        assert is_subclass_not_bool_int(MyInt, MyInt)
 
 
 class TestIsTuple:

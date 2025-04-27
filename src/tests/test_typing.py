@@ -10,7 +10,16 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Self
 from uuid import UUID
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, just, none, sampled_from
+from hypothesis.strategies import (
+    DataObject,
+    SearchStrategy,
+    booleans,
+    data,
+    integers,
+    just,
+    none,
+    sampled_from,
+)
 from pytest import mark, param, raises
 
 from tests.test_typing_funcs.no_future import (
@@ -54,6 +63,7 @@ from utilities.typing import (
     get_union_type_classes,
     is_dict_type,
     is_frozenset_type,
+    is_instance_gen,
     is_list_type,
     is_literal_type,
     is_mapping_type,
@@ -62,6 +72,7 @@ from utilities.typing import (
     is_optional_type,
     is_sequence_type,
     is_set_type,
+    is_subclass_gen,
     is_tuple_type,
     is_union_type,
 )
@@ -473,6 +484,39 @@ class TestIsAnnotationOfType:
         assert func(obj) is expected
 
 
+class TestIsInstanceGen:
+    @given(
+        data=data(),
+        case=sampled_from([
+            (booleans(), bool, True),
+            (booleans(), int, False),
+            (integers(), bool, False),
+            (integers(), int, True),
+            (booleans(), (bool, int), True),
+            (integers(), (bool, int), True),
+        ]),
+    )
+    def test_main(
+        self, *, data: DataObject, case: tuple[SearchStrategy[Any], type[Any], bool]
+    ) -> None:
+        strategy, type_, expected = case
+        value = data.draw(strategy)
+        assert is_instance_gen(value, type_) is expected
+
+    @given(bool_=booleans())
+    def test_bool_value_vs_custom_int(self, *, bool_: bool) -> None:
+        class MyInt(int): ...
+
+        assert not is_instance_gen(bool_, MyInt)
+
+    @given(int_=integers())
+    def test_int_value_vs_custom_int(self, *, int_: int) -> None:
+        class MyInt(int): ...
+
+        assert not is_instance_gen(int_, MyInt)
+        assert is_instance_gen(MyInt(int_), MyInt)
+
+
 class TestIsNamedTuple:
     def test_main(self) -> None:
         class Example(NamedTuple):
@@ -488,3 +532,31 @@ class TestIsNamedTuple:
 
         assert not is_namedtuple_class(Example)
         assert not is_namedtuple_instance(Example(x=0))
+
+
+class TestIsSubclassGen:
+    @given(
+        case=sampled_from([
+            (bool, bool, True),
+            (bool, int, False),
+            (int, bool, False),
+            (int, int, True),
+            (bool, (bool, int), True),
+            (int, (bool, int), True),
+            (bool, Number, False),
+            (int, Number, True),
+            (float, Number, True),
+        ])
+    )
+    def test_main(self, *, case: tuple[type[Any], Any, bool]) -> None:
+        child, parent, expected = case
+        assert is_subclass_gen(child, parent) is expected
+
+    def test_custom_int(self) -> None:
+        class MyInt(int): ...
+
+        assert not is_subclass_gen(bool, MyInt)
+        assert not is_subclass_gen(MyInt, bool)
+        assert not is_subclass_gen(int, MyInt)
+        assert is_subclass_gen(MyInt, int)
+        assert is_subclass_gen(MyInt, MyInt)
