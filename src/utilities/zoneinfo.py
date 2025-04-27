@@ -8,9 +8,9 @@ from zoneinfo import ZoneInfo
 if TYPE_CHECKING:
     from utilities.types import TimeZone, TimeZoneLike
 
-HongKong = ZoneInfo("Asia/Hong_Kong")
-Tokyo = ZoneInfo("Asia/Tokyo")
+
 UTC = ZoneInfo("UTC")
+
 
 ##
 
@@ -68,11 +68,4 @@ def get_time_zone_name(time_zone: TimeZoneLike, /) -> TimeZone:
     return cast("TimeZone", ensure_time_zone(time_zone).key)
 
 
-__all__ = [
-    "UTC",
-    "EnsureTimeZoneError",
-    "HongKong",
-    "Tokyo",
-    "ensure_time_zone",
-    "get_time_zone_name",
-]
+__all__ = ["UTC", "EnsureTimeZoneError", "ensure_time_zone", "get_time_zone_name"]

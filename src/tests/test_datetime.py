@@ -6,7 +6,6 @@ from math import isclose
 from operator import eq, gt, lt
 from re import search
 from typing import TYPE_CHECKING, Any, Self
-from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
@@ -38,13 +37,9 @@ from utilities.datetime import (
     MILLISECOND,
     MINUTE,
     MONTH,
-    NOW_HK,
-    NOW_TOKYO,
     NOW_UTC,
     QUARTER,
     SECOND,
-    TODAY_HK,
-    TODAY_TOKYO,
     TODAY_UTC,
     WEEK,
     YEAR,
@@ -98,14 +93,8 @@ from utilities.datetime import (
     get_half_years,
     get_months,
     get_now,
-    get_now_hk,
-    get_now_local,
-    get_now_tokyo,
     get_quarters,
     get_today,
-    get_today_hk,
-    get_today_local,
-    get_today_tokyo,
     get_years,
     is_integral_timedelta,
     is_local_datetime,
@@ -149,10 +138,12 @@ from utilities.hypothesis import (
 )
 from utilities.math import MAX_INT32, MIN_INT32, is_integral, round_to_float
 from utilities.sentinel import Sentinel, sentinel
-from utilities.zoneinfo import UTC, HongKong, Tokyo
+from utilities.tzdata import HongKong
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from zoneinfo import ZoneInfo
 
     from utilities.sentinel import Sentinel
     from utilities.types import (
@@ -686,24 +677,14 @@ class TestGetDateTime:
 
 class TestGetNow:
     @given(time_zone=timezones())
-    def test_main(self, *, time_zone: ZoneInfo) -> None:
+    def test_function(self, *, time_zone: ZoneInfo) -> None:
         now = get_now(time_zone=time_zone)
         assert isinstance(now, dt.datetime)
         assert now.tzinfo is time_zone
 
-    def test_local(self) -> None:
-        now = get_now(time_zone="local")
-        assert isinstance(now, dt.datetime)
-        ETC = ZoneInfo("Etc/UTC")  # noqa: N806
-        assert now.tzinfo in {ETC, HongKong, Tokyo, UTC}
-
-    @given(get_now=sampled_from([get_now, get_now_local, get_now_hk, get_now_tokyo]))
-    def test_getters(self, *, get_now: Callable[[], dt.datetime]) -> None:
-        assert isinstance(get_now(), dt.date)
-
-    @given(now=sampled_from([NOW_UTC, NOW_HK, NOW_TOKYO]))
-    def test_constants(self, *, now: dt.datetime) -> None:
-        assert isinstance(now, dt.date)
+    def test_constant(self) -> None:
+        assert isinstance(NOW_UTC, dt.datetime)
+        assert NOW_UTC.tzinfo is UTC
 
 
 class TestGetTimedelta:
@@ -729,24 +710,12 @@ class TestGetTimedelta:
 
 class TestGetToday:
     @given(time_zone=timezones())
-    def test_main(self, *, time_zone: ZoneInfo) -> None:
+    def test_function(self, *, time_zone: ZoneInfo) -> None:
         today = get_today(time_zone=time_zone)
         assert isinstance(today, dt.date)
 
-    @given(
-        get_today=sampled_from([
-            get_today,
-            get_today_local,
-            get_today_hk,
-            get_today_tokyo,
-        ])
-    )
-    def test_getters(self, *, get_today: Callable[[], dt.datetime]) -> None:
-        assert isinstance(get_today(), dt.date)
-
-    @given(today=sampled_from([TODAY_UTC, TODAY_HK, TODAY_TOKYO]))
-    def test_constants(self, *, today: dt.date) -> None:
-        assert isinstance(today, dt.date)
+    def test_constant(self) -> None:
+        assert isinstance(TODAY_UTC, dt.date)
 
 
 class TestIsIntegralTimeDelta:

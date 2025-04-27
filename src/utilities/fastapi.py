@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from uvicorn import Config, Server
 
 from utilities.asyncio import AsyncService
-from utilities.datetime import SECOND, datetime_duration_to_float, get_now_local
+from utilities.datetime import SECOND, datetime_duration_to_float
 
 if TYPE_CHECKING:
     from utilities.types import Duration
@@ -26,6 +26,7 @@ class _PingerReceiverApp(FastAPI):
 
         @self.get("/ping")  # skipif-ci
         def ping() -> str:
+            from utilities.tzlocal import get_now_local  # skipif-ci
             from utilities.whenever import serialize_zoned_datetime  # skipif-ci
 
             now = serialize_zoned_datetime(get_now_local())  # skipif-ci

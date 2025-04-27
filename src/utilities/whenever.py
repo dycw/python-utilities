@@ -36,6 +36,7 @@ if TYPE_CHECKING:
         TimeLike,
     )
 
+
 MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3659635, microseconds=-1)
 MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
 

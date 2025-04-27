@@ -37,11 +37,9 @@ from typing import (
     override,
 )
 
-from utilities.atomicwrites import move_many, writer
 from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
     SECOND,
-    get_now_local,
     maybe_sub_pct_y,
     parse_datetime_compact,
     round_datetime,
@@ -200,6 +198,8 @@ def _compute_rollover_actions(
     patterns: _RolloverPatterns | None = None,
     backup_count: int = 1,
 ) -> _RolloverActions:
+    from utilities.tzlocal import get_now_local  # skipif-ci-and-windows
+
     patterns = (  # skipif-ci-and-windows
         _compute_rollover_patterns(stem, suffix) if patterns is None else patterns
     )
@@ -244,6 +244,8 @@ class _RolloverActions:
     rotations: set[_Rotation] = field(default_factory=set)
 
     def do(self) -> None:
+        from utilities.atomicwrites import move_many  # skipif-ci-and-windows
+
         for deletion in self.deletions:  # skipif-ci-and-windows
             deletion.delete()
         move_many(  # skipif-ci-and-windows
@@ -388,6 +390,9 @@ class StandaloneFileHandler(Handler):
 
     @override
     def emit(self, record: LogRecord) -> None:
+        from utilities.atomicwrites import writer
+        from utilities.tzlocal import get_now_local
+
         try:
             path = (
                 resolve_path(path=self._path)

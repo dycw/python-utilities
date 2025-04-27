@@ -69,7 +69,6 @@ from utilities.datetime import (
     date_to_month,
     datetime_duration_to_float,
     datetime_duration_to_timedelta,
-    get_now_local,
     round_datetime,
 )
 from utilities.functions import ensure_int, ensure_str, max_nullable, min_nullable
@@ -1440,6 +1439,7 @@ def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[_TestRe
     from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
 
     from utilities.redis import _TestRedis, yield_redis  #  skipif-ci-and-not-linux
+    from utilities.tzlocal import get_now_local  #  skipif-ci-and-not-linux
 
     now = get_now_local()  # skipif-ci-and-not-linux
     uuid = data.draw(uuids())  # skipif-ci-and-not-linux

@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING
 
 from pyinstrument.profiler import Profiler
 
-from utilities.datetime import get_now_local, serialize_compact
+from utilities.datetime import serialize_compact
 from utilities.pathlib import PWD
+from utilities.tzlocal import get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
