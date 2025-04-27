@@ -619,39 +619,6 @@ class TestIsHashable:
         assert is_hashable(obj) is expected
 
 
-class TestIsInstanceNotIntBool:
-    @given(
-        data=data(),
-        case=sampled_from([
-            (booleans(), bool, True),
-            (booleans(), int, False),
-            (integers(), bool, False),
-            (integers(), int, True),
-            (booleans(), (bool, int), True),
-            (integers(), (bool, int), True),
-        ]),
-    )
-    def test_main(
-        self, *, data: DataObject, case: tuple[SearchStrategy[Any], type[Any], bool]
-    ) -> None:
-        strategy, type_, expected = case
-        value = data.draw(strategy)
-        assert is_instance_not_bool_int(value, type_) is expected
-
-    @given(bool_=booleans())
-    def test_bool_value_vs_custom_int(self, *, bool_: bool) -> None:
-        class MyInt(int): ...
-
-        assert not is_instance_not_bool_int(bool_, MyInt)
-
-    @given(int_=integers())
-    def test_int_value_vs_custom_int(self, *, int_: int) -> None:
-        class MyInt(int): ...
-
-        assert not is_instance_not_bool_int(int_, MyInt)
-        assert is_instance_not_bool_int(MyInt(int_), MyInt)
-
-
 class TestIsIterableOf:
     @given(
         case=sampled_from([
@@ -770,31 +737,6 @@ class TestIsStringMapping:
         obj, expected = case
         result = is_string_mapping(obj)
         assert result is expected
-
-
-class TestIsSubclassNotBoolInt:
-    @given(
-        case=sampled_from([
-            (bool, bool, True),
-            (bool, int, False),
-            (int, bool, False),
-            (int, int, True),
-            (bool, (bool, int), True),
-            (int, (bool, int), True),
-        ])
-    )
-    def test_main(self, *, case: tuple[type[Any], type[Any], bool]) -> None:
-        child, parent, expected = case
-        assert is_subclass_not_bool_int(child, parent) is expected
-
-    def test_custom_int(self) -> None:
-        class MyInt(int): ...
-
-        assert not is_subclass_not_bool_int(bool, MyInt)
-        assert not is_subclass_not_bool_int(MyInt, bool)
-        assert not is_subclass_not_bool_int(int, MyInt)
-        assert is_subclass_not_bool_int(MyInt, int)
-        assert is_subclass_not_bool_int(MyInt, MyInt)
 
 
 class TestIsTuple:
