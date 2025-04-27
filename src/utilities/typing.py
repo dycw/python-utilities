@@ -367,18 +367,24 @@ def is_subclass_gen(
 def is_subclass_gen(cls: Any, parent: Any, /) -> bool: ...
 def is_subclass_gen(cls: Any, parent: Any, /) -> bool:
     """Generalized `issubclass`."""
+    # child
     if isinstance(cls, tuple):
         return all(is_subclass_gen(c, parent) for c in cls)
+    if is_literal_type(cls):
+        types = tuple(map(type, get_args(cls)))
+        return (
+            is_literal_type(parent) and set(get_args(cls)).issubset(get_args(parent))
+        ) or is_subclass_gen(types, parent)
     if is_union_type(cls):
         return all(is_subclass_gen(c, parent) for c in get_args(cls))
+    # parent
     if isinstance(parent, tuple):
         return any(is_subclass_gen(cls, p) for p in parent)
+    if is_literal_type(parent):
+        return is_literal_type(cls) and set(get_args(cls)).issubset(get_args(parent))
     if is_union_type(parent):
         return any(is_subclass_gen(cls, p) for p in get_args(parent))
-    if is_literal_type(cls) and is_literal_type(parent):
-        return set(get_args(cls)).issubset(get_args(parent))
-    if is_literal_type(cls) is not is_literal_type(parent):
-        return False
+    # tuple vs tuple
     if is_tuple_type(cls) and is_tuple_type(parent):
         cls_args, parent_args = get_args(cls), get_args(parent)
         return (len(cls_args) == len(parent_args)) and all(
@@ -386,6 +392,7 @@ def is_subclass_gen(cls: Any, parent: Any, /) -> bool:
         )
     if is_tuple_type(cls) is not is_tuple_type(parent):
         return False
+    # basic
     if isinstance(cls, type):
         return any(_is_subclass_gen_type(cls, p) for p in get_type_classes(parent))
     raise IsSubclassGenError(cls=cls)
