@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 
 from tzlocal import get_localzone
 
+from utilities.datetime import get_now_local, get_today_local
+
 if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
@@ -19,4 +21,8 @@ def get_local_time_zone() -> ZoneInfo:
     return time_zone
 
 
-__all__ = ["get_local_time_zone"]
+NOW_LOCAL = get_now_local()
+TODAY_LOCAL = get_today_local()
+
+
+__all__ = ["NOW_LOCAL", "TODAY_LOCAL", "get_local_time_zone"]

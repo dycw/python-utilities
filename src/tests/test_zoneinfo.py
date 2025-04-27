@@ -9,11 +9,10 @@ from hypothesis.strategies import DataObject, data, datetimes, sampled_from, tim
 from pytest import raises
 
 from utilities.hypothesis import zoned_datetimes
+from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import get_local_time_zone
 from utilities.zoneinfo import (
     UTC,
-    HongKong,
-    Tokyo,
     _EnsureTimeZoneInvalidTZInfoError,
     _EnsureTimeZoneLocalDateTimeError,
     ensure_time_zone,

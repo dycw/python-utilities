@@ -98,12 +98,12 @@ from utilities.datetime import (
     get_half_years,
     get_months,
     get_now,
-    get_now_hk,
+    get_now_hong_kong,
     get_now_local,
     get_now_tokyo,
     get_quarters,
     get_today,
-    get_today_hk,
+    get_today_hong_kong,
     get_today_local,
     get_today_tokyo,
     get_years,
@@ -149,7 +149,8 @@ from utilities.hypothesis import (
 )
 from utilities.math import MAX_INT32, MIN_INT32, is_integral, round_to_float
 from utilities.sentinel import Sentinel, sentinel
-from utilities.zoneinfo import UTC, HongKong, Tokyo
+from utilities.tzdata import HongKong, Tokyo
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -697,7 +698,9 @@ class TestGetNow:
         ETC = ZoneInfo("Etc/UTC")  # noqa: N806
         assert now.tzinfo in {ETC, HongKong, Tokyo, UTC}
 
-    @given(get_now=sampled_from([get_now, get_now_local, get_now_hk, get_now_tokyo]))
+    @given(
+        get_now=sampled_from([get_now, get_now_local, get_now_hong_kong, get_now_tokyo])
+    )
     def test_getters(self, *, get_now: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_now(), dt.date)
 
@@ -737,7 +740,7 @@ class TestGetToday:
         get_today=sampled_from([
             get_today,
             get_today_local,
-            get_today_hk,
+            get_today_hong_kong,
             get_today_tokyo,
         ])
     )
