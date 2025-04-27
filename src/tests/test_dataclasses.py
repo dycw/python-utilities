@@ -8,7 +8,7 @@ from typing import Any, Literal, cast, override
 from hypothesis import given
 from hypothesis.strategies import booleans, integers, lists, sampled_from
 from polars import DataFrame
-from pytest import mark, raises
+from pytest import raises
 
 from tests.test_typing_funcs.no_future import (
     DataClassNoFutureInt,
@@ -405,9 +405,8 @@ class TestSerializeAndParseDataClass:
         result = parse_dataclass(serialized, DataClassFutureIntDefault)
         assert result == obj
 
-    @mark.only
     @given(int_=integers())
-    def test_extra_literal(self, *, int_: int) -> None:
+    def test_literal_type(self, *, int_: int) -> None:
         obj = DataClassFutureInt(int_=int_)
         serialized = serialize_dataclass(obj)
         result = parse_dataclass(
@@ -418,7 +417,7 @@ class TestSerializeAndParseDataClass:
         assert result == obj
 
     @given(int_=integers())
-    def test_extra_type(self, *, int_: int) -> None:
+    def test_type_extra(self, *, int_: int) -> None:
         obj = DataClassFutureNestedOuterFirstOuter(
             inner=DataClassFutureNestedOuterFirstInner(int_=int_)
         )
@@ -677,9 +676,8 @@ class TestYieldFields:
         assert result == expected
         assert is_optional_type(result.type_)
         args = get_args(result.type_)
-        assert args == (TrueOrFalseFutureTypeLit,)
-        arg = one(args)
-        assert get_args(arg) == ("true", "false")
+        assert args == (TrueOrFalseFutureTypeLit, NoneType)
+        assert get_args(args[0]) == ("true", "false")
 
     def test_class_orjson_log_record(self) -> None:
         result = list(yield_fields(OrjsonLogRecord, globalns=globals()))
