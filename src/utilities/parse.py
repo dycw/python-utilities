@@ -61,7 +61,8 @@ def parse_object(
 ) -> Any:
     """Parse text."""
     if extra is not None:
-        return _parse_object_extra(type_, text, extra)
+        with suppress(_ParseObjectParseError):
+            return _parse_object_extra(type_, text, extra)
     if type_ is None:
         try:
             return parse_none(text)
@@ -285,7 +286,7 @@ def _parse_object_extra(cls: Any, text: str, extra: ParseObjectExtra, /) -> Any:
         parser = one(
             p for c, p in extra.items() if (cls is c) or is_subclass_gen(cls, c)
         )
-    except OneEmptyError:
+    except (OneEmptyError, TypeError):
         raise _ParseObjectParseError(type_=cls, text=text) from None
     except OneNonUniqueError as error:
         raise _ParseObjectExtraNonUniqueError(
