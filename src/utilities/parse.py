@@ -9,10 +9,6 @@ from re import DOTALL
 from types import NoneType
 from typing import TYPE_CHECKING, Any, override
 
-from utilities.datetime import (
-    is_instance_date_not_datetime,
-    is_subclass_date_not_datetime,
-)
 from utilities.enum import ParseEnumError, parse_enum
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one, one_str
 from utilities.math import ParseNumberError, parse_number
@@ -35,6 +31,7 @@ from utilities.typing import (
     get_args,
     is_dict_type,
     is_frozenset_type,
+    is_instance_gen,
     is_list_type,
     is_literal_type,
     is_optional_type,
@@ -169,7 +166,7 @@ def _parse_object_type(
             raise _ParseObjectParseError(type_=cls, text=text) from None
     if issubclass(cls, str):
         return text
-    if issubclass(cls, bool):
+    if is_subclass_gen(cls, bool):
         try:
             return parse_bool(text)
         except ParseBoolError:
@@ -201,14 +198,14 @@ def _parse_object_type(
             return parse_version(text)
         except ParseVersionError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
-    if is_subclass_date_not_datetime(cls):
+    if is_subclass_gen(cls, dt.date):
         from utilities.whenever import ParseDateError, parse_date
 
         try:
             return parse_date(text)
         except ParseDateError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
-    if issubclass(cls, dt.datetime):
+    if is_subclass_gen(cls, dt.datetime):
         from utilities.whenever import ParseDateTimeError, parse_datetime
 
         try:
@@ -473,11 +470,11 @@ def serialize_object(
         obj, bool | int | float | str | Path | Sentinel | Version
     ):
         return str(obj)
-    if is_instance_date_not_datetime(obj):
+    if is_instance_gen(obj, dt.date):
         from utilities.whenever import serialize_date
 
         return serialize_date(obj)
-    if isinstance(obj, dt.datetime):
+    if is_instance_gen(obj, dt.datetime):
         from utilities.whenever import serialize_datetime
 
         return serialize_datetime(obj)

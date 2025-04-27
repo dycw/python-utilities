@@ -110,7 +110,6 @@ from utilities.datetime import (
     is_instance_date_not_datetime,
     is_integral_timedelta,
     is_local_datetime,
-    is_subclass_date_not_datetime,
     is_weekday,
     is_zero_time,
     is_zoned_datetime,
@@ -792,13 +791,6 @@ class TestIsLocalDateTime:
     def test_main(self, *, obj: Any, expected: bool) -> None:
         result = is_local_datetime(obj)
         assert result is expected
-
-
-class TestIsSubClassDateNotDateTime:
-    @given(case=sampled_from([(dt.date, True), (dt.datetime, False)]))
-    def test_date(self, *, case: tuple[type[Any], bool]) -> None:
-        type_, expected = case
-        assert is_subclass_date_not_datetime(type_) is expected
 
 
 class TestIsWeekday:

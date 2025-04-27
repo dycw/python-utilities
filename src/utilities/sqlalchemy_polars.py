@@ -28,7 +28,6 @@ from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from utilities.asyncio import timeout_dur
-from utilities.datetime import is_subclass_date_not_datetime
 from utilities.functions import identity
 from utilities.iterables import (
     CheckDuplicatesError,
@@ -49,6 +48,7 @@ from utilities.sqlalchemy import (
     upsert_items,
 )
 from utilities.text import snake_case
+from utilities.typing import is_subclass_gen
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -202,13 +202,13 @@ def _insert_dataframe_check_df_and_db_types(
 ) -> bool:
     return (
         ((dtype == pl.Boolean) and issubclass(db_col_type, bool))
-        or ((dtype == Date) and is_subclass_date_not_datetime(db_col_type))
+        or ((dtype == Date) and is_subclass_gen(db_col_type, dt.date))
         or ((dtype == Datetime) and issubclass(db_col_type, dt.datetime))
         or ((dtype == Float64) and issubclass(db_col_type, float))
-        or ((dtype == Int32) and issubclass(db_col_type, int))
-        or ((dtype == Int64) and issubclass(db_col_type, int))
-        or ((dtype == UInt32) and issubclass(db_col_type, int))
-        or ((dtype == UInt64) and issubclass(db_col_type, int))
+        or ((dtype == Int32) and is_subclass_gen(db_col_type, int))
+        or ((dtype == Int64) and is_subclass_gen(db_col_type, int))
+        or ((dtype == UInt32) and is_subclass_gen(db_col_type, int))
+        or ((dtype == UInt64) and is_subclass_gen(db_col_type, int))
         or ((dtype == String) and issubclass(db_col_type, str))
     )
 

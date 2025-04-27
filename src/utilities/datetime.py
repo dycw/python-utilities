@@ -1362,7 +1362,6 @@ __all__ = [
     "is_instance_date_not_datetime",
     "is_integral_timedelta",
     "is_local_datetime",
-    "is_subclass_date_not_datetime",
     "is_weekday",
     "is_zero_time",
     "is_zoned_datetime",
