@@ -20,9 +20,9 @@ from hypothesis.strategies import (
     floats,
     integers,
     just,
-    lists,
     none,
     sampled_from,
+    sets,
     tuples,
 )
 from pytest import raises
@@ -499,43 +499,48 @@ class TestIsInstanceGen:
     @given(
         data=data(),
         case=sampled_from([
-            (booleans(), bool, True),
-            (booleans(), int, False),
-            (integers(), bool, False),
-            (integers(), int, True),
-            (booleans(), (bool, int), True),
-            (integers(), (bool, int), True),
-            (dates(), dt.date, True),
-            (dates(), dt.datetime, False),
-            (datetimes(), dt.date, False),
-            (datetimes(), dt.datetime, True),
-            (booleans(), Number, False),
-            (integers(), Number, True),
-            (floats(), Number, True),
-            (tuples(booleans()), (bool,), True),
-            (tuples(booleans()), (int,), False),
-            (tuples(integers()), (bool,), False),
-            (tuples(integers()), (int,), True),
-            (tuples(integers()), (int, int), False),
-            (integers(), int | None, True),
-            (integers() | none(), int, False),
-            (integers() | none(), int | None, True),
-            (sampled_from([1, 2]), Literal[1, 2, 3], True),
-            (sampled_from([1, 2, 3]), Literal[1, 2, 3], True),
-            (sampled_from([1, 2, 3]), Literal[1, 2], False),
+            (booleans(), bool, None, True),
+            (booleans(), int, None, False),
+            (integers(), bool, None, False),
+            (integers(), int, None, True),
+            (booleans(), (bool, int), None, True),
+            (integers(), (bool, int), None, True),
+            (dates(), dt.date, None, True),
+            (dates(), dt.datetime, None, False),
+            (datetimes(), dt.date, None, False),
+            (datetimes(), dt.datetime, None, True),
+            (booleans(), Number, None, False),
+            (integers(), Number, None, True),
+            (floats(), Number, None, True),
+            (tuples(booleans()), (bool,), None, True),
+            (tuples(booleans()), (int,), None, False),
+            (tuples(integers()), (bool,), None, False),
+            (tuples(integers()), (int,), None, True),
+            (tuples(integers()), (int, int), None, False),
+            (integers(), int | None, None, True),
+            (integers() | none(), int, None, False),
+            (integers() | none(), int | None, None, True),
+            (sampled_from([1, 2]), Literal[1, 2, 3], 2, True),
+            (sampled_from([1, 2, 3]), Literal[1, 2, 3], 3, True),
+            (sampled_from([1, 2, 3]), Literal[1, 2], 3, False),
         ]),
     )
     @settings(phases={Phase.generate})
     def test_main(
-        self, *, data: DataObject, case: tuple[SearchStrategy[Any], Any, bool]
+        self,
+        *,
+        data: DataObject,
+        case: tuple[SearchStrategy[Any], Any, int | None, bool],
     ) -> None:
-        strategy, type_, expected = case
+        strategy, type_, min_size, expected = case
         match expected:
             case True:
                 value = data.draw(strategy)
                 assert is_instance_gen(value, type_)
             case False:
-                values = data.draw(lists(strategy, min_size=100))
+                values = data.draw(
+                    sets(strategy, min_size=100 if min_size is None else min_size)
+                )
                 assert not all(is_instance_gen(v, type_) for v in values)
 
     @given(bool_=booleans())
