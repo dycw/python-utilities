@@ -60,15 +60,15 @@ def parse_object(
     extra: ParseObjectExtra | None = None,
 ) -> Any:
     """Parse text."""
+    if extra is not None:
+        return _parse_object_extra(type_, text, extra)
     if type_ is None:
         try:
             return parse_none(text)
         except ParseNoneError:
             raise _ParseObjectParseError(type_=type_, text=text) from None
     if isinstance(type_, type):
-        return _parse_object_type(
-            type_, text, case_sensitive=case_sensitive, extra=extra
-        )
+        return _parse_object_type(type_, text, case_sensitive=case_sensitive)
     if is_dict_type(type_):
         return _parse_object_dict_type(
             type_,
@@ -146,17 +146,12 @@ def parse_object(
             extra=extra,
         )
     if is_union_type(type_):
-        return _parse_object_union_type(type_, text, extra=extra)
+        return _parse_object_union_type(type_, text)
     raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
 def _parse_object_type(
-    cls: type[Any],
-    text: str,
-    /,
-    *,
-    case_sensitive: bool = False,
-    extra: ParseObjectExtra | None = None,
+    cls: type[Any], text: str, /, *, case_sensitive: bool = False
 ) -> Any:
     """Parse text."""
     if issubclass(cls, NoneType):
@@ -226,17 +221,6 @@ def _parse_object_type(
             return parse_timedelta(text)
         except ParseTimedeltaError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
-    if extra is not None:
-        try:
-            parser = one(p for c, p in extra.items() if issubclass(cls, c))
-        except OneEmptyError:
-            pass
-        except OneNonUniqueError as error:
-            raise _ParseObjectExtraNonUniqueError(
-                type_=cls, text=text, first=error.first, second=error.second
-            ) from None
-        else:
-            return parser(text)
     raise _ParseObjectParseError(type_=cls, text=text)
 
 
@@ -294,6 +278,21 @@ def _parse_object_dict_type(
         return dict(zip(keys, values, strict=True))
     except _ParseObjectParseError:
         raise _ParseObjectParseError(type_=type_, text=text) from None
+
+
+def _parse_object_extra(cls: Any, text: str, extra: ParseObjectExtra, /) -> Any:
+    try:
+        parser = one(
+            p for c, p in extra.items() if (cls is c) or is_subclass_gen(cls, c)
+        )
+    except OneEmptyError:
+        raise _ParseObjectParseError(type_=cls, text=text) from None
+    except OneNonUniqueError as error:
+        raise _ParseObjectExtraNonUniqueError(
+            type_=cls, text=text, first=error.first, second=error.second
+        ) from None
+    else:
+        return parser(text)
 
 
 def _parse_object_list_type(
@@ -368,9 +367,7 @@ def _parse_object_set_type(
         raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
-def _parse_object_union_type(
-    type_: Any, text: str, /, *, extra: ParseObjectExtra | None = None
-) -> Any:
+def _parse_object_union_type(type_: Any, text: str, /) -> Any:
     if type_ is Number:
         try:
             return parse_number(text)
@@ -383,13 +380,6 @@ def _parse_object_union_type(
             return parse_duration(text)
         except ParseDurationError:
             raise _ParseObjectParseError(type_=type_, text=text) from None
-    if extra is not None:
-        try:
-            parser = one(p for c, p in extra.items() if c is type_)
-        except OneEmptyError:
-            pass
-        else:
-            return parser(text)
     raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
@@ -466,6 +456,9 @@ def serialize_object(
     extra: SerializeObjectExtra | None = None,
 ) -> str:
     """Convert an object to text."""
+    if extra is not None:
+        with suppress(_SerializeObjectSerializeError):
+            return _serialize_object_extra(obj, extra)
     if (obj is None) or isinstance(
         obj, bool | int | float | str | Path | Sentinel | Version
     ):
@@ -504,8 +497,6 @@ def serialize_object(
         return _serialize_object_set(
             obj, list_separator=list_separator, pair_separator=pair_separator
         )
-    if extra is not None:
-        return _serialize_object_extra(obj, extra)
     raise _SerializeObjectSerializeError(obj=obj)
 
 
@@ -537,10 +528,7 @@ def _serialize_object_dict(
 def _serialize_object_extra(obj: Any, extra: SerializeObjectExtra, /) -> str:
     try:
         serializer = one(
-            s
-            for c, s in extra.items()
-            if (isinstance(c, type) and isinstance(obj, c))
-            or isinstance(obj, get_args(c))
+            s for c, s in extra.items() if (obj is c) or is_instance_gen(obj, c)
         )
     except OneEmptyError:
         raise _SerializeObjectSerializeError(obj=obj) from None
