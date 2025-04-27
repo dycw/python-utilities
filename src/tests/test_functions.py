@@ -619,6 +619,37 @@ class TestIsHashable:
         assert is_hashable(obj) is expected
 
 
+class TestIsInstanceNotIntBool:
+    @given(
+        data=data(),
+        case=sampled_from([
+            (booleans(), bool, True),
+            (booleans(), int, False),
+            (integers(), bool, False),
+            (integers(), int, True),
+        ]),
+    )
+    def test_int(
+        self, *, data: DataObject, case: tuple[SearchStrategy[Any], type[Any], bool]
+    ) -> None:
+        strategy, type_, expected = case
+        value = data.draw(strategy)
+        assert is_instance_not_bool_int(value, type_) is expected
+
+    @given(bool_=booleans())
+    def test_bool_value_vs_custom_int(self, *, bool_: bool) -> None:
+        class MyInt(int): ...
+
+        assert not is_instance_not_bool_int(bool_, MyInt)
+
+    @given(int_=integers())
+    def test_int_value_vs_custom_int(self, *, int_: int) -> None:
+        class MyInt(int): ...
+
+        assert not is_instance_not_bool_int(int_, MyInt)
+        assert is_instance_not_bool_int(MyInt(int_), MyInt)
+
+
 class TestIsIterableOf:
     @given(
         case=sampled_from([
@@ -739,7 +770,7 @@ class TestIsStringMapping:
         assert result is expected
 
 
-class TestIsSubclassIntNotBool:
+class TestIsSubclassNotBoolInt:
     @given(
         case=sampled_from([
             (bool, bool, True),

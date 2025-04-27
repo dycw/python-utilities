@@ -532,7 +532,7 @@ class TestParseObject:
 
 class TestSerializeObject:
     @given(bool_=booleans())
-    def test_bool_custom(self, *, bool_: bool) -> None:
+    def test_bool_extra_custom(self, *, bool_: bool) -> None:
         def serializer(bool_: bool, /) -> str:  # noqa: FBT001
             match bool_:
                 case True:
@@ -549,7 +549,7 @@ class TestSerializeObject:
         assert serialized == expected
 
     @given(bool_=booleans())
-    def test_bool_not_int(self, *, bool_: bool) -> None:
+    def test_bool_extra_not_not_used(self, *, bool_: bool) -> None:
         def serializer(int_: int, /) -> str:
             return f"({int_})"
 

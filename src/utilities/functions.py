@@ -659,6 +659,28 @@ def is_hashable(obj: Any, /) -> TypeGuard[Hashable]:
 ##
 
 
+def is_instance_not_bool_int(
+    obj: Any, class_or_tuple: type[Any] | tuple[type[Any], ...], /
+) -> TypeGuard[int]:
+    """Check if an instance relationship holds, except bool<int."""
+    match class_or_tuple:
+        case type() as type_:
+            return _is_instance_not_bool_int(obj, type_)
+        case tuple() as types:
+            return any(_is_instance_not_bool_int(obj, p) for p in types)
+        case _ as never:
+            assert_never(never)
+
+
+def _is_instance_not_bool_int(obj: Any, type_: type[Any], /) -> bool:
+    return isinstance(obj, type_) and not (
+        isinstance(obj, bool) and issubclass(type_, int) and not issubclass(type_, bool)
+    )
+
+
+##
+
+
 @overload
 def is_iterable_of(obj: Any, cls: type[_T], /) -> TypeGuard[Iterable[_T]]: ...
 @overload
@@ -787,7 +809,6 @@ def is_subclass_not_bool_int(
 
 
 def _is_subclass_int_not_bool_one(cls: type[Any], parent: type[Any], /) -> bool:
-    """Check if a class is an integer, and not a boolean."""
     return issubclass(cls, parent) and not (
         issubclass(cls, bool)
         and issubclass(parent, int)
