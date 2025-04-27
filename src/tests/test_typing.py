@@ -22,6 +22,7 @@ from hypothesis.strategies import (
     just,
     none,
     sampled_from,
+    tuples,
 )
 from pytest import mark, param, raises
 
@@ -90,13 +91,14 @@ class TestContainsSelf:
         assert contains_self(obj)
 
 
+@mark.only
 class TestGetArgs:
     @mark.parametrize(
         ("obj", "expected"),
         [
             param(dict[int, int], (int, int)),
             param(frozenset[int], (int,)),
-            param(int | None, (int,)),
+            param(int | None, (int, NoneType)),
             param(int | str, (int, str)),
             param(list[int], (int,)),
             param(Literal["a", "b", "c"], ("a", "b", "c")),
@@ -487,6 +489,7 @@ class TestIsAnnotationOfType:
         assert func(obj) is expected
 
 
+@mark.only
 class TestIsInstanceGen:
     @given(
         data=data(),
@@ -504,14 +507,34 @@ class TestIsInstanceGen:
             (booleans(), Number, False),
             (integers(), Number, True),
             (floats(), Number, True),
+            (tuples(booleans()), (bool,), True),
+            (tuples(booleans()), (int,), False),
+            (tuples(integers()), (bool,), False),
+            (tuples(integers()), (int,), True),
+            (tuples(integers()), (int, int), False),
+            (integers(), int | None, True),
+            (integers() | none(), int, False),
+            (integers() | none(), int | None, True),
+            (sampled_from([1, 2]), Literal[1, 2, 3], True),
+            (sampled_from([1, 2, 3]), Literal[1, 2, 3], True),
+            (sampled_from([1, 2, 3]), Literal[1, 2], False),
         ]),
     )
     def test_main(
         self, *, data: DataObject, case: tuple[SearchStrategy[Any], Any, bool]
     ) -> None:
         strategy, type_, expected = case
-        value = data.draw(strategy)
-        assert is_instance_gen(value, type_) is expected
+        match expected:
+            case True:
+                value = data.draw(strategy)
+                assert is_instance_gen(value, type_)
+            case False:
+                is_instance = True
+                for _ in range(100):
+                    value = data.draw(strategy)
+                    if not is_instance_gen(value, type_):
+                        is_instance &= False
+                assert not is_instance
 
     @given(bool_=booleans())
     def test_bool_value_vs_custom_int(self, *, bool_: bool) -> None:
@@ -544,6 +567,7 @@ class TestIsNamedTuple:
         assert not is_namedtuple_instance(Example(x=0))
 
 
+@mark.only
 class TestIsSubclassGen:
     @given(
         case=sampled_from([
@@ -560,6 +584,17 @@ class TestIsSubclassGen:
             (bool, Number, False),
             (int, Number, True),
             (float, Number, True),
+            ((bool,), (bool,), True),
+            ((bool,), (int,), False),
+            ((int,), (bool,), False),
+            ((int,), (int,), True),
+            ((int,), (int, int), False),
+            (int, int | None, True),
+            (int | None, int, False),
+            (int | None, int | None, True),
+            (Literal[1, 2], Literal[1, 2, 3], True),
+            (Literal[1, 2, 3], Literal[1, 2, 3], True),
+            (Literal[1, 2, 3], Literal[1, 2], False),
         ])
     )
     def test_main(self, *, case: tuple[type[Any], Any, bool]) -> None:

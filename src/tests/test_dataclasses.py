@@ -3,12 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import NoneType
-from typing import Any, cast, override
+from typing import Any, Literal, cast, override
 
 from hypothesis import given
 from hypothesis.strategies import booleans, integers, lists, sampled_from
 from polars import DataFrame
-from pytest import raises
+from pytest import mark, raises
 
 from tests.test_typing_funcs.no_future import (
     DataClassNoFutureInt,
@@ -403,6 +403,19 @@ class TestSerializeAndParseDataClass:
         obj = DataClassFutureIntDefault()
         serialized = serialize_dataclass(obj)
         result = parse_dataclass(serialized, DataClassFutureIntDefault)
+        assert result == obj
+
+    @mark.only
+    @given(truth=sampled_from(["true", "false"]))
+    def test_zz(self, *, truth: TrueOrFalseFutureLit) -> None:
+        obj = DataClassFutureLiteral(truth=truth)
+        serialized = serialize_dataclass(obj)
+        result = parse_dataclass(
+            serialized,
+            DataClassFutureLiteral,
+            globalns=globals(),
+            extra_parsers={Literal["text"]: NotImplementedError},
+        )
         assert result == obj
 
     @given(int_=integers())

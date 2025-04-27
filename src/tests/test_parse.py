@@ -20,7 +20,7 @@ from hypothesis.strategies import (
     sets,
     times,
 )
-from pytest import raises
+from pytest import mark, raises
 
 from tests.test_operator import TruthEnum
 from tests.test_typing_funcs.with_future import (
@@ -324,6 +324,23 @@ class TestParseObject:
 
     @given(text=sampled_from(["F_a_l_s_e", "T_r_u_e"]))
     def test_bool_extra_not_used(self, *, text: str) -> None:
+        def parser(text: str, /) -> bool:
+            match text:
+                case "F_a_l_s_e":
+                    return False
+                case "T_r_u_e":
+                    return True
+                case _:
+                    raise ImpossibleCaseError(case=[f"{text=}"])
+
+        with raises(
+            _ParseObjectParseError, match="Unable to parse <class 'bool'>; got '.*'"
+        ):
+            _ = parse_object(bool, text, extra={int: parser})
+
+    @given(text=sampled_from(["F_a_l_s_e", "T_r_u_e"]))
+    @mark.only
+    def test_zz(self, *, text: str) -> None:
         def parser(text: str, /) -> bool:
             match text:
                 case "F_a_l_s_e":
