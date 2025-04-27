@@ -24,7 +24,7 @@ from hypothesis.strategies import (
     sampled_from,
     tuples,
 )
-from pytest import mark, param, raises
+from pytest import param, raises
 
 from tests.test_typing_funcs.no_future import (
     DataClassNoFutureNestedInnerFirstInner,
@@ -86,30 +86,38 @@ if TYPE_CHECKING:
 
 
 class TestContainsSelf:
-    @mark.parametrize("obj", [param(Self), param(Self | None)])
+    @given(obj=sampled_from([Self, Self | None]))
     def test_main(self, *, obj: Any) -> None:
         assert contains_self(obj)
 
 
 class TestGetArgs:
-    @mark.parametrize(
-        ("obj", "expected"),
-        [
-            param(dict[int, int], (int, int)),
-            param(frozenset[int], (int,)),
-            param(int | None, (int, NoneType)),
-            param(int | str, (int, str)),
-            param(list[int], (int,)),
-            param(Literal["a", "b", "c"], ("a", "b", "c")),
-            param(Mapping[int, int], (int, int)),
-            param(Sequence[int], (int,)),
-            param(set[int], (int,)),
-            param(LogLevel, ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")),
-            param(Parallelism, ("processes", "threads")),
-        ],
+    @given(
+        case=sampled_from([
+            (dict[int, int], (int, int)),
+            (frozenset[int], (int,)),
+            (int | None, (int, NoneType)),
+            (int | str, (int, str)),
+            (list[int], (int,)),
+            (Literal["a", "b", "c"], ("a", "b", "c")),
+            (Mapping[int, int], (int, int)),
+            (Sequence[int], (int,)),
+            (set[int], (int,)),
+            (LogLevel, ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")),
+            (Parallelism, ("processes", "threads")),
+        ])
     )
-    def test_main(self, *, obj: Any, expected: tuple[Any, ...]) -> None:
+    def test_main(self, *, case: tuple[Any, tuple[Any, ...]]) -> None:
+        obj, expected = case
         result = get_args(obj)
+        assert result == expected
+
+    @given(case=sampled_from([(int | None, (int,)), (int | str | None, (int, str))]))
+    def test_optional_drop_none(
+        self, *, case: tuple[Any, tuple[type[Any], ...]]
+    ) -> None:
+        obj, expected = case
+        result = get_args(case, optional_drop_none=True)
         assert result == expected
 
 
@@ -418,9 +426,8 @@ class TestGetUnionTypeClasses:
 
 
 class TestIsAnnotationOfType:
-    @mark.parametrize(
-        ("func", "obj", "expected"),
-        [
+    @given(
+        case=sampled_from([
             param(is_dict_type, Mapping[int, int], False),
             param(is_dict_type, Sequence[int], False),
             param(is_dict_type, dict[int, int], True),
@@ -480,11 +487,10 @@ class TestIsAnnotationOfType:
             param(is_tuple_type, tuple[int, int], True),
             param(is_union_type, int | str, True),
             param(is_union_type, list[int], False),
-        ],
+        ])
     )
-    def test_main(
-        self, *, func: Callable[[Any], bool], obj: Any, expected: bool
-    ) -> None:
+    def test_main(self, *, case: tuple[Callable[[Any], bool], Any, bool]) -> None:
+        func, obj, expected = case
         assert func(obj) is expected
 
 
