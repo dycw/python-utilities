@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from dataclasses import dataclass, field
 from functools import cached_property
+from itertools import permutations
 from typing import (
     TYPE_CHECKING,
     Generic,
@@ -33,6 +34,7 @@ if TYPE_CHECKING:
     from utilities.iterables import MaybeIterable
     from utilities.types import DateOrDateTime
 
+
 type _DateOrDateTime = Literal["date", "datetime"]
 _TPeriod = TypeVar("_TPeriod", dt.date, dt.datetime)
 
@@ -55,12 +57,10 @@ class Period(Generic[_TPeriod]):
     max_duration: dt.timedelta | None = field(default=None, repr=False, kw_only=True)
 
     def __post_init__(self) -> None:
-        if (
-            is_instance_gen(self.start, dt.date)
-            is not is_instance_gen(self.end, dt.date)
-        ) or (
-            is_instance_gen(self.start, dt.datetime)
-            or is_instance_gen(self.end, dt.datetime)
+        if any(
+            is_instance_gen(left, cls) is not is_instance_gen(right, cls)
+            for left, right in permutations([self.start, self.end], 2)
+            for cls in [dt.date, dt.datetime]
         ):
             raise _PeriodDateAndDateTimeMixedError(start=self.start, end=self.end)
         for date in [self.start, self.end]:
