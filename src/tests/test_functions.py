@@ -9,7 +9,7 @@ from pathlib import Path
 from types import NoneType
 from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, TypeVar, cast
 
-from hypothesis import given, reproduce_failure
+from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -786,7 +786,6 @@ class TestIsSubclassNotBoolInt:
             (int, (bool, int), True),
         ])
     )
-    @reproduce_failure("6.131.9", b"AEEG")
     def test_main(self, *, case: tuple[type[Any], type[Any], bool]) -> None:
         child, parent, expected = case
         assert is_subclass_not_bool_int(child, parent) is expected
