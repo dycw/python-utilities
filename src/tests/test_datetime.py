@@ -6,7 +6,6 @@ from math import isclose
 from operator import eq, gt, lt
 from re import search
 from typing import TYPE_CHECKING, Any, Self
-from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
@@ -38,13 +37,9 @@ from utilities.datetime import (
     MILLISECOND,
     MINUTE,
     MONTH,
-    NOW_HK,
-    NOW_TOKYO,
     NOW_UTC,
     QUARTER,
     SECOND,
-    TODAY_HK,
-    TODAY_TOKYO,
     TODAY_UTC,
     WEEK,
     YEAR,
@@ -98,14 +93,8 @@ from utilities.datetime import (
     get_half_years,
     get_months,
     get_now,
-    get_now_hong_kong,
-    get_now_local,
-    get_now_tokyo,
     get_quarters,
     get_today,
-    get_today_hong_kong,
-    get_today_local,
-    get_today_tokyo,
     get_years,
     is_integral_timedelta,
     is_local_datetime,
@@ -154,6 +143,7 @@ from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from zoneinfo import ZoneInfo
 
     from utilities.sentinel import Sentinel
     from utilities.types import (
@@ -691,12 +681,6 @@ class TestGetNow:
         now = get_now(time_zone=time_zone)
         assert isinstance(now, dt.datetime)
         assert now.tzinfo is time_zone
-
-    def test_local(self) -> None:
-        now = get_now(time_zone="local")
-        assert isinstance(now, dt.datetime)
-        ETC = ZoneInfo("Etc/UTC")  # noqa: N806
-        assert now.tzinfo in {ETC, HongKong, Tokyo, UTC}
 
     @given(
         get_now=sampled_from([get_now, get_now_local, get_now_hong_kong, get_now_tokyo])
