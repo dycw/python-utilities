@@ -8,9 +8,11 @@ from zoneinfo import ZoneInfo
 if TYPE_CHECKING:
     from utilities.types import TimeZone, TimeZoneLike
 
+
 HongKong = ZoneInfo("Asia/Hong_Kong")
 Tokyo = ZoneInfo("Asia/Tokyo")
 UTC = ZoneInfo("UTC")
+
 
 ##
 

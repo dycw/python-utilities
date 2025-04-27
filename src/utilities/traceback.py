@@ -46,7 +46,6 @@ from utilities.reprlib import (
 )
 from utilities.types import TBaseException, TCallable
 from utilities.version import get_version
-from utilities.whenever import serialize_zoned_datetime
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
@@ -787,6 +786,8 @@ def _yield_header_lines(
     *, version: MaybeCallableVersionLike | None = None
 ) -> Iterator[str]:
     """Yield the header lines."""
+    from utilities.whenever import serialize_zoned_datetime
+
     yield f"Date/time | {serialize_zoned_datetime(get_now_local())}"
     yield f"User      | {getuser()}"
     yield f"Host      | {gethostname()}"
