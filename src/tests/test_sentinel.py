@@ -26,7 +26,8 @@ class TestParseSentinel:
         result = parse_sentinel(text_use)
         assert result is sentinel
 
-    def test_error(self) -> None:
+    @given(text=sampled_from(["invalid", "ssentinell"]))
+    def test_error(self, *, text: str) -> None:
         with raises(
             ParseSentinelError, match="Unable to parse sentinel value; got 'invalid'"
         ):
