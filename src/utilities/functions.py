@@ -748,7 +748,9 @@ def is_sequence_of(
 def is_sequence_of(
     obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]], /
 ) -> TypeGuard[Sequence[_T1 | _T2 | _T3 | _T4 | _T5]]: ...
-def is_sequence_of(obj: Any, cls: Any, /) -> TypeGuard[Sequence[Any]]:
+@overload
+def is_sequence_of(obj: Any, cls: TypeLike[_T], /) -> TypeGuard[Sequence[_T]]: ...
+def is_sequence_of(obj: Any, cls: TypeLike[_T], /) -> TypeGuard[Sequence[_T]]:
     """Check if an object is a sequence of tuple or string mappings."""
     return isinstance(obj, Sequence) and is_iterable_of(obj, cls)
 
