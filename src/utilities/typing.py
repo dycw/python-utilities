@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from itertools import chain
 from pathlib import Path
 from types import NoneType, UnionType
@@ -15,6 +16,7 @@ from typing import (
     TypeGuard,
     Union,  # pyright: ignore[reportDeprecated]
     get_origin,
+    override,
 )
 from typing import get_args as _get_args
 from typing import get_type_hints as _get_type_hints
@@ -64,7 +66,7 @@ def _get_literal_elements_inner(obj: Any, /) -> list[Any]:
 
 
 def get_type_hints(
-    cls: Any,
+    obj: Any,
     /,
     *,
     globalns: StrMapping | None = None,
@@ -72,15 +74,15 @@ def get_type_hints(
     warn_name_errors: bool = False,
 ) -> dict[str, Any]:
     """Get the type hints of an object."""
-    result: dict[str, Any] = cls.__annotations__
+    result: dict[str, Any] = obj.__annotations__
     _ = {Literal, Path, Sentinel, StrMapping, UUID, dt}
     globalns_use = globals() | ({} if globalns is None else dict(globalns))
     localns_use = {} if localns is None else dict(localns)
     try:
-        hints = _get_type_hints(cls, globalns=globalns_use, localns=localns_use)
+        hints = _get_type_hints(obj, globalns=globalns_use, localns=localns_use)
     except NameError as error:
         if warn_name_errors:
-            warn(f"Error getting type hints for {cls!r}; {error}", stacklevel=2)
+            warn(f"Error getting type hints for {obj!r}; {error}", stacklevel=2)
     else:
         result.update({
             key: value
@@ -88,6 +90,44 @@ def get_type_hints(
             if (key not in result) or isinstance(result[key], str)
         })
     return result
+
+
+##
+
+
+def get_union_type_classes(obj: Any, /) -> tuple[type[Any], ...]:
+    if not is_union_type(obj):
+        raise _GetUnionTypeClassesNotAUnionTypeError(obj=obj)
+    types_: Sequence[type[Any]] = []
+    for arg in get_args(obj):
+        if isinstance(arg, type):
+            types_.append(arg)
+        elif is_union_type(arg):
+            types_.extend(get_union_type_classes(arg))
+        else:
+            raise _GetUnionTypeClassesNotATypeError(obj=obj, inner=arg)
+    return tuple(types_)
+
+
+@dataclass(kw_only=True, slots=True)
+class GetUnionTypeClassesError(Exception):
+    obj: Any
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetUnionTypeClassesNotAUnionTypeError(GetUnionTypeClassesError):
+    @override
+    def __str__(self) -> str:
+        return f"Object must be a Union type; got {self.obj}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetUnionTypeClassesNotATypeError(GetUnionTypeClassesError):
+    inner: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Union type must contain types only; got {self.inner}"
 
 
 ##
@@ -207,9 +247,11 @@ def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:
 
 
 __all__ = [
+    "GetUnionTypeClassesError",
     "contains_self",
     "get_literal_elements",
     "get_type_hints",
+    "get_union_type_classes",
     "is_dict_type",
     "is_frozenset_type",
     "is_list_type",
