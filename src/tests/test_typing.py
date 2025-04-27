@@ -359,7 +359,7 @@ class TestGetUnionTypeClasses:
         ):
             _ = get_union_type_classes(None)
 
-    def test_error_not_a_union_type2(self) -> None:
+    def test_error_not_a_type(self) -> None:
         with raises(
             _GetUnionTypeClassesNotATypeError,
             match=r"Union type must contain types only; got typing\.Literal\[True\]",
