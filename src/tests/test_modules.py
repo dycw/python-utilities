@@ -92,7 +92,7 @@ class TestYieldModuleContents:
         self,
         *,
         case1: tuple[ModuleType, bool, int],
-        case2: tuple[TypeLike, Callable[[Any], bool], int],
+        case2: tuple[TypeLike[Any], Callable[[Any], bool], int],
     ) -> None:
         module, recursive, factor = case1
         type_, predicate, expected = case2
