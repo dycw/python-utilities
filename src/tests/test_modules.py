@@ -28,6 +28,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
+    from utilities.types import TypeLike
+
 
 class TestIsInstalled:
     @given(case=sampled_from([("importlib", True), ("invalid", False)]))
@@ -90,7 +92,7 @@ class TestYieldModuleContents:
         self,
         *,
         case1: tuple[ModuleType, bool, int],
-        case2: tuple[type[Any] | tuple[type[Any], ...], Callable[[Any], bool], int],
+        case2: tuple[TypeLike[Any], Callable[[Any], bool], int],
     ) -> None:
         module, recursive, factor = case1
         type_, predicate, expected = case2
