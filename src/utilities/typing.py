@@ -233,7 +233,7 @@ def is_instance_gen(obj: Any, type_: Any, /) -> bool:
     return any(_is_instance_gen_one(obj, t) for t in get_type_classes(type_))
 
 
-def _is_instance_gen_one(obj: Any, type_: type[Any], /) -> bool:
+def _is_instance_gen_one(obj: Any, type_: type[_T], /) -> TypeGuard[_T]:
     return (
         isinstance(obj, type_)
         and not (
@@ -356,7 +356,7 @@ def is_subclass_gen(cls: type[Any], parent: Any, /) -> bool:
     return any(_is_subclass_gen_one(cls, p) for p in get_type_classes(parent))
 
 
-def _is_subclass_gen_one(cls: type[Any], parent: type[Any], /) -> bool:
+def _is_subclass_gen_one(cls: type[Any], parent: type[_T], /) -> TypeGuard[type[_T]]:
     return (
         issubclass(cls, parent)
         and not (
