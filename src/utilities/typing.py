@@ -17,6 +17,7 @@ from typing import (
     TypeVar,
     Union,  # pyright: ignore[reportDeprecated]
     get_origin,
+    overload,
     override,
 )
 from typing import get_args as _get_args
@@ -153,8 +154,9 @@ def get_type_hints(
 
 
 def get_union_type_classes(obj: Any, /) -> tuple[type[Any], ...]:
+    """Get the type classes from a Union type."""
     if not is_union_type(obj):
-        raise _GetUnionTypeClassesNotAUnionTypeError(obj=obj)
+        raise _GetUnionTypeClassesUnionTypeError(obj=obj)
     types_: Sequence[type[Any]] = []
     for arg in get_args(obj):
         if isinstance(arg, type):
@@ -162,7 +164,7 @@ def get_union_type_classes(obj: Any, /) -> tuple[type[Any], ...]:
         elif is_union_type(arg):
             types_.extend(get_union_type_classes(arg))
         else:
-            raise _GetUnionTypeClassesNotATypeError(obj=obj, inner=arg)
+            raise _GetUnionTypeClassesInternalTypeError(obj=obj, inner=arg)
     return tuple(types_)
 
 
@@ -172,14 +174,14 @@ class GetUnionTypeClassesError(Exception):
 
 
 @dataclass(kw_only=True, slots=True)
-class _GetUnionTypeClassesNotAUnionTypeError(GetUnionTypeClassesError):
+class _GetUnionTypeClassesUnionTypeError(GetUnionTypeClassesError):
     @override
     def __str__(self) -> str:
         return f"Object must be a Union type; got {self.obj}"
 
 
 @dataclass(kw_only=True, slots=True)
-class _GetUnionTypeClassesNotATypeError(GetUnionTypeClassesError):
+class _GetUnionTypeClassesInternalTypeError(GetUnionTypeClassesError):
     inner: Any
 
     @override
@@ -398,6 +400,7 @@ def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:
 
 
 __all__ = [
+    "GetTypeClassesError",
     "GetUnionTypeClassesError",
     "contains_self",
     "get_literal_elements",
