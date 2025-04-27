@@ -367,14 +367,18 @@ def is_subclass_gen(
 def is_subclass_gen(cls: Any, parent: Any, /) -> bool: ...
 def is_subclass_gen(cls: Any, parent: Any, /) -> bool:
     """Generalized `issubclass`."""
-    if isinstance(cls, type):
-        return any(_is_subclass_gen_type(cls, p) for p in get_type_classes(parent))
     if isinstance(cls, tuple) and isinstance(parent, tuple):
         return _is_subclass_gen_tuple(cls, parent)
     if is_literal_type(cls) and is_literal_type(parent):
         return _is_subclass_gen_literal(cls, parent)
+    if (is_literal_type(cls) and not is_literal_type(parent)) or (
+        not is_literal_type(cls) and is_literal_type(parent)
+    ):
+        return False
     if is_union_type(cls):
         return _is_subclass_gen_union(cls, parent)
+    if isinstance(cls, type):
+        return any(_is_subclass_gen_type(cls, p) for p in get_type_classes(parent))
     raise TypeError
 
 

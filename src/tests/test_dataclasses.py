@@ -406,15 +406,14 @@ class TestSerializeAndParseDataClass:
         assert result == obj
 
     @mark.only
-    @given(truth=sampled_from(["true", "false"]))
-    def test_zz(self, *, truth: TrueOrFalseFutureLit) -> None:
-        obj = DataClassFutureLiteral(truth=truth)
+    @given(int_=integers())
+    def test_extra_literal(self, *, int_: int) -> None:
+        obj = DataClassFutureInt(int_=int_)
         serialized = serialize_dataclass(obj)
         result = parse_dataclass(
             serialized,
-            DataClassFutureLiteral,
-            globalns=globals(),
-            extra_parsers={Literal["text"]: NotImplementedError},
+            DataClassFutureInt,
+            extra_parsers={Literal["lit"]: NotImplementedError},
         )
         assert result == obj
 

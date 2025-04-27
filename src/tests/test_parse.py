@@ -57,6 +57,7 @@ from utilities.parse import (
     serialize_object,
 )
 from utilities.sentinel import Sentinel, sentinel
+from utilities.text import parse_bool
 from utilities.types import Duration, Number
 from utilities.version import Version
 
@@ -338,22 +339,12 @@ class TestParseObject:
         ):
             _ = parse_object(bool, text, extra={int: parser})
 
-    @given(text=sampled_from(["F_a_l_s_e", "T_r_u_e"]))
+    @given(bool_=booleans())
     @mark.only
-    def test_zz(self, *, text: str) -> None:
-        def parser(text: str, /) -> bool:
-            match text:
-                case "F_a_l_s_e":
-                    return False
-                case "T_r_u_e":
-                    return True
-                case _:
-                    raise ImpossibleCaseError(case=[f"{text=}"])
-
-        with raises(
-            _ParseObjectParseError, match="Unable to parse <class 'bool'>; got '.*'"
-        ):
-            _ = parse_object(bool, text, extra={int: parser})
+    def test_literal_extra(self, *, bool_: bool) -> None:
+        text = serialize_object(bool_)
+        result = parse_object(bool, text, extra={Literal["lit"]: parse_bool})
+        assert result is bool_
 
     @given(value=text_ascii(min_size=10) | none())
     def test_optional_type_with_union_extra_not_used(

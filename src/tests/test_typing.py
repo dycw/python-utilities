@@ -9,7 +9,7 @@ from types import NoneType
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Self
 from uuid import UUID
 
-from hypothesis import Phase, given, settings
+from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -25,7 +25,7 @@ from hypothesis.strategies import (
     sets,
     tuples,
 )
-from pytest import raises
+from pytest import mark, raises
 
 from tests.test_typing_funcs.no_future import (
     DataClassNoFutureNestedInnerFirstInner,
@@ -496,6 +496,7 @@ class TestIsAnnotationOfType:
 
 
 class TestIsInstanceGen:
+    @mark.only
     @given(
         data=data(),
         case=sampled_from([
@@ -523,9 +524,12 @@ class TestIsInstanceGen:
             (sampled_from([1, 2]), Literal[1, 2, 3], 2, True),
             (sampled_from([1, 2, 3]), Literal[1, 2, 3], 3, True),
             (sampled_from([1, 2, 3]), Literal[1, 2], 3, False),
+            (booleans(), Literal[1, 2, 3], None, False),
+            (sampled_from([1, 2, 3]), bool, 3, False),
+            (tuples(booleans()), Literal[1, 2, 3], None, False),
+            (sampled_from([1, 2, 3]), (bool,), 3, False),
         ]),
     )
-    @settings(phases={Phase.generate})
     def test_main(
         self,
         *,
@@ -575,6 +579,7 @@ class TestIsNamedTuple:
 
 
 class TestIsSubclassGen:
+    @mark.only
     @given(
         case=sampled_from([
             (bool, bool, True),
@@ -601,6 +606,10 @@ class TestIsSubclassGen:
             (Literal[1, 2], Literal[1, 2, 3], True),
             (Literal[1, 2, 3], Literal[1, 2, 3], True),
             (Literal[1, 2, 3], Literal[1, 2], False),
+            (bool, Literal[1, 2, 3], False),
+            (Literal[1, 2, 3], bool, False),
+            ((bool,), Literal[1, 2, 3], False),
+            (Literal[1, 2, 3], (bool,), False),
         ])
     )
     def test_main(self, *, case: tuple[type[Any], Any, bool]) -> None:
