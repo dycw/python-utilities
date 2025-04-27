@@ -227,8 +227,8 @@ def is_instance_gen(
     obj: Any, type_: tuple[_T1, _T2, _T3, _T4, _T5], /
 ) -> TypeGuard[_T1 | _T2 | _T3 | _T4 | _T5]: ...
 @overload
-def is_instance_gen(obj: Any, type_: Any, /) -> Any: ...
-def is_instance_gen(obj: Any, type_: Any, /) -> Any:
+def is_instance_gen(obj: Any, type_: Any, /) -> bool: ...
+def is_instance_gen(obj: Any, type_: Any, /) -> bool:
     """Check if an instance relationship holds, except bool<int."""
     return any(_is_instance_gen_one(obj, t) for t in get_type_classes(type_))
 
@@ -325,6 +325,32 @@ def is_set_type(obj: Any, /) -> bool:
 ##
 
 
+@overload
+def is_subclass_gen(cls: type[Any], parent: type[_T], /) -> TypeGuard[type[_T]]: ...
+@overload
+def is_subclass_gen(
+    cls: type[Any], parent: tuple[type[_T1]], /
+) -> TypeGuard[type[_T1]]: ...
+@overload
+def is_subclass_gen(
+    cls: type[Any], parent: tuple[type[_T1], type[_T2]], /
+) -> TypeGuard[type[_T1 | _T2]]: ...
+@overload
+def is_subclass_gen(
+    cls: type[Any], parent: tuple[type[_T1], type[_T2], type[_T3]], /
+) -> TypeGuard[type[_T1 | _T2 | _T3]]: ...
+@overload
+def is_subclass_gen(
+    cls: type[Any], parent: tuple[type[_T1], type[_T2], type[_T3], type[_T4]], /
+) -> TypeGuard[type[_T1 | _T2 | _T3 | _T4]]: ...
+@overload
+def is_subclass_gen(
+    cls: type[Any],
+    parent: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]],
+    /,
+) -> TypeGuard[type[_T1 | _T2 | _T3 | _T4 | _T5]]: ...
+@overload
+def is_subclass_gen(cls: type[Any], parent: Any, /) -> bool: ...
 def is_subclass_gen(cls: type[Any], parent: Any, /) -> bool:
     """Generalized `issubclass`."""
     return any(_is_subclass_gen_one(cls, p) for p in get_type_classes(parent))
