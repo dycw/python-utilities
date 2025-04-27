@@ -630,8 +630,14 @@ class TestIsSubclassGen:
             (tuple[bool], tuple[Number], False),
             (tuple[int], tuple[Number], True),
             (tuple[float], tuple[Number], True),
-            ((bool,), Literal[1, 2, 3], False),
-            (Literal[1, 2, 3], (bool,), False),
+            (tuple[Literal["a"], bool], tuple[Literal["a"], bool], True),
+            (tuple[Literal["a"], bool], tuple[Literal["a"], int], False),
+            (tuple[Literal["a"], int], tuple[Literal["a"], bool], False),
+            (tuple[Literal["a"], int], tuple[Literal["a"], int], True),
+            (tuple[Literal["a"], bool], tuple[Literal["a", "b"], bool], True),
+            (tuple[Literal["a"], bool], tuple[Literal["a", "b"], int], False),
+            (tuple[Literal["a"], int], tuple[Literal["a", "b"], bool], False),
+            (tuple[Literal["a"], int], tuple[Literal["a", "b"], int], True),
         ])
     )
     def test_main(self, *, case: tuple[type[Any], Any, bool]) -> None:
