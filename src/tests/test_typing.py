@@ -25,7 +25,7 @@ from hypothesis.strategies import (
     sets,
     tuples,
 )
-from pytest import mark, raises
+from pytest import raises
 
 from tests.test_typing_funcs.no_future import (
     DataClassNoFutureNestedInnerFirstInner,
@@ -496,7 +496,6 @@ class TestIsAnnotationOfType:
 
 
 class TestIsInstanceGen:
-    @mark.only
     @given(
         data=data(),
         case=sampled_from([
@@ -579,7 +578,6 @@ class TestIsNamedTuple:
 
 
 class TestIsSubclassGen:
-    @mark.only
     @given(
         case=sampled_from([
             (bool, bool, True),
