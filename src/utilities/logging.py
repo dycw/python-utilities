@@ -243,7 +243,7 @@ class _RolloverActions:
     rotations: set[_Rotation] = field(default_factory=set)
 
     def do(self) -> None:
-        from utilities.atomicwrites import move_many
+        from utilities.atomicwrites import move_many  # skipif-ci-and-windows
 
         for deletion in self.deletions:  # skipif-ci-and-windows
             deletion.delete()
