@@ -581,32 +581,48 @@ class TestIsNamedTuple:
 class TestIsSubclassGen:
     @given(
         case=sampled_from([
+            # types - bool/int
             (bool, bool, True),
             (bool, int, False),
             (int, bool, False),
             (int, int, True),
             (bool, (bool, int), True),
             (int, (bool, int), True),
+            # types - datetime/date
             (dt.date, dt.date, True),
             (dt.date, dt.datetime, False),
             (dt.datetime, dt.date, False),
             (dt.datetime, dt.datetime, True),
+            # parent union
             (bool, Number, False),
             (int, Number, True),
             (float, Number, True),
+            # child tuple
             ((bool,), (bool,), True),
             ((bool,), (int,), False),
             ((int,), (bool,), False),
             ((int,), (int,), True),
-            ((int,), (int, int), False),
-            (int, int | None, True),
-            (int | None, int, False),
-            (int | None, int | None, True),
+            ((bool, int), (int,), False),
+            ((bool, int), (bool, int), True),
+            ((bool, int), (bool, int, float), True),
+            # child union
+            (bool, bool | None, True),
+            (bool | None, bool, False),
+            (bool | None, bool | None, True),
+            # literals
             (Literal[1, 2], Literal[1, 2, 3], True),
             (Literal[1, 2, 3], Literal[1, 2, 3], True),
             (Literal[1, 2, 3], Literal[1, 2], False),
             (bool, Literal[1, 2, 3], False),
             (Literal[1, 2, 3], bool, False),
+            # tuple types
+            (tuple[bool], tuple[bool], True),
+            (tuple[bool], tuple[int], False),
+            (tuple[int], tuple[bool], False),
+            (tuple[int], tuple[int], True),
+            (tuple[bool], tuple[Number], False),
+            (tuple[int], tuple[Number], True),
+            (tuple[float], tuple[Number], True),
             ((bool,), Literal[1, 2, 3], False),
             (Literal[1, 2, 3], (bool,), False),
         ])
