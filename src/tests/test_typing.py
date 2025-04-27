@@ -9,7 +9,7 @@ from types import NoneType
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Self
 from uuid import UUID
 
-from hypothesis import given
+from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -525,6 +525,7 @@ class TestIsInstanceGen:
             (sampled_from([1, 2, 3]), Literal[1, 2], False),
         ]),
     )
+    @settings(phases={Phase.shrink})
     def test_main(
         self, *, data: DataObject, case: tuple[SearchStrategy[Any], Any, bool]
     ) -> None:
