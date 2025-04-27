@@ -636,9 +636,8 @@ class TestYieldFields:
         assert result == expected
         assert is_optional_type(result.type_)
         args = get_args(result.type_)
-        assert args == (TrueOrFalseFutureLit,)
-        arg = one(args)
-        assert get_args(arg) == ("true", "false")
+        assert args == (TrueOrFalseFutureLit, NoneType)
+        assert get_args(args[0]) == ("true", "false")
 
     def test_class_future_nested(self) -> None:
         result = one(
