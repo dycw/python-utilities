@@ -861,12 +861,7 @@ def make_isinstance(cls: TypeLike[_T], /) -> Callable[[Any], TypeGuard[_T]]:
     return partial(_make_instance_core, cls=cls)
 
 
-##
-
-
-def _make_instance_core(
-    obj: Any, /, *, cls: type[_T] | tuple[type[_T], ...]
-) -> TypeGuard[_T]:
+def _make_instance_core(obj: Any, /, *, cls: TypeLike[_T]) -> TypeGuard[_T]:
     return isinstance(obj, cls)
 
 
