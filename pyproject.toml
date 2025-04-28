@@ -40,8 +40,7 @@ dev = [
   "optuna >= 4.3.0, < 4.4",
   "orjson >= 3.10.16, < 3.11",
   "pathvalidate >= 3.2.3, < 3.3",
-  "polars >= 1.27.1, < 1.28",
-  "polars-lts-cpu >= 1.27.1, < 1.28",
+  "polars-lts-cpu >= 1.28.1, < 1.29",
   "polars-ols >= 0.3.5, < 0.4",
   "pqdm >= 0.2.0, < 0.3",
   "psycopg2-binary >= 2.9.10, < 2.10",  # for sqlalchemy
@@ -94,7 +93,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.112.3"
+version = "0.112.4"
 
 [project.optional-dependencies]
 test = [
@@ -117,7 +116,7 @@ zzz-test-altair = [
   "altair >= 5.5.0, < 5.6",
   "atomicwrites >= 1.4.1, < 1.5",
   "img2pdf >= 0.6.0, < 0.7",
-  "polars-lts-cpu >= 1.27.1, < 1.28",
+  "polars-lts-cpu >= 1.28.1, < 1.29",
   "vl-convert-python >= 1.7.0, < 1.8",
   "whenever >= 0.7.3, < 0.8",
 ]
@@ -139,7 +138,7 @@ zzz-test-cryptography = ["cryptography >= 44.0.2, < 44.1"]
 zzz-test-cvxpy = ["cvxpy >= 1.6.5, < 1.7"]
 zzz-test-dataclasses = [
   "orjson >= 3.10.15, < 3.11",
-  "polars-lts-cpu >= 1.27.1, < 1.28",
+  "polars-lts-cpu >= 1.28.1, < 1.29",
   "whenever >= 0.7.3, < 0.8",
 ]
 zzz-test-datetime = [
@@ -163,7 +162,7 @@ zzz-test-functools = []
 zzz-test-getpass = []
 zzz-test-git = []
 zzz-test-hashlib = [
-  "polars-lts-cpu >= 1.27.1, < 1.28",
+  "polars-lts-cpu >= 1.28.1, < 1.29",
   "orjson >= 3.10.15, < 3.11",
   "whenever >= 0.7.3, < 0.8",
 ]
@@ -188,13 +187,13 @@ zzz-test-hypothesis = [
 ]
 zzz-test-ipython = ["ipython >= 9.0.1, < 9.1"]
 zzz-test-iterables = [
-  "polars-lts-cpu >= 1.27.1, < 1.28",
+  "polars-lts-cpu >= 1.28.1, < 1.29",
   "whenever >= 0.7.3, < 0.8",
 ]
 zzz-test-jupyter = [
   "jupyterlab >= 4.2.0, < 4.3",
   "pandas >= 2.2.2, < 2.3",
-  "polars-lts-cpu >= 1.27.1, < 1.28",
+  "polars-lts-cpu >= 1.28.1, < 1.29",
 ]
 zzz-test-logging = [
   "atomicwrites >= 1.4.1, < 1.5",
@@ -216,13 +215,13 @@ zzz-test-modules = []
 zzz-test-more-itertools = ["more-itertools >= 10.7.0, < 10.8"]
 zzz-test-numpy = ["numpy >= 2.2.5, < 2.3"]
 zzz-test-operator = [
-  "polars-lts-cpu >= 1.27.1, < 1.28",
+  "polars-lts-cpu >= 1.28.1, < 1.29",
   "whenever >= 0.7.3, < 0.8",
 ]
 zzz-test-optuna = ["optuna >= 4.3.0, < 4.4"]
 zzz-test-orjson = [
   "orjson >= 3.10.15, < 3.11",
-  "polars-lts-cpu >= 1.27.1, < 1.28",
+  "polars-lts-cpu >= 1.28.1, < 1.29",
   "rich >= 14.0.0, < 14.1",
   "tzlocal >= 5.3.1, < 5.4",
   "whenever >= 0.7.3, < 0.8",
@@ -233,7 +232,7 @@ zzz-test-pickle = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-platform = []
 zzz-test-polars = [
   "dacite >= 1.9.2, < 1.10",
-  "polars-lts-cpu >= 1.27.1, < 1.28",
+  "polars-lts-cpu >= 1.28.1, < 1.29",
   "whenever >= 0.7.3, < 0.8",
 ]
 zzz-test-pqdm = ["pqdm >= 0.2.0, < 0.3"]
@@ -261,7 +260,7 @@ zzz-test-random = []
 zzz-test-re = []
 zzz-test-redis = [
   "orjson >= 3.10.15, < 3.11",
-  "polars-lts-cpu >= 1.27.1, < 1.28",
+  "polars-lts-cpu >= 1.28.1, < 1.29",
   "redis >= 5.2.1, < 5.3",
   "rich >= 14.0.0, < 14.1",
   "tenacity >= 8.5.0, < 9.0",  # limited by luigi
@@ -290,7 +289,7 @@ zzz-test-sqlalchemy-polars = [
   "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
   "greenlet >= 3.2.0, < 3.3",  # for sqlalchemy async
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
-  "polars-lts-cpu >= 1.27.1, < 1.28",
+  "polars-lts-cpu >= 1.28.1, < 1.29",
   "sqlalchemy >= 2.0.40, < 2.1",
   "tenacity >= 8.5.0, < 9.0",  # limited by luigi
   "whenever >= 0.7.3, < 0.8",
@@ -318,7 +317,7 @@ zzz-test-traceback = [
 ]
 zzz-test-types = []
 zzz-test-typing = [
-  "polars-lts-cpu >= 1.27.1, < 1.28",
+  "polars-lts-cpu >= 1.28.1, < 1.29",
   "whenever >= 0.7.3, < 0.8",
 ]
 zzz-test-tzlocal = ["tzlocal >= 5.3.1, < 5.4"]
@@ -337,7 +336,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.112.3"
+current_version = "0.112.4"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
