@@ -275,7 +275,7 @@ def mapping_to_dataclass(
     have = set(field_names_to_values) | default
     missing = {f.name for f in fields_use} - have
     if len(missing) >= 1:
-        raise _MappingToDataclassMissingValuesError(cls=cls, fields=missing)
+        raise _MappingToDataClassMissingValuesError(cls=cls, fields=missing)
     return cls(**field_names_to_values)
 
 
@@ -318,7 +318,7 @@ class _MappingToDataClassNonUniqueError(MappingToDataclassError[TDataclass]):
 
 
 @dataclass(kw_only=True, slots=True)
-class _MappingToDataclassMissingValuesError(MappingToDataclassError[TDataclass]):
+class _MappingToDataClassMissingValuesError(MappingToDataclassError[TDataclass]):
     fields: AbstractSet[str]
 
     @override
@@ -571,7 +571,7 @@ def parse_dataclass(
             case_sensitive=case_sensitive,
             allow_extra=allow_extra_keys,
         )
-    except _MappingToDataclassMissingValuesError as error:
+    except _MappingToDataClassMissingValuesError as error:
         raise _ParseDataClassMissingValuesError(cls=cls, fields=error.fields) from None
 
 

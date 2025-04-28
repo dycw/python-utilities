@@ -35,7 +35,7 @@ from tests.test_typing_funcs.with_future import (
 from utilities.dataclasses import (
     YieldFieldsError,
     _MappingToDataClassEmptyError,
-    _MappingToDataclassMissingValuesError,
+    _MappingToDataClassMissingValuesError,
     _MappingToDataClassNonUniqueError,
     _OneFieldEmptyError,
     _OneFieldNonUniqueError,
@@ -107,7 +107,7 @@ class TestDataClassRepr:
         assert result == expected
 
 
-class TestDataclassToDictAndDataclassRepr:
+class TestDataClassToDictAndDataClassRepr:
     @given(x=integers(), defaults=booleans())
     def test_field_without_defaults(self, *, x: int, defaults: bool) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -228,7 +228,7 @@ class TestDataclassToDictAndDataclassRepr:
         dict_exp = {"inner": Inner(), "y": y}
         assert dict_res == dict_exp
         repr_res = dataclass_repr(obj, localns=locals())
-        repr_exp = f"Outer(inner=TestDataclassToDictAndDataclassRepr.test_nested_without_recursive.<locals>.Inner(x=0), y={y})"
+        repr_exp = f"Outer(inner=TestDataClassToDictAndDataClassRepr.test_nested_without_recursive.<locals>.Inner(x=0), y={y})"
         assert repr_res == repr_exp
 
     @given(y=lists(integers()), z=integers())
@@ -268,11 +268,11 @@ class TestDataclassToDictAndDataclassRepr:
         dict_exp = {"inner": [Inner(x=0)], "y": y, "z": z}
         assert dict_res == dict_exp
         repr_res = dataclass_repr(obj, localns=locals())
-        repr_exp = f"Outer(inner=[TestDataclassToDictAndDataclassRepr.test_nested_in_list_without_recursive.<locals>.Inner(x=0)], y={y}, z={z})"
+        repr_exp = f"Outer(inner=[TestDataClassToDictAndDataClassRepr.test_nested_in_list_without_recursive.<locals>.Inner(x=0)], y={y}, z={z})"
         assert repr_res == repr_exp
 
 
-class TestMappingToDataclass:
+class TestMappingToDataClass:
     @given(key=sampled_from(["int_", "INT_"]), int_=integers())
     def test_exact_match_case_insensitive(self, *, key: str, int_: int) -> None:
         obj = mapping_to_dataclass(DataClassFutureInt, {key: int_})
@@ -382,7 +382,7 @@ class TestMappingToDataclass:
 
     def test_error_missing_values(self) -> None:
         with raises(
-            _MappingToDataclassMissingValuesError,
+            _MappingToDataClassMissingValuesError,
             match="Unable to construct 'DataClassFutureInt'; missing values for 'int_'",
         ):
             _ = mapping_to_dataclass(DataClassFutureInt, {})
