@@ -493,12 +493,12 @@ class TestSerializeAndParseDataClass:
     def test_error_text_extra_non_unique(self) -> None:
         with raises(
             _ParseDataClassTextExtraNonUniqueError,
-            match="Unable to construct 'DataClassFutureInt' since the field 'int_' could not be parsed; got 'invalid'",
+            match="Unable to construct 'DataClassFutureInt' since the field 'int_' must contain exactly one parent class in `extra`; got <class 'int'>, <class 'int'> and perhaps more",
         ):
             _ = parse_dataclass(
                 "int_=0",
                 DataClassFutureInt,
-                extra_parsers={int | str: lambda text: int(text), int | float: int},
+                extra_parsers={int | str: int, int | float: int},
             )
 
 

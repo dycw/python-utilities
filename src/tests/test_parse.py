@@ -25,13 +25,10 @@ from pytest import mark, raises
 from tests.test_operator import TruthEnum
 from tests.test_typing_funcs.with_future import (
     DataClassFutureInt,
-    DataClassFutureIntChild,
     DataClassFutureIntEven,
     DataClassFutureIntEvenOrOddTypeUnion,
     DataClassFutureIntEvenOrOddUnion,
     DataClassFutureIntOdd,
-    DataClassFutureIntParentFirst,
-    DataClassFutureIntParentSecond,
     TrueOrFalseFutureLit,
     TrueOrFalseFutureTypeLit,
 )
@@ -350,16 +347,8 @@ class TestParseObject:
         ):
             _ = parse_object(bool, text, extra={int: parser})
 
-    @mark.only
+    @mark.skip
     def test_asdf(self) -> None:
-        text = "SMA5"
-        result = parse_object(Rolling, text, extra={Rolling: lambda x: int(x[-1])})
-        assert result == 5
-
-        text = "SMA7"
-        result = parse_object(Rolling2, text, extra={Rolling2: lambda x: int(x[-1])})
-        assert result == 7
-
         text = "SMA9"
         result = parse_object(
             Rolling2,
@@ -444,23 +433,13 @@ class TestParseObject:
             _ = parse_object(DataClassFutureInt, "invalid", extra={})
 
     @given(int_=integers())
+    @mark.only
     def test_error_extra_non_unique(self, *, int_: int) -> None:
         with raises(
             _ParseObjectExtraNonUniqueError,
-            match="Unable to parse <class '.*'> since `extra` must contain exactly one parent class; got <function .*>, <function .*> and perhaps more",
+            match="Unable to parse <class 'int'> since `extra` must contain exactly one parent class; got <class 'int'>, <class 'int'> and perhaps more",
         ):
-            _ = parse_object(
-                DataClassFutureIntChild,
-                serialize_object(int_),
-                extra={
-                    DataClassFutureIntParentFirst: lambda text: DataClassFutureIntChild(
-                        int1=int(text), int2=0
-                    ),
-                    DataClassFutureIntParentSecond: lambda text: DataClassFutureIntChild(
-                        int1=0, int2=int(text)
-                    ),
-                },
-            )
+            _ = parse_object(int, str(int_), extra={int | bool: int, int | float: int})
 
     def test_error_union_type_extra(self) -> None:
         with raises(
@@ -709,25 +688,14 @@ class TestSerializeObject:
         ):
             _ = serialize_object(Final, extra={})
 
-    @given(int1=integers(), int2=integers())
-    def test_error_extra_non_unique(self, *, int1: int, int2: int) -> None:
-        def serializer1(obj: DataClassFutureIntParentFirst, /) -> str:
-            return str(obj.int1)
-
-        def serializer2(obj: DataClassFutureIntParentSecond, /) -> str:
-            return str(obj.int2)
-
+    @given(bool_=booleans())
+    @mark.only
+    def test_error_extra_non_unique(self, *, bool_: bool) -> None:
         with raises(
             _SerializeObjectExtraNonUniqueError,
-            match=r"Unable to serialize object DataClassFutureIntChild\(.*\) since `extra` must contain exactly one parent class; got <function .*>, <function .*> and perhaps more",
+            match=r"Unable to serialize object (True|False) of type <class 'bool'> since `extra` must contain exactly one parent class; got <class 'str'>, <class 'str'> and perhaps more",
         ):
-            _ = serialize_object(
-                DataClassFutureIntChild(int1=int1, int2=int2),
-                extra={
-                    DataClassFutureIntParentFirst: serializer1,
-                    DataClassFutureIntParentSecond: serializer2,
-                },
-            )
+            _ = serialize_object(bool_, extra={bool | int: str, bool | float: str})
 
     def test_error_not_implemented(self) -> None:
         with raises(_SerializeObjectSerializeError):

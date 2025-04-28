@@ -610,7 +610,7 @@ class _SerializeObjectExtraNonUniqueError(SerializeObjectError):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to serialize object {self.obj!r} since `extra` must contain exactly one parent class; got {self.first!r}, {self.second!r} and perhaps more"
+        return f"Unable to serialize object {self.obj!r} of type {type(self.obj)!r} since `extra` must contain exactly one parent class; got {self.first!r}, {self.second!r} and perhaps more"
 
 
 __all__ = ["parse_object", "serialize_object"]
