@@ -282,13 +282,13 @@ def mapping_to_dataclass(
 @dataclass(kw_only=True, slots=True)
 class MappingToDataclassError(Exception, Generic[TDataclass]):
     cls: type[TDataclass]
-    head: bool = False
-    case_sensitive: bool = False
 
 
 @dataclass(kw_only=True, slots=True)
 class _MappingToDataClassEmptyError(MappingToDataclassError[TDataclass]):
     key: str
+    head: bool = False
+    case_sensitive: bool = False
 
     @override
     def __str__(self) -> str:
@@ -300,6 +300,8 @@ class _MappingToDataClassEmptyError(MappingToDataclassError[TDataclass]):
 @dataclass(kw_only=True, slots=True)
 class _MappingToDataClassNonUniqueError(MappingToDataclassError[TDataclass]):
     key: str
+    head: bool = False
+    case_sensitive: bool = False
     first: str
     second: str
 
@@ -519,17 +521,31 @@ def parse_dataclass(
             cls, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
         )
     )
-    fields_to_serializes = str_mapping_to_field_mapping(
-        cls,
-        keys_to_serializes,
-        fields=fields,
-        globalns=globalns,
-        localns=localns,
-        warn_name_errors=warn_name_errors,
-        head=head,
-        case_sensitive=case_sensitive,
-        allow_extra=allow_extra_keys,
-    )
+    try:
+        fields_to_serializes = str_mapping_to_field_mapping(
+            cls,
+            keys_to_serializes,
+            fields=fields,
+            globalns=globalns,
+            localns=localns,
+            warn_name_errors=warn_name_errors,
+            head=head,
+            case_sensitive=case_sensitive,
+            allow_extra=allow_extra_keys,
+        )
+    except _StrMappingToFieldMappingEmptyError as error:
+        raise _ParseDataClassStrMappingToFieldMappingEmptyError(
+            cls=cls, key=error.key, head=head, case_sensitive=case_sensitive
+        ) from None
+    except _StrMappingToFieldMappingNonUniqueError as error:
+        raise _ParseDataClassStrMappingToFieldMappingNonUniqueError(
+            cls=cls,
+            key=error.key,
+            head=head,
+            case_sensitive=case_sensitive,
+            first=error.first,
+            second=error.second,
+        ) from None
     field_names_to_values = {
         f.name: _parse_dataclass_parse_text(
             f,
@@ -581,7 +597,7 @@ def _parse_dataclass_split_key_value_pairs(
         ) from None
     except _SplitKeyValuePairsDuplicateKeysError as error:
         raise _ParseDataClassSplitKeyValuePairsDuplicateKeysError(
-            text=error.text, cls=cls, counts=error.counts
+            cls=cls, counts=error.counts
         ) from None
 
 
@@ -611,25 +627,28 @@ def _parse_dataclass_parse_text(
         raise _ParseDataClassTextParseError(cls=cls, field=field, text=text) from None
     except _ParseObjectExtraNonUniqueError as error:
         raise _ParseDataClassTextExtraNonUniqueError(
-            cls=cls, field=field, text=text, first=error.first, second=error.second
+            cls=cls, field=field, first=error.first, second=error.second
         ) from None
 
 
 @dataclass(kw_only=True, slots=True)
 class ParseDataClassError(Exception, Generic[TDataclass]):
-    text: str
     cls: type[TDataclass]
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseDataClassSplitKeyValuePairsSplitError(ParseDataClassError):
+class _ParseDataClassSplitKeyValuePairsSplitError(ParseDataClassError[TDataclass]):
+    text: str
+
     @override
     def __str__(self) -> str:
         return f"Unable to construct {get_class_name(self.cls)!r}; failed to split key-value pair {self.text!r}"
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseDataClassSplitKeyValuePairsDuplicateKeysError(ParseDataClassError):
+class _ParseDataClassSplitKeyValuePairsDuplicateKeysError(
+    ParseDataClassError[TDataclass]
+):
     counts: Mapping[str, int]
 
     @override
@@ -640,6 +659,7 @@ class _ParseDataClassSplitKeyValuePairsDuplicateKeysError(ParseDataClassError):
 @dataclass(kw_only=True, slots=True)
 class _ParseDataClassTextParseError(ParseDataClassError[TDataclass]):
     field: _YieldFieldsClass[Any]
+    text: str
 
     @override
     def __str__(self) -> str:
@@ -655,6 +675,46 @@ class _ParseDataClassTextExtraNonUniqueError(ParseDataClassError[TDataclass]):
     @override
     def __str__(self) -> str:
         return f"Unable to construct {get_class_name(self.cls)!r} since the field {self.field.name!r} of type {self.field.type_!r} must contain exactly one parent class in `extra`; got {self.first!r}, {self.second!r} and perhaps more"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ParseDataClassStrMappingToFieldMappingEmptyError(
+    ParseDataClassError[TDataclass]
+):
+    key: str
+    head: bool = False
+    case_sensitive: bool = False
+
+    @override
+    def __str__(self) -> str:
+        head = f"Unable to construct {get_class_name(self.cls)!r} since it does not contain"
+        tail = _empty_error_str_core(
+            self.key, head=self.head, case_sensitive=self.case_sensitive
+        )
+        return f"{head} {tail}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ParseDataClassStrMappingToFieldMappingNonUniqueError(
+    ParseDataClassError[TDataclass]
+):
+    key: str
+    head: bool = False
+    case_sensitive: bool = False
+    first: str
+    second: str
+
+    @override
+    def __str__(self) -> str:
+        head = f"Unable to construct {get_class_name(self.cls)!r} since it must contain"
+        tail = _non_unique_error_str_core(
+            self.key,
+            self.first,
+            self.second,
+            head=self.head,
+            case_sensitive=self.case_sensitive,
+        )
+        return f"{head} {tail}"
 
 
 ##
@@ -913,18 +973,28 @@ def _empty_error_str(
     case_sensitive: bool = False,
 ) -> str:
     head_msg = f"Dataclass {get_class_name(cls)!r} does not contain"
+    tail_msg = _empty_error_str_core(key, head=head, case_sensitive=case_sensitive)
+    return f"{head_msg} {tail_msg}"
+
+
+def _empty_error_str_core(
+    key: str,
+    /,
+    *,
+    head: bool = False,
+    case_sensitive: bool = False,
+) -> str:
     match head, case_sensitive:
         case False, True:
-            tail_msg = f"a field {key!r}"
+            return f"a field {key!r}"
         case False, False:
-            tail_msg = f"a field {key!r} (modulo case)"
+            return f"a field {key!r} (modulo case)"
         case True, True:
-            tail_msg = f"any field starting with {key!r}"
+            return f"any field starting with {key!r}"
         case True, False:
-            tail_msg = f"any field starting with {key!r} (modulo case)"
+            return f"any field starting with {key!r} (modulo case)"
         case _ as never:
             assert_never(never)
-    return f"{head_msg} {tail_msg}"
 
 
 def _non_unique_error_str(
@@ -938,20 +1008,35 @@ def _non_unique_error_str(
     case_sensitive: bool = False,
 ) -> str:
     head_msg = f"Dataclass {get_class_name(cls)!r} must contain"
+    tail_msg = _non_unique_error_str_core(
+        key, first, second, head=head, case_sensitive=case_sensitive
+    )
+    return f"{head_msg} {tail_msg}"
+
+
+def _non_unique_error_str_core(
+    key: str,
+    first: str,
+    second: str,
+    /,
+    *,
+    head: bool = False,
+    case_sensitive: bool = False,
+) -> str:
     match head, case_sensitive:
         case False, True:
             raise ImpossibleCaseError(  # pragma: no cover
                 case=[f"{head=}", f"{case_sensitive=}"]
             )
         case False, False:
-            mid_msg = f"field {key!r} exactly once (modulo case)"
+            head_msg = f"field {key!r} exactly once (modulo case)"
         case True, True:
-            mid_msg = f"exactly one field starting with {key!r}"
+            head_msg = f"exactly one field starting with {key!r}"
         case True, False:
-            mid_msg = f"exactly one field starting with {key!r} (modulo case)"
+            head_msg = f"exactly one field starting with {key!r} (modulo case)"
         case _ as never:
             assert_never(never)
-    return f"{head_msg} {mid_msg}; got {first!r}, {second!r} and perhaps more"
+    return f"{head_msg}; got {first!r}, {second!r} and perhaps more"
 
 
 __all__ = [
