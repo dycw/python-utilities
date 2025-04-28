@@ -657,9 +657,18 @@ def str_mapping_to_field_mapping(
             )
         except OneFieldEmptyError:
             if not allow_extra:
-                raise StrMappingToFieldMappingError(
+                raise StrMappingToFieldMappingEmptyError(
                     cls=cls, key=key, head=head, case_sensitive=case_sensitive
                 ) from None
+        except OneFieldNonUniqueError as error:
+            raise StrMappingToFieldMappingNonUniqueError(
+                cls=cls,
+                key=key,
+                head=head,
+                case_sensitive=case_sensitive,
+                first=error.first,
+                second=error.second,
+            ) from None
     return {field: mapping[key] for key, field in keys_to_fields.items()}
 
 
@@ -670,6 +679,9 @@ class StrMappingToFieldMappingError(Exception):
     head: bool = False
     case_sensitive: bool = False
 
+
+@dataclass(kw_only=True, slots=True)
+class StrMappingToFieldMappingEmptyError(StrMappingToFieldMappingError):
     @override
     def __str__(self) -> str:
         head = f"Dataclass {get_class_name(self.cls)!r} does not contain"
@@ -685,6 +697,30 @@ class StrMappingToFieldMappingError(Exception):
             case _ as never:
                 assert_never(never)
         return f"{head} {tail}"
+
+
+@dataclass(kw_only=True, slots=True)
+class StrMappingToFieldMappingNonUniqueError(StrMappingToFieldMappingError):
+    first: str
+    second: str
+
+    @override
+    def __str__(self) -> str:
+        head = f"Dataclass {get_class_name(self.cls)!r} must contain"
+        match self.head, self.case_sensitive:
+            case False, True:
+                raise ImpossibleCaseError(  # pragma: no cover
+                    case=[f"{self.head=}", f"{self.case_sensitive=}"]
+                )
+            case False, False:
+                mid = f"field {self.key!r} exactly once (modulo case)"
+            case True, True:
+                mid = f"exactly one field starting with {self.key!r}"
+            case True, False:
+                mid = f"exactly one field starting with {self.key!r} (modulo case)"
+            case _ as never:
+                assert_never(never)
+        return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
 
 
 ##
@@ -858,7 +894,9 @@ __all__ = [
     "OneFieldError",
     "OneFieldNonUniqueError",
     "ParseDataClassError",
+    "StrMappingToFieldMappingEmptyError",
     "StrMappingToFieldMappingError",
+    "StrMappingToFieldMappingNonUniqueError",
     "YieldFieldsError",
     "dataclass_repr",
     "dataclass_to_dict",

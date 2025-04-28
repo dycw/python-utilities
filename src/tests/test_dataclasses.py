@@ -36,7 +36,7 @@ from utilities.dataclasses import (
     MappingToDataclassError,
     OneFieldEmptyError,
     OneFieldNonUniqueError,
-    StrMappingToFieldMappingError,
+    StrMappingToFieldMappingEmptyError,
     YieldFieldsError,
     _parse_dataclass_split_key_value_pairs,
     _ParseDataClassSplitKeyValuePairsDuplicateKeysError,
@@ -312,6 +312,28 @@ class TestMappingToDataclass:
 
 
 class TestOneField:
+    @given(key=sampled_from(["int_", "INT_"]))
+    def test_exact_match_case_insensitive(self, *, key: str) -> None:
+        obj = one_field(DataClassFutureInt, key)
+        expected = one(yield_fields(DataClassFutureInt))
+        assert obj == expected
+
+    @given(key=sampled_from(["in", "IN"]))
+    def test_head_case_insensitive(self, *, key: str) -> None:
+        obj = one_field(DataClassFutureInt, key, head=True)
+        expected = one(yield_fields(DataClassFutureInt))
+        assert obj == expected
+
+    def test_exact_match_case_sensitive(self) -> None:
+        obj = one_field(DataClassFutureInt, "int_", case_sensitive=True)
+        expected = one(yield_fields(DataClassFutureInt))
+        assert obj == expected
+
+    def test_head_case_sensitive(self) -> None:
+        obj = one_field(DataClassFutureInt, "int", head=True, case_sensitive=True)
+        expected = one(yield_fields(DataClassFutureInt))
+        assert obj == expected
+
     def test_error_exact_match_case_insensitive_empty_error(self) -> None:
         with raises(
             OneFieldEmptyError,
@@ -549,7 +571,7 @@ class TestStrMappingToFieldMapping:
     @given(int_=integers())
     def test_error_exact_match_case_insensitive(self, *, int_: int) -> None:
         with raises(
-            StrMappingToFieldMappingError,
+            StrMappingToFieldMappingEmptyError,
             match=r"Dataclass 'DataClassFutureInt' does not contain a field 'invalid' \(modulo case\)",
         ):
             _ = str_mapping_to_field_mapping(
@@ -559,7 +581,7 @@ class TestStrMappingToFieldMapping:
     @given(int_=integers())
     def test_error_exact_match_case_sensitive(self, *, int_: int) -> None:
         with raises(
-            StrMappingToFieldMappingError,
+            StrMappingToFieldMappingEmptyError,
             match=r"Dataclass 'DataClassFutureInt' does not contain a field 'extra'",
         ):
             _ = str_mapping_to_field_mapping(
@@ -569,7 +591,7 @@ class TestStrMappingToFieldMapping:
     @given(int_=integers())
     def test_error_head_case_insensitive(self, *, int_: int) -> None:
         with raises(
-            StrMappingToFieldMappingError,
+            StrMappingToFieldMappingEmptyError,
             match=r"Dataclass .* does not contain any field starting with 'invalid' \(modulo case\)",
         ):
             _ = str_mapping_to_field_mapping(
@@ -579,7 +601,7 @@ class TestStrMappingToFieldMapping:
     @given(int_=integers())
     def test_error_head_case_sensitive(self, *, int_: int) -> None:
         with raises(
-            StrMappingToFieldMappingError,
+            StrMappingToFieldMappingEmptyError,
             match=r"Dataclass .* does not contain any field starting with 'invalid'",
         ):
             _ = str_mapping_to_field_mapping(
