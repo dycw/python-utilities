@@ -283,17 +283,19 @@ def _parse_object_dict_type(
 
 def _parse_object_extra(cls: Any, text: str, extra: ParseObjectExtra, /) -> Any:
     try:
-        parser = one(
-            p for c, p in extra.items() if (cls is c) or is_subclass_gen(cls, c)
-        )
-    except (OneEmptyError, TypeError):
-        raise _ParseObjectParseError(type_=cls, text=text) from None
-    except OneNonUniqueError as error:
-        raise _ParseObjectExtraNonUniqueError(
-            type_=cls, text=text, first=error.first, second=error.second
-        ) from None
-    else:
-        return parser(text)
+        parser = extra[cls]
+    except KeyError:
+        try:
+            parser = one(
+                p for c, p in extra.items() if (cls is c) or is_subclass_gen(cls, c)
+            )
+        except (OneEmptyError, TypeError):
+            raise _ParseObjectParseError(type_=cls, text=text) from None
+        except OneNonUniqueError as error:
+            raise _ParseObjectExtraNonUniqueError(
+                type_=cls, text=text, first=error.first, second=error.second
+            ) from None
+    return parser(text)
 
 
 def _parse_object_list_type(
@@ -600,7 +602,7 @@ class SerializeObjectError(Exception):
 class _SerializeObjectSerializeError(SerializeObjectError):
     @override
     def __str__(self) -> str:
-        return f"Unable to serialize object {self.obj!r}"
+        return f"Unable to serialize object {self.obj!r} of type {type(self.obj)!r}"
 
 
 @dataclass

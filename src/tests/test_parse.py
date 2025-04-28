@@ -20,7 +20,7 @@ from hypothesis.strategies import (
     sets,
     times,
 )
-from pytest import mark, raises
+from pytest import raises
 
 from tests.test_operator import TruthEnum
 from tests.test_typing_funcs.with_future import (
@@ -311,7 +311,7 @@ class TestSerializeAndParseObject:
 
 class TestParseObject:
     @given(text=sampled_from(["F_a_l_s_e", "T_r_u_e"]))
-    def test_bool_custom(self, *, text: str) -> None:
+    def test_extra(self, *, text: str) -> None:
         def parser(text: str, /) -> bool:
             match text:
                 case "F_a_l_s_e":
@@ -332,7 +332,7 @@ class TestParseObject:
         assert bool_ is expected
 
     @given(text=sampled_from(["F_a_l_s_e", "T_r_u_e"]))
-    def test_bool_extra_not_used(self, *, text: str) -> None:
+    def test_extra_both_exact_match_and_non_unique_parents(self, *, text: str) -> None:
         def parser(text: str, /) -> bool:
             match text:
                 case "F_a_l_s_e":
@@ -342,28 +342,17 @@ class TestParseObject:
                 case _:
                     raise ImpossibleCaseError(case=[f"{text=}"])
 
-        with raises(
-            _ParseObjectParseError, match="Unable to parse <class 'bool'>; got '.*'"
-        ):
-            _ = parse_object(bool, text, extra={int: parser})
-
-    @mark.skip
-    def test_asdf(self) -> None:
-        text = "SMA9"
         result = parse_object(
-            Rolling2,
-            text,
-            extra={
-                Rolling: lambda x: int(x[-1]),
-                Rolling2: lambda x: int(x[-1]),
-                # Rolling3: lambda x: int(x[-1]),
-            },
+            bool, text, extra={bool: parser, bool | int: bool, bool | float: bool}
         )
-        assert result == 9
-
-        text = "10"
-        result = parse_object(Number, text, extra={Number: int, Number2: int})
-        assert result == 10
+        match text:
+            case "F_a_l_s_e":
+                expected = False
+            case "T_r_u_e":
+                expected = True
+            case _:
+                raise ImpossibleCaseError(case=[f"{text=}"])
+        assert result is expected
 
     @given(value=text_ascii(min_size=10) | none())
     def test_optional_type_with_union_extra_not_used(
@@ -432,8 +421,23 @@ class TestParseObject:
         ):
             _ = parse_object(DataClassFutureInt, "invalid", extra={})
 
+    @given(text=sampled_from(["F_a_l_s_e", "T_r_u_e"]))
+    def test_error_extra_empty_bool_does_not_use_int(self, *, text: str) -> None:
+        def parser(text: str, /) -> bool:
+            match text:
+                case "F_a_l_s_e":
+                    return False
+                case "T_r_u_e":
+                    return True
+                case _:
+                    raise ImpossibleCaseError(case=[f"{text=}"])
+
+        with raises(
+            _ParseObjectParseError, match="Unable to parse <class 'bool'>; got '.*'"
+        ):
+            _ = parse_object(bool, text, extra={int: parser})
+
     @given(int_=integers())
-    @mark.only
     def test_error_extra_non_unique(self, *, int_: int) -> None:
         with raises(
             _ParseObjectExtraNonUniqueError,
@@ -684,12 +688,11 @@ class TestSerializeObject:
     def test_error_extra_empty(self) -> None:
         with raises(
             _SerializeObjectSerializeError,
-            match=r"Unable to serialize object typing\.Final",
+            match=r"Unable to serialize object typing\.Final of type <class 'typing\._SpecialForm'>",
         ):
             _ = serialize_object(Final, extra={})
 
     @given(bool_=booleans())
-    @mark.only
     def test_error_extra_non_unique(self, *, bool_: bool) -> None:
         with raises(
             _SerializeObjectExtraNonUniqueError,

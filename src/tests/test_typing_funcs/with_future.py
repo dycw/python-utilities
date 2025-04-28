@@ -88,22 +88,6 @@ class DataClassFutureIntOneAndTwo:
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassFutureIntParentFirst:
-    int1: int
-
-
-@dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassFutureIntParentSecond:
-    int2: int
-
-
-@dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassFutureIntChild(
-    DataClassFutureIntParentFirst, DataClassFutureIntParentSecond
-): ...
-
-
-@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureListInts:
     ints: list[int]
 
@@ -151,11 +135,6 @@ class DataClassFutureNone:
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureNoneDefault:
     none: None = None
-
-
-@dataclass(order=True, unsafe_hash=True, kw_only=True)
-class DataClassFutureNumber:
-    number: Number
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
