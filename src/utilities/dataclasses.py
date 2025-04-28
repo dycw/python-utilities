@@ -611,7 +611,7 @@ class _ParseDataClassTextParseError(ParseDataClassError[TDataclass]):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to construct {get_class_name(self.cls)!r} since the field {self.field.name!r} could not be parsed; got {self.text!r}"
+        return f"Unable to construct {get_class_name(self.cls)!r} since the field {self.field.name!r} of type {self.field.type_!r} could not be parsed; got {self.text!r}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -622,7 +622,7 @@ class _ParseDataClassTextExtraNonUniqueError(ParseDataClassError[TDataclass]):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to construct {get_class_name(self.cls)!r} since the field {self.field.name!r} must contain exactly one parent class in `extra`; got {self.first!r}, {self.second!r} and perhaps more"
+        return f"Unable to construct {get_class_name(self.cls)!r} since the field {self.field.name!r} of type {self.field.type_!r} must contain exactly one parent class in `extra`; got {self.first!r}, {self.second!r} and perhaps more"
 
 
 ##
