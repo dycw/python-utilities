@@ -245,7 +245,7 @@ def is_instance_gen(obj: Any, type_: Any, /) -> bool:
         return (len(obj) == len(type_args)) and all(
             is_instance_gen(o, t) for o, t in zip(obj, type_args, strict=True)
         )
-    if (not isinstance(obj, tuple)) and is_tuple_type(type_):
+    if isinstance(obj, tuple) is not is_tuple_type(type_):
         return False
     # basic
     if isinstance(type_, type):
