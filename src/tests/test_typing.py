@@ -53,6 +53,7 @@ from tests.test_typing_funcs.with_future import (
     TrueOrFalseFutureLit,
     TrueOrFalseFutureTypeLit,
 )
+from utilities.hypothesis import text_ascii
 from utilities.sentinel import Sentinel
 from utilities.types import Duration, LogLevel, Number, Parallelism, Seed
 from utilities.typing import (
@@ -530,6 +531,7 @@ class TestIsInstanceGen:
             (sampled_from([1, "2", 3]), int, 3, False),
             (sampled_from([1, "2", 3]), str, 3, False),
             (booleans(), Literal[1, 2, 3], None, False),
+            (text_ascii(), Literal["a", "b", "c"], 4, False),
             # tuple types
             (tuples(booleans()), tuple[bool], None, True),
             (tuples(booleans()), tuple[int], None, False),
@@ -552,6 +554,10 @@ class TestIsInstanceGen:
                 False,
             ),
             (tuples(just("a"), integers()), tuple[Literal["a", "b"], int], None, True),
+            (booleans(), tuple[bool], 2, False),
+            (booleans() | none(), tuple[bool], 3, False),
+            (text_ascii(), tuple[bool], None, False),
+            (text_ascii() | none(), tuple[bool], None, False),
         ]),
     )
     def test_main(
@@ -655,6 +661,7 @@ class TestIsSubclassGen:
             (Literal[1, "2", 3], int, False),
             (Literal[1, "2", 3], str, False),
             (bool, Literal[1, 2, 3], False),
+            (str, Literal["a", "b", "c"], False),
             # tuple types
             (tuple[bool], tuple[bool], True),
             (tuple[bool], tuple[int], False),
@@ -672,6 +679,10 @@ class TestIsSubclassGen:
             (tuple[Literal["a"], bool], tuple[Literal["a", "b"], int], False),
             (tuple[Literal["a"], int], tuple[Literal["a", "b"], bool], False),
             (tuple[Literal["a"], int], tuple[Literal["a", "b"], int], True),
+            (bool, tuple[bool], False),
+            (bool | None, tuple[bool], False),
+            (str, tuple[Literal["a", "b", "c"]], False),
+            (str | None, tuple[Literal["a", "b", "c"]], False),
         ])
     )
     def test_main(self, *, case: tuple[type[Any], Any, bool]) -> None:
