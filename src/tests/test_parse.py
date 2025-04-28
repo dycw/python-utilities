@@ -25,13 +25,10 @@ from pytest import raises
 from tests.test_operator import TruthEnum
 from tests.test_typing_funcs.with_future import (
     DataClassFutureInt,
-    DataClassFutureIntChild,
     DataClassFutureIntEven,
     DataClassFutureIntEvenOrOddTypeUnion,
     DataClassFutureIntEvenOrOddUnion,
     DataClassFutureIntOdd,
-    DataClassFutureIntParentFirst,
-    DataClassFutureIntParentSecond,
     TrueOrFalseFutureLit,
     TrueOrFalseFutureTypeLit,
 )
@@ -309,7 +306,7 @@ class TestSerializeAndParseObject:
 
 class TestParseObject:
     @given(text=sampled_from(["F_a_l_s_e", "T_r_u_e"]))
-    def test_bool_custom(self, *, text: str) -> None:
+    def test_extra(self, *, text: str) -> None:
         def parser(text: str, /) -> bool:
             match text:
                 case "F_a_l_s_e":
@@ -330,7 +327,7 @@ class TestParseObject:
         assert bool_ is expected
 
     @given(text=sampled_from(["F_a_l_s_e", "T_r_u_e"]))
-    def test_bool_extra_not_used(self, *, text: str) -> None:
+    def test_extra_both_exact_match_and_non_unique_parents(self, *, text: str) -> None:
         def parser(text: str, /) -> bool:
             match text:
                 case "F_a_l_s_e":
@@ -340,10 +337,17 @@ class TestParseObject:
                 case _:
                     raise ImpossibleCaseError(case=[f"{text=}"])
 
-        with raises(
-            _ParseObjectParseError, match="Unable to parse <class 'bool'>; got '.*'"
-        ):
-            _ = parse_object(bool, text, extra={int: parser})
+        result = parse_object(
+            bool, text, extra={bool: parser, bool | int: bool, bool | float: bool}
+        )
+        match text:
+            case "F_a_l_s_e":
+                expected = False
+            case "T_r_u_e":
+                expected = True
+            case _:
+                raise ImpossibleCaseError(case=[f"{text=}"])
+        assert result is expected
 
     @given(value=text_ascii(min_size=10) | none())
     def test_optional_type_with_union_extra_not_used(
@@ -412,24 +416,29 @@ class TestParseObject:
         ):
             _ = parse_object(DataClassFutureInt, "invalid", extra={})
 
+    @given(text=sampled_from(["F_a_l_s_e", "T_r_u_e"]))
+    def test_error_extra_empty_bool_does_not_use_int(self, *, text: str) -> None:
+        def parser(text: str, /) -> bool:
+            match text:
+                case "F_a_l_s_e":
+                    return False
+                case "T_r_u_e":
+                    return True
+                case _:
+                    raise ImpossibleCaseError(case=[f"{text=}"])
+
+        with raises(
+            _ParseObjectParseError, match="Unable to parse <class 'bool'>; got '.*'"
+        ):
+            _ = parse_object(bool, text, extra={int: parser})
+
     @given(int_=integers())
     def test_error_extra_non_unique(self, *, int_: int) -> None:
         with raises(
             _ParseObjectExtraNonUniqueError,
-            match="Unable to parse <class '.*'> since `extra` must contain exactly one parent class; got <function .*>, <function .*> and perhaps more",
+            match="Unable to parse <class 'int'> since `extra` must contain exactly one parent class; got <class 'int'>, <class 'int'> and perhaps more",
         ):
-            _ = parse_object(
-                DataClassFutureIntChild,
-                serialize_object(int_),
-                extra={
-                    DataClassFutureIntParentFirst: lambda text: DataClassFutureIntChild(
-                        int1=int(text), int2=0
-                    ),
-                    DataClassFutureIntParentSecond: lambda text: DataClassFutureIntChild(
-                        int1=0, int2=int(text)
-                    ),
-                },
-            )
+            _ = parse_object(int, str(int_), extra={int | bool: int, int | float: int})
 
     def test_error_union_type_extra(self) -> None:
         with raises(
@@ -674,29 +683,17 @@ class TestSerializeObject:
     def test_error_extra_empty(self) -> None:
         with raises(
             _SerializeObjectSerializeError,
-            match=r"Unable to serialize object typing\.Final",
+            match=r"Unable to serialize object typing\.Final of type <class 'typing\._SpecialForm'>",
         ):
             _ = serialize_object(Final, extra={})
 
-    @given(int1=integers(), int2=integers())
-    def test_error_extra_non_unique(self, *, int1: int, int2: int) -> None:
-        def serializer1(obj: DataClassFutureIntParentFirst, /) -> str:
-            return str(obj.int1)
-
-        def serializer2(obj: DataClassFutureIntParentSecond, /) -> str:
-            return str(obj.int2)
-
+    @given(bool_=booleans())
+    def test_error_extra_non_unique(self, *, bool_: bool) -> None:
         with raises(
             _SerializeObjectExtraNonUniqueError,
-            match=r"Unable to serialize object DataClassFutureIntChild\(.*\) since `extra` must contain exactly one parent class; got <function .*>, <function .*> and perhaps more",
+            match=r"Unable to serialize object (True|False) of type <class 'bool'> since `extra` must contain exactly one parent class; got <class 'str'>, <class 'str'> and perhaps more",
         ):
-            _ = serialize_object(
-                DataClassFutureIntChild(int1=int1, int2=int2),
-                extra={
-                    DataClassFutureIntParentFirst: serializer1,
-                    DataClassFutureIntParentSecond: serializer2,
-                },
-            )
+            _ = serialize_object(bool_, extra={bool | int: str, bool | float: str})
 
     def test_error_not_implemented(self) -> None:
         with raises(_SerializeObjectSerializeError):

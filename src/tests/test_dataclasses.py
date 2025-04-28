@@ -39,9 +39,10 @@ from utilities.dataclasses import (
     StrMappingToFieldMappingError,
     YieldFieldsError,
     _parse_dataclass_split_key_value_pairs,
-    _ParseDataClassParseValueError,
     _ParseDataClassSplitKeyValuePairsDuplicateKeysError,
     _ParseDataClassSplitKeyValuePairsSplitError,
+    _ParseDataClassTextExtraNonUniqueError,
+    _ParseDataClassTextParseError,
     _YieldFieldsClass,
     _YieldFieldsInstance,
     dataclass_repr,
@@ -482,12 +483,23 @@ class TestSerializeAndParseDataClass:
         ):
             _ = parse_dataclass("a=1,b=22a,b=22b,c=3", DataClassFutureInt)
 
-    def test_error_parse_value(self) -> None:
+    def test_error_text_parse(self) -> None:
         with raises(
-            _ParseDataClassParseValueError,
-            match="Unable to construct 'DataClassFutureInt'; unable to parse field 'int_' of type <class 'int'>; got 'invalid'",
+            _ParseDataClassTextParseError,
+            match="Unable to construct 'DataClassFutureInt' since the field 'int_' of type <class 'int'> could not be parsed; got 'invalid'",
         ):
             _ = parse_dataclass("int_=invalid", DataClassFutureInt)
+
+    def test_error_text_extra_non_unique(self) -> None:
+        with raises(
+            _ParseDataClassTextExtraNonUniqueError,
+            match="Unable to construct 'DataClassFutureInt' since the field 'int_' of type <class 'int'> must contain exactly one parent class in `extra`; got <class 'int'>, <class 'int'> and perhaps more",
+        ):
+            _ = parse_dataclass(
+                "int_=0",
+                DataClassFutureInt,
+                extra_parsers={int | str: int, int | float: int},
+            )
 
 
 class TestStrMappingToFieldMapping:

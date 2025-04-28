@@ -22,7 +22,12 @@ from utilities.functions import (
 )
 from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.operator import is_equal
-from utilities.parse import ParseObjectError, parse_object, serialize_object
+from utilities.parse import (
+    _ParseObjectExtraNonUniqueError,
+    _ParseObjectParseError,
+    parse_object,
+    serialize_object,
+)
 from utilities.re import ExtractGroupError, extract_group
 from utilities.sentinel import Sentinel, sentinel
 from utilities.text import (
@@ -570,8 +575,12 @@ def _parse_dataclass_parse_text(
             case_sensitive=case_sensitive,
             extra=extra,
         )
-    except ParseObjectError:
-        raise _ParseDataClassParseValueError(cls=cls, field=field, text=text) from None
+    except _ParseObjectParseError:
+        raise _ParseDataClassTextParseError(cls=cls, field=field, text=text) from None
+    except _ParseObjectExtraNonUniqueError as error:
+        raise _ParseDataClassTextExtraNonUniqueError(
+            cls=cls, field=field, text=text, first=error.first, second=error.second
+        ) from None
 
 
 @dataclass(kw_only=True, slots=True)
@@ -597,12 +606,23 @@ class _ParseDataClassSplitKeyValuePairsDuplicateKeysError(ParseDataClassError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseDataClassParseValueError(ParseDataClassError[TDataclass]):
+class _ParseDataClassTextParseError(ParseDataClassError[TDataclass]):
     field: _YieldFieldsClass[Any]
 
     @override
     def __str__(self) -> str:
-        return f"Unable to construct {get_class_name(self.cls)!r}; unable to parse field {self.field.name!r} of type {self.field.type_!r}; got {self.text!r}"
+        return f"Unable to construct {get_class_name(self.cls)!r} since the field {self.field.name!r} of type {self.field.type_!r} could not be parsed; got {self.text!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ParseDataClassTextExtraNonUniqueError(ParseDataClassError[TDataclass]):
+    field: _YieldFieldsClass[Any]
+    first: type[Any]
+    second: type[Any]
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to construct {get_class_name(self.cls)!r} since the field {self.field.name!r} of type {self.field.type_!r} must contain exactly one parent class in `extra`; got {self.first!r}, {self.second!r} and perhaps more"
 
 
 ##
