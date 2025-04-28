@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, override
 
 from dotenv import dotenv_values
 
-from utilities.dataclasses import MappingToDataclassError, parse_dataclass
+from utilities.dataclasses import _ParseDataClassMissingValuesError, parse_dataclass
 from utilities.git import get_repo_root
 from utilities.iterables import MergeStrMappingsError, merge_str_mappings
 from utilities.pathlib import PWD
@@ -61,7 +61,7 @@ def load_settings(
             allow_extra_keys=True,
             extra_parsers=extra_parsers,
         )
-    except MappingToDataclassError as error:
+    except _ParseDataClassMissingValuesError as error:
         raise _LoadSettingsMissingKeysError(path=path, fields=error.fields) from None
 
 

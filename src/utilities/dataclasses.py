@@ -240,17 +240,31 @@ def mapping_to_dataclass(
         )
     else:
         fields_use = fields
-    fields_to_values = str_mapping_to_field_mapping(
-        cls,
-        mapping,
-        fields=fields_use,
-        globalns=globalns,
-        localns=localns,
-        warn_name_errors=warn_name_errors,
-        head=head,
-        case_sensitive=case_sensitive,
-        allow_extra=allow_extra,
-    )
+    try:
+        fields_to_values = str_mapping_to_field_mapping(
+            cls,
+            mapping,
+            fields=fields_use,
+            globalns=globalns,
+            localns=localns,
+            warn_name_errors=warn_name_errors,
+            head=head,
+            case_sensitive=case_sensitive,
+            allow_extra=allow_extra,
+        )
+    except _StrMappingToFieldMappingEmptyError as error:
+        raise _MappingToDataClassEmptyError(
+            cls=cls, key=error.key, head=head, case_sensitive=case_sensitive
+        ) from None
+    except _StrMappingToFieldMappingNonUniqueError as error:
+        raise _MappingToDataClassNonUniqueError(
+            cls=cls,
+            key=error.key,
+            head=head,
+            case_sensitive=case_sensitive,
+            first=error.first,
+            second=error.second,
+        ) from None
     field_names_to_values = {f.name: v for f, v in fields_to_values.items()}
     default = {
         f.name
@@ -261,13 +275,50 @@ def mapping_to_dataclass(
     have = set(field_names_to_values) | default
     missing = {f.name for f in fields_use} - have
     if len(missing) >= 1:
-        raise MappingToDataclassError(cls=cls, fields=missing)
+        raise _MappingToDataClassMissingValuesError(cls=cls, fields=missing)
     return cls(**field_names_to_values)
 
 
 @dataclass(kw_only=True, slots=True)
 class MappingToDataclassError(Exception, Generic[TDataclass]):
     cls: type[TDataclass]
+
+
+@dataclass(kw_only=True, slots=True)
+class _MappingToDataClassEmptyError(MappingToDataclassError[TDataclass]):
+    key: str
+    head: bool = False
+    case_sensitive: bool = False
+
+    @override
+    def __str__(self) -> str:
+        return _empty_error_str(
+            self.cls, self.key, head=self.head, case_sensitive=self.case_sensitive
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class _MappingToDataClassNonUniqueError(MappingToDataclassError[TDataclass]):
+    key: str
+    head: bool = False
+    case_sensitive: bool = False
+    first: str
+    second: str
+
+    @override
+    def __str__(self) -> str:
+        return _non_unique_error_str(
+            self.cls,
+            self.key,
+            self.first,
+            self.second,
+            head=self.head,
+            case_sensitive=self.case_sensitive,
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class _MappingToDataClassMissingValuesError(MappingToDataclassError[TDataclass]):
     fields: AbstractSet[str]
 
     @override
@@ -307,11 +358,11 @@ def one_field(
     try:
         name = one_str(mapping, key, head=head, case_sensitive=case_sensitive)
     except OneStrEmptyError:
-        raise OneFieldEmptyError(
+        raise _OneFieldEmptyError(
             cls=cls, key=key, head=head, case_sensitive=case_sensitive
         ) from None
     except OneStrNonUniqueError as error:
-        raise OneFieldNonUniqueError(
+        raise _OneFieldNonUniqueError(
             cls=cls,
             key=key,
             head=head,
@@ -331,46 +382,29 @@ class OneFieldError(Exception, Generic[TDataclass]):
 
 
 @dataclass(kw_only=True, slots=True)
-class OneFieldEmptyError(OneFieldError[TDataclass]):
+class _OneFieldEmptyError(OneFieldError[TDataclass]):
     @override
     def __str__(self) -> str:
-        head = f"Dataclass {get_class_name(self.cls)!r} does not contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                tail = f"a field {self.key!r}"
-            case False, False:
-                tail = f"a field {self.key!r} (modulo case)"
-            case True, True:
-                tail = f"any field starting with {self.key!r}"
-            case True, False:
-                tail = f"any field starting with {self.key!r} (modulo case)"
-            case _ as never:
-                assert_never(never)
-        return f"{head} {tail}"
+        return _empty_error_str(
+            self.cls, self.key, head=self.head, case_sensitive=self.case_sensitive
+        )
 
 
 @dataclass(kw_only=True, slots=True)
-class OneFieldNonUniqueError(OneFieldError[TDataclass]):
+class _OneFieldNonUniqueError(OneFieldError[TDataclass]):
     first: str
     second: str
 
     @override
     def __str__(self) -> str:
-        head = f"Dataclass {get_class_name(self.cls)!r} must contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                raise ImpossibleCaseError(  # pragma: no cover
-                    case=[f"{self.head=}", f"{self.case_sensitive=}"]
-                )
-            case False, False:
-                mid = f"field {self.key!r} exactly once (modulo case)"
-            case True, True:
-                mid = f"exactly one field starting with {self.key!r}"
-            case True, False:
-                mid = f"exactly one field starting with {self.key!r} (modulo case)"
-            case _ as never:
-                assert_never(never)
-        return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
+        return _non_unique_error_str(
+            self.cls,
+            self.key,
+            self.first,
+            self.second,
+            head=self.head,
+            case_sensitive=self.case_sensitive,
+        )
 
 
 ##
@@ -487,17 +521,31 @@ def parse_dataclass(
             cls, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
         )
     )
-    fields_to_serializes = str_mapping_to_field_mapping(
-        cls,
-        keys_to_serializes,
-        fields=fields,
-        globalns=globalns,
-        localns=localns,
-        warn_name_errors=warn_name_errors,
-        head=head,
-        case_sensitive=case_sensitive,
-        allow_extra=allow_extra_keys,
-    )
+    try:
+        fields_to_serializes = str_mapping_to_field_mapping(
+            cls,
+            keys_to_serializes,
+            fields=fields,
+            globalns=globalns,
+            localns=localns,
+            warn_name_errors=warn_name_errors,
+            head=head,
+            case_sensitive=case_sensitive,
+            allow_extra=allow_extra_keys,
+        )
+    except _StrMappingToFieldMappingEmptyError as error:
+        raise _ParseDataClassStrMappingToFieldMappingEmptyError(
+            cls=cls, key=error.key, head=head, case_sensitive=case_sensitive
+        ) from None
+    except _StrMappingToFieldMappingNonUniqueError as error:
+        raise _ParseDataClassStrMappingToFieldMappingNonUniqueError(
+            cls=cls,
+            key=error.key,
+            head=head,
+            case_sensitive=case_sensitive,
+            first=error.first,
+            second=error.second,
+        ) from None
     field_names_to_values = {
         f.name: _parse_dataclass_parse_text(
             f,
@@ -511,17 +559,20 @@ def parse_dataclass(
         )
         for f, t in fields_to_serializes.items()
     }
-    return mapping_to_dataclass(
-        cls,
-        field_names_to_values,
-        fields=fields,
-        globalns=globalns,
-        localns=localns,
-        warn_name_errors=warn_name_errors,
-        head=head,
-        case_sensitive=case_sensitive,
-        allow_extra=allow_extra_keys,
-    )
+    try:
+        return mapping_to_dataclass(
+            cls,
+            field_names_to_values,
+            fields=fields,
+            globalns=globalns,
+            localns=localns,
+            warn_name_errors=warn_name_errors,
+            head=head,
+            case_sensitive=case_sensitive,
+            allow_extra=allow_extra_keys,
+        )
+    except _MappingToDataClassMissingValuesError as error:
+        raise _ParseDataClassMissingValuesError(cls=cls, fields=error.fields) from None
 
 
 def _parse_dataclass_split_key_value_pairs(
@@ -549,7 +600,7 @@ def _parse_dataclass_split_key_value_pairs(
         ) from None
     except _SplitKeyValuePairsDuplicateKeysError as error:
         raise _ParseDataClassSplitKeyValuePairsDuplicateKeysError(
-            text=error.text, cls=cls, counts=error.counts
+            cls=cls, counts=error.counts
         ) from None
 
 
@@ -579,25 +630,28 @@ def _parse_dataclass_parse_text(
         raise _ParseDataClassTextParseError(cls=cls, field=field, text=text) from None
     except _ParseObjectExtraNonUniqueError as error:
         raise _ParseDataClassTextExtraNonUniqueError(
-            cls=cls, field=field, text=text, first=error.first, second=error.second
+            cls=cls, field=field, first=error.first, second=error.second
         ) from None
 
 
 @dataclass(kw_only=True, slots=True)
 class ParseDataClassError(Exception, Generic[TDataclass]):
-    text: str
     cls: type[TDataclass]
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseDataClassSplitKeyValuePairsSplitError(ParseDataClassError):
+class _ParseDataClassSplitKeyValuePairsSplitError(ParseDataClassError[TDataclass]):
+    text: str
+
     @override
     def __str__(self) -> str:
         return f"Unable to construct {get_class_name(self.cls)!r}; failed to split key-value pair {self.text!r}"
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseDataClassSplitKeyValuePairsDuplicateKeysError(ParseDataClassError):
+class _ParseDataClassSplitKeyValuePairsDuplicateKeysError(
+    ParseDataClassError[TDataclass]
+):
     counts: Mapping[str, int]
 
     @override
@@ -608,6 +662,7 @@ class _ParseDataClassSplitKeyValuePairsDuplicateKeysError(ParseDataClassError):
 @dataclass(kw_only=True, slots=True)
 class _ParseDataClassTextParseError(ParseDataClassError[TDataclass]):
     field: _YieldFieldsClass[Any]
+    text: str
 
     @override
     def __str__(self) -> str:
@@ -623,6 +678,56 @@ class _ParseDataClassTextExtraNonUniqueError(ParseDataClassError[TDataclass]):
     @override
     def __str__(self) -> str:
         return f"Unable to construct {get_class_name(self.cls)!r} since the field {self.field.name!r} of type {self.field.type_!r} must contain exactly one parent class in `extra`; got {self.first!r}, {self.second!r} and perhaps more"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ParseDataClassStrMappingToFieldMappingEmptyError(
+    ParseDataClassError[TDataclass]
+):
+    key: str
+    head: bool = False
+    case_sensitive: bool = False
+
+    @override
+    def __str__(self) -> str:
+        head = f"Unable to construct {get_class_name(self.cls)!r} since it does not contain"
+        tail = _empty_error_str_core(
+            self.key, head=self.head, case_sensitive=self.case_sensitive
+        )
+        return f"{head} {tail}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ParseDataClassStrMappingToFieldMappingNonUniqueError(
+    ParseDataClassError[TDataclass]
+):
+    key: str
+    head: bool = False
+    case_sensitive: bool = False
+    first: str
+    second: str
+
+    @override
+    def __str__(self) -> str:
+        head = f"Unable to construct {get_class_name(self.cls)!r} since it must contain"
+        tail = _non_unique_error_str_core(
+            self.key,
+            self.first,
+            self.second,
+            head=self.head,
+            case_sensitive=self.case_sensitive,
+        )
+        return f"{head} {tail}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ParseDataClassMissingValuesError(ParseDataClassError[TDataclass]):
+    fields: AbstractSet[str]
+
+    @override
+    def __str__(self) -> str:
+        desc = ", ".join(map(repr, sorted(self.fields)))
+        return f"Unable to construct {get_class_name(self.cls)!r}; missing values for {desc}"
 
 
 ##
@@ -655,36 +760,55 @@ def str_mapping_to_field_mapping(
                 head=head,
                 case_sensitive=case_sensitive,
             )
-        except OneFieldEmptyError:
+        except _OneFieldEmptyError:
             if not allow_extra:
-                raise StrMappingToFieldMappingError(
+                raise _StrMappingToFieldMappingEmptyError(
                     cls=cls, key=key, head=head, case_sensitive=case_sensitive
                 ) from None
+        except _OneFieldNonUniqueError as error:
+            raise _StrMappingToFieldMappingNonUniqueError(
+                cls=cls,
+                key=key,
+                head=head,
+                case_sensitive=case_sensitive,
+                first=error.first,
+                second=error.second,
+            ) from None
     return {field: mapping[key] for key, field in keys_to_fields.items()}
 
 
 @dataclass(kw_only=True, slots=True)
-class StrMappingToFieldMappingError(Exception):
-    cls: type[Dataclass]
+class StrMappingToFieldMappingError(Exception, Generic[TDataclass]):
+    cls: type[TDataclass]
     key: str
     head: bool = False
     case_sensitive: bool = False
 
+
+@dataclass(kw_only=True, slots=True)
+class _StrMappingToFieldMappingEmptyError(StrMappingToFieldMappingError):
     @override
     def __str__(self) -> str:
-        head = f"Dataclass {get_class_name(self.cls)!r} does not contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                tail = f"a field {self.key!r}"
-            case False, False:
-                tail = f"a field {self.key!r} (modulo case)"
-            case True, True:
-                tail = f"any field starting with {self.key!r}"
-            case True, False:
-                tail = f"any field starting with {self.key!r} (modulo case)"
-            case _ as never:
-                assert_never(never)
-        return f"{head} {tail}"
+        return _empty_error_str(
+            self.cls, self.key, head=self.head, case_sensitive=self.case_sensitive
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class _StrMappingToFieldMappingNonUniqueError(StrMappingToFieldMappingError):
+    first: str
+    second: str
+
+    @override
+    def __str__(self) -> str:
+        return _non_unique_error_str(
+            self.cls,
+            self.key,
+            self.first,
+            self.second,
+            head=self.head,
+            case_sensitive=self.case_sensitive,
+        )
 
 
 ##
@@ -852,11 +976,81 @@ class YieldFieldsError(Exception):
 
 ##
 
+
+def _empty_error_str(
+    cls: type[Dataclass],
+    key: str,
+    /,
+    *,
+    head: bool = False,
+    case_sensitive: bool = False,
+) -> str:
+    head_msg = f"Dataclass {get_class_name(cls)!r} does not contain"
+    tail_msg = _empty_error_str_core(key, head=head, case_sensitive=case_sensitive)
+    return f"{head_msg} {tail_msg}"
+
+
+def _empty_error_str_core(
+    key: str, /, *, head: bool = False, case_sensitive: bool = False
+) -> str:
+    match head, case_sensitive:
+        case False, True:
+            return f"a field {key!r}"
+        case False, False:
+            return f"a field {key!r} (modulo case)"
+        case True, True:
+            return f"any field starting with {key!r}"
+        case True, False:
+            return f"any field starting with {key!r} (modulo case)"
+        case _ as never:
+            assert_never(never)
+
+
+def _non_unique_error_str(
+    cls: type[Dataclass],
+    key: str,
+    first: str,
+    second: str,
+    /,
+    *,
+    head: bool = False,
+    case_sensitive: bool = False,
+) -> str:
+    head_msg = f"Dataclass {get_class_name(cls)!r} must contain"
+    tail_msg = _non_unique_error_str_core(
+        key, first, second, head=head, case_sensitive=case_sensitive
+    )
+    return f"{head_msg} {tail_msg}"
+
+
+def _non_unique_error_str_core(
+    key: str,
+    first: str,
+    second: str,
+    /,
+    *,
+    head: bool = False,
+    case_sensitive: bool = False,
+) -> str:
+    match head, case_sensitive:
+        case False, True:
+            raise ImpossibleCaseError(  # pragma: no cover
+                case=[f"{head=}", f"{case_sensitive=}"]
+            )
+        case False, False:
+            head_msg = f"field {key!r} exactly once (modulo case)"
+        case True, True:
+            head_msg = f"exactly one field starting with {key!r}"
+        case True, False:
+            head_msg = f"exactly one field starting with {key!r} (modulo case)"
+        case _ as never:
+            assert_never(never)
+    return f"{head_msg}; got {first!r}, {second!r} and perhaps more"
+
+
 __all__ = [
     "MappingToDataclassError",
-    "OneFieldEmptyError",
     "OneFieldError",
-    "OneFieldNonUniqueError",
     "ParseDataClassError",
     "StrMappingToFieldMappingError",
     "YieldFieldsError",
