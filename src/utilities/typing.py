@@ -108,7 +108,7 @@ class GetTypeClassesError(Exception):
 class _GetTypeClassesTypeError(GetTypeClassesError):
     @override
     def __str__(self) -> str:
-        return f"Object must be a type, tuple or Union type; got {self.obj}"
+        return f"Object must be a type, tuple or Union type; got {self.obj!r} of type {type(self.obj)!r}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -117,7 +117,7 @@ class _GetTypeClassesTupleError(GetTypeClassesError):
 
     @override
     def __str__(self) -> str:
-        return f"Tuple must contain types, tuples or Union types only; got {self.inner}"
+        return f"Tuple must contain types, tuples or Union types only; got {self.inner} of type {type(self.inner)!r}"
 
 
 ##
@@ -177,7 +177,9 @@ class GetUnionTypeClassesError(Exception):
 class _GetUnionTypeClassesUnionTypeError(GetUnionTypeClassesError):
     @override
     def __str__(self) -> str:
-        return f"Object must be a Union type; got {self.obj}"
+        return (
+            f"Object must be a Union type; got {self.obj!r} of type {type(self.obj)!r}"
+        )
 
 
 @dataclass(kw_only=True, slots=True)
@@ -186,7 +188,7 @@ class _GetUnionTypeClassesInternalTypeError(GetUnionTypeClassesError):
 
     @override
     def __str__(self) -> str:
-        return f"Union type must contain types only; got {self.inner}"
+        return f"Union type must contain types only; got {self.inner} of type {type(self.inner)!r}"
 
 
 ##
@@ -272,7 +274,7 @@ class IsInstanceGenError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid arguments; got {self.obj!r} and {self.type_!r}"
+        return f"Invalid arguments; got {self.obj!r} of type {type(self.obj)!r} and {self.type_!r} of type {type(self.type_)!r}"
 
 
 ##
@@ -432,7 +434,7 @@ class IsSubclassGenError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Argument must be a class; got {self.cls!r}"
+        return f"Argument must be a class; got {self.cls!r} of type {type(self.cls)!r}"
 
 
 ##

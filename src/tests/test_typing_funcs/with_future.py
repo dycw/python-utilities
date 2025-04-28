@@ -154,6 +154,11 @@ class DataClassFutureNoneDefault:
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureNumber:
+    number: Number
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFuturePath:
     path: Path
 

@@ -167,14 +167,14 @@ class TestGetTypeClasses:
     def test_error_type(self) -> None:
         with raises(
             _GetTypeClassesTypeError,
-            match="Object must be a type, tuple or Union type; got None",
+            match="Object must be a type, tuple or Union type; got None of type <class 'NoneType'>",
         ):
             _ = get_type_classes(None)
 
     def test_error_tuple(self) -> None:
         with raises(
             _GetTypeClassesTupleError,
-            match="Tuple must contain types, tuples or Union types only; got None",
+            match="Tuple must contain types, tuples or Union types only; got None of type <class 'NoneType'>",
         ):
             _ = get_type_classes((None,))
 
@@ -416,14 +416,14 @@ class TestGetUnionTypeClasses:
     def test_error_union_type(self) -> None:
         with raises(
             _GetUnionTypeClassesUnionTypeError,
-            match="Object must be a Union type; got None",
+            match="Object must be a Union type; got None of type <class 'NoneType'>",
         ):
             _ = get_union_type_classes(None)
 
-    def test_error_interal_type(self) -> None:
+    def test_error_internal_type(self) -> None:
         with raises(
             _GetUnionTypeClassesInternalTypeError,
-            match=r"Union type must contain types only; got typing\.Literal\[True\]",
+            match=r"Union type must contain types only; got typing\.Literal\[True\] of type <class 'typing\._LiteralGenericAlias'>",
         ):
             _ = get_union_type_classes(Literal[True] | None)
 
@@ -586,7 +586,8 @@ class TestIsInstanceGen:
 
     def test_error(self) -> None:
         with raises(
-            IsInstanceGenError, match=r"Invalid arguments; got None and typing\.Final"
+            IsInstanceGenError,
+            match=r"Invalid arguments; got None of type <class 'NoneType'> and typing\.Final of type <class 'typing\._SpecialForm'>",
         ):
             _ = is_instance_gen(None, Final)
 
@@ -639,6 +640,9 @@ class TestIsSubclassGen:
             (bool, bool | None, True),
             (bool | None, bool, False),
             (bool | None, bool | None, True),
+            (Number, int, False),
+            (Number, float, False),
+            (Number, Number, True),
             # literals
             (Literal[1, 2], Literal[1, 2, 3], True),
             (Literal[1, 2, 3], Literal[1, 2, 3], True),
@@ -684,5 +688,8 @@ class TestIsSubclassGen:
         assert is_subclass_gen(MyInt, MyInt)
 
     def test_error(self) -> None:
-        with raises(IsSubclassGenError, match="Argument must be a class; got None"):
+        with raises(
+            IsSubclassGenError,
+            match="Argument must be a class; got None of type <class 'NoneType'>",
+        ):
             _ = is_subclass_gen(None, NoneType)

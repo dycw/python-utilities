@@ -20,7 +20,7 @@ from hypothesis.strategies import (
     sets,
     times,
 )
-from pytest import raises
+from pytest import mark, raises
 
 from tests.test_operator import TruthEnum
 from tests.test_typing_funcs.with_future import (
@@ -60,6 +60,11 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.text import parse_bool
 from utilities.types import Duration, Number
 from utilities.version import Version
+
+type Rolling = tuple[Literal["SMA"], int]
+type Rolling2 = Rolling | tuple[Literal["EMA"], int]
+type Rolling3 = Rolling | tuple[Literal["EMA"], int]
+type Number2 = int | float
 
 
 class TestSerializeAndParseObject:
@@ -344,6 +349,32 @@ class TestParseObject:
             _ParseObjectParseError, match="Unable to parse <class 'bool'>; got '.*'"
         ):
             _ = parse_object(bool, text, extra={int: parser})
+
+    @mark.only
+    def test_asdf(self) -> None:
+        text = "SMA5"
+        result = parse_object(Rolling, text, extra={Rolling: lambda x: int(x[-1])})
+        assert result == 5
+
+        text = "SMA7"
+        result = parse_object(Rolling2, text, extra={Rolling2: lambda x: int(x[-1])})
+        assert result == 7
+
+        text = "SMA9"
+        result = parse_object(
+            Rolling2,
+            text,
+            extra={
+                Rolling: lambda x: int(x[-1]),
+                Rolling2: lambda x: int(x[-1]),
+                # Rolling3: lambda x: int(x[-1]),
+            },
+        )
+        assert result == 9
+
+        text = "10"
+        result = parse_object(Number, text, extra={Number: int, Number2: int})
+        assert result == 10
 
     @given(value=text_ascii(min_size=10) | none())
     def test_optional_type_with_union_extra_not_used(
