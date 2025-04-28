@@ -58,11 +58,6 @@ from utilities.text import parse_bool
 from utilities.types import Duration, Number
 from utilities.version import Version
 
-type Rolling = tuple[Literal["SMA"], int]
-type Rolling2 = Rolling | tuple[Literal["EMA"], int]
-type Rolling3 = Rolling | tuple[Literal["EMA"], int]
-type Number2 = int | float
-
 
 class TestSerializeAndParseObject:
     @given(bool_=booleans())
