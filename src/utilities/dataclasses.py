@@ -559,17 +559,20 @@ def parse_dataclass(
         )
         for f, t in fields_to_serializes.items()
     }
-    return mapping_to_dataclass(
-        cls,
-        field_names_to_values,
-        fields=fields,
-        globalns=globalns,
-        localns=localns,
-        warn_name_errors=warn_name_errors,
-        head=head,
-        case_sensitive=case_sensitive,
-        allow_extra=allow_extra_keys,
-    )
+    try:
+        return mapping_to_dataclass(
+            cls,
+            field_names_to_values,
+            fields=fields,
+            globalns=globalns,
+            localns=localns,
+            warn_name_errors=warn_name_errors,
+            head=head,
+            case_sensitive=case_sensitive,
+            allow_extra=allow_extra_keys,
+        )
+    except _MappingToDataclassMissingValuesError as error:
+        raise _ParseDataClassMissingValuesError(cls=cls, fields=error.fields) from None
 
 
 def _parse_dataclass_split_key_value_pairs(
@@ -715,6 +718,16 @@ class _ParseDataClassStrMappingToFieldMappingNonUniqueError(
             case_sensitive=self.case_sensitive,
         )
         return f"{head} {tail}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ParseDataClassMissingValuesError(ParseDataClassError[TDataclass]):
+    fields: AbstractSet[str]
+
+    @override
+    def __str__(self) -> str:
+        desc = ", ".join(map(repr, sorted(self.fields)))
+        return f"Unable to construct {get_class_name(self.cls)!r}; missing values for {desc}"
 
 
 ##
@@ -978,11 +991,7 @@ def _empty_error_str(
 
 
 def _empty_error_str_core(
-    key: str,
-    /,
-    *,
-    head: bool = False,
-    case_sensitive: bool = False,
+    key: str, /, *, head: bool = False, case_sensitive: bool = False
 ) -> str:
     match head, case_sensitive:
         case False, True:
