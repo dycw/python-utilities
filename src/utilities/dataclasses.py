@@ -240,17 +240,31 @@ def mapping_to_dataclass(
         )
     else:
         fields_use = fields
-    fields_to_values = str_mapping_to_field_mapping(
-        cls,
-        mapping,
-        fields=fields_use,
-        globalns=globalns,
-        localns=localns,
-        warn_name_errors=warn_name_errors,
-        head=head,
-        case_sensitive=case_sensitive,
-        allow_extra=allow_extra,
-    )
+    try:
+        fields_to_values = str_mapping_to_field_mapping(
+            cls,
+            mapping,
+            fields=fields_use,
+            globalns=globalns,
+            localns=localns,
+            warn_name_errors=warn_name_errors,
+            head=head,
+            case_sensitive=case_sensitive,
+            allow_extra=allow_extra,
+        )
+    except _StrMappingToFieldMappingEmptyError as error:
+        raise _MappingToDataClassEmptyError(
+            cls=cls, key=error.key, head=head, case_sensitive=case_sensitive
+        ) from None
+    except _StrMappingToFieldMappingNonUniqueError as error:
+        raise _MappingToDataClassNonUniqueError(
+            cls=cls,
+            key=error.key,
+            head=head,
+            case_sensitive=case_sensitive,
+            first=error.first,
+            second=error.second,
+        ) from None
     field_names_to_values = {f.name: v for f, v in fields_to_values.items()}
     default = {
         f.name
@@ -261,13 +275,48 @@ def mapping_to_dataclass(
     have = set(field_names_to_values) | default
     missing = {f.name for f in fields_use} - have
     if len(missing) >= 1:
-        raise MappingToDataclassError(cls=cls, fields=missing)
+        raise _MappingToDataclassMissingValuesError(cls=cls, fields=missing)
     return cls(**field_names_to_values)
 
 
 @dataclass(kw_only=True, slots=True)
 class MappingToDataclassError(Exception, Generic[TDataclass]):
     cls: type[TDataclass]
+    head: bool = False
+    case_sensitive: bool = False
+
+
+@dataclass(kw_only=True, slots=True)
+class _MappingToDataClassEmptyError(MappingToDataclassError[TDataclass]):
+    key: str
+
+    @override
+    def __str__(self) -> str:
+        return _empty_error_str(
+            self.cls, self.key, head=self.head, case_sensitive=self.case_sensitive
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class _MappingToDataClassNonUniqueError(MappingToDataclassError[TDataclass]):
+    key: str
+    first: str
+    second: str
+
+    @override
+    def __str__(self) -> str:
+        return _non_unique_error_str(
+            self.cls,
+            self.key,
+            self.first,
+            self.second,
+            head=self.head,
+            case_sensitive=self.case_sensitive,
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class _MappingToDataclassMissingValuesError(MappingToDataclassError[TDataclass]):
     fields: AbstractSet[str]
 
     @override
@@ -307,11 +356,11 @@ def one_field(
     try:
         name = one_str(mapping, key, head=head, case_sensitive=case_sensitive)
     except OneStrEmptyError:
-        raise OneFieldEmptyError(
+        raise _OneFieldEmptyError(
             cls=cls, key=key, head=head, case_sensitive=case_sensitive
         ) from None
     except OneStrNonUniqueError as error:
-        raise OneFieldNonUniqueError(
+        raise _OneFieldNonUniqueError(
             cls=cls,
             key=key,
             head=head,
@@ -331,46 +380,29 @@ class OneFieldError(Exception, Generic[TDataclass]):
 
 
 @dataclass(kw_only=True, slots=True)
-class OneFieldEmptyError(OneFieldError[TDataclass]):
+class _OneFieldEmptyError(OneFieldError[TDataclass]):
     @override
     def __str__(self) -> str:
-        head = f"Dataclass {get_class_name(self.cls)!r} does not contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                tail = f"a field {self.key!r}"
-            case False, False:
-                tail = f"a field {self.key!r} (modulo case)"
-            case True, True:
-                tail = f"any field starting with {self.key!r}"
-            case True, False:
-                tail = f"any field starting with {self.key!r} (modulo case)"
-            case _ as never:
-                assert_never(never)
-        return f"{head} {tail}"
+        return _empty_error_str(
+            self.cls, self.key, head=self.head, case_sensitive=self.case_sensitive
+        )
 
 
 @dataclass(kw_only=True, slots=True)
-class OneFieldNonUniqueError(OneFieldError[TDataclass]):
+class _OneFieldNonUniqueError(OneFieldError[TDataclass]):
     first: str
     second: str
 
     @override
     def __str__(self) -> str:
-        head = f"Dataclass {get_class_name(self.cls)!r} must contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                raise ImpossibleCaseError(  # pragma: no cover
-                    case=[f"{self.head=}", f"{self.case_sensitive=}"]
-                )
-            case False, False:
-                mid = f"field {self.key!r} exactly once (modulo case)"
-            case True, True:
-                mid = f"exactly one field starting with {self.key!r}"
-            case True, False:
-                mid = f"exactly one field starting with {self.key!r} (modulo case)"
-            case _ as never:
-                assert_never(never)
-        return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
+        return _non_unique_error_str(
+            self.cls,
+            self.key,
+            self.first,
+            self.second,
+            head=self.head,
+            case_sensitive=self.case_sensitive,
+        )
 
 
 ##
@@ -655,13 +687,13 @@ def str_mapping_to_field_mapping(
                 head=head,
                 case_sensitive=case_sensitive,
             )
-        except OneFieldEmptyError:
+        except _OneFieldEmptyError:
             if not allow_extra:
-                raise StrMappingToFieldMappingEmptyError(
+                raise _StrMappingToFieldMappingEmptyError(
                     cls=cls, key=key, head=head, case_sensitive=case_sensitive
                 ) from None
-        except OneFieldNonUniqueError as error:
-            raise StrMappingToFieldMappingNonUniqueError(
+        except _OneFieldNonUniqueError as error:
+            raise _StrMappingToFieldMappingNonUniqueError(
                 cls=cls,
                 key=key,
                 head=head,
@@ -673,54 +705,37 @@ def str_mapping_to_field_mapping(
 
 
 @dataclass(kw_only=True, slots=True)
-class StrMappingToFieldMappingError(Exception):
-    cls: type[Dataclass]
+class StrMappingToFieldMappingError(Exception, Generic[TDataclass]):
+    cls: type[TDataclass]
     key: str
     head: bool = False
     case_sensitive: bool = False
 
 
 @dataclass(kw_only=True, slots=True)
-class StrMappingToFieldMappingEmptyError(StrMappingToFieldMappingError):
+class _StrMappingToFieldMappingEmptyError(StrMappingToFieldMappingError):
     @override
     def __str__(self) -> str:
-        head = f"Dataclass {get_class_name(self.cls)!r} does not contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                tail = f"a field {self.key!r}"
-            case False, False:
-                tail = f"a field {self.key!r} (modulo case)"
-            case True, True:
-                tail = f"any field starting with {self.key!r}"
-            case True, False:
-                tail = f"any field starting with {self.key!r} (modulo case)"
-            case _ as never:
-                assert_never(never)
-        return f"{head} {tail}"
+        return _empty_error_str(
+            self.cls, self.key, head=self.head, case_sensitive=self.case_sensitive
+        )
 
 
 @dataclass(kw_only=True, slots=True)
-class StrMappingToFieldMappingNonUniqueError(StrMappingToFieldMappingError):
+class _StrMappingToFieldMappingNonUniqueError(StrMappingToFieldMappingError):
     first: str
     second: str
 
     @override
     def __str__(self) -> str:
-        head = f"Dataclass {get_class_name(self.cls)!r} must contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                raise ImpossibleCaseError(  # pragma: no cover
-                    case=[f"{self.head=}", f"{self.case_sensitive=}"]
-                )
-            case False, False:
-                mid = f"field {self.key!r} exactly once (modulo case)"
-            case True, True:
-                mid = f"exactly one field starting with {self.key!r}"
-            case True, False:
-                mid = f"exactly one field starting with {self.key!r} (modulo case)"
-            case _ as never:
-                assert_never(never)
-        return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
+        return _non_unique_error_str(
+            self.cls,
+            self.key,
+            self.first,
+            self.second,
+            head=self.head,
+            case_sensitive=self.case_sensitive,
+        )
 
 
 ##
@@ -888,15 +903,62 @@ class YieldFieldsError(Exception):
 
 ##
 
+
+def _empty_error_str(
+    cls: type[Dataclass],
+    key: str,
+    /,
+    *,
+    head: bool = False,
+    case_sensitive: bool = False,
+) -> str:
+    head_msg = f"Dataclass {get_class_name(cls)!r} does not contain"
+    match head, case_sensitive:
+        case False, True:
+            tail_msg = f"a field {key!r}"
+        case False, False:
+            tail_msg = f"a field {key!r} (modulo case)"
+        case True, True:
+            tail_msg = f"any field starting with {key!r}"
+        case True, False:
+            tail_msg = f"any field starting with {key!r} (modulo case)"
+        case _ as never:
+            assert_never(never)
+    return f"{head_msg} {tail_msg}"
+
+
+def _non_unique_error_str(
+    cls: type[Dataclass],
+    key: str,
+    first: str,
+    second: str,
+    /,
+    *,
+    head: bool = False,
+    case_sensitive: bool = False,
+) -> str:
+    head_msg = f"Dataclass {get_class_name(cls)!r} must contain"
+    match head, case_sensitive:
+        case False, True:
+            raise ImpossibleCaseError(  # pragma: no cover
+                case=[f"{head=}", f"{case_sensitive=}"]
+            )
+        case False, False:
+            mid_msg = f"field {key!r} exactly once (modulo case)"
+        case True, True:
+            mid_msg = f"exactly one field starting with {key!r}"
+        case True, False:
+            mid_msg = f"exactly one field starting with {key!r} (modulo case)"
+        case _ as never:
+            assert_never(never)
+    return f"{head_msg} {mid_msg}; got {first!r}, {second!r} and perhaps more"
+
+
 __all__ = [
     "MappingToDataclassError",
-    "OneFieldEmptyError",
     "OneFieldError",
-    "OneFieldNonUniqueError",
     "ParseDataClassError",
-    "StrMappingToFieldMappingEmptyError",
     "StrMappingToFieldMappingError",
-    "StrMappingToFieldMappingNonUniqueError",
     "YieldFieldsError",
     "dataclass_repr",
     "dataclass_to_dict",
