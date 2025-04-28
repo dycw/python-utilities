@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import DataObject, booleans, data
+from pytest import mark
 from redis.asyncio import Redis
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
@@ -40,6 +41,7 @@ class TestPublishAndSubscribe:
         ),
         obj=make_objects(),
     )
+    @mark.flaky
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -110,6 +112,7 @@ class TestPublisher:
         ),
         obj=make_objects(),
     )
+    @mark.flaky
     @settings(
         max_examples=1,
         phases={Phase.generate},

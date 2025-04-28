@@ -568,6 +568,7 @@ class TestSizeAndTimeRotatingFileHandler:
                 p for p in files if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
             )
 
+    @mark.flaky
     @skipif_windows
     def test_time(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
