@@ -27,7 +27,6 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureNestedOuterFirstOuter,
     DataClassFutureNone,
     DataClassFutureNoneDefault,
-    DataClassFutureNumber,
     DataClassFutureTypeLiteral,
     DataClassFutureTypeLiteralNullable,
     TrueOrFalseFutureLit,
@@ -497,12 +496,9 @@ class TestSerializeAndParseDataClass:
             match="Unable to construct 'DataClassFutureInt' since the field 'int_' could not be parsed; got 'invalid'",
         ):
             _ = parse_dataclass(
-                "number=0",
-                DataClassFutureNumber,
-                extra_parsers={
-                    int: lambda text: int(text),
-                    float: lambda text: float(text),
-                },
+                "int_=0",
+                DataClassFutureInt,
+                extra_parsers={int | str: lambda text: int(text), int | float: int},
             )
 
 
