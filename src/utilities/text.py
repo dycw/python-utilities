@@ -25,9 +25,9 @@ DEFAULT_SEPARATOR = ","
 
 def parse_bool(text: str, /) -> bool:
     """Parse text into a boolean value."""
-    if search(r"^(0|False)$", text, flags=IGNORECASE):
+    if search(r"^(0|False|N|No|Off)$", text, flags=IGNORECASE):
         return False
-    if search(r"^(1|True)$", text, flags=IGNORECASE):
+    if search(r"^(1|True|Y|Yes|On)$", text, flags=IGNORECASE):
         return True
     raise ParseBoolError(text=text)
 

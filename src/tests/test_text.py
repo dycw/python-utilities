@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import chain
 from typing import TYPE_CHECKING
 
 from hypothesis import given
@@ -44,14 +45,38 @@ if TYPE_CHECKING:
 class TestParseBool:
     @given(data=data(), value=booleans())
     def test_main(self, *, data: DataObject, value: bool) -> None:
-        text = str(value)
-        text_use = data.draw(
-            sampled_from([str(int(value)), text, text.lower(), text.upper()])
+        match value:
+            case True:
+                extra_cased_texts = ["Y", "Yes", "On"]
+            case False:
+                extra_cased_texts = ["N", "No", "Off"]
+        all_cased_texts = list(chain([str(value), str(int(value))], extra_cased_texts))
+        all_texts = list(
+            chain(
+                extra_cased_texts,
+                map(str.lower, all_cased_texts),
+                map(str.upper, all_cased_texts),
+            )
         )
-        result = parse_bool(text_use)
+        text = data.draw(sampled_from(all_texts))
+        result = parse_bool(text)
         assert result is value
 
-    @given(text=sampled_from(["invalid", "11", "00", "ttruee", "ffalsee"]))
+    @given(
+        text=sampled_from([
+            "00",
+            "11",
+            "ffalsee",
+            "invalid",
+            "nn",
+            "nnoo",
+            "oofff",
+            "oonn",
+            "ttruee",
+            "yy",
+            "yyess",
+        ])
+    )
     def test_error(self, *, text: str) -> None:
         with raises(ParseBoolError, match="Unable to parse boolean value; got '.*'"):
             _ = parse_bool(text)
