@@ -47,9 +47,9 @@ class TestParseBool:
     def test_main(self, *, data: DataObject, value: bool) -> None:
         match value:
             case True:
-                extra_cased_texts = ["On", "Y", "Yes"]
+                extra_cased_texts = ["Y", "Yes", "On"]
             case False:
-                extra_cased_texts = ["Off", "N", "Yes"]
+                extra_cased_texts = ["N", "No", "Off"]
         all_cased_texts = list(chain([str(value), str(int(value))], extra_cased_texts))
         all_texts = list(
             chain(
