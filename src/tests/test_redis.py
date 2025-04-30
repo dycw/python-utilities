@@ -395,8 +395,6 @@ class TestRedisKey:
     async def test_get_and_set_bool(self, *, data: DataObject, value: bool) -> None:
         async with yield_test_redis(data) as test:
             key = redis_key(test.key, bool)
-            with raises(KeyError):
-                _ = await key.get(test.redis, key)
             _ = await key.set(test.redis, value)
             assert await key.get(test.redis) is value
 
@@ -408,8 +406,6 @@ class TestRedisKey:
     ) -> None:
         async with yield_test_redis(data) as test:
             key = redis_key(test.key, (bool, int))
-            with raises(KeyError):
-                _ = await key.get(test.redis, value)
             _ = await key.set(test.redis, value)
             assert await key.get(test.redis) == value
 
@@ -430,7 +426,6 @@ class TestRedisKey:
             key = redis_key(
                 test.key, Sentinel, serializer=serializer, deserializer=deserializer
             )
-            assert await key.get(test.redis) is None
             _ = await key.set(test.redis, sentinel)
             assert await key.get(test.redis) is sentinel
 
@@ -443,7 +438,8 @@ class TestRedisKey:
             _ = await key.set(test.redis, value)
             assert await key.get(test.redis) is value
             _ = await key.delete(test.redis)
-            assert await key.get(test.redis) is None
+            with raises(KeyError):
+                _ = await key.get(test.redis)
 
     @given(data=data(), value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})

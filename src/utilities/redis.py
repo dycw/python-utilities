@@ -107,7 +107,7 @@ class RedisHashMapKey(Generic[_K, _V]):
         """Get a value from a hashmap in `redis`."""
         result = one(await self.get_many(redis, [key]))  # skipif-ci-and-not-linux
         if result is None:  # skipif-ci-and-not-linux
-            raise KeyError(key) from None
+            raise KeyError(self.name, key)
         return result  # skipif-ci-and-not-linux
 
     async def get_all(self, redis: Redis, /) -> Mapping[_K, _V]:
@@ -132,14 +132,14 @@ class RedisHashMapKey(Generic[_K, _V]):
         keys = list(keys)  # skipif-ci-and-not-linux
         if len(keys) == 0:  # skipif-ci-and-not-linux
             return []
-        ser_keys = [  # skipif-ci-and-not-linux
+        ser = [  # skipif-ci-and-not-linux
             _serialize(key, serializer=self.key_serializer) for key in keys
         ]
         async with timeout_dur(  # skipif-ci-and-not-linux
             duration=self.timeout, error=self.error
         ):
             result = await cast(  # skipif-ci-and-not-linux
-                "Awaitable[Sequence[bytes | None]]", redis.hmget(self.name, ser_keys)
+                "Awaitable[Sequence[bytes | None]]", redis.hmget(self.name, ser)
             )
         return [  # skipif-ci-and-not-linux
             None
@@ -419,23 +419,15 @@ class RedisKey(Generic[_T]):
             duration=self.timeout, error=self.error
         ):
             result = cast("bytes | None", await redis.get(self.name))
-        match result:  # skipif-ci-and-not-linux
-            case None:
-                return None
-            case bytes() as data:
-                if self.deserializer is None:
-                    from utilities.orjson import deserialize
-
-                    return deserialize(data)
-                return self.deserializer(data)
-            case _ as never:
-                assert_never(never)
+        if result is None:  # skipif-ci-and-not-linux
+            raise KeyError(self.name)
+        return _deserialize(  # skipif-ci-and-not-linux
+            result, deserializer=self.deserializer
+        )
 
     async def set(self, redis: Redis, value: _T, /) -> int:
         """Set a value in `redis`."""
-        ser_value = _serialize(  # skipif-ci-and-not-linux
-            value, serializer=self.serializer
-        )
+        ser = _serialize(value, serializer=self.serializer)  # skipif-ci-and-not-linux
         ttl = (  # skipif-ci-and-not-linux
             None
             if self.ttl is None
@@ -445,7 +437,7 @@ class RedisKey(Generic[_T]):
             duration=self.timeout, error=self.error
         ):
             result = await redis.set(  # skipif-ci-and-not-linux
-                self.name, ser_value, px=ttl
+                self.name, ser, px=ttl
             )
         return ensure_int(result)  # skipif-ci-and-not-linux
 
