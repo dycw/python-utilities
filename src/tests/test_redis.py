@@ -336,6 +336,17 @@ class TestRedisHashMapKey:
     @given(data=data(), mapping=dictionaries(int64s(), booleans()))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
+    async def test_get_all(
+        self, *, data: DataObject, mapping: Mapping[int, bool]
+    ) -> None:
+        async with yield_test_redis(data) as test:
+            hm_key = redis_hash_map_key(test.key, int, bool)
+            _ = await hm_key.set_many(test.redis, mapping)
+            assert await hm_key.get_all(test.redis) == mapping
+
+    @given(data=data(), mapping=dictionaries(int64s(), booleans()))
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_keys(self, *, data: DataObject, mapping: Mapping[int, bool]) -> None:
         async with yield_test_redis(data) as test:
             hm_key = redis_hash_map_key(test.key, int, bool)
