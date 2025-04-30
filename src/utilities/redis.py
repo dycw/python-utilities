@@ -168,6 +168,16 @@ class RedisHashMapKey(Generic[_K, _V]):
                 await redis.pexpire(self.name, datetime_duration_to_timedelta(self.ttl))
         return result  # skipif-ci-and-not-linux
 
+    async def values(self, redis: Redis, /) -> Sequence[_V]:
+        """Get the values of a hashmap in `redis`."""
+        async with timeout_dur(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
+        ):
+            result = await cast("Awaitable[Sequence[bytes]]", redis.hvals(self.name))
+        return [  # skipif-ci-and-not-linux
+            _deserialize(data, deserializer=self.value_deserializer) for data in result
+        ]
+
 
 @overload
 def redis_hash_map_key(
