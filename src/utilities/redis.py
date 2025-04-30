@@ -140,6 +140,13 @@ class RedisHashMapKey(Generic[_K, _V]):
             _deserialize(data, deserializer=self.key_deserializer) for data in result
         ]
 
+    async def length(self, redis: Redis, /) -> int:
+        """Get the length of a hashmap in `redis`."""
+        async with timeout_dur(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
+        ):
+            return await cast("Awaitable[int]", redis.hlen(self.name))
+
     async def set(self, redis: Redis, key: _K, value: _V, /) -> int:
         """Set a value in a hashmap in `redis`."""
         ser_key = _serialize(  # skipif-ci-and-not-linux
