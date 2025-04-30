@@ -31,11 +31,18 @@ from utilities.datetime import (
 )
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int
-from utilities.iterables import always_iterable
+from utilities.iterables import always_iterable, one
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
+    from collections.abc import (
+        AsyncIterator,
+        Awaitable,
+        Callable,
+        Iterable,
+        Mapping,
+        Sequence,
+    )
 
     from redis.asyncio import ConnectionPool
     from redis.asyncio.client import PubSub
@@ -71,6 +78,7 @@ class RedisHashMapKey(Generic[_K, _V]):
     name: str
     key: TypeLike[_K]
     key_serializer: Callable[[_K], bytes] | None = None
+    key_deserializer: Callable[[bytes], _K] | None = None
     value: TypeLike[_V]
     value_serializer: Callable[[_V], bytes] | None = None
     value_deserializer: Callable[[bytes], _V] | None = None
@@ -95,45 +103,101 @@ class RedisHashMapKey(Generic[_K, _V]):
                 "Awaitable[bool]", redis.hexists(self.name, cast("str", key))
             )
 
-    async def get(self, redis: Redis, key: _K, /) -> _V | None:
+    async def get(self, redis: Redis, key: _K, /) -> _V:
         """Get a value from a hashmap in `redis`."""
-        ser_key = _serialize(  # skipif-ci-and-not-linux
-            key, serializer=self.key_serializer
-        )
+        result = one(await self.get_many(redis, [key]))  # skipif-ci-and-not-linux
+        if result is None:  # skipif-ci-and-not-linux
+            raise KeyError(self.name, key)
+        return result  # skipif-ci-and-not-linux
+
+    async def get_all(self, redis: Redis, /) -> Mapping[_K, _V]:
+        """Get a value from a hashmap in `redis`."""
         async with timeout_dur(  # skipif-ci-and-not-linux
             duration=self.timeout, error=self.error
         ):
             result = await cast(  # skipif-ci-and-not-linux
-                "Awaitable[bytes | None]", redis.hget(self.name, cast("Any", ser_key))
+                "Awaitable[Mapping[bytes, bytes]]", redis.hgetall(self.name)
             )
-        match result:  # skipif-ci-and-not-linux
-            case None:
-                return None
-            case bytes() as data:
-                return _deserialize(data, deserializer=self.value_deserializer)
-            case _ as never:
-                assert_never(never)
+        return {  # skipif-ci-and-not-linux
+            _deserialize(key, deserializer=self.key_deserializer): _deserialize(
+                value, deserializer=self.value_deserializer
+            )
+            for key, value in result.items()
+        }
+
+    async def get_many(
+        self, redis: Redis, keys: Iterable[_K], /
+    ) -> Sequence[_V | None]:
+        """Get multiple values from a hashmap in `redis`."""
+        keys = list(keys)  # skipif-ci-and-not-linux
+        if len(keys) == 0:  # skipif-ci-and-not-linux
+            return []
+        ser = [  # skipif-ci-and-not-linux
+            _serialize(key, serializer=self.key_serializer) for key in keys
+        ]
+        async with timeout_dur(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
+        ):
+            result = await cast(  # skipif-ci-and-not-linux
+                "Awaitable[Sequence[bytes | None]]", redis.hmget(self.name, ser)
+            )
+        return [  # skipif-ci-and-not-linux
+            None
+            if data is None
+            else _deserialize(data, deserializer=self.value_deserializer)
+            for data in result
+        ]
+
+    async def keys(self, redis: Redis, /) -> Sequence[_K]:
+        """Get the keys of a hashmap in `redis`."""
+        async with timeout_dur(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
+        ):
+            result = await cast("Awaitable[Sequence[bytes]]", redis.hkeys(self.name))
+        return [  # skipif-ci-and-not-linux
+            _deserialize(data, deserializer=self.key_deserializer) for data in result
+        ]
+
+    async def length(self, redis: Redis, /) -> int:
+        """Get the length of a hashmap in `redis`."""
+        async with timeout_dur(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
+        ):
+            return await cast("Awaitable[int]", redis.hlen(self.name))
 
     async def set(self, redis: Redis, key: _K, value: _V, /) -> int:
         """Set a value in a hashmap in `redis`."""
-        ser_key = _serialize(  # skipif-ci-and-not-linux
-            key, serializer=self.key_serializer
-        )
-        ser_value = _serialize(  # skipif-ci-and-not-linux
-            value, serializer=self.value_serializer
-        )
+        return await self.set_many(redis, {key: value})  # skipif-ci-and-not-linux
+
+    async def set_many(self, redis: Redis, mapping: Mapping[_K, _V], /) -> int:
+        """Set multiple value(s) in a hashmap in `redis`."""
+        if len(mapping) == 0:  # skipif-ci-and-not-linux
+            return 0
+        ser = {  # skipif-ci-and-not-linux
+            _serialize(key, serializer=self.key_serializer): _serialize(
+                value, serializer=self.value_serializer
+            )
+            for key, value in mapping.items()
+        }
         async with timeout_dur(  # skipif-ci-and-not-linux
             duration=self.timeout, error=self.error
         ):
             result = await cast(
-                "Awaitable[int]",
-                redis.hset(
-                    self.name, key=cast("Any", ser_key), value=cast("Any", ser_value)
-                ),
+                "Awaitable[int]", redis.hset(self.name, mapping=cast("Any", ser))
             )
             if self.ttl is not None:
                 await redis.pexpire(self.name, datetime_duration_to_timedelta(self.ttl))
         return result  # skipif-ci-and-not-linux
+
+    async def values(self, redis: Redis, /) -> Sequence[_V]:
+        """Get the values of a hashmap in `redis`."""
+        async with timeout_dur(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
+        ):
+            result = await cast("Awaitable[Sequence[bytes]]", redis.hvals(self.name))
+        return [  # skipif-ci-and-not-linux
+            _deserialize(data, deserializer=self.value_deserializer) for data in result
+        ]
 
 
 @overload
@@ -144,6 +208,7 @@ def redis_hash_map_key(
     /,
     *,
     key_serializer: Callable[[_K], bytes] | None = None,
+    key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[_V], bytes] | None = None,
     value_deserializer: Callable[[bytes], _V] | None = None,
     timeout: Duration | None = None,
@@ -158,6 +223,7 @@ def redis_hash_map_key(
     /,
     *,
     key_serializer: Callable[[_K], bytes] | None = None,
+    key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[_V1 | _V2], bytes] | None = None,
     value_deserializer: Callable[[bytes], _V1 | _V2] | None = None,
     timeout: Duration | None = None,
@@ -172,6 +238,7 @@ def redis_hash_map_key(
     /,
     *,
     key_serializer: Callable[[_K], bytes] | None = None,
+    key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = None,
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = None,
     timeout: Duration | None = None,
@@ -186,6 +253,7 @@ def redis_hash_map_key(
     /,
     *,
     key_serializer: Callable[[_K1 | _K2], bytes] | None = None,
+    key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[_V], bytes] | None = None,
     value_deserializer: Callable[[bytes], _V] | None = None,
     timeout: Duration | None = None,
@@ -200,6 +268,7 @@ def redis_hash_map_key(
     /,
     *,
     key_serializer: Callable[[_K1 | _K2], bytes] | None = None,
+    key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[_V1 | _V2], bytes] | None = None,
     value_deserializer: Callable[[bytes], _V1 | _V2] | None = None,
     timeout: Duration | None = None,
@@ -214,6 +283,7 @@ def redis_hash_map_key(
     /,
     *,
     key_serializer: Callable[[_K1 | _K2], bytes] | None = None,
+    key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = None,
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = None,
     timeout: Duration | None = None,
@@ -228,6 +298,7 @@ def redis_hash_map_key(
     /,
     *,
     key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = None,
+    key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[_V], bytes] | None = None,
     value_deserializer: Callable[[bytes], _V] | None = None,
     timeout: Duration | None = None,
@@ -242,6 +313,7 @@ def redis_hash_map_key(
     /,
     *,
     key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = None,
+    key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[_V1 | _V2], bytes] | None = None,
     value_deserializer: Callable[[bytes], _V1 | _V2] | None = None,
     timeout: Duration | None = None,
@@ -256,6 +328,7 @@ def redis_hash_map_key(
     /,
     *,
     key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = None,
+    key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = None,
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = None,
     timeout: Duration | None = None,
@@ -270,6 +343,7 @@ def redis_hash_map_key(
     /,
     *,
     key_serializer: Callable[[_K1 | _K2 | _K3], bytes] | None = None,
+    key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[_V1 | _V2 | _V3], bytes] | None = None,
     value_deserializer: Callable[[bytes], _V1 | _V2 | _V3] | None = None,
     timeout: Duration | None = None,
@@ -283,6 +357,7 @@ def redis_hash_map_key(
     /,
     *,
     key_serializer: Callable[[Any], bytes] | None = None,
+    key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[Any], bytes] | None = None,
     value_deserializer: Callable[[bytes], Any] | None = None,
     timeout: Duration | None = None,
@@ -294,6 +369,7 @@ def redis_hash_map_key(
         name=name,
         key=key,
         key_serializer=key_serializer,
+        key_deserializer=key_deserializer,
         value=value,
         value_serializer=value_serializer,
         value_deserializer=value_deserializer,
@@ -343,23 +419,15 @@ class RedisKey(Generic[_T]):
             duration=self.timeout, error=self.error
         ):
             result = cast("bytes | None", await redis.get(self.name))
-        match result:  # skipif-ci-and-not-linux
-            case None:
-                return None
-            case bytes() as data:
-                if self.deserializer is None:
-                    from utilities.orjson import deserialize
-
-                    return deserialize(data)
-                return self.deserializer(data)
-            case _ as never:
-                assert_never(never)
+        if result is None:  # skipif-ci-and-not-linux
+            raise KeyError(self.name)
+        return _deserialize(  # skipif-ci-and-not-linux
+            result, deserializer=self.deserializer
+        )
 
     async def set(self, redis: Redis, value: _T, /) -> int:
         """Set a value in `redis`."""
-        ser_value = _serialize(  # skipif-ci-and-not-linux
-            value, serializer=self.serializer
-        )
+        ser = _serialize(value, serializer=self.serializer)  # skipif-ci-and-not-linux
         ttl = (  # skipif-ci-and-not-linux
             None
             if self.ttl is None
@@ -369,7 +437,7 @@ class RedisKey(Generic[_T]):
             duration=self.timeout, error=self.error
         ):
             result = await redis.set(  # skipif-ci-and-not-linux
-                self.name, ser_value, px=ttl
+                self.name, ser, px=ttl
             )
         return ensure_int(result)  # skipif-ci-and-not-linux
 

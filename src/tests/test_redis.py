@@ -4,8 +4,15 @@ from asyncio import create_task, get_running_loop, sleep
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, Phase, given, settings
-from hypothesis.strategies import DataObject, booleans, data
-from pytest import mark
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    dictionaries,
+    lists,
+    sampled_from,
+)
+from pytest import mark, raises
 from redis.asyncio import Redis
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
@@ -30,6 +37,8 @@ from utilities.redis import (
 from utilities.sentinel import SENTINEL_REPR, Sentinel, sentinel
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from pytest import CaptureFixture
 
 
@@ -221,7 +230,6 @@ class TestRedisHashMapKey:
     ) -> None:
         async with yield_test_redis(data) as test:
             hm_key = redis_hash_map_key(test.key, int, bool)
-            assert await hm_key.get(test.redis, key) is None
             _ = await hm_key.set(test.redis, key, value)
             assert await hm_key.get(test.redis, key) is value
 
@@ -233,7 +241,6 @@ class TestRedisHashMapKey:
     ) -> None:
         async with yield_test_redis(data) as test:
             hm_key = redis_hash_map_key(test.key, (bool, int), bool)
-            assert await hm_key.get(test.redis, key) is None
             _ = await hm_key.set(test.redis, key, value)
             assert await hm_key.get(test.redis, key) is value
 
@@ -250,7 +257,6 @@ class TestRedisHashMapKey:
             hm_key = redis_hash_map_key(
                 test.key, Sentinel, bool, key_serializer=serializer
             )
-            assert await hm_key.get(test.redis, sentinel) is None
             _ = await hm_key.set(test.redis, sentinel, value)
             assert await hm_key.get(test.redis, sentinel) is value
 
@@ -262,7 +268,6 @@ class TestRedisHashMapKey:
     ) -> None:
         async with yield_test_redis(data) as test:
             hm_key = redis_hash_map_key(test.key, int, (bool, int))
-            assert await hm_key.get(test.redis, key) is None
             _ = await hm_key.set(test.redis, key, value)
             assert await hm_key.get(test.redis, key) == value
 
@@ -287,9 +292,24 @@ class TestRedisHashMapKey:
                 value_serializer=serializer,
                 value_deserializer=deserializer,
             )
-            assert await hm_key.get(test.redis, key) is None
             _ = await hm_key.set(test.redis, key, sentinel)
             assert await hm_key.get(test.redis, key) is sentinel
+
+    @given(data=data(), mapping=dictionaries(int64s(), booleans()))
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_get_and_set_many(
+        self, *, data: DataObject, mapping: Mapping[int, bool]
+    ) -> None:
+        async with yield_test_redis(data) as test:
+            hm_key = redis_hash_map_key(test.key, int, bool)
+            _ = await hm_key.set_many(test.redis, mapping)
+            if len(mapping) == 0:
+                keys = []
+            else:
+                keys = data.draw(lists(sampled_from(list(mapping))))
+            expected = [mapping[k] for k in keys]
+            assert await hm_key.get_many(test.redis, keys) == expected
 
     @given(data=data(), key=int64s(), value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
@@ -300,7 +320,8 @@ class TestRedisHashMapKey:
             _ = await hm_key.set(test.redis, key, value)
             assert await hm_key.get(test.redis, key) is value
             _ = await hm_key.delete(test.redis, key)
-            assert await hm_key.get(test.redis, key) is None
+            with raises(KeyError):
+                _ = await hm_key.get(test.redis, key)
 
     @given(data=data(), key=int64s(), value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
@@ -311,6 +332,37 @@ class TestRedisHashMapKey:
             assert not (await hm_key.exists(test.redis, key))
             _ = await hm_key.set(test.redis, key, value)
             assert await hm_key.exists(test.redis, key)
+
+    @given(data=data(), mapping=dictionaries(int64s(), booleans()))
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_get_all(
+        self, *, data: DataObject, mapping: Mapping[int, bool]
+    ) -> None:
+        async with yield_test_redis(data) as test:
+            hm_key = redis_hash_map_key(test.key, int, bool)
+            _ = await hm_key.set_many(test.redis, mapping)
+            assert await hm_key.get_all(test.redis) == mapping
+
+    @given(data=data(), mapping=dictionaries(int64s(), booleans()))
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_keys(self, *, data: DataObject, mapping: Mapping[int, bool]) -> None:
+        async with yield_test_redis(data) as test:
+            hm_key = redis_hash_map_key(test.key, int, bool)
+            _ = await hm_key.set_many(test.redis, mapping)
+            assert await hm_key.keys(test.redis) == list(mapping)
+
+    @given(data=data(), mapping=dictionaries(int64s(), booleans()))
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_length(
+        self, *, data: DataObject, mapping: Mapping[int, bool]
+    ) -> None:
+        async with yield_test_redis(data) as test:
+            hm_key = redis_hash_map_key(test.key, int, bool)
+            _ = await hm_key.set_many(test.redis, mapping)
+            assert await hm_key.length(test.redis) == len(mapping)
 
     @given(data=data(), key=int64s(), value=booleans())
     @settings(max_examples=1, phases={Phase.generate})
@@ -324,6 +376,17 @@ class TestRedisHashMapKey:
             await sleep(0.05)
             assert not await test.redis.exists(hm_key.name)
 
+    @given(data=data(), mapping=dictionaries(int64s(), booleans()))
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_values(
+        self, *, data: DataObject, mapping: Mapping[int, bool]
+    ) -> None:
+        async with yield_test_redis(data) as test:
+            hm_key = redis_hash_map_key(test.key, int, bool)
+            _ = await hm_key.set_many(test.redis, mapping)
+            assert await hm_key.values(test.redis) == list(mapping.values())
+
 
 class TestRedisKey:
     @given(data=data(), value=booleans())
@@ -332,7 +395,6 @@ class TestRedisKey:
     async def test_get_and_set_bool(self, *, data: DataObject, value: bool) -> None:
         async with yield_test_redis(data) as test:
             key = redis_key(test.key, bool)
-            assert await key.get(test.redis) is None
             _ = await key.set(test.redis, value)
             assert await key.get(test.redis) is value
 
@@ -344,7 +406,6 @@ class TestRedisKey:
     ) -> None:
         async with yield_test_redis(data) as test:
             key = redis_key(test.key, (bool, int))
-            assert await key.get(test.redis) is None
             _ = await key.set(test.redis, value)
             assert await key.get(test.redis) == value
 
@@ -365,7 +426,6 @@ class TestRedisKey:
             key = redis_key(
                 test.key, Sentinel, serializer=serializer, deserializer=deserializer
             )
-            assert await key.get(test.redis) is None
             _ = await key.set(test.redis, sentinel)
             assert await key.get(test.redis) is sentinel
 
@@ -378,7 +438,8 @@ class TestRedisKey:
             _ = await key.set(test.redis, value)
             assert await key.get(test.redis) is value
             _ = await key.delete(test.redis)
-            assert await key.get(test.redis) is None
+            with raises(KeyError):
+                _ = await key.get(test.redis)
 
     @given(data=data(), value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
