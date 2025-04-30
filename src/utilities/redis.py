@@ -35,7 +35,7 @@ from utilities.iterables import always_iterable
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
+    from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, Sequence
 
     from redis.asyncio import ConnectionPool
     from redis.asyncio.client import PubSub
@@ -71,6 +71,7 @@ class RedisHashMapKey(Generic[_K, _V]):
     name: str
     key: TypeLike[_K]
     key_serializer: Callable[[_K], bytes] | None = None
+    key_deserializer: Callable[[bytes], _K] | None = None
     value: TypeLike[_V]
     value_serializer: Callable[[_V], bytes] | None = None
     value_deserializer: Callable[[bytes], _V] | None = None
@@ -113,6 +114,31 @@ class RedisHashMapKey(Generic[_K, _V]):
                 return _deserialize(data, deserializer=self.value_deserializer)
             case _ as never:
                 assert_never(never)
+
+    async def get_all(self, redis: Redis, /) -> Mapping[_K, _V]:
+        """Get a value from a hashmap in `redis`."""
+        async with timeout_dur(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
+        ):
+            result = await cast(  # skipif-ci-and-not-linux
+                "Awaitable[Mapping[bytes, bytes]]", redis.hgetall(self.name)
+            )
+        return {  # skipif-ci-and-not-linux
+            _deserialize(key, deserializer=self.key_deserializer): _deserialize(
+                value, deserializer=self.value_deserializer
+            )
+            for key, value in result.items()
+        }
+
+    async def keys(self, redis: Redis, /) -> Sequence[_K]:
+        """Get the keys of a hashmap in `redis`."""
+        async with timeout_dur(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
+        ):
+            result = await cast("Awaitable[Sequence[bytes]]", redis.hkeys(self.name))
+        return [  # skipif-ci-and-not-linux
+            _deserialize(data, deserializer=self.key_deserializer) for data in result
+        ]
 
     async def set(self, redis: Redis, key: _K, value: _V, /) -> int:
         """Set a value in a hashmap in `redis`."""
