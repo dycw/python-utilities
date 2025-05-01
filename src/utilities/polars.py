@@ -1825,17 +1825,27 @@ def normal(
 ##
 
 
-def reify_exprs(*exprs: IntoExprColumn, **named_exprs: IntoExprColumn) -> Series:
+def reify_exprs(*exprs: IntoExprColumn, **named_exprs: IntoExprColumn) -> Expr | Series:
     """Reify a set of expressions."""
     all_exprs = ensure_expr_or_series_many(*exprs, **named_exprs)
+    if len(all_exprs) == 0:
+        raise _ReifyExprsEmptyError from None
     series = [s for s in all_exprs if isinstance(s, Series)]
     lengths = {s.len() for s in series}
     try:
         length = one(lengths)
     except OneEmptyError:
-        raise _ReifyExprsEmptyError from None
+        match len(all_exprs):
+            case 0:
+                raise ImpossibleCaseError(
+                    case=[f"{all_exprs=}"]
+                ) from None  # pragma: no cover
+            case 1:
+                return one(all_exprs)
+            case _:
+                return struct(*all_exprs)
     except OneNonUniqueError as error:
-        raise _ReifyExprsNonUniqueError(
+        raise _ReifyExprsSeriesNonUniqueError(
             first=error.first, second=error.second
         ) from None
     df = (
@@ -1863,11 +1873,11 @@ class ReifyExprsError(Exception): ...
 class _ReifyExprsEmptyError(ReifyExprsError):
     @override
     def __str__(self) -> str:
-        return "At least 1 Series must be given"
+        return "At least 1 Expression or Series must be given"
 
 
 @dataclass
-class _ReifyExprsNonUniqueError(ReifyExprsError):
+class _ReifyExprsSeriesNonUniqueError(ReifyExprsError):
     first: int
     second: int
 

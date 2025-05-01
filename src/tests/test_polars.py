@@ -113,7 +113,7 @@ from utilities.polars import (
     _InsertBetweenMissingColumnsError,
     _InsertBetweenNonConsecutiveError,
     _ReifyExprsEmptyError,
-    _ReifyExprsNonUniqueError,
+    _ReifyExprsSeriesNonUniqueError,
     _yield_struct_series_element_remove_nulls,
     ac_halflife,
     acf,
@@ -1882,11 +1882,45 @@ class TestNormal:
 
 @mark.only
 class TestReifyExprs:
-    @given(name=text_ascii())
-    def test_one_series(self, *, name: str) -> None:
-        series = int_range(end=10, eager=True).alias(name)
+    @given(length=hypothesis.strategies.integers(0, 10), name=text_ascii())
+    def test_one_expr(self, *, length: int, name: str) -> None:
+        expr = int_range(end=length).alias(name)
+        result = reify_exprs(expr)
+        assert isinstance(result, Expr)
+        result2 = (
+            int_range(end=length, eager=True)
+            .alias(f"_{name}")
+            .to_frame()
+            .with_columns(result)[name]
+        )
+        expected = int_range(end=length, eager=True).alias(name)
+        assert_series_equal(result2, expected)
+
+    @given(length=hypothesis.strategies.integers(0, 10), name=text_ascii())
+    def test_one_series(self, *, length: int, name: str) -> None:
+        series = int_range(end=length, eager=True).alias(name)
         result = reify_exprs(series)
+        assert isinstance(result, Series)
         assert_series_equal(result, series)
+
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        names=pairs(text_ascii(), unique=True),
+    )
+    def test_two_exprs(self, *, length: int, names: tuple[str, str]) -> None:
+        name1, name2 = names
+        expr1 = int_range(end=length).alias(name1)
+        expr2 = int_range(end=length).alias(name2)
+        result = reify_exprs(expr1, expr2)
+        assert isinstance(result, Expr)
+        result2 = (
+            int_range(end=length, eager=True)
+            .alias(f"_{names}")
+            .to_frame()
+            .with_columns(result)[name1]
+        )
+        assert result2.name == name1
+        assert result2.dtype == Struct(dict.fromkeys(names, Int64))
 
     @given(
         length=hypothesis.strategies.integers(0, 10),
@@ -1899,13 +1933,28 @@ class TestReifyExprs:
         expr = int_range(end=length).alias(name1)
         series = int_range(end=length, eager=True).alias(name2)
         result = reify_exprs(expr, series)
+        assert isinstance(result, Series)
         assert result.name == name1
         assert result.dtype == Struct(dict.fromkeys(names, Int64))
 
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        names=pairs(text_ascii(), unique=True),
+    )
+    def test_two_series(self, *, length: int, names: tuple[str, str]) -> None:
+        name1, name2 = names
+        series1 = int_range(end=length, eager=True).alias(name1)
+        series2 = int_range(end=length, eager=True).alias(name2)
+        result = reify_exprs(series1, series2)
+        assert isinstance(result, Series)
+        expected = concat_series(series1, series2)
+        assert_frame_equal(result.struct.unnest(), expected)
+
     def test_error_empty(self) -> None:
-        expr = int_range(end=10)
-        with raises(_ReifyExprsEmptyError, match="At least 1 Series must be given"):
-            _ = reify_exprs(expr)
+        with raises(
+            _ReifyExprsEmptyError, match="At least 1 Expression or Series must be given"
+        ):
+            _ = reify_exprs()
 
     @given(
         lengths=pairs(hypothesis.strategies.integers(0, 10), unique=True),
@@ -1919,7 +1968,7 @@ class TestReifyExprs:
             for length, name in zip(lengths, names, strict=True)
         ]
         with raises(
-            _ReifyExprsNonUniqueError,
+            _ReifyExprsSeriesNonUniqueError,
             match=r"Series must contain exactly one length; got \d+, \d+ and perhaps more",
         ):
             _ = reify_exprs(series1, series2)
