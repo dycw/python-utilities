@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import partial, reduce
 from itertools import repeat
-from typing import TYPE_CHECKING, Any, overload, override
+from typing import TYPE_CHECKING, Any, SupportsIndex, overload, override
 
 import numpy as np
 from numpy import (
@@ -44,6 +45,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
     from utilities.types import MaybeIterable
+
+
+type ShapeLike = SupportsIndex | Sequence[SupportsIndex]
 
 
 ##
@@ -131,6 +135,19 @@ def as_int(
 
 
 class AsIntError(Exception): ...
+
+
+##
+
+
+def bernoulli(
+    *, true: float = 0.5, seed: int | None = None, size: ShapeLike = ()
+) -> NDArrayB:
+    """Return a set of Bernoulli random variates."""
+    from numpy.random import default_rng
+
+    rng = default_rng(seed=seed)
+    return rng.binomial(1, true, size=size).astype(bool)
 
 
 ##
@@ -980,11 +997,13 @@ __all__ = [
     "NDArrayF",
     "NDArrayI",
     "NDArrayO",
+    "ShapeLike",
     "ShiftError",
     "SigmoidError",
     "adjust_frequencies",
     "array_indexer",
     "as_int",
+    "bernoulli",
     "boxcar",
     "datetime64D",
     "datetime64M",

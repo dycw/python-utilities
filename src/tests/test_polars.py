@@ -50,6 +50,10 @@ from polars import (
     int_range,
     lit,
 )
+from polars._typing import (
+    IntoExprColumn,  # pyright: ignore[reportPrivateImportUsage]
+    SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
+)
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import raises
 
@@ -67,6 +71,7 @@ from utilities.numpy import DEFAULT_RNG
 from utilities.pathlib import PWD
 from utilities.polars import (
     AppendDataClassError,
+    BooleanValueCountsError,
     ColumnsToDictError,
     DatetimeHongKong,
     DatetimeTokyo,
@@ -113,8 +118,11 @@ from utilities.polars import (
     adjust_frequencies,
     append_dataclass,
     are_frames_equal,
+    bernoulli,
+    boolean_value_counts,
     ceil_datetime,
     check_polars_dataframe,
+    choice,
     collect_series,
     columns_to_dict,
     concat_series,
@@ -126,6 +134,7 @@ from utilities.polars import (
     drop_null_struct_series,
     ensure_data_type,
     ensure_expr_or_series,
+    ensure_expr_or_series_many,
     finite_ewm_mean,
     floor_datetime,
     get_data_type_or_series_time_zone,
@@ -160,11 +169,12 @@ from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
 from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping, Sequence
+    from collections.abc import Callable, Iterable, Mapping, Sequence
     from zoneinfo import ZoneInfo
 
     from polars._typing import (
         IntoExprColumn,  # pyright: ignore[reportPrivateImportUsage]
+        PolarsDataType,  # pyright: ignore[reportPrivateImportUsage]
         SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
     )
     from polars.datatypes import DataTypeClass
@@ -340,6 +350,87 @@ class TestAreFramesEqual:
         x, y, expected = case
         result = are_frames_equal(x, y)
         assert result is expected
+
+
+class TestBernoulli:
+    @given(length=hypothesis.strategies.integers(0, 10))
+    def test_int(self, *, length: int) -> None:
+        series = bernoulli(length)
+        self._assert(series, length)
+
+    @given(length=hypothesis.strategies.integers(0, 10))
+    def test_series(self, *, length: int) -> None:
+        orig = int_range(end=length, eager=True)
+        series = bernoulli(orig)
+        self._assert(series, length)
+
+    @given(length=hypothesis.strategies.integers(0, 10))
+    def test_dataframe(self, *, length: int) -> None:
+        df = int_range(end=length, eager=True).to_frame()
+        series = bernoulli(df)
+        self._assert(series, length)
+
+    def _assert(self, series: Series, length: int, /) -> None:
+        assert series.dtype == Boolean
+        assert series.len() == length
+        assert series.is_not_null().all()
+
+
+class TestBooleanValueCounts:
+    df: ClassVar[DataFrame] = DataFrame(
+        data=[
+            (False, False),
+            (True, None),
+            (True, True),
+            (True, None),
+            (False, True),
+            (None, True),
+            (False, False),
+            (False, True),
+            (False, False),
+            (None, True),
+        ],
+        schema={"x": Boolean, "y": Boolean},
+        orient="row",
+    )
+    schema: ClassVar[SchemaDict] = {
+        "name": String,
+        "true": UInt32,
+        "false": UInt32,
+        "null": UInt32,
+        "total": UInt32,
+        "true (%)": Float64,
+        "false (%)": Float64,
+        "null (%)": Float64,
+    }
+
+    def test_series(self) -> None:
+        result = boolean_value_counts(self.df["x"], "x")
+        check_polars_dataframe(result, height=1, schema_list=self.schema)
+
+    def test_dataframe(self) -> None:
+        result = boolean_value_counts(
+            self.df,
+            "x",
+            "y",
+            (col("x") & col("y")).alias("x_and_y"),
+            x_or_y=col("x") | col("y"),
+        )
+        check_polars_dataframe(result, height=4, schema_list=self.schema)
+
+    def test_empty(self) -> None:
+        result = boolean_value_counts(self.df[:0], "x")
+        check_polars_dataframe(result, height=1, schema_list=self.schema)
+        for column in ["true", "false", "null", "total"]:
+            assert (result[column] == 0).all()
+        for column in ["true (%)", "false (%)", "null (%)"]:
+            assert result[column].is_nan().all()
+
+    def test_error(self) -> None:
+        with raises(
+            BooleanValueCountsError, match="Column 'z' must be Boolean; got Int64"
+        ):
+            _ = boolean_value_counts(self.df, col("x").cast(Int64).alias("z"))
 
 
 class TestCeilDateTime:
@@ -632,6 +723,47 @@ class TestCheckPolarsDataFrameSchemaSubset:
             match=r"DataFrame schema must include .* \(unordered\); got .*:\n\n.*",
         ):
             _check_polars_dataframe_schema_subset(df, schema_inc)
+
+
+class TestChoice:
+    @given(length=hypothesis.strategies.integers(0, 10))
+    def test_int_with_bool(self, *, length: int) -> None:
+        elements = [True, False, None]
+        series = choice(length, elements, dtype=Boolean)
+        self._assert(series, length, elements, dtype=Boolean)
+
+    @given(length=hypothesis.strategies.integers(0, 10))
+    def test_int_with_str(self, *, length: int) -> None:
+        elements = ["A", "B", "C"]
+        series = choice(length, elements, dtype=String)
+        self._assert(series, length, elements, dtype=String)
+
+    @given(length=hypothesis.strategies.integers(0, 10))
+    def test_series(self, *, length: int) -> None:
+        orig = int_range(end=length, eager=True)
+        elements = ["A", "B", "C"]
+        series = choice(orig, elements, dtype=String)
+        self._assert(series, length, elements, dtype=String)
+
+    @given(length=hypothesis.strategies.integers(0, 10))
+    def test_dataframe(self, *, length: int) -> None:
+        df = int_range(end=length, eager=True).to_frame()
+        elements = ["A", "B", "C"]
+        series = choice(df, elements, dtype=String)
+        self._assert(series, length, elements, dtype=String)
+
+    def _assert(
+        self,
+        series: Series,
+        length: int,
+        elements: Iterable[Any],
+        /,
+        *,
+        dtype: PolarsDataType = Float64,
+    ) -> None:
+        assert series.dtype == dtype
+        assert series.len() == length
+        assert series.is_in(list(elements)).all()
 
 
 class TestCollectSeries:
@@ -1185,6 +1317,15 @@ class TestEnsureExprOrSeries:
         assert isinstance(result, Expr | Series)
 
 
+class TestEnsureExprOrSeriesMany:
+    @given(column=sampled_from(["column", col("column"), int_range(end=10)]))
+    def test_main(self, *, column: IntoExprColumn) -> None:
+        result = ensure_expr_or_series_many(column, column=column)
+        assert len(result) == 2
+        for r in result:
+            assert isinstance(r, Expr | Series)
+
+
 class TestFiniteEWMMean:
     alpha_0_75_values: ClassVar[list[float]] = [
         -8.269850726503885,
@@ -1472,8 +1613,7 @@ class TestIntegers:
     )
     def test_int(self, *, length: int, high: int) -> None:
         series = utilities.polars.integers(length, high)
-        assert series.len() == length
-        assert series.is_between(0, high, closed="left").all()
+        self._assert(series, length, high)
 
     @given(
         length=hypothesis.strategies.integers(0, 10),
@@ -1482,8 +1622,7 @@ class TestIntegers:
     def test_series(self, *, length: int, high: int) -> None:
         orig = int_range(end=length, eager=True)
         series = utilities.polars.integers(orig, high)
-        assert series.len() == length
-        assert series.is_between(0, high, closed="left").all()
+        self._assert(series, length, high)
 
     @given(
         length=hypothesis.strategies.integers(0, 10),
@@ -1492,6 +1631,10 @@ class TestIntegers:
     def test_dataframe(self, *, length: int, high: int) -> None:
         df = int_range(end=length, eager=True).to_frame()
         series = utilities.polars.integers(df, high)
+        self._assert(series, length, high)
+
+    def _assert(self, series: Series, length: int, high: int, /) -> None:
+        assert series.dtype == Int64
         assert series.len() == length
         assert series.is_between(0, high, closed="left").all()
 
@@ -1714,20 +1857,22 @@ class TestNormal:
     @given(length=hypothesis.strategies.integers(0, 10))
     def test_int(self, *, length: int) -> None:
         series = normal(length)
-        assert series.len() == length
-        assert series.is_finite().all()
+        self._assert(series, length)
 
     @given(length=hypothesis.strategies.integers(0, 10))
     def test_series(self, *, length: int) -> None:
         orig = int_range(end=length, eager=True)
         series = normal(orig)
-        assert series.len() == length
-        assert series.is_finite().all()
+        self._assert(series, length)
 
     @given(length=hypothesis.strategies.integers(0, 10))
     def test_dataframe(self, *, length: int) -> None:
         df = int_range(end=length, eager=True).to_frame()
         series = normal(df)
+        self._assert(series, length)
+
+    def _assert(self, series: Series, length: int, /) -> None:
+        assert series.dtype == Float64
         assert series.len() == length
         assert series.is_finite().all()
 
@@ -1927,6 +2072,7 @@ class TestUniform:
         series = uniform(length, low=low, high=high)
         assert series.len() == length
         assert series.is_between(low, high).all()
+        self._assert(series, length, low, high)
 
     @given(
         length=hypothesis.strategies.integers(0, 10),
@@ -1938,6 +2084,7 @@ class TestUniform:
         series = uniform(orig, low=low, high=high)
         assert series.len() == length
         assert series.is_between(low, high).all()
+        self._assert(series, length, low, high)
 
     @given(
         length=hypothesis.strategies.integers(0, 10),
@@ -1947,6 +2094,10 @@ class TestUniform:
         low, high = bounds
         df = int_range(end=length, eager=True).to_frame()
         series = uniform(df, low=low, high=high)
+        self._assert(series, length, low, high)
+
+    def _assert(self, series: Series, length: int, low: float, high: float, /) -> None:
+        assert series.dtype == Float64
         assert series.len() == length
         assert series.is_between(low, high).all()
 

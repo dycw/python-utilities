@@ -39,17 +39,20 @@ from polars import (
     Series,
     String,
     Struct,
+    UInt32,
     all_horizontal,
     col,
     concat,
     int_range,
     lit,
     struct,
+    sum_horizontal,
     when,
 )
 from polars.datatypes import DataType, DataTypeClass
 from polars.exceptions import (
     ColumnNotFoundError,
+    NoRowsReturnedError,
     OutOfBoundsError,
     PolarsInefficientMapWarning,
 )
@@ -332,6 +335,102 @@ def are_frames_equal(
     except AssertionError:
         return False
     return True
+
+
+##
+
+
+def bernoulli(
+    obj: int | Series | DataFrame,
+    /,
+    *,
+    true: float = 0.5,
+    seed: int | None = None,
+    name: str | None = None,
+) -> Series:
+    """Construct a series of Bernoulli-random variables."""
+    match obj:
+        case int() as height:
+            import utilities.numpy
+
+            values = utilities.numpy.bernoulli(true=true, seed=seed, size=height)
+            return Series(name=name, values=values)
+        case Series() as series:
+            return bernoulli(series.len(), true=true, seed=seed, name=name)
+        case DataFrame() as df:
+            return bernoulli(df.height, true=true, seed=seed, name=name)
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
+def boolean_value_counts(
+    obj: Series | DataFrame, /, *exprs: IntoExprColumn, **named_exprs: IntoExprColumn
+) -> DataFrame:
+    """Conduct a set of boolean value counts."""
+    match obj:
+        case Series() as series:
+            return boolean_value_counts(series.to_frame(), *exprs, **named_exprs)
+        case DataFrame() as df:
+            all_exprs = ensure_expr_or_series_many(*exprs, **named_exprs)
+            rows = [_boolean_value_counts_one(df, expr) for expr in all_exprs]
+            true, false, null = [col(c) for c in ["true", "false", "null"]]
+            total = sum_horizontal(true, false, null).alias("total")
+            return DataFrame(
+                rows,
+                schema={
+                    "name": String,
+                    "true": UInt32,
+                    "false": UInt32,
+                    "null": UInt32,
+                },
+                orient="row",
+            ).with_columns(
+                total,
+                (true / total).alias("true (%)"),
+                (false / total).alias("false (%)"),
+                (null / total).alias("null (%)"),
+            )
+        case _ as never:
+            assert_never(never)
+
+
+def _boolean_value_counts_one(
+    df: DataFrame, expr: IntoExprColumn, /
+) -> Mapping[str, Any]:
+    name = get_expr_name(df, expr)
+    sr = df.select(expr)[name]
+    if not isinstance(sr.dtype, Boolean):
+        raise BooleanValueCountsError(name=name, dtype=sr.dtype)
+    counts = sr.value_counts()
+    truth = col(name)
+    try:
+        true = counts.row(by_predicate=truth.is_not_null() & truth, named=True)["count"]
+    except NoRowsReturnedError:
+        true = 0
+    try:
+        false = counts.row(by_predicate=(truth.is_not_null() & ~truth), named=True)[
+            "count"
+        ]
+    except NoRowsReturnedError:
+        false = 0
+    try:
+        null = counts.row(by_predicate=truth.is_null(), named=True)["count"]
+    except NoRowsReturnedError:
+        null = 0
+    return {"name": name, "true": true, "false": false, "null": null}
+
+
+@dataclass(kw_only=True, slots=True)
+class BooleanValueCountsError(Exception):
+    name: str
+    dtype: DataType
+
+    @override
+    def __str__(self) -> str:
+        return f"Column {self.name!r} must be Boolean; got {self.dtype!r}"
 
 
 ##
@@ -632,6 +731,54 @@ class _CheckPolarsDataFrameWidthError(CheckPolarsDataFrameError):
         return (
             f"DataFrame must have width {self.width}; got {self.df.width}:\n\n{self.df}"
         )
+
+
+##
+
+
+def choice(
+    obj: int | Series | DataFrame,
+    elements: Iterable[Any],
+    /,
+    *,
+    replace: bool = True,
+    p: Iterable[float] | None = None,
+    seed: int | None = None,
+    name: str | None = None,
+    dtype: PolarsDataType = Float64,
+) -> Series:
+    """Construct a series of random samples."""
+    match obj:
+        case int() as height:
+            from numpy.random import default_rng
+
+            rng = default_rng(seed=seed)
+            elements = list(elements)
+            p = None if p is None else list(p)
+            values = rng.choice(elements, size=height, replace=replace, p=p)
+            return Series(name=name, values=values.tolist(), dtype=dtype)
+        case Series() as series:
+            return choice(
+                series.len(),
+                elements,
+                replace=replace,
+                p=p,
+                seed=seed,
+                name=name,
+                dtype=dtype,
+            )
+        case DataFrame() as df:
+            return choice(
+                df.height,
+                elements,
+                replace=replace,
+                p=p,
+                seed=seed,
+                name=name,
+                dtype=dtype,
+            )
+        case _ as never:
+            assert_never(never)
 
 
 ##
@@ -1053,6 +1200,18 @@ def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
 ##
 
 
+def ensure_expr_or_series_many(
+    *columns: IntoExprColumn, **named_columns: IntoExprColumn
+) -> Sequence[Expr | Series]:
+    """Ensure a set of column expressions and/or Series are returned."""
+    args = map(ensure_expr_or_series, columns)
+    kwargs = (ensure_expr_or_series(v).alias(k) for k, v in named_columns.items())
+    return list(chain(args, kwargs))
+
+
+##
+
+
 @overload
 def finite_ewm_mean(
     column: ExprLike,
@@ -1227,7 +1386,7 @@ class _GetDataTypeOrSeriesTimeZoneNotZonedError(GetDataTypeOrSeriesTimeZoneError
 ##
 
 
-def get_expr_name(obj: Series | DataFrame, expr: Expr, /) -> str:
+def get_expr_name(obj: Series | DataFrame, expr: IntoExprColumn, /) -> str:
     """Get the name of an expression."""
     match obj:
         case Series() as series:
@@ -1948,6 +2107,7 @@ def zoned_datetime(
 
 
 __all__ = [
+    "BooleanValueCountsError",
     "CheckPolarsDataFrameError",
     "ColumnsToDictError",
     "DataClassToDataFrameError",
@@ -1971,8 +2131,11 @@ __all__ = [
     "adjust_frequencies",
     "append_dataclass",
     "are_frames_equal",
+    "bernoulli",
+    "boolean_value_counts",
     "ceil_datetime",
     "check_polars_dataframe",
+    "choice",
     "collect_series",
     "columns_to_dict",
     "concat_series",
@@ -1983,6 +2146,7 @@ __all__ = [
     "drop_null_struct_series",
     "ensure_data_type",
     "ensure_expr_or_series",
+    "ensure_expr_or_series_many",
     "finite_ewm_mean",
     "floor_datetime",
     "get_data_type_or_series_time_zone",

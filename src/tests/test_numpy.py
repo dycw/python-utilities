@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 from hypothesis import assume, given
-from hypothesis.strategies import DataObject, data, floats, integers, none
+from hypothesis.extra.numpy import array_shapes
+from hypothesis.strategies import DataObject, data, floats, integers, none, sampled_from
 from numpy import (
     arange,
     array,
@@ -36,6 +37,7 @@ from utilities.numpy import (
     FlatN0MultipleError,
     NDArrayF,
     NDArrayI,
+    ShapeLike,
     ShiftError,
     SigmoidError,
     _BoxCarLocationsError,
@@ -44,6 +46,7 @@ from utilities.numpy import (
     adjust_frequencies,
     array_indexer,
     as_int,
+    bernoulli,
     boxcar,
     discretize,
     fillna,
@@ -283,6 +286,15 @@ class TestDiscretize:
         result = discretize(arr, bins)
         expected = array(expected_v, dtype=float)
         assert_equal(result, expected)
+
+
+class TestBernoulli:
+    @given(case=sampled_from([(0.0, False), (1.0, True)]), size=array_shapes())
+    def test_main(self, *, case: tuple[float, bool], size: ShapeLike) -> None:
+        true, expected = case
+        result = bernoulli(true=true, size=size)
+        assert (result == expected).all()
+        assert result.shape == size
 
 
 class TestBoxCar:
