@@ -413,7 +413,7 @@ class RedisKey(Generic[_T]):
             case _ as never:
                 assert_never(never)
 
-    async def get(self, redis: Redis, /) -> _T | None:
+    async def get(self, redis: Redis, /) -> _T:
         """Get a value from `redis`."""
         async with timeout_dur(  # skipif-ci-and-not-linux
             duration=self.timeout, error=self.error
