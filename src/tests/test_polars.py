@@ -56,7 +56,7 @@ from polars._typing import (
     SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
 )
 from polars.testing import assert_frame_equal, assert_series_equal
-from pytest import mark, raises
+from pytest import raises
 
 import utilities.polars
 from utilities.datetime import get_now, get_today
@@ -1647,7 +1647,6 @@ class TestIntegers:
         assert series.is_between(0, high, closed="left").all()
 
 
-@mark.only
 class TestIsNearEvent:
     df: ClassVar[DataFrame] = DataFrame(
         data=[
