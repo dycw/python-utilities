@@ -113,6 +113,8 @@ from utilities.polars import (
     _GetSeriesNumberOfDecimalsNotFloatError,
     _InsertBetweenMissingColumnsError,
     _InsertBetweenNonConsecutiveError,
+    _IsNearEventAfterError,
+    _IsNearEventBeforeError,
     _ReifyExprsEmptyError,
     _ReifyExprsSeriesNonUniqueError,
     _yield_struct_series_element_remove_nulls,
@@ -1726,6 +1728,20 @@ class TestIsNearEvent:
             dtype=Boolean,
         )
         assert_series_equal(result, expected)
+
+    @given(before=hypothesis.strategies.integers(max_value=-1))
+    def test_error_before(self, *, before: int) -> None:
+        with raises(
+            _IsNearEventBeforeError, match=r"'Before' must be non-negative; got \-\d+"
+        ):
+            _ = is_near_event(before=before)
+
+    @given(after=hypothesis.strategies.integers(max_value=-1))
+    def test_error_after(self, *, after: int) -> None:
+        with raises(
+            _IsNearEventAfterError, match=r"'After' must be non-negative; got \-\d+"
+        ):
+            _ = is_near_event(after=after)
 
 
 class TestIsNullAndIsNotNullStructSeries:

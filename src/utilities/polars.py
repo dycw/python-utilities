@@ -1623,12 +1623,12 @@ def is_near_event(
 ) -> Expr | Series:
     """Compute the rows near any event."""
     if before <= -1:
-        raise ValueError
+        raise _IsNearEventBeforeError(before=before)
     if after <= -1:
-        raise ValueError
+        raise _IsNearEventAfterError(after=after)
     all_exprs = ensure_expr_or_series_many(*exprs, **named_exprs)
     shifts = range(-before, after + 1)
-    if (len(all_exprs) == 0) or (len(shifts) == 0):
+    if len(all_exprs) == 0:
         near = lit(value=False, dtype=Boolean)
     else:
         near_exprs = (
@@ -1636,6 +1636,28 @@ def is_near_event(
         )
         near = any_horizontal(*near_exprs)
     return try_reify_expr(near, *exprs, **named_exprs)
+
+
+@dataclass(kw_only=True, slots=True)
+class IsNearEventError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _IsNearEventBeforeError(IsNearEventError):
+    before: int
+
+    @override
+    def __str__(self) -> str:
+        return f"'Before' must be non-negative; got {self.before}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _IsNearEventAfterError(IsNearEventError):
+    after: int
+
+    @override
+    def __str__(self) -> str:
+        return f"'After' must be non-negative; got {self.after}"
 
 
 ##
@@ -2252,6 +2274,7 @@ __all__ = [
     "InsertAfterError",
     "InsertBeforeError",
     "InsertBetweenError",
+    "IsNearEventError",
     "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
     "StructFromDataClassError",
@@ -2286,6 +2309,7 @@ __all__ = [
     "insert_before",
     "insert_between",
     "integers",
+    "is_near_event",
     "is_not_null_struct_series",
     "is_null_struct_series",
     "join",
