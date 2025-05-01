@@ -7,7 +7,7 @@ from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import asdict, dataclass
 from functools import partial, reduce
-from itertools import chain
+from itertools import chain, product
 from math import ceil, log
 from pathlib import Path
 from typing import (
@@ -41,6 +41,7 @@ from polars import (
     Struct,
     UInt32,
     all_horizontal,
+    any_horizontal,
     col,
     concat,
     int_range,
@@ -1265,13 +1266,7 @@ def finite_ewm_mean(
     column = ensure_expr_or_series(column)
     mean = column.fill_null(value=0.0).rolling_mean(len(weights), weights=list(weights))
     expr = when(column.is_not_null()).then(mean)
-    match column:
-        case Expr():
-            return expr
-        case Series() as series:
-            return series.to_frame().with_columns(expr.alias(series.name))[series.name]
-        case _ as never:
-            assert_never(never)
+    return try_reify_expr(expr, column)
 
 
 @dataclass(kw_only=True)
@@ -1599,6 +1594,69 @@ def integers(
 ##
 
 
+@overload
+def is_near_event(
+    *exprs: ExprLike, before: int = 0, after: int = 0, **named_exprs: ExprLike
+) -> Expr: ...
+@overload
+def is_near_event(
+    *exprs: Series, before: int = 0, after: int = 0, **named_exprs: Series
+) -> Series: ...
+@overload
+def is_near_event(
+    *exprs: IntoExprColumn,
+    before: int = 0,
+    after: int = 0,
+    **named_exprs: IntoExprColumn,
+) -> Expr | Series: ...
+def is_near_event(
+    *exprs: IntoExprColumn,
+    before: int = 0,
+    after: int = 0,
+    **named_exprs: IntoExprColumn,
+) -> Expr | Series:
+    """Compute the rows near any event."""
+    if before <= -1:
+        raise _IsNearEventBeforeError(before=before)
+    if after <= -1:
+        raise _IsNearEventAfterError(after=after)
+    all_exprs = ensure_expr_or_series_many(*exprs, **named_exprs)
+    shifts = range(-before, after + 1)
+    if len(all_exprs) == 0:
+        near = lit(value=False, dtype=Boolean)
+    else:
+        near_exprs = (
+            e.shift(s).fill_null(value=False) for e, s in product(all_exprs, shifts)
+        )
+        near = any_horizontal(*near_exprs)
+    return try_reify_expr(near, *exprs, **named_exprs)
+
+
+@dataclass(kw_only=True, slots=True)
+class IsNearEventError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _IsNearEventBeforeError(IsNearEventError):
+    before: int
+
+    @override
+    def __str__(self) -> str:
+        return f"'Before' must be non-negative; got {self.before}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _IsNearEventAfterError(IsNearEventError):
+    after: int
+
+    @override
+    def __str__(self) -> str:
+        return f"'After' must be non-negative; got {self.after}"
+
+
+##
+
+
 def is_not_null_struct_series(series: Series, /) -> Series:
     """Check if a struct-dtype Series is not null as per the <= 1.1 definition."""
     try:
@@ -1791,6 +1849,71 @@ def normal(
 ##
 
 
+def reify_exprs(
+    *exprs: IntoExprColumn, **named_exprs: IntoExprColumn
+) -> Expr | Series | DataFrame:
+    """Reify a set of expressions."""
+    all_exprs = ensure_expr_or_series_many(*exprs, **named_exprs)
+    if len(all_exprs) == 0:
+        raise _ReifyExprsEmptyError from None
+    series = [s for s in all_exprs if isinstance(s, Series)]
+    lengths = {s.len() for s in series}
+    try:
+        length = one(lengths)
+    except OneEmptyError:
+        match len(all_exprs):
+            case 0:
+                raise ImpossibleCaseError(
+                    case=[f"{all_exprs=}"]
+                ) from None  # pragma: no cover
+            case 1:
+                return one(all_exprs)
+            case _:
+                return struct(*all_exprs)
+    except OneNonUniqueError as error:
+        raise _ReifyExprsSeriesNonUniqueError(
+            first=error.first, second=error.second
+        ) from None
+    df = (
+        int_range(end=length, eager=True)
+        .alias("_index")
+        .to_frame()
+        .with_columns(*all_exprs)
+        .drop("_index")
+    )
+    match len(df.columns):
+        case 0:
+            raise ImpossibleCaseError(case=[f"{df.columns=}"])  # pragma: no cover
+        case 1:
+            return df[one(df.columns)]
+        case _:
+            return df
+
+
+@dataclass(kw_only=True, slots=True)
+class ReifyExprsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ReifyExprsEmptyError(ReifyExprsError):
+    @override
+    def __str__(self) -> str:
+        return "At least 1 Expression or Series must be given"
+
+
+@dataclass
+class _ReifyExprsSeriesNonUniqueError(ReifyExprsError):
+    first: int
+    second: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Series must contain exactly one length; got {self.first}, {self.second} and perhaps more"
+
+
+##
+
+
 @overload
 def replace_time_zone(
     obj: Series, /, *, time_zone: TimeZoneLike | None = UTC
@@ -1925,6 +2048,28 @@ class _StructFromDataClassTypeError(StructFromDataClassError):
     @override
     def __str__(self) -> str:
         return f"Unsupported type: {self.ann}"
+
+
+##
+
+
+def try_reify_expr(
+    expr: IntoExprColumn, /, *exprs: IntoExprColumn, **named_exprs: IntoExprColumn
+) -> Expr | Series:
+    """Try reify an expression."""
+    expr = ensure_expr_or_series(expr)
+    all_exprs = ensure_expr_or_series_many(*exprs, **named_exprs)
+    all_exprs = [e.alias(f"_{i}") for i, e in enumerate(all_exprs)]
+    result = reify_exprs(expr, *all_exprs)
+    match result:
+        case Expr():
+            return expr
+        case Series() as series:
+            return series
+        case DataFrame() as df:
+            return df[get_expr_name(df, expr)]
+        case _ as never:
+            assert_never(never)
 
 
 ##
@@ -2123,6 +2268,7 @@ __all__ = [
     "InsertAfterError",
     "InsertBeforeError",
     "InsertBetweenError",
+    "IsNearEventError",
     "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
     "StructFromDataClassError",
@@ -2157,6 +2303,7 @@ __all__ = [
     "insert_before",
     "insert_between",
     "integers",
+    "is_near_event",
     "is_not_null_struct_series",
     "is_null_struct_series",
     "join",
@@ -2169,6 +2316,7 @@ __all__ = [
     "struct_dtype",
     "struct_from_dataclass",
     "touch",
+    "try_reify_expr",
     "uniform",
     "unique_element",
     "yield_struct_series_dataclasses",
