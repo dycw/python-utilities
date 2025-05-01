@@ -71,6 +71,7 @@ from utilities.numpy import DEFAULT_RNG
 from utilities.pathlib import PWD
 from utilities.polars import (
     AppendDataClassError,
+    BooleanValueCountsError,
     ColumnsToDictError,
     DatetimeHongKong,
     DatetimeTokyo,
@@ -118,6 +119,7 @@ from utilities.polars import (
     append_dataclass,
     are_frames_equal,
     bernoulli,
+    boolean_value_counts,
     ceil_datetime,
     check_polars_dataframe,
     choice,
@@ -132,6 +134,7 @@ from utilities.polars import (
     drop_null_struct_series,
     ensure_data_type,
     ensure_expr_or_series,
+    ensure_expr_or_series_many,
     finite_ewm_mean,
     floor_datetime,
     get_data_type_or_series_time_zone,
@@ -374,8 +377,51 @@ class TestBernoulli:
 
 
 class TestBooleanValueCounts:
+    df: ClassVar[DataFrame] = DataFrame(
+        data=[
+            (False, False),
+            (True, None),
+            (True, True),
+            (True, None),
+            (False, True),
+            (None, True),
+            (False, False),
+            (False, True),
+            (False, False),
+            (None, True),
+        ],
+        schema={"x": Boolean, "y": Boolean},
+        orient="row",
+    )
+
     def test_main(self) -> None:
-        pass
+        result = boolean_value_counts(
+            self.df,
+            "x",
+            "y",
+            (col("x") & col("y")).alias("x_and_y"),
+            x_or_y=col("x") | col("y"),
+        )
+        check_polars_dataframe(
+            result,
+            height=4,
+            schema_list={
+                "name": String,
+                "true": UInt32,
+                "false": UInt32,
+                "null": UInt32,
+                "total": UInt32,
+                "true (%)": Float64,
+                "false (%)": Float64,
+                "null (%)": Float64,
+            },
+        )
+
+    def test_error(self) -> None:
+        with raises(
+            BooleanValueCountsError, match="Column 'z' must be Boolean; got Int64"
+        ):
+            _ = boolean_value_counts(self.df, col("x").cast(Int64).alias("z"))
 
 
 class TestCeilDateTime:
@@ -1260,6 +1306,15 @@ class TestEnsureExprOrSeries:
     def test_main(self, *, column: IntoExprColumn) -> None:
         result = ensure_expr_or_series(column)
         assert isinstance(result, Expr | Series)
+
+
+class TestEnsureExprOrSeriesMany:
+    @given(column=sampled_from(["column", col("column"), int_range(end=10)]))
+    def test_main(self, *, column: IntoExprColumn) -> None:
+        result = ensure_expr_or_series_many(column, column=column)
+        assert len(result) == 2
+        for r in result:
+            assert isinstance(r, Expr | Series)
 
 
 class TestFiniteEWMMean:

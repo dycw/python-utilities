@@ -39,17 +39,20 @@ from polars import (
     Series,
     String,
     Struct,
+    UInt32,
     all_horizontal,
     col,
     concat,
     int_range,
     lit,
     struct,
+    sum_horizontal,
     when,
 )
 from polars.datatypes import DataType, DataTypeClass
 from polars.exceptions import (
     ColumnNotFoundError,
+    NoRowsReturnedError,
     OutOfBoundsError,
     PolarsInefficientMapWarning,
 )
@@ -364,58 +367,32 @@ def bernoulli(
 
 
 def boolean_value_counts(
-    obj: Series | DataFrame, /, *exprs: IntoExprColumn
+    obj: Series | DataFrame, /, *exprs: IntoExprColumn, **named_exprs: IntoExprColumn
 ) -> DataFrame:
     """Conduct a set of boolean value counts."""
     match obj:
         case Series() as series:
-            return boolean_value_counts(series.to_frame(), *exprs)
+            return boolean_value_counts(series.to_frame(), *exprs, **named_exprs)
         case DataFrame() as df:
-            exprs2 = list(map(ensure_expr_or_series, exprs))
-            rows = []
-            for expr in exprs2:
-                name = get_expr_name(df, expr)
-                sr = df.select(expr)[name]
-                assert sr.dtype == Boolean
-                tmp = (
-                    sr.value_counts()
-                    .with_columns((col("count") / col("count").sum()).alias("frac"))
-                    .rows(named=True)
-                )
-                try:
-                    true_count = one(r["count"] for r in tmp if r[name] is True)
-                except OneEmptyError:
-                    true_count = 0
-                try:
-                    false_count = one(r["count"] for r in tmp if r[name] is False)
-                except OneEmptyError:
-                    false_count = 0
-                try:
-                    null_count = one(r["count"] for r in tmp if r[name] is None)
-                except OneEmptyError:
-                    null_count = 0
-                try:
-                    true_frac = one(r["frac"] for r in tmp if r[name] is True)
-                except OneEmptyError:
-                    true_frac = 0.0
-                try:
-                    false_frac = one(r["frac"] for r in tmp if r[name] is False)
-                except OneEmptyError:
-                    false_frac = 0.0
-                try:
-                    null_frac = one(r["frac"] for r in tmp if r[name] is None)
-                except OneEmptyError:
-                    null_frac = 0.0
-                rows.append({
-                    "name": name,
-                    "true_count": true_count,
-                    "false_count": false_count,
-                    "null_count": null_count,
-                    "true_frac": true_frac,
-                    "false_frac": false_frac,
-                    "null_frac": null_frac,
-                })
-            return DataFrame(rows, orient="rows")
+            all_exprs = ensure_expr_or_series_many(*exprs, **named_exprs)
+            rows = [_boolean_value_counts_one(df, expr) for expr in all_exprs]
+            true, false, null = [col(c) for c in ["true", "false", "null"]]
+            total = sum_horizontal(true, false, null).alias("total")
+            return DataFrame(
+                rows,
+                schema={
+                    "name": String,
+                    "true": UInt32,
+                    "false": UInt32,
+                    "null": UInt32,
+                },
+                orient="row",
+            ).with_columns(
+                total,
+                (true / total).alias("true (%)"),
+                (false / total).alias("false (%)"),
+                (null / total).alias("null (%)"),
+            )
         case _ as never:
             assert_never(never)
 
@@ -426,45 +403,34 @@ def _boolean_value_counts_one(
     name = get_expr_name(df, expr)
     sr = df.select(expr)[name]
     if not isinstance(sr.dtype, Boolean):
-        pass
-    tmp = (
-        sr.value_counts()
-        .with_columns((col("count") / col("count").sum()).alias("frac"))
-        .rows(named=True)
-    )
+        raise BooleanValueCountsError(name=name, dtype=sr.dtype)
+    counts = sr.value_counts()
+    truth = col(name)
     try:
-        true_count = one(r["count"] for r in tmp if r[name] is True)
-    except OneEmptyError:
-        true_count = 0
+        true = counts.row(by_predicate=truth.is_not_null() & truth, named=True)["count"]
+    except NoRowsReturnedError:
+        true = 0
     try:
-        false_count = one(r["count"] for r in tmp if r[name] is False)
-    except OneEmptyError:
-        false_count = 0
+        false = counts.row(by_predicate=(truth.is_not_null() & ~truth), named=True)[
+            "count"
+        ]
+    except NoRowsReturnedError:
+        false = 0
     try:
-        null_count = one(r["count"] for r in tmp if r[name] is None)
-    except OneEmptyError:
-        null_count = 0
-    try:
-        true_frac = one(r["frac"] for r in tmp if r[name] is True)
-    except OneEmptyError:
-        true_frac = 0.0
-    try:
-        false_frac = one(r["frac"] for r in tmp if r[name] is False)
-    except OneEmptyError:
-        false_frac = 0.0
-    try:
-        null_frac = one(r["frac"] for r in tmp if r[name] is None)
-    except OneEmptyError:
-        null_frac = 0.0
-    rows.append({
-        "name": name,
-        "true_count": true_count,
-        "false_count": false_count,
-        "null_count": null_count,
-        "true_frac": true_frac,
-        "false_frac": false_frac,
-        "null_frac": null_frac,
-    })
+        null = counts.row(by_predicate=truth.is_null(), named=True)["count"]
+    except NoRowsReturnedError:
+        null = 0
+    return {"name": name, "true": true, "false": false, "null": null}
+
+
+@dataclass(kw_only=True, slots=True)
+class BooleanValueCountsError(Exception):
+    name: str
+    dtype: DataType
+
+    @override
+    def __str__(self) -> str:
+        return f"Column {self.name!r} must be Boolean; got {self.dtype!r}"
 
 
 ##
@@ -1229,6 +1195,18 @@ def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series: ...
 def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
     """Ensure a column expression or Series is returned."""
     return col(column) if isinstance(column, str) else column
+
+
+##
+
+
+def ensure_expr_or_series_many(
+    *columns: IntoExprColumn, **named_columns: IntoExprColumn
+) -> Sequence[Expr | Series]:
+    """Ensure a set of column expressions and/or Series are returned."""
+    args = map(ensure_expr_or_series, columns)
+    kwargs = (ensure_expr_or_series(v).alias(k) for k, v in named_columns.items())
+    return list(chain(args, kwargs))
 
 
 ##
@@ -2129,6 +2107,7 @@ def zoned_datetime(
 
 
 __all__ = [
+    "BooleanValueCountsError",
     "CheckPolarsDataFrameError",
     "ColumnsToDictError",
     "DataClassToDataFrameError",
@@ -2167,6 +2146,7 @@ __all__ = [
     "drop_null_struct_series",
     "ensure_data_type",
     "ensure_expr_or_series",
+    "ensure_expr_or_series_many",
     "finite_ewm_mean",
     "floor_datetime",
     "get_data_type_or_series_time_zone",
