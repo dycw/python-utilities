@@ -1266,13 +1266,7 @@ def finite_ewm_mean(
     column = ensure_expr_or_series(column)
     mean = column.fill_null(value=0.0).rolling_mean(len(weights), weights=list(weights))
     expr = when(column.is_not_null()).then(mean)
-    match column:
-        case Expr():
-            return expr
-        case Series() as series:
-            return series.to_frame().with_columns(expr.alias(series.name))[series.name]
-        case _ as never:
-            assert_never(never)
+    return try_reify_expr(expr, column)
 
 
 @dataclass(kw_only=True)
@@ -2064,7 +2058,9 @@ def try_reify_expr(
 ) -> Expr | Series:
     """Try reify an expression."""
     expr = ensure_expr_or_series(expr)
-    result = reify_exprs(expr, *exprs, **named_exprs)
+    all_exprs = ensure_expr_or_series_many(*exprs, **named_exprs)
+    all_exprs = [e.alias(f"_{i}") for i, e in enumerate(all_exprs)]
+    result = reify_exprs(expr, *all_exprs)
     match result:
         case Expr():
             return expr

@@ -2275,10 +2275,7 @@ class TestTryReifyExpr:
         expected = int_range(end=length, eager=True).alias(name)
         assert_series_equal(result2, expected)
 
-    @given(
-        length=hypothesis.strategies.integers(0, 10),
-        names=pairs(text_ascii(), unique=True),
-    )
+    @given(length=hypothesis.strategies.integers(0, 10), names=pairs(text_ascii()))
     def test_flat_expr_and_expr(self, *, length: int, names: tuple[str, str]) -> None:
         name1, name2 = names
         expr1 = int_range(end=length).alias(name1)
@@ -2294,10 +2291,7 @@ class TestTryReifyExpr:
         expected = int_range(end=length, eager=True).alias(name1)
         assert_series_equal(result2, expected)
 
-    @given(
-        length=hypothesis.strategies.integers(0, 10),
-        names=pairs(text_ascii(), unique=True),
-    )
+    @given(length=hypothesis.strategies.integers(0, 10), names=pairs(text_ascii()))
     def test_flat_expr_and_series(self, *, length: int, names: tuple[str, str]) -> None:
         name1, name2 = names
         expr = int_range(end=length).alias(name1)
@@ -2325,10 +2319,7 @@ class TestTryReifyExpr:
         )
         assert_series_equal(result2, expected)
 
-    @given(
-        length=hypothesis.strategies.integers(0, 10),
-        names=pairs(text_ascii(), unique=True),
-    )
+    @given(length=hypothesis.strategies.integers(0, 10), names=pairs(text_ascii()))
     def test_struct_expr_and_expr(self, *, length: int, names: tuple[str, str]) -> None:
         name1, name2 = names
         expr1 = struct(int_range(end=length).alias(name1)).alias(name1)
@@ -2349,10 +2340,7 @@ class TestTryReifyExpr:
         )
         assert_series_equal(result2, expected)
 
-    @given(
-        length=hypothesis.strategies.integers(0, 10),
-        names=pairs(text_ascii(), unique=True),
-    )
+    @given(length=hypothesis.strategies.integers(0, 10), names=pairs(text_ascii()))
     def test_struct_expr_and_series(
         self, *, length: int, names: tuple[str, str]
     ) -> None:
@@ -2373,10 +2361,7 @@ class TestTryReifyExpr:
         assert isinstance(result, Series)
         assert_series_equal(result, series)
 
-    @given(
-        length=hypothesis.strategies.integers(0, 10),
-        names=pairs(text_ascii(), unique=True),
-    )
+    @given(length=hypothesis.strategies.integers(0, 10), names=pairs(text_ascii()))
     def test_flat_series_and_expr(self, *, length: int, names: tuple[str, str]) -> None:
         name1, name2 = names
         series = int_range(end=length, eager=True).alias(name1)
@@ -2385,10 +2370,7 @@ class TestTryReifyExpr:
         assert isinstance(result, Series)
         assert_series_equal(result, series)
 
-    @given(
-        length=hypothesis.strategies.integers(0, 10),
-        names=pairs(text_ascii(), unique=True),
-    )
+    @given(length=hypothesis.strategies.integers(0, 10), names=pairs(text_ascii()))
     def test_flat_series_and_series(
         self, *, length: int, names: tuple[str, str]
     ) -> None:
@@ -2412,10 +2394,7 @@ class TestTryReifyExpr:
         assert isinstance(result, Series)
         assert_series_equal(result, series)
 
-    @given(
-        length=hypothesis.strategies.integers(0, 10),
-        names=pairs(text_ascii(), unique=True),
-    )
+    @given(length=hypothesis.strategies.integers(0, 10), names=pairs(text_ascii()))
     def test_struct_series_and_expr(
         self, *, length: int, names: tuple[str, str]
     ) -> None:
@@ -2432,10 +2411,7 @@ class TestTryReifyExpr:
         assert isinstance(result, Series)
         assert_series_equal(result, series)
 
-    @given(
-        length=hypothesis.strategies.integers(0, 10),
-        names=pairs(text_ascii(), unique=True),
-    )
+    @given(length=hypothesis.strategies.integers(0, 10), names=pairs(text_ascii()))
     def test_struct_series_and_series(
         self, *, length: int, names: tuple[str, str]
     ) -> None:
