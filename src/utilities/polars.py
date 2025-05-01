@@ -1845,9 +1845,14 @@ def reify_exprs(*exprs: IntoExprColumn, **named_exprs: IntoExprColumn) -> Series
         .with_columns(*all_exprs)
         .drop("_index")
     )
-    if len(df.columns) == 1:
-        return df.get_column(one(df.columns))
-    raise NotImplementedError
+    match len(df.columns):
+        case 0:
+            raise ImpossibleCaseError(case=[f"{df.columns=}"])  # pragma: no cover
+        case 1:
+            return df[one(df.columns)]
+        case _:
+            name = df.columns[0]
+            return df.select(struct(df.columns).alias(name))[name]
 
 
 @dataclass(kw_only=True, slots=True)

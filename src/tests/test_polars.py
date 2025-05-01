@@ -1886,8 +1886,21 @@ class TestReifyExprs:
     def test_one_series(self, *, name: str) -> None:
         series = int_range(end=10, eager=True).alias(name)
         result = reify_exprs(series)
-        assert isinstance(result, Series)
         assert_series_equal(result, series)
+
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        names=pairs(text_ascii(), unique=True),
+    )
+    def test_one_expr_and_one_series(
+        self, *, length: int, names: tuple[str, str]
+    ) -> None:
+        name1, name2 = names
+        expr = int_range(end=length).alias(name1)
+        series = int_range(end=length, eager=True).alias(name2)
+        result = reify_exprs(expr, series)
+        assert result.name == name1
+        assert result.dtype == Struct(dict.fromkeys(names, Int64))
 
     def test_error_empty(self) -> None:
         expr = int_range(end=10)
