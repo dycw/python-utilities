@@ -1627,7 +1627,8 @@ def is_near_event(
         e.shift(s).fill_null(value=False)
         for e, s in product(all_exprs, range(-before, after))
     )
-    any_horizontal(*near_exprs)
+    any_horizontal(*near_exprs).alias("near")
+    return reify_exprs()
 
 
 ##
@@ -1825,7 +1826,9 @@ def normal(
 ##
 
 
-def reify_exprs(*exprs: IntoExprColumn, **named_exprs: IntoExprColumn) -> Expr | Series:
+def reify_exprs(
+    *exprs: IntoExprColumn, **named_exprs: IntoExprColumn
+) -> Expr | Series | DataFrame:
     """Reify a set of expressions."""
     all_exprs = ensure_expr_or_series_many(*exprs, **named_exprs)
     if len(all_exprs) == 0:
@@ -1861,6 +1864,7 @@ def reify_exprs(*exprs: IntoExprColumn, **named_exprs: IntoExprColumn) -> Expr |
         case 1:
             return df[one(df.columns)]
         case _:
+            return df
             name = df.columns[0]
             return df.select(struct(df.columns).alias(name))[name]
 
@@ -2023,6 +2027,26 @@ class _StructFromDataClassTypeError(StructFromDataClassError):
     @override
     def __str__(self) -> str:
         return f"Unsupported type: {self.ann}"
+
+
+##
+
+
+def try_reify_expr(
+    expr: IntoExprColumn, /, *exprs: IntoExprColumn, **named_exprs: IntoExprColumn
+) -> Expr | Series:
+    """Try reify an expression."""
+    expr = ensure_expr_or_series(expr)
+    result = reify_exprs(expr, *exprs, **named_exprs)
+    match result:
+        case Expr():
+            return expr
+        case Series() as series:
+            return series
+        case DataFrame() as df:
+            return df[get_expr_name(df, expr)]
+        case _ as never:
+            assert_never(never)
 
 
 ##
@@ -2267,6 +2291,7 @@ __all__ = [
     "struct_dtype",
     "struct_from_dataclass",
     "touch",
+    "try_reify_expr",
     "uniform",
     "unique_element",
     "yield_struct_series_dataclasses",

@@ -49,6 +49,7 @@ from polars import (
     datetime_range,
     int_range,
     lit,
+    struct,
 )
 from polars._typing import (
     IntoExprColumn,  # pyright: ignore[reportPrivateImportUsage]
@@ -159,6 +160,7 @@ from utilities.polars import (
     struct_dtype,
     struct_from_dataclass,
     touch,
+    try_reify_expr,
     uniform,
     unique_element,
     week_num,
@@ -1880,7 +1882,6 @@ class TestNormal:
         assert series.is_finite().all()
 
 
-@mark.only
 class TestReifyExprs:
     @given(length=hypothesis.strategies.integers(0, 10), name=text_ascii())
     def test_one_expr(self, *, length: int, name: str) -> None:
@@ -2157,6 +2158,202 @@ class TestStructFromDataClass:
             StructFromDataClassError, match="Unsupported type: <class 'NoneType'>"
         ):
             _ = struct_from_dataclass(Example)
+
+
+@mark.only
+class TestTryReifyExpr:
+    # expr
+
+    @given(length=hypothesis.strategies.integers(0, 10), name=text_ascii())
+    def test_flat_expr(self, *, length: int, name: str) -> None:
+        expr = int_range(end=length).alias(name)
+        result = try_reify_expr(expr)
+        assert isinstance(result, Expr)
+        result2 = (
+            int_range(end=length, eager=True)
+            .alias(f"_{name}")
+            .to_frame()
+            .with_columns(result)[name]
+        )
+        expected = int_range(end=length, eager=True).alias(name)
+        assert_series_equal(result2, expected)
+
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        names=pairs(text_ascii(), unique=True),
+    )
+    def test_flat_expr_and_expr(self, *, length: int, names: tuple[str, str]) -> None:
+        name1, name2 = names
+        expr1 = int_range(end=length).alias(name1)
+        expr2 = int_range(end=length).alias(name2)
+        result = try_reify_expr(expr1, expr2)
+        assert isinstance(result, Expr)
+        result2 = (
+            int_range(end=length, eager=True)
+            .alias(f"_{name1}")
+            .to_frame()
+            .with_columns(result)[name1]
+        )
+        expected = int_range(end=length, eager=True).alias(name1)
+        assert_series_equal(result2, expected)
+
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        names=pairs(text_ascii(), unique=True),
+    )
+    def test_flat_expr_and_series(self, *, length: int, names: tuple[str, str]) -> None:
+        name1, name2 = names
+        expr = int_range(end=length).alias(name1)
+        series = int_range(end=length, eager=True).alias(name2)
+        result = try_reify_expr(expr, series)
+        assert isinstance(result, Series)
+        assert_series_equal(result, series.alias(name1))
+
+    @given(length=hypothesis.strategies.integers(0, 10), name=text_ascii())
+    def test_struct_expr(self, *, length: int, name: str) -> None:
+        expr = struct(int_range(end=length).alias(name)).alias(name)
+        result = try_reify_expr(expr)
+        assert isinstance(result, Expr)
+        result2 = (
+            int_range(end=length, eager=True)
+            .alias(f"_{name}")
+            .to_frame()
+            .with_columns(result)[name]
+        )
+        expected = (
+            int_range(end=length, eager=True)
+            .alias(name)
+            .to_frame()
+            .select(struct(name))[name]
+        )
+        assert_series_equal(result2, expected)
+
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        names=pairs(text_ascii(), unique=True),
+    )
+    def test_struct_expr_and_expr(self, *, length: int, names: tuple[str, str]) -> None:
+        name1, name2 = names
+        expr1 = struct(int_range(end=length).alias(name1)).alias(name1)
+        expr2 = int_range(end=length).alias(name2)
+        result = try_reify_expr(expr1, expr2)
+        assert isinstance(result, Expr)
+        result2 = (
+            int_range(end=length, eager=True)
+            .alias(f"_{name1}")
+            .to_frame()
+            .with_columns(result)[name1]
+        )
+        expected = (
+            int_range(end=length, eager=True)
+            .alias(name1)
+            .to_frame()
+            .select(struct(name1))[name1]
+        )
+        assert_series_equal(result2, expected)
+
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        names=pairs(text_ascii(), unique=True),
+    )
+    def test_struct_expr_and_series(
+        self, *, length: int, names: tuple[str, str]
+    ) -> None:
+        name1, name2 = names
+        expr = struct(int_range(end=length).alias(name1)).alias(name1)
+        series = int_range(end=length, eager=True).alias(name2)
+        result = try_reify_expr(expr, series)
+        assert isinstance(result, Series)
+        expected = series.alias(name1).to_frame().select(struct(name1))[name1]
+        assert_series_equal(result, expected)
+
+    # series
+
+    @given(length=hypothesis.strategies.integers(0, 10), name=text_ascii())
+    def test_flat_series(self, *, length: int, name: str) -> None:
+        series = int_range(end=length, eager=True).alias(name)
+        result = try_reify_expr(series)
+        assert isinstance(result, Series)
+        assert_series_equal(result, series)
+
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        names=pairs(text_ascii(), unique=True),
+    )
+    def test_flat_series_and_expr(self, *, length: int, names: tuple[str, str]) -> None:
+        name1, name2 = names
+        series = int_range(end=length, eager=True).alias(name1)
+        expr = int_range(end=length).alias(name2)
+        result = try_reify_expr(series, expr)
+        assert isinstance(result, Series)
+        assert_series_equal(result, series)
+
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        names=pairs(text_ascii(), unique=True),
+    )
+    def test_flat_series_and_series(
+        self, *, length: int, names: tuple[str, str]
+    ) -> None:
+        name1, name2 = names
+        series1 = int_range(end=length, eager=True).alias(name1)
+        series2 = int_range(end=length, eager=True).alias(name2)
+        result = try_reify_expr(series1, series2)
+        assert isinstance(result, Series)
+        assert_series_equal(result, series1)
+
+    @given(length=hypothesis.strategies.integers(0, 10), name=text_ascii())
+    def test_struct_series(self, *, length: int, name: str) -> None:
+        series = (
+            int_range(end=length, eager=True)
+            .alias(name)
+            .to_frame()
+            .select(struct(name))[name]
+        )
+        assert isinstance(series.dtype, Struct)
+        result = try_reify_expr(series)
+        assert isinstance(result, Series)
+        assert_series_equal(result, series)
+
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        names=pairs(text_ascii(), unique=True),
+    )
+    def test_struct_series_and_expr(
+        self, *, length: int, names: tuple[str, str]
+    ) -> None:
+        name1, name2 = names
+        series = (
+            int_range(end=length, eager=True)
+            .alias(name1)
+            .to_frame()
+            .select(struct(name1))[name1]
+        )
+        assert isinstance(series.dtype, Struct)
+        expr = int_range(end=length).alias(name2)
+        result = try_reify_expr(series, expr)
+        assert isinstance(result, Series)
+        assert_series_equal(result, series)
+
+    @given(
+        length=hypothesis.strategies.integers(0, 10),
+        names=pairs(text_ascii(), unique=True),
+    )
+    def test_struct_series_and_series(
+        self, *, length: int, names: tuple[str, str]
+    ) -> None:
+        name1, name2 = names
+        series1 = (
+            int_range(end=length, eager=True)
+            .alias(name1)
+            .to_frame()
+            .select(struct(name1))[name1]
+        )
+        assert isinstance(series1.dtype, Struct)
+        series2 = int_range(end=length).alias(name2)
+        result = try_reify_expr(series1, series2)
+        assert isinstance(result, Series)
+        assert_series_equal(result, series1)
 
 
 class TestUniform:
