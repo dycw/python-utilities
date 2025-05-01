@@ -37,6 +37,7 @@ from utilities.numpy import (
     FlatN0MultipleError,
     NDArrayF,
     NDArrayI,
+    ShapeLike,
     ShiftError,
     SigmoidError,
     _BoxCarLocationsError,
@@ -289,7 +290,7 @@ class TestDiscretize:
 
 class TestBernoulli:
     @given(case=sampled_from([(0.0, False), (1.0, True)]), size=array_shapes())
-    def test_main(self, *, case: tuple[float, bool], size: Shape) -> None:
+    def test_main(self, *, case: tuple[float, bool], size: ShapeLike) -> None:
         true, expected = case
         result = bernoulli(true=true, size=size)
         assert (result == expected).all()
