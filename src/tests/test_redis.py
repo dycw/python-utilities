@@ -20,6 +20,7 @@ from tests.test_operator import make_objects
 from utilities.functions import get_class_name
 from utilities.hypothesis import (
     int64s,
+    pairs,
     settings_with_reduced_examples,
     text_ascii,
     yield_test_redis,
@@ -323,12 +324,38 @@ class TestRedisHashMapKey:
             with raises(KeyError):
                 _ = await hm_key.get(test.redis, key)
 
+    @given(data=data(), key=pairs(int64s()), value=booleans())
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_delete_compound(
+        self, *, data: DataObject, key: tuple[int, int], value: bool
+    ) -> None:
+        async with yield_test_redis(data) as test:
+            hm_key = redis_hash_map_key(test.key, tuple[int, int], bool)
+            _ = await hm_key.set(test.redis, key, value)
+            assert await hm_key.get(test.redis, key) is value
+            _ = await hm_key.delete(test.redis, key)
+            with raises(KeyError):
+                _ = await hm_key.get(test.redis, key)
+
     @given(data=data(), key=int64s(), value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_exists(self, *, data: DataObject, key: int, value: bool) -> None:
         async with yield_test_redis(data) as test:
             hm_key = redis_hash_map_key(test.key, int, bool)
+            assert not (await hm_key.exists(test.redis, key))
+            _ = await hm_key.set(test.redis, key, value)
+            assert await hm_key.exists(test.redis, key)
+
+    @given(data=data(), key=pairs(int64s()), value=booleans())
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_exists_compound(
+        self, *, data: DataObject, key: tuple[int, int], value: bool
+    ) -> None:
+        async with yield_test_redis(data) as test:
+            hm_key = redis_hash_map_key(test.key, tuple[int, int], bool)
             assert not (await hm_key.exists(test.redis, key))
             _ = await hm_key.set(test.redis, key, value)
             assert await hm_key.exists(test.redis, key)
