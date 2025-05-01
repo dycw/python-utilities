@@ -56,7 +56,7 @@ from polars._typing import (
     SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
 )
 from polars.testing import assert_frame_equal, assert_series_equal
-from pytest import mark, raises
+from pytest import raises
 
 import utilities.polars
 from utilities.datetime import get_now, get_today
@@ -1934,9 +1934,8 @@ class TestReifyExprs:
         expr = int_range(end=length).alias(name1)
         series = int_range(end=length, eager=True).alias(name2)
         result = reify_exprs(expr, series)
-        assert isinstance(result, Series)
-        assert result.name == name1
-        assert result.dtype == Struct(dict.fromkeys(names, Int64))
+        assert isinstance(result, DataFrame)
+        assert result.schema == dict.fromkeys(names, Int64)
 
     @given(
         length=hypothesis.strategies.integers(0, 10),
@@ -1947,9 +1946,9 @@ class TestReifyExprs:
         series1 = int_range(end=length, eager=True).alias(name1)
         series2 = int_range(end=length, eager=True).alias(name2)
         result = reify_exprs(series1, series2)
-        assert isinstance(result, Series)
+        assert isinstance(result, DataFrame)
         expected = concat_series(series1, series2)
-        assert_frame_equal(result.struct.unnest(), expected)
+        assert_frame_equal(result, expected)
 
     def test_error_empty(self) -> None:
         with raises(
@@ -2160,7 +2159,6 @@ class TestStructFromDataClass:
             _ = struct_from_dataclass(Example)
 
 
-@mark.only
 class TestTryReifyExpr:
     # expr
 
