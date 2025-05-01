@@ -418,6 +418,14 @@ class TestBooleanValueCounts:
         )
         check_polars_dataframe(result, height=4, schema_list=self.schema)
 
+    def test_empty(self) -> None:
+        result = boolean_value_counts(self.df[:0], "x")
+        check_polars_dataframe(result, height=1, schema_list=self.schema)
+        for column in ["true", "false", "null", "total"]:
+            assert (result[column] == 0).all()
+        for column in ["true (%)", "false (%)", "null (%)"]:
+            assert result[column].is_nan().all()
+
     def test_error(self) -> None:
         with raises(
             BooleanValueCountsError, match="Column 'z' must be Boolean; got Int64"
