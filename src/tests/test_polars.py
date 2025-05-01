@@ -393,8 +393,22 @@ class TestBooleanValueCounts:
         schema={"x": Boolean, "y": Boolean},
         orient="row",
     )
+    schema: ClassVar[SchemaDict] = {
+        "name": String,
+        "true": UInt32,
+        "false": UInt32,
+        "null": UInt32,
+        "total": UInt32,
+        "true (%)": Float64,
+        "false (%)": Float64,
+        "null (%)": Float64,
+    }
 
-    def test_main(self) -> None:
+    def test_series(self) -> None:
+        result = boolean_value_counts(self.df["x"], "x")
+        check_polars_dataframe(result, height=1, schema_list=self.schema)
+
+    def test_dataframe(self) -> None:
         result = boolean_value_counts(
             self.df,
             "x",
@@ -402,20 +416,7 @@ class TestBooleanValueCounts:
             (col("x") & col("y")).alias("x_and_y"),
             x_or_y=col("x") | col("y"),
         )
-        check_polars_dataframe(
-            result,
-            height=4,
-            schema_list={
-                "name": String,
-                "true": UInt32,
-                "false": UInt32,
-                "null": UInt32,
-                "total": UInt32,
-                "true (%)": Float64,
-                "false (%)": Float64,
-                "null (%)": Float64,
-            },
-        )
+        check_polars_dataframe(result, height=4, schema_list=self.schema)
 
     def test_error(self) -> None:
         with raises(
