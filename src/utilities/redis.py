@@ -88,20 +88,24 @@ class RedisHashMapKey(Generic[_K, _V]):
 
     async def delete(self, redis: Redis, key: _K, /) -> int:
         """Delete a key from a hashmap in `redis`."""
+        ser = _serialize(  # skipif-ci-and-not-linux
+            key, serializer=self.key_serializer
+        ).decode()
         async with timeout_dur(  # skipif-ci-and-not-linux
             duration=self.timeout, error=self.error
         ):
-            return await cast("Awaitable[int]", redis.hdel(self.name, cast("str", key)))
+            return await cast("Awaitable[int]", redis.hdel(self.name, ser))
         raise ImpossibleCaseError(case=[f"{redis=}", f"{key=}"])  # pragma: no cover
 
     async def exists(self, redis: Redis, key: _K, /) -> bool:
         """Check if the key exists in a hashmap in `redis`."""
+        ser = _serialize(  # skipif-ci-and-not-linux
+            key, serializer=self.key_serializer
+        ).decode()
         async with timeout_dur(  # skipif-ci-and-not-linux
             duration=self.timeout, error=self.error
         ):
-            return await cast(
-                "Awaitable[bool]", redis.hexists(self.name, cast("str", key))
-            )
+            return await cast("Awaitable[bool]", redis.hexists(self.name, ser))
 
     async def get(self, redis: Redis, key: _K, /) -> _V:
         """Get a value from a hashmap in `redis`."""
