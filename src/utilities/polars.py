@@ -7,7 +7,7 @@ from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import asdict, dataclass
 from functools import partial, reduce
-from itertools import chain
+from itertools import chain, product
 from math import ceil, log
 from pathlib import Path
 from typing import (
@@ -41,6 +41,7 @@ from polars import (
     Struct,
     UInt32,
     all_horizontal,
+    any_horizontal,
     col,
     concat,
     int_range,
@@ -1599,6 +1600,39 @@ def integers(
 ##
 
 
+@overload
+def is_near_event(
+    *exprs: ExprLike, before: int = 0, after: int = 0, **named_exprs: ExprLike
+) -> Expr: ...
+@overload
+def is_near_event(
+    *exprs: Series, before: int = 0, after: int = 0, **named_exprs: Series
+) -> Series: ...
+@overload
+def is_near_event(
+    *exprs: IntoExprColumn,
+    before: int = 0,
+    after: int = 0,
+    **named_exprs: IntoExprColumn,
+) -> Expr | Series: ...
+def is_near_event(
+    *exprs: IntoExprColumn,
+    before: int = 0,
+    after: int = 0,
+    **named_exprs: IntoExprColumn,
+) -> Expr | Series:
+    """Compute the rows near any event."""
+    all_exprs = ensure_expr_or_series_many(*exprs, **named_exprs)
+    near_exprs = (
+        e.shift(s).fill_null(value=False)
+        for e, s in product(all_exprs, range(-before, after))
+    )
+    any_horizontal(*near_exprs)
+
+
+##
+
+
 def is_not_null_struct_series(series: Series, /) -> Series:
     """Check if a struct-dtype Series is not null as per the <= 1.1 definition."""
     try:
@@ -1786,6 +1820,55 @@ def normal(
             )
         case _ as never:
             assert_never(never)
+
+
+##
+
+
+def reify_exprs(*exprs: IntoExprColumn, **named_exprs: IntoExprColumn) -> Series:
+    """Reify a set of expressions."""
+    all_exprs = ensure_expr_or_series_many(*exprs, **named_exprs)
+    series = [s for s in all_exprs if isinstance(s, Series)]
+    lengths = {s.len() for s in series}
+    try:
+        length = one(lengths)
+    except OneEmptyError:
+        raise _ReifyExprsEmptyError from None
+    except OneNonUniqueError as error:
+        raise _ReifyExprsNonUniqueError(
+            first=error.first, second=error.second
+        ) from None
+    df = (
+        int_range(end=length, eager=True)
+        .alias("_index")
+        .to_frame()
+        .with_columns(*all_exprs)
+        .drop("_index")
+    )
+    if len(df.columns) == 1:
+        return df.get_column(one(df.columns))
+    raise NotImplementedError
+
+
+@dataclass(kw_only=True, slots=True)
+class ReifyExprsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ReifyExprsEmptyError(ReifyExprsError):
+    @override
+    def __str__(self) -> str:
+        return "At least 1 Series must be given"
+
+
+@dataclass
+class _ReifyExprsNonUniqueError(ReifyExprsError):
+    first: int
+    second: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Series must contain exactly one length; got {self.first}, {self.second} and perhaps more"
 
 
 ##

@@ -55,7 +55,7 @@ from polars._typing import (
     SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
 )
 from polars.testing import assert_frame_equal, assert_series_equal
-from pytest import raises
+from pytest import mark, raises
 
 import utilities.polars
 from utilities.datetime import get_now, get_today
@@ -112,6 +112,8 @@ from utilities.polars import (
     _GetSeriesNumberOfDecimalsNotFloatError,
     _InsertBetweenMissingColumnsError,
     _InsertBetweenNonConsecutiveError,
+    _ReifyExprsEmptyError,
+    _ReifyExprsNonUniqueError,
     _yield_struct_series_element_remove_nulls,
     ac_halflife,
     acf,
@@ -151,6 +153,7 @@ from utilities.polars import (
     nan_sum_agg,
     nan_sum_cols,
     normal,
+    reify_exprs,
     replace_time_zone,
     set_first_row_as_columns,
     struct_dtype,
@@ -1875,6 +1878,38 @@ class TestNormal:
         assert series.dtype == Float64
         assert series.len() == length
         assert series.is_finite().all()
+
+
+@mark.only
+class TestReifyExprs:
+    @given(name=text_ascii())
+    def test_one_series(self, *, name: str) -> None:
+        series = int_range(end=10, eager=True).alias(name)
+        result = reify_exprs(series)
+        assert isinstance(result, Series)
+        assert_series_equal(result, series)
+
+    def test_error_empty(self) -> None:
+        expr = int_range(end=10)
+        with raises(_ReifyExprsEmptyError, match="At least 1 Series must be given"):
+            _ = reify_exprs(expr)
+
+    @given(
+        lengths=pairs(hypothesis.strategies.integers(0, 10), unique=True),
+        names=pairs(text_ascii(), unique=True),
+    )
+    def test_error_non_unique(
+        self, *, lengths: tuple[int, int], names: tuple[str, str]
+    ) -> None:
+        series1, series2 = [
+            int_range(end=length, eager=True).alias(name)
+            for length, name in zip(lengths, names, strict=True)
+        ]
+        with raises(
+            _ReifyExprsNonUniqueError,
+            match=r"Series must contain exactly one length; got \d+, \d+ and perhaps more",
+        ):
+            _ = reify_exprs(series1, series2)
 
 
 class TestReplaceTimeZone:
