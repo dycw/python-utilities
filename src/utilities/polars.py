@@ -1894,8 +1894,6 @@ def reify_exprs(
             return df[one(df.columns)]
         case _:
             return df
-            name = df.columns[0]
-            return df.select(struct(df.columns).alias(name))[name]
 
 
 @dataclass(kw_only=True, slots=True)
