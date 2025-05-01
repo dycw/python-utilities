@@ -1622,13 +1622,20 @@ def is_near_event(
     **named_exprs: IntoExprColumn,
 ) -> Expr | Series:
     """Compute the rows near any event."""
+    if before <= -1:
+        raise ValueError
+    if after <= -1:
+        raise ValueError
     all_exprs = ensure_expr_or_series_many(*exprs, **named_exprs)
-    near_exprs = (
-        e.shift(s).fill_null(value=False)
-        for e, s in product(all_exprs, range(-before, after))
-    )
-    any_horizontal(*near_exprs).alias("near")
-    return reify_exprs()
+    shifts = range(-before, after + 1)
+    if (len(all_exprs) == 0) or (len(shifts) == 0):
+        near = lit(value=False, dtype=Boolean)
+    else:
+        near_exprs = (
+            e.shift(s).fill_null(value=False) for e, s in product(all_exprs, shifts)
+        )
+        near = any_horizontal(*near_exprs)
+    return try_reify_expr(near, *exprs, **named_exprs)
 
 
 ##

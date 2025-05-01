@@ -5,7 +5,7 @@ import enum
 import itertools
 from dataclasses import dataclass, field
 from enum import auto
-from itertools import chain
+from itertools import chain, repeat
 from math import isfinite, nan
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
@@ -56,7 +56,7 @@ from polars._typing import (
     SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
 )
 from polars.testing import assert_frame_equal, assert_series_equal
-from pytest import raises
+from pytest import mark, raises
 
 import utilities.polars
 from utilities.datetime import get_now, get_today
@@ -147,6 +147,7 @@ from utilities.polars import (
     insert_after,
     insert_before,
     insert_between,
+    is_near_event,
     is_not_null_struct_series,
     is_null_struct_series,
     join,
@@ -1642,6 +1643,89 @@ class TestIntegers:
         assert series.dtype == Int64
         assert series.len() == length
         assert series.is_between(0, high, closed="left").all()
+
+
+@mark.only
+class TestIsNearEvent:
+    df: ClassVar[DataFrame] = DataFrame(
+        data=[
+            (False, False),
+            (False, False),
+            (True, False),
+            (True, False),
+            (False, False),
+            (False, False),
+            (False, False),
+            (False, False),
+            (False, False),
+            (False, True),
+        ],
+        schema={"x": Boolean, "y": Boolean},
+        orient="row",
+    )
+
+    def test_no_exprs(self) -> None:
+        result = self.df.with_columns(is_near_event().alias("z"))["z"]
+        expected = Series(
+            name="z", values=list(repeat(object=False, times=10)), dtype=Boolean
+        )
+        assert_series_equal(result, expected)
+
+    def test_x(self) -> None:
+        result = self.df.with_columns(is_near_event("x").alias("z"))["z"]
+        expected = Series(
+            name="z",
+            values=[False, False, True, True, False, False, False, False, False, False],
+            dtype=Boolean,
+        )
+        assert_series_equal(result, expected)
+
+    def test_y(self) -> None:
+        result = self.df.with_columns(is_near_event("y").alias("z"))["z"]
+        expected = Series(
+            name="z",
+            values=[
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                True,
+            ],
+            dtype=Boolean,
+        )
+        assert_series_equal(result, expected)
+
+    def test_x_before(self) -> None:
+        result = self.df.with_columns(is_near_event("x", before=1).alias("z"))["z"]
+        expected = Series(
+            name="z",
+            values=[False, True, True, True, False, False, False, False, False, False],
+            dtype=Boolean,
+        )
+        assert_series_equal(result, expected)
+
+    def test_x_after(self) -> None:
+        result = self.df.with_columns(is_near_event("x", after=1).alias("z"))["z"]
+        expected = Series(
+            name="z",
+            values=[False, False, True, True, True, False, False, False, False, False],
+            dtype=Boolean,
+        )
+        assert_series_equal(result, expected)
+
+    def test_x_or_y(self) -> None:
+        result = self.df.with_columns(is_near_event("x", "y").alias("z"))["z"]
+        expected = Series(
+            name="z",
+            values=[False, False, True, True, False, False, False, False, False, True],
+            dtype=Boolean,
+        )
+        assert_series_equal(result, expected)
 
 
 class TestIsNullAndIsNotNullStructSeries:
