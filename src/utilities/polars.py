@@ -337,6 +337,139 @@ def are_frames_equal(
 ##
 
 
+def bernoulli(
+    obj: int | Series | DataFrame,
+    /,
+    *,
+    true: float = 0.5,
+    seed: int | None = None,
+    name: str | None = None,
+) -> Series:
+    """Construct a series of Bernoulli-random variables."""
+    match obj:
+        case int() as height:
+            import utilities.numpy
+
+            values = utilities.numpy.bernoulli(true=true, seed=seed, size=height)
+            return Series(name=name, values=values)
+        case Series() as series:
+            return bernoulli(series.len(), true=true, seed=seed, name=name)
+        case DataFrame() as df:
+            return bernoulli(df.height, true=true, seed=seed, name=name)
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
+def boolean_value_counts(
+    obj: Series | DataFrame, /, *exprs: IntoExprColumn
+) -> DataFrame:
+    """Conduct a set of boolean value counts."""
+    match obj:
+        case Series() as series:
+            return boolean_value_counts(series.to_frame(), *exprs)
+        case DataFrame() as df:
+            exprs2 = list(map(ensure_expr_or_series, exprs))
+            rows = []
+            for expr in exprs2:
+                name = get_expr_name(df, expr)
+                sr = df.select(expr)[name]
+                assert sr.dtype == Boolean
+                tmp = (
+                    sr.value_counts()
+                    .with_columns((col("count") / col("count").sum()).alias("frac"))
+                    .rows(named=True)
+                )
+                try:
+                    true_count = one(r["count"] for r in tmp if r[name] is True)
+                except OneEmptyError:
+                    true_count = 0
+                try:
+                    false_count = one(r["count"] for r in tmp if r[name] is False)
+                except OneEmptyError:
+                    false_count = 0
+                try:
+                    null_count = one(r["count"] for r in tmp if r[name] is None)
+                except OneEmptyError:
+                    null_count = 0
+                try:
+                    true_frac = one(r["frac"] for r in tmp if r[name] is True)
+                except OneEmptyError:
+                    true_frac = 0.0
+                try:
+                    false_frac = one(r["frac"] for r in tmp if r[name] is False)
+                except OneEmptyError:
+                    false_frac = 0.0
+                try:
+                    null_frac = one(r["frac"] for r in tmp if r[name] is None)
+                except OneEmptyError:
+                    null_frac = 0.0
+                rows.append({
+                    "name": name,
+                    "true_count": true_count,
+                    "false_count": false_count,
+                    "null_count": null_count,
+                    "true_frac": true_frac,
+                    "false_frac": false_frac,
+                    "null_frac": null_frac,
+                })
+            return DataFrame(rows, orient="rows")
+        case _ as never:
+            assert_never(never)
+
+
+def _boolean_value_counts_one(
+    df: DataFrame, expr: IntoExprColumn, /
+) -> Mapping[str, Any]:
+    name = get_expr_name(df, expr)
+    sr = df.select(expr)[name]
+    if not isinstance(sr.dtype, Boolean):
+        pass
+    tmp = (
+        sr.value_counts()
+        .with_columns((col("count") / col("count").sum()).alias("frac"))
+        .rows(named=True)
+    )
+    try:
+        true_count = one(r["count"] for r in tmp if r[name] is True)
+    except OneEmptyError:
+        true_count = 0
+    try:
+        false_count = one(r["count"] for r in tmp if r[name] is False)
+    except OneEmptyError:
+        false_count = 0
+    try:
+        null_count = one(r["count"] for r in tmp if r[name] is None)
+    except OneEmptyError:
+        null_count = 0
+    try:
+        true_frac = one(r["frac"] for r in tmp if r[name] is True)
+    except OneEmptyError:
+        true_frac = 0.0
+    try:
+        false_frac = one(r["frac"] for r in tmp if r[name] is False)
+    except OneEmptyError:
+        false_frac = 0.0
+    try:
+        null_frac = one(r["frac"] for r in tmp if r[name] is None)
+    except OneEmptyError:
+        null_frac = 0.0
+    rows.append({
+        "name": name,
+        "true_count": true_count,
+        "false_count": false_count,
+        "null_count": null_count,
+        "true_frac": true_frac,
+        "false_frac": false_frac,
+        "null_frac": null_frac,
+    })
+
+
+##
+
+
 @overload
 def ceil_datetime(column: ExprLike, every: ExprLike, /) -> Expr: ...
 @overload
@@ -632,6 +765,54 @@ class _CheckPolarsDataFrameWidthError(CheckPolarsDataFrameError):
         return (
             f"DataFrame must have width {self.width}; got {self.df.width}:\n\n{self.df}"
         )
+
+
+##
+
+
+def choice(
+    obj: int | Series | DataFrame,
+    elements: Iterable[Any],
+    /,
+    *,
+    replace: bool = True,
+    p: Iterable[float] | None = None,
+    seed: int | None = None,
+    name: str | None = None,
+    dtype: PolarsDataType = Float64,
+) -> Series:
+    """Construct a series of random samples."""
+    match obj:
+        case int() as height:
+            from numpy.random import default_rng
+
+            rng = default_rng(seed=seed)
+            elements = list(elements)
+            p = None if p is None else list(p)
+            values = rng.choice(elements, size=height, replace=replace, p=p)
+            return Series(name=name, values=values.tolist(), dtype=dtype)
+        case Series() as series:
+            return choice(
+                series.len(),
+                elements,
+                replace=replace,
+                p=p,
+                seed=seed,
+                name=name,
+                dtype=dtype,
+            )
+        case DataFrame() as df:
+            return choice(
+                df.height,
+                elements,
+                replace=replace,
+                p=p,
+                seed=seed,
+                name=name,
+                dtype=dtype,
+            )
+        case _ as never:
+            assert_never(never)
 
 
 ##
@@ -1227,7 +1408,7 @@ class _GetDataTypeOrSeriesTimeZoneNotZonedError(GetDataTypeOrSeriesTimeZoneError
 ##
 
 
-def get_expr_name(obj: Series | DataFrame, expr: Expr, /) -> str:
+def get_expr_name(obj: Series | DataFrame, expr: IntoExprColumn, /) -> str:
     """Get the name of an expression."""
     match obj:
         case Series() as series:
@@ -1971,8 +2152,11 @@ __all__ = [
     "adjust_frequencies",
     "append_dataclass",
     "are_frames_equal",
+    "bernoulli",
+    "boolean_value_counts",
     "ceil_datetime",
     "check_polars_dataframe",
+    "choice",
     "collect_series",
     "columns_to_dict",
     "concat_series",
