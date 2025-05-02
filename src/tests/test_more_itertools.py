@@ -7,6 +7,7 @@ from pytest import mark, param, raises
 from utilities.more_itertools import (
     Split,
     bucket_mapping,
+    partition_list,
     partition_typeguard,
     peekable,
     yield_splits,
@@ -33,6 +34,19 @@ class TestBucketMapping:
         assert mapping["a"] == ["a1", "a2"]
         assert mapping["b"] == ["b1", "b2", "b3"]
         assert mapping["c"] == ["c1", "c2"]
+
+
+class TestPartitionList:
+    def test_main(self) -> None:
+        def is_even(x: int, /) -> bool:
+            return x % 2 == 0
+
+        iterable = [1, 2, 3, 4]
+        false, true = partition_list(is_even, iterable)
+        assert isinstance(false, list)
+        assert false == [1, 3]
+        assert isinstance(true, list)
+        assert true == [2, 4]
 
 
 class TestPartitionTypeguard:

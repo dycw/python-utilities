@@ -32,6 +32,9 @@ _T = TypeVar("_T")
 _U = TypeVar("_U")
 
 
+##
+
+
 @overload
 def bucket_mapping(
     iterable: Iterable[_T], func: Callable[[_T], THashable], /, *, list: Literal[True]
@@ -55,6 +58,20 @@ def bucket_mapping(
     return mapping
 
 
+##
+
+
+def partition_list(
+    pred: Callable[[_T], bool], iterable: Iterable[_T], /
+) -> tuple[list[_T], list[_T]]:
+    """Partition with lists."""
+    false, true = partition(pred, iterable)
+    return list(false), list(true)
+
+
+##
+
+
 def partition_typeguard(
     pred: Callable[[_T], TypeGuard[_U]], iterable: Iterable[_T], /
 ) -> tuple[Iterator[_T], Iterator[_U]]:
@@ -62,6 +79,9 @@ def partition_typeguard(
     false, true = partition(pred, iterable)
     true = cast("Iterator[_U]", true)
     return false, true
+
+
+##
 
 
 class peekable(_peekable, Generic[_T]):  # noqa: N801
@@ -96,6 +116,9 @@ class peekable(_peekable, Generic[_T]):  # noqa: N801
     def takewhile(self, predicate: Callable[[_T], bool], /) -> Iterator[_T]:
         while bool(self) and predicate(self.peek()):
             yield next(self)
+
+
+##
 
 
 @dataclass(kw_only=True, slots=True)
@@ -184,4 +207,11 @@ def _yield_splits3(
         )
 
 
-__all__ = ["Split", "bucket_mapping", "partition_typeguard", "peekable", "yield_splits"]
+__all__ = [
+    "Split",
+    "bucket_mapping",
+    "partition_list",
+    "partition_typeguard",
+    "peekable",
+    "yield_splits",
+]
