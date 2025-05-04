@@ -87,7 +87,6 @@ from utilities.polars import (
     IsNullStructSeriesError,
     SetFirstRowAsColumnsError,
     StructFromDataClassError,
-    YieldStructSeriesElementsError,
     _check_polars_dataframe_predicates,
     _check_polars_dataframe_schema_list,
     _check_polars_dataframe_schema_set,
@@ -117,7 +116,6 @@ from utilities.polars import (
     _IsNearEventBeforeError,
     _ReifyExprsEmptyError,
     _ReifyExprsSeriesNonUniqueError,
-    _yield_struct_series_element_remove_nulls,
     ac_halflife,
     acf,
     adjust_frequencies,
@@ -167,8 +165,6 @@ from utilities.polars import (
     uniform,
     unique_element,
     week_num,
-    yield_struct_series_dataclasses,
-    yield_struct_series_elements,
     zoned_datetime,
 )
 from utilities.random import get_state
@@ -2559,154 +2555,6 @@ class TestWeekNum:
         result = series.to_frame().with_columns(wn=week_num("date", start=start))["wn"]
         expected = Series(name="wn", values=exp_values, dtype=Int32)
         assert_series_equal(result, expected)
-
-
-class TestYieldStructSeriesDataclasses:
-    def test_main(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            lower: int | None = None
-            upper: int | None = None
-
-        series = Series(
-            name="series",
-            values=[(1, 1), (2, None), (None, 3), (None, None)],
-            dtype=Struct({"lower": Int64, "upper": Int64}),
-        )
-        result = list(yield_struct_series_dataclasses(series, Row))
-        expected = [
-            Row(lower=1, upper=1),
-            Row(lower=2, upper=None),
-            Row(lower=None, upper=3),
-            None,
-        ]
-        assert result == expected
-
-    def test_nested(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Inner:
-            lower: int
-            upper: int
-
-        @dataclass(kw_only=True, slots=True)
-        class Outer:
-            a: int | None = None
-            b: int | None = None
-            inner: Inner | None = None
-
-        series = Series(
-            name="series",
-            values=[
-                {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
-                {"a": 1, "b": 2, "inner": None},
-                {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
-                {"a": None, "b": None, "inner": None},
-            ],
-            dtype=Struct({
-                "a": Int64,
-                "b": Int64,
-                "inner": Struct({"lower": Int64, "upper": Int64}),
-            }),
-        )
-        result = list(
-            yield_struct_series_dataclasses(
-                series, Outer, forward_references={"Inner": Inner}
-            )
-        )
-        expected = [
-            Outer(a=1, b=2, inner=Inner(lower=3, upper=4)),
-            Outer(a=1, b=2, inner=None),
-            Outer(a=None, b=None, inner=Inner(lower=3, upper=4)),
-            None,
-        ]
-        assert result == expected
-
-
-class TestYieldStructSeriesElements:
-    def test_main(self) -> None:
-        series = Series(
-            name="series",
-            values=[(1, 1), (2, None), (None, 3), (None, None)],
-            dtype=Struct({"lower": Int64, "upper": Int64}),
-        )
-        result = list(yield_struct_series_elements(series))
-        expected = [
-            {"lower": 1, "upper": 1},
-            {"lower": 2, "upper": None},
-            {"lower": None, "upper": 3},
-            None,
-        ]
-        assert result == expected
-
-    def test_nested(self) -> None:
-        series = Series(
-            name="series",
-            values=[
-                {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
-                {"a": 1, "b": 2, "inner": None},
-                {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
-                {"a": None, "b": None, "inner": None},
-            ],
-            dtype=Struct({
-                "a": Int64,
-                "b": Int64,
-                "inner": Struct({"lower": Int64, "upper": Int64}),
-            }),
-        )
-        result = list(yield_struct_series_elements(series))
-        expected = [
-            {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
-            {"a": 1, "b": 2, "inner": None},
-            {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
-            None,
-        ]
-        assert result == expected
-
-    @given(
-        case=sampled_from([
-            (None, None),
-            (1, 1),
-            ({"a": 1, "b": 2}, {"a": 1, "b": 2}),
-            ({"a": 1, "b": None}, {"a": 1, "b": None}),
-            ({"a": None, "b": None}, None),
-            (
-                {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
-                {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
-            ),
-            (
-                {"a": 1, "b": 2, "inner": {"lower": None, "upper": None}},
-                {"a": 1, "b": 2, "inner": None},
-            ),
-            (
-                {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
-                {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
-            ),
-            ({"a": None, "b": None, "inner": {"lower": None, "upper": None}}, None),
-        ])
-    )
-    def test_remove_nulls(self, *, case: tuple[Any, Any]) -> None:
-        obj, expected = case
-        result = _yield_struct_series_element_remove_nulls(obj)
-        assert result == expected
-
-    def test_error_struct_dtype(self) -> None:
-        series = Series(name="series", values=[1, 2, 3, None], dtype=Int64)
-        with raises(
-            YieldStructSeriesElementsError,
-            match="Series must have Struct-dtype; got Int64",
-        ):
-            _ = list(yield_struct_series_elements(series))
-
-    def test_error_null_elements(self) -> None:
-        series = Series(
-            name="series",
-            values=[{"value": 1}, {"value": 2}, {"value": 3}, None],
-            dtype=Struct({"value": Int64}),
-        )
-        with raises(
-            YieldStructSeriesElementsError, match="Series must not have nulls; got .*"
-        ):
-            _ = list(yield_struct_series_elements(series, strict=True))
 
 
 class TestZonedDateTime:
