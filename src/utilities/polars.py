@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import enum
-from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import asdict, dataclass
@@ -15,7 +15,6 @@ from typing import (
     Any,
     Generic,
     Literal,
-    TypeGuard,
     TypeVar,
     assert_never,
     cast,
@@ -109,10 +108,9 @@ from utilities.warnings import suppress_warnings
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
     from collections.abc import Set as AbstractSet
 
-    from dacite.data import Data
     from polars._typing import (
         IntoExpr,  # pyright: ignore[reportPrivateImportUsage]
         IntoExprColumn,  # pyright: ignore[reportPrivateImportUsage]
@@ -126,13 +124,7 @@ if TYPE_CHECKING:
 
     from utilities.numpy import NDArrayB, NDArrayF
     from utilities.statsmodels import ACFMissing
-    from utilities.types import (
-        Dataclass,
-        MaybeIterable,
-        StrMapping,
-        TDataclass,
-        TimeZoneLike,
-    )
+    from utilities.types import Dataclass, MaybeIterable, StrMapping, TimeZoneLike
 
 
 _T = TypeVar("_T")
@@ -2134,116 +2126,6 @@ def week_num(column: IntoExprColumn, /, *, start: WeekDay = "mon") -> Expr | Ser
 ##
 
 
-@overload
-def yield_struct_series_elements(
-    series: Series, /, *, strict: Literal[True]
-) -> Iterator[Mapping[str, Any]]: ...
-@overload
-def yield_struct_series_elements(
-    series: Series, /, *, strict: Literal[False]
-) -> Iterator[Mapping[str, Any] | None]: ...
-@overload
-def yield_struct_series_elements(
-    series: Series, /, *, strict: bool = False
-) -> Iterator[Mapping[str, Any] | None]: ...
-def yield_struct_series_elements(
-    series: Series, /, *, strict: bool = False
-) -> Iterator[Mapping[str, Any] | None]:
-    """Yield the elements of a struct-dtype Series as optional mappings."""
-    if not isinstance(series.dtype, Struct):
-        raise _YieldStructSeriesElementsDTypeError(series=series)
-    if strict and series.is_null().any():
-        raise _YieldStructSeriesElementsNullElementsError(series=series)
-    for value in series:
-        yield _yield_struct_series_element_remove_nulls(value)
-
-
-def _yield_struct_series_element_remove_nulls(obj: Any, /) -> Any:
-    if not _yield_struct_series_element_is_mapping_of_str(obj):
-        return obj
-    if any(_yield_struct_series_element_is_mapping_of_str(v) for v in obj.values()):
-        result = {
-            k: _yield_struct_series_element_remove_nulls(v) for k, v in obj.items()
-        }
-        if result == obj:
-            return result
-        return _yield_struct_series_element_remove_nulls(result)
-    return None if all(v is None for v in obj.values()) else obj
-
-
-def _yield_struct_series_element_is_mapping_of_str(
-    obj: Any, /
-) -> TypeGuard[Mapping[str, Any]]:
-    return isinstance(obj, Mapping) and is_iterable_of(obj, str)
-
-
-@dataclass(kw_only=True, slots=True)
-class YieldStructSeriesElementsError(Exception):
-    series: Series
-
-
-@dataclass(kw_only=True, slots=True)
-class _YieldStructSeriesElementsDTypeError(YieldStructSeriesElementsError):
-    @override
-    def __str__(self) -> str:
-        return f"Series must have Struct-dtype; got {self.series.dtype}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _YieldStructSeriesElementsNullElementsError(YieldStructSeriesElementsError):
-    @override
-    def __str__(self) -> str:
-        return f"Series must not have nulls; got {self.series}"
-
-
-##
-
-
-@overload
-def yield_struct_series_dataclasses(
-    series: Series,
-    cls: type[TDataclass],
-    /,
-    *,
-    forward_references: dict[str, Any] | None = None,
-    check_types: bool = True,
-    strict: Literal[True],
-) -> Iterator[TDataclass]: ...
-@overload
-def yield_struct_series_dataclasses(
-    series: Series,
-    cls: type[TDataclass],
-    /,
-    *,
-    forward_references: dict[str, Any] | None = None,
-    check_types: bool = True,
-    strict: bool = False,
-) -> Iterator[TDataclass | None]: ...
-def yield_struct_series_dataclasses(
-    series: Series,
-    cls: type[TDataclass],
-    /,
-    *,
-    forward_references: dict[str, Any] | None = None,
-    check_types: bool = True,
-    strict: bool = False,
-) -> Iterator[TDataclass | None]:
-    """Yield the elements of a struct-dtype Series as dataclasses."""
-    from dacite import Config, from_dict
-
-    config = Config(
-        forward_references=forward_references, check_types=check_types, strict=True
-    )
-    for value in yield_struct_series_elements(series, strict=strict):
-        if value is None:
-            yield None
-        else:
-            yield from_dict(cls, cast("Data", value), config=config)
-
-
-##
-
-
 def zoned_datetime(
     *, time_unit: TimeUnit = "us", time_zone: TimeZoneLike = UTC
 ) -> Datetime:
@@ -2272,7 +2154,6 @@ __all__ = [
     "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
     "StructFromDataClassError",
-    "YieldStructSeriesElementsError",
     "acf",
     "adjust_frequencies",
     "append_dataclass",
@@ -2319,7 +2200,5 @@ __all__ = [
     "try_reify_expr",
     "uniform",
     "unique_element",
-    "yield_struct_series_dataclasses",
-    "yield_struct_series_elements",
     "zoned_datetime",
 ]

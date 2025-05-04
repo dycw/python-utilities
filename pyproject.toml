@@ -21,7 +21,6 @@ dev = [
   "concurrent-log-handler >= 0.9.25, < 0.10",
   "cryptography >= 44.0.2, < 44.1",
   "cvxpy >= 1.6.5, < 1.7",
-  "dacite >= 1.9.2, < 1.10",
   "eventkit >= 1.0.3, < 1.1",
   "fastapi >= 0.115.11, < 0.116",
   "fpdf2 >= 2.8.3, < 2.9",
@@ -93,7 +92,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.112.14"
+version = "0.112.15"
 
 [project.optional-dependencies]
 test = [
@@ -231,7 +230,6 @@ zzz-test-pathlib = []
 zzz-test-pickle = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-platform = []
 zzz-test-polars = [
-  "dacite >= 1.9.2, < 1.10",
   "polars-lts-cpu >= 1.29.0, < 1.30",
   "whenever >= 0.7.3, < 0.8",
 ]
@@ -336,7 +334,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.112.14"
+current_version = "0.112.15"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
