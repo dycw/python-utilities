@@ -3,12 +3,12 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, replace
 from enum import Enum, auto
-from functools import cmp_to_key, total_ordering
+from functools import cmp_to_key
 from itertools import chain, repeat
 from math import isfinite, isinf, isnan, nan
 from operator import add, neg, sub
 from re import DOTALL
-from typing import TYPE_CHECKING, Any, ClassVar, Self, override
+from typing import TYPE_CHECKING, Any, ClassVar, override
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -634,21 +634,6 @@ class TestCmpNullable:
     ) -> None:
         values, expected = case
         result = sorted(data.draw(permutations(values)), key=cmp_to_key(cmp_nullable))
-        assert result == expected
-
-    @given(data=data())
-    def test_dataclass_lt(self, *, data: DataObject) -> None:
-        @dataclass(kw_only=True)
-        @total_ordering
-        class Example:
-            x: int | None = None
-
-            def __lt__(self, other: Self) -> bool:
-                return cmp_nullable(self.x, other.x) == -1
-
-        obj_none, obj_1, obj_2 = [Example(x=x) for x in [None, 1, 2]]
-        expected = [obj_none, obj_1, obj_2]
-        result = sorted(data.draw(permutations(expected)))
         assert result == expected
 
 

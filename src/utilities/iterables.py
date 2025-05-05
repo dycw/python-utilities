@@ -697,7 +697,7 @@ class _CheckUniqueModuloCaseDuplicateLowerCaseStringsError(CheckUniqueModuloCase
 
 
 def cmp_nullable(x: TSupportsLT | None, y: TSupportsLT | None, /) -> Sign:
-    """Sort two nullable objects."""
+    """Compare two nullable objects."""
     match x, y:
         case None, None:
             return 0
