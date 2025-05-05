@@ -707,6 +707,8 @@ def cmp_nullable(x: TSupportsLT | None, y: TSupportsLT | None, /) -> Sign:
             return 1
         case _, _:
             return cast("Sign", (x > y) - (x < y))
+        case _ as never:
+            assert_never(never)
 
 
 ##
