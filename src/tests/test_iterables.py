@@ -643,7 +643,6 @@ class TestCmpNullable:
         class Example:
             x: int | None = None
 
-            @override
             def __lt__(self, other: Self) -> bool:
                 return cmp_nullable(self.x, other.x) == -1
 
