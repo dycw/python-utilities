@@ -636,7 +636,8 @@ class TestCmpNullable:
         result = sorted(data.draw(permutations(values)), key=cmp_to_key(cmp_nullable))
         assert result == expected
 
-    def test_dataclass_lt(self) -> None:
+    @given(data=data())
+    def test_dataclass_lt(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True)
         @total_ordering
         class Example:
@@ -644,11 +645,11 @@ class TestCmpNullable:
 
             @override
             def __lt__(self, other: Self) -> bool:
-                return 1
+                return cmp_nullable(self.x, other.x) == -1
 
-        obj_2, obj_1, obj_none = [Example(x=x) for x in [2, 1, None]]
-        result = sorted([obj_2, obj_1, obj_none])
+        obj_none, obj_1, obj_2 = [Example(x=x) for x in [None, 1, 2]]
         expected = [obj_none, obj_1, obj_2]
+        result = sorted(data.draw(permutations(expected)))
         assert result == expected
 
 
