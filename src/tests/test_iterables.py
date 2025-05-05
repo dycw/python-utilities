@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, replace
 from enum import Enum, auto
+from functools import cmp_to_key
 from itertools import chain, repeat
 from math import isfinite, isinf, isnan, nan
 from operator import add, neg, sub
@@ -92,6 +93,7 @@ from utilities.iterables import (
     check_superset,
     check_unique_modulo_case,
     chunked,
+    cmp_nullable,
     ensure_hashables,
     ensure_iterable,
     ensure_iterable_not_str,
@@ -610,6 +612,28 @@ class TestChunked:
     def test_odd(self) -> None:
         result = list(chunked("ABCDE", 3))
         expected = [["A", "B", "C"], ["D", "E"]]
+        assert result == expected
+
+
+class TestCmpNullable:
+    @given(
+        data=data(),
+        case=sampled_from([
+            ([None, None], [None, None]),
+            ([1, None], [None, 1]),
+            ([1, None, None], [None, None, 1]),
+            ([2, 1, None], [None, 1, 2]),
+            ([2, 1, None, None], [None, None, 1, 2]),
+        ]),
+    )
+    def test_main(
+        self,
+        *,
+        data: DataObject,
+        case: tuple[Sequence[int | None], Sequence[int | None]],
+    ) -> None:
+        values, expected = case
+        result = sorted(data.draw(permutations(values)), key=cmp_to_key(cmp_nullable))
         assert result == expected
 
 
