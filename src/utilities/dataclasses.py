@@ -221,9 +221,7 @@ def dataclass_to_dict(
 ##
 
 
-def is_nullable_field_lt(
-    x: TSupportsLT | None, y: TSupportsLT | None, /
-) -> bool | None:
+def is_nullable_lt(x: TSupportsLT | None, y: TSupportsLT | None, /) -> bool | None:
     """Compare two nullable fields."""
     match cmp_nullable(x, y):
         case 1:
@@ -1080,8 +1078,8 @@ __all__ = [
     "YieldFieldsError",
     "dataclass_repr",
     "dataclass_to_dict",
-    "is_nullable_field_lt",
-    "is_nullable_field_lt",
+    "is_nullable_lt",
+    "is_nullable_lt",
     "mapping_to_dataclass",
     "one_field",
     "parse_dataclass",

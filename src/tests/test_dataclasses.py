@@ -62,7 +62,7 @@ from utilities.dataclasses import (
     _YieldFieldsInstance,
     dataclass_repr,
     dataclass_to_dict,
-    is_nullable_field_lt,
+    is_nullable_lt,
     mapping_to_dataclass,
     one_field,
     parse_dataclass,
@@ -282,7 +282,7 @@ class TestDataClassToDictAndDataClassRepr:
         assert repr_res == repr_exp
 
 
-class TestIsNullableFieldLT:
+class TestIsNullableLT:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True)
@@ -291,7 +291,7 @@ class TestIsNullableFieldLT:
             x: int | None = None
 
             def __lt__(self, other: Self) -> bool:
-                if (cmp := is_nullable_field_lt(self.x, other.x)) is not None:
+                if (cmp := is_nullable_lt(self.x, other.x)) is not None:
                     return cmp
                 return False
 
