@@ -140,6 +140,7 @@ type RoundMode = Literal[
     "standard-tie-toward-zero",
     "standard-tie-away-zero",
 ]
+type Sign = Literal[-1, 0, 1]
 
 
 # operator
@@ -291,6 +292,7 @@ __all__ = [
     "RoundMode",
     "Seed",
     "SerializeObjectExtra",
+    "Sign",
     "StrMapping",
     "StrStrMapping",
     "SupportsAbs",

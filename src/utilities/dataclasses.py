@@ -20,7 +20,12 @@ from utilities.functions import (
     is_dataclass_class,
     is_dataclass_instance,
 )
-from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
+from utilities.iterables import (
+    OneStrEmptyError,
+    OneStrNonUniqueError,
+    cmp_nullable,
+    one_str,
+)
 from utilities.operator import is_equal
 from utilities.parse import (
     _ParseObjectExtraNonUniqueError,
@@ -43,6 +48,7 @@ from utilities.types import (
     SerializeObjectExtra,
     StrStrMapping,
     TDataclass,
+    TSupportsLT,
 )
 from utilities.typing import get_type_hints
 
@@ -210,6 +216,22 @@ def dataclass_to_dict(
                 value = fld.value
             out[fld.name] = value
     return out if final is None else final(type(obj), out)
+
+
+##
+
+
+def is_nullable_lt(x: TSupportsLT | None, y: TSupportsLT | None, /) -> bool | None:
+    """Compare two nullable fields."""
+    match cmp_nullable(x, y):
+        case 1:
+            return False
+        case -1:
+            return True
+        case 0:
+            return None
+        case _ as never:
+            assert_never(never)
 
 
 ##
@@ -1056,6 +1078,7 @@ __all__ = [
     "YieldFieldsError",
     "dataclass_repr",
     "dataclass_to_dict",
+    "is_nullable_lt",
     "mapping_to_dataclass",
     "one_field",
     "parse_dataclass",

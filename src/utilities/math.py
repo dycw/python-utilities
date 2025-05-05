@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 from utilities.errors import ImpossibleCaseError
 
 if TYPE_CHECKING:
-    from utilities.types import Number, RoundMode
+    from utilities.types import Number, RoundMode, Sign
 
 
 MIN_FLOAT32, MAX_FLOAT32 = -3.4028234663852886e38, 3.4028234663852886e38
@@ -860,7 +860,7 @@ class SafeRoundError(Exception):
 
 def sign(
     x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
-) -> Literal[-1, 0, 1]:
+) -> Sign:
     """Get the sign of an integer/float."""
     match x:
         case int():

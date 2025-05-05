@@ -45,7 +45,7 @@ from utilities.math import (
 )
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import THashable, THashable2, TSupportsAdd
+from utilities.types import Sign, THashable, THashable2, TSupportsAdd, TSupportsLT
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -696,6 +696,24 @@ class _CheckUniqueModuloCaseDuplicateLowerCaseStringsError(CheckUniqueModuloCase
 ##
 
 
+def cmp_nullable(x: TSupportsLT | None, y: TSupportsLT | None, /) -> Sign:
+    """Compare two nullable objects."""
+    match x, y:
+        case None, None:
+            return 0
+        case None, _:
+            return -1
+        case _, None:
+            return 1
+        case _, _:
+            return cast("Sign", (x > y) - (x < y))
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
 def chunked(iterable: Iterable[_T], n: int, /) -> Iterator[Sequence[_T]]:
     """Break an iterable into lists of length n."""
     return iter(partial(take, n, iter(iterable)), [])
@@ -1293,7 +1311,7 @@ def sort_iterable(iterable: Iterable[_T], /) -> list[_T]:
     return sorted(iterable, key=cmp_to_key(_sort_iterable_cmp))
 
 
-def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
+def _sort_iterable_cmp(x: Any, y: Any, /) -> Sign:
     """Compare two quantities."""
     if type(x) is not type(y):
         x_qualname = type(x).__qualname__
@@ -1318,7 +1336,7 @@ def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
         return _sort_iterable_cmp_floats(x, y)
     if isinstance(x, str):  # else Sequence
         y = cast("str", y)
-        return cast("Literal[-1, 0, 1]", (x > y) - (x < y))
+        return cast("Sign", (x > y) - (x < y))
 
     # collections
     if isinstance(x, Sized):
@@ -1333,14 +1351,14 @@ def _sort_iterable_cmp(x: Any, y: Any, /) -> Literal[-1, 0, 1]:
         return _sort_iterable_cmp(sort_iterable(x), sort_iterable(y))
     if isinstance(x, Sequence):
         y = cast("Sequence[Any]", y)
-        it: Iterable[Literal[-1, 0, 1]] = (
+        it: Iterable[Sign] = (
             _sort_iterable_cmp(x_i, y_i) for x_i, y_i in zip(x, y, strict=True)
         )
         with suppress(StopIteration):
             return next(r for r in it if r != 0)
 
     try:
-        return cast("Literal[-1, 0, 1]", (x > y) - (x < y))
+        return cast("Sign", (x > y) - (x < y))
     except TypeError:
         raise SortIterableError(x=x, y=y) from None
 
@@ -1355,13 +1373,11 @@ class SortIterableError(Exception):
         return f"Unable to sort {get_repr(self.x)} and {get_repr(self.y)}"
 
 
-def _sort_iterable_cmp_datetimes(
-    x: dt.datetime, y: dt.datetime, /
-) -> Literal[-1, 0, 1]:
+def _sort_iterable_cmp_datetimes(x: dt.datetime, y: dt.datetime, /) -> Sign:
     """Compare two datetimes."""
     match x.tzinfo, y.tzinfo:
         case None, None:
-            return cast("Literal[-1, 0, 1]", (x > y) - (x < y))
+            return cast("Sign", (x > y) - (x < y))
         case dt.tzinfo(), None:
             return 1
         case None, dt.tzinfo():
@@ -1369,20 +1385,19 @@ def _sort_iterable_cmp_datetimes(
         case dt.tzinfo(), dt.tzinfo():
             x_utc = x.astimezone(tz=UTC)
             y_utc = y.astimezone(tz=UTC)
-            result = cast("Literal[-1, 0, 1]", (x_utc > y_utc) - (x_utc < y_utc))
+            result = cast("Sign", (x_utc > y_utc) - (x_utc < y_utc))
             if result != 0:
                 return result
             x_time_zone = ensure_not_none(ensure_not_none(x.tzinfo).tzname(x))
             y_time_zone = ensure_not_none(ensure_not_none(y.tzinfo).tzname(y))
             return cast(
-                "Literal[-1, 0, 1]",
-                (x_time_zone > y_time_zone) - (x_time_zone < y_time_zone),
+                "Sign", (x_time_zone > y_time_zone) - (x_time_zone < y_time_zone)
             )
         case _ as never:
             assert_never(never)
 
 
-def _sort_iterable_cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
+def _sort_iterable_cmp_floats(x: float, y: float, /) -> Sign:
     """Compare two floats."""
     x_nan, y_nan = map(isnan, [x, y])
     match x_nan, y_nan:
@@ -1393,7 +1408,7 @@ def _sort_iterable_cmp_floats(x: float, y: float, /) -> Literal[-1, 0, 1]:
         case False, True:
             return -1
         case False, False:
-            return cast("Literal[-1, 0, 1]", (x > y) - (x < y))
+            return cast("Sign", (x > y) - (x < y))
         case _ as never:
             assert_never(never)
 
@@ -1517,6 +1532,7 @@ __all__ = [
     "check_superset",
     "check_unique_modulo_case",
     "chunked",
+    "cmp_nullable",
     "ensure_hashables",
     "ensure_iterable",
     "ensure_iterable_not_str",

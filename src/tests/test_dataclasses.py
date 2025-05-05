@@ -1,12 +1,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from functools import total_ordering
 from pathlib import Path
 from types import NoneType
-from typing import Any, Literal, cast, override
+from typing import Any, Literal, Self, cast, override
 
 from hypothesis import given
-from hypothesis.strategies import booleans, integers, lists, sampled_from
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    integers,
+    lists,
+    permutations,
+    sampled_from,
+)
 from polars import DataFrame
 from pytest import raises
 
@@ -53,6 +62,7 @@ from utilities.dataclasses import (
     _YieldFieldsInstance,
     dataclass_repr,
     dataclass_to_dict,
+    is_nullable_lt,
     mapping_to_dataclass,
     one_field,
     parse_dataclass,
@@ -270,6 +280,25 @@ class TestDataClassToDictAndDataClassRepr:
         repr_res = dataclass_repr(obj, localns=locals())
         repr_exp = f"Outer(inner=[TestDataClassToDictAndDataClassRepr.test_nested_in_list_without_recursive.<locals>.Inner(x=0)], y={y}, z={z})"
         assert repr_res == repr_exp
+
+
+class TestIsNullableLT:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True)
+        @total_ordering
+        class Example:
+            x: int | None = None
+
+            def __lt__(self, other: Self) -> bool:
+                if (cmp := is_nullable_lt(self.x, other.x)) is not None:
+                    return cmp
+                return False
+
+        obj_none, obj1, obj2 = [Example(x=x) for x in [None, 1, 2]]
+        expected = [obj_none, obj_none, obj1, obj1, obj2, obj2]
+        result = sorted(data.draw(permutations(expected)))
+        assert result == expected
 
 
 class TestMappingToDataClass:
