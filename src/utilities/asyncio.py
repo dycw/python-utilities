@@ -179,7 +179,7 @@ class AsyncEventService(AsyncService, Generic[_T]):
     """A long-running, asynchronous service of a loop, broken by events."""
 
     sleep: Duration = MILLISECOND
-    _await_upon_aenter: bool = field(default=False, init=False, repr=False)
+    _await_upon_aenter: bool = field(default=True, init=False, repr=False)
     _events: Mapping[_T, Event] = field(default_factory=dict, init=False, repr=False)
 
     def __post_init__(self) -> None:
