@@ -31,6 +31,7 @@ from hypothesis.strategies import (
 from pytest import approx, mark, param, raises
 
 from utilities.asyncio import (
+    AsyncEventService,
     AsyncLoopingService,
     AsyncService,
     EnhancedTaskGroup,
@@ -54,7 +55,51 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from utilities.types import Duration, MaybeCallableEvent
+
+
+class TestAsyncEventService:
+    @given(n=integers(10, 11))
+    async def test_main(self, *, n: int) -> None:
+        class CustomTrueError(Exception): ...
+
+        class CustomFalseError(Exception): ...
+
+        @dataclass(kw_only=True)
+        class Example(AsyncEventService[bool]):
+            counter: int = 0
+
+            @override
+            async def _run_core(self) -> None:
+                self.counter += 1
+                if self.counter >= n:
+                    self._events[n % 2 == 0].set()
+
+            @override
+            async def _run_event(self, event: bool, /) -> None:
+                match event:
+                    case True:
+                        raise CustomTrueError
+                    case False:
+                        raise CustomFalseError
+
+            @override
+            def _yield_events(self) -> Iterator[bool]:
+                yield from [True, False]
+
+        service = Example(sleep=0.1)
+        match n % 2 == 0:
+            case True:
+                with raises(CustomTrueError):
+                    async with service:
+                        await sleep(1.5)
+            case False:
+                with raises(CustomFalseError):
+                    async with service:
+                        await sleep(1.5)
+        assert 5 <= service.counter <= 16
 
 
 class TestAsyncLoopingService:
