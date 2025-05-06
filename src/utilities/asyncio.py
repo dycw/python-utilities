@@ -219,8 +219,8 @@ class AsyncEventService(AsyncService, Generic[_T]):
         """Start the service, assuming no task is present."""
         while True:
             try:
-                self._clear_events()
                 await self._run_init()
+                self._clear_events()
                 while True:
                     try:
                         error = next(
@@ -232,7 +232,6 @@ class AsyncEventService(AsyncService, Generic[_T]):
                         await self._run_core()
                         await sleep_dur(duration=self.sleep_core)
                     else:
-                        self._clear_events()
                         raise self._errors[error]
             except CancelledError:
                 self._run_on_cancel()
