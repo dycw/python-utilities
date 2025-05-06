@@ -204,12 +204,17 @@ class AsyncEventService(AsyncService, Generic[_T]):
             try:
                 key = next(key for key, value in self._events.items() if value.is_set())
             except StopIteration:
-                await self._run_core()
-            except Exception as error:  # noqa: BLE001
-                await self._run_error(error)
-                await sleep_dur(duration=self.sleep)
+                try:
+                    await self._run_core()
+                except Exception as error:  # noqa: BLE001
+                    await self._run_error(error)
+                    await sleep_dur(duration=self.sleep)
             else:
-                await self._run_event(key)
+                try:
+                    await self._run_event(key)
+                except Exception as error:  # noqa: BLE001
+                    await self._run_error(error)
+                    await sleep_dur(duration=self.sleep)
 
     @abstractmethod
     def _yield_events(self) -> Iterator[_T]:
