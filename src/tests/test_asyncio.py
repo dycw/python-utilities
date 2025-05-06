@@ -15,7 +15,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from itertools import chain
 from re import search
-from typing import TYPE_CHECKING, Self, override
+from typing import TYPE_CHECKING, NoReturn, Self, override
 
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
@@ -77,8 +77,10 @@ class TestAsyncEventService:
                 if self.counter >= n:
                     self._events[n % 2 == 0].set()
 
+            async def _run_core2(self) -> None: ...
+
             @override
-            async def _run_event(self, event: bool, /) -> None:
+            async def _run_event(self, event: bool, /) -> NoReturn:
                 match event:
                     case True:
                         raise CustomTrueError
