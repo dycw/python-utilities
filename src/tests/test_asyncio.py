@@ -72,15 +72,15 @@ class TestAsyncEventService:
             counter: int = 0
 
             @override
-            async def _run_core(self) -> None:
-                self.counter += 1
-                if self.counter >= n:
-                    self._events[n % 2 == 0].set()
-
-            async def _run_core2(self) -> None: ...
+            async def _run(self) -> None:
+                while True:
+                    self.counter += 1
+                    if self.counter >= n:
+                        self._events[n % 2 == 0].set()
+                    await sleep_dur(duration=0.1)
 
             @override
-            async def _run_event(self, event: bool, /) -> NoReturn:
+            async def _run_on_event(self, event: bool, /) -> NoReturn:
                 match event:
                     case True:
                         raise CustomTrueError
