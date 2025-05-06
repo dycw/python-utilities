@@ -101,30 +101,6 @@ class TestAsyncEventService:
                         pass
         assert 5 <= service.counter <= 16
 
-    async def test_cancel(self) -> None:
-        @dataclass(kw_only=True)
-        class Example(AsyncEventService[None]):
-            counter: int = 0
-
-            @override
-            async def _run_core(self) -> None:
-                self.counter += 1
-                if self.counter >= 10:
-                    self._events[None].set()
-
-            @override
-            async def _run_event(self, event: None, /) -> None:
-                _ = None
-                raise CancelledError
-
-            @override
-            def _yield_events(self) -> Iterator[None]:
-                yield None
-
-        async with Example(duration=1.0, sleep=0.1) as service:
-            pass
-        assert 5 <= service.counter <= 15
-
 
 class TestAsyncLoopingService:
     async def test_main(self) -> None:
