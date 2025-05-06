@@ -189,9 +189,9 @@ class AsyncEventService(AsyncService, Generic[_T]):
     async def _run_core(self) -> None:
         """Run the core function once."""
 
-    @abstractmethod
     async def _run_error(self, error: Exception, /) -> None:
         """Run upon an exception."""
+        raise error
 
     @abstractmethod
     async def _run_event(self, event: _T, /) -> None:
