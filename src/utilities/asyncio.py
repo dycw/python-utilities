@@ -216,6 +216,7 @@ class AsyncEventService(AsyncService, Generic[_T]):
         """Start the service, assuming no task is present."""
         while True:
             try:
+                self._clear_events()
                 await self._run_init()
                 while True:
                     try:
