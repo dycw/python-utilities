@@ -196,6 +196,11 @@ class AsyncEventService(AsyncService, Generic[_T]):
         self._events = {event: Event() for event, _ in pairs}
         self._errors = dict(pairs)
 
+    def _clear_events(self) -> None:
+        """Reset the events."""
+        for event in self._events.values():
+            event.clear()
+
     async def _run_init(self) -> None:
         """Initialize the service."""
 
@@ -211,8 +216,6 @@ class AsyncEventService(AsyncService, Generic[_T]):
         """Start the service, assuming no task is present."""
         while True:
             try:
-                for event in self._events.values():
-                    event.clear()
                 await self._run_init()
                 while True:
                     try:
@@ -225,6 +228,7 @@ class AsyncEventService(AsyncService, Generic[_T]):
                         await self._run_core()
                         await sleep_dur(duration=self.sleep_core)
                     else:
+                        self._clear_events()
                         raise self._errors[error]
             except Exception as error:  # noqa: BLE001
                 self._run_on_error(error)
