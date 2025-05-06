@@ -17,6 +17,7 @@ from asyncio import (
     sleep,
     timeout,
 )
+from collections.abc import Callable
 from contextlib import (
     AsyncExitStack,
     _AsyncGeneratorContextManager,
@@ -27,12 +28,22 @@ from dataclasses import dataclass, field
 from io import StringIO
 from subprocess import PIPE
 from sys import stderr, stdout
-from typing import TYPE_CHECKING, Generic, Self, TextIO, TypeVar, override
+from typing import (
+    TYPE_CHECKING,
+    Generic,
+    Self,
+    TextIO,
+    TypeVar,
+    assert_never,
+    overload,
+    override,
+)
 
 from utilities.datetime import MILLISECOND, datetime_duration_to_float
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, ensure_not_none
-from utilities.types import THashable, TSupportsRichComparison
+from utilities.sentinel import Sentinel, sentinel
+from utilities.types import MaybeCallableEvent, THashable, TSupportsRichComparison
 
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
@@ -356,6 +367,34 @@ class UniqueQueue(Queue[THashable]):
 ##
 
 
+@overload
+def get_event(*, event: MaybeCallableEvent) -> Event: ...
+@overload
+def get_event(*, event: None) -> None: ...
+@overload
+def get_event(*, event: Sentinel) -> Sentinel: ...
+@overload
+def get_event(*, event: MaybeCallableEvent | Sentinel) -> Event | Sentinel: ...
+@overload
+def get_event(
+    *, event: MaybeCallableEvent | None | Sentinel = sentinel
+) -> Event | None | Sentinel: ...
+def get_event(
+    *, event: MaybeCallableEvent | None | Sentinel = sentinel
+) -> Event | None | Sentinel:
+    """Get the event."""
+    match event:
+        case Event() | None | Sentinel():
+            return event
+        case Callable() as func:
+            return get_event(event=func())
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
 async def get_items(
     queue: Queue[_T], /, *, max_size: int | None = None, lock: Lock | None = None
 ) -> list[_T]:
@@ -490,6 +529,7 @@ __all__ = [
     "StreamCommandOutput",
     "UniquePriorityQueue",
     "UniqueQueue",
+    "get_event",
     "get_items",
     "get_items_nowait",
     "sleep_dur",

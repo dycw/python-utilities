@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from asyncio import Event
 from collections.abc import Awaitable, Callable, Coroutine, Hashable, Iterable, Mapping
 from enum import Enum
 from logging import Logger
@@ -57,6 +58,7 @@ type TupleOrStrMapping = tuple[Any, ...] | StrMapping
 # asyncio
 type Coroutine1[_T] = Coroutine[Any, Any, _T]
 type MaybeAwaitable[_T] = _T | Awaitable[_T]
+type MaybeCallableEvent = MaybeCallable[Event]
 type MaybeCoroutine1[_T] = _T | Coroutine1[_T]
 
 
@@ -277,6 +279,7 @@ __all__ = [
     "MaybeCallable",
     "MaybeCallableDate",
     "MaybeCallableDateTime",
+    "MaybeCallableEvent",
     "MaybeCoroutine1",
     "MaybeIterable",
     "MaybeIterableHashable",

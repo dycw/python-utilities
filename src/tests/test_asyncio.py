@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from asyncio import (
     CancelledError,
+    Event,
     Lock,
     PriorityQueue,
     Queue,
@@ -14,7 +15,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from itertools import chain
 from re import search
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, Self, override
 
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
@@ -37,20 +38,23 @@ from utilities.asyncio import (
     QueueProcessor,
     UniquePriorityQueue,
     UniqueQueue,
+    get_event,
     get_items,
     get_items_nowait,
     sleep_dur,
     stream_command,
     timeout_dur,
 )
+from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import MILLISECOND, datetime_duration_to_timedelta
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import sentinels, text_ascii
 from utilities.iterables import one, unique_everseen
 from utilities.pytest import skipif_windows
+from utilities.sentinel import Sentinel, sentinel
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
-    from utilities.types import Duration
+    from utilities.types import Duration, MaybeCallableEvent
 
 
 class TestAsyncLoopingService:
@@ -295,6 +299,37 @@ class TestExceptionProcessor:
             async with processor:
                 processor.enqueue(CustomError)
                 await sleep(0.1)
+
+
+class TestGetEvent:
+    def test_event(self) -> None:
+        event = Event()
+        assert get_event(event=event) is event
+
+    @given(event=none() | sentinels())
+    def test_none_or_sentinel(self, *, event: None | Sentinel) -> None:
+        assert get_event(event=event) is event
+
+    def test_replace_non_sentinel(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            event: Event = field(default_factory=Event)
+
+            def replace(
+                self, *, event: MaybeCallableEvent | Sentinel = sentinel
+            ) -> Self:
+                return replace_non_sentinel(self, event=get_event(event=event))
+
+        event1, event2, event3 = Event(), Event(), Event()
+        obj = Example(event=event1)
+        assert obj.event is event1
+        assert obj.replace().event is event1
+        assert obj.replace(event=event2).event is event2
+        assert obj.replace(event=lambda: event3).event is event3
+
+    def test_callable(self) -> None:
+        event = Event()
+        assert get_event(event=lambda: event) is event
 
 
 class TestGetItems:
