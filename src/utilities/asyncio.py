@@ -190,6 +190,10 @@ class AsyncEventService(AsyncService, Generic[_T]):
         """Run the core function once."""
 
     @abstractmethod
+    async def _run_error(self, error: Exception, /) -> None:
+        """Run upon an exception."""
+
+    @abstractmethod
     async def _run_event(self, event: _T, /) -> None:
         """Run upon one of the events."""
 
@@ -201,6 +205,8 @@ class AsyncEventService(AsyncService, Generic[_T]):
                 key = next(key for key, value in self._events.items() if value.is_set())
             except StopIteration:
                 await self._run_core()
+            except Exception as error:  # noqa: BLE001
+                await self._run_error(error)
             else:
                 await self._run_event(key)
             finally:
