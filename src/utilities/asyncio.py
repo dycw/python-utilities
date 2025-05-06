@@ -206,7 +206,7 @@ class AsyncEventService(AsyncService, Generic[_T]):
 
     async def _run_on_error(self, error: Exception, /) -> None:
         """Run upon an exception."""
-        _ = error
+        raise error
 
     @override
     async def _start(self) -> None:
@@ -214,10 +214,6 @@ class AsyncEventService(AsyncService, Generic[_T]):
         while True:
             try:
                 await self._run_init()
-            except Exception as error:  # noqa: BLE001
-                await self._run_on_error(error)
-                await sleep_dur(duration=self.sleep_restart)
-            else:
                 while True:
                     try:
                         error = next(
@@ -230,6 +226,9 @@ class AsyncEventService(AsyncService, Generic[_T]):
                         await sleep_dur(duration=self.sleep_core)
                     else:
                         raise self._errors[error]
+            except Exception as error:  # noqa: BLE001
+                await self._run_on_error(error)
+                await sleep_dur(duration=self.sleep_restart)
 
     @abstractmethod
     def _yield_pairs(self) -> Iterator[tuple[_T, MaybeType[Exception]]]:
