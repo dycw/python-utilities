@@ -17,7 +17,7 @@ from asyncio import (
     sleep,
     timeout,
 )
-from collections.abc import Callable
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import (
     AsyncExitStack,
     _AsyncGeneratorContextManager,
@@ -169,6 +169,49 @@ class AsyncLoopingService(AsyncService):
                 await sleep_dur(duration=self.sleep)
             else:
                 await sleep_dur(duration=self.sleep)
+
+
+##
+
+
+@dataclass(kw_only=True)
+class AsyncEventService(AsyncService, Generic[_T]):
+    """A long-running, asynchronous service of a loop, broken by events."""
+
+    sleep: Duration = MILLISECOND
+    _await_upon_aenter: bool = field(default=False, init=False, repr=False)
+    _events: Mapping[_T, Event] = field(default_factory=dict, init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        self._events = {arg: Event() for arg in self._yield_events()}
+
+    @abstractmethod
+    async def _run_core(self) -> None:
+        """Run the core function once."""
+
+    @abstractmethod
+    async def _run_event(self, event: _T, /) -> None:
+        """Run upon one of the events."""
+
+    @override
+    async def _start(self) -> None:
+        """Start the service, assuming no task is present."""
+        while True:
+            try:
+                key = next(key for key, value in self._events.items() if value.is_set())
+            except CancelledError:
+                await self.stop()
+                break
+            except StopIteration:
+                await self._run_core()
+            else:
+                await self._run_event(key)
+            finally:
+                await sleep_dur(duration=self.sleep)
+
+    @abstractmethod
+    def _yield_events(self) -> Iterator[_T]:
+        """Yield the events."""
 
 
 ##
@@ -521,6 +564,7 @@ async def timeout_dur(
 
 
 __all__ = [
+    "AsyncEventService",
     "AsyncLoopingService",
     "AsyncService",
     "EnhancedTaskGroup",
