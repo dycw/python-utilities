@@ -78,7 +78,7 @@ class TestAsyncEventService:
             async def _run_core(self) -> None:
                 self.counter += 1
                 if self.counter >= n:
-                    self._errors[n % 2 == 0].set()
+                    self._events[n % 2 == 0].set()
 
             @override
             def _yield_pairs(self) -> Iterator[tuple[bool, MaybeType[Exception]]]:
