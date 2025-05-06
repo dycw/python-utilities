@@ -204,7 +204,7 @@ class AsyncEventService(AsyncService, Generic[_T]):
     async def _run_core(self) -> None:
         """Run the core function once."""
 
-    async def _run_on_error(self, error: Exception, /) -> None:
+    def _run_on_error(self, error: Exception, /) -> None:
         """Run upon an exception."""
         raise error
 
@@ -227,7 +227,7 @@ class AsyncEventService(AsyncService, Generic[_T]):
                     else:
                         raise self._errors[error]
             except Exception as error:  # noqa: BLE001
-                await self._run_on_error(error)
+                self._run_on_error(error)
                 await sleep_dur(duration=self.sleep_restart)
 
     @abstractmethod
