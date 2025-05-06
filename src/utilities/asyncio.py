@@ -191,7 +191,7 @@ class AsyncEventService(AsyncService, Generic[_T]):
 
     async def _run_error(self, error: Exception, /) -> None:
         """Run upon an exception."""
-        raise error
+        _ = error
 
     @abstractmethod
     async def _run_event(self, event: _T, /) -> None:
@@ -207,10 +207,9 @@ class AsyncEventService(AsyncService, Generic[_T]):
                 await self._run_core()
             except Exception as error:  # noqa: BLE001
                 await self._run_error(error)
+                await sleep_dur(duration=self.sleep)
             else:
                 await self._run_event(key)
-            finally:
-                await sleep_dur(duration=self.sleep)
 
     @abstractmethod
     def _yield_events(self) -> Iterator[_T]:
