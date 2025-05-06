@@ -199,9 +199,6 @@ class AsyncEventService(AsyncService, Generic[_T]):
         while True:
             try:
                 key = next(key for key, value in self._events.items() if value.is_set())
-            except CancelledError:
-                await self.stop()
-                break
             except StopIteration:
                 await self._run_core()
             else:
