@@ -31,7 +31,6 @@ from sys import stderr, stdout
 from typing import (
     TYPE_CHECKING,
     Generic,
-    NoReturn,
     Self,
     TextIO,
     TypeVar,
@@ -44,7 +43,12 @@ from utilities.datetime import MILLISECOND, MINUTE, SECOND, datetime_duration_to
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, ensure_not_none
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import MaybeCallableEvent, THashable, TSupportsRichComparison
+from utilities.types import (
+    MaybeCallableEvent,
+    MaybeType,
+    THashable,
+    TSupportsRichComparison,
+)
 
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
@@ -183,9 +187,14 @@ class AsyncEventService(AsyncService, Generic[_T]):
     sleep_restart: Duration = MINUTE
     _await_upon_aenter: bool = field(default=True, init=False, repr=False)
     _events: Mapping[_T, Event] = field(default_factory=dict, init=False, repr=False)
+    _errors: Mapping[_T, MaybeType[Exception]] = field(
+        default_factory=dict, init=False, repr=False
+    )
 
     def __post_init__(self) -> None:
-        self._events = {arg: Event() for arg in self._yield_events()}
+        pairs = list(self._yield_pairs())
+        self._events = {event: Event() for event, _ in pairs}
+        self._errors = dict(pairs)
 
     @abstractmethod
     async def _run_init(self) -> None:
@@ -199,10 +208,6 @@ class AsyncEventService(AsyncService, Generic[_T]):
         """Run upon an exception."""
         _ = error
 
-    @abstractmethod
-    async def _run_on_event(self, event: _T, /) -> NoReturn:
-        """Run upon one of the events."""
-
     @override
     async def _start(self) -> None:
         """Start the service, assuming no task is present."""
@@ -215,18 +220,20 @@ class AsyncEventService(AsyncService, Generic[_T]):
             else:
                 while True:
                     try:
-                        key = next(
-                            key for key, value in self._events.items() if value.is_set()
+                        error = next(
+                            key
+                            for (key, value) in self._events.items()
+                            if value.is_set()
                         )
                     except StopIteration:
                         await self._run_core()
                         await sleep_dur(duration=self.sleep_core)
                     else:
-                        await self._run_on_event(key)
+                        raise self._errors[error]
 
     @abstractmethod
-    def _yield_events(self) -> Iterator[_T]:
-        """Yield the events."""
+    def _yield_pairs(self) -> Iterator[tuple[_T, MaybeType[Exception]]]:
+        """Yield the event/error pairs."""
 
 
 ##

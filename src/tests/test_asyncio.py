@@ -15,7 +15,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from itertools import chain
 from re import search
-from typing import TYPE_CHECKING, NoReturn, Self, override
+from typing import TYPE_CHECKING, Self, override
 
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
@@ -57,7 +57,7 @@ from utilities.timer import Timer
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import Duration, MaybeCallableEvent
+    from utilities.types import Duration, MaybeCallableEvent, MaybeType
 
 
 class TestAsyncEventService:
@@ -78,19 +78,11 @@ class TestAsyncEventService:
             async def _run_core(self) -> None:
                 self.counter += 1
                 if self.counter >= n:
-                    self._events[n % 2 == 0].set()
+                    self._errors[n % 2 == 0].set()
 
             @override
-            async def _run_on_event(self, event: bool, /) -> NoReturn:
-                match event:
-                    case True:
-                        raise CustomTrueError
-                    case False:
-                        raise CustomFalseError
-
-            @override
-            def _yield_events(self) -> Iterator[bool]:
-                yield from [True, False]
+            def _yield_pairs(self) -> Iterator[tuple[bool, MaybeType[Exception]]]:
+                yield from [(True, CustomTrueError), (False, CustomFalseError)]
 
         service = Example(duration=2.0, sleep_core=0.1)
         match n % 2 == 0:
