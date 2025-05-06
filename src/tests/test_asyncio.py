@@ -15,7 +15,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from itertools import chain
 from re import search
-from typing import TYPE_CHECKING, Self, override
+from typing import TYPE_CHECKING, NoReturn, Self, override
 
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
@@ -79,6 +79,10 @@ class TestAsyncEventService:
                 self.counter += 1
                 if self.counter >= n:
                     self._events[n % 2 == 0].set()
+
+            @override
+            def _run_on_error(self, error: Exception, /) -> NoReturn:
+                raise error
 
             @override
             def _yield_pairs(self) -> Iterator[tuple[bool, MaybeType[Exception]]]:

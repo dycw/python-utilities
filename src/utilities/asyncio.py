@@ -31,7 +31,6 @@ from sys import stderr, stdout
 from typing import (
     TYPE_CHECKING,
     Generic,
-    NoReturn,
     Self,
     TextIO,
     TypeVar,
@@ -197,17 +196,15 @@ class AsyncEventService(AsyncService, Generic[_T]):
         self._events = {event: Event() for event, _ in pairs}
         self._errors = dict(pairs)
 
-    @abstractmethod
     async def _run_init(self) -> None:
         """Initialize the service."""
 
-    @abstractmethod
     async def _run_core(self) -> None:
         """Run the core function once."""
 
-    def _run_on_error(self, error: Exception, /) -> NoReturn:
+    def _run_on_error(self, error: Exception, /) -> None:
         """Run upon an exception."""
-        raise error
+        _ = error
 
     @override
     async def _start(self) -> None:
