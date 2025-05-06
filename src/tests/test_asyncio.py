@@ -89,7 +89,7 @@ class TestAsyncEventService:
             def _yield_events(self) -> Iterator[bool]:
                 yield from [True, False]
 
-        service = Example(duration=2.0, sleep=0.1)
+        service = Example(duration=2.0, sleep_core=0.1)
         match n % 2 == 0:
             case True:
                 with raises(CustomTrueError):

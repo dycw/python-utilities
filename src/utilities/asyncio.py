@@ -31,6 +31,7 @@ from sys import stderr, stdout
 from typing import (
     TYPE_CHECKING,
     Generic,
+    NoReturn,
     Self,
     TextIO,
     TypeVar,
@@ -39,7 +40,7 @@ from typing import (
     override,
 )
 
-from utilities.datetime import MILLISECOND, datetime_duration_to_float
+from utilities.datetime import MILLISECOND, MINUTE, SECOND, datetime_duration_to_float
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, ensure_not_none
 from utilities.sentinel import Sentinel, sentinel
@@ -178,7 +179,8 @@ class AsyncLoopingService(AsyncService):
 class AsyncEventService(AsyncService, Generic[_T]):
     """A long-running, asynchronous service of a loop, broken by events."""
 
-    sleep: Duration = MILLISECOND
+    sleep_core: Duration = SECOND
+    sleep_restart: Duration = MINUTE
     _await_upon_aenter: bool = field(default=True, init=False, repr=False)
     _events: Mapping[_T, Event] = field(default_factory=dict, init=False, repr=False)
 
@@ -194,7 +196,7 @@ class AsyncEventService(AsyncService, Generic[_T]):
         _ = error
 
     @abstractmethod
-    async def _run_event(self, event: _T, /) -> None:
+    async def _run_event(self, event: _T, /) -> NoReturn:
         """Run upon one of the events."""
 
     @override
@@ -202,19 +204,20 @@ class AsyncEventService(AsyncService, Generic[_T]):
         """Start the service, assuming no task is present."""
         while True:
             try:
-                key = next(key for key, value in self._events.items() if value.is_set())
-            except StopIteration:
-                try:
-                    await self._run_core()
-                except Exception as error:  # noqa: BLE001
-                    await self._run_error(error)
-                    await sleep_dur(duration=self.sleep)
+                await self._run_core()
+            except Exception as error:  # noqa: BLE001
+                await self._run_error(error)
+                await sleep_dur(duration=self.sleep_core)
             else:
-                try:
-                    await self._run_event(key)
-                except Exception as error:  # noqa: BLE001
-                    await self._run_error(error)
-                    await sleep_dur(duration=self.sleep)
+                while True:
+                    try:
+                        key = next(
+                            key for key, value in self._events.items() if value.is_set()
+                        )
+                    except StopIteration:
+                        await sleep_dur(duration=self.sleep_core)
+                    else:
+                        await self._run_event(key)
 
     @abstractmethod
     def _yield_events(self) -> Iterator[_T]:
