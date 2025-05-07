@@ -91,6 +91,7 @@ from utilities.datetime import (
     get_date,
     get_datetime,
     get_half_years,
+    get_min_max_date,
     get_months,
     get_now,
     get_quarters,
@@ -129,6 +130,7 @@ from utilities.datetime import (
 from utilities.functions import not_func
 from utilities.hypothesis import (
     assume_does_not_raise,
+    date_durations,
     int32s,
     months,
     pairs,
@@ -148,6 +150,7 @@ if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
     from utilities.types import (
         DateOrDateTime,
+        Duration,
         MaybeCallableDate,
         MaybeCallableDateTime,
         Number,
@@ -673,6 +676,35 @@ class TestGetDateTime:
     @given(datetime=zoned_datetimes())
     def test_callable(self, *, datetime: dt.datetime) -> None:
         assert get_datetime(datetime=lambda: datetime) == datetime
+
+
+class TestGetMinMaxDate:
+    @given(
+        min_date=dates() | none(),
+        max_date=dates() | none(),
+        min_age=date_durations(min_int=0, min_timedelta=ZERO_TIME) | none(),
+        max_age=date_durations(min_int=0, min_timedelta=ZERO_TIME) | none(),
+    )
+    def test_date(
+        self,
+        *,
+        min_date: dt.date | None,
+        max_date: dt.date | None,
+        min_age: Duration | None,
+        max_age: Duration | None,
+    ) -> None:
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            min_date_use, max_date_use = get_min_max_date(
+                min_date=min_date, max_date=max_date, min_age=min_age, max_age=max_age
+            )
+        if (min_date is None) and (min_age is None):
+            assert min_date_use is None
+        else:
+            assert min_date_use is not None
+        if (max_date is None) and (max_age is None):
+            assert max_date_use is None
+        else:
+            assert max_date_use is not None
 
 
 class TestGetNow:

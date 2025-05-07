@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, replace
 from re import search, sub
 from statistics import fmean
@@ -494,6 +494,32 @@ def get_half_years(*, n: int = 1) -> dt.timedelta:
 
 
 HALF_YEAR = get_half_years(n=1)
+
+##
+
+
+def get_min_max_date(
+    *,
+    min_date: dt.date | None = None,
+    max_date: dt.date | None = None,
+    min_age: Duration | None = None,
+    max_age: Duration | None = None,
+    time_zone: TimeZoneLike = UTC,
+) -> tuple[dt.date | None, dt.date | None]:
+    """Get the min/max date given a combination of dates/ages."""
+    min_parts: Sequence[dt.date] = []
+    if min_date is not None:
+        min_parts.append(min_date)
+    if min_age is not None:
+        min_parts.append(sub_duration(get_today(time_zone=time_zone), duration=min_age))
+    min_date_use = min(min_parts, default=None)
+    max_parts: Sequence[dt.date] = []
+    if max_date is not None:
+        max_parts.append(max_date)
+    if max_age is not None:
+        max_parts.append(sub_duration(get_today(time_zone=time_zone), duration=max_age))
+    max_date_use = max(max_parts, default=None)
+    return min_date_use, max_date_use
 
 
 ##
@@ -1280,6 +1306,7 @@ __all__ = [
     "get_date",
     "get_datetime",
     "get_half_years",
+    "get_min_max_date",
     "get_months",
     "get_now",
     "get_quarters",

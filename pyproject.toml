@@ -26,7 +26,7 @@ dev = [
   "fpdf2 >= 2.8.3, < 2.9",
   "greenlet >= 3.2.0, < 3.3",  # for sqlalchemy async
   "httpx >= 0.28.1, < 0.29",  # for fastapi
-  "hypothesis >= 6.131.10, < 6.132",
+  "hypothesis >= 6.131.14, < 6.132",
   "img2pdf >= 0.6.0, < 0.7",
   "lightweight-charts >= 2.1, < 2.2",
   "loguru >= 0.7.3, < 0.8",
@@ -92,11 +92,11 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.113.2"
+version = "0.113.3"
 
 [project.optional-dependencies]
 test = [
-  "hypothesis >= 6.131.10, < 6.132",
+  "hypothesis >= 6.131.14, < 6.132",
   "pytest >= 8.3.5, < 8.4",
   "pytest-asyncio >= 0.26.0, < 0.27",
   "pytest-cov >= 6.1.1, < 6.2",
@@ -174,7 +174,7 @@ zzz-test-hypothesis = [
   "aiosqlite >= 0.21.0, < 0.22",
   "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
   "greenlet >= 3.2.0, < 3.3",  # for sqlalchemy async
-  "hypothesis >= 6.131.10, < 6.132",
+  "hypothesis >= 6.131.14, < 6.132",
   "luigi >= 3.6.0, < 3.7",
   "numpy >= 2.2.5, < 2.3",
   "pathvalidate >= 3.2.3, < 3.3",
@@ -334,7 +334,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.113.2"
+current_version = "0.113.3"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
