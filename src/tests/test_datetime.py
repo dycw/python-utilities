@@ -50,6 +50,7 @@ from utilities.datetime import (
     AreEqualDateTimesError,
     CheckDateNotDateTimeError,
     EnsureMonthError,
+    GetMinMaxDateError,
     MeanDateTimeError,
     MeanTimeDeltaError,
     MillisecondsSinceEpochError,
@@ -67,6 +68,11 @@ from utilities.datetime import (
     _DateDurationToIntTimeDeltaError,
     _DateDurationToTimeDeltaFloatError,
     _DateDurationToTimeDeltaTimeDeltaError,
+    _GetMinMaxDateMaxAgeError,
+    _GetMinMaxDateMaxDateError,
+    _GetMinMaxDateMinAgeError,
+    _GetMinMaxDateMinDateError,
+    _GetMinMaxDatePeriodError,
     _ParseTwoDigitYearInvalidIntegerError,
     _ParseTwoDigitYearInvalidStringError,
     add_duration,
@@ -91,6 +97,7 @@ from utilities.datetime import (
     get_date,
     get_datetime,
     get_half_years,
+    get_min_max_date,
     get_months,
     get_now,
     get_quarters,
@@ -129,6 +136,7 @@ from utilities.datetime import (
 from utilities.functions import not_func
 from utilities.hypothesis import (
     assume_does_not_raise,
+    date_durations,
     int32s,
     months,
     pairs,
@@ -148,6 +156,7 @@ if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
     from utilities.types import (
         DateOrDateTime,
+        Duration,
         MaybeCallableDate,
         MaybeCallableDateTime,
         Number,
@@ -673,6 +682,79 @@ class TestGetDateTime:
     @given(datetime=zoned_datetimes())
     def test_callable(self, *, datetime: dt.datetime) -> None:
         assert get_datetime(datetime=lambda: datetime) == datetime
+
+
+class TestGetMinMaxDate:
+    @given(
+        min_date=dates(max_value=TODAY_UTC) | none(),
+        max_date=dates(max_value=TODAY_UTC) | none(),
+        min_age=date_durations(min_int=0, min_timedelta=ZERO_TIME) | none(),
+        max_age=date_durations(min_int=0, min_timedelta=ZERO_TIME) | none(),
+    )
+    def test_main(
+        self,
+        *,
+        min_date: dt.date | None,
+        max_date: dt.date | None,
+        min_age: Duration | None,
+        max_age: Duration | None,
+    ) -> None:
+        with assume_does_not_raise(GetMinMaxDateError, OverflowError):
+            min_date_use, max_date_use = get_min_max_date(
+                min_date=min_date, max_date=max_date, min_age=min_age, max_age=max_age
+            )
+        if (min_date is None) and (max_age is None):
+            assert min_date_use is None
+        else:
+            assert min_date_use is not None
+        if (max_date is None) and (min_age is None):
+            assert max_date_use is None
+        else:
+            assert max_date_use is not None
+        if min_date_use is not None:
+            assert min_date_use <= get_today()
+        if max_date_use is not None:
+            assert max_date_use <= get_today()
+        if (min_date_use is not None) and (max_date_use is not None):
+            assert min_date_use <= max_date_use
+
+    @given(date=dates(min_value=TODAY_UTC + DAY))
+    def test_error_min_date(self, *, date: dt.date) -> None:
+        with raises(
+            _GetMinMaxDateMinDateError,
+            match="Min date must be at most today; got .* > .*",
+        ):
+            _ = get_min_max_date(min_date=date)
+
+    @given(duration=date_durations(max_int=-1, max_timedelta=-DAY))
+    def test_error_min_age(self, *, duration: Duration) -> None:
+        with raises(
+            _GetMinMaxDateMinAgeError, match="Min age must be non-negative; got .*"
+        ):
+            _ = get_min_max_date(min_age=duration)
+
+    @given(date=dates(min_value=TODAY_UTC + DAY))
+    def test_error_max_date(self, *, date: dt.date) -> None:
+        with raises(
+            _GetMinMaxDateMaxDateError,
+            match="Max date must be at most today; got .* > .*",
+        ):
+            _ = get_min_max_date(max_date=date)
+
+    @given(duration=date_durations(max_int=-1, max_timedelta=-DAY))
+    def test_error_max_age(self, *, duration: Duration) -> None:
+        with raises(
+            _GetMinMaxDateMaxAgeError, match="Max age must be non-negative; got .*"
+        ):
+            _ = get_min_max_date(max_age=duration)
+
+    @given(dates=pairs(dates(max_value=TODAY_UTC), unique=True, sorted=True))
+    def test_error_period(self, *, dates: tuple[dt.date, dt.date]) -> None:
+        with raises(
+            _GetMinMaxDatePeriodError,
+            match="Min date must be at most max date; got .* > .*",
+        ):
+            _ = get_min_max_date(min_date=dates[1], max_date=dates[0])
 
 
 class TestGetNow:
