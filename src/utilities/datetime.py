@@ -513,20 +513,20 @@ def get_min_max_date(
         if min_date > today:
             raise _GetMinMaxDateMinDateError(min_date=min_date, today=today)
         min_parts.append(min_date)
-    if min_age is not None:
-        if date_duration_to_timedelta(min_age) < ZERO_TIME:
-            raise _GetMinMaxDateMinAgeError(min_age=min_age)
-        min_parts.append(sub_duration(today, duration=min_age))
+    if max_age is not None:
+        if date_duration_to_timedelta(max_age) < ZERO_TIME:
+            raise _GetMinMaxDateMaxAgeError(max_age=max_age)
+        min_parts.append(sub_duration(today, duration=max_age))
     min_date_use = max(min_parts, default=None)
     max_parts: Sequence[dt.date] = []
     if max_date is not None:
         if max_date > today:
             raise _GetMinMaxDateMaxDateError(max_date=max_date, today=today)
         max_parts.append(max_date)
-    if max_age is not None:
-        if date_duration_to_timedelta(max_age) < ZERO_TIME:
-            raise _GetMinMaxDateMaxAgeError(max_age=max_age)
-        max_parts.append(sub_duration(today, duration=max_age))
+    if min_age is not None:
+        if date_duration_to_timedelta(min_age) < ZERO_TIME:
+            raise _GetMinMaxDateMinAgeError(min_age=min_age)
+        max_parts.append(sub_duration(today, duration=min_age))
     max_date_use = min(max_parts, default=None)
     if (
         (min_date_use is not None)
