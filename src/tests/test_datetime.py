@@ -703,11 +703,11 @@ class TestGetMinMaxDate:
             min_date_use, max_date_use = get_min_max_date(
                 min_date=min_date, max_date=max_date, min_age=min_age, max_age=max_age
             )
-        if (min_date is None) and (min_age is None):
+        if (min_date is None) and (max_age is None):
             assert min_date_use is None
         else:
             assert min_date_use is not None
-        if (max_date is None) and (max_age is None):
+        if (max_date is None) and (min_age is None):
             assert max_date_use is None
         else:
             assert max_date_use is not None
