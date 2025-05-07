@@ -507,19 +507,88 @@ def get_min_max_date(
     time_zone: TimeZoneLike = UTC,
 ) -> tuple[dt.date | None, dt.date | None]:
     """Get the min/max date given a combination of dates/ages."""
+    today = get_today(time_zone=time_zone)
     min_parts: Sequence[dt.date] = []
     if min_date is not None:
+        if min_date > today:
+            raise _GetMinMaxDateMinDateError(min_date=min_date, today=today)
         min_parts.append(min_date)
     if min_age is not None:
-        min_parts.append(sub_duration(get_today(time_zone=time_zone), duration=min_age))
-    min_date_use = min(min_parts, default=None)
+        if date_duration_to_timedelta(min_age) < ZERO_TIME:
+            raise _GetMinMaxDateMinAgeError(min_age=min_age)
+        min_parts.append(sub_duration(today, duration=min_age))
+    min_date_use = max(min_parts, default=None)
     max_parts: Sequence[dt.date] = []
     if max_date is not None:
+        if max_date > today:
+            raise _GetMinMaxDateMaxDateError(max_date=max_date, today=today)
         max_parts.append(max_date)
     if max_age is not None:
-        max_parts.append(sub_duration(get_today(time_zone=time_zone), duration=max_age))
-    max_date_use = max(max_parts, default=None)
+        if date_duration_to_timedelta(max_age) < ZERO_TIME:
+            raise _GetMinMaxDateMaxAgeError(max_age=max_age)
+        max_parts.append(sub_duration(today, duration=max_age))
+    max_date_use = min(max_parts, default=None)
+    if (
+        (min_date_use is not None)
+        and (max_date_use is not None)
+        and (min_date_use > max_date_use)
+    ):
+        raise _GetMinMaxDatePeriodError(min_date=min_date_use, max_date=max_date_use)
     return min_date_use, max_date_use
+
+
+@dataclass(kw_only=True, slots=True)
+class GetMinMaxDateError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetMinMaxDateMinDateError(GetMinMaxDateError):
+    min_date: dt.date
+    today: dt.date
+
+    @override
+    def __str__(self) -> str:
+        return f"Min date must be at most today; got {self.min_date} > {self.today}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetMinMaxDateMinAgeError(GetMinMaxDateError):
+    min_age: Duration
+
+    @override
+    def __str__(self) -> str:
+        return f"Min age must be non-negative; got {self.min_age}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetMinMaxDateMaxDateError(GetMinMaxDateError):
+    max_date: dt.date
+    today: dt.date
+
+    @override
+    def __str__(self) -> str:
+        return f"Max date must be at most today; got {self.max_date} > {self.today}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetMinMaxDateMaxAgeError(GetMinMaxDateError):
+    max_age: Duration
+
+    @override
+    def __str__(self) -> str:
+        return f"Max age must be non-negative; got {self.max_age}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetMinMaxDatePeriodError(GetMinMaxDateError):
+    min_date: dt.date
+    max_date: dt.date
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Min date must be at most max date; got {self.min_date} > {self.max_date}"
+        )
 
 
 ##
@@ -1270,6 +1339,7 @@ __all__ = [
     "CheckDateNotDateTimeError",
     "DateOrMonth",
     "EnsureMonthError",
+    "GetMinMaxDateError",
     "MeanDateTimeError",
     "MeanTimeDeltaError",
     "MillisecondsSinceEpochError",
