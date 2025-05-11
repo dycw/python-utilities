@@ -607,7 +607,7 @@ class Publisher(QueueProcessor[tuple[str, EncodableT]]):
 
 
 _SUBSCRIBE_TIMEOUT: Duration = SECOND
-_SUBSCRIBE_SLEEP: Duration = 10 * MILLISECOND
+_SUBSCRIBE_SLEEP: Duration = MILLISECOND
 
 
 @overload
@@ -617,8 +617,8 @@ def subscribe(
     /,
     *,
     deserializer: Callable[[bytes], _T],
-    timeout: Duration | None = ...,
-    sleep: Duration = ...,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[_T]: ...
 @overload
 def subscribe(
@@ -627,8 +627,8 @@ def subscribe(
     /,
     *,
     deserializer: None = None,
-    timeout: Duration | None = ...,
-    sleep: Duration = ...,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[bytes]: ...
 async def subscribe(
     pubsub: PubSub,
