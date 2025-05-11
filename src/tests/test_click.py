@@ -102,12 +102,12 @@ class TestFileAndDirPaths:
         file_path.touch()
         result = CliRunner().invoke(cli, [str(file_path)])
         assert result.exit_code == 2
-        assert search("is a file", result.stdout)
+        assert search("is a file", result.stderr)
 
         non_existent = tmp_path.joinpath("non-existent")
         result = CliRunner().invoke(cli, [str(non_existent)])
         assert result.exit_code == 2
-        assert search("does not exist", result.stdout)
+        assert search("does not exist", result.stderr)
 
     def test_existing_file_path(self, *, tmp_path: Path) -> None:
         @command()
@@ -119,7 +119,7 @@ class TestFileAndDirPaths:
 
         result = CliRunner().invoke(cli, [str(tmp_path)])
         assert result.exit_code == 2
-        assert search("is a directory", result.stdout)
+        assert search("is a directory", result.stderr)
 
         file_path = tmp_path.joinpath("file.txt")
         file_path.touch()
@@ -129,7 +129,7 @@ class TestFileAndDirPaths:
         non_existent = tmp_path.joinpath("non-existent")
         result = CliRunner().invoke(cli, [str(non_existent)])
         assert result.exit_code == 2
-        assert search("does not exist", result.stdout)
+        assert search("does not exist", result.stderr)
 
     def test_dir_path(self, *, tmp_path: Path) -> None:
         @command()
@@ -146,7 +146,7 @@ class TestFileAndDirPaths:
         file_path.touch()
         result = CliRunner().invoke(cli, [str(file_path)])
         assert result.exit_code == 2
-        assert search("is a file", result.stdout)
+        assert search("is a file", result.stderr)
 
         non_existent = tmp_path.joinpath("non-existent")
         result = CliRunner().invoke(cli, [str(non_existent)])
@@ -162,7 +162,7 @@ class TestFileAndDirPaths:
 
         result = CliRunner().invoke(cli, [str(tmp_path)])
         assert result.exit_code == 2
-        assert search("is a directory", result.stdout)
+        assert search("is a directory", result.stderr)
 
         file_path = tmp_path.joinpath("file.txt")
         file_path.touch()
@@ -394,7 +394,7 @@ class TestParameters:
         assert result.exit_code == 2
         assert search(
             "Invalid value for '--value': Object '0' of type 'int' must be a string",
-            result.stdout,
+            result.stderr,
         )
 
 
