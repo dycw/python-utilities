@@ -125,7 +125,8 @@ class Enum(ParamType, Generic[TEnum]):
             self.fail(str(error), param, ctx)
 
     @override
-    def get_metavar(self, param: Parameter) -> str | None:
+    def get_metavar(self, param: Parameter, ctx: Context) -> str | None:
+        _ = ctx
         desc = ",".join(e.name for e in self._enum)
         return _make_metavar(param, desc)
 
@@ -273,8 +274,8 @@ class FrozenSetParameter(ParamType, Generic[_TParam, _T]):
         return frozenset(self._param.convert(v, param, ctx) for v in values)
 
     @override
-    def get_metavar(self, param: Parameter) -> str | None:
-        if (metavar := self._param.get_metavar(param)) is None:
+    def get_metavar(self, param: Parameter, ctx: Context) -> str | None:
+        if (metavar := self._param.get_metavar(param, ctx)) is None:
             name = self.name.upper()
         else:
             name = f"FROZENSET{metavar}"
@@ -397,8 +398,8 @@ class ListParameter(ParamType, Generic[_TParam, _T]):
         return [self._param.convert(v, param, ctx) for v in values]
 
     @override
-    def get_metavar(self, param: Parameter) -> str | None:
-        if (metavar := self._param.get_metavar(param)) is None:
+    def get_metavar(self, param: Parameter, ctx: Context) -> str | None:
+        if (metavar := self._param.get_metavar(param, ctx)) is None:
             name = self.name.upper()
         else:
             name = f"LIST{metavar}"
