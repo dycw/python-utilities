@@ -17,7 +17,7 @@ from asyncio import (
     sleep,
     timeout,
 )
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from contextlib import (
     AsyncExitStack,
     _AsyncGeneratorContextManager,
@@ -39,11 +39,17 @@ from typing import (
     override,
 )
 
-from utilities.datetime import MILLISECOND, datetime_duration_to_float
+from utilities.datetime import MILLISECOND, MINUTE, SECOND, datetime_duration_to_float
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, ensure_not_none
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import MaybeCallableEvent, THashable, TSupportsRichComparison
+from utilities.types import (
+    Coroutine1,
+    MaybeCallableEvent,
+    MaybeType,
+    THashable,
+    TSupportsRichComparison,
+)
 
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
@@ -315,6 +321,70 @@ class ExceptionProcessor(QueueProcessor[Exception | type[Exception]]):
     async def _process_item(self, item: Exception | type[Exception], /) -> None:
         """Run the processor on the first item."""
         raise item
+
+
+##
+
+
+@dataclass(kw_only=True)
+class InfiniteLooper(ABC, Generic[THashable]):
+    """An infinite loop which can throw exceptions by setting events."""
+
+    events: Mapping[THashable, Event] = field(
+        default_factory=dict, init=False, repr=False
+    )
+    sleep_core: Duration = SECOND
+    sleep_restart: Duration = MINUTE
+
+    def __post_init__(self) -> None:
+        self._reset_events()
+
+    async def __call__(self) -> Coroutine1[None]:
+        while True:
+            try:
+                self._reset_events()
+                try:
+                    await self.initialize()
+                except Exception as error:  # noqa: BLE001
+                    self.error_upon_initialize(error)
+                    await sleep_dur(duration=self.sleep_restart)
+                else:
+                    while True:
+                        try:
+                            event = next(
+                                key
+                                for (key, value) in self.events.items()
+                                if value.is_set()
+                            )
+                        except StopIteration:
+                            await self.core()
+                            await sleep_dur(duration=self.sleep_core)
+                        else:
+                            raise self.events_and_exceptions[event]
+            except Exception as error:  # noqa: BLE001
+                self.error_upon_core(error)
+                await sleep_dur(duration=self.sleep_restart)
+
+    @property
+    @abstractmethod
+    def events_and_exceptions(self) -> Mapping[THashable, MaybeType[BaseException]]:
+        """A mapping of events to exceptions."""
+
+    async def initialize(self) -> None:
+        """Initialize the loop."""
+
+    async def core(self) -> None:
+        """Run the core."""
+
+    def error_upon_initialize(self, error: Exception, /) -> None:
+        _ = error
+
+    def error_upon_core(self, error: Exception, /) -> None:
+        _ = error
+
+    def _reset_events(self) -> None:
+        """Reset the events."""
+        self.events = {event: Event() for event in self.events_and_exceptions}
 
 
 ##

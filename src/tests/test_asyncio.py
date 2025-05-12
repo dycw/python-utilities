@@ -35,6 +35,7 @@ from utilities.asyncio import (
     AsyncService,
     EnhancedTaskGroup,
     ExceptionProcessor,
+    InfiniteLooper,
     QueueProcessor,
     UniquePriorityQueue,
     UniqueQueue,
@@ -54,7 +55,9 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
-    from utilities.types import Duration, MaybeCallableEvent
+    from collections.abc import Mapping
+
+    from utilities.types import Duration, MaybeCallableEvent, MaybeType
 
 
 class TestAsyncLoopingService:
@@ -399,6 +402,89 @@ class TestGetItemsNoWait:
             assert result == xs
         else:
             assert result == xs[:max_size]
+
+
+class TestInfiniteLooper:
+    @given(n=integers(10, 11))
+    async def test_main(self, *, n: int) -> None:
+        class CustomTrueError(BaseException): ...
+
+        class CustomFalseError(BaseException): ...
+
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[bool]):
+            counter: int = field(init=False, repr=False)
+
+            @override
+            async def initialize(self) -> None:
+                self.counter = 0
+
+            @override
+            async def core(self) -> None:
+                self.counter += 1
+                if self.counter >= n:
+                    self.events[n % 2 == 0].set()
+
+            @property
+            @override
+            def events_and_exceptions(self) -> Mapping[bool, MaybeType[BaseException]]:
+                return {True: CustomTrueError, False: CustomFalseError}
+
+        looper = Example(sleep_core=0.1)
+        match n % 2 == 0:
+            case True:
+                with raises(CustomTrueError):
+                    _ = await looper()
+            case False:
+                with raises(CustomFalseError):
+                    _ = await looper()
+
+    async def test_error_upon_initialize(self) -> None:
+        class CustomError(Exception): ...
+
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            counter: int = field(init=False, repr=False)
+
+            @override
+            async def initialize(self) -> None:
+                raise CustomError
+
+            @override
+            async def core(self) -> None:
+                raise NotImplementedError
+
+            @property
+            @override
+            def events_and_exceptions(self) -> Mapping[None, MaybeType[BaseException]]:
+                return {None: CustomError}
+
+        with raises(TimeoutError):
+            async with timeout_dur(duration=0.5):
+                _ = await Example(sleep_core=0.1)()
+
+    async def test_error_upon_core(self) -> None:
+        class CustomError(Exception): ...
+
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            counter: int = field(init=False, repr=False)
+
+            @override
+            async def initialize(self) -> None: ...
+
+            @override
+            async def core(self) -> None:
+                raise CustomError
+
+            @property
+            @override
+            def events_and_exceptions(self) -> Mapping[None, MaybeType[BaseException]]:
+                return {None: CustomError}
+
+        with raises(TimeoutError):
+            async with timeout_dur(duration=0.5):
+                _ = await Example(sleep_core=0.1)()
 
 
 class TestQueueProcessor:
