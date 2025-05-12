@@ -367,7 +367,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
     @property
     @abstractmethod
-    def events_and_exceptions(self) -> Mapping[THashable, MaybeType[Exception]]:
+    def events_and_exceptions(self) -> Mapping[THashable, MaybeType[BaseException]]:
         """A mapping of events to exceptions."""
 
     async def initialize(self) -> None:

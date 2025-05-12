@@ -15,7 +15,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from itertools import chain
 from re import search
-from typing import TYPE_CHECKING, NoReturn, Self, override
+from typing import TYPE_CHECKING, Self, override
 
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
@@ -31,11 +31,11 @@ from hypothesis.strategies import (
 from pytest import approx, mark, param, raises
 
 from utilities.asyncio import (
-    AsyncEventService,
     AsyncLoopingService,
     AsyncService,
     EnhancedTaskGroup,
     ExceptionProcessor,
+    InfiniteLooper,
     QueueProcessor,
     UniquePriorityQueue,
     UniqueQueue,
@@ -55,50 +55,9 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Mapping
 
     from utilities.types import Duration, MaybeCallableEvent, MaybeType
-
-
-class TestAsyncEventService:
-    @given(n=integers(10, 11))
-    async def test_main(self, *, n: int) -> None:
-        class CustomTrueError(Exception): ...
-
-        class CustomFalseError(Exception): ...
-
-        @dataclass(kw_only=True)
-        class Example(AsyncEventService[bool]):
-            counter: int = 0
-
-            @override
-            async def _run_init(self) -> None: ...
-
-            @override
-            async def _run_core(self) -> None:
-                self.counter += 1
-                if self.counter >= n:
-                    self._events[n % 2 == 0].set()
-
-            @override
-            def _run_on_error(self, error: Exception, /) -> NoReturn:
-                raise error
-
-            @override
-            def _yield_pairs(self) -> Iterator[tuple[bool, MaybeType[Exception]]]:
-                yield from [(True, CustomTrueError), (False, CustomFalseError)]
-
-        service = Example(duration=2.0, sleep_core=0.1)
-        match n % 2 == 0:
-            case True:
-                with raises(CustomTrueError):
-                    async with service:
-                        pass
-            case False:
-                with raises(CustomFalseError):
-                    async with service:
-                        pass
-        assert 5 <= service.counter <= 16
 
 
 class TestAsyncLoopingService:
@@ -443,6 +402,43 @@ class TestGetItemsNoWait:
             assert result == xs
         else:
             assert result == xs[:max_size]
+
+
+@mark.only
+class TestInfiniteLooper:
+    @given(n=integers(10, 11))
+    async def test_main(self, *, n: int) -> None:
+        class CustomTrueError(BaseException): ...
+
+        class CustomFalseError(BaseException): ...
+
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[bool]):
+            counter: int = field(init=False, repr=False)
+
+            @override
+            async def initialize(self) -> None:
+                self.counter = 0
+
+            @override
+            async def core(self) -> None:
+                self.counter += 1
+                if self.counter >= n:
+                    self.events[n % 2 == 0].set()
+
+            @property
+            @override
+            def events_and_exceptions(self) -> Mapping[bool, MaybeType[BaseException]]:
+                return {True: CustomTrueError, False: CustomFalseError}
+
+        looper = Example(sleep_core=0.1)
+        match n % 2 == 0:
+            case True:
+                with raises(CustomTrueError):
+                    _ = await looper()
+            case False:
+                with raises(CustomFalseError):
+                    _ = await looper()
 
 
 class TestQueueProcessor:
