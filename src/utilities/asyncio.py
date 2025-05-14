@@ -335,7 +335,9 @@ class InfiniteLooper(ABC, Generic[THashable]):
     sleep_restart: Duration = MINUTE
 
     def __post_init__(self) -> None:
-        self._reset_events()
+        self._events = {
+            event: Event() for event, _ in self._yield_events_and_exceptions()
+        }
 
     async def __call__(self) -> None:
         """Create a coroutine to run the looper."""
@@ -349,29 +351,28 @@ class InfiniteLooper(ABC, Generic[THashable]):
         while True:
             self._reset_events()
             try:
-                try:
-                    await self._initialize()
-                except Exception as error:  # noqa: BLE001
-                    self._error_upon_initialize(error)
-                    await sleep_dur(duration=self.sleep_restart)
-                else:
-                    while True:
-                        try:
-                            event = next(
-                                key
-                                for (key, value) in self._events.items()
-                                if value.is_set()
-                            )
-                        except StopIteration:
-                            await self._core()
-                            await sleep_dur(duration=self.sleep_core)
-                        else:
-                            self._raise_error(event)
-            except InfiniteLooperError:
-                raise
+                await self._initialize()
             except Exception as error:  # noqa: BLE001
-                self._error_upon_core(error)
+                self._error_upon_initialize(error)
                 await sleep_dur(duration=self.sleep_restart)
+            else:
+                while True:
+                    try:
+                        event = next(
+                            key
+                            for (key, value) in self._events.items()
+                            if value.is_set()
+                        )
+                    except StopIteration:
+                        try:
+                            await self._core()
+                        except Exception as error:  # noqa: BLE001
+                            self._error_upon_core(error)
+                            await sleep_dur(duration=self.sleep_restart)
+                        else:
+                            await sleep_dur(duration=self.sleep_core)
+                    else:
+                        self._raise_error(event)
 
     async def _run_multiple_loopers(self, *loopers: InfiniteLooper) -> None:
         """Run multiple loopers."""
@@ -390,6 +391,10 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
     async def _core(self) -> None:
         """Run the core."""
+
+    def _error_upon_post_init(self, error: Exception, /) -> None:
+        """Handle any errors upon post-initialization the looper."""
+        _ = error
 
     def _error_upon_initialize(self, error: Exception, /) -> None:
         """Handle any errors upon initializing the looper."""
