@@ -349,30 +349,31 @@ class InfiniteLooper(ABC, Generic[THashable]):
     async def _run_looper(self) -> None:
         """Run the looper by itself."""
         while True:
-            self._reset_events()
             try:
-                await self._initialize()
-            except Exception as error:  # noqa: BLE001
-                self._error_upon_initialize(error)
-                await sleep_dur(duration=self.sleep_restart)
-            else:
-                while True:
-                    try:
-                        event = next(
-                            key
-                            for (key, value) in self._events.items()
-                            if value.is_set()
-                        )
-                    except StopIteration:
+                self._reset_events()
+                try:
+                    await self._initialize()
+                except Exception as error:  # noqa: BLE001
+                    self._error_upon_initialize(error)
+                    await sleep_dur(duration=self.sleep_restart)
+                else:
+                    while True:
                         try:
+                            event = next(
+                                key
+                                for (key, value) in self._events.items()
+                                if value.is_set()
+                            )
+                        except StopIteration:
                             await self._core()
-                        except Exception as error:  # noqa: BLE001
-                            self._error_upon_core(error)
-                            await sleep_dur(duration=self.sleep_restart)
-                        else:
                             await sleep_dur(duration=self.sleep_core)
-                    else:
-                        self._raise_error(event)
+                        else:
+                            self._raise_error(event)
+            except InfiniteLooperError:
+                raise
+            except Exception as error:  # noqa: BLE001
+                self._error_upon_core(error)
+                await sleep_dur(duration=self.sleep_restart)
 
     async def _run_multiple_loopers(self, *loopers: InfiniteLooper) -> None:
         """Run multiple loopers."""

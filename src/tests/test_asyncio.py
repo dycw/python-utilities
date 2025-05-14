@@ -472,7 +472,7 @@ class TestInfiniteLooper:
     async def test_error_no_event_found(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
-            counter: int = field(init=False, repr=False)
+            counter: int = 0
 
             @override
             async def _initialize(self) -> None:
