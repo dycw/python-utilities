@@ -393,10 +393,6 @@ class InfiniteLooper(ABC, Generic[THashable]):
     async def _core(self) -> None:
         """Run the core part of the loop."""
 
-    def _error_upon_post_init(self, error: Exception, /) -> None:
-        """Handle any errors upon post-initialization the looper."""
-        _ = error
-
     def _error_upon_initialize(self, error: Exception, /) -> None:
         """Handle any errors upon initializing the looper."""
         _ = error
