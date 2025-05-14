@@ -455,33 +455,35 @@ class QueueInfiniteLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     queue_type: type[Queue[_T]] = field(default=Queue, repr=False)
     _queue: Queue[_T] = field(init=False)
     _current: Queue[_T] = field(init=False)
+    _lock: Lock = field(init=False, repr=False)
 
     @override
     def __post_init__(self) -> None:
         super().__post_init__()
         self._queue = self.queue_type()
         self._current = self.queue_type()
+        self._lock = Lock()
 
     @override
     async def _core(self) -> None:
         """Run the core part of the loop."""
-        items = await get_items_nowait(self._queue)
-        _ = await get_items_nowait(self._current)
+        items = await get_items_nowait(self._queue, lock=self._lock)
+        _ = await get_items_nowait(self._current, lock=self._lock)
         if len(items) == 0:
             return
-        for item in items:
-            self._current.put_nowait(item)
+        await put_items_nowait(items, self._current, lock=self._lock)
         try:
             await self.process_items(*items)
         except Exception:
-            for item in items:
-                self._queue.put_nowait(item)
+            await put_items_nowait(items, self._queue, lock=self._lock)
             raise
 
     @abstractmethod
-    async def process_items(self, *items: _T) -> None: ...
+    async def process_items(self, *items: _T) -> None:
+        """Process the items."""
 
     def enqueue(self, *items: _T) -> None:
+        """Add."""
         for item in items:
             self._queue.put_nowait(item)
 
@@ -579,15 +581,6 @@ async def get_items(queue: Queue[_T], /, *, max_size: int | None = None) -> list
 
 def get_items_nowait(queue: Queue[_T], /, *, max_size: int | None = None) -> list[_T]:
     """Get items from a queue; no waiting."""
-    if lock is None:
-        return _get_items_nowait_core(queue, max_size=max_size)
-    async with lock:
-        return _get_items_nowait_core(queue, max_size=max_size)
-
-
-def _get_items_nowait_core(
-    queue: Queue[_T], /, *, max_size: int | None = None
-) -> list[_T]:
     items: list[_T] = []
     if max_size is None:
         while True:
@@ -607,32 +600,14 @@ def _get_items_nowait_core(
 ##
 
 
-async def put_items(
-    items: Iterable[_T], queue: Queue[_T], /, *, lock: Lock | None = None
-) -> None:
+async def put_items(items: Iterable[_T], queue: Queue[_T], /) -> None:
     """Put items into a queue; if full then wait."""
-    if lock is None:
-        return _put_items_core(items, queue)
-    async with lock:
-        return _put_items_core(items, queue)
-
-
-def _put_items_core(items: Iterable[_T], queue: Queue[_T], /) -> None:
     for item in items:
-        queue.put_nowait(item)
+        await queue.put(item)
 
 
-async def put_items_nowait(
-    items: Iterable[_T], queue: Queue[_T], /, *, lock: Lock | None = None
-) -> None:
+def put_items_nowait(items: Iterable[_T], queue: Queue[_T], /) -> None:
     """Put items into a queue; no waiting."""
-    if lock is None:
-        return _put_items_nowait_core(items, queue)
-    async with lock:
-        return _put_items_nowait_core(items, queue)
-
-
-def _put_items_nowait_core(items: Iterable[_T], queue: Queue[_T], /) -> None:
     for item in items:
         queue.put_nowait(item)
 

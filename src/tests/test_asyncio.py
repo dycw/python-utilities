@@ -490,38 +490,26 @@ class TestInfiniteLooper:
 
 
 class TestPutAndGetItems:
-    @given(
-        xs=lists(integers(), min_size=1),
-        max_size=integers(1, 10) | none(),
-        lock=just(Lock()) | none(),
-    )
-    async def test_put_then_get(
-        self, *, xs: list[int], max_size: int | None, lock: Lock | None
-    ) -> None:
+    @given(xs=lists(integers(), min_size=1), max_size=integers(1, 10) | none())
+    async def test_put_then_get(self, *, xs: list[int], max_size: int | None) -> None:
         queue: Queue[int] = Queue()
-        await put_items(xs, queue, lock=lock)
-        result = await get_items(queue, max_size=max_size, lock=lock)
+        await put_items(xs, queue)
+        result = await get_items(queue, max_size=max_size)
         if max_size is None:
             assert result == xs
         else:
             assert result == xs[:max_size]
 
-    @given(
-        xs=lists(integers(), min_size=1),
-        max_size=integers(1, 10) | none(),
-        lock=just(Lock()) | none(),
-    )
-    async def test_get_then_put(
-        self, *, xs: list[int], max_size: int | None, lock: Lock | None
-    ) -> None:
+    @given(xs=lists(integers(), min_size=1), max_size=integers(1, 10) | none())
+    async def test_get_then_put(self, *, xs: list[int], max_size: int | None) -> None:
         queue: Queue[int] = Queue()
 
         async def put() -> None:
             await sleep(0.01)
-            await put_items(xs, queue, lock=lock)
+            await put_items(xs, queue)
 
         async with TaskGroup() as tg:
-            task = tg.create_task(get_items(queue, max_size=max_size, lock=lock))
+            task = tg.create_task(get_items(queue, max_size=max_size))
             _ = tg.create_task(put())
         result = task.result()
         if max_size is None:
@@ -538,17 +526,11 @@ class TestPutAndGetItems:
 
 
 class TestPutAndGetItemsNoWait:
-    @given(
-        xs=lists(integers(), min_size=1),
-        max_size=integers(1, 10) | none(),
-        lock=just(Lock()) | none(),
-    )
-    async def test_main(
-        self, *, xs: list[int], max_size: int | None, lock: Lock | None
-    ) -> None:
+    @given(xs=lists(integers(), min_size=1), max_size=integers(1, 10) | none())
+    def test_main(self, *, xs: list[int], max_size: int | None) -> None:
         queue: Queue[int] = Queue()
-        await put_items_nowait(xs, queue, lock=lock)
-        result = await get_items_nowait(queue, max_size=max_size, lock=lock)
+        put_items_nowait(xs, queue)
+        result = get_items_nowait(queue, max_size=max_size)
         if max_size is None:
             assert result == xs
         else:
