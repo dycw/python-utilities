@@ -34,6 +34,7 @@ from utilities.asyncio import (
     EnhancedTaskGroup,
     ExceptionProcessor,
     InfiniteLooper,
+    InfiniteLooperError,
     QueueProcessor,
     UniquePriorityQueue,
     UniqueQueue,
@@ -354,7 +355,7 @@ class TestInfiniteLooper:
             async def _core(self) -> None:
                 self.counter += 1
                 if self.counter >= n:
-                    self._events[n % 2 == 0].set()
+                    self._set_event(n % 2 == 0)
 
             @override
             def _yield_events_and_exceptions(
@@ -420,6 +421,25 @@ class TestInfiniteLooper:
         with raises(TimeoutError):
             async with timeout_dur(duration=0.5):
                 _ = await Example(sleep_core=0.1)()
+
+    async def test_error_no_event_found(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            counter: int = field(init=False, repr=False)
+
+            @override
+            async def _initialize(self) -> None:
+                self.counter = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+                if self.counter >= 10:
+                    self._set_event(None)
+
+        looper = Example(sleep_core=0.1)
+        with raises(InfiniteLooperError, match="No event None found"):
+            _ = await looper()
 
 
 class TestPutAndGetItems:

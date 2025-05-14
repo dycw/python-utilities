@@ -16,7 +16,7 @@ from asyncio import (
     sleep,
     timeout,
 )
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Hashable, Iterator, Mapping
 from contextlib import (
     AsyncExitStack,
     _AsyncGeneratorContextManager,
@@ -367,6 +367,8 @@ class InfiniteLooper(ABC, Generic[THashable]):
                             await sleep_dur(duration=self.sleep_core)
                         else:
                             self._raise_error(event)
+            except InfiniteLooperError:
+                raise
             except Exception as error:  # noqa: BLE001
                 self._error_upon_core(error)
                 await sleep_dur(duration=self.sleep_restart)
@@ -399,7 +401,9 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
     def _raise_error(self, event: THashable, /) -> NoReturn:
         """Raise the error corresponding to given event."""
-        raise dict(self._yield_events_and_exceptions())[event]
+        mapping = dict(self._yield_events_and_exceptions())
+        error = mapping.get(event, InfiniteLooperError)
+        raise error
 
     def _reset_events(self) -> None:
         """Reset the events."""
@@ -409,17 +413,30 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
     def _set_event(self, event: THashable, /) -> None:
         """Set the given event."""
-        self._events[event].set()
+        try:
+            event_obj = self._events[event]
+        except KeyError:
+            raise InfiniteLooperError(event=event) from None
+        event_obj.set()
 
-    @abstractmethod
     def _yield_events_and_exceptions(
         self,
     ) -> Iterator[tuple[THashable, MaybeType[BaseException]]]:
         """Yield the events & exceptions."""
+        yield from []
 
     def _yield_loopers(self) -> Iterator[InfiniteLooper]:
         """Yield any other infinite loopers which must also be run."""
         yield from []
+
+
+@dataclass(kw_only=True, slots=True)
+class InfiniteLooperError(Exception):
+    event: Hashable
+
+    @override
+    def __str__(self) -> str:
+        return f"No event {self.event!r} found"
 
 
 ##
@@ -627,6 +644,7 @@ __all__ = [
     "AsyncService",
     "EnhancedTaskGroup",
     "ExceptionProcessor",
+    "InfiniteLooperError",
     "QueueProcessor",
     "StreamCommandOutput",
     "UniquePriorityQueue",
