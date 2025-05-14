@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from asyncio import (
     CancelledError,
     Event,
-    Lock,
     PriorityQueue,
     Queue,
     QueueEmpty,
@@ -17,7 +16,7 @@ from asyncio import (
     sleep,
     timeout,
 )
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from contextlib import (
     AsyncExitStack,
     _AsyncGeneratorContextManager,
@@ -240,7 +239,6 @@ class QueueProcessor(AsyncService, Generic[_T]):
     sleep: Duration = MILLISECOND
     _await_upon_aenter: bool = field(default=False, init=False, repr=False)
     _queue: Queue[_T] = field(init=False, repr=False)
-    _lock: Lock = field(default_factory=Lock, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._queue = self.queue_type(
@@ -265,9 +263,9 @@ class QueueProcessor(AsyncService, Generic[_T]):
             await self._run()
             await sleep_dur(duration=self.sleep)
 
-    async def _get_items_nowait(self, *, max_size: int | None = None) -> Sequence[_T]:
+    def _get_items_nowait(self, *, max_size: int | None = None) -> Sequence[_T]:
         """Get items from the queue; no waiting."""
-        return await get_items_nowait(self._queue, max_size=max_size, lock=self._lock)
+        return get_items_nowait(self._queue, max_size=max_size)
 
     @abstractmethod
     async def _process_item(self, item: _T, /) -> None:
@@ -282,7 +280,7 @@ class QueueProcessor(AsyncService, Generic[_T]):
     async def _run(self) -> None:
         """Run the processer."""
         try:
-            (item,) = await self._get_items_nowait(max_size=1)
+            (item,) = self._get_items_nowait(max_size=1)
         except ValueError:
             raise QueueEmpty from None
         try:
@@ -465,9 +463,7 @@ def get_event(
 ##
 
 
-async def get_items(
-    queue: Queue[_T], /, *, max_size: int | None = None, lock: Lock | None = None
-) -> list[_T]:
+async def get_items(queue: Queue[_T], /, *, max_size: int | None = None) -> list[_T]:
     """Get items from a queue; if empty then wait."""
     try:
         items = [await queue.get()]
@@ -476,28 +472,12 @@ async def get_items(
             return []
         raise
     max_size_use = None if max_size is None else (max_size - 1)
-    if lock is None:
-        items.extend(await get_items_nowait(queue, max_size=max_size_use))
-    else:
-        async with lock:
-            items.extend(await get_items_nowait(queue, max_size=max_size_use))
+    items.extend(get_items_nowait(queue, max_size=max_size_use))
     return items
 
 
-async def get_items_nowait(
-    queue: Queue[_T], /, *, max_size: int | None = None, lock: Lock | None = None
-) -> list[_T]:
+def get_items_nowait(queue: Queue[_T], /, *, max_size: int | None = None) -> list[_T]:
     """Get items from a queue; no waiting."""
-    if lock is None:
-        return _get_items_nowait_core(queue, max_size=max_size)
-    async with lock:
-        return _get_items_nowait_core(queue, max_size=max_size)
-
-
-def _get_items_nowait_core(
-    queue: Queue[_T], /, *, max_size: int | None = None
-) -> list[_T]:
-    """Get all the items from a queue; no waiting."""
     items: list[_T] = []
     if max_size is None:
         while True:
@@ -512,6 +492,21 @@ def _get_items_nowait_core(
             except QueueEmpty:
                 break
     return items
+
+
+##
+
+
+async def put_items(items: Iterable[_T], queue: Queue[_T], /) -> None:
+    """Put items into a queue; if full then wait."""
+    for item in items:
+        await queue.put(item)
+
+
+def put_items_nowait(items: Iterable[_T], queue: Queue[_T], /) -> None:
+    """Put items into a queue; no waiting."""
+    for item in items:
+        queue.put_nowait(item)
 
 
 ##
@@ -602,6 +597,8 @@ __all__ = [
     "get_event",
     "get_items",
     "get_items_nowait",
+    "put_items",
+    "put_items_nowait",
     "sleep_dur",
     "stream_command",
     "timeout_dur",
