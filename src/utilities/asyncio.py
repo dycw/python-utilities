@@ -16,7 +16,7 @@ from asyncio import (
     sleep,
     timeout,
 )
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
 from contextlib import (
     AsyncExitStack,
     _AsyncGeneratorContextManager,
