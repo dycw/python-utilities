@@ -449,43 +449,40 @@ class InfiniteLooperError(Exception):
 
 
 @dataclass(kw_only=True)
-class QueueInfiniteLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
+class InfiniteQueueProcessor(InfiniteLooper[THashable], Generic[THashable, _T]):
     """An infinite loop which processes a queue."""
 
     queue_type: type[Queue[_T]] = field(default=Queue, repr=False)
     _queue: Queue[_T] = field(init=False)
     _current: Queue[_T] = field(init=False)
-    _lock: Lock = field(init=False, repr=False)
 
     @override
     def __post_init__(self) -> None:
         super().__post_init__()
         self._queue = self.queue_type()
         self._current = self.queue_type()
-        self._lock = Lock()
 
     @override
     async def _core(self) -> None:
         """Run the core part of the loop."""
-        items = await get_items_nowait(self._queue, lock=self._lock)
-        _ = await get_items_nowait(self._current, lock=self._lock)
+        items = await get_items(self._queue)
+        _ = get_items_nowait(self._current)
         if len(items) == 0:
             return
-        await put_items_nowait(items, self._current, lock=self._lock)
+        put_items_nowait(items, self._current)
         try:
-            await self.process_items(*items)
+            await self._process_items(*items)
         except Exception:
-            await put_items_nowait(items, self._queue, lock=self._lock)
+            put_items_nowait(items, self._queue)
             raise
 
     @abstractmethod
-    async def process_items(self, *items: _T) -> None:
+    async def _process_items(self, *items: _T) -> None:
         """Process the items."""
 
-    def enqueue(self, *items: _T) -> None:
-        """Add."""
-        for item in items:
-            self._queue.put_nowait(item)
+    def put_items_nowait(self, *items: _T) -> None:
+        """Put items into the queue."""
+        put_items_nowait(items, self._queue)
 
 
 ##

@@ -12,7 +12,7 @@ from asyncio import (
 )
 from collections import Counter
 from dataclasses import dataclass, field
-from itertools import chain
+from itertools import chain, count
 from re import search
 from typing import TYPE_CHECKING, Self, override
 
@@ -35,6 +35,7 @@ from utilities.asyncio import (
     ExceptionProcessor,
     InfiniteLooper,
     InfiniteLooperError,
+    InfiniteQueueProcessor,
     QueueProcessor,
     UniquePriorityQueue,
     UniqueQueue,
@@ -487,6 +488,30 @@ class TestInfiniteLooper:
         looper = Example(sleep_core=0.1)
         with raises(InfiniteLooperError, match="No event None found"):
             _ = await looper()
+
+
+class TestInfiniteQueueLooper:
+    async def test_main(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteQueueProcessor[None, int]):
+            output: set[int] = field(default_factory=set)
+
+            @override
+            async def _process_items(self, *items: int) -> None:
+                self.output.update(items)
+
+        processor = Example(sleep_core=0.1)
+
+        async def add_items() -> None:
+            for i in count():
+                processor.put_items_nowait(i)
+                await sleep(0.1)
+
+        with raises(ExceptionGroup):  # noqa: PT012
+            async with EnhancedTaskGroup(timeout=1.0) as tg:
+                _ = tg.create_task(processor())
+                _ = tg.create_task(add_items())
+        assert 5 <= len(processor.output) <= 15
 
 
 class TestPutAndGetItems:
