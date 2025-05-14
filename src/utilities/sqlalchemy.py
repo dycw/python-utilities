@@ -651,7 +651,7 @@ class Upserter(QueueProcessor[_InsertItem]):
 
 
 @dataclass(kw_only=True)
-class UpserterIQL(InfiniteQueueLooper[None, _InsertItem]):
+class Upserter2(InfiniteQueueLooper[None, _InsertItem]):
     """Upsert a set of items to a database."""
 
     engine: AsyncEngine
@@ -683,12 +683,12 @@ class UpserterIQL(InfiniteQueueLooper[None, _InsertItem]):
     def _yield_events_and_exceptions(
         self,
     ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
-        yield (None, UpserterIQLError)
+        yield (None, Upserter2Error)
 
 
 @dataclass(kw_only=True)
-class UpserterIQLError(Exception):
-    upserter: UpserterIQL
+class Upserter2Error(Exception):
+    upserter: Upserter2
 
     @override
     def __str__(self) -> str:
@@ -1151,8 +1151,8 @@ __all__ = [
     "TablenameMixin",
     "UpsertItemsError",
     "Upserter",
-    "UpserterIQL",
-    "UpserterIQLError",
+    "Upserter2",
+    "Upserter2Error",
     "check_engine",
     "columnwise_max",
     "columnwise_min",
