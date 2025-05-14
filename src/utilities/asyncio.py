@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from asyncio import (
     CancelledError,
     Event,
-    Lock,
     PriorityQueue,
     Queue,
     QueueEmpty,
@@ -240,7 +239,6 @@ class QueueProcessor(AsyncService, Generic[_T]):
     sleep: Duration = MILLISECOND
     _await_upon_aenter: bool = field(default=False, init=False, repr=False)
     _queue: Queue[_T] = field(init=False, repr=False)
-    _lock: Lock = field(default_factory=Lock, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._queue = self.queue_type(
@@ -265,9 +263,9 @@ class QueueProcessor(AsyncService, Generic[_T]):
             await self._run()
             await sleep_dur(duration=self.sleep)
 
-    async def _get_items_nowait(self, *, max_size: int | None = None) -> Sequence[_T]:
+    def _get_items_nowait(self, *, max_size: int | None = None) -> Sequence[_T]:
         """Get items from the queue; no waiting."""
-        return await get_items_nowait(self._queue, max_size=max_size, lock=self._lock)
+        return get_items_nowait(self._queue, max_size=max_size)
 
     @abstractmethod
     async def _process_item(self, item: _T, /) -> None:
@@ -282,7 +280,7 @@ class QueueProcessor(AsyncService, Generic[_T]):
     async def _run(self) -> None:
         """Run the processer."""
         try:
-            (item,) = await self._get_items_nowait(max_size=1)
+            (item,) = self._get_items_nowait(max_size=1)
         except ValueError:
             raise QueueEmpty from None
         try:
