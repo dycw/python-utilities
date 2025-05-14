@@ -589,7 +589,7 @@ class TestQueueProcessor:
 
             @override
             async def _process_item(self, _: int, /) -> None:
-                items = await self._get_items_nowait()
+                items = self._get_items_nowait()
                 self.output.add(len(items))
 
         processor = Example()
