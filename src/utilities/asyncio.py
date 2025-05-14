@@ -17,7 +17,7 @@ from asyncio import (
     sleep,
     timeout,
 )
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from contextlib import (
     AsyncExitStack,
     _AsyncGeneratorContextManager,
@@ -465,9 +465,7 @@ def get_event(
 ##
 
 
-async def get_items(
-    queue: Queue[_T], /, *, max_size: int | None = None, lock: Lock | None = None
-) -> list[_T]:
+async def get_items(queue: Queue[_T], /, *, max_size: int | None = None) -> list[_T]:
     """Get items from a queue; if empty then wait."""
     try:
         items = [await queue.get()]
@@ -476,28 +474,12 @@ async def get_items(
             return []
         raise
     max_size_use = None if max_size is None else (max_size - 1)
-    if lock is None:
-        items.extend(await get_items_nowait(queue, max_size=max_size_use))
-    else:
-        async with lock:
-            items.extend(await get_items_nowait(queue, max_size=max_size_use))
+    items.extend(get_items_nowait(queue, max_size=max_size_use))
     return items
 
 
-async def get_items_nowait(
-    queue: Queue[_T], /, *, max_size: int | None = None, lock: Lock | None = None
-) -> list[_T]:
+def get_items_nowait(queue: Queue[_T], /, *, max_size: int | None = None) -> list[_T]:
     """Get items from a queue; no waiting."""
-    if lock is None:
-        return _get_items_nowait_core(queue, max_size=max_size)
-    async with lock:
-        return _get_items_nowait_core(queue, max_size=max_size)
-
-
-def _get_items_nowait_core(
-    queue: Queue[_T], /, *, max_size: int | None = None
-) -> list[_T]:
-    """Get all the items from a queue; no waiting."""
     items: list[_T] = []
     if max_size is None:
         while True:
@@ -512,6 +494,21 @@ def _get_items_nowait_core(
             except QueueEmpty:
                 break
     return items
+
+
+##
+
+
+async def put_items(items: Iterable[_T], queue: Queue[_T], /) -> None:
+    """Put items into a queue; if full then wait."""
+    for item in items:
+        await queue.put(item)
+
+
+def put_items_nowait(items: Iterable[_T], queue: Queue[_T], /) -> None:
+    """Put items into a queue; no waiting."""
+    for item in items:
+        queue.put_nowait(item)
 
 
 ##
@@ -602,6 +599,8 @@ __all__ = [
     "get_event",
     "get_items",
     "get_items_nowait",
+    "put_items",
+    "put_items_nowait",
     "sleep_dur",
     "stream_command",
     "timeout_dur",
