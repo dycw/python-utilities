@@ -78,7 +78,7 @@ class SlackHandler(Handler, QueueProcessor[str]):
     @override
     async def _process_item(self, item: str, /) -> None:
         """Process the first item."""
-        items = list(chain([item], await self._get_items_nowait()))
+        items = list(chain([item], self._get_items_nowait()))
         text = "\n".join(items)
         try:
             async with timeout_dur(duration=self.timeout):
