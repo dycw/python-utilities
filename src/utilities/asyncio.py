@@ -16,7 +16,7 @@ from asyncio import (
     sleep,
     timeout,
 )
-from collections.abc import Callable, Hashable, Iterator, Mapping
+from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
 from contextlib import (
     AsyncExitStack,
     _AsyncGeneratorContextManager,
@@ -391,7 +391,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
         """Initialize the loop."""
 
     async def _core(self) -> None:
-        """Run the core."""
+        """Run the core part of the loop."""
 
     def _error_upon_post_init(self, error: Exception, /) -> None:
         """Handle any errors upon post-initialization the looper."""
@@ -443,6 +443,47 @@ class InfiniteLooperError(Exception):
     @override
     def __str__(self) -> str:
         return f"No event {self.event!r} found"
+
+
+##
+
+
+@dataclass(kw_only=True)
+class QueueInfiniteLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
+    """An infinite loop which processes a queue."""
+
+    queue_type: type[Queue[_T]] = field(default=Queue, repr=False)
+    _queue: Queue[_T] = field(init=False)
+    _current: Queue[_T] = field(init=False)
+
+    @override
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self._queue = self.queue_type()
+        self._current = self.queue_type()
+
+    @override
+    async def _core(self) -> None:
+        """Run the core part of the loop."""
+        items = await get_items_nowait(self._queue)
+        _ = await get_items_nowait(self._current)
+        if len(items) == 0:
+            return
+        for item in items:
+            self._current.put_nowait(item)
+        try:
+            await self.process_items(*items)
+        except Exception:
+            for item in items:
+                self._queue.put_nowait(item)
+            raise
+
+    @abstractmethod
+    async def process_items(self, *items: _T) -> None: ...
+
+    def enqueue(self, *items: _T) -> None:
+        for item in items:
+            self._queue.put_nowait(item)
 
 
 ##
@@ -538,6 +579,15 @@ async def get_items(queue: Queue[_T], /, *, max_size: int | None = None) -> list
 
 def get_items_nowait(queue: Queue[_T], /, *, max_size: int | None = None) -> list[_T]:
     """Get items from a queue; no waiting."""
+    if lock is None:
+        return _get_items_nowait_core(queue, max_size=max_size)
+    async with lock:
+        return _get_items_nowait_core(queue, max_size=max_size)
+
+
+def _get_items_nowait_core(
+    queue: Queue[_T], /, *, max_size: int | None = None
+) -> list[_T]:
     items: list[_T] = []
     if max_size is None:
         while True:
@@ -557,14 +607,32 @@ def get_items_nowait(queue: Queue[_T], /, *, max_size: int | None = None) -> lis
 ##
 
 
-async def put_items(items: Iterable[_T], queue: Queue[_T], /) -> None:
+async def put_items(
+    items: Iterable[_T], queue: Queue[_T], /, *, lock: Lock | None = None
+) -> None:
     """Put items into a queue; if full then wait."""
+    if lock is None:
+        return _put_items_core(items, queue)
+    async with lock:
+        return _put_items_core(items, queue)
+
+
+def _put_items_core(items: Iterable[_T], queue: Queue[_T], /) -> None:
     for item in items:
-        await queue.put(item)
+        queue.put_nowait(item)
 
 
-def put_items_nowait(items: Iterable[_T], queue: Queue[_T], /) -> None:
+async def put_items_nowait(
+    items: Iterable[_T], queue: Queue[_T], /, *, lock: Lock | None = None
+) -> None:
     """Put items into a queue; no waiting."""
+    if lock is None:
+        return _put_items_nowait_core(items, queue)
+    async with lock:
+        return _put_items_nowait_core(items, queue)
+
+
+def _put_items_nowait_core(items: Iterable[_T], queue: Queue[_T], /) -> None:
     for item in items:
         queue.put_nowait(item)
 
