@@ -35,7 +35,7 @@ from utilities.asyncio import (
     ExceptionProcessor,
     InfiniteLooper,
     InfiniteLooperError,
-    InfiniteQueueProcessor,
+    InfiniteQueueLooper,
     QueueProcessor,
     UniquePriorityQueue,
     UniqueQueue,
@@ -493,7 +493,7 @@ class TestInfiniteLooper:
 class TestInfiniteQueueLooper:
     async def test_main(self) -> None:
         @dataclass(kw_only=True)
-        class Example(InfiniteQueueProcessor[None, int]):
+        class Example(InfiniteQueueLooper[None, int]):
             output: set[int] = field(default_factory=set)
 
             @override
@@ -512,6 +512,37 @@ class TestInfiniteQueueLooper:
                 _ = tg.create_task(processor())
                 _ = tg.create_task(add_items())
         assert 5 <= len(processor.output) <= 15
+
+    async def test_no_items(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteQueueLooper[None, int]):
+            output: set[int] = field(default_factory=set)
+
+            @override
+            async def _process_items(self, *items: int) -> None:
+                self.output.update(items)
+
+        processor = Example(sleep_core=0.1)
+        with raises(TimeoutError):
+            async with timeout_dur(duration=0.5):
+                _ = await processor()
+
+    async def test_error_process_items(self) -> None:
+        class CustomError(Exception): ...
+
+        @dataclass(kw_only=True)
+        class Example(InfiniteQueueLooper[None, int]):
+            output: set[int] = field(default_factory=set)
+
+            @override
+            async def _process_items(self, *items: int) -> None:
+                raise CustomError
+
+        processor = Example(sleep_core=0.1)
+        processor.put_items_nowait(1)
+        with raises(TimeoutError):
+            async with timeout_dur(duration=0.5):
+                _ = await processor()
 
 
 class TestPutAndGetItems:

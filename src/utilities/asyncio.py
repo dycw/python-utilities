@@ -384,8 +384,8 @@ class InfiniteLooper(ABC, Generic[THashable]):
                     _ = tg.create_task(self._run_looper())
                     _ = [tg.create_task(looper()) for looper in loopers]
             except Exception as error:  # noqa: BLE001
-                self._error_upon_core(error)
-                await sleep_dur(duration=self.sleep_restart)
+                self._error_upon_core(error)  # pragma: no cover
+                await sleep_dur(duration=self.sleep_restart)  # pragma: no cover
 
     async def _initialize(self) -> None:
         """Initialize the loop."""
@@ -445,7 +445,7 @@ class InfiniteLooperError(Exception):
 
 
 @dataclass(kw_only=True)
-class InfiniteQueueProcessor(InfiniteLooper[THashable], Generic[THashable, _T]):
+class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     """An infinite loop which processes a queue."""
 
     queue_type: type[Queue[_T]] = field(default=Queue, repr=False)
@@ -463,8 +463,6 @@ class InfiniteQueueProcessor(InfiniteLooper[THashable], Generic[THashable, _T]):
         """Run the core part of the loop."""
         items = await get_items(self._queue)
         _ = get_items_nowait(self._current)
-        if len(items) == 0:
-            return
         put_items_nowait(items, self._current)
         try:
             await self._process_items(*items)
