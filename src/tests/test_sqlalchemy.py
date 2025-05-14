@@ -27,6 +27,7 @@ from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
+from utilities.asyncio import timeout_dur
 from utilities.hypothesis import (
     int32s,
     pairs,
@@ -44,6 +45,8 @@ from utilities.sqlalchemy import (
     TablenameMixin,
     TableOrORMInstOrClass,
     Upserter,
+    Upserter2,
+    Upserter2Error,
     UpsertItemsError,
     _get_dialect,
     _get_dialect_max_params,
@@ -1175,6 +1178,43 @@ class TestUpserter:
         async with engine.begin() as conn:
             res = (await conn.execute(sel)).all()
         assert set(res) == set(pairs)
+
+
+class TestUpserter2:
+    @given(
+        data=data(),
+        name=_table_names(),
+        triples=_upsert_lists(nullable=True, min_size=1),
+    )
+    @mark.flaky
+    @settings(max_examples=1, phases={Phase.generate})
+    async def test_main(
+        self, *, data: DataObject, name: str, triples: list[tuple[int, bool, bool]]
+    ) -> None:
+        table = Table(
+            name,
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+        )
+        engine = await sqlalchemy_engines(data, table)
+        upserter = Upserter2(engine=engine, sleep_core=0.1)
+        pairs = [(id_, init) for id_, init, _ in triples]
+        upserter.put_items_nowait((pairs, table))
+        with raises(TimeoutError):
+            async with timeout_dur(duration=1.0):
+                await upserter()
+        sel = select(table)
+        async with engine.begin() as conn:
+            res = (await conn.execute(sel)).all()
+        assert set(res) == set(pairs)
+
+    @given(data=data())
+    async def test_error(self, *, data: DataObject) -> None:
+        engine = await sqlalchemy_engines(data)
+        upserter = Upserter2(engine=engine)
+        with raises(Upserter2Error, match="Error running 'Upserter2'"):
+            raise Upserter2Error(upserter=upserter)
 
 
 class TestUpsertItems:
