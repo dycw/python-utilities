@@ -55,7 +55,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Iterator
 
     from utilities.types import Duration, MaybeCallableEvent, MaybeType
 
@@ -347,19 +347,21 @@ class TestInfiniteLooper:
             counter: int = field(init=False, repr=False)
 
             @override
-            async def initialize(self) -> None:
+            async def _initialize(self) -> None:
                 self.counter = 0
 
             @override
-            async def core(self) -> None:
+            async def _core(self) -> None:
                 self.counter += 1
                 if self.counter >= n:
-                    self.events[n % 2 == 0].set()
+                    self._events[n % 2 == 0].set()
 
-            @property
             @override
-            def events_and_exceptions(self) -> Mapping[bool, MaybeType[BaseException]]:
-                return {True: CustomTrueError, False: CustomFalseError}
+            def _yield_events_and_exceptions(
+                self,
+            ) -> Iterator[tuple[bool, MaybeType[BaseException]]]:
+                yield (True, CustomTrueError)
+                yield (False, CustomFalseError)
 
         looper = Example(sleep_core=0.1)
         match n % 2 == 0:
@@ -378,17 +380,18 @@ class TestInfiniteLooper:
             counter: int = field(init=False, repr=False)
 
             @override
-            async def initialize(self) -> None:
+            async def _initialize(self) -> None:
                 raise CustomError
 
             @override
-            async def core(self) -> None:
+            async def _core(self) -> None:
                 raise NotImplementedError
 
-            @property
             @override
-            def events_and_exceptions(self) -> Mapping[None, MaybeType[BaseException]]:
-                return {None: CustomError}
+            def _yield_events_and_exceptions(
+                self,
+            ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
+                yield (None, CustomError)
 
         with raises(TimeoutError):
             async with timeout_dur(duration=0.5):
@@ -402,16 +405,17 @@ class TestInfiniteLooper:
             counter: int = field(init=False, repr=False)
 
             @override
-            async def initialize(self) -> None: ...
+            async def _initialize(self) -> None: ...
 
             @override
-            async def core(self) -> None:
+            async def _core(self) -> None:
                 raise CustomError
 
-            @property
             @override
-            def events_and_exceptions(self) -> Mapping[None, MaybeType[BaseException]]:
-                return {None: CustomError}
+            def _yield_events_and_exceptions(
+                self,
+            ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
+                yield (None, CustomError)
 
         with raises(TimeoutError):
             async with timeout_dur(duration=0.5):

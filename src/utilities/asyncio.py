@@ -16,7 +16,7 @@ from asyncio import (
     sleep,
     timeout,
 )
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import (
     AsyncExitStack,
     _AsyncGeneratorContextManager,
@@ -30,6 +30,7 @@ from sys import stderr, stdout
 from typing import (
     TYPE_CHECKING,
     Generic,
+    NoReturn,
     Self,
     TextIO,
     TypeVar,
@@ -43,7 +44,6 @@ from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, ensure_not_none
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import (
-    Coroutine1,
     MaybeCallableEvent,
     MaybeType,
     THashable,
@@ -328,7 +328,7 @@ class ExceptionProcessor(QueueProcessor[Exception | type[Exception]]):
 class InfiniteLooper(ABC, Generic[THashable]):
     """An infinite loop which can throw exceptions by setting events."""
 
-    events: Mapping[THashable, Event] = field(
+    _events: Mapping[THashable, Event] = field(
         default_factory=dict, init=False, repr=False
     )
     sleep_core: Duration = SECOND
@@ -337,52 +337,89 @@ class InfiniteLooper(ABC, Generic[THashable]):
     def __post_init__(self) -> None:
         self._reset_events()
 
-    async def __call__(self) -> Coroutine1[None]:
+    async def __call__(self) -> None:
+        """Create a coroutine to run the looper."""
+        loopers = list(self._yield_loopers())
+        if len(loopers) == 0:
+            return await self._run_looper()
+        return await self._run_multiple_loopers(*loopers)
+
+    async def _run_looper(self) -> None:
+        """Run the looper by itself."""
         while True:
+            self._reset_events()
             try:
-                self._reset_events()
                 try:
-                    await self.initialize()
+                    await self._initialize()
                 except Exception as error:  # noqa: BLE001
-                    self.error_upon_initialize(error)
+                    self._error_upon_initialize(error)
                     await sleep_dur(duration=self.sleep_restart)
                 else:
                     while True:
                         try:
                             event = next(
                                 key
-                                for (key, value) in self.events.items()
+                                for (key, value) in self._events.items()
                                 if value.is_set()
                             )
                         except StopIteration:
-                            await self.core()
+                            await self._core()
                             await sleep_dur(duration=self.sleep_core)
                         else:
-                            raise self.events_and_exceptions[event]
+                            self._raise_error(event)
             except Exception as error:  # noqa: BLE001
-                self.error_upon_core(error)
+                self._error_upon_core(error)
                 await sleep_dur(duration=self.sleep_restart)
 
-    @property
-    @abstractmethod
-    def events_and_exceptions(self) -> Mapping[THashable, MaybeType[BaseException]]:
-        """A mapping of events to exceptions."""
+    async def _run_multiple_loopers(self, *loopers: InfiniteLooper) -> None:
+        """Run multiple loopers."""
+        while True:
+            self._reset_events()
+            try:
+                async with TaskGroup() as tg:
+                    _ = tg.create_task(self._run_looper())
+                    _ = [tg.create_task(looper()) for looper in loopers]
+            except Exception as error:  # noqa: BLE001
+                self._error_upon_core(error)
+                await sleep_dur(duration=self.sleep_restart)
 
-    async def initialize(self) -> None:
+    async def _initialize(self) -> None:
         """Initialize the loop."""
 
-    async def core(self) -> None:
+    async def _core(self) -> None:
         """Run the core."""
 
-    def error_upon_initialize(self, error: Exception, /) -> None:
+    def _error_upon_initialize(self, error: Exception, /) -> None:
+        """Handle any errors upon initializing the looper."""
         _ = error
 
-    def error_upon_core(self, error: Exception, /) -> None:
+    def _error_upon_core(self, error: Exception, /) -> None:
+        """Handle any errors upon running the core function."""
         _ = error
+
+    def _raise_error(self, event: THashable, /) -> NoReturn:
+        """Raise the error corresponding to given event."""
+        raise dict(self._yield_events_and_exceptions())[event]
 
     def _reset_events(self) -> None:
         """Reset the events."""
-        self.events = {event: Event() for event in self.events_and_exceptions}
+        self._events = {
+            event: Event() for event, _ in self._yield_events_and_exceptions()
+        }
+
+    def _set_event(self, event: THashable, /) -> None:
+        """Set the given event."""
+        self._events[event].set()
+
+    @abstractmethod
+    def _yield_events_and_exceptions(
+        self,
+    ) -> Iterator[tuple[THashable, MaybeType[BaseException]]]:
+        """Yield the events & exceptions."""
+
+    def _yield_loopers(self) -> Iterator[InfiniteLooper]:
+        """Yield any other infinite loopers which must also be run."""
+        yield from []
 
 
 ##
