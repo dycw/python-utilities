@@ -271,6 +271,7 @@ class TestPublisherIQL:
         assert buffer.getvalue() == text.encode()
 
     @given(data=data())
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_error(self, *, data: DataObject) -> None:
         async with yield_test_redis(data) as test:
             publisher = PublisherIQL(redis=test.redis)
