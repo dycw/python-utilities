@@ -628,7 +628,7 @@ class PublisherIQL(InfiniteQueueLooper[None, tuple[str, EncodableT]]):
     def _yield_events_and_exceptions(
         self,
     ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
-        yield (None, PublisherIQLError)
+        yield (None, PublisherIQLError)  # skipif-ci-and-not-linux
 
 
 @dataclass(kw_only=True)
@@ -637,7 +637,7 @@ class PublisherIQLError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Error running {get_class_name(self.publisher)!r}"
+        return f"Error running {get_class_name(self.publisher)!r}"  # skipif-ci-and-not-linux
 
 
 ##
