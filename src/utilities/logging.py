@@ -587,19 +587,19 @@ def setup_logging(
 
     # console
     if console_level is not None:  # skipif-ci-and-windows
-        console_low_handler = StreamHandler(stream=stdout)
-        add_filters(console_low_handler, lambda x: x.levelno < ERROR)
-        add_filters(console_low_handler, *console_filters)
-        add_filters(console_low_handler, *filters)
-        console_low_handler.setFormatter(console_formatter)
-        console_low_handler.setLevel(console_level)
-        logger_use.addHandler(console_low_handler)
+        console_low_or_no_exc_handler = StreamHandler(stream=stdout)
+        add_filters(console_low_or_no_exc_handler, _console_low_or_no_exc_filter)
+        add_filters(console_low_or_no_exc_handler, *console_filters)
+        add_filters(console_low_or_no_exc_handler, *filters)
+        console_low_or_no_exc_handler.setFormatter(console_formatter)
+        console_low_or_no_exc_handler.setLevel(console_level)
+        logger_use.addHandler(console_low_or_no_exc_handler)
 
-        console_high_handler = StreamHandler(stream=stdout)
-        add_filters(console_high_handler, *console_filters)
-        add_filters(console_high_handler, *filters)
+        console_high_and_exc_handler = StreamHandler(stream=stdout)
+        add_filters(console_high_and_exc_handler, *console_filters)
+        add_filters(console_high_and_exc_handler, *filters)
         _ = RichTracebackFormatter.create_and_set(
-            console_high_handler,
+            console_high_and_exc_handler,
             version=formatter_version,
             max_width=formatter_max_width,
             indent_size=formatter_indent_size,
@@ -610,10 +610,10 @@ def setup_logging(
             detail=True,
             post=_ansi_wrap_red,
         )
-        console_high_handler.setLevel(
+        console_high_and_exc_handler.setLevel(
             max(get_logging_level_number(console_level), ERROR)
         )
-        logger_use.addHandler(console_high_handler)
+        logger_use.addHandler(console_high_and_exc_handler)
 
     # debug & info
     directory = resolve_path(path=files_dir)  # skipif-ci-and-windows
@@ -640,7 +640,7 @@ def setup_logging(
     standalone_file_handler = StandaloneFileHandler(  # skipif-ci-and-windows
         level=ERROR, path=directory.joinpath("errors")
     )
-    add_filters(standalone_file_handler, lambda x: x.exc_info is not None)
+    add_filters(standalone_file_handler, _standalone_file_filter)
     standalone_file_handler.setFormatter(
         RichTracebackFormatter(
             version=formatter_version,
@@ -658,6 +658,16 @@ def setup_logging(
     # extra
     if extra is not None:  # skipif-ci-and-windows
         extra(logger_use)
+
+
+def _console_low_or_no_exc_filter(record: LogRecord, /) -> bool:
+    return (record.levelno < ERROR) or (
+        (record.levelno >= ERROR) and (record.exc_info is None)
+    )
+
+
+def _standalone_file_filter(record: LogRecord, /) -> bool:
+    return record.exc_info is not None
 
 
 ##
