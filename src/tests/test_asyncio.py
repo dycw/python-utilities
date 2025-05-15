@@ -375,6 +375,30 @@ class TestInfiniteLooper:
                 with raises(FalseError):
                     _ = await looper()
 
+    async def test_hashable(self) -> None:
+        class CustomError(BaseException): ...
+
+        @dataclass(kw_only=True, unsafe_hash=True)
+        class Example(InfiniteLooper[None]):
+            counter: int = 0
+
+            @override
+            async def _initialize(self) -> None:
+                self.counter = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+
+            @override
+            def _yield_events_and_exceptions(
+                self,
+            ) -> Iterator[tuple[bool, MaybeType[BaseException]]]:
+                yield (None, CustomError)
+
+        looper = Example(sleep_core=0.1)
+        _ = hash(looper)
+
     async def test_multiple(self) -> None:
         class ChildError(BaseException): ...
 

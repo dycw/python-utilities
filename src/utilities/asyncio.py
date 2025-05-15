@@ -326,7 +326,7 @@ class ExceptionProcessor(QueueProcessor[Exception | type[Exception]]):
 ##
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, unsafe_hash=True)
 class InfiniteLooper(ABC, Generic[THashable]):
     """An infinite loop which can throw exceptions by setting events."""
 
@@ -334,7 +334,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
     sleep_restart: Duration = MINUTE
     logger: str | None = None
     _events: Mapping[THashable, Event] = field(
-        default_factory=dict, init=False, repr=False
+        default_factory=dict, init=False, repr=False, hash=False
     )
 
     def __post_init__(self) -> None:

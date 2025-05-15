@@ -9,7 +9,12 @@ from typing import TYPE_CHECKING, override
 
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
-from utilities.asyncio import QueueProcessor, sleep_dur, timeout_dur
+from utilities.asyncio import (
+    InfiniteQueueLooper,
+    QueueProcessor,
+    sleep_dur,
+    timeout_dur,
+)
 from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float
 from utilities.functools import cache
 from utilities.math import safe_round
@@ -95,6 +100,49 @@ class SlackHandler(Handler, QueueProcessor[str]):
             await sleep_dur(duration=self.sleep)
 
 
+@dataclass(init=False, unsafe_hash=True)
+class SlackHandlerIQL(Handler, InfiniteQueueLooper[None, str]):
+    """Handler for sending messages to Slack."""
+
+    @override
+    def __init__(
+        self,
+        url: str,
+        /,
+        *,
+        level: int = NOTSET,
+        sleep_core: Duration = _SLEEP,
+        sleep_restart: Duration = _SLEEP,
+        queue_type: type[Queue[str]] = Queue,
+        sender: Callable[[str, str], Coroutine1[None]] = _send_adapter,
+        timeout: Duration = _TIMEOUT,
+    ) -> None:
+        InfiniteQueueLooper.__init__(  # InfiniteQueueLooper first
+            self, queue_type=queue_type
+        )
+        InfiniteQueueLooper.__post_init__(self)
+        Handler.__init__(self, level=level)
+        self.url = url
+        self.sender = sender
+        self.timeout = timeout
+        self.sleep_core = sleep_core
+        self.sleep_restart = sleep_restart
+
+    @override
+    def emit(self, record: LogRecord) -> None:
+        try:
+            self.put_items_nowait(self.format(record))
+        except Exception:  # noqa: BLE001  # pragma: no cover
+            self.handleError(record)
+
+    @override
+    async def _process_items(self, *items: str) -> None:
+        """Process the first item."""
+        text = "\n".join(items)
+        async with timeout_dur(duration=self.timeout):
+            await self.sender(self.url, text)
+
+
 ##
 
 
@@ -128,4 +176,4 @@ def _get_client(url: str, /, *, timeout: Duration = _TIMEOUT) -> AsyncWebhookCli
     return AsyncWebhookClient(url, timeout=timeout_use)
 
 
-__all__ = ["SendToSlackError", "SlackHandler", "send_to_slack"]
+__all__ = ["SendToSlackError", "SlackHandler", "SlackHandlerIQL", "send_to_slack"]

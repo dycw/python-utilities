@@ -9,11 +9,17 @@ from aiohttp import InvalidUrlClientError
 from pytest import mark, raises
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
+from utilities.asyncio import EnhancedTaskGroup, sleep_dur
 from utilities.datetime import MINUTE
 from utilities.iterables import one
 from utilities.os import get_env_var
 from utilities.pytest import throttle
-from utilities.slack_sdk import SlackHandler, _get_client, send_to_slack
+from utilities.slack_sdk import (
+    SlackHandler,
+    SlackHandlerIQL,
+    _get_client,
+    send_to_slack,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -138,3 +144,45 @@ class TestSlackHandler:
                     "message %d from %s", i, TestSlackHandler.test_real.__qualname__
                 )
         await sleep(0.1)
+
+
+class TestSlackHandlerIQL:
+    async def test_main(self, *, tmp_path: Path) -> None:
+        messages: Sequence[str] = []
+
+        async def sender(_: str, text: str, /) -> None:
+            await sleep(0.01)
+            messages.append(text)
+
+        logger = getLogger(str(tmp_path))
+        logger.addHandler(handler := SlackHandlerIQL("url", sender=sender))
+
+        async def sleep_then_log() -> None:
+            await sleep_dur(duration=0.1)
+            logger.warning("message")
+
+        with raises(ExceptionGroup):  # noqa: PT012
+            async with EnhancedTaskGroup(timeout=0.5) as tg:
+                _ = tg.create_task(handler())
+                _ = tg.create_task(sleep_then_log())
+
+        assert messages == ["message"]
+
+    @mark.skipif(get_env_var("SLACK", nullable=True) is None, reason="'SLACK' not set")
+    @throttle(duration=5 * MINUTE)
+    async def test_real(self, *, tmp_path: Path) -> None:
+        url = get_env_var("SLACK")
+        logger = getLogger(str(tmp_path))
+        logger.addHandler(handler := SlackHandlerIQL(url))
+
+        async def sleep_then_log() -> None:
+            await sleep_dur(duration=0.1)
+            for i in range(10):
+                logger.warning(
+                    "message %d from %s", i, TestSlackHandlerIQL.test_real.__qualname__
+                )
+
+        with raises(ExceptionGroup):  # noqa: PT012
+            async with EnhancedTaskGroup(timeout=0.5) as tg:
+                _ = tg.create_task(handler())
+                _ = tg.create_task(sleep_then_log())
