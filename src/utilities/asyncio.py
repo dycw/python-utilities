@@ -23,8 +23,9 @@ from contextlib import (
     asynccontextmanager,
     suppress,
 )
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from io import StringIO
+from logging import getLogger
 from subprocess import PIPE
 from sys import stderr, stdout
 from typing import (
@@ -41,9 +42,10 @@ from typing import (
 
 from utilities.datetime import MILLISECOND, MINUTE, SECOND, datetime_duration_to_float
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import ensure_int, ensure_not_none
+from utilities.functions import ensure_int, ensure_not_none, get_class_name
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import (
+    LoggerOrName,
     MaybeCallableEvent,
     MaybeType,
     THashable,
@@ -58,6 +60,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from utilities.types import Duration
+
 
 _T = TypeVar("_T")
 
@@ -328,11 +331,12 @@ class ExceptionProcessor(QueueProcessor[Exception | type[Exception]]):
 class InfiniteLooper(ABC, Generic[THashable]):
     """An infinite loop which can throw exceptions by setting events."""
 
+    sleep_core: Duration = SECOND
+    sleep_restart: Duration = MINUTE
+    logger: str | None = None
     _events: Mapping[THashable, Event] = field(
         default_factory=dict, init=False, repr=False
     )
-    sleep_core: Duration = SECOND
-    sleep_restart: Duration = MINUTE
 
     def __post_init__(self) -> None:
         self._events = {
@@ -395,11 +399,23 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
     def _error_upon_initialize(self, error: Exception, /) -> None:
         """Handle any errors upon initializing the looper."""
-        _ = error
+        if self.logger is not None:
+            getLogger(name=self.logger).error(
+                "Error initializing %r due to %s; sleeping for %s...",
+                get_class_name(self),
+                error,
+                self.sleep_restart,
+            )
 
     def _error_upon_core(self, error: Exception, /) -> None:
         """Handle any errors upon running the core function."""
-        _ = error
+        if self.logger is not None:
+            getLogger(name=self.logger).error(
+                "Error running core part of %r due to %s; sleeping for %s...",
+                get_class_name(self),
+                error,
+                self.sleep_restart,
+            )
 
     def _raise_error(self, event: THashable, /) -> NoReturn:
         """Raise the error corresponding to given event."""
@@ -452,9 +468,11 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     _queue: Queue[_T] = field(init=False)
     _current: Queue[_T] = field(init=False)
 
+    logger: InitVar[LoggerOrName | None] = None
+
     @override
-    def __post_init__(self) -> None:
-        super().__post_init__()
+    def __post_init__(self, logger: LoggerOrName | None, /) -> None:
+        super().__post_init__(logger)
         self._queue = self.queue_type()
         self._current = self.queue_type()
 

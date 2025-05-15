@@ -536,7 +536,7 @@ class TestInfiniteQueueLooper:
 
             @override
             async def _process_items(self, *items: int) -> None:
-                raise CustomError
+                raise CustomError(*items)
 
         processor = Example(sleep_core=0.1)
         processor.put_items_nowait(1)
