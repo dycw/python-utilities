@@ -400,9 +400,9 @@ class InfiniteLooper(ABC, Generic[THashable]):
         """Handle any errors upon initializing the looper."""
         if self.logger is not None:
             getLogger(name=self.logger).error(
-                "Error initializing %r due to %s; sleeping for %s...",
+                "Error initializing %r due to %r; sleeping for %s...",
                 get_class_name(self),
-                error,
+                repr(error),
                 self.sleep_restart,
             )
 
@@ -410,9 +410,9 @@ class InfiniteLooper(ABC, Generic[THashable]):
         """Handle any errors upon running the core function."""
         if self.logger is not None:
             getLogger(name=self.logger).error(
-                "Error running core part of %r due to %s; sleeping for %s...",
+                "Error running %r due to %r; sleeping for %s...",
                 get_class_name(self),
-                error,
+                repr(error),
                 self.sleep_restart,
             )
 
