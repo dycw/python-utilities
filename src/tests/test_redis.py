@@ -246,25 +246,28 @@ class TestPublisherIQL:
     )
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_text_without_serialize(
-        self, *, capsys: CaptureFixture, data: DataObject, channel: str, text: str
+        self, *, data: DataObject, channel: str, text: str
     ) -> None:
-        BytesIO()
+        buffer = BytesIO()
         async with yield_test_redis(data) as test:
 
             async def listener() -> None:
                 async for bytes_i in subscribe(test.redis.pubsub(), channel):
-                    print(bytes_i)  # noqa: T201
+                    _ = buffer.write(bytes_i)
 
-            task = create_task(listener())
-            await sleep(0.1)
-            _ = await publish(test.redis, channel, text)
-            await sleep(0.1)
-            try:
-                out = capsys.readouterr().out
-                expected = f"{text.encode()}\n"
-                assert out == expected
-            finally:
-                _ = task.cancel()
+            publisher = PublisherIQL(redis=test.redis, sleep_core=0.1)
+
+            async def sleep_then_put() -> None:
+                await sleep_dur(duration=0.1)
+                publisher.put_items_nowait((channel, text))
+
+            with raises(ExceptionGroup):  # noqa: PT012
+                async with EnhancedTaskGroup(timeout=1.0) as tg:
+                    _ = tg.create_task(publisher())
+                    _ = tg.create_task(listener())
+                    _ = tg.create_task(sleep_then_put())
+
+        assert buffer.getvalue() == text.encode()
 
 
 class TestSubscribeMessages:
