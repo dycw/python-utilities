@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from asyncio import create_task, get_running_loop, sleep
+from io import BytesIO, StringIO
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, Phase, given, settings
@@ -17,6 +18,7 @@ from redis.asyncio import Redis
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_operator import make_objects
+from utilities.asyncio import EnhancedTaskGroup, sleep_dur
 from utilities.functions import get_class_name
 from utilities.hypothesis import (
     int64s,
@@ -28,6 +30,7 @@ from utilities.hypothesis import (
 from utilities.orjson import deserialize, serialize
 from utilities.redis import (
     Publisher,
+    PublisherIQL,
     publish,
     redis_hash_map_key,
     redis_key,
@@ -118,7 +121,7 @@ class TestPublisher:
     @given(
         data=data(),
         channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublishAndSubscribe)}_obj_ser_{c}"
+            lambda c: f"{get_class_name(TestPublisher)}_obj_ser_{c}"
         ),
         obj=make_objects(),
     )
@@ -157,7 +160,7 @@ class TestPublisher:
     @given(
         data=data(),
         channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublishAndSubscribe)}_text_no_ser_{c}"
+            lambda c: f"{get_class_name(TestPublisher)}_text_no_ser_{c}"
         ),
         text=text_ascii(min_size=1),
     )
@@ -175,6 +178,82 @@ class TestPublisher:
             async def listener() -> None:
                 async for msg in subscribe(test.redis.pubsub(), channel):
                     print(msg)  # noqa: T201
+
+            task = create_task(listener())
+            await sleep(0.1)
+            _ = await publish(test.redis, channel, text)
+            await sleep(0.1)
+            try:
+                out = capsys.readouterr().out
+                expected = f"{text.encode()}\n"
+                assert out == expected
+            finally:
+                _ = task.cancel()
+
+
+class TestPublisherIQL:
+    @given(
+        data=data(),
+        channel=text_ascii(min_size=1).map(
+            lambda c: f"{get_class_name(TestPublisherIQL)}_main_{c}"
+        ),
+        obj=make_objects(),
+    )
+    @mark.flaky
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_main(self, *, data: DataObject, channel: str, obj: Any) -> None:
+        buffer = StringIO()
+        async with yield_test_redis(data) as test:
+
+            async def listener() -> None:
+                async for obj_i in subscribe(
+                    test.redis.pubsub(), channel, deserializer=deserialize
+                ):
+                    _ = buffer.write(str(obj_i))
+
+            publisher = PublisherIQL(
+                redis=test.redis, serializer=serialize, sleep_core=0.1
+            )
+
+            async def sleep_then_put() -> None:
+                await sleep_dur(duration=0.1)
+                publisher.put_items_nowait((channel, obj))
+
+            with raises(ExceptionGroup):  # noqa: PT012
+                async with EnhancedTaskGroup(timeout=1.0) as tg:
+                    _ = tg.create_task(publisher())
+                    _ = tg.create_task(listener())
+                    _ = tg.create_task(sleep_then_put())
+
+        assert buffer.getvalue() == str(obj)
+
+    @given(
+        data=data(),
+        channel=text_ascii(min_size=1).map(
+            lambda c: f"{get_class_name(TestPublisherIQL)}_text_without_serialize_{c}"
+        ),
+        text=text_ascii(min_size=1),
+    )
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_text_without_serialize(
+        self, *, capsys: CaptureFixture, data: DataObject, channel: str, text: str
+    ) -> None:
+        BytesIO()
+        async with yield_test_redis(data) as test:
+
+            async def listener() -> None:
+                async for bytes_i in subscribe(test.redis.pubsub(), channel):
+                    print(bytes_i)  # noqa: T201
 
             task = create_task(listener())
             await sleep(0.1)

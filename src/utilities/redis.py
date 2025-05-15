@@ -21,7 +21,7 @@ from uuid import UUID, uuid4
 from redis.asyncio import Redis
 from redis.typing import EncodableT
 
-from utilities.asyncio import QueueProcessor, timeout_dur
+from utilities.asyncio import InfiniteQueueLooper, QueueProcessor, timeout_dur
 from utilities.datetime import (
     MILLISECOND,
     SECOND,
@@ -30,7 +30,7 @@ from utilities.datetime import (
     get_now,
 )
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import ensure_int
+from utilities.functions import ensure_int, get_class_name
 from utilities.iterables import always_iterable, one
 
 if TYPE_CHECKING:
@@ -40,6 +40,7 @@ if TYPE_CHECKING:
         Awaitable,
         Callable,
         Iterable,
+        Iterator,
         Mapping,
         Sequence,
     )
@@ -49,7 +50,7 @@ if TYPE_CHECKING:
     from redis.typing import ResponseT
 
     from utilities.iterables import MaybeIterable
-    from utilities.types import Duration, TypeLike
+    from utilities.types import Duration, MaybeType, TypeLike
 
 
 _K = TypeVar("_K")
@@ -603,6 +604,42 @@ class Publisher(QueueProcessor[tuple[str, EncodableT]]):
         )
 
 
+@dataclass(kw_only=True)
+class PublisherIQL(InfiniteQueueLooper[None, tuple[str, EncodableT]]):
+    """Publish a set of messages to Redis."""
+
+    redis: Redis
+    serializer: Callable[[Any], EncodableT] | None = None
+    timeout: Duration = _PUBLISH_TIMEOUT
+
+    @override
+    async def _process_items(self, *items: tuple[str, EncodableT]) -> None:
+        for item in items:  # skipif-ci-and-not-linux
+            channel, data = item
+            _ = await publish(
+                self.redis,
+                channel,
+                data,
+                serializer=self.serializer,
+                timeout=self.timeout,
+            )
+
+    @override
+    def _yield_events_and_exceptions(
+        self,
+    ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
+        yield (None, PublisherIQLError)
+
+
+@dataclass(kw_only=True)
+class PublisherIQLError(Exception):
+    publisher: PublisherIQL
+
+    @override
+    def __str__(self) -> str:
+        return f"Error running {get_class_name(self.publisher)!r}"
+
+
 ##
 
 
@@ -780,6 +817,8 @@ _ = _TestRedis
 
 __all__ = [
     "Publisher",
+    "PublisherIQL",
+    "PublisherIQLError",
     "RedisHashMapKey",
     "RedisKey",
     "publish",
