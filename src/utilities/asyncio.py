@@ -402,7 +402,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
             getLogger(name=self.logger).error(
                 "Error initializing %r due to %r; sleeping for %s...",
                 get_class_name(self),
-                get_class_name(error),
+                repr(error),
                 self.sleep_restart,
             )
 
@@ -412,7 +412,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
             getLogger(name=self.logger).error(
                 "Error running %r due to %r; sleeping for %s...",
                 get_class_name(self),
-                get_class_name(error),
+                repr(error),
                 self.sleep_restart,
             )
 
