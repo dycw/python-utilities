@@ -21,6 +21,7 @@ from hypothesis.strategies import (
     DataObject,
     data,
     integers,
+    just,
     lists,
     none,
     permutations,
@@ -434,7 +435,8 @@ class TestInfiniteLooper:
         assert 10 <= parent.child.counter <= 15
         assert 3 <= parent.counter <= 7
 
-    async def test_error_upon_initialize(self) -> None:
+    @given(logger=just("logger") | none())
+    async def test_error_upon_initialize(self, *, logger: str | None) -> None:
         class CustomError(Exception): ...
 
         @dataclass(kw_only=True)
@@ -449,9 +451,10 @@ class TestInfiniteLooper:
 
         with raises(TimeoutError):
             async with timeout_dur(duration=0.5):
-                _ = await Example(sleep_core=0.1)()
+                _ = await Example(sleep_core=0.1, logger=logger)()
 
-    async def test_error_upon_core(self) -> None:
+    @given(logger=just("logger") | none())
+    async def test_error_upon_core(self, *, logger: str | None) -> None:
         class CustomError(Exception): ...
 
         @dataclass(kw_only=True)
@@ -468,7 +471,7 @@ class TestInfiniteLooper:
 
         with raises(TimeoutError):
             async with timeout_dur(duration=0.5):
-                _ = await Example(sleep_core=0.1)()
+                _ = await Example(sleep_core=0.1, logger=logger)()
 
     async def test_error_no_event_found(self) -> None:
         @dataclass(kw_only=True)
@@ -536,7 +539,7 @@ class TestInfiniteQueueLooper:
 
             @override
             async def _process_items(self, *items: int) -> None:
-                raise CustomError
+                raise CustomError(*items)
 
         processor = Example(sleep_core=0.1)
         processor.put_items_nowait(1)

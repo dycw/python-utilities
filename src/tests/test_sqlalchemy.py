@@ -27,6 +27,7 @@ from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
+from utilities.asyncio import EnhancedTaskGroup, sleep_dur
 from utilities.hypothesis import (
     int32s,
     pairs,
@@ -44,6 +45,8 @@ from utilities.sqlalchemy import (
     TablenameMixin,
     TableOrORMInstOrClass,
     Upserter,
+    UpserterIQL,
+    UpserterIQLError,
     UpsertItemsError,
     _get_dialect,
     _get_dialect_max_params,
@@ -1175,6 +1178,48 @@ class TestUpserter:
         async with engine.begin() as conn:
             res = (await conn.execute(sel)).all()
         assert set(res) == set(pairs)
+
+
+class TestUpserterIQL:
+    @given(
+        data=data(),
+        name=_table_names(),
+        triples=_upsert_lists(nullable=True, min_size=1),
+    )
+    @mark.flaky
+    @settings(max_examples=1, phases={Phase.generate})
+    async def test_main(
+        self, *, data: DataObject, name: str, triples: list[tuple[int, bool, bool]]
+    ) -> None:
+        table = Table(
+            name,
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+        )
+        engine = await sqlalchemy_engines(data, table)
+        upserter = UpserterIQL(engine=engine, sleep_core=0.1)
+        pairs = [(id_, init) for id_, init, _ in triples]
+
+        async def sleep_then_put() -> None:
+            await sleep_dur(duration=0.1)
+            upserter.put_items_nowait((pairs, table))
+
+        with raises(ExceptionGroup):  # noqa: PT012
+            async with EnhancedTaskGroup(timeout=1.0) as tg:
+                _ = tg.create_task(upserter())
+                _ = tg.create_task(sleep_then_put())
+        sel = select(table)
+        async with engine.begin() as conn:
+            res = (await conn.execute(sel)).all()
+        assert set(res) == set(pairs)
+
+    @given(data=data())
+    async def test_error(self, *, data: DataObject) -> None:
+        engine = await sqlalchemy_engines(data)
+        upserter = UpserterIQL(engine=engine)
+        with raises(UpserterIQLError, match="Error running 'UpserterIQL'"):
+            raise UpserterIQLError(upserter=upserter)
 
 
 class TestUpsertItems:
