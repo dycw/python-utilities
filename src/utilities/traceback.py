@@ -60,6 +60,9 @@ _CALL_ARGS = "_CALL_ARGS"
 _INDENT = 4 * " "
 
 
+##
+
+
 class RichTracebackFormatter(Formatter):
     """Formatter for rich tracebacks."""
 
@@ -162,9 +165,16 @@ class RichTracebackFormatter(Formatter):
             detail=detail,
             post=post,
         )
-        handler.addFilter(lambda r: r.exc_info is not None)
+        handler.addFilter(cls._has_exc_info)
         handler.setFormatter(formatter)
         return formatter
+
+    @classmethod
+    def _has_exc_info(cls, record: LogRecord, /) -> bool:
+        return record.exc_info is not None
+
+
+##
 
 
 @dataclass(repr=False, kw_only=True, slots=True)
@@ -468,6 +478,9 @@ class _Frame:
                 _format_exception(error, depth=2),
             ])
         return indent("\n".join(lines), depth * _INDENT)
+
+
+##
 
 
 def get_rich_traceback(
