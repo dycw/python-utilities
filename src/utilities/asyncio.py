@@ -23,7 +23,7 @@ from contextlib import (
     asynccontextmanager,
     suppress,
 )
-from dataclasses import InitVar, dataclass, field
+from dataclasses import dataclass, field
 from io import StringIO
 from logging import getLogger
 from subprocess import PIPE
@@ -45,7 +45,6 @@ from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, ensure_not_none, get_class_name
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import (
-    LoggerOrName,
     MaybeCallableEvent,
     MaybeType,
     THashable,
@@ -468,11 +467,9 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     _queue: Queue[_T] = field(init=False)
     _current: Queue[_T] = field(init=False)
 
-    logger: InitVar[LoggerOrName | None] = None
-
     @override
-    def __post_init__(self, logger: LoggerOrName | None, /) -> None:
-        super().__post_init__(logger)
+    def __post_init__(self) -> None:
+        super().__post_init__()
         self._queue = self.queue_type()
         self._current = self.queue_type()
 
