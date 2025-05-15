@@ -31,6 +31,7 @@ from utilities.orjson import deserialize, serialize
 from utilities.redis import (
     Publisher,
     PublisherIQL,
+    PublisherIQLError,
     publish,
     redis_hash_map_key,
     redis_key,
@@ -268,6 +269,13 @@ class TestPublisherIQL:
                     _ = tg.create_task(sleep_then_put())
 
         assert buffer.getvalue() == text.encode()
+
+    @given(data=data())
+    async def test_error(self, *, data: DataObject) -> None:
+        async with yield_test_redis(data) as test:
+            publisher = PublisherIQL(redis=test.redis)
+            with raises(PublisherIQLError, match="Error running 'PublisherIQL'"):
+                raise PublisherIQLError(publisher=publisher)
 
 
 class TestSubscribeMessages:
