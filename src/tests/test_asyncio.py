@@ -447,10 +447,10 @@ class TestInfiniteLooper:
         assert 19 <= external <= 21
 
     async def test_with_coroutine_self_error(self) -> None:
+        class CustomError(Exception): ...
+
         async def dummy() -> None:
             _ = await Event().wait()
-
-        class CustomError(Exception): ...
 
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
@@ -465,7 +465,7 @@ class TestInfiniteLooper:
             @override
             async def _core(self) -> None:
                 self.counter += 1
-                if self.counter >= 3:
+                if self.counter >= 5:
                     raise CustomError
 
             @override
@@ -482,17 +482,17 @@ class TestInfiniteLooper:
         with raises(TimeoutError):
             async with timeout_dur(duration=1.0):
                 await obj()
-        assert 6 <= obj.initializations <= 8
+        assert 16 <= obj.initializations <= 8
+        assert 11 <= obj.counter <= 3
 
-    @mark.skip
     async def test_with_coroutine_other_coroutine_error(self) -> None:
+        class CustomError(Exception): ...
+
         async def dummy() -> None:
             for i in count():
-                if i >= 3:
+                if i >= 5:
                     raise CustomError
-                await sleep(0.1)
-
-        class CustomError(Exception): ...
+                await sleep(0.05)
 
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
@@ -505,6 +505,10 @@ class TestInfiniteLooper:
                 self.counter = 0
 
             @override
+            async def _core(self) -> None:
+                self.counter += 1
+
+            @override
             def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
                 yield dummy
 
@@ -514,11 +518,12 @@ class TestInfiniteLooper:
             ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
                 yield (None, CustomError)
 
-        obj = Example(sleep_core=0.1, sleep_restart=0.1)
-        with raises(TimeoutError):
+        obj = Example(sleep_core=0.05, sleep_restart=0.05)
+        with raises(CancelledError):
             async with timeout_dur(duration=1.0):
                 await obj()
         assert 3 <= obj.initializations <= 5
+        assert 1 <= obj.counter <= 3
 
     @given(logger=just("logger") | none())
     async def test_error_upon_initialize(self, *, logger: str | None) -> None:
