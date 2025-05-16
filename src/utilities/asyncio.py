@@ -493,9 +493,7 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     @override
     async def _core(self) -> None:
         """Run the core part of the loop."""
-        items = get_items_nowait(self._queue)
-        if len(items) == 0:
-            return
+        items = await get_items(self._queue)
         try:
             await self._process_items(*items)
         except Exception as error:  # noqa: BLE001
