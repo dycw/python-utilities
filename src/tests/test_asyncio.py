@@ -399,7 +399,6 @@ class TestInfiniteLooper:
         looper = Example(sleep_core=0.1)
         _ = hash(looper)
 
-    @mark.only
     async def test_with_coroutines(self) -> None:
         external: int = 0
 
@@ -436,75 +435,64 @@ class TestInfiniteLooper:
             ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
                 yield (None, CustomError)
 
-        parent = Example(sleep_core=0.1)
+        obj = Example(sleep_core=0.1)
         with raises(BaseExceptionGroup) as error:
             async with timeout_dur(duration=1.5):
-                await parent()
+                await obj()
         inner = one(error.value.exceptions)
         assert isinstance(inner, CustomError)
-        assert 10 <= parent.counter <= 15
+        assert 10 <= obj.counter <= 15
         assert 3 <= external <= 7
 
-    @mark.skip
+    @mark.only
     async def test_with_coroutine_broken(self) -> None:
-        class ChildError(BaseException): ...
+        external: int = 0
+
+        async def increment_externally(obj: Example, /) -> None:
+            nonlocal external
+            while True:
+                external += 1
+                obj.counter += 1
+                await sleep(0.1)
+
+        class CustomError(Exception): ...
 
         @dataclass(kw_only=True)
-        class Child(InfiniteLooper[None]):
+        class Example(InfiniteLooper[None]):
+            initializations: int = 0
             counter: int = 0
 
             @override
             async def _initialize(self) -> None:
+                self.initializations += 1
                 self.counter = 0
 
             @override
             async def _core(self) -> None:
                 self.counter += 1
-                if self.counter >= 10:
-                    self._set_event(None)
-
-            @override
-            def _yield_events_and_exceptions(
-                self,
-            ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
-                yield (None, ChildError)
-
-        class ParentError(BaseException): ...
-
-        @dataclass(kw_only=True)
-        class Parent(InfiniteLooper[None]):
-            counter: int = 0
-            child: Child
-
-            @override
-            async def _initialize(self) -> None:
-                self.counter = 0
-
-            @override
-            async def _core(self) -> None:
-                self.counter += 1
-                self.child.counter += 1
                 if self.counter >= 10:
                     self._set_event(None)
 
             @override
             def _yield_coroutines(self) -> Iterator[Coroutine1[None]]:
-                yield self.child()
+                yield increment_externally(self)
 
             @override
             def _yield_events_and_exceptions(
                 self,
             ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
-                yield (None, ParentError)
+                yield (None, CustomError)
 
-        parent = Parent(sleep_core=0.1, child=Child(sleep_core=0.1))
-        with raises(BaseExceptionGroup) as error:
+            @override
+            def _error_upon_core(self, error: Exception, /) -> None:
+                """Handle any errors upon running the core function."""
+                breakpoint()
+
+        obj = Example(sleep_core=0.01)
+        with raises(TimeoutError):
             async with timeout_dur(duration=1.5):
-                await parent()
-        inner = one(error.value.exceptions)
-        assert isinstance(inner, ChildError)
-        assert 10 <= parent.child.counter <= 15
-        assert 3 <= parent.counter <= 7
+                await obj()
+        assert obj.initializations == 5
 
     @given(logger=just("logger") | none())
     async def test_error_upon_initialize(self, *, logger: str | None) -> None:
