@@ -364,7 +364,9 @@ class InfiniteLooper(ABC, Generic[THashable]):
                     await self._initialize()
                     _LOGGER.info("Finished calling _initialize")
                 except Exception as error:  # noqa: BLE001
+                    _LOGGER.info("Error calling _initialize")
                     self._error_upon_initialize(error)
+                    _LOGGER.info(f"About to sleep for {self.sleep_restart}")
                     await sleep_dur(duration=self.sleep_restart)
                 else:
                     while True:
@@ -391,6 +393,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 _LOGGER.info("About to call _error_upon_core")
                 self._error_upon_core(error)
                 _LOGGER.info("Finished calling _error_upon_core")
+                _LOGGER.info(f"About to sleep for {self.sleep_restart}")
                 await sleep_dur(duration=self.sleep_restart)
 
     async def _run_looper_with_coroutines(self, *coroutines: Coroutine1) -> None:
@@ -401,9 +404,11 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 async with TaskGroup() as tg:
                     _ = tg.create_task(self._run_looper())
                     _ = list(map(tg.create_task, coroutines))
-            except Exception as error:  # noqa: BLE001
-                self._error_upon_core(error)  # pragma: no cover
-                await sleep_dur(duration=self.sleep_restart)  # pragma: no cover
+            except ExceptionGroup as error:
+                _LOGGER.info("Got error")
+                self._error_group_upon_coroutines(error)
+                _LOGGER.info(f"About to sleep for {self.sleep_restart}")
+                await sleep_dur(duration=self.sleep_restart)
 
     async def _initialize(self) -> None:
         """Initialize the loop."""
@@ -430,6 +435,33 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 repr(error),
                 self.sleep_restart,
             )
+
+    def _error_group_upon_coroutines(self, group: ExceptionGroup, /) -> None:
+        """Handle any errors upon running the core function."""
+        if self.logger is not None:
+            logger = getLogger(name=self.logger)
+            errors = group.exceptions
+            n = len(errors)
+            for i, error_i in enumerate(errors, start=1):
+                if i < n:
+                    logger.error(
+                        "Error #%d/%d running %r due to %s",
+                        i,
+                        len(errors),
+                        get_class_name(self),
+                        # repr(error_i),
+                        error_i,
+                    )
+                else:
+                    logger.error(
+                        "Error #%d/%d running %r due to %s; sleeping for %s...",
+                        i,
+                        len(errors),
+                        get_class_name(self),
+                        # repr(error_i),
+                        error_i,
+                        self.sleep_restart,
+                    )
 
     def _raise_error(self, event: THashable, /) -> NoReturn:
         """Raise the error corresponding to given event."""

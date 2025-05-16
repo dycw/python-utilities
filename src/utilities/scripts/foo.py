@@ -69,15 +69,6 @@ class Example(InfiniteLooper[None]):
     ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
         yield (None, CustomError)
 
-    @override
-    def _error_upon_core(self, error: Exception, /) -> None:
-        """Handle any errors upon running the core function."""
-        if isinstance(error, ExceptionGroup):
-            for i, error_i in enumerate(error.exceptions, start=1):
-                logger.warning(f"Error #{i}: {error_i!r}")
-        else:
-            logger.warning(f"Non-group error: {error!r}")
-
     async def increment_externally(self) -> None:
         global external
         while True:
@@ -116,6 +107,7 @@ class DebuggableCoro:
 class QueueExample(InfiniteQueueLooper[None, dict[str, Any]]):
     """Merge set of real time bars across data groups."""
 
+    logger: str = __name__
     sleep_core: Duration = 1000 * MILLISECOND
     sleep_restart: Duration = 5 * SECOND
     subscribe_sleep: Duration = MILLISECOND
