@@ -647,7 +647,7 @@ class TestInfiniteQueueLooper:
         looper.put_items_nowait(1)
         with raises(
             InfiniteQueueLooperError,
-            match=r"Encountered CustomError\(1\) whilst processing 1 item\(s\): \[1\]",
+            match=r"'Example' encountered CustomError\(1\) whilst processing 1 item\(s\): \[1\]",
         ):
             _ = await looper._core()
 

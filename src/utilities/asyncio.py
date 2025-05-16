@@ -30,6 +30,7 @@ from subprocess import PIPE
 from sys import stderr, stdout
 from typing import (
     TYPE_CHECKING,
+    Any,
     Generic,
     NoReturn,
     Self,
@@ -466,11 +467,12 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
 @dataclass(kw_only=True, slots=True)
 class InfiniteLooperError(Exception):
+    looper: InfiniteLooper[Any]
     event: Hashable
 
     @override
     def __str__(self) -> str:
-        return f"No event {self.event!r} found"
+        return f"{get_class_name(self.looper)!r} does not have an event {self.event!r}"
 
 
 ##
@@ -497,7 +499,9 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
         try:
             await self._process_items(*items)
         except Exception as error:  # noqa: BLE001
-            raise InfiniteQueueLooperError(items=items, error=error) from None
+            raise InfiniteQueueLooperError(
+                looper=self, items=items, error=error
+            ) from None
 
     @abstractmethod
     async def _process_items(self, *items: _T) -> None:
@@ -526,12 +530,13 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
 
 @dataclass(kw_only=True, slots=True)
 class InfiniteQueueLooperError(Exception, Generic[_T]):
+    looper: InfiniteQueueLooper[Any, Any]
     items: Sequence[_T]
     error: Exception
 
     @override
     def __str__(self) -> str:
-        return f"Encountered {repr_error(self.error)} whilst processing {len(self.items)} item(s): {get_repr(self.items)}"
+        return f"{get_class_name(self.looper)!r} encountered {repr_error(self.error)} whilst processing {len(self.items)} item(s): {get_repr(self.items)}"
 
 
 ##
