@@ -482,8 +482,8 @@ class TestInfiniteLooper:
         with raises(TimeoutError):
             async with timeout_dur(duration=1.0):
                 await obj()
-        assert 16 <= obj.initializations <= 8
-        assert 11 <= obj.counter <= 3
+        assert 3 <= obj.initializations <= 5
+        assert 0 <= obj.counter <= 5
 
     async def test_with_coroutine_other_coroutine_error(self) -> None:
         class CustomError(Exception): ...
