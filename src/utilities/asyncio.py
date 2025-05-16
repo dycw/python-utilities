@@ -41,8 +41,9 @@ from typing import (
 )
 
 from utilities.datetime import MILLISECOND, MINUTE, SECOND, datetime_duration_to_float
-from utilities.errors import ImpossibleCaseError
+from utilities.errors import ImpossibleCaseError, repr_error
 from utilities.functions import ensure_int, ensure_not_none, get_class_name
+from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import (
     Coroutine1,
@@ -63,8 +64,6 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
-
-_LOGGER = getLogger(__name__)
 
 
 ##
@@ -405,9 +404,9 @@ class InfiniteLooper(ABC, Generic[THashable]):
         """Handle any errors upon initializing the looper."""
         if self.logger is not None:
             getLogger(name=self.logger).error(
-                "Error initializing %r due to %r; sleeping for %s...",
+                "%r encountered %r whilst initializing; sleeping for %s...",
                 get_class_name(self),
-                repr(error),
+                repr_error(error),
                 self.sleep_restart,
             )
 
@@ -415,36 +414,24 @@ class InfiniteLooper(ABC, Generic[THashable]):
         """Handle any errors upon running the core function."""
         if self.logger is not None:
             getLogger(name=self.logger).error(
-                "Error running %r due to %r; sleeping for %s...",
+                "%r encountered %r; sleeping for %s...",
                 get_class_name(self),
-                repr(error),
+                repr_error(error),
                 self.sleep_restart,
             )
 
     def _error_group_upon_coroutines(self, group: ExceptionGroup, /) -> None:
         """Handle any errors upon running the core function."""
         if self.logger is not None:
-            logger = getLogger(name=self.logger)
             errors = group.exceptions
             n = len(errors)
-            for i, error_i in enumerate(errors, start=1):
-                if i < n:
-                    logger.error(
-                        "Error #%d/%d running %r due to %s",
-                        i,
-                        len(errors),
-                        get_class_name(self),
-                        error_i,
-                    )
-                else:
-                    logger.error(
-                        "Error #%d/%d running %r due to %s; sleeping for %s...",
-                        i,
-                        len(errors),
-                        get_class_name(self),
-                        error_i,
-                        self.sleep_restart,
-                    )
+            msgs = [f"{get_class_name(self)!r} encountered {n} error(s):"]
+            msgs.extend(
+                f"- Error #{i}/{n}: {repr_error(e)}"
+                for i, e in enumerate(errors, start=1)
+            )
+            msgs.append(f"Sleeping for {self.sleep_restart}...")
+            getLogger(name=self.logger).error("\n".join(msgs))
 
     def _raise_error(self, event: THashable, /) -> NoReturn:
         """Raise the error corresponding to given event."""
@@ -504,21 +491,13 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     @override
     async def _core(self) -> None:
         """Run the core part of the loop."""
-        _LOGGER.info("About to call get_items_nowait")
         items = get_items_nowait(self._queue)
-        _LOGGER.info("Finished calling get_items_nowait")
         if len(items) == 0:
-            _LOGGER.info("Got no items; exiting")
             return
-        _LOGGER.info(
-            f"About to call _process_itemswith {len(items)=}; {self._queue.qsize()=}"
-        )
         try:
             await self._process_items(*items)
-            _LOGGER.info("Finished calling _process_items")
-        except Exception:
-            _LOGGER.exception(f"Got exception with {len(items)=}")
-            raise
+        except Exception as error:  # noqa: BLE001
+            raise InfiniteQueueLooperError(items=items, error=error) from None
 
     @abstractmethod
     async def _process_items(self, *items: _T) -> None:
@@ -527,6 +506,32 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     def put_items_nowait(self, *items: _T) -> None:
         """Put items into the queue."""
         put_items_nowait(items, self._queue)
+
+    @override
+    def _error_upon_core(self, error: Exception, /) -> None:
+        """Handle any errors upon running the core function."""
+        if self.logger is not None:
+            if isinstance(error, InfiniteQueueLooperError):
+                getLogger(name=self.logger).error(
+                    "%r encountered %s whilst processing %d item(s) %s; sleeping for %s...",
+                    get_class_name(self),
+                    repr_error(error.error),
+                    len(error.items),
+                    get_repr(error.items),
+                    self.sleep_restart,
+                )
+            else:
+                super()._error_upon_core(error)  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class InfiniteQueueLooperError(Exception, Generic[_T]):
+    items: Sequence[_T]
+    error: Exception
+
+    @override
+    def __str__(self) -> str:
+        return f"Encountered {repr_error(self.error)} whilst processing {len(self.items)} item(s): {get_repr(self.items)}"
 
 
 ##
@@ -737,6 +742,7 @@ __all__ = [
     "InfiniteLooper",
     "InfiniteLooperError",
     "InfiniteQueueLooper",
+    "InfiniteQueueLooperError",
     "QueueProcessor",
     "StreamCommandOutput",
     "UniquePriorityQueue",
