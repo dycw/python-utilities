@@ -675,7 +675,7 @@ async def subscribe(
     deserializer: Callable[[bytes], _T] | None = None,
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     sleep: Duration = _SUBSCRIBE_SLEEP,
-) -> AsyncIterator[Any]:
+) -> AsyncIterator[_T] | AsyncIterator[bytes]:
     """Subscribe to the data of a given channel(s)."""
     channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
     messages = subscribe_messages(  # skipif-ci-and-not-linux
