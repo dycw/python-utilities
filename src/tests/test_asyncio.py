@@ -400,35 +400,37 @@ class TestInfiniteLooper:
         looper = Example(sleep_core=0.1)
         _ = hash(looper)
 
-    async def test_with_coroutine(self) -> None:
+    async def test_with_coroutine_self_set_event(self) -> None:
         external: int = 0
 
-        async def increment_externally(obj: Example, /) -> None:
+        async def inc_external(obj: Example, /) -> None:
             nonlocal external
             while True:
                 external += 1
                 obj.counter += 1
-                await sleep(0.1)
+                await sleep(0.05)
 
-        class CustomError(BaseException): ...
+        class CustomError(Exception): ...
 
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
+            initializations: int = 0
             counter: int = 0
 
             @override
             async def _initialize(self) -> None:
+                self.initializations += 1
                 self.counter = 0
 
             @override
             async def _core(self) -> None:
                 self.counter += 1
-                if self.counter >= 10:
+                if self.counter >= 5:
                     self._set_event(None)
 
             @override
             def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
-                yield partial(increment_externally, self)
+                yield partial(inc_external, self)
 
             @override
             def _yield_events_and_exceptions(
@@ -437,13 +439,12 @@ class TestInfiniteLooper:
                 yield (None, CustomError)
 
         obj = Example(sleep_core=0.05, sleep_restart=0.05)
-        with raises(BaseExceptionGroup) as error:
+        with raises(TimeoutError):
             async with timeout_dur(duration=1.0):
                 await obj()
-        inner = one(error.value.exceptions)
-        assert isinstance(inner, CustomError)
-        assert 10 <= obj.counter <= 11
-        assert 3 <= external <= 5
+        assert 4 <= obj.initializations <= 6
+        assert 0 <= obj.counter <= 7
+        assert 19 <= external <= 21
 
     async def test_with_coroutine_self_error(self) -> None:
         async def dummy() -> None:
