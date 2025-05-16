@@ -648,7 +648,7 @@ _SUBSCRIBE_SLEEP: Duration = MILLISECOND
 
 
 @overload
-def subscribe(
+async def subscribe(
     pubsub: PubSub,
     channels: MaybeIterable[str],
     /,
@@ -658,7 +658,7 @@ def subscribe(
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[_T]: ...
 @overload
-def subscribe(
+async def subscribe(
     pubsub: PubSub,
     channels: MaybeIterable[str],
     /,
