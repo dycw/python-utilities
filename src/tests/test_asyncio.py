@@ -393,7 +393,7 @@ class TestInfiniteLooper:
             @override
             def _yield_events_and_exceptions(
                 self,
-            ) -> Iterator[tuple[bool, MaybeType[BaseException]]]:
+            ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
                 yield (None, CustomError)
 
         looper = Example(sleep_core=0.1)
