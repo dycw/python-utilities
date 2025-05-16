@@ -451,7 +451,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
         try:
             event_obj = self._events[event]
         except KeyError:
-            raise InfiniteLooperError(event=event) from None
+            raise InfiniteLooperError(looper=self, event=event) from None
         event_obj.set()
 
     def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:

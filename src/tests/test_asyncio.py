@@ -575,7 +575,7 @@ class TestInfiniteLooper:
                     self._set_event(None)
 
         looper = Example(sleep_core=0.1)
-        with raises(InfiniteLooperError, match="No event None found"):
+        with raises(InfiniteLooperError, match="'Example' does not have an event None"):
             _ = await looper()
 
 
