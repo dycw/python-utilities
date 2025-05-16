@@ -436,14 +436,14 @@ class TestInfiniteLooper:
             ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
                 yield (None, CustomError)
 
-        obj = Example(sleep_core=0.1)
+        obj = Example(sleep_core=0.05)
         with raises(BaseExceptionGroup) as error:
-            async with timeout_dur(duration=1.5):
+            async with timeout_dur(duration=1.0):
                 await obj()
         inner = one(error.value.exceptions)
         assert isinstance(inner, CustomError)
-        assert 10 <= obj.counter <= 15
-        assert 3 <= external <= 7
+        assert 10 <= obj.counter <= 11
+        assert 3 <= external <= 5
 
     async def test_with_coroutine_broken(self) -> None:
         async def dummy() -> None:
