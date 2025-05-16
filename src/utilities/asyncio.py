@@ -45,6 +45,7 @@ from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, ensure_not_none, get_class_name
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import (
+    Coroutine1,
     MaybeCallableEvent,
     MaybeType,
     THashable,
@@ -344,10 +345,10 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
     async def __call__(self) -> None:
         """Create a coroutine to run the looper."""
-        loopers = list(self._yield_loopers())
-        if len(loopers) == 0:
+        coroutines = list(self._yield_coroutines())
+        if len(coroutines) == 0:
             return await self._run_looper()
-        return await self._run_multiple_loopers(*loopers)
+        return await self._run_looper_with_coroutines(*coroutines)
 
     async def _run_looper(self) -> None:
         """Run the looper by itself."""
@@ -378,14 +379,14 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 self._error_upon_core(error)
                 await sleep_dur(duration=self.sleep_restart)
 
-    async def _run_multiple_loopers(self, *loopers: InfiniteLooper) -> None:
+    async def _run_looper_with_coroutines(self, *coroutines: Coroutine1) -> None:
         """Run multiple loopers."""
         while True:
             self._reset_events()
             try:
                 async with TaskGroup() as tg:
                     _ = tg.create_task(self._run_looper())
-                    _ = [tg.create_task(looper()) for looper in loopers]
+                    _ = list(map(tg.create_task, coroutines))
             except Exception as error:  # noqa: BLE001
                 self._error_upon_core(error)  # pragma: no cover
                 await sleep_dur(duration=self.sleep_restart)  # pragma: no cover
@@ -436,14 +437,14 @@ class InfiniteLooper(ABC, Generic[THashable]):
             raise InfiniteLooperError(event=event) from None
         event_obj.set()
 
+    def _yield_coroutines(self) -> Iterator[Coroutine1[None]]:
+        """Yield any other coroutines which must also be run."""
+        yield from []
+
     def _yield_events_and_exceptions(
         self,
     ) -> Iterator[tuple[THashable, MaybeType[BaseException]]]:
         """Yield the events & exceptions."""
-        yield from []
-
-    def _yield_loopers(self) -> Iterator[InfiniteLooper]:
-        """Yield any other infinite loopers which must also be run."""
         yield from []
 
 
