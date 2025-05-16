@@ -64,6 +64,8 @@ if TYPE_CHECKING:
 
 _T = TypeVar("_T")
 
+_LOGGER = getLogger(__name__)
+
 
 ##
 
@@ -353,15 +355,20 @@ class InfiniteLooper(ABC, Generic[THashable]):
     async def _run_looper(self) -> None:
         """Run the looper by itself."""
         while True:
+            _LOGGER.info("run looper start")
             try:
+                _LOGGER.info("start")
                 self._reset_events()
                 try:
+                    _LOGGER.info("About to call _initialize")
                     await self._initialize()
+                    _LOGGER.info("Finished calling _initialize")
                 except Exception as error:  # noqa: BLE001
                     self._error_upon_initialize(error)
                     await sleep_dur(duration=self.sleep_restart)
                 else:
                     while True:
+                        _LOGGER.info("checking event set?")
                         try:
                             event = next(
                                 key
@@ -369,14 +376,21 @@ class InfiniteLooper(ABC, Generic[THashable]):
                                 if value.is_set()
                             )
                         except StopIteration:
+                            _LOGGER.info("About to call _core")
                             await self._core()
+                            _LOGGER.info("Finished calling _core")
+                            _LOGGER.info(f"About to sleep for {self.sleep_core}")
                             await sleep_dur(duration=self.sleep_core)
                         else:
+                            _LOGGER.info("About to call _raise_error")
                             self._raise_error(event)
             except InfiniteLooperError:
+                _LOGGER.info("got InfiniteLooperError")
                 raise
             except Exception as error:  # noqa: BLE001
+                _LOGGER.info("About to call _error_upon_core")
                 self._error_upon_core(error)
+                _LOGGER.info("Finished calling _error_upon_core")
                 await sleep_dur(duration=self.sleep_restart)
 
     async def _run_looper_with_coroutines(self, *coroutines: Coroutine1) -> None:
@@ -466,24 +480,29 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
 
     queue_type: type[Queue[_T]] = field(default=Queue, repr=False)
     _queue: Queue[_T] = field(init=False)
-    _current: Queue[_T] = field(init=False)
 
     @override
     def __post_init__(self) -> None:
         super().__post_init__()
         self._queue = self.queue_type()
-        self._current = self.queue_type()
 
     @override
     async def _core(self) -> None:
         """Run the core part of the loop."""
-        items = await get_items(self._queue)
-        _ = get_items_nowait(self._current)
-        put_items_nowait(items, self._current)
+        _LOGGER.info("About to call get_items_nowait")
+        items = get_items_nowait(self._queue)
+        _LOGGER.info("Finished calling get_items_nowait")
+        if len(items) == 0:
+            _LOGGER.info("Got no items; exiting")
+            return
+        _LOGGER.info(
+            f"About to call _process_itemswith {len(items)=}; {self._queue.qsize()=}"
+        )
         try:
             await self._process_items(*items)
+            _LOGGER.info("Finished calling _process_items")
         except Exception:
-            put_items_nowait(items, self._queue)
+            _LOGGER.exception(f"Got exception with {len(items)=}")
             raise
 
     @abstractmethod

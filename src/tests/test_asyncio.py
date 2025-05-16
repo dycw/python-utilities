@@ -50,7 +50,11 @@ from utilities.asyncio import (
     timeout_dur,
 )
 from utilities.dataclasses import replace_non_sentinel
-from utilities.datetime import MILLISECOND, datetime_duration_to_timedelta
+from utilities.datetime import (
+    MILLISECOND,
+    datetime_duration_to_float,
+    datetime_duration_to_timedelta,
+)
 from utilities.hypothesis import sentinels, text_ascii
 from utilities.iterables import one, unique_everseen
 from utilities.pytest import skipif_windows
@@ -453,9 +457,11 @@ class TestInfiniteLooper:
             while True:
                 external += 1
                 obj.counter += 1
-                await sleep(0.1)
+                await sleep(datetime_duration_to_float(obj.sleep_core))
 
-        class CustomError(Exception): ...
+        class CustomError(Exception):
+            def __str__(self) -> str:
+                return "CustomError"
 
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
@@ -484,11 +490,16 @@ class TestInfiniteLooper:
                 yield (None, CustomError)
 
             @override
-            def _error_upon_core(self, error: Exception, /) -> None:
-                """Handle any errors upon running the core function."""
+            def _error_upon_initialize(self, error: Exception, /) -> None:
                 breakpoint()
+                return super()._error_upon_initialize(error)
 
-        obj = Example(sleep_core=0.01)
+            @override
+            def _error_upon_core(self, error: Exception, /) -> None:
+                breakpoint()
+                return super()._error_upon_core(error)
+
+        obj = Example(sleep_core=0.1)
         with raises(TimeoutError):
             async with timeout_dur(duration=1.5):
                 await obj()
