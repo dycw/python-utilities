@@ -43,6 +43,7 @@ from typing import (
 from utilities.datetime import MILLISECOND, MINUTE, SECOND, datetime_duration_to_float
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, ensure_not_none, get_class_name
+from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import (
     Coroutine1,
@@ -466,25 +467,20 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
 
     queue_type: type[Queue[_T]] = field(default=Queue, repr=False)
     _queue: Queue[_T] = field(init=False)
-    _current: Queue[_T] = field(init=False)
 
     @override
     def __post_init__(self) -> None:
         super().__post_init__()
         self._queue = self.queue_type()
-        self._current = self.queue_type()
 
     @override
     async def _core(self) -> None:
         """Run the core part of the loop."""
         items = await get_items(self._queue)
-        _ = get_items_nowait(self._current)
-        put_items_nowait(items, self._current)
         try:
             await self._process_items(*items)
-        except Exception:
-            put_items_nowait(items, self._queue)
-            raise
+        except Exception as error:  # noqa: BLE001
+            raise InfiniteQueueLooperError(items=items, error=error) from None
 
     @abstractmethod
     async def _process_items(self, *items: _T) -> None:
@@ -493,6 +489,31 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     def put_items_nowait(self, *items: _T) -> None:
         """Put items into the queue."""
         put_items_nowait(items, self._queue)
+
+    @override
+    def _error_upon_core(self, error: Exception, /) -> None:
+        """Handle any errors upon running the core function."""
+        if self.logger is not None:
+            if isinstance(looper_error := error, InfiniteQueueLooperError):
+                getLogger(name=self.logger).error(
+                    "Error running %r whilst processing %s due to %r; sleeping for %s...",
+                    get_class_name(self),
+                    get_repr(looper_error.items),
+                    repr(looper_error.error),
+                    self.sleep_restart,
+                )
+            else:
+                super()._error_upon_core(error)
+
+
+@dataclass(kw_only=True, slots=True)
+class InfiniteQueueLooperError(Exception, Generic[_T]):
+    items: Sequence[_T]
+    error: Exception
+
+    @override
+    def __str__(self) -> str:
+        return f"Encountered {self.error} when processing {get_repr(self.items)}"
 
 
 ##
