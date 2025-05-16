@@ -648,7 +648,7 @@ _SUBSCRIBE_SLEEP: Duration = MILLISECOND
 
 
 @overload
-async def subscribe(
+def subscribe(
     pubsub: PubSub,
     channels: MaybeIterable[str],
     /,
@@ -658,7 +658,7 @@ async def subscribe(
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[_T]: ...
 @overload
-async def subscribe(
+def subscribe(
     pubsub: PubSub,
     channels: MaybeIterable[str],
     /,
@@ -667,7 +667,7 @@ async def subscribe(
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[bytes]: ...
-async def subscribe(
+async def subscribe(  # pyright: ignore[reportInconsistentOverload]
     pubsub: PubSub,
     channels: MaybeIterable[str],
     /,
