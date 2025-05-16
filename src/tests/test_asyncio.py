@@ -400,7 +400,7 @@ class TestInfiniteLooper:
         looper = Example(sleep_core=0.1)
         _ = hash(looper)
 
-    async def test_with_coroutines(self) -> None:
+    async def test_with_coroutine(self) -> None:
         external: int = 0
 
         async def increment_externally(obj: Example, /) -> None:
@@ -436,7 +436,7 @@ class TestInfiniteLooper:
             ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
                 yield (None, CustomError)
 
-        obj = Example(sleep_core=0.05)
+        obj = Example(sleep_core=0.05, sleep_restart=0.05)
         with raises(BaseExceptionGroup) as error:
             async with timeout_dur(duration=1.0):
                 await obj()
@@ -445,7 +445,7 @@ class TestInfiniteLooper:
         assert 10 <= obj.counter <= 11
         assert 3 <= external <= 5
 
-    async def test_with_coroutine_broken(self) -> None:
+    async def test_with_coroutine_self_error(self) -> None:
         async def dummy() -> None:
             _ = await Event().wait()
 
@@ -465,7 +465,43 @@ class TestInfiniteLooper:
             async def _core(self) -> None:
                 self.counter += 1
                 if self.counter >= 3:
-                    self._set_event(None)
+                    raise CustomError
+
+            @override
+            def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
+                yield dummy
+
+            @override
+            def _yield_events_and_exceptions(
+                self,
+            ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
+                yield (None, CustomError)
+
+        obj = Example(sleep_core=0.05, sleep_restart=0.05)
+        with raises(TimeoutError):
+            async with timeout_dur(duration=1.0):
+                await obj()
+        assert 6 <= obj.initializations <= 8
+
+    @mark.skip
+    async def test_with_coroutine_other_coroutine_error(self) -> None:
+        async def dummy() -> None:
+            for i in count():
+                if i >= 3:
+                    raise CustomError
+                await sleep(0.1)
+
+        class CustomError(Exception): ...
+
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            initializations: int = 0
+            counter: int = 0
+
+            @override
+            async def _initialize(self) -> None:
+                self.initializations += 1
+                self.counter = 0
 
             @override
             def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
