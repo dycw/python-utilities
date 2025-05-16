@@ -155,10 +155,12 @@ class TestSlackHandlerIQL:
             messages.append(text)
 
         logger = getLogger(str(tmp_path))
-        logger.addHandler(handler := SlackHandlerIQL("url", sender=sender))
+        logger.addHandler(
+            handler := SlackHandlerIQL("url", sleep_core=0.05, sender=sender)
+        )
 
         async def sleep_then_log() -> None:
-            await sleep_dur(duration=0.1)
+            await sleep_dur(duration=0.05)
             logger.warning("message")
 
         with raises(ExceptionGroup):  # noqa: PT012
@@ -173,10 +175,10 @@ class TestSlackHandlerIQL:
     async def test_real(self, *, tmp_path: Path) -> None:
         url = get_env_var("SLACK")
         logger = getLogger(str(tmp_path))
-        logger.addHandler(handler := SlackHandlerIQL(url))
+        logger.addHandler(handler := SlackHandlerIQL(url, sleep_core=0.05))
 
         async def sleep_then_log() -> None:
-            await sleep_dur(duration=0.1)
+            await sleep_dur(duration=0.05)
             for i in range(10):
                 logger.warning(
                     "message %d from %s", i, TestSlackHandlerIQL.test_real.__qualname__
