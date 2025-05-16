@@ -12,6 +12,7 @@ from asyncio import (
 )
 from collections import Counter
 from dataclasses import dataclass, field
+from functools import partial
 from itertools import chain, count
 from re import search
 from typing import TYPE_CHECKING, Self, override
@@ -50,11 +51,7 @@ from utilities.asyncio import (
     timeout_dur,
 )
 from utilities.dataclasses import replace_non_sentinel
-from utilities.datetime import (
-    MILLISECOND,
-    datetime_duration_to_float,
-    datetime_duration_to_timedelta,
-)
+from utilities.datetime import MILLISECOND, datetime_duration_to_timedelta
 from utilities.hypothesis import sentinels, text_ascii
 from utilities.iterables import one, unique_everseen
 from utilities.pytest import skipif_windows
@@ -62,7 +59,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
 
     from utilities.types import Coroutine1, Duration, MaybeCallableEvent, MaybeType
 
@@ -430,8 +427,8 @@ class TestInfiniteLooper:
                     self._set_event(None)
 
             @override
-            def _yield_coroutines(self) -> Iterator[Coroutine1[None]]:
-                yield increment_externally(self)
+            def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
+                yield partial(increment_externally, self)
 
             @override
             def _yield_events_and_exceptions(
@@ -448,20 +445,11 @@ class TestInfiniteLooper:
         assert 10 <= obj.counter <= 15
         assert 3 <= external <= 7
 
-    @mark.only
     async def test_with_coroutine_broken(self) -> None:
-        external: int = 0
+        async def dummy() -> None:
+            _ = await Event().wait()
 
-        async def increment_externally(obj: Example, /) -> None:
-            nonlocal external
-            while True:
-                external += 1
-                obj.counter += 1
-                await sleep(datetime_duration_to_float(obj.sleep_core))
-
-        class CustomError(Exception):
-            def __str__(self) -> str:
-                return "CustomError"
+        class CustomError(Exception): ...
 
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
@@ -476,12 +464,12 @@ class TestInfiniteLooper:
             @override
             async def _core(self) -> None:
                 self.counter += 1
-                if self.counter >= 10:
+                if self.counter >= 3:
                     self._set_event(None)
 
             @override
-            def _yield_coroutines(self) -> Iterator[Coroutine1[None]]:
-                yield increment_externally(self)
+            def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
+                yield dummy
 
             @override
             def _yield_events_and_exceptions(
@@ -489,21 +477,11 @@ class TestInfiniteLooper:
             ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
                 yield (None, CustomError)
 
-            @override
-            def _error_upon_initialize(self, error: Exception, /) -> None:
-                breakpoint()
-                return super()._error_upon_initialize(error)
-
-            @override
-            def _error_upon_core(self, error: Exception, /) -> None:
-                breakpoint()
-                return super()._error_upon_core(error)
-
-        obj = Example(sleep_core=0.1)
+        obj = Example(sleep_core=0.1, sleep_restart=0.1)
         with raises(TimeoutError):
-            async with timeout_dur(duration=1.5):
+            async with timeout_dur(duration=1.0):
                 await obj()
-        assert obj.initializations == 5
+        assert 3 <= obj.initializations <= 5
 
     @given(logger=just("logger") | none())
     async def test_error_upon_initialize(self, *, logger: str | None) -> None:

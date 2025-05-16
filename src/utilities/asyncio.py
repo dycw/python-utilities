@@ -396,18 +396,18 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 _LOGGER.info(f"About to sleep for {self.sleep_restart}")
                 await sleep_dur(duration=self.sleep_restart)
 
-    async def _run_looper_with_coroutines(self, *coroutines: Coroutine1) -> None:
+    async def _run_looper_with_coroutines(
+        self, *coroutines: Callable[[], Coroutine1[None]]
+    ) -> None:
         """Run multiple loopers."""
         while True:
             self._reset_events()
             try:
                 async with TaskGroup() as tg:
                     _ = tg.create_task(self._run_looper())
-                    _ = list(map(tg.create_task, coroutines))
+                    _ = [tg.create_task(c()) for c in coroutines]
             except ExceptionGroup as error:
-                _LOGGER.info("Got error")
                 self._error_group_upon_coroutines(error)
-                _LOGGER.info(f"About to sleep for {self.sleep_restart}")
                 await sleep_dur(duration=self.sleep_restart)
 
     async def _initialize(self) -> None:
@@ -483,7 +483,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
             raise InfiniteLooperError(event=event) from None
         event_obj.set()
 
-    def _yield_coroutines(self) -> Iterator[Coroutine1[None]]:
+    def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
         """Yield any other coroutines which must also be run."""
         yield from []
 

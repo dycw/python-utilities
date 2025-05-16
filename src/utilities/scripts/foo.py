@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, override
 
@@ -14,7 +14,7 @@ from utilities.orjson import deserialize
 from utilities.redis import subscribe
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
 
     from utilities.types import Coroutine1, Duration, MaybeType
 
@@ -140,8 +140,8 @@ class QueueExample(InfiniteQueueLooper[None, dict[str, Any]]):
             self.put_items_nowait(msg)
 
     @override
-    def _yield_coroutines(self) -> Iterator[Coroutine1[None]]:
-        yield self._subscribe_and_push()
+    def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
+        yield self._subscribe_and_push
 
     @override
     def _yield_events_and_exceptions(
