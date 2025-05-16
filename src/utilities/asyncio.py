@@ -724,6 +724,7 @@ __all__ = [
     "InfiniteLooper",
     "InfiniteLooperError",
     "InfiniteQueueLooper",
+    "InfiniteQueueLooperError",
     "QueueProcessor",
     "StreamCommandOutput",
     "UniquePriorityQueue",
