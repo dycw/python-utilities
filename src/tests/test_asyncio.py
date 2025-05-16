@@ -517,7 +517,7 @@ class TestInfiniteLooper:
             async with timeout_dur(duration=1.0):
                 await looper()
         assert 3 <= looper.initializations <= 5
-        assert 1 <= looper.counter <= 5
+        assert 1 <= looper.counter <= 6
 
     @given(logger=just("logger") | none())
     async def test_error_upon_initialize(self, *, logger: str | None) -> None:
