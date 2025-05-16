@@ -399,7 +399,7 @@ class TestInfiniteLooper:
         looper = Example(sleep_core=0.1)
         _ = hash(looper)
 
-    async def test_multiple(self) -> None:
+    async def test_with_coroutines(self) -> None:
         class ChildError(BaseException): ...
 
         @dataclass(kw_only=True)
