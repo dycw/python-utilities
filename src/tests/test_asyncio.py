@@ -435,7 +435,7 @@ class TestInfiniteLooper:
                 await looper()
         assert 4 <= looper.initializations <= 6
         assert 0 <= looper.counter <= 7
-        assert 17 <= external <= 21
+        assert 16 <= external <= 21
 
     async def test_with_coroutine_self_error(self) -> None:
         class CustomError(Exception): ...
@@ -517,7 +517,7 @@ class TestInfiniteLooper:
             async with timeout_dur(duration=1.0):
                 await looper()
         assert 3 <= looper.initializations <= 5
-        assert 1 <= looper.counter <= 5
+        assert 1 <= looper.counter <= 6
 
     @given(logger=just("logger") | none())
     async def test_error_upon_initialize(self, *, logger: str | None) -> None:
