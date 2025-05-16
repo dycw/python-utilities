@@ -60,7 +60,7 @@ from utilities.timer import Timer
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import Duration, MaybeCallableEvent, MaybeType
+    from utilities.types import Coroutine1, Duration, MaybeCallableEvent, MaybeType
 
 
 class TestAsyncLoopingService:
@@ -441,14 +441,14 @@ class TestInfiniteLooper:
                     self._set_event(None)
 
             @override
+            def _yield_coroutines(self) -> Iterator[Coroutine1[None]]:
+                yield self.child()
+
+            @override
             def _yield_events_and_exceptions(
                 self,
             ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
                 yield (None, ParentError)
-
-            @override
-            def _yield_loopers(self) -> Iterator[InfiniteLooper]:
-                yield self.child
 
         parent = Parent(sleep_core=0.1, child=Child(sleep_core=0.1))
         with raises(BaseExceptionGroup) as error:
