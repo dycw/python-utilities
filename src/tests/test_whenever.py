@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import datetime as dt
+from datetime import timezone
 from re import escape
 from typing import TYPE_CHECKING
+from zoneinfo import ZoneInfo
 
 from hypothesis import assume, example, given
 from hypothesis.strategies import (
@@ -88,7 +90,7 @@ from utilities.whenever import (
     serialize_timedelta,
     serialize_zoned_datetime,
 )
-from utilities.zoneinfo import UTC
+from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
     from utilities.types import Duration
@@ -379,6 +381,33 @@ class TestSerializeAndParseZonedDateTime:
     @SKIPIF_CI_AND_WINDOWS
     def test_main(self, *, datetime: dt.datetime) -> None:
         serialized = serialize_zoned_datetime(datetime)
+        result = parse_zoned_datetime(serialized)
+        assert result == datetime
+
+    @given(
+        datetime=zoned_datetimes(
+            time_zone=just(dt.UTC), round_="standard", timedelta=SECOND, valid=True
+        )
+    )
+    @SKIPIF_CI_AND_WINDOWS
+    def test_compact_no_microseconds(self, *, datetime: dt.datetime) -> None:
+        _ = assume(datetime.tzinfo is not ZoneInfo("America/Inuvik"))
+        assert datetime.microsecond == 0
+        part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
+        assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
+        part2 = get_time_zone_name(datetime.tzinfo)
+        serialized = f"{part1}[{part2}]"
+        result = parse_zoned_datetime(serialized)
+        assert result == datetime
+
+    @given(datetime=zoned_datetimes(time_zone=just(dt.UTC), valid=True))
+    @SKIPIF_CI_AND_WINDOWS
+    def test_compact_with_microseconds(self, *, datetime: dt.datetime) -> None:
+        _ = assume(datetime.microsecond != 0)
+        part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S.%f"))
+        assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
+        part2 = get_time_zone_name(datetime.tzinfo)
+        serialized = f"{part1}[{part2}]"
         result = parse_zoned_datetime(serialized)
         assert result == datetime
 
