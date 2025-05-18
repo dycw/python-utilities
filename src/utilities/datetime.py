@@ -706,8 +706,8 @@ def is_integral_timedelta(duration: Duration, /) -> bool:
 ##
 
 
-def is_local_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
-    """Check if an object is a local datetime."""
+def is_plain_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
+    """Check if an object is a plain datetime."""
     return isinstance(obj, dt.datetime) and (obj.tzinfo is None)
 
 
@@ -1388,7 +1388,7 @@ __all__ = [
     "get_today",
     "get_years",
     "is_integral_timedelta",
-    "is_local_datetime",
+    "is_plain_datetime",
     "is_weekday",
     "is_zero_time",
     "is_zoned_datetime",
