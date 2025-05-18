@@ -324,14 +324,14 @@ class TestParameters:
             param(
                 ListUUIDs(), "LIST[UUID]", lists(uuids()), _lift_serializer(str), True
             ),
+            param(utilities.click.Month(), "MONTH", months(), serialize_month, True),
             param(
                 PlainDateTime(),
-                "LOCAL DATETIME",
+                "PLAIN DATETIME",
                 datetimes(),
                 serialize_plain_datetime,
                 True,
             ),
-            param(utilities.click.Month(), "MONTH", months(), serialize_month, True),
             param(Time(), "TIME", times(), serialize_time, True),
             param(
                 Timedelta(),
