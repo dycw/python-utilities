@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from os import getenv
+from typing import override
 
 from cryptography.fernet import Fernet
 
@@ -17,15 +19,23 @@ def decrypt(text: bytes, /, *, env_var: str = _ENV_VAR) -> str:
     return get_fernet(env_var=env_var).decrypt(text).decode()
 
 
+##
+
+
 def get_fernet(*, env_var: str = _ENV_VAR) -> Fernet:
     """Get the Fernet key."""
     if (key := getenv(env_var)) is None:
-        msg = f"{env_var!r} is None"
-        raise GetFernetError(msg)
+        raise GetFernetError(env_var=env_var)
     return Fernet(key.encode())
 
 
-class GetFernetError(Exception): ...
+@dataclass(kw_only=True, slots=True)
+class GetFernetError(Exception):
+    env_var: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Environment variable {self.env_var!r} is None"
 
 
 __all__ = ["GetFernetError", "decrypt", "encrypt", "get_fernet"]
