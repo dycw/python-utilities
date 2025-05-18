@@ -457,7 +457,7 @@ class EnsureMonthError(Exception):
 
 
 def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
-    """Format a local datetime locally & in UTC."""
+    """Format a plain datetime locally & in UTC."""
     time_zone = ensure_time_zone(datetime)
     if time_zone is UTC:
         return datetime.strftime("%Y-%m-%d %H:%M:%S (%a, UTC)")
@@ -1105,7 +1105,7 @@ class SerializeCompactError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to serialize local datetime {self.datetime}"
+        return f"Unable to serialize plain datetime {self.datetime}"
 
 
 def parse_date_compact(text: str, /) -> dt.date:

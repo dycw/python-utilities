@@ -1188,7 +1188,7 @@ class TestSerializeAndParseCompact:
     @given(datetime=datetimes())
     def test_error_serialize(self, *, datetime: dt.datetime) -> None:
         with raises(
-            SerializeCompactError, match="Unable to serialize local datetime .*"
+            SerializeCompactError, match="Unable to serialize plain datetime .*"
         ):
             _ = serialize_compact(datetime)
 

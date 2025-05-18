@@ -154,7 +154,7 @@ class Month(ParamType):
 class PlainDateTime(ParamType):
     """A local-datetime-valued parameter."""
 
-    name = "local datetime"
+    name = "plain datetime"
 
     @override
     def __repr__(self) -> str:
