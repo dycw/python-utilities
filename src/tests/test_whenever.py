@@ -391,7 +391,6 @@ class TestSerializeAndParseZonedDateTime:
     )
     @SKIPIF_CI_AND_WINDOWS
     def test_compact_no_microseconds(self, *, datetime: dt.datetime) -> None:
-        _ = assume(datetime.tzinfo is not ZoneInfo("America/Inuvik"))
         assert datetime.microsecond == 0
         part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
         assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
