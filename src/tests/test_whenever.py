@@ -48,17 +48,17 @@ from utilities.whenever import (
     EnsureDateError,
     EnsureDateTimeError,
     EnsureDurationError,
-    EnsureLocalDateTimeError,
+    EnsurePlainDateTimeError,
     EnsureTimeError,
     EnsureZonedDateTimeError,
     ParseDateError,
     ParseDateTimeError,
     ParseDurationError,
-    ParseLocalDateTimeError,
+    ParsePlainDateTimeError,
     ParseTimeError,
     ParseZonedDateTimeError,
     SerializeDurationError,
-    SerializeLocalDateTimeError,
+    SerializePlainDateTimeError,
     SerializeTimeDeltaError,
     SerializeZonedDateTimeError,
     _EnsureTimedeltaNanosecondError,
@@ -71,21 +71,21 @@ from utilities.whenever import (
     ensure_date,
     ensure_datetime,
     ensure_duration,
-    ensure_local_datetime,
+    ensure_plain_datetime,
     ensure_time,
     ensure_timedelta,
     ensure_zoned_datetime,
     parse_date,
     parse_datetime,
     parse_duration,
-    parse_local_datetime,
+    parse_plain_datetime,
     parse_time,
     parse_timedelta,
     parse_zoned_datetime,
     serialize_date,
     serialize_datetime,
     serialize_duration,
-    serialize_local_datetime,
+    serialize_plain_datetime,
     serialize_time,
     serialize_timedelta,
     serialize_zoned_datetime,
@@ -231,53 +231,53 @@ class TestSerializeAndParseDuration:
 class TestSerializeAndParseLocalDateTime:
     @given(datetime=datetimes())
     def test_main(self, *, datetime: dt.datetime) -> None:
-        serialized = serialize_local_datetime(datetime)
-        result = parse_local_datetime(serialized)
+        serialized = serialize_plain_datetime(datetime)
+        result = parse_plain_datetime(serialized)
         assert result == datetime
 
     @given(datetime=local_datetimes(round_="standard", timedelta=SECOND))
     def test_compact_no_microseconds(self, *, datetime: dt.datetime) -> None:
         assert datetime.microsecond == 0
         serialized = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
-        result = parse_local_datetime(serialized)
+        result = parse_plain_datetime(serialized)
         assert result == datetime
 
     @given(datetime=datetimes())
     def test_compact_with_microseconds(self, *, datetime: dt.datetime) -> None:
         _ = assume(datetime.microsecond != 0)
         serialized = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S.%f"))
-        result = parse_local_datetime(serialized)
+        result = parse_plain_datetime(serialized)
         assert result == datetime
 
     def test_error_parse(self) -> None:
         with raises(
-            ParseLocalDateTimeError,
+            ParsePlainDateTimeError,
             match="Unable to parse local datetime; got 'invalid'",
         ):
-            _ = parse_local_datetime("invalid")
+            _ = parse_plain_datetime("invalid")
 
     def test_error_serialize(self) -> None:
         datetime = dt.datetime(2000, 1, 1, tzinfo=UTC)
         with raises(
-            SerializeLocalDateTimeError,
+            SerializePlainDateTimeError,
             match="Unable to serialize local datetime; got .*",
         ):
-            _ = serialize_local_datetime(datetime)
+            _ = serialize_plain_datetime(datetime)
 
     @given(data=data(), datetime=datetimes())
     def test_ensure(self, *, data: DataObject, datetime: dt.datetime) -> None:
         str_or_value = data.draw(
-            sampled_from([datetime, serialize_local_datetime(datetime)])
+            sampled_from([datetime, serialize_plain_datetime(datetime)])
         )
-        result = ensure_local_datetime(str_or_value)
+        result = ensure_plain_datetime(str_or_value)
         assert result == datetime
 
     def test_error_ensure(self) -> None:
         with raises(
-            EnsureLocalDateTimeError,
+            EnsurePlainDateTimeError,
             match="Unable to ensure local datetime; got 'invalid'",
         ):
-            _ = ensure_local_datetime("invalid")
+            _ = ensure_plain_datetime("invalid")
 
 
 class TestSerializeAndParseTime:

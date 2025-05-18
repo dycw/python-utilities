@@ -23,7 +23,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.typing import is_instance_gen
 from utilities.whenever import (
     serialize_date,
-    serialize_local_datetime,
+    serialize_plain_datetime,
     serialize_zoned_datetime,
 )
 from utilities.zoneinfo import EnsureTimeZoneError, ensure_time_zone
@@ -137,7 +137,7 @@ class Period(Generic[_TPeriod]):
                     )
                     return f"{cls}({start}, {end})"
                 start, end = (
-                    serialize_local_datetime(t.replace(tzinfo=None))
+                    serialize_plain_datetime(t.replace(tzinfo=None))
                     for t in [result.start, result.end]
                 )
                 return f"{cls}({start}, {end}, {time_zone})"

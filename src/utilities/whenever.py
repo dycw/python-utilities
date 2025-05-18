@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, override
 from zoneinfo import ZoneInfo
 
-from whenever import Date, DateTimeDelta, LocalDateTime, Time, ZonedDateTime
+from whenever import Date, DateTimeDelta, PlainDateTime, Time, ZonedDateTime
 
 from utilities.datetime import (
     _MICROSECONDS_PER_DAY,
@@ -138,18 +138,18 @@ class EnsureDurationError(Exception):
 ##
 
 
-def ensure_local_datetime(datetime: DateTimeLike, /) -> dt.datetime:
-    """Ensure the object is a local datetime."""
+def ensure_plain_datetime(datetime: DateTimeLike, /) -> dt.datetime:
+    """Ensure the object is a plain datetime."""
     if isinstance(datetime, dt.datetime):
         return datetime
     try:
-        return parse_local_datetime(datetime)
-    except ParseLocalDateTimeError as error:
-        raise EnsureLocalDateTimeError(datetime=error.datetime) from None
+        return parse_plain_datetime(datetime)
+    except ParsePlainDateTimeError as error:
+        raise EnsurePlainDateTimeError(datetime=error.datetime) from None
 
 
 @dataclass(kw_only=True, slots=True)
-class EnsureLocalDateTimeError(Exception):
+class EnsurePlainDateTimeError(Exception):
     datetime: str
 
     @override
@@ -279,8 +279,8 @@ class ParseDateError(Exception):
 
 def parse_datetime(datetime: str, /) -> dt.datetime:
     """Parse a string into a datetime."""
-    with suppress(ParseLocalDateTimeError):
-        return parse_local_datetime(datetime)
+    with suppress(ParsePlainDateTimeError):
+        return parse_plain_datetime(datetime)
     with suppress(ParseZonedDateTimeError):
         return parse_zoned_datetime(datetime)
     raise ParseDateTimeError(datetime=datetime) from None
@@ -320,25 +320,25 @@ class ParseDurationError(Exception):
 ##
 
 
-_PARSE_LOCAL_DATETIME_REGEX = re.compile(
+_PARSE_PLAIN_DATETIME_REGEX = re.compile(
     r"^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})\.?(\d{6})?$"
 )
 
 
-def parse_local_datetime(datetime: str, /) -> dt.datetime:
-    """Parse a string into a local datetime."""
+def parse_plain_datetime(datetime: str, /) -> dt.datetime:
+    """Parse a string into a plain datetime."""
     try:
-        ldt = LocalDateTime.parse_common_iso(datetime)
+        ldt = PlainDateTime.parse_common_iso(datetime)
     except ValueError:
         pass
     else:
         return ldt.py_datetime()
     try:
         ((year, month, day, hour, minute, second, microsecond),) = (
-            _PARSE_LOCAL_DATETIME_REGEX.findall(datetime)
+            _PARSE_PLAIN_DATETIME_REGEX.findall(datetime)
         )
     except ValueError:
-        raise ParseLocalDateTimeError(datetime=datetime) from None
+        raise ParsePlainDateTimeError(datetime=datetime) from None
     try:
         microsecond_use = int(microsecond)
     except ValueError:
@@ -356,12 +356,12 @@ def parse_local_datetime(datetime: str, /) -> dt.datetime:
 
 
 @dataclass(kw_only=True, slots=True)
-class ParseLocalDateTimeError(Exception):
+class ParsePlainDateTimeError(Exception):
     datetime: str
 
     @override
     def __str__(self) -> str:
-        return f"Unable to parse local datetime; got {self.datetime!r}"
+        return f"Unable to parse plain datetime; got {self.datetime!r}"
 
 
 ##
@@ -494,8 +494,8 @@ def serialize_date(date: dt.date, /) -> str:
 def serialize_datetime(datetime: dt.datetime, /) -> str:
     """Serialize a datetime."""
     try:
-        return serialize_local_datetime(datetime)
-    except SerializeLocalDateTimeError:
+        return serialize_plain_datetime(datetime)
+    except SerializePlainDateTimeError:
         return serialize_zoned_datetime(datetime)
 
 
@@ -524,22 +524,22 @@ class SerializeDurationError(Exception):
 ##
 
 
-def serialize_local_datetime(datetime: dt.datetime, /) -> str:
-    """Serialize a local datetime."""
+def serialize_plain_datetime(datetime: dt.datetime, /) -> str:
+    """Serialize a plain datetime."""
     try:
-        ldt = LocalDateTime.from_py_datetime(datetime)
+        pdt = PlainDateTime.from_py_datetime(datetime)
     except ValueError:
-        raise SerializeLocalDateTimeError(datetime=datetime) from None
-    return ldt.format_common_iso()
+        raise SerializePlainDateTimeError(datetime=datetime) from None
+    return pdt.format_common_iso()
 
 
 @dataclass(kw_only=True, slots=True)
-class SerializeLocalDateTimeError(Exception):
+class SerializePlainDateTimeError(Exception):
     datetime: dt.datetime
 
     @override
     def __str__(self) -> str:
-        return f"Unable to serialize local datetime; got {self.datetime}"
+        return f"Unable to serialize plain datetime; got {self.datetime}"
 
 
 ##
@@ -633,40 +633,40 @@ __all__ = [
     "CheckValidZonedDateimeError",
     "EnsureDateError",
     "EnsureDateTimeError",
-    "EnsureLocalDateTimeError",
+    "EnsurePlainDateTimeError",
     "EnsureTimeError",
     "EnsureTimedeltaError",
     "EnsureZonedDateTimeError",
     "ParseDateError",
     "ParseDateTimeError",
     "ParseDurationError",
-    "ParseLocalDateTimeError",
+    "ParsePlainDateTimeError",
     "ParseTimeError",
     "ParseTimedeltaError",
     "ParseZonedDateTimeError",
     "SerializeDurationError",
-    "SerializeLocalDateTimeError",
+    "SerializePlainDateTimeError",
     "SerializeTimeDeltaError",
     "SerializeZonedDateTimeError",
     "check_valid_zoned_datetime",
     "ensure_date",
     "ensure_datetime",
     "ensure_duration",
-    "ensure_local_datetime",
+    "ensure_plain_datetime",
     "ensure_time",
     "ensure_timedelta",
     "ensure_zoned_datetime",
     "parse_date",
     "parse_datetime",
     "parse_duration",
-    "parse_local_datetime",
+    "parse_plain_datetime",
     "parse_time",
     "parse_timedelta",
     "parse_zoned_datetime",
     "serialize_date",
     "serialize_datetime",
     "serialize_duration",
-    "serialize_local_datetime",
+    "serialize_plain_datetime",
     "serialize_time",
     "serialize_timedelta",
     "serialize_zoned_datetime",
