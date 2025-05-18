@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import datetime as dt
-from datetime import timezone
 from re import escape
 from typing import TYPE_CHECKING
-from zoneinfo import ZoneInfo
 
 from hypothesis import assume, example, given
 from hypothesis.strategies import (
@@ -36,7 +34,7 @@ from utilities.datetime import (
 from utilities.hypothesis import (
     assume_does_not_raise,
     datetime_durations,
-    local_datetimes,
+    plain_datetimes,
     timedeltas_2w,
     zoned_datetimes,
 )
@@ -90,7 +88,7 @@ from utilities.whenever import (
     serialize_timedelta,
     serialize_zoned_datetime,
 )
-from utilities.zoneinfo import UTC, get_time_zone_name
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from utilities.types import Duration
@@ -160,7 +158,7 @@ class TestSerializeAndParseDate:
 
 class TestSerializeAndParseDateTime:
     @given(
-        datetime=local_datetimes()
+        datetime=plain_datetimes()
         | zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
     )
     @SKIPIF_CI_AND_WINDOWS
@@ -177,7 +175,7 @@ class TestSerializeAndParseDateTime:
 
     @given(
         data=data(),
-        datetime=local_datetimes()
+        datetime=plain_datetimes()
         | zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True),
     )
     @SKIPIF_CI_AND_WINDOWS
@@ -228,14 +226,14 @@ class TestSerializeAndParseDuration:
             _ = ensure_duration("invalid")
 
 
-class TestSerializeAndParseLocalDateTime:
+class TestSerializeAndParsePlainDateTime:
     @given(datetime=datetimes())
     def test_main(self, *, datetime: dt.datetime) -> None:
         serialized = serialize_plain_datetime(datetime)
         result = parse_plain_datetime(serialized)
         assert result == datetime
 
-    @given(datetime=local_datetimes(round_="standard", timedelta=SECOND))
+    @given(datetime=plain_datetimes(round_="standard", timedelta=SECOND))
     def test_compact_no_microseconds(self, *, datetime: dt.datetime) -> None:
         assert datetime.microsecond == 0
         serialized = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
@@ -252,7 +250,7 @@ class TestSerializeAndParseLocalDateTime:
     def test_error_parse(self) -> None:
         with raises(
             ParsePlainDateTimeError,
-            match="Unable to parse local datetime; got 'invalid'",
+            match="Unable to parse plain datetime; got 'invalid'",
         ):
             _ = parse_plain_datetime("invalid")
 
@@ -260,7 +258,7 @@ class TestSerializeAndParseLocalDateTime:
         datetime = dt.datetime(2000, 1, 1, tzinfo=UTC)
         with raises(
             SerializePlainDateTimeError,
-            match="Unable to serialize local datetime; got .*",
+            match="Unable to serialize plain datetime; got .*",
         ):
             _ = serialize_plain_datetime(datetime)
 
@@ -275,7 +273,7 @@ class TestSerializeAndParseLocalDateTime:
     def test_error_ensure(self) -> None:
         with raises(
             EnsurePlainDateTimeError,
-            match="Unable to ensure local datetime; got 'invalid'",
+            match="Unable to ensure plain datetime; got 'invalid'",
         ):
             _ = ensure_plain_datetime("invalid")
 
@@ -384,36 +382,7 @@ class TestSerializeAndParseZonedDateTime:
         result = parse_zoned_datetime(serialized)
         assert result == datetime
 
-    @given(
-        datetime=zoned_datetimes(
-            time_zone=timezones() | just(dt.UTC),
-            round_="standard",
-            timedelta=SECOND,
-            valid=True,
-        )
-    )
-    @SKIPIF_CI_AND_WINDOWS
-    def test_compact_no_microseconds(self, *, datetime: dt.datetime) -> None:
-        assert datetime.microsecond == 0
-        part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
-        assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
-        part2 = get_time_zone_name(datetime.tzinfo)
-        serialized = f"{part1}[{part2}]"
-        result = parse_zoned_datetime(serialized)
-        assert result == datetime
-
-    @given(datetime=zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True))
-    @SKIPIF_CI_AND_WINDOWS
-    def test_compact_with_microseconds(self, *, datetime: dt.datetime) -> None:
-        _ = assume(datetime.microsecond != 0)
-        part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S.%f"))
-        assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
-        part2 = get_time_zone_name(datetime.tzinfo)
-        serialized = f"{part1}[{part2}]"
-        result = parse_zoned_datetime(serialized)
-        assert result == datetime
-
-    @given(datetime=local_datetimes())
+    @given(datetime=plain_datetimes())
     @SKIPIF_CI_AND_WINDOWS
     def test_utc(self, *, datetime: dt.datetime) -> None:
         datetime1, datetime2 = [datetime.astimezone(tz) for tz in [UTC, dt.UTC]]

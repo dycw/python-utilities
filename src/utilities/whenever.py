@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     )
 
 
-MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3659635, microseconds=-1)
+MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3652060, microseconds=-1)
 MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
 
 
@@ -154,7 +154,7 @@ class EnsurePlainDateTimeError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to ensure local datetime; got {self.datetime!r}"
+        return f"Unable to ensure plain datetime; got {self.datetime!r}"
 
 
 ##

@@ -32,7 +32,7 @@ def ensure_time_zone(obj: TimeZoneLike, /) -> ZoneInfo:
             raise _EnsureTimeZoneInvalidTZInfoError(time_zone=obj)
         case dt.datetime() as datetime:
             if datetime.tzinfo is None:
-                raise _EnsureTimeZoneLocalDateTimeError(datetime=datetime)
+                raise _EnsureTimeZonePlainDateTimeError(datetime=datetime)
             return ensure_time_zone(datetime.tzinfo)
         case _ as never:
             assert_never(never)
@@ -52,12 +52,12 @@ class _EnsureTimeZoneInvalidTZInfoError(EnsureTimeZoneError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _EnsureTimeZoneLocalDateTimeError(EnsureTimeZoneError):
+class _EnsureTimeZonePlainDateTimeError(EnsureTimeZoneError):
     datetime: dt.datetime
 
     @override
     def __str__(self) -> str:
-        return f"Local datetime: {self.datetime}"
+        return f"Plain datetime: {self.datetime}"
 
 
 ##
