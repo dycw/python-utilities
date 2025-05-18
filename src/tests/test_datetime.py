@@ -106,7 +106,7 @@ from utilities.datetime import (
     get_today,
     get_years,
     is_integral_timedelta,
-    is_local_datetime,
+    is_plain_datetime,
     is_weekday,
     is_zero_time,
     is_zoned_datetime,
@@ -873,7 +873,7 @@ class TestIsIntegralTimeDelta:
         assert not is_integral_timedelta(timedelta)
 
 
-class TestIsLocalDateTime:
+class TestIsPlainDateTime:
     @mark.parametrize(
         ("obj", "expected"),
         [
@@ -883,7 +883,7 @@ class TestIsLocalDateTime:
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = is_local_datetime(obj)
+        result = is_plain_datetime(obj)
         assert result is expected
 
 
