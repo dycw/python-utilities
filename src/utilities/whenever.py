@@ -5,7 +5,6 @@ import re
 from contextlib import suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, override
-from zoneinfo import ZoneInfo
 
 from whenever import Date, DateTimeDelta, PlainDateTime, Time, ZonedDateTime
 
@@ -320,39 +319,13 @@ class ParseDurationError(Exception):
 ##
 
 
-_PARSE_PLAIN_DATETIME_REGEX = re.compile(
-    r"^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})\.?(\d{6})?$"
-)
-
-
 def parse_plain_datetime(datetime: str, /) -> dt.datetime:
     """Parse a string into a plain datetime."""
     try:
         ldt = PlainDateTime.parse_common_iso(datetime)
     except ValueError:
-        pass
-    else:
-        return ldt.py_datetime()
-    try:
-        ((year, month, day, hour, minute, second, microsecond),) = (
-            _PARSE_PLAIN_DATETIME_REGEX.findall(datetime)
-        )
-    except ValueError:
         raise ParsePlainDateTimeError(datetime=datetime) from None
-    try:
-        microsecond_use = int(microsecond)
-    except ValueError:
-        microsecond_use = 0
-    return dt.datetime(
-        year=int(year),
-        month=int(month),
-        day=int(day),
-        hour=int(hour),
-        minute=int(minute),
-        second=int(second),
-        microsecond=microsecond_use,
-        tzinfo=UTC,
-    ).replace(tzinfo=None)
+    return ldt.py_datetime()
 
 
 @dataclass(kw_only=True, slots=True)
@@ -435,39 +408,13 @@ class _ParseTimedeltaNanosecondError(ParseTimedeltaError):
 ##
 
 
-_PARSE_ZONED_DATETIME_REGEX = re.compile(
-    r"^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})\.?(\d{6})?\[([\w\+\-/]+)\]$"
-)
-
-
 def parse_zoned_datetime(datetime: str, /) -> dt.datetime:
     """Parse a string into a zoned datetime."""
     try:
         zdt = ZonedDateTime.parse_common_iso(datetime)
     except ValueError:
-        pass
-    else:
-        return zdt.py_datetime()
-    try:
-        ((year, month, day, hour, minute, second, microsecond, timezone),) = (
-            _PARSE_ZONED_DATETIME_REGEX.findall(datetime)
-        )
-    except ValueError:
         raise ParseZonedDateTimeError(datetime=datetime) from None
-    try:  # skipif-ci-and-windows
-        microsecond_use = int(microsecond)
-    except ValueError:  # skipif-ci-and-windows
-        microsecond_use = 0
-    return dt.datetime(  # skipif-ci-and-windows
-        year=int(year),
-        month=int(month),
-        day=int(day),
-        hour=int(hour),
-        minute=int(minute),
-        second=int(second),
-        microsecond=microsecond_use,
-        tzinfo=ZoneInfo(timezone),
-    )
+    return zdt.py_datetime()
 
 
 @dataclass(kw_only=True, slots=True)
