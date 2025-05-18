@@ -241,7 +241,6 @@ class EnsureZonedDateTimeError(Exception):
 ##
 
 
-_PARSE_DATE_YYYYMMDD_REGEX = re.compile(r"^(\d{4})(\d{2})(\d{2})$")
 _PARSE_DATE_YYMMDD_REGEX = re.compile(r"^(\d{2})(\d{2})(\d{2})$")
 
 
@@ -250,18 +249,13 @@ def parse_date(date: str, /) -> dt.date:
     try:
         w_date = Date.parse_common_iso(date)
     except ValueError:
-        pass
-    else:
-        return w_date.py_date()
-    try:
-        ((year, month, day),) = _PARSE_DATE_YYYYMMDD_REGEX.findall(date)
-    except ValueError:
         try:
             ((year2, month, day),) = _PARSE_DATE_YYMMDD_REGEX.findall(date)
         except ValueError:
             raise ParseDateError(date=date) from None
         year = parse_two_digit_year(year2)
-    return dt.date(year=int(year), month=int(month), day=int(day))
+        return dt.date(year=int(year), month=int(month), day=int(day))
+    return w_date.py_date()
 
 
 @dataclass(kw_only=True, slots=True)
