@@ -649,7 +649,7 @@ _SUBSCRIBE_SLEEP: Duration = MILLISECOND
 
 @overload
 def subscribe(
-    pubsub: PubSub,
+    redis_or_pubsub: Redis | PubSub,
     channels: MaybeIterable[str],
     /,
     *,
@@ -659,7 +659,7 @@ def subscribe(
 ) -> AsyncIterator[_T]: ...
 @overload
 def subscribe(
-    pubsub: PubSub,
+    redis_or_pubsub: Redis | PubSub,
     channels: MaybeIterable[str],
     /,
     *,
@@ -668,7 +668,7 @@ def subscribe(
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[bytes]: ...
 async def subscribe(  # pyright: ignore[reportInconsistentOverload]
-    pubsub: PubSub,
+    redis_or_pubsub: Redis | PubSub,
     channels: MaybeIterable[str],
     /,
     *,
@@ -679,7 +679,7 @@ async def subscribe(  # pyright: ignore[reportInconsistentOverload]
     """Subscribe to the data of a given channel(s)."""
     channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
     messages = subscribe_messages(  # skipif-ci-and-not-linux
-        pubsub, channels, timeout=timeout, sleep=sleep
+        redis_or_pubsub, channels, timeout=timeout, sleep=sleep
     )
     if deserializer is None:  # skipif-ci-and-not-linux
         async for message in messages:
@@ -730,6 +730,8 @@ async def subscribe_messages(
                     yield cast("_RedisMessageSubscribe", message)
                 else:
                     await asyncio.sleep(sleep_use)
+        case _ as never:
+            assert_never(never)
 
 
 class _RedisMessageSubscribe(TypedDict):
