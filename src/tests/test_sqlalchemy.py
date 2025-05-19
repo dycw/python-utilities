@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from asyncio import sleep
 from itertools import chain
 from os import getpid
 from time import time_ns
@@ -44,7 +43,6 @@ from utilities.sqlalchemy import (
     InsertItemsError,
     TablenameMixin,
     TableOrORMInstOrClass,
-    Upserter,
     UpserterIQL,
     UpserterIQLError,
     UpsertItemsError,
@@ -1150,34 +1148,6 @@ class TestTupleToMapping:
         )
         result = _tuple_to_mapping(values, table)
         assert result == expected
-
-
-class TestUpserter:
-    @given(
-        data=data(),
-        name=_table_names(),
-        triples=_upsert_lists(nullable=True, min_size=1),
-    )
-    @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
-    async def test_main(
-        self, *, data: DataObject, name: str, triples: list[tuple[int, bool, bool]]
-    ) -> None:
-        table = Table(
-            name,
-            MetaData(),
-            Column("id_", Integer, primary_key=True),
-            Column("value", Boolean, nullable=True),
-        )
-        engine = await sqlalchemy_engines(data, table)
-        pairs = [(id_, init) for id_, init, _ in triples]
-        async with Upserter(engine=engine) as upserter:
-            upserter.enqueue((pairs, table))
-            await sleep(0.2)
-        sel = select(table)
-        async with engine.begin() as conn:
-            res = (await conn.execute(sel)).all()
-        assert set(res) == set(pairs)
 
 
 class TestUpserterIQL:
