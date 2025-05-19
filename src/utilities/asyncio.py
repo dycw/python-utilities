@@ -48,6 +48,7 @@ from utilities.datetime import (
     MINUTE,
     SECOND,
     datetime_duration_to_float,
+    datetime_duration_to_timedelta,
     get_now,
     round_datetime,
 )
@@ -338,12 +339,15 @@ class ExceptionProcessor(QueueProcessor[Exception | type[Exception]]):
 ##
 
 
+type _DurationOrEvery = Duration | tuple[Literal["every"], Duration]
+
+
 @dataclass(kw_only=True, unsafe_hash=True)
 class InfiniteLooper(ABC, Generic[THashable]):
     """An infinite loop which can throw exceptions by setting events."""
 
-    sleep_core: Duration | tuple[Literal["every"], Duration] = SECOND
-    sleep_restart: Duration | tuple[Literal["every"], Duration] = MINUTE
+    sleep_core: _DurationOrEvery = SECOND
+    sleep_restart: _DurationOrEvery = MINUTE
     logger: str | None = None
     _events: Mapping[THashable, Event] = field(
         default_factory=dict, init=False, repr=False, hash=False
@@ -417,7 +421,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 "%r encountered %r whilst initializing; sleeping for %s...",
                 get_class_name(self),
                 repr_error(error),
-                self.sleep_restart,
+                self._sleep_desc(self.sleep_restart),
             )
 
     def _error_upon_core(self, error: Exception, /) -> None:
@@ -427,7 +431,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 "%r encountered %r; sleeping for %s...",
                 get_class_name(self),
                 repr_error(error),
-                self.sleep_restart,
+                self._sleep_desc(self.sleep_core),
             )
 
     def _error_group_upon_coroutines(self, group: ExceptionGroup, /) -> None:
@@ -462,6 +466,18 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 await sleep_dur(duration=duration)
             case "every", (int() | float() | dt.timedelta()) as duration:
                 await sleep_until_rounded(duration)
+            case _ as never:
+                assert_never(never)
+
+    def _sleep_desc(self, sleep: _DurationOrEvery, /) -> str:
+        """Get a description of the sleep."""
+        match sleep:
+            case int() | float() | dt.timedelta() as duration:
+                timedelta = datetime_duration_to_timedelta(duration)
+                return f"for {timedelta}"
+            case "every", (int() | float() | dt.timedelta()) as duration:
+                timedelta = datetime_duration_to_timedelta(duration)
+                return f"until next {timedelta}"
             case _ as never:
                 assert_never(never)
 
