@@ -406,7 +406,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
                     _ = [tg.create_task(c()) for c in coroutines]
             except ExceptionGroup as error:
                 self._error_group_upon_coroutines(error)
-                await sleep_dur(duration=self.sleep_restart)
+                await self._run_sleep(self.sleep_restart)
 
     async def _initialize(self) -> None:
         """Initialize the loop."""
@@ -421,7 +421,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 "%r encountered %r whilst initializing; sleeping %s...",
                 get_class_name(self),
                 repr_error(error),
-                self._sleep_restart_desc(self.sleep_restart),
+                self._sleep_restart_desc,
             )
 
     def _error_upon_core(self, error: Exception, /) -> None:
@@ -431,7 +431,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 "%r encountered %r; sleeping %s...",
                 get_class_name(self),
                 repr_error(error),
-                self._sleep_restart_desc(self.sleep_restart),
+                self._sleep_restart_desc,
             )
 
     def _error_group_upon_coroutines(self, group: ExceptionGroup, /) -> None:
