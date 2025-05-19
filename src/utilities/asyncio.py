@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime as dt
 from abc import ABC, abstractmethod
 from asyncio import (
-    CancelledError,
     Event,
     PriorityQueue,
     Queue,
@@ -13,17 +12,11 @@ from asyncio import (
     Task,
     TaskGroup,
     create_subprocess_shell,
-    create_task,
     sleep,
     timeout,
 )
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
-from contextlib import (
-    AsyncExitStack,
-    _AsyncGeneratorContextManager,
-    asynccontextmanager,
-    suppress,
-)
+from contextlib import _AsyncGeneratorContextManager, asynccontextmanager
 from dataclasses import dataclass, field
 from io import StringIO
 from logging import getLogger
@@ -35,7 +28,6 @@ from typing import (
     Generic,
     Literal,
     NoReturn,
-    Self,
     TextIO,
     TypeVar,
     assert_never,
@@ -43,16 +35,8 @@ from typing import (
     override,
 )
 
-from utilities.datetime import (
-    MILLISECOND,
-    MINUTE,
-    SECOND,
-    datetime_duration_to_float,
-    datetime_duration_to_timedelta,
-    get_now,
-    round_datetime,
-)
-from utilities.errors import ImpossibleCaseError, repr_error
+from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float
+from utilities.errors import repr_error
 from utilities.functions import ensure_int, ensure_not_none, get_class_name
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
@@ -69,7 +53,6 @@ if TYPE_CHECKING:
     from asyncio.subprocess import Process
     from collections.abc import AsyncIterator, Sequence
     from contextvars import Context
-    from types import TracebackType
 
     from utilities.types import Duration
 
