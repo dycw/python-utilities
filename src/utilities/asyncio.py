@@ -462,6 +462,14 @@ class InfiniteLooper(ABC, Generic[THashable]):
             raise InfiniteLooperError(looper=self, event=event) from None
         event_obj.set()
 
+    async def _sleep_until_core(self) -> None:
+        """Sleep until the next part of the loop."""
+        await sleep(60)
+
+    async def _sleep_until_restart(self) -> None:
+        """Sleep until restart."""
+        await sleep(60)
+
     def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
         """Yield any other coroutines which must also be run."""
         yield from []
