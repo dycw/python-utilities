@@ -1478,7 +1478,7 @@ def zoned_datetimes(
 ) -> dt.datetime:
     """Strategy for generating zoned datetimes."""
     from utilities.whenever import (
-        CheckValidZonedDateimeError,
+        CheckValidZonedDateTimeError,
         check_valid_zoned_datetime,
     )
 
@@ -1511,7 +1511,7 @@ def zoned_datetimes(
     _ = assume(min_value_ <= datetime <= max_value_)
     if valid:
         with assume_does_not_raise(  # skipif-ci-and-windows
-            CheckValidZonedDateimeError
+            CheckValidZonedDateTimeError
         ):
             check_valid_zoned_datetime(datetime)
     return datetime

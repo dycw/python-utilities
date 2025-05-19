@@ -62,14 +62,27 @@ def check_valid_zoned_datetime(datetime: dt.datetime, /) -> None:
             .py_datetime()
         )
     except TimeZoneNotFoundError:
-        raise CheckValidZonedDateimeError(datetime=datetime, result=result) from None
+        raise _CheckValidZonedDateTimeInvalidTimeZoneError(  # pragma: no cover
+            datetime=datetime
+        ) from None
     if result != datetime2:  # skipif-ci-and-windows
-        raise CheckValidZonedDateimeError(datetime=datetime, result=result)
+        raise _CheckValidZonedDateTimeUnequalError(datetime=datetime, result=result)
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckValidZonedDateimeError(Exception):
+class CheckValidZonedDateTimeError(Exception):
     datetime: dt.datetime
+
+
+@dataclass(kw_only=True, slots=True)
+class _CheckValidZonedDateTimeInvalidTimeZoneError(CheckValidZonedDateTimeError):
+    @override
+    def __str__(self) -> str:
+        return f"Invalid timezone; got {self.datetime.tzinfo}"  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class _CheckValidZonedDateTimeUnequalError(CheckValidZonedDateTimeError):
     result: dt.datetime
 
     @override
@@ -581,7 +594,7 @@ class _ToDateTimeDeltaError(Exception):
 __all__ = [
     "MAX_SERIALIZABLE_TIMEDELTA",
     "MIN_SERIALIZABLE_TIMEDELTA",
-    "CheckValidZonedDateimeError",
+    "CheckValidZonedDateTimeError",
     "EnsureDateError",
     "EnsureDateTimeError",
     "EnsurePlainDateTimeError",

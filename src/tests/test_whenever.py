@@ -44,7 +44,6 @@ from utilities.tzdata import HongKong
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
-    CheckValidZonedDateimeError,
     EnsureDateError,
     EnsureDateTimeError,
     EnsureDurationError,
@@ -61,6 +60,7 @@ from utilities.whenever import (
     SerializePlainDateTimeError,
     SerializeTimeDeltaError,
     SerializeZonedDateTimeError,
+    _CheckValidZonedDateTimeUnequalError,
     _EnsureTimedeltaNanosecondError,
     _EnsureTimedeltaParseError,
     _ParseTimedeltaNanosecondError,
@@ -111,10 +111,10 @@ class TestCheckValidZonedDateTime:
     def test_main(self, *, datetime: dt.datetime) -> None:
         check_valid_zoned_datetime(datetime)
 
-    def test_error(self) -> None:
+    def test_error_unequal(self) -> None:
         datetime = dt.datetime(1951, 4, 1, 4, tzinfo=HongKong)
         with raises(
-            CheckValidZonedDateimeError,
+            _CheckValidZonedDateTimeUnequalError,
             match=escape(
                 "Zoned datetime must be valid; got 1951-04-01 04:00:00+08:00 != 1951-04-01 05:00:00+09:00"
             ),
