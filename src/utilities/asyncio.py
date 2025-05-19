@@ -46,7 +46,6 @@ from utilities.datetime import (
     MINUTE,
     SECOND,
     datetime_duration_to_float,
-    get_now,
     round_datetime,
 )
 from utilities.errors import ImpossibleCaseError, repr_error
@@ -694,11 +693,20 @@ async def sleep_dur(*, duration: Duration | None = None) -> None:
 ##
 
 
-async def sleep_until(*, duration: Duration | None = None) -> None:
+async def sleep_until(duration: Duration, /) -> None:
     """Sleep which accepts durations."""
     if duration is None:
         return
     await sleep(datetime_duration_to_float(duration))
+
+    event = start + i * timedelta
+    if event <= now:
+        await func(i, event)
+        max(done, i)
+    else:
+        break
+
+    await sleep_dur(duration=round_datetime(now, timedelta, mode="ceil") - now)
 
 
 ##
