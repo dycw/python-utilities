@@ -616,7 +616,7 @@ class TestInfiniteQueueLooper:
         assert looper.empty()
         looper.put_items_nowait(*range(n))
         assert len(looper) == n
-        assert looper.empty()
+        assert not looper.empty()
 
     async def test_no_items(self) -> None:
         @dataclass(kw_only=True)
