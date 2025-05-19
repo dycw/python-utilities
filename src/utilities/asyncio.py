@@ -374,7 +374,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
                     await self._initialize()
                 except Exception as error:  # noqa: BLE001
                     self._error_upon_initialize(error)
-                    await self._sleep_until_restart()
+                    await self._run_sleep(self.sleep_restart)
                 else:
                     while True:
                         try:
@@ -385,14 +385,14 @@ class InfiniteLooper(ABC, Generic[THashable]):
                             )
                         except StopIteration:
                             await self._core()
-                            await self._sleep_until_core()
+                            await self._run_sleep(self.sleep_core)
                         else:
                             self._raise_error(event)
             except InfiniteLooperError:
                 raise
             except Exception as error:  # noqa: BLE001
                 self._error_upon_core(error)
-                await self._sleep_until_restart()
+                await self._run_sleep(self.sleep_restart)
 
     async def _run_looper_with_coroutines(
         self, *coroutines: Callable[[], Coroutine1[None]]
@@ -418,20 +418,20 @@ class InfiniteLooper(ABC, Generic[THashable]):
         """Handle any errors upon initializing the looper."""
         if self.logger is not None:
             getLogger(name=self.logger).error(
-                "%r encountered %r whilst initializing; sleeping for %s...",
+                "%r encountered %r whilst initializing; sleeping %s...",
                 get_class_name(self),
                 repr_error(error),
-                self._sleep_desc(self.sleep_restart),
+                self._sleep_restart_desc(self.sleep_restart),
             )
 
     def _error_upon_core(self, error: Exception, /) -> None:
         """Handle any errors upon running the core function."""
         if self.logger is not None:
             getLogger(name=self.logger).error(
-                "%r encountered %r; sleeping for %s...",
+                "%r encountered %r; sleeping %s...",
                 get_class_name(self),
                 repr_error(error),
-                self._sleep_desc(self.sleep_core),
+                self._sleep_restart_desc(self.sleep_restart),
             )
 
     def _error_group_upon_coroutines(self, group: ExceptionGroup, /) -> None:
@@ -459,9 +459,9 @@ class InfiniteLooper(ABC, Generic[THashable]):
             event: Event() for event, _ in self._yield_events_and_exceptions()
         }
 
-    async def _run_sleep_core(self) -> None:
+    async def _run_sleep(self, sleep: _DurationOrEvery, /) -> None:
         """Sleep until the next part of the loop."""
-        match self.sleep_core:
+        match sleep:
             case int() | float() | dt.timedelta() as duration:
                 await sleep_dur(duration=duration)
             case "every", (int() | float() | dt.timedelta()) as duration:
@@ -469,25 +469,16 @@ class InfiniteLooper(ABC, Generic[THashable]):
             case _ as never:
                 assert_never(never)
 
-    def _sleep_desc(self, sleep: _DurationOrEvery, /) -> str:
-        """Get a description of the sleep."""
-        match sleep:
+    @property
+    def _sleep_restart_desc(self) -> str:
+        """Get a description of the sleep until restart."""
+        match self.sleep_restart:
             case int() | float() | dt.timedelta() as duration:
                 timedelta = datetime_duration_to_timedelta(duration)
                 return f"for {timedelta}"
             case "every", (int() | float() | dt.timedelta()) as duration:
                 timedelta = datetime_duration_to_timedelta(duration)
                 return f"until next {timedelta}"
-            case _ as never:
-                assert_never(never)
-
-    async def _sleep_until_restart(self) -> None:
-        """Sleep until restart."""
-        match self.sleep_restart:
-            case int() | float() | dt.timedelta() as duration:
-                await sleep_dur(duration=duration)
-            case "every", (int() | float() | dt.timedelta()) as duration:
-                await sleep_until_rounded(duration)
             case _ as never:
                 assert_never(never)
 
