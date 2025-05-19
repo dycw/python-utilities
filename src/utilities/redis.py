@@ -22,7 +22,7 @@ from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 from redis.typing import EncodableT
 
-from utilities.asyncio import InfiniteQueueLooper, QueueProcessor, timeout_dur
+from utilities.asyncio import InfiniteQueueLooper, timeout_dur
 from utilities.datetime import (
     MILLISECOND,
     SECOND,
@@ -589,22 +589,6 @@ async def publish(
 
 
 @dataclass(kw_only=True)
-class Publisher(QueueProcessor[tuple[str, EncodableT]]):
-    """Publish a set of messages to Redis."""
-
-    redis: Redis
-    serializer: Callable[[Any], EncodableT] | None = None
-    timeout: Duration = _PUBLISH_TIMEOUT
-
-    @override
-    async def _process_item(self, item: tuple[str, EncodableT], /) -> None:
-        channel, data = item  # skipif-ci-and-not-linux
-        _ = await publish(  # skipif-ci-and-not-linux
-            self.redis, channel, data, serializer=self.serializer, timeout=self.timeout
-        )
-
-
-@dataclass(kw_only=True)
 class PublisherIQL(InfiniteQueueLooper[None, tuple[str, EncodableT]]):
     """Publish a set of messages to Redis."""
 
@@ -828,7 +812,6 @@ _ = _TestRedis
 
 
 __all__ = [
-    "Publisher",
     "PublisherIQL",
     "PublisherIQLError",
     "RedisHashMapKey",
