@@ -80,120 +80,6 @@ _T = TypeVar("_T")
 ##
 
 
-@dataclass(kw_only=True)
-class AsyncService(ABC):
-    """A long-running, asynchronous service."""
-
-    duration: Duration | None = None
-    _await_upon_aenter: bool = field(default=True, init=False, repr=False)
-    _event: Event = field(default_factory=Event, init=False, repr=False)
-    _stack: AsyncExitStack = field(
-        default_factory=AsyncExitStack, init=False, repr=False
-    )
-    _state: bool = field(default=False, init=False, repr=False)
-    _task: Task[None] | None = field(default=None, init=False, repr=False)
-    _depth: int = field(default=0, init=False, repr=False)
-
-    async def __aenter__(self) -> Self:
-        """Context manager entry."""
-        if (self._task is None) and (self._depth == 0):
-            _ = await self._stack.__aenter__()
-            self._task = create_task(self._start_runner())
-            if self._await_upon_aenter:
-                with suppress(CancelledError):
-                    await self._task
-        elif (self._task is not None) and (self._depth >= 1):
-            ...
-        else:
-            raise ImpossibleCaseError(  # pragma: no cover
-                case=[f"{self._task=}", f"{self._depth=}"]
-            )
-        self._depth += 1
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None = None,
-        exc_value: BaseException | None = None,
-        traceback: TracebackType | None = None,
-    ) -> None:
-        """Context manager exit."""
-        _ = (exc_type, exc_value, traceback)
-        if (self._task is None) or (self._depth == 0):
-            raise ImpossibleCaseError(  # pragma: no cover
-                case=[f"{self._task=}", f"{self._depth=}"]
-            )
-        self._state = False
-        self._depth -= 1
-        if self._depth == 0:
-            _ = await self._stack.__aexit__(exc_type, exc_value, traceback)
-            await self.stop()
-            with suppress(CancelledError):
-                await self._task
-            self._task = None
-
-    @abstractmethod
-    async def _start(self) -> None:
-        """Start the service."""
-
-    async def _start_runner(self) -> None:
-        """Coroutine to start the service."""
-        if self.duration is None:
-            _ = await self._start()
-            _ = await self._event.wait()
-        else:
-            try:
-                async with timeout_dur(duration=self.duration):
-                    _ = await self._start()
-            except TimeoutError:
-                await self.stop()
-
-    async def stop(self) -> None:
-        """Stop the service."""
-        if self._task is None:
-            raise ImpossibleCaseError(case=[f"{self._task=}"])  # pragma: no cover
-        with suppress(CancelledError):
-            _ = self._task.cancel()
-
-
-##
-
-
-@dataclass(kw_only=True)
-class AsyncLoopingService(AsyncService):
-    """A long-running, asynchronous service which loops a core function."""
-
-    sleep: Duration = MILLISECOND
-    _await_upon_aenter: bool = field(default=True, init=False, repr=False)
-
-    @abstractmethod
-    async def _run(self) -> None:
-        """Run the core function once."""
-        raise NotImplementedError  # pragma: no cover
-
-    async def _run_failure(self, error: Exception, /) -> None:
-        """Process the failure."""
-        raise error
-
-    @override
-    async def _start(self) -> None:
-        """Start the service, assuming no task is present."""
-        while True:
-            try:
-                await self._run()
-            except CancelledError:
-                await self.stop()
-                break
-            except Exception as error:  # noqa: BLE001
-                await self._run_failure(error)
-                await sleep_dur(duration=self.sleep)
-            else:
-                await sleep_dur(duration=self.sleep)
-
-
-##
-
-
 class EnhancedTaskGroup(TaskGroup):
     """Task group with enhanced features."""
 
@@ -243,103 +129,6 @@ class EnhancedTaskGroup(TaskGroup):
 
 
 ##
-
-
-@dataclass(kw_only=True)
-class QueueProcessor(AsyncService, Generic[_T]):
-    """Process a set of items in a queue."""
-
-    queue_type: type[Queue[_T]] = field(default=Queue, repr=False)
-    queue_max_size: int | None = field(default=None, repr=False)
-    sleep: Duration = MILLISECOND
-    _await_upon_aenter: bool = field(default=False, init=False, repr=False)
-    _queue: Queue[_T] = field(init=False, repr=False)
-
-    def __post_init__(self) -> None:
-        self._queue = self.queue_type(
-            maxsize=0 if self.queue_max_size is None else self.queue_max_size
-        )
-
-    def __len__(self) -> int:
-        return self._queue.qsize()
-
-    def empty(self) -> bool:
-        """Check if the queue is empty."""
-        return self._queue.empty()
-
-    def enqueue(self, *items: _T) -> None:
-        """Enqueue a set items."""
-        for item in items:
-            self._queue.put_nowait(item)
-
-    async def run_until_empty(self) -> None:
-        """Run the processor until the queue is empty."""
-        while not self.empty():
-            await self._run()
-            await sleep_dur(duration=self.sleep)
-
-    def _get_items_nowait(self, *, max_size: int | None = None) -> Sequence[_T]:
-        """Get items from the queue; no waiting."""
-        return get_items_nowait(self._queue, max_size=max_size)
-
-    @abstractmethod
-    async def _process_item(self, item: _T, /) -> None:
-        """Process the first item."""
-        raise NotImplementedError(item)  # pragma: no cover
-
-    async def _process_item_failure(self, item: _T, error: Exception, /) -> None:
-        """Process the failure."""
-        _ = item
-        raise error
-
-    async def _run(self) -> None:
-        """Run the processer."""
-        try:
-            (item,) = self._get_items_nowait(max_size=1)
-        except ValueError:
-            raise QueueEmpty from None
-        try:
-            await self._process_item(item)
-        except Exception as error:  # noqa: BLE001
-            await self._process_item_failure(item, error)
-
-    @override
-    async def _start(self) -> None:
-        """Start the processor."""
-        while True:
-            try:
-                await self._run()
-            except QueueEmpty:
-                await sleep_dur(duration=self.sleep)
-            except CancelledError:
-                await self.stop()
-                break
-            else:
-                await sleep_dur(duration=self.sleep)
-
-    @override
-    async def stop(self) -> None:
-        """Stop the processor."""
-        await self.run_until_empty()
-        await super().stop()
-
-
-@dataclass(kw_only=True)
-class ExceptionProcessor(QueueProcessor[Exception | type[Exception]]):
-    """Raise an exception in a queue."""
-
-    queue_max_size: int | None = field(default=1, repr=False)
-
-    @override
-    async def _process_item(self, item: Exception | type[Exception], /) -> None:
-        """Run the processor on the first item."""
-        raise item
-
-
-##
-
-
-type _DurationOrEvery = Duration | tuple[Literal["every"], Duration]
 
 
 @dataclass(kw_only=True, unsafe_hash=True)
@@ -807,15 +596,11 @@ async def timeout_dur(
 
 
 __all__ = [
-    "AsyncLoopingService",
-    "AsyncService",
     "EnhancedTaskGroup",
-    "ExceptionProcessor",
     "InfiniteLooper",
     "InfiniteLooperError",
     "InfiniteQueueLooper",
     "InfiniteQueueLooperError",
-    "QueueProcessor",
     "StreamCommandOutput",
     "UniquePriorityQueue",
     "UniqueQueue",
