@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from itertools import chain, count
 from re import search
-from typing import TYPE_CHECKING, Self, override
+from typing import TYPE_CHECKING, Literal, Self, override
 
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
@@ -582,7 +582,10 @@ class TestInfiniteLooper:
 
 
 class TestInfiniteQueueLooper:
-    async def test_main(self) -> None:
+    @given(sleep_core=sampled_from([0.05, ("every", 0.05)]))
+    async def test_main(
+        self, *, sleep_core: float | tuple[Literal["every"], float]
+    ) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteQueueLooper[None, int]):
             output: set[int] = field(default_factory=set)
@@ -591,7 +594,7 @@ class TestInfiniteQueueLooper:
             async def _process_items(self, *items: int) -> None:
                 self.output.update(items)
 
-        looper = Example(sleep_core=0.05)
+        looper = Example(sleep_core=sleep_core)
 
         async def add_items() -> None:
             for i in count():
