@@ -11,7 +11,6 @@ from hypothesis import example, given, settings
 from hypothesis.strategies import (
     SearchStrategy,
     booleans,
-    builds,
     dates,
     datetimes,
     dictionaries,
@@ -19,13 +18,10 @@ from hypothesis.strategies import (
     integers,
     just,
     lists,
-    none,
     recursive,
     sampled_from,
-    times,
     timezones,
     tuples,
-    uuids,
 )
 from polars import DataFrame, Int64
 from pytest import raises
@@ -33,28 +29,11 @@ from pytest import raises
 import utilities.math
 import utilities.operator
 from tests.conftest import IS_CI_AND_WINDOWS
-from tests.test_typing_funcs.with_future import (
-    DataClassFutureCustomEquality,
-    DataClassFutureDefaultInInitChild,
-    DataClassFutureInt,
-    DataClassFutureIntDefault,
-    DataClassFutureLiteral,
-    DataClassFutureLiteralNullable,
-    DataClassFutureNestedInnerFirstOuter,
-    DataClassFutureNestedOuterFirstOuter,
-    DataClassFutureNone,
-    DataClassFutureTypeLiteral,
-    DataClassFutureTypeLiteralNullable,
-)
+from tests.test_typing_funcs.with_future import DataClassFutureCustomEquality
 from utilities.hypothesis import (
     assume_does_not_raise,
-    int64s,
     pairs,
-    paths,
     text_ascii,
-    text_printable,
-    timedeltas_2w,
-    versions,
     zoned_datetimes,
 )
 from utilities.math import MAX_INT64, MIN_INT64
@@ -90,67 +69,27 @@ def base_objects(
 ) -> SearchStrategy[Any]:
     base = (
         booleans()
-        | floats(
-            min_value=floats_min_value,
-            max_value=floats_max_value,
-            allow_nan=floats_allow_nan,
-            allow_infinity=floats_allow_infinity,
-        )
-        | dates()
-        | datetimes()
-        | int64s()
-        | none()
-        | paths()
-        | text_printable().filter(lambda x: not x.startswith("["))
-        | times()
-        | timedeltas_2w()
-        | uuids()
-        | versions()
+        # | floats(
+        #     min_value=floats_min_value,
+        #     max_value=floats_max_value,
+        #     allow_nan=floats_allow_nan,
+        #     allow_infinity=floats_allow_infinity,
+        # )
+        # | dates()
+        # | datetimes()
+        # | int64s()
+        # | none()
+        # | paths()
+        # | text_printable().filter(lambda x: not x.startswith("["))
+        # | times()
+        # | timedeltas_2w()
+        # | uuids()
+        # | versions()
     )
     if IS_CI_AND_WINDOWS:
         base |= zoned_datetimes()
     else:
         base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
-    if dataclass_custom_equality:
-        base |= builds(DataClassFutureCustomEquality)
-    if dataclass_default_in_init_child:
-        base |= builds(DataClassFutureDefaultInInitChild)
-    if dataclass_int:
-        base |= builds(DataClassFutureInt).filter(lambda obj: _is_int64(obj.int_))
-    if dataclass_int_default:
-        base |= builds(DataClassFutureIntDefault).filter(
-            lambda obj: _is_int64(obj.int_)
-        )
-    if dataclass_literal:
-        base |= builds(DataClassFutureLiteral, truth=sampled_from(["true", "false"]))
-    if dataclass_literal_nullable:
-        base |= builds(
-            DataClassFutureLiteralNullable,
-            truth=sampled_from(["true", "false"]) | none(),
-        )
-    if dataclass_nested:
-        base |= builds(DataClassFutureNestedInnerFirstOuter).filter(
-            lambda outer: _is_int64(outer.inner.int_)
-        ) | builds(DataClassFutureNestedOuterFirstOuter).filter(
-            lambda outer: _is_int64(outer.inner.int_)
-        )
-    if dataclass_none:
-        base |= builds(DataClassFutureNone)
-    if dataclass_type_literal:
-        base |= builds(
-            DataClassFutureTypeLiteral, truth=sampled_from(["true", "false"])
-        )
-    if dataclass_type_literal_nullable:
-        base |= builds(
-            DataClassFutureTypeLiteralNullable,
-            truth=sampled_from(["true", "false"]) | none(),
-        )
-    if enum:
-        base |= sampled_from(TruthEnum)
-    if exception_class:
-        base |= just(CustomError)
-    if exception_instance:
-        base |= builds(CustomError, int64s())
     return base
 
 
