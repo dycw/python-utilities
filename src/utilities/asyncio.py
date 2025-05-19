@@ -444,7 +444,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 f"- Error #{i}/{n}: {repr_error(e)}"
                 for i, e in enumerate(errors, start=1)
             )
-            msgs.append(f"Sleeping for {self.sleep_restart}...")
+            msgs.append(f"Sleeping {self._sleep_restart_desc}...")
             getLogger(name=self.logger).error("\n".join(msgs))
 
     def _raise_error(self, event: THashable, /) -> NoReturn:
