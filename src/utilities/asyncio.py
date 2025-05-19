@@ -686,6 +686,16 @@ async def sleep_dur(*, duration: Duration | None = None) -> None:
 ##
 
 
+async def sleep_until(*, duration: Duration | None = None) -> None:
+    """Sleep which accepts durations."""
+    if duration is None:
+        return
+    await sleep(datetime_duration_to_float(duration))
+
+
+##
+
+
 @dataclass(kw_only=True, slots=True)
 class StreamCommandOutput:
     process: Process
