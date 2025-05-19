@@ -19,7 +19,7 @@ dev = [
   "click >= 8.2.0, < 8.3",
   "coloredlogs >= 15.0.1, < 15.1",
   "concurrent-log-handler >= 0.9.26, < 0.10",
-  "cryptography >= 44.0.2, < 44.1",
+  "cryptography >= 45.0.2, < 46.0",
   "cvxpy >= 1.6.5, < 1.7",
   "eventkit >= 1.0.3, < 1.1",
   "fastapi >= 0.115.11, < 0.116",
@@ -92,7 +92,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.116.4"
+version = "0.116.5"
 
 [project.optional-dependencies]
 test = [
@@ -133,7 +133,7 @@ zzz-test-click = [
 ]
 zzz-test-contextlib = []
 zzz-test-contextvars = []
-zzz-test-cryptography = ["cryptography >= 44.0.2, < 44.1"]
+zzz-test-cryptography = ["cryptography >= 45.0.2, < 46.0"]
 zzz-test-cvxpy = ["cvxpy >= 1.6.5, < 1.7"]
 zzz-test-dataclasses = [
   "orjson >= 3.10.15, < 3.11",
@@ -334,7 +334,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.116.4"
+current_version = "0.116.5"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
