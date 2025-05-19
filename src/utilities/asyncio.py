@@ -517,7 +517,7 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
         put_items_nowait(items, self._queue)
 
     async def run_until_empty(self) -> None:
-        """Run the processor until the queue is empty."""
+        """Run until the queue is empty."""
         while not self.empty():
             await self._process_items(*get_items_nowait(self._queue))
 

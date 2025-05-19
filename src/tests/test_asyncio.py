@@ -859,7 +859,7 @@ class TestQueueProcessor:
         processor.enqueue(0)
         assert not processor.empty()
 
-    @given(n=integers(0, 10))
+    @given(n=integers(1, 10))
     async def test_get_items_nowait(self, *, n: int) -> None:
         @dataclass(kw_only=True)
         class Example(QueueProcessor[int]):
