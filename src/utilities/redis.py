@@ -19,6 +19,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 from redis.asyncio import Redis
+from redis.asyncio.client import PubSub
 from redis.typing import EncodableT
 
 from utilities.asyncio import InfiniteQueueLooper, QueueProcessor, timeout_dur
@@ -46,7 +47,6 @@ if TYPE_CHECKING:
     )
 
     from redis.asyncio import ConnectionPool
-    from redis.asyncio.client import PubSub
     from redis.typing import ResponseT
 
     from utilities.iterables import MaybeIterable
@@ -649,7 +649,7 @@ _SUBSCRIBE_SLEEP: Duration = MILLISECOND
 
 @overload
 def subscribe(
-    pubsub: PubSub,
+    redis_or_pubsub: Redis | PubSub,
     channels: MaybeIterable[str],
     /,
     *,
@@ -659,7 +659,7 @@ def subscribe(
 ) -> AsyncIterator[_T]: ...
 @overload
 def subscribe(
-    pubsub: PubSub,
+    redis_or_pubsub: Redis | PubSub,
     channels: MaybeIterable[str],
     /,
     *,
@@ -668,7 +668,7 @@ def subscribe(
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[bytes]: ...
 async def subscribe(  # pyright: ignore[reportInconsistentOverload]
-    pubsub: PubSub,
+    redis_or_pubsub: Redis | PubSub,
     channels: MaybeIterable[str],
     /,
     *,
@@ -679,7 +679,7 @@ async def subscribe(  # pyright: ignore[reportInconsistentOverload]
     """Subscribe to the data of a given channel(s)."""
     channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
     messages = subscribe_messages(  # skipif-ci-and-not-linux
-        pubsub, channels, timeout=timeout, sleep=sleep
+        redis_or_pubsub, channels, timeout=timeout, sleep=sleep
     )
     if deserializer is None:  # skipif-ci-and-not-linux
         async for message in messages:
@@ -690,7 +690,7 @@ async def subscribe(  # pyright: ignore[reportInconsistentOverload]
 
 
 async def subscribe_messages(
-    pubsub: PubSub,
+    redis_or_pubsub: Redis | PubSub,
     channels: MaybeIterable[str],
     /,
     *,
@@ -698,28 +698,40 @@ async def subscribe_messages(
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[_RedisMessageSubscribe]:
     """Subscribe to the messages of a given channel(s)."""
-    channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
-    for channel in channels:  # skipif-ci-and-not-linux
-        await pubsub.subscribe(channel)
-    channels_bytes = [c.encode() for c in channels]  # skipif-ci-and-not-linux
-    timeout_use = (  # skipif-ci-and-not-linux
-        None if timeout is None else datetime_duration_to_float(timeout)
-    )
-    sleep_use = datetime_duration_to_float(sleep)  # skipif-ci-and-not-linux
-    while True:  # skipif-ci-and-not-linux
-        message = cast(
-            "_RedisMessageSubscribe | _RedisMessageUnsubscribe | None",
-            await pubsub.get_message(timeout=timeout_use),
-        )
-        if (
-            (message is not None)
-            and (message["type"] in {"subscribe", "psubscribe", "message", "pmessage"})
-            and (message["channel"] in channels_bytes)
-            and isinstance(message["data"], bytes)
-        ):
-            yield cast("_RedisMessageSubscribe", message)
-        else:
-            await asyncio.sleep(sleep_use)
+    match redis_or_pubsub:  # skipif-ci-and-not-linux
+        case Redis() as redis:
+            async for msg in subscribe_messages(
+                redis.pubsub(), channels, timeout=timeout, sleep=sleep
+            ):
+                yield msg
+        case PubSub() as pubsub:
+            channels = list(always_iterable(channels))
+            for channel in channels:
+                await pubsub.subscribe(channel)
+            channels_bytes = [c.encode() for c in channels]
+            timeout_use = (
+                None if timeout is None else datetime_duration_to_float(timeout)
+            )
+            sleep_use = datetime_duration_to_float(sleep)
+            while True:
+                message = cast(
+                    "_RedisMessageSubscribe | _RedisMessageUnsubscribe | None",
+                    await pubsub.get_message(timeout=timeout_use),
+                )
+                if (
+                    (message is not None)
+                    and (
+                        message["type"]
+                        in {"subscribe", "psubscribe", "message", "pmessage"}
+                    )
+                    and (message["channel"] in channels_bytes)
+                    and isinstance(message["data"], bytes)
+                ):
+                    yield cast("_RedisMessageSubscribe", message)
+                else:
+                    await asyncio.sleep(sleep_use)
+        case _ as never:
+            assert_never(never)
 
 
 class _RedisMessageSubscribe(TypedDict):

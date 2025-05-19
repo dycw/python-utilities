@@ -45,13 +45,14 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from pytest import CaptureFixture
+    from redis.asyncio.client import PubSub
 
 
 class TestPublishAndSubscribe:
     @given(
         data=data(),
         channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublishAndSubscribe)}_obj_ser_{c}"
+            lambda c: f"{get_class_name(TestPublishAndSubscribe)}_all_objects_with_serialize_{c}"
         ),
         obj=make_objects(),
     )
@@ -87,7 +88,7 @@ class TestPublishAndSubscribe:
     @given(
         data=data(),
         channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublishAndSubscribe)}_text_no_ser_{c}"
+            lambda c: f"{get_class_name(TestPublishAndSubscribe)}_text_without_serialize_{c}"
         ),
         text=text_ascii(min_size=1),
     )
@@ -282,7 +283,7 @@ class TestPublisherIQL:
 class TestSubscribeMessages:
     @given(
         channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestSubscribeMessages)}_{c}"
+            lambda c: f"{get_class_name(TestSubscribeMessages)}_redis_{c}"
         ),
         message=text_ascii(min_size=1),
     )
@@ -292,18 +293,46 @@ class TestSubscribeMessages:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(
+    async def test_redis(
         self, *, capsys: CaptureFixture, channel: str, message: str
     ) -> None:
-        client = Redis()
+        redis = Redis()
+        await self._run_test(redis, redis, capsys, channel, message)
 
+    @given(
+        channel=text_ascii(min_size=1).map(
+            lambda c: f"{get_class_name(TestSubscribeMessages)}_pubsub_{c}"
+        ),
+        message=text_ascii(min_size=1),
+    )
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_pubsub(
+        self, *, capsys: CaptureFixture, channel: str, message: str
+    ) -> None:
+        redis = Redis()
+        await self._run_test(redis, redis.pubsub(), capsys, channel, message)
+
+    async def _run_test(
+        self,
+        redis: Redis,
+        redis_or_pubsub: Redis | PubSub,
+        capsys: CaptureFixture,
+        channel: str,
+        message: str,
+        /,
+    ) -> None:
         async def listener() -> None:
-            async for msg in subscribe_messages(client.pubsub(), channel):
+            async for msg in subscribe_messages(redis_or_pubsub, channel):
                 print(msg)  # noqa: T201
 
         task = get_running_loop().create_task(listener())
         await sleep(0.05)
-        _ = await client.publish(channel, message)
+        _ = await redis.publish(channel, message)
         await sleep(0.05)
         try:
             out = capsys.readouterr().out
