@@ -17,7 +17,7 @@ from itertools import chain, count
 from re import search
 from typing import TYPE_CHECKING, Self, override
 
-from hypothesis import Phase, given, settings
+from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
     data,
@@ -28,7 +28,7 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import approx, mark, param, raises
+from pytest import LogCaptureFixture, approx, mark, param, raises
 
 from utilities.asyncio import (
     AsyncLoopingService,
@@ -42,6 +42,7 @@ from utilities.asyncio import (
     QueueProcessor,
     UniquePriorityQueue,
     UniqueQueue,
+    _DurationOrEvery,
     get_event,
     get_items,
     get_items_nowait,
@@ -54,7 +55,12 @@ from utilities.asyncio import (
     timeout_dur,
 )
 from utilities.dataclasses import replace_non_sentinel
-from utilities.datetime import MILLISECOND, datetime_duration_to_timedelta, get_now
+from utilities.datetime import (
+    MILLISECOND,
+    MINUTE,
+    datetime_duration_to_timedelta,
+    get_now,
+)
 from utilities.hypothesis import sentinels, text_ascii
 from utilities.iterables import one, unique_everseen
 from utilities.pytest import skipif_windows
@@ -343,8 +349,8 @@ class TestGetEvent:
 
 
 class TestInfiniteLooper:
-    @given(n=integers(10, 11))
-    async def test_main(self, *, n: int) -> None:
+    @given(n=integers(10, 11), sleep_core=sampled_from([0.1, ("every", 0.1)]))
+    async def test_main(self, *, n: int, sleep_core: _DurationOrEvery) -> None:
         class TrueError(BaseException): ...
 
         class FalseError(BaseException): ...
@@ -370,7 +376,7 @@ class TestInfiniteLooper:
                 yield (True, TrueError)
                 yield (False, FalseError)
 
-        looper = Example(sleep_core=0.1)
+        looper = Example(sleep_core=sleep_core)
         match n % 2 == 0:
             case True:
                 with raises(TrueError):
@@ -522,7 +528,24 @@ class TestInfiniteLooper:
         assert 1 <= looper.counter <= 6
 
     @given(logger=just("logger") | none())
-    async def test_error_upon_initialize(self, *, logger: str | None) -> None:
+    @mark.parametrize(
+        ("sleep_restart", "desc"),
+        [
+            (60.0, "for 0:01:00"),
+            (MINUTE, "for 0:01:00"),
+            (("every", 60), "until next 0:01:00"),
+            (("every", MINUTE), "until next 0:01:00"),
+        ],
+    )
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_error_upon_initialize(
+        self,
+        *,
+        sleep_restart: _DurationOrEvery,
+        desc: str,
+        logger: str | None,
+        caplog: LogCaptureFixture,
+    ) -> None:
         class CustomError(Exception): ...
 
         @dataclass(kw_only=True)
@@ -535,13 +558,34 @@ class TestInfiniteLooper:
             async def _core(self) -> None:
                 raise NotImplementedError
 
-        looper = Example(sleep_core=0.1, logger=logger)
+        looper = Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger)
         with raises(TimeoutError):
             async with timeout_dur(duration=0.5):
                 _ = await looper()
+        if logger is not None:
+            message = caplog.messages[0]
+            expected = f"'Example' encountered 'CustomError()' whilst initializing; sleeping {desc}..."
+            assert message == expected
 
     @given(logger=just("logger") | none())
-    async def test_error_group_upon_coroutines(self, *, logger: str | None) -> None:
+    @mark.parametrize(
+        ("sleep_restart", "desc"),
+        [
+            (60.0, "for 0:01:00"),
+            (MINUTE, "for 0:01:00"),
+            (("every", 60), "until next 0:01:00"),
+            (("every", MINUTE), "until next 0:01:00"),
+        ],
+    )
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_error_group_upon_coroutines(
+        self,
+        *,
+        sleep_restart: _DurationOrEvery,
+        desc: str,
+        logger: str | None,
+        caplog: LogCaptureFixture,
+    ) -> None:
         class CustomError(Exception): ...
 
         @dataclass(kw_only=True)
@@ -556,10 +600,14 @@ class TestInfiniteLooper:
             ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
                 yield (None, CustomError)
 
-        looper = Example(sleep_core=0.1, logger=logger)
+        looper = Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger)
         with raises(TimeoutError):
             async with timeout_dur(duration=0.5):
                 _ = await looper()
+        if logger is not None:
+            message = caplog.messages[0]
+            expected = f"'Example' encountered 'CustomError()'; sleeping {desc}..."
+            assert message == expected
 
     async def test_error_no_event_found(self) -> None:
         @dataclass(kw_only=True)
