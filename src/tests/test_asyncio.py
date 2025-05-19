@@ -618,7 +618,7 @@ class TestInfiniteLooper:
                 _ = await looper()
         if use_logger:
             message = caplog.messages[0]
-            expected = f"'Example' encountered 'CustomError()' whilst initializing; sleeping {desc}..."
+            expected = f"'Example' encountered 'CustomError()'; sleeping {desc}..."
             assert message == expected
 
     async def test_error_no_event_found(self) -> None:
