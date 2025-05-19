@@ -602,6 +602,22 @@ class TestInfiniteQueueLooper:
                 _ = tg.create_task(add_items())
         assert 15 <= len(looper.output) <= 20
 
+    @given(n=integers(1, 10))
+    def test_len_and_empty(self, *, n: int) -> None:
+        class Example(InfiniteQueueLooper[None, int]):
+            output: set[int] = field(default_factory=set)
+
+            @override
+            async def _process_items(self, *items: int) -> None:
+                self.output.update(items)
+
+        looper = Example(sleep_core=0.05)
+        assert len(looper) == 0
+        assert looper.empty()
+        looper.put_items_nowait(*range(n))
+        assert len(looper) == n
+        assert not looper.empty()
+
     async def test_no_items(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteQueueLooper[None, int]):
@@ -615,6 +631,34 @@ class TestInfiniteQueueLooper:
         with raises(TimeoutError):
             async with timeout_dur(duration=0.5):
                 _ = await looper()
+
+    async def test_run_until_empty(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteQueueLooper[None, int]):
+            output: set[int] = field(default_factory=set)
+
+            @override
+            async def _process_items(self, *items: int) -> None:
+                self.output.update(items)
+
+        looper = Example(sleep_core=0.5)
+
+        async def add_items() -> None:
+            for i in count():
+                looper.put_items_nowait(i)
+                await sleep(0.01)
+
+        with raises(ExceptionGroup):  # noqa: PT012
+            async with EnhancedTaskGroup(timeout=1.0) as tg:
+                _ = tg.create_task(looper())
+                _ = tg.create_task(add_items())
+
+        tasks = len(looper)
+        assert tasks >= 1
+        await sleep(0.1)
+        assert len(looper) == tasks
+        await looper.run_until_empty()
+        assert looper.empty()
 
     @given(logger=just("logger") | none())
     async def test_error_process_items(self, *, logger: str | None) -> None:
