@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from abc import ABC, abstractmethod
 from asyncio import (
     CancelledError,
@@ -32,6 +33,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
+    Literal,
     NoReturn,
     Self,
     TextIO,
@@ -62,7 +64,6 @@ from utilities.types import (
 )
 
 if TYPE_CHECKING:
-    import datetime as dt
     from asyncio import _CoroutineLike
     from asyncio.subprocess import Process
     from collections.abc import AsyncIterator, Sequence
@@ -341,8 +342,8 @@ class ExceptionProcessor(QueueProcessor[Exception | type[Exception]]):
 class InfiniteLooper(ABC, Generic[THashable]):
     """An infinite loop which can throw exceptions by setting events."""
 
-    sleep_core: Duration = SECOND
-    sleep_restart: Duration = MINUTE
+    sleep_core: Duration | tuple[Literal["every"], Duration] = SECOND
+    sleep_restart: Duration | tuple[Literal["every"], Duration] = MINUTE
     logger: str | None = None
     _events: Mapping[THashable, Event] = field(
         default_factory=dict, init=False, repr=False, hash=False
@@ -369,7 +370,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
                     await self._initialize()
                 except Exception as error:  # noqa: BLE001
                     self._error_upon_initialize(error)
-                    await sleep_dur(duration=self.sleep_restart)
+                    await self._sleep_until_restart()
                 else:
                     while True:
                         try:
@@ -380,14 +381,14 @@ class InfiniteLooper(ABC, Generic[THashable]):
                             )
                         except StopIteration:
                             await self._core()
-                            await sleep_dur(duration=self.sleep_core)
+                            await self._sleep_until_core()
                         else:
                             self._raise_error(event)
             except InfiniteLooperError:
                 raise
             except Exception as error:  # noqa: BLE001
                 self._error_upon_core(error)
-                await sleep_dur(duration=self.sleep_restart)
+                await self._sleep_until_restart()
 
     async def _run_looper_with_coroutines(
         self, *coroutines: Callable[[], Coroutine1[None]]
@@ -454,6 +455,26 @@ class InfiniteLooper(ABC, Generic[THashable]):
             event: Event() for event, _ in self._yield_events_and_exceptions()
         }
 
+    async def _run_sleep_core(self) -> None:
+        """Sleep until the next part of the loop."""
+        match self.sleep_core:
+            case int() | float() | dt.timedelta() as duration:
+                await sleep_dur(duration=duration)
+            case "every", (int() | float() | dt.timedelta()) as duration:
+                await sleep_until_rounded(duration)
+            case _ as never:
+                assert_never(never)
+
+    async def _sleep_until_restart(self) -> None:
+        """Sleep until restart."""
+        match self.sleep_restart:
+            case int() | float() | dt.timedelta() as duration:
+                await sleep_dur(duration=duration)
+            case "every", (int() | float() | dt.timedelta()) as duration:
+                await sleep_until_rounded(duration)
+            case _ as never:
+                assert_never(never)
+
     def _set_event(self, event: THashable, /) -> None:
         """Set the given event."""
         try:
@@ -461,14 +482,6 @@ class InfiniteLooper(ABC, Generic[THashable]):
         except KeyError:
             raise InfiniteLooperError(looper=self, event=event) from None
         event_obj.set()
-
-    async def _sleep_until_core(self) -> None:
-        """Sleep until the next part of the loop."""
-        await sleep(60)
-
-    async def _sleep_until_restart(self) -> None:
-        """Sleep until restart."""
-        await sleep(60)
 
     def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
         """Yield any other coroutines which must also be run."""
