@@ -343,8 +343,10 @@ class TestGetEvent:
 
 
 class TestInfiniteLooper:
-    @given(n=integers(10, 11))
-    async def test_main(self, *, n: int) -> None:
+    @given(n=integers(10, 11), sleep_core=sampled_from([0.1, ("every", 0.1)]))
+    async def test_main(
+        self, *, n: int, sleep_core: float | tuple[Literal["every"], float]
+    ) -> None:
         class TrueError(BaseException): ...
 
         class FalseError(BaseException): ...
@@ -370,7 +372,7 @@ class TestInfiniteLooper:
                 yield (True, TrueError)
                 yield (False, FalseError)
 
-        looper = Example(sleep_core=0.1)
+        looper = Example(sleep_core=sleep_core)
         match n % 2 == 0:
             case True:
                 with raises(TrueError):
@@ -582,10 +584,7 @@ class TestInfiniteLooper:
 
 
 class TestInfiniteQueueLooper:
-    @given(sleep_core=sampled_from([0.05, ("every", 0.05)]))
-    async def test_main(
-        self, *, sleep_core: float | tuple[Literal["every"], float]
-    ) -> None:
+    async def test_main(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteQueueLooper[None, int]):
             output: set[int] = field(default_factory=set)
@@ -594,7 +593,7 @@ class TestInfiniteQueueLooper:
             async def _process_items(self, *items: int) -> None:
                 self.output.update(items)
 
-        looper = Example(sleep_core=sleep_core)
+        looper = Example(sleep_core=0.05)
 
         async def add_items() -> None:
             for i in count():
