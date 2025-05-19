@@ -296,22 +296,8 @@ class TestSubscribeMessages:
     async def test_redis(
         self, *, capsys: CaptureFixture, channel: str, message: str
     ) -> None:
-        client = Redis()
-
-        async def listener() -> None:
-            async for msg in subscribe_messages(client.pubsub(), channel):
-                print(msg)  # noqa: T201
-
-        task = get_running_loop().create_task(listener())
-        await sleep(0.05)
-        _ = await client.publish(channel, message)
-        await sleep(0.05)
-        try:
-            out = capsys.readouterr().out
-            expected = f"{{'type': 'message', 'pattern': None, 'channel': b'{channel}', 'data': b'{message}'}}\n"
-            assert out == expected
-        finally:
-            _ = task.cancel()
+        redis = Redis()
+        await self._run_test(redis, redis, capsys, channel, message)
 
     @given(
         channel=text_ascii(min_size=1).map(
