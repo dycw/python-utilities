@@ -602,6 +602,22 @@ class TestInfiniteQueueLooper:
                 _ = tg.create_task(add_items())
         assert 15 <= len(looper.output) <= 20
 
+    @given(n=integers(0, 10))
+    def test_len_and_empty(self, *, n: int) -> None:
+        class Example(InfiniteQueueLooper[None, int]):
+            output: set[int] = field(default_factory=set)
+
+            @override
+            async def _process_items(self, *items: int) -> None:
+                self.output.update(items)
+
+        looper = Example(sleep_core=0.05)
+        assert len(looper) == 0
+        assert looper.empty()
+        looper.put_items_nowait(*range(n))
+        assert len(looper) == n
+        assert looper.empty()
+
     async def test_no_items(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteQueueLooper[None, int]):
@@ -642,7 +658,7 @@ class TestInfiniteQueueLooper:
         await sleep(0.1)
         assert len(looper) == tasks
         await looper.run_until_empty()
-        assert len(looper) == 0
+        assert looper.empty()
 
     @given(logger=just("logger") | none())
     async def test_error_process_items(self, *, logger: str | None) -> None:
