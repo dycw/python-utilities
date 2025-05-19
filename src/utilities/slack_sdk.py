@@ -3,18 +3,12 @@ from __future__ import annotations
 from asyncio import Queue
 from dataclasses import dataclass
 from http import HTTPStatus
-from itertools import chain
 from logging import NOTSET, Handler, LogRecord
 from typing import TYPE_CHECKING, override
 
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
-from utilities.asyncio import (
-    InfiniteQueueLooper,
-    QueueProcessor,
-    sleep_dur,
-    timeout_dur,
-)
+from utilities.asyncio import InfiniteQueueLooper, timeout_dur
 from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float
 from utilities.functools import cache
 from utilities.math import safe_round
@@ -38,66 +32,6 @@ _SLEEP: Duration = SECOND
 
 async def _send_adapter(url: str, text: str, /) -> None:
     await send_to_slack(url, text)  # pragma: no cover
-
-
-@dataclass(init=False, order=True, unsafe_hash=True)
-class SlackHandler(Handler, QueueProcessor[str]):
-    """Handler for sending messages to Slack."""
-
-    @override
-    def __init__(
-        self,
-        url: str,
-        /,
-        *,
-        level: int = NOTSET,
-        queue_type: type[Queue[str]] = Queue,
-        queue_max_size: int | None = None,
-        sender: Callable[[str, str], Coroutine1[None]] = _send_adapter,
-        timeout: Duration = _TIMEOUT,
-        callback_failure: Callable[[str, Exception], None] | None = None,
-        callback_success: Callable[[str], None] | None = None,
-        callback_final: Callable[[str], None] | None = None,
-        sleep: Duration = _SLEEP,
-    ) -> None:
-        QueueProcessor.__init__(  # QueueProcessor first
-            self, queue_type=queue_type, queue_max_size=queue_max_size
-        )
-        QueueProcessor.__post_init__(self)
-        Handler.__init__(self, level=level)
-        self.url = url
-        self.sender = sender
-        self.timeout = timeout
-        self.callback_failure = callback_failure
-        self.callback_success = callback_success
-        self.callback_final = callback_final
-        self.sleep = sleep
-
-    @override
-    def emit(self, record: LogRecord) -> None:
-        try:
-            self.enqueue(self.format(record))
-        except Exception:  # noqa: BLE001  # pragma: no cover
-            self.handleError(record)
-
-    @override
-    async def _process_item(self, item: str, /) -> None:
-        """Process the first item."""
-        items = list(chain([item], self._get_items_nowait()))
-        text = "\n".join(items)
-        try:
-            async with timeout_dur(duration=self.timeout):
-                await self.sender(self.url, text)
-        except Exception as error:  # noqa: BLE001
-            if self.callback_failure is not None:
-                self.callback_failure(text, error)
-        else:
-            if self.callback_success is not None:
-                self.callback_success(text)
-        finally:
-            if self.callback_final is not None:
-                self.callback_final(text)
-            await sleep_dur(duration=self.sleep)
 
 
 @dataclass(init=False, unsafe_hash=True)
@@ -176,4 +110,4 @@ def _get_client(url: str, /, *, timeout: Duration = _TIMEOUT) -> AsyncWebhookCli
     return AsyncWebhookClient(url, timeout=timeout_use)
 
 
-__all__ = ["SendToSlackError", "SlackHandler", "SlackHandlerIQL", "send_to_slack"]
+__all__ = ["SendToSlackError", "SlackHandlerIQL", "send_to_slack"]
