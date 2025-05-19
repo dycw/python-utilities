@@ -14,8 +14,8 @@ from utilities.datetime import (
     _MICROSECONDS_PER_SECOND,
     ZERO_TIME,
     check_date_not_datetime,
+    datetime_duration_to_microseconds,
     parse_two_digit_year,
-    timedelta_to_microseconds,
 )
 from utilities.math import ParseNumberError, parse_number
 from utilities.re import (
@@ -601,7 +601,7 @@ class SerializeZonedDateTimeError(Exception):
 
 def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
     """Serialize a timedelta."""
-    total_microseconds = timedelta_to_microseconds(timedelta)
+    total_microseconds = datetime_duration_to_microseconds(timedelta)
     if total_microseconds == 0:
         return DateTimeDelta()
     if total_microseconds >= 1:

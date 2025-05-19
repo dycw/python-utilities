@@ -41,7 +41,14 @@ from typing import (
     override,
 )
 
-from utilities.datetime import MILLISECOND, MINUTE, SECOND, datetime_duration_to_float
+from utilities.datetime import (
+    MILLISECOND,
+    MINUTE,
+    SECOND,
+    datetime_duration_to_float,
+    get_now,
+    round_datetime,
+)
 from utilities.errors import ImpossibleCaseError, repr_error
 from utilities.functions import ensure_int, ensure_not_none, get_class_name
 from utilities.reprlib import get_repr
@@ -55,6 +62,7 @@ from utilities.types import (
 )
 
 if TYPE_CHECKING:
+    import datetime as dt
     from asyncio import _CoroutineLike
     from asyncio.subprocess import Process
     from collections.abc import AsyncIterator, Sequence
@@ -686,6 +694,27 @@ async def sleep_dur(*, duration: Duration | None = None) -> None:
 ##
 
 
+async def sleep_until(datetime: dt.datetime, /) -> None:
+    """Sleep until a given time."""
+    await sleep_dur(duration=datetime - get_now())
+
+
+##
+
+
+async def sleep_until_rounded(
+    duration: Duration, /, *, rel_tol: float | None = None, abs_tol: float | None = None
+) -> None:
+    """Sleep until a rounded time; accepts durations."""
+    datetime = round_datetime(
+        get_now(), duration, mode="ceil", rel_tol=rel_tol, abs_tol=abs_tol
+    )
+    await sleep_until(datetime)
+
+
+##
+
+
 @dataclass(kw_only=True, slots=True)
 class StreamCommandOutput:
     process: Process
@@ -768,6 +797,8 @@ __all__ = [
     "put_items",
     "put_items_nowait",
     "sleep_dur",
+    "sleep_until",
+    "sleep_until_rounded",
     "stream_command",
     "timeout_dur",
 ]

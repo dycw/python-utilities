@@ -48,11 +48,13 @@ from utilities.asyncio import (
     put_items,
     put_items_nowait,
     sleep_dur,
+    sleep_until,
+    sleep_until_rounded,
     stream_command,
     timeout_dur,
 )
 from utilities.dataclasses import replace_non_sentinel
-from utilities.datetime import MILLISECOND, datetime_duration_to_timedelta
+from utilities.datetime import MILLISECOND, datetime_duration_to_timedelta, get_now
 from utilities.hypothesis import sentinels, text_ascii
 from utilities.iterables import one, unique_everseen
 from utilities.pytest import skipif_windows
@@ -949,6 +951,19 @@ class TestSleepDur:
         with Timer() as timer:
             await sleep_dur()
         assert timer <= 0.01
+
+
+class TestSleepUntil:
+    async def test_main(self) -> None:
+        now = get_now()
+        with Timer() as timer:
+            await sleep_until(now + 10 * MILLISECOND)
+        assert timer >= datetime_duration_to_timedelta(5 * MILLISECOND)
+
+
+class TestSleepUntilRounded:
+    async def test_main(self) -> None:
+        await sleep_until_rounded(10 * MILLISECOND)
 
 
 class TestStreamCommand:
