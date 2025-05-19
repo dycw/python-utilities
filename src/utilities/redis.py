@@ -698,22 +698,22 @@ async def subscribe_messages(
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[_RedisMessageSubscribe]:
     """Subscribe to the messages of a given channel(s)."""
-    match redis_or_pubsub:
+    match redis_or_pubsub:  # skipif-ci-and-not-linux
         case Redis() as redis:
-            async for msg in subscribe_messages(  # skipif-ci-and-not-linux
+            async for msg in subscribe_messages(
                 redis.pubsub(), channels, timeout=timeout, sleep=sleep
             ):
                 yield msg
         case PubSub() as pubsub:
-            channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
-            for channel in channels:  # skipif-ci-and-not-linux
+            channels = list(always_iterable(channels))
+            for channel in channels:
                 await pubsub.subscribe(channel)
-            channels_bytes = [c.encode() for c in channels]  # skipif-ci-and-not-linux
-            timeout_use = (  # skipif-ci-and-not-linux
+            channels_bytes = [c.encode() for c in channels]
+            timeout_use = (
                 None if timeout is None else datetime_duration_to_float(timeout)
             )
-            sleep_use = datetime_duration_to_float(sleep)  # skipif-ci-and-not-linux
-            while True:  # skipif-ci-and-not-linux
+            sleep_use = datetime_duration_to_float(sleep)
+            while True:
                 message = cast(
                     "_RedisMessageSubscribe | _RedisMessageUnsubscribe | None",
                     await pubsub.get_message(timeout=timeout_use),
