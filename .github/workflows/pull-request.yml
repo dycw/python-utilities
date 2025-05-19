@@ -36,7 +36,7 @@ jobs:
         with:
           python-version: ${{ matrix.version }}
       - run: uv sync
-      - run: uv run pytest --cov-report=term-missing:skip-covered -n=auto src/tests/test_whenever.py src/tests/test_orjson.py
+      - run: uv run pytest -n=auto src/tests/test_whenever.py src/tests/test_orjson.py src/tests/test_iterables.py
     timeout-minutes: 60
 
   test-ubuntu:
@@ -64,5 +64,5 @@ jobs:
         with:
           python-version: ${{ matrix.version }}
       - run: uv sync
-      - run: uv run pytest --cov-report=term-missing:skip-covered -n=auto src/tests/test_whenever.py src/tests/test_orjson.py
+      - run: uv run pytest -n=auto src/tests/test_whenever.py src/tests/test_orjson.py src/tests/test_iterables.py
     timeout-minutes: 60
