@@ -334,6 +334,52 @@ def datetime_duration_to_float(duration: Duration, /) -> float:
             assert_never(never)
 
 
+def datetime_duration_to_microseconds(duration: Duration, /) -> int:
+    """Compute the number of microseconds in a datetime duration."""
+    timedelta = datetime_duration_to_timedelta(duration)
+    return (
+        _MICROSECONDS_PER_DAY * timedelta.days
+        + _MICROSECONDS_PER_SECOND * timedelta.seconds
+        + timedelta.microseconds
+    )
+
+
+@overload
+def datetime_duration_to_milliseconds(
+    duration: Duration, /, *, strict: Literal[True]
+) -> int: ...
+@overload
+def datetime_duration_to_milliseconds(
+    duration: Duration, /, *, strict: bool = False
+) -> float: ...
+def datetime_duration_to_milliseconds(
+    duration: Duration, /, *, strict: bool = False
+) -> int | float:
+    """Compute the number of milliseconds in a datetime duration."""
+    timedelta = datetime_duration_to_timedelta(duration)
+    microseconds = datetime_duration_to_microseconds(timedelta)
+    milliseconds, remainder = divmod(microseconds, _MICROSECONDS_PER_MILLISECOND)
+    match remainder, strict:
+        case 0, _:
+            return milliseconds
+        case _, True:
+            raise TimedeltaToMillisecondsError(duration=duration, remainder=remainder)
+        case _, False:
+            return milliseconds + remainder / _MICROSECONDS_PER_MILLISECOND
+        case _ as never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class TimedeltaToMillisecondsError(Exception):
+    duration: Duration
+    remainder: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to convert {self.duration} to milliseconds; got {self.remainder} microsecond(s)"
+
+
 def datetime_duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
     """Ensure a datetime duration is a timedelta."""
     match duration:
@@ -651,8 +697,9 @@ YEAR = get_years(n=1)
 ##
 
 
-def is_integral_timedelta(timedelta: dt.timedelta, /) -> bool:
-    """Check if a timedelta is integral."""
+def is_integral_timedelta(duration: Duration, /) -> bool:
+    """Check if a duration is integral."""
+    timedelta = datetime_duration_to_timedelta(duration)
     return (timedelta.seconds == 0) and (timedelta.microseconds == 0)
 
 
@@ -679,9 +726,9 @@ def is_weekday(date: dt.date, /) -> bool:
 ##
 
 
-def is_zero_time(timedelta: dt.timedelta, /) -> bool:
+def is_zero_time(duration: Duration, /) -> bool:
     """Check if a timedelta is 0."""
-    return timedelta == ZERO_TIME
+    return datetime_duration_to_timedelta(duration) == ZERO_TIME
 
 
 ##
@@ -763,7 +810,7 @@ def mean_timedelta(
         case 1:
             return one(timedeltas)
         case _:
-            microseconds = list(map(timedelta_to_microseconds, timedeltas))
+            microseconds = list(map(datetime_duration_to_microseconds, timedeltas))
             mean_float = fmean(microseconds, weights=weights)
             mean_int = round_(mean_float, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
             return microseconds_to_timedelta(mean_int)
@@ -781,7 +828,7 @@ class MeanTimeDeltaError(Exception):
 
 def microseconds_since_epoch(datetime: dt.datetime, /) -> int:
     """Compute the number of microseconds since the epoch."""
-    return timedelta_to_microseconds(timedelta_since_epoch(datetime))
+    return datetime_duration_to_microseconds(timedelta_since_epoch(datetime))
 
 
 def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
@@ -980,7 +1027,7 @@ class _ParseTwoDigitYearInvalidStringError(Exception):
 
 def round_datetime(
     datetime: dt.datetime,
-    timedelta: dt.timedelta,
+    duration: Duration,
     /,
     *,
     mode: RoundMode = "standard",
@@ -990,7 +1037,7 @@ def round_datetime(
     """Round a datetime to a timedelta."""
     if datetime.tzinfo is None:
         dividend = microseconds_since_epoch(datetime)
-        divisor = timedelta_to_microseconds(timedelta)
+        divisor = datetime_duration_to_microseconds(duration)
         quotient, remainder = divmod(dividend, divisor)
         rnd_remainder = round_(
             remainder / divisor, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol
@@ -1000,7 +1047,7 @@ def round_datetime(
         return microseconds_since_epoch_to_datetime(microseconds)
     local = datetime.replace(tzinfo=None)
     rounded = round_datetime(
-        local, timedelta, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol
+        local, duration, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol
     )
     return rounded.replace(tzinfo=datetime.tzinfo)
 
@@ -1175,50 +1222,6 @@ def timedelta_since_epoch(date_or_datetime: DateOrDateTime, /) -> dt.timedelta:
             assert_never(never)
 
 
-def timedelta_to_microseconds(timedelta: dt.timedelta, /) -> int:
-    """Compute the number of microseconds in a timedelta."""
-    return (
-        _MICROSECONDS_PER_DAY * timedelta.days
-        + _MICROSECONDS_PER_SECOND * timedelta.seconds
-        + timedelta.microseconds
-    )
-
-
-@overload
-def timedelta_to_milliseconds(
-    timedelta: dt.timedelta, /, *, strict: Literal[True]
-) -> int: ...
-@overload
-def timedelta_to_milliseconds(
-    timedelta: dt.timedelta, /, *, strict: bool = False
-) -> float: ...
-def timedelta_to_milliseconds(
-    timedelta: dt.timedelta, /, *, strict: bool = False
-) -> int | float:
-    """Compute the number of milliseconds in a timedelta."""
-    microseconds = timedelta_to_microseconds(timedelta)
-    milliseconds, remainder = divmod(microseconds, _MICROSECONDS_PER_MILLISECOND)
-    match remainder, strict:
-        case 0, _:
-            return milliseconds
-        case _, True:
-            raise TimedeltaToMillisecondsError(timedelta=timedelta, remainder=remainder)
-        case _, False:
-            return milliseconds + remainder / _MICROSECONDS_PER_MILLISECOND
-        case _ as never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class TimedeltaToMillisecondsError(Exception):
-    timedelta: dt.timedelta
-    remainder: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to convert {self.timedelta} to milliseconds; got {self.remainder} microsecond(s)"
-
-
 ##
 
 
@@ -1367,6 +1370,8 @@ __all__ = [
     "date_to_datetime",
     "date_to_month",
     "datetime_duration_to_float",
+    "datetime_duration_to_microseconds",
+    "datetime_duration_to_milliseconds",
     "datetime_duration_to_timedelta",
     "datetime_utc",
     "days_since_epoch",
@@ -1407,8 +1412,6 @@ __all__ = [
     "serialize_month",
     "sub_duration",
     "timedelta_since_epoch",
-    "timedelta_to_microseconds",
-    "timedelta_to_milliseconds",
     "yield_days",
     "yield_weekdays",
 ]

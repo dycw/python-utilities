@@ -41,7 +41,13 @@ from typing import (
     override,
 )
 
-from utilities.datetime import MILLISECOND, MINUTE, SECOND, datetime_duration_to_float
+from utilities.datetime import (
+    MILLISECOND,
+    MINUTE,
+    SECOND,
+    datetime_duration_to_float,
+    round_datetime,
+)
 from utilities.errors import ImpossibleCaseError, repr_error
 from utilities.functions import ensure_int, ensure_not_none, get_class_name
 from utilities.reprlib import get_repr
@@ -686,11 +692,20 @@ async def sleep_dur(*, duration: Duration | None = None) -> None:
 ##
 
 
-async def sleep_until(*, duration: Duration | None = None) -> None:
+async def sleep_until(duration: Duration, /) -> None:
     """Sleep which accepts durations."""
     if duration is None:
         return
     await sleep(datetime_duration_to_float(duration))
+
+    event = start + i * timedelta
+    if event <= now:
+        await func(i, event)
+        max(done, i)
+    else:
+        break
+
+    await sleep_dur(duration=round_datetime(now, timedelta, mode="ceil") - now)
 
 
 ##
