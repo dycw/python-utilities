@@ -35,7 +35,14 @@ from typing import (
     override,
 )
 
-from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float
+from utilities.datetime import (
+    MINUTE,
+    SECOND,
+    datetime_duration_to_float,
+    datetime_duration_to_timedelta,
+    get_now,
+    round_datetime,
+)
 from utilities.errors import repr_error
 from utilities.functions import ensure_int, ensure_not_none, get_class_name
 from utilities.reprlib import get_repr
@@ -112,6 +119,9 @@ class EnhancedTaskGroup(TaskGroup):
 
 
 ##
+
+
+type _DurationOrEvery = Duration | tuple[Literal["every"], Duration]
 
 
 @dataclass(kw_only=True, unsafe_hash=True)
