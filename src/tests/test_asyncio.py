@@ -486,7 +486,7 @@ class TestInfiniteLooper:
         assert 3 <= looper.initializations <= 5
         assert 0 <= looper.counter <= 5
 
-    @given(logger=just("logger222") | none())
+    @given(logger=just("logger") | none())
     async def test_with_coroutine_other_coroutine_error(
         self, *, logger: str | None
     ) -> None:
