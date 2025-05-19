@@ -602,7 +602,7 @@ class TestInfiniteQueueLooper:
                 _ = tg.create_task(add_items())
         assert 15 <= len(looper.output) <= 20
 
-    @given(n=integers(0, 10))
+    @given(n=integers(1, 10))
     def test_len_and_empty(self, *, n: int) -> None:
         class Example(InfiniteQueueLooper[None, int]):
             output: set[int] = field(default_factory=set)
@@ -859,7 +859,7 @@ class TestQueueProcessor:
         processor.enqueue(0)
         assert not processor.empty()
 
-    @given(n=integers(1, 10))
+    @given(n=integers(0, 10))
     async def test_get_items_nowait(self, *, n: int) -> None:
         @dataclass(kw_only=True)
         class Example(QueueProcessor[int]):
