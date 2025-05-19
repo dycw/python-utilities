@@ -641,7 +641,7 @@ class TestInfiniteQueueLooper:
             async def _process_items(self, *items: int) -> None:
                 self.output.update(items)
 
-        looper = Example(sleep_core=0.05)
+        looper = Example(sleep_core=0.5)
 
         async def add_items() -> None:
             for i in count():
