@@ -490,6 +490,9 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
         super().__post_init__()
         self._queue = self.queue_type()
 
+    def __len__(self) -> int:
+        return self._queue.qsize()
+
     @override
     async def _core(self) -> None:
         """Run the core part of the loop."""
@@ -505,9 +508,18 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     async def _process_items(self, *items: _T) -> None:
         """Process the items."""
 
+    def empty(self) -> bool:
+        """Check if the queue is empty."""
+        return self._queue.empty()
+
     def put_items_nowait(self, *items: _T) -> None:
         """Put items into the queue."""
         put_items_nowait(items, self._queue)
+
+    async def run_until_empty(self) -> None:
+        """Run the processor until the queue is empty."""
+        while not self.empty():
+            await self._process_items(*get_items_nowait(self._queue))
 
     @override
     def _error_upon_core(self, error: Exception, /) -> None:
