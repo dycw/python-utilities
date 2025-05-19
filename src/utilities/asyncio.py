@@ -694,22 +694,11 @@ async def sleep_dur(*, duration: Duration | None = None) -> None:
 ##
 
 
-async def sleep_until(datetime: dt.datetime, /) -> None:
-    """Sleep until a given time."""
-    await sleep_dur(duration=datetime - get_now())
-
-
-##
-
-
-async def sleep_until_rounded(
-    duration: Duration, /, *, rel_tol: float | None = None, abs_tol: float | None = None
-) -> None:
-    """Sleep until a rounded time; accepts durations."""
-    datetime = round_datetime(
-        get_now(), duration, mode="ceil", rel_tol=rel_tol, abs_tol=abs_tol
-    )
-    await sleep_until(datetime)
+async def sleep_until(*, duration: Duration | None = None) -> None:
+    """Sleep which accepts durations."""
+    if duration is None:
+        return
+    await sleep(datetime_duration_to_float(duration))
 
 
 ##
