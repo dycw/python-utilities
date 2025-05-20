@@ -57,7 +57,7 @@ from sqlalchemy.orm import (
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
-from utilities.asyncio import InfiniteQueueLooper, QueueProcessor, timeout_dur
+from utilities.asyncio import InfiniteQueueLooper, timeout_dur
 from utilities.functions import (
     ensure_str,
     get_class_name,
@@ -609,48 +609,6 @@ class TablenameMixin:
 
 
 @dataclass(kw_only=True)
-class Upserter(QueueProcessor[_InsertItem]):
-    """Upsert a set of items into a database."""
-
-    engine: AsyncEngine
-    snake: bool = False
-    selected_or_all: _SelectedOrAll = "selected"
-    chunk_size_frac: float = CHUNK_SIZE_FRAC
-    assume_tables_exist: bool = False
-    timeout_create: Duration | None = None
-    error_create: type[Exception] = TimeoutError
-    timeout_insert: Duration | None = None
-    error_insert: type[Exception] = TimeoutError
-
-    async def _pre_upsert(self, items: Sequence[_InsertItem], /) -> None:
-        """Pre-upsert coroutine."""
-        _ = items
-
-    async def _post_upsert(self, items: Sequence[_InsertItem], /) -> None:
-        """Post-upsert coroutine."""
-        _ = items
-
-    @override
-    async def _process_item(self, item: _InsertItem, /) -> None:
-        """Process the first item."""
-        items = list(chain([item], self._get_items_nowait()))
-        await self._pre_upsert(items)
-        await upsert_items(
-            self.engine,
-            *items,
-            snake=self.snake,
-            selected_or_all=self.selected_or_all,
-            chunk_size_frac=self.chunk_size_frac,
-            assume_tables_exist=self.assume_tables_exist,
-            timeout_create=self.timeout_create,
-            error_create=self.error_create,
-            timeout_insert=self.timeout_insert,
-            error_insert=self.error_insert,
-        )
-        await self._post_upsert(items)
-
-
-@dataclass(kw_only=True)
 class UpserterIQL(InfiniteQueueLooper[None, _InsertItem]):
     """Upsert a set of items to a database."""
 
@@ -1150,7 +1108,6 @@ __all__ = [
     "InsertItemsError",
     "TablenameMixin",
     "UpsertItemsError",
-    "Upserter",
     "UpserterIQL",
     "UpserterIQLError",
     "check_engine",

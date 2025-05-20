@@ -29,7 +29,6 @@ from utilities.hypothesis import (
 )
 from utilities.orjson import deserialize, serialize
 from utilities.redis import (
-    Publisher,
     PublisherIQL,
     PublisherIQLError,
     publish,
@@ -111,80 +110,6 @@ class TestPublishAndSubscribe:
             await sleep(0.05)
             _ = await publish(test.redis, channel, text)
             await sleep(0.05)
-            try:
-                out = capsys.readouterr().out
-                expected = f"{text.encode()}\n"
-                assert out == expected
-            finally:
-                _ = task.cancel()
-
-
-class TestPublisher:
-    @given(
-        data=data(),
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublisher)}_obj_ser_{c}"
-        ),
-        obj=make_objects(),
-    )
-    @mark.flaky
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(
-        self, *, capsys: CaptureFixture, data: DataObject, channel: str, obj: Any
-    ) -> None:
-        async with yield_test_redis(data) as test:
-
-            async def listener() -> None:
-                async for msg in subscribe(
-                    test.redis.pubsub(), channel, deserializer=deserialize
-                ):
-                    print(msg)  # noqa: T201
-
-            task = create_task(listener())
-            await sleep(0.1)
-
-            async with Publisher(redis=test.redis, serializer=serialize) as publisher:
-                publisher.enqueue((channel, obj))
-                await sleep(0.1)
-
-            try:
-                out = capsys.readouterr().out
-                expected = f"{obj}\n"
-                assert out == expected
-            finally:
-                _ = task.cancel()
-
-    @given(
-        data=data(),
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublisher)}_text_no_ser_{c}"
-        ),
-        text=text_ascii(min_size=1),
-    )
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_text_without_serialize(
-        self, *, capsys: CaptureFixture, data: DataObject, channel: str, text: str
-    ) -> None:
-        async with yield_test_redis(data) as test:
-
-            async def listener() -> None:
-                async for msg in subscribe(test.redis.pubsub(), channel):
-                    print(msg)  # noqa: T201
-
-            task = create_task(listener())
-            await sleep(0.1)
-            _ = await publish(test.redis, channel, text)
-            await sleep(0.1)
             try:
                 out = capsys.readouterr().out
                 expected = f"{text.encode()}\n"
