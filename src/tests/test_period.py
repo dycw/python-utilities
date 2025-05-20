@@ -38,6 +38,7 @@ from utilities.period import (
     _PeriodTimeZoneNonUniqueError,
     _TPeriod,
 )
+from utilities.whenever import SerializeZonedDateTimeError
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -149,7 +150,8 @@ class TestPeriod:
         datetimes = data.draw(pairs(zoned_datetimes(time_zone=time_zone), sorted=True))
         start, end = datetimes
         period = Period(start, end)
-        result = func(period)
+        with assume_does_not_raise(SerializeZonedDateTimeError):
+            result = func(period)
         assert search(
             r"^Period\(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?, \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?, .+\)$",
             result,
