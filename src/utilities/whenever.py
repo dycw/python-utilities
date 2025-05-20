@@ -54,17 +54,15 @@ def check_valid_zoned_datetime(datetime: dt.datetime, /) -> None:
     """Check if a zoned datetime is valid."""
     time_zone = ensure_time_zone(datetime)  # skipif-ci-and-windows
     datetime2 = datetime.replace(tzinfo=time_zone)  # skipif-ci-and-windows
-    try:
-        result = (  # skipif-ci-and-windows
+    try:  # skipif-ci-and-windows
+        result = (
             ZonedDateTime.from_py_datetime(datetime2)
             .to_tz(get_time_zone_name(UTC))
             .to_tz(get_time_zone_name(time_zone))
             .py_datetime()
         )
-    except TimeZoneNotFoundError:
-        raise _CheckValidZonedDateTimeInvalidTimeZoneError(  # pragma: no cover
-            datetime=datetime
-        ) from None
+    except TimeZoneNotFoundError:  # pragma: no cover
+        raise _CheckValidZonedDateTimeInvalidTimeZoneError(datetime=datetime) from None
     if result != datetime2:  # skipif-ci-and-windows
         raise _CheckValidZonedDateTimeUnequalError(datetime=datetime, result=result)
 
