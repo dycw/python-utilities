@@ -131,7 +131,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
     sleep_core: _DurationOrEvery = SECOND
     sleep_restart: _DurationOrEvery = MINUTE
     logger: str | None = None
-    _events: Mapping[THashable, Event] = field(
+    _events: Mapping[THashable | None, Event] = field(
         default_factory=dict, init=False, repr=False, hash=False
     )
 
@@ -264,12 +264,12 @@ class InfiniteLooper(ABC, Generic[THashable]):
             case _ as never:
                 assert_never(never)
 
-    def _set_event(self, event: THashable, /) -> None:
+    def _set_event(self, *, event: THashable | None = None) -> None:
         """Set the given event."""
         try:
             event_obj = self._events[event]
         except KeyError:
-            raise InfiniteLooperError(looper=self, event=event) from None
+            raise _InfiniteLooperNoSuchEventError(looper=self, event=event) from None
         event_obj.set()
 
     def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
@@ -278,19 +278,30 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
     def _yield_events_and_exceptions(
         self,
-    ) -> Iterator[tuple[THashable, MaybeType[BaseException]]]:
+    ) -> Iterator[tuple[THashable | None, MaybeType[BaseException]]]:
         """Yield the events & exceptions."""
-        yield from []
+        yield (None, _InfiniteLooperDefaultEventError)
 
 
 @dataclass(kw_only=True, slots=True)
 class InfiniteLooperError(Exception):
     looper: InfiniteLooper[Any]
+
+
+@dataclass(kw_only=True, slots=True)
+class _InfiniteLooperNoSuchEventError(InfiniteLooperError):
     event: Hashable
 
     @override
     def __str__(self) -> str:
         return f"{get_class_name(self.looper)!r} does not have an event {self.event!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _InfiniteLooperDefaultEventError(InfiniteLooperError):
+    @override
+    def __str__(self) -> str:
+        return f"{get_class_name(self.looper)!r} default event"
 
 
 ##
