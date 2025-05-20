@@ -29,8 +29,8 @@ from utilities.hypothesis import (
 )
 from utilities.orjson import deserialize, serialize
 from utilities.redis import (
-    PublisherIQL,
-    PublisherIQLError,
+    Publisher,
+    PublisherError,
     publish,
     redis_hash_map_key,
     redis_key,
@@ -118,11 +118,11 @@ class TestPublishAndSubscribe:
                 _ = task.cancel()
 
 
-class TestPublisherIQL:
+class TestPublisher:
     @given(
         data=data(),
         channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublisherIQL)}_main_{c}"
+            lambda c: f"{get_class_name(TestPublisher)}_main_{c}"
         ),
         obj=make_objects(),
     )
@@ -143,7 +143,7 @@ class TestPublisherIQL:
                 ):
                     _ = buffer.write(str(obj_i))
 
-            publisher = PublisherIQL(
+            publisher = Publisher(
                 redis=test.redis, serializer=serialize, sleep_core=0.1
             )
 
@@ -162,7 +162,7 @@ class TestPublisherIQL:
     @given(
         data=data(),
         channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublisherIQL)}_text_without_serialize_{c}"
+            lambda c: f"{get_class_name(TestPublisher)}_text_without_serialize_{c}"
         ),
         text=text_ascii(min_size=1),
     )
@@ -182,7 +182,7 @@ class TestPublisherIQL:
                 async for bytes_i in subscribe(test.redis.pubsub(), channel):
                     _ = buffer.write(bytes_i)
 
-            publisher = PublisherIQL(redis=test.redis, sleep_core=0.1)
+            publisher = Publisher(redis=test.redis, sleep_core=0.1)
 
             async def sleep_then_put() -> None:
                 await sleep_dur(duration=0.1)
@@ -200,9 +200,9 @@ class TestPublisherIQL:
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_error(self, *, data: DataObject) -> None:
         async with yield_test_redis(data) as test:
-            publisher = PublisherIQL(redis=test.redis)
-            with raises(PublisherIQLError, match="Error running 'PublisherIQL'"):
-                raise PublisherIQLError(publisher=publisher)
+            publisher = Publisher(redis=test.redis)
+            with raises(PublisherError, match="Error running 'Publisher'"):
+                raise PublisherError(publisher=publisher)
 
 
 class TestSubscribeMessages:

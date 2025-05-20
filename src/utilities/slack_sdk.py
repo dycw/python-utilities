@@ -35,7 +35,7 @@ async def _send_adapter(url: str, text: str, /) -> None:
 
 
 @dataclass(init=False, unsafe_hash=True)
-class SlackHandlerIQL(Handler, InfiniteQueueLooper[None, str]):
+class SlackHandler(Handler, InfiniteQueueLooper[None, str]):
     """Handler for sending messages to Slack."""
 
     @override
@@ -110,4 +110,4 @@ def _get_client(url: str, /, *, timeout: Duration = _TIMEOUT) -> AsyncWebhookCli
     return AsyncWebhookClient(url, timeout=timeout_use)
 
 
-__all__ = ["SendToSlackError", "SlackHandlerIQL", "send_to_slack"]
+__all__ = ["SendToSlackError", "SlackHandler", "send_to_slack"]

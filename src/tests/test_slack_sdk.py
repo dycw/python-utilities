@@ -12,7 +12,7 @@ from utilities.asyncio import EnhancedTaskGroup, sleep_dur
 from utilities.datetime import MINUTE
 from utilities.os import get_env_var
 from utilities.pytest import throttle
-from utilities.slack_sdk import SlackHandlerIQL, _get_client, send_to_slack
+from utilities.slack_sdk import SlackHandler, _get_client, send_to_slack
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -39,7 +39,7 @@ class TestSendToSlack:
         )
 
 
-class TestSlackHandlerIQL:
+class TestSlackHandler:
     async def test_main(self, *, tmp_path: Path) -> None:
         messages: Sequence[str] = []
 
@@ -49,7 +49,7 @@ class TestSlackHandlerIQL:
 
         logger = getLogger(str(tmp_path))
         logger.addHandler(
-            handler := SlackHandlerIQL("url", sleep_core=0.05, sender=sender)
+            handler := SlackHandler("url", sleep_core=0.05, sender=sender)
         )
 
         async def sleep_then_log() -> None:
@@ -68,13 +68,13 @@ class TestSlackHandlerIQL:
     async def test_real(self, *, tmp_path: Path) -> None:
         url = get_env_var("SLACK")
         logger = getLogger(str(tmp_path))
-        logger.addHandler(handler := SlackHandlerIQL(url, sleep_core=0.05))
+        logger.addHandler(handler := SlackHandler(url, sleep_core=0.05))
 
         async def sleep_then_log() -> None:
             await sleep_dur(duration=0.05)
             for i in range(10):
                 logger.warning(
-                    "message %d from %s", i, TestSlackHandlerIQL.test_real.__qualname__
+                    "message %d from %s", i, TestSlackHandler.test_real.__qualname__
                 )
 
         with raises(ExceptionGroup):  # noqa: PT012
