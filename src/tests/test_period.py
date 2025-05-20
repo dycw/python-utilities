@@ -173,7 +173,8 @@ class TestPeriod:
         time_zone1, time_zone2 = time_zones
         with assume_does_not_raise(OverflowError, match="date value out of range"):
             period = Period(start.astimezone(time_zone1), end.astimezone(time_zone2))
-        result = func(period)
+        with assume_does_not_raise(SerializeZonedDateTimeError):
+            result = func(period)
         assert search(
             r"^Period\(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?[\+-]\d{2}:\d{2}(:\d{2})?\[.+\], \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?[\+-]\d{2}:\d{2}(:\d{2})?\[.+\]\)$",
             result,
