@@ -43,8 +43,8 @@ from utilities.sqlalchemy import (
     InsertItemsError,
     TablenameMixin,
     TableOrORMInstOrClass,
-    UpserterIQL,
-    UpserterIQLError,
+    Upserter,
+    UpserterError,
     UpsertItemsError,
     _get_dialect,
     _get_dialect_max_params,
@@ -1150,7 +1150,7 @@ class TestTupleToMapping:
         assert result == expected
 
 
-class TestUpserterIQL:
+class TestUpserter:
     @given(
         data=data(),
         name=_table_names(),
@@ -1168,7 +1168,7 @@ class TestUpserterIQL:
             Column("value", Boolean, nullable=True),
         )
         engine = await sqlalchemy_engines(data, table)
-        upserter = UpserterIQL(engine=engine, sleep_core=0.1)
+        upserter = Upserter(engine=engine, sleep_core=0.1)
         pairs = [(id_, init) for id_, init, _ in triples]
 
         async def sleep_then_put() -> None:
@@ -1187,9 +1187,9 @@ class TestUpserterIQL:
     @given(data=data())
     async def test_error(self, *, data: DataObject) -> None:
         engine = await sqlalchemy_engines(data)
-        upserter = UpserterIQL(engine=engine)
-        with raises(UpserterIQLError, match="Error running 'UpserterIQL'"):
-            raise UpserterIQLError(upserter=upserter)
+        upserter = Upserter(engine=engine)
+        with raises(UpserterError, match="Error running 'Upserter'"):
+            raise UpserterError(upserter=upserter)
 
 
 class TestUpsertItems:

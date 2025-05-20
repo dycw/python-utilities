@@ -589,7 +589,7 @@ async def publish(
 
 
 @dataclass(kw_only=True)
-class PublisherIQL(InfiniteQueueLooper[None, tuple[str, EncodableT]]):
+class Publisher(InfiniteQueueLooper[None, tuple[str, EncodableT]]):
     """Publish a set of messages to Redis."""
 
     redis: Redis
@@ -612,12 +612,12 @@ class PublisherIQL(InfiniteQueueLooper[None, tuple[str, EncodableT]]):
     def _yield_events_and_exceptions(
         self,
     ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
-        yield (None, PublisherIQLError)  # skipif-ci-and-not-linux
+        yield (None, PublisherError)  # skipif-ci-and-not-linux
 
 
 @dataclass(kw_only=True)
-class PublisherIQLError(Exception):
-    publisher: PublisherIQL
+class PublisherError(Exception):
+    publisher: Publisher
 
     @override
     def __str__(self) -> str:
@@ -812,8 +812,8 @@ _ = _TestRedis
 
 
 __all__ = [
-    "PublisherIQL",
-    "PublisherIQLError",
+    "Publisher",
+    "PublisherError",
     "RedisHashMapKey",
     "RedisKey",
     "publish",
