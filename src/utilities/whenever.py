@@ -6,7 +6,14 @@ from contextlib import suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, override
 
-from whenever import Date, DateTimeDelta, PlainDateTime, Time, ZonedDateTime
+from whenever import (
+    Date,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeZoneNotFoundError,
+    ZonedDateTime,
+)
 
 from utilities.datetime import (
     _MICROSECONDS_PER_DAY,
@@ -47,19 +54,35 @@ def check_valid_zoned_datetime(datetime: dt.datetime, /) -> None:
     """Check if a zoned datetime is valid."""
     time_zone = ensure_time_zone(datetime)  # skipif-ci-and-windows
     datetime2 = datetime.replace(tzinfo=time_zone)  # skipif-ci-and-windows
-    result = (  # skipif-ci-and-windows
-        ZonedDateTime.from_py_datetime(datetime2)
-        .to_tz(get_time_zone_name(UTC))
-        .to_tz(get_time_zone_name(time_zone))
-        .py_datetime()
-    )
+    try:
+        result = (  # skipif-ci-and-windows
+            ZonedDateTime.from_py_datetime(datetime2)
+            .to_tz(get_time_zone_name(UTC))
+            .to_tz(get_time_zone_name(time_zone))
+            .py_datetime()
+        )
+    except TimeZoneNotFoundError:
+        raise _CheckValidZonedDateTimeInvalidTimeZoneError(  # pragma: no cover
+            datetime=datetime
+        ) from None
     if result != datetime2:  # skipif-ci-and-windows
-        raise CheckValidZonedDateimeError(datetime=datetime, result=result)
+        raise _CheckValidZonedDateTimeUnequalError(datetime=datetime, result=result)
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckValidZonedDateimeError(Exception):
+class CheckValidZonedDateTimeError(Exception):
     datetime: dt.datetime
+
+
+@dataclass(kw_only=True, slots=True)
+class _CheckValidZonedDateTimeInvalidTimeZoneError(CheckValidZonedDateTimeError):
+    @override
+    def __str__(self) -> str:
+        return f"Invalid timezone; got {self.datetime.tzinfo}"  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class _CheckValidZonedDateTimeUnequalError(CheckValidZonedDateTimeError):
     result: dt.datetime
 
     @override
@@ -571,7 +594,7 @@ class _ToDateTimeDeltaError(Exception):
 __all__ = [
     "MAX_SERIALIZABLE_TIMEDELTA",
     "MIN_SERIALIZABLE_TIMEDELTA",
-    "CheckValidZonedDateimeError",
+    "CheckValidZonedDateTimeError",
     "EnsureDateError",
     "EnsureDateTimeError",
     "EnsurePlainDateTimeError",
