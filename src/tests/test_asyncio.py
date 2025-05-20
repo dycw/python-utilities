@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from itertools import chain, count
 from re import search
-from typing import TYPE_CHECKING, Self, override
+from typing import TYPE_CHECKING, Any, Self, cast, override
 
 from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import (
@@ -23,12 +23,12 @@ from pytest import LogCaptureFixture, mark, raises
 from utilities.asyncio import (
     EnhancedTaskGroup,
     InfiniteLooper,
-    InfiniteLooperError,
     InfiniteQueueLooper,
     InfiniteQueueLooperError,
     UniquePriorityQueue,
     UniqueQueue,
-    _DurationOrEvery,
+    _InfiniteLooperDefaultEventError,
+    _InfiniteLooperNoSuchEventError,
     get_event,
     get_items,
     get_items_nowait,
@@ -56,7 +56,13 @@ from utilities.timer import Timer
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
-    from utilities.types import Coroutine1, Duration, MaybeCallableEvent, MaybeType
+    from utilities.types import (
+        Coroutine1,
+        Duration,
+        DurationOrEveryDuration,
+        MaybeCallableEvent,
+        MaybeType,
+    )
 
 
 class TestEnhancedTaskGroup:
@@ -130,7 +136,7 @@ class TestGetEvent:
 
 class TestInfiniteLooper:
     @given(n=integers(10, 11), sleep_core=sampled_from([0.1, ("every", 0.1)]))
-    async def test_main(self, *, n: int, sleep_core: _DurationOrEvery) -> None:
+    async def test_main(self, *, n: int, sleep_core: DurationOrEveryDuration) -> None:
         class TrueError(BaseException): ...
 
         class FalseError(BaseException): ...
@@ -147,7 +153,7 @@ class TestInfiniteLooper:
             async def _core(self) -> None:
                 self.counter += 1
                 if self.counter >= n:
-                    self._set_event(n % 2 == 0)
+                    self._set_event(event=n % 2 == 0)
 
             @override
             def _yield_events_and_exceptions(
@@ -166,15 +172,8 @@ class TestInfiniteLooper:
                     _ = await looper()
 
     async def test_hashable(self) -> None:
-        class CustomError(Exception): ...
-
         @dataclass(kw_only=True, unsafe_hash=True)
-        class Example(InfiniteLooper[None]):
-            @override
-            def _yield_events_and_exceptions(
-                self,
-            ) -> Iterator[tuple[None, MaybeType[Exception]]]:
-                yield (None, CustomError)
+        class Example(InfiniteLooper[None]): ...
 
         looper = Example(sleep_core=0.1)
         _ = hash(looper)
@@ -188,8 +187,6 @@ class TestInfiniteLooper:
                 external += 1
                 obj.counter += 1
                 await sleep(0.05)
-
-        class CustomError(Exception): ...
 
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
@@ -205,17 +202,11 @@ class TestInfiniteLooper:
             async def _core(self) -> None:
                 self.counter += 1
                 if self.counter >= 5:
-                    self._set_event(None)
+                    self._set_event()
 
             @override
             def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
                 yield partial(inc_external, self)
-
-            @override
-            def _yield_events_and_exceptions(
-                self,
-            ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
-                yield (None, CustomError)
 
         looper = Example(sleep_core=0.05, sleep_restart=0.05)
         with raises(TimeoutError):
@@ -250,12 +241,6 @@ class TestInfiniteLooper:
             @override
             def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
                 yield dummy
-
-            @override
-            def _yield_events_and_exceptions(
-                self,
-            ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
-                yield (None, CustomError)
 
         looper = Example(sleep_core=0.05, sleep_restart=0.05)
         with raises(TimeoutError):
@@ -294,18 +279,23 @@ class TestInfiniteLooper:
             def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
                 yield dummy
 
-            @override
-            def _yield_events_and_exceptions(
-                self,
-            ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
-                yield (None, CustomError)
-
         looper = Example(sleep_core=0.05, sleep_restart=0.05, logger=logger)
         with raises(CancelledError):
             async with timeout_dur(duration=1.0):
                 await looper()
         assert 3 <= looper.initializations <= 5
         assert 1 <= looper.counter <= 6
+
+    async def test_error_default_event(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]): ...
+
+        looper = Example()
+
+        with raises(
+            _InfiniteLooperDefaultEventError, match=r"'Example' default event error"
+        ):
+            raise _InfiniteLooperDefaultEventError(looper=looper)
 
     @given(logger=just("logger") | none())
     @mark.parametrize(
@@ -321,7 +311,7 @@ class TestInfiniteLooper:
     async def test_error_upon_initialize(
         self,
         *,
-        sleep_restart: _DurationOrEvery,
+        sleep_restart: DurationOrEveryDuration,
         desc: str,
         logger: str | None,
         caplog: LogCaptureFixture,
@@ -361,7 +351,7 @@ class TestInfiniteLooper:
     async def test_error_group_upon_coroutines(
         self,
         *,
-        sleep_restart: _DurationOrEvery,
+        sleep_restart: DurationOrEveryDuration,
         desc: str,
         logger: str | None,
         caplog: LogCaptureFixture,
@@ -373,12 +363,6 @@ class TestInfiniteLooper:
             @override
             async def _core(self) -> None:
                 raise CustomError
-
-            @override
-            def _yield_events_and_exceptions(
-                self,
-            ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
-                yield (None, CustomError)
 
         looper = Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger)
         with raises(TimeoutError):
@@ -402,10 +386,13 @@ class TestInfiniteLooper:
             async def _core(self) -> None:
                 self.counter += 1
                 if self.counter >= 10:
-                    self._set_event(None)
+                    self._set_event(event=cast("Any", "invalid"))
 
-        looper = Example(sleep_core=0.1)
-        with raises(InfiniteLooperError, match="'Example' does not have an event None"):
+        looper = Example()
+        with raises(
+            _InfiniteLooperNoSuchEventError,
+            match="'Example' does not have an event 'invalid'",
+        ):
             _ = await looper()
 
 

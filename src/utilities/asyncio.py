@@ -26,7 +26,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
-    Literal,
     NoReturn,
     TextIO,
     TypeVar,
@@ -49,6 +48,7 @@ from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import (
     Coroutine1,
+    DurationOrEveryDuration,
     MaybeCallableEvent,
     MaybeType,
     THashable,
@@ -121,17 +121,14 @@ class EnhancedTaskGroup(TaskGroup):
 ##
 
 
-type _DurationOrEvery = Duration | tuple[Literal["every"], Duration]
-
-
 @dataclass(kw_only=True, unsafe_hash=True)
 class InfiniteLooper(ABC, Generic[THashable]):
     """An infinite loop which can throw exceptions by setting events."""
 
-    sleep_core: _DurationOrEvery = SECOND
-    sleep_restart: _DurationOrEvery = MINUTE
+    sleep_core: DurationOrEveryDuration = SECOND
+    sleep_restart: DurationOrEveryDuration = MINUTE
     logger: str | None = None
-    _events: Mapping[THashable, Event] = field(
+    _events: Mapping[THashable | None, Event] = field(
         default_factory=dict, init=False, repr=False, hash=False
     )
 
@@ -229,7 +226,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
             msgs.append(f"Sleeping {self._sleep_restart_desc}...")
             getLogger(name=self.logger).error("\n".join(msgs))
 
-    def _raise_error(self, event: THashable, /) -> NoReturn:
+    def _raise_error(self, event: THashable | None, /) -> NoReturn:
         """Raise the error corresponding to given event."""
         mapping = dict(self._yield_events_and_exceptions())
         error = mapping.get(event, InfiniteLooperError)
@@ -241,7 +238,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
             event: Event() for event, _ in self._yield_events_and_exceptions()
         }
 
-    async def _run_sleep(self, sleep: _DurationOrEvery, /) -> None:
+    async def _run_sleep(self, sleep: DurationOrEveryDuration, /) -> None:
         """Sleep until the next part of the loop."""
         match sleep:
             case int() | float() | dt.timedelta() as duration:
@@ -264,12 +261,12 @@ class InfiniteLooper(ABC, Generic[THashable]):
             case _ as never:
                 assert_never(never)
 
-    def _set_event(self, event: THashable, /) -> None:
+    def _set_event(self, *, event: THashable | None = None) -> None:
         """Set the given event."""
         try:
             event_obj = self._events[event]
         except KeyError:
-            raise InfiniteLooperError(looper=self, event=event) from None
+            raise _InfiniteLooperNoSuchEventError(looper=self, event=event) from None
         event_obj.set()
 
     def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
@@ -278,19 +275,30 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
     def _yield_events_and_exceptions(
         self,
-    ) -> Iterator[tuple[THashable, MaybeType[BaseException]]]:
+    ) -> Iterator[tuple[THashable | None, MaybeType[BaseException]]]:
         """Yield the events & exceptions."""
-        yield from []
+        yield (None, _InfiniteLooperDefaultEventError)
 
 
 @dataclass(kw_only=True, slots=True)
 class InfiniteLooperError(Exception):
     looper: InfiniteLooper[Any]
+
+
+@dataclass(kw_only=True, slots=True)
+class _InfiniteLooperNoSuchEventError(InfiniteLooperError):
     event: Hashable
 
     @override
     def __str__(self) -> str:
         return f"{get_class_name(self.looper)!r} does not have an event {self.event!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _InfiniteLooperDefaultEventError(InfiniteLooperError):
+    @override
+    def __str__(self) -> str:
+        return f"{get_class_name(self.looper)!r} default event error"
 
 
 ##

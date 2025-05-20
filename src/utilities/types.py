@@ -92,6 +92,7 @@ type DateTimeLike = MaybeStr[dt.datetime]
 type DateOrDateTime = dt.date | dt.datetime
 type Duration = Number | dt.timedelta
 type DurationLike = MaybeStr[Duration]
+type DurationOrEveryDuration = Duration | tuple[Literal["every"], Duration]
 type MaybeCallableDate = MaybeCallable[dt.date]
 type MaybeCallableDateTime = MaybeCallable[dt.datetime]
 type TimeLike = MaybeStr[dt.time]
@@ -270,6 +271,7 @@ __all__ = [
     "DateTimeLike",
     "Duration",
     "DurationLike",
+    "DurationOrEveryDuration",
     "EnumLike",
     "ExcInfo",
     "IterableHashable",
