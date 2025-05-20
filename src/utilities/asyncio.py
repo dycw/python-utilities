@@ -298,7 +298,7 @@ class _InfiniteLooperNoSuchEventError(InfiniteLooperError):
 class _InfiniteLooperDefaultEventError(InfiniteLooperError):
     @override
     def __str__(self) -> str:
-        return f"{get_class_name(self.looper)!r} default event"
+        return f"{get_class_name(self.looper)!r} default event error"
 
 
 ##

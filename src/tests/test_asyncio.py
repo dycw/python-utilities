@@ -23,11 +23,12 @@ from pytest import LogCaptureFixture, mark, raises
 from utilities.asyncio import (
     EnhancedTaskGroup,
     InfiniteLooper,
-    InfiniteLooperError,
     InfiniteQueueLooper,
     InfiniteQueueLooperError,
     UniquePriorityQueue,
     UniqueQueue,
+    _InfiniteLooperDefaultEventError,
+    _InfiniteLooperNoSuchEventError,
     get_event,
     get_items,
     get_items_nowait,
@@ -285,6 +286,17 @@ class TestInfiniteLooper:
         assert 3 <= looper.initializations <= 5
         assert 1 <= looper.counter <= 6
 
+    async def test_error_default_event(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]): ...
+
+        looper = Example()
+
+        with raises(
+            _InfiniteLooperDefaultEventError, match=r"'Example' default event error"
+        ):
+            raise _InfiniteLooperDefaultEventError(looper=looper)
+
     @given(logger=just("logger") | none())
     @mark.parametrize(
         ("sleep_restart", "desc"),
@@ -376,9 +388,10 @@ class TestInfiniteLooper:
                 if self.counter >= 10:
                     self._set_event(event=cast("Any", "invalid"))
 
-        looper = Example(sleep_core=0.1)
+        looper = Example()
         with raises(
-            InfiniteLooperError, match="'Example' does not have an event 'invalid'"
+            _InfiniteLooperNoSuchEventError,
+            match="'Example' does not have an event 'invalid'",
         ):
             _ = await looper()
 
