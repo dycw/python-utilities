@@ -26,7 +26,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
-    Literal,
     NoReturn,
     TextIO,
     TypeVar,
@@ -49,6 +48,7 @@ from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import (
     Coroutine1,
+    DurationOrEveryDuration,
     MaybeCallableEvent,
     MaybeType,
     THashable,
@@ -121,15 +121,12 @@ class EnhancedTaskGroup(TaskGroup):
 ##
 
 
-type _DurationOrEvery = Duration | tuple[Literal["every"], Duration]
-
-
 @dataclass(kw_only=True, unsafe_hash=True)
 class InfiniteLooper(ABC, Generic[THashable]):
     """An infinite loop which can throw exceptions by setting events."""
 
-    sleep_core: _DurationOrEvery = SECOND
-    sleep_restart: _DurationOrEvery = MINUTE
+    sleep_core: DurationOrEveryDuration = SECOND
+    sleep_restart: DurationOrEveryDuration = MINUTE
     logger: str | None = None
     _events: Mapping[THashable | None, Event] = field(
         default_factory=dict, init=False, repr=False, hash=False
@@ -229,7 +226,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
             msgs.append(f"Sleeping {self._sleep_restart_desc}...")
             getLogger(name=self.logger).error("\n".join(msgs))
 
-    def _raise_error(self, event: THashable, /) -> NoReturn:
+    def _raise_error(self, event: THashable | None, /) -> NoReturn:
         """Raise the error corresponding to given event."""
         mapping = dict(self._yield_events_and_exceptions())
         error = mapping.get(event, InfiniteLooperError)
@@ -241,7 +238,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
             event: Event() for event, _ in self._yield_events_and_exceptions()
         }
 
-    async def _run_sleep(self, sleep: _DurationOrEvery, /) -> None:
+    async def _run_sleep(self, sleep: DurationOrEveryDuration, /) -> None:
         """Sleep until the next part of the loop."""
         match sleep:
             case int() | float() | dt.timedelta() as duration:

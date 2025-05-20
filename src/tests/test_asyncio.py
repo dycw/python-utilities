@@ -28,7 +28,6 @@ from utilities.asyncio import (
     InfiniteQueueLooperError,
     UniquePriorityQueue,
     UniqueQueue,
-    _DurationOrEvery,
     get_event,
     get_items,
     get_items_nowait,
@@ -56,7 +55,13 @@ from utilities.timer import Timer
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
-    from utilities.types import Coroutine1, Duration, MaybeCallableEvent, MaybeType
+    from utilities.types import (
+        Coroutine1,
+        Duration,
+        DurationOrEveryDuration,
+        MaybeCallableEvent,
+        MaybeType,
+    )
 
 
 class TestEnhancedTaskGroup:
@@ -130,7 +135,7 @@ class TestGetEvent:
 
 class TestInfiniteLooper:
     @given(n=integers(10, 11), sleep_core=sampled_from([0.1, ("every", 0.1)]))
-    async def test_main(self, *, n: int, sleep_core: _DurationOrEvery) -> None:
+    async def test_main(self, *, n: int, sleep_core: DurationOrEveryDuration) -> None:
         class TrueError(BaseException): ...
 
         class FalseError(BaseException): ...
@@ -294,7 +299,7 @@ class TestInfiniteLooper:
     async def test_error_upon_initialize(
         self,
         *,
-        sleep_restart: _DurationOrEvery,
+        sleep_restart: DurationOrEveryDuration,
         desc: str,
         logger: str | None,
         caplog: LogCaptureFixture,
@@ -334,7 +339,7 @@ class TestInfiniteLooper:
     async def test_error_group_upon_coroutines(
         self,
         *,
-        sleep_restart: _DurationOrEvery,
+        sleep_restart: DurationOrEveryDuration,
         desc: str,
         logger: str | None,
         caplog: LogCaptureFixture,
