@@ -48,8 +48,8 @@ from utilities.functions import ensure_int
 from utilities.git import _GIT_REMOTE_GET_URL_ORIGIN, _GIT_REV_PARSE_ABBREV_REV_HEAD
 from utilities.hypothesis import (
     _SQLALCHEMY_ENGINE_DIALECTS,
-    LocalDateTimesError,
     MaybeSearchStrategy,
+    PlainDateTimesError,
     Shape,
     ZonedDateTimesError,
     _Draw2DefaultGeneratedSentinelError,
@@ -70,7 +70,6 @@ from utilities.hypothesis import (
     int64s,
     int_arrays,
     lists_fixed_length,
-    local_datetimes,
     min_and_max_datetimes,
     min_and_maybe_max_datetimes,
     min_and_maybe_max_sizes,
@@ -79,6 +78,7 @@ from utilities.hypothesis import (
     numbers,
     pairs,
     paths,
+    plain_datetimes,
     random_states,
     sentinels,
     sets_fixed_length,
@@ -677,42 +677,6 @@ class TestListsFixedLength:
             assert sorted(result) == result
 
 
-class TestLocalDateTimes:
-    @given(data=data(), min_value=datetimes(), max_value=datetimes())
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_main(
-        self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            datetime = data.draw(
-                local_datetimes(min_value=min_value, max_value=max_value)
-            )
-        assert datetime.tzinfo is None
-        assert min_value <= datetime <= max_value
-
-    @given(data=data())
-    def test_rounding(self, *, data: DataObject) -> None:
-        min_value, max_value = data.draw(pairs(local_datetimes(), sorted=True))
-        datetime = data.draw(
-            local_datetimes(
-                min_value=min_value,
-                max_value=max_value,
-                round_="standard",
-                timedelta=MINUTE,
-            )
-        )
-        assert isinstance(datetime, dt.datetime)
-        assert datetime.second == datetime.microsecond == 0
-        assert min_value <= datetime <= max_value
-
-    @given(data=data())
-    def test_error_rounding(self, *, data: DataObject) -> None:
-        with raises(
-            LocalDateTimesError, match="Rounding requires a timedelta; got None"
-        ):
-            _ = data.draw(local_datetimes(round_="standard"))
-
-
 class TestMinAndMaxDateTimes:
     @given(
         data=data(),
@@ -860,6 +824,42 @@ class TestPaths:
         assert isinstance(path, Path)
         assert not path.is_absolute()
         validate_filepath(str(path))
+
+
+class TestPlainDateTimes:
+    @given(data=data(), min_value=datetimes(), max_value=datetimes())
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_main(
+        self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            datetime = data.draw(
+                plain_datetimes(min_value=min_value, max_value=max_value)
+            )
+        assert datetime.tzinfo is None
+        assert min_value <= datetime <= max_value
+
+    @given(data=data())
+    def test_rounding(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(plain_datetimes(), sorted=True))
+        datetime = data.draw(
+            plain_datetimes(
+                min_value=min_value,
+                max_value=max_value,
+                round_="standard",
+                timedelta=MINUTE,
+            )
+        )
+        assert isinstance(datetime, dt.datetime)
+        assert datetime.second == datetime.microsecond == 0
+        assert min_value <= datetime <= max_value
+
+    @given(data=data())
+    def test_error_rounding(self, *, data: DataObject) -> None:
+        with raises(
+            PlainDateTimesError, match="Rounding requires a timedelta; got None"
+        ):
+            _ = data.draw(plain_datetimes(round_="standard"))
 
 
 class TestRandomStates:

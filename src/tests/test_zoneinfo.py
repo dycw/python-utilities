@@ -14,7 +14,7 @@ from utilities.tzlocal import get_local_time_zone
 from utilities.zoneinfo import (
     UTC,
     _EnsureTimeZoneInvalidTZInfoError,
-    _EnsureTimeZoneLocalDateTimeError,
+    _EnsureTimeZonePlainDateTimeError,
     ensure_time_zone,
     get_time_zone_name,
 )
@@ -63,7 +63,7 @@ class TestEnsureTimeZone:
 
     @given(datetime=datetimes())
     def test_error_local_datetime(self, *, datetime: dt.datetime) -> None:
-        with raises(_EnsureTimeZoneLocalDateTimeError, match="Local datetime: .*"):
+        with raises(_EnsureTimeZonePlainDateTimeError, match="Plain datetime: .*"):
             _ = ensure_time_zone(datetime)
 
 

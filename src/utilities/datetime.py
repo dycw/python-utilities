@@ -457,7 +457,7 @@ class EnsureMonthError(Exception):
 
 
 def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
-    """Format a local datetime locally & in UTC."""
+    """Format a plain datetime locally & in UTC."""
     time_zone = ensure_time_zone(datetime)
     if time_zone is UTC:
         return datetime.strftime("%Y-%m-%d %H:%M:%S (%a, UTC)")
@@ -706,8 +706,8 @@ def is_integral_timedelta(duration: Duration, /) -> bool:
 ##
 
 
-def is_local_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
-    """Check if an object is a local datetime."""
+def is_plain_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
+    """Check if an object is a plain datetime."""
     return isinstance(obj, dt.datetime) and (obj.tzinfo is None)
 
 
@@ -1105,7 +1105,7 @@ class SerializeCompactError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to serialize local datetime {self.datetime}"
+        return f"Unable to serialize plain datetime {self.datetime}"
 
 
 def parse_date_compact(text: str, /) -> dt.date:
@@ -1388,7 +1388,7 @@ __all__ = [
     "get_today",
     "get_years",
     "is_integral_timedelta",
-    "is_local_datetime",
+    "is_plain_datetime",
     "is_weekday",
     "is_zero_time",
     "is_zoned_datetime",

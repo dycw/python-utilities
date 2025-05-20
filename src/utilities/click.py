@@ -131,28 +131,6 @@ class Enum(ParamType, Generic[TEnum]):
         return _make_metavar(param, desc)
 
 
-class LocalDateTime(ParamType):
-    """A local-datetime-valued parameter."""
-
-    name = "local datetime"
-
-    @override
-    def __repr__(self) -> str:
-        return self.name.upper()
-
-    @override
-    def convert(
-        self, value: DateTimeLike, param: Parameter | None, ctx: Context | None
-    ) -> dt.date:
-        """Convert a value into the `LocalDateTime` type."""
-        from utilities.whenever import EnsureLocalDateTimeError, ensure_local_datetime
-
-        try:
-            return ensure_local_datetime(value)
-        except EnsureLocalDateTimeError as error:
-            self.fail(str(error), param, ctx)
-
-
 class Month(ParamType):
     """A month-valued parameter."""
 
@@ -170,6 +148,28 @@ class Month(ParamType):
         try:
             return ensure_month(value)
         except EnsureMonthError as error:
+            self.fail(str(error), param, ctx)
+
+
+class PlainDateTime(ParamType):
+    """A local-datetime-valued parameter."""
+
+    name = "plain datetime"
+
+    @override
+    def __repr__(self) -> str:
+        return self.name.upper()
+
+    @override
+    def convert(
+        self, value: DateTimeLike, param: Parameter | None, ctx: Context | None
+    ) -> dt.date:
+        """Convert a value into the `LocalDateTime` type."""
+        from utilities.whenever import EnsurePlainDateTimeError, ensure_plain_datetime
+
+        try:
+            return ensure_plain_datetime(value)
+        except EnsurePlainDateTimeError as error:
             self.fail(str(error), param, ctx)
 
 
@@ -506,8 +506,8 @@ __all__ = [
     "ListParameter",
     "ListStrs",
     "ListUUIDs",
-    "LocalDateTime",
     "Month",
+    "PlainDateTime",
     "Time",
     "Timedelta",
     "ZonedDateTime",

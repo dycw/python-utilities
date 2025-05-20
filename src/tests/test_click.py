@@ -54,7 +54,7 @@ from utilities.click import (
     ListMonths,
     ListStrs,
     ListUUIDs,
-    LocalDateTime,
+    PlainDateTime,
     Time,
     Timedelta,
     ZonedDateTime,
@@ -71,7 +71,7 @@ from utilities.text import join_strs, strip_and_dedent
 from utilities.whenever import (
     serialize_date,
     serialize_duration,
-    serialize_local_datetime,
+    serialize_plain_datetime,
     serialize_time,
     serialize_timedelta,
     serialize_zoned_datetime,
@@ -324,14 +324,14 @@ class TestParameters:
             param(
                 ListUUIDs(), "LIST[UUID]", lists(uuids()), _lift_serializer(str), True
             ),
+            param(utilities.click.Month(), "MONTH", months(), serialize_month, True),
             param(
-                LocalDateTime(),
-                "LOCAL DATETIME",
+                PlainDateTime(),
+                "PLAIN DATETIME",
                 datetimes(),
-                serialize_local_datetime,
+                serialize_plain_datetime,
                 True,
             ),
-            param(utilities.click.Month(), "MONTH", months(), serialize_month, True),
             param(Time(), "TIME", times(), serialize_time, True),
             param(
                 Timedelta(),

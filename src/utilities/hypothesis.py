@@ -643,43 +643,6 @@ def lists_fixed_length(
 
 
 @composite
-def local_datetimes(
-    draw: DrawFn,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MIN_NAIVE,
-    max_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MAX_NAIVE,
-    round_: RoundMode | None = None,
-    timedelta: dt.timedelta | None = None,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
-) -> dt.datetime:
-    """Strategy for generating local datetimes."""
-    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
-    datetime = draw(datetimes(min_value=min_value_, max_value=max_value_))
-    if round_ is not None:
-        if timedelta is None:
-            raise LocalDateTimesError(round_=round_)
-        datetime = round_datetime(
-            datetime, timedelta, mode=round_, rel_tol=rel_tol, abs_tol=abs_tol
-        )
-        _ = assume(min_value_ <= datetime <= max_value_)
-    return datetime
-
-
-@dataclass(kw_only=True, slots=True)
-class LocalDateTimesError(Exception):
-    round_: RoundMode
-
-    @override
-    def __str__(self) -> str:
-        return "Rounding requires a timedelta; got None"
-
-
-##
-
-
-@composite
 def min_and_max_datetimes(
     draw: DrawFn,
     /,
@@ -986,6 +949,43 @@ def paths() -> SearchStrategy[Path]:
     reserved = {"NUL"}
     strategy = text_ascii(min_size=1, max_size=10).filter(lambda x: x not in reserved)
     return lists(strategy, max_size=10).map(lambda parts: Path(*parts))
+
+
+##
+
+
+@composite
+def plain_datetimes(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MIN_NAIVE,
+    max_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MAX_NAIVE,
+    round_: RoundMode | None = None,
+    timedelta: dt.timedelta | None = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+) -> dt.datetime:
+    """Strategy for generating plain datetimes."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    datetime = draw(datetimes(min_value=min_value_, max_value=max_value_))
+    if round_ is not None:
+        if timedelta is None:
+            raise PlainDateTimesError(round_=round_)
+        datetime = round_datetime(
+            datetime, timedelta, mode=round_, rel_tol=rel_tol, abs_tol=abs_tol
+        )
+        _ = assume(min_value_ <= datetime <= max_value_)
+    return datetime
+
+
+@dataclass(kw_only=True, slots=True)
+class PlainDateTimesError(Exception):
+    round_: RoundMode
+
+    @override
+    def __str__(self) -> str:
+        return "Rounding requires a timedelta; got None"
 
 
 ##
@@ -1478,7 +1478,7 @@ def zoned_datetimes(
 ) -> dt.datetime:
     """Strategy for generating zoned datetimes."""
     from utilities.whenever import (
-        CheckValidZonedDateimeError,
+        CheckValidZonedDateTimeError,
         check_valid_zoned_datetime,
     )
 
@@ -1496,7 +1496,7 @@ def zoned_datetimes(
             max_value_ = max_value_.astimezone(time_zone_)
     try:
         datetime = draw(
-            local_datetimes(
+            plain_datetimes(
                 min_value=min_value_.replace(tzinfo=None),
                 max_value=max_value_.replace(tzinfo=None),
                 round_=round_,
@@ -1505,13 +1505,13 @@ def zoned_datetimes(
                 abs_tol=abs_tol,
             )
         )
-    except LocalDateTimesError as error:
+    except PlainDateTimesError as error:
         raise ZonedDateTimesError(round_=error.round_) from None
     datetime = datetime.replace(tzinfo=time_zone_)
     _ = assume(min_value_ <= datetime <= max_value_)
     if valid:
         with assume_does_not_raise(  # skipif-ci-and-windows
-            CheckValidZonedDateimeError
+            CheckValidZonedDateTimeError
         ):
             check_valid_zoned_datetime(datetime)
     return datetime
@@ -1528,8 +1528,8 @@ class ZonedDateTimesError(Exception):
 
 __all__ = [
     "Draw2Error",
-    "LocalDateTimesError",
     "MaybeSearchStrategy",
+    "PlainDateTimesError",
     "Shape",
     "ZonedDateTimesError",
     "assume_does_not_raise",
@@ -1548,8 +1548,6 @@ __all__ = [
     "int64s",
     "int_arrays",
     "lists_fixed_length",
-    "local_datetimes",
-    "local_datetimes",
     "min_and_max_datetimes",
     "min_and_maybe_max_datetimes",
     "min_and_maybe_max_sizes",
@@ -1559,6 +1557,8 @@ __all__ = [
     "numbers",
     "pairs",
     "paths",
+    "plain_datetimes",
+    "plain_datetimes",
     "random_states",
     "sentinels",
     "sets_fixed_length",

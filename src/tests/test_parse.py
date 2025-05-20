@@ -36,9 +36,9 @@ from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_path
 from utilities.hypothesis import (
     datetime_durations,
-    local_datetimes,
     numbers,
     paths,
+    plain_datetimes,
     text_ascii,
     timedeltas_2w,
     versions,
@@ -72,7 +72,7 @@ class TestSerializeAndParseObject:
         result = parse_object(dt.date, serialized)
         assert result == date
 
-    @given(datetime=local_datetimes() | zoned_datetimes())
+    @given(datetime=plain_datetimes() | zoned_datetimes())
     def test_datetime(self, *, datetime: dt.datetime) -> None:
         serialized = serialize_object(datetime)
         result = parse_object(dt.datetime, serialized)

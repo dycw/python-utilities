@@ -48,7 +48,7 @@ from utilities.uuid import UUID_PATTERN
 from utilities.version import Version, parse_version
 from utilities.whenever import (
     parse_date,
-    parse_local_datetime,
+    parse_plain_datetime,
     parse_time,
     parse_timedelta,
     parse_zoned_datetime,
@@ -424,7 +424,7 @@ def _object_hook(
             if match := _FLOAT_PATTERN.search(text):
                 return float(match.group(1))
             if match := _LOCAL_DATETIME_PATTERN.search(text):
-                return parse_local_datetime(match.group(1))
+                return parse_plain_datetime(match.group(1))
             if match := _PATH_PATTERN.search(text):
                 return Path(match.group(1))
             if match := _TIME_PATTERN.search(text):
