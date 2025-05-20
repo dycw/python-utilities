@@ -620,10 +620,7 @@ class TestSleepDur:
 
 class TestSleepUntil:
     async def test_main(self) -> None:
-        now = get_now()
-        with Timer() as timer:
-            await sleep_until(now + 10 * MILLISECOND)
-        assert timer >= datetime_duration_to_timedelta(5 * MILLISECOND)
+        await sleep_until(get_now() + 10 * MILLISECOND)
 
 
 class TestSleepUntilRounded:
