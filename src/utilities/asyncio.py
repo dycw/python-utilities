@@ -209,7 +209,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
         coroutines = list(self._yield_coroutines())
         if len(coroutines) == 0:
             return await self._run_looper_by_itself()
-        return await self._run_looper_with_coroutines(*coroutines)
+        return await self._run_looper_with_others(*coroutines)
 
     async def _run_looper_by_itself(self) -> None:
         """Run the looper by itself."""
@@ -245,7 +245,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 finally:
                     await self._run_sleep(self.sleep_restart)
 
-    async def _run_looper_with_coroutines(
+    async def _run_looper_with_others(
         self, *coroutines: Callable[[], Coroutine1[None]]
     ) -> None:
         """Run multiple loopers."""
@@ -253,7 +253,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
             self._reset_events()
             try:
                 async with TaskGroup() as tg:
-                    _ = tg.create_task(self._run_looper())
+                    _ = tg.create_task(self._run_looper_by_itself())
                     _ = [tg.create_task(c()) for c in coroutines]
             except ExceptionGroup as error:
                 self._error_group_upon_coroutines(error)
@@ -363,7 +363,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
     def _yield_events_and_exceptions(
         self,
-    ) -> Iterator[tuple[THashable | None], MaybeType[Exception]]:
+    ) -> Iterator[tuple[THashable | None, MaybeType[Exception]]]:
         """Yield the events & exceptions."""
         yield (None, _InfiniteLooperDefaultEventError)
 
