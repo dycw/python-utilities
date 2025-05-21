@@ -134,10 +134,10 @@ class EnhancedTaskGroup(TaskGroup):
 class InfiniteLooper(ABC, Generic[THashable]):
     """An infinite loop which can throw exceptions by setting events."""
 
-    sleep_core: DurationOrEveryDuration = SECOND
-    sleep_restart: DurationOrEveryDuration = MINUTE
-    duration: Duration | None = None
-    logger: str | None = None
+    sleep_core: DurationOrEveryDuration = field(default=SECOND, repr=False)
+    sleep_restart: DurationOrEveryDuration = field(default=MINUTE, repr=False)
+    duration: Duration | None = field(default=None, repr=False)
+    logger: str | None = field(default=None, repr=False)
     _depth: int = field(default=0, init=False, repr=False)
     _events: Mapping[THashable | None, Event] = field(
         default_factory=dict, init=False, repr=False, hash=False
@@ -186,6 +186,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
             with suppress(CancelledError):
                 await self._task
             self._task = None
+            await self._teardown()
 
     async def stop(self) -> None:
         """Stop the service."""

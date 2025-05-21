@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import Event, Queue, TaskGroup, run, sleep, timeout
+from asyncio import CancelledError, Event, Queue, TaskGroup, run, sleep, timeout
 from dataclasses import dataclass, field
 from functools import partial
 from itertools import chain, count
@@ -134,7 +134,7 @@ class TestGetEvent:
         assert get_event(event=lambda: event) is event
 
 
-@mark.only
+# @mark.only
 class TestInfiniteLooper:
     async def test_main_no_errors(self) -> None:
         @dataclass(kw_only=True)
@@ -186,6 +186,21 @@ class TestInfiniteLooper:
         assert 0 <= looper.counter <= 5
         assert 3 <= looper.teardowns <= 5
 
+    async def test_cancelled_error(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            counter: int = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+                if self.counter >= 5:
+                    raise CancelledError
+
+        async with Example(sleep_core=0.05) as service:
+            pass
+        assert 5 <= service.counter <= 15
+
     async def test_duration(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
@@ -209,6 +224,40 @@ class TestInfiniteLooper:
 
         looper = Example(sleep_core=0.1)
         _ = hash(looper)
+
+    @mark.only
+    async def test_nested_context_manager(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            running: bool = False
+
+            @override
+            async def _initialize(self) -> None:
+                self.running = True
+
+            @override
+            async def _teardown(self) -> None:
+                self.running = False
+
+        looper = Example(duration=0.1)
+        for _ in range(2):
+            assert not looper.running
+            async with looper:
+                assert looper.running
+                async with looper:
+                    assert looper.running
+                assert looper.running
+            assert not looper.running
+
+    def test_repr(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            counter: int = 0
+
+        looper = Example()
+        result = repr(looper)
+        expected = "TestInfiniteLooper.test_repr.<locals>.Example(counter=0)"
+        assert result == expected
 
     @given(n=integers(10, 11))
     async def test_setting_events(self, *, n: int) -> None:
