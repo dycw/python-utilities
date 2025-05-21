@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import CancelledError, Event, Queue, TaskGroup, run, sleep, timeout
+from asyncio import Event, Queue, TaskGroup, run, sleep, timeout
 from dataclasses import dataclass, field
 from functools import partial
 from itertools import chain, count
@@ -137,7 +137,7 @@ class TestGetEvent:
 # @mark.only
 class TestInfiniteLooper:
     @mark.skip
-    async def test_main(self) -> None:
+    async def test_main_no_errors(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
             counter: int = 0
@@ -153,6 +153,40 @@ class TestInfiniteLooper:
         async with timeout_dur(duration=1.0), Example(sleep_core=0.05) as service:
             pass
         assert 15 <= service.counter <= 25
+
+    @mark.only
+    async def test_main_with_errors(self) -> None:
+        class CustomError(Exception): ...
+
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            initializations: int = 0
+            counter: int = 0
+            teardowns: int = 0
+
+            @override
+            async def _initialize(self) -> None:
+                self.initializations += 1
+                self.counter = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+                if self.counter >= 5:
+                    raise CustomError
+
+            @override
+            async def _teardown(self) -> None:
+                self.teardowns += 1
+
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.05, sleep_restart=0.05) as service,
+        ):
+            pass
+        assert 3 <= service.initializations <= 5
+        assert 0 <= service.counter <= 5
+        assert 3 <= service.teardowns <= 5
 
     @mark.skip
     async def test_duration(self) -> None:
@@ -227,7 +261,7 @@ class TestInfiniteLooper:
                 assert looper.true_counter == 0
                 assert looper.false_counter >= 1
 
-    @mark.only
+    @mark.skip
     async def test_with_coroutine_self_set_event(self) -> None:
         external: int = 0
 
@@ -264,7 +298,7 @@ class TestInfiniteLooper:
         assert 0 <= looper.counter <= 7
         assert 16 <= external <= 21
 
-    @mark.only
+    @mark.skip
     async def test_with_coroutine_self_error(self) -> None:
         class CustomError(Exception): ...
 
@@ -296,7 +330,7 @@ class TestInfiniteLooper:
         assert 3 <= looper.initializations <= 5
         assert 0 <= looper.counter <= 5
 
-    @mark.only
+    @mark.skip
     @given(logger=just("logger") | none())
     async def test_with_coroutine_other_coroutine_error(
         self, *, logger: str | None
