@@ -134,16 +134,60 @@ class TestGetEvent:
         assert get_event(event=lambda: event) is event
 
 
+@mark.only
 class TestInfiniteLooper:
-    @given(n=integers(10, 11), sleep_core=sampled_from([0.1, ("every", 0.1)]))
-    async def test_main(self, *, n: int, sleep_core: DurationOrEveryDuration) -> None:
-        class TrueError(BaseException): ...
+    async def test_main(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            counter: int = 0
 
-        class FalseError(BaseException): ...
+            @override
+            async def _initialize(self) -> None:
+                self.counter = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+
+        async with timeout_dur(duration=1.0), Example(sleep_core=0.05) as service:
+            pass
+        assert 15 <= service.counter <= 25
+
+    async def test_duration(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            counter: int = 0
+
+            @override
+            async def _initialize(self) -> None:
+                self.counter = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+
+        async with Example(duration=1.0, sleep_core=0.05) as service:
+            pass
+        assert 15 <= service.counter <= 25
+
+    async def test_hashable(self) -> None:
+        @dataclass(kw_only=True, unsafe_hash=True)
+        class Example(InfiniteLooper[None]): ...
+
+        looper = Example(sleep_core=0.1)
+        _ = hash(looper)
+
+    @given(n=integers(10, 11))
+    async def test_setting_events(self, *, n: int) -> None:
+        class TrueError(Exception): ...
+
+        class FalseError(Exception): ...
 
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[bool]):
             counter: int = 0
+            true_counter: int = 0
+            false_counter: int = 0
 
             @override
             async def _initialize(self) -> None:
@@ -156,27 +200,28 @@ class TestInfiniteLooper:
                     self._set_event(event=n % 2 == 0)
 
             @override
+            def _error_upon_core(self, error: Exception, /) -> None:
+                if isinstance(error, TrueError):
+                    self.true_counter += 1
+                elif isinstance(error, FalseError):
+                    self.false_counter += 1
+
+            @override
             def _yield_events_and_exceptions(
                 self,
-            ) -> Iterator[tuple[bool, MaybeType[BaseException]]]:
+            ) -> Iterator[tuple[bool, MaybeType[Exception]]]:
                 yield (True, TrueError)
                 yield (False, FalseError)
 
-        looper = Example(sleep_core=sleep_core)
+        async with Example(duration=1.0, sleep_core=0.05) as looper:
+            ...
         match n % 2 == 0:
             case True:
-                with raises(TrueError):
-                    _ = await looper()
+                assert looper.true_counter >= 1, looper
+                assert looper.false_counter == 0
             case False:
-                with raises(FalseError):
-                    _ = await looper()
-
-    async def test_hashable(self) -> None:
-        @dataclass(kw_only=True, unsafe_hash=True)
-        class Example(InfiniteLooper[None]): ...
-
-        looper = Example(sleep_core=0.1)
-        _ = hash(looper)
+                assert looper.true_counter == 0
+                assert looper.false_counter >= 1
 
     async def test_with_coroutine_self_set_event(self) -> None:
         external: int = 0

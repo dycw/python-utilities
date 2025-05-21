@@ -640,7 +640,7 @@ class Upserter(InfiniteQueueLooper[None, _InsertItem]):
     @override
     def _yield_events_and_exceptions(
         self,
-    ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
+    ) -> Iterator[tuple[None], MaybeType[Exception]]:
         yield (None, UpserterError)
 
 
