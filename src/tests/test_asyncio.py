@@ -149,9 +149,9 @@ class TestInfiniteLooper:
             async def _core(self) -> None:
                 self.counter += 1
 
-        async with timeout_dur(duration=1.0), Example(sleep_core=0.05) as service:
+        async with timeout_dur(duration=1.0), Example(sleep_core=0.05) as looper:
             pass
-        assert 15 <= service.counter <= 25
+        assert 15 <= looper.counter <= 25
 
     async def test_main_with_errors(self) -> None:
         class CustomError(Exception): ...
@@ -179,12 +179,12 @@ class TestInfiniteLooper:
 
         async with (
             timeout_dur(duration=1.0),
-            Example(sleep_core=0.05, sleep_restart=0.05) as service,
+            Example(sleep_core=0.05, sleep_restart=0.05) as looper,
         ):
             pass
-        assert 3 <= service.initializations <= 5
-        assert 0 <= service.counter <= 5
-        assert 3 <= service.teardowns <= 5
+        assert 3 <= looper.initializations <= 5
+        assert 0 <= looper.counter <= 5
+        assert 3 <= looper.teardowns <= 5
 
     async def test_duration(self) -> None:
         @dataclass(kw_only=True)
@@ -199,9 +199,9 @@ class TestInfiniteLooper:
             async def _core(self) -> None:
                 self.counter += 1
 
-        async with Example(duration=1.0, sleep_core=0.05) as service:
+        async with Example(duration=1.0, sleep_core=0.05) as looper:
             pass
-        assert 15 <= service.counter <= 25
+        assert 15 <= looper.counter <= 25
 
     async def test_hashable(self) -> None:
         @dataclass(kw_only=True, unsafe_hash=True)
@@ -363,6 +363,46 @@ class TestInfiniteLooper:
             ...
         assert 3 <= looper.initializations <= 5
         assert 1 <= looper.counter <= 6
+
+    async def test_with_looper(self) -> None:
+        @dataclass(kw_only=True)
+        class Child(InfiniteLooper[None]):
+            counter: int = 0
+
+            @override
+            async def _initialize(self) -> None:
+                self.counter = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+
+        @dataclass(kw_only=True)
+        class Parent(InfiniteLooper[None]):
+            counter: int = 0
+            child: Child = field(init=False, repr=False)
+
+            @override
+            def __post_init__(self) -> None:
+                super().__post_init__()
+                self.child = Child(sleep_core=self.sleep_core)
+
+            @override
+            async def _initialize(self) -> None:
+                self.counter = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+
+            @override
+            def _yield_loopers(self) -> Iterator[InfiniteLooper]:
+                yield self.child
+
+        async with timeout_dur(duration=1.0), Parent(sleep_core=0.05) as parent:
+            ...
+        assert 15 <= parent.counter <= 25
+        assert 15 <= parent.child.counter <= 25
 
     async def test_error_default_event(self) -> None:
         @dataclass(kw_only=True)

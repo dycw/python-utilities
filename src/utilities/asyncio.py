@@ -207,9 +207,10 @@ class InfiniteLooper(ABC, Generic[THashable]):
     async def _run_looper_without_timeout(self) -> None:
         """Run the looper without a timeout."""
         coroutines = list(self._yield_coroutines())
-        if len(coroutines) == 0:
+        loopers = list(self._yield_loopers())
+        if (len(coroutines) == 0) and (len(loopers) == 0):
             return await self._run_looper_by_itself()
-        return await self._run_looper_with_others(*coroutines)
+        return await self._run_looper_with_others(coroutines, loopers)
 
     async def _run_looper_by_itself(self) -> None:
         """Run the looper by itself."""
@@ -246,15 +247,21 @@ class InfiniteLooper(ABC, Generic[THashable]):
                     await self._run_sleep(self.sleep_restart)
 
     async def _run_looper_with_others(
-        self, *coroutines: Callable[[], Coroutine1[None]]
+        self,
+        coroutines: Iterable[Callable[[], Coroutine1[None]]],
+        loopers: Iterable[InfiniteLooper[Any]],
+        /,
     ) -> None:
         """Run multiple loopers."""
         while True:
             self._reset_events()
             try:
-                async with TaskGroup() as tg:
+                async with TaskGroup() as tg, AsyncExitStack() as stack:
                     _ = tg.create_task(self._run_looper_by_itself())
                     _ = [tg.create_task(c()) for c in coroutines]
+                    _ = [
+                        tg.create_task(stack.enter_async_context(lo)) for lo in loopers
+                    ]
             except ExceptionGroup as error:
                 self._error_group_upon_coroutines(error)
                 await self._run_sleep(self.sleep_restart)
@@ -354,13 +361,6 @@ class InfiniteLooper(ABC, Generic[THashable]):
             raise _InfiniteLooperNoSuchEventError(looper=self, event=event) from None
         event_obj.set()
 
-    # async def __call__(self) -> None:
-    #     """Create a coroutine to run the looper."""
-    #     coroutines = list(self._yield_coroutines())
-    #     if len(coroutines) == 0:
-    #         return await self._run_looper()
-    #     return await self._run_looper_with_coroutines(*coroutines)
-
     def _yield_events_and_exceptions(
         self,
     ) -> Iterator[tuple[THashable | None, MaybeType[Exception]]]:
@@ -371,7 +371,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
         """Yield any other coroutines which must also be run."""
         yield from []
 
-    def _yield_loopers(self) -> Iterator[Callable[[], InfiniteLooper]]:
+    def _yield_loopers(self) -> Iterator[InfiniteLooper[Any]]:
         """Yield any other loopers which must also be run."""
         yield from []
 
