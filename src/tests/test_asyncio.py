@@ -134,9 +134,8 @@ class TestGetEvent:
         assert get_event(event=lambda: event) is event
 
 
-# @mark.only
+@mark.only
 class TestInfiniteLooper:
-    @mark.skip
     async def test_main_no_errors(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
@@ -154,7 +153,6 @@ class TestInfiniteLooper:
             pass
         assert 15 <= service.counter <= 25
 
-    @mark.only
     async def test_main_with_errors(self) -> None:
         class CustomError(Exception): ...
 
@@ -188,7 +186,6 @@ class TestInfiniteLooper:
         assert 0 <= service.counter <= 5
         assert 3 <= service.teardowns <= 5
 
-    @mark.skip
     async def test_duration(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
@@ -206,7 +203,6 @@ class TestInfiniteLooper:
             pass
         assert 15 <= service.counter <= 25
 
-    @mark.skip
     async def test_hashable(self) -> None:
         @dataclass(kw_only=True, unsafe_hash=True)
         class Example(InfiniteLooper[None]): ...
@@ -215,7 +211,6 @@ class TestInfiniteLooper:
         _ = hash(looper)
 
     @given(n=integers(10, 11))
-    @mark.skip
     async def test_setting_events(self, *, n: int) -> None:
         class TrueError(Exception): ...
 
@@ -251,7 +246,7 @@ class TestInfiniteLooper:
                 yield (True, TrueError)
                 yield (False, FalseError)
 
-        async with Example(duration=1.0, sleep_core=0.05) as looper:
+        async with timeout_dur(duration=1.0), Example(sleep_core=0.05) as looper:
             ...
         match n % 2 == 0:
             case True:
@@ -261,7 +256,6 @@ class TestInfiniteLooper:
                 assert looper.true_counter == 0
                 assert looper.false_counter >= 1
 
-    @mark.skip
     async def test_with_coroutine_self_set_event(self) -> None:
         external: int = 0
 
@@ -292,13 +286,15 @@ class TestInfiniteLooper:
             def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
                 yield partial(inc_external, self)
 
-        async with Example(duration=1.0, sleep_core=0.05, sleep_restart=0.05) as looper:
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.05, sleep_restart=0.05) as looper,
+        ):
             ...
         assert 4 <= looper.initializations <= 6
         assert 0 <= looper.counter <= 7
         assert 16 <= external <= 21
 
-    @mark.skip
     async def test_with_coroutine_self_error(self) -> None:
         class CustomError(Exception): ...
 
@@ -325,16 +321,15 @@ class TestInfiniteLooper:
             def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
                 yield dummy
 
-        async with Example(duration=1.0, sleep_core=0.05, sleep_restart=0.05) as looper:
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.05, sleep_restart=0.05) as looper,
+        ):
             ...
         assert 3 <= looper.initializations <= 5
         assert 0 <= looper.counter <= 5
 
-    @mark.skip
-    @given(logger=just("logger") | none())
-    async def test_with_coroutine_other_coroutine_error(
-        self, *, logger: str | None
-    ) -> None:
+    async def test_with_coroutine_other_coroutine_error(self) -> None:
         class CustomError(Exception): ...
 
         async def dummy() -> None:
@@ -361,9 +356,10 @@ class TestInfiniteLooper:
             def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
                 yield dummy
 
-        async with Example(
-            duration=1.0, sleep_core=0.05, sleep_restart=0.05, logger=logger
-        ) as looper:
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.05, sleep_restart=0.05) as looper,
+        ):
             ...
         assert 3 <= looper.initializations <= 5
         assert 1 <= looper.counter <= 6
@@ -410,8 +406,9 @@ class TestInfiniteLooper:
             async def _core(self) -> None:
                 raise NotImplementedError
 
-        async with Example(
-            duration=1.0, sleep_core=0.1, sleep_restart=sleep_restart, logger=logger
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger),
         ):
             ...
         if logger is not None:
@@ -470,12 +467,12 @@ class TestInfiniteLooper:
                 if self.counter >= 10:
                     self._set_event(event=cast("Any", "invalid"))
 
-        looper = Example()
         with raises(
             _InfiniteLooperNoSuchEventError,
             match="'Example' does not have an event 'invalid'",
         ):
-            _ = await looper()
+            async with Example():
+                ...
 
 
 class TestInfiniteQueueLooper:
