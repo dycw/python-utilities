@@ -197,12 +197,9 @@ class InfiniteLooper(ABC, Generic[THashable]):
         _ = (exc_type, exc_value, traceback)
         self._depth = max(self._depth - 1, 0)
         if (self._depth == 0) and (self._task is not None):
-            try:
+            with suppress(CancelledError):
                 await self._task
-            except CancelledError:
-                pass
-            finally:
-                self._task = None
+            self._task = None
             try:
                 await self._teardown()
             except Exception as error:  # noqa: BLE001
