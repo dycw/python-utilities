@@ -87,7 +87,6 @@ class EnhancedTaskGroup(TaskGroup):
     _timeout: Duration | None
     _error: type[Exception]
     _stack: AsyncExitStack
-    _exits: list
     _timeout_cm: _AsyncGeneratorContextManager[None] | None
 
     @override
@@ -102,7 +101,6 @@ class EnhancedTaskGroup(TaskGroup):
         self._semaphore = None if max_tasks is None else Semaphore(max_tasks)
         self._timeout = timeout
         self._error = error
-        self._exits = []
         self._stack = AsyncExitStack()
         self._timeout_cm = None
 
@@ -118,13 +116,19 @@ class EnhancedTaskGroup(TaskGroup):
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
-        print(f"EnhancedTaskGroup exit; {self._stack=}, {self._exits=}")
+        print(f"""\
+EnhancedTaskGroup exit
+    {self._stack=}
+    {self._stack._exit_callbacks=}""")
         # _ = await self._exits[0]._teardown()
         # async with TaskGroup() as tg:
         # _ = tg.create_task(self._stack.__aexit__(et, exc, tb))
         # _ = tg.create_task(super().__aexit__(et, exc, tb))
-        _ = await self._stack.__aexit__(et, exc, tb)
+        # _ = await self._stack.__aexit__(et, exc, tb)
+        _ = await self._stack.aclose()
+        print(f"EnhancedTaskGroup exit finished self._stack; {self._stack=}")
         _ = await super().__aexit__(et, exc, tb)
+        print(f"EnhancedTaskGroup exit finished super(); {self._stack=}")
         # _ = await self._stack.__aexit__(et, exc, tb)
         # _ = await self._stack.aclose()
         # _ = await super().__aexit__(et, exc, tb)
@@ -145,12 +149,13 @@ class EnhancedTaskGroup(TaskGroup):
         return super().create_task(coroutine, name=name, context=context)
 
     async def enter_async_context(self, cm: AbstractAsyncContextManager[_T], /) -> _T:
-        # _ = self._stack.push_async_callback(cm.__aexit__, None, None, None)
         return await self._stack.enter_async_context(cm)
 
     def enter_context(self, cm: AbstractAsyncContextManager[_T], /) -> Task[_T]:
         """Have the TaskGroup start an asynchronous context manager."""
-        return self.create_task(self._stack.enter_async_context(cm))
+        self._stack.push_async_callback(cm.__aexit__)
+        return self.create_task(cm.__aenter__())
+        # return self.create_task(self._stack.enter_async_context(cm))
 
     async def _wrap_with_semaphore(
         self, semaphore: Semaphore, coroutine: _CoroutineLike[_T], /
@@ -216,13 +221,17 @@ class InfiniteLooper(ABC, Generic[THashable]):
         traceback: TracebackType | None = None,
     ) -> None:
         """Context manager exit."""
-        print("InfiniteLooper exit")
+        print(f"""\
+InfiniteLooper exit
+    {self._task=}
+    {self._depth=}""")
         _ = (exc_type, exc_value, traceback)
-        if (self._task is None) or (self._depth == 0):
-            raise ImpossibleCaseError(  # pragma: no cover
-                case=[f"{self._task=}", f"{self._depth=}"]
-            )
-        self._depth -= 1
+        self._depth = max(self._depth - 1, 0)
+        # if (self._task is None) or (self._depth == 0):
+        #     raise ImpossibleCaseError(  # pragma: no cover
+        #         case=[f"{self._task=}", f"{self._depth=}"]
+        #     )
+        # self._depth -= 1
         if self._depth == 0:
             print("InfiniteLooper stack exit")
             with suppress(CancelledError):
