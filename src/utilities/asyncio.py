@@ -199,9 +199,12 @@ class InfiniteLooper(ABC, Generic[THashable]):
         if self._depth == 0:
             if self._task is None:
                 raise ImpossibleCaseError(case=[f"{self._task=}"])  # pragma: no cover
-            with suppress(CancelledError):
+            try:
                 await self._task
-            self._task = None
+            except CancelledError:
+                pass
+            finally:
+                self._task = None
             try:
                 await self._teardown()
             except Exception as error:  # noqa: BLE001
