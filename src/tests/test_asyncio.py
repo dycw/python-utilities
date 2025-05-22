@@ -101,7 +101,26 @@ class TestEnhancedTaskGroup:
         assert not first
         assert not second
 
-    async def test_enter_context(self) -> None:
+    async def test_enter_context_coroutine(self) -> None:
+        flag: bool = False
+
+        @asynccontextmanager
+        async def yield_true() -> AsyncIterator[None]:
+            nonlocal flag
+            try:
+                flag = True
+                yield
+            finally:
+                flag = False
+
+        assert not flag
+        async with EnhancedTaskGroup(timeout=0.1) as tg:
+            _ = tg.enter_context(yield_true())
+            await sleep(0.05)
+            assert flag
+        assert not flag
+
+    async def test_enter_context_looper(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
             running: bool = False
@@ -112,19 +131,15 @@ class TestEnhancedTaskGroup:
 
             @override
             async def _teardown(self) -> None:
-                print("Example teardown")
                 self.running = False
 
-        # async with looper:
-        #     await sleep(0.1)
-
-        looper = Example(duration=1.0)
-        async with EnhancedTaskGroup(timeout=1.0) as tg:
+        looper = Example(duration=0.1)
+        assert not looper.running
+        async with EnhancedTaskGroup(timeout=0.1) as tg:
             assert not looper.running
             _ = tg.enter_context(looper)
-            await sleep(0.1)
+            await sleep(0.05)
             assert looper.running
-        await sleep(0.2)
         assert not looper.running
 
     async def test_max_tasks_disabled(self) -> None:
