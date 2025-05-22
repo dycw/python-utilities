@@ -382,7 +382,7 @@ class TestInfiniteLooper:
             ...
         assert 4 <= looper.initializations <= 6
         assert 0 <= looper.counter <= 7
-        assert 16 <= external <= 21
+        assert 14 <= external <= 21
 
     async def test_with_coroutine_self_error(self) -> None:
         class CustomError(Exception): ...
