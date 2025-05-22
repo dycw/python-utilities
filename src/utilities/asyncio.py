@@ -197,9 +197,10 @@ class InfiniteLooper(ABC, Generic[THashable]):
         _ = (exc_type, exc_value, traceback)
         self._depth = max(self._depth - 1, 0)
         if self._depth == 0:
-            if self._task is not None:
-                with suppress(CancelledError):
-                    await self._task
+            if self._task is None:
+                raise ImpossibleCaseError(case=[f"{self._task=}"])  # pragma: no cover
+            with suppress(CancelledError):
+                await self._task
             self._task = None
             try:
                 await self._teardown()
