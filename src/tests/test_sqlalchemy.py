@@ -1172,6 +1172,7 @@ class TestUpserter:
         async with Upserter(duration=1.0, sleep_core=0.1, engine=engine) as upserter:
             await sleep(0.1)
             upserter.put_items_nowait((pairs, table))
+            await upserter.run_until_empty()
 
         sel = select(table)
         async with engine.begin() as conn:
