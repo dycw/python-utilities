@@ -267,7 +267,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
                         tg.create_task(stack.enter_async_context(lo)) for lo in loopers
                     ]
             except ExceptionGroup as error:
-                self._error_group_upon_coroutines(error)
+                self._error_group_upon_others(error)
                 await self._run_sleep(self.sleep_restart)
 
     async def _initialize(self) -> None:
@@ -309,7 +309,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 self._sleep_restart_desc,
             )
 
-    def _error_group_upon_coroutines(self, group: ExceptionGroup, /) -> None:
+    def _error_group_upon_others(self, group: ExceptionGroup, /) -> None:
         """Handle any errors upon running the core function."""
         if self.logger is not None:
             errors = group.exceptions

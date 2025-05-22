@@ -384,41 +384,6 @@ class TestInfiniteLooper:
         assert 3 <= looper.initializations <= 5
         assert 0 <= looper.counter <= 5
 
-    async def test_with_coroutine_other_coroutine_error(self) -> None:
-        class CustomError(Exception): ...
-
-        async def dummy() -> None:
-            for i in count():
-                if i >= 5:
-                    raise CustomError
-                await sleep(0.05)
-
-        @dataclass(kw_only=True)
-        class Example(InfiniteLooper[None]):
-            initializations: int = 0
-            counter: int = 0
-
-            @override
-            async def _initialize(self) -> None:
-                self.initializations += 1
-                self.counter = 0
-
-            @override
-            async def _core(self) -> None:
-                self.counter += 1
-
-            @override
-            def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
-                yield dummy
-
-        async with (
-            timeout_dur(duration=1.0),
-            Example(sleep_core=0.05, sleep_restart=0.05) as looper,
-        ):
-            ...
-        assert 3 <= looper.initializations <= 5
-        assert 1 <= looper.counter <= 6
-
     async def test_with_looper(self) -> None:
         @dataclass(kw_only=True)
         class Child(InfiniteLooper[None]):
@@ -576,6 +541,56 @@ class TestInfiniteLooper:
             assert first == exp_first
             exp_second = f"'Example' encountered 'Custom2Error()' whilst tearing down; sleeping {desc}..."
             assert second == exp_second
+
+    @given(logger=just("logger") | none())
+    @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_error_group_upon_others(
+        self,
+        *,
+        sleep_restart: DurationOrEveryDuration,
+        desc: str,
+        logger: str | None,
+        caplog: LogCaptureFixture,
+    ) -> None:
+        class CustomError(Exception): ...
+
+        async def dummy() -> None:
+            for i in count():
+                if i >= 5:
+                    raise CustomError
+                await sleep(0.05)
+
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            initializations: int = 0
+            counter: int = 0
+
+            @override
+            async def _initialize(self) -> None:
+                self.initializations += 1
+                self.counter = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+
+            @override
+            def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
+                yield dummy
+
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.05, sleep_restart=sleep_restart, logger=logger),
+        ):
+            ...
+        if logger is not None:
+            message = caplog.messages[0]
+            expected = f"""\
+'Example' encountered 1 error(s):
+- Error #1/1: CustomError()
+Sleeping {desc}..."""
+            assert message == expected
 
     async def test_error_no_event_found(self) -> None:
         @dataclass(kw_only=True)
