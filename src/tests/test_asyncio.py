@@ -24,7 +24,6 @@ from utilities.asyncio import (
     EnhancedTaskGroup,
     InfiniteLooper,
     InfiniteQueueLooper,
-    InfiniteQueueLooperError,
     UniquePriorityQueue,
     UniqueQueue,
     _InfiniteLooperDefaultEventError,
@@ -225,7 +224,6 @@ class TestInfiniteLooper:
         looper = Example(sleep_core=0.1)
         _ = hash(looper)
 
-    @mark.only
     async def test_nested_context_manager(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
@@ -568,24 +566,19 @@ class TestInfiniteQueueLooper:
     async def test_main(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteQueueLooper[None, int]):
-            output: set[int] = field(default_factory=set)
+            counter: int = 0
 
             @override
             async def _process_items(self, *items: int) -> None:
-                self.output.update(items)
+                self.counter += len(items)
 
-        looper = Example(sleep_core=0.05)
-
-        async def add_items() -> None:
-            for i in count():
+        async with timeout_dur(duration=1.0), Example(sleep_core=0.05) as looper:
+            await sleep(0.1)
+            for i in range(10):
                 looper.put_items_nowait(i)
                 await sleep(0.05)
 
-        with raises(ExceptionGroup):  # noqa: PT012
-            async with EnhancedTaskGroup(timeout=1.0) as tg:
-                _ = tg.create_task(looper())
-                _ = tg.create_task(add_items())
-        assert 15 <= len(looper.output) <= 20
+            assert looper.counter == 10
 
     @given(n=integers(1, 10))
     def test_len_and_empty(self, *, n: int) -> None:
@@ -603,20 +596,6 @@ class TestInfiniteQueueLooper:
         assert len(looper) == n
         assert not looper.empty()
 
-    async def test_no_items(self) -> None:
-        @dataclass(kw_only=True)
-        class Example(InfiniteQueueLooper[None, int]):
-            output: set[int] = field(default_factory=set)
-
-            @override
-            async def _process_items(self, *items: int) -> None:
-                self.output.update(items)
-
-        looper = Example(sleep_core=0.05)
-        with raises(TimeoutError):
-            async with timeout_dur(duration=1.0):
-                _ = await looper()
-
     async def test_run_until_empty(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteQueueLooper[None, int]):
@@ -626,27 +605,17 @@ class TestInfiniteQueueLooper:
             async def _process_items(self, *items: int) -> None:
                 self.output.update(items)
 
-        looper = Example(sleep_core=0.5)
-
-        async def add_items() -> None:
-            for i in count():
-                looper.put_items_nowait(i)
-                await sleep(0.01)
-
-        with raises(ExceptionGroup):  # noqa: PT012
-            async with EnhancedTaskGroup(timeout=1.0) as tg:
-                _ = tg.create_task(looper())
-                _ = tg.create_task(add_items())
-
-        tasks = len(looper)
-        assert tasks >= 1
-        await sleep(0.1)
-        assert len(looper) == tasks
-        await looper.run_until_empty()
+        looper = Example(sleep_core=0.05)
+        looper.put_items_nowait(*range(10))
+        async with looper:
+            await looper.run_until_empty()
         assert looper.empty()
 
     @given(logger=just("logger") | none())
-    async def test_error_process_items(self, *, logger: str | None) -> None:
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_error_process_items(
+        self, *, logger: str | None, caplog: LogCaptureFixture
+    ) -> None:
         class CustomError(Exception): ...
 
         @dataclass(kw_only=True)
@@ -657,28 +626,15 @@ class TestInfiniteQueueLooper:
             async def _process_items(self, *items: int) -> None:
                 raise CustomError(*items)
 
-        looper = Example(sleep_core=0.05, logger=logger)
-        looper.put_items_nowait(1)
-        with raises(TimeoutError):
-            async with timeout_dur(duration=1.0):
-                _ = await looper()
-
-    async def test_error_infinite_queue_looper(self) -> None:
-        class CustomError(Exception): ...
-
-        @dataclass(kw_only=True)
-        class Example(InfiniteQueueLooper[None, int]):
-            @override
-            async def _process_items(self, *items: int) -> None:
-                raise CustomError(*items)
-
-        looper = Example(sleep_core=0.1)
-        looper.put_items_nowait(1)
-        with raises(
-            InfiniteQueueLooperError,
-            match=r"'Example' encountered CustomError\(1\) whilst processing 1 item\(s\): \[1\]",
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.05, logger=logger) as looper,
         ):
-            _ = await looper._core()
+            looper.put_items_nowait(1)
+        if logger is not None:
+            message = caplog.messages[0]
+            expected = "'Example' encountered CustomError(1) whilst processing 1 item(s) [1]; sleeping for 0:01:00..."
+            assert message == expected
 
 
 class TestPutAndGetItems:

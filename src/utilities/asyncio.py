@@ -138,6 +138,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
     sleep_restart: DurationOrEveryDuration = field(default=MINUTE, repr=False)
     duration: Duration | None = field(default=None, repr=False)
     logger: str | None = field(default=None, repr=False)
+    _await_upon_aenter: bool = field(default=True, init=False, repr=False)
     _depth: int = field(default=0, init=False, repr=False)
     _events: Mapping[THashable | None, Event] = field(
         default_factory=dict, init=False, repr=False, hash=False
@@ -157,8 +158,9 @@ class InfiniteLooper(ABC, Generic[THashable]):
         if (self._task is None) and (self._depth == 0):
             _ = await self._stack.__aenter__()
             self._task = create_task(self._run_looper())
-            with suppress(CancelledError):
-                await self._task
+            if self._await_upon_aenter:
+                with suppress(CancelledError):
+                    await self._task
         elif (self._task is not None) and (self._depth >= 1):
             ...
         else:
@@ -406,6 +408,7 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     """An infinite loop which processes a queue."""
 
     queue_type: type[Queue[_T]] = field(default=Queue, repr=False)
+    _await_upon_aenter: bool = field(default=False, init=False, repr=False)
     _queue: Queue[_T] = field(init=False)
 
     @override
@@ -443,6 +446,7 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
         """Run until the queue is empty."""
         while not self.empty():
             await self._process_items(*get_items_nowait(self._queue))
+        await self.stop()
 
     @override
     def _error_upon_core(self, error: Exception, /) -> None:
