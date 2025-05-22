@@ -18,7 +18,7 @@ from redis.asyncio import Redis
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_operator import make_objects
-from utilities.asyncio import EnhancedTaskGroup, sleep_dur
+from utilities.asyncio import EnhancedTaskGroup
 from utilities.functions import get_class_name
 from utilities.hypothesis import (
     int64s,
@@ -149,7 +149,7 @@ class TestPublisher:
                     _ = buffer.write(str(obj_i))
 
             async def sleep_then_put() -> None:
-                await sleep_dur(duration=0.1)
+                await sleep(0.1)
                 publisher.put_items_nowait((channel, obj))
 
             with raises(ExceptionGroup):  # noqa: PT012
@@ -186,7 +186,7 @@ class TestPublisher:
                     _ = buffer.write(bytes_i)
 
             async def sleep_then_put() -> None:
-                await sleep_dur(duration=0.1)
+                await sleep(0.1)
                 publisher.put_items_nowait((channel, text))
 
             with raises(ExceptionGroup):  # noqa: PT012
