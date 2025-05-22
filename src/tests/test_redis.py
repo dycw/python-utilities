@@ -135,7 +135,12 @@ class TestPublisher:
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, data: DataObject, channel: str, obj: Any) -> None:
         buffer = StringIO()
-        async with yield_test_redis(data) as test:
+        async with (
+            yield_test_redis(data) as test,
+            Publisher(
+                duration=1.0, redis=test.redis, serializer=serialize, sleep_core=0.1
+            ) as publisher,
+        ):
 
             async def listener() -> None:
                 async for obj_i in subscribe(
@@ -143,19 +148,13 @@ class TestPublisher:
                 ):
                     _ = buffer.write(str(obj_i))
 
-            publisher = Publisher(
-                redis=test.redis, serializer=serialize, sleep_core=0.1
-            )
-
             async def sleep_then_put() -> None:
                 await sleep_dur(duration=0.1)
                 publisher.put_items_nowait((channel, obj))
 
-            with raises(ExceptionGroup):  # noqa: PT012
-                async with EnhancedTaskGroup(timeout=1.0) as tg:
-                    _ = tg.create_task(publisher())
-                    _ = tg.create_task(listener())
-                    _ = tg.create_task(sleep_then_put())
+            async with EnhancedTaskGroup(timeout=1.0) as tg:
+                _ = tg.create_task(listener())
+                _ = tg.create_task(sleep_then_put())
 
         assert buffer.getvalue() == str(obj)
 
@@ -176,23 +175,22 @@ class TestPublisher:
         self, *, data: DataObject, channel: str, text: str
     ) -> None:
         buffer = BytesIO()
-        async with yield_test_redis(data) as test:
+        async with (
+            yield_test_redis(data) as test,
+            Publisher(duration=1.0, redis=test.redis, sleep_core=0.1) as publisher,
+        ):
 
             async def listener() -> None:
                 async for bytes_i in subscribe(test.redis.pubsub(), channel):
                     _ = buffer.write(bytes_i)
 
-            publisher = Publisher(redis=test.redis, sleep_core=0.1)
-
             async def sleep_then_put() -> None:
                 await sleep_dur(duration=0.1)
                 publisher.put_items_nowait((channel, text))
 
-            with raises(ExceptionGroup):  # noqa: PT012
-                async with EnhancedTaskGroup(timeout=1.0) as tg:
-                    _ = tg.create_task(publisher())
-                    _ = tg.create_task(listener())
-                    _ = tg.create_task(sleep_then_put())
+            async with EnhancedTaskGroup(timeout=1.0) as tg:
+                _ = tg.create_task(listener())
+                _ = tg.create_task(sleep_then_put())
 
         assert buffer.getvalue() == text.encode()
 
