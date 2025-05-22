@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from itertools import chain, count
 from re import search
-from typing import TYPE_CHECKING, Any, Self, cast, override
+from typing import TYPE_CHECKING, Any, ClassVar, Self, cast, override
 
 from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import (
@@ -18,13 +18,12 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import LogCaptureFixture, mark, raises
+from pytest import LogCaptureFixture, mark, param, raises
 
 from utilities.asyncio import (
     EnhancedTaskGroup,
     InfiniteLooper,
     InfiniteQueueLooper,
-    InfiniteQueueLooperError,
     UniquePriorityQueue,
     UniqueQueue,
     _InfiniteLooperDefaultEventError,
@@ -135,15 +134,146 @@ class TestGetEvent:
 
 
 class TestInfiniteLooper:
-    @given(n=integers(10, 11), sleep_core=sampled_from([0.1, ("every", 0.1)]))
-    async def test_main(self, *, n: int, sleep_core: DurationOrEveryDuration) -> None:
-        class TrueError(BaseException): ...
+    sleep_restart_cases: ClassVar[list[Any]] = [
+        param(60.0, "for 0:01:00"),
+        param(MINUTE, "for 0:01:00"),
+        param(("every", 60), "until next 0:01:00"),
+        param(("every", MINUTE), "until next 0:01:00"),
+    ]
 
-        class FalseError(BaseException): ...
+    async def test_main_no_errors(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            counter: int = 0
+
+            @override
+            async def _initialize(self) -> None:
+                self.counter = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+
+        async with timeout_dur(duration=1.0), Example(sleep_core=0.05) as looper:
+            pass
+        assert 15 <= looper.counter <= 25
+
+    async def test_main_with_errors(self) -> None:
+        class CustomError(Exception): ...
+
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            initializations: int = 0
+            counter: int = 0
+            teardowns: int = 0
+
+            @override
+            async def _initialize(self) -> None:
+                self.initializations += 1
+                self.counter = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+                if self.counter >= 5:
+                    raise CustomError
+
+            @override
+            async def _teardown(self) -> None:
+                self.teardowns += 1
+
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.05, sleep_restart=0.05) as looper,
+        ):
+            pass
+        assert 3 <= looper.initializations <= 5
+        assert 0 <= looper.counter <= 5
+        assert 3 <= looper.teardowns <= 5
+
+    async def test_cancelled_error(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            counter: int = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+                if self.counter >= 5:
+                    raise CancelledError
+
+        async with Example(sleep_core=0.05) as service:
+            pass
+        assert 5 <= service.counter <= 15
+
+    async def test_duration(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            counter: int = 0
+
+            @override
+            async def _initialize(self) -> None:
+                self.counter = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+
+        async with Example(duration=1.0, sleep_core=0.05) as looper:
+            pass
+        assert 15 <= looper.counter <= 25
+
+    async def test_hashable(self) -> None:
+        @dataclass(kw_only=True, unsafe_hash=True)
+        class Example(InfiniteLooper[None]): ...
+
+        looper = Example(sleep_core=0.1)
+        _ = hash(looper)
+
+    async def test_nested_context_manager(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            running: bool = False
+
+            @override
+            async def _initialize(self) -> None:
+                self.running = True
+
+            @override
+            async def _teardown(self) -> None:
+                self.running = False
+
+        looper = Example()
+        for _ in range(2):
+            assert not looper.running
+            async with timeout_dur(duration=0.2), looper:
+                assert looper.running
+                async with timeout_dur(duration=0.1), looper:
+                    assert looper.running
+                assert looper.running
+            assert not looper.running
+
+    def test_repr(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            counter: int = 0
+
+        looper = Example()
+        result = repr(looper)
+        expected = "TestInfiniteLooper.test_repr.<locals>.Example(counter=0)"
+        assert result == expected
+
+    @given(n=integers(10, 11))
+    async def test_setting_events(self, *, n: int) -> None:
+        class TrueError(Exception): ...
+
+        class FalseError(Exception): ...
 
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[bool]):
             counter: int = 0
+            true_counter: int = 0
+            false_counter: int = 0
 
             @override
             async def _initialize(self) -> None:
@@ -156,27 +286,28 @@ class TestInfiniteLooper:
                     self._set_event(event=n % 2 == 0)
 
             @override
+            def _error_upon_core(self, error: Exception, /) -> None:
+                if isinstance(error, TrueError):
+                    self.true_counter += 1
+                elif isinstance(error, FalseError):
+                    self.false_counter += 1
+
+            @override
             def _yield_events_and_exceptions(
                 self,
-            ) -> Iterator[tuple[bool, MaybeType[BaseException]]]:
+            ) -> Iterator[tuple[bool, MaybeType[Exception]]]:
                 yield (True, TrueError)
                 yield (False, FalseError)
 
-        looper = Example(sleep_core=sleep_core)
+        async with timeout_dur(duration=1.0), Example(sleep_core=0.05) as looper:
+            ...
         match n % 2 == 0:
             case True:
-                with raises(TrueError):
-                    _ = await looper()
+                assert looper.true_counter >= 1, looper
+                assert looper.false_counter == 0
             case False:
-                with raises(FalseError):
-                    _ = await looper()
-
-    async def test_hashable(self) -> None:
-        @dataclass(kw_only=True, unsafe_hash=True)
-        class Example(InfiniteLooper[None]): ...
-
-        looper = Example(sleep_core=0.1)
-        _ = hash(looper)
+                assert looper.true_counter == 0
+                assert looper.false_counter >= 1
 
     async def test_with_coroutine_self_set_event(self) -> None:
         external: int = 0
@@ -208,10 +339,11 @@ class TestInfiniteLooper:
             def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
                 yield partial(inc_external, self)
 
-        looper = Example(sleep_core=0.05, sleep_restart=0.05)
-        with raises(TimeoutError):
-            async with timeout_dur(duration=1.0):
-                await looper()
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.05, sleep_restart=0.05) as looper,
+        ):
+            ...
         assert 4 <= looper.initializations <= 6
         assert 0 <= looper.counter <= 7
         assert 16 <= external <= 21
@@ -242,16 +374,181 @@ class TestInfiniteLooper:
             def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
                 yield dummy
 
-        looper = Example(sleep_core=0.05, sleep_restart=0.05)
-        with raises(TimeoutError):
-            async with timeout_dur(duration=1.0):
-                await looper()
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.05, sleep_restart=0.05) as looper,
+        ):
+            ...
         assert 3 <= looper.initializations <= 5
         assert 0 <= looper.counter <= 5
 
+    async def test_with_looper(self) -> None:
+        @dataclass(kw_only=True)
+        class Child(InfiniteLooper[None]):
+            counter: int = 0
+
+            @override
+            async def _initialize(self) -> None:
+                self.counter = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+
+        @dataclass(kw_only=True)
+        class Parent(InfiniteLooper[None]):
+            counter: int = 0
+            child: Child = field(init=False, repr=False)
+
+            @override
+            def __post_init__(self) -> None:
+                super().__post_init__()
+                self.child = Child(sleep_core=self.sleep_core)
+
+            @override
+            async def _initialize(self) -> None:
+                self.counter = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+
+            @override
+            def _yield_loopers(self) -> Iterator[InfiniteLooper]:
+                yield self.child
+
+        async with timeout_dur(duration=1.0), Parent(sleep_core=0.05) as parent:
+            ...
+        assert 15 <= parent.counter <= 25
+        assert 15 <= parent.child.counter <= 25
+
+    async def test_error_default_event(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]): ...
+
+        looper = Example()
+
+        with raises(
+            _InfiniteLooperDefaultEventError, match=r"'Example' default event error"
+        ):
+            raise _InfiniteLooperDefaultEventError(looper=looper)
+
     @given(logger=just("logger") | none())
-    async def test_with_coroutine_other_coroutine_error(
-        self, *, logger: str | None
+    @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_error_upon_initialize(
+        self,
+        *,
+        sleep_restart: DurationOrEveryDuration,
+        desc: str,
+        logger: str | None,
+        caplog: LogCaptureFixture,
+    ) -> None:
+        class CustomError(Exception): ...
+
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            @override
+            async def _initialize(self) -> None:
+                raise CustomError
+
+            @override
+            async def _core(self) -> None:
+                raise NotImplementedError
+
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger),
+        ):
+            ...
+        if logger is not None:
+            message = caplog.messages[0]
+            expected = f"'Example' encountered 'CustomError()' whilst initializing; sleeping {desc}..."
+            assert message == expected
+
+    @given(logger=just("logger") | none())
+    @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_error_upon_core(
+        self,
+        *,
+        sleep_restart: DurationOrEveryDuration,
+        desc: str,
+        logger: str | None,
+        caplog: LogCaptureFixture,
+    ) -> None:
+        class CustomError(Exception): ...
+
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            @override
+            async def _core(self) -> None:
+                raise CustomError
+
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger),
+        ):
+            ...
+        if logger is not None:
+            message = caplog.messages[0]
+            expected = f"'Example' encountered 'CustomError()'; sleeping {desc}..."
+            assert message == expected
+
+    @given(logger=just("logger") | none())
+    @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_error_upon_teardown(
+        self,
+        *,
+        sleep_restart: DurationOrEveryDuration,
+        desc: str,
+        logger: str | None,
+        caplog: LogCaptureFixture,
+    ) -> None:
+        class Custom1Error(Exception): ...
+
+        class Custom2Error(Exception): ...
+
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            counter: int = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+                if self.counter >= 5:
+                    self._set_event()
+
+            @override
+            async def _teardown(self) -> None:
+                raise Custom2Error
+
+            @override
+            def _yield_events_and_exceptions(
+                self,
+            ) -> Iterator[tuple[None, MaybeType[Exception]]]:
+                yield (None, Custom1Error)
+
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger),
+        ):
+            ...
+        if logger is not None:
+            expected = f"'Example' encountered 'Custom2Error()' whilst tearing down; sleeping {desc}..."
+            assert expected in caplog.messages
+
+    @given(logger=just("logger") | none())
+    @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_error_group_upon_others(
+        self,
+        *,
+        sleep_restart: DurationOrEveryDuration,
+        desc: str,
+        logger: str | None,
+        caplog: LogCaptureFixture,
     ) -> None:
         class CustomError(Exception): ...
 
@@ -279,98 +576,17 @@ class TestInfiniteLooper:
             def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
                 yield dummy
 
-        looper = Example(sleep_core=0.05, sleep_restart=0.05, logger=logger)
-        with raises(CancelledError):
-            async with timeout_dur(duration=1.0):
-                await looper()
-        assert 3 <= looper.initializations <= 5
-        assert 1 <= looper.counter <= 6
-
-    async def test_error_default_event(self) -> None:
-        @dataclass(kw_only=True)
-        class Example(InfiniteLooper[None]): ...
-
-        looper = Example()
-
-        with raises(
-            _InfiniteLooperDefaultEventError, match=r"'Example' default event error"
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.05, sleep_restart=sleep_restart, logger=logger),
         ):
-            raise _InfiniteLooperDefaultEventError(looper=looper)
-
-    @given(logger=just("logger") | none())
-    @mark.parametrize(
-        ("sleep_restart", "desc"),
-        [
-            (60.0, "for 0:01:00"),
-            (MINUTE, "for 0:01:00"),
-            (("every", 60), "until next 0:01:00"),
-            (("every", MINUTE), "until next 0:01:00"),
-        ],
-    )
-    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    async def test_error_upon_initialize(
-        self,
-        *,
-        sleep_restart: DurationOrEveryDuration,
-        desc: str,
-        logger: str | None,
-        caplog: LogCaptureFixture,
-    ) -> None:
-        class CustomError(Exception): ...
-
-        @dataclass(kw_only=True)
-        class Example(InfiniteLooper[None]):
-            @override
-            async def _initialize(self) -> None:
-                raise CustomError
-
-            @override
-            async def _core(self) -> None:
-                raise NotImplementedError
-
-        looper = Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger)
-        with raises(TimeoutError):
-            async with timeout_dur(duration=0.5):
-                _ = await looper()
+            ...
         if logger is not None:
             message = caplog.messages[0]
-            expected = f"'Example' encountered 'CustomError()' whilst initializing; sleeping {desc}..."
-            assert message == expected
-
-    @given(logger=just("logger") | none())
-    @mark.parametrize(
-        ("sleep_restart", "desc"),
-        [
-            (60.0, "for 0:01:00"),
-            (MINUTE, "for 0:01:00"),
-            (("every", 60), "until next 0:01:00"),
-            (("every", MINUTE), "until next 0:01:00"),
-        ],
-    )
-    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    async def test_error_group_upon_coroutines(
-        self,
-        *,
-        sleep_restart: DurationOrEveryDuration,
-        desc: str,
-        logger: str | None,
-        caplog: LogCaptureFixture,
-    ) -> None:
-        class CustomError(Exception): ...
-
-        @dataclass(kw_only=True)
-        class Example(InfiniteLooper[None]):
-            @override
-            async def _core(self) -> None:
-                raise CustomError
-
-        looper = Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger)
-        with raises(TimeoutError):
-            async with timeout_dur(duration=0.5):
-                _ = await looper()
-        if logger is not None:
-            message = caplog.messages[0]
-            expected = f"'Example' encountered 'CustomError()'; sleeping {desc}..."
+            expected = f"""\
+'Example' encountered 1 error(s):
+- Error #1/1: CustomError()
+Sleeping {desc}..."""
             assert message == expected
 
     async def test_error_no_event_found(self) -> None:
@@ -388,36 +604,31 @@ class TestInfiniteLooper:
                 if self.counter >= 10:
                     self._set_event(event=cast("Any", "invalid"))
 
-        looper = Example()
         with raises(
             _InfiniteLooperNoSuchEventError,
             match="'Example' does not have an event 'invalid'",
         ):
-            _ = await looper()
+            async with Example():
+                ...
 
 
 class TestInfiniteQueueLooper:
     async def test_main(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteQueueLooper[None, int]):
-            output: set[int] = field(default_factory=set)
+            counter: int = 0
 
             @override
             async def _process_items(self, *items: int) -> None:
-                self.output.update(items)
+                self.counter += len(items)
 
-        looper = Example(sleep_core=0.05)
-
-        async def add_items() -> None:
-            for i in count():
+        async with timeout_dur(duration=1.0), Example(sleep_core=0.05) as looper:
+            await sleep(0.1)
+            for i in range(10):
                 looper.put_items_nowait(i)
                 await sleep(0.05)
 
-        with raises(ExceptionGroup):  # noqa: PT012
-            async with EnhancedTaskGroup(timeout=1.0) as tg:
-                _ = tg.create_task(looper())
-                _ = tg.create_task(add_items())
-        assert 15 <= len(looper.output) <= 20
+            assert looper.counter == 10
 
     @given(n=integers(1, 10))
     def test_len_and_empty(self, *, n: int) -> None:
@@ -435,20 +646,6 @@ class TestInfiniteQueueLooper:
         assert len(looper) == n
         assert not looper.empty()
 
-    async def test_no_items(self) -> None:
-        @dataclass(kw_only=True)
-        class Example(InfiniteQueueLooper[None, int]):
-            output: set[int] = field(default_factory=set)
-
-            @override
-            async def _process_items(self, *items: int) -> None:
-                self.output.update(items)
-
-        looper = Example(sleep_core=0.05)
-        with raises(TimeoutError):
-            async with timeout_dur(duration=0.5):
-                _ = await looper()
-
     async def test_run_until_empty(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteQueueLooper[None, int]):
@@ -458,27 +655,17 @@ class TestInfiniteQueueLooper:
             async def _process_items(self, *items: int) -> None:
                 self.output.update(items)
 
-        looper = Example(sleep_core=0.5)
-
-        async def add_items() -> None:
-            for i in count():
-                looper.put_items_nowait(i)
-                await sleep(0.01)
-
-        with raises(ExceptionGroup):  # noqa: PT012
-            async with EnhancedTaskGroup(timeout=1.0) as tg:
-                _ = tg.create_task(looper())
-                _ = tg.create_task(add_items())
-
-        tasks = len(looper)
-        assert tasks >= 1
-        await sleep(0.1)
-        assert len(looper) == tasks
-        await looper.run_until_empty()
+        looper = Example(sleep_core=0.05)
+        looper.put_items_nowait(*range(10))
+        async with looper:
+            await looper.run_until_empty()
         assert looper.empty()
 
     @given(logger=just("logger") | none())
-    async def test_error_process_items(self, *, logger: str | None) -> None:
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_error_process_items(
+        self, *, logger: str | None, caplog: LogCaptureFixture
+    ) -> None:
         class CustomError(Exception): ...
 
         @dataclass(kw_only=True)
@@ -489,28 +676,15 @@ class TestInfiniteQueueLooper:
             async def _process_items(self, *items: int) -> None:
                 raise CustomError(*items)
 
-        looper = Example(sleep_core=0.05, logger=logger)
-        looper.put_items_nowait(1)
-        with raises(TimeoutError):
-            async with timeout_dur(duration=0.5):
-                _ = await looper()
-
-    async def test_error_infinite_queue_looper(self) -> None:
-        class CustomError(Exception): ...
-
-        @dataclass(kw_only=True)
-        class Example(InfiniteQueueLooper[None, int]):
-            @override
-            async def _process_items(self, *items: int) -> None:
-                raise CustomError(*items)
-
-        looper = Example(sleep_core=0.1)
-        looper.put_items_nowait(1)
-        with raises(
-            InfiniteQueueLooperError,
-            match=r"'Example' encountered CustomError\(1\) whilst processing 1 item\(s\): \[1\]",
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.05, logger=logger) as looper,
         ):
-            _ = await looper._core()
+            looper.put_items_nowait(1)
+        if logger is not None:
+            message = caplog.messages[0]
+            expected = "'Example' encountered CustomError(1) whilst processing 1 item(s) [1]; sleeping for 0:01:00..."
+            assert message == expected
 
 
 class TestPutAndGetItems:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from abc import ABC, abstractmethod
 from asyncio import (
+    CancelledError,
     Event,
     PriorityQueue,
     Queue,
@@ -12,11 +13,17 @@ from asyncio import (
     Task,
     TaskGroup,
     create_subprocess_shell,
+    create_task,
     sleep,
     timeout,
 )
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
-from contextlib import _AsyncGeneratorContextManager, asynccontextmanager
+from contextlib import (
+    AsyncExitStack,
+    _AsyncGeneratorContextManager,
+    asynccontextmanager,
+    suppress,
+)
 from dataclasses import dataclass, field
 from io import StringIO
 from logging import getLogger
@@ -27,6 +34,7 @@ from typing import (
     Any,
     Generic,
     NoReturn,
+    Self,
     TextIO,
     TypeVar,
     assert_never,
@@ -42,7 +50,7 @@ from utilities.datetime import (
     get_now,
     round_datetime,
 )
-from utilities.errors import repr_error
+from utilities.errors import ImpossibleCaseError, repr_error
 from utilities.functions import ensure_int, ensure_not_none, get_class_name
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
@@ -60,6 +68,7 @@ if TYPE_CHECKING:
     from asyncio.subprocess import Process
     from collections.abc import AsyncIterator, Sequence
     from contextvars import Context
+    from types import TracebackType
 
     from utilities.types import Duration
 
@@ -125,26 +134,94 @@ class EnhancedTaskGroup(TaskGroup):
 class InfiniteLooper(ABC, Generic[THashable]):
     """An infinite loop which can throw exceptions by setting events."""
 
-    sleep_core: DurationOrEveryDuration = SECOND
-    sleep_restart: DurationOrEveryDuration = MINUTE
-    logger: str | None = None
+    sleep_core: DurationOrEveryDuration = field(default=SECOND, repr=False)
+    sleep_restart: DurationOrEveryDuration = field(default=MINUTE, repr=False)
+    duration: Duration | None = field(default=None, repr=False)
+    logger: str | None = field(default=None, repr=False)
+    _await_upon_aenter: bool = field(default=True, init=False, repr=False)
+    _depth: int = field(default=0, init=False, repr=False)
     _events: Mapping[THashable | None, Event] = field(
         default_factory=dict, init=False, repr=False, hash=False
     )
+    _stack: AsyncExitStack = field(
+        default_factory=AsyncExitStack, init=False, repr=False
+    )
+    _task: Task[None] | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._events = {
             event: Event() for event, _ in self._yield_events_and_exceptions()
         }
 
-    async def __call__(self) -> None:
-        """Create a coroutine to run the looper."""
-        coroutines = list(self._yield_coroutines())
-        if len(coroutines) == 0:
-            return await self._run_looper()
-        return await self._run_looper_with_coroutines(*coroutines)
+    async def __aenter__(self) -> Self:
+        """Context manager entry."""
+        if (self._task is None) and (self._depth == 0):
+            _ = await self._stack.__aenter__()
+            self._task = create_task(self._run_looper())
+            if self._await_upon_aenter:
+                with suppress(CancelledError):
+                    await self._task
+        elif (self._task is not None) and (self._depth >= 1):
+            ...
+        else:
+            raise ImpossibleCaseError(  # pragma: no cover
+                case=[f"{self._task=}", f"{self._depth=}"]
+            )
+        self._depth += 1
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None = None,
+        exc_value: BaseException | None = None,
+        traceback: TracebackType | None = None,
+    ) -> None:
+        """Context manager exit."""
+        _ = (exc_type, exc_value, traceback)
+        if (self._task is None) or (self._depth == 0):
+            raise ImpossibleCaseError(  # pragma: no cover
+                case=[f"{self._task=}", f"{self._depth=}"]
+            )
+        self._depth -= 1
+        if self._depth == 0:
+            _ = await self._stack.__aexit__(exc_type, exc_value, traceback)
+            with suppress(CancelledError):
+                await self._task
+            self._task = None
+            with suppress(Exception):
+                await self._teardown()
+
+    async def stop(self) -> None:
+        """Stop the service."""
+        if self._task is None:
+            raise ImpossibleCaseError(case=[f"{self._task=}"])  # pragma: no cover
+        with suppress(CancelledError):
+            _ = self._task.cancel()
 
     async def _run_looper(self) -> None:
+        """Run the looper."""
+        match self.duration:
+            case None:
+                await self._run_looper_without_timeout()
+            case int() | float() | dt.timedelta() as duration:
+                try:
+                    async with timeout_dur(duration=duration):
+                        return await self._run_looper_without_timeout()
+                except TimeoutError:
+                    await self.stop()
+            case _ as never:
+                assert_never(never)
+        return None
+
+    async def _run_looper_without_timeout(self) -> None:
+        """Run the looper without a timeout."""
+        coroutines = list(self._yield_coroutines())
+        loopers = list(self._yield_loopers())
+        if (len(coroutines) == 0) and (len(loopers) == 0):
+            return await self._run_looper_by_itself()
+        return await self._run_looper_with_others(coroutines, loopers)
+
+    async def _run_looper_by_itself(self) -> None:
         """Run the looper by itself."""
         while True:
             try:
@@ -171,20 +248,31 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 raise
             except Exception as error:  # noqa: BLE001
                 self._error_upon_core(error)
-                await self._run_sleep(self.sleep_restart)
+                try:
+                    await self._teardown()
+                except Exception as error:  # noqa: BLE001
+                    self._error_upon_teardown(error)
+                finally:
+                    await self._run_sleep(self.sleep_restart)
 
-    async def _run_looper_with_coroutines(
-        self, *coroutines: Callable[[], Coroutine1[None]]
+    async def _run_looper_with_others(
+        self,
+        coroutines: Iterable[Callable[[], Coroutine1[None]]],
+        loopers: Iterable[InfiniteLooper[Any]],
+        /,
     ) -> None:
         """Run multiple loopers."""
         while True:
             self._reset_events()
             try:
-                async with TaskGroup() as tg:
-                    _ = tg.create_task(self._run_looper())
+                async with TaskGroup() as tg, AsyncExitStack() as stack:
+                    _ = tg.create_task(self._run_looper_by_itself())
                     _ = [tg.create_task(c()) for c in coroutines]
+                    _ = [
+                        tg.create_task(stack.enter_async_context(lo)) for lo in loopers
+                    ]
             except ExceptionGroup as error:
-                self._error_group_upon_coroutines(error)
+                self._error_group_upon_others(error)
                 await self._run_sleep(self.sleep_restart)
 
     async def _initialize(self) -> None:
@@ -192,6 +280,9 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
     async def _core(self) -> None:
         """Run the core part of the loop."""
+
+    async def _teardown(self) -> None:
+        """Tear down the loop."""
 
     def _error_upon_initialize(self, error: Exception, /) -> None:
         """Handle any errors upon initializing the looper."""
@@ -213,7 +304,17 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 self._sleep_restart_desc,
             )
 
-    def _error_group_upon_coroutines(self, group: ExceptionGroup, /) -> None:
+    def _error_upon_teardown(self, error: Exception, /) -> None:
+        """Handle any errors upon tearing down the looper."""
+        if self.logger is not None:
+            getLogger(name=self.logger).error(
+                "%r encountered %r whilst tearing down; sleeping %s...",
+                get_class_name(self),
+                repr_error(error),
+                self._sleep_restart_desc,
+            )
+
+    def _error_group_upon_others(self, group: ExceptionGroup, /) -> None:
         """Handle any errors upon running the core function."""
         if self.logger is not None:
             errors = group.exceptions
@@ -269,15 +370,19 @@ class InfiniteLooper(ABC, Generic[THashable]):
             raise _InfiniteLooperNoSuchEventError(looper=self, event=event) from None
         event_obj.set()
 
+    def _yield_events_and_exceptions(
+        self,
+    ) -> Iterator[tuple[THashable | None, MaybeType[Exception]]]:
+        """Yield the events & exceptions."""
+        yield (None, _InfiniteLooperDefaultEventError(looper=self))
+
     def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
         """Yield any other coroutines which must also be run."""
         yield from []
 
-    def _yield_events_and_exceptions(
-        self,
-    ) -> Iterator[tuple[THashable | None, MaybeType[BaseException]]]:
-        """Yield the events & exceptions."""
-        yield (None, _InfiniteLooperDefaultEventError)
+    def _yield_loopers(self) -> Iterator[InfiniteLooper[Any]]:
+        """Yield any other loopers which must also be run."""
+        yield from []
 
 
 @dataclass(kw_only=True, slots=True)
@@ -309,6 +414,7 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     """An infinite loop which processes a queue."""
 
     queue_type: type[Queue[_T]] = field(default=Queue, repr=False)
+    _await_upon_aenter: bool = field(default=False, init=False, repr=False)
     _queue: Queue[_T] = field(init=False)
 
     @override
@@ -346,6 +452,7 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
         """Run until the queue is empty."""
         while not self.empty():
             await self._process_items(*get_items_nowait(self._queue))
+        await self.stop()
 
     @override
     def _error_upon_core(self, error: Exception, /) -> None:
@@ -353,12 +460,12 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
         if self.logger is not None:
             if isinstance(error, InfiniteQueueLooperError):
                 getLogger(name=self.logger).error(
-                    "%r encountered %s whilst processing %d item(s) %s; sleeping for %s...",
+                    "%r encountered %s whilst processing %d item(s) %s; sleeping %s...",
                     get_class_name(self),
                     repr_error(error.error),
                     len(error.items),
                     get_repr(error.items),
-                    self.sleep_restart,
+                    self._sleep_restart_desc,
                 )
             else:
                 super()._error_upon_core(error)  # pragma: no cover
@@ -369,10 +476,6 @@ class InfiniteQueueLooperError(Exception, Generic[_T]):
     looper: InfiniteQueueLooper[Any, Any]
     items: Sequence[_T]
     error: Exception
-
-    @override
-    def __str__(self) -> str:
-        return f"{get_class_name(self.looper)!r} encountered {repr_error(self.error)} whilst processing {len(self.items)} item(s): {get_repr(self.items)}"
 
 
 ##

@@ -611,7 +611,7 @@ class Publisher(InfiniteQueueLooper[None, tuple[str, EncodableT]]):
     @override
     def _yield_events_and_exceptions(
         self,
-    ) -> Iterator[tuple[None, MaybeType[BaseException]]]:
+    ) -> Iterator[tuple[None, MaybeType[Exception]]]:
         yield (None, PublisherError)  # skipif-ci-and-not-linux
 
 

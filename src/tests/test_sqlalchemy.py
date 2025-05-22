@@ -26,7 +26,6 @@ from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
-from utilities.asyncio import EnhancedTaskGroup, sleep_dur
 from utilities.hypothesis import (
     int32s,
     pairs,
@@ -1168,17 +1167,10 @@ class TestUpserter:
             Column("value", Boolean, nullable=True),
         )
         engine = await sqlalchemy_engines(data, table)
-        upserter = Upserter(engine=engine, sleep_core=0.1)
         pairs = [(id_, init) for id_, init, _ in triples]
-
-        async def sleep_then_put() -> None:
-            await sleep_dur(duration=0.1)
+        async with Upserter(duration=1.0, sleep_core=0.1, engine=engine) as upserter:
             upserter.put_items_nowait((pairs, table))
 
-        with raises(ExceptionGroup):  # noqa: PT012
-            async with EnhancedTaskGroup(timeout=1.0) as tg:
-                _ = tg.create_task(upserter())
-                _ = tg.create_task(sleep_then_put())
         sel = select(table)
         async with engine.begin() as conn:
             res = (await conn.execute(sel)).all()
