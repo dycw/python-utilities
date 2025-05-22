@@ -70,5 +70,9 @@ class PingReceiver(InfiniteLooper):
     async def _initialize(self) -> None:
         await self._server.serve()  # skipif-ci
 
+    @override
+    async def _teardown(self) -> None:
+        await self._server.shutdown()  # skipif-ci
+
 
 __all__ = ["PingReceiver"]

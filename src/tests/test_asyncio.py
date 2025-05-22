@@ -55,8 +55,6 @@ from utilities.timer import Timer
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
-    from _pytest.mark import ParameterSet
-
     from utilities.types import (
         Coroutine1,
         Duration,
@@ -136,7 +134,7 @@ class TestGetEvent:
 
 
 class TestInfiniteLooper:
-    sleep_restart_cases: ClassVar[list[ParameterSet]] = [
+    sleep_restart_cases: ClassVar[list[Any]] = [
         param(60.0, "for 0:01:00"),
         param(MINUTE, "for 0:01:00"),
         param(("every", 60), "until next 0:01:00"),
