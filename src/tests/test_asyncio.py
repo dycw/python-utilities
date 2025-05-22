@@ -66,42 +66,7 @@ if TYPE_CHECKING:
 
 
 class TestEnhancedTaskGroup:
-    async def test_context_managers(self) -> None:
-        first: bool = False
-
-        @asynccontextmanager
-        async def yield_first() -> AsyncIterator[None]:
-            nonlocal first
-            try:
-                first = True
-                yield
-            finally:
-                first = False
-
-        second: bool = False
-
-        @asynccontextmanager
-        async def yield_second() -> AsyncIterator[None]:
-            nonlocal second
-            try:
-                second = True
-                yield
-            finally:
-                second = False
-
-        async with EnhancedTaskGroup() as tg:
-            assert not first
-            assert not second
-            _ = await tg.enter_async_context(yield_first())
-            assert first
-            assert not second
-            _ = await tg.enter_async_context(yield_second())
-            assert first
-            assert second
-        assert not first
-        assert not second
-
-    async def test_enter_context_coroutine(self) -> None:
+    async def test_enter_async_context_coroutine(self) -> None:
         flag: bool = False
 
         @asynccontextmanager
@@ -115,12 +80,12 @@ class TestEnhancedTaskGroup:
 
         assert not flag
         async with EnhancedTaskGroup(timeout=0.1) as tg:
-            _ = tg.enter_context(yield_true())
+            _ = tg.enter_async_context(yield_true())
             await sleep(0.05)
             assert flag
         assert not flag
 
-    async def test_enter_context_looper(self) -> None:
+    async def test_enter_async_context_looper(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
             running: bool = False
@@ -137,7 +102,7 @@ class TestEnhancedTaskGroup:
         assert not looper.running
         async with EnhancedTaskGroup(timeout=0.1) as tg:
             assert not looper.running
-            _ = tg.enter_context(looper)
+            _ = tg.enter_async_context(looper)
             await sleep(0.05)
             assert looper.running
         assert not looper.running
