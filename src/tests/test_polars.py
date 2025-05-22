@@ -987,10 +987,7 @@ class TestDataClassToDataFrame:
         objs = data.draw(
             lists(builds(Example, x=zoned_datetimes(time_zone=time_zone)), min_size=1)
         )
-        with assume_does_not_raise(
-            ComputeError,  # unable to parse time zone
-            ValueError,  # failed to parse timezone
-        ):
+        with assume_does_not_raise(ComputeError, match="unable to parse time zone"):
             df = dataclass_to_dataframe(objs, localns=locals())
         check_polars_dataframe(
             df, height=len(objs), schema_list={"x": zoned_datetime(time_zone=time_zone)}
