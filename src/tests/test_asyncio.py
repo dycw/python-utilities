@@ -66,7 +66,7 @@ if TYPE_CHECKING:
 
 
 class TestEnhancedTaskGroup:
-    async def test_enter_async_context_coroutine(self) -> None:
+    async def test_create_task_context_coroutine(self) -> None:
         flag: bool = False
 
         @asynccontextmanager
@@ -85,7 +85,7 @@ class TestEnhancedTaskGroup:
             assert flag
         assert not flag
 
-    async def test_enter_async_context_looper(self) -> None:
+    async def test_create_task_context_looper(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
             running: bool = False
