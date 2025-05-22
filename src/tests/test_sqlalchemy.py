@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from asyncio import sleep
 from itertools import chain
 from os import getpid
 from time import time_ns
@@ -1170,9 +1169,7 @@ class TestUpserter:
         engine = await sqlalchemy_engines(data, table)
         pairs = [(id_, init) for id_, init, _ in triples]
         async with Upserter(duration=1.0, sleep_core=0.1, engine=engine) as upserter:
-            await sleep(0.1)
             upserter.put_items_nowait((pairs, table))
-            await upserter.run_until_empty()
 
         sel = select(table)
         async with engine.begin() as conn:
