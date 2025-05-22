@@ -19,6 +19,7 @@ from asyncio import (
 )
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
 from contextlib import (
+    AbstractAsyncContextManager,
     AsyncExitStack,
     _AsyncGeneratorContextManager,
     asynccontextmanager,
@@ -85,6 +86,8 @@ class EnhancedTaskGroup(TaskGroup):
     _semaphore: Semaphore | None
     _timeout: Duration | None
     _error: type[Exception]
+    _stack: AsyncExitStack
+    _stack_entered: bool
     _timeout_cm: _AsyncGeneratorContextManager[None] | None
 
     @override
@@ -99,7 +102,24 @@ class EnhancedTaskGroup(TaskGroup):
         self._semaphore = None if max_tasks is None else Semaphore(max_tasks)
         self._timeout = timeout
         self._error = error
+        self._stack = AsyncExitStack()
+        self._stack_entered = False  # TOOD: no need
         self._timeout_cm = None
+
+    @override
+    async def __aenter__(self) -> Self:
+        _ = await self._stack.__aenter__()
+        return await super().__aenter__()
+
+    @override
+    async def __aexit__(
+        self,
+        et: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        _ = await self._stack.__aexit__(et, exc, tb)
+        _ = await super().__aexit__(et, exc, tb)
 
     @override
     def create_task(
@@ -115,6 +135,9 @@ class EnhancedTaskGroup(TaskGroup):
             coroutine = self._wrap_with_semaphore(self._semaphore, coro)
         coroutine = self._wrap_with_timeout(coroutine)
         return super().create_task(coroutine, name=name, context=context)
+
+    async def enter_async_context(self, cm: AbstractAsyncContextManager[_T], /) -> _T:
+        return await self._stack.enter_async_context(cm)
 
     async def _wrap_with_semaphore(
         self, semaphore: Semaphore, coroutine: _CoroutineLike[_T], /
