@@ -487,8 +487,9 @@ class TestInfiniteLooper:
             async def _core(self) -> None:
                 raise CustomError
 
-        async with Example(
-            duration=1.0, sleep_core=0.1, sleep_restart=sleep_restart, logger=logger
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger),
         ):
             ...
         if logger is not None:
@@ -531,8 +532,9 @@ class TestInfiniteLooper:
             ) -> Iterator[tuple[None, MaybeType[Exception]]]:
                 yield (None, Custom1Error)
 
-        async with Example(
-            duration=1.0, sleep_core=0.1, sleep_restart=sleep_restart, logger=logger
+        async with (
+            timeout_dur(duration=1.0),
+            Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger),
         ):
             ...
         if logger is not None:
