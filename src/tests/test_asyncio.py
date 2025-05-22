@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from itertools import chain, count
 from re import search
-from typing import TYPE_CHECKING, Any, Self, cast, override
+from typing import TYPE_CHECKING, Any, ClassVar, Self, cast, override
 
 from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import (
@@ -18,7 +18,7 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import LogCaptureFixture, mark, raises
+from pytest import LogCaptureFixture, mark, param, raises
 
 from utilities.asyncio import (
     EnhancedTaskGroup,
@@ -54,6 +54,8 @@ from utilities.timer import Timer
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
+
+    from _pytest.mark import ParameterSet
 
     from utilities.types import (
         Coroutine1,
@@ -134,6 +136,13 @@ class TestGetEvent:
 
 
 class TestInfiniteLooper:
+    sleep_restart_cases: ClassVar[list[ParameterSet]] = [
+        param(60.0, "for 0:01:00"),
+        param(MINUTE, "for 0:01:00"),
+        param(("every", 60), "until next 0:01:00"),
+        param(("every", MINUTE), "until next 0:01:00"),
+    ]
+
     async def test_main_no_errors(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
@@ -462,15 +471,7 @@ class TestInfiniteLooper:
             raise _InfiniteLooperDefaultEventError(looper=looper)
 
     @given(logger=just("logger") | none())
-    @mark.parametrize(
-        ("sleep_restart", "desc"),
-        [
-            (60.0, "for 0:01:00"),
-            (MINUTE, "for 0:01:00"),
-            (("every", 60), "until next 0:01:00"),
-            (("every", MINUTE), "until next 0:01:00"),
-        ],
-    )
+    @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_upon_initialize(
         self,
@@ -503,15 +504,7 @@ class TestInfiniteLooper:
             assert message == expected
 
     @given(logger=just("logger") | none())
-    @mark.parametrize(
-        ("sleep_restart", "desc"),
-        [
-            (60.0, "for 0:01:00"),
-            (MINUTE, "for 0:01:00"),
-            (("every", 60), "until next 0:01:00"),
-            (("every", MINUTE), "until next 0:01:00"),
-        ],
-    )
+    @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_upon_core(
         self,
@@ -539,15 +532,7 @@ class TestInfiniteLooper:
             assert message == expected
 
     @given(logger=just("logger") | none())
-    @mark.parametrize(
-        ("sleep_restart", "desc"),
-        [
-            (60.0, "for 0:01:00"),
-            (MINUTE, "for 0:01:00"),
-            (("every", 60), "until next 0:01:00"),
-            (("every", MINUTE), "until next 0:01:00"),
-        ],
-    )
+    @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_upon_teardown(
         self,
