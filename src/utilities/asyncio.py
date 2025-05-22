@@ -178,7 +178,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
     async def __aenter__(self) -> Self:
         """Context manager entry."""
-        if self._depth == 0:
+        if self._task is None:
             self._task = create_task(self._run_looper())
             if self._await_upon_aenter:
                 with suppress(CancelledError):
