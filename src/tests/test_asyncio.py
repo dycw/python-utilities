@@ -80,7 +80,7 @@ class TestEnhancedTaskGroup:
 
         assert not flag
         async with EnhancedTaskGroup(timeout=0.1) as tg:
-            _ = tg.enter_async_context(yield_true())
+            _ = tg.create_task_context(yield_true())
             await sleep(0.05)
             assert flag
         assert not flag
@@ -102,7 +102,7 @@ class TestEnhancedTaskGroup:
         assert not looper.running
         async with EnhancedTaskGroup(timeout=0.1) as tg:
             assert not looper.running
-            _ = tg.enter_async_context(looper)
+            _ = tg.create_task_context(looper)
             await sleep(0.05)
             assert looper.running
         assert not looper.running

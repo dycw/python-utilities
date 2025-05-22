@@ -134,7 +134,7 @@ class EnhancedTaskGroup(TaskGroup):
         coroutine = self._wrap_with_timeout(coroutine)
         return super().create_task(coroutine, name=name, context=context)
 
-    def enter_async_context(self, cm: AbstractAsyncContextManager[_T], /) -> Task[_T]:
+    def create_task_context(self, cm: AbstractAsyncContextManager[_T], /) -> Task[_T]:
         """Have the TaskGroup start an asynchronous context manager."""
         _ = self._stack.push_async_callback(cm.__aexit__, None, None, None)
         return self.create_task(cm.__aenter__())
