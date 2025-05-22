@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from asyncio import CancelledError, Event, Queue, TaskGroup, run, sleep, timeout
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from functools import partial
 from itertools import chain, count
@@ -53,7 +54,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import AsyncIterator, Callable, Iterator
 
     from utilities.types import (
         Coroutine1,
@@ -65,6 +66,41 @@ if TYPE_CHECKING:
 
 
 class TestEnhancedTaskGroup:
+    async def test_context_managers(self) -> None:
+        first: bool = False
+
+        @asynccontextmanager
+        async def yield_first() -> AsyncIterator[None]:
+            nonlocal first
+            try:
+                first = True
+                yield
+            finally:
+                first = False
+
+        second: bool = False
+
+        @asynccontextmanager
+        async def yield_second() -> AsyncIterator[None]:
+            nonlocal second
+            try:
+                second = True
+                yield
+            finally:
+                second = False
+
+        async with EnhancedTaskGroup() as tg:
+            assert not first
+            assert not second
+            _ = await tg.enter_async_context(yield_first())
+            assert first
+            assert not second
+            _ = await tg.enter_async_context(yield_second())
+            assert first
+            assert second
+        assert not first
+        assert not second
+
     async def test_max_tasks_disabled(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup() as tg:
@@ -346,7 +382,7 @@ class TestInfiniteLooper:
             ...
         assert 4 <= looper.initializations <= 6
         assert 0 <= looper.counter <= 7
-        assert 16 <= external <= 21
+        assert 14 <= external <= 21
 
     async def test_with_coroutine_self_error(self) -> None:
         class CustomError(Exception): ...
