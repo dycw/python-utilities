@@ -101,6 +101,32 @@ class TestEnhancedTaskGroup:
         assert not first
         assert not second
 
+    async def test_enter_context(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            running: bool = False
+
+            @override
+            async def _initialize(self) -> None:
+                self.running = True
+
+            @override
+            async def _teardown(self) -> None:
+                print("Example teardown")
+                self.running = False
+
+        # async with looper:
+        #     await sleep(0.1)
+
+        looper = Example(duration=1.0)
+        async with EnhancedTaskGroup(timeout=1.0) as tg:
+            assert not looper.running
+            _ = tg.enter_context(looper)
+            await sleep(0.1)
+            assert looper.running
+        await sleep(0.2)
+        assert not looper.running
+
     async def test_max_tasks_disabled(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup() as tg:
