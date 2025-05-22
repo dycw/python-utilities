@@ -133,7 +133,6 @@ class TestGetEvent:
         assert get_event(event=lambda: event) is event
 
 
-# @mark.only
 class TestInfiniteLooper:
     async def test_main_no_errors(self) -> None:
         @dataclass(kw_only=True)
