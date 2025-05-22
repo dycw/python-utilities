@@ -152,9 +152,10 @@ class TestPublisher:
                 await sleep_dur(duration=0.1)
                 publisher.put_items_nowait((channel, obj))
 
-            async with EnhancedTaskGroup(timeout=1.0) as tg:
-                _ = tg.create_task(listener())
-                _ = tg.create_task(sleep_then_put())
+            with raises(ExceptionGroup):  # noqa: PT012
+                async with EnhancedTaskGroup(timeout=1.0) as tg:
+                    _ = tg.create_task(listener())
+                    _ = tg.create_task(sleep_then_put())
 
         assert buffer.getvalue() == str(obj)
 
@@ -188,9 +189,10 @@ class TestPublisher:
                 await sleep_dur(duration=0.1)
                 publisher.put_items_nowait((channel, text))
 
-            async with EnhancedTaskGroup(timeout=1.0) as tg:
-                _ = tg.create_task(listener())
-                _ = tg.create_task(sleep_then_put())
+            with raises(ExceptionGroup):  # noqa: PT012
+                async with EnhancedTaskGroup(timeout=1.0) as tg:
+                    _ = tg.create_task(listener())
+                    _ = tg.create_task(sleep_then_put())
 
         assert buffer.getvalue() == text.encode()
 
