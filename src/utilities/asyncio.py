@@ -200,13 +200,18 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
     async def _run_looper(self) -> None:
         """Run the looper."""
-        if self.duration is None:
-            await self._run_looper_without_timeout()
-        try:
-            async with timeout_dur(duration=self.duration):
-                return await self._run_looper_without_timeout()
-        except TimeoutError:
-            await self.stop()
+        match self.duration:
+            case None:
+                await self._run_looper_without_timeout()
+            case int() | float() | dt.timedelta() as duration:
+                try:
+                    async with timeout_dur(duration=duration):
+                        return await self._run_looper_without_timeout()
+                except TimeoutError:
+                    await self.stop()
+            case _ as never:
+                assert_never(never)
+        return None
 
     async def _run_looper_without_timeout(self) -> None:
         """Run the looper without a timeout."""
