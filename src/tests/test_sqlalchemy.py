@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from asyncio import sleep
 from itertools import chain
 from os import getpid
 from time import time_ns
@@ -26,7 +27,6 @@ from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
-from utilities.asyncio import sleep_dur
 from utilities.hypothesis import (
     int32s,
     pairs,
@@ -1170,7 +1170,7 @@ class TestUpserter:
         engine = await sqlalchemy_engines(data, table)
         pairs = [(id_, init) for id_, init, _ in triples]
         async with Upserter(duration=1.0, sleep_core=0.1, engine=engine) as upserter:
-            await sleep_dur(duration=0.1)
+            await sleep(0.1)
             upserter.put_items_nowait((pairs, table))
 
         sel = select(table)
