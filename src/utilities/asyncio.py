@@ -455,12 +455,12 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
         if self.logger is not None:
             if isinstance(error, InfiniteQueueLooperError):
                 getLogger(name=self.logger).error(
-                    "%r encountered %s whilst processing %d item(s) %s; sleeping for %s...",
+                    "%r encountered %s whilst processing %d item(s) %s; sleeping %s...",
                     get_class_name(self),
                     repr_error(error.error),
                     len(error.items),
                     get_repr(error.items),
-                    self.sleep_restart,
+                    self._sleep_restart_desc,
                 )
             else:
                 super()._error_upon_core(error)  # pragma: no cover
@@ -471,10 +471,6 @@ class InfiniteQueueLooperError(Exception, Generic[_T]):
     looper: InfiniteQueueLooper[Any, Any]
     items: Sequence[_T]
     error: Exception
-
-    @override
-    def __str__(self) -> str:
-        return f"{get_class_name(self.looper)!r} encountered {repr_error(self.error)} whilst processing {len(self.items)} item(s): {get_repr(self.items)}"
 
 
 ##

@@ -665,6 +665,7 @@ class TestInfiniteQueueLooper:
         assert looper.empty()
 
     @given(logger=just("logger") | none())
+    @mark.only
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_process_items(
         self, *, logger: str | None, caplog: LogCaptureFixture
