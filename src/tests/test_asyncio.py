@@ -245,12 +245,12 @@ class TestInfiniteLooper:
             async def _teardown(self) -> None:
                 self.running = False
 
-        looper = Example(duration=0.1)
+        looper = Example()
         for _ in range(2):
             assert not looper.running
-            async with looper:
+            async with timeout_dur(duration=0.2), looper:
                 assert looper.running
-                async with looper:
+                async with timeout_dur(duration=0.1), looper:
                     assert looper.running
                 assert looper.running
             assert not looper.running
