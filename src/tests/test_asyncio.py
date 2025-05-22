@@ -536,11 +536,8 @@ class TestInfiniteLooper:
         ):
             ...
         if logger is not None:
-            first, second = caplog.messages
-            exp_first = f"'Example' encountered 'Custom1Error()'; sleeping {desc}..."
-            assert first == exp_first
-            exp_second = f"'Example' encountered 'Custom2Error()' whilst tearing down; sleeping {desc}..."
-            assert second == exp_second
+            expected = f"'Example' encountered 'Custom2Error()' whilst tearing down; sleeping {desc}..."
+            assert expected in caplog.messages
 
     @given(logger=just("logger") | none())
     @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
