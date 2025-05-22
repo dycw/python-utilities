@@ -117,7 +117,7 @@ if TYPE_CHECKING:
         JoinStrategy,  # pyright: ignore[reportPrivateImportUsage]
         JoinValidation,  # pyright: ignore[reportPrivateImportUsage]
         PolarsDataType,  # pyright: ignore[reportPrivateImportUsage]
-        RollingInterpolationMethod,  # pyright: ignore[reportPrivateImportUsage]
+        QuantileMethod,  # pyright: ignore[reportPrivateImportUsage]
         SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
         TimeUnit,  # pyright: ignore[reportPrivateImportUsage]
     )
@@ -939,7 +939,7 @@ def cross_rolling_quantile(
     quantile: float,
     /,
     *,
-    interpolation: RollingInterpolationMethod = "nearest",
+    interpolation: QuantileMethod = "nearest",
     window_size: int = 2,
     weights: list[float] | None = None,
     min_samples: int | None = None,
@@ -952,7 +952,7 @@ def cross_rolling_quantile(
     quantile: float,
     /,
     *,
-    interpolation: RollingInterpolationMethod = "nearest",
+    interpolation: QuantileMethod = "nearest",
     window_size: int = 2,
     weights: list[float] | None = None,
     min_samples: int | None = None,
@@ -965,7 +965,7 @@ def cross_rolling_quantile(
     quantile: float,
     /,
     *,
-    interpolation: RollingInterpolationMethod = "nearest",
+    interpolation: QuantileMethod = "nearest",
     window_size: int = 2,
     weights: list[float] | None = None,
     min_samples: int | None = None,
@@ -977,7 +977,7 @@ def cross_rolling_quantile(
     quantile: float,
     /,
     *,
-    interpolation: RollingInterpolationMethod = "nearest",
+    interpolation: QuantileMethod = "nearest",
     window_size: int = 2,
     weights: list[float] | None = None,
     min_samples: int | None = None,

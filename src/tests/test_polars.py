@@ -55,6 +55,7 @@ from polars._typing import (
     IntoExprColumn,  # pyright: ignore[reportPrivateImportUsage]
     SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
 )
+from polars.exceptions import ComputeError
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import raises
 
@@ -986,7 +987,10 @@ class TestDataClassToDataFrame:
         objs = data.draw(
             lists(builds(Example, x=zoned_datetimes(time_zone=time_zone)), min_size=1)
         )
-        with assume_does_not_raise(ValueError, match="failed to parse timezone"):
+        with assume_does_not_raise(
+            ComputeError,  # unable to parse time zone
+            ValueError,  # failed to parse timezone
+        ):
             df = dataclass_to_dataframe(objs, localns=locals())
         check_polars_dataframe(
             df, height=len(objs), schema_list={"x": zoned_datetime(time_zone=time_zone)}
