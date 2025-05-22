@@ -196,9 +196,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
         """Context manager exit."""
         _ = (exc_type, exc_value, traceback)
         self._depth = max(self._depth - 1, 0)
-        if self._depth == 0:
-            if self._task is None:
-                raise ImpossibleCaseError(case=[f"{self._task=}"])  # pragma: no cover
+        if (self._depth == 0) and (self._task is not None):
             try:
                 await self._task
             except CancelledError:
