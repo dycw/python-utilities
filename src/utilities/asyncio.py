@@ -116,22 +116,8 @@ class EnhancedTaskGroup(TaskGroup):
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
-        print(f"""\
-EnhancedTaskGroup exit
-    {self._stack=}
-    {self._stack._exit_callbacks=}""")
-        # _ = await self._exits[0]._teardown()
-        # async with TaskGroup() as tg:
-        # _ = tg.create_task(self._stack.__aexit__(et, exc, tb))
-        # _ = tg.create_task(super().__aexit__(et, exc, tb))
-        # _ = await self._stack.__aexit__(et, exc, tb)
-        _ = await self._stack.aclose()
-        print(f"EnhancedTaskGroup exit finished self._stack; {self._stack=}")
+        _ = await self._stack.__aexit__(et, exc, tb)
         _ = await super().__aexit__(et, exc, tb)
-        print(f"EnhancedTaskGroup exit finished super(); {self._stack=}")
-        # _ = await self._stack.__aexit__(et, exc, tb)
-        # _ = await self._stack.aclose()
-        # _ = await super().__aexit__(et, exc, tb)
 
     @override
     def create_task(
@@ -153,9 +139,8 @@ EnhancedTaskGroup exit
 
     def enter_context(self, cm: AbstractAsyncContextManager[_T], /) -> Task[_T]:
         """Have the TaskGroup start an asynchronous context manager."""
-        self._stack.push_async_callback(cm.__aexit__)
+        _ = self._stack.push_async_callback(cm.__aexit__, None, None, None)
         return self.create_task(cm.__aenter__())
-        # return self.create_task(self._stack.enter_async_context(cm))
 
     async def _wrap_with_semaphore(
         self, semaphore: Semaphore, coroutine: _CoroutineLike[_T], /
@@ -196,21 +181,12 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
     async def __aenter__(self) -> Self:
         """Context manager entry."""
-        print("InfiniteLooper enter")
-        if (self._task is None) and (self._depth == 0):
-            # _ = self._stack.push_async_callback(self._teardown)
-            # _ = await self._stack.__aenter__()
+        if self._depth == 0:
             self._task = create_task(self._run_looper())
             if self._await_upon_aenter:
                 with suppress(CancelledError):
                     await self._task
             _ = await self._stack.__aenter__()
-        elif (self._task is not None) and (self._depth >= 1):
-            ...
-        else:
-            raise ImpossibleCaseError(  # pragma: no cover
-                case=[f"{self._task=}", f"{self._depth=}"]
-            )
         self._depth += 1
         return self
 
@@ -221,23 +197,12 @@ class InfiniteLooper(ABC, Generic[THashable]):
         traceback: TracebackType | None = None,
     ) -> None:
         """Context manager exit."""
-        print(f"""\
-InfiniteLooper exit
-    {self._task=}
-    {self._depth=}""")
         _ = (exc_type, exc_value, traceback)
         self._depth = max(self._depth - 1, 0)
-        # if (self._task is None) or (self._depth == 0):
-        #     raise ImpossibleCaseError(  # pragma: no cover
-        #         case=[f"{self._task=}", f"{self._depth=}"]
-        #     )
-        # self._depth -= 1
         if self._depth == 0:
-            print("InfiniteLooper stack exit")
             with suppress(CancelledError):
                 await self._task
             self._task = None
-            # with suppress(Exception):
             try:
                 await self._teardown()
             except Exception as error:  # noqa: BLE001
