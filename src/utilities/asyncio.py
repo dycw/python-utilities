@@ -188,7 +188,8 @@ class InfiniteLooper(ABC, Generic[THashable]):
             with suppress(CancelledError):
                 await self._task
             self._task = None
-            await self._teardown()
+            with suppress(Exception):
+                await self._teardown()
 
     async def stop(self) -> None:
         """Stop the service."""
@@ -368,7 +369,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
         self,
     ) -> Iterator[tuple[THashable | None, MaybeType[Exception]]]:
         """Yield the events & exceptions."""
-        yield (None, _InfiniteLooperDefaultEventError)
+        yield (None, _InfiniteLooperDefaultEventError(looper=self))
 
     def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
         """Yield any other coroutines which must also be run."""

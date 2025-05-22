@@ -513,7 +513,7 @@ class TestInfiniteLooper:
         ],
     )
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    async def test_error_group_upon_coroutines(
+    async def test_error_upon_core(
         self,
         *,
         sleep_restart: DurationOrEveryDuration,
@@ -537,6 +537,60 @@ class TestInfiniteLooper:
             message = caplog.messages[0]
             expected = f"'Example' encountered 'CustomError()'; sleeping {desc}..."
             assert message == expected
+
+    @given(logger=just("logger") | none())
+    @mark.parametrize(
+        ("sleep_restart", "desc"),
+        [
+            (60.0, "for 0:01:00"),
+            (MINUTE, "for 0:01:00"),
+            (("every", 60), "until next 0:01:00"),
+            (("every", MINUTE), "until next 0:01:00"),
+        ],
+    )
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_error_upon_teardown(
+        self,
+        *,
+        sleep_restart: DurationOrEveryDuration,
+        desc: str,
+        logger: str | None,
+        caplog: LogCaptureFixture,
+    ) -> None:
+        class Custom1Error(Exception): ...
+
+        class Custom2Error(Exception): ...
+
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            counter: int = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+                if self.counter >= 5:
+                    self._set_event()
+
+            @override
+            async def _teardown(self) -> None:
+                raise Custom2Error
+
+            @override
+            def _yield_events_and_exceptions(
+                self,
+            ) -> Iterator[tuple[None, MaybeType[Exception]]]:
+                yield (None, Custom1Error)
+
+        async with Example(
+            duration=1.0, sleep_core=0.1, sleep_restart=sleep_restart, logger=logger
+        ):
+            ...
+        if logger is not None:
+            first, second = caplog.messages
+            exp_first = f"'Example' encountered 'Custom1Error()'; sleeping {desc}..."
+            assert first == exp_first
+            exp_second = f"'Example' encountered 'Custom2Error()' whilst tearing down; sleeping {desc}..."
+            assert second == exp_second
 
     async def test_error_no_event_found(self) -> None:
         @dataclass(kw_only=True)
