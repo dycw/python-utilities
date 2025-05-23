@@ -68,7 +68,6 @@ if TYPE_CHECKING:
     )
 
 
-@mark.only
 class TestEnhancedQueue:
     @given(
         xs=lists(integers()),

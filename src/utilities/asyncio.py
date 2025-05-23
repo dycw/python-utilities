@@ -93,22 +93,22 @@ class EnhancedQueue(Queue[_T]):
     @override
     @deprecated("Use `get_left`/`get_right` instead")
     async def get(self) -> _T:
-        raise RuntimeError
+        raise RuntimeError  # pragma: no cover
 
     @override
     @deprecated("Use `get_left_nowait`/`get_right_nowait` instead")
     def get_nowait(self) -> _T:
-        raise RuntimeError
+        raise RuntimeError  # pragma: no cover
 
     @override
     @deprecated("Use `put_left`/`put_right` instead")
     async def put(self, item: _T) -> None:
-        raise RuntimeError(item)
+        raise RuntimeError(item)  # pragma: no cover
 
     @override
     @deprecated("Use `put_left_nowait`/`put_right_nowait` instead")
     def put_nowait(self, item: _T) -> None:
-        raise RuntimeError(item)
+        raise RuntimeError(item)  # pragma: no cover
 
     # get all
 
