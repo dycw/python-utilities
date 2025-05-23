@@ -249,7 +249,6 @@ class TestGetEvent:
         assert get_event(event=lambda: event) is event
 
 
-@mark.only
 class TestGetItems:
     @given(
         xs=lists(integers(), min_size=1),
