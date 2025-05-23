@@ -612,14 +612,6 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
         """Check if the queue is empty."""
         return self._queue.empty()
 
-    async def put_left(self, *items: _T) -> None:
-        """Put items into the queue at the start."""
-        await self._queue.put_left(*items)  # pragma: no cover
-
-    async def put_right(self, *items: _T) -> None:
-        """Put items into the queue at the end."""
-        await self._queue.put_right(*items)  # pragma: no cover
-
     def put_left_nowait(self, *items: _T) -> None:
         """Put items into the queue at the start without blocking."""
         self._queue.put_left_nowait(*items)  # pragma: no cover

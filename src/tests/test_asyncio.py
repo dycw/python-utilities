@@ -746,8 +746,8 @@ Sleeping {desc}..."""
                 ...
 
 
+@mark.only
 class TestInfiniteQueueLooper:
-    @mark.only
     async def test_main(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteQueueLooper[None, int]):
@@ -760,7 +760,7 @@ class TestInfiniteQueueLooper:
         async with timeout_dur(duration=1.0), Example(sleep_core=0.05) as looper:
             await sleep(0.1)
             for i in range(10):
-                looper.put_left(i)
+                looper.put_right_nowait(i)
                 await sleep(0.05)
 
             assert looper.counter == 10
@@ -771,13 +771,13 @@ class TestInfiniteQueueLooper:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _process_items(self, *items: int) -> None:
-                self.output.update(items)
+            async def _process_queue(self) -> None:
+                self.output.update(self._queue.get_all_nowait())
 
         looper = Example(sleep_core=0.05)
         assert len(looper) == 0
         assert looper.empty()
-        looper.put_left(*range(n))
+        looper.put_right_nowait(*range(n))
         assert len(looper) == n
         assert not looper.empty()
 
@@ -787,11 +787,11 @@ class TestInfiniteQueueLooper:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _process_items(self, *items: int) -> None:
-                self.output.update(items)
+            async def _process_queue(self) -> None:
+                self.output.update(self._queue.get_all_nowait())
 
         looper = Example(sleep_core=0.05)
-        looper.put_left(*range(10))
+        looper.put_right_nowait(*range(10))
         async with looper:
             await looper.run_until_empty()
         assert looper.empty()
@@ -808,17 +808,17 @@ class TestInfiniteQueueLooper:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _process_items(self, *items: int) -> None:
-                raise CustomError(*items)
+            async def _process_queue(self) -> None:
+                raise CustomError
 
         async with (
             timeout_dur(duration=1.0),
             Example(sleep_core=0.05, logger=logger) as looper,
         ):
-            looper.put_left(1)
+            looper.put_left_nowait(1)
         if logger is not None:
             message = caplog.messages[0]
-            expected = "'Example' encountered CustomError(1) whilst processing 1 item(s) [1]; sleeping for 0:01:00..."
+            expected = "'Example' encountered 'CustomError()'; sleeping for 0:01:00..."
             assert message == expected
 
 
