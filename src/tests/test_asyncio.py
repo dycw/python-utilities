@@ -9,7 +9,7 @@ from itertools import chain, count
 from re import search
 from typing import TYPE_CHECKING, Any, ClassVar, Self, cast, override
 
-from hypothesis import HealthCheck, Phase, given, settings
+from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
     booleans,
@@ -68,10 +68,11 @@ if TYPE_CHECKING:
     )
 
 
+@mark.only
 class TestEnhancedQueue:
-    @given(xs=lists(integers(), min_size=1), wait=booleans())
-    @mark.only
+    @given(xs=lists(integers()), wait=booleans())
     async def test_left(self, xs: list[int], wait: int) -> None:
+        _ = assume(not ((len(xs) == 0) and wait))
         deq: deque[int] = deque()
         queue: EnhancedQueue[int] = EnhancedQueue()
         for i, x in enumerate(xs, start=1):
@@ -88,9 +89,9 @@ class TestEnhancedQueue:
             res = queue.get_all_nowait()
         assert res == xs[::-1]
 
-    @given(xs=lists(integers(), min_size=1), wait=booleans())
-    @mark.only
+    @given(xs=lists(integers()), wait=booleans())
     async def test_right(self, xs: list[int], wait: int) -> None:
+        _ = assume(not ((len(xs) == 0) and wait))
         deq: deque[int] = deque()
         queue: EnhancedQueue[int] = EnhancedQueue()
         for i, x in enumerate(xs, start=1):
