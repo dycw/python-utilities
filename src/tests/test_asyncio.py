@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import CancelledError, Event, Queue, TaskGroup, run, sleep, timeout
+from asyncio import CancelledError, Event, Queue, run, sleep
 from collections import deque
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -9,7 +9,7 @@ from itertools import chain, count
 from re import search
 from typing import TYPE_CHECKING, Any, ClassVar, Self, cast, override
 
-from hypothesis import HealthCheck, Phase, given, reproduce_failure, settings
+from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
     booleans,
@@ -69,30 +69,42 @@ if TYPE_CHECKING:
 
 
 class TestEnhancedQueue:
-    @given(xs=lists(integers(), min_size=1))
+    @given(xs=lists(integers(), min_size=1), wait=booleans())
     @mark.only
-    async def test_left(self, xs: list[int]) -> None:
+    async def test_left(self, xs: list[int], wait: int) -> None:
         deq: deque[int] = deque()
         queue: EnhancedQueue[int] = EnhancedQueue()
         for i, x in enumerate(xs, start=1):
             deq.appendleft(x)
-            await queue.put_left(x)
+            if wait:
+                await queue.put_left(x)
+            else:
+                queue.put_left_nowait(x)
             assert len(deq) == queue.qsize() == i
         assert list(deq) == xs[::-1]
-        res = await get_items(queue)
+        if wait:
+            res = await queue.get_all()
+        else:
+            res = queue.get_all_nowait()
         assert res == xs[::-1]
 
-    @given(xs=lists(integers(), min_size=1))
+    @given(xs=lists(integers(), min_size=1), wait=booleans())
     @mark.only
-    async def test_right(self, xs: list[int]) -> None:
+    async def test_right(self, xs: list[int], wait: int) -> None:
         deq: deque[int] = deque()
         queue: EnhancedQueue[int] = EnhancedQueue()
         for i, x in enumerate(xs, start=1):
             deq.append(x)
-            await queue.put_right(x)
+            if wait:
+                await queue.put_right(x)
+            else:
+                queue.put_right_nowait(x)
             assert len(deq) == queue.qsize() == i
         assert list(deq) == xs
-        res = await get_items(queue)
+        if wait:
+            res = await queue.get_all()
+        else:
+            res = queue.get_all_nowait()
         assert res == xs
 
 

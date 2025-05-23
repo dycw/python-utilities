@@ -18,7 +18,6 @@ from asyncio import (
     sleep,
     timeout,
 )
-from asyncio.mixins import _LoopBoundMixin
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
 from contextlib import (
     AbstractAsyncContextManager,
@@ -29,6 +28,7 @@ from contextlib import (
 )
 from dataclasses import dataclass, field
 from io import StringIO
+from itertools import chain
 from logging import getLogger
 from subprocess import PIPE
 from sys import stderr, stdout
@@ -90,13 +90,15 @@ class EnhancedQueue(Queue[_T]):
         super().__init__(maxsize=maxsize)
         self._queue: deque[_T]
 
-    # @override
-    # async def get(self) -> _T:
-    #     raise RuntimeError
-    #
-    # @override
-    # def get_nowait(self) -> _T:
-    #     raise RuntimeError
+    @override
+    @deprecated("Use `get_left`/`get_right` instead")
+    async def get(self) -> _T:
+        raise RuntimeError
+
+    @override
+    @deprecated("Use `get_left_nowait`/`get_right_nowait` instead")
+    def get_nowait(self) -> _T:
+        raise RuntimeError
 
     @override
     @deprecated("Use `put_left`/`put_right` instead")
@@ -108,82 +110,61 @@ class EnhancedQueue(Queue[_T]):
     def put_nowait(self, item: _T) -> None:
         raise RuntimeError(item)
 
-    async def put_left(self, item: _T) -> None:
-        """Put an item into the queue."""
-        while self.full():
-            putter = self._get_loop().create_future()
-            self._putters.append(putter)
+    # get all
+
+    async def get_all(self, *, reverse: bool = False) -> Sequence[_T]:
+        """Remove and return all items from the queue."""
+        first = await (self.get_right() if reverse else self.get_left())
+        return list(chain([first], self.get_all_nowait(reverse=reverse)))
+
+    def get_all_nowait(self, *, reverse: bool = False) -> Sequence[_T]:
+        """Remove and return all items from the queue without blocking."""
+        items: Sequence[_T] = []
+        while True:
             try:
-                await putter
-            except:
-                putter.cancel()  # Just in case putter is not done yet.
-                try:
-                    # Clean self._putters from canceled putters.
-                    self._putters.remove(putter)
-                except ValueError:
-                    # The putter could be removed from self._putters by a
-                    # previous get_nowait call.
-                    pass
-                if not self.full() and not putter.cancelled():
-                    # We were woken up by get_nowait(), but can't take
-                    # the call.  Wake up the next in line.
-                    self._wakeup_next(self._putters)
-                raise
-        return self.put_left_nowait(item)
+                items.append(
+                    self.get_right_nowait() if reverse else self.get_left_nowait()
+                )
+            except QueueEmpty:
+                return items
 
-    def put_left_nowait(self, item: _T) -> None:
-        """Put an item into the queue without blocking."""
-        if self.full():
-            raise QueueFull
-        self._put_left(item)
-        self._unfinished_tasks += 1
-        self._finished.clear()
-        self._wakeup_next(self._getters)
+    # get left/right
 
-    async def put_right(self, item: _T) -> None:
+    async def get_left(self) -> _T:
+        """Remove and return an item from the start of the queue."""
+        return await self._get_left_or_right(self._get)
+
+    async def get_right(self) -> _T:
+        """Remove and return an item from the end of the queue."""
+        return await self._get_left_or_right(self._get_right)
+
+    def get_left_nowait(self) -> _T:
+        """Remove and return an item from the start of the queue without blocking."""
+        return self._get_left_or_right_nowait(self._get)
+
+    def get_right_nowait(self) -> _T:
+        """Remove and return an item from the end of the queue without blocking."""
+        return self._get_left_or_right_nowait(self._get_right)
+
+    # put left/right
+
+    async def put_left(self, *items: _T) -> None:
+        """Put an item into the queue at the start."""
+        return self._put_left_or_right_nowait(self._put_left, *items)
+
+    async def put_right(self, *items: _T) -> None:
         """Put an item into the queue."""
-        while self.full():
-            putter = self._get_loop().create_future()
-            self._putters.append(putter)
-            try:
-                await putter
-            except:
-                putter.cancel()  # Just in case putter is not done yet.
-                try:
-                    # Clean self._putters from canceled putters.
-                    self._putters.remove(putter)
-                except ValueError:
-                    # The putter could be removed from self._putters by a
-                    # previous get_nowait call.
-                    pass
-                if not self.full() and not putter.cancelled():
-                    # We were woken up by get_nowait(), but can't take
-                    # the call.  Wake up the next in line.
-                    self._wakeup_next(self._putters)
-                raise
-        return self.put_right_nowait(item)
+        return self._put_left_or_right_nowait(self._put, *items)
 
-    def put_right_nowait(self, item: _T) -> None:
-        """Put an item into the queue without blocking."""
-        if self.full():
-            raise QueueFull
-        self._put_right(item)
-        self._unfinished_tasks += 1
-        self._finished.clear()
-        self._wakeup_next(self._getters)
+    def put_left_nowait(self, *items: _T) -> None:
+        """Put an item into the queue at the start without blocking."""
+        self._put_left_or_right_nowait(self._put_left, *items)
+
+    def put_right_nowait(self, *items: _T) -> None:
+        """Put an item into the queue at the end without blocking."""
+        self._put_left_or_right_nowait(self._put, *items)
 
     # private
-
-    # @override
-    # def _init(self, maxsize: int = 0) -> None:
-    #     self._queue = deque(maxlen=None if maxsize == 0 else maxsize)
-
-    @override
-    def _get(self) -> _T:
-        return self._queue.popleft()
-
-    def _get_left(self) -> _T:
-        return self._queue.popleft()
 
     def _put_left(self, item: _T) -> None:
         self._queue.appendleft(item)
@@ -191,8 +172,68 @@ class EnhancedQueue(Queue[_T]):
     def _get_right(self) -> _T:
         return self._queue.pop()
 
-    def _put_right(self, item: _T) -> None:
-        self._queue.append(item)
+    async def _get_left_or_right(self, getter_use: Callable[[], _T], /) -> _T:
+        while self.empty():
+            getter = self._get_loop().create_future()  # pyright: ignore[reportAttributeAccessIssue]
+            self._getters.append(getter)  # pyright: ignore[reportAttributeAccessIssue]
+            try:
+                await getter
+            except:
+                getter.cancel()
+                with suppress(ValueError):
+                    self._getters.remove(getter)  # pyright: ignore[reportAttributeAccessIssue]
+                if not self.empty() and not getter.cancelled():
+                    self._wakeup_next(self._getters)  # pyright: ignore[reportAttributeAccessIssue]
+                raise
+        return getter_use()
+
+    def _get_left_or_right_nowait(self, getter: Callable[[], _T], /) -> _T:
+        if self.empty():
+            raise QueueEmpty
+        item = getter()
+        self._wakeup_next(self._putters)  # pyright: ignore[reportAttributeAccessIssue]
+        return item
+
+    async def _put_left_or_right(
+        self, putter_use: Callable[[_T], None], /, *items: _T
+    ) -> None:
+        """Put an item into the queue."""
+        for item in items:
+            await self._put_left_or_right_one(putter_use, item)
+
+    async def _put_left_or_right_one(
+        self, putter_use: Callable[[_T], None], item: _T, /
+    ) -> None:
+        """Put an item into the queue."""
+        while self.full():
+            putter = self._get_loop().create_future()  # pyright: ignore[reportAttributeAccessIssue]
+            self._putters.append(putter)  # pyright: ignore[reportAttributeAccessIssue]
+            try:
+                await putter
+            except:
+                putter.cancel()
+                with suppress(ValueError):
+                    self._putters.remove(putter)  # pyright: ignore[reportAttributeAccessIssue]
+                if not self.full() and not putter.cancelled():
+                    self._wakeup_next(self._putters)  # pyright: ignore[reportAttributeAccessIssue]
+                raise
+        return putter_use(item)
+
+    def _put_left_or_right_nowait(
+        self, putter: Callable[[_T], None], /, *items: _T
+    ) -> None:
+        for item in items:
+            self._put_left_or_right_nowait_one(putter, item)
+
+    def _put_left_or_right_nowait_one(
+        self, putter: Callable[[_T], None], item: _T, /
+    ) -> None:
+        if self.full():
+            raise QueueFull
+        putter(item)
+        self._unfinished_tasks += 1  # pyright: ignore[reportAttributeAccessIssue]
+        self._finished.clear()  # pyright: ignore[reportAttributeAccessIssue]
+        self._wakeup_next(self._getters)  # pyright: ignore[reportAttributeAccessIssue]
 
 
 ##
