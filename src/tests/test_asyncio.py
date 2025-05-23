@@ -66,40 +66,46 @@ if TYPE_CHECKING:
 
 
 class TestEnhancedTaskGroup:
-    async def test_context_managers(self) -> None:
-        first: bool = False
+    async def test_create_task_context_coroutine(self) -> None:
+        flag: bool = False
 
         @asynccontextmanager
-        async def yield_first() -> AsyncIterator[None]:
-            nonlocal first
+        async def yield_true() -> AsyncIterator[None]:
+            nonlocal flag
             try:
-                first = True
+                flag = True
                 yield
             finally:
-                first = False
+                flag = False
 
-        second: bool = False
+        assert not flag
+        async with EnhancedTaskGroup(timeout=0.1) as tg:
+            _ = tg.create_task_context(yield_true())
+            await sleep(0.05)
+            assert flag
+        assert not flag
 
-        @asynccontextmanager
-        async def yield_second() -> AsyncIterator[None]:
-            nonlocal second
-            try:
-                second = True
-                yield
-            finally:
-                second = False
+    async def test_create_task_context_looper(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            running: bool = False
 
-        async with EnhancedTaskGroup() as tg:
-            assert not first
-            assert not second
-            _ = await tg.enter_async_context(yield_first())
-            assert first
-            assert not second
-            _ = await tg.enter_async_context(yield_second())
-            assert first
-            assert second
-        assert not first
-        assert not second
+            @override
+            async def _initialize(self) -> None:
+                self.running = True
+
+            @override
+            async def _teardown(self) -> None:
+                self.running = False
+
+        looper = Example(duration=0.1)
+        assert not looper.running
+        async with EnhancedTaskGroup(timeout=0.1) as tg:
+            assert not looper.running
+            _ = tg.create_task_context(looper)
+            await sleep(0.05)
+            assert looper.running
+        assert not looper.running
 
     async def test_max_tasks_disabled(self) -> None:
         with Timer() as timer:
@@ -350,7 +356,7 @@ class TestInfiniteLooper:
 
         async def inc_external(obj: Example, /) -> None:
             nonlocal external
-            while True:
+            for _ in range(100):  # infinite doesn't work on CI
                 external += 1
                 obj.counter += 1
                 await sleep(0.05)
