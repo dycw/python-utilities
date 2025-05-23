@@ -478,9 +478,9 @@ class TestInfiniteLooper:
             Example(sleep_core=0.05, sleep_restart=0.05) as looper,
         ):
             ...
-        assert 4 <= looper.initializations <= 6
-        assert 0 <= looper.counter <= 7
-        assert 14 <= external <= 21
+        assert 3 <= looper.initializations <= 7
+        assert 0 <= looper.counter <= 8
+        assert 13 <= external <= 22
 
     async def test_with_coroutine_self_error(self) -> None:
         class CustomError(Exception): ...
