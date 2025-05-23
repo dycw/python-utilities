@@ -37,25 +37,81 @@ _U = TypeVar("_U")
 
 @overload
 def bucket_mapping(
-    iterable: Iterable[_T], func: Callable[[_T], THashable], /, *, list: Literal[True]
-) -> Mapping[THashable, Sequence[_T]]: ...
+    iterable: Iterable[_T],
+    func: Callable[[_T], THashable],
+    /,
+    *,
+    transform: Callable[[_T], _U],
+    list: Literal[True],
+) -> Mapping[THashable, Sequence[_U]]: ...
 @overload
-def bucket_mapping(
-    iterable: Iterable[_T], func: Callable[[_T], THashable], /, *, list: bool = False
-) -> Mapping[THashable, Iterator[_T]]: ...
 def bucket_mapping(
     iterable: Iterable[_T],
     func: Callable[[_T], THashable],
     /,
     *,
+    transform: Callable[[_T], _U],
+    list: bool = False,
+) -> Mapping[THashable, Iterator[_U]]: ...
+@overload
+def bucket_mapping(
+    iterable: Iterable[_T],
+    func: Callable[[_T], THashable],
+    /,
+    *,
+    transform: Callable[[_T], _U] | None = None,
+    list: Literal[True],
+) -> Mapping[THashable, Sequence[_T]]: ...
+@overload
+def bucket_mapping(
+    iterable: Iterable[_T],
+    func: Callable[[_T], THashable],
+    /,
+    *,
+    transform: Callable[[_T], _U] | None = None,
+    list: bool = False,
+) -> Mapping[THashable, Iterator[_T]]: ...
+@overload
+def bucket_mapping(
+    iterable: Iterable[_T],
+    func: Callable[[_T], THashable],
+    /,
+    *,
+    transform: Callable[[_T], _U] | None = None,
+    list: bool = False,
+) -> (
+    Mapping[THashable, Iterator[_T]]
+    | Mapping[THashable, Iterator[_U]]
+    | Mapping[THashable, Sequence[_T]]
+    | Mapping[THashable, Sequence[_U]]
+): ...
+def bucket_mapping(
+    iterable: Iterable[_T],
+    func: Callable[[_T], THashable],
+    /,
+    *,
+    transform: Callable[[_T], _U] | None = None,
     list: bool = False,  # noqa: A002
-) -> Mapping[THashable, Iterator[_T]] | Mapping[THashable, Sequence[_T]]:
+) -> (
+    Mapping[THashable, Iterator[_T]]
+    | Mapping[THashable, Iterator[_U]]
+    | Mapping[THashable, Sequence[_T]]
+    | Mapping[THashable, Sequence[_U]]
+):
     """Bucket the values of iterable into a mapping."""
     b = bucket(iterable, func)
     mapping = {key: b[key] for key in b}
-    if list:
-        return {key: builtins.list(value) for key, value in mapping.items()}
-    return mapping
+    match transform, list:
+        case None, False:
+            return mapping
+        case None, True:
+            return {key: builtins.list(value) for key, value in mapping.items()}
+        case _, False:
+            return {k: map(transform, v) for k, v in mapping.items()}
+        case _, True:
+            return {k: builtins.list(map(transform, v)) for k, v in mapping.items()}
+        case _ as never:
+            assert_never(never)
 
 
 ##
