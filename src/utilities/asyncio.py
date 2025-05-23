@@ -87,7 +87,11 @@ class EnhancedQueue(Queue[_T]):
     @override
     def __init__(self, maxsize: int = 0) -> None:
         super().__init__(maxsize=maxsize)
+        self._finished: Event
+        self._getters: deque[Any]
+        self._putters: deque[Any]
         self._queue: deque[_T]
+        self._unfinished_tasks: int
 
     @override
     @deprecated("Use `get_left`/`get_right` instead")
@@ -174,13 +178,13 @@ class EnhancedQueue(Queue[_T]):
     async def _get_left_or_right(self, getter_use: Callable[[], _T], /) -> _T:
         while self.empty():  # pragma: no cover
             getter = self._get_loop().create_future()  # pyright: ignore[reportAttributeAccessIssue]
-            self._getters.append(getter)  # pyright: ignore[reportAttributeAccessIssue]
+            self._getters.append(getter)
             try:
                 await getter
             except:
                 getter.cancel()
                 with suppress(ValueError):
-                    self._getters.remove(getter)  # pyright: ignore[reportAttributeAccessIssue]
+                    self._getters.remove(getter)
                 if not self.empty() and not getter.cancelled():
                     self._wakeup_next(self._getters)  # pyright: ignore[reportAttributeAccessIssue]
                 raise
@@ -206,13 +210,13 @@ class EnhancedQueue(Queue[_T]):
         """Put an item into the queue."""
         while self.full():  # pragma: no cover
             putter = self._get_loop().create_future()  # pyright: ignore[reportAttributeAccessIssue]
-            self._putters.append(putter)  # pyright: ignore[reportAttributeAccessIssue]
+            self._putters.append(putter)
             try:
                 await putter
             except:
                 putter.cancel()
                 with suppress(ValueError):
-                    self._putters.remove(putter)  # pyright: ignore[reportAttributeAccessIssue]
+                    self._putters.remove(putter)
                 if not self.full() and not putter.cancelled():
                     self._wakeup_next(self._putters)  # pyright: ignore[reportAttributeAccessIssue]
                 raise
@@ -230,8 +234,8 @@ class EnhancedQueue(Queue[_T]):
         if self.full():  # pragma: no cover
             raise QueueFull
         putter(item)
-        self._unfinished_tasks += 1  # pyright: ignore[reportAttributeAccessIssue]
-        self._finished.clear()  # pyright: ignore[reportAttributeAccessIssue]
+        self._unfinished_tasks += 1
+        self._finished.clear()
         self._wakeup_next(self._getters)  # pyright: ignore[reportAttributeAccessIssue]
 
 
