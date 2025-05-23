@@ -65,7 +65,7 @@ class SlackHandler(Handler, InfiniteQueueLooper[None, str]):
     @override
     def emit(self, record: LogRecord) -> None:
         try:
-            self.put_items_nowait(self.format(record))
+            self.put_left(self.format(record))
         except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 

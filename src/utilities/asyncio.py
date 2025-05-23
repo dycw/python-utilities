@@ -57,7 +57,6 @@ from utilities.datetime import (
 )
 from utilities.errors import ImpossibleCaseError, repr_error
 from utilities.functions import ensure_int, ensure_not_none, get_class_name
-from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import (
     Coroutine1,
@@ -149,19 +148,19 @@ class EnhancedQueue(Queue[_T]):
     # put left/right
 
     async def put_left(self, *items: _T) -> None:
-        """Put an item into the queue at the start."""
+        """Put items into the queue at the start."""
         return await self._put_left_or_right(self._put_left, *items)
 
     async def put_right(self, *items: _T) -> None:
-        """Put an item into the queue."""
+        """Put items into the queue at the end."""
         return await self._put_left_or_right(self._put, *items)
 
     def put_left_nowait(self, *items: _T) -> None:
-        """Put an item into the queue at the start without blocking."""
+        """Put items into the queue at the start without blocking."""
         self._put_left_or_right_nowait(self._put_left, *items)
 
     def put_right_nowait(self, *items: _T) -> None:
-        """Put an item into the queue at the end without blocking."""
+        """Put items into the queue at the end without blocking."""
         self._put_left_or_right_nowait(self._put, *items)
 
     # private
@@ -587,14 +586,13 @@ class _InfiniteLooperDefaultEventError(InfiniteLooperError):
 class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     """An infinite loop which processes a queue."""
 
-    queue_type: type[Queue[_T]] = field(default=Queue, repr=False)
     _await_upon_aenter: bool = field(default=False, init=False, repr=False)
-    _queue: Queue[_T] = field(init=False)
+    _queue: EnhancedQueue[_T] = field(init=False, repr=False)
 
     @override
     def __post_init__(self) -> None:
         super().__post_init__()
-        self._queue = self.queue_type()
+        self._queue = EnhancedQueue()
 
     def __len__(self) -> int:
         return self._queue.qsize()
@@ -602,54 +600,39 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     @override
     async def _core(self) -> None:
         """Run the core part of the loop."""
-        items = await get_items(self._queue)
-        try:
-            await self._process_items(*items)
-        except Exception as error:  # noqa: BLE001
-            raise InfiniteQueueLooperError(
-                looper=self, items=items, error=error
-            ) from None
+        first = await self._queue.get_left()
+        self._queue.put_left_nowait(first)
+        await self._process_queue()
 
     @abstractmethod
-    async def _process_items(self, *items: _T) -> None:
+    async def _process_queue(self) -> None:
         """Process the items."""
 
     def empty(self) -> bool:
         """Check if the queue is empty."""
         return self._queue.empty()
 
-    def put_items_nowait(self, *items: _T) -> None:
-        """Put items into the queue."""
-        put_items_nowait(items, self._queue)
+    async def put_left(self, *items: _T) -> None:
+        """Put items into the queue at the start."""
+        await self._queue.put_left(*items)  # pragma: no cover
+
+    async def put_right(self, *items: _T) -> None:
+        """Put items into the queue at the end."""
+        await self._queue.put_right(*items)  # pragma: no cover
+
+    def put_left_nowait(self, *items: _T) -> None:
+        """Put items into the queue at the start without blocking."""
+        self._queue.put_left_nowait(*items)  # pragma: no cover
+
+    def put_right_nowait(self, *items: _T) -> None:
+        """Put items into the queue at the end without blocking."""
+        self._queue.put_right_nowait(*items)  # pragma: no cover
 
     async def run_until_empty(self) -> None:
         """Run until the queue is empty."""
         while not self.empty():
-            await self._process_items(*get_items_nowait(self._queue))
+            await self._process_queue()
         await self.stop()
-
-    @override
-    def _error_upon_core(self, error: Exception, /) -> None:
-        """Handle any errors upon running the core function."""
-        if self.logger is not None:
-            if isinstance(error, InfiniteQueueLooperError):
-                getLogger(name=self.logger).error(
-                    "%r encountered %s whilst processing %d item(s) %s; sleeping %s...",
-                    get_class_name(self),
-                    repr_error(error.error),
-                    len(error.items),
-                    get_repr(error.items),
-                    self._sleep_restart_desc,
-                )
-            else:
-                super()._error_upon_core(error)  # pragma: no cover
-
-
-@dataclass(kw_only=True, slots=True)
-class InfiniteQueueLooperError(Exception, Generic[_T]):
-    looper: InfiniteQueueLooper[Any, Any]
-    items: Sequence[_T]
-    error: Exception
 
 
 ##
@@ -879,7 +862,6 @@ __all__ = [
     "InfiniteLooper",
     "InfiniteLooperError",
     "InfiniteQueueLooper",
-    "InfiniteQueueLooperError",
     "StreamCommandOutput",
     "UniquePriorityQueue",
     "UniqueQueue",
