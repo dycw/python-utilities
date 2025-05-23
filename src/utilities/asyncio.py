@@ -8,6 +8,7 @@ from asyncio import (
     PriorityQueue,
     Queue,
     QueueEmpty,
+    QueueFull,
     Semaphore,
     StreamReader,
     Task,
@@ -17,6 +18,7 @@ from asyncio import (
     sleep,
     timeout,
 )
+from asyncio.mixins import _LoopBoundMixin
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
 from contextlib import (
     AbstractAsyncContextManager,
@@ -43,6 +45,8 @@ from typing import (
     override,
 )
 
+from typing_extensions import deprecated
+
 from utilities.datetime import (
     MINUTE,
     SECOND,
@@ -67,6 +71,7 @@ from utilities.types import (
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
     from asyncio.subprocess import Process
+    from collections import deque
     from collections.abc import AsyncIterator, Sequence
     from contextvars import Context
     from types import TracebackType
@@ -75,6 +80,119 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
+
+
+class EnhancedQueue(Queue[_T]):
+    """An asynchronous deque."""
+
+    @override
+    def __init__(self, maxsize: int = 0) -> None:
+        super().__init__(maxsize=maxsize)
+        self._queue: deque[_T]
+
+    # @override
+    # async def get(self) -> _T:
+    #     raise RuntimeError
+    #
+    # @override
+    # def get_nowait(self) -> _T:
+    #     raise RuntimeError
+
+    @override
+    @deprecated("Use `put_left`/`put_right` instead")
+    async def put(self, item: _T) -> None:
+        raise RuntimeError(item)
+
+    @override
+    @deprecated("Use `put_left_nowait`/`put_right_nowait` instead")
+    def put_nowait(self, item: _T) -> None:
+        raise RuntimeError(item)
+
+    async def put_left(self, item: _T) -> None:
+        """Put an item into the queue."""
+        while self.full():
+            putter = self._get_loop().create_future()
+            self._putters.append(putter)
+            try:
+                await putter
+            except:
+                putter.cancel()  # Just in case putter is not done yet.
+                try:
+                    # Clean self._putters from canceled putters.
+                    self._putters.remove(putter)
+                except ValueError:
+                    # The putter could be removed from self._putters by a
+                    # previous get_nowait call.
+                    pass
+                if not self.full() and not putter.cancelled():
+                    # We were woken up by get_nowait(), but can't take
+                    # the call.  Wake up the next in line.
+                    self._wakeup_next(self._putters)
+                raise
+        return self.put_left_nowait(item)
+
+    def put_left_nowait(self, item: _T) -> None:
+        """Put an item into the queue without blocking."""
+        if self.full():
+            raise QueueFull
+        self._put_left(item)
+        self._unfinished_tasks += 1
+        self._finished.clear()
+        self._wakeup_next(self._getters)
+
+    async def put_right(self, item: _T) -> None:
+        """Put an item into the queue."""
+        while self.full():
+            putter = self._get_loop().create_future()
+            self._putters.append(putter)
+            try:
+                await putter
+            except:
+                putter.cancel()  # Just in case putter is not done yet.
+                try:
+                    # Clean self._putters from canceled putters.
+                    self._putters.remove(putter)
+                except ValueError:
+                    # The putter could be removed from self._putters by a
+                    # previous get_nowait call.
+                    pass
+                if not self.full() and not putter.cancelled():
+                    # We were woken up by get_nowait(), but can't take
+                    # the call.  Wake up the next in line.
+                    self._wakeup_next(self._putters)
+                raise
+        return self.put_right_nowait(item)
+
+    def put_right_nowait(self, item: _T) -> None:
+        """Put an item into the queue without blocking."""
+        if self.full():
+            raise QueueFull
+        self._put_right(item)
+        self._unfinished_tasks += 1
+        self._finished.clear()
+        self._wakeup_next(self._getters)
+
+    # private
+
+    # @override
+    # def _init(self, maxsize: int = 0) -> None:
+    #     self._queue = deque(maxlen=None if maxsize == 0 else maxsize)
+
+    @override
+    def _get(self) -> _T:
+        return self._queue.popleft()
+
+    def _get_left(self) -> _T:
+        return self._queue.popleft()
+
+    def _put_left(self, item: _T) -> None:
+        self._queue.appendleft(item)
+
+    def _get_right(self) -> _T:
+        return self._queue.pop()
+
+    def _put_right(self, item: _T) -> None:
+        self._queue.append(item)
 
 
 ##
@@ -715,6 +833,7 @@ async def timeout_dur(
 
 
 __all__ = [
+    "EnhancedQueue",
     "EnhancedTaskGroup",
     "InfiniteLooper",
     "InfiniteLooperError",
