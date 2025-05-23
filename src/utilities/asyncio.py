@@ -150,11 +150,11 @@ class EnhancedQueue(Queue[_T]):
 
     async def put_left(self, *items: _T) -> None:
         """Put an item into the queue at the start."""
-        return self._put_left_or_right_nowait(self._put_left, *items)
+        return await self._put_left_or_right(self._put_left, *items)
 
     async def put_right(self, *items: _T) -> None:
         """Put an item into the queue."""
-        return self._put_left_or_right_nowait(self._put, *items)
+        return await self._put_left_or_right(self._put, *items)
 
     def put_left_nowait(self, *items: _T) -> None:
         """Put an item into the queue at the start without blocking."""
