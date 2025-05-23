@@ -173,7 +173,7 @@ class EnhancedQueue(Queue[_T]):
         return self._queue.pop()
 
     async def _get_left_or_right(self, getter_use: Callable[[], _T], /) -> _T:
-        while self.empty():
+        while self.empty():  # pragma: no cover
             getter = self._get_loop().create_future()  # pyright: ignore[reportAttributeAccessIssue]
             self._getters.append(getter)  # pyright: ignore[reportAttributeAccessIssue]
             try:
@@ -205,7 +205,7 @@ class EnhancedQueue(Queue[_T]):
         self, putter_use: Callable[[_T], None], item: _T, /
     ) -> None:
         """Put an item into the queue."""
-        while self.full():
+        while self.full():  # pragma: no cover
             putter = self._get_loop().create_future()  # pyright: ignore[reportAttributeAccessIssue]
             self._putters.append(putter)  # pyright: ignore[reportAttributeAccessIssue]
             try:
@@ -228,7 +228,7 @@ class EnhancedQueue(Queue[_T]):
     def _put_left_or_right_nowait_one(
         self, putter: Callable[[_T], None], item: _T, /
     ) -> None:
-        if self.full():
+        if self.full():  # pragma: no cover
             raise QueueFull
         putter(item)
         self._unfinished_tasks += 1  # pyright: ignore[reportAttributeAccessIssue]

@@ -70,8 +70,15 @@ if TYPE_CHECKING:
 
 @mark.only
 class TestEnhancedQueue:
-    @given(xs=lists(integers()), put_all=booleans(), wait=booleans())
-    async def test_left(self, *, xs: list[int], put_all: bool, wait: int) -> None:
+    @given(
+        xs=lists(integers()),
+        wait=booleans(),
+        put_all=booleans(),
+        get_reverse=booleans(),
+    )
+    async def test_left(
+        self, *, xs: list[int], wait: int, put_all: bool, get_reverse: bool
+    ) -> None:
         _ = assume(not ((len(xs) == 0) and wait))
         deq: deque[int] = deque()
         for x in xs:
@@ -91,13 +98,21 @@ class TestEnhancedQueue:
                 assert queue.qsize() == i
         assert list(deq) == xs[::-1]
         if wait:
-            res = await queue.get_all()
+            res = await queue.get_all(reverse=get_reverse)
         else:
-            res = queue.get_all_nowait()
-        assert res == xs[::-1]
+            res = queue.get_all_nowait(reverse=get_reverse)
+        expected = xs if get_reverse else xs[::-1]
+        assert res == expected
 
-    @given(xs=lists(integers()), put_all=booleans(), wait=booleans())
-    async def test_right(self, *, xs: list[int], put_all: bool, wait: int) -> None:
+    @given(
+        xs=lists(integers()),
+        wait=booleans(),
+        put_all=booleans(),
+        get_reverse=booleans(),
+    )
+    async def test_right(
+        self, *, xs: list[int], wait: int, put_all: bool, get_reverse: bool
+    ) -> None:
         _ = assume(not ((len(xs) == 0) and wait))
         deq: deque[int] = deque()
         for x in xs:
@@ -118,10 +133,11 @@ class TestEnhancedQueue:
                 assert queue.qsize() == i
         assert list(deq) == xs
         if wait:
-            res = await queue.get_all()
+            res = await queue.get_all(reverse=get_reverse)
         else:
-            res = queue.get_all_nowait()
-        assert res == xs
+            res = queue.get_all_nowait(reverse=get_reverse)
+        expected = xs[::-1] if get_reverse else xs
+        assert res == expected
 
 
 class TestEnhancedTaskGroup:
