@@ -821,7 +821,6 @@ class TestInfiniteQueueLooper:
             assert message == expected
 
 
-@mark.only
 class TestPutItems:
     @given(xs=lists(integers(), min_size=1), wait=booleans())
     async def test_main(self, *, xs: list[int], wait: bool) -> None:
