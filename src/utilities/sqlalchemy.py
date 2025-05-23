@@ -623,7 +623,8 @@ class Upserter(InfiniteQueueLooper[None, _InsertItem]):
     error_insert: type[Exception] = TimeoutError
 
     @override
-    async def _process_items(self, *items: _InsertItem) -> None:
+    async def _process_queue(self) -> None:
+        items = self._queue.get_all_nowait()
         await upsert_items(
             self.engine,
             *items,

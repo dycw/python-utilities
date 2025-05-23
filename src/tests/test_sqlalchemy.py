@@ -1169,7 +1169,7 @@ class TestUpserter:
         engine = await sqlalchemy_engines(data, table)
         pairs = [(id_, init) for id_, init, _ in triples]
         async with Upserter(duration=1.0, sleep_core=0.1, engine=engine) as upserter:
-            upserter.put_items_nowait((pairs, table))
+            upserter.put_right_nowait((pairs, table))
 
         sel = select(table)
         async with engine.begin() as conn:

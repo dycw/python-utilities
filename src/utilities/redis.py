@@ -597,8 +597,8 @@ class Publisher(InfiniteQueueLooper[None, tuple[str, EncodableT]]):
     timeout: Duration = _PUBLISH_TIMEOUT
 
     @override
-    async def _process_items(self, *items: tuple[str, EncodableT]) -> None:
-        for item in items:  # skipif-ci-and-not-linux
+    async def _process_queue(self) -> None:
+        for item in self._queue.get_all_nowait():  # skipif-ci-and-not-linux
             channel, data = item
             _ = await publish(
                 self.redis,

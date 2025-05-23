@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from asyncio import CancelledError, Event, Queue, TaskGroup, run, sleep, timeout
+from asyncio import CancelledError, Event, Queue, run, sleep
+from collections import deque
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from functools import partial
@@ -8,9 +9,10 @@ from itertools import chain, count
 from re import search
 from typing import TYPE_CHECKING, Any, ClassVar, Self, cast, override
 
-from hypothesis import HealthCheck, Phase, given, settings
+from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
+    booleans,
     data,
     integers,
     just,
@@ -22,6 +24,7 @@ from hypothesis.strategies import (
 from pytest import LogCaptureFixture, mark, param, raises
 
 from utilities.asyncio import (
+    EnhancedQueue,
     EnhancedTaskGroup,
     InfiniteLooper,
     InfiniteQueueLooper,
@@ -63,6 +66,77 @@ if TYPE_CHECKING:
         MaybeCallableEvent,
         MaybeType,
     )
+
+
+class TestEnhancedQueue:
+    @given(
+        xs=lists(integers()),
+        wait=booleans(),
+        put_all=booleans(),
+        get_reverse=booleans(),
+    )
+    async def test_left(
+        self, *, xs: list[int], wait: int, put_all: bool, get_reverse: bool
+    ) -> None:
+        _ = assume(not ((len(xs) == 0) and wait))
+        deq: deque[int] = deque()
+        for x in xs:
+            deq.appendleft(x)
+        queue: EnhancedQueue[int] = EnhancedQueue()
+        if put_all:
+            if wait:
+                await queue.put_left(*xs)
+            else:
+                queue.put_left_nowait(*xs)
+        else:
+            for i, x in enumerate(xs, start=1):
+                if wait:
+                    await queue.put_left(x)
+                else:
+                    queue.put_left_nowait(x)
+                assert queue.qsize() == i
+        assert list(deq) == xs[::-1]
+        if wait:
+            res = await queue.get_all(reverse=get_reverse)
+        else:
+            res = queue.get_all_nowait(reverse=get_reverse)
+        expected = xs if get_reverse else xs[::-1]
+        assert res == expected
+
+    @given(
+        xs=lists(integers()),
+        wait=booleans(),
+        put_all=booleans(),
+        get_reverse=booleans(),
+    )
+    async def test_right(
+        self, *, xs: list[int], wait: int, put_all: bool, get_reverse: bool
+    ) -> None:
+        _ = assume(not ((len(xs) == 0) and wait))
+        deq: deque[int] = deque()
+        for x in xs:
+            deq.append(x)
+        queue: EnhancedQueue[int] = EnhancedQueue()
+        if put_all:
+            if wait:
+                await queue.put_right(*xs)
+            else:
+                queue.put_right_nowait(*xs)
+            assert queue.qsize() == len(xs)
+        else:
+            for i, x in enumerate(xs, start=1):
+                if wait:
+                    await queue.put_right(x)
+                else:
+                    queue.put_right_nowait(x)
+                assert queue.qsize() == i
+        assert list(deq) == xs
+        if wait:
+            res = await queue.get_all(reverse=get_reverse)
+        else:
+            res = queue.get_all_nowait(reverse=get_reverse)
+        expected = xs[::-1] if get_reverse else xs
+        assert res == expected
 
 
 class TestEnhancedTaskGroup:
@@ -173,6 +247,24 @@ class TestGetEvent:
     def test_callable(self) -> None:
         event = Event()
         assert get_event(event=lambda: event) is event
+
+
+class TestGetItems:
+    @given(
+        xs=lists(integers(), min_size=1),
+        max_size=integers(1, 10) | none(),
+        wait=booleans(),
+    )
+    async def test_main(
+        self, *, xs: list[int], max_size: int | None, wait: bool
+    ) -> None:
+        queue: Queue[int] = Queue()
+        put_items_nowait(xs, queue)
+        if wait:
+            result = await get_items(queue, max_size=max_size)
+        else:
+            result = get_items_nowait(queue, max_size=max_size)
+        assert result == xs[:max_size]
 
 
 class TestInfiniteLooper:
@@ -386,9 +478,9 @@ class TestInfiniteLooper:
             Example(sleep_core=0.05, sleep_restart=0.05) as looper,
         ):
             ...
-        assert 4 <= looper.initializations <= 6
-        assert 0 <= looper.counter <= 7
-        assert 14 <= external <= 21
+        assert 3 <= looper.initializations <= 7
+        assert 0 <= looper.counter <= 8
+        assert 13 <= external <= 22
 
     async def test_with_coroutine_self_error(self) -> None:
         class CustomError(Exception): ...
@@ -661,13 +753,13 @@ class TestInfiniteQueueLooper:
             counter: int = 0
 
             @override
-            async def _process_items(self, *items: int) -> None:
-                self.counter += len(items)
+            async def _process_queue(self) -> None:
+                self.counter += len(self._queue.get_all_nowait())
 
         async with timeout_dur(duration=1.0), Example(sleep_core=0.05) as looper:
             await sleep(0.1)
             for i in range(10):
-                looper.put_items_nowait(i)
+                looper.put_right_nowait(i)
                 await sleep(0.05)
 
             assert looper.counter == 10
@@ -678,13 +770,13 @@ class TestInfiniteQueueLooper:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _process_items(self, *items: int) -> None:
-                self.output.update(items)
+            async def _process_queue(self) -> None:
+                self.output.update(self._queue.get_all_nowait())
 
         looper = Example(sleep_core=0.05)
         assert len(looper) == 0
         assert looper.empty()
-        looper.put_items_nowait(*range(n))
+        looper.put_right_nowait(*range(n))
         assert len(looper) == n
         assert not looper.empty()
 
@@ -694,11 +786,11 @@ class TestInfiniteQueueLooper:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _process_items(self, *items: int) -> None:
-                self.output.update(items)
+            async def _process_queue(self) -> None:
+                self.output.update(self._queue.get_all_nowait())
 
         looper = Example(sleep_core=0.05)
-        looper.put_items_nowait(*range(10))
+        looper.put_right_nowait(*range(10))
         async with looper:
             await looper.run_until_empty()
         assert looper.empty()
@@ -715,66 +807,32 @@ class TestInfiniteQueueLooper:
             output: set[int] = field(default_factory=set)
 
             @override
-            async def _process_items(self, *items: int) -> None:
-                raise CustomError(*items)
+            async def _process_queue(self) -> None:
+                raise CustomError
 
         async with (
             timeout_dur(duration=1.0),
             Example(sleep_core=0.05, logger=logger) as looper,
         ):
-            looper.put_items_nowait(1)
+            looper.put_left_nowait(1)
         if logger is not None:
             message = caplog.messages[0]
-            expected = "'Example' encountered CustomError(1) whilst processing 1 item(s) [1]; sleeping for 0:01:00..."
+            expected = "'Example' encountered 'CustomError()'; sleeping for 0:01:00..."
             assert message == expected
 
 
-class TestPutAndGetItems:
-    @given(xs=lists(integers(), min_size=1), max_size=integers(1, 10) | none())
-    async def test_put_then_get(self, *, xs: list[int], max_size: int | None) -> None:
+class TestPutItems:
+    @given(xs=lists(integers(), min_size=1), wait=booleans())
+    async def test_main(self, *, xs: list[int], wait: bool) -> None:
         queue: Queue[int] = Queue()
-        await put_items(xs, queue)
-        result = await get_items(queue, max_size=max_size)
-        if max_size is None:
-            assert result == xs
+        if wait:
+            put_items_nowait(xs, queue)
         else:
-            assert result == xs[:max_size]
-
-    @given(xs=lists(integers(), min_size=1), max_size=integers(1, 10) | none())
-    async def test_get_then_put(self, *, xs: list[int], max_size: int | None) -> None:
-        queue: Queue[int] = Queue()
-
-        async def put() -> None:
-            await sleep(0.01)
             await put_items(xs, queue)
-
-        async with TaskGroup() as tg:
-            task = tg.create_task(get_items(queue, max_size=max_size))
-            _ = tg.create_task(put())
-        result = task.result()
-        if max_size is None:
-            assert result == xs
-        else:
-            assert result == xs[:max_size]
-
-    async def test_empty(self) -> None:
-        queue: Queue[int] = Queue()
-        with raises(TimeoutError):  # noqa: PT012
-            async with timeout(0.01), TaskGroup() as tg:
-                _ = tg.create_task(get_items(queue))
-                _ = tg.create_task(sleep(0.02))
-
-
-class TestPutAndGetItemsNoWait:
-    @given(xs=lists(integers(), min_size=1), max_size=integers(1, 10) | none())
-    def test_main(self, *, xs: list[int], max_size: int | None) -> None:
-        queue: Queue[int] = Queue()
-        put_items_nowait(xs, queue)
-        result = get_items_nowait(queue, max_size=max_size)
-        if max_size is None:
-            assert result == xs
-        else:
-            assert result == xs[:max_size]
+        result: list[int] = []
+        while not queue.empty():
+            result.append(await queue.get())
+        assert result == xs
 
 
 class TestUniquePriorityQueue:
