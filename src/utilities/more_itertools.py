@@ -105,7 +105,7 @@ def bucket_mapping(
         case None, False:
             return mapping
         case None, True:
-            return {key: builtins.list(value) for key, value in mapping.items()}
+            return {k: builtins.list(v) for k, v in mapping.items()}
         case _, False:
             return {k: map(transform, v) for k, v in mapping.items()}
         case _, True:
