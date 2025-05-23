@@ -356,7 +356,7 @@ class TestInfiniteLooper:
 
         async def inc_external(obj: Example, /) -> None:
             nonlocal external
-            while True:
+            for _ in range(100):  # infinite doesn't work on CI
                 external += 1
                 obj.counter += 1
                 await sleep(0.05)
