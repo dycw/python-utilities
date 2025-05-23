@@ -150,7 +150,7 @@ class TestPublisher:
 
             async def sleep_then_put() -> None:
                 await sleep(0.1)
-                publisher.put_left((channel, obj))
+                publisher.put_right_nowait((channel, obj))
 
             with raises(ExceptionGroup):  # noqa: PT012
                 async with EnhancedTaskGroup(timeout=1.0) as tg:

@@ -606,7 +606,7 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
 
     @abstractmethod
     async def _process_queue(self) -> None:
-        """Process the items."""
+        """Process the queue."""
 
     def empty(self) -> bool:
         """Check if the queue is empty."""

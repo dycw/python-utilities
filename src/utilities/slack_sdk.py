@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from asyncio import Queue
 from dataclasses import dataclass
 from http import HTTPStatus
 from logging import NOTSET, Handler, LogRecord
@@ -47,15 +46,12 @@ class SlackHandler(Handler, InfiniteQueueLooper[None, str]):
         level: int = NOTSET,
         sleep_core: Duration = _SLEEP,
         sleep_restart: Duration = _SLEEP,
-        queue_type: type[Queue[str]] = Queue,
         sender: Callable[[str, str], Coroutine1[None]] = _send_adapter,
         timeout: Duration = _TIMEOUT,
     ) -> None:
-        InfiniteQueueLooper.__init__(  # InfiniteQueueLooper first
-            self, queue_type=queue_type
-        )
+        InfiniteQueueLooper.__init__(self)  # InfiniteQueueLooper first
         InfiniteQueueLooper.__post_init__(self)
-        Handler.__init__(self, level=level)
+        Handler.__init__(self, level=level)  # Handler next
         self.url = url
         self.sender = sender
         self.timeout = timeout
@@ -65,14 +61,14 @@ class SlackHandler(Handler, InfiniteQueueLooper[None, str]):
     @override
     def emit(self, record: LogRecord) -> None:
         try:
-            self.put_left(self.format(record))
+            self.put_right_nowait(self.format(record))
         except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
     @override
-    async def _process_items(self, *items: str) -> None:
-        """Process the first item."""
-        text = "\n".join(items)
+    async def _process_queue(self) -> None:
+        messages = self._queue.get_all_nowait()
+        text = "\n".join(messages)
         async with timeout_dur(duration=self.timeout):
             await self.sender(self.url, text)
 
