@@ -1,5 +1,4 @@
 altair
-astor
 asyncio
 atomicwrites
 atools
