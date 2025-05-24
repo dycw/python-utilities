@@ -235,15 +235,6 @@ wheels = [
 ]
 
 [[package]]
-name = "astor"
-version = "0.8.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/5a/21/75b771132fee241dfe601d39ade629548a9626d1d39f333fde31bc46febe/astor-0.8.1.tar.gz", hash = "sha256:6a6effda93f4e1ce9f618779b2dd1d9d84f1e32812c23a29b3fff6fd7f63fa5e", size = 35090, upload-time = "2019-12-10T01:50:35.51Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c3/88/97eef84f48fa04fbd6750e62dcceafba6c63c81b7ac1420856c8dcc0a3f9/astor-0.8.1-py2.py3-none-any.whl", hash = "sha256:070a54e890cefb5b3739d19f30f5a5ec840ffc9c50ffa7d23cc9fc1a38ebbfc5", size = 27488, upload-time = "2019-12-10T01:50:33.628Z" },
-]
-
-[[package]]
 name = "asttokens"
 version = "3.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -748,7 +739,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.124.1"
+version = "0.125.0"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },
@@ -778,9 +769,6 @@ zzz-test-altair = [
     { name = "polars-lts-cpu" },
     { name = "vl-convert-python" },
     { name = "whenever" },
-]
-zzz-test-astor = [
-    { name = "astor" },
 ]
 zzz-test-atomicwrites = [
     { name = "atomicwrites" },
@@ -1014,7 +1002,6 @@ dev = [
     { name = "aiohttp" },
     { name = "aiosqlite" },
     { name = "altair" },
-    { name = "astor" },
     { name = "asyncpg" },
     { name = "atomicwrites" },
     { name = "atools" },
@@ -1091,7 +1078,6 @@ requires-dist = [
     { name = "aiosqlite", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=0.21.0,<0.22" },
     { name = "aiosqlite", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=0.21.0,<0.22" },
     { name = "altair", marker = "extra == 'zzz-test-altair'", specifier = ">=5.5.0,<5.6" },
-    { name = "astor", marker = "extra == 'zzz-test-astor'", specifier = ">=0.8.1,<0.9" },
     { name = "asyncpg", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=0.30.0,<0.31" },
     { name = "asyncpg", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=0.30.0,<0.31" },
     { name = "asyncpg", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=0.30.0,<0.31" },
@@ -1233,14 +1219,13 @@ requires-dist = [
     { name = "whenever", marker = "extra == 'zzz-test-whenever'", specifier = ">=0.8.2,<0.9" },
     { name = "whenever", marker = "extra == 'zzz-test-zoneinfo'", specifier = ">=0.8.2,<0.9" },
 ]
-provides-extras = ["test", "zzz-test-altair", "zzz-test-astor", "zzz-test-asyncio", "zzz-test-atomicwrites", "zzz-test-atools", "zzz-test-cachetools", "zzz-test-click", "zzz-test-contextlib", "zzz-test-contextvars", "zzz-test-cryptography", "zzz-test-cvxpy", "zzz-test-dataclasses", "zzz-test-datetime", "zzz-test-enum", "zzz-test-errors", "zzz-test-eventkit", "zzz-test-fastapi", "zzz-test-fpdf2", "zzz-test-functions", "zzz-test-functools", "zzz-test-getpass", "zzz-test-git", "zzz-test-hashlib", "zzz-test-http", "zzz-test-hypothesis", "zzz-test-ipython", "zzz-test-iterables", "zzz-test-jupyter", "zzz-test-logging", "zzz-test-loguru", "zzz-test-luigi", "zzz-test-math", "zzz-test-memory-profiler", "zzz-test-modules", "zzz-test-more-itertools", "zzz-test-numpy", "zzz-test-operator", "zzz-test-optuna", "zzz-test-orjson", "zzz-test-os", "zzz-test-pathlib", "zzz-test-pickle", "zzz-test-platform", "zzz-test-polars", "zzz-test-pqdm", "zzz-test-pydantic", "zzz-test-pyinstrument", "zzz-test-pyrsistent", "zzz-test-pytest", "zzz-test-pytest-regressions", "zzz-test-python-dotenv", "zzz-test-random", "zzz-test-re", "zzz-test-redis", "zzz-test-rich", "zzz-test-scipy", "zzz-test-sentinel", "zzz-test-shelve", "zzz-test-slack-sdk", "zzz-test-socket", "zzz-test-sqlalchemy", "zzz-test-sqlalchemy-polars", "zzz-test-streamlit", "zzz-test-sys", "zzz-test-tempfile", "zzz-test-tenacity", "zzz-test-text", "zzz-test-threading", "zzz-test-timer", "zzz-test-traceback", "zzz-test-types", "zzz-test-typing", "zzz-test-tzlocal", "zzz-test-uuid", "zzz-test-version", "zzz-test-warnings", "zzz-test-whenever", "zzz-test-zipfile", "zzz-test-zoneinfo"]
+provides-extras = ["test", "zzz-test-altair", "zzz-test-asyncio", "zzz-test-atomicwrites", "zzz-test-atools", "zzz-test-cachetools", "zzz-test-click", "zzz-test-contextlib", "zzz-test-contextvars", "zzz-test-cryptography", "zzz-test-cvxpy", "zzz-test-dataclasses", "zzz-test-datetime", "zzz-test-enum", "zzz-test-errors", "zzz-test-eventkit", "zzz-test-fastapi", "zzz-test-fpdf2", "zzz-test-functions", "zzz-test-functools", "zzz-test-getpass", "zzz-test-git", "zzz-test-hashlib", "zzz-test-http", "zzz-test-hypothesis", "zzz-test-ipython", "zzz-test-iterables", "zzz-test-jupyter", "zzz-test-logging", "zzz-test-loguru", "zzz-test-luigi", "zzz-test-math", "zzz-test-memory-profiler", "zzz-test-modules", "zzz-test-more-itertools", "zzz-test-numpy", "zzz-test-operator", "zzz-test-optuna", "zzz-test-orjson", "zzz-test-os", "zzz-test-pathlib", "zzz-test-pickle", "zzz-test-platform", "zzz-test-polars", "zzz-test-pqdm", "zzz-test-pydantic", "zzz-test-pyinstrument", "zzz-test-pyrsistent", "zzz-test-pytest", "zzz-test-pytest-regressions", "zzz-test-python-dotenv", "zzz-test-random", "zzz-test-re", "zzz-test-redis", "zzz-test-rich", "zzz-test-scipy", "zzz-test-sentinel", "zzz-test-shelve", "zzz-test-slack-sdk", "zzz-test-socket", "zzz-test-sqlalchemy", "zzz-test-sqlalchemy-polars", "zzz-test-streamlit", "zzz-test-sys", "zzz-test-tempfile", "zzz-test-tenacity", "zzz-test-text", "zzz-test-threading", "zzz-test-timer", "zzz-test-traceback", "zzz-test-types", "zzz-test-typing", "zzz-test-tzlocal", "zzz-test-uuid", "zzz-test-version", "zzz-test-warnings", "zzz-test-whenever", "zzz-test-zipfile", "zzz-test-zoneinfo"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "aiohttp", specifier = ">=3.11.16,<3.12" },
     { name = "aiosqlite", specifier = ">=0.21.0,<0.22" },
     { name = "altair", specifier = ">=5.5.0,<5.6" },
-    { name = "astor", specifier = ">=0.8.1,<0.9" },
     { name = "asyncpg", specifier = ">=0.30.0,<0.31" },
     { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
     { name = "atools", specifier = ">=0.14.2,<0.15" },
@@ -1600,15 +1585,15 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.131.24"
+version = "6.131.25"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b0/9f/7170779fc48d25cd9d8d0cd6aef6f2ab5225dc4482e95067b4f90ac7d70e/hypothesis-6.131.24.tar.gz", hash = "sha256:769f6882fb1383d5d6035a889f9bc539549524cef4221facc35115c6a64c631f", size = 438764, upload-time = "2025-05-23T16:08:18.226Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/24/9e/ae4b5f271a532e37f9c918ab0085e41e976ff8500ac6448a964432b80b37/hypothesis-6.131.25.tar.gz", hash = "sha256:fa0d0842f257237b6daafabc1c22604d213a281cee4d7a7987e8c9efaae181be", size = 439530, upload-time = "2025-05-23T20:54:40.901Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1a/ef/f3df34176b17e97fa8529c81592e04197d729c9e40469e1b3fc0d874e2ae/hypothesis-6.131.24-py3-none-any.whl", hash = "sha256:d5b81dd8b38f85f728472489bf537bf4a6e2a85055df668d2638443ad10aed72", size = 503305, upload-time = "2025-05-23T16:08:14.856Z" },
+    { url = "https://files.pythonhosted.org/packages/0b/af/b8045b788b6b51684ef21536f4268b9e5081996f53a8a89ad2bd2f5e5422/hypothesis-6.131.25-py3-none-any.whl", hash = "sha256:a9660d8496515a52c7ca8aebd7335a05069130fde7027a169684827c97f544b4", size = 504127, upload-time = "2025-05-23T20:54:36.9Z" },
 ]
 
 [[package]]
