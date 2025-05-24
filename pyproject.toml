@@ -11,7 +11,6 @@ dev = [
   "aiohttp >= 3.11.16, < 3.12",  # for slack
   "aiosqlite >= 0.21.0, < 0.22",
   "altair >= 5.5.0, < 5.6",
-  "astor >= 0.8.1, < 0.9",
   "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
   "atomicwrites >= 1.4.1, < 1.5",
   "atools >= 0.14.2, < 0.15",
@@ -92,7 +91,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.124.1"
+version = "0.124.2"
 
 [project.optional-dependencies]
 test = [
@@ -119,7 +118,6 @@ zzz-test-altair = [
   "vl-convert-python >= 1.7.0, < 1.8",
   "whenever >= 0.8.2, < 0.9",
 ]
-zzz-test-astor = ["astor >= 0.8.1, < 0.9"]
 zzz-test-asyncio = []
 zzz-test-atomicwrites = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-atools = [
@@ -334,7 +332,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.124.1"
+current_version = "0.124.2"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -445,7 +443,6 @@ filterwarnings = [
   "ignore:Task .* without outputs has no custom complete.* method:UserWarning",  # luigi
   "ignore:There is no current event loop:DeprecationWarning",  # eventkit
   "ignore:Using fork.* can cause Polars to deadlock in the child process:RuntimeWarning",  # polars/pqdm
-  "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",  # astor
   "ignore:loop is closed:ResourceWarning",  # redis
   "ignore:unclosed <StreamWriter .*>:ResourceWarning",  # redis
   "ignore:unclosed <socket.*socket .*>:ResourceWarning",  # redis
