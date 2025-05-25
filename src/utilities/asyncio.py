@@ -624,11 +624,12 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
         """Put items into the queue at the end without blocking."""
         self._queue.put_right_nowait(*items)  # pragma: no cover
 
-    async def run_until_empty(self) -> None:
+    async def run_until_empty(self, *, stop: bool = False) -> None:
         """Run until the queue is empty."""
         while not self.empty():
             await self._process_queue()
-        await self.stop()
+        if stop:
+            await self.stop()
 
 
 ##

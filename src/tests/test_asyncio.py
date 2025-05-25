@@ -792,7 +792,7 @@ class TestInfiniteQueueLooper:
         looper = Example(sleep_core=0.05)
         looper.put_right_nowait(*range(10))
         async with looper:
-            await looper.run_until_empty()
+            await looper.run_until_empty(stop=True)
         assert looper.empty()
 
     @given(logger=just("logger") | none())
