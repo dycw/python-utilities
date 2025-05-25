@@ -129,40 +129,29 @@ def bucket_mapping(
     """Bucket the values of iterable into a mapping."""
     b = bucket(iterable, func)
     mapping = {key: b[key] for key in b}
-    match transform, list, unique:
-        case None, False, False:
-            return mapping
-        case None, True, False:
-            return {k: builtins.list(v) for k, v in mapping.items()}
-        case _, False, False:
-            return {k: map(transform, v) for k, v in mapping.items()}
-        case _, True, False:
-            return {k: builtins.list(map(transform, v)) for k, v in mapping.items()}
-        case None, _, True:
-            results_no_transform: Mapping[THashable, _T] = {}
-            error_no_transform: dict[THashable, tuple[_T, _T]] = {}
-            for key, value in mapping.items():
-                try:
-                    results_no_transform[key] = one(value)
-                except OneNonUniqueError as error:
-                    error_no_transform[key] = (error.first, error.second)
-            if len(error_no_transform) >= 1:
-                raise BucketMappingError(errors=error_no_transform)
-            return results_no_transform
-        case _, _, True:
+    match transform, list:
+        case None, False:
+            ...
+        case None, True:
+            mapping = {k: builtins.list(v) for k, v in mapping.items()}
+        case _, False:
             mapping = {k: map(transform, v) for k, v in mapping.items()}
-            results_transform: Mapping[THashable, _U] = {}
-            error_transform: dict[THashable, tuple[_U, _U]] = {}
-            for key, value in mapping.items():
-                try:
-                    results_transform[key] = one(value)
-                except OneNonUniqueError as error:
-                    error_transform[key] = (error.first, error.second)
-            if len(error_transform) >= 1:
-                raise BucketMappingError(errors=error_transform)
-            return results_transform
+        case _, True:
+            mapping = {k: builtins.list(map(transform, v)) for k, v in mapping.items()}
         case _ as never:
             assert_never(never)
+    if not unique:
+        return mapping
+    results = {}
+    error_no_transform: dict[THashable, tuple[_T, _T]] = {}
+    for key, value in mapping.items():
+        try:
+            results[key] = one(value)
+        except OneNonUniqueError as error:
+            error_no_transform[key] = (error.first, error.second)
+    if len(error_no_transform) >= 1:
+        raise BucketMappingError(errors=error_no_transform)
+    return results
 
 
 @dataclass(kw_only=True, slots=True)
