@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import CancelledError, Event, Queue, run, sleep
+from asyncio import CancelledError, Event, Queue, run, sleep, timeout
 from collections import deque
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -288,7 +288,7 @@ class TestInfiniteLooper:
             async def _core(self) -> None:
                 self.counter += 1
 
-        async with timeout_dur(duration=1.0), Example(sleep_core=0.05) as looper:
+        async with timeout(1.0), Example(sleep_core=0.05) as looper:
             pass
         assert 15 <= looper.counter <= 25
 
@@ -316,10 +316,7 @@ class TestInfiniteLooper:
             async def _teardown(self) -> None:
                 self.teardowns += 1
 
-        async with (
-            timeout_dur(duration=1.0),
-            Example(sleep_core=0.05, sleep_restart=0.05) as looper,
-        ):
+        async with timeout(1.0), Example(sleep_core=0.05, sleep_restart=0.05) as looper:
             pass
         assert 3 <= looper.initializations <= 5
         assert 0 <= looper.counter <= 5
@@ -380,9 +377,9 @@ class TestInfiniteLooper:
         looper = Example()
         for _ in range(2):
             assert not looper.running
-            async with timeout_dur(duration=0.2), looper:
+            async with timeout(0.2), looper:
                 assert looper.running
-                async with timeout_dur(duration=0.1), looper:
+                async with timeout(0.1), looper:
                     assert looper.running
                 assert looper.running
             assert not looper.running
@@ -433,7 +430,7 @@ class TestInfiniteLooper:
                 yield (True, TrueError)
                 yield (False, FalseError)
 
-        async with timeout_dur(duration=1.0), Example(sleep_core=0.05) as looper:
+        async with timeout(1.0), Example(sleep_core=0.05) as looper:
             ...
         match n % 2 == 0:
             case True:
@@ -473,10 +470,7 @@ class TestInfiniteLooper:
             def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
                 yield partial(inc_external, self)
 
-        async with (
-            timeout_dur(duration=1.0),
-            Example(sleep_core=0.05, sleep_restart=0.05) as looper,
-        ):
+        async with timeout(1.0), Example(sleep_core=0.05, sleep_restart=0.05) as looper:
             ...
         assert 3 <= looper.initializations <= 7
         assert 0 <= looper.counter <= 8
@@ -508,10 +502,7 @@ class TestInfiniteLooper:
             def _yield_coroutines(self) -> Iterator[Callable[[], Coroutine1[None]]]:
                 yield dummy
 
-        async with (
-            timeout_dur(duration=1.0),
-            Example(sleep_core=0.05, sleep_restart=0.05) as looper,
-        ):
+        async with timeout(1.0), Example(sleep_core=0.05, sleep_restart=0.05) as looper:
             ...
         assert 3 <= looper.initializations <= 5
         assert 0 <= looper.counter <= 5
@@ -551,7 +542,7 @@ class TestInfiniteLooper:
             def _yield_loopers(self) -> Iterator[InfiniteLooper]:
                 yield self.child
 
-        async with timeout_dur(duration=1.0), Parent(sleep_core=0.05) as parent:
+        async with timeout(1.0), Parent(sleep_core=0.05) as parent:
             ...
         assert 15 <= parent.counter <= 25
         assert 15 <= parent.child.counter <= 25
@@ -591,7 +582,7 @@ class TestInfiniteLooper:
                 raise NotImplementedError
 
         async with (
-            timeout_dur(duration=1.0),
+            timeout(1.0),
             Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger),
         ):
             ...
@@ -620,7 +611,7 @@ class TestInfiniteLooper:
                 raise CustomError
 
         async with (
-            timeout_dur(duration=1.0),
+            timeout(1.0),
             Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger),
         ):
             ...
@@ -665,7 +656,7 @@ class TestInfiniteLooper:
                 yield (None, Custom1Error)
 
         async with (
-            timeout_dur(duration=1.0),
+            timeout(1.0),
             Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger),
         ):
             ...
@@ -711,7 +702,7 @@ class TestInfiniteLooper:
                 yield dummy
 
         async with (
-            timeout_dur(duration=1.0),
+            timeout(1.0),
             Example(sleep_core=0.05, sleep_restart=sleep_restart, logger=logger),
         ):
             ...
@@ -746,6 +737,7 @@ Sleeping {desc}..."""
                 ...
 
 
+@mark.only
 class TestInfiniteQueueLooper:
     async def test_main(self) -> None:
         @dataclass(kw_only=True)
@@ -756,7 +748,7 @@ class TestInfiniteQueueLooper:
             async def _process_queue(self) -> None:
                 self.counter += len(self._queue.get_all_nowait())
 
-        async with timeout_dur(duration=1.0), Example(sleep_core=0.05) as looper:
+        async with timeout(1.0), Example(sleep_core=0.05) as looper:
             await sleep(0.1)
             for i in range(10):
                 looper.put_right_nowait(i)
@@ -780,7 +772,21 @@ class TestInfiniteQueueLooper:
         assert len(looper) == n
         assert not looper.empty()
 
-    async def test_run_until_empty(self) -> None:
+    async def test_run_until_empty_no_stop(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(InfiniteQueueLooper[None, int]):
+            output: set[int] = field(default_factory=set)
+
+            @override
+            async def _process_queue(self) -> None:
+                self.output.update(self._queue.get_all_nowait())
+
+        looper = Example(sleep_core=0.05)
+        looper.put_right_nowait(*range(10))
+        async with timeout(1.0), looper:
+            await looper.run_until_empty()
+
+    async def test_run_until_empty_stop(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteQueueLooper[None, int]):
             output: set[int] = field(default_factory=set)
@@ -810,10 +816,7 @@ class TestInfiniteQueueLooper:
             async def _process_queue(self) -> None:
                 raise CustomError
 
-        async with (
-            timeout_dur(duration=1.0),
-            Example(sleep_core=0.05, logger=logger) as looper,
-        ):
+        async with timeout(1.0), Example(sleep_core=0.05, logger=logger) as looper:
             looper.put_left_nowait(1)
         if logger is not None:
             message = caplog.messages[0]
