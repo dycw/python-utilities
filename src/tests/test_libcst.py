@@ -2,11 +2,24 @@ from __future__ import annotations
 
 from hypothesis import given
 from hypothesis.strategies import sampled_from
-from libcst import Dot, Expr, ImportAlias, ImportFrom, Module, Name, SimpleStatementLine
+from libcst import (
+    Attribute,
+    Dot,
+    Expr,
+    Import,
+    ImportAlias,
+    ImportFrom,
+    ImportStar,
+    Module,
+    Name,
+    SimpleStatementLine,
+)
 from pytest import raises
 
+from utilities.iterables import one
 from utilities.libcst import (
-    ParseImportError,
+    _ParseImportAliasError,
+    _ParseImportEmptyModuleError,
     generate_f_string,
     generate_from_import,
     generate_import,
@@ -38,9 +51,6 @@ class TestGenerateFromImport:
         imp = generate_from_import(module, name, asname=asname)
         result = Module([SimpleStatementLine([imp])]).code.strip("\n")
         assert result == expected
-        parsed = parse_import(imp)
-        assert parsed.module == module
-        assert parsed.name == name
 
 
 class TestGenerateImport:
@@ -57,16 +67,52 @@ class TestGenerateImport:
         imp = generate_import(module, asname=asname)
         result = Module([SimpleStatementLine([imp])]).code.strip("\n")
         assert result == expected
-        parsed = parse_import(imp)
-        assert parsed.module == module
-        assert parsed.name is None
 
 
 class TestParseImport:
-    def test_error(self) -> None:
+    def test_import_one_name(self) -> None:
+        imp = Import(names=[ImportAlias(Name("foo"))])
+        parsed = one(parse_import(imp))
+        assert parsed.module == "foo"
+        assert parsed.name is None
+
+    def test_import_one_attr(self) -> None:
+        imp = Import(names=[ImportAlias(Attribute(Name("foo"), Name("bar")))])
+        parsed = one(parse_import(imp))
+        assert parsed.module == "foo.bar"
+        assert parsed.name is None
+
+    def test_import_many(self) -> None:
+        imp = Import(names=[ImportAlias(Name("foo")), ImportAlias(Name("bar"))])
+        result = parse_import(imp)
+        assert len(result) == 2
+        first, second = result
+        assert first.module == "foo"
+        assert first.name is None
+        assert second.module == "bar"
+        assert second.name is None
+
+    def test_import_star(self) -> None:
+        imp = ImportFrom(module=Name("foo"), names=ImportStar())
+        result = parse_import(imp)
+        assert result.module == "foo"
+        assert result.name == "*"
+
+    def test_error_empty_module(self) -> None:
         alias = ImportAlias(name=Name("foo"))
         imp = ImportFrom(module=None, names=[alias], relative=[Dot()])
-        with raises(ParseImportError, match="Module must not be None; got .*"):
+        with raises(
+            _ParseImportEmptyModuleError, match="Module must not be None; got .*"
+        ):
+            _ = parse_import(imp)
+
+    def test_error_alias(self) -> None:
+        alias = ImportAlias(name=Attribute(Name("foo"), Name("bar")))
+        imp = ImportFrom(module=Name("baz"), names=[alias])
+        with raises(
+            _ParseImportAliasError,
+            match=r"Invalid alias name; got module 'baz' and attribute 'foo\.bar'",
+        ):
             _ = parse_import(imp)
 
 

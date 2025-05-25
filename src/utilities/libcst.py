@@ -56,25 +56,18 @@ class _ParseImportOutput:
     name: str | None = None
 
 
-def parse_import(import_: Import | ImportFrom, /) -> _ParseImportOutput:
+def parse_import(import_: Import | ImportFrom, /) -> Sequence[_ParseImportOutput]:
     """Parse an import."""
     match import_:
         case Import():
-            attr_or_name = import_.names[0].name
-            return _ParseImportOutput(module=join_dotted_str(attr_or_name))
+            return [_parse_import_one(n) for n in import_.names]
         case ImportFrom():
             if (attr_or_name := import_.module) is None:
-                raise ParseImportError(import_=import_)
-                return _ParseImportOutput(module="")
+                raise _ParseImportEmptyModuleError(import_=import_)
             module = join_dotted_str(attr_or_name)
             match import_.names:
-                case Sequence() as imports:
-                    first = imports[0]
-                    match first.name:
-                        case Name(name):
-                            ...
-                        case _:
-                            raise TypeError(*[f"{first.name=}"])
+                case Sequence() as names:
+                    return [_parse_import_from_one(module, n) for n in names]
                 case ImportStar():
                     name = "*"
                 case _ as never:
@@ -84,13 +77,42 @@ def parse_import(import_: Import | ImportFrom, /) -> _ParseImportOutput:
             assert_never(never)
 
 
+def _parse_import_one(alias: ImportAlias, /) -> _ParseImportOutput:
+    return _ParseImportOutput(module=join_dotted_str(alias.name))
+
+
+def _parse_import_from_one(module: str, alias: ImportAlias, /) -> _ParseImportOutput:
+    match alias.name:
+        case Name(name):
+            return _ParseImportOutput(module=module, name=name)
+        case Attribute() as attr:
+            raise _ParseImportAliasError(module=module, attr=attr)
+        case _ as never:
+            assert_never(never)
+
+
 @dataclass(kw_only=True, slots=True)
-class ParseImportError(Exception):
+class ParseImportError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ParseImportEmptyModuleError(ParseImportError):
     import_: ImportFrom
 
     @override
     def __str__(self) -> str:
         return f"Module must not be None; got {self.import_}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ParseImportAliasError(ParseImportError):
+    module: str
+    attr: Attribute
+
+    @override
+    def __str__(self) -> str:
+        attr = self.attr
+        return f"Invalid alias name; got module {self.module!r} and attribute '{attr.value.value}.{attr.attr.value}'"
 
 
 ##
