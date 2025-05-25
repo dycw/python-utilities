@@ -69,10 +69,9 @@ def parse_import(import_: Import | ImportFrom, /) -> Sequence[_ParseImportOutput
                 case Sequence() as names:
                     return [_parse_import_from_one(module, n) for n in names]
                 case ImportStar():
-                    name = "*"
+                    return [_ParseImportOutput(module=module, name="*")]
                 case _ as never:
                     assert_never(never)
-            return _ParseImportOutput(module=module, name=name)
         case _ as never:
             assert_never(never)
 

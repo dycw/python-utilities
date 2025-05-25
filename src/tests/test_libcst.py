@@ -92,9 +92,27 @@ class TestParseImport:
         assert second.module == "bar"
         assert second.name is None
 
-    def test_import_star(self) -> None:
-        imp = ImportFrom(module=Name("foo"), names=ImportStar())
+    def test_from_import_one(self) -> None:
+        imp = ImportFrom(module=Name("foo"), names=[ImportAlias(Name("bar"))])
+        result = one(parse_import(imp))
+        assert result.module == "foo"
+        assert result.name == "bar"
+
+    def test_from_import_many(self) -> None:
+        imp = ImportFrom(
+            module=Name("foo"),
+            names=[ImportAlias(Name("bar")), ImportAlias(Name("baz"))],
+        )
         result = parse_import(imp)
+        first, second = result
+        assert first.module == "foo"
+        assert first.name == "bar"
+        assert second.module == "foo"
+        assert second.name == "baz"
+
+    def test_from_import_star(self) -> None:
+        imp = ImportFrom(module=Name("foo"), names=ImportStar())
+        result = one(parse_import(imp))
         assert result.module == "foo"
         assert result.name == "*"
 
