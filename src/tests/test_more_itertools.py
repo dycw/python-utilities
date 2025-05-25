@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from re import escape
 from typing import TYPE_CHECKING, Any, ClassVar, TypeGuard
 
 from pytest import mark, param, raises
 
 from utilities.more_itertools import (
+    BucketMappingError,
     Split,
     bucket_mapping,
     partition_list,
@@ -63,6 +65,46 @@ class TestBucketMapping:
         assert mapping["a"] == [1, 2]
         assert mapping["b"] == [1, 2, 3]
         assert mapping["c"] == [1, 2]
+
+    iterable_unique: ClassVar[list[str]] = ["a1", "b2", "c3"]
+
+    def test_unique(self) -> None:
+        mapping = bucket_mapping(self.iterable_unique, lambda x: x[0], unique=True)
+        expected = {"a": "a1", "b": "b2", "c": "c3"}
+        assert mapping == expected
+
+    def test_transform_and_unique(self) -> None:
+        mapping = bucket_mapping(
+            self.iterable_unique,
+            lambda x: x[0],
+            transform=lambda x: int(x[-1]),
+            unique=True,
+        )
+        expected = {"a": 1, "b": 2, "c": 3}
+        assert mapping == expected
+
+    def test_error_unique(self) -> None:
+        with raises(
+            BucketMappingError,
+            match=escape(
+                "Buckets must contain exactly one item each; got 'a' (#1: 'a1', #2: 'a2'), 'b' (#1: 'b1', #2: 'b2'), 'c' (#1: 'c1', #2: 'c2')"
+            ),
+        ):
+            _ = bucket_mapping(self.iterable, lambda x: x[0], unique=True)
+
+    def test_error_transform_and_unique(self) -> None:
+        with raises(
+            BucketMappingError,
+            match=escape(
+                "Buckets must contain exactly one item each; got 'a' (#1: 1, #2: 2), 'b' (#1: 1, #2: 2), 'c' (#1: 1, #2: 2)"
+            ),
+        ):
+            _ = bucket_mapping(
+                self.iterable,
+                lambda x: x[0],
+                transform=lambda x: int(x[-1]),
+                unique=True,
+            )
 
 
 class TestPartitionList:

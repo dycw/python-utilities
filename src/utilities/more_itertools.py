@@ -21,12 +21,14 @@ from more_itertools import bucket, partition, split_into
 from more_itertools import peekable as _peekable
 
 from utilities.functions import get_class_name
+from utilities.iterables import OneNonUniqueError, one
+from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import THashable
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 
-    from utilities.types import THashable
 
 _T = TypeVar("_T")
 _U = TypeVar("_U")
@@ -35,6 +37,26 @@ _U = TypeVar("_U")
 ##
 
 
+@overload
+def bucket_mapping(
+    iterable: Iterable[_T],
+    func: Callable[[_T], THashable],
+    /,
+    *,
+    transform: Callable[[_T], _U],
+    list: bool = False,
+    unique: Literal[True],
+) -> Mapping[THashable, _U]: ...
+@overload
+def bucket_mapping(
+    iterable: Iterable[_T],
+    func: Callable[[_T], THashable],
+    /,
+    *,
+    transform: Callable[[_T], _U] | None = None,
+    list: bool = False,
+    unique: Literal[True],
+) -> Mapping[THashable, _T]: ...
 @overload
 def bucket_mapping(
     iterable: Iterable[_T],
@@ -79,11 +101,14 @@ def bucket_mapping(
     *,
     transform: Callable[[_T], _U] | None = None,
     list: bool = False,
+    unique: bool = False,
 ) -> (
     Mapping[THashable, Iterator[_T]]
     | Mapping[THashable, Iterator[_U]]
     | Mapping[THashable, Sequence[_T]]
     | Mapping[THashable, Sequence[_U]]
+    | Mapping[THashable, _T]
+    | Mapping[THashable, _U]
 ): ...
 def bucket_mapping(
     iterable: Iterable[_T],
@@ -92,26 +117,55 @@ def bucket_mapping(
     *,
     transform: Callable[[_T], _U] | None = None,
     list: bool = False,  # noqa: A002
+    unique: bool = False,
 ) -> (
     Mapping[THashable, Iterator[_T]]
     | Mapping[THashable, Iterator[_U]]
     | Mapping[THashable, Sequence[_T]]
     | Mapping[THashable, Sequence[_U]]
+    | Mapping[THashable, _T]
+    | Mapping[THashable, _U]
 ):
     """Bucket the values of iterable into a mapping."""
     b = bucket(iterable, func)
     mapping = {key: b[key] for key in b}
     match transform, list:
         case None, False:
-            return mapping
+            ...
         case None, True:
-            return {k: builtins.list(v) for k, v in mapping.items()}
+            mapping = {k: builtins.list(v) for k, v in mapping.items()}
         case _, False:
-            return {k: map(transform, v) for k, v in mapping.items()}
+            mapping = {k: map(transform, v) for k, v in mapping.items()}
         case _, True:
-            return {k: builtins.list(map(transform, v)) for k, v in mapping.items()}
+            mapping = {k: builtins.list(map(transform, v)) for k, v in mapping.items()}
         case _ as never:
             assert_never(never)
+    if not unique:
+        return mapping
+    results = {}
+    error_no_transform: dict[THashable, tuple[_T, _T]] = {}
+    for key, value in mapping.items():
+        try:
+            results[key] = one(value)
+        except OneNonUniqueError as error:
+            error_no_transform[key] = (error.first, error.second)
+    if len(error_no_transform) >= 1:
+        raise BucketMappingError(errors=error_no_transform)
+    return results
+
+
+@dataclass(kw_only=True, slots=True)
+class BucketMappingError(Exception, Generic[THashable, _U]):
+    errors: Mapping[THashable, tuple[_U, _U]]
+
+    @override
+    def __str__(self) -> str:
+        parts = [
+            f"{get_repr(key)} (#1: {get_repr(first)}, #2: {get_repr(second)})"
+            for key, (first, second) in self.errors.items()
+        ]
+        desc = ", ".join(parts)
+        return f"Buckets must contain exactly one item each; got {desc}"
 
 
 ##
@@ -264,6 +318,7 @@ def _yield_splits3(
 
 
 __all__ = [
+    "BucketMappingError",
     "Split",
     "bucket_mapping",
     "partition_list",
