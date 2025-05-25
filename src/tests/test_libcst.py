@@ -13,7 +13,7 @@ class TestGenerateFromImport:
             ("foo", "bar", None, "from foo import bar"),
             ("foo", "bar", "bar2", "from foo import bar as bar2"),
             ("foo.bar", "baz", None, "from foo.bar import baz"),
-            ("foo.bar", "baz", "baz2", "from foo.bar import baz2"),
+            ("foo.bar", "baz", "baz2", "from foo.bar import baz as baz2"),
         ])
     )
     def test_main(self, *, case: tuple[str, str, str | None, str]) -> None:
