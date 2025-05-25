@@ -25,7 +25,7 @@ dev = [
   "fpdf2 >= 2.8.3, < 2.9",
   "greenlet >= 3.2.0, < 3.3",  # for sqlalchemy async
   "httpx >= 0.28.1, < 0.29",  # for fastapi
-  "hypothesis >= 6.131.24, < 6.132",
+  "hypothesis >= 6.131.27, < 6.132",
   "img2pdf >= 0.6.0, < 0.7",
   "lightweight-charts >= 2.1, < 2.2",
   "loguru >= 0.7.3, < 0.8",
@@ -43,7 +43,7 @@ dev = [
   "pqdm >= 0.2.0, < 0.3",
   "psycopg2-binary >= 2.9.10, < 2.10",  # for sqlalchemy
   "pydantic >= 2.11.4, < 2.12",
-  "pyinstrument >= 5.0.0, < 5.1",
+  "pyinstrument >= 5.0.2, < 5.1",
   "pyrsistent >= 0.20.0, < 0.21",
   "pytest >= 8.3.5, < 8.4",
   "pytest-regressions >= 2.7.0, < 2.8",
@@ -91,11 +91,11 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.125.0"
+version = "0.125.1"
 
 [project.optional-dependencies]
 test = [
-  "hypothesis >= 6.131.24, < 6.132",
+  "hypothesis >= 6.131.27, < 6.132",
   "pytest >= 8.3.5, < 8.4",
   "pytest-asyncio >= 0.26.0, < 0.27",
   "pytest-cov >= 6.1.1, < 6.2",
@@ -172,7 +172,7 @@ zzz-test-hypothesis = [
   "aiosqlite >= 0.21.0, < 0.22",
   "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
   "greenlet >= 3.2.0, < 3.3",  # for sqlalchemy async
-  "hypothesis >= 6.131.24, < 6.132",
+  "hypothesis >= 6.131.27, < 6.132",
   "luigi >= 3.6.0, < 3.7",
   "numpy >= 2.2.6, < 2.3",
   "pathvalidate >= 3.2.3, < 3.3",
@@ -238,7 +238,7 @@ zzz-test-pydantic = [
 ]
 zzz-test-pyinstrument = [
   "atomicwrites >= 1.4.1, < 1.5",
-  "pyinstrument >= 5.0.0, < 5.1",
+  "pyinstrument >= 5.0.2, < 5.1",
   "tzlocal >= 5.3.1, < 5.4",
 ]
 zzz-test-pyrsistent = ["pyrsistent >= 0.20.0, < 0.21"]
@@ -332,7 +332,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.125.0"
+current_version = "0.125.1"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"

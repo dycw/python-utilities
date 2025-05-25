@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from asyncio import sleep
+from asyncio import sleep, timeout
 from re import search
 
 from tests.conftest import SKIPIF_CI
-from utilities.asyncio import timeout_dur
 from utilities.fastapi import PingReceiver
 
 
@@ -14,7 +13,7 @@ class TestPingReceiver:
         port = 5465
         assert await PingReceiver.ping(port) is False
         await sleep(0.1)
-        async with timeout_dur(duration=1.0), PingReceiver(port=port):
+        async with timeout(1.0), PingReceiver(port=port):
             await sleep(0.1)
             result = await PingReceiver.ping(port)
             assert isinstance(result, str)
