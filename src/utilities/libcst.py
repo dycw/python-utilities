@@ -8,7 +8,6 @@ from libcst import (
     AsName,
     Attribute,
     BaseExpression,
-    BaseSmallStatement,
     FormattedString,
     FormattedStringExpression,
     FormattedStringText,
@@ -18,16 +17,7 @@ from libcst import (
     ImportStar,
     Module,
     Name,
-    SimpleStatementLine,
 )
-
-
-def generate_import(module: str, /, *, asname: str | None = None) -> Import:
-    """Generate an `Import` object."""
-    alias = ImportAlias(
-        name=_split_dotted(module), asname=AsName(Name(asname)) if asname else None
-    )
-    return Import(names=[alias])
 
 
 def generate_from_import(
@@ -37,15 +27,26 @@ def generate_from_import(
     alias = ImportAlias(
         name=Name(name), asname=AsName(Name(asname)) if asname else None
     )
-    return ImportFrom(module=_split_dotted(module), names=[alias])
+    return ImportFrom(module=split_dotted_str(module), names=[alias])
 
 
-def _split_dotted(dotted: str, /) -> Name | Attribute:
-    parts = dotted.split(".")
-    node = Name(parts[0])
-    for part in parts[1:]:
-        node = Attribute(value=node, attr=Name(part))
-    return node
+def generate_f_string(var: str, suffix: str, /) -> FormattedString:
+    """Generate an f-string."""
+    return FormattedString([
+        FormattedStringExpression(expression=Name(var)),
+        FormattedStringText(suffix),
+    ])
+
+
+def generate_import(module: str, /, *, asname: str | None = None) -> Import:
+    """Generate an `Import` object."""
+    alias = ImportAlias(
+        name=split_dotted_str(module), asname=AsName(Name(asname)) if asname else None
+    )
+    return Import(names=[alias])
+
+
+##
 
 
 @dataclass(kw_only=True, slots=True)
@@ -59,11 +60,11 @@ def parse_import(import_: Import | ImportFrom, /) -> _ParseImportOutput:
     match import_:
         case Import():
             attr_or_name = import_.names[0].name
-            return _ParseImportOutput(module=_join_dotted(attr_or_name))
+            return _ParseImportOutput(module=join_dotted_str(attr_or_name))
         case ImportFrom():
             if (attr_or_name := import_.module) is None:
                 return _ParseImportOutput(module="")
-            module = _join_dotted(attr_or_name)
+            module = join_dotted_str(attr_or_name)
             match import_.names:
                 case Sequence() as imports:
                     first = imports[0]
@@ -77,7 +78,20 @@ def parse_import(import_: Import | ImportFrom, /) -> _ParseImportOutput:
             return _ParseImportOutput(module=module, name=name)
 
 
-def _join_dotted(name_or_attr: Name | Attribute, /) -> str:
+##
+
+
+def split_dotted_str(dotted: str, /) -> Name | Attribute:
+    """Split a dotted string into a name/attribute."""
+    parts = dotted.split(".")
+    node = Name(parts[0])
+    for part in parts[1:]:
+        node = Attribute(value=node, attr=Name(part))
+    return node
+
+
+def join_dotted_str(name_or_attr: Name | Attribute, /) -> str:
+    """Join a dotted from from a name/attribute."""
     parts: Sequence[str] = []
     curr: BaseExpression | Name | Attribute = name_or_attr
     while True:
@@ -93,15 +107,7 @@ def _join_dotted(name_or_attr: Name | Attribute, /) -> str:
     return ".".join(reversed(parts))
 
 
-def fstring(var: str, suffix: str, /) -> FormattedString:
-    return FormattedString([
-        FormattedStringExpression(expression=Name(var)),
-        FormattedStringText(suffix),
-    ])
-
-
-def render_base_small_statement(node: BaseSmallStatement, /) -> str:
-    return Module([SimpleStatementLine([node])]).code
+##
 
 
 def render_module(source: str | Module, /) -> str:
@@ -111,3 +117,14 @@ def render_module(source: str | Module, /) -> str:
             return check_output(["ruff", "format", "-"], input=text, text=True)
         case Module() as module:
             return render_module(module.code)
+
+
+##
+
+
+__all__ = [
+    "generate_f_string",
+    "generate_from_import",
+    "generate_import",
+    "render_module",
+]
