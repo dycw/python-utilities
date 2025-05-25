@@ -64,6 +64,23 @@ class TestBucketMapping:
         assert mapping["b"] == [1, 2, 3]
         assert mapping["c"] == [1, 2]
 
+    iterable_unique: ClassVar[list[str]] = ["a1", "b2", "c3"]
+
+    def test_unique(self) -> None:
+        mapping = bucket_mapping(self.iterable_unique, lambda x: x[0], unique=True)
+        expected = {"a": "a1", "b": "b2", "c": "c3"}
+        assert mapping == expected
+
+    def test_transform_and_unique(self) -> None:
+        mapping = bucket_mapping(
+            self.iterable_unique,
+            lambda x: x[0],
+            transform=lambda x: int(x[-1]),
+            unique=True,
+        )
+        expected = {"a": 1, "b": 2, "c": 3}
+        assert mapping == expected
+
 
 class TestPartitionList:
     def test_main(self) -> None:

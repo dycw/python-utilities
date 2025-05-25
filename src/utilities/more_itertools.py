@@ -21,12 +21,13 @@ from more_itertools import bucket, partition, split_into
 from more_itertools import peekable as _peekable
 
 from utilities.functions import get_class_name
+from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import THashable
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 
-    from utilities.types import THashable
 
 _T = TypeVar("_T")
 _U = TypeVar("_U")
@@ -35,6 +36,26 @@ _U = TypeVar("_U")
 ##
 
 
+@overload
+def bucket_mapping(
+    iterable: Iterable[_T],
+    func: Callable[[_T], THashable],
+    /,
+    *,
+    transform: Callable[[_T], _U],
+    list: bool = False,
+    unique: Literal[True],
+) -> Mapping[THashable, _U]: ...
+@overload
+def bucket_mapping(
+    iterable: Iterable[_T],
+    func: Callable[[_T], THashable],
+    /,
+    *,
+    transform: Callable[[_T], _U] | None = None,
+    list: bool = False,
+    unique: Literal[True],
+) -> Mapping[THashable, _T]: ...
 @overload
 def bucket_mapping(
     iterable: Iterable[_T],
@@ -79,11 +100,14 @@ def bucket_mapping(
     *,
     transform: Callable[[_T], _U] | None = None,
     list: bool = False,
+    unique: bool = False,
 ) -> (
     Mapping[THashable, Iterator[_T]]
     | Mapping[THashable, Iterator[_U]]
     | Mapping[THashable, Sequence[_T]]
     | Mapping[THashable, Sequence[_U]]
+    | Mapping[THashable, _T]
+    | Mapping[THashable, _U]
 ): ...
 def bucket_mapping(
     iterable: Iterable[_T],
@@ -92,26 +116,57 @@ def bucket_mapping(
     *,
     transform: Callable[[_T], _U] | None = None,
     list: bool = False,  # noqa: A002
+    unique: bool = False,
 ) -> (
     Mapping[THashable, Iterator[_T]]
     | Mapping[THashable, Iterator[_U]]
     | Mapping[THashable, Sequence[_T]]
     | Mapping[THashable, Sequence[_U]]
+    | Mapping[THashable, _T]
+    | Mapping[THashable, _U]
 ):
     """Bucket the values of iterable into a mapping."""
     b = bucket(iterable, func)
     mapping = {key: b[key] for key in b}
-    match transform, list:
-        case None, False:
+    match transform, list, unique:
+        case None, False, False:
             return mapping
-        case None, True:
+        case None, True, False:
             return {k: builtins.list(v) for k, v in mapping.items()}
-        case _, False:
+        case _, False, False:
             return {k: map(transform, v) for k, v in mapping.items()}
-        case _, True:
+        case _, True, False:
             return {k: builtins.list(map(transform, v)) for k, v in mapping.items()}
+        case None, _, True:
+            results_no_transform: Mapping[THashable, _T] = {}
+            non_unique: set[THashable] = set()
+            for key, value in mapping.items():
+                try:
+                    results_no_transform[key] = one(value)
+                except OneNonUniqueError:
+                    non_unique.add(key)
+            if len(non_unique) >= 1:
+                raise
+            return results_no_transform
+        case _, _, True:
+            mapping = {k: map(transform, v) for k, v in mapping.items()}
+            results_transform: Mapping[THashable, _U] = {}
+            non_unique: set[THashable] = set()
+            for key, value in mapping.items():
+                try:
+                    results_transform[key] = one(value)
+                except OneNonUniqueError:
+                    non_unique.add(key)
+            if len(non_unique) >= 1:
+                raise
+            return results_transform
         case _ as never:
             assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class BucketMappingError(Exception, Generic[THashable, _U]):
+    errors: Mapping[THashable]
 
 
 ##
