@@ -10,6 +10,7 @@ from libcst import (
     ImportAlias,
     ImportFrom,
     ImportStar,
+    Integer,
     Module,
     Name,
     SimpleStatementLine,
@@ -18,6 +19,7 @@ from pytest import raises
 
 from utilities.iterables import one
 from utilities.libcst import (
+    JoinDottedStrError,
     _ParseImportAliasError,
     _ParseImportEmptyModuleError,
     generate_f_string,
@@ -139,3 +141,9 @@ class TestSplitAndJoinDottedStr:
     def test_main(self, *, text: str) -> None:
         result = join_dotted_str(split_dotted_str(text))
         assert result == text
+
+    def test_join_dotted_fallback_expression(self) -> None:
+        with raises(
+            JoinDottedStrError, match="Only names & attributes allowed; got .*"
+        ):
+            _ = join_dotted_str(Integer("0"))
