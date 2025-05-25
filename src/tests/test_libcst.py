@@ -17,6 +17,7 @@ from libcst import (
 )
 from pytest import raises
 
+from tests.conftest import SKIPIF_CI
 from utilities.iterables import one
 from utilities.libcst import (
     JoinDottedStrError,
@@ -138,6 +139,7 @@ class TestParseImport:
 
 
 class TestRenderModule:
+    @SKIPIF_CI
     def test_main(self) -> None:
         module = Module([SimpleStatementLine([generate_import("foo")])])
         result = render_module(module)

@@ -160,7 +160,7 @@ class JoinDottedStrError(Exception):
 
 def render_module(source: str | Module, /) -> str:
     """Render a module."""
-    match source:
+    match source:  # skipif-ci
         case str() as text:
             return check_output(["ruff", "format", "-"], input=text, text=True)
         case Module() as module:
