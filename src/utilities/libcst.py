@@ -126,5 +126,8 @@ __all__ = [
     "generate_f_string",
     "generate_from_import",
     "generate_import",
+    "join_dotted_str",
+    "parse_import",
     "render_module",
+    "split_dotted_str",
 ]

@@ -2,9 +2,24 @@ from __future__ import annotations
 
 from hypothesis import given
 from hypothesis.strategies import sampled_from
-from libcst import Module, SimpleStatementLine
+from libcst import Expr, Module, SimpleStatementLine
 
-from utilities.libcst import generate_from_import, generate_import
+from utilities.libcst import (
+    generate_f_string,
+    generate_from_import,
+    generate_import,
+    join_dotted_str,
+    parse_import,
+    split_dotted_str,
+)
+
+
+class TestGenerateFString:
+    def test_main(self) -> None:
+        string = generate_f_string("foo", "bar")
+        result = Module([SimpleStatementLine([Expr(string)])]).code.strip("\n")
+        expected = 'f"{foo}bar"'
+        assert result == expected
 
 
 class TestGenerateFromImport:
@@ -21,6 +36,9 @@ class TestGenerateFromImport:
         imp = generate_from_import(module, name, asname=asname)
         result = Module([SimpleStatementLine([imp])]).code.strip("\n")
         assert result == expected
+        parsed = parse_import(imp)
+        assert parsed.module == module
+        assert parsed.name == name
 
 
 class TestGenerateImport:
@@ -37,3 +55,13 @@ class TestGenerateImport:
         imp = generate_import(module, asname=asname)
         result = Module([SimpleStatementLine([imp])]).code.strip("\n")
         assert result == expected
+        parsed = parse_import(imp)
+        assert parsed.module == module
+        assert parsed.name is None
+
+
+class TestSplitAndJoinDottedStr:
+    @given(text=sampled_from(["foo", "foo.bar", "foo.bar.baz"]))
+    def test_main(self, *, text: str) -> None:
+        result = join_dotted_str(split_dotted_str(text))
+        assert result == text
