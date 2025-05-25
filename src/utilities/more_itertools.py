@@ -21,7 +21,8 @@ from more_itertools import bucket, partition, split_into
 from more_itertools import peekable as _peekable
 
 from utilities.functions import get_class_name
-from utilities.iterables import OneEmptyError, OneNonUniqueError, one
+from utilities.iterables import OneNonUniqueError, one
+from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import THashable
 
@@ -139,26 +140,26 @@ def bucket_mapping(
             return {k: builtins.list(map(transform, v)) for k, v in mapping.items()}
         case None, _, True:
             results_no_transform: Mapping[THashable, _T] = {}
-            non_unique: set[THashable] = set()
+            error_no_transform: dict[THashable, tuple[_T, _T]] = {}
             for key, value in mapping.items():
                 try:
                     results_no_transform[key] = one(value)
-                except OneNonUniqueError:
-                    non_unique.add(key)
-            if len(non_unique) >= 1:
-                raise
+                except OneNonUniqueError as error:
+                    error_no_transform[key] = (error.first, error.second)
+            if len(error_no_transform) >= 1:
+                raise BucketMappingError(errors=error_no_transform)
             return results_no_transform
         case _, _, True:
             mapping = {k: map(transform, v) for k, v in mapping.items()}
             results_transform: Mapping[THashable, _U] = {}
-            non_unique: set[THashable] = set()
+            error_transform: dict[THashable, tuple[_U, _U]] = {}
             for key, value in mapping.items():
                 try:
                     results_transform[key] = one(value)
-                except OneNonUniqueError:
-                    non_unique.add(key)
-            if len(non_unique) >= 1:
-                raise
+                except OneNonUniqueError as error:
+                    error_transform[key] = (error.first, error.second)
+            if len(error_transform) >= 1:
+                raise BucketMappingError(errors=error_transform)
             return results_transform
         case _ as never:
             assert_never(never)
@@ -166,7 +167,16 @@ def bucket_mapping(
 
 @dataclass(kw_only=True, slots=True)
 class BucketMappingError(Exception, Generic[THashable, _U]):
-    errors: Mapping[THashable]
+    errors: Mapping[THashable, tuple[_U, _U]]
+
+    @override
+    def __str__(self) -> str:
+        parts = [
+            f"{get_repr(key)} (#1: {get_repr(first)}, #2: {get_repr(second)})"
+            for key, (first, second) in self.errors.items()
+        ]
+        desc = ", ".join(parts)
+        return f"Buckets must contain exactly one item each; got {desc}"
 
 
 ##
@@ -319,6 +329,7 @@ def _yield_splits3(
 
 
 __all__ = [
+    "BucketMappingError",
     "Split",
     "bucket_mapping",
     "partition_list",
