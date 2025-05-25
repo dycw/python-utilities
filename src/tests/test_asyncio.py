@@ -737,7 +737,6 @@ Sleeping {desc}..."""
                 ...
 
 
-@mark.only
 class TestInfiniteQueueLooper:
     async def test_main(self) -> None:
         @dataclass(kw_only=True)
