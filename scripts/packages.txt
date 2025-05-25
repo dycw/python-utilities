@@ -25,6 +25,7 @@ hypothesis
 ipython
 iterables
 jupyter
+libcst
 logging
 loguru
 luigi
