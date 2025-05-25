@@ -27,6 +27,7 @@ from utilities.libcst import (
     generate_import,
     join_dotted_str,
     parse_import,
+    render_module,
     split_dotted_str,
 )
 
@@ -134,6 +135,14 @@ class TestParseImport:
             match=r"Invalid alias name; got module 'baz' and attribute 'foo\.bar'",
         ):
             _ = parse_import(imp)
+
+
+class TestRenderModule:
+    def test_main(self) -> None:
+        module = Module([SimpleStatementLine([generate_import("foo")])])
+        result = render_module(module)
+        expected = "import foo\n"
+        assert result == expected
 
 
 class TestSplitAndJoinDottedStr:
