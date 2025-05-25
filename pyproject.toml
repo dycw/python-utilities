@@ -35,6 +35,7 @@ dev = [
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "nox >= 2025.2.9, < 2025.3",
   "numpy >= 2.2.6, < 2.3",
+  "libcst >= 1.7.0, < 1.8",
   "optuna >= 4.3.0, < 4.4",
   "orjson >= 3.10.18, < 3.11",
   "pathvalidate >= 3.2.3, < 3.3",
