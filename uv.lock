@@ -24,6 +24,7 @@ dependencies = [
     { name = "propcache" },
     { name = "yarl" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/6a/61/d37b33a074ad867d1ecec9f03183e2b9fee067745cae17e73c264f556d57/aiohttp-3.12.0.tar.gz", hash = "sha256:e3f0a2b4d7fb16c0d584d9b8860f1e46d39f7d93372b25a6f80c10015a7acdab", size = 7762804, upload-time = "2025-05-24T22:33:33.318Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a4/83/5cf89e601d565ca18fa8792f5b7393f6f3d80fa26447ee4649232f83a6aa/aiohttp-3.12.0-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:71fe01ddea2673973f1958c3776da990106e33a02a4a5c708d4bb34717cae712", size = 688428, upload-time = "2025-05-24T22:31:29.505Z" },
     { url = "https://files.pythonhosted.org/packages/fc/f4/034d086f5dacd94063a6926d17c63094ba32dd4938954beb704a6f90d2a6/aiohttp-3.12.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:9ce499a7ea20925572d52f86cd42e16690f4db2ff56933710bf759cf1ec68212", size = 463055, upload-time = "2025-05-24T22:31:31.314Z" },
