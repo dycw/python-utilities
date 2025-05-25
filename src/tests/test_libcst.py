@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from hypothesis import given
 from hypothesis.strategies import sampled_from
-from libcst import Expr, Module, SimpleStatementLine
+from libcst import Dot, Expr, ImportAlias, ImportFrom, Module, Name, SimpleStatementLine
+from pytest import raises
 
 from utilities.libcst import (
+    ParseImportError,
     generate_f_string,
     generate_from_import,
     generate_import,
@@ -58,6 +60,14 @@ class TestGenerateImport:
         parsed = parse_import(imp)
         assert parsed.module == module
         assert parsed.name is None
+
+
+class TestParseImport:
+    def test_error(self) -> None:
+        alias = ImportAlias(name=Name("foo"))
+        imp = ImportFrom(module=None, names=[alias], relative=[Dot()])
+        with raises(ParseImportError, match="Module must not be None; got .*"):
+            _ = parse_import(imp)
 
 
 class TestSplitAndJoinDottedStr:

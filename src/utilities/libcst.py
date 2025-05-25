@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from subprocess import check_output
+from typing import assert_never, override
 
 from libcst import (
     AsName,
@@ -63,6 +64,7 @@ def parse_import(import_: Import | ImportFrom, /) -> _ParseImportOutput:
             return _ParseImportOutput(module=join_dotted_str(attr_or_name))
         case ImportFrom():
             if (attr_or_name := import_.module) is None:
+                raise ParseImportError(import_=import_)
                 return _ParseImportOutput(module="")
             module = join_dotted_str(attr_or_name)
             match import_.names:
@@ -75,7 +77,20 @@ def parse_import(import_: Import | ImportFrom, /) -> _ParseImportOutput:
                             raise TypeError(*[f"{first.name=}"])
                 case ImportStar():
                     name = "*"
+                case _ as never:
+                    assert_never(never)
             return _ParseImportOutput(module=module, name=name)
+        case _ as never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseImportError(Exception):
+    import_: ImportFrom
+
+    @override
+    def __str__(self) -> str:
+        return f"Module must not be None; got {self.import_}"
 
 
 ##
@@ -104,6 +119,8 @@ def join_dotted_str(name_or_attr: Name | Attribute, /) -> str:
                 curr = value
             case BaseExpression():
                 break
+            case _ as never:
+                assert_never(never)
     return ".".join(reversed(parts))
 
 
@@ -117,12 +134,15 @@ def render_module(source: str | Module, /) -> str:
             return check_output(["ruff", "format", "-"], input=text, text=True)
         case Module() as module:
             return render_module(module.code)
+        case _ as never:
+            assert_never(never)
 
 
 ##
 
 
 __all__ = [
+    "ParseImportError",
     "generate_f_string",
     "generate_from_import",
     "generate_import",
