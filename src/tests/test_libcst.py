@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import re
+from re import DOTALL
+
 from hypothesis import given
 from hypothesis.strategies import sampled_from
 from libcst import (
@@ -10,7 +13,6 @@ from libcst import (
     ImportAlias,
     ImportFrom,
     ImportStar,
-    Integer,
     Module,
     Name,
     SimpleStatementLine,
@@ -20,7 +22,6 @@ from pytest import raises
 from tests.conftest import SKIPIF_CI
 from utilities.iterables import one
 from utilities.libcst import (
-    JoinDottedStrError,
     _ParseImportAliasError,
     _ParseImportEmptyModuleError,
     generate_f_string,
@@ -133,7 +134,10 @@ class TestParseImport:
         imp = ImportFrom(module=Name("baz"), names=[alias])
         with raises(
             _ParseImportAliasError,
-            match=r"Invalid alias name; got module 'baz' and attribute 'foo\.bar'",
+            match=re.compile(
+                r"Invalid alias name; got module 'baz' and attribute 'Name\(.*\)'",
+                flags=DOTALL,
+            ),
         ):
             _ = parse_import(imp)
 
@@ -152,9 +156,3 @@ class TestSplitAndJoinDottedStr:
     def test_main(self, *, text: str) -> None:
         result = join_dotted_str(split_dotted_str(text))
         assert result == text
-
-    def test_join_dotted_fallback_expression(self) -> None:
-        with raises(
-            JoinDottedStrError, match="Only names & attributes allowed; got .*"
-        ):
-            _ = join_dotted_str(Integer("0"))

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from enum import Enum, auto
 from functools import cmp_to_key
 from itertools import chain, repeat
 from math import isfinite, isinf, isnan, nan
 from operator import add, neg, sub
 from re import DOTALL
-from typing import TYPE_CHECKING, Any, ClassVar, override
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -52,7 +52,6 @@ from utilities.iterables import (
     CheckSubSetError,
     CheckSuperMappingError,
     CheckSuperSetError,
-    Collection,
     EnsureIterableError,
     EnsureIterableNotStrError,
     MergeStrMappingsError,
@@ -634,168 +633,6 @@ class TestCmpNullable:
     ) -> None:
         values, expected = case
         result = sorted(data.draw(permutations(values)), key=cmp_to_key(cmp_nullable))
-        assert result == expected
-
-
-@dataclass(unsafe_hash=True, slots=True)
-class _Item:
-    n: int
-
-
-class TestCollection:
-    def test_and_singleton(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection & _Item(1)
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(1))
-        assert result == expected
-
-    def test_and_collection(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection & Collection(_Item(1))
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(1))
-        assert result == expected
-
-    def test_and_iterable(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection & [_Item(1)]
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(1))
-        assert result == expected
-
-    def test_filter(self) -> None:
-        collection = Collection(map(_Item, range(4)))
-        result = collection.filter(lambda item: item.n % 2 == 0)
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(0), _Item(2))
-        assert result == expected
-
-    def test_hash(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        _ = hash(collection)
-
-    def test_init(self) -> None:
-        class SubCollection(Collection[_Item]):
-            @override
-            def __init__(self, *item_or_items: MaybeIterable[_Item]) -> None:
-                super().__init__(*item_or_items)
-                if any(item.n >= 1 for item in self):
-                    msg = "n >= 1 is not permitted"
-                    raise ValueError(msg)
-
-        with raises(ValueError, match="n >= 1 is not permitted"):
-            _ = SubCollection(map(_Item, range(3)))
-
-    def test_map_return_same_type(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection.map(lambda item: replace(item, n=item.n + 1))
-        assert isinstance(result, Collection)
-        expected = Collection(map(_Item, range(1, 4)))
-        assert result == expected
-
-    def test_map_return_different_type(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection.map(lambda item: item.n)
-        assert isinstance(result, Collection)
-        expected = Collection(range(3))
-        assert result == expected
-
-    def test_new_one_singleton(self) -> None:
-        collection = Collection(_Item(1))
-        assert isinstance(collection, Collection)
-        assert len(collection) == 1
-        assert one(collection) == _Item(1)
-
-    def test_new_one_iterable(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        assert isinstance(collection, Collection)
-        assert len(collection) == 3
-
-    def test_new_many_singletons(self) -> None:
-        collection = Collection(_Item(1), _Item(2), _Item(3))
-        assert isinstance(collection, Collection)
-        assert len(collection) == 3
-
-    def test_new_many_iterables(self) -> None:
-        collection = Collection(map(_Item, range(3)), map(_Item, range(3)))
-        assert isinstance(collection, Collection)
-        assert len(collection) == 3
-
-    def test_new_check_items(self) -> None:
-        class SubCollection(Collection[_Item]):
-            @classmethod
-            @override
-            def check_items(cls, items: Iterable[_Item]) -> None:
-                if any(item.n >= 1 for item in items):
-                    msg = "n >= 1 is not permitted"
-                    raise ValueError(msg)
-
-        with raises(ValueError, match="n >= 1 is not permitted"):
-            _ = SubCollection(map(_Item, range(3)))
-
-    def test_or_singleton(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection | _Item(3)
-        assert isinstance(result, Collection)
-        expected = Collection(map(_Item, range(4)))
-        assert result == expected
-
-    def test_or_collection(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection | Collection(map(_Item, range(1, 4)))
-        assert isinstance(result, Collection)
-        expected = Collection(map(_Item, range(4)))
-        assert result == expected
-
-    def test_or_iterable(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection | map(_Item, range(1, 4))
-        assert isinstance(result, Collection)
-        expected = Collection(map(_Item, range(4)))
-        assert result == expected
-
-    def test_partition(self) -> None:
-        collection = Collection(map(_Item, range(4)))
-        result_false, result_true = collection.partition(lambda item: item.n % 2 == 0)
-        assert isinstance(result_false, Collection)
-        expected_false = Collection(_Item(1), _Item(3))
-        assert result_false == expected_false
-        assert isinstance(result_true, Collection)
-        expected_true = Collection(_Item(0), _Item(2))
-        assert result_true == expected_true
-
-    def test_repr(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = repr(collection)
-        expected = "Collection({_Item(n=0), _Item(n=1), _Item(n=2)})"
-        assert result == expected
-
-    def test_str(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = str(collection)
-        expected = "Collection({_Item(n=0), _Item(n=1), _Item(n=2)})"
-        assert result == expected
-
-    def test_sub_single_item(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection - _Item(1)
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(0), _Item(2))
-        assert result == expected
-
-    def test_sub_collection(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection - Collection(_Item(1))
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(0), _Item(2))
-        assert result == expected
-
-    def test_sub_iterable(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection - [_Item(1)]
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(0), _Item(2))
         assert result == expected
 
 

@@ -25,7 +25,6 @@ from typing import (
     Any,
     Generic,
     Literal,
-    Self,
     TypeGuard,
     TypeVar,
     assert_never,
@@ -45,7 +44,7 @@ from utilities.math import (
 )
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import Sign, THashable, THashable2, TSupportsAdd, TSupportsLT
+from utilities.types import Sign, THashable, TSupportsAdd, TSupportsLT
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -717,57 +716,6 @@ def cmp_nullable(x: TSupportsLT | None, y: TSupportsLT | None, /) -> Sign:
 def chunked(iterable: Iterable[_T], n: int, /) -> Iterator[Sequence[_T]]:
     """Break an iterable into lists of length n."""
     return iter(partial(take, n, iter(iterable)), [])
-
-
-##
-
-
-class Collection(frozenset[THashable]):
-    """A collection of hashable, sortable items."""
-
-    def __new__(cls, *item_or_items: MaybeIterable[THashable]) -> Self:
-        items = list(chain(*map(always_iterable, item_or_items)))
-        cls.check_items(items)
-        return super().__new__(cls, items)
-
-    def __init__(self, *item_or_items: MaybeIterable[THashable]) -> None:
-        super().__init__()
-        _ = item_or_items
-
-    @override
-    def __and__(self, other: MaybeIterable[THashable], /) -> Self:
-        if isinstance(other, type(self)):
-            return type(self)(super().__and__(other))
-        return self.__and__(type(self)(other))
-
-    @override
-    def __or__(self, other: MaybeIterable[THashable], /) -> Self:
-        if isinstance(other, type(self)):
-            return type(self)(super().__or__(other))
-        return self.__or__(type(self)(other))
-
-    @override
-    def __sub__(self, other: MaybeIterable[THashable], /) -> Self:
-        if isinstance(other, type(self)):
-            return type(self)(super().__sub__(other))
-        return self.__sub__(type(self)(other))
-
-    @classmethod
-    def check_items(cls, items: Iterable[THashable], /) -> None:
-        _ = items
-
-    def filter(self, func: Callable[[THashable], bool], /) -> Self:
-        return type(self)(filter(func, self))
-
-    def map(self, func: Callable[[THashable], THashable2], /) -> Collection[THashable2]:
-        values = cast("Any", map(func, self))
-        return cast("Any", type(self)(values))
-
-    def partition(self, func: Callable[[THashable], bool], /) -> tuple[Self, Self]:
-        from more_itertools import partition
-
-        is_false, is_true = partition(func, self)
-        return type(self)(is_false), type(self)(is_true)
 
 
 ##

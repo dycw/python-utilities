@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from lightweight_charts import AbstractChart, Chart
     from lightweight_charts.abstract import SeriesCommon
     from polars import DataFrame
-    from polars._typing import SchemaDict  # pyright: ignore[reportPrivateImportUsage]
+    from polars._typing import SchemaDict
 
     from utilities.types import PathLike
 

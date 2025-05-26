@@ -6,12 +6,7 @@ from re import search
 from typing import TYPE_CHECKING, Any, cast
 
 from loguru import logger
-from loguru._recattrs import (
-    RecordFile,  # pyright: ignore[reportPrivateImportUsage]
-    RecordLevel,  # pyright: ignore[reportPrivateImportUsage]
-    RecordProcess,  # pyright: ignore[reportPrivateImportUsage]
-    RecordThread,  # pyright: ignore[reportPrivateImportUsage]
-)
+from loguru._recattrs import RecordFile, RecordLevel, RecordProcess, RecordThread
 from pytest import CaptureFixture, fixture, mark, param, raises
 
 from utilities.loguru import (

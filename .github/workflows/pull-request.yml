@@ -6,14 +6,30 @@ on:
       - master
 
 jobs:
-  lint:
-    name: lint
+  ruff:
+    name: ruff
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/ruff-action@v3
       - run: ruff check --fix
       - run: ruff format
+
+  pyright:
+    name: pyright
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+      - run: uv sync
+      - run: uv run pyright
 
   test-windows-and-mac:
     name: test / ${{ matrix.os }} / ${{ matrix.version }}
@@ -29,13 +45,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.version }}
-      - run: uv sync
+      - run: uv sync --locked
       - run: uv run pytest --cov-report=term-missing:skip-covered -n=auto
     timeout-minutes: 60
 
@@ -57,12 +73,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.version }}
-      - run: uv sync
+      - run: uv sync --locked
       - run: uv run pytest --cov-report=term-missing:skip-covered -n=auto
     timeout-minutes: 60
