@@ -20,6 +20,8 @@ from libcst import (
     Name,
 )
 
+from utilities.errors import ImpossibleCaseError
+
 
 def generate_from_import(
     module: str, name: str, /, *, asname: str | None = None
@@ -138,21 +140,11 @@ def join_dotted_str(name_or_attr: Name | Attribute, /) -> str:
             case Attribute(value=value, attr=Name(value=attr_value)):
                 parts.append(attr_value)
                 curr = value
-            case BaseExpression() as expr:
-                raise JoinDottedStrError(name_or_attr=name_or_attr, expr=expr)
+            case BaseExpression():
+                raise ImpossibleCaseError(case=[f"{curr=}"])
             case _ as never:
                 assert_never(never)
     return ".".join(reversed(parts))
-
-
-@dataclass(kw_only=True, slots=True)
-class JoinDottedStrError(Exception):
-    name_or_attr: Name | Attribute
-    expr: BaseExpression
-
-    @override
-    def __str__(self) -> str:
-        return f"Only names & attributes allowed; got {self.expr}"
 
 
 ##
