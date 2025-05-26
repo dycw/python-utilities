@@ -20,7 +20,7 @@ class ImpossibleCaseError(Exception):
 ##
 
 
-def repr_error(error: MaybeType[Exception], /) -> str:
+def repr_error(error: MaybeType[BaseException], /) -> str:
     """Get a string representation of an error."""
     match error:
         case Exception() as error_obj:
