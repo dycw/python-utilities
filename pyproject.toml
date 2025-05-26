@@ -396,6 +396,7 @@ style = [
 [tool.pyright]
 deprecateTypingAliases = true
 enableReachabilityAnalysis = false
+ignore = ["**/_typeshed/**"]
 pythonVersion = "3.12"
 reportAny = false
 reportCallInDefaultInitializer = true

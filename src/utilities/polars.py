@@ -112,14 +112,14 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
 
     from polars._typing import (
-        IntoExpr,  # pyright: ignore[reportPrivateImportUsage]
-        IntoExprColumn,  # pyright: ignore[reportPrivateImportUsage]
-        JoinStrategy,  # pyright: ignore[reportPrivateImportUsage]
-        JoinValidation,  # pyright: ignore[reportPrivateImportUsage]
-        PolarsDataType,  # pyright: ignore[reportPrivateImportUsage]
-        QuantileMethod,  # pyright: ignore[reportPrivateImportUsage]
-        SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
-        TimeUnit,  # pyright: ignore[reportPrivateImportUsage]
+        IntoExpr,
+        IntoExprColumn,
+        JoinStrategy,
+        JoinValidation,
+        PolarsDataType,
+        QuantileMethod,
+        SchemaDict,
+        TimeUnit,
     )
 
     from utilities.numpy import NDArrayB, NDArrayF

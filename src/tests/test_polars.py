@@ -51,10 +51,7 @@ from polars import (
     lit,
     struct,
 )
-from polars._typing import (
-    IntoExprColumn,  # pyright: ignore[reportPrivateImportUsage]
-    SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
-)
+from polars._typing import IntoExprColumn, SchemaDict
 from polars.exceptions import ComputeError
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import raises

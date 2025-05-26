@@ -35,11 +35,9 @@ if TYPE_CHECKING:
     )
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
-    from _pytest.config import Config  # pyright: ignore[reportPrivateImportUsage]
-    from _pytest.config.argparsing import (
-        Parser,  # pyright: ignore[reportPrivateImportUsage]
-    )
-    from _pytest.python import Function  # pyright: ignore[reportPrivateImportUsage]
+    from _pytest.config import Config
+    from _pytest.config.argparsing import Parser
+    from _pytest.python import Function
     from pytest import mark, skip
 except ModuleNotFoundError:  # pragma: no cover
     from typing import Any as Config
