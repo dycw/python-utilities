@@ -6,14 +6,31 @@ on:
       - master
 
 jobs:
-  lint:
-    name: lint
+  ruff:
+    name: ruff
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/ruff-action@v3
       - run: ruff check --fix
       - run: ruff format
+
+  pyright:
+    name: pyright / ${{ matrix.os }} / ${{ matrix.version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.version }}
+      - run: uv sync --locked
+      - run: uv run pyright
 
   test-windows-and-mac:
     name: test / ${{ matrix.os }} / ${{ matrix.version }}

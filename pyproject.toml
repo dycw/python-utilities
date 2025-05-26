@@ -18,14 +18,14 @@ dev = [
   "click >= 8.2.1, < 8.3",
   "coloredlogs >= 15.0.1, < 15.1",
   "concurrent-log-handler >= 0.9.26, < 0.10",
-  "cryptography >= 45.0.2, < 45.1",
+  "cryptography >= 45.0.3, < 45.1",
   "cvxpy >= 1.6.5, < 1.7",
   "eventkit >= 1.0.3, < 1.1",
   "fastapi >= 0.115.11, < 0.116",
   "fpdf2 >= 2.8.3, < 2.9",
   "greenlet >= 3.2.0, < 3.3",  # for sqlalchemy async
   "httpx >= 0.28.1, < 0.29",  # for fastapi
-  "hypothesis >= 6.131.27, < 6.132",
+  "hypothesis >= 6.131.28, < 6.132",
   "img2pdf >= 0.6.0, < 0.7",
   "lightweight-charts >= 2.1, < 2.2",
   "loguru >= 0.7.3, < 0.8",
@@ -45,6 +45,7 @@ dev = [
   "psycopg2-binary >= 2.9.10, < 2.10",  # for sqlalchemy
   "pydantic >= 2.11.4, < 2.12",
   "pyinstrument >= 5.0.2, < 5.1",
+  "pyright[nodejs] >= 1.1.401, < 1.2",
   "pyrsistent >= 0.20.0, < 0.21",
   "pytest >= 8.3.5, < 8.4",
   "pytest-regressions >= 2.7.0, < 2.8",
@@ -92,11 +93,11 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.125.4"
+version = "0.125.5"
 
 [project.optional-dependencies]
 test = [
-  "hypothesis >= 6.131.27, < 6.132",
+  "hypothesis >= 6.131.28, < 6.132",
   "pytest >= 8.3.5, < 8.4",
   "pytest-asyncio >= 0.26.0, < 0.27",
   "pytest-cov >= 6.1.1, < 6.2",
@@ -132,7 +133,7 @@ zzz-test-click = [
 ]
 zzz-test-contextlib = []
 zzz-test-contextvars = []
-zzz-test-cryptography = ["cryptography >= 45.0.2, < 45.1"]
+zzz-test-cryptography = ["cryptography >= 45.0.3, < 45.1"]
 zzz-test-cvxpy = ["cvxpy >= 1.6.5, < 1.7"]
 zzz-test-dataclasses = [
   "orjson >= 3.10.15, < 3.11",
@@ -173,7 +174,7 @@ zzz-test-hypothesis = [
   "aiosqlite >= 0.21.0, < 0.22",
   "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
   "greenlet >= 3.2.0, < 3.3",  # for sqlalchemy async
-  "hypothesis >= 6.131.27, < 6.132",
+  "hypothesis >= 6.131.28, < 6.132",
   "luigi >= 3.6.0, < 3.7",
   "numpy >= 2.2.6, < 2.3",
   "pathvalidate >= 3.2.3, < 3.3",
@@ -333,7 +334,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.125.4"
+current_version = "0.125.5"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
