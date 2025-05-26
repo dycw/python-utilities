@@ -267,6 +267,7 @@ class TestGetItems:
         assert result == xs[:max_size]
 
 
+@mark.only
 class TestInfiniteLooper:
     sleep_restart_cases: ClassVar[list[Any]] = [
         param(60.0, "for 0:01:00"),
@@ -438,7 +439,7 @@ class TestInfiniteLooper:
                     self._set_event(event=n % 2 == 0)
 
             @override
-            def _error_upon_core(self, error: Exception, /) -> None:
+            def _error_upon_core(self, error: BaseException, /) -> None:
                 if isinstance(error, TrueError):
                     self.true_counter += 1
                 elif isinstance(error, FalseError):

@@ -425,24 +425,19 @@ class InfiniteLooper(ABC, Generic[THashable]):
                             self._raise_error(event)
             except InfiniteLooperError:
                 raise
-            except Exception as error:
-                if isinstance(error, blacklisted):
-                    raise
-                self._error_upon_core(error)
+            except BaseException as error1:
+                match error1:
+                    case Exception():
+                        if isinstance(error1, blacklisted):
+                            raise
+                    case BaseException():
+                        if not isinstance(error1, whitelisted):
+                            raise
+                self._error_upon_core(error1)
                 try:
                     await self._teardown()
-                except Exception as error:  # noqa: BLE001
-                    self._error_upon_teardown(error)
-                finally:
-                    await self._run_sleep(self.sleep_restart)
-            except BaseException as error:
-                if not isinstance(error, whitelisted):
-                    raise
-                self._error_upon_core(error)
-                try:
-                    await self._teardown()
-                except Exception as error:  # noqa: BLE001
-                    self._error_upon_teardown(error)
+                except BaseException as error2:  # noqa: BLE001
+                    self._error_upon_teardown(error2)
                 finally:
                     await self._run_sleep(self.sleep_restart)
 
