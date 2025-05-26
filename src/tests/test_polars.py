@@ -174,11 +174,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
     from zoneinfo import ZoneInfo
 
-    from polars._typing import (
-        IntoExprColumn,  # pyright: ignore[reportPrivateImportUsage]
-        PolarsDataType,  # pyright: ignore[reportPrivateImportUsage]
-        SchemaDict,  # pyright: ignore[reportPrivateImportUsage]
-    )
+    from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
     from polars.datatypes import DataTypeClass
 
     from utilities.types import MaybeType, StrMapping, WeekDay

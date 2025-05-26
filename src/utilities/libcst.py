@@ -113,7 +113,7 @@ class _ParseImportAliasError(ParseImportError):
     @override
     def __str__(self) -> str:
         attr = self.attr
-        return f"Invalid alias name; got module {self.module!r} and attribute '{attr.value.value}.{attr.attr.value}'"
+        return f"Invalid alias name; got module {self.module!r} and attribute '{attr.value}.{attr.attr}'"
 
 
 ##

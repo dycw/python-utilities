@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import re
+from re import DOTALL
+
 from hypothesis import given
 from hypothesis.strategies import sampled_from
 from libcst import (
@@ -131,7 +134,10 @@ class TestParseImport:
         imp = ImportFrom(module=Name("baz"), names=[alias])
         with raises(
             _ParseImportAliasError,
-            match=r"Invalid alias name; got module 'baz' and attribute 'foo\.bar'",
+            match=re.compile(
+                r"Invalid alias name; got module 'baz' and attribute 'Name\(.*\)'",
+                flags=DOTALL,
+            ),
         ):
             _ = parse_import(imp)
 
