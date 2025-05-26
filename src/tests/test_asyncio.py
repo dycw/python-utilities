@@ -267,7 +267,6 @@ class TestGetItems:
         assert result == xs[:max_size]
 
 
-@mark.only
 class TestInfiniteLooper:
     sleep_restart_cases: ClassVar[list[Any]] = [
         param(60.0, "for 0:01:00"),
