@@ -448,6 +448,7 @@ filterwarnings = [
   "ignore:unclosed <StreamWriter .*>:ResourceWarning",  # redis
   "ignore:unclosed <socket.*socket .*>:ResourceWarning",  # redis
   "ignore:unclosed Connection <redis.*asyncio.*connection.*Connection.*>:ResourceWarning",  # redis
+  "ignore:unclosed database in <sqlite3.*Connection .*>",  # luigi
   "ignore:unclosed event loop <_UnixSelectorEventLoop .*>:ResourceWarning",  # redis
   "ignore:unclosed transport <_SelectorSocketTransport .*>:ResourceWarning",  # redis
 ]
