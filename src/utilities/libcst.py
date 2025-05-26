@@ -141,7 +141,7 @@ def join_dotted_str(name_or_attr: Name | Attribute, /) -> str:
                 parts.append(attr_value)
                 curr = value
             case BaseExpression():
-                raise ImpossibleCaseError(case=[f"{curr=}"])
+                raise ImpossibleCaseError(case=[f"{curr=}"])  # pragma: no cover
             case _ as never:
                 assert_never(never)
     return ".".join(reversed(parts))
