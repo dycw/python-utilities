@@ -34,7 +34,7 @@ jobs:
           enable-cache: true
           python-version: ${{ matrix.version }}
       - run: uv sync
-      - run: uv run --frozen pytest --cov-report=term-missing:skip-covered -n=auto
+      - run: uv run pytest --cov-report=term-missing:skip-covered -n=auto
     timeout-minutes: 60
 
   test-ubuntu:
