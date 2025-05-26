@@ -16,20 +16,19 @@ jobs:
       - run: ruff format
 
   pyright:
-    name: pyright / ${{ matrix.os }} / ${{ matrix.version }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
-        version: ["3.12", "3.13"]
+    name: pyright
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          python-version: ${{ matrix.version }}
-      - run: uv sync --locked
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+      - run: uv sync
       - run: uv run pyright
 
   test-windows-and-mac:
@@ -52,7 +51,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.version }}
-      - run: uv sync
+      - run: uv sync --locked
       - run: uv run pytest --cov-report=term-missing:skip-covered -n=auto
     timeout-minutes: 60
 
@@ -80,6 +79,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.version }}
-      - run: uv sync
+      - run: uv sync --locked
       - run: uv run pytest --cov-report=term-missing:skip-covered -n=auto
     timeout-minutes: 60
