@@ -427,12 +427,12 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 raise
             except BaseException as error1:
                 match error1:
-                    case Exception():
-                        if isinstance(error1, blacklisted):
-                            raise
-                    case BaseException():
-                        if not isinstance(error1, whitelisted):
-                            raise
+                    case Exception() if isinstance(error1, blacklisted):
+                        raise
+                    case BaseException() if not isinstance(error1, whitelisted):
+                        raise
+                    case _:
+                        pass
                 self._error_upon_core(error1)
                 try:
                     await self._teardown()
