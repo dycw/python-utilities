@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from subprocess import check_output
+from subprocess import CalledProcessError, check_output
 from typing import assert_never, override
 
 from libcst import (
@@ -154,11 +154,21 @@ def render_module(source: str | Module, /) -> str:
     """Render a module."""
     match source:  # skipif-ci
         case str() as text:
-            return check_output(["ruff", "format", "-"], input=text, text=True)
+            try:
+                return check_output(["ruff", "format", "-"], input=text, text=True)
+            except CalledProcessError:
+                raise RenderModuleError from None
         case Module() as module:
             return render_module(module.code)
         case _ as never:
             assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class RenderModuleError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "'ruff' must be available"  # pragma: no cover
 
 
 ##
@@ -166,6 +176,7 @@ def render_module(source: str | Module, /) -> str:
 
 __all__ = [
     "ParseImportError",
+    "RenderModuleError",
     "generate_f_string",
     "generate_from_import",
     "generate_import",
