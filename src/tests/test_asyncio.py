@@ -322,6 +322,27 @@ class TestInfiniteLooper:
         assert 0 <= looper.counter <= 5
         assert 3 <= looper.teardowns <= 5
 
+    async def test_blacklisted_errors(self) -> None:
+        class CustomError(Exception): ...
+
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            counter: int = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+                if self.counter >= 5:
+                    raise CustomError
+
+            @override
+            def _yield_blacklisted_errors(self) -> Iterator[type[Exception]]:
+                yield CustomError
+
+        with raises(CustomError):
+            async with Example(sleep_core=0.05):
+                ...
+
     async def test_cancelled_error(self) -> None:
         @dataclass(kw_only=True)
         class Example(InfiniteLooper[None]):
@@ -417,7 +438,7 @@ class TestInfiniteLooper:
                     self._set_event(event=n % 2 == 0)
 
             @override
-            def _error_upon_core(self, error: Exception, /) -> None:
+            def _error_upon_core(self, error: BaseException, /) -> None:
                 if isinstance(error, TrueError):
                     self.true_counter += 1
                 elif isinstance(error, FalseError):
@@ -439,6 +460,34 @@ class TestInfiniteLooper:
             case False:
                 assert looper.true_counter == 0
                 assert looper.false_counter >= 1
+
+    async def test_whitelisted_errors(self) -> None:
+        class CustomError(BaseException): ...
+
+        @dataclass(kw_only=True)
+        class Example(InfiniteLooper[None]):
+            initializations: int = 0
+            counter: int = 0
+
+            @override
+            async def _initialize(self) -> None:
+                self.initializations += 1
+                self.counter = 0
+
+            @override
+            async def _core(self) -> None:
+                self.counter += 1
+                if self.counter >= 5:
+                    raise CustomError
+
+            @override
+            def _yield_whitelisted_errors(self) -> Iterator[type[BaseException]]:
+                yield CustomError
+
+        async with timeout(1.0), Example(sleep_core=0.05, sleep_restart=0.05) as looper:
+            ...
+        assert 3 <= looper.initializations <= 7
+        assert 0 <= looper.counter <= 8
 
     async def test_with_coroutine_self_set_event(self) -> None:
         external: int = 0

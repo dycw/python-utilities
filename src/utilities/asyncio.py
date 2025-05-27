@@ -400,6 +400,8 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
     async def _run_looper_by_itself(self) -> None:
         """Run the looper by itself."""
+        whitelisted = tuple(self._yield_whitelisted_errors())
+        blacklisted = tuple(self._yield_blacklisted_errors())
         while True:
             try:
                 self._reset_events()
@@ -423,12 +425,21 @@ class InfiniteLooper(ABC, Generic[THashable]):
                             self._raise_error(event)
             except InfiniteLooperError:
                 raise
-            except Exception as error:  # noqa: BLE001
-                self._error_upon_core(error)
+            except BaseException as error1:
+                match error1:
+                    case Exception():
+                        if isinstance(error1, blacklisted):
+                            raise
+                    case BaseException():
+                        if not isinstance(error1, whitelisted):
+                            raise
+                    case _ as never:
+                        assert_never(never)
+                self._error_upon_core(error1)
                 try:
                     await self._teardown()
-                except Exception as error:  # noqa: BLE001
-                    self._error_upon_teardown(error)
+                except BaseException as error2:  # noqa: BLE001
+                    self._error_upon_teardown(error2)
                 finally:
                     await self._run_sleep(self.sleep_restart)
 
@@ -471,7 +482,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 self._sleep_restart_desc,
             )
 
-    def _error_upon_core(self, error: Exception, /) -> None:
+    def _error_upon_core(self, error: BaseException, /) -> None:
         """Handle any errors upon running the core function."""
         if self.logger is not None:
             getLogger(name=self.logger).error(
@@ -481,7 +492,7 @@ class InfiniteLooper(ABC, Generic[THashable]):
                 self._sleep_restart_desc,
             )
 
-    def _error_upon_teardown(self, error: Exception, /) -> None:
+    def _error_upon_teardown(self, error: BaseException, /) -> None:
         """Handle any errors upon tearing down the looper."""
         if self.logger is not None:
             getLogger(name=self.logger).error(
@@ -559,6 +570,14 @@ class InfiniteLooper(ABC, Generic[THashable]):
 
     def _yield_loopers(self) -> Iterator[InfiniteLooper[Any]]:
         """Yield any other loopers which must also be run."""
+        yield from []
+
+    def _yield_blacklisted_errors(self) -> Iterator[type[Exception]]:
+        """Yield any exceptions which the looper ought to catch terminate upon."""
+        yield from []
+
+    def _yield_whitelisted_errors(self) -> Iterator[type[BaseException]]:
+        """Yield any exceptions which the looper ought to catch and allow running."""
         yield from []
 
 
