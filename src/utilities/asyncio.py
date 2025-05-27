@@ -433,6 +433,8 @@ class InfiniteLooper(ABC, Generic[THashable]):
                     case BaseException():
                         if not isinstance(error1, whitelisted):
                             raise
+                    case _ as never:
+                        assert_never(never)
                 self._error_upon_core(error1)
                 try:
                     await self._teardown()
