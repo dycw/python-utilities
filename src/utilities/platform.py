@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from platform import system
 from typing import TYPE_CHECKING, Literal, assert_never, override
 
@@ -42,6 +43,32 @@ IS_NOT_MAC = not IS_MAC
 IS_NOT_LINUX = not IS_LINUX
 
 
+##
+
+
+def get_max_pid() -> int | None:
+    """Get the maximum process ID."""
+    match SYSTEM:
+        case "windows":  # pragma: no cover
+            return None
+        case "mac":  # skipif-not-macos
+            return 99999
+        case "linux":  # skipif-not-linux
+            try:
+                with Path("/proc/sys/kernel/pid_max").open() as fh:
+                    return int(fh.read())
+            except FileNotFoundError:  # pragma: no cover
+                return None
+        case _ as never:
+            assert_never(never)
+
+
+MAX_PID = get_max_pid()
+
+
+##
+
+
 def maybe_yield_lower_case(text: Iterable[str], /) -> Iterator[str]:
     """Yield lower-cased text if the platform is case-insentive."""
     match SYSTEM:
@@ -62,9 +89,11 @@ __all__ = [
     "IS_NOT_MAC",
     "IS_NOT_WINDOWS",
     "IS_WINDOWS",
+    "MAX_PID",
     "SYSTEM",
     "GetSystemError",
     "System",
+    "get_max_pid",
     "get_system",
     "maybe_yield_lower_case",
 ]
