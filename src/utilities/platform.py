@@ -57,7 +57,7 @@ def get_max_pid() -> int | None:
             try:
                 with Path("/proc/sys/kernel/pid_max").open() as fh:
                     return int(fh.read())
-            except FileNotFoundError:
+            except FileNotFoundError:  # pragma: no cover
                 return None
         case _ as never:
             assert_never(never)
