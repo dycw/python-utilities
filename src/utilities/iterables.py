@@ -1190,6 +1190,56 @@ def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterator[Mapping[_K,
 ##
 
 
+def range_partitions(stop: int, num: int, total: int, /) -> range:
+    """Partition a range."""
+    if stop <= 0:
+        raise _RangePartitionsStopError(stop=stop)
+    if not (1 <= total <= stop):
+        raise _RangePartitionsTotalError(stop=stop, total=total)
+    if not (0 <= num < total):
+        raise _RangePartitionsNumError(num=num, total=total)
+    q, r = divmod(stop, total)
+    start = num * q + min(num, r)
+    end = start + q + (1 if num < r else 0)
+    return range(start, end)
+
+
+@dataclass(kw_only=True, slots=True)
+class RangePartitionsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _RangePartitionsStopError(RangePartitionsError):
+    stop: int
+
+    @override
+    def __str__(self) -> str:
+        return f"'stop' must be positive; got {self.stop}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _RangePartitionsTotalError(RangePartitionsError):
+    stop: int
+    total: int
+
+    @override
+    def __str__(self) -> str:
+        return f"'total' must be in [1, {self.stop}]; got {self.total}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _RangePartitionsNumError(RangePartitionsError):
+    num: int
+    total: int
+
+    @override
+    def __str__(self) -> str:
+        return f"'num' must be in [0, {self.total - 1}]; got {self.num}"
+
+
+##
+
+
 @overload
 def reduce_mappings(
     func: Callable[[_V, _V], _V], sequence: Iterable[Mapping[_K, _V]], /
@@ -1458,6 +1508,7 @@ __all__ = [
     "OneUniqueEmptyError",
     "OneUniqueError",
     "OneUniqueNonUniqueError",
+    "RangePartitionsError",
     "ResolveIncludeAndExcludeError",
     "SortIterableError",
     "always_iterable",
@@ -1502,6 +1553,7 @@ __all__ = [
     "one_unique",
     "pairwise_tail",
     "product_dicts",
+    "range_partitions",
     "reduce_mappings",
     "resolve_include_and_exclude",
     "sort_iterable",

@@ -69,6 +69,9 @@ from utilities.iterables import (
     _ApplyBijectionDuplicateValuesError,
     _CheckUniqueModuloCaseDuplicateLowerCaseStringsError,
     _CheckUniqueModuloCaseDuplicateStringsError,
+    _RangePartitionsNumError,
+    _RangePartitionsStopError,
+    _RangePartitionsTotalError,
     _sort_iterable_cmp_datetimes,
     _sort_iterable_cmp_floats,
     always_iterable,
@@ -114,6 +117,7 @@ from utilities.iterables import (
     one_unique,
     pairwise_tail,
     product_dicts,
+    range_partitions,
     reduce_mappings,
     resolve_include_and_exclude,
     sort_iterable,
@@ -1089,6 +1093,66 @@ class TestProductDicts:
             {"x": 2, "y": 9},
         ]
         assert result == expected
+
+
+class TestRangePartitions:
+    @given(
+        case=sampled_from([
+            (1, 0, 1, [0]),
+            (2, 0, 1, [0, 1]),
+            (2, 0, 2, [0]),
+            (2, 1, 2, [1]),
+            (3, 0, 1, [0, 1, 2]),
+            (3, 0, 2, [0, 1]),
+            (3, 1, 2, [2]),
+            (3, 0, 3, [0]),
+            (3, 1, 3, [1]),
+            (3, 2, 3, [2]),
+            (6, 0, 1, [0, 1, 2, 3, 4, 5]),
+            (6, 0, 2, [0, 1, 2]),
+            (6, 1, 2, [3, 4, 5]),
+            (6, 0, 3, [0, 1]),
+            (6, 1, 3, [2, 3]),
+            (6, 2, 3, [4, 5]),
+            (7, 0, 2, [0, 1, 2, 3]),
+            (7, 1, 2, [4, 5, 6]),
+            (7, 0, 3, [0, 1, 2]),
+            (7, 1, 3, [3, 4]),
+            (7, 2, 3, [5, 6]),
+        ])
+    )
+    def test_main(self, *, case: tuple[int, int, int, Sequence[int]]) -> None:
+        stop, num, total, expected = case
+        result = list(range_partitions(stop, num, total))
+        assert result == expected
+
+    def test_error_stop(self) -> None:
+        with raises(_RangePartitionsStopError, match="'stop' must be positive; got 0"):
+            _ = range_partitions(0, 0, 0)
+
+    def test_error_total_too_low(self) -> None:
+        with raises(
+            _RangePartitionsTotalError, match=r"'total' must be in \[1, 1\]; got 0"
+        ):
+            _ = range_partitions(1, 0, 0)
+
+    def test_error_total_too_high(self) -> None:
+        with raises(
+            _RangePartitionsTotalError, match=r"'total' must be in \[1, 1\]; got 2"
+        ):
+            _ = range_partitions(1, 0, 2)
+
+    def test_error_num_too_low(self) -> None:
+        with raises(
+            _RangePartitionsNumError, match=r"'num' must be in \[0, 1\]; got -1"
+        ):
+            _ = range_partitions(2, -1, 2)
+
+    def test_error_num_too_high(self) -> None:
+        with raises(
+            _RangePartitionsNumError, match=r"'num' must be in \[0, 1\]; got 2"
+        ):
+            _ = range_partitions(2, 2, 2)
 
 
 class TestReduceMappings:
