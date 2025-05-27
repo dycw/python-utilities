@@ -1192,10 +1192,10 @@ def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterator[Mapping[_K,
 
 def range_partitions(stop: int, num: int, total: int, /) -> range:
     """Partition a range."""
-    if stop < 0:
+    if stop <= 0:
         raise _RangePartitionsStopError(stop=stop)
-    if total < 0:
-        raise _RangePartitionsTotalError(total=total)
+    if not (1 <= total <= stop):
+        raise _RangePartitionsTotalError(stop=stop, total=total)
     if not (0 <= num < total):
         raise _RangePartitionsNumError(num=num, total=total)
     q, r = divmod(stop, total)
@@ -1214,16 +1214,17 @@ class _RangePartitionsStopError(RangePartitionsError):
 
     @override
     def __str__(self) -> str:
-        return f"'stop' must be non-negative; got {self.stop}"
+        return f"'stop' must be positive; got {self.stop}"
 
 
 @dataclass(kw_only=True, slots=True)
 class _RangePartitionsTotalError(RangePartitionsError):
+    stop: int
     total: int
 
     @override
     def __str__(self) -> str:
-        return f"'total' must be non-negative; got {self.total}"
+        return f"'total' must be in [1, {self.stop}]; got {self.total}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1233,7 +1234,7 @@ class _RangePartitionsNumError(RangePartitionsError):
 
     @override
     def __str__(self) -> str:
-        return f"'num' must be in [0, {self.total}); got {self.num}"
+        return f"'num' must be in [0, {self.total - 1}]; got {self.num}"
 
 
 ##
