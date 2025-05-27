@@ -157,18 +157,11 @@ def render_module(source: str | Module, /) -> str:
             try:
                 return check_output(["ruff", "format", "-"], input=text, text=True)
             except CalledProcessError:
-                raise RenderModuleError from None
+                return text
         case Module() as module:
             return render_module(module.code)
         case _ as never:
             assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class RenderModuleError(Exception):
-    @override
-    def __str__(self) -> str:
-        return "'ruff' must be available"  # pragma: no cover
 
 
 ##
@@ -176,7 +169,6 @@ class RenderModuleError(Exception):
 
 __all__ = [
     "ParseImportError",
-    "RenderModuleError",
     "generate_f_string",
     "generate_from_import",
     "generate_import",
