@@ -13,6 +13,7 @@ from utilities.platform import (
     IS_NOT_MAC,
     IS_NOT_WINDOWS,
     IS_WINDOWS,
+    MAX_PID,
     SYSTEM,
     System,
     get_max_pid,
@@ -35,6 +36,17 @@ class TestGetMaxPID:
                 assert isinstance(result, int)
             case "linux":  # skipif-not-linux
                 assert isinstance(result, int)
+            case _ as never:
+                assert_never(never)
+
+    def test_constant(self) -> None:
+        match SYSTEM:
+            case "windows":  # skipif-not-windows
+                assert MAX_PID is None
+            case "mac":  # skipif-not-macos
+                assert isinstance(MAX_PID, int)
+            case "linux":  # skipif-not-linux
+                assert isinstance(MAX_PID, int)
             case _ as never:
                 assert_never(never)
 
