@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from subprocess import check_output
+from subprocess import CalledProcessError, check_output
 from typing import assert_never, override
 
 from libcst import (
@@ -154,7 +154,10 @@ def render_module(source: str | Module, /) -> str:
     """Render a module."""
     match source:  # skipif-ci
         case str() as text:
-            return check_output(["ruff", "format", "-"], input=text, text=True)
+            try:
+                return check_output(["ruff", "format", "-"], input=text, text=True)
+            except CalledProcessError:
+                return text
         case Module() as module:
             return render_module(module.code)
         case _ as never:
