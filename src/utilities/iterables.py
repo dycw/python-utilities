@@ -1196,7 +1196,7 @@ def range_partitions(stop: int, num: int, total: int, /) -> range:
         raise _RangePartitionsStopError(stop=stop)
     if total < 0:
         raise _RangePartitionsTotalError(total=total)
-    if 0 <= num < total:
+    if not (0 <= num < total):
         raise _RangePartitionsNumError(num=num, total=total)
     q, r = divmod(stop, total)
     start = num * q + min(num, r)

@@ -114,6 +114,7 @@ from utilities.iterables import (
     one_unique,
     pairwise_tail,
     product_dicts,
+    range_partitions,
     reduce_mappings,
     resolve_include_and_exclude,
     sort_iterable,
@@ -1088,6 +1089,14 @@ class TestProductDicts:
             {"x": 2, "y": 8},
             {"x": 2, "y": 9},
         ]
+        assert result == expected
+
+
+class TestRangePartitions:
+    @given(case=sampled_from([(6, 0, 2, [0, 1, 2])]))
+    def test_main(self, *, case: tuple[int, int, int, Sequence[int]]) -> None:
+        result = list(range_partitions(6, 0, 2))
+        expected = [0, 1, 2]
         assert result == expected
 
 
