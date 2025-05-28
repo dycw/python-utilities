@@ -21,17 +21,19 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import LogCaptureFixture, mark, param, raises
+from pytest import LogCaptureFixture, approx, mark, param, raises
 
 from utilities.asyncio import (
     EnhancedQueue,
     EnhancedTaskGroup,
     InfiniteLooper,
     InfiniteQueueLooper,
+    Looper,
     UniquePriorityQueue,
     UniqueQueue,
     _InfiniteLooperDefaultEventError,
     _InfiniteLooperNoSuchEventError,
+    _LooperStats,
     get_event,
     get_items,
     get_items_nowait,
@@ -870,6 +872,47 @@ class TestInfiniteQueueLooper:
             message = caplog.messages[0]
             expected = "'Example' encountered 'CustomError()'; sleeping for 0:01:00..."
             assert message == expected
+
+
+class _ExampleLooperError(Exception): ...
+
+
+@dataclass(kw_only=True)
+class _ExampleLooper(Looper[Any]):
+    freq: Duration = field(default=10 * MILLISECOND, repr=False)
+    backoff: Duration = field(default=100 * MILLISECOND, repr=False)
+    count: int = 0
+    max_count: int = 10
+
+    @override
+    async def _initialize_core(self) -> None:
+        self.count = 0
+
+    @override
+    async def core(self) -> None:
+        self.count += 1
+        if self.count >= self.max_count:
+            raise _ExampleLooperError
+
+
+@mark.only
+class TestLooper:
+    async def test_main(self) -> None:
+        looper = _ExampleLooper()
+        async with looper:
+            ...
+        assert looper.stats == _LooperStats(entries=1, stops=1)
+
+    async def test_start(self) -> None:
+        looper = _ExampleLooper()
+        with raises(TimeoutError):
+            async with timeout(1.0), looper:
+                await looper
+        assert looper.stats.entries == 1
+        assert looper.stats.core_successes == approx(45, rel=0.1)
+        assert looper.stats.core_failures == approx(5, rel=0.1)
+        assert looper.stats.initialization_attempts == approx(6, rel=0.5)
+        assert looper.stats.stops == 1
 
 
 class TestPutItems:

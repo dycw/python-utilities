@@ -728,7 +728,7 @@ class Looper(Generic[_T]):
                     )
                     if not looper.auto_start:
                         self._logger.warning(
-                            "%s: changing sub-looper %s to auto-start..."
+                            "%s: changing sub-looper %s to auto-start...", self, looper
                         )
                         looper.auto_start = True
                     _ = await self._stack.enter_async_context(looper)
