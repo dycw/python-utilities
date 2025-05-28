@@ -30,7 +30,7 @@ from contextlib import (
 from dataclasses import dataclass, field
 from io import StringIO
 from itertools import chain
-from logging import getLogger
+from logging import Logger, getLogger
 from subprocess import PIPE
 from sys import stderr, stdout
 from typing import (
@@ -660,25 +660,121 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
 ##
 
 
-type _LooperState = Literal["off"]
+type _LooperState = (
+    Literal["off"] | tuple[Literal["idle", "initializing", "running"], Task]
+)
 
 
 @dataclass(kw_only=True, unsafe_hash=True)
 class Looper(ABC, Generic[THashable]):
     """An looper allowing constant retries."""
 
-    sleep_core: DurationOrEveryDuration = field(default=SECOND, repr=False)
-    sleep_restart: DurationOrEveryDuration = field(default=MINUTE, repr=False)
+    freq: Duration = field(default=SECOND, repr=False)
+    sleep_error: Duration = field(default=10 * SECOND, repr=False)
     duration: Duration | None = field(default=None, repr=False)
     logger: str | None = field(default=None, repr=False)
     _events: Mapping[THashable | None, Event] = field(
         default_factory=dict, init=False, repr=False, hash=False
     )
+    _freq_float: float = field(init=False, repr=False)
+    _is_initializing: bool = field(default=False, init=False, repr=False)
+    _is_initialized: bool = field(default=False, init=False, repr=False)
+    _is_pending_exit: bool = field(default=False, init=False, repr=False)
+    _is_pending_restart: bool = field(default=False, init=False, repr=False)
+    _is_running: bool = field(default=False, init=False, repr=False)
     _lock: Lock = field(default_factory=Lock, init=False, repr=False, hash=False)
+    _logger: Logger = field(init=False, repr=False, hash=False)
+    _sleep_error_float: float = field(init=False, repr=False)
     _stack: AsyncExitStack = field(
         default_factory=AsyncExitStack, init=False, repr=False, hash=False
     )
-    _task: Task[None] | None = field(default=None, init=False, repr=False)
+    _state: _LooperState = field(default="off", init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        self._logger = getLogger(name=self.logger)
+        self._freq = datetime_duration_to_float(self.freq)
+        self._sleep_error_float = datetime_duration_to_float(self.sleep_error)
+
+    async def __aenter__(self) -> Self:
+        """Enter the context manager."""
+        match self._state:
+            case "off":
+                self._logger.debug("%s: creating task...", self)
+                task = create_task(self._run_loop())
+                await self._set_state(("idle", task))
+                return self
+            case "idle" | "initializing" | "running", Task():
+                msg = f"{self} is already running; cannot start again"
+                raise ValueError(msg)
+            case _ as never:
+                assert_never(never)
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None = None,
+        exc_value: BaseException | None = None,
+        traceback: TracebackType | None = None,
+    ) -> None:
+        """Exit the context manager."""
+        _ = (exc_type, exc_value, traceback)
+        match self._state:
+            case "off":
+                msg = f"{self} is already stopped; cannot stop again"
+                raise ValueError(msg)
+            case "idle" | "initializing" | "running", Task() as task:
+                self._logger.debug("%s: cancelling %s...", self, task)
+                _ = task.cancel()
+                with suppress(CancelledError):
+                    await task
+                self._logger.debug("%s: finished cancelling %s", self, task)
+            case _ as never:
+                assert_never(never)
+
+    async def initialize(self) -> None:
+        """Initialize."""
+        match self._state:
+            case "off":
+                msg = f"{self} is off"
+                raise ValueError(msg)
+            case "idle", Task() as task:
+                self._logger.debug("%s: initializing...", self)
+                await self._set_state(("initializing", task))
+                await self._initialize_core()
+                await self._set_state(("running", task))
+                self._logger.debug("%s: finished initializing...", self)
+            case "initializing", Task() as task:
+                self._logger.debug("%s is already initializing", self)
+            case _ as never:
+                assert_never(never)
+
+    async def _initialize_core(self) -> None:
+        """Core part of initializing the looper."""
+
+    async def _run_loop(self) -> None:
+        while True:
+            match self._state:
+                case "off":
+                    msg = f"{self} is off"
+                    raise ValueError(msg)
+                case "idle", Task():
+                    print("idle...")
+                    await self.initialize()
+                case "initializing", Task():
+                    print("initializing...")
+                    raise NotImplementedError
+                case "running", Task():
+                    print("running...")
+                    raise NotImplementedError
+                case _ as never:
+                    assert_never(never)
+            await sleep(self._freq_float)
+
+    async def _set_state(self, state: _LooperState, /) -> None:
+        async with self._lock:
+            self._state = state
+
+    @property
+    def _state_and_task(self) -> Literal["off"]: ...
 
 
 ##
@@ -908,6 +1004,7 @@ __all__ = [
     "InfiniteLooper",
     "InfiniteLooperError",
     "InfiniteQueueLooper",
+    "Looper",
     "StreamCommandOutput",
     "UniquePriorityQueue",
     "UniqueQueue",
