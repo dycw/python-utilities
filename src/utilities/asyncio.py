@@ -37,7 +37,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
-    Literal,
     NoReturn,
     Self,
     TextIO,
@@ -680,7 +679,9 @@ class Looper(Generic[_T]):
     )
     _is_pending_stop: Event = field(default_factory=Event, init=False, repr=False)
     _is_pending_restart: Event = field(default_factory=Event, init=False, repr=False)
+    _is_restarting: Event = field(default_factory=Event, init=False, repr=False)
     _is_running: Event = field(default_factory=Event, init=False, repr=False)
+    _is_stopped: Event = field(default_factory=Event, init=False, repr=False)
     _is_stopping: Event = field(default_factory=Event, init=False, repr=False)
     _is_tearing_down: Event = field(
         default_factory=Event, init=False, repr=False, hash=False
@@ -692,9 +693,6 @@ class Looper(Generic[_T]):
     _logger: Logger = field(init=False, repr=False, hash=False)
     _backoff: float = field(init=False, repr=False)
     _queue: EnhancedQueue[_T] = field(init=False, repr=False)
-    _running_event: Event = field(
-        default_factory=Event, init=False, repr=False, hash=False
-    )
     _stack: AsyncExitStack = field(
         default_factory=AsyncExitStack, init=False, repr=False, hash=False
     )
@@ -704,7 +702,6 @@ class Looper(Generic[_T]):
         self._backoff = datetime_duration_to_float(self.backoff)
         self._freq = datetime_duration_to_float(self.freq)
         self._logger = getLogger(name=self.logger)
-        self._running_event.set()
 
     async def __aenter__(self) -> Self:
         """Enter the context manager."""
@@ -784,47 +781,53 @@ class Looper(Generic[_T]):
 
     async def _run_loop(self) -> None:
         """Run the looper."""
-        while self._running_event.is_set():
+        while not self._is_stopped.is_set():
             _ = self._debug and self._logger.debug("%s: running...", self)
             if self._is_pending_stop.is_set():
                 _ = self._debug and self._logger.debug("%s: pending stop", self)
                 await self.stop()
-                return
-            if self._is_pending_restart:
+            elif self._is_pending_restart.is_set():
                 _ = self._debug and self._logger.debug("%s: pending restart", self)
                 await self.restart()
+            elif not self._is_initialized.is_set():
+                await self.initialize()
             else:
-                match self._state:
-                    case "off":
-                        msg = f"{self} is off"
-                        raise ValueError(msg)
-                    case "idle", Task():
-                        await self.initialize()
-                    case "initializing", Task():
-                        await sleep(self._freq)
-                    case "running", Task() as task:
-                        try:
-                            await self.core()
-                        except Exception as error:  # noqa: BLE001
-                            _ = self._logger.warning(
-                                "%s: encountered %s...", self, repr_error(error)
-                            )
-                            await self.teardown()
-                            await sleep(self._backoff)
-                        else:
-                            await sleep(self._freq)
-                    case "recovering", Task():
-                        msg = f"{self} is backing off"
-                        raise ValueError(msg)
-                    case _ as never:
-                        assert_never(never)
+                try:
+                    await self.core()
+                except Exception as error:  # noqa: BLE001
+                    _ = self._logger.warning(
+                        "%s: encountered %s whilst running core...",
+                        self,
+                        repr_error(error),
+                    )
+                    self._is_pending_restart.set()
+                    await sleep(self._backoff)
+                else:
+                    await sleep(self._freq)
 
     async def restart(self) -> None:
         """Restart the looper."""
-        _ = self._debug and self._logger.debug("%s: restarting...", self)
-        await self.teardown()
-        await self.initialize()
-        _ = self._debug and self._logger.debug("%s: finished restarting", self)
+        match self._is_restarting.is_set():
+            case True:
+                _ = self._debug and self._logger.debug("%s: already restarting", self)
+            case False:
+                _ = self._debug and self._logger.debug("%s: restarting...", self)
+                self._is_pending_restart.clear()
+                try:
+                    await self.teardown()
+                    await self.initialize()
+                except Exception as error:  # noqa: BLE001
+                    _ = self._logger.warning(
+                        "%s: encountered %s whilst restarting", self, repr_error(error)
+                    )
+                else:
+                    _ = self._debug and self._logger.debug(
+                        "%s: finished restarting", self
+                    )
+                finally:
+                    self._is_restarting.clear()
+            case _ as never:
+                assert_never(never)
 
     async def stop(self) -> None:
         """Stop the looper."""
@@ -842,14 +845,13 @@ class Looper(Generic[_T]):
                     await task
                 except Exception as error:  # noqa: BLE001
                     _ = self._logger.warning(
-                        "%s: encountered %s whilst stopping",
-                        self,
-                        repr_error(error),
+                        "%s: encountered %s whilst stopping", self, repr_error(error)
                     )
                 else:
                     _ = self._debug and self._logger.debug(
                         "%s: finished stopping", self
                     )
+                    self._is_stopped.set()
                 finally:
                     self._is_stopping.set()
             case _ as never:
@@ -870,6 +872,10 @@ class Looper(Generic[_T]):
                         "%s: encountered %s whilst tearing down",
                         self,
                         repr_error(error),
+                    )
+                else:
+                    _ = self._debug and self._logger.debug(
+                        "%s: finished tearing down", self
                     )
                 finally:
                     self._is_tearing_down.clear()
