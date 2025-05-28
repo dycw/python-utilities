@@ -876,13 +876,10 @@ class Looper(Generic[_T]):
                     _ = self._debug and self._logger.debug("%s: stopped", self)
                     return
                 if self._is_pending_stop.is_set():
-                    _ = self._debug and self._logger.debug("%s: pending stop", self)
                     await self.stop()
                 elif self._is_pending_restart.is_set():
-                    _ = self._debug and self._logger.debug("%s: pending restart", self)
                     await self.restart()
                 elif not self._is_initialized.is_set():
-                    _ = self._debug and self._logger.debug("%s: initializing...", self)
                     await self.initialize()
                 else:
                     _ = self._debug and self._logger.debug("%s: running core...", self)
