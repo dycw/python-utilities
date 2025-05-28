@@ -686,9 +686,6 @@ class Looper(Generic[_T]):
     _is_tearing_down: Event = field(
         default_factory=Event, init=False, repr=False, hash=False
     )
-    # _is_torn_down: Event = field(
-    #     default_factory=Event, init=False, repr=False, hash=False
-    # )
     _lock: Lock = field(default_factory=Lock, init=False, repr=False, hash=False)
     _logger: Logger = field(init=False, repr=False, hash=False)
     _backoff: float = field(init=False, repr=False)
@@ -779,32 +776,29 @@ class Looper(Generic[_T]):
     async def _initialize_core(self) -> None:
         """Core part of initializing the looper."""
 
-    async def _run_loop(self) -> None:
-        """Run the looper."""
-        while not self._is_stopped.is_set():
-            if self._is_pending_stop.is_set():
-                _ = self._debug and self._logger.debug("%s: pending stop", self)
-                await self.stop()
-            elif self._is_pending_restart.is_set():
-                _ = self._debug and self._logger.debug("%s: pending restart", self)
-                await self.restart()
-            elif not self._is_initialized.is_set():
-                _ = self._debug and self._logger.debug("%s: initializing...", self)
-                await self.initialize()
-            else:
-                _ = self._debug and self._logger.debug("%s: running core...", self)
-                try:
-                    await self.core()
-                except Exception as error:  # noqa: BLE001
-                    _ = self._logger.warning(
-                        "%s: encountered %s whilst running core...",
-                        self,
-                        repr_error(error),
-                    )
-                    self._is_pending_restart.set()
-                    await sleep(self._backoff)
-                else:
-                    await sleep(self._freq)
+    def request_restart(self) -> None:
+        """Request the looper to restart."""
+        match self._is_pending_restart.is_set():
+            case True:
+                _ = self._debug and self._logger.debug(
+                    "%s: already requested restart", self
+                )
+            case False:
+                self._is_pending_restart.set()
+            case _ as never:
+                assert_never(never)
+
+    def request_stop(self) -> None:
+        """Request the looper to stop."""
+        match self._is_pending_stop.is_set():
+            case True:
+                _ = self._debug and self._logger.debug(
+                    "%s: already requested stop", self
+                )
+            case False:
+                self._is_pending_stop.set()
+            case _ as never:
+                assert_never(never)
 
     async def restart(self) -> None:
         """Restart the looper."""
@@ -829,6 +823,36 @@ class Looper(Generic[_T]):
                     self._is_restarting.clear()
             case _ as never:
                 assert_never(never)
+
+    async def _run_loop(self) -> None:
+        """Run the looper."""
+        while True:
+            if self._is_stopped.is_set():
+                _ = self._debug and self._logger.debug("%s: stopped", self)
+                return
+            if self._is_pending_stop.is_set():
+                _ = self._debug and self._logger.debug("%s: pending stop", self)
+                await self.stop()
+            elif self._is_pending_restart.is_set():
+                _ = self._debug and self._logger.debug("%s: pending restart", self)
+                await self.restart()
+            elif not self._is_initialized.is_set():
+                _ = self._debug and self._logger.debug("%s: initializing...", self)
+                await self.initialize()
+            else:
+                _ = self._debug and self._logger.debug("%s: running core...", self)
+                try:
+                    await self.core()
+                except Exception as error:  # noqa: BLE001
+                    _ = self._logger.warning(
+                        "%s: encountered %s whilst running core...",
+                        self,
+                        repr_error(error),
+                    )
+                    self._is_pending_restart.set()
+                    await sleep(self._backoff)
+                else:
+                    await sleep(self._freq)
 
     async def stop(self) -> None:
         """Stop the looper."""
