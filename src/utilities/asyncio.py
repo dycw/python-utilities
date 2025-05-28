@@ -676,7 +676,7 @@ class Looper(ABC, Generic[THashable]):
     _events: Mapping[THashable | None, Event] = field(
         default_factory=dict, init=False, repr=False, hash=False
     )
-    _freq_float: float = field(init=False, repr=False)
+    _freq: float = field(init=False, repr=False)
     _is_initializing: bool = field(default=False, init=False, repr=False)
     _is_initialized: bool = field(default=False, init=False, repr=False)
     _is_pending_exit: bool = field(default=False, init=False, repr=False)
@@ -684,7 +684,7 @@ class Looper(ABC, Generic[THashable]):
     _is_running: bool = field(default=False, init=False, repr=False)
     _lock: Lock = field(default_factory=Lock, init=False, repr=False, hash=False)
     _logger: Logger = field(init=False, repr=False, hash=False)
-    _sleep_error_float: float = field(init=False, repr=False)
+    _sleep_error: float = field(init=False, repr=False)
     _stack: AsyncExitStack = field(
         default_factory=AsyncExitStack, init=False, repr=False, hash=False
     )
@@ -693,7 +693,7 @@ class Looper(ABC, Generic[THashable]):
     def __post_init__(self) -> None:
         self._logger = getLogger(name=self.logger)
         self._freq = datetime_duration_to_float(self.freq)
-        self._sleep_error_float = datetime_duration_to_float(self.sleep_error)
+        self._sleep_error = datetime_duration_to_float(self.sleep_error)
 
     async def __aenter__(self) -> Self:
         """Enter the context manager."""
@@ -717,6 +717,8 @@ class Looper(ABC, Generic[THashable]):
     ) -> None:
         """Exit the context manager."""
         _ = (exc_type, exc_value, traceback)
+        if exc_value is not None:
+            self._logger.debug("%s: encountered %s", self, repr_error(exc_value))
         match self._state:
             case "off":
                 msg = f"{self} is already stopped; cannot stop again"
@@ -757,17 +759,17 @@ class Looper(ABC, Generic[THashable]):
                     msg = f"{self} is off"
                     raise ValueError(msg)
                 case "idle", Task():
-                    print("idle...")
+                    self._logger.debug("idle...")
                     await self.initialize()
                 case "initializing", Task():
-                    print("initializing...")
+                    self._logger.debug("initializing...")
                     raise NotImplementedError
                 case "running", Task():
-                    print("running...")
+                    self._logger.debug("running...")
                     raise NotImplementedError
                 case _ as never:
                     assert_never(never)
-            await sleep(self._freq_float)
+            await sleep(self._freq)
 
     async def _set_state(self, state: _LooperState, /) -> None:
         async with self._lock:
