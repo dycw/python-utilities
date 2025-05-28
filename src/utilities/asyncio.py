@@ -738,12 +738,16 @@ class Looper(Generic[_T]):
         traceback: TracebackType | None = None,
     ) -> None:
         """Exit the context manager."""
-        _ = (exc_type, exc_value, traceback)
-        if exc_value is not None:
+        _ = self._debug and self._logger.debug("%s: exiting context...", self)
+        self._is_entered.clear()
+        if (
+            (exc_type is not None)
+            and (exc_value is not None)
+            and (traceback is not None)
+        ):
             _ = self._debug and self._logger.warning(
                 "%s: encountered %s whilst in context", self, repr_error(exc_value)
             )
-        self._is_entered.clear()
         await self.stop()
 
     def __await__(self) -> Any:
@@ -889,6 +893,7 @@ class Looper(Generic[_T]):
     def stats(self) -> _LooperStats:
         """Return the statistics."""
         return _LooperStats(
+            entries=self._entries,
             core_attempts=self._core_attempts,
             core_successes=self._core_successes,
             core_failures=self._core_failures,
@@ -906,11 +911,17 @@ class Looper(Generic[_T]):
 
     async def stop(self) -> None:
         """Stop the looper."""
-        _ = self._debug and self._logger.debug("%s: stopping...", self)
-        self._is_pending_stop.clear()
-        self._is_stopped.set()
-        self._stops += 1
-        _ = self._debug and self._logger.debug("%s: stopped", self)
+        match self._is_stopped.is_set():
+            case True:
+                _ = self._debug and self._logger.debug("%s: already stopped", self)
+            case False:
+                _ = self._debug and self._logger.debug("%s: stopping...", self)
+                self._is_pending_stop.clear()
+                self._is_stopped.set()
+                self._stops += 1
+                _ = self._debug and self._logger.debug("%s: stopped", self)
+            case _ as never:
+                assert_never(never)
 
     async def teardown(self) -> None:
         """Tear down the looper."""
