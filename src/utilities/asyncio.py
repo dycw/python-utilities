@@ -693,6 +693,9 @@ class Looper(Generic[_T]):
     _is_initializing: Event = field(default_factory=Event, init=False, repr=False)
     _is_pending_restart: Event = field(default_factory=Event, init=False, repr=False)
     _is_pending_stop: Event = field(default_factory=Event, init=False, repr=False)
+    _is_pending_stop_when_empty: Event = field(
+        default_factory=Event, init=False, repr=False
+    )
     _is_restarting: Event = field(default_factory=Event, init=False, repr=False)
     _is_stopped: Event = field(default_factory=Event, init=False, repr=False)
     _is_tearing_down: Event = field(default_factory=Event, init=False, repr=False)
@@ -723,9 +726,12 @@ class Looper(Generic[_T]):
                     _ = self._debug and self._logger.debug(
                         "%s: adding sub-looper %s", self, looper
                     )
-                    _ = await self._stack.enter_async_context(
-                        looper.replace(auto_start=True)
-                    )
+                    if not looper.auto_start:
+                        self._logger.warning(
+                            "%s: changing sub-looper %s to auto-start..."
+                        )
+                        looper.auto_start = True
+                    _ = await self._stack.enter_async_context(looper)
                 if self.auto_start:
                     _ = self._debug and self._logger.debug("%s: auto-starting...", self)
                     with suppress(_LooperTimeoutError):
@@ -741,17 +747,26 @@ class Looper(Generic[_T]):
         traceback: TracebackType | None = None,
     ) -> None:
         """Exit the context manager."""
-        _ = self._debug and self._logger.debug("%s: exiting context...", self)
-        self._is_entered.clear()
-        if (
-            (exc_type is not None)
-            and (exc_value is not None)
-            and (traceback is not None)
-        ):
-            _ = self._debug and self._logger.warning(
-                "%s: encountered %s whilst in context", self, repr_error(exc_value)
-            )
-        await self.stop()
+        match self._is_entered.is_set():
+            case True:
+                _ = self._debug and self._logger.debug("%s: exiting context...", self)
+                self._is_entered.clear()
+                if (
+                    (exc_type is not None)
+                    and (exc_value is not None)
+                    and (traceback is not None)
+                ):
+                    _ = self._debug and self._logger.warning(
+                        "%s: encountered %s whilst in context",
+                        self,
+                        repr_error(exc_value),
+                    )
+                _ = await self._stack.__aexit__(exc_type, exc_value, traceback)
+                await self.stop()
+            case False:
+                _ = self._debug and self._logger.debug("%s: already exited", self)
+            case _ as never:
+                assert_never(never)
 
     def __await__(self) -> Any:
         match self._task:
@@ -765,6 +780,10 @@ class Looper(Generic[_T]):
 
     async def core(self) -> None:
         """Core part of running the looper."""
+
+    def empty(self) -> bool:
+        """Check if the queue is empty."""
+        return self._queue.empty()
 
     async def initialize(self) -> None:
         """Initialize the looper."""
@@ -799,6 +818,14 @@ class Looper(Generic[_T]):
     async def _initialize_core(self) -> None:
         """Core part of initializing the looper."""
 
+    def put_left_nowait(self, *items: _T) -> None:
+        """Put items into the queue at the start without blocking."""
+        self._queue.put_left_nowait(*items)  # pragma: no cover
+
+    def put_right_nowait(self, *items: _T) -> None:
+        """Put items into the queue at the end without blocking."""
+        self._queue.put_right_nowait(*items)  # pragma: no cover
+
     def replace(
         self,
         *,
@@ -826,6 +853,9 @@ class Looper(Generic[_T]):
                     "%s: already requested restart", self
                 )
             case False:
+                _ = self._debug and self._logger.debug(
+                    "%s: requesting restart...", self
+                )
                 self._is_pending_restart.set()
             case _ as never:
                 assert_never(never)
@@ -838,7 +868,23 @@ class Looper(Generic[_T]):
                     "%s: already requested stop", self
                 )
             case False:
+                _ = self._debug and self._logger.debug("%s: requesting stop...", self)
                 self._is_pending_stop.set()
+            case _ as never:
+                assert_never(never)
+
+    def request_stop_when_empty(self) -> None:
+        """Request the looper to stop when the queue is empty."""
+        match self._is_pending_stop_when_empty.is_set():
+            case True:
+                _ = self._debug and self._logger.debug(
+                    "%s: already requested stop when empty", self
+                )
+            case False:
+                _ = self._debug and self._logger.debug(
+                    "%s: requesting stop when empty...", self
+                )
+                self._is_pending_stop_when_empty.set()
             case _ as never:
                 assert_never(never)
 
@@ -876,7 +922,9 @@ class Looper(Generic[_T]):
                 if self._is_stopped.is_set():
                     _ = self._debug and self._logger.debug("%s: stopped", self)
                     return
-                if self._is_pending_stop.is_set():
+                if (self._is_pending_stop.is_set()) or (
+                    self._is_pending_stop_when_empty.is_set() and self.empty()
+                ):
                     await self.stop()
                 elif self._is_pending_restart.is_set():
                     await self.restart()
