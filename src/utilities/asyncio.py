@@ -26,13 +26,12 @@ from contextlib import (
     asynccontextmanager,
     suppress,
 )
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from io import StringIO
 from itertools import chain
 from logging import Logger, getLogger
 from subprocess import PIPE
 from sys import stderr, stdout
-from time import monotonic
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -663,16 +662,14 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
 class Looper(Generic[_T]):
     """An looper allowing constant retries."""
 
-    autostart: bool = field(default=False, repr=False)
+    auto_start: bool = field(default=False, repr=False)
     freq: Duration = field(default=SECOND, repr=False)
     backoff: Duration = field(default=10 * SECOND, repr=False)
-    duration: Duration | None = field(default=None, repr=False)
     logger: str | None = field(default=None, repr=False)
+    timeout: Duration | None = field(default=None, repr=False)
     # settings
     _backoff: float = field(init=False, repr=False)
     _debug: bool = field(default=False, repr=False)
-    _duration: float | None = field(default=None, repr=False)
-    _entry_time: float | None = field(default=None, init=False, repr=False)
     _freq: float = field(init=False, repr=False)
     # counts
     _core_attempts: int = field(default=0, init=False, repr=False)
@@ -708,9 +705,6 @@ class Looper(Generic[_T]):
 
     def __post_init__(self) -> None:
         self._backoff = datetime_duration_to_float(self.backoff)
-        self._duration = (
-            None if self.duration is None else datetime_duration_to_float(self.duration)
-        )
         self._freq = datetime_duration_to_float(self.freq)
         self._logger = getLogger(name=self.logger)
 
@@ -723,10 +717,18 @@ class Looper(Generic[_T]):
                 _ = self._debug and self._logger.debug("%s: entering context...", self)
                 self._is_entered.set()
                 self._entries += 1
-                self._entry_time = monotonic()
                 self._task = create_task(self._run_loop())
-                if self.autostart:
-                    await self._task
+                for looper in self._yield_sub_loopers():
+                    _ = self._debug and self._logger.debug(
+                        "%s: adding sub-looper %s", self, looper
+                    )
+                    _ = await self._stack.enter_async_context(
+                        looper.replace(auto_start=True)
+                    )
+                if self.auto_start:
+                    _ = self._debug and self._logger.debug("%s: auto-starting...", self)
+                    with suppress(_LooperTimeoutError):
+                        await self._task
             case _ as never:
                 assert_never(never)
         return self
@@ -796,6 +798,25 @@ class Looper(Generic[_T]):
     async def _initialize_core(self) -> None:
         """Core part of initializing the looper."""
 
+    def replace(
+        self,
+        *,
+        auto_start: bool | Sentinel = sentinel,
+        freq: Duration | Sentinel = sentinel,
+        backoff: Duration | Sentinel = sentinel,
+        duration: Duration | None | Sentinel = sentinel,
+        logger: str | None | Sentinel = sentinel,
+    ) -> Self:
+        """Replace elements of the looper."""
+        return replace(
+            self,
+            auto_start=auto_start,
+            freq=freq,
+            backoff=backoff,
+            duration=duration,
+            logger=logger,
+        )
+
     def request_restart(self) -> None:
         """Request the looper to restart."""
         match self._is_pending_restart.is_set():
@@ -849,45 +870,37 @@ class Looper(Generic[_T]):
 
     async def _run_loop(self) -> None:
         """Run the looper."""
-        while True:
-            if self._is_stopped.is_set():
-                _ = self._debug and self._logger.debug("%s: stopped", self)
-                return
-            if self._is_pending_stop.is_set():
-                _ = self._debug and self._logger.debug("%s: pending stop", self)
-                await self.stop()
-            elif self._is_pending_restart.is_set():
-                _ = self._debug and self._logger.debug("%s: pending restart", self)
-                await self.restart()
-            elif (
-                (self._entry_time is not None)
-                and (self._duration is not None)
-                and ((self._entry_time + self._duration) <= monotonic())
-            ):
-                _ = self._debug and self._logger.debug(
-                    "%s: requesting restart...", self
-                )
-                self.request_restart()
-            elif not self._is_initialized.is_set():
-                _ = self._debug and self._logger.debug("%s: initializing...", self)
-                await self.initialize()
-            else:
-                _ = self._debug and self._logger.debug("%s: running core...", self)
-                self._core_attempts += 1
-                try:
-                    await self.core()
-                except Exception as error:  # noqa: BLE001
-                    _ = self._logger.warning(
-                        "%s: encountered %s whilst running core...",
-                        self,
-                        repr_error(error),
-                    )
-                    self._is_pending_restart.set()
-                    self._core_failures += 1
-                    await sleep(self._backoff)
+        async with timeout_dur(duration=self.timeout, error=_LooperTimeoutError):
+            while True:
+                if self._is_stopped.is_set():
+                    _ = self._debug and self._logger.debug("%s: stopped", self)
+                    return
+                if self._is_pending_stop.is_set():
+                    _ = self._debug and self._logger.debug("%s: pending stop", self)
+                    await self.stop()
+                elif self._is_pending_restart.is_set():
+                    _ = self._debug and self._logger.debug("%s: pending restart", self)
+                    await self.restart()
+                elif not self._is_initialized.is_set():
+                    _ = self._debug and self._logger.debug("%s: initializing...", self)
+                    await self.initialize()
                 else:
-                    self._core_successes += 1
-                    await sleep(self._freq)
+                    _ = self._debug and self._logger.debug("%s: running core...", self)
+                    self._core_attempts += 1
+                    try:
+                        await self.core()
+                    except Exception as error:  # noqa: BLE001
+                        _ = self._logger.warning(
+                            "%s: encountered %s whilst running core...",
+                            self,
+                            repr_error(error),
+                        )
+                        self._is_pending_restart.set()
+                        self._core_failures += 1
+                        await sleep(self._backoff)
+                    else:
+                        self._core_successes += 1
+                        await sleep(self._freq)
 
     @property
     def stats(self) -> _LooperStats:
@@ -953,6 +966,13 @@ class Looper(Generic[_T]):
 
     async def _teardown_core(self) -> None:
         """Core part of tearing down the looper."""
+
+    def _yield_sub_loopers(self) -> Iterator[Looper]:
+        """Yield all sub-loopers."""
+        yield from []
+
+
+class _LooperTimeoutError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
