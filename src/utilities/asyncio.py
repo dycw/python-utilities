@@ -661,7 +661,8 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
 
 
 type _LooperState = (
-    Literal["off"] | tuple[Literal["idle", "initializing", "running"], Task]
+    Literal["off"]
+    | tuple[Literal["idle", "initializing", "running", "backing off"], Task]
 )
 
 
@@ -670,7 +671,7 @@ class Looper(ABC, Generic[THashable]):
     """An looper allowing constant retries."""
 
     freq: Duration = field(default=SECOND, repr=False)
-    sleep_error: Duration = field(default=10 * SECOND, repr=False)
+    restart: Duration = field(default=10 * SECOND, repr=False)
     duration: Duration | None = field(default=None, repr=False)
     logger: str | None = field(default=None, repr=False)
     _events: Mapping[THashable | None, Event] = field(
@@ -684,16 +685,19 @@ class Looper(ABC, Generic[THashable]):
     _is_running: bool = field(default=False, init=False, repr=False)
     _lock: Lock = field(default_factory=Lock, init=False, repr=False, hash=False)
     _logger: Logger = field(init=False, repr=False, hash=False)
-    _sleep_error: float = field(init=False, repr=False)
+    _restart: float = field(init=False, repr=False)
     _stack: AsyncExitStack = field(
         default_factory=AsyncExitStack, init=False, repr=False, hash=False
     )
     _state: _LooperState = field(default="off", init=False, repr=False)
+    _stop_event: Event = field(
+        default_factory=Event, init=False, repr=False, hash=False
+    )
 
     def __post_init__(self) -> None:
         self._logger = getLogger(name=self.logger)
         self._freq = datetime_duration_to_float(self.freq)
-        self._sleep_error = datetime_duration_to_float(self.sleep_error)
+        self._restart = datetime_duration_to_float(self.restart)
 
     async def __aenter__(self) -> Self:
         """Enter the context manager."""
@@ -703,8 +707,8 @@ class Looper(ABC, Generic[THashable]):
                 task = create_task(self._run_loop())
                 await self._set_state(("idle", task))
                 return self
-            case "idle" | "initializing" | "running", Task():
-                msg = f"{self} is already running; cannot start again"
+            case "idle" | "initializing" | "running" | "backing off", Task():
+                msg = f"{self}: already running; cannot start again"
                 raise ValueError(msg)
             case _ as never:
                 assert_never(never)
@@ -719,18 +723,7 @@ class Looper(ABC, Generic[THashable]):
         _ = (exc_type, exc_value, traceback)
         if exc_value is not None:
             self._logger.debug("%s: encountered %s", self, repr_error(exc_value))
-        match self._state:
-            case "off":
-                msg = f"{self} is already stopped; cannot stop again"
-                raise ValueError(msg)
-            case "idle" | "initializing" | "running", Task() as task:
-                self._logger.debug("%s: cancelling %s...", self, task)
-                _ = task.cancel()
-                with suppress(CancelledError):
-                    await task
-                self._logger.debug("%s: finished cancelling %s", self, task)
-            case _ as never:
-                assert_never(never)
+        await self.stop()
 
     async def initialize(self) -> None:
         """Initialize."""
@@ -744,8 +737,20 @@ class Looper(ABC, Generic[THashable]):
                 await self._initialize_core()
                 await self._set_state(("running", task))
                 self._logger.debug("%s: finished initializing...", self)
-            case "initializing", Task() as task:
-                self._logger.debug("%s is already initializing", self)
+            case "initializing", Task():
+                self._logger.debug("%s: already initializing", self)
+            case "running", Task() as task:
+                self._logger.debug("%s: initializing...", self)
+                await self._set_state(("initializing", task))
+                await self._initialize_core()
+                await self._set_state(("running", task))
+                self._logger.debug("%s: finished initializing...", self)
+            case "backing off", Task() as task:
+                self._logger.debug("%s: skipping backoff and initializing...", self)
+                await self._set_state(("initializing", task))
+                await self._initialize_core()
+                await self._set_state(("running", task))
+                self._logger.debug("%s: finished initializing...", self)
             case _ as never:
                 assert_never(never)
 
@@ -753,30 +758,59 @@ class Looper(ABC, Generic[THashable]):
         """Core part of initializing the looper."""
 
     async def _run_loop(self) -> None:
-        while True:
+        """Run the looper."""
+        while not self._stop_event:
+            self._logger.debug("%s: running loop...", self)
             match self._state:
                 case "off":
                     msg = f"{self} is off"
                     raise ValueError(msg)
                 case "idle", Task():
-                    self._logger.debug("idle...")
+                    self._logger.debug("%s: idle...", self)
                     await self.initialize()
                 case "initializing", Task():
-                    self._logger.debug("initializing...")
-                    raise NotImplementedError
-                case "running", Task():
-                    self._logger.debug("running...")
-                    raise NotImplementedError
+                    self._logger.debug("%s: already initializing", self)
+                case "running", Task() as task:
+                    self._logger.debug("%s: running core...", self)
+                    try:
+                        await self._core()
+                    except Exception as error:  # noqa: BLE001
+                        self._logger.warning(
+                            "%s: encountered %s...", self, repr_error(error)
+                        )
+                        await self._set_state(("backing off", task))
+                        await sleep(self._restart)
+                        await self._set_state(("idle", task))
+                    else:
+                        await sleep(self._freq)
+                case "backing off", Task():
+                    msg = f"{self} is backing off"
+                    raise ValueError(msg)
                 case _ as never:
                     assert_never(never)
-            await sleep(self._freq)
+
+    async def _core(self) -> None:
+        """Core part of running the looper."""
 
     async def _set_state(self, state: _LooperState, /) -> None:
+        """Set the looper state."""
         async with self._lock:
             self._state = state
 
-    @property
-    def _state_and_task(self) -> Literal["off"]: ...
+    async def stop(self) -> None:
+        """Stop the looper."""
+        match self._state:
+            case "off":
+                self._logger.debug("%s: already stopped", self)
+                return
+            case _, Task() as task:
+                self._logger.debug("%s: stopping...", self)
+                self._stop_event.set()
+                await task
+                self._logger.debug("%s: stopped", self)
+                await self._set_state("off")
+            case _ as never:
+                assert_never(never)
 
 
 ##
