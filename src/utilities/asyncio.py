@@ -669,6 +669,9 @@ class Looper(Generic[_T]):
     duration: Duration | None = field(default=None, repr=False)
     logger: str | None = field(default=None, repr=False)
     _backoff: float = field(init=False, repr=False)
+    _core_attempts: int = field(default=0, init=False, repr=False)
+    _core_successes: int = field(default=0, init=False, repr=False)
+    _core_failures: int = field(default=0, init=False, repr=False)
     _entries: int = field(default=0, init=False, repr=False)
     _debug: bool = field(default=False, repr=False)
     _freq: float = field(init=False, repr=False)
@@ -855,6 +858,7 @@ class Looper(Generic[_T]):
                 await self.initialize()
             else:
                 _ = self._debug and self._logger.debug("%s: running core...", self)
+                self._core_attempts += 1
                 try:
                     await self.core()
                 except Exception as error:  # noqa: BLE001
@@ -864,8 +868,10 @@ class Looper(Generic[_T]):
                         repr_error(error),
                     )
                     self._is_pending_restart.set()
+                    self._core_failures += 1
                     await sleep(self._backoff)
                 else:
+                    self._core_successes += 1
                     await sleep(self._freq)
 
     async def stop(self) -> None:
