@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from asyncio import (
     CancelledError,
     Event,
-    Lock,
     PriorityQueue,
     Queue,
     QueueEmpty,
@@ -668,43 +667,42 @@ class Looper(Generic[_T]):
     backoff: Duration = field(default=10 * SECOND, repr=False)
     duration: Duration | None = field(default=None, repr=False)
     logger: str | None = field(default=None, repr=False)
+    # settings
     _backoff: float = field(init=False, repr=False)
+    _debug: bool = field(default=False, repr=False)
+    _freq: float = field(init=False, repr=False)
+    # counts
     _core_attempts: int = field(default=0, init=False, repr=False)
     _core_successes: int = field(default=0, init=False, repr=False)
     _core_failures: int = field(default=0, init=False, repr=False)
     _entries: int = field(default=0, init=False, repr=False)
-    _debug: bool = field(default=False, repr=False)
-    _freq: float = field(init=False, repr=False)
     _initialization_attempts: int = field(default=0, init=False, repr=False)
     _initialization_successes: int = field(default=0, init=False, repr=False)
     _initialization_failures: int = field(default=0, init=False, repr=False)
+    _restart_attempts: int = field(default=0, init=False, repr=False)
+    _restart_successes: int = field(default=0, init=False, repr=False)
+    _restart_failures: int = field(default=0, init=False, repr=False)
+    _teardown_attempts: int = field(default=0, init=False, repr=False)
+    _teardown_successes: int = field(default=0, init=False, repr=False)
+    _teardown_failures: int = field(default=0, init=False, repr=False)
+    # flags
     _is_entered: Event = field(default_factory=Event, init=False, repr=False)
     _is_initialized: Event = field(default_factory=Event, init=False, repr=False)
-    _is_initializing: Event = field(
-        default_factory=Event, init=False, repr=False, hash=False
-    )
+    _is_initializing: Event = field(default_factory=Event, init=False, repr=False)
     _is_pending_stop: Event = field(default_factory=Event, init=False, repr=False)
     _is_pending_restart: Event = field(default_factory=Event, init=False, repr=False)
     _is_restarting: Event = field(default_factory=Event, init=False, repr=False)
     _is_running: Event = field(default_factory=Event, init=False, repr=False)
     _is_stopped: Event = field(default_factory=Event, init=False, repr=False)
     _is_stopping: Event = field(default_factory=Event, init=False, repr=False)
-    _is_tearing_down: Event = field(
-        default_factory=Event, init=False, repr=False, hash=False
-    )
-    _lock: Lock = field(default_factory=Lock, init=False, repr=False, hash=False)
+    _is_tearing_down: Event = field(default_factory=Event, init=False, repr=False)
+    # internal objects
     _logger: Logger = field(init=False, repr=False, hash=False)
-    _queue: EnhancedQueue[_T] = field(init=False, repr=False)
-    _restart_attempts: int = field(default=0, init=False, repr=False)
-    _restart_successes: int = field(default=0, init=False, repr=False)
-    _restart_failures: int = field(default=0, init=False, repr=False)
+    _queue: EnhancedQueue[_T] = field(init=False, repr=False, hash=False)
     _stack: AsyncExitStack = field(
         default_factory=AsyncExitStack, init=False, repr=False, hash=False
     )
     _task: Task[None] | None = field(default=None, init=False, repr=False, hash=False)
-    _teardown_attempts: int = field(default=0, init=False, repr=False)
-    _teardown_successes: int = field(default=0, init=False, repr=False)
-    _teardown_failures: int = field(default=0, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._backoff = datetime_duration_to_float(self.backoff)
