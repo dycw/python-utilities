@@ -623,8 +623,8 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     @override
     async def _core(self) -> None:
         """Run the core part of the loop."""
-        first = await self._queue.get_left()
-        self._queue.put_left_nowait(first)
+        if self._queue.empty():
+            return
         await self._process_queue()
 
     @abstractmethod
@@ -642,6 +642,10 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     def put_right_nowait(self, *items: _T) -> None:
         """Put items into the queue at the end without blocking."""
         self._queue.put_right_nowait(*items)  # pragma: no cover
+
+    def qsize(self, *items: _T) -> int:
+        """Get the number of items in the queue."""
+        return self._queue.qsize(*items)
 
     async def run_until_empty(self, *, stop: bool = False) -> None:
         """Run until the queue is empty."""
