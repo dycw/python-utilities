@@ -817,7 +817,7 @@ class TestInfiniteQueueLooper:
         assert len(looper) == 0
         assert looper.empty()
         looper.put_right_nowait(*range(n))
-        assert len(looper) == n
+        assert len(looper) == looper.qsize() == n
         assert not looper.empty()
 
     async def test_run_until_empty_no_stop(self) -> None:
