@@ -782,7 +782,6 @@ class Looper(Generic[_T]):
     async def _run_loop(self) -> None:
         """Run the looper."""
         while not self._is_stopped.is_set():
-            _ = self._debug and self._logger.debug("%s: running...", self)
             if self._is_pending_stop.is_set():
                 _ = self._debug and self._logger.debug("%s: pending stop", self)
                 await self.stop()
@@ -790,8 +789,10 @@ class Looper(Generic[_T]):
                 _ = self._debug and self._logger.debug("%s: pending restart", self)
                 await self.restart()
             elif not self._is_initialized.is_set():
+                _ = self._debug and self._logger.debug("%s: initializing...", self)
                 await self.initialize()
             else:
+                _ = self._debug and self._logger.debug("%s: running core...", self)
                 try:
                     await self.core()
                 except Exception as error:  # noqa: BLE001
