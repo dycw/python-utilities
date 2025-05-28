@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from asyncio import (
     CancelledError,
     Event,
+    Lock,
     PriorityQueue,
     Queue,
     QueueEmpty,
@@ -36,6 +37,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
+    Literal,
     NoReturn,
     Self,
     TextIO,
@@ -653,6 +655,30 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
             await self._process_queue()
         if stop:
             await self.stop()
+
+
+##
+
+
+type _LooperState = Literal["off"]
+
+
+@dataclass(kw_only=True, unsafe_hash=True)
+class Looper(ABC, Generic[THashable]):
+    """An looper allowing constant retries."""
+
+    sleep_core: DurationOrEveryDuration = field(default=SECOND, repr=False)
+    sleep_restart: DurationOrEveryDuration = field(default=MINUTE, repr=False)
+    duration: Duration | None = field(default=None, repr=False)
+    logger: str | None = field(default=None, repr=False)
+    _events: Mapping[THashable | None, Event] = field(
+        default_factory=dict, init=False, repr=False, hash=False
+    )
+    _lock: Lock = field(default_factory=Lock, init=False, repr=False, hash=False)
+    _stack: AsyncExitStack = field(
+        default_factory=AsyncExitStack, init=False, repr=False, hash=False
+    )
+    _task: Task[None] | None = field(default=None, init=False, repr=False)
 
 
 ##
