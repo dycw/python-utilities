@@ -32,6 +32,7 @@ from itertools import chain
 from logging import Logger, getLogger
 from subprocess import PIPE
 from sys import stderr, stdout
+from time import monotonic
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -670,6 +671,8 @@ class Looper(Generic[_T]):
     # settings
     _backoff: float = field(init=False, repr=False)
     _debug: bool = field(default=False, repr=False)
+    _duration: float | None = field(default=None, repr=False)
+    _entry_time: float | None = field(default=None, init=False, repr=False)
     _freq: float = field(init=False, repr=False)
     # counts
     _core_attempts: int = field(default=0, init=False, repr=False)
@@ -682,6 +685,7 @@ class Looper(Generic[_T]):
     _restart_attempts: int = field(default=0, init=False, repr=False)
     _restart_successes: int = field(default=0, init=False, repr=False)
     _restart_failures: int = field(default=0, init=False, repr=False)
+    _stops: int = field(default=0, init=False, repr=False)
     _teardown_attempts: int = field(default=0, init=False, repr=False)
     _teardown_successes: int = field(default=0, init=False, repr=False)
     _teardown_failures: int = field(default=0, init=False, repr=False)
@@ -689,12 +693,10 @@ class Looper(Generic[_T]):
     _is_entered: Event = field(default_factory=Event, init=False, repr=False)
     _is_initialized: Event = field(default_factory=Event, init=False, repr=False)
     _is_initializing: Event = field(default_factory=Event, init=False, repr=False)
-    _is_pending_stop: Event = field(default_factory=Event, init=False, repr=False)
     _is_pending_restart: Event = field(default_factory=Event, init=False, repr=False)
+    _is_pending_stop: Event = field(default_factory=Event, init=False, repr=False)
     _is_restarting: Event = field(default_factory=Event, init=False, repr=False)
-    _is_running: Event = field(default_factory=Event, init=False, repr=False)
     _is_stopped: Event = field(default_factory=Event, init=False, repr=False)
-    _is_stopping: Event = field(default_factory=Event, init=False, repr=False)
     _is_tearing_down: Event = field(default_factory=Event, init=False, repr=False)
     # internal objects
     _logger: Logger = field(init=False, repr=False, hash=False)
@@ -706,6 +708,9 @@ class Looper(Generic[_T]):
 
     def __post_init__(self) -> None:
         self._backoff = datetime_duration_to_float(self.backoff)
+        self._duration = (
+            None if self.duration is None else datetime_duration_to_float(self.duration)
+        )
         self._freq = datetime_duration_to_float(self.freq)
         self._logger = getLogger(name=self.logger)
 
@@ -716,8 +721,9 @@ class Looper(Generic[_T]):
                 _ = self._debug and self._logger.debug("%s: already entered", self)
             case False:
                 _ = self._debug and self._logger.debug("%s: entering context...", self)
-                self._entries += 1
                 self._is_entered.set()
+                self._entries += 1
+                self._entry_time = monotonic()
                 self._task = create_task(self._run_loop())
                 if self.autostart:
                     await self._task
@@ -735,9 +741,7 @@ class Looper(Generic[_T]):
         _ = (exc_type, exc_value, traceback)
         if exc_value is not None:
             _ = self._debug and self._logger.warning(
-                "%s: encountered %s whilst in context manager",
-                self,
-                repr_error(exc_value),
+                "%s: encountered %s whilst in context", self, repr_error(exc_value)
             )
         self._is_entered.clear()
         await self.stop()
@@ -851,6 +855,15 @@ class Looper(Generic[_T]):
             elif self._is_pending_restart.is_set():
                 _ = self._debug and self._logger.debug("%s: pending restart", self)
                 await self.restart()
+            elif (
+                (self._entry_time is not None)
+                and (self._duration is not None)
+                and ((self._entry_time + self._duration) <= monotonic())
+            ):
+                _ = self._debug and self._logger.debug(
+                    "%s: requesting restart...", self
+                )
+                self.request_restart()
             elif not self._is_initialized.is_set():
                 _ = self._debug and self._logger.debug("%s: initializing...", self)
                 await self.initialize()
@@ -872,33 +885,32 @@ class Looper(Generic[_T]):
                     self._core_successes += 1
                     await sleep(self._freq)
 
+    @property
+    def stats(self) -> _LooperStats:
+        """Return the statistics."""
+        return _LooperStats(
+            core_attempts=self._core_attempts,
+            core_successes=self._core_successes,
+            core_failures=self._core_failures,
+            initialization_attempts=self._initialization_attempts,
+            initialization_successes=self._initialization_successes,
+            initialization_failures=self._initialization_failures,
+            teardown_attempts=self._teardown_attempts,
+            teardown_successes=self._teardown_successes,
+            teardown_failures=self._teardown_failures,
+            restart_attempts=self._restart_attempts,
+            restart_successes=self._restart_successes,
+            restart_failures=self._restart_failures,
+            stops=self._stops,
+        )
+
     async def stop(self) -> None:
         """Stop the looper."""
-        match self._is_stopping.is_set(), self._task:
-            case True, _:
-                _ = self._debug and self._logger.debug("%s: already stopping", self)
-            case False, None:
-                _ = self._debug and self._logger.debug("%s: no task to stop", self)
-            case False, Task() as task:
-                _ = self._debug and self._logger.debug("%s: stopping...", self)
-                self._is_pending_stop.clear()
-                self._is_stopping.set()
-                self._is_running.clear()
-                try:
-                    await task
-                except Exception as error:  # noqa: BLE001
-                    _ = self._logger.warning(
-                        "%s: encountered %s whilst stopping", self, repr_error(error)
-                    )
-                else:
-                    _ = self._debug and self._logger.debug(
-                        "%s: finished stopping", self
-                    )
-                    self._is_stopped.set()
-                finally:
-                    self._is_stopping.set()
-            case _ as never:
-                assert_never(never)
+        _ = self._debug and self._logger.debug("%s: stopping...", self)
+        self._is_pending_stop.clear()
+        self._is_stopped.set()
+        self._stops += 1
+        _ = self._debug and self._logger.debug("%s: stopped", self)
 
     async def teardown(self) -> None:
         """Tear down the looper."""
@@ -930,6 +942,24 @@ class Looper(Generic[_T]):
 
     async def _teardown_core(self) -> None:
         """Core part of tearing down the looper."""
+
+
+@dataclass(kw_only=True, slots=True)
+class _LooperStats:
+    entries: int = 0
+    core_attempts: int = 0
+    core_successes: int = 0
+    core_failures: int = 0
+    initialization_attempts: int = 0
+    initialization_successes: int = 0
+    initialization_failures: int = 0
+    teardown_attempts: int = 0
+    teardown_successes: int = 0
+    teardown_failures: int = 0
+    restart_attempts: int = 0
+    restart_successes: int = 0
+    restart_failures: int = 0
+    stops: int = 0
 
 
 ##
