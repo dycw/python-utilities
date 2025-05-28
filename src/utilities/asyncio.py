@@ -26,7 +26,7 @@ from contextlib import (
     asynccontextmanager,
     suppress,
 )
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from io import StringIO
 from itertools import chain
 from logging import Logger, getLogger
@@ -47,6 +47,7 @@ from typing import (
 
 from typing_extensions import deprecated
 
+from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
     MINUTE,
     SECOND,
@@ -717,7 +718,7 @@ class Looper(Generic[_T]):
                 _ = self._debug and self._logger.debug("%s: entering context...", self)
                 self._is_entered.set()
                 self._entries += 1
-                self._task = create_task(self._run_loop())
+                self._task = create_task(self.run_looper())
                 for looper in self._yield_sub_loopers():
                     _ = self._debug and self._logger.debug(
                         "%s: adding sub-looper %s", self, looper
@@ -804,17 +805,17 @@ class Looper(Generic[_T]):
         auto_start: bool | Sentinel = sentinel,
         freq: Duration | Sentinel = sentinel,
         backoff: Duration | Sentinel = sentinel,
-        duration: Duration | None | Sentinel = sentinel,
         logger: str | None | Sentinel = sentinel,
+        timeout: Duration | None | Sentinel = sentinel,
     ) -> Self:
         """Replace elements of the looper."""
-        return replace(
+        return replace_non_sentinel(
             self,
             auto_start=auto_start,
             freq=freq,
             backoff=backoff,
-            duration=duration,
             logger=logger,
+            timeout=timeout,
         )
 
     def request_restart(self) -> None:
@@ -868,7 +869,7 @@ class Looper(Generic[_T]):
             case _ as never:
                 assert_never(never)
 
-    async def _run_loop(self) -> None:
+    async def run_looper(self) -> None:
         """Run the looper."""
         async with timeout_dur(duration=self.timeout, error=_LooperTimeoutError):
             while True:
