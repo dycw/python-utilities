@@ -1014,8 +1014,8 @@ class TestLooper:
         self, *, caplog: LogCaptureFixture
     ) -> None:
         looper = _ExampleLooper()
-        looper.request_restart()
-        looper.request_restart()
+        for _ in range(2):
+            looper.request_restart()
         _ = one(
             m for m in caplog.messages if search(r": already requested restart$", m)
         )
@@ -1045,8 +1045,8 @@ class TestLooper:
 
     def test_request_stop_already_requested(self, *, caplog: LogCaptureFixture) -> None:
         looper = _ExampleLooper()
-        looper.request_stop()
-        looper.request_stop()
+        for _ in range(2):
+            looper.request_stop()
         _ = one(m for m in caplog.messages if search(r": already requested stop$", m))
 
     async def test_request_stop_when_empty(self) -> None:
@@ -1071,6 +1071,18 @@ class TestLooper:
             teardown_successes=2,
             restart_successes=2,
             stops=1,
+        )
+
+    def test_request_stop_when_empty_already_requested(
+        self, *, caplog: LogCaptureFixture
+    ) -> None:
+        looper = _ExampleLooper()
+        for _ in range(2):
+            looper.request_stop_when_empty()
+        _ = one(
+            m
+            for m in caplog.messages
+            if search(r": already requested stop when empty$", m)
         )
 
     def _assert_stats(
