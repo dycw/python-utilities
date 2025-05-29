@@ -960,11 +960,11 @@ class TestLooper:
             @override
             async def _initialize_core(self) -> None:
                 if self._initialization_attempts == 1:
-                    await super().initialize()
+                    _ = await super().initialize()
                 await super()._initialize_core()
 
         looper = Example()
-        await looper.initialize()
+        _ = await looper.initialize()
         _ = one(m for m in caplog.messages if search(": already initializing$", m))
 
     async def test_initialize_failure(self, *, caplog: LogCaptureFixture) -> None:
@@ -976,7 +976,7 @@ class TestLooper:
                 await super()._initialize_core()
 
         looper = Example()
-        await looper.initialize()
+        _ = await looper.initialize()
         _ = one(
             m
             for m in caplog.messages
@@ -1167,6 +1167,36 @@ class TestLooper:
                 r": encountered _ExampleLooperError\(\) \(tear down\) and then _ExampleLooperError\(\) \(initialization\) whilst restarting$",
                 m,
             )
+        )
+
+    async def test_tear_down_already_initializing(
+        self, *, caplog: LogCaptureFixture
+    ) -> None:
+        class Example(_ExampleLooper):
+            @override
+            async def _tear_down_core(self) -> None:
+                if self._tear_down_attempts == 1:
+                    _ = await super().tear_down()
+                await super()._tear_down_core()
+
+        looper = Example()
+        _ = await looper.tear_down()
+        _ = one(m for m in caplog.messages if search(": already tearing down$", m))
+
+    async def test_tear_down_failure(self, *, caplog: LogCaptureFixture) -> None:
+        class Example(_ExampleLooper):
+            @override
+            async def _tear_down_core(self) -> None:
+                if self._tear_down_attempts == 1:
+                    raise _ExampleLooperError
+                await super()._tear_down_core()
+
+        looper = Example()
+        _ = await looper.tear_down()
+        _ = one(
+            m
+            for m in caplog.messages
+            if search(r": encountered _ExampleLooperError\(\) whilst tearing down$", m)
         )
 
     def _assert_stats(
