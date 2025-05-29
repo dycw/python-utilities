@@ -654,8 +654,28 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
 
 
 ##
+
+
 @dataclass(kw_only=True, slots=True)
-class LooperTimeoutError(Exception): ...
+class LooperError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class LooperTimeoutError(LooperError):
+    duration: Duration | None = None
+
+    @override
+    def __str__(self) -> str:
+        return "Timeout" if self.duration is None else f"Timeout after {self.duration}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _LooperNoTaskError(LooperError):
+    looper: Looper
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.looper} has no running task"
 
 
 @dataclass(kw_only=True, unsafe_hash=True)
@@ -774,8 +794,7 @@ class Looper(Generic[_T]):
     def __await__(self) -> Any:
         match self._task:
             case None:
-                msg = f"{self}: no task to await"
-                raise ValueError(msg)
+                raise _LooperNoTaskError(looper=self)
             case Task() as task:
                 return task.__await__()
             case _ as never:
@@ -1267,6 +1286,8 @@ __all__ = [
     "InfiniteLooperError",
     "InfiniteQueueLooper",
     "Looper",
+    "LooperError",
+    "LooperTimeoutError",
     "StreamCommandOutput",
     "UniquePriorityQueue",
     "UniqueQueue",

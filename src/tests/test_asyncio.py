@@ -34,6 +34,7 @@ from utilities.asyncio import (
     UniqueQueue,
     _InfiniteLooperDefaultEventError,
     _InfiniteLooperNoSuchEventError,
+    _LooperNoTaskError,
     _LooperStats,
     get_event,
     get_items,
@@ -923,7 +924,7 @@ class TestLooper:
     async def test_main_with_timeout(self) -> None:
         looper = _ExampleLooper(timeout=SECOND)
         async with looper:
-            with raises(LooperTimeoutError):
+            with raises(LooperTimeoutError, match="Timeout"):
                 await looper
         self._assert_stats(looper, 1)
 
@@ -932,6 +933,11 @@ class TestLooper:
         async with looper:
             ...
         self._assert_stats(looper, 1)
+
+    async def test_await_without_task(self) -> None:
+        looper = _ExampleLooper()
+        with raises(_LooperNoTaskError, match=".* has no running task"):
+            await looper
 
     async def test_context_manager_already_entered(
         self, *, caplog: LogCaptureFixture
