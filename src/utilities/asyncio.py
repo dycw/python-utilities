@@ -797,6 +797,9 @@ class Looper(Generic[_T]):
             case Task() as task:
                 return task.__await__()
             case _ as never:
+                self._logger.warning(  # pragma: no cover
+                    "Got %s of type %s", self._task, type(self._task)
+                )
                 assert_never(never)
 
     def __len__(self) -> int:

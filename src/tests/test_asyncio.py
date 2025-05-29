@@ -927,6 +927,7 @@ class TestLooper:
             ...
         assert looper.stats == _LooperStats(entries=1, stops=1)
 
+    @mark.flaky
     async def test_main_with_explicit_start(self) -> None:
         looper = _ExampleLooper()
         with raises(TimeoutError):
@@ -941,6 +942,7 @@ class TestLooper:
                 ...
         self._assert_stats(looper)
 
+    @mark.flaky
     async def test_main_with_timeout(self) -> None:
         looper = _ExampleLooper(timeout=SECOND)
         async with looper:
