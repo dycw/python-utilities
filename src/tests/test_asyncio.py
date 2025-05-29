@@ -988,14 +988,20 @@ class TestLooper:
             @override
             async def _initialize_core(self) -> None:
                 if self._initialization_attempts == 1:
-                    _ = await super().initialize()
+                    _ = await super().initialize(sleep_if_failure=False)
                 await super()._initialize_core()
 
         looper = Example()
-        _ = await looper.initialize()
+        _ = await looper.initialize(sleep_if_failure=False)
         _ = one(m for m in caplog.messages if search(": already initializing$", m))
 
-    async def test_initialize_failure(self, *, caplog: LogCaptureFixture) -> None:
+    @given(case=sampled_from([(True, "; sleeping for .*"), (False, "")]))
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_initialize_failure(
+        self, *, case: tuple[bool, str], caplog: LogCaptureFixture
+    ) -> None:
+        sleep_if_failure, extra = case
+
         class Example(_ExampleLooper):
             @override
             async def _initialize_core(self) -> None:
@@ -1004,11 +1010,13 @@ class TestLooper:
                 await super()._initialize_core()
 
         looper = Example()
-        _ = await looper.initialize()
+        _ = await looper.initialize(sleep_if_failure=sleep_if_failure)
         _ = one(
             m
             for m in caplog.messages
-            if search(r": encountered _ExampleLooperError\(\) whilst initializing$", m)
+            if search(
+                rf": encountered _ExampleLooperError\(\) whilst initializing{extra}$", m
+            )
         )
 
     def test_len_and_qsize(self) -> None:
@@ -1128,9 +1136,13 @@ class TestLooper:
             if search(r": already requested stop when empty$", m)
         )
 
+    @given(case=sampled_from([(True, "; sleeping for .*"), (False, "")]))
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_restart_failure_during_initialization(
-        self, *, caplog: LogCaptureFixture
+        self, *, case: tuple[bool, str], caplog: LogCaptureFixture
     ) -> None:
+        sleep_if_failure, extra = case
+
         class Example(_ExampleLooper):
             @override
             async def _initialize_core(self) -> None:
@@ -1139,19 +1151,23 @@ class TestLooper:
                 await super()._initialize_core()
 
         looper = Example()
-        await looper.restart()
+        await looper.restart(sleep_if_failure=sleep_if_failure)
         _ = one(
             m
             for m in caplog.messages
             if search(
-                r": encountered _ExampleLooperError\(\) whilst restarting, during initialization$",
+                rf": encountered _ExampleLooperError\(\) whilst restarting \(initialize\){extra}$",
                 m,
             )
         )
 
+    @given(case=sampled_from([(True, "; sleeping for .*"), (False, "")]))
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_restart_failure_during_tear_down(
-        self, *, caplog: LogCaptureFixture
+        self, *, case: tuple[bool, str], caplog: LogCaptureFixture
     ) -> None:
+        sleep_if_failure, extra = case
+
         class Example(_ExampleLooper):
             @override
             async def _tear_down_core(self) -> None:
@@ -1160,19 +1176,23 @@ class TestLooper:
                 await super()._tear_down_core()
 
         looper = Example()
-        await looper.restart()
+        await looper.restart(sleep_if_failure=sleep_if_failure)
         _ = one(
             m
             for m in caplog.messages
             if search(
-                r": encountered _ExampleLooperError\(\) whilst restarting, during tear down$",
+                rf": encountered _ExampleLooperError\(\) whilst restarting \(tear down\){extra}$",
                 m,
             )
         )
 
+    @given(case=sampled_from([(True, "; sleeping for .*"), (False, "")]))
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_restart_failure_during_tear_down_and_initialization(
-        self, *, caplog: LogCaptureFixture
+        self, *, case: tuple[bool, str], caplog: LogCaptureFixture
     ) -> None:
+        sleep_if_failure, extra = case
+
         class Example(_ExampleLooper):
             @override
             async def _initialize_core(self) -> None:
@@ -1187,12 +1207,12 @@ class TestLooper:
                 await super()._tear_down_core()
 
         looper = Example()
-        await looper.restart()
+        await looper.restart(sleep_if_failure=sleep_if_failure)
         _ = one(
             m
             for m in caplog.messages
             if search(
-                r": encountered _ExampleLooperError\(\) \(tear down\) and then _ExampleLooperError\(\) \(initialization\) whilst restarting$",
+                rf": encountered _ExampleLooperError\(\) \(tear down\) and then _ExampleLooperError\(\) \(initialization\) whilst restarting{extra}$",
                 m,
             )
         )
@@ -1227,21 +1247,27 @@ class TestLooper:
             )
         )
 
-    async def test_tear_down_already_initializing(
+    async def test_tear_down_already_tearing_down(
         self, *, caplog: LogCaptureFixture
     ) -> None:
         class Example(_ExampleLooper):
             @override
             async def _tear_down_core(self) -> None:
                 if self._tear_down_attempts == 1:
-                    _ = await super().tear_down()
+                    _ = await super().tear_down(sleep_if_failure=False)
                 await super()._tear_down_core()
 
         looper = Example()
-        _ = await looper.tear_down()
+        _ = await looper.tear_down(sleep_if_failure=False)
         _ = one(m for m in caplog.messages if search(": already tearing down$", m))
 
-    async def test_tear_down_failure(self, *, caplog: LogCaptureFixture) -> None:
+    @given(case=sampled_from([(True, "; sleeping for .*"), (False, "")]))
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_tear_down_failure(
+        self, *, case: tuple[bool, str], caplog: LogCaptureFixture
+    ) -> None:
+        sleep_if_failure, extra = case
+
         class Example(_ExampleLooper):
             @override
             async def _tear_down_core(self) -> None:
@@ -1250,11 +1276,13 @@ class TestLooper:
                 await super()._tear_down_core()
 
         looper = Example()
-        _ = await looper.tear_down()
+        _ = await looper.tear_down(sleep_if_failure=sleep_if_failure)
         _ = one(
             m
             for m in caplog.messages
-            if search(r": encountered _ExampleLooperError\(\) whilst tearing down$", m)
+            if search(
+                rf": encountered _ExampleLooperError\(\) whilst tearing down{extra}$", m
+            )
         )
 
     def _assert_stats(
