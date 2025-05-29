@@ -825,7 +825,7 @@ class Looper(Generic[_T]):
         """Remove and return an item from the end of the queue without blocking."""
         return self._queue.get_right_nowait()
 
-    async def initialize(self) -> Exception | None:
+    async def initialize(self, *, sleep_if_failure: bool) -> Exception | None:
         """Initialize the looper."""
         match self._is_initializing.is_set():
             case True:
@@ -848,6 +848,8 @@ class Looper(Generic[_T]):
                     async with self._lock:
                         self._initialization_failures += 1
                     ret = error
+                    if sleep_if_failure:
+                        await sleep(self._backoff)
                 else:
                     _ = self._debug and self._logger.debug(
                         "%s: finished initializing", self
@@ -946,7 +948,7 @@ class Looper(Generic[_T]):
         async with self._lock:
             self._restart_attempts += 1
         tear_down = await self.tear_down()
-        initialization = await self.initialize()
+        initialization = await self.initialize(sleep_if_failure=False)
         match tear_down, initialization:
             case None, None:
                 _ = self._debug and self._logger.debug("%s: finished restarting", self)
@@ -960,6 +962,7 @@ class Looper(Generic[_T]):
                 )
                 async with self._lock:
                     self._restart_failures += 1
+                await sleep(self._backoff)
             case None, Exception():
                 _ = self._logger.warning(
                     "%s: encountered %s whilst restarting, during initialization",
@@ -968,6 +971,7 @@ class Looper(Generic[_T]):
                 )
                 async with self._lock:
                     self._restart_failures += 1
+                await sleep(self._backoff)
             case Exception(), Exception():
                 _ = self._logger.warning(
                     "%s: encountered %s (tear down) and then %s (initialization) whilst restarting",
@@ -977,6 +981,7 @@ class Looper(Generic[_T]):
                 )
                 async with self._lock:
                     self._restart_failures += 1
+                await sleep(self._backoff)
             case _ as never:
                 assert_never(never)
 
@@ -994,7 +999,7 @@ class Looper(Generic[_T]):
                 elif self._is_pending_restart.is_set():
                     await self.restart()
                 elif not self._is_initialized.is_set():
-                    _ = await self.initialize()
+                    _ = await self.initialize(sleep_if_failure=True)
                 else:
                     _ = self._debug and self._logger.debug("%s: running core...", self)
                     async with self._lock:
