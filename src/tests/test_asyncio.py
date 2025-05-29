@@ -1011,7 +1011,7 @@ class TestLooper:
             core_successes=79,
             core_failures=1,
             initialization_successes=16,
-            teardown_successes=15,
+            tear_down_successes=15,
             restart_successes=15,
             stops=1,
         )
@@ -1044,7 +1044,7 @@ class TestLooper:
             core_successes=14,
             core_failures=1,
             initialization_successes=2,
-            teardown_successes=1,
+            tear_down_successes=1,
             restart_successes=1,
             stops=1,
         )
@@ -1083,7 +1083,7 @@ class TestLooper:
             core_successes=25,
             core_failures=2,
             initialization_successes=3,
-            teardown_successes=2,
+            tear_down_successes=2,
             restart_successes=2,
             stops=1,
         )
@@ -1100,6 +1100,48 @@ class TestLooper:
             if search(r": already requested stop when empty$", m)
         )
 
+    async def test_restart_failure_during_teardown(
+        self, *, caplog: LogCaptureFixture
+    ) -> None:
+        class Example(_ExampleLooper):
+            @override
+            async def _tear_down_core(self) -> None:
+                if self._tear_down_attempts == 1:
+                    raise _ExampleLooperError
+                await super()._tear_down_core()
+
+        looper = Example()
+        await looper.restart()
+        _ = one(
+            m
+            for m in caplog.messages
+            if search(
+                r": encountered _ExampleLooperError\(\) whilst restarting, during tear down$",
+                m,
+            )
+        )
+
+    async def test_restart_failure_during_initialization(
+        self, *, caplog: LogCaptureFixture
+    ) -> None:
+        class Example(_ExampleLooper):
+            @override
+            async def _initialize_core(self) -> None:
+                if self._initialization_attempts == 1:
+                    raise _ExampleLooperError
+                await super()._initialize_core()
+
+        looper = Example()
+        await looper.restart()
+        _ = one(
+            m
+            for m in caplog.messages
+            if search(
+                r": encountered _ExampleLooperError\(\) whilst restarting, during initialization$",
+                m,
+            )
+        )
+
     def _assert_stats(
         self,
         looper: _ExampleLooper,
@@ -1110,8 +1152,8 @@ class TestLooper:
         core_failures: int = 5,
         initialization_successes: int = 6,
         initialization_failures: int = 0,
-        teardown_successes: int = 5,
-        teardown_failures: int = 0,
+        tear_down_successes: int = 5,
+        tear_down_failures: int = 0,
         restart_successes: int = 5,
         restart_failures: int = 0,
         stops: int = 0,
@@ -1128,11 +1170,11 @@ class TestLooper:
             initialization_successes, rel=0.5
         )
         assert stats.initialization_failures == approx(initialization_failures, rel=0.5)
-        assert stats.teardown_attempts == (
-            stats.teardown_successes + stats.teardown_failures
+        assert stats.tear_down_attempts == (
+            stats.tear_down_successes + stats.tear_down_failures
         )
-        assert stats.teardown_successes == approx(teardown_successes, rel=0.5)
-        assert stats.teardown_failures == approx(teardown_failures, rel=0.5)
+        assert stats.tear_down_successes == approx(tear_down_successes, rel=0.5)
+        assert stats.tear_down_failures == approx(tear_down_failures, rel=0.5)
         assert stats.restart_attempts == (
             stats.restart_successes + stats.restart_failures
         )

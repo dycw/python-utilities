@@ -704,9 +704,9 @@ class Looper(Generic[_T]):
     _restart_successes: int = field(default=0, init=False, repr=False)
     _restart_failures: int = field(default=0, init=False, repr=False)
     _stops: int = field(default=0, init=False, repr=False)
-    _teardown_attempts: int = field(default=0, init=False, repr=False)
-    _teardown_successes: int = field(default=0, init=False, repr=False)
-    _teardown_failures: int = field(default=0, init=False, repr=False)
+    _tear_down_attempts: int = field(default=0, init=False, repr=False)
+    _tear_down_successes: int = field(default=0, init=False, repr=False)
+    _tear_down_failures: int = field(default=0, init=False, repr=False)
     # flags
     _is_entered: Event = field(default_factory=Event, init=False, repr=False)
     _is_initialized: Event = field(default_factory=Event, init=False, repr=False)
@@ -716,7 +716,6 @@ class Looper(Generic[_T]):
     _is_pending_stop_when_empty: Event = field(
         default_factory=Event, init=False, repr=False
     )
-    _is_restarting: Event = field(default_factory=Event, init=False, repr=False)
     _is_stopped: Event = field(default_factory=Event, init=False, repr=False)
     _is_tearing_down: Event = field(default_factory=Event, init=False, repr=False)
     # internal objects
@@ -818,11 +817,12 @@ class Looper(Generic[_T]):
         """Remove and return an item from the end of the queue without blocking."""
         return self._queue.get_right_nowait()
 
-    async def initialize(self) -> None:
+    async def initialize(self) -> Exception | None:
         """Initialize the looper."""
         match self._is_initializing.is_set():
             case True:
                 _ = self._debug and self._logger.debug("%s: already initializing", self)
+                return None
             case False:
                 _ = self._debug and self._logger.debug("%s: initializing...", self)
                 self._is_initializing.set()
@@ -837,14 +837,17 @@ class Looper(Generic[_T]):
                         repr_error(error),
                     )
                     self._initialization_failures += 1
+                    ret = error
                 else:
                     _ = self._debug and self._logger.debug(
                         "%s: finished initializing", self
                     )
                     self._is_initialized.set()
                     self._initialization_successes += 1
+                    ret = None
                 finally:
                     self._is_initializing.clear()
+                return ret
             case _ as never:
                 assert_never(never)
 
@@ -927,28 +930,37 @@ class Looper(Generic[_T]):
 
     async def restart(self) -> None:
         """Restart the looper."""
-        match self._is_restarting.is_set():
-            case True:
-                _ = self._debug and self._logger.debug("%s: already restarting", self)
-            case False:
-                _ = self._debug and self._logger.debug("%s: restarting...", self)
-                self._is_pending_restart.clear()
-                self._restart_attempts += 1
-                try:
-                    await self.teardown()
-                    await self.initialize()
-                except Exception as error:  # noqa: BLE001
-                    _ = self._logger.warning(
-                        "%s: encountered %s whilst restarting", self, repr_error(error)
-                    )
-                    self._restart_failures += 1
-                else:
-                    _ = self._debug and self._logger.debug(
-                        "%s: finished restarting", self
-                    )
-                    self._restart_successes += 1
-                finally:
-                    self._is_restarting.clear()
+        _ = self._debug and self._logger.debug("%s: restarting...", self)
+        self._is_pending_restart.clear()
+        self._restart_attempts += 1
+        tear_down = await self.tear_down()
+        initialization = await self.initialize()
+        match tear_down, initialization:
+            case None, None:
+                _ = self._debug and self._logger.debug("%s: finished restarting", self)
+                self._restart_successes += 1
+            case Exception(), None:
+                _ = self._logger.warning(
+                    "%s: encountered %s whilst restarting, during tear down",
+                    self,
+                    repr_error(tear_down),
+                )
+                self._restart_failures += 1
+            case None, Exception():
+                _ = self._logger.warning(
+                    "%s: encountered %s whilst restarting, during initialization",
+                    self,
+                    repr_error(initialization),
+                )
+                self._restart_failures += 1
+            case Exception(), Exception():
+                _ = self._logger.warning(
+                    "%s: encountered %s (tear down) and then %s (initialization) whilst restarting",
+                    self,
+                    repr_error(tear_down),
+                    repr_error(initialization),
+                )
+                self._restart_failures += 1
             case _ as never:
                 assert_never(never)
 
@@ -996,9 +1008,9 @@ class Looper(Generic[_T]):
             initialization_attempts=self._initialization_attempts,
             initialization_successes=self._initialization_successes,
             initialization_failures=self._initialization_failures,
-            teardown_attempts=self._teardown_attempts,
-            teardown_successes=self._teardown_successes,
-            teardown_failures=self._teardown_failures,
+            tear_down_attempts=self._tear_down_attempts,
+            tear_down_successes=self._tear_down_successes,
+            tear_down_failures=self._tear_down_failures,
             restart_attempts=self._restart_attempts,
             restart_successes=self._restart_successes,
             restart_failures=self._restart_failures,
@@ -1019,35 +1031,39 @@ class Looper(Generic[_T]):
             case _ as never:
                 assert_never(never)
 
-    async def teardown(self) -> None:
+    async def tear_down(self) -> Exception | None:
         """Tear down the looper."""
         match self._is_tearing_down.is_set():
             case True:
                 _ = self._debug and self._logger.debug("%s: already tearing down", self)
+                return None
             case False:
                 _ = self._debug and self._logger.debug("%s: tearing down...", self)
                 self._is_tearing_down.set()
-                self._teardown_attempts += 1
+                self._tear_down_attempts += 1
                 try:
-                    await self._teardown_core()
+                    await self._tear_down_core()
                 except Exception as error:  # noqa: BLE001
                     _ = self._logger.warning(
                         "%s: encountered %s whilst tearing down",
                         self,
                         repr_error(error),
                     )
-                    self._teardown_failures += 1
+                    self._tear_down_failures += 1
+                    ret = error
                 else:
                     _ = self._debug and self._logger.debug(
                         "%s: finished tearing down", self
                     )
-                    self._teardown_successes += 1
+                    self._tear_down_successes += 1
+                    ret = None
                 finally:
                     self._is_tearing_down.clear()
+                return ret
             case _ as never:
                 assert_never(never)
 
-    async def _teardown_core(self) -> None:
+    async def _tear_down_core(self) -> None:
         """Core part of tearing down the looper."""
 
     def _yield_sub_loopers(self) -> Iterator[Looper]:
@@ -1064,9 +1080,9 @@ class _LooperStats:
     initialization_attempts: int = 0
     initialization_successes: int = 0
     initialization_failures: int = 0
-    teardown_attempts: int = 0
-    teardown_successes: int = 0
-    teardown_failures: int = 0
+    tear_down_attempts: int = 0
+    tear_down_successes: int = 0
+    tear_down_failures: int = 0
     restart_attempts: int = 0
     restart_successes: int = 0
     restart_failures: int = 0
