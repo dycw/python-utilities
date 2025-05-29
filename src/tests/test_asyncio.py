@@ -29,6 +29,7 @@ from utilities.asyncio import (
     InfiniteLooper,
     InfiniteQueueLooper,
     Looper,
+    LooperTimeoutError,
     UniquePriorityQueue,
     UniqueQueue,
     _InfiniteLooperDefaultEventError,
@@ -49,6 +50,7 @@ from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
     MILLISECOND,
     MINUTE,
+    SECOND,
     datetime_duration_to_timedelta,
     get_now,
 )
@@ -897,22 +899,46 @@ class _ExampleLooper(Looper[Any]):
 
 @mark.only
 class TestLooper:
-    async def test_main(self) -> None:
+    async def test_main_with_nothing(self) -> None:
         looper = _ExampleLooper()
         async with looper:
             ...
         assert looper.stats == _LooperStats(entries=1, stops=1)
 
-    async def test_start(self) -> None:
+    async def test_main_with_explicit_start(self) -> None:
         looper = _ExampleLooper()
         with raises(TimeoutError):
             async with timeout(1.0), looper:
                 await looper
+        self._assert_stats(looper, 1)
+
+    async def test_main_with_auto_start(self) -> None:
+        looper = _ExampleLooper(auto_start=True)
+        with raises(TimeoutError):
+            async with timeout(1.0), looper:
+                ...
+        self._assert_stats(looper, 0)
+
+    async def test_main_with_timeout(self) -> None:
+        looper = _ExampleLooper(timeout=SECOND)
+        async with looper:
+            with raises(LooperTimeoutError):
+                await looper
+        self._assert_stats(looper, 1)
+
+    async def test_main_with_auto_start_and_timeout(self) -> None:
+        looper = _ExampleLooper(auto_start=True, timeout=SECOND)
+        async with looper:
+            ...
+        self._assert_stats(looper, 1)
+
+    def _assert_stats(self, looper: _ExampleLooper, stops: int, /) -> None:
         assert looper.stats.entries == 1
         assert looper.stats.core_successes == approx(45, rel=0.1)
         assert looper.stats.core_failures == approx(5, rel=0.1)
         assert looper.stats.initialization_attempts == approx(6, rel=0.5)
-        assert looper.stats.stops == 1
+        assert looper.stats.teardown_attempts == approx(5, rel=0.5)
+        assert looper.stats.stops == stops
 
 
 class TestPutItems:

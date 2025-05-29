@@ -657,6 +657,8 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
 
 
 ##
+@dataclass(kw_only=True, slots=True)
+class LooperTimeoutError(Exception): ...
 
 
 @dataclass(kw_only=True, unsafe_hash=True)
@@ -668,6 +670,7 @@ class Looper(Generic[_T]):
     backoff: Duration = field(default=10 * SECOND, repr=False)
     logger: str | None = field(default=None, repr=False)
     timeout: Duration | None = field(default=None, repr=False)
+    timeout_error: type[Exception] = field(default=LooperTimeoutError, repr=False)
     # settings
     _backoff: float = field(init=False, repr=False)
     _debug: bool = field(default=False, repr=False)
@@ -734,7 +737,7 @@ class Looper(Generic[_T]):
                     _ = await self._stack.enter_async_context(looper)
                 if self.auto_start:
                     _ = self._debug and self._logger.debug("%s: auto-starting...", self)
-                    with suppress(_LooperTimeoutError):
+                    with suppress(self.timeout_error):
                         await self._task
             case _ as never:
                 assert_never(never)
@@ -917,7 +920,7 @@ class Looper(Generic[_T]):
 
     async def run_looper(self) -> None:
         """Run the looper."""
-        async with timeout_dur(duration=self.timeout, error=_LooperTimeoutError):
+        async with timeout_dur(duration=self.timeout, error=self.timeout_error):
             while True:
                 if self._is_stopped.is_set():
                     _ = self._debug and self._logger.debug("%s: stopped", self)
@@ -1016,9 +1019,6 @@ class Looper(Generic[_T]):
     def _yield_sub_loopers(self) -> Iterator[Looper]:
         """Yield all sub-loopers."""
         yield from []
-
-
-class _LooperTimeoutError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
