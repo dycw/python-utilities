@@ -791,17 +791,9 @@ class Looper(Generic[_T]):
                 assert_never(never)
 
     def __await__(self) -> Any:
-        match self._task:
-            case None:
-                raise _LooperNoTaskError(looper=self)
-            case Task() as task:
-                return task.__await__()
-            case _ as never:
-                self._logger.error(  # pragma: no cover
-                    "%s: task %s is of type %s", self, self._task, type(self._task)
-                )
-                return self.__await__()  # pragma: no cover
-                assert_never(never)
+        if self._task is None:  # cannot use `match` statement
+            raise _LooperNoTaskError(looper=self)
+        return self._task.__await__()
 
     def __len__(self) -> int:
         return self._queue.qsize()
