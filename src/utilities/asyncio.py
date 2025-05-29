@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from asyncio import (
     CancelledError,
     Event,
+    Lock,
     PriorityQueue,
     Queue,
     QueueEmpty,
@@ -719,6 +720,7 @@ class Looper(Generic[_T]):
     _is_stopped: Event = field(default_factory=Event, init=False, repr=False)
     _is_tearing_down: Event = field(default_factory=Event, init=False, repr=False)
     # internal objects
+    _lock: Lock = field(default_factory=Lock, init=False, repr=False, hash=False)
     _logger: Logger = field(init=False, repr=False, hash=False)
     _queue: EnhancedQueue[_T] = field(
         default_factory=EnhancedQueue, init=False, repr=False, hash=False
@@ -742,8 +744,9 @@ class Looper(Generic[_T]):
             case False:
                 _ = self._debug and self._logger.debug("%s: entering context...", self)
                 self._is_entered.set()
-                self._entries += 1
-                self._task = create_task(self.run_looper())
+                async with self._lock:
+                    self._entries += 1
+                    self._task = create_task(self.run_looper())
                 for looper in self._yield_sub_loopers():
                     _ = self._debug and self._logger.debug(
                         "%s: adding sub-looper %s", self, looper
@@ -752,7 +755,8 @@ class Looper(Generic[_T]):
                         self._logger.warning(
                             "%s: changing sub-looper %s to auto-start...", self, looper
                         )
-                        looper.auto_start = True
+                        async with self._lock:
+                            looper.auto_start = True
                     _ = await self._stack.enter_async_context(looper)
                 if self.auto_start:
                     _ = self._debug and self._logger.debug("%s: auto-starting...", self)
@@ -797,9 +801,6 @@ class Looper(Generic[_T]):
             case Task() as task:
                 return task.__await__()
             case _ as never:
-                self._logger.warning(  # pragma: no cover
-                    "Got %s of type %s", self._task, type(self._task)
-                )
                 assert_never(never)
 
     def __len__(self) -> int:
@@ -811,6 +812,10 @@ class Looper(Generic[_T]):
     def empty(self) -> bool:
         """Check if the queue is empty."""
         return self._queue.empty()
+
+    def get_all_nowait(self, *, reverse: bool = False) -> Sequence[_T]:
+        """Remove and return all items from the queue without blocking."""
+        return self._queue.get_all_nowait(reverse=reverse)
 
     def get_left_nowait(self) -> _T:
         """Remove and return an item from the start of the queue without blocking."""
@@ -830,7 +835,8 @@ class Looper(Generic[_T]):
                 _ = self._debug and self._logger.debug("%s: initializing...", self)
                 self._is_initializing.set()
                 self._is_initialized.clear()
-                self._initialization_attempts += 1
+                async with self._lock:
+                    self._initialization_attempts += 1
                 try:
                     await self._initialize_core()
                 except Exception as error:  # noqa: BLE001
@@ -839,14 +845,16 @@ class Looper(Generic[_T]):
                         self,
                         repr_error(error),
                     )
-                    self._initialization_failures += 1
+                    async with self._lock:
+                        self._initialization_failures += 1
                     ret = error
                 else:
                     _ = self._debug and self._logger.debug(
                         "%s: finished initializing", self
                     )
                     self._is_initialized.set()
-                    self._initialization_successes += 1
+                    async with self._lock:
+                        self._initialization_successes += 1
                     ret = None
                 finally:
                     self._is_initializing.clear()
@@ -935,27 +943,31 @@ class Looper(Generic[_T]):
         """Restart the looper."""
         _ = self._debug and self._logger.debug("%s: restarting...", self)
         self._is_pending_restart.clear()
-        self._restart_attempts += 1
+        async with self._lock:
+            self._restart_attempts += 1
         tear_down = await self.tear_down()
         initialization = await self.initialize()
         match tear_down, initialization:
             case None, None:
                 _ = self._debug and self._logger.debug("%s: finished restarting", self)
-                self._restart_successes += 1
+                async with self._lock:
+                    self._restart_successes += 1
             case Exception(), None:
                 _ = self._logger.warning(
                     "%s: encountered %s whilst restarting, during tear down",
                     self,
                     repr_error(tear_down),
                 )
-                self._restart_failures += 1
+                async with self._lock:
+                    self._restart_failures += 1
             case None, Exception():
                 _ = self._logger.warning(
                     "%s: encountered %s whilst restarting, during initialization",
                     self,
                     repr_error(initialization),
                 )
-                self._restart_failures += 1
+                async with self._lock:
+                    self._restart_failures += 1
             case Exception(), Exception():
                 _ = self._logger.warning(
                     "%s: encountered %s (tear down) and then %s (initialization) whilst restarting",
@@ -963,7 +975,8 @@ class Looper(Generic[_T]):
                     repr_error(tear_down),
                     repr_error(initialization),
                 )
-                self._restart_failures += 1
+                async with self._lock:
+                    self._restart_failures += 1
             case _ as never:
                 assert_never(never)
 
@@ -984,7 +997,8 @@ class Looper(Generic[_T]):
                     _ = await self.initialize()
                 else:
                     _ = self._debug and self._logger.debug("%s: running core...", self)
-                    self._core_attempts += 1
+                    async with self._lock:
+                        self._core_attempts += 1
                     try:
                         await self.core()
                     except Exception as error:  # noqa: BLE001
@@ -993,11 +1007,13 @@ class Looper(Generic[_T]):
                             self,
                             repr_error(error),
                         )
-                        self._core_failures += 1
+                        async with self._lock:
+                            self._core_failures += 1
                         self.request_restart()
                         await sleep(self._backoff)
                     else:
-                        self._core_successes += 1
+                        async with self._lock:
+                            self._core_successes += 1
                         await sleep(self._freq)
 
     @property
@@ -1029,7 +1045,8 @@ class Looper(Generic[_T]):
                 _ = self._debug and self._logger.debug("%s: stopping...", self)
                 self._is_pending_stop.clear()
                 self._is_stopped.set()
-                self._stops += 1
+                async with self._lock:
+                    self._stops += 1
                 _ = self._debug and self._logger.debug("%s: stopped", self)
             case _ as never:
                 assert_never(never)
@@ -1043,7 +1060,8 @@ class Looper(Generic[_T]):
             case False:
                 _ = self._debug and self._logger.debug("%s: tearing down...", self)
                 self._is_tearing_down.set()
-                self._tear_down_attempts += 1
+                async with self._lock:
+                    self._tear_down_attempts += 1
                 try:
                     await self._tear_down_core()
                 except Exception as error:  # noqa: BLE001
@@ -1052,13 +1070,15 @@ class Looper(Generic[_T]):
                         self,
                         repr_error(error),
                     )
-                    self._tear_down_failures += 1
+                    async with self._lock:
+                        self._tear_down_failures += 1
                     ret = error
                 else:
                     _ = self._debug and self._logger.debug(
                         "%s: finished tearing down", self
                     )
-                    self._tear_down_successes += 1
+                    async with self._lock:
+                        self._tear_down_successes += 1
                     ret = None
                 finally:
                     self._is_tearing_down.clear()
