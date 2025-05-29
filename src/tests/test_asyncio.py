@@ -899,6 +899,27 @@ class _ExampleLooper(Looper[Any]):
             raise _ExampleLooperError
 
 
+@dataclass(kw_only=True)
+class _ExampleOuterLooper(_ExampleLooper):
+    inner: _ExampleLooper = field(init=False, repr=False)
+
+    @override
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.inner = _ExampleLooper(
+            freq=self.freq / 2,
+            backoff=self.backoff / 2,
+            logger=self.logger,
+            timeout=self.timeout,
+            timeout_error=self.timeout_error,
+            max_count=round(self.max_count / 2),
+        )
+
+    @override
+    def _yield_sub_loopers(self) -> Iterator[Looper]:
+        yield self.inner
+
+
 @mark.only
 class TestLooper:
     async def test_main_with_nothing(self) -> None:
@@ -1166,6 +1187,28 @@ class TestLooper:
             if search(
                 r": encountered _ExampleLooperError\(\) \(tear down\) and then _ExampleLooperError\(\) \(initialization\) whilst restarting$",
                 m,
+            )
+        )
+
+    async def test_sub_looper(self) -> None:
+        looper = _ExampleOuterLooper(auto_start=True, timeout=SECOND)
+        looper.inner.auto_start = True
+        async with looper:
+            ...
+        self._assert_stats(looper, stops=1)
+        self._assert_stats(looper.inner, stops=1)
+
+    async def test_sub_looper_changing_to_auto_start(
+        self, *, caplog: LogCaptureFixture
+    ) -> None:
+        looper = _ExampleOuterLooper(auto_start=True, timeout=SECOND)
+        async with looper:
+            ...
+        _ = one(
+            m
+            for m in caplog.messages
+            if search(
+                r": changing sub-looper _ExampleLooper\(.*?\) to auto-start...$", m
             )
         )
 
