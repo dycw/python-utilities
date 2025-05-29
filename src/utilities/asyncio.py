@@ -807,6 +807,14 @@ class Looper(Generic[_T]):
         """Check if the queue is empty."""
         return self._queue.empty()
 
+    def get_left_nowait(self) -> _T:
+        """Remove and return an item from the start of the queue without blocking."""
+        return self._queue.get_left_nowait()
+
+    def get_right_nowait(self) -> _T:
+        """Remove and return an item from the end of the queue without blocking."""
+        return self._queue.get_right_nowait()
+
     async def initialize(self) -> None:
         """Initialize the looper."""
         match self._is_initializing.is_set():
@@ -842,11 +850,11 @@ class Looper(Generic[_T]):
 
     def put_left_nowait(self, *items: _T) -> None:
         """Put items into the queue at the start without blocking."""
-        self._queue.put_left_nowait(*items)  # pragma: no cover
+        self._queue.put_left_nowait(*items)
 
     def put_right_nowait(self, *items: _T) -> None:
         """Put items into the queue at the end without blocking."""
-        self._queue.put_right_nowait(*items)  # pragma: no cover
+        self._queue.put_right_nowait(*items)
 
     def replace(
         self,

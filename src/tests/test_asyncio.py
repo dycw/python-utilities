@@ -1043,6 +1043,36 @@ class TestLooper:
             stops=1,
         )
 
+    def test_request_stop_already_requested(self, *, caplog: LogCaptureFixture) -> None:
+        looper = _ExampleLooper()
+        looper.request_stop()
+        looper.request_stop()
+        _ = one(m for m in caplog.messages if search(r": already requested stop$", m))
+
+    async def test_request_stop_when_empty(self) -> None:
+        class Example(_ExampleLooper):
+            @override
+            async def core(self) -> None:
+                await super().core()
+                if self.empty():
+                    await self.stop()
+                _ = self.get_left_nowait()
+                self.request_stop_when_empty()
+
+        looper = Example(auto_start=True, timeout=SECOND)
+        looper.put_left_nowait(*range(25))
+        async with looper:
+            ...
+        self._assert_stats(
+            looper,
+            core_successes=25,
+            core_failures=2,
+            initialization_successes=3,
+            teardown_successes=2,
+            restart_successes=2,
+            stops=1,
+        )
+
     def _assert_stats(
         self,
         looper: _ExampleLooper,
