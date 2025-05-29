@@ -59,6 +59,7 @@ socket
 sqlalchemy
 sqlalchemy-polars
 streamlit
+string
 sys
 tempfile
 tenacity
