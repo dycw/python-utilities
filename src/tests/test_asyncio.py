@@ -975,6 +975,12 @@ class TestLooper:
         looper.put_left_nowait(None)
         assert not looper.empty()
 
+    def test_get_all_nowait(self) -> None:
+        looper = _ExampleLooper()
+        looper.put_left_nowait(None)
+        items = looper.get_all_nowait()
+        assert items == [None]
+
     async def test_initialize_already_initializing(
         self, *, caplog: LogCaptureFixture
     ) -> None:
@@ -1084,6 +1090,7 @@ class TestLooper:
                 await super().core()
                 if self.empty():
                     await self.stop()
+                _ = self.get_left_nowait()
                 match self.qsize() % 2 == 0:
                     case True:
                         _ = self.get_left_nowait()

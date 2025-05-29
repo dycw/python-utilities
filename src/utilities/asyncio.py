@@ -813,6 +813,10 @@ class Looper(Generic[_T]):
         """Check if the queue is empty."""
         return self._queue.empty()
 
+    def get_all_nowait(self, *, reverse: bool = False) -> Sequence[_T]:
+        """Remove and return all items from the queue without blocking."""
+        return self._queue.get_all_nowait(reverse=reverse)  # pragma: no cover
+
     def get_left_nowait(self) -> _T:
         """Remove and return an item from the start of the queue without blocking."""
         return self._queue.get_left_nowait()
