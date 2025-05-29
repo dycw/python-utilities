@@ -988,11 +988,11 @@ class TestLooper:
             @override
             async def _initialize_core(self) -> None:
                 if self._initialization_attempts == 1:
-                    _ = await super().initialize()
+                    _ = await super().initialize(sleep_if_failure=False)
                 await super()._initialize_core()
 
         looper = Example()
-        _ = await looper.initialize()
+        _ = await looper.initialize(sleep_if_failure=False)
         _ = one(m for m in caplog.messages if search(": already initializing$", m))
 
     async def test_initialize_failure(self, *, caplog: LogCaptureFixture) -> None:
@@ -1004,7 +1004,7 @@ class TestLooper:
                 await super()._initialize_core()
 
         looper = Example()
-        _ = await looper.initialize()
+        _ = await looper.initialize(sleep_if_failure=False)
         _ = one(
             m
             for m in caplog.messages
