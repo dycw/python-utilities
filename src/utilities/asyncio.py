@@ -680,7 +680,7 @@ class _LooperNoTaskError(LooperError):
 
 @dataclass(kw_only=True, unsafe_hash=True)
 class Looper(Generic[_T]):
-    """An looper allowing constant retries."""
+    """A looper of a core coroutine, handling errors."""
 
     auto_start: bool = field(default=False, repr=False)
     freq: Duration = field(default=SECOND, repr=False)
