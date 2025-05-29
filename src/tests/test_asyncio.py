@@ -1020,6 +1020,29 @@ class TestLooper:
             m for m in caplog.messages if search(r": already requested restart$", m)
         )
 
+    async def test_request_stop(self) -> None:
+        class Example(_ExampleLooper):
+            @override
+            async def core(self) -> None:
+                await super().core()
+                if (self._initialization_attempts >= 2) and (
+                    self.count >= (self.max_count / 2)
+                ):
+                    self.request_stop()
+
+        looper = Example(auto_start=True, timeout=SECOND)
+        async with looper:
+            ...
+        self._assert_stats(
+            looper,
+            core_successes=14,
+            core_failures=1,
+            initialization_successes=2,
+            teardown_successes=1,
+            restart_successes=1,
+            stops=1,
+        )
+
     def _assert_stats(
         self,
         looper: _ExampleLooper,
