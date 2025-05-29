@@ -1090,7 +1090,6 @@ class TestLooper:
                 await super().core()
                 if self.empty():
                     await self.stop()
-                _ = self.get_left_nowait()
                 match self.qsize() % 2 == 0:
                     case True:
                         _ = self.get_left_nowait()
