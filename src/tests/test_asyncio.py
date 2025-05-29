@@ -1178,7 +1178,6 @@ class TestLooper:
             )
         )
 
-    @mark.only
     @given(case=sampled_from([(True, "; sleeping for .*"), (False, "")]))
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_restart_failure_during_tear_down_and_initialization(
