@@ -947,7 +947,7 @@ class TestLooper:
             ...
         _ = one(m for m in caplog.messages if search(": already entered$", m))
 
-    async def test_empty(self) -> None:
+    def test_empty(self) -> None:
         looper = _ExampleLooper()
         assert looper.empty()
         looper.put_left_nowait(None)
@@ -982,6 +982,12 @@ class TestLooper:
             for m in caplog.messages
             if search(r": encountered _ExampleLooperError\(\) whilst initializing$", m)
         )
+
+    def test_len_and_qsize(self) -> None:
+        looper = _ExampleLooper()
+        assert len(looper) == looper.qsize() == 0
+        looper.put_left_nowait(None)
+        assert len(looper) == looper.qsize() == 1
 
     def test_replace(self) -> None:
         looper = _ExampleLooper().replace(freq=SECOND)
@@ -1056,11 +1062,20 @@ class TestLooper:
                 await super().core()
                 if self.empty():
                     await self.stop()
-                _ = self.get_left_nowait()
+                match self.qsize() % 2 == 0:
+                    case True:
+                        _ = self.get_left_nowait()
+                    case False:
+                        _ = self.get_left_nowait()
                 self.request_stop_when_empty()
 
         looper = Example(auto_start=True, timeout=SECOND)
-        looper.put_left_nowait(*range(25))
+        for i in range(25):
+            match i % 2 == 0:
+                case True:
+                    looper.put_left_nowait(i)
+                case False:
+                    looper.put_right_nowait(i)
         async with looper:
             ...
         self._assert_stats(

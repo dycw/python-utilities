@@ -800,6 +800,9 @@ class Looper(Generic[_T]):
             case _ as never:
                 assert_never(never)
 
+    def __len__(self) -> int:
+        return self._queue.qsize()
+
     async def core(self) -> None:
         """Core part of running the looper."""
 
@@ -855,6 +858,10 @@ class Looper(Generic[_T]):
     def put_right_nowait(self, *items: _T) -> None:
         """Put items into the queue at the end without blocking."""
         self._queue.put_right_nowait(*items)
+
+    def qsize(self) -> int:
+        """Get the number of items in the queue."""
+        return self._queue.qsize()
 
     def replace(
         self,
