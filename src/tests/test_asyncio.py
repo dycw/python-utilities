@@ -920,7 +920,6 @@ class _ExampleOuterLooper(_ExampleLooper):
         yield self.inner
 
 
-@mark.only
 class TestLooper:
     async def test_main_with_nothing(self) -> None:
         looper = _ExampleLooper()
