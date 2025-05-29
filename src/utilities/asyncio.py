@@ -29,7 +29,7 @@ from contextlib import (
 from dataclasses import dataclass, field
 from io import StringIO
 from itertools import chain
-from logging import getLogger
+from logging import DEBUG, Logger, getLogger
 from subprocess import PIPE
 from sys import stderr, stdout
 from typing import (
@@ -47,6 +47,7 @@ from typing import (
 
 from typing_extensions import deprecated
 
+from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
     MINUTE,
     SECOND,
@@ -610,12 +611,9 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     """An infinite loop which processes a queue."""
 
     _await_upon_aenter: bool = field(default=False, init=False, repr=False)
-    _queue: EnhancedQueue[_T] = field(init=False, repr=False)
-
-    @override
-    def __post_init__(self) -> None:
-        super().__post_init__()
-        self._queue = EnhancedQueue()
+    _queue: EnhancedQueue[_T] = field(
+        default_factory=EnhancedQueue, init=False, repr=False
+    )
 
     def __len__(self) -> int:
         return self._queue.qsize()
@@ -623,8 +621,8 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     @override
     async def _core(self) -> None:
         """Run the core part of the loop."""
-        first = await self._queue.get_left()
-        self._queue.put_left_nowait(first)
+        if self.empty():
+            return
         await self._process_queue()
 
     @abstractmethod
@@ -643,12 +641,455 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
         """Put items into the queue at the end without blocking."""
         self._queue.put_right_nowait(*items)  # pragma: no cover
 
+    def qsize(self) -> int:
+        """Get the number of items in the queue."""
+        return self._queue.qsize()
+
     async def run_until_empty(self, *, stop: bool = False) -> None:
         """Run until the queue is empty."""
         while not self.empty():
             await self._process_queue()
         if stop:
             await self.stop()
+
+
+##
+
+
+@dataclass(kw_only=True, slots=True)
+class LooperError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class LooperTimeoutError(LooperError):
+    duration: Duration | None = None
+
+    @override
+    def __str__(self) -> str:
+        return "Timeout" if self.duration is None else f"Timeout after {self.duration}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _LooperNoTaskError(LooperError):
+    looper: Looper
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.looper} has no running task"
+
+
+@dataclass(kw_only=True, unsafe_hash=True)
+class Looper(Generic[_T]):
+    """A looper of a core coroutine, handling errors."""
+
+    auto_start: bool = field(default=False, repr=False)
+    freq: Duration = field(default=SECOND, repr=False)
+    backoff: Duration = field(default=10 * SECOND, repr=False)
+    logger: str | None = field(default=None, repr=False)
+    timeout: Duration | None = field(default=None, repr=False)
+    timeout_error: type[Exception] = field(default=LooperTimeoutError, repr=False)
+    # settings
+    _backoff: float = field(init=False, repr=False)
+    _debug: bool = field(default=False, repr=False)
+    _freq: float = field(init=False, repr=False)
+    # counts
+    _entries: int = field(default=0, init=False, repr=False)
+    _core_attempts: int = field(default=0, init=False, repr=False)
+    _core_successes: int = field(default=0, init=False, repr=False)
+    _core_failures: int = field(default=0, init=False, repr=False)
+    _initialization_attempts: int = field(default=0, init=False, repr=False)
+    _initialization_successes: int = field(default=0, init=False, repr=False)
+    _initialization_failures: int = field(default=0, init=False, repr=False)
+    _tear_down_attempts: int = field(default=0, init=False, repr=False)
+    _tear_down_successes: int = field(default=0, init=False, repr=False)
+    _tear_down_failures: int = field(default=0, init=False, repr=False)
+    _restart_attempts: int = field(default=0, init=False, repr=False)
+    _restart_successes: int = field(default=0, init=False, repr=False)
+    _restart_failures: int = field(default=0, init=False, repr=False)
+    _stops: int = field(default=0, init=False, repr=False)
+    # flags
+    _is_entered: Event = field(default_factory=Event, init=False, repr=False)
+    _is_initialized: Event = field(default_factory=Event, init=False, repr=False)
+    _is_initializing: Event = field(default_factory=Event, init=False, repr=False)
+    _is_pending_restart: Event = field(default_factory=Event, init=False, repr=False)
+    _is_pending_stop: Event = field(default_factory=Event, init=False, repr=False)
+    _is_pending_stop_when_empty: Event = field(
+        default_factory=Event, init=False, repr=False
+    )
+    _is_stopped: Event = field(default_factory=Event, init=False, repr=False)
+    _is_tearing_down: Event = field(default_factory=Event, init=False, repr=False)
+    # internal objects
+    _logger: Logger = field(init=False, repr=False, hash=False)
+    _queue: EnhancedQueue[_T] = field(
+        default_factory=EnhancedQueue, init=False, repr=False, hash=False
+    )
+    _stack: AsyncExitStack = field(
+        default_factory=AsyncExitStack, init=False, repr=False, hash=False
+    )
+    _task: Task[None] | None = field(default=None, init=False, repr=False, hash=False)
+
+    def __post_init__(self) -> None:
+        self._backoff = datetime_duration_to_float(self.backoff)
+        self._freq = datetime_duration_to_float(self.freq)
+        self._logger = getLogger(name=self.logger)
+        self._logger.setLevel(DEBUG)
+
+    async def __aenter__(self) -> Self:
+        """Enter the context manager."""
+        match self._is_entered.is_set():
+            case True:
+                _ = self._debug and self._logger.debug("%s: already entered", self)
+            case False:
+                _ = self._debug and self._logger.debug("%s: entering context...", self)
+                self._is_entered.set()
+                self._entries += 1
+                self._task = create_task(self.run_looper())
+                for looper in self._yield_sub_loopers():
+                    _ = self._debug and self._logger.debug(
+                        "%s: adding sub-looper %s", self, looper
+                    )
+                    if not looper.auto_start:
+                        self._logger.warning(
+                            "%s: changing sub-looper %s to auto-start...", self, looper
+                        )
+                        looper.auto_start = True
+                    _ = await self._stack.enter_async_context(looper)
+                if self.auto_start:
+                    _ = self._debug and self._logger.debug("%s: auto-starting...", self)
+                    with suppress(self.timeout_error):
+                        await self._task
+            case _ as never:
+                assert_never(never)
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None = None,
+        exc_value: BaseException | None = None,
+        traceback: TracebackType | None = None,
+    ) -> None:
+        """Exit the context manager."""
+        match self._is_entered.is_set():
+            case True:
+                _ = self._debug and self._logger.debug("%s: exiting context...", self)
+                self._is_entered.clear()
+                if (
+                    (exc_type is not None)
+                    and (exc_value is not None)
+                    and (traceback is not None)
+                ):
+                    _ = self._debug and self._logger.warning(
+                        "%s: encountered %s whilst in context",
+                        self,
+                        repr_error(exc_value),
+                    )
+                _ = await self._stack.__aexit__(exc_type, exc_value, traceback)
+                await self.stop()
+            case False:
+                _ = self._debug and self._logger.debug("%s: already exited", self)
+            case _ as never:
+                assert_never(never)
+
+    def __await__(self) -> Any:
+        match self._task:
+            case None:
+                raise _LooperNoTaskError(looper=self)
+            case Task() as task:
+                return task.__await__()
+            case _ as never:
+                self._logger.warning(  # pragma: no cover
+                    "Got %s of type %s", self._task, type(self._task)
+                )
+                assert_never(never)
+
+    def __len__(self) -> int:
+        return self._queue.qsize()
+
+    async def core(self) -> None:
+        """Core part of running the looper."""
+
+    def empty(self) -> bool:
+        """Check if the queue is empty."""
+        return self._queue.empty()
+
+    def get_left_nowait(self) -> _T:
+        """Remove and return an item from the start of the queue without blocking."""
+        return self._queue.get_left_nowait()
+
+    def get_right_nowait(self) -> _T:
+        """Remove and return an item from the end of the queue without blocking."""
+        return self._queue.get_right_nowait()
+
+    async def initialize(self) -> Exception | None:
+        """Initialize the looper."""
+        match self._is_initializing.is_set():
+            case True:
+                _ = self._debug and self._logger.debug("%s: already initializing", self)
+                return None
+            case False:
+                _ = self._debug and self._logger.debug("%s: initializing...", self)
+                self._is_initializing.set()
+                self._is_initialized.clear()
+                self._initialization_attempts += 1
+                try:
+                    await self._initialize_core()
+                except Exception as error:  # noqa: BLE001
+                    _ = self._logger.warning(
+                        "%s: encountered %s whilst initializing",
+                        self,
+                        repr_error(error),
+                    )
+                    self._initialization_failures += 1
+                    ret = error
+                else:
+                    _ = self._debug and self._logger.debug(
+                        "%s: finished initializing", self
+                    )
+                    self._is_initialized.set()
+                    self._initialization_successes += 1
+                    ret = None
+                finally:
+                    self._is_initializing.clear()
+                return ret
+            case _ as never:
+                assert_never(never)
+
+    async def _initialize_core(self) -> None:
+        """Core part of initializing the looper."""
+
+    def put_left_nowait(self, *items: _T) -> None:
+        """Put items into the queue at the start without blocking."""
+        self._queue.put_left_nowait(*items)
+
+    def put_right_nowait(self, *items: _T) -> None:
+        """Put items into the queue at the end without blocking."""
+        self._queue.put_right_nowait(*items)
+
+    def qsize(self) -> int:
+        """Get the number of items in the queue."""
+        return self._queue.qsize()
+
+    def replace(
+        self,
+        *,
+        auto_start: bool | Sentinel = sentinel,
+        freq: Duration | Sentinel = sentinel,
+        backoff: Duration | Sentinel = sentinel,
+        logger: str | None | Sentinel = sentinel,
+        timeout: Duration | None | Sentinel = sentinel,
+    ) -> Self:
+        """Replace elements of the looper."""
+        return replace_non_sentinel(
+            self,
+            auto_start=auto_start,
+            freq=freq,
+            backoff=backoff,
+            logger=logger,
+            timeout=timeout,
+        )
+
+    def request_restart(self) -> None:
+        """Request the looper to restart."""
+        match self._is_pending_restart.is_set():
+            case True:
+                _ = self._debug and self._logger.debug(
+                    "%s: already requested restart", self
+                )
+            case False:
+                _ = self._debug and self._logger.debug(
+                    "%s: requesting restart...", self
+                )
+                self._is_pending_restart.set()
+            case _ as never:
+                assert_never(never)
+
+    def request_stop(self) -> None:
+        """Request the looper to stop."""
+        match self._is_pending_stop.is_set():
+            case True:
+                _ = self._debug and self._logger.debug(
+                    "%s: already requested stop", self
+                )
+            case False:
+                _ = self._debug and self._logger.debug("%s: requesting stop...", self)
+                self._is_pending_stop.set()
+            case _ as never:
+                assert_never(never)
+
+    def request_stop_when_empty(self) -> None:
+        """Request the looper to stop when the queue is empty."""
+        match self._is_pending_stop_when_empty.is_set():
+            case True:
+                _ = self._debug and self._logger.debug(
+                    "%s: already requested stop when empty", self
+                )
+            case False:
+                _ = self._debug and self._logger.debug(
+                    "%s: requesting stop when empty...", self
+                )
+                self._is_pending_stop_when_empty.set()
+            case _ as never:
+                assert_never(never)
+
+    async def restart(self) -> None:
+        """Restart the looper."""
+        _ = self._debug and self._logger.debug("%s: restarting...", self)
+        self._is_pending_restart.clear()
+        self._restart_attempts += 1
+        tear_down = await self.tear_down()
+        initialization = await self.initialize()
+        match tear_down, initialization:
+            case None, None:
+                _ = self._debug and self._logger.debug("%s: finished restarting", self)
+                self._restart_successes += 1
+            case Exception(), None:
+                _ = self._logger.warning(
+                    "%s: encountered %s whilst restarting, during tear down",
+                    self,
+                    repr_error(tear_down),
+                )
+                self._restart_failures += 1
+            case None, Exception():
+                _ = self._logger.warning(
+                    "%s: encountered %s whilst restarting, during initialization",
+                    self,
+                    repr_error(initialization),
+                )
+                self._restart_failures += 1
+            case Exception(), Exception():
+                _ = self._logger.warning(
+                    "%s: encountered %s (tear down) and then %s (initialization) whilst restarting",
+                    self,
+                    repr_error(tear_down),
+                    repr_error(initialization),
+                )
+                self._restart_failures += 1
+            case _ as never:
+                assert_never(never)
+
+    async def run_looper(self) -> None:
+        """Run the looper."""
+        async with timeout_dur(duration=self.timeout, error=self.timeout_error):
+            while True:
+                if self._is_stopped.is_set():
+                    _ = self._debug and self._logger.debug("%s: stopped", self)
+                    return
+                if (self._is_pending_stop.is_set()) or (
+                    self._is_pending_stop_when_empty.is_set() and self.empty()
+                ):
+                    await self.stop()
+                elif self._is_pending_restart.is_set():
+                    await self.restart()
+                elif not self._is_initialized.is_set():
+                    _ = await self.initialize()
+                else:
+                    _ = self._debug and self._logger.debug("%s: running core...", self)
+                    self._core_attempts += 1
+                    try:
+                        await self.core()
+                    except Exception as error:  # noqa: BLE001
+                        _ = self._logger.warning(
+                            "%s: encountered %s whilst running core...",
+                            self,
+                            repr_error(error),
+                        )
+                        self._core_failures += 1
+                        self.request_restart()
+                        await sleep(self._backoff)
+                    else:
+                        self._core_successes += 1
+                        await sleep(self._freq)
+
+    @property
+    def stats(self) -> _LooperStats:
+        """Return the statistics."""
+        return _LooperStats(
+            entries=self._entries,
+            core_attempts=self._core_attempts,
+            core_successes=self._core_successes,
+            core_failures=self._core_failures,
+            initialization_attempts=self._initialization_attempts,
+            initialization_successes=self._initialization_successes,
+            initialization_failures=self._initialization_failures,
+            tear_down_attempts=self._tear_down_attempts,
+            tear_down_successes=self._tear_down_successes,
+            tear_down_failures=self._tear_down_failures,
+            restart_attempts=self._restart_attempts,
+            restart_successes=self._restart_successes,
+            restart_failures=self._restart_failures,
+            stops=self._stops,
+        )
+
+    async def stop(self) -> None:
+        """Stop the looper."""
+        match self._is_stopped.is_set():
+            case True:
+                _ = self._debug and self._logger.debug("%s: already stopped", self)
+            case False:
+                _ = self._debug and self._logger.debug("%s: stopping...", self)
+                self._is_pending_stop.clear()
+                self._is_stopped.set()
+                self._stops += 1
+                _ = self._debug and self._logger.debug("%s: stopped", self)
+            case _ as never:
+                assert_never(never)
+
+    async def tear_down(self) -> Exception | None:
+        """Tear down the looper."""
+        match self._is_tearing_down.is_set():
+            case True:
+                _ = self._debug and self._logger.debug("%s: already tearing down", self)
+                return None
+            case False:
+                _ = self._debug and self._logger.debug("%s: tearing down...", self)
+                self._is_tearing_down.set()
+                self._tear_down_attempts += 1
+                try:
+                    await self._tear_down_core()
+                except Exception as error:  # noqa: BLE001
+                    _ = self._logger.warning(
+                        "%s: encountered %s whilst tearing down",
+                        self,
+                        repr_error(error),
+                    )
+                    self._tear_down_failures += 1
+                    ret = error
+                else:
+                    _ = self._debug and self._logger.debug(
+                        "%s: finished tearing down", self
+                    )
+                    self._tear_down_successes += 1
+                    ret = None
+                finally:
+                    self._is_tearing_down.clear()
+                return ret
+            case _ as never:
+                assert_never(never)
+
+    async def _tear_down_core(self) -> None:
+        """Core part of tearing down the looper."""
+
+    def _yield_sub_loopers(self) -> Iterator[Looper]:
+        """Yield all sub-loopers."""
+        yield from []
+
+
+@dataclass(kw_only=True, slots=True)
+class _LooperStats:
+    entries: int = 0
+    core_attempts: int = 0
+    core_successes: int = 0
+    core_failures: int = 0
+    initialization_attempts: int = 0
+    initialization_successes: int = 0
+    initialization_failures: int = 0
+    tear_down_attempts: int = 0
+    tear_down_successes: int = 0
+    tear_down_failures: int = 0
+    restart_attempts: int = 0
+    restart_successes: int = 0
+    restart_failures: int = 0
+    stops: int = 0
 
 
 ##
@@ -878,6 +1319,9 @@ __all__ = [
     "InfiniteLooper",
     "InfiniteLooperError",
     "InfiniteQueueLooper",
+    "Looper",
+    "LooperError",
+    "LooperTimeoutError",
     "StreamCommandOutput",
     "UniquePriorityQueue",
     "UniqueQueue",
