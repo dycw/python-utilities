@@ -791,9 +791,13 @@ class Looper(Generic[_T]):
                 assert_never(never)
 
     def __await__(self) -> Any:
-        if self._task is None:  # cannot use `match` statement
-            raise _LooperNoTaskError(looper=self)
-        return self._task.__await__()
+        match self._task:
+            case None:
+                raise _LooperNoTaskError(looper=self)
+            case Task() as task:
+                return task.__await__()
+            case _ as never:
+                assert_never(never)
 
     def __len__(self) -> int:
         return self._queue.qsize()
