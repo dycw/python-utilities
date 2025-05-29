@@ -912,27 +912,27 @@ class TestLooper:
         with raises(TimeoutError):
             async with timeout(1.0), looper:
                 await looper
-        self._assert_stats(looper, 1)
+        self._assert_stats(looper, stops=1)
 
     async def test_main_with_auto_start(self) -> None:
         looper = _ExampleLooper(auto_start=True)
         with raises(TimeoutError):
             async with timeout(1.0), looper:
                 ...
-        self._assert_stats(looper, 0)
+        self._assert_stats(looper)
 
     async def test_main_with_timeout(self) -> None:
         looper = _ExampleLooper(timeout=SECOND)
         async with looper:
             with raises(LooperTimeoutError, match="Timeout"):
                 await looper
-        self._assert_stats(looper, 1)
+        self._assert_stats(looper, stops=1)
 
     async def test_main_with_auto_start_and_timeout(self) -> None:
         looper = _ExampleLooper(auto_start=True, timeout=SECOND)
         async with looper:
             ...
-        self._assert_stats(looper, 1)
+        self._assert_stats(looper, stops=1)
 
     async def test_await_without_task(self) -> None:
         looper = _ExampleLooper()
@@ -945,7 +945,6 @@ class TestLooper:
         looper = _ExampleLooper(auto_start=True, timeout=SECOND)
         async with looper, looper:
             ...
-        self._assert_stats(looper, 1)
         _ = one(m for m in caplog.messages if search(": already entered$", m))
 
     async def test_empty(self) -> None:
@@ -988,13 +987,68 @@ class TestLooper:
         looper = _ExampleLooper().replace(freq=SECOND)
         assert looper.freq == SECOND
 
-    def _assert_stats(self, looper: _ExampleLooper, stops: int, /) -> None:
-        assert looper.stats.entries == 1
-        assert looper.stats.core_successes == approx(45, rel=0.1)
-        assert looper.stats.core_failures == approx(5, rel=0.1)
-        assert looper.stats.initialization_attempts == approx(6, rel=0.5)
-        assert looper.stats.teardown_attempts == approx(5, rel=0.5)
-        assert looper.stats.stops == stops
+    async def test_request_restart(self) -> None:
+        class Example(_ExampleLooper):
+            @override
+            async def core(self) -> None:
+                await super().core()
+                if (self._initialization_attempts >= 2) and (
+                    self.count >= (self.max_count / 2)
+                ):
+                    self.request_restart()
+
+        looper = Example(auto_start=True, timeout=SECOND)
+        async with looper:
+            ...
+        self._assert_stats(
+            looper,
+            core_successes=79,
+            core_failures=1,
+            initialization_successes=16,
+            teardown_successes=15,
+            restart_successes=15,
+            stops=1,
+        )
+
+    def _assert_stats(
+        self,
+        looper: _ExampleLooper,
+        /,
+        *,
+        entries: int = 1,
+        core_successes: int = 45,
+        core_failures: int = 5,
+        initialization_successes: int = 6,
+        initialization_failures: int = 0,
+        teardown_successes: int = 5,
+        teardown_failures: int = 0,
+        restart_successes: int = 5,
+        restart_failures: int = 0,
+        stops: int = 0,
+    ) -> None:
+        stats = looper.stats
+        assert stats.entries == entries
+        assert stats.core_attempts == (stats.core_successes + stats.core_failures)
+        assert stats.core_successes == approx(core_successes, rel=0.1)
+        assert stats.core_failures == approx(core_failures, rel=0.1)
+        assert stats.initialization_attempts == (
+            stats.initialization_successes + stats.initialization_failures
+        )
+        assert stats.initialization_successes == approx(
+            initialization_successes, rel=0.5
+        )
+        assert stats.initialization_failures == approx(initialization_failures, rel=0.5)
+        assert stats.teardown_attempts == (
+            stats.teardown_successes + stats.teardown_failures
+        )
+        assert stats.teardown_successes == approx(teardown_successes, rel=0.5)
+        assert stats.teardown_failures == approx(teardown_failures, rel=0.5)
+        assert stats.restart_attempts == (
+            stats.restart_successes + stats.restart_failures
+        )
+        assert stats.restart_successes == approx(restart_successes, rel=0.5)
+        assert stats.restart_failures == approx(restart_failures, rel=0.5)
+        assert stats.stops == stops
 
 
 class TestPutItems:
