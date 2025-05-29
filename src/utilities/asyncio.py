@@ -840,16 +840,26 @@ class Looper(Generic[_T]):
                 try:
                     await self._initialize_core()
                 except Exception as error:  # noqa: BLE001
-                    _ = self._logger.warning(
-                        "%s: encountered %s whilst initializing",
-                        self,
-                        repr_error(error),
-                    )
                     async with self._lock:
                         self._initialization_failures += 1
                     ret = error
-                    if sleep_if_failure:
-                        await sleep(self._backoff)
+                    match sleep_if_failure:
+                        case True:
+                            _ = self._logger.warning(
+                                "%s: encountered %s whilst initializing; sleeping for %s...",
+                                self,
+                                repr_error(error),
+                                self.backoff,
+                            )
+                            await sleep(self._backoff)
+                        case False:
+                            _ = self._logger.warning(
+                                "%s: encountered %s whilst initializing",
+                                self,
+                                repr_error(error),
+                            )
+                        case _ as never:
+                            assert_never(never)
                 else:
                     _ = self._debug and self._logger.debug(
                         "%s: finished initializing", self
@@ -941,47 +951,75 @@ class Looper(Generic[_T]):
             case _ as never:
                 assert_never(never)
 
-    async def restart(self) -> None:
+    async def restart(self, *, sleep_if_failure: bool) -> None:
         """Restart the looper."""
         _ = self._debug and self._logger.debug("%s: restarting...", self)
         self._is_pending_restart.clear()
         async with self._lock:
             self._restart_attempts += 1
-        tear_down = await self.tear_down()
+        tear_down = await self.tear_down(sleep_if_failure=False)
         initialization = await self.initialize(sleep_if_failure=False)
-        match tear_down, initialization:
-            case None, None:
+        match tear_down, initialization, sleep_if_failure:
+            case None, None, bool():
                 _ = self._debug and self._logger.debug("%s: finished restarting", self)
                 async with self._lock:
                     self._restart_successes += 1
-            case Exception(), None:
+            case Exception(), None, True:
+                async with self._lock:
+                    self._restart_failures += 1
                 _ = self._logger.warning(
-                    "%s: encountered %s whilst restarting, during tear down",
+                    "%s: encountered %s whilst restarting (tear down); sleeping for %s...",
+                    self,
+                    repr_error(tear_down),
+                    self.backoff,
+                )
+                await sleep(self._backoff)
+            case Exception(), None, False:
+                async with self._lock:
+                    self._restart_failures += 1
+                _ = self._logger.warning(
+                    "%s: encountered %s whilst restarting (tear down)",
                     self,
                     repr_error(tear_down),
                 )
+            case None, Exception(), True:
                 async with self._lock:
                     self._restart_failures += 1
-                await sleep(self._backoff)
-            case None, Exception():
                 _ = self._logger.warning(
-                    "%s: encountered %s whilst restarting, during initialization",
+                    "%s: encountered %s whilst restarting (initialize); sleeping for %s...",
+                    self,
+                    repr_error(initialization),
+                    self.backoff,
+                )
+                await sleep(self._backoff)
+            case None, Exception(), False:
+                async with self._lock:
+                    self._restart_failures += 1
+                _ = self._logger.warning(
+                    "%s: encountered %s whilst restarting (initialize)",
                     self,
                     repr_error(initialization),
                 )
+            case Exception(), Exception(), True:
                 async with self._lock:
                     self._restart_failures += 1
+                _ = self._logger.warning(
+                    "%s: encountered %s (tear down) and then %s (initialization) whilst restarting; sleeping for %s...",
+                    self,
+                    repr_error(tear_down),
+                    repr_error(initialization),
+                    self.backoff,
+                )
                 await sleep(self._backoff)
-            case Exception(), Exception():
+            case Exception(), Exception(), False:
+                async with self._lock:
+                    self._restart_failures += 1
                 _ = self._logger.warning(
                     "%s: encountered %s (tear down) and then %s (initialization) whilst restarting",
                     self,
                     repr_error(tear_down),
                     repr_error(initialization),
                 )
-                async with self._lock:
-                    self._restart_failures += 1
-                await sleep(self._backoff)
             case _ as never:
                 assert_never(never)
 
@@ -997,7 +1035,7 @@ class Looper(Generic[_T]):
                 ):
                     await self.stop()
                 elif self._is_pending_restart.is_set():
-                    await self.restart()
+                    await self.restart(sleep_if_failure=True)
                 elif not self._is_initialized.is_set():
                     _ = await self.initialize(sleep_if_failure=True)
                 else:
@@ -1056,7 +1094,7 @@ class Looper(Generic[_T]):
             case _ as never:
                 assert_never(never)
 
-    async def tear_down(self) -> Exception | None:
+    async def tear_down(self, *, sleep_if_failure: bool) -> Exception | None:
         """Tear down the looper."""
         match self._is_tearing_down.is_set():
             case True:
@@ -1070,14 +1108,26 @@ class Looper(Generic[_T]):
                 try:
                     await self._tear_down_core()
                 except Exception as error:  # noqa: BLE001
-                    _ = self._logger.warning(
-                        "%s: encountered %s whilst tearing down",
-                        self,
-                        repr_error(error),
-                    )
                     async with self._lock:
                         self._tear_down_failures += 1
                     ret = error
+                    match sleep_if_failure:
+                        case True:
+                            _ = self._logger.warning(
+                                "%s: encountered %s whilst tearing down; sleeping for %s...",
+                                self,
+                                repr_error(error),
+                                self.backoff,
+                            )
+                            await sleep(self._backoff)
+                        case False:
+                            _ = self._logger.warning(
+                                "%s: encountered %s whilst tearing down",
+                                self,
+                                repr_error(error),
+                            )
+                        case _ as never:
+                            assert_never(never)
                 else:
                     _ = self._debug and self._logger.debug(
                         "%s: finished tearing down", self
