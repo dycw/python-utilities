@@ -995,7 +995,13 @@ class TestLooper:
         _ = await looper.initialize(sleep_if_failure=False)
         _ = one(m for m in caplog.messages if search(": already initializing$", m))
 
-    async def test_initialize_failure(self, *, caplog: LogCaptureFixture) -> None:
+    @given(case=sampled_from([(True, "; sleeping for .*"), (False, "")]))
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_initialize_failure(
+        self, *, case: tuple[bool, str], caplog: LogCaptureFixture
+    ) -> None:
+        sleep_if_failure, extra = case
+
         class Example(_ExampleLooper):
             @override
             async def _initialize_core(self) -> None:
@@ -1004,11 +1010,13 @@ class TestLooper:
                 await super()._initialize_core()
 
         looper = Example()
-        _ = await looper.initialize(sleep_if_failure=False)
+        _ = await looper.initialize(sleep_if_failure=sleep_if_failure)
         _ = one(
             m
             for m in caplog.messages
-            if search(r": encountered _ExampleLooperError\(\) whilst initializing$", m)
+            if search(
+                rf": encountered _ExampleLooperError\(\) whilst initializing{extra}$", m
+            )
         )
 
     def test_len_and_qsize(self) -> None:
