@@ -1066,7 +1066,7 @@ class TestLooper:
                     case True:
                         _ = self.get_left_nowait()
                     case False:
-                        _ = self.get_left_nowait()
+                        _ = self.get_right_nowait()
                 self.request_stop_when_empty()
 
         looper = Example(auto_start=True, timeout=SECOND)
