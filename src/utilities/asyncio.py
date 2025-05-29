@@ -29,7 +29,7 @@ from contextlib import (
 from dataclasses import dataclass, field
 from io import StringIO
 from itertools import chain
-from logging import Logger, getLogger
+from logging import DEBUG, Logger, getLogger
 from subprocess import PIPE
 from sys import stderr, stdout
 from typing import (
@@ -611,12 +611,9 @@ class InfiniteQueueLooper(InfiniteLooper[THashable], Generic[THashable, _T]):
     """An infinite loop which processes a queue."""
 
     _await_upon_aenter: bool = field(default=False, init=False, repr=False)
-    _queue: EnhancedQueue[_T] = field(init=False, repr=False)
-
-    @override
-    def __post_init__(self) -> None:
-        super().__post_init__()
-        self._queue = EnhancedQueue()
+    _queue: EnhancedQueue[_T] = field(
+        default_factory=EnhancedQueue, init=False, repr=False
+    )
 
     def __len__(self) -> int:
         return self._queue.qsize()
@@ -704,7 +701,9 @@ class Looper(Generic[_T]):
     _is_tearing_down: Event = field(default_factory=Event, init=False, repr=False)
     # internal objects
     _logger: Logger = field(init=False, repr=False, hash=False)
-    _queue: EnhancedQueue[_T] = field(init=False, repr=False, hash=False)
+    _queue: EnhancedQueue[_T] = field(
+        default_factory=EnhancedQueue, init=False, repr=False, hash=False
+    )
     _stack: AsyncExitStack = field(
         default_factory=AsyncExitStack, init=False, repr=False, hash=False
     )
@@ -714,6 +713,7 @@ class Looper(Generic[_T]):
         self._backoff = datetime_duration_to_float(self.backoff)
         self._freq = datetime_duration_to_float(self.freq)
         self._logger = getLogger(name=self.logger)
+        self._logger.setLevel(DEBUG)
 
     async def __aenter__(self) -> Self:
         """Enter the context manager."""

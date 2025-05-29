@@ -883,6 +883,7 @@ class _ExampleLooperError(Exception): ...
 class _ExampleLooper(Looper[Any]):
     freq: Duration = field(default=10 * MILLISECOND, repr=False)
     backoff: Duration = field(default=100 * MILLISECOND, repr=False)
+    _debug: bool = field(default=True, repr=False)
     count: int = 0
     max_count: int = 10
 
@@ -931,6 +932,55 @@ class TestLooper:
         async with looper:
             ...
         self._assert_stats(looper, 1)
+
+    async def test_context_manager_already_entered(
+        self, *, caplog: LogCaptureFixture
+    ) -> None:
+        looper = _ExampleLooper(auto_start=True, timeout=SECOND)
+        async with looper, looper:
+            ...
+        self._assert_stats(looper, 1)
+        _ = one(m for m in caplog.messages if search(": already entered$", m))
+
+    async def test_empty(self) -> None:
+        looper = _ExampleLooper()
+        assert looper.empty()
+        looper.put_left_nowait(None)
+        assert not looper.empty()
+
+    async def test_initialize_already_initializing(
+        self, *, caplog: LogCaptureFixture
+    ) -> None:
+        class Example(_ExampleLooper):
+            @override
+            async def _initialize_core(self) -> None:
+                if self._initialization_attempts == 1:
+                    await super().initialize()
+                await super()._initialize_core()
+
+        looper = Example()
+        await looper.initialize()
+        _ = one(m for m in caplog.messages if search(": already initializing$", m))
+
+    async def test_initialize_failure(self, *, caplog: LogCaptureFixture) -> None:
+        class Example(_ExampleLooper):
+            @override
+            async def _initialize_core(self) -> None:
+                if self._initialization_attempts == 1:
+                    raise _ExampleLooperError
+                await super()._initialize_core()
+
+        looper = Example()
+        await looper.initialize()
+        _ = one(
+            m
+            for m in caplog.messages
+            if search(r": encountered _ExampleLooperError\(\) whilst initializing$", m)
+        )
+
+    def test_replace(self) -> None:
+        looper = _ExampleLooper().replace(freq=SECOND)
+        assert looper.freq == SECOND
 
     def _assert_stats(self, looper: _ExampleLooper, stops: int, /) -> None:
         assert looper.stats.entries == 1
