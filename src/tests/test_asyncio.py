@@ -1196,7 +1196,15 @@ class TestLooper:
         async with looper:
             ...
         self._assert_stats(looper, stops=1)
-        self._assert_stats(looper.inner, stops=1)
+        self._assert_stats(
+            looper.inner,
+            core_successes=56,
+            core_failures=13,
+            initialization_successes=14,
+            tear_down_successes=13,
+            restart_successes=13,
+            stops=1,
+        )
 
     async def test_sub_looper_changing_to_auto_start(
         self, *, caplog: LogCaptureFixture
