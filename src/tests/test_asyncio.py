@@ -1285,6 +1285,11 @@ class TestLooper:
             )
         )
 
+    def test_with_auto_start(self) -> None:
+        looper = _ExampleLooper()
+        assert not looper.auto_start
+        assert looper.with_auto_start.auto_start
+
     def _assert_stats(
         self,
         looper: _ExampleLooper,

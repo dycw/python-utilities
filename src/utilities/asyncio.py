@@ -1140,6 +1140,11 @@ class Looper(Generic[_T]):
     async def _tear_down_core(self) -> None:
         """Core part of tearing down the looper."""
 
+    @property
+    def with_auto_start(self) -> Self:
+        """Replace the auto start flag of the looper."""
+        return self.replace(auto_start=True)
+
     def _yield_sub_loopers(self) -> Iterator[Looper]:
         """Yield all sub-loopers."""
         yield from []
