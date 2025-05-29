@@ -1010,6 +1010,16 @@ class TestLooper:
             stops=1,
         )
 
+    def test_request_restart_already_requested(
+        self, *, caplog: LogCaptureFixture
+    ) -> None:
+        looper = _ExampleLooper()
+        looper.request_restart()
+        looper.request_restart()
+        _ = one(
+            m for m in caplog.messages if search(r": already requested restart$", m)
+        )
+
     def _assert_stats(
         self,
         looper: _ExampleLooper,
