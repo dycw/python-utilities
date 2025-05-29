@@ -1153,7 +1153,6 @@ class TestLooper:
             )
         )
 
-    @mark.only
     @given(case=sampled_from([(True, "; sleeping for .*"), (False, "")]))
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_restart_failure_during_tear_down(
@@ -1179,9 +1178,14 @@ class TestLooper:
             )
         )
 
+    @mark.only
+    @given(case=sampled_from([(True, "; sleeping for .*"), (False, "")]))
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_restart_failure_during_tear_down_and_initialization(
-        self, *, caplog: LogCaptureFixture
+        self, *, case: tuple[bool, str], caplog: LogCaptureFixture
     ) -> None:
+        sleep_if_failure, extra = case
+
         class Example(_ExampleLooper):
             @override
             async def _initialize_core(self) -> None:
@@ -1196,12 +1200,12 @@ class TestLooper:
                 await super()._tear_down_core()
 
         looper = Example()
-        await looper.restart()
+        await looper.restart(sleep_if_failure=sleep_if_failure)
         _ = one(
             m
             for m in caplog.messages
             if search(
-                r": encountered _ExampleLooperError\(\) \(tear down\) and then _ExampleLooperError\(\) \(initialization\) whilst restarting$",
+                rf": encountered _ExampleLooperError\(\) \(tear down\) and then _ExampleLooperError\(\) \(initialization\) whilst restarting{extra}$",
                 m,
             )
         )
