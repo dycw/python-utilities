@@ -1100,7 +1100,28 @@ class TestLooper:
             if search(r": already requested stop when empty$", m)
         )
 
-    async def test_restart_failure_during_teardown(
+    async def test_restart_failure_during_initialization(
+        self, *, caplog: LogCaptureFixture
+    ) -> None:
+        class Example(_ExampleLooper):
+            @override
+            async def _initialize_core(self) -> None:
+                if self._initialization_attempts == 1:
+                    raise _ExampleLooperError
+                await super()._initialize_core()
+
+        looper = Example()
+        await looper.restart()
+        _ = one(
+            m
+            for m in caplog.messages
+            if search(
+                r": encountered _ExampleLooperError\(\) whilst restarting, during initialization$",
+                m,
+            )
+        )
+
+    async def test_restart_failure_during_tear_down(
         self, *, caplog: LogCaptureFixture
     ) -> None:
         class Example(_ExampleLooper):
@@ -1121,7 +1142,7 @@ class TestLooper:
             )
         )
 
-    async def test_restart_failure_during_initialization(
+    async def test_restart_failure_during_tear_down_and_initialization(
         self, *, caplog: LogCaptureFixture
     ) -> None:
         class Example(_ExampleLooper):
@@ -1131,13 +1152,19 @@ class TestLooper:
                     raise _ExampleLooperError
                 await super()._initialize_core()
 
+            @override
+            async def _tear_down_core(self) -> None:
+                if self._tear_down_attempts == 1:
+                    raise _ExampleLooperError
+                await super()._tear_down_core()
+
         looper = Example()
         await looper.restart()
         _ = one(
             m
             for m in caplog.messages
             if search(
-                r": encountered _ExampleLooperError\(\) whilst restarting, during initialization$",
+                r": encountered _ExampleLooperError\(\) \(tear down\) and then _ExampleLooperError\(\) \(initialization\) whilst restarting$",
                 m,
             )
         )
