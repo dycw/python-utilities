@@ -42,6 +42,7 @@ pickle
 platform
 polars
 pqdm
+psutil
 pydantic
 pyinstrument
 pyrsistent
