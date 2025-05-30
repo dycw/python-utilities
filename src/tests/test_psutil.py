@@ -5,10 +5,25 @@ from typing import TYPE_CHECKING
 from pytest import approx, mark, param
 
 from utilities.datetime import MILLISECOND, SECOND
-from utilities.psutil import MemoryMonitorService
+from utilities.psutil import MemoryMonitorService, MemoryUsage
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+class TestMemoryUsage:
+    def test_main(self) -> None:
+        memory = MemoryUsage.new()
+        assert memory.virtual_total >= 0
+        assert memory.virtual_total_mb >= 0
+        assert memory.virtual_total >= 0
+        assert memory.virtual_total_mb >= 0
+        assert 0.0 <= memory.virtual_pct <= 1.0
+        assert memory.swap_total >= 0
+        assert memory.swap_total_mb >= 0
+        assert memory.swap_total >= 0
+        assert memory.swap_total_mb >= 0
+        assert 0.0 <= memory.swap_pct <= 1.0
 
 
 class TestMemoryMonitorService:

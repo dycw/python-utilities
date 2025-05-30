@@ -21,6 +21,50 @@ if TYPE_CHECKING:
 
 
 @dataclass(kw_only=True)
+class MemoryMonitorService(Looper[None]):
+    """Service to monitor memory usage."""
+
+    # base
+    freq: Duration = field(default=10 * SECOND, repr=False)
+    backoff: Duration = field(default=10 * SECOND, repr=False)
+    # self
+    console: str | None = field(default=None, repr=False)
+    path: PathLike = "memory.txt"
+    _console: Logger | None = field(init=False, repr=False)
+    _max_age: int | None = field(default=None, init=False, repr=False)
+    _path: Path = field(init=False, repr=False)
+
+    @override
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.console is not None:
+            self._console = getLogger(self.console)
+        self._path = Path(self.path)
+
+    @override
+    async def core(self) -> None:
+        await super().core()
+        memory = MemoryUsage.new()
+        mapping = {
+            "datetime": memory.datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "virtual used (mb)": memory.virtual_used_mb,
+            "virtual total (mb)": memory.virtual_total_mb,
+            "virtual (%)": memory.virtual_pct,
+            "swap used (mb)": memory.swap_used_mb,
+            "swap total (mb)": memory.swap_total_mb,
+            "swap (%)": memory.swap_pct,
+        }
+        ser = dumps(mapping)
+        with self._path.open(mode="a") as fh:
+            _ = fh.write(f"{ser}\n")
+        if self._console is not None:
+            self._console.info("%s", mapping)
+
+
+##
+
+
+@dataclass(kw_only=True)
 class MemoryUsage:
     """A memory usage."""
 
@@ -66,53 +110,6 @@ class MemoryUsage:
 
     def _to_mb(self, bytes_: int) -> int:
         return round(bytes_ / (1024**2))
-
-
-##
-
-
-@dataclass(kw_only=True)
-class MemoryMonitorService(Looper[None]):
-    """Service to monitor memory usage."""
-
-    # base
-    freq: Duration = field(default=10 * SECOND, repr=False)
-    backoff: Duration = field(default=10 * SECOND, repr=False)
-    # self
-    console: str | None = field(default=None, repr=False)
-    path: PathLike = "memory.txt"
-    _console: Logger | None = field(init=False, repr=False)
-    _max_age: int | None = field(default=None, init=False, repr=False)
-    _path: Path = field(init=False, repr=False)
-
-    @override
-    def __post_init__(self) -> None:
-        super().__post_init__()
-        if self.console is not None:
-            self._console = getLogger(self.console)
-        self._path = Path(self.path)
-
-    @override
-    async def core(self) -> None:
-        await super().core()
-        usage = MemoryUsage.new()
-        mapping = {
-            "datetime": usage.datetime.strftime("%Y-%m-%d %H:%M:%S"),
-            "virtual used (mb)": usage.virtual_used_mb,
-            "virtual total (mb)": usage.virtual_total_mb,
-            "virtual (%)": usage.virtual_pct,
-            "swap used (mb)": usage.swap_used_mb,
-            "swap total (mb)": usage.swap_total_mb,
-            "swap (%)": usage.swap_pct,
-        }
-        ser = dumps(mapping)
-        with self._path.open(mode="a") as fh:
-            _ = fh.write(f"{ser}\n")
-        if self._console is not None:
-            self._console.info("%s", mapping)
-
-
-##
 
 
 __all__ = ["MemoryMonitorService", "MemoryUsage"]
