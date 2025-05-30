@@ -158,6 +158,11 @@ class DataClassFutureTimeDelta:
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureTimeDeltaNullable:
+    timedelta: dt.timedelta | None = None
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureTypeLiteral:
     truth: TrueOrFalseFutureTypeLit
 
