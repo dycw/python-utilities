@@ -1308,14 +1308,12 @@ async def sleep_dur(*, duration: Duration | None = None) -> None:
 
 
 async def sleep_max_dur(
-    *, max_duration: Duration | None = None, random: Random = SYSTEM_RANDOM
+    *, duration: Duration | None = None, random: Random = SYSTEM_RANDOM
 ) -> None:
     """Sleep which accepts max durations."""
-    if max_duration is None:
+    if duration is None:
         return
-    max_float = datetime_duration_to_float(max_duration)
-    drawn = random.uniform(0.0, max_float)
-    await sleep(drawn)
+    await sleep(random.uniform(0.0, datetime_duration_to_float(duration)))
 
 
 ##
