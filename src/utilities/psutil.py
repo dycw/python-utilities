@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import deque
-from contextlib import suppress
 from dataclasses import dataclass, field
 from json import dumps
 from logging import getLogger
@@ -12,6 +11,7 @@ from typing import TYPE_CHECKING, override
 from psutil import swap_memory, virtual_memory
 
 from utilities.asyncio import Looper
+from utilities.contextlib import suppress_super_object_attribute_error
 from utilities.datetime import (
     MINUTE,
     SECOND,
@@ -110,8 +110,7 @@ class _MemoryUsage:
 
     @override
     def __post_init__(self) -> None:
-        # TODO: use reraise mixin
-        with suppress():
+        with suppress_super_object_attribute_error():
             super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
         self.virtual_used_mb = self._to_mb(self.virtual_used)
         self.virtual_total_mb = self._to_mb(self.virtual_total)
