@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from http import HTTPStatus
 from logging import NOTSET, Handler, LogRecord
-from typing import TYPE_CHECKING, Any, Self, override
+from typing import TYPE_CHECKING, Self, override
 
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
@@ -13,6 +13,7 @@ from utilities.asyncio import (
     LooperTimeoutError,
     timeout_dur,
 )
+from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float
 from utilities.functools import cache
 from utilities.math import safe_round
@@ -89,7 +90,6 @@ class SlackHandlerService(Handler, Looper[str]):
         *,
         url: str,
         auto_start: bool = False,
-        empty_upon_exit: bool = True,
         freq: Duration = SECOND,
         backoff: Duration = SECOND,
         logger: str | None = None,
@@ -104,7 +104,6 @@ class SlackHandlerService(Handler, Looper[str]):
             self,
             auto_start=auto_start,
             freq=freq,
-            empty_upon_exit=empty_upon_exit,
             backoff=backoff,
             logger=logger,
             timeout=timeout,
@@ -119,19 +118,16 @@ class SlackHandlerService(Handler, Looper[str]):
 
     @override
     def emit(self, record: LogRecord) -> None:
-        fmtted = self.format(record)
         try:
-            self.put_right_nowait(fmtted)
+            self.put_right_nowait(self.format(record))
         except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
     @override
     async def core(self) -> None:
-        await super().core()
-        if self.empty():
-            return
-        text = "\n".join(self.get_all_nowait())
+        text = "\n".join(msg := self.get_all_nowait())
         async with timeout_dur(duration=self.send_timeout):
+            self._logger.info("sending %s msgs", len(msg))
             await self.sender(self.url, text)
 
     @override
@@ -139,27 +135,20 @@ class SlackHandlerService(Handler, Looper[str]):
         self,
         *,
         auto_start: bool | Sentinel = sentinel,
-        empty_upon_exit: bool | Sentinel = sentinel,
         freq: Duration | Sentinel = sentinel,
         backoff: Duration | Sentinel = sentinel,
         logger: str | None | Sentinel = sentinel,
         timeout: Duration | None | Sentinel = sentinel,
-        timeout_error: type[Exception] | Sentinel = sentinel,
-        _debug: bool | Sentinel = sentinel,
-        **kwargs: Any,
     ) -> Self:
         """Replace elements of the looper."""
-        return super().replace(
+        return replace_non_sentinel(
+            self,
             url=self.url,
             auto_start=auto_start,
-            empty_upon_exit=empty_upon_exit,
             freq=freq,
             backoff=backoff,
             logger=logger,
             timeout=timeout,
-            timeout_error=timeout_error,
-            _debug=_debug,
-            **kwargs,
         )
 
 
