@@ -895,6 +895,8 @@ class Looper(Generic[_T]):
         backoff: Duration | Sentinel = sentinel,
         logger: str | None | Sentinel = sentinel,
         timeout: Duration | None | Sentinel = sentinel,
+        timeout_error: type[Exception] | Sentinel = sentinel,
+        _debug: bool | Sentinel = sentinel,
     ) -> Self:
         """Replace elements of the looper."""
         return replace_non_sentinel(
@@ -904,6 +906,8 @@ class Looper(Generic[_T]):
             backoff=backoff,
             logger=logger,
             timeout=timeout,
+            timeout_error=timeout_error,
+            _debug=_debug,
         )
 
     def request_restart(self) -> None:
