@@ -1217,9 +1217,8 @@ class TestLooper:
             )
         )
 
-    async def test_sub_looper(self) -> None:
+    async def test_sub_looper_one(self) -> None:
         looper = _ExampleOuterLooper(auto_start=True, timeout=SECOND)
-        looper.inner.auto_start = True
         async with looper:
             ...
         self._assert_stats(looper, stops=1)
@@ -1245,6 +1244,96 @@ class TestLooper:
             if search(
                 r": changing sub-looper _ExampleLooper\(.*?\) to auto-start...$", m
             )
+        )
+
+    async def test_sub_loopers_multiple(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(_ExampleLooper):
+            inner1: _ExampleLooper = field(init=False, repr=False)
+            inner2: _ExampleLooper = field(init=False, repr=False)
+
+            @override
+            def __post_init__(self) -> None:
+                super().__post_init__()
+                self.inner1 = _ExampleLooper(
+                    freq=self.freq / 2,
+                    backoff=self.backoff / 2,
+                    logger=self.logger,
+                    timeout=self.timeout,
+                    timeout_error=self.timeout_error,
+                    max_count=round(self.max_count / 2),
+                )
+                self.inner2 = _ExampleLooper(
+                    freq=self.freq / 2,
+                    backoff=self.backoff / 2,
+                    logger=self.logger,
+                    timeout=self.timeout,
+                    timeout_error=self.timeout_error,
+                    max_count=round(self.max_count / 2),
+                )
+
+            @override
+            def _yield_sub_loopers(self) -> Iterator[Looper]:
+                yield self.inner1
+                yield self.inner2
+
+        looper = Example(auto_start=True, timeout=SECOND)
+        async with looper:
+            ...
+        self._assert_stats(looper, stops=1)
+        for inner in [looper.inner1, looper.inner2]:
+            self._assert_stats(
+                inner,
+                core_successes=56,
+                core_failures=13,
+                initialization_successes=14,
+                tear_down_successes=13,
+                restart_successes=13,
+                stops=1,
+            )
+
+    async def test_sub_loopers_nested(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(_ExampleLooper):
+            middle: _ExampleOuterLooper = field(init=False, repr=False)
+
+            @override
+            def __post_init__(self) -> None:
+                super().__post_init__()
+                self.middle = _ExampleOuterLooper(
+                    freq=self.freq / 2,
+                    backoff=self.backoff / 2,
+                    logger=self.logger,
+                    timeout=self.timeout,
+                    timeout_error=self.timeout_error,
+                    max_count=round(self.max_count / 2),
+                )
+
+            @override
+            def _yield_sub_loopers(self) -> Iterator[Looper]:
+                yield self.middle
+
+        looper = Example(auto_start=True, timeout=SECOND)
+        async with looper:
+            ...
+        self._assert_stats(looper, stops=1)
+        self._assert_stats(
+            looper.middle,
+            core_successes=56,
+            core_failures=13,
+            initialization_successes=14,
+            tear_down_successes=13,
+            restart_successes=13,
+            stops=1,
+        )
+        self._assert_stats(
+            looper.middle.inner,
+            core_successes=34,
+            core_failures=34,
+            initialization_successes=34,
+            tear_down_successes=33,
+            restart_successes=33,
+            stops=1,
         )
 
     async def test_tear_down_already_tearing_down(
