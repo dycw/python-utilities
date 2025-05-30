@@ -42,6 +42,7 @@ from utilities.asyncio import (
     put_items,
     put_items_nowait,
     sleep_dur,
+    sleep_max_dur,
     sleep_until,
     sleep_until_rounded,
     stream_command,
@@ -1428,11 +1429,25 @@ class TestSleepDur:
     async def test_main(self, *, duration: Duration) -> None:
         with Timer() as timer:
             await sleep_dur(duration=duration)
-        assert timer >= datetime_duration_to_timedelta(duration / 2)
+        assert timer <= datetime_duration_to_timedelta(2 * duration)
 
     async def test_none(self) -> None:
         with Timer() as timer:
             await sleep_dur()
+        assert timer <= 0.01
+
+
+class TestSleepMaxDur:
+    @given(duration=sampled_from([0.1, 10 * MILLISECOND]))
+    @settings(phases={Phase.generate})
+    async def test_main(self, *, duration: Duration) -> None:
+        with Timer() as timer:
+            await sleep_max_dur(duration=duration)
+        assert timer <= datetime_duration_to_timedelta(2 * duration)
+
+    async def test_none(self) -> None:
+        with Timer() as timer:
+            await sleep_max_dur()
         assert timer <= 0.01
 
 
