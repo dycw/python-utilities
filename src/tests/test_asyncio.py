@@ -1447,7 +1447,7 @@ class TestSleepMaxDur:
 
     async def test_none(self) -> None:
         with Timer() as timer:
-            await sleep_dur()
+            await sleep_max_dur()
         assert timer <= 0.01
 
 
