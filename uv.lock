@@ -1267,7 +1267,7 @@ dev = [
     { name = "polars-lts-cpu", specifier = ">=1.30.0,<1.31" },
     { name = "polars-ols", specifier = ">=0.3.5,<0.4" },
     { name = "pqdm", specifier = ">=0.2.0,<0.3" },
-    { name = "psutil", specifier = ">=7.0.0" },
+    { name = "psutil", specifier = ">=7.0.0,<7.1" },
     { name = "psycopg2-binary", specifier = ">=2.9.10,<2.10" },
     { name = "pydantic", specifier = ">=2.11.4,<2.12" },
     { name = "pyinstrument", specifier = ">=5.0.2,<5.1" },
