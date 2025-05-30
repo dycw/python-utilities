@@ -1,28 +1,20 @@
 from __future__ import annotations
 
-from collections import deque
 from dataclasses import dataclass, field
 from json import dumps
 from logging import getLogger
+from math import isclose, nan
 from pathlib import Path
-from statistics import mean
 from typing import TYPE_CHECKING, override
 
 from psutil import swap_memory, virtual_memory
 
 from utilities.asyncio import Looper
 from utilities.contextlib import suppress_super_object_attribute_error
-from utilities.datetime import (
-    MINUTE,
-    SECOND,
-    datetime_duration_to_timedelta,
-    get_now,
-    sub_duration,
-)
+from utilities.datetime import SECOND, get_now
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import Set as AbstractSet
     from logging import Logger
 
     from utilities.types import Duration, PathLike
@@ -38,18 +30,13 @@ class MemoryMonitorService(Looper[None]):
     # self
     console: str | None = field(default=None, repr=False)
     path: PathLike = "memory.txt"
-    averages: AbstractSet[Duration] | None = {MINUTE}
-    _cache: deque[_MemoryUsage] = field(default_factory=deque, init=False, repr=False)
     _console: Logger | None = field(init=False, repr=False)
-    _max_age: dt.timedelta | None = field(default=None, init=False, repr=False)
+    _max_age: int | None = field(default=None, init=False, repr=False)
     _path: Path = field(init=False, repr=False)
 
     @override
     def __post_init__(self) -> None:
         super().__post_init__()
-        if self.averages is not None:
-            averages = set(map(datetime_duration_to_timedelta, self.averages))
-            self._max_age = max(averages, default=None)
         if self.console is not None:
             self._console = getLogger(self.console)
         self._path = Path(self.path)
@@ -66,13 +53,8 @@ class MemoryMonitorService(Looper[None]):
             swap_used=swap.used,
             swap_total=swap.total,
         )
-        self._cache.append(usage)
-        if self._max_age is not None:
-            min_datetime = sub_duration(get_now(), duration=self._max_age)
-            while (len(self._cache) >= 1) and (min_datetime <= self._cache[0].datetime):
-                _ = self._cache.popleft()
         mapping = {
-            "datetime": usage.datetime,
+            "datetime": usage.datetime.strftime("%Y-%m-%d %H:%M:%S"),
             "virtual used (mb)": usage.virtual_used_mb,
             "virtual total (mb)": usage.virtual_total_mb,
             "virtual (%)": usage.virtual_pct,
@@ -80,14 +62,9 @@ class MemoryMonitorService(Looper[None]):
             "swap total (mb)": usage.swap_total_mb,
             "swap (%)": usage.swap_pct,
         }
-        if self.averages is not None:
-            for average in self.averages:
-                min_datetime = sub_duration(get_now(), duration=average)
-                usages = [u for u in self._cache if min_datetime <= u.datetime]
-                mapping[f"virtual ({average}, %)"] = mean(u.virtual_pct for u in usages)
-                mapping[f"swap ({average}, %)"] = mean(u.swap_pct for u in usages)
-        with self._path.open(mode="+a") as fh:
-            _ = fh.write(dumps(mapping))
+        ser = dumps(mapping)
+        with self._path.open(mode="a") as fh:
+            _ = fh.write(f"{ser}\n")
         if self._console is not None:
             self._console.info("%s", mapping)
 
@@ -113,10 +90,16 @@ class _MemoryUsage:
             super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
         self.virtual_used_mb = self._to_mb(self.virtual_used)
         self.virtual_total_mb = self._to_mb(self.virtual_total)
-        self.virtual_pct = self.virtual_used / self.virtual_total
+        self.virtual_pct = (
+            nan
+            if isclose(self.virtual_total, 0.0)
+            else self.virtual_used / self.virtual_total
+        )
         self.swap_used_mb = self._to_mb(self.swap_used)
         self.swap_total_mb = self._to_mb(self.swap_total)
-        self.swap_pct = self.swap_used / self.swap_total
+        self.swap_pct = (
+            nan if isclose(self.swap_total, 0.0) else self.swap_used / self.swap_total
+        )
 
     def _to_mb(self, bytes_: int) -> int:
         return round(bytes_ / (1024**2))
