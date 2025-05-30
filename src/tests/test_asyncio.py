@@ -1438,12 +1438,12 @@ class TestSleepDur:
 
 
 class TestSleepMaxDur:
-    @given(max_duration=sampled_from([0.1, 10 * MILLISECOND]))
+    @given(duration=sampled_from([0.1, 10 * MILLISECOND]))
     @settings(phases={Phase.generate})
-    async def test_main(self, *, max_duration: Duration) -> None:
+    async def test_main(self, *, duration: Duration) -> None:
         with Timer() as timer:
-            await sleep_max_dur(max_duration=max_duration)
-        assert timer <= datetime_duration_to_timedelta(2 * max_duration)
+            await sleep_max_dur(duration=duration)
+        assert timer <= datetime_duration_to_timedelta(2 * duration)
 
     async def test_none(self) -> None:
         with Timer() as timer:
