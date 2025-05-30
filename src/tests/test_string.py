@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 class TestSubstituteEnviron:
     template: ClassVar[str] = strip_and_dedent("""
         This is a template string with:
-         - key = '$TEST_ENV_KEY'
-         - value = '$TEST_ENV_VALUE'
+         - key = '$TEMPLATE_KEY'
+         - value = '$TEMPLATE_VALUE'
     """)
 
     @given(root=temp_paths(), key=text_ascii(), value=text_ascii())
@@ -31,12 +31,22 @@ class TestSubstituteEnviron:
     def test_text(self, *, key: str, value: str) -> None:
         self._run_test(self.template, key, value)
 
+    @given(key=text_ascii(), value=text_ascii())
+    def test_kwargs(self, *, key: str, value: str) -> None:
+        result = substitute_environ(
+            self.template, TEMPLATE_KEY=key, TEMPLATE_VALUE=value
+        )
+        self._assert_equal(result, key, value)
+
     def _run_test(self, path_or_text: Path | str, key: str, value: str) -> None:
-        with temp_environ(TEST_ENV_KEY=key, TEST_ENV_VALUE=value):
+        with temp_environ(TEMPLATE_KEY=key, TEMPLATE_VALUE=value):
             result = substitute_environ(path_or_text)
+        self._assert_equal(result, key, value)
+
+    def _assert_equal(self, text: str, key: str, value: str) -> None:
         expected = strip_and_dedent(f"""
             This is a template string with:
              - key = {key!r}
              - value = {value!r}
         """)
-        assert result == expected
+        assert text == expected
