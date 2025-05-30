@@ -1217,8 +1217,13 @@ class TestLooper:
             )
         )
 
-    async def test_sub_looper_one(self) -> None:
+    @given(auto_start=booleans())
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    async def test_sub_looper_one(
+        self, *, auto_start: bool, caplog: LogCaptureFixture
+    ) -> None:
         looper = _ExampleOuterLooper(auto_start=True, timeout=SECOND)
+        looper.inner.auto_start = auto_start
         async with looper:
             ...
         self._assert_stats(looper, stops=1)
@@ -1231,20 +1236,12 @@ class TestLooper:
             restart_successes=13,
             stops=1,
         )
-
-    async def test_sub_looper_changing_to_auto_start(
-        self, *, caplog: LogCaptureFixture
-    ) -> None:
-        looper = _ExampleOuterLooper(auto_start=True, timeout=SECOND)
-        async with looper:
-            ...
-        _ = one(
-            m
-            for m in caplog.messages
-            if search(
-                r": changing sub-looper _ExampleLooper\(.*?\) to auto-start...$", m
-            )
-        )
+        pattern = r": changing sub-looper _ExampleLooper\(.*?\) to auto-start\.\.\.$"
+        matches = [bool(search(pattern, m)) for m in caplog.messages]
+        if auto_start:
+            assert not any(matches)
+        else:
+            _ = one(matches)
 
     async def test_sub_loopers_multiple(self) -> None:
         @dataclass(kw_only=True)
