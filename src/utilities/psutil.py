@@ -29,8 +29,8 @@ if TYPE_CHECKING:
 
 
 @dataclass(kw_only=True)
-class MemoryUsageMonitor(Looper[None]):
-    """Monitor memory usage."""
+class MemoryMonitorService(Looper[None]):
+    """Service to monitor memory usage."""
 
     # base
     freq: Duration = field(default=10 * SECOND, repr=False)
@@ -108,7 +108,6 @@ class _MemoryUsage:
     swap_total_mb: int = field(init=False)
     swap_pct: float = field(init=False)
 
-    @override
     def __post_init__(self) -> None:
         with suppress_super_object_attribute_error():
             super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
@@ -121,3 +120,6 @@ class _MemoryUsage:
 
     def _to_mb(self, bytes_: int) -> int:
         return round(bytes_ / (1024**2))
+
+
+__all__ = ["MemoryMonitorService"]
