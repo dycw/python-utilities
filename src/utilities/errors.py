@@ -15,6 +15,7 @@ class ImpossibleCaseError(Exception):
     def __str__(self) -> str:
         desc = ", ".join(self.case)
         return f"Case must be possible: {desc}."
+        ##
 
 
 ##
