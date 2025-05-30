@@ -51,7 +51,7 @@ class TestSuppressSuperObjectAttributeError:
         class E(A, B, C, D):
             @override
             def __post_init__(self) -> None:
-                super().__post_init__()  # pyright:ignore [reportAttributeAccessIssue]
+                super().__post_init__()
                 nonlocal inits
                 inits.append("E")
 

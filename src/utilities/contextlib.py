@@ -41,4 +41,4 @@ def suppress_super_object_attribute_error() -> Iterator[None]:
             raise
 
 
-__all__ = ["NoOpContextManager"]
+__all__ = ["NoOpContextManager", "suppress_super_object_attribute_error"]
