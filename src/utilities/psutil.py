@@ -5,7 +5,7 @@ from json import dumps
 from logging import getLogger
 from math import isclose, nan
 from pathlib import Path
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, Self, override
 
 from psutil import swap_memory, virtual_memory
 
@@ -21,56 +21,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(kw_only=True)
-class MemoryMonitorService(Looper[None]):
-    """Service to monitor memory usage."""
-
-    # base
-    freq: Duration = field(default=10 * SECOND, repr=False)
-    backoff: Duration = field(default=10 * SECOND, repr=False)
-    # self
-    console: str | None = field(default=None, repr=False)
-    path: PathLike = "memory.txt"
-    _console: Logger | None = field(init=False, repr=False)
-    _max_age: int | None = field(default=None, init=False, repr=False)
-    _path: Path = field(init=False, repr=False)
-
-    @override
-    def __post_init__(self) -> None:
-        super().__post_init__()
-        if self.console is not None:
-            self._console = getLogger(self.console)
-        self._path = Path(self.path)
-
-    @override
-    async def core(self) -> None:
-        await super().core()
-        virtual = virtual_memory()
-        virtual_total = virtual.total
-        swap = swap_memory()
-        usage = _MemoryUsage(
-            virtual_used=virtual_total - virtual.available,
-            virtual_total=virtual_total,
-            swap_used=swap.used,
-            swap_total=swap.total,
-        )
-        mapping = {
-            "datetime": usage.datetime.strftime("%Y-%m-%d %H:%M:%S"),
-            "virtual used (mb)": usage.virtual_used_mb,
-            "virtual total (mb)": usage.virtual_total_mb,
-            "virtual (%)": usage.virtual_pct,
-            "swap used (mb)": usage.swap_used_mb,
-            "swap total (mb)": usage.swap_total_mb,
-            "swap (%)": usage.swap_pct,
-        }
-        ser = dumps(mapping)
-        with self._path.open(mode="a") as fh:
-            _ = fh.write(f"{ser}\n")
-        if self._console is not None:
-            self._console.info("%s", mapping)
-
-
-@dataclass(kw_only=True)
-class _MemoryUsage:
+class MemoryUsage:
     """A memory usage."""
 
     datetime: dt.datetime = field(default_factory=get_now)
@@ -101,8 +52,67 @@ class _MemoryUsage:
             nan if isclose(self.swap_total, 0.0) else self.swap_used / self.swap_total
         )
 
+    @classmethod
+    def new(cls) -> Self:
+        virtual = virtual_memory()
+        virtual_total = virtual.total
+        swap = swap_memory()
+        return cls(
+            virtual_used=virtual_total - virtual.available,
+            virtual_total=virtual_total,
+            swap_used=swap.used,
+            swap_total=swap.total,
+        )
+
     def _to_mb(self, bytes_: int) -> int:
         return round(bytes_ / (1024**2))
 
 
-__all__ = ["MemoryMonitorService"]
+##
+
+
+@dataclass(kw_only=True)
+class MemoryMonitorService(Looper[None]):
+    """Service to monitor memory usage."""
+
+    # base
+    freq: Duration = field(default=10 * SECOND, repr=False)
+    backoff: Duration = field(default=10 * SECOND, repr=False)
+    # self
+    console: str | None = field(default=None, repr=False)
+    path: PathLike = "memory.txt"
+    _console: Logger | None = field(init=False, repr=False)
+    _max_age: int | None = field(default=None, init=False, repr=False)
+    _path: Path = field(init=False, repr=False)
+
+    @override
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.console is not None:
+            self._console = getLogger(self.console)
+        self._path = Path(self.path)
+
+    @override
+    async def core(self) -> None:
+        await super().core()
+        usage = MemoryUsage.new()
+        mapping = {
+            "datetime": usage.datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "virtual used (mb)": usage.virtual_used_mb,
+            "virtual total (mb)": usage.virtual_total_mb,
+            "virtual (%)": usage.virtual_pct,
+            "swap used (mb)": usage.swap_used_mb,
+            "swap total (mb)": usage.swap_total_mb,
+            "swap (%)": usage.swap_pct,
+        }
+        ser = dumps(mapping)
+        with self._path.open(mode="a") as fh:
+            _ = fh.write(f"{ser}\n")
+        if self._console is not None:
+            self._console.info("%s", mapping)
+
+
+##
+
+
+__all__ = ["MemoryMonitorService", "MemoryUsage"]
