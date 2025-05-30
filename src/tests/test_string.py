@@ -28,11 +28,11 @@ class TestSubstituteEnviron:
         self._run_test(path, key, value)
 
     @given(key=text_ascii(), value=text_ascii())
-    def test_text(self, *, key: str, value: str) -> None:
+    def test_text_environ(self, *, key: str, value: str) -> None:
         self._run_test(self.template, key, value)
 
     @given(key=text_ascii(), value=text_ascii())
-    def test_kwargs(self, *, key: str, value: str) -> None:
+    def test_text_kwargs(self, *, key: str, value: str) -> None:
         result = substitute_environ(
             self.template, TEMPLATE_KEY=key, TEMPLATE_VALUE=value
         )
