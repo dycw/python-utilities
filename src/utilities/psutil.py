@@ -3,16 +3,27 @@ from __future__ import annotations
 from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, AbstractSet, override
+from json import dumps
+from logging import getLogger
+from pathlib import Path
+from statistics import mean
+from typing import TYPE_CHECKING, override
 
 from psutil import swap_memory, virtual_memory
 
-from utilities.asyncio import Looper, sleep_dur
-from utilities.datetime import MINUTE, SECOND, datetime_duration_to_timedelta, get_now
+from utilities.asyncio import Looper
+from utilities.datetime import (
+    MINUTE,
+    SECOND,
+    datetime_duration_to_timedelta,
+    get_now,
+    sub_duration,
+)
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import Sequence
+    from collections.abc import Set as AbstractSet
+    from logging import Logger
 
     from utilities.types import Duration, PathLike
 
@@ -24,21 +35,24 @@ class MemoryUsageMonitor(Looper[None]):
     # base
     freq: Duration = field(default=10 * SECOND, repr=False)
     backoff: Duration = field(default=10 * SECOND, repr=False)
-    logger: str | None = field(default=__name__, repr=False)
     # self
-    console: bool = False
+    console: str | None = field(default=None, repr=False)
     path: PathLike = "memory.txt"
     averages: AbstractSet[Duration] | None = {MINUTE}
-    _max_duration: dt.timedelta | None = field(default=None, init=False, repr=False)
     _cache: deque[_MemoryUsage] = field(default_factory=deque, init=False, repr=False)
-    _scale: int = field(default=1024**2, init=False, repr=False)
+    _console: Logger | None = field(init=False, repr=False)
+    _max_age: dt.timedelta | None = field(default=None, init=False, repr=False)
+    _path: Path = field(init=False, repr=False)
 
     @override
     def __post_init__(self) -> None:
         super().__post_init__()
         if self.averages is not None:
             averages = set(map(datetime_duration_to_timedelta, self.averages))
-            self._max_duration = max(averages, default=None)
+            self._max_age = max(averages, default=None)
+        if self.console is not None:
+            self._console = getLogger(self.console)
+        self._path = Path(self.path)
 
     @override
     async def core(self) -> None:
@@ -53,42 +67,29 @@ class MemoryUsageMonitor(Looper[None]):
             swap_total=swap.total,
         )
         self._cache.append(usage)
-        self._rows.append(row)
-        self._upserter.put_right_nowait(row)
-        if self.log:
-            _LOGGER.info("\n%s", pretty_repr(self._df.row(-1, named=True)))
-
-    @property
-    def _df(self) -> DataFrame:
-        df = DataFrame(
-            data=self._rows,
-            schema={
-                DATETIME: DatetimeUTC,
-                "user": String,
-                "host": String,
-                "virtual_used_mb": Int64,
-                "virtual_total_mb": Int64,
-                "swap_used_mb": Int64,
-                "swap_total_mb": Int64,
-            },
-            orient="row",
-        )
-        return df.select(
-            col(DATETIME).dt.convert_time_zone(get_time_zone_name("local")),
-            *self._df_columns("virtual", abbreviation="virt"),
-            *self._df_columns("swap"),
-        )
-
-    def _df_columns(
-        self, key: str, /, *, abbreviation: str | None = None
-    ) -> SequenceExpr:
-        name = key if abbreviation is None else abbreviation
-        used = col(f"{key}_used_mb").alias(f"{name}-used (MB)")
-        total = col(f"{key}_total_mb").alias(f"{name}-total (MB)")
-        pct = (used / total).alias(f"{name} (%)")
-        pct10m = pct.rolling_mean_by(DATETIME, MINUTE).alias(f"{name} (%-10m)")
-        pct1h = pct.rolling_mean_by(DATETIME, MINUTE).alias(f"{name} (%-1h)")
-        return [used, total, pct, pct10m, pct1h]
+        if self._max_age is not None:
+            min_datetime = sub_duration(get_now(), duration=self._max_age)
+            while (len(self._cache) >= 1) and (min_datetime <= self._cache[0].datetime):
+                _ = self._cache.popleft()
+        mapping = {
+            "datetime": usage.datetime,
+            "virtual used (mb)": usage.virtual_used_mb,
+            "virtual total (mb)": usage.virtual_total_mb,
+            "virtual (%)": usage.virtual_pct,
+            "swap used (mb)": usage.swap_used_mb,
+            "swap total (mb)": usage.swap_total_mb,
+            "swap (%)": usage.swap_pct,
+        }
+        if self.averages is not None:
+            for average in self.averages:
+                min_datetime = sub_duration(get_now(), duration=average)
+                usages = [u for u in self._cache if min_datetime <= u.datetime]
+                mapping[f"virtual ({average}, %)"] = mean(u.virtual_pct for u in usages)
+                mapping[f"swap ({average}, %)"] = mean(u.swap_pct for u in usages)
+        with self._path.open(mode="+a") as fh:
+            _ = fh.write(dumps(mapping))
+        if self._console is not None:
+            self._console.info("%s", mapping)
 
 
 @dataclass(kw_only=True)
