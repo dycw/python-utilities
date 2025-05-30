@@ -921,12 +921,9 @@ class _ExampleOuterLooper(_ExampleLooper):
 
 
 class TestLooper:
-    pattern: ClassVar[str] = (
-        r": encountered _ExampleLooperError\(\) whilst tearing down{extra}$"
-    )
     sleep_if_failure_cases: ClassVar[list[Any]] = [
-        param(True, pattern.format(extra="; sleeping for .*")),
-        param(False, pattern.format(extra="")),
+        param(True, "; sleeping for .*"),
+        param(False, ""),
     ]
 
     async def test_main_with_nothing(self) -> None:
@@ -1003,9 +1000,9 @@ class TestLooper:
         _ = await looper.initialize(sleep_if_failure=False)
         _ = one(m for m in caplog.messages if search(": already initializing$", m))
 
-    @mark.parametrize(("sleep_if_failure", "pattern"), sleep_if_failure_cases)
+    @mark.parametrize(("sleep_if_failure", "extra"), sleep_if_failure_cases)
     async def test_initialize_failure(
-        self, *, sleep_if_failure: bool, pattern: str, caplog: LogCaptureFixture
+        self, *, sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
     ) -> None:
         class Example(_ExampleLooper):
             @override
@@ -1016,6 +1013,7 @@ class TestLooper:
 
         looper = Example()
         _ = await looper.initialize(sleep_if_failure=sleep_if_failure)
+        pattern = rf": encountered _ExampleLooperError\(\) whilst initializing{extra}$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
     def test_len_and_qsize(self) -> None:
@@ -1135,9 +1133,9 @@ class TestLooper:
             if search(r": already requested stop when empty$", m)
         )
 
-    @mark.parametrize(("sleep_if_failure", "pattern"), sleep_if_failure_cases)
+    @mark.parametrize(("sleep_if_failure", "extra"), sleep_if_failure_cases)
     async def test_restart_failure_during_initialization(
-        self, *, sleep_if_failure: bool, pattern: str, caplog: LogCaptureFixture
+        self, *, sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
     ) -> None:
         class Example(_ExampleLooper):
             @override
@@ -1148,11 +1146,12 @@ class TestLooper:
 
         looper = Example()
         await looper.restart(sleep_if_failure=sleep_if_failure)
+        pattern = rf": encountered _ExampleLooperError\(\) whilst restarting \(initialize\){extra}$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
-    @mark.parametrize(("sleep_if_failure", "pattern"), sleep_if_failure_cases)
+    @mark.parametrize(("sleep_if_failure", "extra"), sleep_if_failure_cases)
     async def test_restart_failure_during_tear_down(
-        self, *, sleep_if_failure: bool, pattern: str, caplog: LogCaptureFixture
+        self, *, sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
     ) -> None:
         class Example(_ExampleLooper):
             @override
@@ -1163,15 +1162,13 @@ class TestLooper:
 
         looper = Example()
         await looper.restart(sleep_if_failure=sleep_if_failure)
+        pattern = rf": encountered _ExampleLooperError\(\) whilst restarting \(tear down\){extra}$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
-    @given(case=sampled_from([(True, "; sleeping for .*"), (False, "")]))
-    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    @mark.parametrize(("sleep_if_failure", "extra"), sleep_if_failure_cases)
     async def test_restart_failure_during_tear_down_and_initialization(
-        self, *, case: tuple[bool, str], caplog: LogCaptureFixture
+        self, *, sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
     ) -> None:
-        sleep_if_failure, extra = case
-
         class Example(_ExampleLooper):
             @override
             async def _initialize_core(self) -> None:
@@ -1187,14 +1184,8 @@ class TestLooper:
 
         looper = Example()
         await looper.restart(sleep_if_failure=sleep_if_failure)
-        _ = one(
-            m
-            for m in caplog.messages
-            if search(
-                rf": encountered _ExampleLooperError\(\) \(tear down\) and then _ExampleLooperError\(\) \(initialization\) whilst restarting{extra}$",
-                m,
-            )
-        )
+        pattern = rf": encountered _ExampleLooperError\(\) \(tear down\) and then _ExampleLooperError\(\) \(initialization\) whilst restarting{extra}$"
+        _ = one(m for m in caplog.messages if search(pattern, m))
 
     @mark.parametrize("auto_start", [param(True), param(False)])
     async def test_sub_looper_one(
