@@ -1217,8 +1217,7 @@ class TestLooper:
             )
         )
 
-    @given(auto_start=booleans())
-    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    @mark.parametrize("auto_start", [param(True), param(False)])
     async def test_sub_looper_one(
         self, *, auto_start: bool, caplog: LogCaptureFixture
     ) -> None:
@@ -1237,9 +1236,9 @@ class TestLooper:
             stops=1,
         )
         pattern = r": changing sub-looper _ExampleLooper\(.*?\) to auto-start\.\.\.$"
-        matches = [bool(search(pattern, m)) for m in caplog.messages]
+        matches = [m for m in caplog.messages if bool(search(pattern, m))]
         if auto_start:
-            assert not any(matches)
+            assert len(matches) == 0
         else:
             _ = one(matches)
 
