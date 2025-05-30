@@ -59,6 +59,7 @@ from utilities.datetime import (
 )
 from utilities.errors import ImpossibleCaseError, repr_error
 from utilities.functions import ensure_int, ensure_not_none, get_class_name
+from utilities.random import SYSTEM_RANDOM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import (
     Coroutine1,
@@ -75,6 +76,7 @@ if TYPE_CHECKING:
     from collections import deque
     from collections.abc import AsyncIterator, Sequence
     from contextvars import Context
+    from random import Random
     from types import TracebackType
 
     from utilities.types import Duration
@@ -1305,6 +1307,20 @@ async def sleep_dur(*, duration: Duration | None = None) -> None:
 ##
 
 
+async def sleep_max_dur(
+    *, max_duration: Duration | None = None, random: Random = SYSTEM_RANDOM
+) -> None:
+    """Sleep which accepts max durations."""
+    if max_duration is None:
+        return
+    max_float = datetime_duration_to_float(max_duration)
+    drawn = random.uniform(0.0, max_float)
+    await sleep(drawn)
+
+
+##
+
+
 async def sleep_until(datetime: dt.datetime, /) -> None:
     """Sleep until a given time."""
     await sleep_dur(duration=datetime - get_now())
@@ -1407,6 +1423,7 @@ __all__ = [
     "put_items",
     "put_items_nowait",
     "sleep_dur",
+    "sleep_max_dur",
     "sleep_until",
     "sleep_until_rounded",
     "stream_command",
