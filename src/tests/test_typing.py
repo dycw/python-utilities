@@ -48,6 +48,7 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureSentinel,
     DataClassFutureStr,
     DataClassFutureTimeDelta,
+    DataClassFutureTimeDeltaNullable,
     DataClassFutureTypeLiteral,
     DataClassFutureUUID,
     TrueOrFalseFutureLit,
@@ -345,6 +346,19 @@ class TestGetTypeHints:
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
         expected = {"timedelta": dt.timedelta}
+        assert hints == expected
+
+    @given(data=data())
+    def test_timedelta_nullable(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            timedelta: dt.timedelta | None
+
+        cls = data.draw(sampled_from([Example, DataClassFutureTimeDeltaNullable]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"timedelta": dt.timedelta | None}
         assert hints == expected
 
     @given(data=data())
