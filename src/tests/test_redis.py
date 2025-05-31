@@ -595,12 +595,14 @@ class TestSubscribeService:
 
 
 class TestYieldClient:
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self) -> None:
         async with yield_redis() as client:
             assert isinstance(client, Redis)
 
 
 class TestYieldPubSub:
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, tmp_path: Path) -> None:
         channel = str(tmp_path)
         async with yield_redis() as redis, yield_pubsub(redis, channel) as pubsub:

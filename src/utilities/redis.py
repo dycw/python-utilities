@@ -594,11 +594,13 @@ async def publish(
     timeout: Duration = _PUBLISH_TIMEOUT,
 ) -> ResponseT:
     """Publish an object to a channel."""
-    if isinstance(data, bytes | str) and (serializer is None):
+    if isinstance(data, bytes | str) and (  # skipif-ci-and-not-linux
+        serializer is None
+    ):
         data_use = data
-    elif serializer is not None:
+    elif serializer is not None:  # skipif-ci-and-not-linux
         data_use = serializer(data)
-    else:
+    else:  # skipif-ci-and-not-linux
         raise PublishError(data=data, serializer=serializer)
     async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
         return await redis.publish(channel, data_use)  # skipif-ci-and-not-linux
@@ -749,8 +751,8 @@ async def subscribe(
     output: Literal["raw", "bytes", "text"] | Callable[[bytes], _T] = "text",
 ) -> AsyncIterator[Task[None]]:
     """Subscribe to the data of a given channel(s)."""
-    channels = list(always_iterable(channels))
-    match output:
+    channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
+    match output:  # skipif-ci-and-not-linux
         case "raw":
             transform = cast("Any", identity)
         case "bytes":
@@ -768,12 +770,12 @@ async def subscribe(
         case _ as never:
             assert_never(never)
 
-    task = create_task(
+    task = create_task(  # skipif-ci-and-not-linux
         _subscribe_core(redis, channels, transform, queue, timeout=timeout, sleep=sleep)
     )
-    try:
+    try:  # skipif-ci-and-not-linux
         yield task
-    finally:
+    finally:  # skipif-ci-and-not-linux
         _ = task.cancel()
         with suppress(CancelledError):
             await task
@@ -789,12 +791,14 @@ async def _subscribe_core(
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> None:
-    timeout_use = None if timeout is None else datetime_duration_to_float(timeout)
-    sleep_use = datetime_duration_to_float(sleep)
-    is_subscribe_message = partial(
+    timeout_use = (  # skipif-ci-and-not-linux
+        None if timeout is None else datetime_duration_to_float(timeout)
+    )
+    sleep_use = datetime_duration_to_float(sleep)  # skipif-ci-and-not-linux
+    is_subscribe_message = partial(  # skipif-ci-and-not-linux
         _is_subscribe_message, channels={c.encode() for c in channels}
     )
-    async with yield_pubsub(redis, channels) as pubsub:
+    async with yield_pubsub(redis, channels) as pubsub:  # skipif-ci-and-not-linux
         while True:
             message = cast(
                 "_RedisMessageSubscribe | _RedisMessageUnsubscribe | None",
@@ -858,8 +862,8 @@ class SubscribeService(Looper[_T]):
 
     @override
     async def __aenter__(self) -> Self:
-        _ = await super().__aenter__()
-        match self._is_subscribed.is_set():
+        _ = await super().__aenter__()  # skipif-ci-and-not-linux
+        match self._is_subscribed.is_set():  # skipif-ci-and-not-linux
             case True:
                 _ = self._debug and self._logger.debug("%s: already subscribing", self)
             case False:
@@ -882,7 +886,7 @@ class SubscribeService(Looper[_T]):
                 )
             case _ as never:
                 assert_never(never)
-        return self
+        return self  # skipif-ci-and-not-linux
 
     @override
     async def __aexit__(
@@ -891,10 +895,10 @@ class SubscribeService(Looper[_T]):
         exc_value: BaseException | None = None,
         traceback: TracebackType | None = None,
     ) -> None:
-        await super().__aexit__(
+        await super().__aexit__(  # skipif-ci-and-not-linux
             exc_type=exc_type, exc_value=exc_value, traceback=traceback
         )
-        match self._is_subscribed.is_set():
+        match self._is_subscribed.is_set():  # skipif-ci-and-not-linux
             case True:
                 _ = self._debug and self._logger.debug(
                     "%s: stopping subscription...", self
@@ -919,9 +923,9 @@ async def yield_pubsub(
     pubsub = redis.pubsub()
     channels = list(always_iterable(channels))
     await pubsub.subscribe(*channels)
-    try:
+    try:  # skipif-ci-and-not-linux
         yield pubsub
-    finally:
+    finally:  # skipif-ci-and-not-linux
         await pubsub.unsubscribe(*channels)
         await pubsub.aclose()
 
