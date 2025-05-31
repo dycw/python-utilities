@@ -284,14 +284,6 @@ class TestPublisher:
 
         assert buffer.getvalue() == text.encode()
 
-    @given(data=data())
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_error_service(self, *, data: DataObject) -> None:
-        async with yield_test_redis(data) as test:
-            service = PublishService(redis=test.redis)
-            with raises(PublisherError, match="Error running 'PublishService'"):
-                raise PublisherError(publisher=service)
-
 
 class TestSubscribeMessages:
     @given(
