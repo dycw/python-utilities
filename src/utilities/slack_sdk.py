@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from asyncio import sleep
 from dataclasses import dataclass
 from http import HTTPStatus
 from logging import NOTSET, Handler, LogRecord
@@ -21,6 +22,7 @@ from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from types import TracebackType
 
     from slack_sdk.webhook import WebhookResponse
 
@@ -117,17 +119,37 @@ class SlackHandlerService(Handler, Looper[str]):
         self.send_timeout = send_timeout
 
     @override
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None = None,
+        exc_value: BaseException | None = None,
+        traceback: TracebackType | None = None,
+    ) -> None:
+        await self.run_until_empty()
+        await super().__aexit__(exc_type, exc_value, traceback)
+
+    async def run_until_empty(self) -> None:
+        """Run the core function until the queue is empty."""
+        while not self.empty():
+            await self.core()
+            if not self.empty():
+                await sleep(self._freq)
+
+    @override
     def emit(self, record: LogRecord) -> None:
+        fmtted = self.format(record)
         try:
-            self.put_right_nowait(self.format(record))
+            self.put_right_nowait(fmtted)
         except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
 
     @override
     async def core(self) -> None:
-        text = "\n".join(msg := self.get_all_nowait())
+        await super().core()
+        if self.empty():
+            return
+        text = "\n".join(self.get_all_nowait())
         async with timeout_dur(duration=self.send_timeout):
-            self._logger.info("sending %s msgs", len(msg))
             await self.sender(self.url, text)
 
     @override
@@ -139,6 +161,8 @@ class SlackHandlerService(Handler, Looper[str]):
         backoff: Duration | Sentinel = sentinel,
         logger: str | None | Sentinel = sentinel,
         timeout: Duration | None | Sentinel = sentinel,
+        timeout_error: type[Exception] | Sentinel = sentinel,
+        _debug: bool | Sentinel = sentinel,
     ) -> Self:
         """Replace elements of the looper."""
         return replace_non_sentinel(
@@ -149,6 +173,8 @@ class SlackHandlerService(Handler, Looper[str]):
             backoff=backoff,
             logger=logger,
             timeout=timeout,
+            timeout_error=timeout_error,
+            _debug=_debug,
         )
 
 

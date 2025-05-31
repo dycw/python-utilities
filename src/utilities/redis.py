@@ -639,8 +639,8 @@ class PublishService(Looper[tuple[str, _T]]):
 
     @override
     async def core(self) -> None:
-        for item in self.get_all_nowait():  # pragma: no cover
-            channel, data = item
+        while not self.empty():  # skipif-ci-and-not-linux
+            channel, data = self.get_left_nowait()
             _ = await publish(
                 self.redis,
                 channel,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import sleep, timeout
+from asyncio import timeout
 from logging import getLogger
 from typing import TYPE_CHECKING
 
@@ -72,8 +72,8 @@ class TestSlackHandler:
 
     # service
 
-    @mark.only
-    async def test_main_service(self, *, tmp_path: Path) -> None:
+    @mark.parametrize("auto_start", [param(True), param(False)])
+    async def test_main_service(self, *, tmp_path: Path, auto_start: bool) -> None:
         messages: Sequence[str] = []
 
         async def sender(_: str, text: str, /) -> None:
@@ -82,22 +82,11 @@ class TestSlackHandler:
         logger = getLogger(str(tmp_path))
         logger.addHandler(
             handler := SlackHandlerService(
-                auto_start=True,  # cannot use context manager
-                url="url",
-                # url="https://hooks.slack.com/services/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",
-                freq=0.05,
-                sender=sender,
-                timeout=1.0,
-                _debug=True,
+                auto_start=auto_start, url="url", freq=0.05, sender=sender, timeout=1.0
             )
         )
         async with handler:
-            await sleep(0.2)
             logger.warning("message")
-            await sleep(0.2)
-        # with raises(TimeoutError):
-        #     async with timeout(1.0), handler:
-        #         logger.warning("message")
         assert messages == ["message"]
 
     @mark.skipif(get_env_var("SLACK", nullable=True) is None, reason="'SLACK' not set")
