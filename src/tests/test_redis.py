@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from asyncio import Queue, sleep
 from os import getpid
+from re import search
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import Phase, given, settings
+from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
     DrawFn,
@@ -17,7 +18,7 @@ from hypothesis.strategies import (
     sampled_from,
     uuids,
 )
-from pytest import raises
+from pytest import LogCaptureFixture, mark, raises
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 
@@ -32,6 +33,7 @@ from utilities.hypothesis import (
     text_ascii,
     yield_test_redis,
 )
+from utilities.iterables import one
 from utilities.operator import is_equal
 from utilities.orjson import deserialize, serialize
 from utilities.redis import (
@@ -546,6 +548,7 @@ class TestSubscribe:
             assert result["data"] == message.encode()
 
 
+@mark.only
 class TestSubscribeService:
     @given(
         channel=channels(),
@@ -567,6 +570,24 @@ class TestSubscribeService:
         for result, message in zip(results, messages, strict=True):
             assert isinstance(result, str)
             assert result == message
+
+    @given(channel=channels())
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_context_manager_already_subscribing(
+        self, *, channel: str, caplog: LogCaptureFixture
+    ) -> None:
+        async with yield_redis() as redis:
+            looper = SubscribeService(
+                timeout=1.0, _debug=True, redis=redis, channel=channel
+            )
+            async with looper, looper:
+                ...
+            _ = one(m for m in caplog.messages if search(": already subscribing$", m))
 
 
 class TestYieldClient:
