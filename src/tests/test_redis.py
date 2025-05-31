@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import Queue, create_task, sleep
+from asyncio import Queue, sleep
 from io import BytesIO, StringIO
 from os import getpid
 from typing import TYPE_CHECKING, Any
@@ -56,8 +56,6 @@ from utilities.tzlocal import get_now_local
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
     from pathlib import Path
-
-    from pytest import CaptureFixture
 
 
 _PUB_SUB_SLEEP = 0.1
@@ -129,78 +127,6 @@ class TestPublish:
                 PublishError, match="Unable to publish data None with serializer None"
             ):
                 _ = await publish(redis, "channel", None)
-
-
-@mark.skip
-class TestPublishAndSubscribe:
-    @given(
-        data=data(),
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublishAndSubscribe)}_all_objects_with_serialize_{c}"
-        ),
-        obj=make_objects(),
-    )
-    @mark.flaky
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_all_objects_with_serialize(
-        self, *, capsys: CaptureFixture, data: DataObject, channel: str, obj: Any
-    ) -> None:
-        async with yield_test_redis(data) as test:
-
-            async def listener() -> None:
-                async for msg in subscribe(
-                    test.redis.pubsub(), channel, deserializer=deserialize
-                ):
-                    print(msg)  # noqa: T201
-
-            task = create_task(listener())
-            await sleep(0.05)
-            _ = await publish(test.redis, channel, obj, serializer=serialize)
-            await sleep(0.05)
-            try:
-                out = capsys.readouterr().out
-                expected = f"{obj}\n"
-                assert out == expected
-            finally:
-                _ = task.cancel()
-
-    @given(
-        data=data(),
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublishAndSubscribe)}_text_without_serialize_{c}"
-        ),
-        text=text_ascii(min_size=1),
-    )
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_text_without_serialize(
-        self, *, capsys: CaptureFixture, data: DataObject, channel: str, text: str
-    ) -> None:
-        async with yield_test_redis(data) as test:
-
-            async def listener() -> None:
-                async for msg in subscribe(test.redis.pubsub(), channel):
-                    print(msg)  # noqa: T201
-
-            task = create_task(listener())
-            await sleep(0.05)
-            _ = await publish(test.redis, channel, text)
-            await sleep(0.05)
-            try:
-                out = capsys.readouterr().out
-                expected = f"{text.encode()}\n"
-                assert out == expected
-            finally:
-                _ = task.cancel()
 
 
 class TestPublisher:
