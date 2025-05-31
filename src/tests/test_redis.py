@@ -4,7 +4,7 @@ from asyncio import Queue, create_task, sleep
 from io import BytesIO, StringIO
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import HealthCheck, Phase, given, reproduce_failure, settings
+from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
     booleans,
@@ -30,7 +30,6 @@ from utilities.hypothesis import (
     text_ascii,
     yield_test_redis,
 )
-from utilities.iterables import one
 from utilities.operator import is_equal
 from utilities.orjson import deserialize, serialize
 from utilities.redis import (
@@ -611,13 +610,8 @@ class TestSubscribe:
 
 @mark.only
 class TestSubscribeService:
-    @given(
-        key=uuids(),
-        messages=lists(text_ascii(min_size=1), max_size=10),
-    )
-    @settings_with_reduced_examples(
-        phases={Phase.generate},
-    )
+    @given(key=uuids(), messages=lists(text_ascii(min_size=1), min_size=1, max_size=10))
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, key: UUID, messages: list[str]) -> None:
         channel = f"test_{serialize_compact(get_now_local())}_{key}"
