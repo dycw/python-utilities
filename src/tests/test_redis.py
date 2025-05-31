@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from asyncio import Queue, sleep
-from io import BytesIO, StringIO
 from os import getpid
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import HealthCheck, Phase, given, settings
+from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
     DrawFn,
@@ -18,15 +17,14 @@ from hypothesis.strategies import (
     sampled_from,
     uuids,
 )
-from pytest import mark, raises
+from pytest import raises
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_operator import make_objects
-from utilities.asyncio import EnhancedTaskGroup, get_items_nowait
+from utilities.asyncio import get_items_nowait
 from utilities.datetime import serialize_compact
-from utilities.functions import get_class_name
 from utilities.hypothesis import (
     int64s,
     pairs,
@@ -160,84 +158,26 @@ class TestPublisher:
                 raise PublisherError(publisher=publisher)
 
     @given(
-        data=data(),
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublisher)}_main_{c}_service"
-        ),
-        obj=make_objects(),
+        channel=channels(),
+        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
     )
-    @mark.flaky
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main_service(
-        self, *, data: DataObject, channel: str, obj: Any
-    ) -> None:
-        buffer = StringIO()
+    async def test_main_service(self, *, channel: str, messages: Sequence[str]) -> None:
+        queue: Queue[str] = Queue()
         async with (
-            yield_test_redis(data) as test,
-            PublishService(
-                freq=0.1, timeout=1.0, redis=test.redis, serializer=serialize
-            ) as service,
+            yield_redis() as redis,
+            PublishService(freq=0.1, timeout=1.0, redis=redis) as service,
+            subscribe(redis, channel, queue),
         ):
-
-            async def listener() -> None:
-                async for obj_i in subscribe(
-                    test.redis.pubsub(), channel, deserializer=deserialize
-                ):
-                    _ = buffer.write(str(obj_i))
-
-            async def sleep_then_put() -> None:
-                await sleep(0.1)
-                service.put_right_nowait((channel, obj))
-
-            with raises(ExceptionGroup):  # noqa: PT012
-                async with EnhancedTaskGroup(timeout=1.0) as tg:
-                    _ = tg.create_task(listener())
-                    _ = tg.create_task(sleep_then_put())
-
-        assert buffer.getvalue() == str(obj)
-
-    @given(
-        data=data(),
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublisher)}_text_without_serialize_{c}_service"
-        ),
-        text=text_ascii(min_size=1),
-    )
-    @mark.flaky
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_text_without_serialize_service(
-        self, *, data: DataObject, channel: str, text: str
-    ) -> None:
-        buffer = BytesIO()
-        async with (
-            yield_test_redis(data) as test,
-            PublishService(freq=0.1, timeout=1.0, redis=test.redis) as service,
-        ):
-
-            async def listener() -> None:
-                async for bytes_i in subscribe(test.redis.pubsub(), channel):
-                    _ = buffer.write(bytes_i)
-
-            async def sleep_then_put() -> None:
-                await sleep(0.1)
-                service.put_right_nowait((channel, text))
-
-            with raises(ExceptionGroup):  # noqa: PT012
-                async with EnhancedTaskGroup(timeout=1.0) as tg:
-                    _ = tg.create_task(listener())
-                    _ = tg.create_task(sleep_then_put())
-
-        assert buffer.getvalue() == text.encode()
+            await sleep(_PUB_SUB_SLEEP)
+            service.put_right_nowait(*((channel, m) for m in messages))
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(messages)
+        results = get_items_nowait(queue)
+        for result, message in zip(results, messages, strict=True):
+            assert isinstance(result, str)
+            assert result == message
 
 
 class TestRedisHashMapKey:
