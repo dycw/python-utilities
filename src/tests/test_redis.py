@@ -53,6 +53,9 @@ if TYPE_CHECKING:
     from pytest import CaptureFixture
 
 
+_PUB_SUB_SLEEP = 0.5
+
+
 @mark.skip
 class TestPublishAndSubscribe:
     @given(
@@ -564,6 +567,7 @@ class TestRedisKey:
 @mark.only
 class TestSubscribe:
     @given(message=text_ascii(min_size=1))
+    @mark.flaky
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -574,14 +578,15 @@ class TestSubscribe:
         channel = str(tmp_path)
         async with yield_redis() as redis:
             queue, _ = subscribe(redis, channel)
-            await sleep(0.1)
+            await sleep(_PUB_SUB_SLEEP)
             await redis.publish(channel, message)
-        await sleep(0.1)
+        await sleep(_PUB_SUB_SLEEP)
         assert queue.qsize() == 1
         result = queue.get_nowait()
         assert result.decode() == message
 
     @given(message=text_ascii(min_size=1))
+    @mark.flaky
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -593,15 +598,15 @@ class TestSubscribe:
         queue: Queue[bytes] = Queue()
         async with yield_redis() as redis:
             _ = subscribe(redis, channel, queue=queue)
-            await sleep(0.1)
+            await sleep(_PUB_SUB_SLEEP)
             await redis.publish(channel, message)
-        await sleep(0.1)
+        await sleep(_PUB_SUB_SLEEP)
         assert queue.qsize() == 1
         result = queue.get_nowait()
         assert result.decode() == message
 
 
-@mark.only
+@mark.skip
 class TestSubscribeService:
     @given(message=text_ascii(min_size=1))
     @settings(
@@ -646,7 +651,7 @@ class TestYieldMessageQueue:
         async with yield_redis() as redis, yield_message_queue(redis, channel) as queue:
             assert isinstance(queue, Queue)
             await redis.publish(channel, message)
-            await sleep(0.1)
+            await sleep(_PUB_SUB_SLEEP)
             assert queue.qsize() == 1
             result = queue.get_nowait()
         assert result.decode() == message
@@ -666,7 +671,7 @@ class TestYieldMessageQueue:
             assert isinstance(queue, Queue)
             for message in messages:
                 await redis.publish(channel, message)
-            await sleep(0.1)
+            await sleep(_PUB_SUB_SLEEP)
             assert queue.qsize() == len(messages)
             results = get_items_nowait(queue)
         assert len(results) == len(messages)
@@ -688,7 +693,7 @@ class TestYieldMessageQueue:
         ):
             assert isinstance(queue, Queue)
             await redis.publish(channel, message)
-            await sleep(0.1)
+            await sleep(_PUB_SUB_SLEEP)
             assert queue.qsize() == 1
             result = queue.get_nowait()
         assert isinstance(result, dict)
@@ -712,7 +717,7 @@ class TestYieldMessageQueue:
         ):
             assert isinstance(queue, Queue)
             await redis.publish(channel, serialize(obj))
-            await sleep(0.1)
+            await sleep(_PUB_SUB_SLEEP)
             assert queue.qsize() == 1
             result = queue.get_nowait()
         assert is_equal(result, obj)

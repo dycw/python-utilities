@@ -23,7 +23,6 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
-import redis.exceptions
 from redis.asyncio import Redis
 from redis.typing import EncodableT
 
@@ -774,21 +773,21 @@ class SubscribeService(Looper[_T]):
     subscribe_sleep: Duration = _SUBSCRIBE_SLEEP
     subscribe_timeout: Duration | None = _SUBSCRIBE_TIMEOUT
     _listen_task: Task[None] | None = field(default=None, init=False, repr=False)
-    _is_listening: Event = field(default_factory=Event, init=False, repr=False)
+    _is_subscribed: Event = field(default_factory=Event, init=False, repr=False)
 
     @override
     async def __aenter__(self) -> Self:
         _ = await super().__aenter__()
-        match self._is_listening.is_set():
+        match self._is_subscribed.is_set():
             case True:
-                _ = self._debug and self._logger.debug("%s: already listening", self)
+                _ = self._debug and self._logger.debug("%s: already subscribing", self)
             case False:
                 _ = self._debug and self._logger.debug(
-                    "%s: starting listening...", self
+                    "%s: starting subscription...", self
                 )
-                self._is_listening.set()
-                async with self._lock:
-                    self._listen_task = subscribe(
+                self._is_subscribed.set()
+                _ = await self._stack.enter_async_context(
+                    yield_message_queue(
                         self.redis,
                         self.channel,
                         sleep=self.subscribe_sleep,
@@ -798,6 +797,18 @@ class SubscribeService(Looper[_T]):
                         if self.deserializer is None
                         else self.deserializer,
                     )
+                )
+                # async with self._lock:
+                #     self._listen_task = subscribe(
+                #         self.redis,
+                #         self.channel,
+                #         sleep=self.subscribe_sleep,
+                #         timeout=self.subscribe_timeout,
+                #         queue=self._queue,
+                #         output="bytes"
+                #         if self.deserializer is None
+                #         else self.deserializer,
+                #     )
             case _ as never:
                 assert_never(never)
         return self
@@ -812,12 +823,12 @@ class SubscribeService(Looper[_T]):
         await super().__aexit__(
             exc_type=exc_type, exc_value=exc_value, traceback=traceback
         )
-        match self._is_listening.is_set():
+        match self._is_subscribed.is_set():
             case True:
                 _ = self._debug and self._logger.debug(
-                    "%s: stopping listening...", self
+                    "%s: stopping subscription...", self
                 )
-                self._is_listening.clear()
+                self._is_subscribed.clear()
             case False:
                 _ = self._debug and self._logger.debug("%s: already exited", self)
             case _ as never:
@@ -952,6 +963,11 @@ async def yield_message_queue(
         task = create_task(listener)
         try:
             yield queue_use
+        except (CancelledError, GeneratorExit):  # pragma: no cover
+            pass
+        except RuntimeError as error:  # pragma: no cover
+            if error.args[0] != "generator didn't stop after athrow()":
+                raise
         finally:
             _ = task.cancel()
             with suppress(CancelledError):
