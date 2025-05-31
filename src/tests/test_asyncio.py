@@ -923,7 +923,7 @@ class _ExampleOuterLooper(_ExampleCounterLooper):
 
 
 @dataclass(kw_only=True)
-class _ExampleQueueLooper(Looper[int]):
+class _ExampleQueueLooper(Looper[None]):
     @override
     async def core(self) -> None:
         await super().core()
@@ -944,47 +944,39 @@ class TestLooper:
         assert looper.stats == _LooperStats(entries=1, stops=1)
 
     async def test_auto_start(self) -> None:
-        looper = _ExampleLooper(auto_start=True)
+        looper = _ExampleCounterLooper(auto_start=True)
         with raises(TimeoutError):
             async with timeout(1.0), looper:
                 ...
         self._assert_stats(looper)
 
     async def test_auto_start_and_timeout(self) -> None:
-        looper = _ExampleLooper(auto_start=True, timeout=1.0)
+        looper = _ExampleCounterLooper(auto_start=True, timeout=1.0)
         async with looper:
             ...
         self._assert_stats(looper, stops=1)
 
     async def test_await_without_task(self) -> None:
-        looper = _ExampleLooper()
+        looper = _ExampleCounterLooper()
         with raises(_LooperNoTaskError, match=".* has no running task"):
             await looper
 
     async def test_context_manager_already_entered(
         self, *, caplog: LogCaptureFixture
     ) -> None:
-        looper = _ExampleLooper(auto_start=True, timeout=SECOND)
+        looper = _ExampleCounterLooper(auto_start=True, timeout=SECOND)
         async with looper, looper:
             ...
         _ = one(m for m in caplog.messages if search(": already entered$", m))
 
     def test_empty(self) -> None:
-        looper = _ExampleLooper()
+        looper = _ExampleCounterLooper()
         assert looper.empty()
         looper.put_left_nowait(None)
         assert not looper.empty()
 
     async def test_empty_upon_exit(self) -> None:
-        @dataclass(kw_only=True)
-        class Example(Looper[None]):
-            @override
-            async def core(self) -> None:
-                await super().core()
-                if not self.empty():
-                    _ = self.get_left_nowait()
-
-        looper = Example(freq=0.05, empty_upon_exit=True)
+        looper = _ExampleQueueLooper(freq=0.05, empty_upon_exit=True)
         looper.put_right_nowait(None)
         assert not looper.empty()
         async with timeout(1.0), looper:
@@ -992,7 +984,7 @@ class TestLooper:
         assert looper.empty()
 
     async def test_explicit_start(self) -> None:
-        looper = _ExampleLooper()
+        looper = _ExampleCounterLooper()
         with raises(TimeoutError):
             async with timeout(1.0), looper:
                 await looper
@@ -1041,7 +1033,7 @@ class TestLooper:
         assert len(looper) == looper.qsize() == 1
 
     def test_replace(self) -> None:
-        looper = _ExampleLooper().replace(freq=10.0)
+        looper = _ExampleCounterLooper().replace(freq=10.0)
         assert looper.freq == 10.0
 
     async def test_request_restart(self) -> None:
@@ -1206,15 +1198,7 @@ class TestLooper:
         _ = one(m for m in caplog.messages if search(pattern, m))
 
     async def test_run_until_empty(self) -> None:
-        @dataclass(kw_only=True)
-        class Example(Looper[None]):
-            @override
-            async def core(self) -> None:
-                await super().core()
-                if not self.empty():
-                    _ = self.get_left_nowait()
-
-        looper = Example(freq=0.05)
+        looper = _ExampleCounterLooper(freq=0.05)
         looper.put_right_nowait(None)
         assert not looper.empty()
         async with timeout(1.0), looper:
@@ -1367,7 +1351,7 @@ class TestLooper:
         _ = one(m for m in caplog.messages if search(pattern, m))
 
     async def test_timeout(self) -> None:
-        looper = _ExampleLooper(timeout=1.0)
+        looper = _ExampleCounterLooper(timeout=1.0)
         async with looper:
             with raises(LooperTimeoutError, match="Timeout"):
                 await looper
