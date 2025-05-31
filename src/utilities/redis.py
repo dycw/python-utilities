@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from asyncio import CancelledError, Event, Queue, Task, create_task
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable, Mapping
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from functools import partial
@@ -46,7 +46,6 @@ if TYPE_CHECKING:
         Collection,
         Iterable,
         Iterator,
-        Mapping,
         Sequence,
     )
     from types import TracebackType
@@ -814,15 +813,17 @@ async def _subscribe_core(
 
 
 def _is_subscribe_message(
-    message: _RedisMessageSubscribe | _RedisMessageUnsubscribe | None,
-    /,
-    *,
-    channels: Collection[bytes],
+    message: Any, /, *, channels: Collection[bytes]
 ) -> TypeGuard[_RedisMessageSubscribe]:
     return (
-        (message is not None)
+        isinstance(message, Mapping)
+        and ("type" in message)
         and (message["type"] in {"subscribe", "psubscribe", "message", "pmessage"})
+        and ("pattern" in message)
+        and ((message["pattern"] is None) or isinstance(message["pattern"], str))
+        and ("channel" in message)
         and (message["channel"] in channels)
+        and ("data" in message)
         and isinstance(message["data"], bytes)
     )
 

@@ -18,7 +18,7 @@ from hypothesis.strategies import (
     sampled_from,
     uuids,
 )
-from pytest import LogCaptureFixture, raises
+from pytest import LogCaptureFixture, mark, param, raises
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 
@@ -42,7 +42,9 @@ from utilities.redis import (
     PublishError,
     PublishService,
     SubscribeService,
+    _is_subscribe_message,
     _RedisMessageSubscribe,
+    _RedisMessageUnsubscribe,
     publish,
     redis_hash_map_key,
     redis_key,
@@ -67,6 +69,58 @@ def channels(draw: DrawFn, /) -> str:
     key = draw(uuids())
     pid = getpid()
     return f"test_{now}_{key}_{pid}"
+
+
+class TestIsSubscribeMessage:
+    @mark.parametrize(
+        ("message", "channels", "expected"),
+        [
+            param(
+                {
+                    "type": "message",
+                    "pattern": None,
+                    "channel": b"channel",
+                    "data": b"data",
+                },
+                [b"channel"],
+                True,
+            ),
+            param(None, [], False),
+            param({"type": "invalid"}, [], False),
+            param({"type": "message"}, [], False),
+            param({"type": "message", "pattern": False}, [], False),
+            param({"type": "message", "pattern": None}, [], False),
+            param(
+                {"type": "message", "pattern": None, "channel": b"channel1"},
+                [b"channel2"],
+                False,
+            ),
+            param(
+                {"type": "message", "pattern": None, "channel": b"channel"},
+                [b"channel"],
+                False,
+            ),
+            param(
+                {
+                    "type": "message",
+                    "pattern": None,
+                    "channel": b"channel",
+                    "data": None,
+                },
+                [b"channel"],
+                False,
+            ),
+        ],
+    )
+    def test_main(
+        self,
+        *,
+        message: _RedisMessageSubscribe | _RedisMessageUnsubscribe | None,
+        channels: Sequence[bytes],
+        expected: bool,
+    ) -> None:
+        result = _is_subscribe_message(message, channels=channels)
+        assert result is expected
 
 
 class TestPublish:
