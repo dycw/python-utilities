@@ -27,10 +27,13 @@ from utilities.hypothesis import (
     text_ascii,
     yield_test_redis,
 )
+from utilities.iterables import one
 from utilities.orjson import deserialize, serialize
 from utilities.redis import (
     Publisher,
     PublisherError,
+    PublishService,
+    SubscribeService,
     publish,
     redis_hash_map_key,
     redis_key,
@@ -204,6 +207,85 @@ class TestPublisher:
             with raises(PublisherError, match="Error running 'Publisher'"):
                 raise PublisherError(publisher=publisher)
 
+    @given(
+        data=data(),
+        channel=text_ascii(min_size=1).map(
+            lambda c: f"{get_class_name(TestPublisher)}_main_{c}_service"
+        ),
+        obj=make_objects(),
+    )
+    @mark.flaky
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_main_service(
+        self, *, data: DataObject, channel: str, obj: Any
+    ) -> None:
+        buffer = StringIO()
+        async with (
+            yield_test_redis(data) as test,
+            PublishService(
+                freq=0.1, timeout=1.0, redis=test.redis, serializer=serialize
+            ) as service,
+        ):
+
+            async def listener() -> None:
+                async for obj_i in subscribe(
+                    test.redis.pubsub(), channel, deserializer=deserialize
+                ):
+                    _ = buffer.write(str(obj_i))
+
+            async def sleep_then_put() -> None:
+                await sleep(0.1)
+                service.put_right_nowait((channel, obj))
+
+            with raises(ExceptionGroup):  # noqa: PT012
+                async with EnhancedTaskGroup(timeout=1.0) as tg:
+                    _ = tg.create_task(listener())
+                    _ = tg.create_task(sleep_then_put())
+
+        assert buffer.getvalue() == str(obj)
+
+    @given(
+        data=data(),
+        channel=text_ascii(min_size=1).map(
+            lambda c: f"{get_class_name(TestPublisher)}_text_without_serialize_{c}_service"
+        ),
+        text=text_ascii(min_size=1),
+    )
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_text_without_serialize_service(
+        self, *, data: DataObject, channel: str, text: str
+    ) -> None:
+        buffer = BytesIO()
+        async with (
+            yield_test_redis(data) as test,
+            PublishService(freq=0.1, timeout=1.0, redis=test.redis) as service,
+        ):
+
+            async def listener() -> None:
+                async for bytes_i in subscribe(test.redis.pubsub(), channel):
+                    _ = buffer.write(bytes_i)
+
+            async def sleep_then_put() -> None:
+                await sleep(0.1)
+                service.put_right_nowait((channel, text))
+
+            with raises(ExceptionGroup):  # noqa: PT012
+                async with EnhancedTaskGroup(timeout=1.0) as tg:
+                    _ = tg.create_task(listener())
+                    _ = tg.create_task(sleep_then_put())
+
+        assert buffer.getvalue() == text.encode()
+
 
 class TestSubscribeMessages:
     @given(
@@ -212,6 +294,7 @@ class TestSubscribeMessages:
         ),
         message=text_ascii(min_size=1),
     )
+    # @mark.para
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -534,6 +617,37 @@ class TestRedisKey:
             assert await key.exists(test.redis)
             await sleep(0.05)
             assert not await key.exists(test.redis)
+
+
+class TestSubscribeService:
+    @given(
+        data=data(),
+        channel=text_ascii(min_size=1).map(
+            lambda c: f"{get_class_name(TestSubscribeService)}_main_{c}"
+        ),
+        message=text_ascii(min_size=1),
+    )
+    @mark.flaky
+    @mark.only
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_main(self, *, data: DataObject, channel: str, message: str) -> None:
+        async with (
+            yield_test_redis(data) as test,
+            SubscribeService(
+                freq=0.1, timeout=1.0, redis=test.redis, channel=channel
+            ) as service,
+        ):
+            await sleep(0.1)
+            _ = await publish(test.redis, channel, message)
+
+        assert service.qsize() == 1
+        result = one(service.get_all_nowait()).decode()
+        assert result == message
 
 
 class TestYieldClient:
