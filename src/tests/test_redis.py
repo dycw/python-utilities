@@ -53,7 +53,7 @@ if TYPE_CHECKING:
     from pytest import CaptureFixture
 
 
-_PUB_SUB_SLEEP = 0.5
+_PUB_SUB_SLEEP = 0.1
 
 
 @mark.skip
@@ -608,22 +608,22 @@ class TestSubscribe:
 
 @mark.only
 class TestSubscribeService:
-    # @given(message=text_ascii(min_size=1))
-    # @settings(
-    #     max_examples=1,
-    #     phases={Phase.generate},
-    #     suppress_health_check={HealthCheck.function_scoped_fixture},
-    # )
+    @given(message=text_ascii(min_size=1))
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @mark.flakyy
     @SKIPIF_CI_AND_NOT_LINUX
-    # async def test_main(self, *, tmp_path: Path, message: str) -> None:
-    async def test_main(self, *, tmp_path: Path) -> None:
-        message = "hi"
+    async def test_main(self, *, tmp_path: Path, message: str) -> None:
+        # async def test_main(self, *, tmp_path: Path) -> None:
+        # message = "hitest"
+
         channel = str(tmp_path)
         async with (
             yield_redis() as redis,
-            SubscribeService(
-                freq=0.1, timeout=3.0, redis=redis, channel=channel
-            ) as service,
+            SubscribeService(timeout=1.0, redis=redis, channel=channel) as service,
         ):
             await sleep(_PUB_SUB_SLEEP)
             await redis.publish(channel, message)
