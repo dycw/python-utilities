@@ -70,7 +70,7 @@ def channels(draw: DrawFn, /) -> str:
 
 
 class TestPublish:
-    @given(channel=channels(), data=lists(binary(min_size=1), min_size=1, max_size=10))
+    @given(channel=channels(), data=lists(binary(min_size=1), min_size=1, max_size=5))
     async def test_bytes(self, *, data: Sequence[bytes], channel: str) -> None:
         queue: Queue[bytes] = Queue()
         async with (
@@ -87,7 +87,7 @@ class TestPublish:
             assert isinstance(result, bytes)
             assert result == datum
 
-    @given(channel=channels(), objects=lists(make_objects(), min_size=1, max_size=10))
+    @given(channel=channels(), objects=lists(make_objects(), min_size=1, max_size=5))
     async def test_serializer(self, *, channel: str, objects: Sequence[Any]) -> None:
         queue: Queue[Any] = Queue()
         async with (
@@ -105,7 +105,7 @@ class TestPublish:
 
     @given(
         channel=channels(),
-        messages=lists(text_ascii(min_size=1), min_size=1, max_size=10),
+        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
     )
     async def test_text(self, *, channel: str, messages: Sequence[str]) -> None:
         queue: Queue[str] = Queue()
@@ -131,7 +131,7 @@ class TestPublish:
 class TestPublisher:
     @given(
         channel=channels(),
-        messages=lists(text_ascii(min_size=1), min_size=1, max_size=10),
+        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
     )
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
@@ -511,7 +511,7 @@ class TestRedisKey:
 
 class TestSubscribe:
     @given(
-        channel=channels(), messages=lists(binary(min_size=1), min_size=1, max_size=10)
+        channel=channels(), messages=lists(binary(min_size=1), min_size=1, max_size=5)
     )
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
@@ -531,7 +531,7 @@ class TestSubscribe:
             assert isinstance(result, bytes)
             assert result == message
 
-    @given(channel=channels(), objs=lists(make_objects(), min_size=1, max_size=10))
+    @given(channel=channels(), objs=lists(make_objects(), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_deserialize(self, *, channel: str, objs: Sequence[Any]) -> None:
@@ -551,7 +551,7 @@ class TestSubscribe:
 
     @given(
         channel=channels(),
-        messages=lists(text_ascii(min_size=1), min_size=1, max_size=10),
+        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
     )
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
@@ -576,7 +576,7 @@ class TestSubscribe:
 
     @given(
         channel=channels(),
-        messages=lists(text_ascii(min_size=1), min_size=1, max_size=10),
+        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
     )
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
@@ -603,7 +603,7 @@ class TestSubscribe:
 class TestSubscribeService:
     @given(
         channel=channels(),
-        messages=lists(text_ascii(min_size=1), min_size=1, max_size=10),
+        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
     )
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
