@@ -561,7 +561,7 @@ async def publish(
     data: _T,
     /,
     *,
-    serializer: Callable[[_T], EncodableT],
+    serializer: Callable[[bytes | str | _T], EncodableT],
     timeout: Duration = _PUBLISH_TIMEOUT,
 ) -> ResponseT: ...
 @overload
@@ -809,6 +809,34 @@ async def _subscribe_core(
                 await asyncio.sleep(sleep_use)
 
 
+def _is_subscribe_message(
+    message: _RedisMessageSubscribe | _RedisMessageUnsubscribe | None,
+    /,
+    *,
+    channels: Collection[bytes],
+) -> TypeGuard[_RedisMessageSubscribe]:
+    return (
+        (message is not None)
+        and (message["type"] in {"subscribe", "psubscribe", "message", "pmessage"})
+        and (message["channel"] in channels)
+        and isinstance(message["data"], bytes)
+    )
+
+
+class _RedisMessageSubscribe(TypedDict):
+    type: Literal["subscribe", "psubscribe", "message", "pmessage"]
+    pattern: str | None
+    channel: bytes
+    data: bytes
+
+
+class _RedisMessageUnsubscribe(TypedDict):
+    type: Literal["unsubscribe", "punsubscribe"]
+    pattern: str | None
+    channel: bytes
+    data: int
+
+
 ##
 
 
@@ -894,68 +922,6 @@ async def yield_pubsub(
     finally:
         await pubsub.unsubscribe(*channels)
         await pubsub.aclose()
-
-
-##
-
-
-async def _pubsub_listener(
-    pubsub: PubSub,
-    is_subscribe_message: Callable[[Any], TypeGuard[_RedisMessageSubscribe]],
-    transform: Callable[[_RedisMessageSubscribe], _T],
-    queue: Queue[_T],
-    sleep: float,
-    /,
-    *,
-    timeout: float | None = None,
-) -> None:
-    while True:
-        try:
-            message = cast(
-                "_RedisMessageSubscribe | _RedisMessageUnsubscribe | None",
-                await pubsub.get_message(timeout=timeout),
-            )
-            if is_subscribe_message(message):
-                if isinstance(queue, EnhancedQueue):
-                    queue.put_right_nowait(transform(message))
-                else:
-                    queue.put_nowait(transform(message))
-            else:
-                await asyncio.sleep(sleep)
-        except (CancelledError, GeneratorExit):  # pragma: no cover
-            pass
-        except RuntimeError as error:  # pragma: no cover
-            if error.args[0] != "generator didn't stop after athrow()":
-                raise
-            break
-
-
-def _is_subscribe_message(
-    message: _RedisMessageSubscribe | _RedisMessageUnsubscribe | None,
-    /,
-    *,
-    channels: Collection[bytes],
-) -> TypeGuard[_RedisMessageSubscribe]:
-    return (
-        (message is not None)
-        and (message["type"] in {"subscribe", "psubscribe", "message", "pmessage"})
-        and (message["channel"] in channels)
-        and isinstance(message["data"], bytes)
-    )
-
-
-class _RedisMessageSubscribe(TypedDict):
-    type: Literal["subscribe", "psubscribe", "message", "pmessage"]
-    pattern: str | None
-    channel: bytes
-    data: bytes
-
-
-class _RedisMessageUnsubscribe(TypedDict):
-    type: Literal["unsubscribe", "punsubscribe"]
-    pattern: str | None
-    channel: bytes
-    data: int
 
 
 ##
