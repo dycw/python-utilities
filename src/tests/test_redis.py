@@ -11,7 +11,6 @@ from hypothesis.strategies import (
     DrawFn,
     binary,
     booleans,
-    builds,
     composite,
     data,
     dictionaries,
@@ -19,7 +18,7 @@ from hypothesis.strategies import (
     sampled_from,
     uuids,
 )
-from pytest import mark, raises, xfail
+from pytest import mark, raises
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 
@@ -40,6 +39,7 @@ from utilities.orjson import deserialize, serialize
 from utilities.redis import (
     Publisher,
     PublisherError,
+    PublishError,
     PublishService,
     SubscribeService,
     _RedisMessageSubscribe,
@@ -73,10 +73,7 @@ def channels(draw: DrawFn, /) -> str:
 
 @mark.only
 class TestPublish:
-    @given(
-        channel=channels(),
-        data=lists(binary(min_size=1), min_size=1, max_size=10),
-    )
+    @given(channel=channels(), data=lists(binary(min_size=1), min_size=1, max_size=10))
     async def test_bytes(self, *, data: Sequence[bytes], channel: str) -> None:
         queue: Queue[bytes] = Queue()
         async with (
@@ -93,23 +90,45 @@ class TestPublish:
             assert isinstance(result, bytes)
             assert result == datum
 
+    @given(channel=channels(), objects=lists(make_objects(), min_size=1, max_size=10))
+    async def test_serializer(self, *, channel: str, objects: Sequence[Any]) -> None:
+        queue: Queue[Any] = Queue()
+        async with (
+            yield_redis() as redis,
+            subscribe(redis, channel, queue, output=deserialize),
+        ):
+            await sleep(_PUB_SUB_SLEEP)
+            for obj in objects:
+                _ = await publish(redis, channel, obj, serializer=serialize)
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(objects)
+        results = get_items_nowait(queue)
+        for result, obj in zip(results, objects, strict=True):
+            assert is_equal(result, obj)
+
     @given(
         channel=channels(),
-        data=lists(text_ascii(min_size=1), min_size=1, max_size=10),
+        messages=lists(text_ascii(min_size=1), min_size=1, max_size=10),
     )
-    @mark.xfail
-    async def test_text(self, *, data: Sequence[str], channel: str) -> None:
+    async def test_text(self, *, channel: str, messages: Sequence[str]) -> None:
         queue: Queue[str] = Queue()
         async with yield_redis() as redis, subscribe(redis, channel, queue):
             await sleep(_PUB_SUB_SLEEP)
-            for datum in data:
-                _ = await publish(redis, channel, datum)
+            for message in messages:
+                _ = await publish(redis, channel, message)
             await sleep(_PUB_SUB_SLEEP)  # keep in context
-        assert queue.qsize() == len(data)
+        assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
-        for result, datum in zip(results, data, strict=True):
-            assert isinstance(result, bytes)
-            assert result == datum
+        for result, message in zip(results, messages, strict=True):
+            assert isinstance(result, str)
+            assert result == message
+
+    async def test_error(self) -> None:
+        async with yield_redis() as redis:
+            with raises(
+                PublishError, match="Unable to publish data None with serializer None"
+            ):
+                _ = await publish(redis, "channel", None)
 
 
 @mark.skip
@@ -623,8 +642,7 @@ class TestRedisKey:
 @mark.only
 class TestSubscribe:
     @given(
-        channel=channels(),
-        messages=lists(binary(min_size=1), min_size=1, max_size=10),
+        channel=channels(), messages=lists(binary(min_size=1), min_size=1, max_size=10)
     )
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX

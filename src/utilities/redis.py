@@ -578,10 +578,10 @@ async def publish(
 async def publish(
     redis: Redis,
     channel: str,
-    data: bytes | _T,
+    data: bytes | str | _T,
     /,
     *,
-    serializer: Callable[[_T], EncodableT] | None = None,
+    serializer: Callable[[bytes | str | _T], EncodableT] | None = None,
     timeout: Duration = _PUBLISH_TIMEOUT,
 ) -> ResponseT: ...
 async def publish(
@@ -590,18 +590,30 @@ async def publish(
     data: bytes | str | _T,
     /,
     *,
-    serializer: Callable[[_T], EncodableT] | None = None,
+    serializer: Callable[[bytes | str | _T], EncodableT] | None = None,
     timeout: Duration = _PUBLISH_TIMEOUT,
 ) -> ResponseT:
     """Publish an object to a channel."""
     if isinstance(data, bytes | str) and (serializer is None):
         data_use = data
-    elif not isinstance(data, bytes | str) and (serializer is not None):
+    elif serializer is not None:
         data_use = serializer(data)
     else:
         raise PublishError(data=data, serializer=serializer)
     async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
         return await redis.publish(channel, data_use)  # skipif-ci-and-not-linux
+
+
+@dataclass(kw_only=True, slots=True)
+class PublishError(Exception):
+    data: Any
+    serializer: Callable[[Any], EncodableT] | None = None
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Unable to publish data {self.data!r} with serializer {self.serializer!r}"
+        )
 
 
 ##
