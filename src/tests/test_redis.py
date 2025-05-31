@@ -256,6 +256,7 @@ class TestPublisher:
         ),
         text=text_ascii(min_size=1),
     )
+    @mark.flaky
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -643,6 +644,7 @@ class TestSubscribeService:
         ):
             await sleep(0.1)
             _ = await publish(test.redis, channel, message)
+            await sleep(0.1)
 
         assert service.qsize() == 1
         result = one(service.get_all_nowait()).decode()

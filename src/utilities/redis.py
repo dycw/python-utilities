@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-from asyncio import Task, create_task
+from asyncio import CancelledError, Task, create_task
 from collections.abc import Callable
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
@@ -20,6 +20,7 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+import redis.exceptions
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 from redis.typing import EncodableT
@@ -712,9 +713,9 @@ async def subscribe_messages(
 ) -> AsyncIterator[_RedisMessageSubscribe]:
     """Subscribe to the messages of a given channel(s)."""
     match redis_or_pubsub:  # skipif-ci-and-not-linux
-        case Redis() as redis:
+        case Redis() as redis_:
             async for msg in subscribe_messages(
-                redis.pubsub(), channels, timeout=timeout, sleep=sleep
+                redis_.pubsub(), channels, timeout=timeout, sleep=sleep
             ):
                 yield msg
         case PubSub() as pubsub:
@@ -811,7 +812,8 @@ class SubscribeService(Looper[_T]):
             _ = self._debug and self._logger.debug(
                 "%s: cancelling subscription...", self
             )
-            _ = self._listen_task.cancel()
+            with suppress(CancelledError, redis.exceptions.ConnectionError):
+                _ = self._listen_task.cancel()
 
 
 ##
