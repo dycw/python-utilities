@@ -923,7 +923,7 @@ class _ExampleOuterLooper(_ExampleCounterLooper):
 
 
 @dataclass(kw_only=True)
-class _ExampleQueueLooper(Looper[None]):
+class _ExampleQueueLooper(Looper[int]):
     @override
     async def core(self) -> None:
         await super().core()
@@ -977,7 +977,7 @@ class TestLooper:
 
     async def test_empty_upon_exit(self) -> None:
         looper = _ExampleQueueLooper(freq=0.05, empty_upon_exit=True)
-        looper.put_right_nowait(None)
+        looper.put_right_nowait(0)
         assert not looper.empty()
         async with timeout(1.0), looper:
             ...
@@ -1197,10 +1197,10 @@ class TestLooper:
         pattern = rf": encountered _ExampleLooperError\(\) \(tear down\) and then _ExampleLooperError\(\) \(initialization\) whilst restarting{extra}$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
-    async def test_run_until_empty(self) -> None:
+    @mark.parametrize("n", [param(0), param(1), param(2)])
+    async def test_run_until_empty(self, *, n: int) -> None:
         looper = _ExampleQueueLooper(freq=0.05)
-        looper.put_right_nowait(None)
-        assert not looper.empty()
+        looper.put_right_nowait(*range(n))
         async with timeout(1.0), looper:
             await looper.run_until_empty()
         assert looper.empty()
