@@ -984,7 +984,6 @@ class TestLooper:
         else:
             assert not looper.empty()
 
-    @mark.flaky
     async def test_explicit_start(self) -> None:
         looper = _ExampleLooper()
         with raises(TimeoutError):
@@ -1199,7 +1198,6 @@ class TestLooper:
         pattern = rf": encountered _ExampleLooperError\(\) \(tear down\) and then _ExampleLooperError\(\) \(initialization\) whilst restarting{extra}$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
-    @mark.only
     async def test_run_until_empty(self) -> None:
         @dataclass(kw_only=True)
         class Example(Looper[int]):
@@ -1361,7 +1359,6 @@ class TestLooper:
         pattern = rf": encountered _ExampleLooperError\(\) whilst tearing down{extra}$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
-    @mark.flaky
     async def test_timeout(self) -> None:
         looper = _ExampleLooper(timeout=1.0)
         async with looper:
