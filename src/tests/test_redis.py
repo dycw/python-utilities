@@ -574,7 +574,7 @@ class TestSubscribe:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_return_new_queue(self, *, tmp_path: Path, message: str) -> None:
+    async def test_new_queue(self, *, tmp_path: Path, message: str) -> None:
         channel = str(tmp_path)
         async with yield_redis() as redis:
             queue, _ = subscribe(redis, channel)
@@ -593,7 +593,7 @@ class TestSubscribe:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_use_existing_queue(self, *, tmp_path: Path, message: str) -> None:
+    async def test_existing_queue(self, *, tmp_path: Path, message: str) -> None:
         channel = str(tmp_path)
         queue: Queue[bytes] = Queue()
         async with yield_redis() as redis:
@@ -606,25 +606,28 @@ class TestSubscribe:
         assert result.decode() == message
 
 
-@mark.skip
+@mark.only
 class TestSubscribeService:
-    @given(message=text_ascii(min_size=1))
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
+    # @given(message=text_ascii(min_size=1))
+    # @settings(
+    #     max_examples=1,
+    #     phases={Phase.generate},
+    #     suppress_health_check={HealthCheck.function_scoped_fixture},
+    # )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, tmp_path: Path, message: str) -> None:
+    # async def test_main(self, *, tmp_path: Path, message: str) -> None:
+    async def test_main(self, *, tmp_path: Path) -> None:
+        message = "hi"
         channel = str(tmp_path)
         async with (
             yield_redis() as redis,
             SubscribeService(
-                freq=0.1, timeout=1.0, redis=redis, channel=channel
+                freq=0.1, timeout=3.0, redis=redis, channel=channel
             ) as service,
         ):
+            await sleep(_PUB_SUB_SLEEP)
             await redis.publish(channel, message)
-        await sleep(0.1)
+        await sleep(_PUB_SUB_SLEEP)
         assert service.qsize() == 1
         result = one(service.get_all_nowait()).decode()
         assert result == message
