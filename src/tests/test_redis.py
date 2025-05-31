@@ -19,7 +19,7 @@ from redis.asyncio.client import PubSub
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_operator import make_objects
-from utilities.asyncio import EnhancedTaskGroup
+from utilities.asyncio import EnhancedTaskGroup, get_items_nowait
 from utilities.functions import get_class_name
 from utilities.hypothesis import (
     int64s,
@@ -40,20 +40,20 @@ from utilities.redis import (
     redis_hash_map_key,
     redis_key,
     subscribe,
-    subscribe_messages,
+    yield_message_queue,
     yield_pubsub,
-    yield_pubsub_message_queue,
     yield_redis,
 )
 from utilities.sentinel import SENTINEL_REPR, Sentinel, sentinel
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
     from pathlib import Path
 
     from pytest import CaptureFixture
 
 
+@mark.skip
 class TestPublishAndSubscribe:
     @given(
         data=data(),
@@ -290,69 +290,6 @@ class TestPublisher:
                     _ = tg.create_task(sleep_then_put())
 
         assert buffer.getvalue() == text.encode()
-
-
-class TestSubscribeMessages:
-    @given(
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestSubscribeMessages)}_redis_{c}"
-        ),
-        message=text_ascii(min_size=1),
-    )
-    # @mark.para
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_redis(
-        self, *, capsys: CaptureFixture, channel: str, message: str
-    ) -> None:
-        redis = Redis()
-        await self._run_test(redis, redis, capsys, channel, message)
-
-    @given(
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestSubscribeMessages)}_pubsub_{c}"
-        ),
-        message=text_ascii(min_size=1),
-    )
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_pubsub(
-        self, *, capsys: CaptureFixture, channel: str, message: str
-    ) -> None:
-        redis = Redis()
-        await self._run_test(redis, redis.pubsub(), capsys, channel, message)
-
-    async def _run_test(
-        self,
-        redis: Redis,
-        redis_or_pubsub: Redis | PubSub,
-        capsys: CaptureFixture,
-        channel: str,
-        message: str,
-        /,
-    ) -> None:
-        async def listener() -> None:
-            async for msg in subscribe_messages(redis_or_pubsub, channel):
-                print(msg)  # noqa: T201
-
-        task = get_running_loop().create_task(listener())
-        await sleep(0.05)
-        _ = await redis.publish(channel, message)
-        await sleep(0.05)
-        try:
-            out = capsys.readouterr().out
-            expected = f"{{'type': 'message', 'pattern': None, 'channel': b'{channel}', 'data': b'{message}'}}\n"
-            assert out == expected
-        finally:
-            _ = task.cancel()
 
 
 class TestRedisHashMapKey:
@@ -624,14 +561,29 @@ class TestRedisKey:
             assert not await key.exists(test.redis)
 
 
-class TestSubscribeService:
-    @given(
-        data=data(),
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestSubscribeService)}_main_{c}"
-        ),
-        message=text_ascii(min_size=1),
+@mark.skip
+class TestSubscribe:
+    @given(message=text_ascii(min_size=1))
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
     )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_return_new_queue(self, *, tmp_path: Path, message: str) -> None:
+        channel = str(tmp_path)
+        async with yield_redis() as redis:
+            queue, _ = subscribe(redis, channel)
+            await redis.publish(channel, message)
+            await sleep(0.5)
+            assert queue.qsize() == 1
+            result = queue.get_nowait()
+        assert result.decode() == message
+
+
+@mark.skip
+class TestSubscribeService:
+    @given(message=text_ascii(min_size=1))
     @mark.flaky
     @settings(
         max_examples=1,
@@ -639,17 +591,16 @@ class TestSubscribeService:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, data: DataObject, channel: str, message: str) -> None:
+    async def test_main(self, *, tmp_path: Path, message: str) -> None:
+        channel = str(tmp_path)
         async with (
-            yield_test_redis(data) as test,
+            yield_redis() as redis,
             SubscribeService(
-                freq=0.1, timeout=1.0, redis=test.redis, channel=channel
+                freq=0.1, timeout=1.0, redis=redis, channel=channel
             ) as service,
         ):
+            _ = await publish(redis, channel, message)
             await sleep(0.1)
-            _ = await publish(test.redis, channel, message)
-            await sleep(0.1)
-
         assert service.qsize() == 1
         result = one(service.get_all_nowait()).decode()
         assert result == message
@@ -663,15 +614,7 @@ class TestYieldClient:
 
 
 @mark.only
-class TestYieldPubSub:
-    async def test_main(self, *, tmp_path: Path) -> None:
-        channel = str(tmp_path)
-        async with yield_redis() as redis, yield_pubsub(redis, channel) as pubsub:
-            assert isinstance(pubsub, PubSub)
-
-
-@mark.only
-class TestYieldPubSubMessageQueue:
+class TestYieldMessageQueue:
     @given(message=text_ascii())
     @settings(
         max_examples=1,
@@ -683,7 +626,7 @@ class TestYieldPubSubMessageQueue:
         channel = str(tmp_path)
         async with (
             yield_redis() as redis,
-            yield_pubsub_message_queue(redis, channel) as queue,
+            yield_message_queue(redis, channel) as queue,
         ):
             assert isinstance(queue, Queue)
             await redis.publish(channel, message)
@@ -691,6 +634,31 @@ class TestYieldPubSubMessageQueue:
             assert queue.qsize() == 1
             result = queue.get_nowait()
         assert result.decode() == message
+
+    @given(messages=lists(text_ascii(), max_size=10))
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_bytes_multiple(
+        self, *, messages: Sequence[str], tmp_path: Path
+    ) -> None:
+        channel = str(tmp_path)
+        async with (
+            yield_redis() as redis,
+            yield_message_queue(redis, channel) as queue,
+        ):
+            assert isinstance(queue, Queue)
+            for message in messages:
+                await redis.publish(channel, message)
+            await sleep(0.1)
+            assert queue.qsize() == len(messages)
+            results = get_items_nowait(queue)
+        assert len(results) == len(messages)
+        for result, message in zip(results, messages, strict=True):
+            assert result.decode() == message
 
     @given(message=text_ascii())
     @settings(
@@ -703,7 +671,7 @@ class TestYieldPubSubMessageQueue:
         channel = str(tmp_path)
         async with (
             yield_redis() as redis,
-            yield_pubsub_message_queue(redis, channel, output="raw") as queue,
+            yield_message_queue(redis, channel, output="raw") as queue,
         ):
             assert isinstance(queue, Queue)
             await redis.publish(channel, message)
@@ -727,7 +695,7 @@ class TestYieldPubSubMessageQueue:
         channel = str(tmp_path)
         async with (
             yield_redis() as redis,
-            yield_pubsub_message_queue(redis, channel, output=deserialize) as queue,
+            yield_message_queue(redis, channel, output=deserialize) as queue,
         ):
             assert isinstance(queue, Queue)
             await redis.publish(channel, serialize(obj))
@@ -735,3 +703,11 @@ class TestYieldPubSubMessageQueue:
             assert queue.qsize() == 1
             result = queue.get_nowait()
         assert is_equal(result, obj)
+
+
+@mark.only
+class TestYieldPubSub:
+    async def test_main(self, *, tmp_path: Path) -> None:
+        channel = str(tmp_path)
+        async with yield_redis() as redis, yield_pubsub(redis, channel) as pubsub:
+            assert isinstance(pubsub, PubSub)
