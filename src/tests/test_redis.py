@@ -614,7 +614,7 @@ class TestSubscribeService:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    @mark.flakyy
+    @mark.flaky
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, tmp_path: Path, message: str) -> None:
         # async def test_main(self, *, tmp_path: Path) -> None:

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from asyncio import CancelledError, Event, Future, Queue, Task, create_task
-from collections.abc import Callable
+from asyncio import CancelledError, Event, Future, Queue, Task, create_task, sleep
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from functools import partial
@@ -756,6 +756,61 @@ def subscribe(
 
     task = create_task(listen())
     return (queue_use, task) if queue is None else task
+
+
+@asynccontextmanager
+async def subscribe_to_queue(
+    redis: Redis,
+    channels: MaybeIterable[str],
+    queue: Queue[_T],
+    /,
+    *,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    output: Literal["raw", "bytes"] | Callable[[bytes], _T] = "bytes",
+) -> AsyncIterator[None]:
+    channels = list(always_iterable(channels))
+    is_subscribe_message = partial(
+        _is_subscribe_message, channels={c.encode() for c in channels}
+    )
+    sleep_use = datetime_duration_to_float(sleep)
+    timeout_use = None if timeout is None else datetime_duration_to_float(timeout)
+
+    match output:
+        case "raw":
+            transform = cast("Any", identity)
+        case "bytes":
+            transform = cast("Any", itemgetter("data"))
+        case Callable() as deserialize:
+
+            def transform(message: _RedisMessageSubscribe, /) -> _T:
+                return deserialize(message["data"])
+
+        case _ as never:
+            assert_never(never)
+
+    async def _run() -> None:
+        async with yield_pubsub(redis, channels) as pubsub:
+            while True:
+                message = cast(
+                    "_RedisMessageSubscribe | _RedisMessageUnsubscribe | None",
+                    await pubsub.get_message(timeout=timeout_use),
+                )
+                if is_subscribe_message(message):
+                    if isinstance(queue, EnhancedQueue):
+                        queue.put_right_nowait(transform(message))
+                    else:
+                        queue.put_nowait(transform(message))
+                else:
+                    await asyncio.sleep(sleep_use)
+
+    task: Task[None] = create_task(_run())
+    try:
+        yield
+    finally:
+        _ = task.cancel()
+        with suppress(CancelledError):
+            await task
 
 
 @dataclass(kw_only=True)
