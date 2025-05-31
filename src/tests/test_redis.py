@@ -1,25 +1,31 @@
 from __future__ import annotations
 
-from asyncio import create_task, get_running_loop, sleep
-from io import BytesIO, StringIO
+from asyncio import Queue, sleep
+from os import getpid
+from re import search
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
+    DrawFn,
+    binary,
     booleans,
+    composite,
     data,
     dictionaries,
     lists,
     sampled_from,
+    uuids,
 )
-from pytest import mark, raises
+from pytest import LogCaptureFixture, mark, param, raises
 from redis.asyncio import Redis
+from redis.asyncio.client import PubSub
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_operator import make_objects
-from utilities.asyncio import EnhancedTaskGroup
-from utilities.functions import get_class_name
+from utilities.asyncio import get_items_nowait
+from utilities.datetime import serialize_compact
 from utilities.hypothesis import (
     int64s,
     pairs,
@@ -27,174 +33,183 @@ from utilities.hypothesis import (
     text_ascii,
     yield_test_redis,
 )
+from utilities.iterables import one
+from utilities.operator import is_equal
 from utilities.orjson import deserialize, serialize
 from utilities.redis import (
     Publisher,
     PublisherError,
+    PublishError,
+    PublishService,
+    SubscribeService,
+    _is_subscribe_message,
+    _RedisMessageSubscribe,
+    _RedisMessageUnsubscribe,
     publish,
     redis_hash_map_key,
     redis_key,
     subscribe,
-    subscribe_messages,
+    yield_pubsub,
     yield_redis,
 )
 from utilities.sentinel import SENTINEL_REPR, Sentinel, sentinel
+from utilities.tzlocal import get_now_local
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-
-    from pytest import CaptureFixture
-    from redis.asyncio.client import PubSub
+    from collections.abc import Mapping, Sequence
+    from pathlib import Path
 
 
-class TestPublishAndSubscribe:
-    @given(
-        data=data(),
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublishAndSubscribe)}_all_objects_with_serialize_{c}"
-        ),
-        obj=make_objects(),
+_PUB_SUB_SLEEP = 0.1
+
+
+@composite
+def channels(draw: DrawFn, /) -> str:
+    now = serialize_compact(get_now_local())
+    key = draw(uuids())
+    pid = getpid()
+    return f"test_{now}_{key}_{pid}"
+
+
+class TestIsSubscribeMessage:
+    @mark.parametrize(
+        ("message", "channels", "expected"),
+        [
+            param(
+                {
+                    "type": "message",
+                    "pattern": None,
+                    "channel": b"channel",
+                    "data": b"data",
+                },
+                [b"channel"],
+                True,
+            ),
+            param(None, [], False),
+            param({"type": "invalid"}, [], False),
+            param({"type": "message"}, [], False),
+            param({"type": "message", "pattern": False}, [], False),
+            param({"type": "message", "pattern": None}, [], False),
+            param(
+                {"type": "message", "pattern": None, "channel": b"channel1"},
+                [b"channel2"],
+                False,
+            ),
+            param(
+                {"type": "message", "pattern": None, "channel": b"channel"},
+                [b"channel"],
+                False,
+            ),
+            param(
+                {
+                    "type": "message",
+                    "pattern": None,
+                    "channel": b"channel",
+                    "data": None,
+                },
+                [b"channel"],
+                False,
+            ),
+        ],
     )
-    @mark.flaky
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_all_objects_with_serialize(
-        self, *, capsys: CaptureFixture, data: DataObject, channel: str, obj: Any
+    def test_main(
+        self,
+        *,
+        message: _RedisMessageSubscribe | _RedisMessageUnsubscribe | None,
+        channels: Sequence[bytes],
+        expected: bool,
     ) -> None:
-        async with yield_test_redis(data) as test:
+        result = _is_subscribe_message(message, channels=channels)
+        assert result is expected
 
-            async def listener() -> None:
-                async for msg in subscribe(
-                    test.redis.pubsub(), channel, deserializer=deserialize
-                ):
-                    print(msg)  # noqa: T201
 
-            task = create_task(listener())
-            await sleep(0.05)
-            _ = await publish(test.redis, channel, obj, serializer=serialize)
-            await sleep(0.05)
-            try:
-                out = capsys.readouterr().out
-                expected = f"{obj}\n"
-                assert out == expected
-            finally:
-                _ = task.cancel()
+class TestPublish:
+    @given(channel=channels(), data=lists(binary(min_size=1), min_size=1, max_size=5))
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_bytes(self, *, data: Sequence[bytes], channel: str) -> None:
+        queue: Queue[bytes] = Queue()
+        async with (
+            yield_redis() as redis,
+            subscribe(redis, channel, queue, output="bytes"),
+        ):
+            await sleep(_PUB_SUB_SLEEP)
+            for datum in data:
+                _ = await publish(redis, channel, datum)
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(data)
+        results = get_items_nowait(queue)
+        for result, datum in zip(results, data, strict=True):
+            assert isinstance(result, bytes)
+            assert result == datum
+
+    @given(channel=channels(), objects=lists(make_objects(), min_size=1, max_size=5))
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_serializer(self, *, channel: str, objects: Sequence[Any]) -> None:
+        queue: Queue[Any] = Queue()
+        async with (
+            yield_redis() as redis,
+            subscribe(redis, channel, queue, output=deserialize),
+        ):
+            await sleep(_PUB_SUB_SLEEP)
+            for obj in objects:
+                _ = await publish(redis, channel, obj, serializer=serialize)
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(objects)
+        results = get_items_nowait(queue)
+        for result, obj in zip(results, objects, strict=True):
+            assert is_equal(result, obj)
 
     @given(
-        data=data(),
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublishAndSubscribe)}_text_without_serialize_{c}"
-        ),
-        text=text_ascii(min_size=1),
+        channel=channels(),
+        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
     )
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_text_without_serialize(
-        self, *, capsys: CaptureFixture, data: DataObject, channel: str, text: str
-    ) -> None:
-        async with yield_test_redis(data) as test:
+    async def test_text(self, *, channel: str, messages: Sequence[str]) -> None:
+        queue: Queue[str] = Queue()
+        async with yield_redis() as redis, subscribe(redis, channel, queue):
+            await sleep(_PUB_SUB_SLEEP)
+            for message in messages:
+                _ = await publish(redis, channel, message)
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(messages)
+        results = get_items_nowait(queue)
+        for result, message in zip(results, messages, strict=True):
+            assert isinstance(result, str)
+            assert result == message
 
-            async def listener() -> None:
-                async for msg in subscribe(test.redis.pubsub(), channel):
-                    print(msg)  # noqa: T201
-
-            task = create_task(listener())
-            await sleep(0.05)
-            _ = await publish(test.redis, channel, text)
-            await sleep(0.05)
-            try:
-                out = capsys.readouterr().out
-                expected = f"{text.encode()}\n"
-                assert out == expected
-            finally:
-                _ = task.cancel()
+    async def test_error(self) -> None:
+        async with yield_redis() as redis:
+            with raises(
+                PublishError, match="Unable to publish data None with serializer None"
+            ):
+                _ = await publish(redis, "channel", None)
 
 
 class TestPublisher:
     @given(
-        data=data(),
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublisher)}_main_{c}"
-        ),
-        obj=make_objects(),
+        channel=channels(),
+        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
     )
-    @mark.flaky
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, data: DataObject, channel: str, obj: Any) -> None:
-        buffer = StringIO()
+    async def test_main(self, *, channel: str, messages: Sequence[str]) -> None:
+        queue: Queue[str] = Queue()
         async with (
-            yield_test_redis(data) as test,
-            Publisher(
-                duration=1.0, redis=test.redis, serializer=serialize, sleep_core=0.1
-            ) as publisher,
+            yield_redis() as redis,
+            Publisher(duration=1.0, redis=redis, sleep_core=0.1) as publisher,
+            subscribe(redis, channel, queue),
         ):
-
-            async def listener() -> None:
-                async for obj_i in subscribe(
-                    test.redis.pubsub(), channel, deserializer=deserialize
-                ):
-                    _ = buffer.write(str(obj_i))
-
-            async def sleep_then_put() -> None:
-                await sleep(0.1)
-                publisher.put_right_nowait((channel, obj))
-
-            with raises(ExceptionGroup):  # noqa: PT012
-                async with EnhancedTaskGroup(timeout=1.0) as tg:
-                    _ = tg.create_task(listener())
-                    _ = tg.create_task(sleep_then_put())
-
-        assert buffer.getvalue() == str(obj)
-
-    @given(
-        data=data(),
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublisher)}_text_without_serialize_{c}"
-        ),
-        text=text_ascii(min_size=1),
-    )
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_text_without_serialize(
-        self, *, data: DataObject, channel: str, text: str
-    ) -> None:
-        buffer = BytesIO()
-        async with (
-            yield_test_redis(data) as test,
-            Publisher(duration=1.0, redis=test.redis, sleep_core=0.1) as publisher,
-        ):
-
-            async def listener() -> None:
-                async for bytes_i in subscribe(test.redis.pubsub(), channel):
-                    _ = buffer.write(bytes_i)
-
-            async def sleep_then_put() -> None:
-                await sleep(0.1)
-                publisher.put_right_nowait((channel, text))
-
-            with raises(ExceptionGroup):  # noqa: PT012
-                async with EnhancedTaskGroup(timeout=1.0) as tg:
-                    _ = tg.create_task(listener())
-                    _ = tg.create_task(sleep_then_put())
-
-        assert buffer.getvalue() == text.encode()
+            await sleep(_PUB_SUB_SLEEP)
+            publisher.put_right_nowait(*((channel, m) for m in messages))
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(messages)
+        results = get_items_nowait(queue)
+        for result, message in zip(results, messages, strict=True):
+            assert isinstance(result, str)
+            assert result == message
 
     @given(data=data())
     @SKIPIF_CI_AND_NOT_LINUX
@@ -204,67 +219,27 @@ class TestPublisher:
             with raises(PublisherError, match="Error running 'Publisher'"):
                 raise PublisherError(publisher=publisher)
 
-
-class TestSubscribeMessages:
     @given(
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestSubscribeMessages)}_redis_{c}"
-        ),
-        message=text_ascii(min_size=1),
+        channel=channels(),
+        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
     )
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
+    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_redis(
-        self, *, capsys: CaptureFixture, channel: str, message: str
-    ) -> None:
-        redis = Redis()
-        await self._run_test(redis, redis, capsys, channel, message)
-
-    @given(
-        channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestSubscribeMessages)}_pubsub_{c}"
-        ),
-        message=text_ascii(min_size=1),
-    )
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_pubsub(
-        self, *, capsys: CaptureFixture, channel: str, message: str
-    ) -> None:
-        redis = Redis()
-        await self._run_test(redis, redis.pubsub(), capsys, channel, message)
-
-    async def _run_test(
-        self,
-        redis: Redis,
-        redis_or_pubsub: Redis | PubSub,
-        capsys: CaptureFixture,
-        channel: str,
-        message: str,
-        /,
-    ) -> None:
-        async def listener() -> None:
-            async for msg in subscribe_messages(redis_or_pubsub, channel):
-                print(msg)  # noqa: T201
-
-        task = get_running_loop().create_task(listener())
-        await sleep(0.05)
-        _ = await redis.publish(channel, message)
-        await sleep(0.05)
-        try:
-            out = capsys.readouterr().out
-            expected = f"{{'type': 'message', 'pattern': None, 'channel': b'{channel}', 'data': b'{message}'}}\n"
-            assert out == expected
-        finally:
-            _ = task.cancel()
+    async def test_main_service(self, *, channel: str, messages: Sequence[str]) -> None:
+        queue: Queue[str] = Queue()
+        async with (
+            yield_redis() as redis,
+            PublishService(freq=0.1, timeout=1.0, redis=redis) as service,
+            subscribe(redis, channel, queue),
+        ):
+            await sleep(_PUB_SUB_SLEEP)
+            service.put_right_nowait(*((channel, m) for m in messages))
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(messages)
+        results = get_items_nowait(queue)
+        for result, message in zip(results, messages, strict=True):
+            assert isinstance(result, str)
+            assert result == message
 
 
 class TestRedisHashMapKey:
@@ -536,7 +511,153 @@ class TestRedisKey:
             assert not await key.exists(test.redis)
 
 
+class TestSubscribe:
+    @given(
+        channel=channels(), messages=lists(binary(min_size=1), min_size=1, max_size=5)
+    )
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_bytes(self, *, channel: str, messages: Sequence[bytes]) -> None:
+        queue: Queue[bytes] = Queue()
+        async with (
+            yield_redis() as redis,
+            subscribe(redis, channel, queue, output="bytes"),
+        ):
+            await sleep(_PUB_SUB_SLEEP)
+            for message in messages:
+                await redis.publish(channel, message)
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(messages)
+        results = get_items_nowait(queue)
+        for result, message in zip(results, messages, strict=True):
+            assert isinstance(result, bytes)
+            assert result == message
+
+    @given(channel=channels(), objs=lists(make_objects(), min_size=1, max_size=5))
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_deserialize(self, *, channel: str, objs: Sequence[Any]) -> None:
+        queue: Queue[Any] = Queue()
+        async with (
+            yield_redis() as redis,
+            subscribe(redis, channel, queue, output=deserialize),
+        ):
+            await sleep(_PUB_SUB_SLEEP)
+            for obj in objs:
+                await redis.publish(channel, serialize(obj))
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(objs)
+        results = get_items_nowait(queue)
+        for result, obj in zip(results, objs, strict=True):
+            assert is_equal(result, obj)
+
+    @given(
+        channel=channels(),
+        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
+    )
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_raw(self, *, channel: str, messages: Sequence[str]) -> None:
+        queue: Queue[_RedisMessageSubscribe] = Queue()
+        async with (
+            yield_redis() as redis,
+            subscribe(redis, channel, queue, output="raw"),
+        ):
+            await sleep(_PUB_SUB_SLEEP)
+            for message in messages:
+                await redis.publish(channel, message)
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(messages)
+        results = get_items_nowait(queue)
+        for result, message in zip(results, messages, strict=True):
+            assert isinstance(result, dict)
+            assert result["type"] == "message"
+            assert result["pattern"] is None
+            assert result["channel"] == channel.encode()
+            assert result["data"] == message.encode()
+
+    @given(
+        channel=channels(),
+        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
+    )
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_text(self, *, channel: str, messages: Sequence[str]) -> None:
+        queue: Queue[_RedisMessageSubscribe] = Queue()
+        async with (
+            yield_redis() as redis,
+            subscribe(redis, channel, queue, output="raw"),
+        ):
+            await sleep(_PUB_SUB_SLEEP)
+            for message in messages:
+                await redis.publish(channel, message)
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(messages)
+        results = get_items_nowait(queue)
+        for result, message in zip(results, messages, strict=True):
+            assert isinstance(result, dict)
+            assert result["type"] == "message"
+            assert result["pattern"] is None
+            assert result["channel"] == channel.encode()
+            assert result["data"] == message.encode()
+
+
+class TestSubscribeService:
+    @given(
+        channel=channels(),
+        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
+    )
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_main(self, *, channel: str, messages: list[str]) -> None:
+        async with (
+            yield_redis() as redis,
+            SubscribeService(timeout=1.0, redis=redis, channel=channel) as service,
+        ):
+            await sleep(_PUB_SUB_SLEEP)
+            for message in messages:
+                await redis.publish(channel, message)
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert service.qsize() == len(messages)
+        results = service.get_all_nowait()
+        for result, message in zip(results, messages, strict=True):
+            assert isinstance(result, str)
+            assert result == message
+
+    @given(channel=channels())
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_context_manager_already_subscribing(
+        self, *, channel: str, caplog: LogCaptureFixture
+    ) -> None:
+        async with yield_redis() as redis:
+            looper = SubscribeService(
+                timeout=1.0, _debug=True, redis=redis, channel=channel
+            )
+            async with looper, looper:
+                ...
+            _ = one(m for m in caplog.messages if search(": already subscribing$", m))
+            _ = one(
+                m
+                for m in caplog.messages
+                if search(": already stopped subscription$", m)
+            )
+
+
 class TestYieldClient:
-    async def test_sync(self) -> None:
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_main(self) -> None:
         async with yield_redis() as client:
             assert isinstance(client, Redis)
+
+
+class TestYieldPubSub:
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_main(self, *, tmp_path: Path) -> None:
+        channel = str(tmp_path)
+        async with yield_redis() as redis, yield_pubsub(redis, channel) as pubsub:
+            assert isinstance(pubsub, PubSub)
