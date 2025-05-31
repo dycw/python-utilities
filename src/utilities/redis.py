@@ -568,25 +568,38 @@ async def publish(
 async def publish(
     redis: Redis,
     channel: str,
-    data: EncodableT,
+    data: bytes | str,
     /,
     *,
-    serializer: Callable[[EncodableT], EncodableT] | None = None,
+    serializer: None = None,
+    timeout: Duration = _PUBLISH_TIMEOUT,
+) -> ResponseT: ...
+@overload
+async def publish(
+    redis: Redis,
+    channel: str,
+    data: bytes | _T,
+    /,
+    *,
+    serializer: Callable[[_T], EncodableT] | None = None,
     timeout: Duration = _PUBLISH_TIMEOUT,
 ) -> ResponseT: ...
 async def publish(
     redis: Redis,
     channel: str,
-    data: Any,
+    data: bytes | str | _T,
     /,
     *,
-    serializer: Callable[[Any], EncodableT] | None = None,
+    serializer: Callable[[_T], EncodableT] | None = None,
     timeout: Duration = _PUBLISH_TIMEOUT,
 ) -> ResponseT:
     """Publish an object to a channel."""
-    data_use = (  # skipif-ci-and-not-linux
-        cast("EncodableT", data) if serializer is None else serializer(data)
-    )
+    if isinstance(data, bytes | str) and (serializer is None):
+        data_use = data
+    elif not isinstance(data, bytes | str) and (serializer is not None):
+        data_use = serializer(data)
+    else:
+        raise PublishError(data=data, serializer=serializer)
     async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
         return await redis.publish(channel, data_use)  # skipif-ci-and-not-linux
 
@@ -686,7 +699,19 @@ def subscribe(
     *,
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     sleep: Duration = _SUBSCRIBE_SLEEP,
-    output: Literal["bytes"] = "bytes",
+    output: Literal["bytes"],
+) -> AsyncIterator[Task[None]]: ...
+@overload
+@asynccontextmanager
+def subscribe(
+    redis: Redis,
+    channels: MaybeIterable[str],
+    queue: Queue[str],
+    /,
+    *,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
+    output: Literal["text"] = "text",
 ) -> AsyncIterator[Task[None]]: ...
 @overload
 @asynccontextmanager
@@ -700,18 +725,6 @@ def subscribe(
     sleep: Duration = _SUBSCRIBE_SLEEP,
     output: Callable[[bytes], _T],
 ) -> AsyncIterator[Task[None]]: ...
-@overload
-@asynccontextmanager
-def subscribe(
-    redis: Redis,
-    channels: MaybeIterable[str],
-    queue: Queue[bytes] | Queue[_T],
-    /,
-    *,
-    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
-    sleep: Duration = _SUBSCRIBE_SLEEP,
-    output: Literal["bytes"] | Callable[[bytes], _T] = "bytes",
-) -> AsyncIterator[Task[None]]: ...
 @asynccontextmanager
 async def subscribe(
     redis: Redis,
@@ -721,7 +734,7 @@ async def subscribe(
     *,
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     sleep: Duration = _SUBSCRIBE_SLEEP,
-    output: Literal["raw", "bytes"] | Callable[[bytes], _T] = "bytes",
+    output: Literal["raw", "bytes", "text"] | Callable[[bytes], _T] = "text",
 ) -> AsyncIterator[Task[None]]:
     """Subscribe to the data of a given channel(s)."""
     channels = list(always_iterable(channels))
@@ -730,6 +743,11 @@ async def subscribe(
             transform = cast("Any", identity)
         case "bytes":
             transform = cast("Any", itemgetter("data"))
+        case "text":
+
+            def transform(message: _RedisMessageSubscribe, /) -> str:  # pyright: ignore[reportRedeclaration]
+                return message["data"].decode()
+
         case Callable() as deserialize:
 
             def transform(message: _RedisMessageSubscribe, /) -> _T:
@@ -816,9 +834,10 @@ class SubscribeService(Looper[_T]):
                         self._queue,
                         sleep=self.subscribe_sleep,
                         timeout=self.subscribe_timeout,
-                        output="bytes"
-                        if self.deserializer is None
-                        else self.deserializer,
+                        output=cast(
+                            "Any",
+                            "text" if self.deserializer is None else self.deserializer,
+                        ),
                     )
                 )
             case _ as never:

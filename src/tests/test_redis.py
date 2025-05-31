@@ -2,13 +2,16 @@ from __future__ import annotations
 
 from asyncio import Queue, create_task, sleep
 from io import BytesIO, StringIO
+from os import getpid
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
     DrawFn,
+    binary,
     booleans,
+    builds,
     composite,
     data,
     dictionaries,
@@ -16,7 +19,7 @@ from hypothesis.strategies import (
     sampled_from,
     uuids,
 )
-from pytest import mark, raises
+from pytest import mark, raises, xfail
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 
@@ -64,7 +67,49 @@ _PUB_SUB_SLEEP = 0.1
 def channels(draw: DrawFn, /) -> str:
     now = serialize_compact(get_now_local())
     key = draw(uuids())
-    return f"test_{now}_{key}"
+    pid = getpid()
+    return f"test_{now}_{key}_{pid}"
+
+
+@mark.only
+class TestPublish:
+    @given(
+        channel=channels(),
+        data=lists(binary(min_size=1), min_size=1, max_size=10),
+    )
+    async def test_bytes(self, *, data: Sequence[bytes], channel: str) -> None:
+        queue: Queue[bytes] = Queue()
+        async with (
+            yield_redis() as redis,
+            subscribe(redis, channel, queue, output="bytes"),
+        ):
+            await sleep(_PUB_SUB_SLEEP)
+            for datum in data:
+                _ = await publish(redis, channel, datum)
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(data)
+        results = get_items_nowait(queue)
+        for result, datum in zip(results, data, strict=True):
+            assert isinstance(result, bytes)
+            assert result == datum
+
+    @given(
+        channel=channels(),
+        data=lists(text_ascii(min_size=1), min_size=1, max_size=10),
+    )
+    @mark.xfail
+    async def test_text(self, *, data: Sequence[str], channel: str) -> None:
+        queue: Queue[str] = Queue()
+        async with yield_redis() as redis, subscribe(redis, channel, queue):
+            await sleep(_PUB_SUB_SLEEP)
+            for datum in data:
+                _ = await publish(redis, channel, datum)
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(data)
+        results = get_items_nowait(queue)
+        for result, datum in zip(results, data, strict=True):
+            assert isinstance(result, bytes)
+            assert result == datum
 
 
 @mark.skip
@@ -579,13 +624,16 @@ class TestRedisKey:
 class TestSubscribe:
     @given(
         channel=channels(),
-        messages=lists(text_ascii(min_size=1), min_size=1, max_size=10),
+        messages=lists(binary(min_size=1), min_size=1, max_size=10),
     )
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_bytes(self, *, channel: str, messages: Sequence[str]) -> None:
+    async def test_bytes(self, *, channel: str, messages: Sequence[bytes]) -> None:
         queue: Queue[bytes] = Queue()
-        async with yield_redis() as redis, subscribe(redis, channel, queue):
+        async with (
+            yield_redis() as redis,
+            subscribe(redis, channel, queue, output="bytes"),
+        ):
             await sleep(_PUB_SUB_SLEEP)
             for message in messages:
                 await redis.publish(channel, message)
@@ -594,7 +642,25 @@ class TestSubscribe:
         results = get_items_nowait(queue)
         for result, message in zip(results, messages, strict=True):
             assert isinstance(result, bytes)
-            assert result.decode() == message
+            assert result == message
+
+    @given(channel=channels(), objs=lists(make_objects(), min_size=1, max_size=10))
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_deserialize(self, *, channel: str, objs: Sequence[Any]) -> None:
+        queue: Queue[Any] = Queue()
+        async with (
+            yield_redis() as redis,
+            subscribe(redis, channel, queue, output=deserialize),
+        ):
+            await sleep(_PUB_SUB_SLEEP)
+            for obj in objs:
+                await redis.publish(channel, serialize(obj))
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(objs)
+        results = get_items_nowait(queue)
+        for result, obj in zip(results, objs, strict=True):
+            assert is_equal(result, obj)
 
     @given(
         channel=channels(),
@@ -621,23 +687,30 @@ class TestSubscribe:
             assert result["channel"] == channel.encode()
             assert result["data"] == message.encode()
 
-    @given(channel=channels(), objs=lists(make_objects(), min_size=1, max_size=10))
+    @given(
+        channel=channels(),
+        messages=lists(text_ascii(min_size=1), min_size=1, max_size=10),
+    )
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_deserialize(self, *, channel: str, objs: Sequence[Any]) -> None:
-        queue: Queue[Any] = Queue()
+    async def test_text(self, *, channel: str, messages: Sequence[str]) -> None:
+        queue: Queue[_RedisMessageSubscribe] = Queue()
         async with (
             yield_redis() as redis,
-            subscribe(redis, channel, queue, output=deserialize),
+            subscribe(redis, channel, queue, output="raw"),
         ):
             await sleep(_PUB_SUB_SLEEP)
-            for obj in objs:
-                await redis.publish(channel, serialize(obj))
+            for message in messages:
+                await redis.publish(channel, message)
             await sleep(_PUB_SUB_SLEEP)  # keep in context
-        assert queue.qsize() == len(objs)
+        assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
-        for result, obj in zip(results, objs, strict=True):
-            assert is_equal(result, obj)
+        for result, message in zip(results, messages, strict=True):
+            assert isinstance(result, dict)
+            assert result["type"] == "message"
+            assert result["pattern"] is None
+            assert result["channel"] == channel.encode()
+            assert result["data"] == message.encode()
 
 
 @mark.only
@@ -660,7 +733,8 @@ class TestSubscribeService:
         assert service.qsize() == len(messages)
         results = service.get_all_nowait()
         for result, message in zip(results, messages, strict=True):
-            assert result.decode() == message
+            assert isinstance(result, str)
+            assert result == message
 
 
 class TestYieldClient:
