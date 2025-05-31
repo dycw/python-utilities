@@ -725,11 +725,6 @@ async def subscribe(
 ) -> AsyncIterator[Task[None]]:
     """Subscribe to the data of a given channel(s)."""
     channels = list(always_iterable(channels))
-    is_subscribe_message = partial(
-        _is_subscribe_message, channels={c.encode() for c in channels}
-    )
-    sleep_use = datetime_duration_to_float(sleep)
-    timeout_use = None if timeout is None else datetime_duration_to_float(timeout)
     match output:
         case "raw":
             transform = cast("Any", identity)
@@ -743,28 +738,48 @@ async def subscribe(
         case _ as never:
             assert_never(never)
 
-    async def _run() -> None:
-        async with yield_pubsub(redis, channels) as pubsub:
-            while True:
-                message = cast(
-                    "_RedisMessageSubscribe | _RedisMessageUnsubscribe | None",
-                    await pubsub.get_message(timeout=timeout_use),
-                )
-                if is_subscribe_message(message):
-                    if isinstance(queue, EnhancedQueue):
-                        queue.put_right_nowait(transform(message))
-                    else:
-                        queue.put_nowait(transform(message))
-                else:
-                    await asyncio.sleep(sleep_use)
-
-    task = create_task(_run())
+    task = create_task(
+        _subscribe_core(redis, channels, transform, queue, timeout=timeout, sleep=sleep)
+    )
     try:
         yield task
     finally:
         _ = task.cancel()
         with suppress(CancelledError):
             await task
+
+
+async def _subscribe_core(
+    redis: Redis,
+    channels: MaybeIterable[str],
+    transform: Callable[[_RedisMessageSubscribe], Any],
+    queue: Queue[Any],
+    /,
+    *,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
+) -> None:
+    timeout_use = None if timeout is None else datetime_duration_to_float(timeout)
+    sleep_use = datetime_duration_to_float(sleep)
+    is_subscribe_message = partial(
+        _is_subscribe_message, channels={c.encode() for c in channels}
+    )
+    async with yield_pubsub(redis, channels) as pubsub:
+        while True:
+            message = cast(
+                "_RedisMessageSubscribe | _RedisMessageUnsubscribe | None",
+                await pubsub.get_message(timeout=timeout_use),
+            )
+            if is_subscribe_message(message):
+                if isinstance(queue, EnhancedQueue):
+                    queue.put_right_nowait(transform(message))
+                else:
+                    queue.put_nowait(transform(message))
+            else:
+                await asyncio.sleep(sleep_use)
+
+
+##
 
 
 @dataclass(kw_only=True)
