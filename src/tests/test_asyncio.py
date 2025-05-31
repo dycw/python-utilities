@@ -965,9 +965,6 @@ class TestLooper:
         looper.put_left_nowait(None)
         assert not looper.empty()
 
-    @mark.only
-    @mark.flaky
-    @mark.parametrize("empty_upon_exit", [param(True), param(False)])
     async def test_empty_upon_exit(self, *, empty_upon_exit: bool) -> None:
         @dataclass(kw_only=True)
         class Example(Looper[None]):
@@ -1038,8 +1035,8 @@ class TestLooper:
         assert len(looper) == looper.qsize() == 1
 
     def test_replace(self) -> None:
-        looper = _ExampleLooper().replace(freq=SECOND)
-        assert looper.freq == SECOND
+        looper = _ExampleLooper().replace(freq=10.0)
+        assert looper.freq == 10.0
 
     async def test_request_restart(self) -> None:
         class Example(_ExampleLooper):
@@ -1051,7 +1048,7 @@ class TestLooper:
                 ):
                     self.request_restart()
 
-        looper = Example(auto_start=True, timeout=SECOND)
+        looper = Example(auto_start=True, timeout=1.0)
         async with looper:
             ...
         self._assert_stats(
@@ -1084,7 +1081,7 @@ class TestLooper:
                 ):
                     self.request_stop()
 
-        looper = Example(auto_start=True, timeout=SECOND)
+        looper = Example(auto_start=True, timeout=1.0)
         async with looper:
             ...
         self._assert_stats(
@@ -1117,7 +1114,7 @@ class TestLooper:
                         _ = self.get_right_nowait()
                 self.request_stop_when_empty()
 
-        looper = Example(auto_start=True, timeout=SECOND)
+        looper = Example(auto_start=True, timeout=1.0)
         for i in range(25):
             match i % 2 == 0:
                 case True:
@@ -1223,7 +1220,7 @@ class TestLooper:
     async def test_sub_looper_one(
         self, *, auto_start: bool, caplog: LogCaptureFixture
     ) -> None:
-        looper = _ExampleOuterLooper(auto_start=True, timeout=SECOND)
+        looper = _ExampleOuterLooper(auto_start=True, timeout=1.0)
         looper.inner.auto_start = auto_start
         async with looper:
             ...
@@ -1275,7 +1272,7 @@ class TestLooper:
                 yield self.inner1
                 yield self.inner2
 
-        looper = Example(auto_start=True, timeout=SECOND)
+        looper = Example(auto_start=True, timeout=1.0)
         async with looper:
             ...
         self._assert_stats(looper, stops=1)
@@ -1311,7 +1308,7 @@ class TestLooper:
             def _yield_sub_loopers(self) -> Iterator[Looper]:
                 yield self.middle
 
-        looper = Example(auto_start=True, timeout=SECOND)
+        looper = Example(auto_start=True, timeout=1.0)
         async with looper:
             ...
         self._assert_stats(looper, stops=1)
