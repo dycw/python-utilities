@@ -5,6 +5,7 @@ from asyncio import CancelledError, Queue, Task, create_task
 from collections.abc import Callable
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
+from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -42,7 +43,7 @@ if TYPE_CHECKING:
     from collections.abc import (
         AsyncIterator,
         Awaitable,
-        Callable,
+        Collection,
         Iterable,
         Iterator,
         Mapping,
@@ -905,53 +906,146 @@ async def yield_pubsub(
 ##
 
 
+@overload
+@asynccontextmanager
+def yield_pubsub_message_queue(
+    redis: Redis,
+    channels: MaybeIterable[str],
+    /,
+    *,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    output: Literal["raw"],
+) -> AsyncIterator[Queue[_RedisMessageSubscribe]]: ...
+@overload
+@asynccontextmanager
+def yield_pubsub_message_queue(
+    redis: Redis,
+    channels: MaybeIterable[str],
+    /,
+    *,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    output: Literal["bytes"] = "bytes",
+) -> AsyncIterator[Queue[bytes]]: ...
+@overload
+@asynccontextmanager
+def yield_pubsub_message_queue(
+    redis: Redis,
+    channels: MaybeIterable[str],
+    /,
+    *,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    output: Callable[[bytes], _T],
+) -> AsyncIterator[Queue[_T]]: ...
+@overload
+@asynccontextmanager
+def yield_pubsub_message_queue(
+    redis: Redis,
+    channels: MaybeIterable[str],
+    /,
+    *,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    output: Literal["raw", "bytes"] | Callable[[bytes], _T] = "bytes",
+) -> (
+    AsyncIterator[Queue[_RedisMessageSubscribe]]
+    | AsyncIterator[Queue[bytes]]
+    | AsyncIterator[Queue[_T]]
+): ...
 @asynccontextmanager
 async def yield_pubsub_message_queue(
     redis: Redis,
     channels: MaybeIterable[str],
     /,
     *,
-    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     sleep: Duration = _SUBSCRIBE_SLEEP,
-) -> AsyncIterator[Queue[_RedisMessageSubscribe]]:
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    output: Literal["raw", "bytes"] | Callable[[bytes], _T] = "bytes",
+) -> AsyncIterator[Queue[_RedisMessageSubscribe] | Queue[bytes] | Queue[_T]]:
     """Yield a queue of messages."""
     channels = list(always_iterable(channels))
-    channels_bytes = [c.encode() for c in channels]
-    queue: Queue[_RedisMessageSubscribe] = Queue()
-    timeout_use = None if timeout is None else datetime_duration_to_float(timeout)
+    is_subscribe_message = partial(
+        _is_subscribe_message, channels={c.encode() for c in channels}
+    )
+    queue: Queue[Any] = Queue()
     sleep_use = datetime_duration_to_float(sleep)
+    timeout_use = None if timeout is None else datetime_duration_to_float(timeout)
+    match output:
+        case "raw":
 
-    async def listener(pubsub: PubSub, /) -> None:
-        while True:
-            try:
-                message = cast(
-                    "_RedisMessageSubscribe | _RedisMessageUnsubscribe | None",
-                    await pubsub.get_message(timeout=timeout_use),
-                )
-                if (
-                    (message is not None)
-                    and (
-                        message["type"]
-                        in {"subscribe", "psubscribe", "message", "pmessage"}
-                    )
-                    and (message["channel"] in channels_bytes)
-                    and isinstance(message["data"], bytes)
-                ):
-                    message = cast("_RedisMessageSubscribe", message)
-                    queue.put_nowait(message)
-                else:
-                    await asyncio.sleep(sleep_use)
-            except CancelledError:  # pragma: no cover
-                break
+            def func(message: _RedisMessageSubscribe, /) -> _RedisMessageSubscribe:
+                return message
+
+        case "bytes":
+
+            def func(message: _RedisMessageSubscribe, /) -> bytes:
+                return message["data"]
+
+        case Callable() as deserializer:
+
+            def func(message: _RedisMessageSubscribe, /) -> _T:
+                return deserializer(message["data"])
+
+        case _ as never:
+            assert_never(never)
 
     async with yield_pubsub(redis, channels) as pubsub:
-        task = create_task(listener(pubsub))
+        task = create_task(
+            _pubsub_listener(
+                pubsub,
+                is_subscribe_message,
+                queue,
+                func,
+                sleep_use,
+                timeout=timeout_use,
+            )
+        )
         try:
             yield queue
         finally:
             _ = task.cancel()
             with suppress(CancelledError):
                 await task
+
+
+async def _pubsub_listener(
+    pubsub: PubSub,
+    is_subscribe_message: Callable[[Any], TypeGuard[_RedisMessageSubscribe]],
+    queue: Queue[_T],
+    transform: Callable[[_RedisMessageSubscribe], _T],
+    sleep: float,
+    /,
+    *,
+    timeout: float | None = None,
+) -> None:
+    while True:
+        try:
+            message = cast(
+                "_RedisMessageSubscribe | _RedisMessageUnsubscribe | None",
+                await pubsub.get_message(timeout=timeout),
+            )
+            if is_subscribe_message(message):
+                queue.put_nowait(transform(message))
+            else:
+                await asyncio.sleep(sleep)
+        except CancelledError:  # pragma: no cover
+            break
+
+
+def _is_subscribe_message(
+    message: _RedisMessageSubscribe | _RedisMessageUnsubscribe | None,
+    /,
+    *,
+    channels: Collection[bytes],
+) -> TypeGuard[_RedisMessageSubscribe]:
+    return (
+        (message is not None)
+        and (message["type"] in {"subscribe", "psubscribe", "message", "pmessage"})
+        and (message["channel"] in channels)
+        and isinstance(message["data"], bytes)
+    )
 
 
 ##

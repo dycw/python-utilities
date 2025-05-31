@@ -688,3 +688,5 @@ class TestYieldPubSubMessageQueue:
             await redis.publish(channel, message)
             await sleep(0.1)
             assert queue.qsize() == 1
+            result = queue.get_nowait()
+        assert result.decode() == message
