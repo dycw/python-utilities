@@ -208,7 +208,7 @@ class TestPublisher:
     @given(
         data=data(),
         channel=text_ascii(min_size=1).map(
-            lambda c: f"{get_class_name(TestPublisher)}_main_{c}"
+            lambda c: f"{get_class_name(TestPublisher)}_main_{c}_service"
         ),
         obj=make_objects(),
     )
