@@ -882,7 +882,7 @@ class _ExampleLooperError(Exception): ...
 
 
 @dataclass(kw_only=True)
-class _ExampleLooper(Looper[Any]):
+class _ExampleCounterLooper(Looper[Any]):
     freq: Duration = field(default=10 * MILLISECOND, repr=False)
     backoff: Duration = field(default=100 * MILLISECOND, repr=False)
     _debug: bool = field(default=True, repr=False)
@@ -901,13 +901,13 @@ class _ExampleLooper(Looper[Any]):
 
 
 @dataclass(kw_only=True)
-class _ExampleOuterLooper(_ExampleLooper):
-    inner: _ExampleLooper = field(init=False, repr=False)
+class _ExampleOuterLooper(_ExampleCounterLooper):
+    inner: _ExampleCounterLooper = field(init=False, repr=False)
 
     @override
     def __post_init__(self) -> None:
         super().__post_init__()
-        self.inner = _ExampleLooper(
+        self.inner = _ExampleCounterLooper(
             freq=self.freq / 2,
             backoff=self.backoff / 2,
             logger=self.logger,
@@ -921,6 +921,15 @@ class _ExampleOuterLooper(_ExampleLooper):
         yield self.inner
 
 
+@dataclass(kw_only=True)
+class _ExampleQueueLooper(Looper[None]):
+    @override
+    async def core(self) -> None:
+        await super().core()
+        if not self.empty():
+            _ = self.get_left_nowait()
+
+
 class TestLooper:
     sleep_if_failure_cases: ClassVar[list[Any]] = [
         param(True, "; sleeping for .*"),
@@ -928,53 +937,45 @@ class TestLooper:
     ]
 
     async def test_main_with_nothing(self) -> None:
-        looper = _ExampleLooper()
+        looper = _ExampleCounterLooper()
         async with looper:
             ...
         assert looper.stats == _LooperStats(entries=1, stops=1)
 
     async def test_auto_start(self) -> None:
-        looper = _ExampleLooper(auto_start=True)
+        looper = _ExampleCounterLooper(auto_start=True)
         with raises(TimeoutError):
             async with timeout(1.0), looper:
                 ...
         self._assert_stats(looper)
 
     async def test_auto_start_and_timeout(self) -> None:
-        looper = _ExampleLooper(auto_start=True, timeout=1.0)
+        looper = _ExampleCounterLooper(auto_start=True, timeout=1.0)
         async with looper:
             ...
         self._assert_stats(looper, stops=1)
 
     async def test_await_without_task(self) -> None:
-        looper = _ExampleLooper()
+        looper = _ExampleCounterLooper()
         with raises(_LooperNoTaskError, match=".* has no running task"):
             await looper
 
     async def test_context_manager_already_entered(
         self, *, caplog: LogCaptureFixture
     ) -> None:
-        looper = _ExampleLooper(auto_start=True, timeout=SECOND)
+        looper = _ExampleCounterLooper(auto_start=True, timeout=SECOND)
         async with looper, looper:
             ...
         _ = one(m for m in caplog.messages if search(": already entered$", m))
 
     def test_empty(self) -> None:
-        looper = _ExampleLooper()
+        looper = _ExampleCounterLooper()
         assert looper.empty()
         looper.put_left_nowait(None)
         assert not looper.empty()
 
     async def test_empty_upon_exit(self) -> None:
-        @dataclass(kw_only=True)
-        class Example(Looper[None]):
-            @override
-            async def core(self) -> None:
-                await super().core()
-                if not self.empty():
-                    _ = self.get_left_nowait()
-
-        looper = Example(freq=0.05, empty_upon_exit=True)
+        looper = _ExampleQueueLooper(freq=0.05, empty_upon_exit=True)
         looper.put_right_nowait(None)
         assert not looper.empty()
         async with timeout(1.0), looper:
@@ -982,14 +983,14 @@ class TestLooper:
         assert looper.empty()
 
     async def test_explicit_start(self) -> None:
-        looper = _ExampleLooper()
+        looper = _ExampleCounterLooper()
         with raises(TimeoutError):
             async with timeout(1.0), looper:
                 await looper
         self._assert_stats(looper, stops=1)
 
     def test_get_all_nowait(self) -> None:
-        looper = _ExampleLooper()
+        looper = _ExampleCounterLooper()
         looper.put_left_nowait(None)
         items = looper.get_all_nowait()
         assert items == [None]
@@ -997,7 +998,7 @@ class TestLooper:
     async def test_initialize_already_initializing(
         self, *, caplog: LogCaptureFixture
     ) -> None:
-        class Example(_ExampleLooper):
+        class Example(_ExampleCounterLooper):
             @override
             async def _initialize_core(self) -> None:
                 if self._initialization_attempts == 1:
@@ -1012,7 +1013,7 @@ class TestLooper:
     async def test_initialize_failure(
         self, *, sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
     ) -> None:
-        class Example(_ExampleLooper):
+        class Example(_ExampleCounterLooper):
             @override
             async def _initialize_core(self) -> None:
                 if self._initialization_attempts == 1:
@@ -1025,17 +1026,17 @@ class TestLooper:
         _ = one(m for m in caplog.messages if search(pattern, m))
 
     def test_len_and_qsize(self) -> None:
-        looper = _ExampleLooper()
+        looper = _ExampleCounterLooper()
         assert len(looper) == looper.qsize() == 0
         looper.put_left_nowait(None)
         assert len(looper) == looper.qsize() == 1
 
     def test_replace(self) -> None:
-        looper = _ExampleLooper().replace(freq=10.0)
+        looper = _ExampleCounterLooper().replace(freq=10.0)
         assert looper.freq == 10.0
 
     async def test_request_restart(self) -> None:
-        class Example(_ExampleLooper):
+        class Example(_ExampleCounterLooper):
             @override
             async def core(self) -> None:
                 await super().core()
@@ -1060,7 +1061,7 @@ class TestLooper:
     def test_request_restart_already_requested(
         self, *, caplog: LogCaptureFixture
     ) -> None:
-        looper = _ExampleLooper()
+        looper = _ExampleCounterLooper()
         for _ in range(2):
             looper.request_restart()
         _ = one(
@@ -1068,7 +1069,7 @@ class TestLooper:
         )
 
     async def test_request_stop(self) -> None:
-        class Example(_ExampleLooper):
+        class Example(_ExampleCounterLooper):
             @override
             async def core(self) -> None:
                 await super().core()
@@ -1091,13 +1092,13 @@ class TestLooper:
         )
 
     def test_request_stop_already_requested(self, *, caplog: LogCaptureFixture) -> None:
-        looper = _ExampleLooper()
+        looper = _ExampleCounterLooper()
         for _ in range(2):
             looper.request_stop()
         _ = one(m for m in caplog.messages if search(r": already requested stop$", m))
 
     async def test_request_stop_when_empty(self) -> None:
-        class Example(_ExampleLooper):
+        class Example(_ExampleCounterLooper):
             @override
             async def core(self) -> None:
                 await super().core()
@@ -1132,7 +1133,7 @@ class TestLooper:
     def test_request_stop_when_empty_already_requested(
         self, *, caplog: LogCaptureFixture
     ) -> None:
-        looper = _ExampleLooper()
+        looper = _ExampleCounterLooper()
         for _ in range(2):
             looper.request_stop_when_empty()
         _ = one(
@@ -1145,7 +1146,7 @@ class TestLooper:
     async def test_restart_failure_during_initialization(
         self, *, sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
     ) -> None:
-        class Example(_ExampleLooper):
+        class Example(_ExampleCounterLooper):
             @override
             async def _initialize_core(self) -> None:
                 if self._initialization_attempts == 1:
@@ -1161,7 +1162,7 @@ class TestLooper:
     async def test_restart_failure_during_tear_down(
         self, *, sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
     ) -> None:
-        class Example(_ExampleLooper):
+        class Example(_ExampleCounterLooper):
             @override
             async def _tear_down_core(self) -> None:
                 if self._tear_down_attempts == 1:
@@ -1177,7 +1178,7 @@ class TestLooper:
     async def test_restart_failure_during_tear_down_and_initialization(
         self, *, sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
     ) -> None:
-        class Example(_ExampleLooper):
+        class Example(_ExampleCounterLooper):
             @override
             async def _initialize_core(self) -> None:
                 if self._initialization_attempts == 1:
@@ -1196,15 +1197,7 @@ class TestLooper:
         _ = one(m for m in caplog.messages if search(pattern, m))
 
     async def test_run_until_empty(self) -> None:
-        @dataclass(kw_only=True)
-        class Example(Looper[None]):
-            @override
-            async def core(self) -> None:
-                await super().core()
-                if not self.empty():
-                    _ = self.get_left_nowait()
-
-        looper = Example(freq=0.05)
+        looper = _ExampleCounterLooper(freq=0.05)
         looper.put_right_nowait(None)
         assert not looper.empty()
         async with timeout(1.0), looper:
@@ -1238,14 +1231,14 @@ class TestLooper:
 
     async def test_sub_loopers_multiple(self) -> None:
         @dataclass(kw_only=True)
-        class Example(_ExampleLooper):
-            inner1: _ExampleLooper = field(init=False, repr=False)
-            inner2: _ExampleLooper = field(init=False, repr=False)
+        class Example(_ExampleCounterLooper):
+            inner1: _ExampleCounterLooper = field(init=False, repr=False)
+            inner2: _ExampleCounterLooper = field(init=False, repr=False)
 
             @override
             def __post_init__(self) -> None:
                 super().__post_init__()
-                self.inner1 = _ExampleLooper(
+                self.inner1 = _ExampleCounterLooper(
                     freq=self.freq / 2,
                     backoff=self.backoff / 2,
                     logger=self.logger,
@@ -1253,7 +1246,7 @@ class TestLooper:
                     timeout_error=self.timeout_error,
                     max_count=round(self.max_count / 2),
                 )
-                self.inner2 = _ExampleLooper(
+                self.inner2 = _ExampleCounterLooper(
                     freq=self.freq / 2,
                     backoff=self.backoff / 2,
                     logger=self.logger,
@@ -1284,7 +1277,7 @@ class TestLooper:
 
     async def test_sub_loopers_nested(self) -> None:
         @dataclass(kw_only=True)
-        class Example(_ExampleLooper):
+        class Example(_ExampleCounterLooper):
             middle: _ExampleOuterLooper = field(init=False, repr=False)
 
             @override
@@ -1329,7 +1322,7 @@ class TestLooper:
     async def test_tear_down_already_tearing_down(
         self, *, caplog: LogCaptureFixture
     ) -> None:
-        class Example(_ExampleLooper):
+        class Example(_ExampleCounterLooper):
             @override
             async def _tear_down_core(self) -> None:
                 if self._tear_down_attempts == 1:
@@ -1344,7 +1337,7 @@ class TestLooper:
     async def test_tear_down_failure(
         self, *, sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
     ) -> None:
-        class Example(_ExampleLooper):
+        class Example(_ExampleCounterLooper):
             @override
             async def _tear_down_core(self) -> None:
                 if self._tear_down_attempts == 1:
@@ -1357,20 +1350,20 @@ class TestLooper:
         _ = one(m for m in caplog.messages if search(pattern, m))
 
     async def test_timeout(self) -> None:
-        looper = _ExampleLooper(timeout=1.0)
+        looper = _ExampleCounterLooper(timeout=1.0)
         async with looper:
             with raises(LooperTimeoutError, match="Timeout"):
                 await looper
         self._assert_stats(looper, stops=1)
 
     def test_with_auto_start(self) -> None:
-        looper = _ExampleLooper()
+        looper = _ExampleCounterLooper()
         assert not looper.auto_start
         assert looper.with_auto_start.auto_start
 
     def _assert_stats(
         self,
-        looper: _ExampleLooper,
+        looper: _ExampleCounterLooper,
         /,
         *,
         entries: int = 1,
