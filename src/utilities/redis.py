@@ -22,7 +22,7 @@ from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 from redis.typing import EncodableT
 
-from utilities.asyncio import InfiniteQueueLooper, Looper, timeout_dur
+from utilities.asyncio import InfiniteQueueLooper, timeout_dur
 from utilities.datetime import (
     MILLISECOND,
     SECOND,
@@ -624,32 +624,6 @@ class PublisherError(Exception):
         return f"Error running {get_class_name(self.publisher)!r}"  # skipif-ci-and-not-linux
 
 
-@dataclass(kw_only=True)
-class PublishService(Looper[tuple[str, _T]]):
-    """Service to publish items to Redis."""
-
-    # base
-    freq: Duration = field(default=MILLISECOND, repr=False)
-    backoff: Duration = field(default=SECOND, repr=False)
-    logger: str | None = field(default=None, repr=False)
-    # self
-    redis: Redis
-    serializer: Callable[[Any], EncodableT] | None = None
-    publish_timeout: Duration = SECOND
-
-    @override
-    async def core(self) -> None:
-        while not self.empty():  # skipif-ci-and-not-linux
-            channel, data = self.get_left_nowait()
-            _ = await publish(
-                self.redis,
-                channel,
-                cast("Any", data),
-                serializer=self.serializer,
-                timeout=self.publish_timeout,
-            )
-
-
 ##
 
 
@@ -838,7 +812,6 @@ _ = _TestRedis
 
 
 __all__ = [
-    "PublishService",
     "Publisher",
     "PublisherError",
     "RedisHashMapKey",
