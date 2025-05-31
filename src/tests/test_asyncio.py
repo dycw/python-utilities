@@ -1205,12 +1205,18 @@ class TestLooper:
             await looper.run_until_empty()
         assert looper.empty()
 
-    @mark.parametrize("auto_start", [param(True), param(False)])
+    @mark.only
+    @mark.parametrize("auto_start_outer", [param(True), param(False)])
+    @mark.parametrize("auto_start_inner", [param(True), param(False)])
     async def test_sub_looper_one(
-        self, *, auto_start: bool, caplog: LogCaptureFixture
+        self,
+        *,
+        auto_start_outer: bool,
+        auto_start_inner: bool,
+        caplog: LogCaptureFixture,
     ) -> None:
-        looper = _ExampleOuterLooper(auto_start=True, timeout=1.0)
-        looper.inner.auto_start = auto_start
+        looper = _ExampleOuterLooper(auto_start=auto_start_outer, timeout=1.0)
+        looper.inner.auto_start = auto_start_inner
         async with looper:
             ...
         self._assert_stats(looper, stops=1)
@@ -1225,12 +1231,18 @@ class TestLooper:
         )
         pattern = rf": changing sub-looper {get_class_name(_ExampleCounterLooper)}\(.*?\) to auto-start\.\.\.$"
         matches = [m for m in caplog.messages if bool(search(pattern, m))]
-        if auto_start:
+        if auto_start_inner:
             assert len(matches) == 0
         else:
             _ = one(matches)
 
-    async def test_sub_loopers_multiple(self) -> None:
+    @mark.only
+    @mark.parametrize("auto_start", [param(True), param(False)])
+    @mark.parametrize("auto_start1", [param(True), param(False)])
+    @mark.parametrize("auto_start2", [param(True), param(False)])
+    async def test_sub_loopers_multiple(
+        self, *, auto_start: bool, auto_start1: bool, auto_start2: bool
+    ) -> None:
         @dataclass(kw_only=True)
         class Example(_ExampleCounterLooper):
             inner1: _ExampleCounterLooper = field(init=False, repr=False)
@@ -1240,6 +1252,7 @@ class TestLooper:
             def __post_init__(self) -> None:
                 super().__post_init__()
                 self.inner1 = _ExampleCounterLooper(
+                    auto_start=auto_start1,
                     freq=self.freq / 2,
                     backoff=self.backoff / 2,
                     logger=self.logger,
@@ -1248,6 +1261,7 @@ class TestLooper:
                     max_count=round(self.max_count / 2),
                 )
                 self.inner2 = _ExampleCounterLooper(
+                    auto_start=auto_start2,
                     freq=self.freq / 2,
                     backoff=self.backoff / 2,
                     logger=self.logger,
@@ -1261,7 +1275,7 @@ class TestLooper:
                 yield self.inner1
                 yield self.inner2
 
-        looper = Example(auto_start=True, timeout=1.0)
+        looper = Example(auto_start=auto_start, timeout=1.0)
         async with looper:
             ...
         self._assert_stats(looper, stops=1)
@@ -1276,7 +1290,13 @@ class TestLooper:
                 stops=1,
             )
 
-    async def test_sub_loopers_nested(self) -> None:
+    @mark.only
+    @mark.parametrize("auto_start_outer", [param(True), param(False)])
+    @mark.parametrize("auto_start_middle", [param(True), param(False)])
+    @mark.parametrize("auto_start_inner", [param(True), param(False)])
+    async def test_sub_loopers_nested(
+        self, *, auto_start_outer: bool, auto_start_middle: bool, auto_start_inner: bool
+    ) -> None:
         @dataclass(kw_only=True)
         class Example(_ExampleCounterLooper):
             middle: _ExampleOuterLooper = field(init=False, repr=False)
@@ -1285,6 +1305,7 @@ class TestLooper:
             def __post_init__(self) -> None:
                 super().__post_init__()
                 self.middle = _ExampleOuterLooper(
+                    auto_start=auto_start_middle,
                     freq=self.freq / 2,
                     backoff=self.backoff / 2,
                     logger=self.logger,
@@ -1297,7 +1318,8 @@ class TestLooper:
             def _yield_sub_loopers(self) -> Iterator[Looper]:
                 yield self.middle
 
-        looper = Example(auto_start=True, timeout=1.0)
+        looper = Example(auto_start=auto_start_outer, timeout=1.0)
+        looper.middle.inner.auto_start = auto_start_inner
         async with looper:
             ...
         self._assert_stats(looper, stops=1)
