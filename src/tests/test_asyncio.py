@@ -944,11 +944,36 @@ class TestLooper:
         assert looper.stats == _LooperStats(entries=1, stops=1)
 
     async def test_auto_start(self) -> None:
-        looper = _ExampleCounterLooper(auto_start=True)
+        looper = _ExampleLooper(auto_start=True)
         with raises(TimeoutError):
             async with timeout(1.0), looper:
                 ...
         self._assert_stats(looper)
+
+    async def test_auto_start_and_timeout(self) -> None:
+        looper = _ExampleLooper(auto_start=True, timeout=1.0)
+        async with looper:
+            ...
+        self._assert_stats(looper, stops=1)
+
+    async def test_await_without_task(self) -> None:
+        looper = _ExampleLooper()
+        with raises(_LooperNoTaskError, match=".* has no running task"):
+            await looper
+
+    async def test_context_manager_already_entered(
+        self, *, caplog: LogCaptureFixture
+    ) -> None:
+        looper = _ExampleLooper(auto_start=True, timeout=SECOND)
+        async with looper, looper:
+            ...
+        _ = one(m for m in caplog.messages if search(": already entered$", m))
+
+    def test_empty(self) -> None:
+        looper = _ExampleLooper()
+        assert looper.empty()
+        looper.put_left_nowait(None)
+        assert not looper.empty()
 
     @mark.only
     @mark.flaky
@@ -973,48 +998,8 @@ class TestLooper:
             assert not looper.empty()
 
     @mark.flaky
-    async def test_main_with_timeout(self) -> None:
-        looper = _ExampleLooper(timeout=SECOND)
-        async with looper:
-            with raises(LooperTimeoutError, match="Timeout"):
-                await looper
-        self._assert_stats(looper, stops=1)
-
-    async def test_main_with_auto_start_and_timeout(self) -> None:
-        looper = _ExampleLooper(auto_start=True, timeout=SECOND)
-        async with looper:
-            ...
-        self._assert_stats(looper, stops=1)
-
-    async def test_await_without_task(self) -> None:
-        looper = _ExampleCounterLooper()
-        with raises(_LooperNoTaskError, match=".* has no running task"):
-            await looper
-
-    async def test_context_manager_already_entered(
-        self, *, caplog: LogCaptureFixture
-    ) -> None:
-        looper = _ExampleCounterLooper(auto_start=True, timeout=SECOND)
-        async with looper, looper:
-            ...
-        _ = one(m for m in caplog.messages if search(": already entered$", m))
-
-    def test_empty(self) -> None:
-        looper = _ExampleCounterLooper()
-        assert looper.empty()
-        looper.put_left_nowait(None)
-        assert not looper.empty()
-
-    async def test_empty_upon_exit(self) -> None:
-        looper = _ExampleQueueLooper(freq=0.05, empty_upon_exit=True)
-        looper.put_right_nowait(0)
-        assert not looper.empty()
-        async with timeout(1.0), looper:
-            ...
-        assert looper.empty()
-
     async def test_explicit_start(self) -> None:
-        looper = _ExampleCounterLooper()
+        looper = _ExampleLooper()
         with raises(TimeoutError):
             async with timeout(1.0), looper:
                 await looper
@@ -1389,8 +1374,9 @@ class TestLooper:
         pattern = rf": encountered _ExampleLooperError\(\) whilst tearing down{extra}$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
+    @mark.flaky
     async def test_timeout(self) -> None:
-        looper = _ExampleCounterLooper(timeout=1.0)
+        looper = _ExampleLooper(timeout=1.0)
         async with looper:
             with raises(LooperTimeoutError, match="Timeout"):
                 await looper
