@@ -677,19 +677,18 @@ class UpsertService(Looper[_InsertItem]):
     @override
     async def core(self) -> None:
         await super().core()
-        if not self.empty():
-            await upsert_items(
-                self.engine,
-                *self.get_all_nowait(),
-                snake=self.snake,
-                selected_or_all=self.selected_or_all,
-                chunk_size_frac=self.chunk_size_frac,
-                assume_tables_exist=self.assume_tables_exist,
-                timeout_create=self.timeout_create,
-                error_create=self.error_create,
-                timeout_insert=self.timeout_insert,
-                error_insert=self.error_insert,
-            )
+        await upsert_items(
+            self.engine,
+            *self.get_all_nowait(),
+            snake=self.snake,
+            selected_or_all=self.selected_or_all,
+            chunk_size_frac=self.chunk_size_frac,
+            assume_tables_exist=self.assume_tables_exist,
+            timeout_create=self.timeout_create,
+            error_create=self.error_create,
+            timeout_insert=self.timeout_insert,
+            error_insert=self.error_insert,
+        )
 
 
 ##
