@@ -921,9 +921,9 @@ async def yield_pubsub(
     redis: Redis, channels: MaybeIterable[str], /
 ) -> AsyncIterator[PubSub]:
     """Yield a PubSub instance subscribed to some channels."""
-    pubsub = redis.pubsub()
-    channels = list(always_iterable(channels))
-    await pubsub.subscribe(*channels)
+    pubsub = redis.pubsub()  # skipif-ci-and-not-linux
+    channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
+    await pubsub.subscribe(*channels)  # skipif-ci-and-not-linux
     try:  # skipif-ci-and-not-linux
         yield pubsub
     finally:  # skipif-ci-and-not-linux
