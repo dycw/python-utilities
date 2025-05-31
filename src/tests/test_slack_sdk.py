@@ -98,5 +98,7 @@ class TestSlackHandler:
         async with timeout(1.0), handler.with_auto_start:
             for i in range(10):
                 logger.warning(
-                    "message %d from %s", i, TestSlackHandler.test_real.__qualname__
+                    "message %d from %s",
+                    i,
+                    TestSlackHandler.test_real_service.__qualname__,
                 )

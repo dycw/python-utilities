@@ -27,11 +27,13 @@ from utilities.hypothesis import (
     text_ascii,
     yield_test_redis,
 )
+from utilities.iterables import one
 from utilities.orjson import deserialize, serialize
 from utilities.redis import (
     Publisher,
     PublisherError,
     PublishService,
+    SubscribeService,
     publish,
     redis_hash_map_key,
     redis_key,
@@ -292,6 +294,7 @@ class TestSubscribeMessages:
         ),
         message=text_ascii(min_size=1),
     )
+    # @mark.para
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -614,6 +617,37 @@ class TestRedisKey:
             assert await key.exists(test.redis)
             await sleep(0.05)
             assert not await key.exists(test.redis)
+
+
+class TestSubscribeService:
+    @given(
+        data=data(),
+        channel=text_ascii(min_size=1).map(
+            lambda c: f"{get_class_name(TestSubscribeService)}_main_{c}"
+        ),
+        message=text_ascii(min_size=1),
+    )
+    @mark.flaky
+    @mark.only
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_main(self, *, data: DataObject, channel: str, message: str) -> None:
+        async with (
+            yield_test_redis(data) as test,
+            SubscribeService(
+                freq=0.1, timeout=1.0, redis=test.redis, channel=channel
+            ) as service,
+        ):
+            await sleep(0.1)
+            _ = await publish(test.redis, channel, message)
+
+        assert service.qsize() == 1
+        result = one(service.get_all_nowait()).decode()
+        assert result == message
 
 
 class TestYieldClient:

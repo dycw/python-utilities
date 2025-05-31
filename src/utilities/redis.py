@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from asyncio import Task, create_task
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -10,6 +11,7 @@ from typing import (
     Generic,
     Literal,
     TypedDict,
+    TypeGuard,
     TypeVar,
     assert_never,
     cast,
@@ -758,6 +760,59 @@ class _RedisMessageUnsubscribe(TypedDict):
     data: int
 
 
+def _default_filter(obj: Any, /) -> TypeGuard[Any]:
+    _ = obj
+    return True
+
+
+@dataclass(kw_only=True)
+class SubscribeService(Looper[_T]):
+    """Service to subscribe to Redis."""
+
+    # base
+    freq: Duration = field(default=MILLISECOND, repr=False)
+    backoff: Duration = field(default=SECOND, repr=False)
+    logger: str | None = field(default=__name__, repr=False)
+    # self
+    redis: Redis
+    channel: str
+    deserializer: Callable[[bytes], _T] | None = None
+    subscribe_timeout: Duration = SECOND
+    filter_: Callable[[Any], TypeGuard[_T]] = _default_filter
+    _listen_task: Task[None] | None = field(default=None, init=False, repr=False)
+
+    @override
+    async def _initialize_core(self) -> None:
+        await super()._initialize_core()
+        async with self._lock:
+            _ = self._debug and self._logger.debug("%s: subscribing...", self)
+            self._listen_task = create_task(self._listen_to_redis())
+
+    async def _listen_to_redis(self) -> None:
+        async for msg in subscribe(
+            self.redis,
+            self.channel,
+            deserializer=self.deserializer,
+            timeout=self.subscribe_timeout,
+            sleep=self.freq,
+        ):
+            try:
+                is_message = self.filter_(msg)
+            except Exception:  # noqa: BLE001
+                self._logger.warning("%s: error checking if %s is a message", self, msg)
+            else:
+                if is_message:
+                    self._queue.put_right_nowait(msg)
+
+    @override
+    async def _tear_down_core(self) -> None:
+        if self._listen_task is not None:
+            _ = self._debug and self._logger.debug(
+                "%s: cancelling subscription...", self
+            )
+            _ = self._listen_task.cancel()
+
+
 ##
 
 
@@ -843,6 +898,7 @@ __all__ = [
     "PublisherError",
     "RedisHashMapKey",
     "RedisKey",
+    "SubscribeService",
     "publish",
     "redis_hash_map_key",
     "redis_key",
