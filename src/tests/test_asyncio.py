@@ -52,7 +52,6 @@ from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
     MILLISECOND,
     MINUTE,
-    SECOND,
     datetime_duration_to_timedelta,
     get_now,
 )
@@ -964,7 +963,7 @@ class TestLooper:
     async def test_context_manager_already_entered(
         self, *, caplog: LogCaptureFixture
     ) -> None:
-        looper = _ExampleCounterLooper(auto_start=True, timeout=SECOND)
+        looper = _ExampleCounterLooper(timeout=1.0)
         async with looper, looper:
             ...
         _ = one(m for m in caplog.messages if search(": already entered$", m))
