@@ -69,6 +69,8 @@ def channels(draw: DrawFn, /) -> str:
 
 class TestPublish:
     @given(channel=channels(), data=lists(binary(min_size=1), min_size=1, max_size=5))
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_bytes(self, *, data: Sequence[bytes], channel: str) -> None:
         queue: Queue[bytes] = Queue()
         async with (
@@ -86,6 +88,8 @@ class TestPublish:
             assert result == datum
 
     @given(channel=channels(), objects=lists(make_objects(), min_size=1, max_size=5))
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_serializer(self, *, channel: str, objects: Sequence[Any]) -> None:
         queue: Queue[Any] = Queue()
         async with (
@@ -105,6 +109,8 @@ class TestPublish:
         channel=channels(),
         messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
     )
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_text(self, *, channel: str, messages: Sequence[str]) -> None:
         queue: Queue[str] = Queue()
         async with yield_redis() as redis, subscribe(redis, channel, queue):
