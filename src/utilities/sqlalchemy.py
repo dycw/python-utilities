@@ -57,7 +57,8 @@ from sqlalchemy.orm import (
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
-from utilities.asyncio import InfiniteQueueLooper, timeout_dur
+from utilities.asyncio import InfiniteQueueLooper, Looper, timeout_dur
+from utilities.datetime import SECOND
 from utilities.functions import (
     ensure_str,
     get_class_name,
@@ -654,6 +655,42 @@ class UpserterError(Exception):
         return f"Error running {get_class_name(self.upserter)!r}"
 
 
+@dataclass(kw_only=True)
+class UpsertService(Looper[_InsertItem]):
+    """Service to upsert items to a database."""
+
+    # base
+    freq: Duration = field(default=SECOND, repr=False)
+    backoff: Duration = field(default=SECOND, repr=False)
+    empty_upon_exit: bool = field(default=True, repr=False)
+    # self
+    engine: AsyncEngine
+    snake: bool = False
+    selected_or_all: _SelectedOrAll = "selected"
+    chunk_size_frac: float = CHUNK_SIZE_FRAC
+    assume_tables_exist: bool = False
+    timeout_create: Duration | None = None
+    error_create: type[Exception] = TimeoutError
+    timeout_insert: Duration | None = None
+    error_insert: type[Exception] = TimeoutError
+
+    @override
+    async def core(self) -> None:
+        await super().core()
+        await upsert_items(
+            self.engine,
+            *self.get_all_nowait(),
+            snake=self.snake,
+            selected_or_all=self.selected_or_all,
+            chunk_size_frac=self.chunk_size_frac,
+            assume_tables_exist=self.assume_tables_exist,
+            timeout_create=self.timeout_create,
+            error_create=self.error_create,
+            timeout_insert=self.timeout_insert,
+            error_insert=self.error_insert,
+        )
+
+
 ##
 
 
@@ -1109,6 +1146,7 @@ __all__ = [
     "InsertItemsError",
     "TablenameMixin",
     "UpsertItemsError",
+    "UpsertService",
     "Upserter",
     "UpserterError",
     "check_engine",
