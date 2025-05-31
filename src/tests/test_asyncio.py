@@ -1198,7 +1198,7 @@ class TestLooper:
         _ = one(m for m in caplog.messages if search(pattern, m))
 
     async def test_run_until_empty(self) -> None:
-        looper = _ExampleCounterLooper(freq=0.05)
+        looper = _ExampleQueueLooper(freq=0.05)
         looper.put_right_nowait(None)
         assert not looper.empty()
         async with timeout(1.0), looper:
