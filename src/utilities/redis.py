@@ -901,7 +901,9 @@ class SubscribeService(Looper[_T]):
                 )
                 self._is_subscribed.clear()
             case False:
-                _ = self._debug and self._logger.debug("%s: already exited", self)
+                _ = self._debug and self._logger.debug(
+                    "%s: already stopped subscription", self
+                )
             case _ as never:
                 assert_never(never)
 

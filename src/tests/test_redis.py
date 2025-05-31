@@ -18,7 +18,7 @@ from hypothesis.strategies import (
     sampled_from,
     uuids,
 )
-from pytest import LogCaptureFixture, mark, raises
+from pytest import LogCaptureFixture, raises
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 
@@ -548,7 +548,6 @@ class TestSubscribe:
             assert result["data"] == message.encode()
 
 
-@mark.only
 class TestSubscribeService:
     @given(
         channel=channels(),
@@ -588,6 +587,11 @@ class TestSubscribeService:
             async with looper, looper:
                 ...
             _ = one(m for m in caplog.messages if search(": already subscribing$", m))
+            _ = one(
+                m
+                for m in caplog.messages
+                if search(": already stopped subscription$", m)
+            )
 
 
 class TestYieldClient:
