@@ -56,6 +56,7 @@ from utilities.datetime import (
     datetime_duration_to_timedelta,
     get_now,
 )
+from utilities.functions import get_class_name
 from utilities.hypothesis import sentinels, text_ascii
 from utilities.iterables import one, unique_everseen
 from utilities.pytest import skipif_windows
@@ -1222,7 +1223,7 @@ class TestLooper:
             restart_successes=13,
             stops=1,
         )
-        pattern = r": changing sub-looper _ExampleLooper\(.*?\) to auto-start\.\.\.$"
+        pattern = rf": changing sub-looper {get_class_name(_ExampleCounterLooper)}\(.*?\) to auto-start\.\.\.$"
         matches = [m for m in caplog.messages if bool(search(pattern, m))]
         if auto_start:
             assert len(matches) == 0
