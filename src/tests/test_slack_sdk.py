@@ -102,3 +102,9 @@ class TestSlackHandler:
                     i,
                     TestSlackHandler.test_real_service.__qualname__,
                 )
+
+    async def test_replace(self) -> None:
+        handler = SlackHandlerService(url="url")
+        new = handler.replace(freq=10.0)
+        assert new.url == handler.url
+        assert new.freq == 10.0
