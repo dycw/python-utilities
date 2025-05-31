@@ -728,22 +728,26 @@ async def subscribe_messages(
             )
             sleep_use = datetime_duration_to_float(sleep)
             while True:
-                message = cast(
-                    "_RedisMessageSubscribe | _RedisMessageUnsubscribe | None",
-                    await pubsub.get_message(timeout=timeout_use),
-                )
-                if (
-                    (message is not None)
-                    and (
-                        message["type"]
-                        in {"subscribe", "psubscribe", "message", "pmessage"}
+                try:
+                    message = cast(
+                        "_RedisMessageSubscribe | _RedisMessageUnsubscribe | None",
+                        await pubsub.get_message(timeout=timeout_use),
                     )
-                    and (message["channel"] in channels_bytes)
-                    and isinstance(message["data"], bytes)
-                ):
-                    yield cast("_RedisMessageSubscribe", message)
+                except GeneratorExit:  # pragma: no cover
+                    pass
                 else:
-                    await asyncio.sleep(sleep_use)
+                    if (
+                        (message is not None)
+                        and (
+                            message["type"]
+                            in {"subscribe", "psubscribe", "message", "pmessage"}
+                        )
+                        and (message["channel"] in channels_bytes)
+                        and isinstance(message["data"], bytes)
+                    ):
+                        yield cast("_RedisMessageSubscribe", message)
+                    else:
+                        await asyncio.sleep(sleep_use)
         case _ as never:
             assert_never(never)
 
