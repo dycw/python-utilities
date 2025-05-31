@@ -95,7 +95,7 @@ class TestSlackHandler:
         url = get_env_var("SLACK")
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := SlackHandlerService(url=url, freq=0.05))
-        async with timeout(1.0), handler.with_auto_start:
+        async with timeout(1.0), handler:
             for i in range(10):
                 logger.warning(
                     "message %d from %s",
