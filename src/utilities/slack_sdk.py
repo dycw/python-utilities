@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from asyncio import sleep
 from dataclasses import dataclass
 from http import HTTPStatus
 from logging import NOTSET, Handler, LogRecord
-from typing import TYPE_CHECKING, Self, override
+from typing import TYPE_CHECKING, Any, Self, override
 
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
@@ -14,7 +13,6 @@ from utilities.asyncio import (
     LooperTimeoutError,
     timeout_dur,
 )
-from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float
 from utilities.functools import cache
 from utilities.math import safe_round
@@ -22,7 +20,6 @@ from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from types import TracebackType
 
     from slack_sdk.webhook import WebhookResponse
 
@@ -92,6 +89,7 @@ class SlackHandlerService(Handler, Looper[str]):
         *,
         url: str,
         auto_start: bool = False,
+        empty_upon_exit: bool = True,
         freq: Duration = SECOND,
         backoff: Duration = SECOND,
         logger: str | None = None,
@@ -106,6 +104,7 @@ class SlackHandlerService(Handler, Looper[str]):
             self,
             auto_start=auto_start,
             freq=freq,
+            empty_upon_exit=empty_upon_exit,
             backoff=backoff,
             logger=logger,
             timeout=timeout,
@@ -117,23 +116,6 @@ class SlackHandlerService(Handler, Looper[str]):
         self.url = url
         self.sender = sender
         self.send_timeout = send_timeout
-
-    @override
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None = None,
-        exc_value: BaseException | None = None,
-        traceback: TracebackType | None = None,
-    ) -> None:
-        await self.run_until_empty()
-        await super().__aexit__(exc_type, exc_value, traceback)
-
-    async def run_until_empty(self) -> None:
-        """Run the core function until the queue is empty."""
-        while not self.empty():
-            await self.core()
-            if not self.empty():
-                await sleep(self._freq)
 
     @override
     def emit(self, record: LogRecord) -> None:
@@ -157,24 +139,27 @@ class SlackHandlerService(Handler, Looper[str]):
         self,
         *,
         auto_start: bool | Sentinel = sentinel,
+        empty_upon_exit: bool | Sentinel = sentinel,
         freq: Duration | Sentinel = sentinel,
         backoff: Duration | Sentinel = sentinel,
         logger: str | None | Sentinel = sentinel,
         timeout: Duration | None | Sentinel = sentinel,
         timeout_error: type[Exception] | Sentinel = sentinel,
         _debug: bool | Sentinel = sentinel,
+        **kwargs: Any,
     ) -> Self:
         """Replace elements of the looper."""
-        return replace_non_sentinel(
-            self,
+        return super().replace(
             url=self.url,
             auto_start=auto_start,
+            empty_upon_exit=empty_upon_exit,
             freq=freq,
             backoff=backoff,
             logger=logger,
             timeout=timeout,
             timeout_error=timeout_error,
             _debug=_debug,
+            **kwargs,
         )
 
 
