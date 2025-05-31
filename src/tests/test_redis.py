@@ -29,6 +29,7 @@ from utilities.hypothesis import (
     yield_test_redis,
 )
 from utilities.iterables import one
+from utilities.operator import is_equal
 from utilities.orjson import deserialize, serialize
 from utilities.redis import (
     Publisher,
@@ -678,7 +679,7 @@ class TestYieldPubSubMessageQueue:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, message: str, tmp_path: Path) -> None:
+    async def test_bytes(self, *, message: str, tmp_path: Path) -> None:
         channel = str(tmp_path)
         async with (
             yield_redis() as redis,
@@ -690,3 +691,47 @@ class TestYieldPubSubMessageQueue:
             assert queue.qsize() == 1
             result = queue.get_nowait()
         assert result.decode() == message
+
+    @given(message=text_ascii())
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_raw(self, *, message: str, tmp_path: Path) -> None:
+        channel = str(tmp_path)
+        async with (
+            yield_redis() as redis,
+            yield_pubsub_message_queue(redis, channel, output="raw") as queue,
+        ):
+            assert isinstance(queue, Queue)
+            await redis.publish(channel, message)
+            await sleep(0.1)
+            assert queue.qsize() == 1
+            result = queue.get_nowait()
+        assert isinstance(result, dict)
+        assert result["type"] == "message"
+        assert result["pattern"] is None
+        assert result["channel"] == channel.encode()
+        assert result["data"] == message.encode()
+
+    @given(obj=make_objects())
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_deserialize(self, *, obj: Any, tmp_path: Path) -> None:
+        channel = str(tmp_path)
+        async with (
+            yield_redis() as redis,
+            yield_pubsub_message_queue(redis, channel, output=deserialize) as queue,
+        ):
+            assert isinstance(queue, Queue)
+            await redis.publish(channel, serialize(obj))
+            await sleep(0.1)
+            assert queue.qsize() == 1
+            result = queue.get_nowait()
+        assert is_equal(result, obj)
