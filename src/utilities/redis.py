@@ -633,7 +633,7 @@ class PublishService(Looper[tuple[str, _T]]):
     # base
     freq: Duration = field(default=MILLISECOND, repr=False)
     backoff: Duration = field(default=SECOND, repr=False)
-    logger: str | None = field(default=None, repr=False)
+    empty_upon_exit: bool = field(default=True, repr=False)
     # self
     redis: Redis
     serializer: Callable[[Any], EncodableT] | None = None
@@ -641,6 +641,7 @@ class PublishService(Looper[tuple[str, _T]]):
 
     @override
     async def core(self) -> None:
+        await super().core()  # skipif-ci-and-not-linux
         while not self.empty():  # skipif-ci-and-not-linux
             channel, data = self.get_left_nowait()
             _ = await publish(

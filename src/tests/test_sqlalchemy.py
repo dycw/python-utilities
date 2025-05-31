@@ -45,6 +45,7 @@ from utilities.sqlalchemy import (
     Upserter,
     UpserterError,
     UpsertItemsError,
+    UpsertService,
     _get_dialect,
     _get_dialect_max_params,
     _InsertItem,
@@ -1182,6 +1183,35 @@ class TestUpserter:
         upserter = Upserter(engine=engine)
         with raises(UpserterError, match="Error running 'Upserter'"):
             raise UpserterError(upserter=upserter)
+
+    # service
+
+    @given(
+        data=data(),
+        name=_table_names(),
+        triples=_upsert_lists(nullable=True, min_size=1),
+    )
+    @mark.flaky
+    @settings(max_examples=1, phases={Phase.generate})
+    async def test_main_service(
+        self, *, data: DataObject, name: str, triples: list[tuple[int, bool, bool]]
+    ) -> None:
+        table = Table(
+            name,
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+        )
+        engine = await sqlalchemy_engines(data, table)
+        service = UpsertService(freq=0.1, timeout=1.0, engine=engine)
+        pairs = [(id_, init) for id_, init, _ in triples]
+        async with service:
+            service.put_right_nowait((pairs, table))
+
+        sel = select(table)
+        async with engine.begin() as conn:
+            res = (await conn.execute(sel)).all()
+        assert set(res) == set(pairs)
 
 
 class TestUpsertItems:
