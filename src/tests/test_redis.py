@@ -54,7 +54,6 @@ from utilities.tzlocal import get_now_local
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
     from pathlib import Path
-    from uuid import UUID
 
     from pytest import CaptureFixture
 
@@ -623,6 +622,24 @@ class TestSubscribe:
             assert result["channel"] == channel.encode()
             assert result["data"] == message.encode()
 
+    @given(channel=channels(), objs=lists(make_objects(), min_size=1, max_size=10))
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_deserialize(self, *, channel: str, objs: Sequence[Any]) -> None:
+        queue: Queue[Any] = Queue()
+        async with (
+            yield_redis() as redis,
+            subscribe(redis, channel, queue, output=deserialize),
+        ):
+            await sleep(_PUB_SUB_SLEEP)
+            for obj in objs:
+                await redis.publish(channel, serialize(obj))
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(objs)
+        results = get_items_nowait(queue)
+        for result, obj in zip(results, objs, strict=True):
+            assert is_equal(result, obj)
+
 
 @mark.only
 class TestSubscribeService:
@@ -681,7 +698,3 @@ class TestYieldPubSub:
         channel = str(tmp_path)
         async with yield_redis() as redis, yield_pubsub(redis, channel) as pubsub:
             assert isinstance(pubsub, PubSub)
-
-
-def _get_test_channel(key: UUID, /) -> str:
-    return f"test_{serialize_compact(get_now_local())}_{key}"
