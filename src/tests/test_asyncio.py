@@ -948,6 +948,28 @@ class TestLooper:
                 ...
         self._assert_stats(looper)
 
+    @mark.only
+    @mark.flaky
+    @mark.parametrize("empty_upon_exit", [param(True), param(False)])
+    async def test_empty_upon_exit(self, *, empty_upon_exit: bool) -> None:
+        @dataclass(kw_only=True)
+        class Example(Looper[None]):
+            @override
+            async def core(self) -> None:
+                await super().core()
+                if not self.empty():
+                    _ = self.get_left_nowait()
+
+        looper = Example(freq=0.05, empty_upon_exit=empty_upon_exit)
+        looper.put_right_nowait(None)
+        assert not looper.empty()
+        async with timeout(1.0), looper:
+            ...
+        if empty_upon_exit:
+            assert looper.empty()
+        else:
+            assert not looper.empty()
+
     @mark.flaky
     async def test_main_with_timeout(self) -> None:
         looper = _ExampleLooper(timeout=SECOND)
@@ -1187,6 +1209,23 @@ class TestLooper:
         await looper.restart(sleep_if_failure=sleep_if_failure)
         pattern = rf": encountered _ExampleLooperError\(\) \(tear down\) and then _ExampleLooperError\(\) \(initialization\) whilst restarting{extra}$"
         _ = one(m for m in caplog.messages if search(pattern, m))
+
+    @mark.only
+    async def test_run_until_empty(self) -> None:
+        @dataclass(kw_only=True)
+        class Example(Looper[int]):
+            @override
+            async def core(self) -> None:
+                await super().core()
+                if not self.empty():
+                    _ = self.get_left_nowait()
+
+        looper = Example(freq=0.05)
+        looper.put_right_nowait(*range(10))
+        assert not looper.empty()
+        async with timeout(1.0), looper:
+            await looper.run_until_empty()
+        assert looper.empty()
 
     @mark.parametrize("auto_start", [param(True), param(False)])
     async def test_sub_looper_one(

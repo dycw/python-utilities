@@ -688,6 +688,7 @@ class Looper(Generic[_T]):
     auto_start: bool = field(default=False, repr=False)
     freq: Duration = field(default=SECOND, repr=False)
     backoff: Duration = field(default=10 * SECOND, repr=False)
+    empty_upon_exit: bool = field(default=False, repr=False)
     logger: str | None = field(default=None, repr=False)
     timeout: Duration | None = field(default=None, repr=False)
     timeout_error: type[Exception] = field(default=LooperTimeoutError, repr=False)
@@ -791,6 +792,8 @@ class Looper(Generic[_T]):
                     )
                 _ = await self._stack.__aexit__(exc_type, exc_value, traceback)
                 await self.stop()
+                if self.empty_upon_exit:
+                    await self.run_until_empty()
             case False:
                 _ = self._debug and self._logger.debug("%s: already exited", self)
             case _ as never:
@@ -891,6 +894,7 @@ class Looper(Generic[_T]):
         self,
         *,
         auto_start: bool | Sentinel = sentinel,
+        empty_upon_exit: bool | Sentinel = sentinel,
         freq: Duration | Sentinel = sentinel,
         backoff: Duration | Sentinel = sentinel,
         logger: str | None | Sentinel = sentinel,
@@ -902,6 +906,7 @@ class Looper(Generic[_T]):
         return replace_non_sentinel(
             self,
             auto_start=auto_start,
+            empty_upon_exit=empty_upon_exit,
             freq=freq,
             backoff=backoff,
             logger=logger,
@@ -1060,6 +1065,13 @@ class Looper(Generic[_T]):
                         async with self._lock:
                             self._core_successes += 1
                         await sleep(self._freq)
+
+    async def run_until_empty(self) -> None:
+        """Run until the queue is empty."""
+        while not self.empty():
+            await self.core()
+            if not self.empty():
+                await sleep(self._freq)
 
     @property
     def stats(self) -> _LooperStats:
