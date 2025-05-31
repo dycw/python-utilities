@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from asyncio import CancelledError, Event, Future, Queue, Task, create_task, sleep
+from asyncio import CancelledError, Event, Future, Queue, Task, create_task
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
@@ -49,7 +49,6 @@ if TYPE_CHECKING:
         Mapping,
         Sequence,
     )
-    from types import TracebackType
 
     from redis.asyncio import ConnectionPool
     from redis.asyncio.client import PubSub
@@ -820,6 +819,7 @@ class SubscribeService(Looper[_T]):
     # base
     freq: Duration = field(default=MILLISECOND, repr=False)
     backoff: Duration = field(default=SECOND, repr=False)
+    # empty_upon_exit: bool = field(default=True, repr=False)
     logger: str | None = field(default=__name__, repr=False)
     # self
     redis: Redis
@@ -843,14 +843,24 @@ class SubscribeService(Looper[_T]):
         #         output="bytes" if self.deserializer is None else self.deserializer,
         #     )
         # )
-        self._listen_task = subscribe(
-            self.redis,
-            self.channel,
-            sleep=self.subscribe_sleep,
-            timeout=self.subscribe_timeout,
-            queue=self._queue,
-            output="bytes" if self.deserializer is None else self.deserializer,
+        _ = await self._stack.enter_async_context(
+            subscribe_to_queue(
+                self.redis,
+                self.channel,
+                self._queue,
+                sleep=self.subscribe_sleep,
+                timeout=self.subscribe_timeout,
+                output="bytes" if self.deserializer is None else self.deserializer,
+            )
         )
+        # self._listen_task = subscribe(
+        #     self.redis,
+        #     self.channel,
+        #     sleep=self.subscribe_sleep,
+        #     timeout=self.subscribe_timeout,
+        #     queue=self._queue,
+        #     output="bytes" if self.deserializer is None else self.deserializer,
+        # )
         return self
         match self._is_subscribed.is_set():
             case True:
