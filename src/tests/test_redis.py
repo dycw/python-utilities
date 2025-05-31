@@ -628,7 +628,6 @@ class TestSubscribeService:
         message=text_ascii(min_size=1),
     )
     @mark.flaky
-    @mark.only
     @settings(
         max_examples=1,
         phases={Phase.generate},
