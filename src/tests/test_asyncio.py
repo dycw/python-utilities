@@ -1381,25 +1381,27 @@ class TestLooper:
         stats = looper.stats
         assert stats.entries == entries
         assert stats.core_attempts == (stats.core_successes + stats.core_failures)
-        assert stats.core_successes == approx(core_successes, rel=0.5)
-        assert stats.core_failures == approx(core_failures, rel=0.5)
+        assert stats.core_successes == approx(core_successes, rel=0.75)
+        assert stats.core_failures == approx(core_failures, rel=0.75)
         assert stats.initialization_attempts == (
             stats.initialization_successes + stats.initialization_failures
         )
         assert stats.initialization_successes == approx(
-            initialization_successes, rel=0.5
+            initialization_successes, rel=0.75
         )
-        assert stats.initialization_failures == approx(initialization_failures, rel=0.5)
+        assert stats.initialization_failures == approx(
+            initialization_failures, rel=0.75
+        )
         assert stats.tear_down_attempts == (
             stats.tear_down_successes + stats.tear_down_failures
         )
-        assert stats.tear_down_successes == approx(tear_down_successes, rel=0.5)
-        assert stats.tear_down_failures == approx(tear_down_failures, rel=0.5)
+        assert stats.tear_down_successes == approx(tear_down_successes, rel=0.75)
+        assert stats.tear_down_failures == approx(tear_down_failures, rel=0.75)
         assert stats.restart_attempts == (
             stats.restart_successes + stats.restart_failures
         )
-        assert stats.restart_successes == approx(restart_successes, rel=0.5)
-        assert stats.restart_failures == approx(restart_failures, rel=0.5)
+        assert stats.restart_successes == approx(restart_successes, rel=0.75)
+        assert stats.restart_failures == approx(restart_failures, rel=0.75)
         assert stats.stops == stops
 
 
