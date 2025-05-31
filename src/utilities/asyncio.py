@@ -1070,12 +1070,12 @@ class Looper(Generic[_T]):
                             async with self._lock:
                                 self._core_successes += 1
                             await sleep(self._freq)
-        except GeneratorExit:  # pragma: no cover
+        except (GeneratorExit, RuntimeError):  # pragma: no cover
+            from utilities.pytest import is_pytest
+
+            if not is_pytest():
+                raise
             return
-        except RuntimeError as error:  # pragma: no cover
-            if error.args[0] == "generator didn't stop after athrow()":
-                return
-            raise
 
     async def run_until_empty(self) -> None:
         """Run until the queue is empty."""

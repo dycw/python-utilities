@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import create_task, get_running_loop, sleep
+from asyncio import Queue, create_task, get_running_loop, sleep
 from io import BytesIO, StringIO
 from typing import TYPE_CHECKING, Any
 
@@ -15,6 +15,7 @@ from hypothesis.strategies import (
 )
 from pytest import mark, raises
 from redis.asyncio import Redis
+from redis.asyncio.client import PubSub
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_operator import make_objects
@@ -39,15 +40,17 @@ from utilities.redis import (
     redis_key,
     subscribe,
     subscribe_messages,
+    yield_pubsub,
+    yield_pubsub_message_queue,
     yield_redis,
 )
 from utilities.sentinel import SENTINEL_REPR, Sentinel, sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+    from pathlib import Path
 
     from pytest import CaptureFixture
-    from redis.asyncio.client import PubSub
 
 
 class TestPublishAndSubscribe:
@@ -651,7 +654,37 @@ class TestSubscribeService:
         assert result == message
 
 
+@mark.only
 class TestYieldClient:
-    async def test_sync(self) -> None:
+    async def test_main(self) -> None:
         async with yield_redis() as client:
             assert isinstance(client, Redis)
+
+
+@mark.only
+class TestYieldPubSub:
+    async def test_main(self, *, tmp_path: Path) -> None:
+        channel = str(tmp_path)
+        async with yield_redis() as redis, yield_pubsub(redis, channel) as pubsub:
+            assert isinstance(pubsub, PubSub)
+
+
+@mark.only
+class TestYieldPubSubMessageQueue:
+    @given(message=text_ascii())
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_main(self, *, message: str, tmp_path: Path) -> None:
+        channel = str(tmp_path)
+        async with (
+            yield_redis() as redis,
+            yield_pubsub_message_queue(redis, channel) as queue,
+        ):
+            assert isinstance(queue, Queue)
+            await redis.publish(channel, message)
+            await sleep(0.1)
+            assert queue.qsize() == 1
