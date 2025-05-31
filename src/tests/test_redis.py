@@ -651,7 +651,7 @@ class TestSubscribeService:
     async def test_main(self, *, channel: str, messages: list[str]) -> None:
         async with (
             yield_redis() as redis,
-            SubscribeService(timeout=4.0, redis=redis, channel=channel) as service,
+            SubscribeService(timeout=1.0, redis=redis, channel=channel) as service,
         ):
             await sleep(_PUB_SUB_SLEEP)
             for message in messages:

@@ -700,6 +700,18 @@ def subscribe(
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     output: Callable[[bytes], _T],
 ) -> AsyncIterator[Task[None]]: ...
+@overload
+@asynccontextmanager
+def subscribe(
+    redis: Redis,
+    channels: MaybeIterable[str],
+    queue: Queue[bytes] | Queue[_T],
+    /,
+    *,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    output: Literal["bytes"] | Callable[[bytes], _T] = "bytes",
+) -> AsyncIterator[Task[None]]: ...
 @asynccontextmanager
 async def subscribe(
     redis: Redis,
@@ -755,60 +767,6 @@ async def subscribe(
             await task
 
 
-@asynccontextmanager
-async def subscribe_to_queue(
-    redis: Redis,
-    channels: MaybeIterable[str],
-    queue: Queue[_T],
-    /,
-    *,
-    sleep: Duration = _SUBSCRIBE_SLEEP,
-    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
-    output: Literal["raw", "bytes"] | Callable[[bytes], _T] = "bytes",
-) -> AsyncIterator[None]:
-    channels = list(always_iterable(channels))
-    is_subscribe_message = partial(
-        _is_subscribe_message, channels={c.encode() for c in channels}
-    )
-    sleep_use = datetime_duration_to_float(sleep)
-    timeout_use = None if timeout is None else datetime_duration_to_float(timeout)
-    match output:
-        case "raw":
-            transform = cast("Any", identity)
-        case "bytes":
-            transform = cast("Any", itemgetter("data"))
-        case Callable() as deserialize:
-
-            def transform(message: _RedisMessageSubscribe, /) -> _T:
-                return deserialize(message["data"])
-
-        case _ as never:
-            assert_never(never)
-
-    async def _run() -> None:
-        async with yield_pubsub(redis, channels) as pubsub:
-            while True:
-                message = cast(
-                    "_RedisMessageSubscribe | _RedisMessageUnsubscribe | None",
-                    await pubsub.get_message(timeout=timeout_use),
-                )
-                if is_subscribe_message(message):
-                    if isinstance(queue, EnhancedQueue):
-                        queue.put_right_nowait(transform(message))
-                    else:
-                        queue.put_nowait(transform(message))
-                else:
-                    await asyncio.sleep(sleep_use)
-
-    task: Task[None] = create_task(_run())
-    try:
-        yield
-    finally:
-        _ = task.cancel()
-        with suppress(CancelledError):
-            await task
-
-
 @dataclass(kw_only=True)
 class SubscribeService(Looper[_T]):
     """Service to subscribe to Redis."""
@@ -837,7 +795,7 @@ class SubscribeService(Looper[_T]):
                 )
                 self._is_subscribed.set()
                 _ = await self._stack.enter_async_context(
-                    subscribe_to_queue(
+                    subscribe(
                         self.redis,
                         self.channel,
                         self._queue,
