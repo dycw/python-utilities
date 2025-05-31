@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from asyncio import CancelledError, Event, Queue, Task, create_task
+from asyncio import CancelledError, Event, Future, Queue, Task, create_task
 from collections.abc import Callable
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
@@ -12,6 +12,7 @@ from typing import (
     Any,
     Generic,
     Literal,
+    Self,
     TypedDict,
     TypeGuard,
     TypeVar,
@@ -664,6 +665,61 @@ _SUBSCRIBE_TIMEOUT: Duration = SECOND
 _SUBSCRIBE_SLEEP: Duration = MILLISECOND
 
 
+@overload
+def subscribe(
+    redis: Redis,
+    channels: MaybeIterable[str],
+    /,
+    *,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    queue: Queue[_RedisMessageSubscribe] | Queue[bytes] | Queue[_T],
+    output: Literal["raw", "bytes"] | Callable[[bytes], _T] = "bytes",
+) -> Task[None]: ...
+@overload
+def subscribe(
+    redis: Redis,
+    channels: MaybeIterable[str],
+    /,
+    *,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    queue: None = None,
+    output: Literal["raw"],
+) -> tuple[Queue[_RedisMessageSubscribe], Task[None]]: ...
+@overload
+def subscribe(
+    redis: Redis,
+    channels: MaybeIterable[str],
+    /,
+    *,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    queue: None = None,
+    output: Literal["bytes"] = "bytes",
+) -> tuple[Queue[bytes], Task[None]]: ...
+@overload
+def subscribe(
+    redis: Redis,
+    channels: MaybeIterable[str],
+    /,
+    *,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    queue: None = None,
+    output: Callable[[bytes], _T],
+) -> tuple[Queue[_T], Task[None]]: ...
+@overload
+def subscribe(
+    redis: Redis,
+    channels: MaybeIterable[str],
+    /,
+    *,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    queue: None = None,
+    output: Literal["raw", "bytes"] | Callable[[bytes], _T] = "bytes",
+) -> tuple[Queue[_RedisMessageSubscribe] | Queue[bytes] | Queue[_T], Task[None]]: ...
 def subscribe(
     redis: Redis,
     channels: MaybeIterable[str],
@@ -675,7 +731,7 @@ def subscribe(
     output: Literal["raw", "bytes"] | Callable[[bytes], _T] = "bytes",
 ) -> (
     Task[None]
-    | tuple[Queue[bytes] | Queue[_T] | Queue[_RedisMessageSubscribe], Task[None]]
+    | tuple[Queue[_RedisMessageSubscribe] | Queue[bytes] | Queue[_T], Task[None]]
 ):
     """Subscribe to the data of a given channel(s)."""
     queue_use: Queue[_RedisMessageSubscribe] | Queue[bytes] | Queue[_T] = (
@@ -683,23 +739,24 @@ def subscribe(
     )
 
     async def listen() -> None:
-        async with yield_message_queue(
-            redis,
-            channels,
-            sleep=sleep,
-            timeout=timeout,
-            queue=queue_use,
-            output=cast("Any", output),
-        ) as _:
-            _ = await Event().wait()
+        try:
+            async with yield_message_queue(
+                redis,
+                channels,
+                sleep=sleep,
+                timeout=timeout,
+                queue=queue_use,
+                output=cast("Any", output),
+            ) as _:
+                await Future()
+        except (CancelledError, GeneratorExit):  # pragma: no cover
+            pass
+        except RuntimeError as error:  # pragma: no cover
+            if error.args[0] != "generator didn't stop after athrow()":
+                raise
 
     task = create_task(listen())
     return (queue_use, task) if queue is None else task
-
-
-def _default_filter(obj: Any, /) -> TypeGuard[Any]:
-    _ = obj
-    return True
 
 
 @dataclass(kw_only=True)
@@ -716,7 +773,6 @@ class SubscribeService(Looper[_T]):
     deserializer: Callable[[bytes], _T] | None = None
     subscribe_sleep: Duration = _SUBSCRIBE_SLEEP
     subscribe_timeout: Duration | None = _SUBSCRIBE_TIMEOUT
-    filter_: Callable[[Any], TypeGuard[_T]] = _default_filter
     _listen_task: Task[None] | None = field(default=None, init=False, repr=False)
     _is_listening: Event = field(default_factory=Event, init=False, repr=False)
 
@@ -732,17 +788,15 @@ class SubscribeService(Looper[_T]):
                 )
                 self._is_listening.set()
                 async with self._lock:
-                    self._listen_task = create_task(
-                        yield_message_queue(
-                            self.redis,
-                            self.channel,
-                            sleep=self.subscribe_sleep,
-                            timeout=self.subscribe_timeout,
-                            queue=self._queue,
-                            output="bytes"
-                            if self.deserializer is None
-                            else self.deserializer,
-                        )
+                    self._listen_task = subscribe(
+                        self.redis,
+                        self.channel,
+                        sleep=self.subscribe_sleep,
+                        timeout=self.subscribe_timeout,
+                        queue=self._queue,
+                        output="bytes"
+                        if self.deserializer is None
+                        else self.deserializer,
                     )
             case _ as never:
                 assert_never(never)
@@ -768,38 +822,6 @@ class SubscribeService(Looper[_T]):
                 _ = self._debug and self._logger.debug("%s: already exited", self)
             case _ as never:
                 assert_never(never)
-
-    @override
-    async def _initialize_core(self) -> None:
-        await super()._initialize_core()
-        async with self._lock:
-            _ = self._debug and self._logger.debug("%s: subscribing...", self)
-            self._listen_task = create_task(self._listen_to_redis())
-
-    async def _listen_to_redis(self) -> None:
-        async for msg in subscribe(
-            self.redis,
-            self.channel,
-            deserializer=self.deserializer,
-            timeout=self.subscribe_timeout,
-            sleep=self.freq,
-        ):
-            try:
-                is_message = self.filter_(msg)
-            except Exception:  # noqa: BLE001
-                self._logger.warning("%s: error checking if %s is a message", self, msg)
-            else:
-                if is_message:
-                    self._queue.put_right_nowait(msg)
-
-    @override
-    async def _tear_down_core(self) -> None:
-        if self._listen_task is not None:
-            _ = self._debug and self._logger.debug(
-                "%s: cancelling subscription...", self
-            )
-            with suppress(CancelledError, redis.exceptions.ConnectionError):
-                _ = self._listen_task.cancel()
 
 
 ##
@@ -870,11 +892,7 @@ def yield_message_queue(
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     queue: Queue[_RedisMessageSubscribe] | Queue[bytes] | Queue[_T] | None = None,
     output: Literal["raw", "bytes"] | Callable[[bytes], _T] = "bytes",
-) -> (
-    AsyncIterator[Queue[_RedisMessageSubscribe]]
-    | AsyncIterator[Queue[bytes]]
-    | AsyncIterator[Queue[_T]]
-): ...
+) -> AsyncIterator[Queue[_RedisMessageSubscribe] | Queue[bytes] | Queue[_T]]: ...
 @asynccontextmanager
 async def yield_message_queue(
     redis: Redis,
@@ -893,7 +911,9 @@ async def yield_message_queue(
     )
     sleep_use = datetime_duration_to_float(sleep)
     timeout_use = None if timeout is None else datetime_duration_to_float(timeout)
-    queue_use = Queue() if queue is None else queue
+    queue_use: Queue[_RedisMessageSubscribe] | Queue[bytes] | Queue[_T] = (
+        Queue() if queue is None else queue
+    )
     async with yield_pubsub(redis, channels) as pubsub:
         match output:
             case "raw":
@@ -1080,7 +1100,6 @@ __all__ = [
     "redis_hash_map_key",
     "redis_key",
     "subscribe",
-    "subscribe_messages",
     "yield_message_queue",
     "yield_pubsub",
     "yield_redis",

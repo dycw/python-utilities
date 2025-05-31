@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import Queue, create_task, get_running_loop, sleep
+from asyncio import Queue, create_task, sleep
 from io import BytesIO, StringIO
 from typing import TYPE_CHECKING, Any
 
@@ -561,7 +561,7 @@ class TestRedisKey:
             assert not await key.exists(test.redis)
 
 
-@mark.skip
+@mark.only
 class TestSubscribe:
     @given(message=text_ascii(min_size=1))
     @settings(
@@ -574,17 +574,36 @@ class TestSubscribe:
         channel = str(tmp_path)
         async with yield_redis() as redis:
             queue, _ = subscribe(redis, channel)
+            await sleep(0.1)
             await redis.publish(channel, message)
-            await sleep(0.5)
-            assert queue.qsize() == 1
-            result = queue.get_nowait()
+        await sleep(0.1)
+        assert queue.qsize() == 1
+        result = queue.get_nowait()
+        assert result.decode() == message
+
+    @given(message=text_ascii(min_size=1))
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_use_existing_queue(self, *, tmp_path: Path, message: str) -> None:
+        channel = str(tmp_path)
+        queue: Queue[bytes] = Queue()
+        async with yield_redis() as redis:
+            _ = subscribe(redis, channel, queue=queue)
+            await sleep(0.1)
+            await redis.publish(channel, message)
+        await sleep(0.1)
+        assert queue.qsize() == 1
+        result = queue.get_nowait()
         assert result.decode() == message
 
 
-@mark.skip
+@mark.only
 class TestSubscribeService:
     @given(message=text_ascii(min_size=1))
-    @mark.flaky
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -599,8 +618,8 @@ class TestSubscribeService:
                 freq=0.1, timeout=1.0, redis=redis, channel=channel
             ) as service,
         ):
-            _ = await publish(redis, channel, message)
-            await sleep(0.1)
+            await redis.publish(channel, message)
+        await sleep(0.1)
         assert service.qsize() == 1
         result = one(service.get_all_nowait()).decode()
         assert result == message
@@ -624,10 +643,7 @@ class TestYieldMessageQueue:
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_bytes(self, *, message: str, tmp_path: Path) -> None:
         channel = str(tmp_path)
-        async with (
-            yield_redis() as redis,
-            yield_message_queue(redis, channel) as queue,
-        ):
+        async with yield_redis() as redis, yield_message_queue(redis, channel) as queue:
             assert isinstance(queue, Queue)
             await redis.publish(channel, message)
             await sleep(0.1)
@@ -646,10 +662,7 @@ class TestYieldMessageQueue:
         self, *, messages: Sequence[str], tmp_path: Path
     ) -> None:
         channel = str(tmp_path)
-        async with (
-            yield_redis() as redis,
-            yield_message_queue(redis, channel) as queue,
-        ):
+        async with yield_redis() as redis, yield_message_queue(redis, channel) as queue:
             assert isinstance(queue, Queue)
             for message in messages:
                 await redis.publish(channel, message)
