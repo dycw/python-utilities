@@ -44,7 +44,6 @@ from utilities.redis import (
     redis_hash_map_key,
     redis_key,
     subscribe,
-    yield_message_queue,
     yield_pubsub,
     yield_redis,
 )
@@ -668,29 +667,6 @@ class TestYieldClient:
     async def test_main(self) -> None:
         async with yield_redis() as client:
             assert isinstance(client, Redis)
-
-
-@mark.skip
-class TestYieldMessageQueue:
-    @given(obj=make_objects())
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_deserialize(self, *, obj: Any, tmp_path: Path) -> None:
-        channel = str(tmp_path)
-        async with (
-            yield_redis() as redis,
-            yield_message_queue(redis, channel, output=deserialize) as queue,
-        ):
-            assert isinstance(queue, Queue)
-            await redis.publish(channel, serialize(obj))
-            await sleep(_PUB_SUB_SLEEP)
-            assert queue.qsize() == 1
-            result = queue.get_nowait()
-        assert is_equal(result, obj)
 
 
 class TestYieldPubSub:
