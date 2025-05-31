@@ -672,8 +672,8 @@ def subscribe(
     queue: Queue[_RedisMessageSubscribe],
     /,
     *,
-    sleep: Duration = _SUBSCRIBE_SLEEP,
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
     output: Literal["raw"],
 ) -> AsyncIterator[Task[None]]: ...
 @overload
@@ -684,8 +684,8 @@ def subscribe(
     queue: Queue[bytes],
     /,
     *,
-    sleep: Duration = _SUBSCRIBE_SLEEP,
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
     output: Literal["bytes"] = "bytes",
 ) -> AsyncIterator[Task[None]]: ...
 @overload
@@ -696,8 +696,8 @@ def subscribe(
     queue: Queue[_T],
     /,
     *,
-    sleep: Duration = _SUBSCRIBE_SLEEP,
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
     output: Callable[[bytes], _T],
 ) -> AsyncIterator[Task[None]]: ...
 @overload
@@ -708,8 +708,8 @@ def subscribe(
     queue: Queue[bytes] | Queue[_T],
     /,
     *,
-    sleep: Duration = _SUBSCRIBE_SLEEP,
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
     output: Literal["bytes"] | Callable[[bytes], _T] = "bytes",
 ) -> AsyncIterator[Task[None]]: ...
 @asynccontextmanager
@@ -719,8 +719,8 @@ async def subscribe(
     queue: Queue[_RedisMessageSubscribe] | Queue[bytes] | Queue[_T],
     /,
     *,
-    sleep: Duration = _SUBSCRIBE_SLEEP,
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
     output: Literal["raw", "bytes"] | Callable[[bytes], _T] = "bytes",
 ) -> AsyncIterator[Task[None]]:
     """Subscribe to the data of a given channel(s)."""
