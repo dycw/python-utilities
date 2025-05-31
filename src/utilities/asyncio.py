@@ -901,6 +901,7 @@ class Looper(Generic[_T]):
         timeout: Duration | None | Sentinel = sentinel,
         timeout_error: type[Exception] | Sentinel = sentinel,
         _debug: bool | Sentinel = sentinel,
+        **kwargs: Any,
     ) -> Self:
         """Replace elements of the looper."""
         return replace_non_sentinel(
@@ -913,6 +914,7 @@ class Looper(Generic[_T]):
             timeout=timeout,
             timeout_error=timeout_error,
             _debug=_debug,
+            **kwargs,
         )
 
     def request_restart(self) -> None:
