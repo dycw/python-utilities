@@ -975,9 +975,6 @@ class TestLooper:
         looper.put_left_nowait(None)
         assert not looper.empty()
 
-    @mark.only
-    @mark.flaky
-    @mark.parametrize("empty_upon_exit", [param(True), param(False)])
     async def test_empty_upon_exit(self, *, empty_upon_exit: bool) -> None:
         @dataclass(kw_only=True)
         class Example(Looper[None]):
@@ -1048,7 +1045,7 @@ class TestLooper:
         assert len(looper) == looper.qsize() == 1
 
     def test_replace(self) -> None:
-        looper = _ExampleCounterLooper().replace(freq=10.0)
+        looper = _ExampleLooper().replace(freq=10.0)
         assert looper.freq == 10.0
 
     async def test_request_restart(self) -> None:
