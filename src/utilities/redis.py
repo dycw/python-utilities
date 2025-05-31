@@ -6,6 +6,7 @@ from collections.abc import Callable
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from functools import partial
+from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -35,7 +36,7 @@ from utilities.datetime import (
     get_now,
 )
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import ensure_int, get_class_name
+from utilities.functions import ensure_int, get_class_name, identity
 from utilities.iterables import always_iterable, one
 
 if TYPE_CHECKING:
@@ -969,39 +970,45 @@ async def yield_pubsub_message_queue(
     is_subscribe_message = partial(
         _is_subscribe_message, channels={c.encode() for c in channels}
     )
-    queue: Queue[Any] = Queue()
     sleep_use = datetime_duration_to_float(sleep)
     timeout_use = None if timeout is None else datetime_duration_to_float(timeout)
-    match output:
-        case "raw":
-
-            def func(message: _RedisMessageSubscribe, /) -> _RedisMessageSubscribe:
-                return message
-
-        case "bytes":
-
-            def func(message: _RedisMessageSubscribe, /) -> bytes:
-                return message["data"]
-
-        case Callable() as deserializer:
-
-            def func(message: _RedisMessageSubscribe, /) -> _T:
-                return deserializer(message["data"])
-
-        case _ as never:
-            assert_never(never)
-
+    queue: Queue[Any] = Queue()
     async with yield_pubsub(redis, channels) as pubsub:
-        task = create_task(
-            _pubsub_listener(
-                pubsub,
-                is_subscribe_message,
-                queue,
-                func,
-                sleep_use,
-                timeout=timeout_use,
-            )
-        )
+        match output:
+            case "raw":
+                listener = _pubsub_listener(
+                    pubsub,
+                    is_subscribe_message,
+                    identity,
+                    queue,
+                    sleep_use,
+                    timeout=timeout_use,
+                )
+            case "bytes":
+                listener = _pubsub_listener(
+                    pubsub,
+                    is_subscribe_message,
+                    itemgetter("data"),
+                    queue,
+                    sleep_use,
+                    timeout=timeout_use,
+                )
+            case Callable() as deserializer:
+
+                def transform(message: _RedisMessageSubscribe, /) -> _T:
+                    return deserializer(message["data"])
+
+                listener = _pubsub_listener(
+                    pubsub,
+                    is_subscribe_message,
+                    transform,
+                    queue,
+                    sleep_use,
+                    timeout=timeout_use,
+                )
+            case _ as never:
+                assert_never(never)
+        task = create_task(listener)
         try:
             yield queue
         finally:
@@ -1013,8 +1020,8 @@ async def yield_pubsub_message_queue(
 async def _pubsub_listener(
     pubsub: PubSub,
     is_subscribe_message: Callable[[Any], TypeGuard[_RedisMessageSubscribe]],
-    queue: Queue[_T],
     transform: Callable[[_RedisMessageSubscribe], _T],
+    queue: Queue[_T],
     sleep: float,
     /,
     *,
