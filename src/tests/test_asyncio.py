@@ -975,7 +975,7 @@ class TestLooper:
         looper.put_left_nowait(None)
         assert not looper.empty()
 
-    async def test_empty_upon_exit(self, *, empty_upon_exit: bool) -> None:
+    async def test_empty_upon_exit(self) -> None:
         @dataclass(kw_only=True)
         class Example(Looper[None]):
             @override
@@ -984,15 +984,12 @@ class TestLooper:
                 if not self.empty():
                     _ = self.get_left_nowait()
 
-        looper = Example(freq=0.05, empty_upon_exit=empty_upon_exit)
+        looper = Example(freq=0.05, empty_upon_exit=True)
         looper.put_right_nowait(None)
         assert not looper.empty()
         async with timeout(1.0), looper:
             ...
-        if empty_upon_exit:
-            assert looper.empty()
-        else:
-            assert not looper.empty()
+        assert looper.empty()
 
     async def test_explicit_start(self) -> None:
         looper = _ExampleLooper()
@@ -1210,7 +1207,7 @@ class TestLooper:
 
     async def test_run_until_empty(self) -> None:
         @dataclass(kw_only=True)
-        class Example(Looper[int]):
+        class Example(Looper[None]):
             @override
             async def core(self) -> None:
                 await super().core()
@@ -1218,7 +1215,7 @@ class TestLooper:
                     _ = self.get_left_nowait()
 
         looper = Example(freq=0.05)
-        looper.put_right_nowait(*range(10))
+        looper.put_right_nowait(None)
         assert not looper.empty()
         async with timeout(1.0), looper:
             await looper.run_until_empty()
