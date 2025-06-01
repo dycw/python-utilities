@@ -657,7 +657,7 @@ class PublisherError(Exception):
 
 
 @dataclass(kw_only=True)
-class PublishService(Looper[tuple[str, _T]]):
+class PublishService(Looper[tuple[str, bytes | str | _T]]):
     """Service to publish items to Redis."""
 
     # base
@@ -677,7 +677,7 @@ class PublishService(Looper[tuple[str, _T]]):
             _ = await publish(
                 self.redis,
                 channel,
-                cast("Any", data),
+                data,
                 serializer=self.serializer,
                 timeout=self.publish_timeout,
             )
@@ -695,7 +695,7 @@ _SUBSCRIBE_SLEEP: Duration = MILLISECOND
 def subscribe(
     redis: Redis,
     channels: MaybeIterable[str],
-    queue: Queue[_RedisMessageSubscribe],
+    queue: Queue[_RedisMessage],
     /,
     *,
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
@@ -742,7 +742,7 @@ def subscribe(
 async def subscribe(
     redis: Redis,
     channels: MaybeIterable[str],
-    queue: Queue[_RedisMessageSubscribe] | Queue[bytes] | Queue[_T],
+    queue: Queue[_RedisMessage] | Queue[bytes] | Queue[_T],
     /,
     *,
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
@@ -758,12 +758,12 @@ async def subscribe(
             transform = cast("Any", itemgetter("data"))
         case "text":
 
-            def transform(message: _RedisMessageSubscribe, /) -> str:  # pyright: ignore[reportRedeclaration]
+            def transform(message: _RedisMessage, /) -> str:  # pyright: ignore[reportRedeclaration]
                 return message["data"].decode()
 
         case Callable() as deserialize:
 
-            def transform(message: _RedisMessageSubscribe, /) -> _T:
+            def transform(message: _RedisMessage, /) -> _T:
                 return deserialize(message["data"])
 
         case _ as never:
@@ -783,7 +783,7 @@ async def subscribe(
 async def _subscribe_core(
     redis: Redis,
     channels: MaybeIterable[str],
-    transform: Callable[[_RedisMessageSubscribe], Any],
+    transform: Callable[[_RedisMessage], Any],
     queue: Queue[Any],
     /,
     *,
@@ -795,14 +795,11 @@ async def _subscribe_core(
     )
     sleep_use = datetime_duration_to_float(sleep)  # skipif-ci-and-not-linux
     is_subscribe_message = partial(  # skipif-ci-and-not-linux
-        _is_subscribe_message, channels={c.encode() for c in channels}
+        _is_message, channels={c.encode() for c in channels}
     )
     async with yield_pubsub(redis, channels) as pubsub:  # skipif-ci-and-not-linux
         while True:
-            message = cast(
-                "_RedisMessageSubscribe | _RedisMessageUnsubscribe | None",
-                await pubsub.get_message(timeout=timeout_use),
-            )
+            message = await pubsub.get_message(timeout=timeout_use)
             if is_subscribe_message(message):
                 if isinstance(queue, EnhancedQueue):
                     queue.put_right_nowait(transform(message))
@@ -812,9 +809,9 @@ async def _subscribe_core(
                 await asyncio.sleep(sleep_use)
 
 
-def _is_subscribe_message(
+def _is_message(
     message: Any, /, *, channels: Collection[bytes]
-) -> TypeGuard[_RedisMessageSubscribe]:
+) -> TypeGuard[_RedisMessage]:
     return (
         isinstance(message, Mapping)
         and ("type" in message)
@@ -828,18 +825,11 @@ def _is_subscribe_message(
     )
 
 
-class _RedisMessageSubscribe(TypedDict):
+class _RedisMessage(TypedDict):
     type: Literal["subscribe", "psubscribe", "message", "pmessage"]
     pattern: str | None
     channel: bytes
     data: bytes
-
-
-class _RedisMessageUnsubscribe(TypedDict):
-    type: Literal["unsubscribe", "punsubscribe"]
-    pattern: str | None
-    channel: bytes
-    data: int
 
 
 ##
