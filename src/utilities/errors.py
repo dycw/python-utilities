@@ -24,6 +24,10 @@ class ImpossibleCaseError(Exception):
 def repr_error(error: MaybeType[BaseException], /) -> str:
     """Get a string representation of an error."""
     match error:
+        case ExceptionGroup() as group:
+            descs = list(map(repr_error, group.exceptions))
+            joined = ", ".join(descs)
+            return f"{group.__class__.__name__}({joined})"
         case BaseException() as error_obj:
             return f"{error_obj.__class__.__name__}({error_obj})"
         case type() as error_cls:
