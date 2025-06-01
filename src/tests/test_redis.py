@@ -42,9 +42,8 @@ from utilities.redis import (
     PublishError,
     PublishService,
     SubscribeService,
-    _is_subscribe_message,
-    _RedisMessageSubscribe,
-    _RedisMessageUnsubscribe,
+    _is_message,
+    _RedisMessage,
     publish,
     redis_hash_map_key,
     redis_key,
@@ -71,7 +70,7 @@ def channels(draw: DrawFn, /) -> str:
     return f"test_{now}_{key}_{pid}"
 
 
-class TestIsSubscribeMessage:
+class TestIsMessage:
     @mark.parametrize(
         ("message", "channels", "expected"),
         [
@@ -113,13 +112,9 @@ class TestIsSubscribeMessage:
         ],
     )
     def test_main(
-        self,
-        *,
-        message: _RedisMessageSubscribe | _RedisMessageUnsubscribe | None,
-        channels: Sequence[bytes],
-        expected: bool,
+        self, *, message: Any, channels: Sequence[bytes], expected: bool
     ) -> None:
-        result = _is_subscribe_message(message, channels=channels)
+        result = _is_message(message, channels=channels)
         assert result is expected
 
 
@@ -558,7 +553,7 @@ class TestSubscribe:
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_raw(self, *, channel: str, messages: Sequence[str]) -> None:
-        queue: Queue[_RedisMessageSubscribe] = Queue()
+        queue: Queue[_RedisMessage] = Queue()
         async with (
             yield_redis() as redis,
             subscribe(redis, channel, queue, output="raw"),
@@ -583,7 +578,7 @@ class TestSubscribe:
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_text(self, *, channel: str, messages: Sequence[str]) -> None:
-        queue: Queue[_RedisMessageSubscribe] = Queue()
+        queue: Queue[_RedisMessage] = Queue()
         async with (
             yield_redis() as redis,
             subscribe(redis, channel, queue, output="raw"),
