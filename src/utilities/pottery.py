@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 @asynccontextmanager
-async def yield_aio_redlock(
+async def yield_locked_resource(
     redis_or_redises: MaybeIterable[Redis],
     key: str,
     /,
@@ -48,4 +48,4 @@ async def yield_aio_redlock(
             await lock.release()
 
 
-__all__ = ["yield_aio_redlock"]
+__all__ = ["yield_locked_resource"]

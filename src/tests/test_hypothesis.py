@@ -99,8 +99,8 @@ from utilities.hypothesis import (
     triples,
     uint32s,
     uint64s,
+    unique_strs,
     versions,
-    yield_test_redis,
     zoned_datetimes,
 )
 from utilities.math import (
@@ -1171,6 +1171,13 @@ class TestUInt64s:
         assert max(min_value, MIN_UINT64) <= x <= min(max_value, MAX_UINT64)
 
 
+class TestUniqueStrs:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        first, second = data.draw(pairs(unique_strs()))
+        assert first != second
+
+
 class TestVersions:
     @given(data=data(), suffix=booleans())
     def test_main(self, *, data: DataObject, suffix: bool) -> None:
@@ -1180,18 +1187,6 @@ class TestVersions:
             assert version.suffix is not None
         else:
             assert version.suffix is None
-
-
-@SKIPIF_CI_AND_NOT_LINUX
-class TestYieldTestRedis:
-    @given(data=data(), value=int32s())
-    @settings_with_reduced_examples()
-    async def test_core(self, *, data: DataObject, value: int) -> None:
-        async with yield_test_redis(data) as test:
-            assert not await test.redis.exists(test.key)
-            _ = await test.redis.set(test.key, value)
-            result = int(await test.redis.get(test.key))
-            assert result == value
 
 
 class TestZonedDateTimes:

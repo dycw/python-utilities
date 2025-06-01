@@ -2,18 +2,13 @@ from __future__ import annotations
 
 import builtins
 import datetime as dt
-from contextlib import (
-    AbstractAsyncContextManager,
-    asynccontextmanager,
-    contextmanager,
-    suppress,
-)
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import timezone
 from enum import Enum, auto
 from functools import partial
 from math import ceil, floor, inf, isclose, isfinite, nan
-from os import environ
+from os import environ, getpid
 from pathlib import Path
 from re import search
 from string import ascii_letters, ascii_lowercase, ascii_uppercase, digits, printable
@@ -70,6 +65,7 @@ from utilities.datetime import (
     datetime_duration_to_float,
     datetime_duration_to_timedelta,
     round_datetime,
+    serialize_compact,
 )
 from utilities.functions import ensure_int, ensure_str, max_nullable, min_nullable
 from utilities.math import (
@@ -92,27 +88,19 @@ from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
+from utilities.tzlocal import get_now_local
 from utilities.version import Version
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import (
-        AsyncIterator,
-        Collection,
-        Hashable,
-        Iterable,
-        Iterator,
-        Sequence,
-    )
+    from collections.abc import Collection, Hashable, Iterable, Iterator, Sequence
     from zoneinfo import ZoneInfo
 
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
-    from redis.typing import KeyT
     from sqlalchemy.ext.asyncio import AsyncEngine
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
-    from utilities.redis import _TestRedis
     from utilities.sqlalchemy import Dialect, TableOrORMInstOrClass
     from utilities.types import Duration, Number, RoundMode
 
@@ -1423,40 +1411,24 @@ def uint64s(
 
 
 @composite
+def unique_strs(draw: DrawFn, /) -> str:
+    """Strategy for generating unique strings."""
+    now = serialize_compact(get_now_local())
+    pid = getpid()
+    key = draw(uuids())
+    return f"{now}_{pid}_{key}"
+
+
+##
+
+
+@composite
 def versions(draw: DrawFn, /, *, suffix: MaybeSearchStrategy[bool] = False) -> Version:
     """Strategy for generating versions."""
     major, minor, patch = draw(triples(integers(min_value=0)))
     _ = assume((major >= 1) or (minor >= 1) or (patch >= 1))
     suffix_use = draw(text_ascii(min_size=1)) if draw2(draw, suffix) else None
     return Version(major=major, minor=minor, patch=patch, suffix=suffix_use)
-
-
-##
-
-
-def yield_test_redis(data: DataObject, /) -> AbstractAsyncContextManager[_TestRedis]:
-    """Strategy for generating test redis clients."""
-    from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
-
-    from utilities.redis import _TestRedis, yield_redis  #  skipif-ci-and-not-linux
-    from utilities.tzlocal import get_now_local  #  skipif-ci-and-not-linux
-
-    now = get_now_local()  # skipif-ci-and-not-linux
-    uuid = data.draw(uuids())  # skipif-ci-and-not-linux
-    key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
-
-    @asynccontextmanager
-    async def func() -> AsyncIterator[_TestRedis]:  # skipif-ci-and-not-linux
-        async with yield_redis(db=15) as redis:  # skipif-ci-and-not-linux
-            keys = cast("list[KeyT]", await redis.keys(pattern=f"{key}_*"))
-            with suppress(ResponseError):
-                _ = await redis.delete(*keys)
-            yield _TestRedis(redis=redis, timestamp=now, uuid=uuid, key=key)
-            keys = cast("list[KeyT]", await redis.keys(pattern=f"{key}_*"))
-            with suppress(ResponseError):
-                _ = await redis.delete(*keys)
-
-    return func()  # skipif-ci-and-not-linux
 
 
 ##
@@ -1578,7 +1550,7 @@ __all__ = [
     "triples",
     "uint32s",
     "uint64s",
+    "unique_strs",
     "versions",
-    "yield_test_redis",
     "zoned_datetimes",
 ]
