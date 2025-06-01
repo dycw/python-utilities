@@ -33,7 +33,7 @@ from pytest import mark, raises
 from sqlalchemy import Column, Integer, MetaData, Table, insert, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from tests.conftest import SKIPIF_CI_AND_NOT_LINUX, SKIPIF_CI_AND_WINDOWS
+from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
     MAX_DATE_TWO_DIGIT_YEAR,
     MIN_DATE_TWO_DIGIT_YEAR,
