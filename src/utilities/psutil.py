@@ -31,7 +31,6 @@ class MemoryMonitorService(Looper[None]):
     console: str | None = field(default=None, repr=False)
     path: PathLike = "memory.txt"
     _console: Logger | None = field(init=False, repr=False)
-    _max_age: int | None = field(default=None, init=False, repr=False)
     _path: Path = field(init=False, repr=False)
 
     @override
@@ -40,6 +39,7 @@ class MemoryMonitorService(Looper[None]):
         if self.console is not None:
             self._console = getLogger(self.console)
         self._path = Path(self.path)
+        self._path.parent.mkdir(parents=True, exist_ok=True)
 
     @override
     async def core(self) -> None:
