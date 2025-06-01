@@ -40,6 +40,7 @@ class MemoryMonitorService(Looper[None]):
         if self.console is not None:
             self._console = getLogger(self.console)
         self._path = Path(self.path)
+        self._path.parent.mkdir(parents=True, exist_ok=True)
 
     @override
     async def core(self) -> None:
