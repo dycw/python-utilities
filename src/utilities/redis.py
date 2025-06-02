@@ -886,7 +886,7 @@ class SubscribeService(Looper[_T]):
                         timeout=self.subscribe_timeout,
                         sleep=self.subscribe_sleep,
                         output=self.deserializer,
-                        filter=self.filter_,
+                        filter_=self.filter_,
                     )
                 )
             case _ as never:
