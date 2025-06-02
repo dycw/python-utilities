@@ -893,10 +893,12 @@ class _ExampleCounterLooper(Looper[Any]):
 
     @override
     async def _initialize_core(self) -> None:
+        await super()._initialize_core()
         self.count = 0
 
     @override
     async def core(self) -> None:
+        await super().core()
         self.count += 1
         if self.count >= self.max_count:
             raise _ExampleLooperError
@@ -920,6 +922,7 @@ class _ExampleOuterLooper(_ExampleCounterLooper):
 
     @override
     def _yield_sub_loopers(self) -> Iterator[Looper]:
+        yield from super()._yield_sub_loopers()
         yield self.inner
 
 

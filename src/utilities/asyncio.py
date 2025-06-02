@@ -754,12 +754,13 @@ class Looper(Generic[_T]):
                     _ = self._debug and self._logger.debug(
                         "%s: adding sub-looper %s", self, looper
                     )
-                    if not looper.auto_start:
-                        self._logger.warning(
-                            "%s: changing sub-looper %s to auto-start...", self, looper
-                        )
-                        async with self._lock:
-                            looper.auto_start = True
+                    # if not looper.auto_start:
+                    #     assert 0
+                    #     self._logger.warning(
+                    #         "%s: changing sub-looper %s to auto-start...", self, looper
+                    #     )
+                    #     async with self._lock:
+                    #         looper.auto_start = True
                     _ = await self._stack.enter_async_context(looper)
                 if self.auto_start:
                     _ = self._debug and self._logger.debug("%s: auto-starting...", self)
@@ -1034,39 +1035,46 @@ class Looper(Generic[_T]):
 
     async def run_looper(self) -> None:
         """Run the looper."""
-        async with timeout_dur(duration=self.timeout, error=self.timeout_error):
-            while True:
-                if self._is_stopped.is_set():
-                    _ = self._debug and self._logger.debug("%s: stopped", self)
-                    return
-                if (self._is_pending_stop.is_set()) or (
-                    self._is_pending_stop_when_empty.is_set() and self.empty()
-                ):
-                    await self.stop()
-                elif self._is_pending_restart.is_set():
-                    await self.restart(sleep_if_failure=True)
-                elif not self._is_initialized.is_set():
-                    _ = await self.initialize(sleep_if_failure=True)
-                else:
-                    _ = self._debug and self._logger.debug("%s: running core...", self)
-                    async with self._lock:
-                        self._core_attempts += 1
-                    try:
-                        await self.core()
-                    except Exception as error:  # noqa: BLE001
-                        _ = self._logger.warning(
-                            "%s: encountered %s whilst running core...",
-                            self,
-                            repr_error(error),
+        try:
+            async with timeout_dur(duration=self.timeout, error=self.timeout_error):
+                while True:
+                    if self._is_stopped.is_set():
+                        _ = self._debug and self._logger.debug("%s: stopped", self)
+                        return
+                    if (self._is_pending_stop.is_set()) or (
+                        self._is_pending_stop_when_empty.is_set() and self.empty()
+                    ):
+                        await self.stop()
+                    elif self._is_pending_restart.is_set():
+                        await self.restart(sleep_if_failure=True)
+                    elif not self._is_initialized.is_set():
+                        _ = await self.initialize(sleep_if_failure=True)
+                    else:
+                        _ = self._debug and self._logger.debug(
+                            "%s: running core...", self
                         )
                         async with self._lock:
-                            self._core_failures += 1
-                        self.request_restart()
-                        await sleep(self._backoff)
-                    else:
-                        async with self._lock:
-                            self._core_successes += 1
-                        await sleep(self._freq)
+                            self._core_attempts += 1
+                        try:
+                            await self.core()
+                        except Exception as error:  # noqa: BLE001
+                            _ = self._logger.warning(
+                                "%s: encountered %s whilst running core...",
+                                self,
+                                repr_error(error),
+                            )
+                            async with self._lock:
+                                self._core_failures += 1
+                            self.request_restart()
+                            await sleep(self._backoff)
+                        else:
+                            async with self._lock:
+                                self._core_successes += 1
+                            await sleep(self._freq)
+        except RuntimeError as error:  # pragma: no cover
+            if error.args[0] == "generator didn't stop after athrow()":
+                return
+            raise
 
     async def run_until_empty(self) -> None:
         """Run until the queue is empty."""
