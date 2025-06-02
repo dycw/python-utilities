@@ -36,10 +36,8 @@ from utilities.contextlib import suppress_super_object_attribute_error
 from utilities.datetime import (
     MILLISECOND,
     SECOND,
-    add_duration,
     datetime_duration_to_float,
     datetime_duration_to_timedelta,
-    get_now,
 )
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, get_class_name, identity
@@ -47,7 +45,6 @@ from utilities.iterables import always_iterable, one
 from utilities.orjson import deserialize, serialize
 
 if TYPE_CHECKING:
-    import datetime as dt
     from collections.abc import (
         AsyncIterator,
         Awaitable,

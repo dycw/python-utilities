@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from asyncio import Queue, sleep
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from itertools import chain
 from re import search
 from typing import TYPE_CHECKING, Any
@@ -17,13 +18,15 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import LogCaptureFixture, mark, param, raises
+from pytest import LogCaptureFixture, fixture, mark, param, raises
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
+from tests.test_asyncio import assert_looper_stats
+from tests.test_asyncio_classes.loopers import _BACKOFF, _FREQ
 from tests.test_operator import make_objects
-from utilities.asyncio import get_items_nowait
+from utilities.asyncio import Looper, get_items_nowait
 from utilities.hypothesis import (
     int64s,
     pairs,
@@ -38,7 +41,9 @@ from utilities.redis import (
     PublisherError,
     PublishError,
     PublishService,
+    PublishServiceMixin,
     SubscribeService,
+    SubscribeServiceMixin,
     _is_message,
     _RedisMessage,
     publish,
@@ -57,6 +62,12 @@ if TYPE_CHECKING:
 
 
 _PUB_SUB_SLEEP = 0.1
+
+
+@fixture
+async def test_redis() -> AsyncIterator[Redis]:
+    async with yield_redis(db=15) as redis:
+        yield redis
 
 
 @asynccontextmanager
@@ -228,8 +239,37 @@ class TestPublisher:
 
 
 class TestPublishServiceMixin:
-    async def test_main(self) -> None:
-        pass
+    @mark.only
+    @given(channel=unique_strs())
+    @settings_with_reduced_examples(
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_main(self, *, channel: str, test_redis: Redis) -> None:
+        @dataclass(kw_only=True)
+        class Example(
+            PublishServiceMixin[int], SubscribeServiceMixin[int], Looper[int]
+        ): ...
+
+        service = Example(
+            auto_start=True,
+            freq=_FREQ,
+            backoff=_BACKOFF,
+            timeout=1.0,
+            publish_service_redis=test_redis,
+            subscribe_service_redis=test_redis,
+            subscribe_service_channel=channel,
+        )
+        async with service:
+            ...
+        assert_looper_stats(
+            service, entries=1, core_successes=99, initialization_successes=1, stops=1
+        )
+        for s in [service._publish_service, service._subscribe_service]:
+            assert_looper_stats(
+                s, entries=1, core_successes=833, initialization_successes=1, stops=1
+            )
 
 
 class TestRedisHashMapKey:
