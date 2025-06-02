@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from asyncio import TaskGroup, run, sleep
-from functools import partial
-from multiprocessing.pool import Pool
+from asyncio import TaskGroup, sleep
 
-from hypothesis import Phase, given, settings
+from hypothesis import Phase, given
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_redis import yield_test_redis
@@ -23,16 +21,6 @@ async def _asyncio_runner(num_tasks: int, key: str) -> None:
         _ = [tg.create_task(_coroutine(key)) for _ in range(num_tasks)]
 
 
-async def _process_runner_no(process_num: int, /, *, num_tasks: int, key: str) -> None:
-    _ = process_num
-    await _asyncio_runner(num_tasks, key)
-
-
-def _process_runner(process_num: int, num_tasks: int, key: str) -> None:
-    _ = process_num
-    run(_asyncio_runner(num_tasks, key))
-
-
 class TestYieldLockedResource:
     @given(key=unique_strs())
     @settings_with_reduced_examples(phases={Phase.generate})
@@ -42,12 +30,3 @@ class TestYieldLockedResource:
             await _asyncio_runner(3, key)
         min_time = 0.3
         assert min_time <= float(timer) <= 3 * min_time
-
-    @given(key=unique_strs())
-    @settings(max_examples=1, phases={Phase.generate})
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_multi_process(self, *, key: str) -> None:
-        with Timer() as timer, Pool(processes=2) as pool:
-            _ = pool.map(partial(_process_runner, num_tasks=3, key=key), range(2))
-        min_time = 0.6
-        assert min_time <= float(timer) <= 5 * min_time

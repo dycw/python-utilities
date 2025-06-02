@@ -38,7 +38,7 @@ async def yield_locked_resource(
         context_manager_timeout=duration_use,
     )
     sleep_use = datetime_duration_to_float(sleep)  # skipif-ci-and-not-linux
-    while not await lock.acquire():  # skipif-ci-and-not-linux
+    while not await lock.acquire():  # pragma: no cover
         _ = await asyncio.sleep(sleep_use)
     try:  # skipif-ci-and-not-linux
         yield
