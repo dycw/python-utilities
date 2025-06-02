@@ -176,12 +176,12 @@ class TestFileAndDirPaths:
 
 
 class TestHelpOptionNames:
-    @given(help=sampled_from(["-h", "--help"]))
-    def test_main(self) -> None:
+    @given(help_=sampled_from(["-h", "--help"]))
+    def test_main(self, *, help_: str) -> None:
         @command(**CONTEXT_SETTINGS)
         def cli() -> None: ...
 
-        result = CliRunner().invoke(cli, [help])
+        result = CliRunner().invoke(cli, [help_])
         assert result.exit_code == 0
 
 
