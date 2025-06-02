@@ -754,13 +754,6 @@ class Looper(Generic[_T]):
                     _ = self._debug and self._logger.debug(
                         "%s: adding sub-looper %s", self, looper
                     )
-                    # if not looper.auto_start:
-                    #     assert 0
-                    #     self._logger.warning(
-                    #         "%s: changing sub-looper %s to auto-start...", self, looper
-                    #     )
-                    #     async with self._lock:
-                    #         looper.auto_start = True
                     _ = await self._stack.enter_async_context(looper)
                 if self.auto_start:
                     _ = self._debug and self._logger.debug("%s: auto-starting...", self)

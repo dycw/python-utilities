@@ -4,7 +4,6 @@ from asyncio import CancelledError, Event, Queue, run, sleep, timeout
 from collections import deque
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from enum import auto
 from functools import partial
 from itertools import chain, count
 from re import search
@@ -57,7 +56,6 @@ from utilities.datetime import (
     datetime_duration_to_timedelta,
     get_now,
 )
-from utilities.functions import get_class_name
 from utilities.hypothesis import sentinels, text_ascii
 from utilities.iterables import one, unique_everseen
 from utilities.pytest import skipif_windows
@@ -1093,7 +1091,7 @@ class TestLooper:
         # else:
         #     _ = one(matches)
 
-    @mark.only
+    # @mark.only
     async def test_counter_mixin(self) -> None:
         # to mimic subscribe
 
@@ -1134,6 +1132,8 @@ class TestLooper:
         looper = Example(auto_start=True, timeout=1.0)
         async with looper:
             ...
+        self._assert_stats(looper, stops=1)
+        self._assert_stats(looper._counter, stops=1)
 
     def test_replace(self) -> None:
         looper = _ExampleCounterLooper().replace(freq=10.0)
@@ -1309,9 +1309,7 @@ class TestLooper:
         assert looper.empty()
 
     @mark.parametrize("auto_start", [param(True), param(False)])
-    async def test_sub_looper_one(
-        self, *, auto_start: bool, caplog: LogCaptureFixture
-    ) -> None:
+    async def test_sub_looper_one(self, *, auto_start: bool) -> None:
         looper = _ExampleOuterLooper(auto_start=True, timeout=1.0)
         looper.inner.auto_start = auto_start
         async with looper:
@@ -1326,14 +1324,12 @@ class TestLooper:
             restart_successes=13,
             stops=1,
         )
-        pattern = rf": changing sub-looper {get_class_name(_ExampleCounterLooper)}\(.*?\) to auto-start\.\.\.$"
-        matches = [m for m in caplog.messages if bool(search(pattern, m))]
-        if auto_start:
-            assert len(matches) == 0
-        else:
-            _ = one(matches)
 
-    async def test_sub_loopers_multiple(self) -> None:
+    @mark.parametrize("auto_start1", [param(True), param(False)])
+    @mark.parametrize("auto_start2", [param(True), param(False)])
+    async def test_sub_loopers_multiple(
+        self, *, auto_start1: bool, auto_start2: bool
+    ) -> None:
         @dataclass(kw_only=True)
         class Example(_ExampleCounterLooper):
             inner1: _ExampleCounterLooper = field(init=False, repr=False)
@@ -1343,6 +1339,7 @@ class TestLooper:
             def __post_init__(self) -> None:
                 super().__post_init__()
                 self.inner1 = _ExampleCounterLooper(
+                    auto_start=auto_start1,
                     freq=self.freq / 2,
                     backoff=self.backoff / 2,
                     logger=self.logger,
@@ -1351,6 +1348,7 @@ class TestLooper:
                     max_count=round(self.max_count / 2),
                 )
                 self.inner2 = _ExampleCounterLooper(
+                    auto_start=auto_start2,
                     freq=self.freq / 2,
                     backoff=self.backoff / 2,
                     logger=self.logger,
@@ -1368,9 +1366,18 @@ class TestLooper:
         async with looper:
             ...
         self._assert_stats(looper, stops=1)
-        for inner in [looper.inner1, looper.inner2]:
+        self._assert_stats(
+            looper.inner1,
+            core_successes=56,
+            core_failures=13,
+            initialization_successes=14,
+            tear_down_successes=13,
+            restart_successes=13,
+            stops=1,
+        )
+        if auto_start2:
             self._assert_stats(
-                inner,
+                looper.inner2,
                 core_successes=56,
                 core_failures=13,
                 initialization_successes=14,
@@ -1378,6 +1385,8 @@ class TestLooper:
                 restart_successes=13,
                 stops=1,
             )
+        else:
+            self._assert_stats(looper.inner2, stops=1)
 
     async def test_sub_loopers_nested(self) -> None:
         @dataclass(kw_only=True)
