@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import Queue, sleep
+from asyncio import Queue, TaskGroup, sleep
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from itertools import chain
@@ -26,7 +26,7 @@ from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_asyncio import assert_looper_stats
 from tests.test_asyncio_classes.loopers import _BACKOFF, _FREQ
 from tests.test_operator import make_objects
-from utilities.asyncio import Looper, get_items_nowait
+from utilities.asyncio import EnhancedTaskGroup, Looper, get_items_nowait
 from utilities.hypothesis import (
     int64s,
     pairs,
@@ -269,6 +269,94 @@ class TestPublishServiceMixin:
         for s in [service._publish_service, service._subscribe_service]:
             assert_looper_stats(
                 s, entries=1, core_successes=833, initialization_successes=1, stops=1
+            )
+
+    @mark.only
+    @given(channel=unique_strs())
+    @settings_with_reduced_examples(
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_task_group(self, *, channel: str, test_redis: Redis) -> None:
+        @dataclass(kw_only=True)
+        class Example(
+            PublishServiceMixin[int], SubscribeServiceMixin[int], Looper[int]
+        ): ...
+
+        service = Example(
+            auto_start=True,
+            freq=_FREQ,
+            backoff=_BACKOFF,
+            timeout=1.0,
+            publish_service_redis=test_redis,
+            subscribe_service_redis=test_redis,
+            subscribe_service_channel=channel,
+        )
+        async with EnhancedTaskGroup() as tg:
+            _ = tg.create_task_context(service)
+        assert_looper_stats(
+            service, entries=1, core_successes=99, initialization_successes=1
+        )
+        for s in [service._publish_service, service._subscribe_service]:
+            assert_looper_stats(
+                s, entries=1, core_successes=833, initialization_successes=1
+            )
+
+    @mark.only
+    @given(channel=unique_strs())
+    @settings_with_reduced_examples(
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_task_group_multiple(
+        self, *, channel: str, test_redis: Redis
+    ) -> None:
+        @dataclass(kw_only=True)
+        class Example1(
+            PublishServiceMixin[int], SubscribeServiceMixin[int], Looper[int]
+        ): ...
+
+        @dataclass(kw_only=True)
+        class Example2(
+            PublishServiceMixin[int], SubscribeServiceMixin[int], Looper[int]
+        ): ...
+
+        service1 = Example1(
+            auto_start=True,
+            freq=_FREQ,
+            backoff=_BACKOFF,
+            timeout=1.0,
+            publish_service_redis=test_redis,
+            subscribe_service_redis=test_redis,
+            subscribe_service_channel=channel,
+        )
+        service2 = Example2(
+            auto_start=True,
+            freq=_FREQ,
+            backoff=_BACKOFF,
+            timeout=1.0,
+            publish_service_redis=test_redis,
+            subscribe_service_redis=test_redis,
+            subscribe_service_channel=channel,
+        )
+        async with EnhancedTaskGroup() as tg:
+            _ = tg.create_task_context(service1)
+            _ = tg.create_task_context(service2)
+        assert_looper_stats(
+            service1, entries=1, core_successes=99, initialization_successes=1
+        )
+        for s in [service1._publish_service, service1._subscribe_service]:
+            assert_looper_stats(
+                s, entries=1, core_successes=833, initialization_successes=1
+            )
+        assert_looper_stats(
+            service2, entries=1, core_successes=99, initialization_successes=1
+        )
+        for s in [service2._publish_service, service2._subscribe_service]:
+            assert_looper_stats(
+                s, entries=1, core_successes=833, initialization_successes=1
             )
 
 
