@@ -4,6 +4,7 @@ from asyncio import CancelledError, Event, Queue, run, sleep, timeout
 from collections import deque
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
+from enum import auto
 from functools import partial
 from itertools import chain, count
 from re import search
@@ -48,6 +49,7 @@ from utilities.asyncio import (
     stream_command,
     timeout_dur,
 )
+from utilities.contextlib import suppress_super_object_attribute_error
 from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
     MILLISECOND,
@@ -1030,6 +1032,105 @@ class TestLooper:
         assert len(looper) == looper.qsize() == 0
         looper.put_left_nowait(None)
         assert len(looper) == looper.qsize() == 1
+
+    # @mark.parametrize("auto_start", [param(True), param(False)])
+    @mark.skip
+    async def test_multiple_sub_loopers(self, *, caplog: LogCaptureFixture) -> None:
+        @dataclass(kw_only=True)
+        class Example(_ExampleCounterLooper):
+            inner1: _ExampleCounterLooper = field(init=False, repr=False)
+            inner2: _ExampleCounterLooper = field(init=False, repr=False)
+
+            @override
+            def __post_init__(self) -> None:
+                super().__post_init__()
+                self.inner1 = _ExampleCounterLooper(
+                    auto_start=True,
+                    freq=self.freq / 2,
+                    backoff=self.backoff / 2,
+                    logger=self.logger,
+                    timeout=self.timeout,
+                    timeout_error=self.timeout_error,
+                    max_count=round(self.max_count / 2),
+                )
+                self.inner2 = _ExampleCounterLooper(
+                    auto_start=True,
+                    freq=self.freq / 3,
+                    backoff=self.backoff / 3,
+                    logger=self.logger,
+                    timeout=self.timeout,
+                    timeout_error=self.timeout_error,
+                    max_count=round(self.max_count / 3),
+                )
+
+            @override
+            def _yield_sub_loopers(self) -> Iterator[Looper]:
+                yield self.inner1
+                yield self.inner2
+
+        looper = Example(auto_start=True, timeout=1.0)
+        async with looper:
+            ...
+        assert 0, [looper.stats, looper.inner1.stats, looper.inner2.stats]
+        # self._assert_stats(looper, stops=1)
+        # self._assert_stats(looper.inner1, stops=1)
+        # self._assert_stats(
+        #     looper.inner2,
+        #     core_successes=56,
+        #     core_failures=13,
+        #     initialization_successes=14,
+        #     tear_down_successes=13,
+        #     restart_successes=13,
+        #     stops=1,
+        # )
+        # pattern = rf": changing sub-looper {get_class_name(_ExampleCounterLooper)}\(.*?\) to auto-start\.\.\.$"
+        # matches = [m for m in caplog.messages if bool(search(pattern, m))]
+        # if auto_start:
+        #     assert len(matches) == 0
+        # else:
+        #     _ = one(matches)
+
+    @mark.only
+    async def test_counter_mixin(self) -> None:
+        # to mimic subscribe
+
+        @dataclass(kw_only=True)
+        class CounterMixin:
+            freq: Duration = field(default=10 * MILLISECOND, repr=False)
+            backoff: Duration = field(default=100 * MILLISECOND, repr=False)
+            _debug: bool = field(default=True, repr=False)
+            count: int = 0
+            max_count: int = 0
+            _counter: _ExampleCounterLooper = field(init=False, repr=False)
+
+            def __post_init__(self) -> None:
+                with suppress_super_object_attribute_error():
+                    super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
+                self._counter = _ExampleCounterLooper(
+                    auto_start=False,
+                    freq=self.freq,
+                    backoff=self.backoff,
+                    _debug=self._debug,
+                    count=self.count,
+                    max_count=self.max_count,
+                )
+
+            def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
+                with suppress_super_object_attribute_error():
+                    yield from super()._yield_sub_loopers()  # pyright: ignore[reportAttributeAccessIssue]
+                yield self._counter
+
+        @dataclass(kw_only=True)
+        class Example(CounterMixin, _ExampleCounterLooper):
+            freq: Duration = field(default=10 * MILLISECOND, repr=False)
+            backoff: Duration = field(default=100 * MILLISECOND, repr=False)
+            _debug: bool = field(default=True, repr=False)
+            count: int = 0
+            max_count: int = 10
+
+        looper = Example(auto_start=True, timeout=1.0)
+        async with looper:
+            ...
 
     def test_replace(self) -> None:
         looper = _ExampleCounterLooper().replace(freq=10.0)
