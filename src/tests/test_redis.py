@@ -466,10 +466,10 @@ class TestRedisKey:
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_exists(self, *, key: str, value: bool) -> None:
         async with yield_test_redis() as redis:
-            red_key = redis_key(key, bool)
-            assert not (await red_key.exists(redis))
-            _ = await red_key.set(redis, value)
-            assert await red_key.exists(redis)
+            rkey = redis_key(key, bool)
+            assert not (await rkey.exists(redis))
+            _ = await rkey.set(redis, value)
+            assert await rkey.exists(redis)
 
     @given(key=unique_strs(), value=booleans())
     @settings(max_examples=1, phases={Phase.generate})

@@ -65,7 +65,6 @@ from utilities.datetime import (
     datetime_duration_to_float,
     datetime_duration_to_timedelta,
     round_datetime,
-    serialize_compact,
 )
 from utilities.functions import ensure_int, ensure_str, max_nullable, min_nullable
 from utilities.math import (
@@ -1413,10 +1412,10 @@ def uint64s(
 @composite
 def unique_strs(draw: DrawFn, /) -> str:
     """Strategy for generating unique strings."""
-    now = serialize_compact(get_now_local())
+    now = get_now_local()
     pid = getpid()
     key = draw(uuids())
-    return f"{now}_{pid}_{key}"
+    return f"{now:%Y%m%d%H%M%S%f}_{pid}_{key}"
 
 
 ##

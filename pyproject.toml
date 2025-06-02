@@ -83,7 +83,7 @@ dev = [
   "pytest-xdist >= 3.7.0, < 3.8",
   # CI
   "win32_setctime >= 1.2.0, < 1.3",  # https://github.com/Delgan/loguru/issues/147
-  "setuptools >= 78.1.0",  # https://github.com/theY4Kman/pytest-only/issues/14
+  "setuptools >= 78.1.0",
 ]
 
 # project

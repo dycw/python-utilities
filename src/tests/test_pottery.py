@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING
 
 from hypothesis import given
 
-from tests.test_redis import channels
+from tests.test_redis import yield_test_redis
+from utilities.hypothesis import unique_strs
 from utilities.pottery import yield_locked_resource
-from utilities.redis import yield_redis
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
@@ -15,15 +15,12 @@ if TYPE_CHECKING:
 
 
 class TestYieldLockedResource:
-    @given(key=channels())
+    @given(key=unique_strs())
     async def test_main(self, *, key: str) -> None:
         async def coroutine(redis: Redis) -> None:
             async with yield_locked_resource(redis, key):
                 await sleep(0.1)
 
-        with Timer() as t, yield_redis(db=15):
-            async with TaskGroup() as tg:
-                _ = [
-                    tg.create_task(coroutine(host=f"job{j}-test{i}")) for i in range(10)
-                ]
-        t
+        with Timer():
+            async with TaskGroup() as tg, yield_test_redis() as redis:
+                _ = [tg.create_task(coroutine(redis)) for i in range(2)]
