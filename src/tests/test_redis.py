@@ -547,7 +547,7 @@ class TestSubscribe:
         queue: Queue[str] = Queue()
         async with (
             yield_redis() as redis,
-            subscribe(redis, channel, queue, filter_=lambda text: len(text) >= 3),
+            subscribe(redis, channel, queue, filter_=lambda text: len(text) >= 6),
         ):
             await sleep(_PUB_SUB_SLEEP)
             for message in messages:
