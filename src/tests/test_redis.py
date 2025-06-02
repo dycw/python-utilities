@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from asyncio import Queue, sleep
 from contextlib import asynccontextmanager
+from itertools import chain
 from re import search
 from typing import TYPE_CHECKING, Any
 
@@ -13,6 +14,7 @@ from hypothesis.strategies import (
     data,
     dictionaries,
     lists,
+    permutations,
     sampled_from,
 )
 from pytest import LogCaptureFixture, mark, param, raises
@@ -526,10 +528,23 @@ class TestSubscribe:
             assert is_equal(result, obj)
 
     @mark.only
-    @given(channel=unique_strs(), messages=lists(text_ascii(), min_size=1, max_size=5))
+    @given(
+        channel=unique_strs(),
+        data=data(),
+        short_messages=lists(text_ascii(max_size=3), min_size=1, max_size=5),
+        long_messages=lists(text_ascii(min_size=3), min_size=1, max_size=5),
+    )
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_filter(self, *, channel: str, messages: Sequence[str]) -> None:
+    async def test_filter(
+        self,
+        *,
+        channel: str,
+        data: DataObject,
+        short_messages: Sequence[str],
+        long_messages: Sequence[str],
+    ) -> None:
+        messages = data.draw(permutations(list(chain(short_messages, long_messages))))
         queue: Queue[str] = Queue()
         async with (
             yield_redis() as redis,
@@ -539,11 +554,11 @@ class TestSubscribe:
             for message in messages:
                 await redis.publish(channel, message)
             await sleep(_PUB_SUB_SLEEP)  # keep in context
-        assert queue.qsize() == sum(int(len(m) >= 3) for m in messages)
+        assert queue.qsize() == len(long_messages)
         results = get_items_nowait(queue)
         for result in results:
             assert isinstance(result, str)
-            assert len(message) >= 3
+            assert len(result) >= 3
 
     @given(
         channel=unique_strs(),
