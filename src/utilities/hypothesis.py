@@ -13,6 +13,7 @@ from pathlib import Path
 from re import search
 from string import ascii_letters, ascii_lowercase, ascii_uppercase, digits, printable
 from subprocess import check_call
+from threading import get_ident
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -1414,8 +1415,9 @@ def unique_strs(draw: DrawFn, /) -> str:
     """Strategy for generating unique strings."""
     now = get_now_local()
     pid = getpid()
-    key = draw(uuids())
-    return f"{now:%Y%m%d%H%M%S%f}_{pid}_{key}"
+    ident = get_ident()
+    key = str(draw(uuids())).replace("-", "")
+    return f"{now:%Y%m%d%H%M%S%f}_{pid}_{ident}_{key}"
 
 
 ##

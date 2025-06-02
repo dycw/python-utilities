@@ -21,7 +21,6 @@ from typing import (
     overload,
     override,
 )
-from uuid import UUID, uuid4
 
 from redis.asyncio import Redis
 from redis.typing import EncodableT
@@ -32,14 +31,12 @@ from utilities.datetime import (
     SECOND,
     datetime_duration_to_float,
     datetime_duration_to_timedelta,
-    get_now,
 )
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, get_class_name, identity
 from utilities.iterables import always_iterable, one
 
 if TYPE_CHECKING:
-    import datetime as dt
     from collections.abc import (
         AsyncIterator,
         Awaitable,
@@ -982,22 +979,6 @@ def _deserialize(
     else:  # skipif-ci-and-not-linux
         deserializer_use = deserializer
     return deserializer_use(data)  # skipif-ci-and-not-linux
-
-
-##
-
-
-@dataclass(repr=False, kw_only=True, slots=True)
-class _TestRedis:
-    """A container for a redis client; for testing purposes only."""
-
-    redis: Redis
-    timestamp: dt.datetime = field(default_factory=get_now)
-    uuid: UUID = field(default_factory=uuid4)
-    key: str
-
-
-_ = _TestRedis
 
 
 __all__ = [
