@@ -1322,7 +1322,7 @@ class TestLooper:
         async with looper:
             with raises(LooperTimeoutError, match="Timeout"):
                 await looper
-        self._assert_stats(looper, entries=1, stops=1)
+        self._assert_stats_full(looper, entries=1, stops=1)
 
     def test_with_auto_start(self) -> None:
         looper = CountingLooper()
