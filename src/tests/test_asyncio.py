@@ -56,7 +56,6 @@ from utilities.asyncio import (
     stream_command,
     timeout_dur,
 )
-from utilities.contextlib import suppress_super_object_attribute_error
 from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
     MILLISECOND,
@@ -993,50 +992,8 @@ class TestLooper:
         assert len(looper) == looper.qsize() == 1
         self._assert_stats_no_runs(looper)
 
-    @mark.parametrize(
-        "counter_auto_start",
-        [
-            param(True, marks=mark.skip),
-            param(False, marks=mark.only),
-        ],
-    )
+    @mark.parametrize("counter_auto_start", [param(True), param(False)])
     async def test_mixin(self, *, counter_auto_start: bool) -> None:
-        # to mimic subscribe
-
-        @dataclass(kw_only=True)
-        class CounterMixin:
-            freq: Duration = field(default=10 * MILLISECOND, repr=False)
-            backoff: Duration = field(default=100 * MILLISECOND, repr=False)
-            _debug: bool = field(default=True, repr=False)
-            count: int = 0
-            max_count: int = 0
-            _counter: CountingLooper = field(init=False, repr=False)
-
-            def __post_init__(self) -> None:
-                with suppress_super_object_attribute_error():
-                    super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
-                self._counter = CountingLooper(
-                    auto_start=False,
-                    freq=self.freq,
-                    backoff=self.backoff,
-                    _debug=self._debug,
-                    count=self.count,
-                    max_count=self.max_count,
-                )
-
-            def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
-                with suppress_super_object_attribute_error():
-                    yield from super()._yield_sub_loopers()  # pyright: ignore[reportAttributeAccessIssue]
-                yield self._counter
-
-        @dataclass(kw_only=True)
-        class Example(CounterMixin, CountingLooper):
-            freq: Duration = field(default=10 * MILLISECOND, repr=False)
-            backoff: Duration = field(default=100 * MILLISECOND, repr=False)
-            _debug: bool = field(default=True, repr=False)
-            count: int = 0
-            max_count: int = 10
-
         looper = LooperWithCounterMixin(
             auto_start=True, timeout=1.0, counter_auto_start=counter_auto_start
         )
@@ -1044,7 +1001,7 @@ class TestLooper:
             with raises(TimeoutError):
                 async with timeout(1.0), looper:
                     ...
-            self._assert_stats(looper._counter, stops=1)
+            self._assert_stats_half(looper._counter)
         else:
             async with looper:
                 ...

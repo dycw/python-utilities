@@ -32,7 +32,6 @@ class CountingLooper(Looper[Any]):
     @override
     async def core(self) -> None:
         await super().core()
-        self._logger.log("running core?")
         self.count += 1
         if self.count >= self.max_count:
             raise CountingLooperError
