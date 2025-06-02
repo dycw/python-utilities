@@ -33,10 +33,10 @@ class CountingLooper(Looper[Any]):
         await super().core()
         self.count += 1
         if self.count >= self.max_count:
-            raise CounterError
+            raise CountingLooperError
 
 
-class CounterError(Exception): ...
+class CountingLooperError(Exception): ...
 
 
 # one sub looper
