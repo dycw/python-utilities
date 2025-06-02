@@ -96,6 +96,32 @@ class MultipleSubLoopers(CountingLooper):
         yield self.inner2
 
 
+# nested sub loopers
+
+
+@dataclass(kw_only=True)
+class Outer2CountingLooper(CountingLooper):
+    middle: OuterCountingLooper = field(init=False, repr=False)
+    middle_auto_start: bool = field(default=False, repr=False)
+    inner_auto_start: bool = field(default=False, repr=False)
+
+    @override
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.middle = OuterCountingLooper(
+            auto_start=self.middle_auto_start,
+            freq=self.freq / 2,
+            backoff=self.backoff / 2,
+            max_count=round(self.max_count / 2),
+            inner_auto_start=self.inner_auto_start,
+        )
+
+    @override
+    def _yield_sub_loopers(self) -> Iterator[Looper]:
+        yield from super()._yield_sub_loopers()
+        yield self.middle
+
+
 # queue looper
 
 

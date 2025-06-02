@@ -26,6 +26,7 @@ from pytest import LogCaptureFixture, approx, mark, param, raises
 from tests.test_asyncio_classes.loopers import (
     CountingLooper,
     MultipleSubLoopers,
+    Outer2CountingLooper,
     OuterCountingLooper,
     QueueLooper,
 )
@@ -1011,7 +1012,6 @@ class TestLooper:
         assert len(looper) == looper.qsize() == 1
         self._assert_stats_no_runs(looper)
 
-    # @mark.only
     @mark.skip
     async def test_counter_mixin(self) -> None:
         # to mimic subscribe
@@ -1230,7 +1230,6 @@ class TestLooper:
         assert looper.empty()
 
     @mark.parametrize("inner_auto_start", [param(True), param(False)])
-    @mark.only
     async def test_sub_looper_one(self, *, inner_auto_start: bool) -> None:
         looper = OuterCountingLooper(
             auto_start=True, timeout=1.0, inner_auto_start=inner_auto_start
@@ -1280,56 +1279,31 @@ class TestLooper:
                 self._assert_stats_half(looper.inner1, stops=1)
                 self._assert_stats_third(looper.inner2, stops=1)
 
-    @mark.parametrize("auto_start_middle", [param(True), param(False)])
-    @mark.parametrize("auto_start_inner", [param(True), param(False)])
-    @mark.skip
+    @mark.parametrize("middle_auto_start", [param(True), param(False)])
+    @mark.parametrize("inner_auto_start", [param(True), param(False)])
     async def test_sub_loopers_nested(
-        self, *, auto_start_middle: bool, auto_start_inner: bool
+        self, *, middle_auto_start: bool, inner_auto_start: bool
     ) -> None:
-        @dataclass(kw_only=True)
-        class Example(CountingLooper):
-            middle: _ExampleOuterLooper = field(init=False, repr=False)
-
-            @override
-            def __post_init__(self) -> None:
-                super().__post_init__()
-                self.middle = _ExampleOuterLooper(
-                    auto_start=auto_start_middle,
-                    freq=self.freq / 2,
-                    backoff=self.backoff / 2,
-                    logger=self.logger,
-                    timeout=self.timeout,
-                    timeout_error=self.timeout_error,
-                    max_count=round(self.max_count / 2),
-                )
-
-            @override
-            def _yield_sub_loopers(self) -> Iterator[Looper]:
-                yield self.middle
-
-        looper = Example(auto_start=True, timeout=1.0)
-        looper.middle.inner.auto_start = auto_start_inner
-        async with looper:
-            ...
-        self._assert_stats(looper, stops=1)
-        self._assert_stats(
-            looper.middle,
-            core_successes=56,
-            core_failures=13,
-            initialization_successes=14,
-            tear_down_successes=13,
-            restart_successes=13,
-            stops=1,
+        looper = Outer2CountingLooper(
+            auto_start=True,
+            timeout=1.0,
+            middle_auto_start=middle_auto_start,
+            inner_auto_start=inner_auto_start,
         )
-        self._assert_stats(
-            looper.middle.inner,
-            core_successes=34,
-            core_failures=34,
-            initialization_successes=34,
-            tear_down_successes=33,
-            restart_successes=33,
-            stops=1,
-        )
+        match middle_auto_start, inner_auto_start:
+            case False, False:
+                async with looper:
+                    ...
+                self._assert_stats_full(looper, stops=1)
+                self._assert_stats_half(looper.middle, stops=1)
+                self._assert_stats_quarter(looper.middle.inner, stops=1)
+            case _, _:
+                with raises(TimeoutError):
+                    async with timeout(1.0), looper:
+                        ...
+                self._assert_stats_full(looper)
+                self._assert_stats_half(looper.middle)
+                self._assert_stats_quarter(looper.middle.inner)
 
     async def test_tear_down_already_tearing_down(
         self, *, caplog: LogCaptureFixture
@@ -1507,6 +1481,21 @@ class TestLooper:
             initialization_successes=25,
             tear_down_successes=24,
             restart_successes=24,
+            stops=stops,
+            rel=rel,
+        )
+
+    def _assert_stats_quarter(
+        self, looper: Looper[Any], /, *, stops: int = 0, rel: float = 0.75
+    ) -> None:
+        self._assert_stats_new(
+            looper,
+            entries=1,
+            core_successes=35,
+            core_failures=35,
+            initialization_successes=35,
+            tear_down_successes=34,
+            restart_successes=34,
             stops=stops,
             rel=rel,
         )
