@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from asyncio import CancelledError, Event, Queue, run, sleep, timeout
+from asyncio import CancelledError, Event, Queue, TaskGroup, run, sleep, timeout
 from collections import deque
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass, field
 from functools import partial
 from itertools import chain, count
@@ -1006,6 +1006,67 @@ class TestLooper:
             async with looper:
                 ...
             self._assert_stats_half(looper._counter, stops=1)
+
+    @mark.parametrize(
+        "counter_auto_start",
+        [
+            param(True, marks=mark.only),
+            param(False, marks=mark.skip),
+        ],
+    )
+    async def test_mixin_in_task_group(self, *, counter_auto_start: bool) -> None:
+        looper = LooperWithCounterMixin(
+            auto_start=True, timeout=1.0, counter_auto_start=counter_auto_start
+        )
+        if counter_auto_start:
+            with raises(ExceptionGroup) as exc_info:
+                async with EnhancedTaskGroup(timeout=looper.timeout) as tg:
+                    _ = tg.create_task_context(looper)
+            error = one(exc_info.value.exceptions)
+            assert isinstance(error, TimeoutError)
+            self._assert_stats_half(looper._counter)
+        else:
+            with raises(ExceptionGroup) as exc_info:
+                async with EnhancedTaskGroup(timeout=looper.timeout) as tg:
+                    _ = tg.create_task_context(looper)
+                    # _ = tg.create_task(Event().wait())
+            # async with EnhancedTaskGroup() as tg, AsyncExitStack() as stack:
+            #     _ = await stack.enter_async_context(looper)
+            self._assert_stats_half(looper._counter)
+
+    @mark.parametrize(
+        "counter_auto_start",
+        [
+            param(True, marks=mark.only),
+            param(False, marks=mark.skip),
+        ],
+    )
+    async def test_mixins_in_task_group(self, *, counter_auto_start: bool) -> None:
+        looper1 = LooperWithCounterMixin(
+            auto_start=True, timeout=1.0, counter_auto_start=counter_auto_start
+        )
+        looper2 = LooperWithCounterMixin(
+            auto_start=True, timeout=1.0, counter_auto_start=counter_auto_start
+        )
+        if counter_auto_start:
+            with raises(ExceptionGroup) as exc_info:  # noqa: PT012
+                async with EnhancedTaskGroup(timeout=1.0) as tg:
+                    _ = tg.create_task_context(looper1)
+                    _ = tg.create_task_context(looper2)
+            errors = exc_info.value.exceptions
+            assert 1 <= len(errors) <= 2
+            for error in errors:
+                assert isinstance(error, TimeoutError)
+            self._assert_stats_half(looper1._counter)
+            self._assert_stats_half(looper2._counter)
+        else:
+            with raises(ExceptionGroup) as exc_info:
+                async with EnhancedTaskGroup(timeout=looper.timeout) as tg:
+                    _ = tg.create_task_context(looper)
+                    # _ = tg.create_task(Event().wait())
+            # async with EnhancedTaskGroup() as tg, AsyncExitStack() as stack:
+            #     _ = await stack.enter_async_context(looper)
+            self._assert_stats_half(looper._counter)
 
     def test_replace(self) -> None:
         looper = CountingLooper().replace(freq=10.0)
