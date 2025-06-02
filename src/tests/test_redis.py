@@ -227,6 +227,11 @@ class TestPublisher:
             assert result == message
 
 
+class TestPublishServiceMixin:
+    async def test_main(self) -> None:
+        pass
+
+
 class TestRedisHashMapKey:
     @given(key=int64s(), value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})

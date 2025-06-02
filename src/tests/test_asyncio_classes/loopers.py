@@ -123,7 +123,7 @@ class Outer2CountingLooper(CountingLooper):
         yield self.middle
 
 
-# mixin
+# one mixin
 
 
 @dataclass(kw_only=True)
@@ -154,6 +154,65 @@ class CounterMixin:
 
 @dataclass(kw_only=True)
 class LooperWithCounterMixin(CounterMixin, Looper): ...
+
+
+# two mixins
+
+
+@dataclass(kw_only=True)
+class CounterMixin1:
+    freq: Duration = field(default=_FREQ, repr=False)
+    backoff: Duration = field(default=_BACKOFF, repr=False)
+    _debug: bool = field(default=True, repr=False)
+    count: int = 0
+    max_count: int = 10
+    counter1_auto_start: bool = False
+    _counter1: CountingLooper = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        with suppress_super_object_attribute_error():
+            super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
+        self._counter1 = CountingLooper(
+            auto_start=self.counter1_auto_start,
+            freq=self.freq / 2,
+            backoff=self.backoff / 2,
+            max_count=round(self.max_count / 2),
+        )
+
+    def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
+        with suppress_super_object_attribute_error():
+            yield from super()._yield_sub_loopers()  # pyright: ignore[reportAttributeAccessIssue]
+        yield self._counter1
+
+
+@dataclass(kw_only=True)
+class CounterMixin2:
+    freq: Duration = field(default=_FREQ, repr=False)
+    backoff: Duration = field(default=_BACKOFF, repr=False)
+    _debug: bool = field(default=True, repr=False)
+    count: int = 0
+    max_count: int = 10
+    counter2_auto_start: bool = False
+    _counter2: CountingLooper = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        with suppress_super_object_attribute_error():
+            super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
+        self._counter2 = CountingLooper(
+            auto_start=self.counter2_auto_start,
+            freq=self.freq / 3,
+            backoff=self.backoff / 3,
+            max_count=round(self.max_count / 3),
+        )
+
+    def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
+        with suppress_super_object_attribute_error():
+            yield from super()._yield_sub_loopers()  # pyright: ignore[reportAttributeAccessIssue]
+        yield self._counter2
+
+
+@dataclass(kw_only=True)
+class LooperWithCounterMixins(CounterMixin1, CounterMixin2, Looper): ...
 
 
 # queue looper
