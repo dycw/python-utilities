@@ -24,6 +24,7 @@ from typing import (
     overload,
     override,
 )
+from uuid import uuid4
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
@@ -1415,9 +1416,10 @@ def unique_strs(draw: DrawFn, /) -> str:
     """Strategy for generating unique strings."""
     now = get_now_local()
     pid = getpid()
-    ident = get_ident()
-    key = str(draw(uuids())).replace("-", "")
-    return f"{now:%Y%m%d%H%M%S%f}_{pid}_{ident}_{key}"
+    ident = just(get_ident())
+    key = str(uuid4()).replace("-", "")
+    full = f"{now:%Y%m%d%H%M%S%f}_{pid}_{ident}_{key}"
+    return draw(just(full))
 
 
 ##
