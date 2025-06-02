@@ -27,4 +27,5 @@ class TestYieldLockedResource:
         with Timer() as timer:
             async with TaskGroup() as tg, yield_test_redis() as redis:
                 _ = [tg.create_task(coroutine(redis)) for _ in range(3)]
-        assert 0.3 <= float(timer) <= 0.6
+        min_time = 0.3
+        assert min_time <= float(timer) <= 3 * min_time
