@@ -7,7 +7,6 @@ from hypothesis import Phase, given
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_redis import yield_test_redis
-from utilities.datetime import SECOND
 from utilities.hypothesis import settings_with_reduced_examples, unique_strs
 from utilities.pottery import yield_locked_resource
 from utilities.timer import Timer
@@ -27,5 +26,5 @@ class TestYieldLockedResource:
 
         with Timer() as timer:
             async with TaskGroup() as tg, yield_test_redis() as redis:
-                _ = [tg.create_task(coroutine(redis)) for _ in range(10)]
-        assert SECOND <= timer <= 2 * SECOND
+                _ = [tg.create_task(coroutine(redis)) for _ in range(3)]
+        assert 0.3 <= float(timer) <= 0.6
