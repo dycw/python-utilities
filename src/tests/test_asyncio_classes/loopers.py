@@ -39,6 +39,9 @@ class CountingLooper(Looper[Any]):
 class CounterError(Exception): ...
 
 
+# one sub looper
+
+
 @dataclass(kw_only=True)
 class OuterCountingLooper(CountingLooper):
     inner: CountingLooper = field(init=False, repr=False)
@@ -51,9 +54,6 @@ class OuterCountingLooper(CountingLooper):
             auto_start=self.inner_auto_start,
             freq=self.freq / 2,
             backoff=self.backoff / 2,
-            logger=self.logger,
-            timeout=self.timeout,
-            timeout_error=self.timeout_error,
             max_count=round(self.max_count / 2),
         )
 
@@ -61,6 +61,42 @@ class OuterCountingLooper(CountingLooper):
     def _yield_sub_loopers(self) -> Iterator[Looper]:
         yield from super()._yield_sub_loopers()
         yield self.inner
+
+
+# two sub loopers
+
+
+@dataclass(kw_only=True)
+class MultipleSubLoopers(CountingLooper):
+    inner1: CountingLooper = field(init=False, repr=False)
+    inner2: CountingLooper = field(init=False, repr=False)
+    inner1_auto_start: bool = field(default=False, repr=False)
+    inner2_auto_start: bool = field(default=False, repr=False)
+
+    @override
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.inner1 = CountingLooper(
+            auto_start=self.inner1_auto_start,
+            freq=self.freq / 2,
+            backoff=self.backoff / 2,
+            max_count=round(self.max_count / 2),
+        )
+        self.inner2 = CountingLooper(
+            auto_start=self.inner2_auto_start,
+            freq=self.freq / 3,
+            backoff=self.backoff / 3,
+            max_count=round(self.max_count / 3),
+        )
+
+    @override
+    def _yield_sub_loopers(self) -> Iterator[Looper]:
+        yield from super()._yield_sub_loopers()
+        yield self.inner1
+        yield self.inner2
+
+
+# queue looper
 
 
 @dataclass(kw_only=True)
