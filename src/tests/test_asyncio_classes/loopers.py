@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, override
 
 from utilities.asyncio import Looper
+from utilities.contextlib import suppress_super_object_attribute_error
 from utilities.datetime import MILLISECOND
 
 if TYPE_CHECKING:
@@ -31,6 +32,7 @@ class CountingLooper(Looper[Any]):
     @override
     async def core(self) -> None:
         await super().core()
+        self._logger.log("running core?")
         self.count += 1
         if self.count >= self.max_count:
             raise CountingLooperError
@@ -45,7 +47,7 @@ class CountingLooperError(Exception): ...
 @dataclass(kw_only=True)
 class OuterCountingLooper(CountingLooper):
     inner: CountingLooper = field(init=False, repr=False)
-    inner_auto_start: bool = field(default=False, repr=False)
+    inner_auto_start: bool = False
 
     @override
     def __post_init__(self) -> None:
@@ -70,8 +72,8 @@ class OuterCountingLooper(CountingLooper):
 class MultipleSubLoopers(CountingLooper):
     inner1: CountingLooper = field(init=False, repr=False)
     inner2: CountingLooper = field(init=False, repr=False)
-    inner1_auto_start: bool = field(default=False, repr=False)
-    inner2_auto_start: bool = field(default=False, repr=False)
+    inner1_auto_start: bool = False
+    inner2_auto_start: bool = False
 
     @override
     def __post_init__(self) -> None:
@@ -102,8 +104,8 @@ class MultipleSubLoopers(CountingLooper):
 @dataclass(kw_only=True)
 class Outer2CountingLooper(CountingLooper):
     middle: OuterCountingLooper = field(init=False, repr=False)
-    middle_auto_start: bool = field(default=False, repr=False)
-    inner_auto_start: bool = field(default=False, repr=False)
+    middle_auto_start: bool = False
+    inner_auto_start: bool = False
 
     @override
     def __post_init__(self) -> None:
@@ -120,6 +122,39 @@ class Outer2CountingLooper(CountingLooper):
     def _yield_sub_loopers(self) -> Iterator[Looper]:
         yield from super()._yield_sub_loopers()
         yield self.middle
+
+
+# mixin
+
+
+@dataclass(kw_only=True)
+class CounterMixin:
+    freq: Duration = field(default=_FREQ, repr=False)
+    backoff: Duration = field(default=_BACKOFF, repr=False)
+    _debug: bool = field(default=True, repr=False)
+    count: int = 0
+    max_count: int = 10
+    counter_auto_start: bool = False
+    _counter: CountingLooper = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        with suppress_super_object_attribute_error():
+            super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
+        self._counter = CountingLooper(
+            auto_start=self.counter_auto_start,
+            freq=self.freq / 2,
+            backoff=self.backoff / 2,
+            max_count=round(self.max_count / 2),
+        )
+
+    def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
+        with suppress_super_object_attribute_error():
+            yield from super()._yield_sub_loopers()  # pyright: ignore[reportAttributeAccessIssue]
+        yield self._counter
+
+
+@dataclass(kw_only=True)
+class LooperWithCounterMixin(CounterMixin, Looper): ...
 
 
 # queue looper

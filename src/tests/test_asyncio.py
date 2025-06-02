@@ -26,6 +26,7 @@ from pytest import LogCaptureFixture, approx, mark, param, raises
 from tests.test_asyncio_classes.loopers import (
     CountingLooper,
     CountingLooperError,
+    LooperWithCounterMixin,
     MultipleSubLoopers,
     Outer2CountingLooper,
     OuterCountingLooper,
@@ -992,8 +993,14 @@ class TestLooper:
         assert len(looper) == looper.qsize() == 1
         self._assert_stats_no_runs(looper)
 
-    @mark.skip
-    async def test_counter_mixin(self) -> None:
+    @mark.parametrize(
+        "counter_auto_start",
+        [
+            param(True, marks=mark.skip),
+            param(False, marks=mark.only),
+        ],
+    )
+    async def test_mixin(self, *, counter_auto_start: bool) -> None:
         # to mimic subscribe
 
         @dataclass(kw_only=True)
@@ -1030,11 +1037,18 @@ class TestLooper:
             count: int = 0
             max_count: int = 10
 
-        looper = Example(auto_start=True, timeout=1.0)
-        async with looper:
-            ...
-        self._assert_stats(looper, stops=1)
-        self._assert_stats(looper._counter, stops=1)
+        looper = LooperWithCounterMixin(
+            auto_start=True, timeout=1.0, counter_auto_start=counter_auto_start
+        )
+        if counter_auto_start:
+            with raises(TimeoutError):
+                async with timeout(1.0), looper:
+                    ...
+            self._assert_stats(looper._counter, stops=1)
+        else:
+            async with looper:
+                ...
+            self._assert_stats_half(looper._counter, stops=1)
 
     def test_replace(self) -> None:
         looper = CountingLooper().replace(freq=10.0)
@@ -1089,6 +1103,7 @@ class TestLooper:
             ...
         self._assert_stats(
             looper,
+            entries=1,
             core_successes=14,
             core_failures=1,
             initialization_successes=2,
@@ -1322,7 +1337,7 @@ class TestLooper:
         async with looper:
             with raises(LooperTimeoutError, match="Timeout"):
                 await looper
-        self._assert_stats_full(looper, entries=1, stops=1)
+        self._assert_stats_full(looper, stops=1)
 
     def test_with_auto_start(self) -> None:
         looper = CountingLooper()
