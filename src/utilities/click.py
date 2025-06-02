@@ -57,7 +57,7 @@ class _ContextSettings(TypedDict):
     context_settings: _HelpOptionNames
 
 
-CONTEXT_SETTINGS = _ContextSettings(
+CONTEXT_SETTINGS_HELP_OPTION_NAMES = _ContextSettings(
     context_settings=_HelpOptionNames(help_option_names=["-h", "--help"])
 )
 
@@ -493,7 +493,7 @@ def _make_metavar(param: Parameter, desc: str, /) -> str:
 
 
 __all__ = [
-    "CONTEXT_SETTINGS",
+    "CONTEXT_SETTINGS_HELP_OPTION_NAMES",
     "Date",
     "DirPath",
     "Duration",

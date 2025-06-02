@@ -31,7 +31,7 @@ import utilities.click
 import utilities.datetime
 import utilities.types
 from utilities.click import (
-    CONTEXT_SETTINGS,
+    CONTEXT_SETTINGS_HELP_OPTION_NAMES,
     Date,
     DirPath,
     Enum,
@@ -178,7 +178,7 @@ class TestFileAndDirPaths:
 class TestHelpOptionNames:
     @given(help_=sampled_from(["-h", "--help"]))
     def test_main(self, *, help_: str) -> None:
-        @command(**CONTEXT_SETTINGS)
+        @command(**CONTEXT_SETTINGS_HELP_OPTION_NAMES)
         def cli() -> None: ...
 
         result = CliRunner().invoke(cli, [help_])
