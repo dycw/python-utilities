@@ -31,6 +31,7 @@ import utilities.click
 import utilities.datetime
 import utilities.types
 from utilities.click import (
+    CONTEXT_SETTINGS,
     Date,
     DirPath,
     Enum,
@@ -171,6 +172,16 @@ class TestFileAndDirPaths:
 
         non_existent = tmp_path.joinpath("non-existent")
         result = CliRunner().invoke(cli, [str(non_existent)])
+        assert result.exit_code == 0
+
+
+class TestHelpOptionNames:
+    @given(help=sampled_from(["-h", "--help"]))
+    def test_main(self) -> None:
+        @command(**CONTEXT_SETTINGS)
+        def cli() -> None: ...
+
+        result = CliRunner().invoke(cli, [help])
         assert result.exit_code == 0
 
 

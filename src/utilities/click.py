@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import pathlib
-from typing import TYPE_CHECKING, Generic, TypeVar, override
+from typing import TYPE_CHECKING, Generic, TypedDict, TypeVar, override
 from uuid import UUID
 
 import click
@@ -46,6 +46,19 @@ ExistingFilePath = click.Path(
 )
 ExistingDirPath = click.Path(
     exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path
+)
+
+
+class _HelpOptionNames(TypedDict):
+    help_option_names: Sequence[str]
+
+
+class _ContextSettings(TypedDict):
+    context_settings: _HelpOptionNames
+
+
+CONTEXT_SETTINGS = _ContextSettings(
+    context_settings=_HelpOptionNames(help_option_names=["-h", "--help"])
 )
 
 
@@ -480,6 +493,7 @@ def _make_metavar(param: Parameter, desc: str, /) -> str:
 
 
 __all__ = [
+    "CONTEXT_SETTINGS",
     "Date",
     "DirPath",
     "Duration",
