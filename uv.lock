@@ -745,7 +745,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.126.4"
+version = "0.126.5"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },
@@ -1160,8 +1160,8 @@ requires-dist = [
     { name = "pytest-lazy-fixtures", marker = "extra == 'test'", specifier = ">=1.1.4,<1.2" },
     { name = "pytest-only", marker = "extra == 'test'", specifier = ">=2.1.2,<2.2" },
     { name = "pytest-randomly", marker = "extra == 'test'", specifier = ">=3.16.0,<3.17" },
-    { name = "pytest-regressions", marker = "extra == 'test'", specifier = ">=2.7.0,<2.8" },
-    { name = "pytest-regressions", marker = "extra == 'zzz-test-pytest-regressions'", specifier = ">=2.7.0,<2.8" },
+    { name = "pytest-regressions", marker = "extra == 'test'", specifier = ">=2.8.0,<2.9" },
+    { name = "pytest-regressions", marker = "extra == 'zzz-test-pytest-regressions'", specifier = ">=2.8.0,<2.9" },
     { name = "pytest-rerunfailures", marker = "extra == 'test'", specifier = ">=15.1,<16" },
     { name = "pytest-rng", marker = "extra == 'test'", specifier = ">=1.0.0,<1.1" },
     { name = "pytest-timeout", marker = "extra == 'test'", specifier = ">=2.4.0,<2.5" },
@@ -1282,7 +1282,7 @@ dev = [
     { name = "pytest-lazy-fixtures", specifier = ">=1.1.4,<1.2" },
     { name = "pytest-only", specifier = ">=2.1.2,<2.2" },
     { name = "pytest-randomly", specifier = ">=3.16.0,<3.17" },
-    { name = "pytest-regressions", specifier = ">=2.7.0,<2.8" },
+    { name = "pytest-regressions", specifier = ">=2.8.0,<2.9" },
     { name = "pytest-rerunfailures", specifier = ">=15.1,<16" },
     { name = "pytest-rng", specifier = ">=1.0.0,<1.1" },
     { name = "pytest-timeout", specifier = ">=2.4.0,<2.5" },
@@ -3348,16 +3348,16 @@ wheels = [
 
 [[package]]
 name = "pytest-regressions"
-version = "2.7.0"
+version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pytest" },
     { name = "pytest-datadir" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/07/40/2e233d49a86e2ba88325bcfdcad77fa56b05ba7ca61b58bc0212330e560a/pytest_regressions-2.7.0.tar.gz", hash = "sha256:4c30064e0923929012c94f5d6f35205be06fd8709c7f0dba0228e05c460af05e", size = 116270, upload-time = "2025-01-10T10:28:07.555Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c5/ef/48083b093c1291fac24d0556b8ddb88310977c5b7d6c7abe73cc87647901/pytest_regressions-2.8.0.tar.gz", hash = "sha256:775044e17117f5427df2caad3ab1c66889abe770a0ce2bc3f24fdeac99af76fe", size = 116454, upload-time = "2025-05-30T17:46:21.498Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6d/83/3eaf30c06a1cf8bb58b1e5dba0345d1c747b720e889cbae81750c7659e9f/pytest_regressions-2.7.0-py3-none-any.whl", hash = "sha256:69f5e3f03493cf0ef84d96d23e50a546617c198b1d7746f2e2b9e441cbab4847", size = 24497, upload-time = "2025-01-10T10:28:04.718Z" },
+    { url = "https://files.pythonhosted.org/packages/7f/6a/cf0a9929a94912e7123dd3ab23658fce5c3bdef12cb270da84348282feda/pytest_regressions-2.8.0-py3-none-any.whl", hash = "sha256:2926f37efa5fd6793806b10352e274c5284a5469a845aeab6243e86f9214766f", size = 24859, upload-time = "2025-05-30T17:46:19.722Z" },
 ]
 
 [[package]]
