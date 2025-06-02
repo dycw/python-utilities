@@ -527,12 +527,11 @@ class TestSubscribe:
         for result, obj in zip(results, objs, strict=True):
             assert is_equal(result, obj)
 
-    @mark.only
     @given(
         channel=unique_strs(),
         data=data(),
-        short_messages=lists(text_ascii(max_size=2), min_size=1, max_size=5),
-        long_messages=lists(text_ascii(min_size=3), min_size=1, max_size=5),
+        short_messages=lists(text_ascii(max_size=4), min_size=1, max_size=5),
+        long_messages=lists(text_ascii(min_size=6), min_size=1, max_size=5),
     )
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
