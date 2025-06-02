@@ -525,6 +525,26 @@ class TestSubscribe:
         for result, obj in zip(results, objs, strict=True):
             assert is_equal(result, obj)
 
+    @mark.only
+    @given(channel=unique_strs(), messages=lists(text_ascii(), min_size=1, max_size=5))
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_filter(self, *, channel: str, messages: Sequence[str]) -> None:
+        queue: Queue[str] = Queue()
+        async with (
+            yield_redis() as redis,
+            subscribe(redis, channel, queue, filter_=lambda text: len(text) >= 3),
+        ):
+            await sleep(_PUB_SUB_SLEEP)
+            for message in messages:
+                await redis.publish(channel, message)
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == sum(int(len(m) >= 3) for m in messages)
+        results = get_items_nowait(queue)
+        for result in results:
+            assert isinstance(result, str)
+            assert len(message) >= 3
+
     @given(
         channel=unique_strs(),
         messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
@@ -577,26 +597,22 @@ class TestSubscribe:
 
 
 class TestSubscribeService:
-    @given(
-        channel=unique_strs(),
-        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
-    )
+    @given(channel=unique_strs(), objects=lists(make_objects(), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, channel: str, messages: list[str]) -> None:
+    async def test_main(self, *, channel: str, objects: list[str]) -> None:
         async with (
             yield_redis() as redis,
             SubscribeService(timeout=1.0, redis=redis, channel=channel) as service,
         ):
             await sleep(_PUB_SUB_SLEEP)
-            for message in messages:
-                await redis.publish(channel, message)
+            for obj in objects:
+                await redis.publish(channel, serialize(obj))
             await sleep(_PUB_SUB_SLEEP)  # keep in context
-        assert service.qsize() == len(messages)
+        assert service.qsize() == len(objects)
         results = service.get_all_nowait()
-        for result, message in zip(results, messages, strict=True):
-            assert isinstance(result, str)
-            assert result == message
+        for result, obj in zip(results, objects, strict=True):
+            assert is_equal(result, obj)
 
     @given(channel=unique_strs())
     @settings(

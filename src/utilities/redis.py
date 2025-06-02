@@ -817,9 +817,9 @@ async def _subscribe_core(
                 transformed = transform(message)
                 if (filter_ is None) or filter_(transformed):
                     if isinstance(queue, EnhancedQueue):
-                        queue.put_right_nowait(transform(message))
+                        queue.put_right_nowait(transformed)
                     else:
-                        queue.put_nowait(transform(message))
+                        queue.put_nowait(transformed)
             else:
                 await asyncio.sleep(sleep_use)
 
