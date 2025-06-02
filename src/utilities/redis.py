@@ -35,6 +35,7 @@ from utilities.datetime import (
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, get_class_name, identity
 from utilities.iterables import always_iterable, one
+from utilities.orjson import deserialize, serialize
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -557,7 +558,7 @@ async def publish(
     data: _T,
     /,
     *,
-    serializer: Callable[[bytes | str | _T], EncodableT],
+    serializer: Callable[[_T], EncodableT],
     timeout: Duration = _PUBLISH_TIMEOUT,
 ) -> ResponseT: ...
 @overload
@@ -577,7 +578,7 @@ async def publish(
     data: bytes | str | _T,
     /,
     *,
-    serializer: Callable[[bytes | str | _T], EncodableT] | None = None,
+    serializer: Callable[[_T], EncodableT] | None = None,
     timeout: Duration = _PUBLISH_TIMEOUT,
 ) -> ResponseT: ...
 async def publish(
@@ -586,18 +587,19 @@ async def publish(
     data: bytes | str | _T,
     /,
     *,
-    serializer: Callable[[bytes | str | _T], EncodableT] | None = None,
+    serializer: Callable[[_T], EncodableT] | None = None,
     timeout: Duration = _PUBLISH_TIMEOUT,
 ) -> ResponseT:
     """Publish an object to a channel."""
-    if isinstance(data, bytes | str) and (  # skipif-ci-and-not-linux
-        serializer is None
-    ):
-        data_use = data
-    elif serializer is not None:  # skipif-ci-and-not-linux
-        data_use = serializer(data)
-    else:  # skipif-ci-and-not-linux
-        raise PublishError(data=data, serializer=serializer)
+    match data, serializer:  # skipif-ci-and-not-linux
+        case bytes() | str() as data_use, _:
+            ...
+        case _, None:
+            raise PublishError(data=data, serializer=serializer)
+        case _, Callable():
+            data_use = serializer(data)
+        case _ as never:
+            assert_never(never)
     async with timeout_dur(duration=timeout):  # skipif-ci-and-not-linux
         return await redis.publish(channel, data_use)  # skipif-ci-and-not-linux
 
@@ -654,7 +656,7 @@ class PublisherError(Exception):
 
 
 @dataclass(kw_only=True)
-class PublishService(Looper[tuple[str, bytes | str | _T]]):
+class PublishService(Looper[tuple[str, _T]]):
     """Service to publish items to Redis."""
 
     # base
@@ -663,7 +665,7 @@ class PublishService(Looper[tuple[str, bytes | str | _T]]):
     empty_upon_exit: bool = field(default=True, repr=False)
     # self
     redis: Redis
-    serializer: Callable[[Any], EncodableT] | None = None
+    serializer: Callable[[_T], EncodableT] = serialize
     publish_timeout: Duration = SECOND
 
     @override
@@ -698,6 +700,7 @@ def subscribe(
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     sleep: Duration = _SUBSCRIBE_SLEEP,
     output: Literal["raw"],
+    filter_: Callable[[_RedisMessage], bool] | None = None,
 ) -> AsyncIterator[Task[None]]: ...
 @overload
 @asynccontextmanager
@@ -710,6 +713,7 @@ def subscribe(
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     sleep: Duration = _SUBSCRIBE_SLEEP,
     output: Literal["bytes"],
+    filter_: Callable[[bytes], bool] | None = None,
 ) -> AsyncIterator[Task[None]]: ...
 @overload
 @asynccontextmanager
@@ -722,6 +726,7 @@ def subscribe(
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     sleep: Duration = _SUBSCRIBE_SLEEP,
     output: Literal["text"] = "text",
+    filter_: Callable[[str], bool] | None = None,
 ) -> AsyncIterator[Task[None]]: ...
 @overload
 @asynccontextmanager
@@ -734,6 +739,7 @@ def subscribe(
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     sleep: Duration = _SUBSCRIBE_SLEEP,
     output: Callable[[bytes], _T],
+    filter_: Callable[[_T], bool] | None = None,
 ) -> AsyncIterator[Task[None]]: ...
 @asynccontextmanager
 async def subscribe(
@@ -745,6 +751,7 @@ async def subscribe(
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     sleep: Duration = _SUBSCRIBE_SLEEP,
     output: Literal["raw", "bytes", "text"] | Callable[[bytes], _T] = "text",
+    filter_: Callable[[Any], bool] | None = None,
 ) -> AsyncIterator[Task[None]]:
     """Subscribe to the data of a given channel(s)."""
     channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
@@ -767,7 +774,15 @@ async def subscribe(
             assert_never(never)
 
     task = create_task(  # skipif-ci-and-not-linux
-        _subscribe_core(redis, channels, transform, queue, timeout=timeout, sleep=sleep)
+        _subscribe_core(
+            redis,
+            channels,
+            transform,
+            queue,
+            timeout=timeout,
+            sleep=sleep,
+            filter_=filter_,
+        )
     )
     try:  # skipif-ci-and-not-linux
         yield task
@@ -786,6 +801,7 @@ async def _subscribe_core(
     *,
     timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     sleep: Duration = _SUBSCRIBE_SLEEP,
+    filter_: Callable[[Any], bool] | None = None,
 ) -> None:
     timeout_use = (  # skipif-ci-and-not-linux
         None if timeout is None else datetime_duration_to_float(timeout)
@@ -798,10 +814,12 @@ async def _subscribe_core(
         while True:
             message = await pubsub.get_message(timeout=timeout_use)
             if is_subscribe_message(message):
-                if isinstance(queue, EnhancedQueue):
-                    queue.put_right_nowait(transform(message))
-                else:
-                    queue.put_nowait(transform(message))
+                transformed = transform(message)
+                if (filter_ is None) or filter_(transformed):
+                    if isinstance(queue, EnhancedQueue):
+                        queue.put_right_nowait(transformed)
+                    else:
+                        queue.put_nowait(transformed)
             else:
                 await asyncio.sleep(sleep_use)
 
@@ -843,9 +861,10 @@ class SubscribeService(Looper[_T]):
     # self
     redis: Redis
     channel: str
-    deserializer: Callable[[bytes], _T] | None = None
-    subscribe_sleep: Duration = _SUBSCRIBE_SLEEP
+    deserializer: Callable[[bytes], _T] = deserialize
     subscribe_timeout: Duration | None = _SUBSCRIBE_TIMEOUT
+    subscribe_sleep: Duration = _SUBSCRIBE_SLEEP
+    filter_: Callable[[_T], bool] | None = None
     _is_subscribed: Event = field(default_factory=Event, init=False, repr=False)
 
     @override
@@ -864,12 +883,10 @@ class SubscribeService(Looper[_T]):
                         self.redis,
                         self.channel,
                         self._queue,
-                        sleep=self.subscribe_sleep,
                         timeout=self.subscribe_timeout,
-                        output=cast(
-                            "Any",
-                            "text" if self.deserializer is None else self.deserializer,
-                        ),
+                        sleep=self.subscribe_sleep,
+                        output=self.deserializer,
+                        filter_=self.filter_,
                     )
                 )
             case _ as never:

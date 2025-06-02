@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from asyncio import Queue, sleep
 from contextlib import asynccontextmanager
+from itertools import chain
 from re import search
 from typing import TYPE_CHECKING, Any
 
@@ -13,6 +14,7 @@ from hypothesis.strategies import (
     data,
     dictionaries,
     lists,
+    permutations,
     sampled_from,
 )
 from pytest import LogCaptureFixture, mark, param, raises
@@ -527,6 +529,38 @@ class TestSubscribe:
 
     @given(
         channel=unique_strs(),
+        data=data(),
+        short_messages=lists(text_ascii(max_size=4), min_size=1, max_size=5),
+        long_messages=lists(text_ascii(min_size=6), min_size=1, max_size=5),
+    )
+    @settings_with_reduced_examples(phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_filter(
+        self,
+        *,
+        channel: str,
+        data: DataObject,
+        short_messages: Sequence[str],
+        long_messages: Sequence[str],
+    ) -> None:
+        messages = data.draw(permutations(list(chain(short_messages, long_messages))))
+        queue: Queue[str] = Queue()
+        async with (
+            yield_redis() as redis,
+            subscribe(redis, channel, queue, filter_=lambda text: len(text) >= 6),
+        ):
+            await sleep(_PUB_SUB_SLEEP)
+            for message in messages:
+                await redis.publish(channel, message)
+            await sleep(_PUB_SUB_SLEEP)  # keep in context
+        assert queue.qsize() == len(long_messages)
+        results = get_items_nowait(queue)
+        for result in results:
+            assert isinstance(result, str)
+            assert len(result) >= 3
+
+    @given(
+        channel=unique_strs(),
         messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
     )
     @settings_with_reduced_examples(phases={Phase.generate})
@@ -577,26 +611,22 @@ class TestSubscribe:
 
 
 class TestSubscribeService:
-    @given(
-        channel=unique_strs(),
-        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
-    )
+    @given(channel=unique_strs(), objects=lists(make_objects(), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, channel: str, messages: list[str]) -> None:
+    async def test_main(self, *, channel: str, objects: list[str]) -> None:
         async with (
             yield_redis() as redis,
             SubscribeService(timeout=1.0, redis=redis, channel=channel) as service,
         ):
             await sleep(_PUB_SUB_SLEEP)
-            for message in messages:
-                await redis.publish(channel, message)
+            for obj in objects:
+                await redis.publish(channel, serialize(obj))
             await sleep(_PUB_SUB_SLEEP)  # keep in context
-        assert service.qsize() == len(messages)
+        assert service.qsize() == len(objects)
         results = service.get_all_nowait()
-        for result, message in zip(results, messages, strict=True):
-            assert isinstance(result, str)
-            assert result == message
+        for result, obj in zip(results, objects, strict=True):
+            assert is_equal(result, obj)
 
     @given(channel=unique_strs())
     @settings(
