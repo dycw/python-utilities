@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import Event
+import asyncio
 from contextlib import asynccontextmanager, suppress
 from typing import TYPE_CHECKING
 
@@ -8,7 +8,7 @@ from pottery import AIORedlock
 from pottery.exceptions import ReleaseUnlockedLock
 from redis.asyncio import Redis
 
-from utilities.datetime import SECOND, datetime_duration_to_float
+from utilities.datetime import MILLISECOND, SECOND, datetime_duration_to_float
 from utilities.iterables import always_iterable
 
 if TYPE_CHECKING:
@@ -19,7 +19,12 @@ if TYPE_CHECKING:
 
 @asynccontextmanager
 async def yield_locked_resource(
-    redis: MaybeIterable[Redis], key: str, /, *, duration: Duration = 10 * SECOND
+    redis: MaybeIterable[Redis],
+    key: str,
+    /,
+    *,
+    duration: Duration = 10 * SECOND,
+    sleep: Duration = MILLISECOND,
 ) -> AsyncIterator[None]:
     """Yield a locked resource."""
     masters = (  # skipif-ci-and-not-linux
@@ -32,8 +37,9 @@ async def yield_locked_resource(
         auto_release_time=duration_use,
         context_manager_timeout=duration_use,
     )
+    sleep_use = datetime_duration_to_float(sleep)  # skipif-ci-and-not-linux
     while not await lock.acquire():  # skipif-ci-and-not-linux
-        _ = await Event().wait()
+        _ = await asyncio.sleep(sleep_use)
     try:  # skipif-ci-and-not-linux
         yield
     finally:  # skipif-ci-and-not-linux
