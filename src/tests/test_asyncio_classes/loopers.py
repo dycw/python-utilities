@@ -1,0 +1,72 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, override
+
+from utilities.asyncio import Looper
+from utilities.datetime import MILLISECOND
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from utilities.types import Duration
+
+_FREQ: Duration = 10 * MILLISECOND
+_BACKOFF: Duration = 100 * MILLISECOND
+
+
+@dataclass(kw_only=True)
+class CountingLooper(Looper[Any]):
+    freq: Duration = field(default=_FREQ, repr=False)
+    backoff: Duration = field(default=_BACKOFF, repr=False)
+    _debug: bool = field(default=True, repr=False)
+    count: int = 0
+    max_count: int = 10
+
+    @override
+    async def _initialize_core(self) -> None:
+        await super()._initialize_core()
+        self.count = 0
+
+    @override
+    async def core(self) -> None:
+        await super().core()
+        self.count += 1
+        if self.count >= self.max_count:
+            raise CounterError
+
+
+class CounterError(Exception): ...
+
+
+@dataclass(kw_only=True)
+class OuterCountingLooper(CountingLooper):
+    inner: CountingLooper = field(init=False, repr=False)
+    inner_auto_start: bool = field(default=False, repr=False)
+
+    @override
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.inner = CountingLooper(
+            auto_start=self.inner_auto_start,
+            freq=self.freq / 2,
+            backoff=self.backoff / 2,
+            logger=self.logger,
+            timeout=self.timeout,
+            timeout_error=self.timeout_error,
+            max_count=round(self.max_count / 2),
+        )
+
+    @override
+    def _yield_sub_loopers(self) -> Iterator[Looper]:
+        yield from super()._yield_sub_loopers()
+        yield self.inner
+
+
+@dataclass(kw_only=True)
+class QueueLooper(Looper[int]):
+    @override
+    async def core(self) -> None:
+        await super().core()
+        if not self.empty():
+            _ = self.get_left_nowait()
