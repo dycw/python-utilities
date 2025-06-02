@@ -156,7 +156,7 @@ def render_module(source: str | Module, /) -> str:
         case str() as text:
             try:
                 return check_output(["ruff", "format", "-"], input=text, text=True)
-            except CalledProcessError:
+            except CalledProcessError:  # pragma: no cover
                 return text
         case Module() as module:
             return render_module(module.code)
