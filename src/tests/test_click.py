@@ -87,6 +87,16 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 
 
+class TestContextSettingsHelpOptionNames:
+    @given(help_=sampled_from(["-h", "--help"]))
+    def test_main(self, *, help_: str) -> None:
+        @command(**CONTEXT_SETTINGS_HELP_OPTION_NAMES)
+        def cli() -> None: ...
+
+        result = CliRunner().invoke(cli, [help_])
+        assert result.exit_code == 0
+
+
 class TestFileAndDirPaths:
     def test_existing_dir_path(self, *, tmp_path: Path) -> None:
         @command()
@@ -172,16 +182,6 @@ class TestFileAndDirPaths:
 
         non_existent = tmp_path.joinpath("non-existent")
         result = CliRunner().invoke(cli, [str(non_existent)])
-        assert result.exit_code == 0
-
-
-class TestHelpOptionNames:
-    @given(help_=sampled_from(["-h", "--help"]))
-    def test_main(self, *, help_: str) -> None:
-        @command(**CONTEXT_SETTINGS_HELP_OPTION_NAMES)
-        def cli() -> None: ...
-
-        result = CliRunner().invoke(cli, [help_])
         assert result.exit_code == 0
 
 
