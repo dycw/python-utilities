@@ -31,6 +31,7 @@ import utilities.click
 import utilities.datetime
 import utilities.types
 from utilities.click import (
+    CONTEXT_SETTINGS_HELP_OPTION_NAMES,
     Date,
     DirPath,
     Enum,
@@ -84,6 +85,16 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
+
+
+class TestContextSettingsHelpOptionNames:
+    @given(help_=sampled_from(["-h", "--help"]))
+    def test_main(self, *, help_: str) -> None:
+        @command(**CONTEXT_SETTINGS_HELP_OPTION_NAMES)
+        def cli() -> None: ...
+
+        result = CliRunner().invoke(cli, [help_])
+        assert result.exit_code == 0
 
 
 class TestFileAndDirPaths:
