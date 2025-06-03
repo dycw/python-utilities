@@ -127,7 +127,7 @@ def yield_mapping_repr(
     """Pretty print of a set of keyword arguments."""
     try:
         from rich.pretty import pretty_repr
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         repr_use = repr
     else:
         repr_use = partial(
