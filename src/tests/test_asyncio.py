@@ -42,7 +42,6 @@ from utilities.asyncio import (
     InfiniteLooper,
     InfiniteQueueLooper,
     Looper,
-    LooperTimeoutError,
     UniquePriorityQueue,
     UniqueQueue,
     _InfiniteLooperDefaultEventError,
@@ -1362,7 +1361,7 @@ class TestLooper:
     async def test_timeout(self) -> None:
         looper = CountingLooper(timeout=1.0)
         async with looper:
-            with raises(LooperTimeoutError, match="Timeout"):
+            with raises(TimeoutError, match="Timeout"):
                 await looper
         self._assert_stats_full(looper, stops=1)
 

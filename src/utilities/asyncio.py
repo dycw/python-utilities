@@ -664,15 +664,6 @@ class LooperError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
-class LooperTimeoutError(LooperError):
-    duration: Duration | None = None
-
-    @override
-    def __str__(self) -> str:
-        return "Timeout" if self.duration is None else f"Timeout after {self.duration}"
-
-
-@dataclass(kw_only=True, slots=True)
 class _LooperNoTaskError(LooperError):
     looper: Looper
 
@@ -756,7 +747,7 @@ class Looper(Generic[_T]):
                     _ = await self._stack.enter_async_context(looper)
                 if self.auto_start:
                     _ = self._debug and self._logger.debug("%s: auto-starting...", self)
-                    with suppress(self.timeout_error):
+                    with suppress(TimeoutError):
                         await self._task
             case _ as never:
                 assert_never(never)
@@ -1429,7 +1420,6 @@ __all__ = [
     "InfiniteQueueLooper",
     "Looper",
     "LooperError",
-    "LooperTimeoutError",
     "StreamCommandOutput",
     "UniquePriorityQueue",
     "UniqueQueue",
