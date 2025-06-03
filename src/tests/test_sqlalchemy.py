@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from itertools import chain
 from time import time_ns
 from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
@@ -25,6 +26,9 @@ from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
+from tests.test_asyncio import assert_looper_stats
+from tests.test_asyncio_classes.loopers import _BACKOFF, _FREQ
+from utilities.asyncio import Looper
 from utilities.hypothesis import (
     int32s,
     pairs,
@@ -45,6 +49,7 @@ from utilities.sqlalchemy import (
     UpserterError,
     UpsertItemsError,
     UpsertService,
+    UpsertServiceMixin,
     _get_dialect,
     _get_dialect_max_params,
     _InsertItem,
@@ -94,7 +99,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from pathlib import Path
 
-    from utilities.types import StrMapping
+    from utilities.types import Duration, StrMapping
 
 
 def _table_names() -> str:
@@ -1419,6 +1424,29 @@ class TestUpsertItems:
             results = (await conn.execute(sel)).all()
         if expected is not None:
             assert set(results) == expected
+
+
+class TestUpsertServiceMixin:
+    @given(data=data())
+    @settings_with_reduced_examples(phases={Phase.generate})
+    async def test_main(self, *, data: DataObject) -> None:
+        engine = await sqlalchemy_engines(data)
+
+        @dataclass(kw_only=True)
+        class Example(UpsertServiceMixin, Looper[Any]):
+            freq: Duration = field(default=_FREQ, repr=False)
+            backoff: Duration = field(default=_BACKOFF, repr=False)
+            _debug: bool = field(default=True, repr=False)
+            upsert_service_database: AsyncEngine = engine
+            upsert_service_freq: Duration = field(default=_FREQ, repr=False)
+            upsert_service_backoff: Duration = field(default=_BACKOFF, repr=False)
+
+        service = Example(auto_start=True, timeout=1.0)
+        async with service:
+            ...
+        assert_looper_stats(
+            service, entries=1, core_successes=99, initialization_successes=1, stops=1
+        )
 
 
 class TestYieldPrimaryKeyColumns:
