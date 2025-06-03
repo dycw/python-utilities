@@ -192,8 +192,7 @@ class TestPublishService:
     )
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, messages: Sequence[str]) -> None:
-        channel = unique_str()
+    async def test_main(self, *, channel: str, messages: Sequence[str]) -> None:
         queue: Queue[str] = Queue()
         async with (
             yield_redis() as redis,
