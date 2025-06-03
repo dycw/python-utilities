@@ -6,7 +6,7 @@ from random import Random
 from time import sleep
 from typing import TYPE_CHECKING
 
-from pytest import mark, param, raises
+from pytest import fixture, mark, param, raises
 
 from utilities.pytest import (
     NodeIdToPathError,
@@ -15,6 +15,7 @@ from utilities.pytest import (
     random_state,
     throttle,
 )
+from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -23,6 +24,19 @@ if TYPE_CHECKING:
 
 
 _ = random_state
+
+
+@fixture(autouse=True)
+def inject_pyproject_toml(*, testdir: Testdir) -> None:
+    _ = testdir.makepyprojecttoml(
+        strip_and_dedent(
+            """
+            [tool.pytest.ini_options]
+            addopts = ""
+            asyncio_default_fixture_loop_scope = "function"
+            """
+        )
+    )
 
 
 class TestIsPytest:
