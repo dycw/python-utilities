@@ -4,13 +4,20 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Self
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import integers, sets
-from pytest import mark, param
+from pytest import mark, param, raises
 
 from utilities.dataclasses import replace_non_sentinel
-from utilities.hypothesis import paths, temp_paths
-from utilities.pathlib import ensure_suffix, get_path, list_dir, temp_cwd
+from utilities.hypothesis import git_repos, paths, temp_paths
+from utilities.pathlib import (
+    GetRootError,
+    ensure_suffix,
+    get_path,
+    get_root,
+    list_dir,
+    temp_cwd,
+)
 from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
@@ -67,6 +74,19 @@ class TestGetPath:
     @given(path=paths())
     def test_callable(self, *, path: Path) -> None:
         assert get_path(path=lambda: path) == path
+
+
+class TestGetRoot:
+    @given(repo=git_repos())
+    @settings(max_examples=1)
+    def test_git(self, *, repo: Path) -> None:
+        root = get_root(path=repo)
+        expected = repo.resolve()
+        assert root == expected
+
+    def test_error(self, *, tmp_path: Path) -> None:
+        with raises(GetRootError, match="Unable to determine root"):
+            _ = get_root(cwd=tmp_path)
 
 
 class TestListDir:

@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from contextlib import contextmanager
+from dataclasses import dataclass
 from itertools import chain
 from os import chdir
 from pathlib import Path
-from typing import TYPE_CHECKING, assert_never, overload
+from re import IGNORECASE, search
+from subprocess import PIPE, CalledProcessError, check_output
+from typing import TYPE_CHECKING, assert_never, overload, override
 
 from utilities.sentinel import Sentinel, sentinel
 
@@ -55,8 +58,29 @@ def get_path(
 ##
 
 
-def get_root(path: PathLike, /) -> Path:
+def get_root(*, path: MaybeCallablePathLike | None = None) -> Path:
     """Get the root of a path."""
+    path = get_path(path=path)
+    try:
+        output = check_output(
+            ["git", "rev-parse", "--show-toplevel"], stderr=PIPE, cwd=path, text=True
+        )
+    except CalledProcessError as error:
+        # newer versions of git report "Not a git repository", whilst older
+        # versions report "not a git repository"
+        if not search("fatal: not a git repository", error.stderr, flags=IGNORECASE):
+            raise  # pragma: no cover
+    else:
+        return Path(output.strip("\n"))
+
+
+@dataclass(kw_only=True, slots=True)
+class GetRootError(Exception):
+    path: PathLike
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to determine root: {self.path}"
 
 
 ##
