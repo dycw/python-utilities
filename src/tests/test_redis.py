@@ -6,7 +6,7 @@ from itertools import chain
 from re import search
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import HealthCheck, Phase, given, settings
+from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
     binary,
@@ -29,7 +29,6 @@ from utilities.hypothesis import (
     pairs,
     settings_with_reduced_examples,
     text_ascii,
-    unique_strs,
 )
 from utilities.iterables import one
 from utilities.operator import is_equal
@@ -50,6 +49,7 @@ from utilities.redis import (
     yield_redis,
 )
 from utilities.sentinel import SENTINEL_REPR, Sentinel, sentinel
+from utilities.text import unique_str
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Mapping, Sequence
@@ -114,12 +114,11 @@ class TestIsMessage:
 
 
 class TestPublish:
-    @given(
-        channel=unique_strs(), data=lists(binary(min_size=1), min_size=1, max_size=5)
-    )
+    @given(data=lists(binary(min_size=1), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_bytes(self, *, data: Sequence[bytes], channel: str) -> None:
+        channel = f"test_{unique_str()}"
         queue: Queue[bytes] = Queue()
         async with (
             yield_test_redis() as redis,
@@ -135,7 +134,7 @@ class TestPublish:
             assert isinstance(result, bytes)
             assert result == datum
 
-    @given(channel=unique_strs(), objects=lists(make_objects(), min_size=1, max_size=5))
+    @given(objects=lists(make_objects(), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_serializer(self, *, channel: str, objects: Sequence[Any]) -> None:
@@ -153,13 +152,11 @@ class TestPublish:
         for result, obj in zip(results, objects, strict=True):
             assert is_equal(result, obj)
 
-    @given(
-        channel=unique_strs(),
-        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
-    )
+    @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_text(self, *, channel: str, messages: Sequence[str]) -> None:
+    async def test_text(self, *, messages: Sequence[str]) -> None:
+        channel = f"test_{unique_str()}"
         queue: Queue[str] = Queue()
         async with yield_redis() as redis, subscribe(redis, channel, queue):
             await sleep(_PUB_SUB_SLEEP)
@@ -181,10 +178,7 @@ class TestPublish:
 
 
 class TestPublisher:
-    @given(
-        channel=unique_strs(),
-        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
-    )
+    @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, channel: str, messages: Sequence[str]) -> None:
@@ -210,10 +204,7 @@ class TestPublisher:
             with raises(PublisherError, match="Error running 'Publisher'"):
                 raise PublisherError(publisher=publisher)
 
-    @given(
-        channel=unique_strs(),
-        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
-    )
+    @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main_service(self, *, channel: str, messages: Sequence[str]) -> None:
@@ -234,55 +225,53 @@ class TestPublisher:
 
 
 class TestRedisHashMapKey:
-    @given(outer=unique_strs(), inner=int64s(), value=booleans())
+    @given(key=int64s(), value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_and_set_bool(
-        self, *, outer: str, inner: int, value: bool
-    ) -> None:
+    async def test_get_and_set_bool(self, *, key: int, value: bool) -> None:
         async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(outer, int, bool)
-            _ = await hm_key.set(redis, inner, value)
-            assert await hm_key.get(redis, inner) is value
+            hm_key = redis_hash_map_key(unique_str(), int, bool)
+            _ = await hm_key.set(redis, key, value)
+            assert await hm_key.get(redis, key) is value
 
-    @given(outer=unique_strs(), inner=booleans() | int64s(), value=booleans())
+    @given(key=booleans() | int64s(), value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_and_set_union_key(
-        self, *, outer: str, inner: bool | int, value: bool
-    ) -> None:
+    async def test_get_and_set_union_key(self, *, key: bool | int, value: bool) -> None:
         async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(outer, (bool, int), bool)
-            _ = await hm_key.set(redis, inner, value)
-            assert await hm_key.get(redis, inner) is value
+            hm_key = redis_hash_map_key(unique_str(), (bool, int), bool)
+            _ = await hm_key.set(redis, key, value)
+            assert await hm_key.get(redis, key) is value
 
-    @given(key=unique_strs(), value=booleans())
+    @given(value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_and_set_sentinel_key(self, *, key: str, value: bool) -> None:
+    async def test_get_and_set_sentinel_key(self, *, value: bool) -> None:
         def serializer(sentinel: Sentinel, /) -> bytes:
             return repr(sentinel).encode()
 
         async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(key, Sentinel, bool, key_serializer=serializer)
+            hm_key = redis_hash_map_key(
+                unique_str(), Sentinel, bool, key_serializer=serializer
+            )
             _ = await hm_key.set(redis, sentinel, value)
             assert await hm_key.get(redis, sentinel) is value
 
-    @given(outer=unique_strs(), inner=int64s(), value=int64s() | booleans())
+    @given(key=int64s(), value=int64s() | booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_union_value(
-        self, *, outer: str, inner: int, value: bool | int
+        self, *, key: int, value: bool | int
     ) -> None:
         async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(outer, int, (bool, int))
-            _ = await hm_key.set(redis, inner, value)
-            assert await hm_key.get(redis, inner) == value
+            hm_key = redis_hash_map_key(unique_str(), int, (bool, int))
+            _ = await hm_key.set(redis, key, value)
+            assert await hm_key.get(redis, key) == value
 
-    @given(outer=unique_strs(), inner=int64s())
+    @given(key=int64s())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_and_set_sentinel_value(self, *, outer: str, inner: int) -> None:
+    async def test_get_and_set_sentinel_value(self, *, key: int) -> None:
         def serializer(sentinel: Sentinel, /) -> bytes:
             return repr(sentinel).encode()
 
@@ -292,23 +281,23 @@ class TestRedisHashMapKey:
 
         async with yield_test_redis() as redis:
             hm_key = redis_hash_map_key(
-                outer,
+                unique_str(),
                 int,
                 Sentinel,
                 value_serializer=serializer,
                 value_deserializer=deserializer,
             )
-            _ = await hm_key.set(redis, inner, sentinel)
-            assert await hm_key.get(redis, inner) is sentinel
+            _ = await hm_key.set(redis, key, sentinel)
+            assert await hm_key.get(redis, key) is sentinel
 
-    @given(data=data(), key=unique_strs(), mapping=dictionaries(int64s(), booleans()))
+    @given(data=data(), mapping=dictionaries(int64s(), booleans()))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_many(
-        self, *, data: DataObject, key: str, mapping: Mapping[int, bool]
+        self, *, data: DataObject, mapping: Mapping[int, bool]
     ) -> None:
         async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(key, int, bool)
+            hm_key = redis_hash_map_key(unique_str(), int, bool)
             _ = await hm_key.set_many(redis, mapping)
             if len(mapping) == 0:
                 keys = []
@@ -317,105 +306,101 @@ class TestRedisHashMapKey:
             expected = [mapping[k] for k in keys]
             assert await hm_key.get_many(redis, keys) == expected
 
-    @given(outer=unique_strs(), inner=int64s(), value=booleans())
+    @given(key=int64s(), value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_delete(self, *, outer: str, inner: int, value: bool) -> None:
+    async def test_delete(self, *, key: int, value: bool) -> None:
         async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(outer, int, bool)
-            _ = await hm_key.set(redis, inner, value)
-            assert await hm_key.get(redis, inner) is value
-            _ = await hm_key.delete(redis, inner)
+            hm_key = redis_hash_map_key(unique_str(), int, bool)
+            _ = await hm_key.set(redis, key, value)
+            assert await hm_key.get(redis, key) is value
+            _ = await hm_key.delete(redis, key)
             with raises(KeyError):
-                _ = await hm_key.get(redis, inner)
+                _ = await hm_key.get(redis, key)
 
-    @given(outer=unique_strs(), inner=pairs(int64s()), value=booleans())
+    @given(key=pairs(int64s()), value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_delete_compound(
-        self, *, outer: str, inner: tuple[int, int], value: bool
-    ) -> None:
+    async def test_delete_compound(self, *, key: tuple[int, int], value: bool) -> None:
         async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(outer, tuple[int, int], bool)
-            _ = await hm_key.set(redis, inner, value)
-            assert await hm_key.get(redis, inner) is value
-            _ = await hm_key.delete(redis, inner)
+            hm_key = redis_hash_map_key(unique_str(), tuple[int, int], bool)
+            _ = await hm_key.set(redis, key, value)
+            assert await hm_key.get(redis, key) is value
+            _ = await hm_key.delete(redis, key)
             with raises(KeyError):
-                _ = await hm_key.get(redis, inner)
+                _ = await hm_key.get(redis, key)
 
-    @given(outer=unique_strs(), inner=int64s(), value=booleans())
+    @given(key=int64s(), value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_exists(self, *, outer: str, inner: int, value: bool) -> None:
+    async def test_exists(self, *, key: int, value: bool) -> None:
         async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(outer, int, bool)
-            assert not (await hm_key.exists(redis, inner))
-            _ = await hm_key.set(redis, inner, value)
-            assert await hm_key.exists(redis, inner)
+            hm_key = redis_hash_map_key(unique_str(), int, bool)
+            assert not (await hm_key.exists(redis, key))
+            _ = await hm_key.set(redis, key, value)
+            assert await hm_key.exists(redis, key)
 
-    @given(outer=unique_strs(), inner=pairs(int64s()), value=booleans())
+    @given(key=pairs(int64s()), value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_exists_compound(
-        self, *, outer: str, inner: tuple[int, int], value: bool
-    ) -> None:
+    async def test_exists_compound(self, *, key: tuple[int, int], value: bool) -> None:
         async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(outer, tuple[int, int], bool)
-            assert not (await hm_key.exists(redis, inner))
-            _ = await hm_key.set(redis, inner, value)
-            assert await hm_key.exists(redis, inner)
+            hm_key = redis_hash_map_key(unique_str(), tuple[int, int], bool)
+            assert not (await hm_key.exists(redis, key))
+            _ = await hm_key.set(redis, key, value)
+            assert await hm_key.exists(redis, key)
 
-    @given(key=unique_strs(), mapping=dictionaries(int64s(), booleans()))
+    @given(mapping=dictionaries(int64s(), booleans()))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_all(self, *, key: str, mapping: Mapping[int, bool]) -> None:
+    async def test_get_all(self, *, mapping: Mapping[int, bool]) -> None:
         async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(key, int, bool)
+            hm_key = redis_hash_map_key(unique_str(), int, bool)
             _ = await hm_key.set_many(redis, mapping)
             assert await hm_key.get_all(redis) == mapping
 
-    @given(key=unique_strs(), mapping=dictionaries(int64s(), booleans()))
+    @given(mapping=dictionaries(int64s(), booleans()))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_keys(self, *, key: str, mapping: Mapping[int, bool]) -> None:
+    async def test_keys(self, *, mapping: Mapping[int, bool]) -> None:
         async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(key, int, bool)
+            hm_key = redis_hash_map_key(unique_str(), int, bool)
             _ = await hm_key.set_many(redis, mapping)
             assert await hm_key.keys(redis) == list(mapping)
 
-    @given(key=unique_strs(), mapping=dictionaries(int64s(), booleans()))
+    @given(mapping=dictionaries(int64s(), booleans()))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_length(self, *, key: str, mapping: Mapping[int, bool]) -> None:
+    async def test_length(self, *, mapping: Mapping[int, bool]) -> None:
         async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(key, int, bool)
+            hm_key = redis_hash_map_key(unique_str(), int, bool)
             _ = await hm_key.set_many(redis, mapping)
             assert await hm_key.length(redis) == len(mapping)
 
-    @given(outer=unique_strs(), inner=int64s(), value=booleans())
+    @given(key=int64s(), value=booleans())
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_ttl(self, *, outer: str, inner: int, value: bool) -> None:
+    async def test_ttl(self, *, key: int, value: bool) -> None:
         async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(outer, int, bool, ttl=0.05)
-            _ = await hm_key.set(redis, inner, value)
+            hm_key = redis_hash_map_key(unique_str(), int, bool, ttl=0.05)
+            _ = await hm_key.set(redis, key, value)
             await sleep(0.025)  # else next line may not work
-            assert await hm_key.exists(redis, inner)
+            assert await hm_key.exists(redis, key)
             await sleep(0.05)
             assert not await redis.exists(hm_key.name)
 
-    @given(key=unique_strs(), mapping=dictionaries(int64s(), booleans()))
+    @given(mapping=dictionaries(int64s(), booleans()))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_values(self, *, key: str, mapping: Mapping[int, bool]) -> None:
+    async def test_values(self, *, mapping: Mapping[int, bool]) -> None:
         async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(key, int, bool)
+            hm_key = redis_hash_map_key(unique_str(), int, bool)
             _ = await hm_key.set_many(redis, mapping)
             assert await hm_key.values(redis) == list(mapping.values())
 
 
 class TestRedisKey:
-    @given(key=unique_strs(), value=booleans())
+    @given(value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_bool(self, *, key: str, value: bool) -> None:
@@ -424,7 +409,7 @@ class TestRedisKey:
             _ = await red_key.set(redis, value)
             assert await red_key.get(redis) is value
 
-    @given(key=unique_strs(), value=booleans() | int64s())
+    @given(value=booleans() | int64s())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_union(self, *, key: str, value: bool | int) -> None:
@@ -433,10 +418,8 @@ class TestRedisKey:
             _ = await red_key.set(redis, value)
             assert await red_key.get(redis) == value
 
-    @given(key=unique_strs())
-    @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_and_set_sentinel_with_serialize(self, *, key: str) -> None:
+    async def test_get_and_set_sentinel_with_serialize(self) -> None:
         def serializer(sentinel: Sentinel, /) -> bytes:
             return repr(sentinel).encode()
 
@@ -446,12 +429,12 @@ class TestRedisKey:
 
         async with yield_test_redis() as redis:
             red_key = redis_key(
-                key, Sentinel, serializer=serializer, deserializer=deserializer
+                unique_str(), Sentinel, serializer=serializer, deserializer=deserializer
             )
             _ = await red_key.set(redis, sentinel)
             assert await red_key.get(redis) is sentinel
 
-    @given(key=unique_strs(), value=booleans())
+    @given(value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_delete(self, *, key: str, value: bool) -> None:
@@ -463,22 +446,22 @@ class TestRedisKey:
             with raises(KeyError):
                 _ = await red_key.get(redis)
 
-    @given(key=unique_strs(), value=booleans())
+    @given(value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_exists(self, *, key: str, value: bool) -> None:
+    async def test_exists(self, *, value: bool) -> None:
         async with yield_test_redis() as redis:
-            rkey = redis_key(key, bool)
+            rkey = redis_key(unique_str(), bool)
             assert not (await rkey.exists(redis))
             _ = await rkey.set(redis, value)
             assert await rkey.exists(redis)
 
-    @given(key=unique_strs(), value=booleans())
+    @given(value=booleans())
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_ttl(self, *, key: str, value: bool) -> None:
+    async def test_ttl(self, *, value: bool) -> None:
         async with yield_test_redis() as redis:
-            red_key = redis_key(key, bool, ttl=0.05)
+            red_key = redis_key(unique_str(), bool, ttl=0.05)
             _ = await red_key.set(redis, value)
             await sleep(0.025)  # else next line may not work
             assert await red_key.exists(redis)
@@ -487,10 +470,7 @@ class TestRedisKey:
 
 
 class TestSubscribe:
-    @given(
-        channel=unique_strs(),
-        messages=lists(binary(min_size=1), min_size=1, max_size=5),
-    )
+    @given(messages=lists(binary(min_size=1), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_bytes(self, *, channel: str, messages: Sequence[bytes]) -> None:
@@ -509,7 +489,7 @@ class TestSubscribe:
             assert isinstance(result, bytes)
             assert result == message
 
-    @given(channel=unique_strs(), objs=lists(make_objects(), min_size=1, max_size=5))
+    @given(objs=lists(make_objects(), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_deserialize(self, *, channel: str, objs: Sequence[Any]) -> None:
@@ -528,7 +508,6 @@ class TestSubscribe:
             assert is_equal(result, obj)
 
     @given(
-        channel=unique_strs(),
         data=data(),
         short_messages=lists(text_ascii(max_size=4), min_size=1, max_size=5),
         long_messages=lists(text_ascii(min_size=6), min_size=1, max_size=5),
@@ -559,13 +538,11 @@ class TestSubscribe:
             assert isinstance(result, str)
             assert len(result) >= 3
 
-    @given(
-        channel=unique_strs(),
-        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
-    )
+    @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_raw(self, *, channel: str, messages: Sequence[str]) -> None:
+    async def test_raw(self, *, messages: Sequence[str]) -> None:
+        channel = f"test_{unique_str()}"
         queue: Queue[_RedisMessage] = Queue()
         async with (
             yield_redis() as redis,
@@ -584,13 +561,11 @@ class TestSubscribe:
             assert result["channel"] == channel.encode()
             assert result["data"] == message.encode()
 
-    @given(
-        channel=unique_strs(),
-        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
-    )
+    @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_text(self, *, channel: str, messages: Sequence[str]) -> None:
+    async def test_text(self, *, messages: Sequence[str]) -> None:
+        channel = f"test_{unique_str()}"
         queue: Queue[_RedisMessage] = Queue()
         async with (
             yield_redis() as redis,
@@ -611,10 +586,11 @@ class TestSubscribe:
 
 
 class TestSubscribeService:
-    @given(channel=unique_strs(), objects=lists(make_objects(), min_size=1, max_size=5))
+    @given(objects=lists(make_objects(), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, channel: str, objects: list[str]) -> None:
+    async def test_main(self, *, objects: list[str]) -> None:
+        channel = f"test_{unique_str()}"
         async with (
             yield_redis() as redis,
             SubscribeService(timeout=1.0, redis=redis, channel=channel) as service,
@@ -628,16 +604,11 @@ class TestSubscribeService:
         for result, obj in zip(results, objects, strict=True):
             assert is_equal(result, obj)
 
-    @given(channel=unique_strs())
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_context_manager_already_subscribing(
-        self, *, channel: str, caplog: LogCaptureFixture
+        self, *, caplog: LogCaptureFixture
     ) -> None:
+        channel = f"test_{unique_str()}"
         async with yield_redis() as redis:
             looper = SubscribeService(
                 timeout=1.0, _debug=True, redis=redis, channel=channel

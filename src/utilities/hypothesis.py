@@ -8,12 +8,11 @@ from datetime import timezone
 from enum import Enum, auto
 from functools import partial
 from math import ceil, floor, inf, isclose, isfinite, nan
-from os import environ, getpid
+from os import environ
 from pathlib import Path
 from re import search
 from string import ascii_letters, ascii_lowercase, ascii_uppercase, digits, printable
 from subprocess import check_call
-from threading import get_ident
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -24,7 +23,6 @@ from typing import (
     overload,
     override,
 )
-from uuid import uuid4
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
@@ -89,7 +87,6 @@ from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
-from utilities.tzlocal import get_now_local
 from utilities.version import Version
 from utilities.zoneinfo import UTC
 
@@ -1412,20 +1409,6 @@ def uint64s(
 
 
 @composite
-def unique_strs(draw: DrawFn, /) -> str:
-    """Strategy for generating unique strings."""
-    now = get_now_local()
-    pid = getpid()
-    ident = just(get_ident())
-    key = str(uuid4()).replace("-", "")
-    full = f"{now:%Y%m%d%H%M%S%f}_{pid}_{ident}_{key}"
-    return draw(just(full))
-
-
-##
-
-
-@composite
 def versions(draw: DrawFn, /, *, suffix: MaybeSearchStrategy[bool] = False) -> Version:
     """Strategy for generating versions."""
     major, minor, patch = draw(triples(integers(min_value=0)))
@@ -1553,7 +1536,6 @@ __all__ = [
     "triples",
     "uint32s",
     "uint64s",
-    "unique_strs",
     "versions",
     "zoned_datetimes",
 ]

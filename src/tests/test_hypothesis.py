@@ -99,7 +99,6 @@ from utilities.hypothesis import (
     triples,
     uint32s,
     uint64s,
-    unique_strs,
     versions,
     zoned_datetimes,
 )
@@ -1169,13 +1168,6 @@ class TestUInt64s:
         min_value, max_value = data.draw(pairs(uint64s(), sorted=True))
         x = data.draw(uint64s(min_value=min_value, max_value=max_value))
         assert max(min_value, MIN_UINT64) <= x <= min(max_value, MAX_UINT64)
-
-
-class TestUniqueStrs:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        first, second = data.draw(pairs(unique_strs()))
-        assert first != second
 
 
 class TestVersions:

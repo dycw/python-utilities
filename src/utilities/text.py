@@ -4,9 +4,13 @@ import re
 from collections import deque
 from dataclasses import dataclass
 from itertools import chain
+from os import getpid
 from re import IGNORECASE, Match, escape, search
 from textwrap import dedent
+from threading import get_ident
+from time import time_ns
 from typing import TYPE_CHECKING, Any, Literal, overload, override
+from uuid import uuid4
 
 from utilities.iterables import CheckDuplicatesError, check_duplicates, transpose
 from utilities.reprlib import get_repr
@@ -395,6 +399,18 @@ def strip_and_dedent(text: str, /, *, trailing: bool = False) -> str:
     return f"{result}\n" if trailing else result
 
 
+##
+
+
+def unique_str() -> str:
+    """Generate at unique string."""
+    now = time_ns()
+    pid = getpid()
+    ident = get_ident()
+    key = str(uuid4()).replace("-", "")
+    return f"{now}_{pid}_{ident}_{key}"
+
+
 __all__ = [
     "BRACKETS",
     "DEFAULT_SEPARATOR",
@@ -413,4 +429,5 @@ __all__ = [
     "split_str",
     "str_encode",
     "strip_and_dedent",
+    "unique_str",
 ]
