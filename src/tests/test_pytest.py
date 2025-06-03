@@ -6,7 +6,7 @@ from random import Random
 from time import sleep
 from typing import TYPE_CHECKING
 
-from pytest import mark, param, raises
+from pytest import fixture, mark, param, raises
 
 from utilities.pytest import (
     NodeIdToPathError,
@@ -15,6 +15,7 @@ from utilities.pytest import (
     random_state,
     throttle,
 )
+from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -23,6 +24,18 @@ if TYPE_CHECKING:
 
 
 _ = random_state
+
+
+@fixture(autouse=True)
+def inject_pyproject_toml(*, testdir: Testdir) -> None:
+    _ = testdir.makepyprojecttoml(
+        strip_and_dedent(
+            """
+            [tool.pytest.ini_options]
+            asyncio_default_fixture_loop_scope = "function"
+            """
+        )
+    )
 
 
 class TestIsPytest:
@@ -240,7 +253,7 @@ class TestRandomState:
 class TestThrottle:
     @mark.parametrize("as_float", [param(True), param(False)])
     @mark.parametrize("on_try", [param(True), param(False)])
-    @mark.flaky
+    # @mark.flaky
     def test_basic(
         self, *, testdir: Testdir, tmp_path: Path, as_float: bool, on_try: bool
     ) -> None:
@@ -264,7 +277,7 @@ class TestThrottle:
     @mark.parametrize("asyncio_first", [param(True), param(False)])
     @mark.parametrize("as_float", [param(True), param(False)])
     @mark.parametrize("on_try", [param(True), param(False)])
-    @mark.flaky
+    # @mark.flaky
     def test_async(
         self,
         *,
@@ -301,7 +314,7 @@ async def test_main():
         sleep(1.0)
         testdir.runpytest().assert_outcomes(passed=1)
 
-    @mark.flaky
+    # @mark.flaky
     def test_on_pass(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
@@ -323,7 +336,11 @@ async def test_main():
             def test_main(is_pass):
                 assert is_pass
             """
-        _ = testdir.makepyfile(contents)
+
+        z = testdir.makepyfile(contents)
+
+        breakpoint()
+
         for i in range(2):
             for _ in range(2):
                 testdir.runpytest().assert_outcomes(failed=1)
@@ -333,7 +350,8 @@ async def test_main():
             if i == 0:
                 sleep(1.0)
 
-    @mark.flaky
+    # @mark.flaky
+    @mark.only
     def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
