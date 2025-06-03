@@ -46,9 +46,8 @@ from utilities.datetime import (
     serialize_compact,
 )
 from utilities.errors import ImpossibleCaseError
-from utilities.git import get_repo_root
 from utilities.iterables import OneEmptyError, always_iterable, one
-from utilities.pathlib import ensure_suffix, get_path
+from utilities.pathlib import ensure_suffix, get_path, get_root
 from utilities.reprlib import (
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
@@ -471,7 +470,7 @@ class FilterForKeyError(Exception):
 
 def get_default_logging_path() -> Path:
     """Get the logging default path."""
-    return get_repo_root().joinpath(".logs")
+    return get_root().joinpath(".logs")
 
 
 ##
