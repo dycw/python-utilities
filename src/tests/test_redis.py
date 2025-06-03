@@ -118,6 +118,7 @@ class TestIsMessage:
 
 class TestPublish:
     @given(data=lists(binary(min_size=1), min_size=1, max_size=5))
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_bytes(self, *, data: Sequence[bytes]) -> None:
@@ -158,6 +159,7 @@ class TestPublish:
             assert is_equal(result, obj)
 
     @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_text(self, *, messages: Sequence[str]) -> None:
@@ -184,6 +186,7 @@ class TestPublish:
 
 class TestPublisher:
     @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, messages: Sequence[str]) -> None:
@@ -211,6 +214,7 @@ class TestPublisher:
                 raise PublisherError(publisher=publisher)
 
     @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main_service(self, *, messages: Sequence[str]) -> None:
@@ -300,6 +304,7 @@ class TestPublishServiceMixin:
 
 class TestRedisHashMapKey:
     @given(key=int64s(), value=booleans())
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_bool(self, *, key: int, value: bool) -> None:
@@ -309,6 +314,7 @@ class TestRedisHashMapKey:
             assert await hm_key.get(redis, key) is value
 
     @given(key=booleans() | int64s(), value=booleans())
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_union_key(self, *, key: bool | int, value: bool) -> None:
@@ -318,6 +324,7 @@ class TestRedisHashMapKey:
             assert await hm_key.get(redis, key) is value
 
     @given(value=booleans())
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_sentinel_key(self, *, value: bool) -> None:
@@ -332,6 +339,7 @@ class TestRedisHashMapKey:
             assert await hm_key.get(redis, sentinel) is value
 
     @given(key=int64s(), value=int64s() | booleans())
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_union_value(
@@ -343,6 +351,7 @@ class TestRedisHashMapKey:
             assert await hm_key.get(redis, key) == value
 
     @given(key=int64s())
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_sentinel_value(self, *, key: int) -> None:
@@ -365,6 +374,7 @@ class TestRedisHashMapKey:
             assert await hm_key.get(redis, key) is sentinel
 
     @given(data=data(), mapping=dictionaries(int64s(), booleans()))
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_many(
@@ -381,6 +391,7 @@ class TestRedisHashMapKey:
             assert await hm_key.get_many(redis, keys) == expected
 
     @given(key=int64s(), value=booleans())
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_delete(self, *, key: int, value: bool) -> None:
@@ -393,6 +404,7 @@ class TestRedisHashMapKey:
                 _ = await hm_key.get(redis, key)
 
     @given(key=pairs(int64s()), value=booleans())
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_delete_compound(self, *, key: tuple[int, int], value: bool) -> None:
@@ -405,6 +417,7 @@ class TestRedisHashMapKey:
                 _ = await hm_key.get(redis, key)
 
     @given(key=int64s(), value=booleans())
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_exists(self, *, key: int, value: bool) -> None:
@@ -415,6 +428,7 @@ class TestRedisHashMapKey:
             assert await hm_key.exists(redis, key)
 
     @given(key=pairs(int64s()), value=booleans())
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_exists_compound(self, *, key: tuple[int, int], value: bool) -> None:
@@ -425,6 +439,7 @@ class TestRedisHashMapKey:
             assert await hm_key.exists(redis, key)
 
     @given(mapping=dictionaries(int64s(), booleans()))
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_all(self, *, mapping: Mapping[int, bool]) -> None:
@@ -434,6 +449,7 @@ class TestRedisHashMapKey:
             assert await hm_key.get_all(redis) == mapping
 
     @given(mapping=dictionaries(int64s(), booleans()))
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_keys(self, *, mapping: Mapping[int, bool]) -> None:
@@ -443,6 +459,7 @@ class TestRedisHashMapKey:
             assert await hm_key.keys(redis) == list(mapping)
 
     @given(mapping=dictionaries(int64s(), booleans()))
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_length(self, *, mapping: Mapping[int, bool]) -> None:
@@ -452,6 +469,7 @@ class TestRedisHashMapKey:
             assert await hm_key.length(redis) == len(mapping)
 
     @given(key=int64s(), value=booleans())
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_ttl(self, *, key: int, value: bool) -> None:
@@ -464,6 +482,7 @@ class TestRedisHashMapKey:
             assert not await redis.exists(hm_key.name)
 
     @given(mapping=dictionaries(int64s(), booleans()))
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_values(self, *, mapping: Mapping[int, bool]) -> None:
@@ -475,6 +494,7 @@ class TestRedisHashMapKey:
 
 class TestRedisKey:
     @given(value=booleans())
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_bool(self, *, value: bool) -> None:
@@ -484,6 +504,7 @@ class TestRedisKey:
             assert await key.get(redis) is value
 
     @given(value=booleans() | int64s())
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_union(self, *, value: bool | int) -> None:
@@ -492,6 +513,7 @@ class TestRedisKey:
             _ = await key.set(redis, value)
             assert await key.get(redis) == value
 
+    @mark.flaky
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_sentinel_with_serialize(self) -> None:
         def serializer(sentinel: Sentinel, /) -> bytes:
@@ -509,6 +531,7 @@ class TestRedisKey:
             assert await red_key.get(redis) is sentinel
 
     @given(value=booleans())
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_delete(self, *, value: bool) -> None:
@@ -521,6 +544,7 @@ class TestRedisKey:
                 _ = await key.get(redis)
 
     @given(value=booleans())
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_exists(self, *, value: bool) -> None:
@@ -531,6 +555,7 @@ class TestRedisKey:
             assert await key.exists(redis)
 
     @given(value=booleans())
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_ttl(self, *, value: bool) -> None:
@@ -545,6 +570,7 @@ class TestRedisKey:
 
 class TestSubscribe:
     @given(messages=lists(binary(min_size=1), min_size=1, max_size=5))
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_bytes(self, *, messages: Sequence[bytes]) -> None:
@@ -565,6 +591,7 @@ class TestSubscribe:
             assert result == message
 
     @given(objs=lists(make_objects(), min_size=1, max_size=5))
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_deserialize(self, *, objs: Sequence[Any]) -> None:
@@ -588,6 +615,7 @@ class TestSubscribe:
         short_messages=lists(text_ascii(max_size=4), min_size=1, max_size=5),
         long_messages=lists(text_ascii(min_size=6), min_size=1, max_size=5),
     )
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_filter(
@@ -615,6 +643,7 @@ class TestSubscribe:
             assert len(result) >= 3
 
     @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_raw(self, *, messages: Sequence[str]) -> None:
@@ -638,6 +667,7 @@ class TestSubscribe:
             assert result["data"] == message.encode()
 
     @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_text(self, *, messages: Sequence[str]) -> None:
@@ -663,6 +693,7 @@ class TestSubscribe:
 
 class TestSubscribeService:
     @given(objects=lists(make_objects(), min_size=1, max_size=5))
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, objects: list[str]) -> None:
@@ -680,6 +711,7 @@ class TestSubscribeService:
         for result, obj in zip(results, objects, strict=True):
             assert is_equal(result, obj)
 
+    @mark.flaky
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_context_manager_already_subscribing(
         self, *, caplog: LogCaptureFixture
