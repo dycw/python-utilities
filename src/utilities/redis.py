@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import asyncio
-from asyncio import CancelledError, Event, Queue, Task, create_task, sleep
+from asyncio import CancelledError, Event, Queue, Task, create_task
 from collections.abc import AsyncIterator, Callable, Mapping
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from functools import partial
-from logging import getLogger
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -676,19 +675,8 @@ class PublishService(Looper[tuple[str, _T]]):
     serializer: Callable[[_T], EncodableT] = serialize
     publish_timeout: Duration = _PUBLISH_TIMEOUT
 
-    def __post_init__(self) -> None:
-        super().__post_init__()
-        self.freq = 0.5
-
     @override
     async def core(self) -> None:
-        logger = getLogger("dts")
-        logger.info(
-            "PublishService: e=%d i=%d c=%d",
-            self.stats.entries,
-            self.stats.initialization_attempts,
-            self.stats.core_attempts,
-        )
         await super().core()  # skipif-ci-and-not-linux
         while not self.empty():  # skipif-ci-and-not-linux
             channel, data = self.get_left_nowait()
@@ -699,7 +687,6 @@ class PublishService(Looper[tuple[str, _T]]):
                 serializer=self.serializer,
                 timeout=self.publish_timeout,
             )
-        await sleep(0.5)
 
 
 ##
@@ -743,17 +730,6 @@ class PublishServiceMixin(Generic[_T]):
             redis=self.publish_service_redis,
             serializer=self.publish_service_serializer,
             publish_timeout=self.publish_service_publish_timeout,
-        )
-
-    async def core(self) -> None:
-        with suppress_super_object_attribute_error():
-            await super().core()  # pyright: ignore[reportAttributeAccessIssue]
-        logger = getLogger("dts")
-        logger.info(
-            "PublishServiceMixin._publish_service: e=%d i=%d c=%d",
-            self._publish_service.stats.entries,
-            self._publish_service.stats.initialization_attempts,
-            self._publish_service.stats.core_attempts,
         )
 
     def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:

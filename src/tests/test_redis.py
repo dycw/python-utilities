@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from asyncio import Queue, TaskGroup, sleep
+from asyncio import Queue, sleep
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from itertools import chain
 from re import search
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import Phase, core, given, settings
+from hypothesis import Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
     binary,
@@ -262,20 +262,9 @@ class TestPublishServiceMixin:
         )
         async with service:
             ...
-        assert_looper_stats(
-            service,
-            entries=1,
-            core_successes=91,
-            initialization_successes=1,
-            stops=1,
-        )
-        for s in [service._publish_service, service._subscribe_service]:
+        for s in [service, service._publish_service, service._subscribe_service]:
             assert_looper_stats(
-                s,
-                entries=1,
-                core_successes=1,
-                initialization_successes=1,
-                stops=1,
+                s, entries=1, core_successes=91, initialization_successes=1, stops=1
             )
 
     @mark.skip
