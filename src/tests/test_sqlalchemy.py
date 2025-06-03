@@ -44,8 +44,6 @@ from utilities.sqlalchemy import (
     InsertItemsError,
     TablenameMixin,
     TableOrORMInstOrClass,
-    Upserter,
-    UpserterError,
     UpsertItemsError,
     UpsertService,
     UpsertServiceMixin,
@@ -1139,37 +1137,6 @@ class TestUpserter:
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     async def test_main(
-        self, *, data: DataObject, triples: list[tuple[int, bool, bool]]
-    ) -> None:
-        table = Table(
-            _table_names(),
-            MetaData(),
-            Column("id_", Integer, primary_key=True),
-            Column("value", Boolean, nullable=True),
-        )
-        engine = await sqlalchemy_engines(data, table)
-        pairs = [(id_, init) for id_, init, _ in triples]
-        async with Upserter(duration=1.0, sleep_core=0.1, engine=engine) as upserter:
-            upserter.put_right_nowait((pairs, table))
-
-        sel = select(table)
-        async with engine.begin() as conn:
-            res = (await conn.execute(sel)).all()
-        assert set(res) == set(pairs)
-
-    @given(data=data())
-    async def test_error(self, *, data: DataObject) -> None:
-        engine = await sqlalchemy_engines(data)
-        upserter = Upserter(engine=engine)
-        with raises(UpserterError, match="Error running 'Upserter'"):
-            raise UpserterError(upserter=upserter)
-
-    # service
-
-    @given(data=data(), triples=_upsert_lists(nullable=True, min_size=1))
-    @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
-    async def test_main_service(
         self, *, data: DataObject, triples: list[tuple[int, bool, bool]]
     ) -> None:
         table = Table(

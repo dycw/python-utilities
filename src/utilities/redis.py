@@ -23,9 +23,8 @@ from typing import (
 )
 
 from redis.asyncio import Redis
-from redis.typing import EncodableT
 
-from utilities.asyncio import EnhancedQueue, InfiniteQueueLooper, Looper, timeout_dur
+from utilities.asyncio import EnhancedQueue, Looper, timeout_dur
 from utilities.contextlib import suppress_super_object_attribute_error
 from utilities.datetime import (
     MILLISECOND,
@@ -34,7 +33,7 @@ from utilities.datetime import (
     datetime_duration_to_timedelta,
 )
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import ensure_int, get_class_name, identity
+from utilities.functions import ensure_int, identity
 from utilities.iterables import always_iterable, one
 from utilities.orjson import deserialize, serialize
 
@@ -51,10 +50,10 @@ if TYPE_CHECKING:
 
     from redis.asyncio import ConnectionPool
     from redis.asyncio.client import PubSub
-    from redis.typing import ResponseT
+    from redis.typing import EncodableT, ResponseT
 
     from utilities.iterables import MaybeIterable
-    from utilities.types import Duration, MaybeType, TypeLike
+    from utilities.types import Duration, TypeLike
 
 
 _K = TypeVar("_K")
@@ -621,42 +620,6 @@ class PublishError(Exception):
 
 
 @dataclass(kw_only=True)
-class Publisher(InfiniteQueueLooper[None, tuple[str, EncodableT]]):
-    """Publish a set of messages to Redis."""
-
-    redis: Redis
-    serializer: Callable[[Any], EncodableT] | None = None
-    timeout: Duration = _PUBLISH_TIMEOUT
-
-    @override
-    async def _process_queue(self) -> None:
-        for item in self._queue.get_all_nowait():  # skipif-ci-and-not-linux
-            channel, data = item
-            _ = await publish(
-                self.redis,
-                channel,
-                data,
-                serializer=self.serializer,
-                timeout=self.timeout,
-            )
-
-    @override
-    def _yield_events_and_exceptions(
-        self,
-    ) -> Iterator[tuple[None, MaybeType[Exception]]]:
-        yield (None, PublisherError)  # skipif-ci-and-not-linux
-
-
-@dataclass(kw_only=True)
-class PublisherError(Exception):
-    publisher: Publisher
-
-    @override
-    def __str__(self) -> str:
-        return f"Error running {get_class_name(self.publisher)!r}"  # skipif-ci-and-not-linux
-
-
-@dataclass(kw_only=True)
 class PublishService(Looper[tuple[str, _T]]):
     """Service to publish items to Redis."""
 
@@ -1095,8 +1058,6 @@ def _deserialize(
 __all__ = [
     "PublishService",
     "PublishServiceMixin",
-    "Publisher",
-    "PublisherError",
     "RedisHashMapKey",
     "RedisKey",
     "SubscribeService",

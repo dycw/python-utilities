@@ -31,8 +31,6 @@ from utilities.iterables import one
 from utilities.operator import is_equal
 from utilities.orjson import deserialize, serialize
 from utilities.redis import (
-    Publisher,
-    PublisherError,
     PublishError,
     PublishService,
     SubscribeService,
@@ -184,40 +182,12 @@ class TestPublish:
                 _ = await publish(redis, "channel", None)
 
 
-class TestPublisher:
+class TestPublisherService:
     @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, messages: Sequence[str]) -> None:
-        channel = unique_str()
-        queue: Queue[str] = Queue()
-        async with (
-            yield_redis() as redis,
-            Publisher(duration=1.0, redis=redis, sleep_core=0.1) as publisher,
-            subscribe(redis, channel, queue),
-        ):
-            await sleep(_PUB_SUB_SLEEP)
-            publisher.put_right_nowait(*((channel, m) for m in messages))
-            await sleep(_PUB_SUB_SLEEP)  # keep in context
-        assert queue.qsize() == len(messages)
-        results = get_items_nowait(queue)
-        for result, message in zip(results, messages, strict=True):
-            assert isinstance(result, str)
-            assert result == message
-
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_error(self) -> None:
-        async with yield_test_redis() as redis:
-            publisher = Publisher(redis=redis)
-            with raises(PublisherError, match="Error running 'Publisher'"):
-                raise PublisherError(publisher=publisher)
-
-    @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
-    @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
-    @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main_service(self, *, messages: Sequence[str]) -> None:
         channel = unique_str()
         queue: Queue[str] = Queue()
         async with (
