@@ -506,13 +506,7 @@ def floats_extra(
 
 
 @composite
-def git_repos(
-    draw: DrawFn,
-    /,
-    *,
-    branch: MaybeSearchStrategy[str | None] = None,
-    remote: MaybeSearchStrategy[str | None] = None,
-) -> Path:
+def git_repos(draw: DrawFn, /) -> Path:
     path = draw(temp_paths())
     with temp_cwd(path):
         _ = check_call(["git", "init", "-b", "master"])
@@ -525,10 +519,6 @@ def git_repos(
         _ = check_call(["git", "commit", "-m", "add"])
         _ = check_call(["git", "rm", file_str])
         _ = check_call(["git", "commit", "-m", "rm"])
-        if (branch_ := draw2(draw, branch)) is not None:
-            _ = check_call(["git", "checkout", "-b", branch_])
-        if (remote_ := draw2(draw, remote)) is not None:
-            _ = check_call(["git", "remote", "add", "origin", remote_])
     return path
 
 

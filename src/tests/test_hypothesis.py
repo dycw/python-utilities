@@ -4,7 +4,6 @@ import datetime as dt
 from itertools import pairwise
 from pathlib import Path
 from re import search
-from subprocess import PIPE, check_output
 from typing import TYPE_CHECKING, Any, cast
 
 from hypothesis import HealthCheck, Phase, assume, given, settings
@@ -45,7 +44,6 @@ from utilities.datetime import (
     parse_two_digit_year,
 )
 from utilities.functions import ensure_int
-from utilities.git import _GIT_REMOTE_GET_URL_ORIGIN, _GIT_REV_PARSE_ABBREV_REV_HEAD
 from utilities.hypothesis import (
     _SQLALCHEMY_ENGINE_DIALECTS,
     MaybeSearchStrategy,
@@ -590,21 +588,9 @@ class TestGitRepos:
     @given(data=data())
     @settings_with_reduced_examples()
     def test_main(self, *, data: DataObject) -> None:
-        branch = data.draw(text_ascii(min_size=1) | none())
-        remote = data.draw(text_ascii(min_size=1) | none())
-        root = data.draw(git_repos(branch=branch, remote=remote))
+        root = data.draw(git_repos())
         files = set(root.iterdir())
         assert Path(root, ".git") in files
-        if branch is not None:
-            output = check_output(
-                _GIT_REV_PARSE_ABBREV_REV_HEAD, stderr=PIPE, cwd=root, text=True
-            )
-            assert output.strip("\n") == branch
-        if remote is not None:
-            output = check_output(
-                _GIT_REMOTE_GET_URL_ORIGIN, stderr=PIPE, cwd=root, text=True
-            )
-            assert output.strip("\n") == remote
 
 
 class TestHashables:
