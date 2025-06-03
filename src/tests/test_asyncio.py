@@ -15,7 +15,6 @@ from hypothesis.strategies import (
     booleans,
     data,
     integers,
-    just,
     lists,
     none,
     permutations,
@@ -71,6 +70,7 @@ from utilities.hypothesis import sentinels, text_ascii
 from utilities.iterables import one, unique_everseen
 from utilities.pytest import skipif_windows
 from utilities.sentinel import Sentinel, sentinel
+from utilities.text import unique_str
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
@@ -625,7 +625,8 @@ class TestInfiniteLooper:
         ):
             raise _InfiniteLooperDefaultEventError(looper=looper)
 
-    @given(logger=just("logger") | none())
+    @given(log=booleans())
+    @mark.flaky
     @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_upon_initialize(
@@ -633,7 +634,7 @@ class TestInfiniteLooper:
         *,
         sleep_restart: DurationOrEveryDuration,
         desc: str,
-        logger: str | None,
+        log: bool,
         caplog: LogCaptureFixture,
     ) -> None:
         class CustomError(Exception): ...
@@ -650,15 +651,20 @@ class TestInfiniteLooper:
 
         async with (
             timeout(1.0),
-            Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger),
+            Example(
+                sleep_core=0.1,
+                sleep_restart=sleep_restart,
+                logger=unique_str() if log else None,
+            ),
         ):
             ...
-        if logger is not None:
+        if log:
             message = caplog.messages[0]
             expected = f"'Example' encountered 'CustomError()' whilst initializing; sleeping {desc}..."
             assert message == expected
 
-    @given(logger=just("logger") | none())
+    @given(log=booleans())
+    @mark.flaky
     @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_upon_core(
@@ -666,7 +672,7 @@ class TestInfiniteLooper:
         *,
         sleep_restart: DurationOrEveryDuration,
         desc: str,
-        logger: str | None,
+        log: bool,
         caplog: LogCaptureFixture,
     ) -> None:
         class CustomError(Exception): ...
@@ -679,15 +685,19 @@ class TestInfiniteLooper:
 
         async with (
             timeout(1.0),
-            Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger),
+            Example(
+                sleep_core=0.1,
+                sleep_restart=sleep_restart,
+                logger=unique_str() if log else None,
+            ),
         ):
             ...
-        if logger is not None:
+        if log:
             message = caplog.messages[0]
             expected = f"'Example' encountered 'CustomError()'; sleeping {desc}..."
             assert message == expected
 
-    @given(logger=just("logger") | none())
+    @given(log=booleans())
     @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_upon_teardown(
@@ -695,7 +705,7 @@ class TestInfiniteLooper:
         *,
         sleep_restart: DurationOrEveryDuration,
         desc: str,
-        logger: str | None,
+        log: bool,
         caplog: LogCaptureFixture,
     ) -> None:
         class Custom1Error(Exception): ...
@@ -724,14 +734,19 @@ class TestInfiniteLooper:
 
         async with (
             timeout(1.0),
-            Example(sleep_core=0.1, sleep_restart=sleep_restart, logger=logger),
+            Example(
+                sleep_core=0.1,
+                sleep_restart=sleep_restart,
+                logger=unique_str() if log else None,
+            ),
         ):
             ...
-        if logger is not None:
+        if log:
             expected = f"'Example' encountered 'Custom2Error()' whilst tearing down; sleeping {desc}..."
             assert expected in caplog.messages
 
-    @given(logger=just("logger") | none())
+    @given(log=booleans())
+    @mark.flaky
     @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_group_upon_others(
@@ -739,7 +754,7 @@ class TestInfiniteLooper:
         *,
         sleep_restart: DurationOrEveryDuration,
         desc: str,
-        logger: str | None,
+        log: bool,
         caplog: LogCaptureFixture,
     ) -> None:
         class CustomError(Exception): ...
@@ -770,10 +785,14 @@ class TestInfiniteLooper:
 
         async with (
             timeout(1.0),
-            Example(sleep_core=0.05, sleep_restart=sleep_restart, logger=logger),
+            Example(
+                sleep_core=0.05,
+                sleep_restart=sleep_restart,
+                logger=unique_str() if log else None,
+            ),
         ):
             ...
-        if logger is not None:
+        if log:
             message = caplog.messages[0]
             expected = f"""\
 'Example' encountered 1 error(s):
@@ -867,11 +886,11 @@ class TestInfiniteQueueLooper:
             await looper.run_until_empty(stop=True)
         assert looper.empty()
 
-    @given(logger=just("logger") | none())
+    @given(log=booleans())
     @mark.flaky
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_process_items(
-        self, *, logger: str | None, caplog: LogCaptureFixture
+        self, *, log: bool, caplog: LogCaptureFixture
     ) -> None:
         class CustomError(Exception): ...
 
@@ -883,9 +902,12 @@ class TestInfiniteQueueLooper:
             async def _process_queue(self) -> None:
                 raise CustomError
 
-        async with timeout(1.0), Example(sleep_core=0.05, logger=logger) as looper:
+        async with (
+            timeout(1.0),
+            Example(sleep_core=0.05, logger=unique_str() if log else None) as looper,
+        ):
             looper.put_left_nowait(1)
-        if logger is not None:
+        if log:
             message = caplog.messages[0]
             expected = "'Example' encountered 'CustomError()'; sleeping for 0:01:00..."
             assert message == expected
