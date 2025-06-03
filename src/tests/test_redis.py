@@ -117,8 +117,8 @@ class TestPublish:
     @given(data=lists(binary(min_size=1), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_bytes(self, *, data: Sequence[bytes], channel: str) -> None:
-        channel = f"test_{unique_str()}"
+    async def test_bytes(self, *, data: Sequence[bytes]) -> None:
+        channel = unique_str()
         queue: Queue[bytes] = Queue()
         async with (
             yield_test_redis() as redis,
@@ -137,7 +137,8 @@ class TestPublish:
     @given(objects=lists(make_objects(), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_serializer(self, *, channel: str, objects: Sequence[Any]) -> None:
+    async def test_serializer(self, *, objects: Sequence[Any]) -> None:
+        channel = unique_str()
         queue: Queue[Any] = Queue()
         async with (
             yield_redis() as redis,
@@ -181,7 +182,8 @@ class TestPublisher:
     @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, channel: str, messages: Sequence[str]) -> None:
+    async def test_main(self, *, messages: Sequence[str]) -> None:
+        channel = unique_str()
         queue: Queue[str] = Queue()
         async with (
             yield_redis() as redis,
@@ -207,7 +209,8 @@ class TestPublisher:
     @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main_service(self, *, channel: str, messages: Sequence[str]) -> None:
+    async def test_main_service(self, *, messages: Sequence[str]) -> None:
+        channel = unique_str()
         queue: Queue[str] = Queue()
         async with (
             yield_redis() as redis,
@@ -473,7 +476,8 @@ class TestSubscribe:
     @given(messages=lists(binary(min_size=1), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_bytes(self, *, channel: str, messages: Sequence[bytes]) -> None:
+    async def test_bytes(self, *, messages: Sequence[bytes]) -> None:
+        channel = unique_str()
         queue: Queue[bytes] = Queue()
         async with (
             yield_redis() as redis,
@@ -492,7 +496,8 @@ class TestSubscribe:
     @given(objs=lists(make_objects(), min_size=1, max_size=5))
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_deserialize(self, *, channel: str, objs: Sequence[Any]) -> None:
+    async def test_deserialize(self, *, objs: Sequence[Any]) -> None:
+        channel = unique_str()
         queue: Queue[Any] = Queue()
         async with (
             yield_redis() as redis,
@@ -517,11 +522,11 @@ class TestSubscribe:
     async def test_filter(
         self,
         *,
-        channel: str,
         data: DataObject,
         short_messages: Sequence[str],
         long_messages: Sequence[str],
     ) -> None:
+        channel = unique_str()
         messages = data.draw(permutations(list(chain(short_messages, long_messages))))
         queue: Queue[str] = Queue()
         async with (
