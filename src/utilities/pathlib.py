@@ -1,15 +1,18 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from contextlib import contextmanager
 from itertools import chain
 from os import chdir
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, assert_never, overload
+
+from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
-    from utilities.types import PathLike, PathLikeOrCallable
+    from utilities.types import MaybeCallablePath, PathLike, PathLikeOrCallable
 
 PWD = Path.cwd()
 
@@ -25,9 +28,50 @@ def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
     return path.with_name(name)
 
 
+##
+
+
+@overload
+def get_path(*, path: MaybeCallablePath) -> Path: ...
+@overload
+def get_path(*, path: None) -> None: ...
+@overload
+def get_path(*, path: Sentinel) -> Sentinel: ...
+@overload
+def get_path(*, path: MaybeCallablePath | Sentinel) -> Path | Sentinel: ...
+@overload
+def get_path(
+    *, path: MaybeCallablePath | None | Sentinel = sentinel
+) -> Path | None | Sentinel: ...
+def get_path(
+    *, path: MaybeCallablePath | None | Sentinel = sentinel
+) -> Path | None | Sentinel:
+    """Get the path."""
+    match path:
+        case Path() | None | Sentinel():
+            return path
+        case Callable() as func:
+            return get_path(path=func())
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
+def get_root(path: PathLike, /) -> Path:
+    """Get the root of a path."""
+
+
+##
+
+
 def list_dir(path: PathLike, /) -> Sequence[Path]:
     """List the contents of a directory."""
     return sorted(Path(path).iterdir())
+
+
+##
 
 
 def resolve_path(*, path: PathLikeOrCallable | None = None) -> Path:
@@ -39,6 +83,9 @@ def resolve_path(*, path: PathLikeOrCallable | None = None) -> Path:
             return Path(path)
         case _:
             return Path(path())
+
+
+##
 
 
 @contextmanager
