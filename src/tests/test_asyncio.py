@@ -624,7 +624,7 @@ class TestInfiniteLooper:
         ):
             raise _InfiniteLooperDefaultEventError(looper=looper)
 
-    @given(logger=just("logger") | none())
+    @given(log=booleans())
     @mark.flaky
     @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
@@ -662,7 +662,8 @@ class TestInfiniteLooper:
             expected = f"'Example' encountered 'CustomError()' whilst initializing; sleeping {desc}..."
             assert message == expected
 
-    @given(log=booleans())
+    @given(logger=just("logger") | none())
+    @mark.flaky
     @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_upon_core(
