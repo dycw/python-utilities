@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from itertools import chain
 from os import chdir
@@ -72,6 +72,12 @@ def get_root(*, path: MaybeCallablePathLike | None = None) -> Path:
             raise  # pragma: no cover
     else:
         return Path(output.strip("\n"))
+    all_paths = list(chain([path], path.parents))
+    with suppress(StopIteration):
+        return next(
+            p for p in all_paths if any(p_i.name == ".envrc" for p_i in p.iterdir())
+        )
+    raise GetRootError(path=path)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -80,7 +86,7 @@ class GetRootError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to determine root: {self.path}"
+        return f"Unable to determine root from {str(self.path)!r}"
 
 
 ##

@@ -84,9 +84,25 @@ class TestGetRoot:
         expected = repo.resolve()
         assert root == expected
 
+    @given(root=temp_paths())
+    @settings(max_examples=1)
+    def test_envrc(self, *, root: Path) -> None:
+        root.joinpath(".envrc").touch()
+        result = get_root(path=root)
+        assert result == root
+
+    @given(root=temp_paths())
+    @settings(max_examples=1)
+    def test_envrc_from_inside(self, *, root: Path) -> None:
+        root.joinpath(".envrc").touch()
+        path = root.joinpath("foo", "bar", "baz")
+        path.mkdir(parents=True)
+        result = get_root(path=path)
+        assert result == root
+
     def test_error(self, *, tmp_path: Path) -> None:
-        with raises(GetRootError, match="Unable to determine root"):
-            _ = get_root(cwd=tmp_path)
+        with raises(GetRootError, match="Unable to determine root from '.*'"):
+            _ = get_root(path=tmp_path)
 
 
 class TestListDir:
