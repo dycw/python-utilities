@@ -67,6 +67,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
 from utilities.asyncio import Looper, timeout_dur
+from utilities.contextlib import suppress_super_object_attribute_error
 from utilities.datetime import SECOND
 from utilities.functions import (
     ensure_str,
@@ -1161,6 +1162,7 @@ __all__ = [
     "TablenameMixin",
     "UpsertItemsError",
     "UpsertService",
+    "UpsertServiceMixin",
     "check_engine",
     "columnwise_max",
     "columnwise_min",
