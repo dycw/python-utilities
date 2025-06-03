@@ -21,9 +21,10 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import LogCaptureFixture, approx, mark, param, raises
+from pytest import LogCaptureFixture, mark, param, raises
 
 from tests.test_asyncio_classes.loopers import (
+    _REL,
     CountingLooper,
     CountingLooperError,
     LooperWithCounterMixin,
@@ -32,6 +33,8 @@ from tests.test_asyncio_classes.loopers import (
     Outer2CountingLooper,
     OuterCountingLooper,
     QueueLooper,
+    assert_looper_full,
+    assert_looper_stats,
 )
 from utilities.asyncio import (
     EnhancedQueue,
@@ -81,46 +84,6 @@ if TYPE_CHECKING:
         MaybeCallableEvent,
         MaybeType,
     )
-
-
-_ASSERT_LOOPER_STATS_REL: float = 0.5
-
-
-def assert_looper_stats(
-    looper: Looper[Any],
-    /,
-    *,
-    entries: int = 0,
-    core_successes: int = 0,
-    core_failures: int = 0,
-    initialization_successes: int = 0,
-    initialization_failures: int = 0,
-    tear_down_successes: int = 0,
-    tear_down_failures: int = 0,
-    restart_successes: int = 0,
-    restart_failures: int = 0,
-    stops: int = 0,
-    rel: float = _ASSERT_LOOPER_STATS_REL,
-) -> None:
-    stats = looper.stats
-    assert stats.entries == entries
-    assert stats.core_attempts == (stats.core_successes + stats.core_failures)
-    assert stats.core_successes == approx(core_successes, rel=rel)
-    assert stats.core_failures == approx(core_failures, rel=rel)
-    assert stats.initialization_attempts == (
-        stats.initialization_successes + stats.initialization_failures
-    )
-    assert stats.initialization_successes == approx(initialization_successes, rel=rel)
-    assert stats.initialization_failures == approx(initialization_failures, rel=rel)
-    assert stats.tear_down_attempts == (
-        stats.tear_down_successes + stats.tear_down_failures
-    )
-    assert stats.tear_down_successes == approx(tear_down_successes, rel=rel)
-    assert stats.tear_down_failures == approx(tear_down_failures, rel=rel)
-    assert stats.restart_attempts == (stats.restart_successes + stats.restart_failures)
-    assert stats.restart_successes == approx(restart_successes, rel=rel)
-    assert stats.restart_failures == approx(restart_failures, rel=rel)
-    assert stats.stops == stops
 
 
 class TestEnhancedQueue:
@@ -1076,30 +1039,20 @@ class TestLooper:
                 with raises(TimeoutError):
                     async with timeout(1.0), looper:
                         ...
-                assert_looper_stats(
-                    looper, entries=1, core_successes=99, initialization_successes=1
-                )
+                assert_looper_full(looper)
                 self._assert_stats_no_runs(looper._counter1)
                 self._assert_stats_third(looper._counter2)
             case True, False:
                 with raises(TimeoutError):
                     async with timeout(1.0), looper:
                         ...
-                assert_looper_stats(
-                    looper, entries=1, core_successes=99, initialization_successes=1
-                )
+                assert_looper_full(looper)
                 self._assert_stats_half(looper._counter1)
                 self._assert_stats_third(looper._counter2)
             case False, False:
                 async with looper:
                     ...
-                assert_looper_stats(
-                    looper,
-                    entries=1,
-                    core_successes=99,
-                    initialization_successes=1,
-                    stops=1,
-                )
+                assert_looper_full(looper, stops=1)
                 self._assert_stats_half(looper._counter1, stops=1)
                 self._assert_stats_third(looper._counter2, stops=1)
 
@@ -1423,17 +1376,12 @@ class TestLooper:
         *,
         entries: int = 0,
         stops: int = 0,
-        rel: float = _ASSERT_LOOPER_STATS_REL,
+        rel: float = _REL,
     ) -> None:
         assert_looper_stats(looper, entries=entries, stops=stops, rel=rel)
 
     def _assert_stats_full(
-        self,
-        looper: Looper[Any],
-        /,
-        *,
-        stops: int = 0,
-        rel: float = _ASSERT_LOOPER_STATS_REL,
+        self, looper: Looper[Any], /, *, stops: int = 0, rel: float = _REL
     ) -> None:
         assert_looper_stats(
             looper,
@@ -1448,12 +1396,7 @@ class TestLooper:
         )
 
     def _assert_stats_half(
-        self,
-        looper: Looper[Any],
-        /,
-        *,
-        stops: int = 0,
-        rel: float = _ASSERT_LOOPER_STATS_REL,
+        self, looper: Looper[Any], /, *, stops: int = 0, rel: float = _REL
     ) -> None:
         assert_looper_stats(
             looper,
@@ -1468,12 +1411,7 @@ class TestLooper:
         )
 
     def _assert_stats_third(
-        self,
-        looper: Looper[Any],
-        /,
-        *,
-        stops: int = 0,
-        rel: float = _ASSERT_LOOPER_STATS_REL,
+        self, looper: Looper[Any], /, *, stops: int = 0, rel: float = _REL
     ) -> None:
         assert_looper_stats(
             looper,
@@ -1488,12 +1426,7 @@ class TestLooper:
         )
 
     def _assert_stats_quarter(
-        self,
-        looper: Looper[Any],
-        /,
-        *,
-        stops: int = 0,
-        rel: float = _ASSERT_LOOPER_STATS_REL,
+        self, looper: Looper[Any], /, *, stops: int = 0, rel: float = _REL
     ) -> None:
         assert_looper_stats(
             looper,
