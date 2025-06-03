@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from asyncio import CancelledError, Event, Queue, Task, create_task
+from asyncio import CancelledError, Event, Queue, Task, create_task, sleep
 from collections.abc import AsyncIterator, Callable, Mapping
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
@@ -694,6 +694,7 @@ class PublishService(Looper[tuple[str, _T]]):
                 serializer=self.serializer,
                 timeout=self.publish_timeout,
             )
+        await sleep(0.5)
 
 
 ##
