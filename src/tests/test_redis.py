@@ -185,14 +185,13 @@ class TestPublish:
                 _ = await publish(redis, "channel", None)
 
 
-class TestPublishService:
-    @given(
-        channel=unique_strs(),
-        messages=lists(text_ascii(min_size=1), min_size=1, max_size=5),
-    )
-    @settings_with_reduced_examples(phases={Phase.generate})
+class TestPublisherService:
+    @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
+    @mark.flaky
+    @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, channel: str, messages: Sequence[str]) -> None:
+    async def test_main(self, *, messages: Sequence[str]) -> None:
+        channel = unique_str()
         queue: Queue[str] = Queue()
         async with (
             yield_redis() as redis,

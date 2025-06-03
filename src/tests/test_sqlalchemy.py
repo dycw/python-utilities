@@ -1153,7 +1153,7 @@ class TestUpserter:
         self, *, triples: list[tuple[int, bool, bool]], test_engine: AsyncEngine
     ) -> None:
         table = Table(
-            name,
+            _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),
