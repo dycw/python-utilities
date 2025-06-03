@@ -144,8 +144,7 @@ class TestGetLogRecords:
                 sampled_from(get_args(LogLevel)),
                 text_ascii(),
                 dictionaries(text_ascii(), int64s()),
-            ),
-            max_size=5,
+            )
         ),
         root=temp_paths(),
     )
@@ -184,9 +183,8 @@ class TestGetLogRecords:
             tuples(
                 sampled_from(get_args(LogLevel)),
                 text_ascii(),
-                dictionaries(text_ascii(), int64s()),
-            ),
-            max_size=5,
+                dictionaries(text_ascii(), integers()),
+            )
         ),
         root=temp_paths(),
         index=integers() | none(),
@@ -236,7 +234,7 @@ class TestGetLogRecords:
         handler.setFormatter(OrjsonFormatter())
         for level_, message_, extra_ in items:
             _ = assume(set(extra_) & set(_LOG_RECORD_DEFAULT_ATTRS) == set())
-            logger.log(get_logging_level_number(level_), message_, extra=extra_)
+            logger.log(get_logging_level_number(level_), "%s", message_, extra=extra_)
         output = get_log_records(root, parallelism="threads")
         output = output.filter(
             index=index,
