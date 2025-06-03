@@ -198,7 +198,6 @@ class TestEnhancedTaskGroup:
             assert looper.running
         assert not looper.running
 
-    @mark.flaky
     async def test_max_tasks_disabled(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup() as tg:
@@ -626,7 +625,6 @@ class TestInfiniteLooper:
             raise _InfiniteLooperDefaultEventError(looper=looper)
 
     @given(log=booleans())
-    @mark.flaky
     @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_upon_initialize(
@@ -664,7 +662,6 @@ class TestInfiniteLooper:
             assert message == expected
 
     @given(log=booleans())
-    @mark.flaky
     @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_upon_core(
@@ -746,7 +743,6 @@ class TestInfiniteLooper:
             assert expected in caplog.messages
 
     @given(log=booleans())
-    @mark.flaky
     @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_group_upon_others(
@@ -887,7 +883,6 @@ class TestInfiniteQueueLooper:
         assert looper.empty()
 
     @given(log=booleans())
-    @mark.flaky
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_process_items(
         self, *, log: bool, caplog: LogCaptureFixture
