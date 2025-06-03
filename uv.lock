@@ -875,7 +875,7 @@ requires-dist = [
     { name = "tomlkit", marker = "extra == 'zzz-test-sys'", specifier = ">=0.13.2,<0.14" },
     { name = "tomlkit", marker = "extra == 'zzz-test-traceback'", specifier = ">=0.13.2,<0.14" },
     { name = "tomlkit", marker = "extra == 'zzz-test-version'", specifier = ">=0.13.2,<0.14" },
-    { name = "typing-extensions", specifier = ">=4.13.1,<4.14" },
+    { name = "typing-extensions", specifier = ">=4.14.0,<4.15" },
     { name = "tzdata", marker = "extra == 'zzz-test-zoneinfo'", specifier = ">=2025.2,<2025.3" },
     { name = "tzlocal", marker = "extra == 'zzz-test-datetime'", specifier = ">=5.3.1,<5.4" },
     { name = "tzlocal", marker = "extra == 'zzz-test-fpdf2'", specifier = ">=5.3.1,<5.4" },

@@ -113,10 +113,7 @@ tzdata = ["tzdata >= 2025.2, < 2025.3"]
 [project]
 authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
 dependencies = [
-  "atomicwrites >= 1.4.1, < 1.5",
   "typing-extensions >= 4.14.0, < 4.15",
-  "tzlocal >= 5.3.1, < 5.4",
-  "whenever >= 0.8.5, < 0.9",
 ]
 name = "dycw-utilities"
 readme = "README.md"
