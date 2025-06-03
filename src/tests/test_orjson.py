@@ -95,6 +95,7 @@ if TYPE_CHECKING:
 
 
 class TestGetLogRecords:
+    @mark.only
     def test_main(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := FileHandler(file := tmp_path.joinpath("log")))
@@ -373,7 +374,6 @@ class TestGetLogRecords:
         assert len(result.other_errors) == 0
 
     @SKIPIF_CI_AND_WINDOWS
-    @mark.only
     def test_error_file(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("log")
         with file.open(mode="wb") as fh:
