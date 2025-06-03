@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING, Any, Literal, override
+
+from pytest import approx
 
 from utilities.asyncio import Looper
 from utilities.contextlib import suppress_super_object_attribute_error
@@ -14,6 +16,87 @@ if TYPE_CHECKING:
 
 _FREQ: Duration = 10 * MILLISECOND
 _BACKOFF: Duration = 100 * MILLISECOND
+_REL: float = 0.75
+
+
+# assert
+
+
+def assert_looper_stats(
+    looper: Looper[Any],
+    /,
+    *,
+    entries: int = 0,
+    core_successes: int | tuple[Literal[">="], int] = 0,
+    core_failures: int = 0,
+    initialization_successes: int = 0,
+    initialization_failures: int = 0,
+    tear_down_successes: int = 0,
+    tear_down_failures: int = 0,
+    restart_successes: int = 0,
+    restart_failures: int = 0,
+    stops: int = 0,
+    rel: float = _REL,
+) -> None:
+    stats = looper.stats
+    assert stats.entries == entries, f"{stats=}, {entries=}"
+    assert stats.core_attempts == (stats.core_successes + stats.core_failures), (
+        f"{stats=}"
+    )
+    match core_successes:
+        case int():
+            assert stats.core_successes == approx(core_successes, rel=rel), (
+                f"{stats=}, {core_successes=}"
+            )
+        case ">=", int() as min_successes:
+            assert stats.core_successes >= min_successes, f"{stats=}, {min_successes=}"
+    assert stats.core_failures == approx(core_failures, rel=rel), (
+        f"{stats=}, {core_failures=}"
+    )
+    assert stats.initialization_attempts == (
+        stats.initialization_successes + stats.initialization_failures
+    ), f"{stats=}"
+    assert stats.initialization_successes == approx(
+        initialization_successes, rel=rel
+    ), f"{stats=}, {initialization_successes=}"
+    assert stats.initialization_failures == approx(initialization_failures, rel=rel), (
+        f"{stats=}, {initialization_failures=}"
+    )
+    assert stats.tear_down_attempts == (
+        stats.tear_down_successes + stats.tear_down_failures
+    ), f"{stats=}"
+    assert stats.tear_down_successes == approx(tear_down_successes, rel=rel), (
+        f"{stats=}, {tear_down_successes=}"
+    )
+    assert stats.tear_down_failures == approx(tear_down_failures, rel=rel), (
+        f"{stats=}, {initialization_failures=}"
+    )
+    assert stats.restart_attempts == (
+        stats.restart_successes + stats.restart_failures
+    ), f"{stats=}"
+    assert stats.restart_successes == approx(restart_successes, rel=rel), (
+        f"{stats=}, {restart_successes=}"
+    )
+    assert stats.restart_failures == approx(restart_failures, rel=rel), (
+        f"{stats=}, {restart_failures=}"
+    )
+    assert stats.stops == stops, f"{stats=}, {stops=}"
+
+
+def assert_looper_full(
+    looper: Looper[Any], /, *, stops: int = 0, rel: float = _REL
+) -> None:
+    assert_looper_stats(
+        looper,
+        entries=1,
+        core_successes=99,
+        initialization_successes=1,
+        stops=stops,
+        rel=rel,
+    )
+
+
+# counting looper
 
 
 @dataclass(kw_only=True)
@@ -123,7 +206,7 @@ class Outer2CountingLooper(CountingLooper):
         yield self.middle
 
 
-# mixin
+# one mixin
 
 
 @dataclass(kw_only=True)
@@ -154,6 +237,65 @@ class CounterMixin:
 
 @dataclass(kw_only=True)
 class LooperWithCounterMixin(CounterMixin, Looper): ...
+
+
+# two mixins
+
+
+@dataclass(kw_only=True)
+class CounterMixin1:
+    freq: Duration = field(default=_FREQ, repr=False)
+    backoff: Duration = field(default=_BACKOFF, repr=False)
+    _debug: bool = field(default=True, repr=False)
+    count: int = 0
+    max_count: int = 10
+    counter1_auto_start: bool = False
+    _counter1: CountingLooper = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        with suppress_super_object_attribute_error():
+            super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
+        self._counter1 = CountingLooper(
+            auto_start=self.counter1_auto_start,
+            freq=self.freq / 2,
+            backoff=self.backoff / 2,
+            max_count=round(self.max_count / 2),
+        )
+
+    def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
+        with suppress_super_object_attribute_error():
+            yield from super()._yield_sub_loopers()  # pyright: ignore[reportAttributeAccessIssue]
+        yield self._counter1
+
+
+@dataclass(kw_only=True)
+class CounterMixin2:
+    freq: Duration = field(default=_FREQ, repr=False)
+    backoff: Duration = field(default=_BACKOFF, repr=False)
+    _debug: bool = field(default=True, repr=False)
+    count: int = 0
+    max_count: int = 10
+    counter2_auto_start: bool = False
+    _counter2: CountingLooper = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        with suppress_super_object_attribute_error():
+            super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
+        self._counter2 = CountingLooper(
+            auto_start=self.counter2_auto_start,
+            freq=self.freq / 3,
+            backoff=self.backoff / 3,
+            max_count=round(self.max_count / 3),
+        )
+
+    def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
+        with suppress_super_object_attribute_error():
+            yield from super()._yield_sub_loopers()  # pyright: ignore[reportAttributeAccessIssue]
+        yield self._counter2
+
+
+@dataclass(kw_only=True)
+class LooperWithCounterMixins(CounterMixin1, CounterMixin2, Looper): ...
 
 
 # queue looper
