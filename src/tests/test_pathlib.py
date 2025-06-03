@@ -46,7 +46,7 @@ class TestGetPath:
     def test_replace_non_sentinel(self, *, path1: Path, path2: Path) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            path: Path = field(default_factory=get_path)
+            path: Path = field(default_factory=Path.cwd)
 
             def replace(self, *, path: MaybeCallablePath | Sentinel = sentinel) -> Self:
                 return replace_non_sentinel(self, path=get_path(path=path))
