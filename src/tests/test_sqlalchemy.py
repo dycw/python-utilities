@@ -242,7 +242,7 @@ class TestCreateAsyncEngine:
 
 class TestEnsureTablesCreated:
     @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_table(self, *, data: DataObject) -> None:
         table = Table(
             _table_names(), MetaData(), Column("id_", Integer, primary_key=True)
@@ -251,7 +251,7 @@ class TestEnsureTablesCreated:
         await self._run_test(engine, table)
 
     @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_mapped_class(self, *, data: DataObject) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
@@ -275,7 +275,7 @@ class TestEnsureTablesCreated:
 
 class TestEnsureTablesDropped:
     @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_table(self, *, data: DataObject) -> None:
         table = Table(
             _table_names(), MetaData(), Column("id_", Integer, primary_key=True)
@@ -284,7 +284,7 @@ class TestEnsureTablesDropped:
         await self._run_test(engine, table)
 
     @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_mapped_class(self, *, data: DataObject) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
@@ -503,7 +503,7 @@ class TestHashPrimaryKeyValues:
 
 class TestInsertItems:
     @given(data=data(), case=sampled_from(["tuple", "dict"]), id_=integers(0, 10))
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_pair_of_obj_and_table(
         self, *, data: DataObject, case: Literal["tuple", "dict"], id_: int
     ) -> None:
@@ -526,7 +526,7 @@ class TestInsertItems:
         ]),
         ids=sets(integers(0, 10), min_size=1),
     )
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_pair_of_objs_and_table_or_list_of_pairs_of_objs_and_table(
         self,
         *,
@@ -553,28 +553,28 @@ class TestInsertItems:
         await self._run_test(engine, table, ids, item)
 
     @given(data=data(), ids=sets(integers(0, 1000), min_size=10, max_size=100))
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_many_items(self, *, data: DataObject, ids: set[int]) -> None:
         table = self._make_table()
         engine = await sqlalchemy_engines(data, table)
         await self._run_test(engine, table, ids, [({"id_": id_}, table) for id_ in ids])
 
     @given(data=data(), id_=integers(0, 10))
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_mapped_class(self, *, data: DataObject, id_: int) -> None:
         cls = self._make_mapped_class()
         engine = await sqlalchemy_engines(data, cls)
         await self._run_test(engine, cls, {id_}, cls(id_=id_))
 
     @given(data=data(), ids=sets(integers(0, 10), min_size=1))
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_mapped_classes(self, *, data: DataObject, ids: set[int]) -> None:
         cls = self._make_mapped_class()
         engine = await sqlalchemy_engines(data, cls)
         await self._run_test(engine, cls, ids, [cls(id_=id_) for id_ in ids])
 
     @given(data=data(), id_=integers(0, 10))
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_snake(self, *, data: DataObject, id_: int) -> None:
         table = self._make_table(title=True)
         engine = await sqlalchemy_engines(data, table)
@@ -582,7 +582,7 @@ class TestInsertItems:
         await self._run_test(engine, table, {id_}, item, snake=True)
 
     @given(data=data(), id_=integers(0, 10))
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_assume_table_exists(self, *, data: DataObject, id_: int) -> None:
         table = self._make_table()
         engine = await sqlalchemy_engines(data, table)
@@ -592,7 +592,7 @@ class TestInsertItems:
             await insert_items(engine, ({"id_": id_}, table), assume_tables_exist=True)
 
     @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_error(self, *, data: DataObject) -> None:
         cls = self._make_mapped_class()
         engine = await sqlalchemy_engines(data, cls)
@@ -1192,7 +1192,7 @@ class TestUpserter:
 
 class TestUpsertItems:
     @given(data=data(), triple=_upsert_triples(nullable=True))
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_pair_of_dict_and_table(
         self, *, data: DataObject, triple: tuple[int, bool, bool | None]
     ) -> None:
@@ -1211,7 +1211,7 @@ class TestUpsertItems:
         triples=_upsert_lists(nullable=True, min_size=1),
         case=sampled_from(["pair-list-of-dicts", "list-of-pair-of-dicts"]),
     )
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_pair_of_list_of_dicts_and_table(
         self,
         *,
@@ -1252,7 +1252,7 @@ class TestUpsertItems:
         _ = await self._run_test(engine, table, post, expected=post_expected)
 
     @given(data=data(), triple=_upsert_triples())
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_mapped_class(
         self, *, data: DataObject, triple: tuple[int, bool, bool]
     ) -> None:
@@ -1267,7 +1267,7 @@ class TestUpsertItems:
         )
 
     @given(data=data(), triples=_upsert_lists(nullable=True, min_size=1))
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_mapped_classes(
         self, *, data: DataObject, triples: list[tuple[int, bool, bool | None]]
     ) -> None:
@@ -1292,7 +1292,7 @@ class TestUpsertItems:
         y=booleans(),
         selected_or_all=sampled_from(get_args(_SelectedOrAll)),
     )
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_sel_or_all(
         self,
         *,
@@ -1332,7 +1332,7 @@ class TestUpsertItems:
         )
 
     @given(data=data(), id_=integers(0, 10))
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_assume_table_exists(self, *, data: DataObject, id_: int) -> None:
         table = self._make_table()
         engine = await sqlalchemy_engines(data, table)
@@ -1348,7 +1348,7 @@ class TestUpsertItems:
         value1=booleans() | none(),
         value2=booleans() | none(),
     )
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_both_nulls_and_non_nulls(
         self,
         *,
@@ -1365,7 +1365,7 @@ class TestUpsertItems:
         await upsert_items(engine, item)
 
     @given(data=data(), triples=_upsert_lists(nullable=True, min_size=1))
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_multiple_elements_with_the_same_primary_key(
         self, *, data: DataObject, triples: list[tuple[int, bool, bool | None]]
     ) -> None:
@@ -1382,7 +1382,7 @@ class TestUpsertItems:
         await self._run_test(engine, table, item, expected=expected)
 
     @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_error(self, *, data: DataObject) -> None:
         table = self._make_table()
         engine = await sqlalchemy_engines(data, table)

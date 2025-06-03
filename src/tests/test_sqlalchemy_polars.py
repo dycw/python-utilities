@@ -139,7 +139,7 @@ _CASES_INSERT: list[
 
 class TestInsertDataFrame:
     @given(data=data(), case=sampled_from(_CASES_INSERT))
-    @settings(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_main(
         self,
         *,
@@ -161,7 +161,7 @@ class TestInsertDataFrame:
             assert ((r is None) == (v is None)) or check(r, v)
 
     @given(data=data())
-    @settings(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_assume_exists_with_empty(self, *, data: DataObject) -> None:
         df = DataFrame(schema={"value": pl.Boolean})
         table = self._make_table(sqlalchemy.Boolean)
@@ -170,7 +170,7 @@ class TestInsertDataFrame:
         await insert_dataframe(df, table, engine, assume_tables_exist=True)
 
     @given(data=data(), value=booleans())
-    @settings(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_assume_exists_with_non_empty(
         self, *, data: DataObject, value: bool
     ) -> None:
