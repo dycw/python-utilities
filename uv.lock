@@ -744,6 +744,18 @@ wheels = [
 ]
 
 [[package]]
+name = "dycw-pytest-only"
+version = "2.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b9/71/0c544627c131eee64e41653bf35ebbf02a5aa2318b69c2f9d9415b8005f5/dycw_pytest_only-2.1.1.tar.gz", hash = "sha256:b3c7dce202ee3fac6c83a47d7b9b581737d83db89aab4c624102def18edd00d5", size = 5054, upload-time = "2025-06-03T01:04:47.751Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f8/1a/25272fafd13c92a2e3b8e351127410b9ea5557324bfea3552388d65797fc/dycw_pytest_only-2.1.1-py3-none-any.whl", hash = "sha256:ea8fe48878dd95ad0ca804e549225cf3b7a1928eb188c22a284c1d17b48a7b89", size = 2413, upload-time = "2025-06-03T01:04:46.585Z" },
+]
+
+[[package]]
 name = "dycw-utilities"
 version = "0.126.9"
 source = { editable = "." }
@@ -753,13 +765,13 @@ dependencies = [
 
 [package.optional-dependencies]
 test = [
+    { name = "dycw-pytest-only" },
     { name = "hypothesis" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "pytest-instafail" },
     { name = "pytest-lazy-fixtures" },
-    { name = "pytest-only" },
     { name = "pytest-randomly" },
     { name = "pytest-regressions" },
     { name = "pytest-rerunfailures" },
@@ -1018,6 +1030,7 @@ dev = [
     { name = "coverage-conditional-plugin" },
     { name = "cryptography" },
     { name = "cvxpy" },
+    { name = "dycw-pytest-only" },
     { name = "eventkit" },
     { name = "fastapi" },
     { name = "fpdf2" },
@@ -1052,7 +1065,6 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-instafail" },
     { name = "pytest-lazy-fixtures" },
-    { name = "pytest-only" },
     { name = "pytest-randomly" },
     { name = "pytest-regressions" },
     { name = "pytest-rerunfailures" },
@@ -1107,6 +1119,7 @@ requires-dist = [
     { name = "concurrent-log-handler", marker = "extra == 'zzz-test-logging'", specifier = ">=0.9.26,<0.10" },
     { name = "cryptography", marker = "extra == 'zzz-test-cryptography'", specifier = ">=45.0.3,<45.1" },
     { name = "cvxpy", marker = "extra == 'zzz-test-cvxpy'", specifier = ">=1.6.5,<1.7" },
+    { name = "dycw-pytest-only", marker = "extra == 'test'", specifier = ">=2.1.1,<2.2" },
     { name = "eventkit", marker = "extra == 'zzz-test-eventkit'", specifier = ">=1.0.3,<1.1" },
     { name = "fastapi", marker = "extra == 'zzz-test-fastapi'", specifier = ">=0.115.11,<0.116" },
     { name = "fpdf2", marker = "extra == 'zzz-test-fpdf2'", specifier = ">=2.8.3,<2.9" },
@@ -1158,7 +1171,6 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=6.1.1,<6.2" },
     { name = "pytest-instafail", marker = "extra == 'test'", specifier = ">=0.5.0,<0.6" },
     { name = "pytest-lazy-fixtures", marker = "extra == 'test'", specifier = ">=1.1.4,<1.2" },
-    { name = "pytest-only", marker = "extra == 'test'", specifier = ">=2.1.2,<2.2" },
     { name = "pytest-randomly", marker = "extra == 'test'", specifier = ">=3.16.0,<3.17" },
     { name = "pytest-regressions", marker = "extra == 'test'", specifier = ">=2.8.0,<2.9" },
     { name = "pytest-regressions", marker = "extra == 'zzz-test-pytest-regressions'", specifier = ">=2.8.0,<2.9" },
@@ -1246,6 +1258,7 @@ dev = [
     { name = "coverage-conditional-plugin", specifier = ">=0.9.0,<0.10" },
     { name = "cryptography", specifier = ">=45.0.3,<45.1" },
     { name = "cvxpy", specifier = ">=1.6.5,<1.7" },
+    { name = "dycw-pytest-only", specifier = ">=2.1.1,<2.2" },
     { name = "eventkit", specifier = ">=1.0.3,<1.1" },
     { name = "fastapi", specifier = ">=0.115.11,<0.116" },
     { name = "fpdf2", specifier = ">=2.8.3,<2.9" },
@@ -1280,7 +1293,6 @@ dev = [
     { name = "pytest-cov", specifier = ">=6.1.1,<6.2" },
     { name = "pytest-instafail", specifier = ">=0.5.0,<0.6" },
     { name = "pytest-lazy-fixtures", specifier = ">=1.1.4,<1.2" },
-    { name = "pytest-only", specifier = ">=2.1.2,<2.2" },
     { name = "pytest-randomly", specifier = ">=3.16.0,<3.17" },
     { name = "pytest-regressions", specifier = ">=2.8.0,<2.9" },
     { name = "pytest-rerunfailures", specifier = ">=15.1,<16" },
@@ -3320,18 +3332,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/1b/30/97444293c3339adfb6fe04a28e2edbaff5d5926e789de40e9a69401f885c/pytest_lazy_fixtures-1.1.4.tar.gz", hash = "sha256:c494b52d798890033d64b28687a4d52807c8b0f606d56316e139df0cbe116c57", size = 7426, upload-time = "2025-05-27T11:05:46.448Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/39/c9/a9bcc96ceb1c15e985fcb3060b33120b8bfa1762f94499c014420f12e51e/pytest_lazy_fixtures-1.1.4-py3-none-any.whl", hash = "sha256:1504b6e267657d70d34829fce2580cedd4d3f8558491d6c03fab9b525ec77f2b", size = 7086, upload-time = "2025-05-27T11:05:45.19Z" },
-]
-
-[[package]]
-name = "pytest-only"
-version = "2.1.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/1f/2f/937d554943477a540aa2aae2b4c47ad41c2f089f47691288938c67e94143/pytest_only-2.1.2.tar.gz", hash = "sha256:e341acc083e3bb66debc660b7d5d71ae3b31da5edc2a737280d7304221ab0c29", size = 4863, upload-time = "2024-05-27T17:04:18.626Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/da/95/3cf1a035048ee224a5dc701a3f41a5ec8684b030d217517bdf7da2f545aa/pytest_only-2.1.2-py3-none-any.whl", hash = "sha256:04dffe2aed64a741145ce5ad25b5df3ae4212e01ff885a8821fd2318eb509e91", size = 6456, upload-time = "2024-05-27T17:04:16.936Z" },
 ]
 
 [[package]]
