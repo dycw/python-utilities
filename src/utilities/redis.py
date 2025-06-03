@@ -739,7 +739,6 @@ class PublishServiceMixin(Generic[_T]):
             publish_timeout=self.publish_service_publish_timeout,
         )
 
-    @override
     async def core(self) -> None:
         with suppress_super_object_attribute_error():
             await super().core()  # pyright: ignore[reportAttributeAccessIssue]
