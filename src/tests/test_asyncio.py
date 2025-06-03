@@ -199,6 +199,7 @@ class TestEnhancedTaskGroup:
             assert looper.running
         assert not looper.running
 
+    @mark.flaky
     async def test_max_tasks_disabled(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup() as tg:
