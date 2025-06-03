@@ -1108,11 +1108,13 @@ def _deserialize(
 
 __all__ = [
     "PublishService",
+    "PublishServiceMixin",
     "Publisher",
     "PublisherError",
     "RedisHashMapKey",
     "RedisKey",
     "SubscribeService",
+    "SubscribeServiceMixin",
     "publish",
     "redis_hash_map_key",
     "redis_key",
