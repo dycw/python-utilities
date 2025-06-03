@@ -48,7 +48,7 @@ from utilities.datetime import (
 from utilities.errors import ImpossibleCaseError
 from utilities.git import get_repo_root
 from utilities.iterables import OneEmptyError, always_iterable, one
-from utilities.pathlib import ensure_suffix, resolve_path
+from utilities.pathlib import ensure_suffix, get_path, resolve_path
 from utilities.reprlib import (
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
@@ -71,7 +71,6 @@ if TYPE_CHECKING:
         MaybeCallablePathLike,
         MaybeIterable,
         PathLike,
-        PathLikeOrCallable,
     )
     from utilities.version import MaybeCallableVersionLike
 
@@ -384,10 +383,10 @@ class StandaloneFileHandler(Handler):
 
     @override
     def __init__(
-        self, *, level: int = NOTSET, path: PathLikeOrCallable | None = None
+        self, *, level: int = NOTSET, path: MaybeCallablePathLike | None = None
     ) -> None:
         super().__init__(level=level)
-        self._path = path
+        self._path = get_path(path=path)
 
     @override
     def emit(self, record: LogRecord) -> None:
