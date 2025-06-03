@@ -1136,7 +1136,7 @@ class TestLooper:
         looper = Example(auto_start=True, timeout=1.0)
         async with looper:
             ...
-        self._assert_stats(
+        assert_looper_stats(
             looper,
             entries=1,
             core_successes=79,
@@ -1170,7 +1170,7 @@ class TestLooper:
         looper = Example(auto_start=True, timeout=1.0)
         async with looper:
             ...
-        self._assert_stats(
+        assert_looper_stats(
             looper,
             entries=1,
             core_successes=14,
@@ -1210,7 +1210,7 @@ class TestLooper:
                     looper.put_right_nowait(i)
         async with looper:
             ...
-        self._assert_stats(
+        assert_looper_stats(
             looper,
             entries=1,
             core_successes=25,
