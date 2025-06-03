@@ -748,6 +748,7 @@ class PublishServiceMixin(Generic[_T]):
             "PublishServiceMixin._publish_service.stats: %s",
             self._publish_service.stats,
         )
+        await sleep(0.5)
 
     def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
         with suppress_super_object_attribute_error():
