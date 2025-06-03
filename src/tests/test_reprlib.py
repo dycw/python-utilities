@@ -9,6 +9,7 @@ from utilities.reprlib import (
     get_call_args_mapping,
     get_repr,
     get_repr_and_class,
+    yield_call_args_repr,
     yield_mapping_repr,
 )
 
@@ -57,9 +58,26 @@ class TestGetReprAndClass:
         assert result == expected
 
 
+class TestYieldCallArgsRepr:
+    def test_main(self) -> None:
+        lines = list(
+            yield_call_args_repr(1, 2, list(range(100)), d=4, e=5, f=list(range(100)))
+        )
+        expected = [
+            "args[0] = 1",
+            "args[1] = 2",
+            "args[2] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, ... +80]",
+            "kwargs[d] = 4",
+            "kwargs[e] = 5",
+            "kwargs[f] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, ... +80]",
+        ]
+        assert lines == expected
+
+
 class TestYieldMappingRepr:
     def test_main(self) -> None:
-        lines = list(yield_mapping_repr(a=1, b=2, c=3, d=list(range(100))))
+        mapping = {"a": 1, "b": 2, "c": 3, "d": list(range(100))}
+        lines = list(yield_mapping_repr(mapping))
         expected = [
             "a = 1",
             "b = 2",
