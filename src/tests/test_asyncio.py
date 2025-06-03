@@ -160,8 +160,7 @@ class TestEnhancedTaskGroup:
         assert not flag
 
     async def test_create_task_context_looper(self) -> None:
-        looper = CountingLooper()
-        looper.timeout = 0.1
+        looper = CountingLooper().replace(timeout=1.0)
         assert looper._core_attempts == 0
         async with EnhancedTaskGroup(timeout=0.1) as tg:
             assert looper._core_attempts == 0

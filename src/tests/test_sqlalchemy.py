@@ -1140,7 +1140,7 @@ class TestUpserter:
         self, *, data: DataObject, triples: list[tuple[int, bool, bool]]
     ) -> None:
         table = Table(
-            name,
+            _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),
