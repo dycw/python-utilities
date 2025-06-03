@@ -455,7 +455,6 @@ filterwarnings = [
   "ignore:unclosed Connection <redis.*asyncio.*connection.*Connection.*>:ResourceWarning",  # redis
   "ignore:unclosed event loop <_UnixSelectorEventLoop .*>:ResourceWarning",  # redis
   "ignore:unclosed transport <_SelectorSocketTransport .*>:ResourceWarning",  # redis
-  "ignore:The event loop scope for asynchronous fixtures will default to the fixture cachine scope:pytest.PytestDeprecationWarning",  # pytest-asyncio
 ]
 minversion = "8.0"
 testpaths = ["src/tests"]
