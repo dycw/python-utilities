@@ -691,7 +691,6 @@ class Looper(Generic[_T]):
     empty_upon_exit: bool = field(default=False, repr=False)
     logger: str | None = field(default=None, repr=False)
     timeout: Duration | None = field(default=None, repr=False)
-    timeout_error: type[Exception] = field(default=LooperTimeoutError, repr=False)
     # settings
     _backoff: float = field(init=False, repr=False)
     _debug: bool = field(default=False, repr=False)
@@ -893,7 +892,6 @@ class Looper(Generic[_T]):
         backoff: Duration | Sentinel = sentinel,
         logger: str | None | Sentinel = sentinel,
         timeout: Duration | None | Sentinel = sentinel,
-        timeout_error: type[Exception] | Sentinel = sentinel,
         _debug: bool | Sentinel = sentinel,
         **kwargs: Any,
     ) -> Self:
@@ -906,7 +904,6 @@ class Looper(Generic[_T]):
             backoff=backoff,
             logger=logger,
             timeout=timeout,
-            timeout_error=timeout_error,
             _debug=_debug,
             **kwargs,
         )
@@ -1029,7 +1026,7 @@ class Looper(Generic[_T]):
     async def run_looper(self) -> None:
         """Run the looper."""
         try:
-            async with timeout_dur(duration=self.timeout, error=self.timeout_error):
+            async with timeout_dur(duration=self.timeout):
                 while True:
                     if self._is_stopped.is_set():
                         _ = self._debug and self._logger.debug("%s: stopped", self)
@@ -1068,6 +1065,8 @@ class Looper(Generic[_T]):
             if error.args[0] == "generator didn't stop after athrow()":
                 return
             raise
+        except TimeoutError:
+            pass
 
     async def run_until_empty(self) -> None:
         """Run until the queue is empty."""
