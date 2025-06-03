@@ -39,24 +39,44 @@ def assert_looper_stats(
     rel: float = _REL,
 ) -> None:
     stats = looper.stats
-    assert stats.entries == entries
-    assert stats.core_attempts == (stats.core_successes + stats.core_failures)
-    assert stats.core_successes == approx(core_successes, rel=rel)
-    assert stats.core_failures == approx(core_failures, rel=rel)
+    assert stats.entries == entries, f"{stats=}, {entries=}"
+    assert stats.core_attempts == (stats.core_successes + stats.core_failures), (
+        f"{stats=}"
+    )
+    assert stats.core_successes == approx(core_successes, rel=rel), (
+        f"{stats=}, {core_successes=}"
+    )
+    assert stats.core_failures == approx(core_failures, rel=rel), (
+        f"{stats=}, {core_failures=}"
+    )
     assert stats.initialization_attempts == (
         stats.initialization_successes + stats.initialization_failures
+    ), f"{stats=}"
+    assert stats.initialization_successes == approx(
+        initialization_successes, rel=rel
+    ), f"{stats=}, {initialization_successes=}"
+    assert stats.initialization_failures == approx(initialization_failures, rel=rel), (
+        f"{stats=}, {initialization_failures=}"
     )
-    assert stats.initialization_successes == approx(initialization_successes, rel=rel)
-    assert stats.initialization_failures == approx(initialization_failures, rel=rel)
     assert stats.tear_down_attempts == (
         stats.tear_down_successes + stats.tear_down_failures
+    ), f"{stats=}"
+    assert stats.tear_down_successes == approx(tear_down_successes, rel=rel), (
+        f"{stats=}, {tear_down_successes=}"
     )
-    assert stats.tear_down_successes == approx(tear_down_successes, rel=rel)
-    assert stats.tear_down_failures == approx(tear_down_failures, rel=rel)
-    assert stats.restart_attempts == (stats.restart_successes + stats.restart_failures)
-    assert stats.restart_successes == approx(restart_successes, rel=rel)
-    assert stats.restart_failures == approx(restart_failures, rel=rel)
-    assert stats.stops == stops
+    assert stats.tear_down_failures == approx(tear_down_failures, rel=rel), (
+        f"{stats=}, {initialization_failures=}"
+    )
+    assert stats.restart_attempts == (
+        stats.restart_successes + stats.restart_failures
+    ), f"{stats=}"
+    assert stats.restart_successes == approx(restart_successes, rel=rel), (
+        f"{stats=}, {restart_successes=}"
+    )
+    assert stats.restart_failures == approx(restart_failures, rel=rel), (
+        f"{stats=}, {restart_failures=}"
+    )
+    assert stats.stops == stops, f"{stats=}, {stops=}"
 
 
 def assert_looper_full(
