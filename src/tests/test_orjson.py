@@ -23,7 +23,7 @@ from hypothesis.strategies import (
 )
 from orjson import JSONDecodeError
 from polars import Object, String, UInt64
-from pytest import approx, mark, raises
+from pytest import approx, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from tests.test_operator import (
@@ -95,7 +95,6 @@ if TYPE_CHECKING:
 
 
 class TestGetLogRecords:
-    @mark.only
     def test_main(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := FileHandler(file := tmp_path.joinpath("log")))
