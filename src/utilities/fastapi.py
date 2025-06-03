@@ -56,7 +56,7 @@ class PingReceiver(Looper[None]):
         _ = await super().__aenter__()  # skipif-ci
         async with self._lock:  # skipif-ci
             self._server_task = create_task(self._server.serve())
-        return self  # skipif-ci
+        return self
 
     @override
     async def __aexit__(
@@ -82,16 +82,6 @@ class PingReceiver(Looper[None]):
         except ConnectError:  # skipif-ci
             return False
         return response.text if response.status_code == 200 else False  # skipif-ci
-
-    @override
-    async def _initialize_core(self) -> None:
-        await super()._initialize_core()  # skipif-ci
-        await self._server.serve()  # skipif-ci
-
-    @override
-    async def _tear_down_core(self) -> None:
-        await super()._tear_down_core()  # skipif-ci
-        await self._server.shutdown()  # skipif-ci
 
 
 __all__ = ["PingReceiver"]
