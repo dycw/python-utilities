@@ -399,6 +399,7 @@ skip_empty = true
 [tool.coverage.run]
 branch = true
 data_file = ".coverage/data"
+disable_warnings = ["module-not-measured"]
 omit = ["src/utilities/streamlit.py"]
 parallel = true
 plugins = ["coverage_conditional_plugin"]
