@@ -336,7 +336,7 @@ async def test_main():
             def test_main(is_pass):
                 assert is_pass
             """
-        testdir.makepyfile(contents)
+        _ = testdir.makepyfile(contents)
         for i in range(2):
             for _ in range(2):
                 testdir.runpytest().assert_outcomes(failed=1)
