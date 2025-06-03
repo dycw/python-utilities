@@ -715,9 +715,9 @@ class PublishServiceMixin(Generic[_T]):
     _publish_service: PublishService[_T] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        with suppress_super_object_attribute_error():
+        with suppress_super_object_attribute_error():  # skipif-ci-and-not-linux
             super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
-        self._publish_service = PublishService(
+        self._publish_service = PublishService(  # skipif-ci-and-not-linux
             # looper
             freq=self.publish_service_freq,
             backoff=self.publish_service_backoff,
@@ -733,9 +733,9 @@ class PublishServiceMixin(Generic[_T]):
         )
 
     def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
-        with suppress_super_object_attribute_error():
+        with suppress_super_object_attribute_error():  # skipif-ci-and-not-linux
             yield from super()._yield_sub_loopers()  # pyright: ignore[reportAttributeAccessIssue]
-        yield self._publish_service
+        yield self._publish_service  # skipif-ci-and-not-linux
 
 
 ##
@@ -1000,9 +1000,9 @@ class SubscribeServiceMixin(Generic[_T]):
     _subscribe_service: SubscribeService[_T] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        with suppress_super_object_attribute_error():
+        with suppress_super_object_attribute_error():  # skipif-ci-and-not-linux
             super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
-        self._subscribe_service = SubscribeService(
+        self._subscribe_service = SubscribeService(  # skipif-ci-and-not-linux
             # looper
             freq=self.subscribe_service_freq,
             backoff=self.subscribe_service_backoff,
@@ -1020,9 +1020,9 @@ class SubscribeServiceMixin(Generic[_T]):
         )
 
     def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
-        with suppress_super_object_attribute_error():
+        with suppress_super_object_attribute_error():  # skipif-ci-and-not-linux
             yield from super()._yield_sub_loopers()  # pyright: ignore[reportAttributeAccessIssue]
-        yield self._subscribe_service
+        yield self._subscribe_service  # skipif-ci-and-not-linux
 
 
 ##
