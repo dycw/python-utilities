@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 _FREQ: Duration = 10 * MILLISECOND
 _BACKOFF: Duration = 100 * MILLISECOND
-_REL: float = 0.5
+_REL: float = 0.75
 
 
 # assert
