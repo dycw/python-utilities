@@ -48,7 +48,7 @@ from utilities.datetime import (
 from utilities.errors import ImpossibleCaseError
 from utilities.git import get_repo_root
 from utilities.iterables import OneEmptyError, always_iterable, one
-from utilities.pathlib import ensure_suffix, get_path, resolve_path
+from utilities.pathlib import ensure_suffix, get_path
 from utilities.reprlib import (
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
@@ -394,10 +394,8 @@ class StandaloneFileHandler(Handler):
         from utilities.tzlocal import get_now_local
 
         try:
-            path = (
-                resolve_path(path=self._path)
-                .joinpath(serialize_compact(get_now_local()))
-                .with_suffix(".txt")
+            path = self._path.joinpath(serialize_compact(get_now_local())).with_suffix(
+                ".txt"
             )
             formatted = self.format(record)
             with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
@@ -616,7 +614,7 @@ def setup_logging(
         logger_use.addHandler(console_high_and_exc_handler)
 
     # debug & info
-    directory = resolve_path(path=files_dir)  # skipif-ci-and-windows
+    directory = get_path(path=files_dir)  # skipif-ci-and-windows
     levels: list[LogLevel] = ["DEBUG", "INFO"]  # skipif-ci-and-windows
     for level, (subpath, files_or_plain_formatter) in product(  # skipif-ci-and-windows
         levels, [(Path(), files_formatter), (Path("plain"), plain_formatter)]

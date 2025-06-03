@@ -12,7 +12,7 @@ from utilities.sentinel import Sentinel, sentinel
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
-    from utilities.types import MaybeCallablePathLike, PathLike, PathLikeOrCallable
+    from utilities.types import MaybeCallablePathLike, PathLike
 
 PWD = Path.cwd()
 
@@ -32,9 +32,7 @@ def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
 
 
 @overload
-def get_path(*, path: MaybeCallablePathLike) -> Path: ...
-@overload
-def get_path(*, path: None) -> None: ...
+def get_path(*, path: MaybeCallablePathLike | None) -> Path: ...
 @overload
 def get_path(*, path: Sentinel) -> Sentinel: ...
 def get_path(
@@ -42,10 +40,12 @@ def get_path(
 ) -> Path | None | Sentinel:
     """Get the path."""
     match path:
-        case Path() | None | Sentinel():
+        case Path() | Sentinel():
             return path
         case str():
             return Path(path)
+        case None:
+            return Path.cwd()
         case Callable() as func:
             return get_path(path=func())
         case _ as never:
@@ -70,20 +70,6 @@ def list_dir(path: PathLike, /) -> Sequence[Path]:
 ##
 
 
-def resolve_path(*, path: PathLikeOrCallable | None = None) -> Path:
-    """Resolve for a path."""
-    match path:
-        case None:
-            return Path.cwd()
-        case Path() | str():
-            return Path(path)
-        case _:
-            return Path(path())
-
-
-##
-
-
 @contextmanager
 def temp_cwd(path: PathLike, /) -> Iterator[None]:
     """Context manager with temporary current working directory set."""
@@ -95,4 +81,4 @@ def temp_cwd(path: PathLike, /) -> Iterator[None]:
         chdir(prev)
 
 
-__all__ = ["ensure_suffix", "get_path", "list_dir", "resolve_path", "temp_cwd"]
+__all__ = ["ensure_suffix", "get_path", "list_dir", "temp_cwd"]

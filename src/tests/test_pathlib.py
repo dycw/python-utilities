@@ -5,12 +5,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Self
 
 from hypothesis import given
-from hypothesis.strategies import integers, none, sets
+from hypothesis.strategies import integers, sets
 from pytest import mark, param
 
 from utilities.dataclasses import replace_non_sentinel
-from utilities.hypothesis import paths, sentinels, temp_paths
-from utilities.pathlib import ensure_suffix, get_path, list_dir, resolve_path, temp_cwd
+from utilities.hypothesis import paths, temp_paths
+from utilities.pathlib import ensure_suffix, get_path, list_dir, temp_cwd
 from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
@@ -42,9 +42,11 @@ class TestGetPath:
     def test_str(self, *, path: Path) -> None:
         assert get_path(path=str(path)) == path
 
-    @given(path=none() | sentinels())
-    def test_none_or_sentinel(self, *, path: None | Sentinel) -> None:
-        assert get_path(path=path) is path
+    def test_none(self) -> None:
+        assert get_path(path=None) == Path.cwd()
+
+    def test_sentinel(self) -> None:
+        assert get_path(path=sentinel) is sentinel
 
     @given(path1=paths(), path2=paths())
     def test_replace_non_sentinel(self, *, path1: Path, path2: Path) -> None:
@@ -76,21 +78,6 @@ class TestListDir:
         result = list_dir(root)
         expected = sorted(Path(root, f"{n}.txt") for n in nums)
         assert result == expected
-
-
-class TestResolvePath:
-    def test_cwd(self, *, tmp_path: Path) -> None:
-        with temp_cwd(tmp_path):
-            result = resolve_path()
-        assert result == tmp_path
-
-    def test_path(self, *, tmp_path: Path) -> None:
-        result = resolve_path(path=tmp_path)
-        assert result == tmp_path
-
-    def test_callable(self, *, tmp_path: Path) -> None:
-        result = resolve_path(path=lambda: tmp_path)
-        assert result == tmp_path
 
 
 class TestTempCWD:
