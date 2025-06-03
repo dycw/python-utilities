@@ -99,4 +99,4 @@ def temp_cwd(path: PathLike, /) -> Iterator[None]:
         chdir(prev)
 
 
-__all__ = ["ensure_suffix", "list_dir", "resolve_path", "temp_cwd"]
+__all__ = ["ensure_suffix", "get_path", "list_dir", "resolve_path", "temp_cwd"]

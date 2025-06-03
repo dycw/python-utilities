@@ -1,13 +1,20 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING, Self
 
 from hypothesis import given
-from hypothesis.strategies import integers, sets
+from hypothesis.strategies import integers, none, sets
 from pytest import mark, param
 
-from utilities.hypothesis import temp_paths
-from utilities.pathlib import ensure_suffix, list_dir, resolve_path, temp_cwd
+from utilities.dataclasses import replace_non_sentinel
+from utilities.hypothesis import paths, sentinels, temp_paths
+from utilities.pathlib import ensure_suffix, get_path, list_dir, resolve_path, temp_cwd
+from utilities.sentinel import Sentinel, sentinel
+
+if TYPE_CHECKING:
+    from utilities.types import MaybeCallablePath
 
 
 class TestEnsureSuffix:
@@ -24,6 +31,34 @@ class TestEnsureSuffix:
     def test_main(self, *, path: Path, suffix: str, expected: str) -> None:
         result = str(ensure_suffix(path, suffix))
         assert result == expected
+
+
+class TestGetPath:
+    @given(path=paths())
+    def test_path(self, *, path: Path) -> None:
+        assert get_path(path=path) == path
+
+    @given(path=none() | sentinels())
+    def test_none_or_sentinel(self, *, path: None | Sentinel) -> None:
+        assert get_path(path=path) is path
+
+    @given(path1=paths(), path2=paths())
+    def test_replace_non_sentinel(self, *, path1: Path, path2: Path) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            path: Path = field(default_factory=get_path)
+
+            def replace(self, *, path: MaybeCallablePath | Sentinel = sentinel) -> Self:
+                return replace_non_sentinel(self, path=get_path(path=path))
+
+        obj = Example(path=path1)
+        assert obj.path == path1
+        assert obj.replace().path == path1
+        assert obj.replace(path=path2).path == path2
+
+    @given(path=paths())
+    def test_callable(self, *, path: Path) -> None:
+        assert get_path(path=lambda: path) == path
 
 
 class TestListDir:
