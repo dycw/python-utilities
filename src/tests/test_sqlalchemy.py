@@ -26,7 +26,7 @@ from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
-from tests.test_asyncio_classes.loopers import _BACKOFF, _FREQ, assert_looper_full
+from tests.test_asyncio_classes.loopers import _BACKOFF, _FREQ, assert_looper_stats
 from utilities.asyncio import Looper
 from utilities.hypothesis import (
     int32s,
@@ -1443,7 +1443,13 @@ class TestUpsertServiceMixin:
         service = Example(auto_start=True, timeout=1.0)
         async with service:
             ...
-        assert_looper_full(service, stops=1)
+        assert_looper_stats(
+            service,
+            entries=1,
+            core_successes=(">=", 40),
+            initialization_successes=1,
+            stops=1,
+        )
 
 
 class TestYieldPrimaryKeyColumns:
