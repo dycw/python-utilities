@@ -138,13 +138,12 @@ _CASES_INSERT: list[
 
 
 class TestInsertDataFrame:
-    @given(data=data(), name=_table_names(), case=sampled_from(_CASES_INSERT))
+    @given(data=data(), case=sampled_from(_CASES_INSERT))
     @settings(phases={Phase.generate})
     async def test_main(
         self,
         *,
         data: DataObject,
-        name: str,
         case: tuple[
             SearchStrategy[Any], PolarsDataType, Any, Callable[[Any, Any], bool]
         ],
@@ -152,7 +151,7 @@ class TestInsertDataFrame:
         strategy, pl_dtype, col_type, check = case
         values = data.draw(lists(strategy, max_size=100))
         df = DataFrame({"value": values}, schema={"value": pl_dtype})
-        table = self._make_table(name, col_type)
+        table = self._make_table(col_type)
         engine = await sqlalchemy_engines(data, table)
         await insert_dataframe(df, table, engine)
         sel = select(table.c["value"])
@@ -161,35 +160,33 @@ class TestInsertDataFrame:
         for r, v in zip(results, values, strict=True):
             assert ((r is None) == (v is None)) or check(r, v)
 
-    @given(data=data(), name=_table_names())
+    @given(data=data())
     @settings(phases={Phase.generate})
-    async def test_assume_exists_with_empty(
-        self, *, data: DataObject, name: str
-    ) -> None:
+    async def test_assume_exists_with_empty(self, *, data: DataObject) -> None:
         df = DataFrame(schema={"value": pl.Boolean})
-        table = self._make_table(name, sqlalchemy.Boolean)
+        table = self._make_table(sqlalchemy.Boolean)
         engine = await sqlalchemy_engines(data, table)
         await ensure_tables_created(engine, table)
         await insert_dataframe(df, table, engine, assume_tables_exist=True)
 
-    @given(data=data(), name=_table_names(), value=booleans())
+    @given(data=data(), value=booleans())
     @settings(phases={Phase.generate})
     async def test_assume_exists_with_non_empty(
-        self, *, data: DataObject, name: str, value: bool
+        self, *, data: DataObject, value: bool
     ) -> None:
         df = DataFrame([(value,)], schema={"value": pl.Boolean})
-        table = self._make_table(name, sqlalchemy.Boolean)
+        table = self._make_table(sqlalchemy.Boolean)
         engine = await sqlalchemy_engines(data, table)
         with raises(
             (OperationalError, ProgrammingError), match="(no such table|does not exist)"
         ):
             await insert_dataframe(df, table, engine, assume_tables_exist=True)
 
-    @given(data=data(), name=_table_names())
+    @given(data=data())
     @settings(phases={Phase.generate})
-    async def test_empty(self, *, data: DataObject, name: str) -> None:
+    async def test_empty(self, *, data: DataObject) -> None:
         df = DataFrame(schema={"value": pl.Boolean})
-        table = self._make_table(name, sqlalchemy.Boolean)
+        table = self._make_table(sqlalchemy.Boolean)
         engine = await sqlalchemy_engines(data, table)
         await insert_dataframe(df, table, engine, assume_tables_exist=False)
         sel = select(table.c["value"])
@@ -197,16 +194,16 @@ class TestInsertDataFrame:
             results = (await conn.execute(sel)).scalars().all()
         assert results == []
 
-    @given(data=data(), name=_table_names())
+    @given(data=data())
     @settings(phases={Phase.generate})
-    async def test_upsert(self, *, data: DataObject, name: str) -> None:
+    async def test_upsert(self, *, data: DataObject) -> None:
         values = data.draw(_upsert_lists())
         df = DataFrame(
             values,
             schema={"id_": Int64, "init": pl.Boolean, "post": pl.Boolean},
             orient="row",
         )
-        table = self._make_table(name, sqlalchemy.Boolean)
+        table = self._make_table(sqlalchemy.Boolean)
         engine = await sqlalchemy_engines(data, table)
         await insert_dataframe(
             df.select("id_", col("init").alias("value")),
@@ -231,11 +228,11 @@ class TestInsertDataFrame:
         )
         assert set(results) == set(expected.rows())
 
-    @given(data=data(), name=_table_names(), value=booleans())
+    @given(data=data(), value=booleans())
     @settings(phases={Phase.generate})
-    async def test_error(self, *, data: DataObject, name: str, value: bool) -> None:
+    async def test_error(self, *, data: DataObject, value: bool) -> None:
         df = DataFrame([(value,)], schema={"other": pl.Boolean})
-        table = self._make_table(name, sqlalchemy.Boolean)
+        table = self._make_table(sqlalchemy.Boolean)
         engine = await sqlalchemy_engines(data, table)
         with raises(
             InsertDataFrameError,
@@ -243,9 +240,9 @@ class TestInsertDataFrame:
         ):
             _ = await insert_dataframe(df, table, engine)
 
-    def _make_table(self, name: str, type_: Any, /) -> Table:
+    def _make_table(self, type_: Any, /) -> Table:
         return Table(
-            name,
+            _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", type_),
@@ -396,7 +393,6 @@ class TestInsertDataFrameMapDFSchemaToTable:
 class TestSelectToDataFrame:
     @given(
         data=data(),
-        name=_table_names(),
         case=sampled_from([
             (strategy, pl_dtype, col_type)
             for (strategy, pl_dtype, col_type, _) in _CASES_SELECT
@@ -404,16 +400,12 @@ class TestSelectToDataFrame:
     )
     @settings(phases={Phase.generate})
     async def test_main(
-        self,
-        *,
-        data: DataObject,
-        name: str,
-        case: tuple[SearchStrategy[Any], PolarsDataType, Any],
+        self, *, data: DataObject, case: tuple[SearchStrategy[Any], PolarsDataType, Any]
     ) -> None:
         strategy, pl_dtype, col_type = case
         values = data.draw(lists(strategy, max_size=100))
         df = DataFrame({"value": values}, schema={"value": pl_dtype})
-        table = self._make_table(name, col_type)
+        table = self._make_table(col_type)
         engine = await sqlalchemy_engines(data, table)
         await insert_dataframe(df, table, engine)
         sel = select(table.c["value"])
@@ -422,16 +414,15 @@ class TestSelectToDataFrame:
 
     @given(
         data=data(),
-        name=_table_names(),
         values=lists(booleans() | none(), min_size=1, max_size=100),
         sr_name=sampled_from(["Value", "value"]),
     )
     @settings(phases={Phase.generate})
     async def test_snake(
-        self, *, data: DataObject, name: str, values: list[bool], sr_name: str
+        self, *, data: DataObject, values: list[bool], sr_name: str
     ) -> None:
         df = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
-        table = self._make_table(name, sqlalchemy.Boolean, title=True)
+        table = self._make_table(sqlalchemy.Boolean, title=True)
         engine = await sqlalchemy_engines(data, table)
         await insert_dataframe(df, table, engine, snake=True)
         sel = select(table.c["Value"])
@@ -441,35 +432,28 @@ class TestSelectToDataFrame:
 
     @given(
         data=data(),
-        name=_table_names(),
         values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
         batch_size=integers(1, 10),
     )
     @settings(phases={Phase.generate})
     async def test_batch(
-        self, *, data: DataObject, name: str, values: list[int], batch_size: int
+        self, *, data: DataObject, values: list[int], batch_size: int
     ) -> None:
-        df, table, engine, sel = await self._prepare_feature_test(data, name, values)
+        df, table, engine, sel = await self._prepare_feature_test(data, values)
         await insert_dataframe(df, table, engine)
         dfs = await select_to_dataframe(sel, engine, batch_size=batch_size)
         self._assert_batch_results(dfs, batch_size, values)
 
     @given(
         data=data(),
-        name=_table_names(),
         values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
         in_clauses_chunk_size=integers(1, 10),
     )
     @settings(phases={Phase.generate})
     async def test_in_clauses_non_empty(
-        self,
-        *,
-        data: DataObject,
-        name: str,
-        values: list[int],
-        in_clauses_chunk_size: int,
+        self, *, data: DataObject, values: list[int], in_clauses_chunk_size: int
     ) -> None:
-        df, table, engine, sel = await self._prepare_feature_test(data, name, values)
+        df, table, engine, sel = await self._prepare_feature_test(data, values)
         await insert_dataframe(df, table, engine)
         in_values = data.draw(sets(sampled_from(values)))
         df = await select_to_dataframe(
@@ -481,10 +465,10 @@ class TestSelectToDataFrame:
         check_polars_dataframe(df, height=len(in_values), schema_list={"value": Int64})
         assert set(df["value"].to_list()) == in_values
 
-    @given(data=data(), name=_table_names())
+    @given(data=data())
     @settings(phases={Phase.generate})
-    async def test_in_clauses_empty(self, *, data: DataObject, name: str) -> None:
-        table = self._make_table(name, Integer)
+    async def test_in_clauses_empty(self, *, data: DataObject) -> None:
+        table = self._make_table(Integer)
         engine = await sqlalchemy_engines(data, table)
         await ensure_tables_created(engine, table)
         sel = select(table.c["value"])
@@ -493,7 +477,6 @@ class TestSelectToDataFrame:
 
     @given(
         data=data(),
-        name=_table_names(),
         values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
         batch_size=integers(1, 10),
         in_clauses_chunk_size=integers(1, 10),
@@ -503,12 +486,11 @@ class TestSelectToDataFrame:
         self,
         *,
         data: DataObject,
-        name: str,
         values: list[int],
         batch_size: int,
         in_clauses_chunk_size: int,
     ) -> None:
-        df, table, engine, sel = await self._prepare_feature_test(data, name, values)
+        df, table, engine, sel = await self._prepare_feature_test(data, values)
         await insert_dataframe(df, table, engine)
         in_values = data.draw(sets(sampled_from(values)))
         async_dfs = await select_to_dataframe(
@@ -535,19 +517,19 @@ class TestSelectToDataFrame:
             seen.update(df_i["value"].to_list())
         assert seen == values
 
-    def _make_table(self, name: str, type_: Any, /, *, title: bool = False) -> Table:
+    def _make_table(self, type_: Any, /, *, title: bool = False) -> Table:
         return Table(
-            name,
+            _table_names(),
             MetaData(),
             Column("Id" if title else "id", Integer, primary_key=True),
             Column("Value" if title else "value", type_),
         )
 
     async def _prepare_feature_test(
-        self, data: DataObject, name: str, values: Sequence[int], /
+        self, data: DataObject, values: Sequence[int], /
     ) -> tuple[DataFrame, Table, AsyncEngine, Select[Any]]:
         df = DataFrame({"value": values}, schema={"value": Int64})
-        table = self._make_table(name, Integer)
+        table = self._make_table(Integer)
         engine = await sqlalchemy_engines(data, table)
         sel = select(table.c["value"])
         return df, table, engine, sel
@@ -652,7 +634,6 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
 class TestSelectToDataFrameYieldSelectsWithInClauses:
     @given(
         data=data(),
-        name=_table_names(),
         values=sets(integers(), max_size=100),
         in_clauses_chunk_size=integers(1, 10) | none(),
         chunk_size_frac=floats(0.1, 10.0),
@@ -661,12 +642,13 @@ class TestSelectToDataFrameYieldSelectsWithInClauses:
         self,
         *,
         data: DataObject,
-        name: str,
         values: set[int],
         in_clauses_chunk_size: int | None,
         chunk_size_frac: float,
     ) -> None:
-        table = Table(name, MetaData(), Column("id", Integer, primary_key=True))
+        table = Table(
+            _table_names(), MetaData(), Column("id", Integer, primary_key=True)
+        )
         engine = await sqlalchemy_engines(data, table)
         sel = select(table.c["id"])
         sels = _select_to_dataframe_yield_selects_with_in_clauses(

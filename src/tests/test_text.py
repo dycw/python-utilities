@@ -36,6 +36,7 @@ from utilities.text import (
     split_str,
     str_encode,
     strip_and_dedent,
+    unique_str,
 )
 
 if TYPE_CHECKING:
@@ -305,3 +306,9 @@ class TestStripAndDedent:
         result = strip_and_dedent(text, trailing=trailing)
         expected = "This is line 1.\nThis is line 2." + ("\n" if trailing else "")
         assert result == expected
+
+
+class TestUniqueStrs:
+    def test_main(self) -> None:
+        first, second = [unique_str() for _ in range(2)]
+        assert first != second
