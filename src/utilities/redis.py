@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator, Callable, Mapping
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from functools import partial
+from logging import getLogger
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -675,8 +676,14 @@ class PublishService(Looper[tuple[str, _T]]):
     serializer: Callable[[_T], EncodableT] = serialize
     publish_timeout: Duration = _PUBLISH_TIMEOUT
 
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.freq = 0.5
+
     @override
     async def core(self) -> None:
+        logger = getLogger("dts")
+        logger.info("PublishService.stats: %s", self.stats)
         await super().core()  # skipif-ci-and-not-linux
         while not self.empty():  # skipif-ci-and-not-linux
             channel, data = self.get_left_nowait()
@@ -730,6 +737,16 @@ class PublishServiceMixin(Generic[_T]):
             redis=self.publish_service_redis,
             serializer=self.publish_service_serializer,
             publish_timeout=self.publish_service_publish_timeout,
+        )
+
+    @override
+    async def core(self) -> None:
+        with suppress_super_object_attribute_error():
+            await super().core()
+        logger = getLogger("dts")
+        logger.info(
+            "PublishServiceMixin._publish_service.stats: %s",
+            self._publish_service.stats,
         )
 
     def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
