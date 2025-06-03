@@ -801,8 +801,8 @@ requires-dist = [
     { name = "greenlet", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=3.2.0,<3.3" },
     { name = "greenlet", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=3.2.0,<3.3" },
     { name = "httpx", marker = "extra == 'zzz-test-fastapi'", specifier = ">=0.28.1,<0.29" },
-    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.133.0,<6.134" },
-    { name = "hypothesis", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=6.133.0,<6.134" },
+    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.135.0,<6.136" },
+    { name = "hypothesis", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=6.135.0,<6.136" },
     { name = "img2pdf", marker = "extra == 'zzz-test-altair'", specifier = ">=0.6.0,<0.7" },
     { name = "ipython", marker = "extra == 'zzz-test-ipython'", specifier = ">=9.0.1,<9.1" },
     { name = "jupyterlab", marker = "extra == 'zzz-test-jupyter'", specifier = ">=4.2.0,<4.3" },
@@ -940,6 +940,36 @@ dataclasses-test = [
 dev = [
     { name = "coloredlogs", specifier = ">=15.0.1,<15.1" },
     { name = "coverage-conditional-plugin", specifier = ">=0.9.0,<0.10" },
+    { name = "cryptography", specifier = ">=45.0.4,<45.1" },
+    { name = "cvxpy", specifier = ">=1.6.5,<1.7" },
+    { name = "dycw-pytest-only", specifier = ">=2.1.1,<2.2" },
+    { name = "eventkit", specifier = ">=1.0.3,<1.1" },
+    { name = "fastapi", specifier = ">=0.115.11,<0.116" },
+    { name = "fpdf2", specifier = ">=2.8.3,<2.9" },
+    { name = "greenlet", specifier = ">=3.2.0,<3.3" },
+    { name = "httpx", specifier = ">=0.28.1,<0.29" },
+    { name = "hypothesis", specifier = ">=6.135.0,<6.136" },
+    { name = "img2pdf", specifier = ">=0.6.0,<0.7" },
+    { name = "inflect", specifier = ">=7.5.0,<7.6" },
+    { name = "libcst", specifier = ">=1.8.0,<1.9" },
+    { name = "lightweight-charts", specifier = ">=2.1,<2.2" },
+    { name = "luigi", specifier = ">=3.6.0,<3.7" },
+    { name = "memory-profiler", specifier = ">=0.61.0,<0.62" },
+    { name = "more-itertools", specifier = ">=10.7.0,<10.8" },
+    { name = "nest-asyncio", specifier = ">=1.6.0,<1.7" },
+    { name = "nox", specifier = ">=2025.2.9,<2025.3" },
+    { name = "numpy", specifier = ">=2.3.0,<2.4" },
+    { name = "optuna", specifier = ">=4.3.0,<4.4" },
+    { name = "orjson", specifier = ">=3.10.18,<3.11" },
+    { name = "pathvalidate", specifier = ">=3.2.3,<3.3" },
+    { name = "polars-lts-cpu", specifier = ">=1.30.0,<1.31" },
+    { name = "polars-ols", specifier = ">=0.3.5,<0.4" },
+    { name = "pottery", specifier = ">=3.0.1,<3.1" },
+    { name = "pqdm", specifier = ">=0.2.0,<0.3" },
+    { name = "psutil", specifier = ">=7.0.0,<7.1" },
+    { name = "psycopg2-binary", specifier = ">=2.9.10,<2.10" },
+    { name = "pydantic", specifier = ">=2.11.4,<2.12" },
+    { name = "pyinstrument", specifier = ">=5.0.2,<5.1" },
     { name = "pyright", extras = ["nodejs"], specifier = ">=1.1.401,<1.2" },
     { name = "pyrsistent", specifier = ">=0.20.0,<0.21" },
     { name = "pytest", specifier = ">=8.4.0,<8.5" },
@@ -1232,15 +1262,15 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.135.9"
+version = "6.135.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1d/f6/86cb56efe11ac39c943dcb007c7135b89f2c674ab273ff7c0a8da415aaff/hypothesis-6.135.9.tar.gz", hash = "sha256:a80a256268b8af3d34d62be30f6bf4a7d099b2b762621cc5f3f1de65e7b98543", size = 452490, upload-time = "2025-06-13T05:56:45.951Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f9/ad/519dc222d624017d4d4890c3cb832892aec372ebdcaaed026c21b23da91f/hypothesis-6.135.0.tar.gz", hash = "sha256:d71b92ab845959aaa5b10bb8638f19349b6ec1222e731da542a25c162aba528a", size = 449272, upload-time = "2025-06-03T23:05:59.76Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5d/e1/c9fd793a75d367055087540c42ff567e4a1bd98379df04b5fb635520dcfd/hypothesis-6.135.9-py3-none-any.whl", hash = "sha256:f26a8b0dfb9d4921df931ef1dbe56435b227832a6f3b8dbab5bd563c2e443831", size = 518596, upload-time = "2025-06-13T05:56:41.933Z" },
+    { url = "https://files.pythonhosted.org/packages/b5/5a/b67bb690744d957086cab028b2bdcb5c6ad5c1c2428aaab4a6e45709a677/hypothesis-6.135.0-py3-none-any.whl", hash = "sha256:7a1eb93809c628767db115f50a3e95ad96390c0b98260b975660014c346a19e9", size = 514970, upload-time = "2025-06-03T23:05:54.656Z" },
 ]
 
 [[package]]
