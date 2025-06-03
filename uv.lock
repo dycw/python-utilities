@@ -745,7 +745,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.126.8"
+version = "0.126.9"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },
@@ -2819,11 +2819,11 @@ wheels = [
 
 [[package]]
 name = "prometheus-client"
-version = "0.22.0"
+version = "0.22.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/5b/5a/3fa1fa7e91a203759aaf316be394f70f2ef598d589b9785a8611b6094c00/prometheus_client-0.22.0.tar.gz", hash = "sha256:18da1d2241ac2d10c8d2110f13eedcd5c7c0c8af18c926e8731f04fc10cd575c", size = 74443, upload-time = "2025-05-16T20:50:18.333Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/cf/40dde0a2be27cc1eb41e333d1a674a74ce8b8b0457269cc640fd42b07cf7/prometheus_client-0.22.1.tar.gz", hash = "sha256:190f1331e783cf21eb60bca559354e0a4d4378facecf78f5428c39b675d20d28", size = 69746, upload-time = "2025-06-02T14:29:01.152Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/50/c7/cee159ba3d7192e84a4c166ec1752f44a5fa859ac0eeda2d73a1da65ab47/prometheus_client-0.22.0-py3-none-any.whl", hash = "sha256:c8951bbe64e62b96cd8e8f5d917279d1b9b91ab766793f33d4dce6c228558713", size = 62658, upload-time = "2025-05-16T20:50:16.978Z" },
+    { url = "https://files.pythonhosted.org/packages/32/ae/ec06af4fe3ee72d16973474f122541746196aaa16cea6f66d18b963c6177/prometheus_client-0.22.1-py3-none-any.whl", hash = "sha256:cca895342e308174341b2cbf99a56bef291fbc0ef7b9e5412a0f26d653ba7094", size = 58694, upload-time = "2025-06-02T14:29:00.068Z" },
 ]
 
 [[package]]
@@ -3288,14 +3288,14 @@ wheels = [
 
 [[package]]
 name = "pytest-datadir"
-version = "1.7.0"
+version = "1.7.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e2/51/bcde0e5a96420166e305f48ead58d6834b7874d136b0c147c3606b18d19d/pytest_datadir-1.7.0.tar.gz", hash = "sha256:6f4948e50ad0e3c558e58752cf79ec5946334a7b21c86d569a3b94a0b3bb4527", size = 10795, upload-time = "2025-05-30T11:59:13.792Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cf/5b/88e71a8e199b0410a1bb504894b4f7ab3178a26b4edeb2b3a8908f775db2/pytest_datadir-1.7.1.tar.gz", hash = "sha256:367b4cd34b6ca3151317db310ab688ef9a28a9ec15e1e7d6696f4737b5f14bd8", size = 10962, upload-time = "2025-06-02T15:19:30.249Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/70/23/206e935bb7fc5d61d4b9be285bbe3c7bfa8628cc151558f94fbe28e31349/pytest_datadir-1.7.0-py3-none-any.whl", hash = "sha256:9dfb14e082a9e9c41b178ca35c3553266d54554f80d7941ed926957d8303c3e9", size = 6055, upload-time = "2025-05-30T11:59:12.178Z" },
+    { url = "https://files.pythonhosted.org/packages/aa/b7/1c5cd1e9beab5c8b286c1196da553c2cb0a18b494218dfdfce72a1413f87/pytest_datadir-1.7.1-py3-none-any.whl", hash = "sha256:12372417ff2cec4db8aecaf6b6fac119db91515f17e81c7926220e342148e3b4", size = 6076, upload-time = "2025-06-02T15:19:28.998Z" },
 ]
 
 [[package]]
