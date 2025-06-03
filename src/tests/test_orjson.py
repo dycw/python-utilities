@@ -234,7 +234,7 @@ class TestGetLogRecords:
         handler.setFormatter(OrjsonFormatter())
         for level_, message_, extra_ in items:
             _ = assume(set(extra_) & set(_LOG_RECORD_DEFAULT_ATTRS) == set())
-            logger.log(get_logging_level_number(level_), message_, extra=extra_)
+            logger.log(get_logging_level_number(level_), "%s", message_, extra=extra_)
         output = get_log_records(root, parallelism="threads")
         output = output.filter(
             index=index,
