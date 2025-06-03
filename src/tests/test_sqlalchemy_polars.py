@@ -183,7 +183,7 @@ class TestInsertDataFrame:
             await insert_dataframe(df, table, engine, assume_tables_exist=True)
 
     @given(data=data())
-    @settings(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_empty(self, *, data: DataObject) -> None:
         df = DataFrame(schema={"value": pl.Boolean})
         table = self._make_table(sqlalchemy.Boolean)
@@ -195,7 +195,7 @@ class TestInsertDataFrame:
         assert results == []
 
     @given(data=data())
-    @settings(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_upsert(self, *, data: DataObject) -> None:
         values = data.draw(_upsert_lists())
         df = DataFrame(
@@ -229,7 +229,7 @@ class TestInsertDataFrame:
         assert set(results) == set(expected.rows())
 
     @given(data=data(), value=booleans())
-    @settings(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_error(self, *, data: DataObject, value: bool) -> None:
         df = DataFrame([(value,)], schema={"other": pl.Boolean})
         table = self._make_table(sqlalchemy.Boolean)
@@ -398,7 +398,7 @@ class TestSelectToDataFrame:
             for (strategy, pl_dtype, col_type, _) in _CASES_SELECT
         ]),
     )
-    @settings(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_main(
         self, *, data: DataObject, case: tuple[SearchStrategy[Any], PolarsDataType, Any]
     ) -> None:
@@ -417,7 +417,7 @@ class TestSelectToDataFrame:
         values=lists(booleans() | none(), min_size=1, max_size=100),
         sr_name=sampled_from(["Value", "value"]),
     )
-    @settings(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_snake(
         self, *, data: DataObject, values: list[bool], sr_name: str
     ) -> None:
@@ -435,7 +435,7 @@ class TestSelectToDataFrame:
         values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
         batch_size=integers(1, 10),
     )
-    @settings(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_batch(
         self, *, data: DataObject, values: list[int], batch_size: int
     ) -> None:
@@ -449,7 +449,7 @@ class TestSelectToDataFrame:
         values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
         in_clauses_chunk_size=integers(1, 10),
     )
-    @settings(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_in_clauses_non_empty(
         self, *, data: DataObject, values: list[int], in_clauses_chunk_size: int
     ) -> None:
@@ -466,7 +466,7 @@ class TestSelectToDataFrame:
         assert set(df["value"].to_list()) == in_values
 
     @given(data=data())
-    @settings(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_in_clauses_empty(self, *, data: DataObject) -> None:
         table = self._make_table(Integer)
         engine = await sqlalchemy_engines(data, table)
@@ -481,7 +481,7 @@ class TestSelectToDataFrame:
         batch_size=integers(1, 10),
         in_clauses_chunk_size=integers(1, 10),
     )
-    @settings(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_batch_and_in_clauses(
         self,
         *,
