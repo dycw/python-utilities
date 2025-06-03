@@ -182,7 +182,7 @@ class TestPublish:
                 _ = await publish(redis, "channel", None)
 
 
-class TestPublisher:
+class TestPublisherService:
     @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
