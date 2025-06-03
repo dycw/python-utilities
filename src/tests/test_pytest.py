@@ -6,7 +6,7 @@ from random import Random
 from time import sleep
 from typing import TYPE_CHECKING, ClassVar
 
-from pytest import mark, param, raises
+from pytest import fixture, mark, param, raises
 
 from utilities.iterables import one
 from utilities.pytest import (
@@ -16,6 +16,7 @@ from utilities.pytest import (
     random_state,
     throttle,
 )
+from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -24,6 +25,18 @@ if TYPE_CHECKING:
 
 
 _ = random_state
+
+
+@fixture(autouse=True)
+def inject_pyproject_toml(*, testdir: Testdir) -> None:
+    _ = testdir.makepyprojecttoml(
+        strip_and_dedent(
+            """
+            [tool.pytest.ini_options]
+            asyncio_default_fixture_loop_scope = "function"
+            """
+        )
+    )
 
 
 class TestIsPytest:
@@ -239,14 +252,16 @@ class TestRandomState:
 
 
 class TestThrottle:
-    delta: ClassVar[float] = 0.5
-
-    @mark.flaky
+    @mark.parametrize("as_float", [param(True), param(False)])
     @mark.parametrize("on_try", [param(True), param(False)])
-    def test_basic(self, *, testdir: Testdir, tmp_path: Path, on_try: bool) -> None:
-        _ = testdir.makepyfile(
-            f"""
-            from whenever import TimeDelta
+    # @mark.flaky
+    def test_basic(
+        self, *, testdir: Testdir, tmp_path: Path, as_float: bool, on_try: bool
+    ) -> None:
+        root_str = str(tmp_path)
+        duration = "1.0" if as_float else "dt.timedelta(seconds=1.0)"
+        contents = f"""
+            import datetime as dt
 
             from utilities.pytest import throttle
 
@@ -263,6 +278,7 @@ class TestThrottle:
     @mark.flaky
     @mark.parametrize("asyncio_first", [param(True), param(False)])
     @mark.parametrize("on_try", [param(True), param(False)])
+    # @mark.flaky
     def test_async(
         self, *, testdir: Testdir, tmp_path: Path, asyncio_first: bool, on_try: bool
     ) -> None:
@@ -301,7 +317,7 @@ class TestThrottle:
         sleep(self.delta)
         testdir.runpytest().assert_outcomes(passed=1)
 
-    @mark.flaky
+    # @mark.flaky
     def test_on_pass(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
@@ -325,14 +341,20 @@ class TestThrottle:
             def test_main(*, is_pass: bool) -> None:
                 assert is_pass
             """
-        )
-        for delta_use in [self.delta, 0.0]:
-            testdir.runpytest().assert_outcomes(failed=1)
+
+        z = testdir.makepyfile(contents)
+
+        breakpoint()
+
+        for i in range(2):
+            for _ in range(2):
+                testdir.runpytest().assert_outcomes(failed=1)
             testdir.runpytest("--pass").assert_outcomes(passed=1)
             testdir.runpytest("--pass").assert_outcomes(skipped=1)
             sleep(delta_use)
 
-    @mark.flaky
+    # @mark.flaky
+    @mark.only
     def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
