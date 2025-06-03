@@ -22,7 +22,7 @@ from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
-from tests.test_asyncio import _ASSERT_LOOPER_STATS_REL, assert_looper_stats
+from tests.test_asyncio_classes.loopers import _REL, assert_looper_stats
 from tests.test_asyncio_classes.redis import LooperWithPublishAndSubscribeMixins
 from tests.test_operator import make_objects
 from utilities.asyncio import EnhancedTaskGroup, Looper, get_items_nowait
@@ -287,12 +287,7 @@ class TestPublishServiceMixin:
             self._assert_stats(s)
 
     def _assert_stats(
-        self,
-        looper: Looper[Any],
-        /,
-        *,
-        stops: int = 0,
-        rel: float = _ASSERT_LOOPER_STATS_REL,
+        self, looper: Looper[Any], /, *, stops: int = 0, rel: float = _REL
     ) -> None:
         assert_looper_stats(
             looper,
