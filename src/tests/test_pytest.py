@@ -33,6 +33,7 @@ def inject_pyproject_toml(*, testdir: Testdir) -> None:
         strip_and_dedent(
             """
             [tool.pytest.ini_options]
+            addopts = ""
             asyncio_default_fixture_loop_scope = "function"
             """
         )
@@ -254,7 +255,7 @@ class TestRandomState:
 class TestThrottle:
     @mark.parametrize("as_float", [param(True), param(False)])
     @mark.parametrize("on_try", [param(True), param(False)])
-    # @mark.flaky
+    @mark.flaky
     def test_basic(
         self, *, testdir: Testdir, tmp_path: Path, as_float: bool, on_try: bool
     ) -> None:
@@ -278,7 +279,7 @@ class TestThrottle:
     @mark.flaky
     @mark.parametrize("asyncio_first", [param(True), param(False)])
     @mark.parametrize("on_try", [param(True), param(False)])
-    # @mark.flaky
+    @mark.flaky
     def test_async(
         self, *, testdir: Testdir, tmp_path: Path, asyncio_first: bool, on_try: bool
     ) -> None:
@@ -317,7 +318,7 @@ class TestThrottle:
         sleep(self.delta)
         testdir.runpytest().assert_outcomes(passed=1)
 
-    # @mark.flaky
+    @mark.flaky
     def test_on_pass(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
@@ -349,8 +350,7 @@ class TestThrottle:
             testdir.runpytest("--pass").assert_outcomes(skipped=1)
             sleep(delta_use)
 
-    # @mark.flaky
-    @mark.only
+    @mark.flaky
     def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
