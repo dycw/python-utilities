@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import reprlib
+from functools import partial
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from utilities.types import StrMapping
 
 RICH_MAX_WIDTH: int = 80
@@ -78,6 +81,37 @@ def get_repr_and_class(
         expand_all=expand_all,
     )
     return f"Object {repr_use!r} of type {type(obj).__name__!r}"
+
+
+##
+
+
+def yield_mapping_repr(
+    _max_width: int = RICH_MAX_WIDTH,
+    _indent_size: int = RICH_INDENT_SIZE,
+    _max_length: int | None = RICH_MAX_LENGTH,
+    _max_string: int | None = RICH_MAX_STRING,
+    _max_depth: int | None = RICH_MAX_DEPTH,
+    _expand_all: bool = RICH_EXPAND_ALL,  # noqa: FBT001
+    **kwargs: Any,
+) -> Iterator[str]:
+    """Pretty print of a set of keyword arguments."""
+    try:
+        from rich.pretty import pretty_repr
+    except ModuleNotFoundError:
+        repr_use = repr
+    else:
+        repr_use = partial(
+            pretty_repr,
+            max_width=_max_width,
+            indent_size=_indent_size,
+            max_length=_max_length,
+            max_string=_max_string,
+            max_depth=_max_depth,
+            expand_all=_expand_all,
+        )
+    for k, v in kwargs.items():
+        yield f"{k} = {repr_use(v)}"
 
 
 __all__ = [

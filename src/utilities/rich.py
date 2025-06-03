@@ -11,6 +11,7 @@ from utilities.reprlib import (
     RICH_MAX_LENGTH,
     RICH_MAX_STRING,
     RICH_MAX_WIDTH,
+    get_call_args_mapping,
 )
 
 if TYPE_CHECKING:
@@ -31,9 +32,7 @@ def yield_call_args_repr(
     **kwargs: Any,
 ) -> Iterator[str]:
     """Pretty print of a set of positional/keyword arguments."""
-    mapping = {f"args[{i}]": v for i, v in enumerate(args)} | {
-        f"kwargs[{k}]": v for k, v in kwargs.items()
-    }
+    mapping = get_call_args_mapping(*args, **kwargs)
     return yield_mapping_repr(
         _max_width=_max_width,
         _indent_size=_indent_size,
