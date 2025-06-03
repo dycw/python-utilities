@@ -25,13 +25,7 @@ from typing import (
 from redis.asyncio import Redis
 from redis.typing import EncodableT
 
-from utilities.asyncio import (
-    EnhancedQueue,
-    InfiniteQueueLooper,
-    Looper,
-    LooperTimeoutError,
-    timeout_dur,
-)
+from utilities.asyncio import EnhancedQueue, InfiniteQueueLooper, Looper, timeout_dur
 from utilities.contextlib import suppress_super_object_attribute_error
 from utilities.datetime import (
     MILLISECOND,
@@ -702,9 +696,6 @@ class PublishServiceMixin(Generic[_T]):
     publish_service_empty_upon_exit: bool = field(default=False, repr=False)
     publish_service_logger: str | None = field(default=None, repr=False)
     publish_service_timeout: Duration | None = field(default=None, repr=False)
-    publish_service_timeout_error: type[Exception] = field(
-        default=LooperTimeoutError, repr=False
-    )
     publish_service_debug: bool = field(default=False, repr=False)
     _is_pending_restart: Event = field(default_factory=Event, init=False, repr=False)
     # base - publish service
@@ -724,7 +715,6 @@ class PublishServiceMixin(Generic[_T]):
             empty_upon_exit=self.publish_service_empty_upon_exit,
             logger=self.publish_service_logger,
             timeout=self.publish_service_timeout,
-            timeout_error=self.publish_service_timeout_error,
             _debug=self.publish_service_debug,
             # publish service
             redis=self.publish_service_redis,
@@ -986,9 +976,6 @@ class SubscribeServiceMixin(Generic[_T]):
     subscribe_service_empty_upon_exit: bool = field(default=False, repr=False)
     subscribe_service_logger: str | None = field(default=None, repr=False)
     subscribe_service_timeout: Duration | None = field(default=None, repr=False)
-    subscribe_service_timeout_error: type[Exception] = field(
-        default=LooperTimeoutError, repr=False
-    )
     subscribe_service_debug: bool = field(default=False, repr=False)
     # base - looper
     subscribe_service_redis: Redis
@@ -1009,7 +996,6 @@ class SubscribeServiceMixin(Generic[_T]):
             empty_upon_exit=self.subscribe_service_empty_upon_exit,
             logger=self.subscribe_service_logger,
             timeout=self.subscribe_service_timeout,
-            timeout_error=self.subscribe_service_timeout_error,
             _debug=self.subscribe_service_debug,
             # subscribe service
             redis=self.subscribe_service_redis,

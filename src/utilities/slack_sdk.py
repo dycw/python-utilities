@@ -7,12 +7,7 @@ from typing import TYPE_CHECKING, Any, Self, override
 
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
-from utilities.asyncio import (
-    InfiniteQueueLooper,
-    Looper,
-    LooperTimeoutError,
-    timeout_dur,
-)
+from utilities.asyncio import InfiniteQueueLooper, Looper, timeout_dur
 from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float
 from utilities.functools import cache
 from utilities.math import safe_round
@@ -94,7 +89,6 @@ class SlackHandlerService(Handler, Looper[str]):
         backoff: Duration = SECOND,
         logger: str | None = None,
         timeout: Duration | None = None,
-        timeout_error: type[Exception] = LooperTimeoutError,
         _debug: bool = False,
         level: int = NOTSET,
         sender: Callable[[str, str], Coroutine1[None]] = _send_adapter,
@@ -108,7 +102,6 @@ class SlackHandlerService(Handler, Looper[str]):
             backoff=backoff,
             logger=logger,
             timeout=timeout,
-            timeout_error=timeout_error,
             _debug=_debug,
         )
         Looper.__post_init__(self)
@@ -144,7 +137,6 @@ class SlackHandlerService(Handler, Looper[str]):
         backoff: Duration | Sentinel = sentinel,
         logger: str | None | Sentinel = sentinel,
         timeout: Duration | None | Sentinel = sentinel,
-        timeout_error: type[Exception] | Sentinel = sentinel,
         _debug: bool | Sentinel = sentinel,
         **kwargs: Any,
     ) -> Self:
@@ -157,7 +149,6 @@ class SlackHandlerService(Handler, Looper[str]):
             backoff=backoff,
             logger=logger,
             timeout=timeout,
-            timeout_error=timeout_error,
             _debug=_debug,
             **kwargs,
         )

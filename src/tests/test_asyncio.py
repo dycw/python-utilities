@@ -21,7 +21,7 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import LogCaptureFixture, mark, param, raises
+from pytest import LogCaptureFixture, approx, mark, param, raises
 
 from tests.test_asyncio_classes.loopers import (
     _REL,
@@ -42,7 +42,6 @@ from utilities.asyncio import (
     InfiniteLooper,
     InfiniteQueueLooper,
     Looper,
-    LooperTimeoutError,
     UniquePriorityQueue,
     UniqueQueue,
     _InfiniteLooperDefaultEventError,
@@ -1361,9 +1360,10 @@ class TestLooper:
 
     async def test_timeout(self) -> None:
         looper = CountingLooper(timeout=1.0)
-        async with looper:
-            with raises(LooperTimeoutError, match="Timeout"):
+        with Timer() as timer:
+            async with looper:
                 await looper
+        assert float(timer) == approx(1.0, rel=_REL)
         self._assert_stats_full(looper, stops=1)
 
     def test_with_auto_start(self) -> None:

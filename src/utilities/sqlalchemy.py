@@ -57,12 +57,7 @@ from sqlalchemy.orm import (
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
-from utilities.asyncio import (
-    InfiniteQueueLooper,
-    Looper,
-    LooperTimeoutError,
-    timeout_dur,
-)
+from utilities.asyncio import InfiniteQueueLooper, Looper, timeout_dur
 from utilities.contextlib import suppress_super_object_attribute_error
 from utilities.datetime import SECOND
 from utilities.functions import (
@@ -707,9 +702,6 @@ class UpsertServiceMixin:
     upsert_service_empty_upon_exit: bool = field(default=False, repr=False)
     upsert_service_logger: str | None = field(default=None, repr=False)
     upsert_service_timeout: Duration | None = field(default=None, repr=False)
-    upsert_service_timeout_error: type[Exception] = field(
-        default=LooperTimeoutError, repr=False
-    )
     upsert_service_debug: bool = field(default=False, repr=False)
     # base - upsert service
     upsert_service_database: AsyncEngine
@@ -734,7 +726,6 @@ class UpsertServiceMixin:
             empty_upon_exit=self.upsert_service_empty_upon_exit,
             logger=self.upsert_service_logger,
             timeout=self.upsert_service_timeout,
-            timeout_error=self.upsert_service_timeout_error,
             _debug=self.upsert_service_debug,
             # upsert service
             engine=self.upsert_service_database,
