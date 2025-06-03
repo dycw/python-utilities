@@ -94,7 +94,6 @@ class SlackHandlerService(Handler, Looper[str]):
         backoff: Duration | Sentinel = sentinel,
         logger: str | None | Sentinel = sentinel,
         timeout: Duration | None | Sentinel = sentinel,
-        timeout_error: type[Exception] | Sentinel = sentinel,
         _debug: bool | Sentinel = sentinel,
         **kwargs: Any,
     ) -> Self:
@@ -107,7 +106,6 @@ class SlackHandlerService(Handler, Looper[str]):
             backoff=backoff,
             logger=logger,
             timeout=timeout,
-            timeout_error=timeout_error,
             _debug=_debug,
             **kwargs,
         )
