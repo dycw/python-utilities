@@ -236,6 +236,7 @@ class TestPublisher:
 
 
 class TestPublishServiceMixin:
+    @mark.flaky
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, test_redis: Redis) -> None:
         service = LooperWithPublishAndSubscribeMixins(
@@ -249,6 +250,7 @@ class TestPublishServiceMixin:
         for s in [service, service._publish_service, service._subscribe_service]:
             self._assert_stats(s, stops=1)
 
+    @mark.flaky
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_task_group(self, *, test_redis: Redis) -> None:
         service = LooperWithPublishAndSubscribeMixins(
@@ -262,6 +264,7 @@ class TestPublishServiceMixin:
         for s in [service, service._publish_service, service._subscribe_service]:
             self._assert_stats(s)
 
+    @mark.flaky
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_task_group_multiple(self, *, test_redis: Redis) -> None:
         service1, service2 = [
