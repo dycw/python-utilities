@@ -624,7 +624,8 @@ class TestInfiniteLooper:
         ):
             raise _InfiniteLooperDefaultEventError(looper=looper)
 
-    @given(log=booleans())
+    @given(logger=just("logger") | none())
+    @mark.flaky
     @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_upon_initialize(
