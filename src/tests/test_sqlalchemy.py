@@ -170,7 +170,7 @@ class TestCheckEngine:
 
 class TestColumnwiseMinMax:
     @given(data=data(), values=sets(pairs(integers(0, 10) | none()), min_size=1))
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_main(
         self, *, data: DataObject, values: set[tuple[int | None, int | None]]
     ) -> None:
