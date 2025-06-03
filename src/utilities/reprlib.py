@@ -16,6 +16,7 @@ RICH_MAX_STRING: int | None = None
 RICH_MAX_DEPTH: int | None = None
 RICH_EXPAND_ALL: bool = False
 
+
 ##
 
 
@@ -86,14 +87,42 @@ def get_repr_and_class(
 ##
 
 
-def yield_mapping_repr(
+def yield_call_args_repr(
+    *args: Any,
     _max_width: int = RICH_MAX_WIDTH,
     _indent_size: int = RICH_INDENT_SIZE,
     _max_length: int | None = RICH_MAX_LENGTH,
     _max_string: int | None = RICH_MAX_STRING,
     _max_depth: int | None = RICH_MAX_DEPTH,
-    _expand_all: bool = RICH_EXPAND_ALL,  # noqa: FBT001
+    _expand_all: bool = RICH_EXPAND_ALL,
     **kwargs: Any,
+) -> Iterator[str]:
+    """Pretty print of a set of positional/keyword arguments."""
+    mapping = get_call_args_mapping(*args, **kwargs)
+    return yield_mapping_repr(
+        mapping,
+        _max_width=_max_width,
+        _indent_size=_indent_size,
+        _max_length=_max_length,
+        _max_string=_max_string,
+        _max_depth=_max_depth,
+        _expand_all=_expand_all,
+    )
+
+
+##
+
+
+def yield_mapping_repr(
+    mapping: StrMapping,
+    /,
+    *,
+    _max_width: int = RICH_MAX_WIDTH,
+    _indent_size: int = RICH_INDENT_SIZE,
+    _max_length: int | None = RICH_MAX_LENGTH,
+    _max_string: int | None = RICH_MAX_STRING,
+    _max_depth: int | None = RICH_MAX_DEPTH,
+    _expand_all: bool = RICH_EXPAND_ALL,
 ) -> Iterator[str]:
     """Pretty print of a set of keyword arguments."""
     try:
@@ -110,7 +139,7 @@ def yield_mapping_repr(
             max_depth=_max_depth,
             expand_all=_expand_all,
         )
-    for k, v in kwargs.items():
+    for k, v in mapping.items():
         yield f"{k} = {repr_use(v)}"
 
 

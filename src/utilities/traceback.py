@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from functools import wraps
@@ -43,6 +42,8 @@ from utilities.reprlib import (
     RICH_MAX_LENGTH,
     RICH_MAX_STRING,
     RICH_MAX_WIDTH,
+    yield_call_args_repr,
+    yield_mapping_repr,
 )
 from utilities.types import TBaseException, TCallable
 from utilities.version import get_version
@@ -208,9 +209,6 @@ class _CallArgs:
             lines: list[str] = [
                 f"Unable to bind arguments for {get_func_name(func)!r}; {orig}"
             ]
-            with contextlib.suppress(ModuleNotFoundError):
-                from utilities.rich import yield_call_args_repr
-
             lines.extend(yield_call_args_repr(*args, **kwargs))
             new = "\n".join(lines)
             raise _CallArgsError(new) from None
@@ -439,8 +437,6 @@ class _Frame:
         depth: int = 0,
     ) -> str:
         """Format the traceback."""
-        from utilities.rich import yield_call_args_repr, yield_mapping_repr
-
         lines: list[str] = [f"Frame {index + 1}/{total}: {self.name} ({self.module})"]
         if detail:
             lines.append(indent("Inputs:", _INDENT))
@@ -461,13 +457,13 @@ class _Frame:
             lines.extend(
                 indent(line, 2 * _INDENT)
                 for line in yield_mapping_repr(
+                    self.locals,
                     _max_width=self.max_width,
                     _indent_size=self.indent_size,
                     _max_length=self.max_length,
                     _max_string=self.max_string,
                     _max_depth=self.max_depth,
                     _expand_all=self.expand_all,
-                    **self.locals,
                 )
             )
             lines.extend([
