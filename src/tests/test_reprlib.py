@@ -5,7 +5,21 @@ from typing import Any
 from hypothesis import given
 from hypothesis.strategies import sampled_from
 
-from utilities.reprlib import get_repr, get_repr_and_class
+from utilities.reprlib import get_call_args_mapping, get_repr, get_repr_and_class
+
+
+class TestYieldCallArgsRepr:
+    def test_main(self) -> None:
+        mapping = get_call_args_mapping(1, 2, 3, x=4, y=5, z=6)
+        expected = {
+            "args[0]": 1,
+            "args[1]": 2,
+            "args[2]": 3,
+            "kwargs[x]": 4,
+            "kwargs[y]": 5,
+            "kwargs[z]": 6,
+        }
+        assert mapping == expected
 
 
 class TestGetRepr:

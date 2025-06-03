@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from functools import wraps
@@ -199,8 +200,6 @@ class _CallArgs:
     @classmethod
     def create(cls, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Self:
         """Make the initial trace data."""
-        from utilities.rich import yield_call_args_repr
-
         sig = signature(func)
         try:
             bound_args = sig.bind(*args, **kwargs)
@@ -209,6 +208,9 @@ class _CallArgs:
             lines: list[str] = [
                 f"Unable to bind arguments for {get_func_name(func)!r}; {orig}"
             ]
+            with contextlib.suppress(ModuleNotFoundError):
+                from utilities.rich import yield_call_args_repr
+
             lines.extend(yield_call_args_repr(*args, **kwargs))
             new = "\n".join(lines)
             raise _CallArgsError(new) from None

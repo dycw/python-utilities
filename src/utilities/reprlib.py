@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import reprlib
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from utilities.types import StrMapping
 
 RICH_MAX_WIDTH: int = 80
 RICH_INDENT_SIZE: int = 4
@@ -9,6 +12,18 @@ RICH_MAX_LENGTH: int | None = 20
 RICH_MAX_STRING: int | None = None
 RICH_MAX_DEPTH: int | None = None
 RICH_EXPAND_ALL: bool = False
+
+##
+
+
+def get_call_args_mapping(*args: Any, **kwargs: Any) -> StrMapping:
+    """Get the representation of a set of call arguments."""
+    return {f"args[{i}]": v for i, v in enumerate(args)} | {
+        f"kwargs[{k}]": v for k, v in kwargs.items()
+    }
+
+
+##
 
 
 def get_repr(
@@ -36,6 +51,9 @@ def get_repr(
         max_depth=max_depth,
         expand_all=expand_all,
     )
+
+
+##
 
 
 def get_repr_and_class(
@@ -69,6 +87,7 @@ __all__ = [
     "RICH_MAX_LENGTH",
     "RICH_MAX_STRING",
     "RICH_MAX_WIDTH",
+    "get_call_args_mapping",
     "get_repr",
     "get_repr_and_class",
 ]
