@@ -50,6 +50,8 @@ def get_path(
     match path:
         case Path() | None | Sentinel():
             return path
+        case str():
+            return Path(path)
         case Callable() as func:
             return get_path(path=func())
         case _ as never:

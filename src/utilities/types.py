@@ -241,7 +241,7 @@ type SerializeObjectExtra = Mapping[Any, Callable[[Any], str]]
 
 
 # pathlib
-type MaybeCallablePath = MaybeCallable[Path]
+type MaybeCallablePath = MaybeCallable[PathLike]
 type PathLike = MaybeStr[Path]
 type PathLikeOrCallable = PathLike | Callable[[], PathLike]
 

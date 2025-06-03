@@ -38,6 +38,10 @@ class TestGetPath:
     def test_path(self, *, path: Path) -> None:
         assert get_path(path=path) == path
 
+    @given(path=paths())
+    def test_str(self, *, path: Path) -> None:
+        assert get_path(path=str(path)) == path
+
     @given(path=none() | sentinels())
     def test_none_or_sentinel(self, *, path: None | Sentinel) -> None:
         assert get_path(path=path) is path
