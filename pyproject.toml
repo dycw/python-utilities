@@ -219,7 +219,6 @@ addopts = [
 ]
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "function"
 collect_imported_tests = false
 filterwarnings = [
   "error",
@@ -239,7 +238,7 @@ filterwarnings = [
   "ignore:unclosed event loop <_UnixSelectorEventLoop .*>:ResourceWarning",  # redis
   "ignore:unclosed file <_io.*TextIOWrapper .*>:ResourceWarning",  # logging
   "ignore:unclosed transport <_SelectorSocketTransport .*>:ResourceWarning",  # redis
-  "ignore:The event loop scope for asynchronous fixtures will default to the fixture cachine scope:pytest.PytestDeprecationWarning", # pytest-asyncio
+  "ignore:The event loop scope for asynchronous fixtures will default to the fixture cachine scope:pytest.PytestDeprecationWarning",  # pytest-asyncio
 ]
 minversion = "8.0"
 testpaths = ["src/tests"]
