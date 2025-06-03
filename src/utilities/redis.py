@@ -742,7 +742,7 @@ class PublishServiceMixin(Generic[_T]):
     @override
     async def core(self) -> None:
         with suppress_super_object_attribute_error():
-            await super().core()
+            await super().core()  # pyright: ignore[reportAttributeAccessIssue]
         logger = getLogger("dts")
         logger.info(
             "PublishServiceMixin._publish_service.stats: %s",
