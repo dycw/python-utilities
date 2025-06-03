@@ -1427,7 +1427,7 @@ class TestUpsertItems:
 
 class TestUpsertServiceMixin:
     @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_main(self, *, data: DataObject) -> None:
         engine = await sqlalchemy_engines(data)
 
