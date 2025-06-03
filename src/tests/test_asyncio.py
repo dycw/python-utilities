@@ -687,7 +687,7 @@ class TestInfiniteLooper:
             Example(
                 sleep_core=0.1,
                 sleep_restart=sleep_restart,
-                log=unique_str() if log else None,
+                logger=unique_str() if log else None,
             ),
         ):
             ...
