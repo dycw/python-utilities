@@ -101,7 +101,7 @@ logging = [
 ]
 test = [
   "dycw-pytest-only >= 2.1.1, < 2.2",
-  "hypothesis >= 6.132.0, < 6.133",
+  "hypothesis >= 6.133.0, < 6.134",
   "pytest >= 8.4.0, < 8.5",
   "pytest-asyncio >= 1.0.0, < 1.1",
   "pytest-cov >= 6.1.1, < 6.2",
