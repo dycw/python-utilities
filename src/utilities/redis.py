@@ -23,8 +23,13 @@ from typing import (
 
 from redis.asyncio import Redis
 
-from utilities.asyncio import EnhancedQueue, Looper, sleep_td, timeout_td
-from utilities.contextlib import suppress_super_object_attribute_error
+from utilities.asyncio import EnhancedQueue, Looper, timeout_dur
+from utilities.datetime import (
+    MILLISECOND,
+    SECOND,
+    datetime_duration_to_float,
+    datetime_duration_to_timedelta,
+)
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, identity
 from utilities.iterables import always_iterable, one
@@ -32,14 +37,7 @@ from utilities.orjson import deserialize, serialize
 from utilities.whenever import MILLISECOND, SECOND
 
 if TYPE_CHECKING:
-    from collections.abc import (
-        AsyncIterator,
-        Awaitable,
-        Collection,
-        Iterable,
-        Iterator,
-        Sequence,
-    )
+    from collections.abc import AsyncIterator, Awaitable, Collection, Iterable, Sequence
     from types import TracebackType
 
     from redis.asyncio import ConnectionPool
@@ -1049,7 +1047,6 @@ def _deserialize(
 
 __all__ = [
     "PublishService",
-    "PublishServiceMixin",
     "RedisHashMapKey",
     "RedisKey",
     "SubscribeService",
