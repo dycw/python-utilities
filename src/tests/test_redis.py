@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from asyncio import Queue, sleep
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
 from itertools import chain
 from re import search
 from typing import TYPE_CHECKING, Any
@@ -23,8 +22,8 @@ from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
-from tests.test_asyncio import assert_looper_stats
-from tests.test_asyncio_classes.loopers import _BACKOFF, _FREQ
+from tests.test_asyncio import _ASSERT_LOOPER_STATS_REL, assert_looper_stats
+from tests.test_asyncio_classes.redis import LooperWithPublishAndSubscribeMixins
 from tests.test_operator import make_objects
 from utilities.asyncio import EnhancedTaskGroup, Looper, get_items_nowait
 from utilities.hypothesis import (
@@ -41,9 +40,7 @@ from utilities.redis import (
     PublisherError,
     PublishError,
     PublishService,
-    PublishServiceMixin,
     SubscribeService,
-    SubscribeServiceMixin,
     _is_message,
     _RedisMessage,
     publish,
@@ -242,106 +239,72 @@ class TestPublishServiceMixin:
     @mark.only
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, test_redis: Redis) -> None:
-        @dataclass(kw_only=True)
-        class Example(
-            PublishServiceMixin[int], SubscribeServiceMixin[int], Looper[int]
-        ): ...
-
-        service = Example(
+        service = LooperWithPublishAndSubscribeMixins(
             auto_start=True,
-            freq=_FREQ,
-            backoff=_BACKOFF,
             timeout=1.0,
-            publish_service_freq=_FREQ,
-            publish_service_backoff=_BACKOFF,
             publish_service_redis=test_redis,
-            subscribe_service_freq=_FREQ,
-            subscribe_service_backoff=_BACKOFF,
             subscribe_service_redis=test_redis,
-            subscribe_service_channel=unique_str(),
         )
         async with service:
             ...
         for s in [service, service._publish_service, service._subscribe_service]:
-            assert_looper_stats(
-                s, entries=1, core_successes=91, initialization_successes=1, stops=1
-            )
+            self._assert_stats(s, stops=1)
 
-    @mark.skip
+    @mark.only
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_task_group(self, *, test_redis: Redis) -> None:
-        @dataclass(kw_only=True)
-        class Example(
-            PublishServiceMixin[int], SubscribeServiceMixin[int], Looper[int]
-        ): ...
-
-        service = Example(
+        service = LooperWithPublishAndSubscribeMixins(
             auto_start=True,
-            freq=_FREQ,
-            backoff=_BACKOFF,
             timeout=1.0,
             publish_service_redis=test_redis,
             subscribe_service_redis=test_redis,
-            subscribe_service_channel=unique_str(),
         )
         async with EnhancedTaskGroup() as tg:
             _ = tg.create_task_context(service)
-        assert_looper_stats(
-            service, entries=1, core_successes=99, initialization_successes=1
-        )
-        for s in [service._publish_service, service._subscribe_service]:
-            assert_looper_stats(
-                s, entries=1, core_successes=833, initialization_successes=1
-            )
+        for s in [service, service._publish_service, service._subscribe_service]:
+            self._assert_stats(s)
 
-    @mark.skip
+    @mark.only
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_task_group_multiple(self, *, test_redis: Redis) -> None:
-        @dataclass(kw_only=True)
-        class Example1(
-            PublishServiceMixin[int], SubscribeServiceMixin[int], Looper[int]
-        ): ...
-
-        @dataclass(kw_only=True)
-        class Example2(
-            PublishServiceMixin[int], SubscribeServiceMixin[int], Looper[int]
-        ): ...
-
-        service1 = Example1(
-            auto_start=True,
-            freq=_FREQ,
-            backoff=_BACKOFF,
-            timeout=1.0,
-            publish_service_redis=test_redis,
-            subscribe_service_redis=test_redis,
-            subscribe_service_channel=unique_str(),
-        )
-        service2 = Example2(
-            auto_start=True,
-            freq=_FREQ,
-            backoff=_BACKOFF,
-            timeout=1.0,
-            publish_service_redis=test_redis,
-            subscribe_service_redis=test_redis,
-            subscribe_service_channel=unique_str(),
-        )
+        service1, service2 = [
+            LooperWithPublishAndSubscribeMixins(
+                auto_start=True,
+                timeout=1.0,
+                publish_service_redis=test_redis,
+                subscribe_service_redis=test_redis,
+            )
+            for _ in range(2)
+        ]
         async with EnhancedTaskGroup() as tg:
             _ = tg.create_task_context(service1)
             _ = tg.create_task_context(service2)
+        for s in [
+            service1,
+            service1._publish_service,
+            service1._subscribe_service,
+            service2,
+            service2._publish_service,
+            service2._subscribe_service,
+        ]:
+            self._assert_stats(s)
+
+    def _assert_stats(
+        self,
+        looper: Looper[Any],
+        /,
+        *,
+        stops: int = 0,
+        rel: float = _ASSERT_LOOPER_STATS_REL,
+    ) -> None:
         assert_looper_stats(
-            service1, entries=1, core_successes=99, initialization_successes=1
+            looper,
+            entries=1,
+            core_successes=91,
+            initialization_successes=1,
+            stops=stops,
+            rel=rel,
         )
-        for s in [service1._publish_service, service1._subscribe_service]:
-            assert_looper_stats(
-                s, entries=1, core_successes=833, initialization_successes=1
-            )
-        assert_looper_stats(
-            service2, entries=1, core_successes=99, initialization_successes=1
-        )
-        for s in [service2._publish_service, service2._subscribe_service]:
-            assert_looper_stats(
-                s, entries=1, core_successes=833, initialization_successes=1
-            )
 
 
 class TestRedisHashMapKey:

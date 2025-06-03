@@ -83,6 +83,9 @@ if TYPE_CHECKING:
     )
 
 
+_ASSERT_LOOPER_STATS_REL: float = 0.5
+
+
 def assert_looper_stats(
     looper: Looper[Any],
     /,
@@ -97,7 +100,7 @@ def assert_looper_stats(
     restart_successes: int = 0,
     restart_failures: int = 0,
     stops: int = 0,
-    rel: float = 0.5,
+    rel: float = _ASSERT_LOOPER_STATS_REL,
 ) -> None:
     stats = looper.stats
     assert stats.entries == entries
@@ -1420,12 +1423,17 @@ class TestLooper:
         *,
         entries: int = 0,
         stops: int = 0,
-        rel: float = 0.75,
+        rel: float = _ASSERT_LOOPER_STATS_REL,
     ) -> None:
         assert_looper_stats(looper, entries=entries, stops=stops, rel=rel)
 
     def _assert_stats_full(
-        self, looper: Looper[Any], /, *, stops: int = 0, rel: float = 0.75
+        self,
+        looper: Looper[Any],
+        /,
+        *,
+        stops: int = 0,
+        rel: float = _ASSERT_LOOPER_STATS_REL,
     ) -> None:
         assert_looper_stats(
             looper,
@@ -1440,7 +1448,12 @@ class TestLooper:
         )
 
     def _assert_stats_half(
-        self, looper: Looper[Any], /, *, stops: int = 0, rel: float = 0.75
+        self,
+        looper: Looper[Any],
+        /,
+        *,
+        stops: int = 0,
+        rel: float = _ASSERT_LOOPER_STATS_REL,
     ) -> None:
         assert_looper_stats(
             looper,
@@ -1455,7 +1468,12 @@ class TestLooper:
         )
 
     def _assert_stats_third(
-        self, looper: Looper[Any], /, *, stops: int = 0, rel: float = 0.75
+        self,
+        looper: Looper[Any],
+        /,
+        *,
+        stops: int = 0,
+        rel: float = _ASSERT_LOOPER_STATS_REL,
     ) -> None:
         assert_looper_stats(
             looper,
@@ -1470,7 +1488,12 @@ class TestLooper:
         )
 
     def _assert_stats_quarter(
-        self, looper: Looper[Any], /, *, stops: int = 0, rel: float = 0.75
+        self,
+        looper: Looper[Any],
+        /,
+        *,
+        stops: int = 0,
+        rel: float = _ASSERT_LOOPER_STATS_REL,
     ) -> None:
         assert_looper_stats(
             looper,
