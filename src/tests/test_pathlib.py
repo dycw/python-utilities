@@ -14,7 +14,7 @@ from utilities.pathlib import ensure_suffix, get_path, list_dir, resolve_path, t
 from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
-    from utilities.types import MaybeCallablePath
+    from utilities.types import MaybeCallablePathLike
 
 
 class TestEnsureSuffix:
@@ -52,7 +52,9 @@ class TestGetPath:
         class Example:
             path: Path = field(default_factory=Path.cwd)
 
-            def replace(self, *, path: MaybeCallablePath | Sentinel = sentinel) -> Self:
+            def replace(
+                self, *, path: MaybeCallablePathLike | Sentinel = sentinel
+            ) -> Self:
                 return replace_non_sentinel(self, path=get_path(path=path))
 
         obj = Example(path=path1)

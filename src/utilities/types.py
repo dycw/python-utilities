@@ -241,9 +241,8 @@ type SerializeObjectExtra = Mapping[Any, Callable[[Any], str]]
 
 
 # pathlib
-type MaybeCallablePath = MaybeCallable[PathLike]
+type MaybeCallablePathLike = MaybeCallable[PathLike]
 type PathLike = MaybeStr[Path]
-type PathLikeOrCallable = PathLike | Callable[[], PathLike]
 
 
 # random
@@ -283,7 +282,7 @@ __all__ = [
     "MaybeCallableDate",
     "MaybeCallableDateTime",
     "MaybeCallableEvent",
-    "MaybeCallablePath",
+    "MaybeCallablePathLike",
     "MaybeCoroutine1",
     "MaybeIterable",
     "MaybeIterableHashable",
@@ -295,7 +294,6 @@ __all__ = [
     "Parallelism",
     "ParseObjectExtra",
     "PathLike",
-    "PathLikeOrCallable",
     "RoundMode",
     "Seed",
     "SerializeObjectExtra",

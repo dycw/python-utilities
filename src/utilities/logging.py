@@ -68,6 +68,7 @@ if TYPE_CHECKING:
     from utilities.types import (
         LoggerOrName,
         LogLevel,
+        MaybeCallablePathLike,
         MaybeIterable,
         PathLike,
         PathLikeOrCallable,
@@ -520,7 +521,7 @@ def setup_logging(
     console_level: LogLevel | None = "INFO",
     console_filters: Iterable[_FilterType] | None = None,
     console_fmt: str = "❯ {_zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
-    files_dir: PathLikeOrCallable | None = get_default_logging_path,
+    files_dir: MaybeCallablePathLike | None = get_default_logging_path,
     files_when: _When = "D",
     files_interval: int = 1,
     files_backup_count: int = 10,

@@ -12,7 +12,7 @@ from utilities.sentinel import Sentinel, sentinel
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
-    from utilities.types import MaybeCallablePath, PathLike, PathLikeOrCallable
+    from utilities.types import MaybeCallablePathLike, PathLike, PathLikeOrCallable
 
 PWD = Path.cwd()
 
@@ -32,19 +32,19 @@ def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
 
 
 @overload
-def get_path(*, path: MaybeCallablePath) -> Path: ...
+def get_path(*, path: MaybeCallablePathLike) -> Path: ...
 @overload
 def get_path(*, path: None) -> None: ...
 @overload
 def get_path(*, path: Sentinel) -> Sentinel: ...
 @overload
-def get_path(*, path: MaybeCallablePath | Sentinel) -> Path | Sentinel: ...
+def get_path(*, path: MaybeCallablePathLike | Sentinel) -> Path | Sentinel: ...
 @overload
 def get_path(
-    *, path: MaybeCallablePath | None | Sentinel = sentinel
+    *, path: MaybeCallablePathLike | None | Sentinel = sentinel
 ) -> Path | None | Sentinel: ...
 def get_path(
-    *, path: MaybeCallablePath | None | Sentinel = sentinel
+    *, path: MaybeCallablePathLike | None | Sentinel = sentinel
 ) -> Path | None | Sentinel:
     """Get the path."""
     match path:
