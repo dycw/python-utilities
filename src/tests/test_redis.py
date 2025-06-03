@@ -406,20 +406,20 @@ class TestRedisKey:
     @given(value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_and_set_bool(self, *, key: str, value: bool) -> None:
+    async def test_get_and_set_bool(self, *, value: bool) -> None:
         async with yield_test_redis() as redis:
-            red_key = redis_key(key, bool)
-            _ = await red_key.set(redis, value)
-            assert await red_key.get(redis) is value
+            key = redis_key(unique_str(), bool)
+            _ = await key.set(redis, value)
+            assert await key.get(redis) is value
 
     @given(value=booleans() | int64s())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_and_set_union(self, *, key: str, value: bool | int) -> None:
+    async def test_get_and_set_union(self, *, value: bool | int) -> None:
         async with yield_test_redis() as redis:
-            red_key = redis_key(key, (bool, int))
-            _ = await red_key.set(redis, value)
-            assert await red_key.get(redis) == value
+            key = redis_key(unique_str(), (bool, int))
+            _ = await key.set(redis, value)
+            assert await key.get(redis) == value
 
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_sentinel_with_serialize(self) -> None:
@@ -440,36 +440,36 @@ class TestRedisKey:
     @given(value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_delete(self, *, key: str, value: bool) -> None:
+    async def test_delete(self, *, value: bool) -> None:
         async with yield_test_redis() as redis:
-            red_key = redis_key(key, bool)
-            _ = await red_key.set(redis, value)
-            assert await red_key.get(redis) is value
-            _ = await red_key.delete(redis)
+            key = redis_key(unique_str(), bool)
+            _ = await key.set(redis, value)
+            assert await key.get(redis) is value
+            _ = await key.delete(redis)
             with raises(KeyError):
-                _ = await red_key.get(redis)
+                _ = await key.get(redis)
 
     @given(value=booleans())
     @settings_with_reduced_examples(phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_exists(self, *, value: bool) -> None:
         async with yield_test_redis() as redis:
-            rkey = redis_key(unique_str(), bool)
-            assert not (await rkey.exists(redis))
-            _ = await rkey.set(redis, value)
-            assert await rkey.exists(redis)
+            key = redis_key(unique_str(), bool)
+            assert not (await key.exists(redis))
+            _ = await key.set(redis, value)
+            assert await key.exists(redis)
 
     @given(value=booleans())
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_ttl(self, *, value: bool) -> None:
         async with yield_test_redis() as redis:
-            red_key = redis_key(unique_str(), bool, ttl=0.05)
-            _ = await red_key.set(redis, value)
+            key = redis_key(unique_str(), bool, ttl=0.05)
+            _ = await key.set(redis, value)
             await sleep(0.025)  # else next line may not work
-            assert await red_key.exists(redis)
+            assert await key.exists(redis)
             await sleep(0.05)
-            assert not await red_key.exists(redis)
+            assert not await key.exists(redis)
 
 
 class TestSubscribe:
