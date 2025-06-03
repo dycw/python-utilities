@@ -683,7 +683,12 @@ class PublishService(Looper[tuple[str, _T]]):
     @override
     async def core(self) -> None:
         logger = getLogger("dts")
-        logger.info("PublishService.stats: %s", self.stats)
+        logger.info(
+            "PublishService: e=%d i=%d c=%d",
+            self.stats.entries,
+            self.stats.initialization_attempts,
+            self.stats.core_attempts,
+        )
         await super().core()  # skipif-ci-and-not-linux
         while not self.empty():  # skipif-ci-and-not-linux
             channel, data = self.get_left_nowait()
@@ -745,8 +750,10 @@ class PublishServiceMixin(Generic[_T]):
             await super().core()  # pyright: ignore[reportAttributeAccessIssue]
         logger = getLogger("dts")
         logger.info(
-            "PublishServiceMixin._publish_service.stats: %s",
-            self._publish_service.stats,
+            "PublishServiceMixin._publish_service: e=%d i=%d c=%d",
+            self._publish_service.stats.entries,
+            self._publish_service.stats.initialization_attempts,
+            self._publish_service.stats.core_attempts,
         )
         await sleep(0.5)
 
