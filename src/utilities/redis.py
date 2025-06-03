@@ -755,7 +755,6 @@ class PublishServiceMixin(Generic[_T]):
             self._publish_service.stats.initialization_attempts,
             self._publish_service.stats.core_attempts,
         )
-        await sleep(0.5)
 
     def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
         with suppress_super_object_attribute_error():

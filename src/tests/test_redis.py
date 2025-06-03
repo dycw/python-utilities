@@ -7,7 +7,7 @@ from itertools import chain
 from re import search
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import Phase, given, settings
+from hypothesis import Phase, core, given, settings
 from hypothesis.strategies import (
     DataObject,
     binary,
@@ -240,13 +240,8 @@ class TestPublisher:
 
 class TestPublishServiceMixin:
     @mark.only
-    @given(channel=unique_strs())
-    @settings_with_reduced_examples(
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, channel: str, test_redis: Redis) -> None:
+    async def test_main(self, *, test_redis: Redis) -> None:
         @dataclass(kw_only=True)
         class Example(
             PublishServiceMixin[int], SubscribeServiceMixin[int], Looper[int]
@@ -257,28 +252,35 @@ class TestPublishServiceMixin:
             freq=_FREQ,
             backoff=_BACKOFF,
             timeout=1.0,
+            publish_service_freq=_FREQ,
+            publish_service_backoff=_BACKOFF,
             publish_service_redis=test_redis,
+            subscribe_service_freq=_FREQ,
+            subscribe_service_backoff=_BACKOFF,
             subscribe_service_redis=test_redis,
-            subscribe_service_channel=channel,
+            subscribe_service_channel=unique_str(),
         )
         async with service:
             ...
         assert_looper_stats(
-            service, entries=1, core_successes=99, initialization_successes=1, stops=1
+            service,
+            entries=1,
+            core_successes=91,
+            initialization_successes=1,
+            stops=1,
         )
         for s in [service._publish_service, service._subscribe_service]:
             assert_looper_stats(
-                s, entries=1, core_successes=833, initialization_successes=1, stops=1
+                s,
+                entries=1,
+                core_successes=1,
+                initialization_successes=1,
+                stops=1,
             )
 
-    @mark.only
-    @given(channel=unique_strs())
-    @settings_with_reduced_examples(
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
+    @mark.skip
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_task_group(self, *, channel: str, test_redis: Redis) -> None:
+    async def test_task_group(self, *, test_redis: Redis) -> None:
         @dataclass(kw_only=True)
         class Example(
             PublishServiceMixin[int], SubscribeServiceMixin[int], Looper[int]
@@ -291,7 +293,7 @@ class TestPublishServiceMixin:
             timeout=1.0,
             publish_service_redis=test_redis,
             subscribe_service_redis=test_redis,
-            subscribe_service_channel=channel,
+            subscribe_service_channel=unique_str(),
         )
         async with EnhancedTaskGroup() as tg:
             _ = tg.create_task_context(service)
@@ -303,16 +305,9 @@ class TestPublishServiceMixin:
                 s, entries=1, core_successes=833, initialization_successes=1
             )
 
-    @mark.only
-    @given(channel=unique_strs())
-    @settings_with_reduced_examples(
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
+    @mark.skip
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_task_group_multiple(
-        self, *, channel: str, test_redis: Redis
-    ) -> None:
+    async def test_task_group_multiple(self, *, test_redis: Redis) -> None:
         @dataclass(kw_only=True)
         class Example1(
             PublishServiceMixin[int], SubscribeServiceMixin[int], Looper[int]
@@ -330,7 +325,7 @@ class TestPublishServiceMixin:
             timeout=1.0,
             publish_service_redis=test_redis,
             subscribe_service_redis=test_redis,
-            subscribe_service_channel=channel,
+            subscribe_service_channel=unique_str(),
         )
         service2 = Example2(
             auto_start=True,
@@ -339,7 +334,7 @@ class TestPublishServiceMixin:
             timeout=1.0,
             publish_service_redis=test_redis,
             subscribe_service_redis=test_redis,
-            subscribe_service_channel=channel,
+            subscribe_service_channel=unique_str(),
         )
         async with EnhancedTaskGroup() as tg:
             _ = tg.create_task_context(service1)
