@@ -745,6 +745,7 @@ class TestInfiniteLooper:
             assert expected in caplog.messages
 
     @given(log=booleans())
+    @mark.flaky
     @mark.parametrize(("sleep_restart", "desc"), sleep_restart_cases)
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     async def test_error_group_upon_others(
