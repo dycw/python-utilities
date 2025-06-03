@@ -1,15 +1,18 @@
 from __future__ import annotations
 
+from asyncio import Task, create_task
 from dataclasses import InitVar, dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, override
+from typing import TYPE_CHECKING, Any, Literal, Self, override
 
 from fastapi import FastAPI
 from uvicorn import Config, Server
 
-from utilities.asyncio import InfiniteLooper
+from utilities.asyncio import Looper
 from utilities.datetime import SECOND, datetime_duration_to_float
 
 if TYPE_CHECKING:
+    from types import TracebackType
+
     from utilities.types import Duration
 
 
@@ -36,7 +39,7 @@ class _PingerReceiverApp(FastAPI):
 
 
 @dataclass(kw_only=True)
-class PingReceiver(InfiniteLooper):
+class PingReceiver(Looper[None]):
     """A ping receiver."""
 
     host: InitVar[str] = _LOCALHOST
@@ -44,11 +47,30 @@ class PingReceiver(InfiniteLooper):
     _app: _PingerReceiverApp = field(
         default_factory=_PingerReceiverApp, init=False, repr=False
     )
-    _await_upon_aenter: bool = field(default=False, init=False, repr=False)
     _server: Server = field(init=False, repr=False)
+    _server_task: Task[None] | None = field(default=None, init=False, repr=False)
 
+    @override
     def __post_init__(self, host: str, port: int, /) -> None:
+        super().__post_init__()  # skipif-ci
         self._server = Server(Config(self._app, host=host, port=port))  # skipif-ci
+
+    @override
+    async def __aenter__(self) -> Self:
+        _ = await super().__aenter__()  # skipif-ci
+        async with self._lock:  # skipif-ci
+            self._server_task = create_task(self._server.serve())
+        return self
+
+    @override
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None = None,
+        exc_value: BaseException | None = None,
+        traceback: TracebackType | None = None,
+    ) -> None:
+        await super().__aexit__(exc_type, exc_value, traceback)  # skipif-ci
+        await self._server.shutdown()  # skipif-ci
 
     @classmethod
     async def ping(
@@ -65,14 +87,6 @@ class PingReceiver(InfiniteLooper):
         except ConnectError:  # skipif-ci
             return False
         return response.text if response.status_code == 200 else False  # skipif-ci
-
-    @override
-    async def _initialize(self) -> None:
-        await self._server.serve()  # skipif-ci
-
-    @override
-    async def _teardown(self) -> None:
-        await self._server.shutdown()  # skipif-ci
 
 
 __all__ = ["PingReceiver"]

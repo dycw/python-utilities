@@ -23,10 +23,8 @@ from typing import (
 )
 
 from redis.asyncio import Redis
-from redis.typing import EncodableT
 
-from utilities.asyncio import EnhancedQueue, InfiniteQueueLooper, Looper, timeout_dur
-from utilities.contextlib import suppress_super_object_attribute_error
+from utilities.asyncio import EnhancedQueue, Looper, timeout_dur
 from utilities.datetime import (
     MILLISECOND,
     SECOND,
@@ -34,27 +32,20 @@ from utilities.datetime import (
     datetime_duration_to_timedelta,
 )
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import ensure_int, get_class_name, identity
+from utilities.functions import ensure_int, identity
 from utilities.iterables import always_iterable, one
 from utilities.orjson import deserialize, serialize
 
 if TYPE_CHECKING:
-    from collections.abc import (
-        AsyncIterator,
-        Awaitable,
-        Collection,
-        Iterable,
-        Iterator,
-        Sequence,
-    )
+    from collections.abc import AsyncIterator, Awaitable, Collection, Iterable, Sequence
     from types import TracebackType
 
     from redis.asyncio import ConnectionPool
     from redis.asyncio.client import PubSub
-    from redis.typing import ResponseT
+    from redis.typing import EncodableT, ResponseT
 
     from utilities.iterables import MaybeIterable
-    from utilities.types import Duration, MaybeType, TypeLike
+    from utilities.types import Duration, TypeLike
 
 
 _K = TypeVar("_K")
@@ -71,9 +62,6 @@ _V = TypeVar("_V")
 _V1 = TypeVar("_V1")
 _V2 = TypeVar("_V2")
 _V3 = TypeVar("_V3")
-
-
-_PUBLISH_TIMEOUT: Duration = SECOND
 
 
 ##
@@ -552,6 +540,9 @@ def redis_key(
 ##
 
 
+_PUBLISH_TIMEOUT: Duration = SECOND
+
+
 @overload
 async def publish(
     redis: Redis,
@@ -621,42 +612,6 @@ class PublishError(Exception):
 
 
 @dataclass(kw_only=True)
-class Publisher(InfiniteQueueLooper[None, tuple[str, EncodableT]]):
-    """Publish a set of messages to Redis."""
-
-    redis: Redis
-    serializer: Callable[[Any], EncodableT] | None = None
-    timeout: Duration = _PUBLISH_TIMEOUT
-
-    @override
-    async def _process_queue(self) -> None:
-        for item in self._queue.get_all_nowait():  # skipif-ci-and-not-linux
-            channel, data = item
-            _ = await publish(
-                self.redis,
-                channel,
-                data,
-                serializer=self.serializer,
-                timeout=self.timeout,
-            )
-
-    @override
-    def _yield_events_and_exceptions(
-        self,
-    ) -> Iterator[tuple[None, MaybeType[Exception]]]:
-        yield (None, PublisherError)  # skipif-ci-and-not-linux
-
-
-@dataclass(kw_only=True)
-class PublisherError(Exception):
-    publisher: Publisher
-
-    @override
-    def __str__(self) -> str:
-        return f"Error running {get_class_name(self.publisher)!r}"  # skipif-ci-and-not-linux
-
-
-@dataclass(kw_only=True)
 class PublishService(Looper[tuple[str, _T]]):
     """Service to publish items to Redis."""
 
@@ -667,7 +622,7 @@ class PublishService(Looper[tuple[str, _T]]):
     # self
     redis: Redis
     serializer: Callable[[_T], EncodableT] = serialize
-    publish_timeout: Duration = _PUBLISH_TIMEOUT
+    publish_timeout: Duration = SECOND
 
     @override
     async def core(self) -> None:
@@ -681,51 +636,6 @@ class PublishService(Looper[tuple[str, _T]]):
                 serializer=self.serializer,
                 timeout=self.publish_timeout,
             )
-
-
-##
-
-
-@dataclass(kw_only=True)
-class PublishServiceMixin(Generic[_T]):
-    """Mix-in for the publish service."""
-
-    # base - looper
-    publish_service_freq: Duration = field(default=MILLISECOND, repr=False)
-    publish_service_backoff: Duration = field(default=SECOND, repr=False)
-    publish_service_empty_upon_exit: bool = field(default=False, repr=False)
-    publish_service_logger: str | None = field(default=None, repr=False)
-    publish_service_timeout: Duration | None = field(default=None, repr=False)
-    publish_service_debug: bool = field(default=False, repr=False)
-    _is_pending_restart: Event = field(default_factory=Event, init=False, repr=False)
-    # base - publish service
-    publish_service_redis: Redis
-    publish_service_serializer: Callable[[_T], EncodableT] = serialize
-    publish_service_publish_timeout: Duration = _PUBLISH_TIMEOUT
-    # self
-    _publish_service: PublishService[_T] = field(init=False, repr=False)
-
-    def __post_init__(self) -> None:
-        with suppress_super_object_attribute_error():  # skipif-ci-and-not-linux
-            super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
-        self._publish_service = PublishService(  # skipif-ci-and-not-linux
-            # looper
-            freq=self.publish_service_freq,
-            backoff=self.publish_service_backoff,
-            empty_upon_exit=self.publish_service_empty_upon_exit,
-            logger=self.publish_service_logger,
-            timeout=self.publish_service_timeout,
-            _debug=self.publish_service_debug,
-            # publish service
-            redis=self.publish_service_redis,
-            serializer=self.publish_service_serializer,
-            publish_timeout=self.publish_service_publish_timeout,
-        )
-
-    def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
-        with suppress_super_object_attribute_error():  # skipif-ci-and-not-linux
-            yield from super()._yield_sub_loopers()  # pyright: ignore[reportAttributeAccessIssue]
-        yield self._publish_service  # skipif-ci-and-not-linux
 
 
 ##
@@ -966,54 +876,6 @@ class SubscribeService(Looper[_T]):
 ##
 
 
-@dataclass(kw_only=True)
-class SubscribeServiceMixin(Generic[_T]):
-    """Mix-in for the subscribe service."""
-
-    # base - looper
-    subscribe_service_freq: Duration = field(default=MILLISECOND, repr=False)
-    subscribe_service_backoff: Duration = field(default=SECOND, repr=False)
-    subscribe_service_empty_upon_exit: bool = field(default=False, repr=False)
-    subscribe_service_logger: str | None = field(default=None, repr=False)
-    subscribe_service_timeout: Duration | None = field(default=None, repr=False)
-    subscribe_service_debug: bool = field(default=False, repr=False)
-    # base - looper
-    subscribe_service_redis: Redis
-    subscribe_service_channel: str
-    subscribe_service_deserializer: Callable[[bytes], _T] = deserialize
-    subscribe_service_subscribe_sleep: Duration = _SUBSCRIBE_SLEEP
-    subscribe_service_subscribe_timeout: Duration | None = _SUBSCRIBE_TIMEOUT
-    # self
-    _subscribe_service: SubscribeService[_T] = field(init=False, repr=False)
-
-    def __post_init__(self) -> None:
-        with suppress_super_object_attribute_error():  # skipif-ci-and-not-linux
-            super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
-        self._subscribe_service = SubscribeService(  # skipif-ci-and-not-linux
-            # looper
-            freq=self.subscribe_service_freq,
-            backoff=self.subscribe_service_backoff,
-            empty_upon_exit=self.subscribe_service_empty_upon_exit,
-            logger=self.subscribe_service_logger,
-            timeout=self.subscribe_service_timeout,
-            _debug=self.subscribe_service_debug,
-            # subscribe service
-            redis=self.subscribe_service_redis,
-            channel=self.subscribe_service_channel,
-            deserializer=self.subscribe_service_deserializer,
-            subscribe_sleep=self.subscribe_service_subscribe_sleep,
-            subscribe_timeout=self.subscribe_service_subscribe_timeout,
-        )
-
-    def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
-        with suppress_super_object_attribute_error():  # skipif-ci-and-not-linux
-            yield from super()._yield_sub_loopers()  # pyright: ignore[reportAttributeAccessIssue]
-        yield self._subscribe_service  # skipif-ci-and-not-linux
-
-
-##
-
-
 @asynccontextmanager
 async def yield_pubsub(
     redis: Redis, channels: MaybeIterable[str], /
@@ -1094,13 +956,9 @@ def _deserialize(
 
 __all__ = [
     "PublishService",
-    "PublishServiceMixin",
-    "Publisher",
-    "PublisherError",
     "RedisHashMapKey",
     "RedisKey",
     "SubscribeService",
-    "SubscribeServiceMixin",
     "publish",
     "redis_hash_map_key",
     "redis_key",
