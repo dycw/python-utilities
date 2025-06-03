@@ -622,7 +622,7 @@ class PublishService(Looper[tuple[str, _T]]):
     # self
     redis: Redis
     serializer: Callable[[_T], EncodableT] = serialize
-    publish_timeout: Duration = SECOND
+    publish_timeout: Duration = _PUBLISH_TIMEOUT
 
     @override
     async def core(self) -> None:
