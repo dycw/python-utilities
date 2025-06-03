@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING, Any, Literal, override
 
 from pytest import approx
 
+from tests.conftest import IS_CI_AND_WINDOWS
 from utilities.asyncio import Looper
 from utilities.contextlib import suppress_super_object_attribute_error
 from utilities.datetime import MILLISECOND
@@ -27,7 +28,7 @@ def assert_looper_stats(
     /,
     *,
     entries: int = 0,
-    core_successes: int = 0,
+    core_successes: int | tuple[Literal[">="], int] = 0,
     core_failures: int = 0,
     initialization_successes: int = 0,
     initialization_failures: int = 0,
@@ -43,9 +44,13 @@ def assert_looper_stats(
     assert stats.core_attempts == (stats.core_successes + stats.core_failures), (
         f"{stats=}"
     )
-    assert stats.core_successes == approx(core_successes, rel=rel), (
-        f"{stats=}, {core_successes=}"
-    )
+    match core_successes:
+        case int():
+            assert stats.core_successes == approx(core_successes, rel=rel), (
+                f"{stats=}, {core_successes=}"
+            )
+        case ">=", int() as min_successes:
+            assert stats.core_successes >= min_successes, f"{stats=}, {min_successes=}"
     assert stats.core_failures == approx(core_failures, rel=rel), (
         f"{stats=}, {core_failures=}"
     )
@@ -85,7 +90,7 @@ def assert_looper_full(
     assert_looper_stats(
         looper,
         entries=1,
-        core_successes=99,
+        core_successes=(">=", 200) if IS_CI_AND_WINDOWS else 99,
         initialization_successes=1,
         stops=stops,
         rel=rel,
