@@ -60,7 +60,7 @@ class PingReceiver(Looper[None]):
         _ = await super().__aenter__()  # skipif-ci
         async with self._lock:  # skipif-ci
             self._server_task = create_task(self._server.serve())
-        return self
+        return self  # skipif-ci
 
     @override
     async def __aexit__(
