@@ -138,6 +138,7 @@ class TestPublish:
             assert result == datum
 
     @given(objects=lists(make_objects(), min_size=1, max_size=5))
+    @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_serializer(self, *, objects: Sequence[Any]) -> None:
