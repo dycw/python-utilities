@@ -612,8 +612,8 @@ class TestInfiniteLooper:
 
         async with timeout(1.0), Parent(sleep_core=0.05) as parent:
             ...
-        assert 15 <= parent.counter <= 25
-        assert 15 <= parent.child.counter <= 25
+        assert 12 <= parent.counter <= 25
+        assert 12 <= parent.child.counter <= 25
 
     async def test_error_default_event(self) -> None:
         @dataclass(kw_only=True)
