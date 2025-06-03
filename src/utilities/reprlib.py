@@ -153,4 +153,6 @@ __all__ = [
     "get_call_args_mapping",
     "get_repr",
     "get_repr_and_class",
+    "yield_call_args_repr",
+    "yield_mapping_repr",
 ]
