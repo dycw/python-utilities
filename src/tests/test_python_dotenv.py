@@ -57,10 +57,10 @@ class TestLoadSettings:
             key_env = data.draw(sampled_from(["key", "KEY"]))
             value_env = data.draw(text_ascii())
             with temp_environ({key_env: value_env}):
-                settings = load_settings(SettingsUse, cwd=root)
+                settings = load_settings(SettingsUse, path=root)
             exp_value = value_env
         else:
-            settings = load_settings(SettingsUse, cwd=root)
+            settings = load_settings(SettingsUse, path=root)
             exp_value = value_file
 
         if SettingsUse is SettingsLower:
@@ -82,7 +82,7 @@ class TestLoadSettings:
             _ = fh.write(f"key = {value}\n")
             _ = fh.write(f"other = {value}\n")
 
-        settings = load_settings(Settings, cwd=root)
+        settings = load_settings(Settings, path=root)
         expected = Settings(key=value)
         assert settings == expected
 
@@ -94,7 +94,7 @@ class TestLoadSettings:
             KEY: str
 
         with raises(_LoadSettingsFileNotFoundError, match=r"Path '.*' must exist"):
-            _ = load_settings(Settings, cwd=root)
+            _ = load_settings(Settings, path=root)
 
     @given(root=git_repos(), value=integers())
     @settings_with_reduced_examples()
@@ -114,7 +114,7 @@ class TestLoadSettings:
                 flags=DOTALL,
             ),
         ):
-            _ = load_settings(Settings, cwd=root)
+            _ = load_settings(Settings, path=root)
 
     @given(root=git_repos())
     @settings_with_reduced_examples()
@@ -129,4 +129,4 @@ class TestLoadSettings:
             _LoadSettingsMissingKeysError,
             match=r"Unable to load '.*'; missing value\(s\) for 'key'",
         ):
-            _ = load_settings(Settings, cwd=root)
+            _ = load_settings(Settings, path=root)

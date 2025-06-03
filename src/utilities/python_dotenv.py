@@ -2,29 +2,33 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from os import environ
+from pathlib import Path
 from typing import TYPE_CHECKING, override
 
 from dotenv import dotenv_values
 
 from utilities.dataclasses import _ParseDataClassMissingValuesError, parse_dataclass
-from utilities.git import get_repo_root
 from utilities.iterables import MergeStrMappingsError, merge_str_mappings
-from utilities.pathlib import PWD
+from utilities.pathlib import get_root
 from utilities.reprlib import get_repr
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
     from collections.abc import Set as AbstractSet
-    from pathlib import Path
 
-    from utilities.types import ParseObjectExtra, PathLike, StrMapping, TDataclass
+    from utilities.types import (
+        MaybeCallablePathLike,
+        ParseObjectExtra,
+        StrMapping,
+        TDataclass,
+    )
 
 
 def load_settings(
     cls: type[TDataclass],
     /,
     *,
-    cwd: PathLike = PWD,
+    path: MaybeCallablePathLike | None = Path.cwd,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     warn_name_errors: bool = False,
@@ -33,7 +37,7 @@ def load_settings(
     extra_parsers: ParseObjectExtra | None = None,
 ) -> TDataclass:
     """Load a set of settings from the `.env` file."""
-    path = get_repo_root(cwd=cwd).joinpath(".env")
+    path = get_root(path=path).joinpath(".env")
     if not path.exists():
         raise _LoadSettingsFileNotFoundError(path=path) from None
     maybe_values_dotenv = dotenv_values(path)

@@ -94,7 +94,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.127.1"
+version = "0.128.0"
 
 [project.optional-dependencies]
 test = [
@@ -334,7 +334,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.127.1"
+current_version = "0.128.0"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -447,6 +447,7 @@ filterwarnings = [
   "ignore:Task .* without outputs has no custom complete.* method:UserWarning",  # luigi
   "ignore:There is no current event loop:DeprecationWarning",  # eventkit
   "ignore:Using fork.* can cause Polars to deadlock in the child process:RuntimeWarning",  # polars/pqdm
+  "ignore:coroutine 'AsyncConnection.close' was never awaited:RuntimeWarning",
   "ignore:loop is closed:ResourceWarning",  # redis
   "ignore:unclosed <StreamWriter .*>:ResourceWarning",  # redis
   "ignore:unclosed <socket.*socket .*>:ResourceWarning",  # redis

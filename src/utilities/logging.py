@@ -46,9 +46,8 @@ from utilities.datetime import (
     serialize_compact,
 )
 from utilities.errors import ImpossibleCaseError
-from utilities.git import get_repo_root
 from utilities.iterables import OneEmptyError, always_iterable, one
-from utilities.pathlib import ensure_suffix, resolve_path
+from utilities.pathlib import ensure_suffix, get_path, get_root
 from utilities.reprlib import (
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
@@ -68,9 +67,9 @@ if TYPE_CHECKING:
     from utilities.types import (
         LoggerOrName,
         LogLevel,
+        MaybeCallablePathLike,
         MaybeIterable,
         PathLike,
-        PathLikeOrCallable,
     )
     from utilities.version import MaybeCallableVersionLike
 
@@ -383,10 +382,10 @@ class StandaloneFileHandler(Handler):
 
     @override
     def __init__(
-        self, *, level: int = NOTSET, path: PathLikeOrCallable | None = None
+        self, *, level: int = NOTSET, path: MaybeCallablePathLike | None = None
     ) -> None:
         super().__init__(level=level)
-        self._path = path
+        self._path = get_path(path=path)
 
     @override
     def emit(self, record: LogRecord) -> None:
@@ -394,10 +393,8 @@ class StandaloneFileHandler(Handler):
         from utilities.tzlocal import get_now_local
 
         try:
-            path = (
-                resolve_path(path=self._path)
-                .joinpath(serialize_compact(get_now_local()))
-                .with_suffix(".txt")
+            path = self._path.joinpath(serialize_compact(get_now_local())).with_suffix(
+                ".txt"
             )
             formatted = self.format(record)
             with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
@@ -473,7 +470,7 @@ class FilterForKeyError(Exception):
 
 def get_default_logging_path() -> Path:
     """Get the logging default path."""
-    return get_repo_root().joinpath(".logs")
+    return get_root().joinpath(".logs")
 
 
 ##
@@ -520,7 +517,7 @@ def setup_logging(
     console_level: LogLevel | None = "INFO",
     console_filters: Iterable[_FilterType] | None = None,
     console_fmt: str = "❯ {_zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
-    files_dir: PathLikeOrCallable | None = get_default_logging_path,
+    files_dir: MaybeCallablePathLike | None = get_default_logging_path,
     files_when: _When = "D",
     files_interval: int = 1,
     files_backup_count: int = 10,
@@ -616,7 +613,7 @@ def setup_logging(
         logger_use.addHandler(console_high_and_exc_handler)
 
     # debug & info
-    directory = resolve_path(path=files_dir)  # skipif-ci-and-windows
+    directory = get_path(path=files_dir)  # skipif-ci-and-windows
     levels: list[LogLevel] = ["DEBUG", "INFO"]  # skipif-ci-and-windows
     for level, (subpath, files_or_plain_formatter) in product(  # skipif-ci-and-windows
         levels, [(Path(), files_formatter), (Path("plain"), plain_formatter)]

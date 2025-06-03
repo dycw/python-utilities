@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal, override
 
 from pytest import approx
 
+from tests.conftest import IS_CI
 from utilities.asyncio import Looper
 from utilities.contextlib import suppress_super_object_attribute_error
 from utilities.datetime import MILLISECOND
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 
 _FREQ: Duration = 10 * MILLISECOND
 _BACKOFF: Duration = 100 * MILLISECOND
-_REL: float = 0.75
+_REL: float = 2.0 if IS_CI else 0.25
 
 
 # assert

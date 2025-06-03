@@ -18,7 +18,6 @@ fpdf2
 functions
 functools
 getpass
-git
 hashlib
 http
 hypothesis
