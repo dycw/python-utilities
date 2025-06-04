@@ -793,11 +793,11 @@ class TestLooper:
         assert_looper_stats(
             looper,
             entries=1,
-            core_successes=28,
-            core_failures=14,
-            initialization_successes=14,
-            tear_down_successes=13,
-            restart_successes=13,
+            core_successes=48,
+            core_failures=24,
+            initialization_successes=25,
+            tear_down_successes=24,
+            restart_successes=24,
             stops=stops,
             rel=rel,
         )
