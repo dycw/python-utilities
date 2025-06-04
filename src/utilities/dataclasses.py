@@ -79,6 +79,7 @@ def dataclass_repr(
     abs_tol: float | None = None,
     extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
     defaults: bool = False,
+    add_repr_false: bool = False,
     recursive: bool = False,
 ) -> str:
     """Repr a dataclass, without its defaults."""
@@ -86,17 +87,14 @@ def dataclass_repr(
     for fld in yield_fields(
         obj, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
     ):
-        if (
-            fld.keep(
-                include=include,
-                exclude=exclude,
-                rel_tol=rel_tol,
-                abs_tol=abs_tol,
-                extra=extra,
-                defaults=defaults,
-            )
-            and fld.repr
-        ):
+        if fld.keep(
+            include=include,
+            exclude=exclude,
+            rel_tol=rel_tol,
+            abs_tol=abs_tol,
+            extra=extra,
+            defaults=defaults,
+        ) and (fld.repr or add_repr_false):
             if recursive:
                 if is_dataclass_instance(fld.value):
                     repr_ = dataclass_repr(
@@ -110,6 +108,7 @@ def dataclass_repr(
                         abs_tol=abs_tol,
                         extra=extra,
                         defaults=defaults,
+                        add_repr_false=add_repr_false,
                         recursive=recursive,
                     )
                 elif isinstance(fld.value, list):
@@ -125,6 +124,7 @@ def dataclass_repr(
                             abs_tol=abs_tol,
                             extra=extra,
                             defaults=defaults,
+                            add_repr_false=add_repr_false,
                             recursive=recursive,
                         )
                         if is_dataclass_instance(v)
