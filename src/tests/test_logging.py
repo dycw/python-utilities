@@ -487,7 +487,6 @@ class TestSizeAndTimeRotatingFileHandler:
         assert content == "message\n"
 
     @skipif_windows
-    @mark.only
     def test_size(self, *, tmp_path: Path) -> None:
         logger = getLogger(str(tmp_path))
         logger.addHandler(
