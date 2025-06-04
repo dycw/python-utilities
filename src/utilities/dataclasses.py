@@ -870,9 +870,13 @@ def yield_fields(
             localns=localns,
             warn_name_errors=warn_name_errors,
         ):
+            try:
+                value = getattr(obj, field.name)
+            except AttributeError:
+                value = sentinel
             yield _YieldFieldsInstance(
                 name=field.name,
-                value=getattr(obj, field.name),
+                value=value,
                 type_=field.type_,
                 default=field.default,
                 default_factory=field.default_factory,
@@ -915,7 +919,7 @@ def yield_fields(
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
 class _YieldFieldsInstance(Generic[_T]):
     name: str
-    value: _T = field(hash=False)
+    value: _T | Sentinel = field(hash=False)
     type_: Any = field(hash=False)
     default: _T | Sentinel = field(default=sentinel, hash=False)
     default_factory: Callable[[], _T] | Sentinel = field(default=sentinel, hash=False)
