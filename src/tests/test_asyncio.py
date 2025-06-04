@@ -453,6 +453,42 @@ class TestLooper:
         looper = CountingLooper().replace(freq=10.0)
         assert looper.freq == 10.0
 
+    @mark.only
+    async def test_request_back_off(self) -> None:
+        class Example(CountingLooper):
+            @override
+            async def core(self) -> None:
+                await super().core()
+                if (self._initialization_attempts >= 2) and (
+                    self.count >= (self.max_count / 2)
+                ):
+                    self.request_back_off()
+
+        looper = Example(auto_start=True, timeout=1.0)
+        async with looper:
+            ...
+        assert_looper_stats(
+            looper,
+            entries=1,
+            core_successes=23,
+            core_failures=2,
+            initialization_successes=3,
+            tear_down_successes=2,
+            restart_successes=2,
+            stops=1,
+        )
+
+    @mark.only
+    async def test_request_back_off_already_requested(
+        self, *, caplog: LogCaptureFixture
+    ) -> None:
+        looper = CountingLooper()
+        for _ in range(2):
+            looper.request_back_off()
+        _ = one(
+            m for m in caplog.messages if search(r": already requested back off$", m)
+        )
+
     async def test_request_restart(self) -> None:
         class Example(CountingLooper):
             @override
