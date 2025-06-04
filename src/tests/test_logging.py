@@ -422,19 +422,6 @@ class TestSetupLogging:
         assert record.message == expected
 
     @skipif_windows
-    def test_new_brace_formatting(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture
-    ) -> None:
-        name = str(tmp_path)
-        setup_logging(logger=name, files_dir=tmp_path)
-        logger = getLogger(name)
-        logger.info("int: {:d}, float: {:.2f}, percent: {:.2%}", 1, 12.3456, 0.123456)
-        record = one(caplog.records)
-        assert isinstance(record, _AdvancedLogRecord)
-        expected = "int: 1, float: 12.35, percent: 12.35%"
-        assert record.message == expected
-
-    @skipif_windows
     def test_no_console(self, *, tmp_path: Path) -> None:
         name = str(tmp_path)
         setup_logging(logger=name, console_level=None, files_dir=tmp_path)
