@@ -494,66 +494,55 @@ class TestSizeAndTimeRotatingFileHandler:
                 filename=tmp_path.joinpath("log.txt"), maxBytes=100, backupCount=3
             )
         )
-
-        for i in range(1, 3):
-            logger.warning("message %d", i)
-            files = list(tmp_path.iterdir())
-            assert len(files) == 1
-            assert any(p for p in files if search(r"^log\.txt$", p.name))
-
-        logger.warning(10 * "message 3")
-        files = list(tmp_path.iterdir())
-        assert len(files) == 2
-        assert any(p for p in files if search(r"^log\.txt$", p.name))
-        assert any(p for p in files if search(r"^log\.1__[\dT]+\.txt$", p.name))
-
-        for i in range(4, 6):
-            logger.warning("message %d", i)
-            files = list(tmp_path.iterdir())
-            assert len(files) == 3
-            assert any(p for p in files if search(r"^log\.txt$", p.name))
-            assert any(
-                p for p in files if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
-            )
-            assert any(p for p in files if search(r"^log\.2__[\dT]+\.txt$", p.name))
-
-        logger.warning(10 * "message 6")
-        files = list(tmp_path.iterdir())
-        assert len(files) == 4
-        assert any(p for p in files if search(r"^log\.txt$", p.name))
-        assert any(p for p in files if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name))
-        assert any(p for p in files if search(r"^log\.2__[\dT]+__[\dT]+\.txt$", p.name))
-        assert any(p for p in files if search(r"^log\.3__[\dT]+\.txt$", p.name))
-
-        for _ in range(2):
-            for i in range(7, 9):
-                logger.warning("message %d", i)
+        for cycle in range(1, 10):
+            for i in range(1, 4):
+                logger.warning("%s message %d", 100 * "long" if i % 3 == 0 else "", i)
                 files = list(tmp_path.iterdir())
-                assert len(files) == 4
+                assert len(files) == min(cycle, 4)
                 assert any(p for p in files if search(r"^log\.txt$", p.name))
-                assert any(
-                    p for p in files if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
-                )
-                assert any(
-                    p for p in files if search(r"^log\.2__[\dT]+__[\dT]+\.txt$", p.name)
-                )
-                assert any(
-                    p for p in files if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
-                )
-
-            logger.warning("message 9")
-            files = list(tmp_path.iterdir())
-            assert len(files) == 4
-            assert any(p for p in files if search(r"^log\.txt$", p.name))
-            assert any(
-                p for p in files if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
-            )
-            assert any(
-                p for p in files if search(r"^log\.2__[\dT]+__[\dT]+\.txt$", p.name)
-            )
-            assert any(
-                p for p in files if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
-            )
+                if cycle == 2:
+                    assert any(
+                        p for p in files if search(r"^log\.1__[\dT]+\.txt$", p.name)
+                    )
+                elif cycle == 3:
+                    assert any(
+                        p
+                        for p in files
+                        if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
+                    )
+                    assert any(
+                        p for p in files if search(r"^log\.2__[\dT]+\.txt$", p.name)
+                    )
+                elif cycle == 4:
+                    assert any(
+                        p
+                        for p in files
+                        if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
+                    )
+                    assert any(
+                        p
+                        for p in files
+                        if search(r"^log\.2__[\dT]+__[\dT]+\.txt$", p.name)
+                    )
+                    assert any(
+                        p for p in files if search(r"^log\.3__[\dT]+\.txt$", p.name)
+                    )
+                elif cycle >= 5:
+                    assert any(
+                        p
+                        for p in files
+                        if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
+                    )
+                    assert any(
+                        p
+                        for p in files
+                        if search(r"^log\.2__[\dT]+__[\dT]+\.txt$", p.name)
+                    )
+                    assert any(
+                        p
+                        for p in files
+                        if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
+                    )
 
     @mark.flaky
     @skipif_windows

@@ -160,13 +160,11 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
     def _should_rollover(self, record: LogRecord, /) -> bool:
         if self._max_bytes is not None:  # skipif-ci-and-windows
             try:
-                current = self._filename.stat().st_size
+                size = self._filename.stat().st_size
             except FileNotFoundError:
                 pass
             else:
-                delta = len(f"{self.format(record)}\n")
-                new = current + delta
-                if new >= self._max_bytes:
+                if size >= self._max_bytes:
                     return True
         return bool(self._time_handler.shouldRollover(record))  # skipif-ci-and-windows
 
