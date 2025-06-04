@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from logging import getLogger
+
+_LOGGER = getLogger("dts")
+
 from asyncio import (
     Event,
     Lock,
@@ -742,6 +746,7 @@ class Looper(Generic[_T]):
             case False:
                 _ = self._debug and self._logger.debug("%s: stopping...", self)
                 self._is_pending_stop.clear()
+                _LOGGER.warning("Setting _is_stopped!!!")
                 self._is_stopped.set()
                 async with self._lock:
                     self._stops += 1
