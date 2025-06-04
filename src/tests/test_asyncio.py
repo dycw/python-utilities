@@ -21,7 +21,9 @@ from hypothesis.strategies import (
 )
 from pytest import LogCaptureFixture, approx, mark, param, raises
 
+from tests.conftest import IS_CI
 from tests.test_asyncio_classes.loopers import (
+    _BACKOFF,
     _REL,
     CountingLooper,
     CountingLooperError,
@@ -63,6 +65,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
+    import datetime as dt
     from collections.abc import AsyncIterator
 
     from utilities.types import Duration, MaybeCallableEvent
@@ -255,9 +258,12 @@ class TestGetItems:
 
 
 class TestLooper:
-    sleep_if_failure_cases: ClassVar[list[Any]] = [
-        param(True, "; sleeping for .*"),
-        param(False, ""),
+    _restart_min_elapsed: ClassVar[dt.timedelta] = datetime_duration_to_timedelta(
+        (0.9 if IS_CI else 1.0) * _BACKOFF
+    )
+    skip_sleep_if_failure_cases: ClassVar[list[Any]] = [
+        param(True, ""),
+        param(False, "; sleeping for .*"),
     ]
 
     async def test_main_with_nothing(self) -> None:
@@ -330,16 +336,16 @@ class TestLooper:
             @override
             async def _initialize_core(self) -> None:
                 if self._initialization_attempts == 1:
-                    _ = await super().initialize(sleep_if_failure=False)
+                    _ = await super().initialize()
                 await super()._initialize_core()
 
         looper = Example()
-        _ = await looper.initialize(sleep_if_failure=False)
+        _ = await looper.initialize()
         _ = one(m for m in caplog.messages if search(": already initializing$", m))
 
-    @mark.parametrize(("sleep_if_failure", "extra"), sleep_if_failure_cases)
+    @mark.parametrize(("skip_sleep_if_failure", "extra"), skip_sleep_if_failure_cases)
     async def test_initialize_failure(
-        self, *, sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
+        self, *, skip_sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
     ) -> None:
         class Example(CountingLooper):
             @override
@@ -349,7 +355,7 @@ class TestLooper:
                 await super()._initialize_core()
 
         looper = Example()
-        _ = await looper.initialize(sleep_if_failure=sleep_if_failure)
+        _ = await looper.initialize(skip_sleep_if_failure=skip_sleep_if_failure)
         pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) whilst initializing{extra}$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
@@ -459,11 +465,11 @@ class TestLooper:
         assert_looper_stats(
             looper,
             entries=1,
-            core_successes=79,
+            core_successes=35,
             core_failures=1,
-            initialization_successes=16,
-            tear_down_successes=15,
-            restart_successes=15,
+            initialization_successes=7,
+            tear_down_successes=6,
+            restart_successes=6,
             stops=1,
         )
 
@@ -553,9 +559,8 @@ class TestLooper:
             if search(r": already requested stop when empty$", m)
         )
 
-    @mark.parametrize(("sleep_if_failure", "extra"), sleep_if_failure_cases)
     async def test_restart_failure_during_initialization(
-        self, *, sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
+        self, *, caplog: LogCaptureFixture
     ) -> None:
         class Example(CountingLooper):
             @override
@@ -565,13 +570,14 @@ class TestLooper:
                 await super()._initialize_core()
 
         looper = Example()
-        await looper.restart(sleep_if_failure=sleep_if_failure)
-        pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) whilst restarting \(initialize\){extra}$"
+        with Timer() as timer:
+            await looper.restart()
+        assert timer.timedelta >= self._restart_min_elapsed
+        pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) whilst restarting \(initialize\); sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
-    @mark.parametrize(("sleep_if_failure", "extra"), sleep_if_failure_cases)
     async def test_restart_failure_during_tear_down(
-        self, *, sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
+        self, *, caplog: LogCaptureFixture
     ) -> None:
         class Example(CountingLooper):
             @override
@@ -581,13 +587,14 @@ class TestLooper:
                 await super()._tear_down_core()
 
         looper = Example()
-        await looper.restart(sleep_if_failure=sleep_if_failure)
-        pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) whilst restarting \(tear down\){extra}$"
+        with Timer() as timer:
+            await looper.restart()
+        assert timer.timedelta >= self._restart_min_elapsed
+        pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) whilst restarting \(tear down\); sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
-    @mark.parametrize(("sleep_if_failure", "extra"), sleep_if_failure_cases)
     async def test_restart_failure_during_tear_down_and_initialization(
-        self, *, sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
+        self, *, caplog: LogCaptureFixture
     ) -> None:
         class Example(CountingLooper):
             @override
@@ -603,8 +610,18 @@ class TestLooper:
                 await super()._tear_down_core()
 
         looper = Example()
-        await looper.restart(sleep_if_failure=sleep_if_failure)
-        pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) \(tear down\) and then {get_class_name(CountingLooperError)}\(\) \(initialization\) whilst restarting{extra}$"
+        with Timer() as timer:
+            await looper.restart()
+        assert timer.timedelta >= self._restart_min_elapsed
+        pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) \(tear down\) and then {get_class_name(CountingLooperError)}\(\) \(initialization\) whilst restarting; sleeping for .*\.\.\.$"
+        _ = one(m for m in caplog.messages if search(pattern, m))
+
+    async def test_restart_success(self, *, caplog: LogCaptureFixture) -> None:
+        looper = CountingLooper()
+        with Timer() as timer:
+            await looper.restart()
+        assert timer.timedelta >= self._restart_min_elapsed
+        pattern = r": finished restarting; sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
     @mark.parametrize("n", [param(0), param(1), param(2)])
@@ -698,16 +715,16 @@ class TestLooper:
             @override
             async def _tear_down_core(self) -> None:
                 if self._tear_down_attempts == 1:
-                    _ = await super().tear_down(sleep_if_failure=False)
+                    _ = await super().tear_down()
                 await super()._tear_down_core()
 
         looper = Example()
-        _ = await looper.tear_down(sleep_if_failure=False)
+        _ = await looper.tear_down()
         _ = one(m for m in caplog.messages if search(": already tearing down$", m))
 
-    @mark.parametrize(("sleep_if_failure", "extra"), sleep_if_failure_cases)
+    @mark.parametrize(("skip_sleep_if_failure", "extra"), skip_sleep_if_failure_cases)
     async def test_tear_down_failure(
-        self, *, sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
+        self, *, skip_sleep_if_failure: bool, extra: str, caplog: LogCaptureFixture
     ) -> None:
         class Example(CountingLooper):
             @override
@@ -717,7 +734,7 @@ class TestLooper:
                 await super()._tear_down_core()
 
         looper = Example()
-        _ = await looper.tear_down(sleep_if_failure=sleep_if_failure)
+        _ = await looper.tear_down(skip_sleep_if_failure=skip_sleep_if_failure)
         pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) whilst tearing down{extra}$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
@@ -751,7 +768,7 @@ class TestLooper:
         assert_looper_stats(
             looper,
             entries=1,
-            core_successes=45,
+            core_successes=47,
             core_failures=5,
             initialization_successes=6,
             tear_down_successes=5,
@@ -767,10 +784,10 @@ class TestLooper:
             looper,
             entries=1,
             core_successes=56,
-            core_failures=13,
-            initialization_successes=14,
-            tear_down_successes=13,
-            restart_successes=13,
+            core_failures=14,
+            initialization_successes=15,
+            tear_down_successes=14,
+            restart_successes=14,
             stops=stops,
             rel=rel,
         )
@@ -781,7 +798,7 @@ class TestLooper:
         assert_looper_stats(
             looper,
             entries=1,
-            core_successes=49,
+            core_successes=48,
             core_failures=24,
             initialization_successes=25,
             tear_down_successes=24,
@@ -798,9 +815,9 @@ class TestLooper:
             entries=1,
             core_successes=35,
             core_failures=35,
-            initialization_successes=35,
-            tear_down_successes=34,
-            restart_successes=34,
+            initialization_successes=36,
+            tear_down_successes=35,
+            restart_successes=35,
             stops=stops,
             rel=rel,
         )
