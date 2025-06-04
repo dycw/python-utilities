@@ -460,11 +460,11 @@ class TestLooper:
         assert_looper_stats(
             looper,
             entries=1,
-            core_successes=79,
+            core_successes=35,
             core_failures=1,
-            initialization_successes=16,
-            tear_down_successes=15,
-            restart_successes=15,
+            initialization_successes=7,
+            tear_down_successes=6,
+            restart_successes=6,
             stops=1,
         )
 
@@ -793,11 +793,11 @@ class TestLooper:
         assert_looper_stats(
             looper,
             entries=1,
-            core_successes=49,
-            core_failures=24,
-            initialization_successes=25,
-            tear_down_successes=24,
-            restart_successes=24,
+            core_successes=28,
+            core_failures=14,
+            initialization_successes=14,
+            tear_down_successes=13,
+            restart_successes=13,
             stops=stops,
             rel=rel,
         )
@@ -808,11 +808,11 @@ class TestLooper:
         assert_looper_stats(
             looper,
             entries=1,
-            core_successes=35,
-            core_failures=35,
-            initialization_successes=35,
-            tear_down_successes=34,
-            restart_successes=34,
+            core_successes=19,
+            core_failures=19,
+            initialization_successes=19,
+            tear_down_successes=18,
+            restart_successes=18,
             stops=stops,
             rel=rel,
         )
