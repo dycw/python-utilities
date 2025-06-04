@@ -672,7 +672,6 @@ class Looper(Generic[_T]):
                             async with self._lock:
                                 self._core_failures += 1
                             self.request_restart()
-                            await sleep(self._backoff)
                         else:
                             async with self._lock:
                                 self._core_successes += 1
