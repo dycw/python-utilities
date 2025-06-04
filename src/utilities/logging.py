@@ -416,13 +416,13 @@ def add_filters(handler: Handler, /, *filters: _FilterType) -> None:
 def basic_config(
     *,
     logger: LoggerOrName | None = None,
-    format: str = "{asctime} | {name} | {levelname:8} | {message}",  # noqa: A002
+    format_: str = "{asctime} | {name} | {levelname:8} | {message}",
     level: LogLevel = "INFO",
 ) -> None:
     """Do the basic config."""
     datefmt = maybe_sub_pct_y("%Y-%m-%d %H:%M:%S")
     if logger is None:
-        basicConfig(format=format, datefmt=datefmt, style="{", level=level)
+        basicConfig(format=format_, datefmt=datefmt, style="{", level=level)
     else:
         logger_use = get_logger(logger=logger)
         logger_use.setLevel(DEBUG)
@@ -434,9 +434,9 @@ def basic_config(
         try:
             from coloredlogs import ColoredFormatter
         except ModuleNotFoundError:  # pragma: no cover
-            formatter = Formatter(fmt=format, datefmt=datefmt, style="{")
+            formatter = Formatter(fmt=format_, datefmt=datefmt, style="{")
         else:
-            formatter = ColoredFormatter(fmt=format, datefmt=datefmt, style="{")
+            formatter = ColoredFormatter(fmt=format_, datefmt=datefmt, style="{")
         handler.setFormatter(formatter)
 
 
