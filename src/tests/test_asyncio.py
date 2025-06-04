@@ -453,7 +453,6 @@ class TestLooper:
         looper = CountingLooper().replace(freq=10.0)
         assert looper.freq == 10.0
 
-    @mark.only
     async def test_request_back_off(self) -> None:
         class Example(CountingLooper):
             @override
@@ -478,7 +477,6 @@ class TestLooper:
             stops=1,
         )
 
-    @mark.only
     async def test_request_back_off_already_requested(
         self, *, caplog: LogCaptureFixture
     ) -> None:
