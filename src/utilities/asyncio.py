@@ -584,6 +584,7 @@ class Looper(Generic[_T]):
                 self._is_pending_restart.set()
             case _ as never:
                 assert_never(never)
+        self.request_back_off()
 
     def request_stop(self) -> None:
         """Request the looper to stop."""
