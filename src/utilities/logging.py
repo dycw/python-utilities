@@ -428,9 +428,6 @@ def basic_config(
         logger_use.setLevel(DEBUG)
         logger_use.addHandler(handler := StreamHandler())
         handler.setLevel(DEBUG)
-        handler.setFormatter(
-            Formatter(style="{", fmt="{asctime} | {module}:{lineno} | {message}")
-        )
         try:
             from coloredlogs import ColoredFormatter
         except ModuleNotFoundError:  # pragma: no cover
