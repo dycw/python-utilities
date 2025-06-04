@@ -21,6 +21,7 @@ from hypothesis.strategies import (
 )
 from pytest import LogCaptureFixture, approx, mark, param, raises
 
+from tests.conftest import IS_CI
 from tests.test_asyncio_classes.loopers import (
     _BACKOFF,
     _REL,
@@ -64,6 +65,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
+    import datetime as dt
     from collections.abc import AsyncIterator
 
     from utilities.types import Duration, MaybeCallableEvent
@@ -256,6 +258,9 @@ class TestGetItems:
 
 
 class TestLooper:
+    _restart_min_elapsed: ClassVar[dt.timedelta] = datetime_duration_to_timedelta(
+        (0.9 if IS_CI else 1.0) * _BACKOFF
+    )
     skip_sleep_if_failure_cases: ClassVar[list[Any]] = [
         param(True, ""),
         param(False, "; sleeping for .*"),
@@ -567,7 +572,7 @@ class TestLooper:
         looper = Example()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta >= (datetime_duration_to_timedelta(_BACKOFF))
+        assert timer.timedelta >= self._restart_min_elapsed
         pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) whilst restarting \(initialize\); sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
@@ -584,7 +589,7 @@ class TestLooper:
         looper = Example()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta >= (datetime_duration_to_timedelta(_BACKOFF))
+        assert timer.timedelta >= self._restart_min_elapsed
         pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) whilst restarting \(tear down\); sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
@@ -607,7 +612,7 @@ class TestLooper:
         looper = Example()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta >= (datetime_duration_to_timedelta(_BACKOFF))
+        assert timer.timedelta >= self._restart_min_elapsed
         pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) \(tear down\) and then {get_class_name(CountingLooperError)}\(\) \(initialization\) whilst restarting; sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
@@ -615,7 +620,7 @@ class TestLooper:
         looper = CountingLooper()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta >= (datetime_duration_to_timedelta(_BACKOFF))
+        assert timer.timedelta >= self._restart_min_elapsed
         pattern = r": finished restarting; sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
