@@ -654,7 +654,7 @@ class Looper(Generic[_T]):
                     elif self._is_pending_restart.is_set():
                         await self.restart()
                     elif not self._is_initialized.is_set():
-                        _ = await self.initialize(skip_sleep_if_failure=True)
+                        _ = await self.initialize()
                     else:
                         _ = self._debug and self._logger.debug(
                             "%s: running core...", self
