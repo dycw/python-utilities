@@ -598,8 +598,8 @@ class Looper(Generic[_T]):
         self._is_pending_restart.clear()
         async with self._lock:
             self._restart_attempts += 1
-        tear_down = await self.tear_down(skip_sleep_if_failure=False)
-        initialization = await self.initialize(skip_sleep_if_failure=False)
+        tear_down = await self.tear_down(skip_sleep_if_failure=True)
+        initialization = await self.initialize(skip_sleep_if_failure=True)
         match tear_down, initialization:
             case None, None:
                 _ = self._debug and self._logger.debug(
