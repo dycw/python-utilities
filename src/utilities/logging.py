@@ -23,7 +23,7 @@ from logging import (
 )
 from logging.handlers import BaseRotatingHandler, TimedRotatingFileHandler
 from pathlib import Path
-from re import Pattern, search
+from re import Pattern
 from sys import stdout
 from time import time
 from typing import (
@@ -750,29 +750,6 @@ class _AdvancedLogRecord(LogRecord):
     def __init_subclass__(cls, *, time_zone: ZoneInfo, **kwargs: Any) -> None:
         cls.time_zone = time_zone.key  # skipif-ci-and-windows
         super().__init_subclass__(**kwargs)  # skipif-ci-and-windows
-
-    @override
-    def getMessage(self) -> str:
-        """Return the message for this LogRecord."""
-        msg = str(self.msg)  # pragma: no cover
-        if self.args:  # pragma: no cover
-            try:
-                return msg % self.args  # compability for 3rd party code
-            except ValueError as error:
-                if len(error.args) == 0:
-                    raise
-                first = error.args[0]
-                if search("unsupported format character", first):
-                    return msg.format(*self.args)
-                raise
-            except TypeError as error:
-                if len(error.args) == 0:
-                    raise
-                first = error.args[0]
-                if search("not all arguments converted", first):
-                    return msg.format(*self.args)
-                raise
-        return msg  # pragma: no cover
 
     @classmethod
     def get_now(cls) -> Any:
