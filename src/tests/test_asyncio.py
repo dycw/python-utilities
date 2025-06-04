@@ -808,11 +808,11 @@ class TestLooper:
         assert_looper_stats(
             looper,
             entries=1,
-            core_successes=19,
-            core_failures=19,
-            initialization_successes=19,
-            tear_down_successes=18,
-            restart_successes=18,
+            core_successes=35,
+            core_failures=35,
+            initialization_successes=36,
+            tear_down_successes=35,
+            restart_successes=35,
             stops=stops,
             rel=rel,
         )
