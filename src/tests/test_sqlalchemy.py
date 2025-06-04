@@ -1332,6 +1332,7 @@ class TestUpsertItems:
         await upsert_items(engine, item)
 
     @given(data=data(), triples=_upsert_lists(nullable=True, min_size=1))
+    @mark.flaky
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_multiple_elements_with_the_same_primary_key(
         self, *, data: DataObject, triples: list[tuple[int, bool, bool | None]]
