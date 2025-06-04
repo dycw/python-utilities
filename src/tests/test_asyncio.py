@@ -24,6 +24,7 @@ from pytest import LogCaptureFixture, approx, mark, param, raises
 from tests.conftest import IS_CI
 from tests.test_asyncio_classes.loopers import (
     _BACKOFF,
+    _FREQ,
     _REL,
     CountingLooper,
     CountingLooperError,
@@ -259,7 +260,10 @@ class TestGetItems:
 
 class TestLooper:
     _restart_min_elapsed: ClassVar[dt.timedelta] = datetime_duration_to_timedelta(
-        (0.9 if IS_CI else 1.0) * _BACKOFF
+        (0.8 if IS_CI else 1.0) * _BACKOFF
+    )
+    _restart_max_elapsed: ClassVar[dt.timedelta] = datetime_duration_to_timedelta(
+        (1.2 if IS_CI else 1.0) * _FREQ
     )
     skip_sleep_if_failure_cases: ClassVar[list[Any]] = [
         param(True, ""),
@@ -449,6 +453,40 @@ class TestLooper:
         looper = CountingLooper().replace(freq=10.0)
         assert looper.freq == 10.0
 
+    async def test_request_back_off(self) -> None:
+        class Example(CountingLooper):
+            @override
+            async def core(self) -> None:
+                await super().core()
+                if (self._initialization_attempts >= 2) and (
+                    self.count >= (self.max_count / 2)
+                ):
+                    self.request_back_off()
+
+        looper = Example(auto_start=True, timeout=1.0)
+        async with looper:
+            ...
+        assert_looper_stats(
+            looper,
+            entries=1,
+            core_successes=23,
+            core_failures=2,
+            initialization_successes=3,
+            tear_down_successes=2,
+            restart_successes=2,
+            stops=1,
+        )
+
+    async def test_request_back_off_already_requested(
+        self, *, caplog: LogCaptureFixture
+    ) -> None:
+        looper = CountingLooper()
+        for _ in range(2):
+            looper.request_back_off()
+        _ = one(
+            m for m in caplog.messages if search(r": already requested back off$", m)
+        )
+
     async def test_request_restart(self) -> None:
         class Example(CountingLooper):
             @override
@@ -620,8 +658,8 @@ class TestLooper:
         looper = CountingLooper()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta >= self._restart_min_elapsed
-        pattern = r": finished restarting; sleeping for .*\.\.\.$"
+        assert timer.timedelta <= self._restart_max_elapsed
+        pattern = r": finished restarting$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
     @mark.parametrize("n", [param(0), param(1), param(2)])
