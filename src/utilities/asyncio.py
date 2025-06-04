@@ -353,6 +353,7 @@ class Looper(Generic[_T]):
     _is_entered: Event = field(default_factory=Event, init=False, repr=False)
     _is_initialized: Event = field(default_factory=Event, init=False, repr=False)
     _is_initializing: Event = field(default_factory=Event, init=False, repr=False)
+    _is_pending_back_off: Event = field(default_factory=Event, init=False, repr=False)
     _is_pending_restart: Event = field(default_factory=Event, init=False, repr=False)
     _is_pending_stop: Event = field(default_factory=Event, init=False, repr=False)
     _is_pending_stop_when_empty: Event = field(
@@ -439,6 +440,11 @@ class Looper(Generic[_T]):
     def __len__(self) -> int:
         return self._queue.qsize()
 
+    async def _apply_back_off(self) -> None:
+        """Apply a back off period."""
+        await sleep(self._backoff)
+        self._is_pending_back_off.clear()
+
     async def core(self) -> None:
         """Core part of running the looper."""
 
@@ -492,7 +498,7 @@ class Looper(Generic[_T]):
                                 repr_error(error),
                                 self.backoff,
                             )
-                            await sleep(self._backoff)
+                            await self._apply_back_off()
                         case _ as never:
                             assert_never(never)
                 else:
@@ -549,6 +555,21 @@ class Looper(Generic[_T]):
             **kwargs,
         )
 
+    def request_back_off(self) -> None:
+        """Request the looper to back off."""
+        match self._is_pending_back_off.is_set():
+            case True:
+                _ = self._debug and self._logger.debug(
+                    "%s: already requested back off", self
+                )
+            case False:
+                _ = self._debug and self._logger.debug(
+                    "%s: requesting back off...", self
+                )
+                self._is_pending_back_off.set()
+            case _ as never:
+                assert_never(never)
+
     def request_restart(self) -> None:
         """Request the looper to restart."""
         match self._is_pending_restart.is_set():
@@ -602,9 +623,7 @@ class Looper(Generic[_T]):
         initialization = await self.initialize(skip_sleep_if_failure=True)
         match tear_down, initialization:
             case None, None:
-                _ = self._debug and self._logger.debug(
-                    "%s: finished restarting; sleeping for %s...", self, self.backoff
-                )
+                _ = self._debug and self._logger.debug("%s: finished restarting", self)
                 async with self._lock:
                     self._restart_successes += 1
             case Exception(), None:
@@ -616,6 +635,7 @@ class Looper(Generic[_T]):
                     repr_error(tear_down),
                     self.backoff,
                 )
+                await self._apply_back_off()
             case None, Exception():
                 async with self._lock:
                     self._restart_failures += 1
@@ -625,6 +645,7 @@ class Looper(Generic[_T]):
                     repr_error(initialization),
                     self.backoff,
                 )
+                await self._apply_back_off()
             case Exception(), Exception():
                 async with self._lock:
                     self._restart_failures += 1
@@ -635,9 +656,9 @@ class Looper(Generic[_T]):
                     repr_error(initialization),
                     self.backoff,
                 )
+                await self._apply_back_off()
             case _ as never:
                 assert_never(never)
-        await sleep(self._backoff)
 
     async def run_looper(self) -> None:
         """Run the looper."""
@@ -651,6 +672,8 @@ class Looper(Generic[_T]):
                         self._is_pending_stop_when_empty.is_set() and self.empty()
                     ):
                         await self.stop()
+                    elif self._is_pending_back_off.is_set():
+                        await self._apply_back_off()
                     elif self._is_pending_restart.is_set():
                         await self.restart()
                     elif not self._is_initialized.is_set():
@@ -671,6 +694,7 @@ class Looper(Generic[_T]):
                             )
                             async with self._lock:
                                 self._core_failures += 1
+                            self.request_back_off()
                             self.request_restart()
                         else:
                             async with self._lock:
@@ -758,7 +782,7 @@ class Looper(Generic[_T]):
                                 repr_error(error),
                                 self.backoff,
                             )
-                            await sleep(self._backoff)
+                            await self._apply_back_off()
                         case _ as never:
                             assert_never(never)
                 else:
