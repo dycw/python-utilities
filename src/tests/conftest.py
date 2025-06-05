@@ -39,6 +39,8 @@ def traceback_func_chain() -> Pattern[str]:
         strip_and_dedent(
             r"""
             Date/time \| .+
+            Started   \| .+
+            Duration  \| .+
             User      \| .+
             Host      \| .+
             Version   \|\s
@@ -98,6 +100,8 @@ def traceback_func_one() -> Pattern[str]:
         strip_and_dedent(
             r"""
             Date/time \| .+
+            Started   \| .+
+            Duration  \| .+
             User      \| .+
             Host      \| .+
             Version   \|\s
@@ -134,6 +138,8 @@ def traceback_func_many_long() -> Pattern[str]:
         strip_and_dedent(
             r"""
             Date/time \| .+
+            Started   \| .+
+            Duration  \| .+
             User      \| .+
             Host      \| .+
             Version   \|\s
@@ -192,6 +198,8 @@ def traceback_func_many_short() -> Pattern[str]:
         strip_and_dedent(
             r"""
             Date/time \| .+
+            Started   \| .+
+            Duration  \| .+
             User      \| .+
             Host      \| .+
             Version   \|\s
@@ -228,6 +236,8 @@ def traceback_func_task_group_one() -> Pattern[str]:
         strip_and_dedent(
             r"""
             Date/time \| .+
+            Started   \| .+
+            Duration  \| .+
             User      \| .+
             Host      \| .+
             Version   \|\s
@@ -287,6 +297,8 @@ def traceback_func_two() -> Pattern[str]:
         strip_and_dedent(
             r"""
             Date/time \| .+
+            Started   \| .+
+            Duration  \| .+
             User      \| .+
             Host      \| .+
             Version   \|\s
