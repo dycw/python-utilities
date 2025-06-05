@@ -425,9 +425,9 @@ def basic_config(
         basicConfig(format=format_, datefmt=datefmt, style="{", level=level)
     else:
         logger_use = get_logger(logger=logger)
-        logger_use.setLevel(DEBUG)
+        logger_use.setLevel(level)
         logger_use.addHandler(handler := StreamHandler())
-        handler.setLevel(DEBUG)
+        handler.setLevel(level)
         try:
             from coloredlogs import ColoredFormatter
         except ModuleNotFoundError:  # pragma: no cover
