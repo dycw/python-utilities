@@ -42,6 +42,7 @@ from utilities.logging import (
     temp_logger,
 )
 from utilities.pytest import skipif_windows
+from utilities.text import unique_str
 from utilities.types import LogLevel
 from utilities.typing import get_args
 
@@ -53,9 +54,9 @@ if TYPE_CHECKING:
 
 
 class TestAddFilters:
-    @given(root=temp_paths(), expected=booleans())
-    def test_main(self, *, root: Path, expected: bool) -> None:
-        logger = getLogger(str(root))
+    @given(expected=booleans())
+    def test_main(self, *, expected: bool) -> None:
+        logger = getLogger(unique_str())
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
         add_filters(handler, lambda _: expected)
         assert len(handler.filters) == 1
@@ -71,10 +72,13 @@ class TestAddFilters:
 
 
 class TestBasicConfig:
-    def test_main(self, *, tmp_path: Path) -> None:
-        basic_config()
-        logger = getLogger(str(tmp_path))
-        logger.info("message")
+    @mark.parametrize("log", [param(True), param(False)])
+    def test_main(self, *, caplog: LogCaptureFixture, log: bool) -> None:
+        logger = unique_str() if log else None
+        basic_config(logger=logger)
+        logger_use = getLogger()
+        logger_use.warning("message")
+        assert "message" in caplog.messages
 
 
 class TestComputeRolloverActions:
@@ -191,16 +195,9 @@ class TestComputeRolloverActions:
 
 
 class TestFilterForKey:
-    @given(
-        root=temp_paths(),
-        key=text_ascii(),
-        value=booleans() | none(),
-        default=booleans(),
-    )
-    def test_main(
-        self, *, root: Path, key: str, value: bool | None, default: bool
-    ) -> None:
-        logger = getLogger(str(root))
+    @given(key=text_ascii(), value=booleans() | none(), default=booleans())
+    def test_main(self, *, key: str, value: bool | None, default: bool) -> None:
+        logger = getLogger(unique_str())
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
         with assume_does_not_raise(FilterForKeyError):
             filter_ = filter_for_key(key, default=default)
@@ -230,15 +227,16 @@ class TestGetDefaultLoggingPath:
 
 
 class TestGetLogger:
-    def test_logger(self, *, tmp_path: Path) -> None:
-        logger = getLogger(str(tmp_path))
+    def test_logger(self) -> None:
+        logger = getLogger(unique_str())
         result = get_logger(logger=logger)
         assert result is logger
 
-    def test_str(self, *, tmp_path: Path) -> None:
-        result = get_logger(logger=str(tmp_path))
-        assert isinstance(result, Logger)
-        assert result.name == str(tmp_path)
+    def test_str(self) -> None:
+        name = unique_str()
+        logger = getLogger(name)
+        assert isinstance(logger, Logger)
+        assert logger.name == name
 
     def test_none(self) -> None:
         result = get_logger()
@@ -382,7 +380,7 @@ class TestSetupLogging:
     def test_decorated(
         self, *, tmp_path: Path, traceback_func_one: Pattern[str]
     ) -> None:
-        name = str(tmp_path)
+        name = unique_str()
         setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 7
@@ -397,7 +395,7 @@ class TestSetupLogging:
     def test_undecorated(
         self, *, tmp_path: Path, traceback_func_untraced: Pattern[str]
     ) -> None:
-        name = str(tmp_path)
+        name = unique_str()
         setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 7
@@ -412,7 +410,7 @@ class TestSetupLogging:
     def test_regular_percent_formatting(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
-        name = str(tmp_path)
+        name = unique_str()
         setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("int: %d, float: %.2f", 1, 12.3456)
@@ -423,14 +421,14 @@ class TestSetupLogging:
 
     @skipif_windows
     def test_no_console(self, *, tmp_path: Path) -> None:
-        name = str(tmp_path)
+        name = unique_str()
         setup_logging(logger=name, console_level=None, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 5
 
     @skipif_windows
     def test_zoned_datetime(self, *, tmp_path: Path, caplog: LogCaptureFixture) -> None:
-        name = str(tmp_path)
+        name = unique_str()
         setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         logger.info("")
@@ -441,7 +439,7 @@ class TestSetupLogging:
 
     @skipif_windows
     def test_extra(self, *, tmp_path: Path) -> None:
-        name = str(tmp_path)
+        name = unique_str()
 
         def extra(logger: LoggerOrName | None, /) -> None:
             get_logger(logger=logger).addHandler(
@@ -478,7 +476,7 @@ class TestSetupLogging:
 class TestSizeAndTimeRotatingFileHandler:
     @skipif_windows
     def test_handlers(self, *, tmp_path: Path) -> None:
-        logger = getLogger(str(tmp_path))
+        logger = getLogger(unique_str())
         filename = tmp_path.joinpath("log")
         logger.addHandler(SizeAndTimeRotatingFileHandler(filename=filename))
         logger.warning("message")
@@ -488,7 +486,7 @@ class TestSizeAndTimeRotatingFileHandler:
 
     @skipif_windows
     def test_size(self, *, tmp_path: Path) -> None:
-        logger = getLogger(str(tmp_path))
+        logger = getLogger(unique_str())
         logger.addHandler(
             SizeAndTimeRotatingFileHandler(
                 filename=tmp_path.joinpath("log.txt"), maxBytes=100, backupCount=3
@@ -547,7 +545,7 @@ class TestSizeAndTimeRotatingFileHandler:
     @mark.flaky
     @skipif_windows
     def test_time(self, *, tmp_path: Path) -> None:
-        logger = getLogger(str(tmp_path))
+        logger = getLogger(unique_str())
         logger.addHandler(
             SizeAndTimeRotatingFileHandler(
                 filename=tmp_path.joinpath("log.txt"),
@@ -620,7 +618,7 @@ class TestSizeAndTimeRotatingFileHandler:
     def test_should_rollover_file_not_found(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
-        logger = getLogger(str(tmp_path))
+        logger = getLogger(unique_str())
         path = tmp_path.joinpath("log")
         logger.addHandler(
             handler := SizeAndTimeRotatingFileHandler(filename=path, maxBytes=1)
@@ -634,7 +632,7 @@ class TestSizeAndTimeRotatingFileHandler:
 class TestStandaloneFileHandler:
     @skipif_windows
     def test_main(self, *, tmp_path: Path) -> None:
-        logger = getLogger(str(tmp_path))
+        logger = getLogger(unique_str())
         logger.addHandler(StandaloneFileHandler(level=DEBUG, path=tmp_path))
         assert len(list(tmp_path.iterdir())) == 0
         logger.warning("message")
@@ -646,8 +644,8 @@ class TestStandaloneFileHandler:
 
 
 class TestTempHandler:
-    def test_main(self, *, tmp_path: Path) -> None:
-        logger = getLogger(str(tmp_path))
+    def test_main(self) -> None:
+        logger = getLogger(unique_str())
         logger.addHandler(h1 := StreamHandler())
         logger.addHandler(h2 := StreamHandler())
         assert len(logger.handlers) == 2
@@ -660,22 +658,22 @@ class TestTempHandler:
 
 
 class TestTempLogger:
-    def test_disabled(self, *, tmp_path: Path) -> None:
-        logger = getLogger(str(tmp_path))
+    def test_disabled(self) -> None:
+        logger = getLogger(unique_str())
         assert not logger.disabled
         with temp_logger(logger, disabled=True):
             assert logger.disabled
         assert not logger.disabled
 
-    def test_level(self, *, tmp_path: Path) -> None:
-        logger = getLogger(str(tmp_path))
+    def test_level(self) -> None:
+        logger = getLogger(unique_str())
         assert logger.level == NOTSET
         with temp_logger(logger, level="DEBUG"):
             assert logger.level == DEBUG
         assert logger.level == NOTSET
 
-    def test_propagate(self, *, tmp_path: Path) -> None:
-        logger = getLogger(str(tmp_path))
+    def test_propagate(self) -> None:
+        logger = getLogger(unique_str())
         assert logger.propagate
         with temp_logger(logger, propagate=False):
             assert not logger.propagate
