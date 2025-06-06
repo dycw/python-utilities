@@ -449,12 +449,17 @@ def basic_config(
             )
         case Handler() as handler:
             handler.setLevel(level)
-            try:
-                from coloredlogs import ColoredFormatter
-            except ModuleNotFoundError:  # pragma: no cover
+            if plain:
                 formatter = Formatter(fmt=format_, datefmt=datefmt, style="{")
             else:
-                formatter = ColoredFormatter(fmt=format_, datefmt=datefmt, style="{")
+                try:
+                    from coloredlogs import ColoredFormatter
+                except ModuleNotFoundError:  # pragma: no cover
+                    formatter = Formatter(fmt=format_, datefmt=datefmt, style="{")
+                else:
+                    formatter = ColoredFormatter(
+                        fmt=format_, datefmt=datefmt, style="{"
+                    )
             handler.setFormatter(formatter)
         case _ as never:
             assert_never(never)

@@ -74,11 +74,12 @@ class TestAddFilters:
 class TestBasicConfig:
     @mark.parametrize("log", [param(True), param(False)])
     @mark.parametrize("whenever", [param(True), param(False)])
+    @mark.parametrize("plain", [param(True), param(False)])
     def test_main(
-        self, *, caplog: LogCaptureFixture, log: bool, whenever: bool
+        self, *, caplog: LogCaptureFixture, log: bool, whenever: bool, plain: bool
     ) -> None:
         logger = unique_str() if log else None
-        basic_config(obj=logger, whenever=whenever)
+        basic_config(obj=logger, whenever=whenever, plain=plain)
         logger_use = getLogger()
         logger_use.warning("message")
         assert "message" in caplog.messages
