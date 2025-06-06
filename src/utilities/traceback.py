@@ -115,6 +115,78 @@ def format_exception_stack(
 ##
 
 
+def make_except_hook(
+    exc_type: type[BaseException] | None,
+    exc_val: BaseException | None,
+    traceback: TracebackType | None,
+    /,
+    *,
+    start: MaybeCallableDateTime | None = _START,
+    version: MaybeCallableVersionLike | None = None,
+    path: MaybeCallablePathLike | None = None,
+    file_max_width: int = RICH_MAX_WIDTH,
+    file_indent_size: int = RICH_INDENT_SIZE,
+    file_max_length: int | None = RICH_MAX_LENGTH,
+    file_max_string: int | None = RICH_MAX_STRING,
+    file_max_depth: int | None = RICH_MAX_DEPTH,
+    file_expand_all: bool = RICH_EXPAND_ALL,
+    slack_url: str | None = None,
+    slack_max_width: int = RICH_MAX_WIDTH,
+    slack_indent_size: int = RICH_INDENT_SIZE,
+    slack_max_length: int | None = RICH_MAX_LENGTH,
+    slack_max_string: int | None = RICH_MAX_STRING,
+    slack_max_depth: int | None = RICH_MAX_DEPTH,
+    slack_expand_all: bool = RICH_EXPAND_ALL,
+) -> None:
+    """Exception hook to log the traceback."""
+    _ = (exc_type, traceback)
+    if exc_val is None:
+        raise MakeExceptHookError
+    if path is not None:
+        from utilities.atomicwrites import writer
+        from utilities.tzlocal import get_now_local
+
+        path = (
+            get_path(path=path)
+            .joinpath(serialize_compact(get_now_local()))
+            .with_suffix(".txt")
+        )
+        text = format_exception_stack(
+            exc_val,
+            header=True,
+            start=start,
+            version=version,
+            capture_locals=True,
+            max_width=file_max_width,
+            indent_size=file_indent_size,
+            max_length=file_max_length,
+            max_string=file_max_string,
+            max_depth=file_max_depth,
+            expand_all=file_expand_all,
+        )
+        with writer(path, overwrite=True) as temp:
+            _ = temp.write_text(text)
+    if slack_url is not None:  # pragma: no cover
+        from utilities.slack_sdk import send_to_slack
+
+        text = format_exception_stack(
+            exc_val,
+            header=True,
+            start=start,
+            version=version,
+            max_width=slack_max_width,
+            indent_size=slack_indent_size,
+            max_length=slack_max_length,
+            max_string=slack_max_string,
+            max_depth=slack_max_depth,
+            expand_all=slack_expand_all,
+        )
+        run(send_to_slack(slack_url, text))
+
+
+##
+
+
 class RichTracebackFormatter(Formatter):
     """Formatter for rich tracebacks."""
 
@@ -942,12 +1014,12 @@ def _yield_frame_summary_lines(
     if frame.locals is not None:
         yield from yield_mapping_repr(
             frame.locals,
-            max_width=max_width,
-            indent_size=indent_size,
-            max_length=max_length,
-            max_string=max_string,
-            max_depth=max_depth,
-            expand_all=expand_all,
+            _max_width=max_width,
+            _indent_size=indent_size,
+            _max_length=max_length,
+            _max_string=max_string,
+            _max_depth=max_depth,
+            _expand_all=expand_all,
         )
 
 
@@ -973,44 +1045,6 @@ def _trim_path(path: PathLike, pattern: str, /) -> Path | None:
     except OneEmptyError:
         return None
     return Path(*parts[i + 1 :])
-
-
-def make_except_hook(
-    exc_type: type[BaseException] | None,
-    exc_val: BaseException | None,
-    traceback: TracebackType | None,
-    /,
-    *,
-    start: MaybeCallableDateTime | None = _START,
-    version: MaybeCallableVersionLike | None = None,
-    path: MaybeCallablePathLike | None = None,
-    slack_url: str | None = None,
-) -> None:
-    """Exception hook to log the traceback."""
-    _ = (exc_type, traceback)
-    if exc_val is None:
-        raise MakeExceptHookError
-    if path is not None:
-        from utilities.atomicwrites import writer
-        from utilities.tzlocal import get_now_local
-
-        path = (
-            get_path(path=path)
-            .joinpath(serialize_compact(get_now_local()))
-            .with_suffix(".txt")
-        )
-        text = format_exception_stack(
-            exc_val, header=True, start=start, version=version, capture_locals=True
-        )
-        with writer(path, overwrite=True) as temp:
-            _ = temp.write_text(text)
-    if slack_url is not None:  # pragma: no cover
-        from utilities.slack_sdk import send_to_slack
-
-        text = format_exception_stack(
-            exc_val, header=True, start=start, version=version
-        )
-        run(send_to_slack(slack_url, text))
 
 
 @dataclass(kw_only=True, slots=True)
