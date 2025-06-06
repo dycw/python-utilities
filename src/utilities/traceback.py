@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import re
+from asyncio import run
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from functools import wraps
 from getpass import getuser
 from inspect import iscoroutinefunction, signature
+from itertools import repeat
 from logging import Formatter, Handler, LogRecord
 from pathlib import Path
 from socket import gethostname
@@ -16,8 +18,10 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
+    NotRequired,
     Protocol,
     Self,
+    TypedDict,
     TypeGuard,
     TypeVar,
     assert_never,
@@ -47,7 +51,13 @@ from utilities.reprlib import (
     yield_call_args_repr,
     yield_mapping_repr,
 )
-from utilities.types import MaybeCallableDateTime, PathLike, TBaseException, TCallable
+from utilities.types import (
+    MaybeCallableDateTime,
+    MaybeCoroutine1,
+    PathLike,
+    TBaseException,
+    TCallable,
+)
 from utilities.version import get_version
 from utilities.whenever import serialize_duration
 
@@ -76,13 +86,14 @@ def format_exception_stack(
     header: bool = False,
     start: MaybeCallableDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
-) -> Sequence[str]:
+    capture_locals: bool = False,
+) -> str:
     """Format an exception stack."""
     lines: Sequence[str] = []
     if header:
         lines.extend(_yield_header_lines(start=start, version=version))
-    lines.extend(_yield_formatted_frame_summary(error))
-    return lines
+    lines.extend(_yield_formatted_frame_summary(error, capture_locals=capture_locals))
+    return "\n".join(lines)
 
 
 ##
@@ -864,17 +875,29 @@ def _yield_header_lines(
 ##
 
 
-def _yield_formatted_frame_summary(error: BaseException, /) -> Iterator[str]:
+def _yield_formatted_frame_summary(
+    error: BaseException, /, *, capture_locals: bool = False
+) -> Iterator[str]:
     """Yield the formatted frame summary lines."""
-    stack = TracebackException.from_exception(error).stack
+    stack = TracebackException.from_exception(
+        error, capture_locals=capture_locals
+    ).stack
+    n = len(stack)
     for i, frame in enumerate(stack, start=1):
-        yield f"{i} | {_format_frame_summary(frame)}"
+        num = f"{i}/{n}"
+        first, *rest = _yield_frame_summary_lines(frame)
+        yield f"{num} | {first}"
+        blank = "".join(repeat(" ", len(num)))
+        for rest_i in rest:
+            yield f"{blank} | {rest_i}"
     yield repr_error(error)
 
 
-def _format_frame_summary(frame: FrameSummary, /) -> str:
+def _yield_frame_summary_lines(frame: FrameSummary, /) -> Iterator[str]:
     module = _path_to_dots(frame.filename)
-    return f"{module}:{frame.lineno} | {frame.name} | {frame.line}"
+    yield f"{module}:{frame.lineno} | {frame.name} | {frame.line}"
+    if frame.locals is not None:
+        yield from yield_mapping_repr(frame.locals)
 
 
 def _path_to_dots(path: PathLike, /) -> str:
@@ -901,23 +924,45 @@ def _trim_path(path: PathLike, pattern: str, /) -> Path | None:
     return Path(*parts[i + 1 :])
 
 
-##
+class _FormatExceptionStackKwargs(TypedDict):
+    header: NotRequired[bool]
+    start: NotRequired[MaybeCallableDateTime | None]
+    version: NotRequired[MaybeCallableVersionLike | None]
+    capture_locals: NotRequired[bool]
 
 
-def _except_hook(
+def make_except_hook(
     exc_type: type[BaseException] | None,
     exc_val: BaseException | None,
     traceback: TracebackType | None,
     /,
+    *,
+    callbacks: Iterable[
+        tuple[_FormatExceptionStackKwargs, Callable[[str], MaybeCoroutine1[None]]]
+    ]
+    | None = None,
 ) -> None:
     """Exception hook to log the traceback."""
     _ = (exc_type, traceback)
     if exc_val is None:
+        raise MakeExceptHookError
+    if callbacks is None:
         return
-    tb_exception = TracebackException.from_exception(exc_val, capture_locals=True)
-    for _i, _frame in enumerate(tb_exception.stack, start=1):
-        pass
-    return
+    for kwargs, callback in callbacks:
+        text = format_exception_stack(exc_val, **kwargs)
+        if not iscoroutinefunction(callback):
+            sync_callback = cast("Callable[[str], None]", callback)
+            sync_callback(text)
+        else:  # skipif-ci
+            async_callback = cast("Callable[[str], Coroutine1[None]]", callback)
+            run(async_callback(text))
+
+
+@dataclass(kw_only=True, slots=True)
+class MakeExceptHookError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "No exception to log"
 
 
 __all__ = [

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, ClassVar, Literal
 
 from hypothesis import given
 from hypothesis.strategies import sampled_from
-from pytest import mark, raises
+from pytest import raises
 
 from tests.conftest import SKIPIF_CI
 from tests.test_traceback_funcs.chain import func_chain_first
@@ -68,21 +68,19 @@ class TestFormatException:
         assert result == expected
 
 
-@mark.only
 class TestFormatExceptionStack:
     def test_main(self) -> None:
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
-            result = format_exception_stack(error)
+            result = format_exception_stack(error).splitlines()
             self._assert_lines(result)
 
-    @mark.only
     def test_header(self) -> None:
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
-            result = format_exception_stack(error, header=True)
+            result = format_exception_stack(error, header=True).splitlines()
             patterns = [
                 r"^Date/time \| .+$",
                 r"^Started   \| .+$",
@@ -96,11 +94,22 @@ class TestFormatExceptionStack:
                 assert search(pattern, line), line
             self._assert_lines(result[7:])
 
+    def test_capture_locals(self) -> None:
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError as error:
+            result = format_exception_stack(error, capture_locals=True).splitlines()
+            assert len(result) == 17
+            indices = [0, 3, 9, 16]
+            self._assert_lines([result[i] for i in indices])
+            for i in set(range(17)) - set(indices):
+                assert search(r"^    \| \w+ = .+$", result[i])
+
     def _assert_lines(self, lines: Iterable[str], /) -> None:
         expected = [
-            r"^1 \| tests\.test_traceback:\d+ \| test_\w+ \| _ = func_one\(1, 2, 3, 4, c=5, d=6, e=7\)$",
-            r"^2 \| utilities\.traceback:\d+ \| trace_sync \| return func_typed\(\*args, \*\*kwargs\)$",
-            r'^3 \| tests\.test_traceback_funcs\.one:16 \| func_one \| assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"$',
+            r"^1/3 \| tests\.test_traceback:\d+ \| test_\w+ \| _ = func_one\(1, 2, 3, 4, c=5, d=6, e=7\)$",
+            r"^2/3 \| utilities\.traceback:\d+ \| trace_sync \| return func_typed\(\*args, \*\*kwargs\)$",
+            r'^3/3 \| tests\.test_traceback_funcs\.one:16 \| func_one \| assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"$',
             r"^AssertionError\(Result \(56\) must be divisible by 10\)$",
         ]
         for line, pattern in zip(lines, expected, strict=True):
@@ -564,7 +573,6 @@ class TestRichTracebackFormatter:
         assert result.startswith("> ")
 
 
-@mark.only
 class TestPathToDots:
     @given(
         case=sampled_from([
