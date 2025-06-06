@@ -1075,6 +1075,7 @@ __all__ = [
     "ExcGroupTB",
     "ExcTB",
     "RichTracebackFormatter",
+    "format_exception_stack",
     "get_rich_traceback",
     "make_except_hook",
     "trace",
