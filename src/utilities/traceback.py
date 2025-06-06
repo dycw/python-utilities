@@ -18,10 +18,8 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
-    NotRequired,
     Protocol,
     Self,
-    TypedDict,
     TypeGuard,
     TypeVar,
     assert_never,
@@ -31,15 +29,7 @@ from typing import (
     runtime_checkable,
 )
 
-from utilities.datetime import (
-    SECOND,
-    get_datetime,
-    get_now,
-    maybe_sub_pct_y,
-    parse_datetime_compact,
-    round_datetime,
-    serialize_compact,
-)
+from utilities.datetime import get_datetime, get_now, serialize_compact
 from utilities.errors import ImpossibleCaseError, repr_error
 from utilities.functions import (
     ensure_not_none,
@@ -63,7 +53,6 @@ from utilities.reprlib import (
 from utilities.types import (
     MaybeCallableDateTime,
     MaybeCallablePathLike,
-    MaybeCoroutine1,
     PathLike,
     TBaseException,
     TCallable,
@@ -97,12 +86,29 @@ def format_exception_stack(
     start: MaybeCallableDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
     capture_locals: bool = False,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
 ) -> str:
     """Format an exception stack."""
     lines: Sequence[str] = []
     if header:
         lines.extend(_yield_header_lines(start=start, version=version))
-    lines.extend(_yield_formatted_frame_summary(error, capture_locals=capture_locals))
+    lines.extend(
+        _yield_formatted_frame_summary(
+            error,
+            capture_locals=capture_locals,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
+        )
+    )
     return "\n".join(lines)
 
 
@@ -899,19 +905,20 @@ def _yield_formatted_frame_summary(
 ) -> Iterator[str]:
     """Yield the formatted frame summary lines."""
     stack = TracebackException.from_exception(
-        error,
-        capture_locals=capture_locals,
-        max_width=max_width,
-        indent_size=indent_size,
-        max_length=max_length,
-        max_string=max_string,
-        max_depth=max_depth,
-        expand_all=expand_all,
+        error, capture_locals=capture_locals
     ).stack
     n = len(stack)
     for i, frame in enumerate(stack, start=1):
         num = f"{i}/{n}"
-        first, *rest = _yield_frame_summary_lines(frame)
+        first, *rest = _yield_frame_summary_lines(
+            frame,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
+        )
         yield f"{num} | {first}"
         blank = "".join(repeat(" ", len(num)))
         for rest_i in rest:
