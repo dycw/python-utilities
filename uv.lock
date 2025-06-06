@@ -549,18 +549,6 @@ wheels = [
 ]
 
 [[package]]
-name = "concurrent-log-handler"
-version = "0.9.27"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "portalocker" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ca/09/43c708ad4007aef96ef72aa84dc2d83da093ba2508aeece761e4117be165/concurrent_log_handler-0.9.27.tar.gz", hash = "sha256:db652de155d9ec1e970ef37797ff6d80b39b0968856b5bfaf9acda280bf6f464", size = 32670, upload-time = "2025-06-06T02:21:24.39Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b5/16/220353eabcd1c282706cb8c89afd261eba246fd6861fff6dc45e76abb53c/concurrent_log_handler-0.9.27-py3-none-any.whl", hash = "sha256:09fa2f0d988d19e388c6489b7086227f21af953a98829fb906fa92f6acb12d6d", size = 31144, upload-time = "2025-06-06T02:21:23.327Z" },
-]
-
-[[package]]
 name = "coverage"
 version = "7.8.2"
 source = { registry = "https://pypi.org/simple" }
@@ -867,7 +855,6 @@ zzz-test-jupyter = [
 zzz-test-logging = [
     { name = "atomicwrites" },
     { name = "coloredlogs" },
-    { name = "concurrent-log-handler" },
     { name = "rich" },
     { name = "tomlkit" },
     { name = "tzlocal" },
@@ -1025,7 +1012,6 @@ dev = [
     { name = "cachetools" },
     { name = "click" },
     { name = "coloredlogs" },
-    { name = "concurrent-log-handler" },
     { name = "coverage-conditional-plugin" },
     { name = "cryptography" },
     { name = "cvxpy" },
@@ -1114,7 +1100,6 @@ requires-dist = [
     { name = "cachetools", marker = "extra == 'zzz-test-cachetools'", specifier = ">=5.5.2,<5.6" },
     { name = "click", marker = "extra == 'zzz-test-click'", specifier = ">=8.2.1,<8.3" },
     { name = "coloredlogs", marker = "extra == 'zzz-test-logging'", specifier = ">=15.0.1,<15.1" },
-    { name = "concurrent-log-handler", marker = "extra == 'zzz-test-logging'", specifier = ">=0.9.26,<0.10" },
     { name = "cryptography", marker = "extra == 'zzz-test-cryptography'", specifier = ">=45.0.3,<45.1" },
     { name = "cvxpy", marker = "extra == 'zzz-test-cvxpy'", specifier = ">=1.6.5,<1.7" },
     { name = "dycw-pytest-only", marker = "extra == 'test'", specifier = ">=2.1.1,<2.2" },
@@ -1251,7 +1236,6 @@ dev = [
     { name = "cachetools", specifier = ">=5.5.2,<5.6" },
     { name = "click", specifier = ">=8.2.1,<8.3" },
     { name = "coloredlogs", specifier = ">=15.0.1,<15.1" },
-    { name = "concurrent-log-handler", specifier = ">=0.9.26,<0.10" },
     { name = "coverage-conditional-plugin", specifier = ">=0.9.0,<0.10" },
     { name = "cryptography", specifier = ">=45.0.3,<45.1" },
     { name = "cvxpy", specifier = ">=1.6.5,<1.7" },
@@ -2782,18 +2766,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/0e/40/c760dc5eaa03bf6ff3e9d09c723b7d7b02521a5a45324910b74d6aa19480/polars_ols-0.3.5-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7b8c0f03c6bf6dd9e0384f4d95183989724fd8e5703d20daade1754631f5b7d9", size = 15267885, upload-time = "2024-08-25T16:22:26.114Z" },
     { url = "https://files.pythonhosted.org/packages/13/1d/b3f7c57ca9ab7bf878b766467e68f4adcc5e41a94eee68c8d0c7bcd948d2/polars_ols-0.3.5-cp38-abi3-win32.whl", hash = "sha256:8e33fc7d6cb62cb7930b50a5dd428ce9dfd5bb3587463672269ed65776aa8081", size = 8963620, upload-time = "2024-08-25T16:22:28.697Z" },
     { url = "https://files.pythonhosted.org/packages/ea/5f/5a7b73ab8bead1b453a8b9fcca1bf024dd7b057177c19bbc523537c4bfcd/polars_ols-0.3.5-cp38-abi3-win_amd64.whl", hash = "sha256:075e27381781895a9ada73296777304fcd2752797c4f7e17f3c30b57ae4a2120", size = 10338290, upload-time = "2024-08-25T16:22:31.476Z" },
-]
-
-[[package]]
-name = "portalocker"
-version = "3.1.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pywin32", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ac/91/8bfe23e1f7f630f2061ef38b5225d9fda9068d6a30fcbc187951e678e630/portalocker-3.1.1.tar.gz", hash = "sha256:ec20f6dda2ad9ce89fa399a5f31f4f1495f515958f0cb7ca6543cef7bb5a749e", size = 43708, upload-time = "2024-12-31T14:22:48.535Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f7/60/1974cfdd5bb770568ddc6f89f3e0df4cfdd1acffd5a609dff5e95f48c6e2/portalocker-3.1.1-py3-none-any.whl", hash = "sha256:80e984e24de292ff258a5bea0e4f3f778fff84c0ae1275dbaebc4658de4aacb3", size = 19661, upload-time = "2024-12-31T14:22:47.019Z" },
 ]
 
 [[package]]
