@@ -192,13 +192,13 @@ def _make_except_hook_inner(
             max_depth=max_depth,
             expand_all=expand_all,
         )
-        send = f"```{full}```"
         with writer(path, overwrite=True) as temp:
-            _ = temp.write_text(send)
+            _ = temp.write_text(full)
     if slack_url is not None:  # pragma: no cover
         from utilities.slack_sdk import send_to_slack
 
-        run(send_to_slack(slack_url, slim))
+        send = f"```{slim}```"
+        run(send_to_slack(slack_url, send))
 
 
 ##
