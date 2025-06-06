@@ -745,7 +745,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.129.9"
+version = "0.129.10"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },
@@ -3267,14 +3267,14 @@ wheels = [
 
 [[package]]
 name = "pytest-datadir"
-version = "1.7.1"
+version = "1.7.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cf/5b/88e71a8e199b0410a1bb504894b4f7ab3178a26b4edeb2b3a8908f775db2/pytest_datadir-1.7.1.tar.gz", hash = "sha256:367b4cd34b6ca3151317db310ab688ef9a28a9ec15e1e7d6696f4737b5f14bd8", size = 10962, upload-time = "2025-06-02T15:19:30.249Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2f/16/7701db071caf7d8f7226b76323de40a09d2a391c7d064cda072d45a87c7b/pytest_datadir-1.7.2.tar.gz", hash = "sha256:15f5228a35d0a3205e4968e75d3b9cca91762424e1eafc21eb637d380a48443e", size = 11265, upload-time = "2025-06-06T11:24:18.075Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/aa/b7/1c5cd1e9beab5c8b286c1196da553c2cb0a18b494218dfdfce72a1413f87/pytest_datadir-1.7.1-py3-none-any.whl", hash = "sha256:12372417ff2cec4db8aecaf6b6fac119db91515f17e81c7926220e342148e3b4", size = 6076, upload-time = "2025-06-02T15:19:28.998Z" },
+    { url = "https://files.pythonhosted.org/packages/d3/61/a06f3406852534e186413c75f544c90251db00fd8eb9625ee3ac239499f3/pytest_datadir-1.7.2-py3-none-any.whl", hash = "sha256:8392ba0e9eaf37030e663dcd91cc5123dec99c44300f0c5eac44f35f13f0e086", size = 6273, upload-time = "2025-06-06T11:24:16.388Z" },
 ]
 
 [[package]]
