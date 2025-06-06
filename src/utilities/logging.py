@@ -107,8 +107,9 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         utc: bool = False,
         atTime: dt.time | None = None,
     ) -> None:
-        filename = str(Path(filename))
-        super().__init__(filename, mode, encoding=encoding, delay=delay, errors=errors)
+        path = Path(filename)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        super().__init__(path, mode, encoding=encoding, delay=delay, errors=errors)
         self._max_bytes = maxBytes if maxBytes >= 1 else None
         self._backup_count = backupCount if backupCount >= 1 else None
         self._filename = Path(self.baseFilename)
@@ -117,7 +118,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         self._suffix = self._filename.suffix
         self._patterns = _compute_rollover_patterns(self._stem, self._suffix)
         self._time_handler = TimedRotatingFileHandler(
-            filename,
+            path,
             when=when,
             interval=interval,
             backupCount=backupCount,

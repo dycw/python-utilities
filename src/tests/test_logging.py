@@ -488,6 +488,13 @@ class TestSizeAndTimeRotatingFileHandler:
         assert content == "message\n"
 
     @skipif_windows
+    def test_create_parents(self, *, tmp_path: Path) -> None:
+        logger = getLogger(unique_str())
+        filename = tmp_path.joinpath("foo", "bar", "bar", "log")
+        logger.addHandler(SizeAndTimeRotatingFileHandler(filename=filename))
+        assert filename.exists()
+
+    @skipif_windows
     def test_size(self, *, tmp_path: Path) -> None:
         logger = getLogger(unique_str())
         logger.addHandler(
