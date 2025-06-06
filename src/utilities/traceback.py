@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from functools import wraps
@@ -27,7 +28,7 @@ from typing import (
 )
 
 from utilities.datetime import get_datetime, get_now
-from utilities.errors import ImpossibleCaseError
+from utilities.errors import ImpossibleCaseError, repr_error
 from utilities.functions import (
     ensure_not_none,
     ensure_str,
@@ -35,7 +36,7 @@ from utilities.functions import (
     get_func_name,
     get_func_qualname,
 )
-from utilities.iterables import always_iterable, one
+from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.reprlib import (
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
@@ -46,12 +47,12 @@ from utilities.reprlib import (
     yield_call_args_repr,
     yield_mapping_repr,
 )
-from utilities.types import MaybeCallableDateTime, TBaseException, TCallable
+from utilities.types import MaybeCallableDateTime, PathLike, TBaseException, TCallable
 from utilities.version import get_version
 from utilities.whenever import serialize_duration
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator
+    from collections.abc import Callable, Iterable, Iterator, Sequence
     from logging import _FormatStyle
     from types import FrameType, TracebackType
 
@@ -836,6 +837,64 @@ def _yield_header_lines(
     version_use = "" if version is None else get_version(version=version)
     yield f"Version   | {version_use}"
     yield ""
+
+
+##
+
+
+def format_exception_stack(error: BaseException, /) -> Sequence[str]:
+    """Format an exception stack."""
+    lines: Sequence[str] = []
+    stack = TracebackException.from_exception(error).stack
+    for i, frame in enumerate(stack, start=1):
+        lines.append(f"{i} | {_format_frame_summary(frame)}")
+    lines.append(repr_error(error))
+    return lines
+
+
+def _format_frame_summary(frame: FrameSummary, /) -> str:
+    module = _path_to_dots(frame.filename)
+    return f"{module}:{frame.lineno} | {frame.name} | {frame.line}"
+
+
+def _path_to_dots(path: PathLike, /) -> str:
+    new_path: Path | None = None
+    for pattern in [
+        "site-packages",
+        ".venv",  # after site-packages
+        "src",
+        r"python\d+\.\d+",
+    ]:
+        if (new_path := _trim_path(path, pattern)) is not None:
+            break
+    path_use = Path(path) if new_path is None else new_path
+    return ".".join(path_use.with_suffix("").parts)
+
+
+def _trim_path(path: PathLike, pattern: str, /) -> Path | None:
+    parts = Path(path).parts
+    compiled = re.compile(f"^{pattern}$")
+    try:
+        i = one(i for i, p in enumerate(parts) if compiled.search(p))
+    except OneEmptyError:
+        return None
+    return Path(*parts[i + 1 :])
+
+
+def _except_hook(
+    exc_type: type[BaseException] | None,
+    exc_val: BaseException | None,
+    traceback: TracebackType | None,
+    /,
+) -> None:
+    """Exception hook to log the traceback."""
+    _ = (exc_type, traceback)
+    if exc_val is None:
+        return
+    tb_exception = TracebackException.from_exception(exc_val, capture_locals=True)
+    for _i, _frame in enumerate(tb_exception.stack, start=1):
+        pass
+    return
 
 
 __all__ = [

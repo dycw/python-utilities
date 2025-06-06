@@ -2,9 +2,13 @@ from __future__ import annotations
 
 from io import StringIO
 from logging import StreamHandler, getLogger
+from pathlib import Path
+from re import search
 from typing import TYPE_CHECKING, ClassVar, Literal
 
-from pytest import raises
+from hypothesis import given
+from hypothesis.strategies import sampled_from
+from pytest import mark, raises
 
 from tests.conftest import SKIPIF_CI
 from tests.test_traceback_funcs.chain import func_chain_first
@@ -33,6 +37,8 @@ from utilities.traceback import (
     _CallArgsError,
     _format_exception,
     _Frame,
+    _path_to_dots,
+    format_exception_stack,
     get_rich_traceback,
     trace,
     yield_exceptions,
@@ -41,7 +47,6 @@ from utilities.traceback import (
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
     from re import Pattern
     from traceback import FrameSummary
     from types import FrameType
@@ -60,6 +65,23 @@ class TestFormatException:
         result = _format_exception(error)
         expected = "utilities.errors.ImpossibleCaseError(Case must be possible: x=0.)"
         assert result == expected
+
+
+class TestFormatExceptionStack:
+    @mark.only
+    def test_main(self) -> None:
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError as error:
+            result = format_exception_stack(error)
+            expected = [
+                r"^1 \| tests\.test_traceback:\d+ \| test_main \| _ = func_one\(1, 2, 3, 4, c=5, d=6, e=7\)$",
+                r"^2 \| utilities\.traceback:\d+ \| trace_sync \| return func_typed\(\*args, \*\*kwargs\)$",
+                r'^3 \| tests\.test_traceback_funcs\.one:16 \| func_one \| assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"$',
+                r"^AssertionError\(Result \(56\) must be divisible by 10\)$",
+            ]
+            for line, pattern in zip(result, expected, strict=True):
+                assert search(pattern, line), line
 
 
 class TestFrame:
@@ -517,6 +539,43 @@ class TestRichTracebackFormatter:
             logger.exception("message")
         result = buffer.getvalue()
         assert result.startswith("> ")
+
+
+@mark.only
+class TestPathToDots:
+    @given(
+        case=sampled_from([
+            (
+                Path("repo", ".venv", "lib", "site-packages", "click", "core.py"),
+                "click.core",
+            ),
+            (
+                Path(
+                    "repo", ".venv", "lib", "site-packages", "utilities", "traceback.py"
+                ),
+                "utilities.traceback",
+            ),
+            (Path("repo", ".venv", "bin", "cli.py"), "bin.cli"),
+            (Path("src", "utilities", "foo", "bar.py"), "utilities.foo.bar"),
+            (
+                Path(
+                    "uv",
+                    "python",
+                    "cpython-3.13.0-macos-aarch64-none",
+                    "lib",
+                    "python3.13",
+                    "asyncio",
+                    "runners.py",
+                ),
+                "asyncio.runners",
+            ),
+            (Path("unknown", "file.py"), "unknown.file"),
+        ])
+    )
+    def test_main(self, *, case: tuple[Path, str]) -> None:
+        path, expected = case
+        result = _path_to_dots(path)
+        assert result == expected
 
 
 class TestYieldExceptions:
