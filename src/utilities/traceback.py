@@ -26,6 +26,7 @@ from typing import (
     runtime_checkable,
 )
 
+from utilities.datetime import get_datetime, get_now
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     ensure_not_none,
@@ -45,8 +46,9 @@ from utilities.reprlib import (
     yield_call_args_repr,
     yield_mapping_repr,
 )
-from utilities.types import TBaseException, TCallable
+from utilities.types import MaybeCallableDateTime, TBaseException, TCallable
 from utilities.version import get_version
+from utilities.whenever import serialize_duration
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
@@ -60,6 +62,7 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 _CALL_ARGS = "_CALL_ARGS"
 _INDENT = 4 * " "
+_START = get_now()
 
 
 ##
@@ -78,6 +81,7 @@ class RichTracebackFormatter(Formatter):
         /,
         *,
         defaults: StrMapping | None = None,
+        start: MaybeCallableDateTime | None = _START,
         version: MaybeCallableVersionLike | None = None,
         max_width: int = RICH_MAX_WIDTH,
         indent_size: int = RICH_INDENT_SIZE,
@@ -89,7 +93,8 @@ class RichTracebackFormatter(Formatter):
         post: Callable[[str], str] | None = None,
     ) -> None:
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
-        self._version = version
+        self._start = get_datetime(datetime=start)
+        self._version = get_version(version=version)
         self._max_width = max_width
         self._indent_size = indent_size
         self._max_length = max_length
@@ -110,6 +115,7 @@ class RichTracebackFormatter(Formatter):
         exc_value = ensure_not_none(exc_value, desc="exc_value")
         error = get_rich_traceback(
             exc_value,
+            start=self._start,
             version=self._version,
             max_width=self._max_width,
             indent_size=self._indent_size,
@@ -263,6 +269,7 @@ class ExcChainTB(Generic[TBaseException]):
     errors: list[
         ExcGroupTB[TBaseException] | ExcTB[TBaseException] | TBaseException
     ] = field(default_factory=list)
+    start: MaybeCallableDateTime | None = field(default=_START, repr=False)
     version: MaybeCallableVersionLike | None = field(default=None, repr=False)
     max_width: int = RICH_MAX_WIDTH
     indent_size: int = RICH_INDENT_SIZE
@@ -292,7 +299,7 @@ class ExcChainTB(Generic[TBaseException]):
         """Format the traceback."""
         lines: list[str] = []
         if header:  # pragma: no cover
-            lines.extend(_yield_header_lines(version=self.version))
+            lines.extend(_yield_header_lines(start=self.start, version=self.version))
         total = len(self.errors)
         for i, errors in enumerate(self.errors, start=1):
             lines.append(f"Exception chain {i}/{total}:")
@@ -315,6 +322,7 @@ class ExcGroupTB(Generic[TBaseException]):
     errors: list[
         ExcGroupTB[TBaseException] | ExcTB[TBaseException] | TBaseException
     ] = field(default_factory=list)
+    start: MaybeCallableDateTime | None = field(default=_START, repr=False)
     version: MaybeCallableVersionLike | None = field(default=None, repr=False)
     max_width: int = RICH_MAX_WIDTH
     indent_size: int = RICH_INDENT_SIZE
@@ -333,7 +341,7 @@ class ExcGroupTB(Generic[TBaseException]):
         """Format the traceback."""
         lines: list[str] = []  # skipif-ci
         if header:  # pragma: no cover
-            lines.extend(_yield_header_lines(version=self.version))
+            lines.extend(_yield_header_lines(start=self.start, version=self.version))
         lines.append("Exception group:")  # skipif-ci
         match self.exc_group:  # skipif-ci
             case ExcTB() as exc_tb:
@@ -363,6 +371,7 @@ class ExcTB(Generic[TBaseException]):
 
     frames: list[_Frame] = field(default_factory=list)
     error: TBaseException
+    start: MaybeCallableDateTime | None = field(default=_START, repr=False)
     version: MaybeCallableVersionLike | None = field(default=None, repr=False)
     max_width: int = RICH_MAX_WIDTH
     indent_size: int = RICH_INDENT_SIZE
@@ -391,7 +400,7 @@ class ExcTB(Generic[TBaseException]):
         total = len(self)
         lines: list[str] = []
         if header:  # pragma: no cover
-            lines.extend(_yield_header_lines(version=self.version))
+            lines.extend(_yield_header_lines(start=self.start, version=self.version))
         for i, frame in enumerate(self.frames):
             is_head = i < total - 1
             lines.append(
@@ -485,6 +494,7 @@ def get_rich_traceback(
     error: TBaseException,
     /,
     *,
+    start: MaybeCallableDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
@@ -506,6 +516,7 @@ def get_rich_traceback(
             err_recast = cast("TBaseException", err)
             return _get_rich_traceback_non_chain(
                 err_recast,
+                start=start,
                 version=version,
                 max_width=max_width,
                 indent_size=indent_size,
@@ -520,6 +531,7 @@ def get_rich_traceback(
                 errors=[
                     _get_rich_traceback_non_chain(
                         e,
+                        start=start,
                         version=version,
                         max_width=max_width,
                         indent_size=indent_size,
@@ -530,6 +542,7 @@ def get_rich_traceback(
                     )
                     for e in errs_recast
                 ],
+                start=start,
                 version=version,
                 max_width=max_width,
                 indent_size=indent_size,
@@ -544,6 +557,7 @@ def _get_rich_traceback_non_chain(
     error: ExceptionGroup[Any] | TBaseException,
     /,
     *,
+    start: MaybeCallableDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
@@ -567,6 +581,7 @@ def _get_rich_traceback_non_chain(
             errors = [
                 _get_rich_traceback_non_chain(
                     e,
+                    start=start,
                     version=version,
                     max_width=max_width,
                     indent_size=indent_size,
@@ -580,6 +595,7 @@ def _get_rich_traceback_non_chain(
             return ExcGroupTB(
                 exc_group=exc_group_or_exc_tb,
                 errors=errors,
+                start=start,
                 version=version,
                 max_width=max_width,
                 indent_size=indent_size,
@@ -591,6 +607,7 @@ def _get_rich_traceback_non_chain(
         case BaseException() as base_exc:
             return _get_rich_traceback_base_one(
                 base_exc,
+                start=start,
                 version=version,
                 max_width=max_width,
                 indent_size=indent_size,
@@ -607,6 +624,7 @@ def _get_rich_traceback_base_one(
     error: TBaseException,
     /,
     *,
+    start: MaybeCallableDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
@@ -638,6 +656,7 @@ def _get_rich_traceback_base_one(
         return ExcTB(
             frames=frames,
             error=error,
+            start=start,
             version=version,
             max_width=max_width,
             indent_size=indent_size,
@@ -793,13 +812,25 @@ def _merge_frames(
 
 
 def _yield_header_lines(
-    *, version: MaybeCallableVersionLike | None = None
+    *,
+    start: MaybeCallableDateTime | None = _START,
+    version: MaybeCallableVersionLike | None = None,
 ) -> Iterator[str]:
     """Yield the header lines."""
-    from utilities.tzlocal import get_now_local
+    from utilities.tzlocal import get_local_time_zone, get_now_local
     from utilities.whenever import serialize_zoned_datetime
 
-    yield f"Date/time | {serialize_zoned_datetime(get_now_local())}"
+    now = get_now_local()
+    start_use = get_datetime(datetime=start)
+    start_use = (
+        None if start_use is None else start_use.astimezone(get_local_time_zone())
+    )
+    yield f"Date/time | {serialize_zoned_datetime(now)}"
+    start_str = "" if start_use is None else serialize_zoned_datetime(start_use)
+    yield f"Started   | {start_str}"
+    duration = None if start_use is None else (now - start_use)
+    duration_str = "" if duration is None else serialize_duration(duration)
+    yield f"Duration  | {duration_str}"
     yield f"User      | {getuser()}"
     yield f"Host      | {gethostname()}"
     version_use = "" if version is None else get_version(version=version)
