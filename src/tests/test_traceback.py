@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, ClassVar, Literal
 
 from hypothesis import given
 from hypothesis.strategies import sampled_from
-from pytest import raises
+from pytest import CaptureFixture, raises
 
 from tests.conftest import SKIPIF_CI
 from tests.test_traceback_funcs.chain import func_chain_first
@@ -521,13 +521,15 @@ class TestGetRichTraceback:
 
 
 class TestMakeExceptHook:
-    def test_main(self) -> None:
+    def test_main(self, *, capsys: CaptureFixture) -> None:
         hook = make_except_hook()
         try:
             _ = 1 / 0
         except ZeroDivisionError:
             exc_type, exc_val, traceback = exc_info()
             hook(exc_type, exc_val, traceback)
+            out, error = capsys.readouterr()
+            assert error == "asdf"
 
     def test_file(self, *, tmp_path: Path) -> None:
         hook = make_except_hook(path=tmp_path)
