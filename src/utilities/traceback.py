@@ -31,7 +31,15 @@ from typing import (
     runtime_checkable,
 )
 
-from utilities.datetime import get_datetime, get_now
+from utilities.datetime import (
+    SECOND,
+    get_datetime,
+    get_now,
+    maybe_sub_pct_y,
+    parse_datetime_compact,
+    round_datetime,
+    serialize_compact,
+)
 from utilities.errors import ImpossibleCaseError, repr_error
 from utilities.functions import (
     ensure_not_none,
@@ -41,6 +49,7 @@ from utilities.functions import (
     get_func_qualname,
 )
 from utilities.iterables import OneEmptyError, always_iterable, one
+from utilities.pathlib import get_path
 from utilities.reprlib import (
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
@@ -53,6 +62,7 @@ from utilities.reprlib import (
 )
 from utilities.types import (
     MaybeCallableDateTime,
+    MaybeCallablePathLike,
     MaybeCoroutine1,
     PathLike,
     TBaseException,
@@ -876,11 +886,27 @@ def _yield_header_lines(
 
 
 def _yield_formatted_frame_summary(
-    error: BaseException, /, *, capture_locals: bool = False
+    error: BaseException,
+    /,
+    *,
+    capture_locals: bool = False,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
 ) -> Iterator[str]:
     """Yield the formatted frame summary lines."""
     stack = TracebackException.from_exception(
-        error, capture_locals=capture_locals
+        error,
+        capture_locals=capture_locals,
+        max_width=max_width,
+        indent_size=indent_size,
+        max_length=max_length,
+        max_string=max_string,
+        max_depth=max_depth,
+        expand_all=expand_all,
     ).stack
     n = len(stack)
     for i, frame in enumerate(stack, start=1):
@@ -893,11 +919,29 @@ def _yield_formatted_frame_summary(
     yield repr_error(error)
 
 
-def _yield_frame_summary_lines(frame: FrameSummary, /) -> Iterator[str]:
+def _yield_frame_summary_lines(
+    frame: FrameSummary,
+    /,
+    *,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+) -> Iterator[str]:
     module = _path_to_dots(frame.filename)
     yield f"{module}:{frame.lineno} | {frame.name} | {frame.line}"
     if frame.locals is not None:
-        yield from yield_mapping_repr(frame.locals)
+        yield from yield_mapping_repr(
+            frame.locals,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
+        )
 
 
 def _path_to_dots(path: PathLike, /) -> str:
@@ -924,38 +968,42 @@ def _trim_path(path: PathLike, pattern: str, /) -> Path | None:
     return Path(*parts[i + 1 :])
 
 
-class _FormatExceptionStackKwargs(TypedDict):
-    header: NotRequired[bool]
-    start: NotRequired[MaybeCallableDateTime | None]
-    version: NotRequired[MaybeCallableVersionLike | None]
-    capture_locals: NotRequired[bool]
-
-
 def make_except_hook(
     exc_type: type[BaseException] | None,
     exc_val: BaseException | None,
     traceback: TracebackType | None,
     /,
     *,
-    callbacks: Iterable[
-        tuple[_FormatExceptionStackKwargs, Callable[[str], MaybeCoroutine1[None]]]
-    ]
-    | None = None,
+    start: MaybeCallableDateTime | None = _START,
+    version: MaybeCallableVersionLike | None = None,
+    path: MaybeCallablePathLike | None = None,
+    slack_url: str | None = None,
 ) -> None:
     """Exception hook to log the traceback."""
     _ = (exc_type, traceback)
     if exc_val is None:
         raise MakeExceptHookError
-    if callbacks is None:
-        return
-    for kwargs, callback in callbacks:
-        text = format_exception_stack(exc_val, **kwargs)
-        if not iscoroutinefunction(callback):
-            sync_callback = cast("Callable[[str], None]", callback)
-            sync_callback(text)
-        else:  # skipif-ci
-            async_callback = cast("Callable[[str], Coroutine1[None]]", callback)
-            run(async_callback(text))
+    if path is not None:
+        from utilities.atomicwrites import writer
+        from utilities.tzlocal import get_now_local
+
+        path = (
+            get_path(path=path)
+            .joinpath(serialize_compact(get_now_local()))
+            .with_suffix(".txt")
+        )
+        text = format_exception_stack(
+            exc_val, header=True, start=start, version=version, capture_locals=True
+        )
+        with writer(path, overwrite=True) as temp:
+            _ = temp.write_text(text)
+    if slack_url is not None:  # pragma: no cover
+        from utilities.slack_sdk import send_to_slack
+
+        text = format_exception_stack(
+            exc_val, header=True, start=start, version=version
+        )
+        run(send_to_slack(slack_url, text))
 
 
 @dataclass(kw_only=True, slots=True)
@@ -971,6 +1019,7 @@ __all__ = [
     "ExcTB",
     "RichTracebackFormatter",
     "get_rich_traceback",
+    "make_except_hook",
     "trace",
     "yield_exceptions",
     "yield_extended_frame_summaries",
