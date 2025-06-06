@@ -415,26 +415,32 @@ def add_filters(handler: Handler, /, *filters: _FilterType) -> None:
 
 def basic_config(
     *,
-    logger: LoggerOrName | None = None,
+    obj: LoggerOrName | Handler | None = None,
     format_: str = "{asctime} | {name} | {levelname:8} | {message}",
     level: LogLevel = "INFO",
 ) -> None:
     """Do the basic config."""
     datefmt = maybe_sub_pct_y("%Y-%m-%d %H:%M:%S")
-    if logger is None:
-        basicConfig(format=format_, datefmt=datefmt, style="{", level=level)
-    else:
-        logger_use = get_logger(logger=logger)
-        logger_use.setLevel(level)
-        logger_use.addHandler(handler := StreamHandler())
-        handler.setLevel(level)
-        try:
-            from coloredlogs import ColoredFormatter
-        except ModuleNotFoundError:  # pragma: no cover
-            formatter = Formatter(fmt=format_, datefmt=datefmt, style="{")
-        else:
-            formatter = ColoredFormatter(fmt=format_, datefmt=datefmt, style="{")
-        handler.setFormatter(formatter)
+    match obj:
+        case None:
+            basicConfig(format=format_, datefmt=datefmt, style="{", level=level)
+        case Logger() as logger:
+            logger.setLevel(level)
+            logger.addHandler(handler := StreamHandler())
+            basic_config(obj=handler, format_=format_, level=level)
+        case str() as name:
+            basic_config(obj=get_logger(logger=name), format_=format_, level=level)
+        case Handler() as handler:
+            handler.setLevel(level)
+            try:
+                from coloredlogs import ColoredFormatter
+            except ModuleNotFoundError:  # pragma: no cover
+                formatter = Formatter(fmt=format_, datefmt=datefmt, style="{")
+            else:
+                formatter = ColoredFormatter(fmt=format_, datefmt=datefmt, style="{")
+            handler.setFormatter(formatter)
+        case _ as never:
+            assert_never(never)
 
 
 ##

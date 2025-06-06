@@ -75,7 +75,7 @@ class TestBasicConfig:
     @mark.parametrize("log", [param(True), param(False)])
     def test_main(self, *, caplog: LogCaptureFixture, log: bool) -> None:
         logger = unique_str() if log else None
-        basic_config(logger=logger)
+        basic_config(obj=logger)
         logger_use = getLogger()
         logger_use.warning("message")
         assert "message" in caplog.messages

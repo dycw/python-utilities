@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from datetime import timezone
+from logging import getLogger, setLogRecordFactory
 from re import escape
 from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
@@ -40,6 +41,7 @@ from utilities.hypothesis import (
     timedeltas_2w,
     zoned_datetimes,
 )
+from utilities.text import unique_str
 from utilities.tzdata import HongKong
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
@@ -60,6 +62,7 @@ from utilities.whenever import (
     SerializePlainDateTimeError,
     SerializeTimeDeltaError,
     SerializeZonedDateTimeError,
+    WheneverLogRecord,
     _CheckValidZonedDateTimeUnequalError,
     _EnsureTimedeltaNanosecondError,
     _EnsureTimedeltaParseError,
@@ -492,3 +495,10 @@ class TestToDateTimeDelta:
             _ToDateTimeDeltaError, match="Unable to create DateTimeDelta; got .*"
         ):
             _ = _to_datetime_delta(timedelta)
+
+
+class TestWheneverLogRecord:
+    def test_main(self) -> None:
+        logger = getLogger(unique_str())
+        setLogRecordFactory(WheneverLogRecord)
+        logger.warning("message")
