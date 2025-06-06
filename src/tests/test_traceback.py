@@ -4,6 +4,7 @@ from io import StringIO
 from logging import StreamHandler, getLogger
 from pathlib import Path
 from re import search
+from sys import exc_info
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 from hypothesis import given
@@ -40,6 +41,7 @@ from utilities.traceback import (
     _path_to_dots,
     format_exception_stack,
     get_rich_traceback,
+    make_except_hook,
     trace,
     yield_exceptions,
     yield_extended_frame_summaries,
@@ -515,6 +517,26 @@ class TestGetRichTraceback:
         assert frame5.locals["args"] == (96, 128)
         assert frame5.locals["kwargs"] == {"d": 192, "e": 224}
         assert isinstance(exc_path.error, AssertionError)
+
+
+class TestMakeExceptHook:
+    def test_main(self) -> None:
+        hook = make_except_hook()
+        try:
+            _ = 1 / 0
+        except ZeroDivisionError:
+            exc_type, exc_val, traceback = exc_info()
+            hook(exc_type, exc_val, traceback)
+
+    def test_file(self, *, tmp_path: Path) -> None:
+        hook = make_except_hook(path=tmp_path)
+        try:
+            _ = 1 / 0
+        except ZeroDivisionError:
+            exc_type, exc_val, traceback = exc_info()
+            hook(exc_type, exc_val, traceback)
+        path = one(tmp_path.iterdir())
+        assert search(r"^\d{8}T\d{6}\.txt$", path.name)
 
 
 class TestRichTracebackFormatter:

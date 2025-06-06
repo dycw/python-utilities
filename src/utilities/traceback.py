@@ -4,7 +4,7 @@ import re
 from asyncio import run
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
-from functools import wraps
+from functools import partial, wraps
 from getpass import getuser
 from inspect import iscoroutinefunction, signature
 from itertools import repeat
@@ -116,6 +116,37 @@ def format_exception_stack(
 
 
 def make_except_hook(
+    *,
+    start: MaybeCallableDateTime | None = _START,
+    version: MaybeCallableVersionLike | None = None,
+    path: MaybeCallablePathLike | None = None,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+    slack_url: str | None = None,
+) -> Callable[
+    [type[BaseException] | None, BaseException | None, TracebackType | None], None
+]:
+    """Exception hook to log the traceback."""
+    return partial(
+        _make_except_hook_inner,
+        start=start,
+        version=version,
+        path=path,
+        max_width=max_width,
+        indent_size=indent_size,
+        max_length=max_length,
+        max_string=max_string,
+        max_depth=max_depth,
+        expand_all=expand_all,
+        slack_url=slack_url,
+    )
+
+
+def _make_except_hook_inner(
     exc_type: type[BaseException] | None,
     exc_val: BaseException | None,
     traceback: TracebackType | None,
