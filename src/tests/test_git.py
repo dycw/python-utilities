@@ -16,7 +16,7 @@ class TestGetRepoRoot:
     @given(repo=git_repos())
     @settings(max_examples=1)
     def test_main(self, *, repo: Path) -> None:
-        root = get_repo_root(cwd=repo)
+        root = get_repo_root(path=repo)
         expected = repo.resolve()
         assert root == expected
 
@@ -24,4 +24,4 @@ class TestGetRepoRoot:
         with raises(
             GetRepoRootError, match="Path is not part of a `git` repository: .*"
         ):
-            _ = get_repo_root(cwd=tmp_path)
+            _ = get_repo_root(path=tmp_path)
