@@ -428,15 +428,25 @@ def basic_config(
     datefmt = maybe_sub_pct_y("%Y-%m-%d %H:%M:%S")
     match obj:
         case None:
-            basicConfig(
-                format=format_, datefmt=datefmt, style="{", level=level, plain=plain
-            )
+            basicConfig(format=format_, datefmt=datefmt, style="{", level=level)
         case Logger() as logger:
             logger.setLevel(level)
             logger.addHandler(handler := StreamHandler())
-            basic_config(obj=handler, format_=format_, level=level)
+            basic_config(
+                obj=handler,
+                format_=format_,
+                whenever=whenever,
+                level=level,
+                plain=plain,
+            )
         case str() as name:
-            basic_config(obj=get_logger(logger=name), format_=format_, level=level)
+            basic_config(
+                obj=get_logger(logger=name),
+                format_=format_,
+                whenever=whenever,
+                level=level,
+                plain=plain,
+            )
         case Handler() as handler:
             handler.setLevel(level)
             try:
