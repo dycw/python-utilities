@@ -568,8 +568,7 @@ class SerializeZonedDateTimeError(Exception):
 class WheneverLogRecord(LogRecord):
     """Log record powered by `whenever`."""
 
-    zoned_datetime: ZonedDateTime
-    zoned_datetime_padded: str
+    zoned_datetime: str
 
     @override
     def __init__(
@@ -587,11 +586,10 @@ class WheneverLogRecord(LogRecord):
         super().__init__(
             name, level, pathname, lineno, msg, args, exc_info, func, sinfo
         )
-        now = self.zoned_datetime = self._get_now()
         length = self._get_length()
-        plain = format(now.to_plain().format_common_iso(), f"{length}s")
+        plain = format(self._get_now().to_plain().format_common_iso(), f"{length}s")
         time_zone = self._get_time_zone_key()
-        self.zoned_datetime_padded = f"{plain}[{time_zone}]"
+        self.zoned_datetime = f"{plain}[{time_zone}]"
 
     @classmethod
     @cache
