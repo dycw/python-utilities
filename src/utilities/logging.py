@@ -107,8 +107,9 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         utc: bool = False,
         atTime: dt.time | None = None,
     ) -> None:
-        filename = str(Path(filename))
-        super().__init__(filename, mode, encoding=encoding, delay=delay, errors=errors)
+        path = Path(filename)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        super().__init__(path, mode, encoding=encoding, delay=delay, errors=errors)
         self._max_bytes = maxBytes if maxBytes >= 1 else None
         self._backup_count = backupCount if backupCount >= 1 else None
         self._filename = Path(self.baseFilename)
@@ -117,7 +118,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         self._suffix = self._filename.suffix
         self._patterns = _compute_rollover_patterns(self._stem, self._suffix)
         self._time_handler = TimedRotatingFileHandler(
-            filename,
+            path,
             when=when,
             interval=interval,
             backupCount=backupCount,
@@ -415,26 +416,53 @@ def add_filters(handler: Handler, /, *filters: _FilterType) -> None:
 
 def basic_config(
     *,
-    logger: LoggerOrName | None = None,
+    obj: LoggerOrName | Handler | None = None,
     format_: str = "{asctime} | {name} | {levelname:8} | {message}",
+    whenever: bool = False,
     level: LogLevel = "INFO",
+    plain: bool = False,
 ) -> None:
     """Do the basic config."""
+    if whenever:
+        format_ = format_.replace("{asctime}", "{zoned_datetime}")
     datefmt = maybe_sub_pct_y("%Y-%m-%d %H:%M:%S")
-    if logger is None:
-        basicConfig(format=format_, datefmt=datefmt, style="{", level=level)
-    else:
-        logger_use = get_logger(logger=logger)
-        logger_use.setLevel(level)
-        logger_use.addHandler(handler := StreamHandler())
-        handler.setLevel(level)
-        try:
-            from coloredlogs import ColoredFormatter
-        except ModuleNotFoundError:  # pragma: no cover
-            formatter = Formatter(fmt=format_, datefmt=datefmt, style="{")
-        else:
-            formatter = ColoredFormatter(fmt=format_, datefmt=datefmt, style="{")
-        handler.setFormatter(formatter)
+    match obj:
+        case None:
+            basicConfig(format=format_, datefmt=datefmt, style="{", level=level)
+        case Logger() as logger:
+            logger.setLevel(level)
+            logger.addHandler(handler := StreamHandler())
+            basic_config(
+                obj=handler,
+                format_=format_,
+                whenever=whenever,
+                level=level,
+                plain=plain,
+            )
+        case str() as name:
+            basic_config(
+                obj=get_logger(logger=name),
+                format_=format_,
+                whenever=whenever,
+                level=level,
+                plain=plain,
+            )
+        case Handler() as handler:
+            handler.setLevel(level)
+            if plain:
+                formatter = Formatter(fmt=format_, datefmt=datefmt, style="{")
+            else:
+                try:
+                    from coloredlogs import ColoredFormatter
+                except ModuleNotFoundError:  # pragma: no cover
+                    formatter = Formatter(fmt=format_, datefmt=datefmt, style="{")
+                else:
+                    formatter = ColoredFormatter(
+                        fmt=format_, datefmt=datefmt, style="{"
+                    )
+            handler.setFormatter(formatter)
+        case _ as never:
+            assert_never(never)
 
 
 ##

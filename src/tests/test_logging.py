@@ -73,9 +73,13 @@ class TestAddFilters:
 
 class TestBasicConfig:
     @mark.parametrize("log", [param(True), param(False)])
-    def test_main(self, *, caplog: LogCaptureFixture, log: bool) -> None:
+    @mark.parametrize("whenever", [param(True), param(False)])
+    @mark.parametrize("plain", [param(True), param(False)])
+    def test_main(
+        self, *, caplog: LogCaptureFixture, log: bool, whenever: bool, plain: bool
+    ) -> None:
         logger = unique_str() if log else None
-        basic_config(logger=logger)
+        basic_config(obj=logger, whenever=whenever, plain=plain)
         logger_use = getLogger()
         logger_use.warning("message")
         assert "message" in caplog.messages
@@ -483,6 +487,13 @@ class TestSizeAndTimeRotatingFileHandler:
         with filename.open() as fh:
             content = fh.read()
         assert content == "message\n"
+
+    @skipif_windows
+    def test_create_parents(self, *, tmp_path: Path) -> None:
+        logger = getLogger(unique_str())
+        filename = tmp_path.joinpath("foo", "bar", "bar", "log")
+        logger.addHandler(SizeAndTimeRotatingFileHandler(filename=filename))
+        assert filename.exists()
 
     @skipif_windows
     def test_size(self, *, tmp_path: Path) -> None:
