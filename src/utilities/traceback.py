@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import sys
 from asyncio import run
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
@@ -11,7 +12,7 @@ from itertools import repeat
 from logging import Formatter, Handler, LogRecord
 from pathlib import Path
 from socket import gethostname
-from sys import exc_info, stderr
+from sys import exc_info, stderr, stdout
 from textwrap import indent
 from traceback import FrameSummary, TracebackException, format_exception
 from typing import (
@@ -168,6 +169,9 @@ def _make_except_hook_inner(
     if exc_val is None:
         raise MakeExceptHookError
     slim = format_exception_stack(exc_val, header=True, start=start, version=version)
+    stdout.write("bla")
+    sys.stdout.write("hello")
+    sys.stderr.write("hello")
     _ = stderr.write(f"{slim}\n")
     if path is not None:
         from utilities.atomicwrites import writer
