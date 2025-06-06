@@ -2,9 +2,14 @@ from __future__ import annotations
 
 from io import StringIO
 from logging import StreamHandler, getLogger
+from pathlib import Path
+from re import search
+from sys import exc_info
 from typing import TYPE_CHECKING, ClassVar, Literal
 
-from pytest import raises
+from hypothesis import given
+from hypothesis.strategies import sampled_from
+from pytest import CaptureFixture, raises
 
 from tests.conftest import SKIPIF_CI
 from tests.test_traceback_funcs.chain import func_chain_first
@@ -29,11 +34,15 @@ from utilities.traceback import (
     ExcChainTB,
     ExcGroupTB,
     ExcTB,
+    MakeExceptHookError,
     RichTracebackFormatter,
     _CallArgsError,
     _format_exception,
     _Frame,
+    _path_to_dots,
+    format_exception_stack,
     get_rich_traceback,
+    make_except_hook,
     trace,
     yield_exceptions,
     yield_extended_frame_summaries,
@@ -41,7 +50,7 @@ from utilities.traceback import (
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
+    from collections.abc import Iterable
     from re import Pattern
     from traceback import FrameSummary
     from types import FrameType
@@ -60,6 +69,54 @@ class TestFormatException:
         result = _format_exception(error)
         expected = "utilities.errors.ImpossibleCaseError(Case must be possible: x=0.)"
         assert result == expected
+
+
+class TestFormatExceptionStack:
+    def test_main(self) -> None:
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError as error:
+            result = format_exception_stack(error).splitlines()
+            self._assert_lines(result)
+
+    def test_header(self) -> None:
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError as error:
+            result = format_exception_stack(error, header=True).splitlines()
+            patterns = [
+                r"^Date/time \| .+$",
+                r"^Started   \| .+$",
+                r"^Duration  \| .+$",
+                r"^User      \| .+$",
+                r"^Host      \| .+$",
+                r"^Version   \|\s$",
+                r"^$",
+            ]
+            for line, pattern in zip(result[:7], patterns[:7], strict=False):
+                assert search(pattern, line), line
+            self._assert_lines(result[7:])
+
+    def test_capture_locals(self) -> None:
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError as error:
+            result = format_exception_stack(error, capture_locals=True).splitlines()
+            assert len(result) == 17
+            indices = [0, 3, 9, 16]
+            self._assert_lines([result[i] for i in indices])
+            for i in set(range(17)) - set(indices):
+                assert search(r"^    \| \w+ = .+$", result[i])
+
+    def _assert_lines(self, lines: Iterable[str], /) -> None:
+        expected = [
+            r"^1/3 \| tests\.test_traceback:\d+ \| test_\w+ \| _ = func_one\(1, 2, 3, 4, c=5, d=6, e=7\)$",
+            r"^2/3 \| utilities\.traceback:\d+ \| trace_sync \| return func_typed\(\*args, \*\*kwargs\)$",
+            r'^3/3 \| tests\.test_traceback_funcs\.one:16 \| func_one \| assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"$',
+            r"^AssertionError\(Result \(56\) must be divisible by 10\)$",
+        ]
+        for line, pattern in zip(lines, expected, strict=True):
+            assert search(pattern, line), line
 
 
 class TestFrame:
@@ -463,6 +520,33 @@ class TestGetRichTraceback:
         assert isinstance(exc_path.error, AssertionError)
 
 
+class TestMakeExceptHook:
+    def test_main(self, *, capsys: CaptureFixture) -> None:
+        hook = make_except_hook()
+        try:
+            _ = 1 / 0
+        except ZeroDivisionError:
+            exc_type, exc_val, traceback = exc_info()
+            hook(exc_type, exc_val, traceback)
+            assert capsys.readouterr() != ""
+
+    def test_file(self, *, tmp_path: Path) -> None:
+        hook = make_except_hook(path=tmp_path)
+        try:
+            _ = 1 / 0
+        except ZeroDivisionError:
+            exc_type, exc_val, traceback = exc_info()
+            hook(exc_type, exc_val, traceback)
+        path = one(tmp_path.iterdir())
+        assert search(r"^\d{8}T\d{6}\.txt$", path.name)
+
+    def test_non_error(self) -> None:
+        hook = make_except_hook()
+        exc_type, exc_val, traceback = exc_info()
+        with raises(MakeExceptHookError, match="No exception to log"):
+            hook(exc_type, exc_val, traceback)
+
+
 class TestRichTracebackFormatter:
     def test_decorated(
         self, *, tmp_path: Path, traceback_func_one: Pattern[str]
@@ -517,6 +601,42 @@ class TestRichTracebackFormatter:
             logger.exception("message")
         result = buffer.getvalue()
         assert result.startswith("> ")
+
+
+class TestPathToDots:
+    @given(
+        case=sampled_from([
+            (
+                Path("repo", ".venv", "lib", "site-packages", "click", "core.py"),
+                "click.core",
+            ),
+            (
+                Path(
+                    "repo", ".venv", "lib", "site-packages", "utilities", "traceback.py"
+                ),
+                "utilities.traceback",
+            ),
+            (Path("repo", ".venv", "bin", "cli.py"), "bin.cli"),
+            (Path("src", "utilities", "foo", "bar.py"), "utilities.foo.bar"),
+            (
+                Path(
+                    "uv",
+                    "python",
+                    "cpython-3.13.0-macos-aarch64-none",
+                    "lib",
+                    "python3.13",
+                    "asyncio",
+                    "runners.py",
+                ),
+                "asyncio.runners",
+            ),
+            (Path("unknown", "file.py"), "unknown.file"),
+        ])
+    )
+    def test_main(self, *, case: tuple[Path, str]) -> None:
+        path, expected = case
+        result = _path_to_dots(path)
+        assert result == expected
 
 
 class TestYieldExceptions:
