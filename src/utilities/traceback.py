@@ -12,7 +12,7 @@ from itertools import repeat
 from logging import Formatter, Handler, LogRecord
 from pathlib import Path
 from socket import gethostname
-from sys import exc_info, stderr, stdout
+from sys import exc_info
 from textwrap import indent
 from traceback import FrameSummary, TracebackException, format_exception
 from typing import (
@@ -169,10 +169,7 @@ def _make_except_hook_inner(
     if exc_val is None:
         raise MakeExceptHookError
     slim = format_exception_stack(exc_val, header=True, start=start, version=version)
-    stdout.write("bla")
-    sys.stdout.write("hello")
-    sys.stderr.write("hello")
-    _ = stderr.write(f"{slim}\n")
+    _ = sys.stderr.write(f"{slim}\n")  # don't 'from sys import stderr'
     if path is not None:
         from utilities.atomicwrites import writer
         from utilities.tzlocal import get_now_local
