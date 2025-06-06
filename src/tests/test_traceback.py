@@ -34,6 +34,7 @@ from utilities.traceback import (
     ExcChainTB,
     ExcGroupTB,
     ExcTB,
+    MakeExceptHookError,
     RichTracebackFormatter,
     _CallArgsError,
     _format_exception,
@@ -537,6 +538,12 @@ class TestMakeExceptHook:
             hook(exc_type, exc_val, traceback)
         path = one(tmp_path.iterdir())
         assert search(r"^\d{8}T\d{6}\.txt$", path.name)
+
+    def test_non_error(self) -> None:
+        hook = make_except_hook()
+        exc_type, exc_val, traceback = exc_info()
+        with raises(MakeExceptHookError, match="No exception to log"):
+            hook(exc_type, exc_val, traceback)
 
 
 class TestRichTracebackFormatter:
