@@ -12,17 +12,17 @@ if TYPE_CHECKING:
     from utilities.types import PathLike
 
 
-def get_repo_root(*, cwd: PathLike = PWD) -> Path:
+def get_repo_root(*, path: PathLike = PWD) -> Path:
     """Get the repo root."""
     try:
         output = check_output(
-            ["git", "rev-parse", "--show-toplevel"], stderr=PIPE, cwd=cwd, text=True
+            ["git", "rev-parse", "--show-toplevel"], stderr=PIPE, cwd=path, text=True
         )
     except CalledProcessError as error:
         # newer versions of git report "Not a git repository", whilst older
         # versions report "not a git repository"
         if search("fatal: not a git repository", error.stderr, flags=IGNORECASE):
-            raise GetRepoRootError(cwd=cwd) from error
+            raise GetRepoRootError(cwd=path) from error
         raise  # pragma: no cover
     else:
         return Path(output.strip("\n"))
