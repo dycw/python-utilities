@@ -47,6 +47,7 @@ from utilities.traceback import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from re import Pattern
     from traceback import FrameSummary
     from types import FrameType
@@ -67,21 +68,43 @@ class TestFormatException:
         assert result == expected
 
 
+@mark.only
 class TestFormatExceptionStack:
-    @mark.only
     def test_main(self) -> None:
         try:
             _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
             result = format_exception_stack(error)
-            expected = [
-                r"^1 \| tests\.test_traceback:\d+ \| test_main \| _ = func_one\(1, 2, 3, 4, c=5, d=6, e=7\)$",
-                r"^2 \| utilities\.traceback:\d+ \| trace_sync \| return func_typed\(\*args, \*\*kwargs\)$",
-                r'^3 \| tests\.test_traceback_funcs\.one:16 \| func_one \| assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"$',
-                r"^AssertionError\(Result \(56\) must be divisible by 10\)$",
+            self._assert_lines(result)
+
+    @mark.only
+    def test_header(self) -> None:
+        try:
+            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
+        except AssertionError as error:
+            result = format_exception_stack(error, header=True)
+            patterns = [
+                r"^Date/time \| .+$",
+                r"^Started   \| .+$",
+                r"^Duration  \| .+$",
+                r"^User      \| .+$",
+                r"^Host      \| .+$",
+                r"^Version   \|\s$",
+                r"^$",
             ]
-            for line, pattern in zip(result, expected, strict=True):
+            for line, pattern in zip(result[:7], patterns[:7], strict=False):
                 assert search(pattern, line), line
+            self._assert_lines(result[7:])
+
+    def _assert_lines(self, lines: Iterable[str], /) -> None:
+        expected = [
+            r"^1 \| tests\.test_traceback:\d+ \| test_\w+ \| _ = func_one\(1, 2, 3, 4, c=5, d=6, e=7\)$",
+            r"^2 \| utilities\.traceback:\d+ \| trace_sync \| return func_typed\(\*args, \*\*kwargs\)$",
+            r'^3 \| tests\.test_traceback_funcs\.one:16 \| func_one \| assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"$',
+            r"^AssertionError\(Result \(56\) must be divisible by 10\)$",
+        ]
+        for line, pattern in zip(lines, expected, strict=True):
+            assert search(pattern, line), line
 
 
 class TestFrame:

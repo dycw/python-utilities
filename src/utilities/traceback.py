@@ -69,6 +69,25 @@ _START = get_now()
 ##
 
 
+def format_exception_stack(
+    error: BaseException,
+    /,
+    *,
+    header: bool = False,
+    start: MaybeCallableDateTime | None = _START,
+    version: MaybeCallableVersionLike | None = None,
+) -> Sequence[str]:
+    """Format an exception stack."""
+    lines: Sequence[str] = []
+    if header:
+        lines.extend(_yield_header_lines(start=start, version=version))
+    lines.extend(_yield_formatted_frame_summary(error))
+    return lines
+
+
+##
+
+
 class RichTracebackFormatter(Formatter):
     """Formatter for rich tracebacks."""
 
@@ -812,6 +831,9 @@ def _merge_frames(
     return values[::-1]
 
 
+##
+
+
 def _yield_header_lines(
     *,
     start: MaybeCallableDateTime | None = _START,
@@ -842,14 +864,12 @@ def _yield_header_lines(
 ##
 
 
-def format_exception_stack(error: BaseException, /) -> Sequence[str]:
-    """Format an exception stack."""
-    lines: Sequence[str] = []
+def _yield_formatted_frame_summary(error: BaseException, /) -> Iterator[str]:
+    """Yield the formatted frame summary lines."""
     stack = TracebackException.from_exception(error).stack
     for i, frame in enumerate(stack, start=1):
-        lines.append(f"{i} | {_format_frame_summary(frame)}")
-    lines.append(repr_error(error))
-    return lines
+        yield f"{i} | {_format_frame_summary(frame)}"
+    yield repr_error(error)
 
 
 def _format_frame_summary(frame: FrameSummary, /) -> str:
@@ -879,6 +899,9 @@ def _trim_path(path: PathLike, pattern: str, /) -> Path | None:
     except OneEmptyError:
         return None
     return Path(*parts[i + 1 :])
+
+
+##
 
 
 def _except_hook(
