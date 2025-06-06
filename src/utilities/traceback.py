@@ -11,7 +11,7 @@ from itertools import repeat
 from logging import Formatter, Handler, LogRecord
 from pathlib import Path
 from socket import gethostname
-from sys import exc_info
+from sys import exc_info, stderr
 from textwrap import indent
 from traceback import FrameSummary, TracebackException, format_exception
 from typing import (
@@ -167,6 +167,8 @@ def _make_except_hook_inner(
     _ = (exc_type, traceback)
     if exc_val is None:
         raise MakeExceptHookError
+    slim = format_exception_stack(exc_val, header=True, start=start, version=version)
+    _ = stderr.write(f"{slim}\n")
     if path is not None:
         from utilities.atomicwrites import writer
         from utilities.tzlocal import get_now_local
@@ -176,7 +178,7 @@ def _make_except_hook_inner(
             .joinpath(serialize_compact(get_now_local()))
             .with_suffix(".txt")
         )
-        text = format_exception_stack(
+        full = format_exception_stack(
             exc_val,
             header=True,
             start=start,
@@ -190,14 +192,11 @@ def _make_except_hook_inner(
             expand_all=expand_all,
         )
         with writer(path, overwrite=True) as temp:
-            _ = temp.write_text(text)
+            _ = temp.write_text(full)
     if slack_url is not None:  # pragma: no cover
         from utilities.slack_sdk import send_to_slack
 
-        text = format_exception_stack(
-            exc_val, header=True, start=start, version=version
-        )
-        run(send_to_slack(slack_url, text))
+        run(send_to_slack(slack_url, slim))
 
 
 ##
