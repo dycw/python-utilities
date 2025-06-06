@@ -416,14 +416,13 @@ def add_filters(handler: Handler, /, *filters: _FilterType) -> None:
 def basic_config(
     *,
     obj: LoggerOrName | Handler | None = None,
-    format_: str = "{datetime} | {name} | {levelname:8} | {message}",
+    format_: str = "{asctime} | {name} | {levelname:8} | {message}",
     level: LogLevel = "INFO",
     whenever: bool = False,
 ) -> None:
     """Do the basic config."""
-    format_ = format_.replace(
-        "{datetime}", "{zoned_datetime}" if whenever else "{asctime}"
-    )
+    if whenever:
+        format_ = format_.replace("{asctime}", "{zoned_datetime}")
     datefmt = maybe_sub_pct_y("%Y-%m-%d %H:%M:%S")
     match obj:
         case None:
