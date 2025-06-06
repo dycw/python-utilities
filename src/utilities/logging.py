@@ -418,8 +418,9 @@ def basic_config(
     *,
     obj: LoggerOrName | Handler | None = None,
     format_: str = "{asctime} | {name} | {levelname:8} | {message}",
-    level: LogLevel = "INFO",
     whenever: bool = False,
+    level: LogLevel = "INFO",
+    plain: bool = False,
 ) -> None:
     """Do the basic config."""
     if whenever:
@@ -427,7 +428,9 @@ def basic_config(
     datefmt = maybe_sub_pct_y("%Y-%m-%d %H:%M:%S")
     match obj:
         case None:
-            basicConfig(format=format_, datefmt=datefmt, style="{", level=level)
+            basicConfig(
+                format=format_, datefmt=datefmt, style="{", level=level, plain=plain
+            )
         case Logger() as logger:
             logger.setLevel(level)
             logger.addHandler(handler := StreamHandler())
