@@ -93,9 +93,15 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.129.10"
+version = "0.129.11"
 
 [project.optional-dependencies]
+logging = [
+  "atomicwrites >= 1.4.1, < 1.5",
+  "coloredlogs >= 15.0.1, < 15.1",
+  "tzlocal >= 5.3.1, < 5.4",
+  "whenever >= 0.8.4, < 0.9",
+]
 test = [
   "dycw-pytest-only >= 2.1.1, < 2.2",
   "hypothesis >= 6.135.0, < 6.136",
@@ -332,7 +338,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.129.10"
+current_version = "0.129.11"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
