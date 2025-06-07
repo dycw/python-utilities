@@ -82,6 +82,10 @@ except ModuleNotFoundError:  # pragma: no cover
 ##
 
 
+_BACKUP_COUNT: int = 100
+_MAX_BYTES: int = 10 * 1024**2
+
+
 type _When = Literal[
     "S", "M", "H", "D", "midnight", "W0", "W1", "W2", "W3", "W4", "W5", "W6"
 ]
@@ -100,10 +104,10 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         encoding: str | None = None,
         delay: bool = False,
         errors: Literal["strict", "ignore", "replace"] | None = None,
-        maxBytes: int = 0,
+        maxBytes: int = _MAX_BYTES,
         when: _When = "midnight",
         interval: int = 1,
-        backupCount: int = 0,
+        backupCount: int = _BACKUP_COUNT,
         utc: bool = False,
         atTime: dt.time | None = None,
     ) -> None:
@@ -556,8 +560,8 @@ def setup_logging(
     files_dir: MaybeCallablePathLike | None = get_default_logging_path,
     files_when: _When = "D",
     files_interval: int = 1,
-    files_backup_count: int = 10,
-    files_max_bytes: int = 10 * 1024**2,
+    files_backup_count: int = _BACKUP_COUNT,
+    files_max_bytes: int = _MAX_BYTES,
     files_filters: Iterable[_FilterType] | None = None,
     files_fmt: str = "{_zoned_datetime_str} | {name}:{funcName}:{lineno} | {levelname:8} | {message}",
     filters: MaybeIterable[_FilterType] | None = None,
