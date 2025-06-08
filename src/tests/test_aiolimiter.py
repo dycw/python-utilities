@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from asyncio import sleep
 
-from utilities.aiolimiter import get_async_limiter
+from utilities.aiolimiter import _LIMITERS, get_async_limiter
 from utilities.text import unique_str
 from utilities.timer import Timer
 
@@ -19,6 +19,6 @@ class TestGetAsyncLimiter:
         name = unique_str()
         with Timer() as timer:
             for _ in range(2):
-                async with get_async_limiter(name, max_rate=2):
+                async with get_async_limiter(name, rate=0.5):
                     await increment()
-        assert timer >= 0.5
+        assert timer >= 0.5, _LIMITERS
