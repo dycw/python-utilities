@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from asyncio import sleep
+from typing import ClassVar
 
 from utilities.aiolimiter import _LIMITERS, get_async_limiter
 from utilities.text import unique_str
@@ -22,3 +23,17 @@ class TestGetAsyncLimiter:
                 async with get_async_limiter(name, rate=0.5):
                     await increment()
         assert timer >= 0.5, _LIMITERS
+
+    shared: ClassVar[str] = unique_str()
+
+    async def test_shared1(self) -> None:
+        async with get_async_limiter(self.shared):
+            await sleep(0.01)
+
+    async def test_shared2(self) -> None:
+        async with get_async_limiter(self.shared):
+            await sleep(0.01)
+
+    async def test_shared3(self) -> None:
+        async with get_async_limiter(self.shared):
+            await sleep(0.01)
