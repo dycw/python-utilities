@@ -67,6 +67,15 @@ wheels = [
 ]
 
 [[package]]
+name = "aiolimiter"
+version = "1.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f1/23/b52debf471f7a1e42e362d959a3982bdcb4fe13a5d46e63d28868807a79c/aiolimiter-1.2.1.tar.gz", hash = "sha256:e02a37ea1a855d9e832252a105420ad4d15011505512a1a1d814647451b5cca9", size = 7185, upload-time = "2024-12-08T15:31:51.496Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f3/ba/df6e8e1045aebc4778d19b8a3a9bc1808adb1619ba94ca354d9ba17d86c3/aiolimiter-1.2.1-py3-none-any.whl", hash = "sha256:d3f249e9059a20badcb56b61601a83556133655c11d1eb3dd3e04ff069e5f3c7", size = 6711, upload-time = "2024-12-08T15:31:49.874Z" },
+]
+
+[[package]]
 name = "aiosignal"
 version = "1.3.2"
 source = { registry = "https://pypi.org/simple" }
@@ -773,6 +782,9 @@ test = [
     { name = "pytest-timeout" },
     { name = "pytest-xdist" },
 ]
+zzz-test-aiolimiter = [
+    { name = "aiolimiter" },
+]
 zzz-test-altair = [
     { name = "altair" },
     { name = "atomicwrites" },
@@ -1010,6 +1022,7 @@ zzz-test-zoneinfo = [
 [package.dev-dependencies]
 dev = [
     { name = "aiohttp" },
+    { name = "aiolimiter" },
     { name = "aiosqlite" },
     { name = "altair" },
     { name = "asyncpg" },
@@ -1086,6 +1099,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", marker = "extra == 'zzz-test-slack-sdk'", specifier = ">=3.12.11,<3.13" },
+    { name = "aiolimiter", marker = "extra == 'zzz-test-aiolimiter'", specifier = ">=1.2.1,<1.3" },
     { name = "aiosqlite", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=0.21.0,<0.22" },
     { name = "aiosqlite", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=0.21.0,<0.22" },
     { name = "aiosqlite", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=0.21.0,<0.22" },
@@ -1233,11 +1247,13 @@ requires-dist = [
     { name = "whenever", marker = "extra == 'zzz-test-whenever'", specifier = ">=0.8.4,<0.9" },
     { name = "whenever", marker = "extra == 'zzz-test-zoneinfo'", specifier = ">=0.8.4,<0.9" },
 ]
-provides-extras = ["logging", "test", "zzz-test-altair", "zzz-test-asyncio", "zzz-test-atomicwrites", "zzz-test-atools", "zzz-test-cachetools", "zzz-test-click", "zzz-test-contextlib", "zzz-test-contextvars", "zzz-test-cryptography", "zzz-test-cvxpy", "zzz-test-dataclasses", "zzz-test-datetime", "zzz-test-enum", "zzz-test-errors", "zzz-test-eventkit", "zzz-test-fastapi", "zzz-test-fpdf2", "zzz-test-functions", "zzz-test-functools", "zzz-test-getpass", "zzz-test-git", "zzz-test-hashlib", "zzz-test-http", "zzz-test-hypothesis", "zzz-test-ipython", "zzz-test-iterables", "zzz-test-jupyter", "zzz-test-logging", "zzz-test-loguru", "zzz-test-luigi", "zzz-test-math", "zzz-test-memory-profiler", "zzz-test-modules", "zzz-test-more-itertools", "zzz-test-numpy", "zzz-test-operator", "zzz-test-optuna", "zzz-test-orjson", "zzz-test-os", "zzz-test-pathlib", "zzz-test-pickle", "zzz-test-platform", "zzz-test-polars", "zzz-test-pqdm", "zzz-test-pydantic", "zzz-test-pyinstrument", "zzz-test-pyrsistent", "zzz-test-pytest", "zzz-test-pytest-regressions", "zzz-test-python-dotenv", "zzz-test-random", "zzz-test-re", "zzz-test-redis", "zzz-test-rich", "zzz-test-scipy", "zzz-test-sentinel", "zzz-test-shelve", "zzz-test-slack-sdk", "zzz-test-socket", "zzz-test-sqlalchemy", "zzz-test-sqlalchemy-polars", "zzz-test-streamlit", "zzz-test-sys", "zzz-test-tempfile", "zzz-test-tenacity", "zzz-test-text", "zzz-test-threading", "zzz-test-timer", "zzz-test-traceback", "zzz-test-types", "zzz-test-typing", "zzz-test-tzlocal", "zzz-test-uuid", "zzz-test-version", "zzz-test-warnings", "zzz-test-whenever", "zzz-test-zipfile", "zzz-test-zoneinfo"]
+provides-extras = ["logging", "test", "zzz-test-aiolimiter", "zzz-test-altair", "zzz-test-asyncio", "zzz-test-atomicwrites", "zzz-test-atools", "zzz-test-cachetools", "zzz-test-click", "zzz-test-contextlib", "zzz-test-contextvars", "zzz-test-cryptography", "zzz-test-cvxpy", "zzz-test-dataclasses", "zzz-test-datetime", "zzz-test-enum", "zzz-test-errors", "zzz-test-eventkit", "zzz-test-fastapi", "zzz-test-fpdf2", "zzz-test-functions", "zzz-test-functools", "zzz-test-getpass", "zzz-test-git", "zzz-test-hashlib", "zzz-test-http", "zzz-test-hypothesis", "zzz-test-ipython", "zzz-test-iterables", "zzz-test-jupyter", "zzz-test-logging", "zzz-test-loguru", "zzz-test-luigi", "zzz-test-math", "zzz-test-memory-profiler", "zzz-test-modules", "zzz-test-more-itertools", "zzz-test-numpy", "zzz-test-operator", "zzz-test-optuna", "zzz-test-orjson", "zzz-test-os", "zzz-test-pathlib", "zzz-test-pickle", "zzz-test-platform", "zzz-test-polars", "zzz-test-pqdm", "zzz-test-pydantic", "zzz-test-pyinstrument", "zzz-test-pyrsistent", "zzz-test-pytest", "zzz-test-pytest-regressions", "zzz-test-python-dotenv", "zzz-test-random", "zzz-test-re", "zzz-test-redis", "zzz-test-rich", "zzz-test-scipy", "zzz-test-sentinel", "zzz-test-shelve", "zzz-test-slack-sdk", "zzz-test-socket", "zzz-test-sqlalchemy", "zzz-test-sqlalchemy-polars", "zzz-test-streamlit", "zzz-test-sys", "zzz-test-tempfile", "zzz-test-tenacity", "zzz-test-text", "zzz-test-threading", "zzz-test-timer", "zzz-test-traceback", "zzz-test-types", "zzz-test-typing", "zzz-test-tzlocal", "zzz-test-uuid", "zzz-test-version", "zzz-test-warnings", "zzz-test-whenever", "zzz-test-zipfile", "zzz-test-zoneinfo"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "aiohttp", specifier = ">=3.12.11,<3.13" },
+    { name = "aiolimiter", specifier = ">=1.2.1" },
+    { name = "aiolimiter", specifier = ">=1.2.1,<1.3" },
     { name = "aiosqlite", specifier = ">=0.21.0,<0.22" },
     { name = "altair", specifier = ">=5.5.0,<5.6" },
     { name = "asyncpg", specifier = ">=0.30.0,<0.31" },
