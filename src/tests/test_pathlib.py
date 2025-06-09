@@ -8,6 +8,7 @@ from hypothesis import given, settings
 from hypothesis.strategies import integers, sets
 from pytest import mark, param, raises
 
+from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import git_repos, paths, temp_paths
 from utilities.pathlib import (
@@ -48,8 +49,10 @@ class TestExpandPath:
             param("foo", Path("foo")),
             param("~", Path.home()),
             param("~/foo", Path.home().joinpath("foo")),
-            param("$HOME", Path.home()),
-            param("$HOME/foo", Path.home().joinpath("foo")),
+            param("$HOME", Path.home(), marks=SKIPIF_CI_AND_WINDOWS),
+            param(
+                "$HOME/foo", Path.home().joinpath("foo"), marks=SKIPIF_CI_AND_WINDOWS
+            ),
         ],
         ids=str,
     )
