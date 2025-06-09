@@ -27,6 +27,7 @@ dev = [
   "httpx >= 0.28.1, < 0.29",  # for fastapi
   "hypothesis >= 6.135.2, < 6.136",
   "img2pdf >= 0.6.0, < 0.7",
+  "inflect >= 7.5.0, < 7.6",
   "lightweight-charts >= 2.1, < 2.2",
   "loguru >= 0.7.3, < 0.8",
   "luigi >= 3.6.0, < 3.7",
