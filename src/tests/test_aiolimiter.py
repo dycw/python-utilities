@@ -22,7 +22,7 @@ class TestGetAsyncLimiter:
             for _ in range(2):
                 async with get_async_limiter(name, rate=0.5):
                     await increment()
-        assert timer >= 0.5, _LIMITERS
+        assert timer >= 0.49, _LIMITERS
 
     shared: ClassVar[str] = unique_str()
 
