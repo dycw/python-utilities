@@ -13,6 +13,7 @@ from utilities.hypothesis import git_repos, paths, temp_paths
 from utilities.pathlib import (
     GetRootError,
     ensure_suffix,
+    expand_path,
     get_path,
     get_root,
     list_dir,
@@ -37,6 +38,23 @@ class TestEnsureSuffix:
     )
     def test_main(self, *, path: Path, suffix: str, expected: str) -> None:
         result = str(ensure_suffix(path, suffix))
+        assert result == expected
+
+
+class TestExpandPath:
+    @mark.parametrize(
+        ("path", "expected"),
+        [
+            param("foo", Path("foo")),
+            param("~", Path.home()),
+            param("~/foo", Path.home().joinpath("foo")),
+            param("$HOME", Path.home()),
+            param("$HOME/foo", Path.home().joinpath("foo")),
+        ],
+        ids=str,
+    )
+    def test_main(self, *, path: Path, expected: Path) -> None:
+        result = expand_path(path)
         assert result == expected
 
 

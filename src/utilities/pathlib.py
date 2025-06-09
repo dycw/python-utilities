@@ -5,6 +5,7 @@ from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from itertools import chain
 from os import chdir
+from os.path import expandvars
 from pathlib import Path
 from re import IGNORECASE, search
 from subprocess import PIPE, CalledProcessError, check_output
@@ -29,6 +30,16 @@ def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
         parts.append(suffix)
     name = "".join(parts)
     return path.with_name(name)
+
+
+##
+
+
+def expand_path(path: PathLike, /) -> Path:
+    """Expand a path."""
+    path = str(path)
+    path = expandvars(path)
+    return Path(path).expanduser()
 
 
 ##
@@ -111,4 +122,4 @@ def temp_cwd(path: PathLike, /) -> Iterator[None]:
         chdir(prev)
 
 
-__all__ = ["PWD", "ensure_suffix", "get_path", "list_dir", "temp_cwd"]
+__all__ = ["PWD", "ensure_suffix", "expand_path", "get_path", "list_dir", "temp_cwd"]
