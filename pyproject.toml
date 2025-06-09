@@ -8,7 +8,8 @@ requires = ["hatchling"]
 # dependency groups
 [dependency-groups]
 dev = [
-  "aiohttp >= 3.12.9, < 3.12.10",  # for slack
+  "aiohttp >= 3.12.11, < 3.13",  # for slack
+  "aiolimiter >= 1.2.1, < 1.3",
   "aiosqlite >= 0.21.0, < 0.22",
   "altair >= 5.5.0, < 5.6",
   "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
@@ -24,7 +25,7 @@ dev = [
   "fpdf2 >= 2.8.3, < 2.9",
   "greenlet >= 3.2.0, < 3.3",  # for sqlalchemy async
   "httpx >= 0.28.1, < 0.29",  # for fastapi
-  "hypothesis >= 6.135.0, < 6.136",
+  "hypothesis >= 6.135.2, < 6.136",
   "img2pdf >= 0.6.0, < 0.7",
   "lightweight-charts >= 2.1, < 2.2",
   "loguru >= 0.7.3, < 0.8",
@@ -33,7 +34,7 @@ dev = [
   "more-itertools >= 10.7.0, < 10.8",
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "nox >= 2025.2.9, < 2025.3",
-  "numpy >= 2.2.6, < 2.3",
+  "numpy >= 2.3.0, < 2.4",
   "libcst >= 1.8.0, < 1.9",
   "optuna >= 4.3.0, < 4.4",
   "orjson >= 3.10.18, < 3.11",
@@ -82,6 +83,7 @@ dev = [
   "pytest-xdist >= 3.7.0, < 3.8",
   # CI
   "win32_setctime >= 1.2.0, < 1.3",  # https://github.com/Delgan/loguru/issues/147
+  "aiolimiter>=1.2.1",
 ]
 
 # project
@@ -93,7 +95,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.129.11"
+version = "0.129.12"
 
 [project.optional-dependencies]
 logging = [
@@ -104,7 +106,7 @@ logging = [
 ]
 test = [
   "dycw-pytest-only >= 2.1.1, < 2.2",
-  "hypothesis >= 6.135.0, < 6.136",
+  "hypothesis >= 6.135.2, < 6.136",
   "pytest >= 8.3.5, < 8.4",
   "pytest-asyncio >= 1.0.0, < 1.1",
   "pytest-cov >= 6.1.1, < 6.2",
@@ -116,6 +118,9 @@ test = [
   "pytest-rng >= 1.0.0, < 1.1",
   "pytest-timeout >= 2.4.0, < 2.5",
   "pytest-xdist >= 3.7.0, < 3.8",
+]
+zzz-test-aiolimiter = [
+  "aiolimiter >= 1.2.1, < 1.3",
 ]
 zzz-test-altair = [
   "altair >= 5.5.0, < 5.6",
@@ -179,9 +184,9 @@ zzz-test-hypothesis = [
   "aiosqlite >= 0.21.0, < 0.22",
   "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
   "greenlet >= 3.2.0, < 3.3",  # for sqlalchemy async
-  "hypothesis >= 6.135.0, < 6.136",
+  "hypothesis >= 6.135.2, < 6.136",
   "luigi >= 3.6.0, < 3.7",
-  "numpy >= 2.2.6, < 2.3",
+  "numpy >= 2.3.0, < 2.4",
   "pathvalidate >= 3.2.3, < 3.3",
   "redis >= 6.2.0, < 6.3",
   "sqlalchemy >= 2.0.41, < 2.1",
@@ -212,11 +217,11 @@ zzz-test-luigi = [
   "luigi >= 3.6.0, < 3.7",
   "whenever >= 0.8.4, < 0.9",
 ]
-zzz-test-math = ["numpy >= 2.2.6, < 2.3"]
+zzz-test-math = ["numpy >= 2.3.0, < 2.4"]
 zzz-test-memory-profiler = ["memory-profiler >= 0.61.0, < 0.62"]
 zzz-test-modules = []
 zzz-test-more-itertools = ["more-itertools >= 10.7.0, < 10.8"]
-zzz-test-numpy = ["numpy >= 2.2.6, < 2.3"]
+zzz-test-numpy = ["numpy >= 2.3.0, < 2.4"]
 zzz-test-operator = [
   "polars-lts-cpu >= 1.30.0, < 1.31",
   "whenever >= 0.8.4, < 0.9",
@@ -274,7 +279,7 @@ zzz-test-scipy = ["scipy >= 1.15.3, < 1.16"]
 zzz-test-sentinel = []
 zzz-test-shelve = []
 zzz-test-slack-sdk = [
-  "aiohttp >= 3.12.9, < 3.12.10",  # for slack
+  "aiohttp >= 3.12.11, < 3.13",  # for slack
   "slack-sdk >= 3.35.0, < 3.36",
 ]
 zzz-test-socket = []
@@ -338,7 +343,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.129.11"
+current_version = "0.129.12"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -449,6 +454,7 @@ filterwarnings = [
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
   "ignore:ResourceTracker called reentrantly for resource cleanup, which is unsupported:UserWarning",
   "ignore:Task .* without outputs has no custom complete.* method:UserWarning",  # luigi
+  "ignore:The garbage collector is trying to clean up non-checked-in connection <AdaptedConnection <Connection(.*)>>:sqlalchemy.exc.SAWarning",  # sqlalchemy
   "ignore:There is no current event loop:DeprecationWarning",  # eventkit
   "ignore:Using fork.* can cause Polars to deadlock in the child process:RuntimeWarning",  # polars/pqdm
   "ignore:coroutine 'AsyncConnection.close' was never awaited:RuntimeWarning",

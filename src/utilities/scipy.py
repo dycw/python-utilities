@@ -19,7 +19,7 @@ def _ppf_1d(array: NDArrayF, cutoff: float, /) -> NDArrayF:
         out = full_like(array, nan, dtype=float)
         out[j] = _ppf_1d(array[j], cutoff)
         return out
-    low, high = min(array), max(array)
+    low, high = array.min(), array.max()
     if is_zero(span := high - low):
         return zeros_like(array, dtype=float)
     centred = (array - low) / span
