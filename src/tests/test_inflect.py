@@ -6,7 +6,15 @@ from utilities.inflect import counted_noun
 
 
 class TestCountedNoun:
-    @mark.parametrize(("num", "noun", "expected"), [param(0, "word", "0 words")])
-    def test_main(self, *, num: int, noun: str, expected: str) -> None:
-        result = counted_noun(num, noun)
+    @mark.parametrize(
+        ("num", "expected"),
+        [
+            param(0, "0 words"),
+            param(1, "1 word"),
+            param(2, "2 words"),
+            param(3, "3 words"),
+        ],
+    )
+    def test_main(self, *, num: int, expected: str) -> None:
+        result = counted_noun(num, "word")
         assert result == expected
