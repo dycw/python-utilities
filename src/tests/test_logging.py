@@ -7,7 +7,7 @@ from re import search
 from time import sleep
 from typing import TYPE_CHECKING, Any, cast
 
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import booleans, integers, none, sampled_from
 from pytest import LogCaptureFixture, mark, param, raises
 
@@ -565,14 +565,16 @@ class TestSizeAndTimeRotatingFileHandler:
                     p for p in files if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
                 )
 
+    @given(max_bytes=integers(0, 1))
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     @skipif_windows
     def test_should_rollover_file_not_found(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture
+        self, *, tmp_path: Path, caplog: LogCaptureFixture, max_bytes: int
     ) -> None:
         logger = getLogger(unique_str())
         path = tmp_path.joinpath("log")
         logger.addHandler(
-            handler := SizeAndTimeRotatingFileHandler(filename=path, maxBytes=1)
+            handler := SizeAndTimeRotatingFileHandler(filename=path, maxBytes=max_bytes)
         )
         logger.warning("message")
         record = one(caplog.records)
