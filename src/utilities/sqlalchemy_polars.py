@@ -68,7 +68,7 @@ if TYPE_CHECKING:
     from tenacity.wait import WaitBaseT
 
     import utilities.types
-    from utilities.types import TimeZoneLike
+    from utilities.types import MaybeType, TimeZoneLike
 
 
 async def insert_dataframe(
@@ -303,7 +303,7 @@ async def select_to_dataframe(
     in_clauses_chunk_size: int | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     timeout: utilities.types.Duration | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     **kwargs: Any,
 ) -> DataFrame | Iterable[DataFrame] | AsyncIterable[DataFrame]:
     """Read a table from a database into a DataFrame."""
