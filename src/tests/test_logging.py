@@ -83,12 +83,11 @@ class TestBasicConfig:
         filters: _FilterType | None,
         plain: bool,
     ) -> None:
-        name = unique_str() if log else None
-        basic_config(obj=name, whenever=whenever, filters=filters, plain=plain)
-        logger_use = getLogger()
-        logger_use.warning("message")
+        logger = getLogger(name=unique_str() if log else None)
+        basic_config(obj=logger, whenever=whenever, filters=filters, plain=plain)
+        logger.warning("message")
         if log:
-            record = one(r for r in caplog.records if r.name == name)
+            record = one(r for r in caplog.records if r.name == logger.name)
             assert record.message == "message"
 
 
@@ -487,7 +486,6 @@ class TestSizeAndTimeRotatingFileHandler:
                         if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
                     )
 
-    @mark.flaky
     def test_time(self, *, tmp_path: Path) -> None:
         logger = getLogger(unique_str())
         logger.addHandler(
