@@ -64,7 +64,6 @@ class TestAddFilters:
 
 
 class TestBasicConfig:
-    @mark.parametrize("log", [param(True), param(False)])
     @mark.parametrize("whenever", [param(True), param(False)])
     @mark.parametrize(
         "filters",
@@ -78,17 +77,19 @@ class TestBasicConfig:
         self,
         *,
         caplog: LogCaptureFixture,
-        log: bool,
         whenever: bool,
         filters: _FilterType | None,
         plain: bool,
     ) -> None:
-        logger = getLogger(name=unique_str() if log else None)
-        basic_config(obj=logger, whenever=whenever, filters=filters, plain=plain)
-        logger.warning("message")
-        if log:
-            record = one(r for r in caplog.records if r.name == logger.name)
-            assert record.message == "message"
+        name = unique_str()
+        basic_config(obj=name, whenever=whenever, filters=filters, plain=plain)
+        getLogger(name).warning("message")
+        record = one(r for r in caplog.records if r.name == name)
+        assert record.message == "message"
+
+    @mark.parametrize("whenever", [param(True), param(False)])
+    def test_none(self, *, whenever: bool) -> None:
+        basic_config(whenever=whenever)
 
 
 class TestComputeRolloverActions:
