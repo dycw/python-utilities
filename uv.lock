@@ -1099,7 +1099,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", marker = "extra == 'zzz-test-slack-sdk'", specifier = ">=3.12.11,<3.13" },
+    { name = "aiohttp", marker = "extra == 'zzz-test-slack-sdk'", specifier = ">=3.12.12,<3.13" },
     { name = "aiolimiter", marker = "extra == 'zzz-test-aiolimiter'", specifier = ">=1.2.1,<1.3" },
     { name = "aiosqlite", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=0.21.0,<0.22" },
     { name = "aiosqlite", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=0.21.0,<0.22" },
@@ -1252,7 +1252,7 @@ provides-extras = ["logging", "test", "zzz-test-aiolimiter", "zzz-test-altair", 
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "aiohttp", specifier = ">=3.12.11,<3.13" },
+    { name = "aiohttp", specifier = ">=3.12.12,<3.13" },
     { name = "aiolimiter", specifier = ">=1.2.1" },
     { name = "aiolimiter", specifier = ">=1.2.1,<1.3" },
     { name = "aiosqlite", specifier = ">=0.21.0,<0.22" },
