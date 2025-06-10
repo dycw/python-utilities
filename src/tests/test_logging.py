@@ -19,6 +19,7 @@ from hypothesis import given
 from hypothesis.strategies import booleans, integers, none, sampled_from
 from pytest import LogCaptureFixture, mark, param, raises
 
+from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import NOW_UTC, SECOND, serialize_compact
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -449,6 +450,7 @@ class TestSizeAndTimeRotatingFileHandler:
         logger.addHandler(SizeAndTimeRotatingFileHandler(filename=filename))
         assert filename.exists()
 
+    @SKIPIF_CI_AND_WINDOWS
     async def test_size(self, *, tmp_path: Path) -> None:
         logger = getLogger(unique_str())
         logger.addHandler(
@@ -507,6 +509,7 @@ class TestSizeAndTimeRotatingFileHandler:
                     )
                 await sleep(0.1)
 
+    @SKIPIF_CI_AND_WINDOWS
     async def test_time(self, *, tmp_path: Path) -> None:
         logger = getLogger(unique_str())
         logger.addHandler(
