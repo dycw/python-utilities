@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from io import StringIO
-from logging import StreamHandler, getLogger
 from pathlib import Path
 from re import search
 from sys import exc_info
@@ -35,7 +33,6 @@ from utilities.traceback import (
     ExcGroupTB,
     ExcTB,
     MakeExceptHookError,
-    RichTracebackFormatter,
     _CallArgsError,
     _format_exception,
     _Frame,
@@ -545,62 +542,6 @@ class TestMakeExceptHook:
         exc_type, exc_val, traceback = exc_info()
         with raises(MakeExceptHookError, match="No exception to log"):
             hook(exc_type, exc_val, traceback)
-
-
-class TestRichTracebackFormatter:
-    def test_decorated(
-        self, *, tmp_path: Path, traceback_func_one: Pattern[str]
-    ) -> None:
-        logger = getLogger(str(tmp_path))
-        logger.addHandler(handler := StreamHandler(buffer := StringIO()))
-        handler.setFormatter(RichTracebackFormatter(detail=True))
-        try:
-            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        except AssertionError:
-            logger.exception("message")
-        result = buffer.getvalue()
-        assert traceback_func_one.search(result)
-
-    def test_undecorated(
-        self, *, tmp_path: Path, traceback_func_untraced: Pattern[str]
-    ) -> None:
-        logger = getLogger(str(tmp_path))
-        logger.addHandler(handler := StreamHandler(buffer := StringIO()))
-        handler.setFormatter(RichTracebackFormatter(detail=True))
-        try:
-            _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
-        except AssertionError:
-            logger.exception("message")
-        result = buffer.getvalue()
-        assert traceback_func_untraced.search(result)
-
-    def test_create_and_set(self) -> None:
-        handler = StreamHandler()
-        assert len(handler.filters) == 0
-        _ = RichTracebackFormatter.create_and_set(handler)
-        assert len(handler.filters) == 1
-
-    def test_no_logging(self, *, tmp_path: Path) -> None:
-        logger = getLogger(str(tmp_path))
-        logger.addHandler(handler := StreamHandler(buffer := StringIO()))
-        handler.setFormatter(RichTracebackFormatter(detail=True))
-        logger.error("message")
-        result, _ = buffer.getvalue().splitlines()
-        expected = "ERROR: record.exc_info is None"
-        assert result == expected
-
-    def test_post(self, *, tmp_path: Path) -> None:
-        logger = getLogger(str(tmp_path))
-        logger.addHandler(handler := StreamHandler(buffer := StringIO()))
-        handler.setFormatter(
-            RichTracebackFormatter(detail=True, post=lambda x: f"> {x}")
-        )
-        try:
-            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        except AssertionError:
-            logger.exception("message")
-        result = buffer.getvalue()
-        assert result.startswith("> ")
 
 
 class TestPathToDots:
