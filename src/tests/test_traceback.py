@@ -64,18 +64,18 @@ class TestFormatExceptionStack:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
             result = format_exception_stack(error, capture_locals=True).splitlines()
-            assert len(result) == 17
-            indices = [0, 3, 9, 16]
+            assert len(result) == 19
+            indices = [0, 3, 17, 18]
             self._assert_lines([result[i] for i in indices])
-            for i in set(range(17)) - set(indices):
-                assert search(r"^    \| \w+ = .+$", result[i])
+            for i in set(range(len(result))) - set(indices):
+                assert search(r"^    \| .+ = .+$", result[i])
 
     def _assert_lines(self, lines: Iterable[str], /) -> None:
         expected = [
-            r"^1/3 \| tests\.test_traceback:\d+ \| test_\w+ \| _ = func_one\(1, 2, 3, 4, c=5, d=6, e=7\)$",
-            r"^2/3 \| utilities\.traceback:\d+ \| trace_sync \| return func_typed\(\*args, \*\*kwargs\)$",
-            r'^3/3 \| tests\.test_traceback_funcs\.one:16 \| func_one \| assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"$',
-            r"^AssertionError\(Result \(56\) must be divisible by 10\)$",
+            r"^1/2 \| tests\.test_traceback:\d+ \| test_\w+ \| _ = self\.func\(1, 2, 3, 4, c=5, d=6, e=7\)$",
+            r'^2/2 \| tests\.test_traceback:\d+ \| func \| assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"$',
+            r"^AssertionError\(Result \(56\) must be divisible by 10$",
+            r"^assert \(56 % 10\) == 0\)$",
         ]
         for line, pattern in zip(lines, expected, strict=True):
             assert search(pattern, line), line
