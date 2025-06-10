@@ -878,9 +878,6 @@ zzz-test-logging = [
     { name = "tzlocal" },
     { name = "whenever" },
 ]
-zzz-test-loguru = [
-    { name = "loguru" },
-]
 zzz-test-luigi = [
     { name = "luigi" },
     { name = "whenever" },
@@ -1045,7 +1042,6 @@ dev = [
     { name = "inflect" },
     { name = "libcst" },
     { name = "lightweight-charts" },
-    { name = "loguru" },
     { name = "luigi" },
     { name = "memory-profiler" },
     { name = "more-itertools" },
@@ -1094,7 +1090,6 @@ dev = [
     { name = "vegafusion-python-embed" },
     { name = "vl-convert-python" },
     { name = "whenever" },
-    { name = "win32-setctime" },
 ]
 
 [package.metadata]
@@ -1138,7 +1133,6 @@ requires-dist = [
     { name = "img2pdf", marker = "extra == 'zzz-test-altair'", specifier = ">=0.6.0,<0.7" },
     { name = "ipython", marker = "extra == 'zzz-test-ipython'", specifier = ">=9.0.1,<9.1" },
     { name = "jupyterlab", marker = "extra == 'zzz-test-jupyter'", specifier = ">=4.2.0,<4.3" },
-    { name = "loguru", marker = "extra == 'zzz-test-loguru'", specifier = ">=0.7.3,<0.8" },
     { name = "luigi", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=3.6.0,<3.7" },
     { name = "luigi", marker = "extra == 'zzz-test-luigi'", specifier = ">=3.6.0,<3.7" },
     { name = "memory-profiler", marker = "extra == 'zzz-test-memory-profiler'", specifier = ">=0.61.0,<0.62" },
@@ -1248,7 +1242,7 @@ requires-dist = [
     { name = "whenever", marker = "extra == 'zzz-test-whenever'", specifier = ">=0.8.5,<0.9" },
     { name = "whenever", marker = "extra == 'zzz-test-zoneinfo'", specifier = ">=0.8.5,<0.9" },
 ]
-provides-extras = ["logging", "test", "zzz-test-aiolimiter", "zzz-test-altair", "zzz-test-asyncio", "zzz-test-atomicwrites", "zzz-test-atools", "zzz-test-cachetools", "zzz-test-click", "zzz-test-contextlib", "zzz-test-contextvars", "zzz-test-cryptography", "zzz-test-cvxpy", "zzz-test-dataclasses", "zzz-test-datetime", "zzz-test-enum", "zzz-test-errors", "zzz-test-eventkit", "zzz-test-fastapi", "zzz-test-fpdf2", "zzz-test-functions", "zzz-test-functools", "zzz-test-getpass", "zzz-test-git", "zzz-test-hashlib", "zzz-test-http", "zzz-test-hypothesis", "zzz-test-ipython", "zzz-test-iterables", "zzz-test-jupyter", "zzz-test-logging", "zzz-test-loguru", "zzz-test-luigi", "zzz-test-math", "zzz-test-memory-profiler", "zzz-test-modules", "zzz-test-more-itertools", "zzz-test-numpy", "zzz-test-operator", "zzz-test-optuna", "zzz-test-orjson", "zzz-test-os", "zzz-test-pathlib", "zzz-test-pickle", "zzz-test-platform", "zzz-test-polars", "zzz-test-pqdm", "zzz-test-pydantic", "zzz-test-pyinstrument", "zzz-test-pyrsistent", "zzz-test-pytest", "zzz-test-pytest-regressions", "zzz-test-python-dotenv", "zzz-test-random", "zzz-test-re", "zzz-test-redis", "zzz-test-rich", "zzz-test-scipy", "zzz-test-sentinel", "zzz-test-shelve", "zzz-test-slack-sdk", "zzz-test-socket", "zzz-test-sqlalchemy", "zzz-test-sqlalchemy-polars", "zzz-test-streamlit", "zzz-test-sys", "zzz-test-tempfile", "zzz-test-tenacity", "zzz-test-text", "zzz-test-threading", "zzz-test-timer", "zzz-test-traceback", "zzz-test-types", "zzz-test-typing", "zzz-test-tzlocal", "zzz-test-uuid", "zzz-test-version", "zzz-test-warnings", "zzz-test-whenever", "zzz-test-zipfile", "zzz-test-zoneinfo"]
+provides-extras = ["logging", "test", "zzz-test-aiolimiter", "zzz-test-altair", "zzz-test-asyncio", "zzz-test-atomicwrites", "zzz-test-atools", "zzz-test-cachetools", "zzz-test-click", "zzz-test-contextlib", "zzz-test-contextvars", "zzz-test-cryptography", "zzz-test-cvxpy", "zzz-test-dataclasses", "zzz-test-datetime", "zzz-test-enum", "zzz-test-errors", "zzz-test-eventkit", "zzz-test-fastapi", "zzz-test-fpdf2", "zzz-test-functions", "zzz-test-functools", "zzz-test-getpass", "zzz-test-git", "zzz-test-hashlib", "zzz-test-http", "zzz-test-hypothesis", "zzz-test-ipython", "zzz-test-iterables", "zzz-test-jupyter", "zzz-test-logging", "zzz-test-luigi", "zzz-test-math", "zzz-test-memory-profiler", "zzz-test-modules", "zzz-test-more-itertools", "zzz-test-numpy", "zzz-test-operator", "zzz-test-optuna", "zzz-test-orjson", "zzz-test-os", "zzz-test-pathlib", "zzz-test-pickle", "zzz-test-platform", "zzz-test-polars", "zzz-test-pqdm", "zzz-test-pydantic", "zzz-test-pyinstrument", "zzz-test-pyrsistent", "zzz-test-pytest", "zzz-test-pytest-regressions", "zzz-test-python-dotenv", "zzz-test-random", "zzz-test-re", "zzz-test-redis", "zzz-test-rich", "zzz-test-scipy", "zzz-test-sentinel", "zzz-test-shelve", "zzz-test-slack-sdk", "zzz-test-socket", "zzz-test-sqlalchemy", "zzz-test-sqlalchemy-polars", "zzz-test-streamlit", "zzz-test-sys", "zzz-test-tempfile", "zzz-test-tenacity", "zzz-test-text", "zzz-test-threading", "zzz-test-timer", "zzz-test-traceback", "zzz-test-types", "zzz-test-typing", "zzz-test-tzlocal", "zzz-test-uuid", "zzz-test-version", "zzz-test-warnings", "zzz-test-whenever", "zzz-test-zipfile", "zzz-test-zoneinfo"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1277,7 +1271,6 @@ dev = [
     { name = "inflect", specifier = ">=7.5.0,<7.6" },
     { name = "libcst", specifier = ">=1.8.0,<1.9" },
     { name = "lightweight-charts", specifier = ">=2.1,<2.2" },
-    { name = "loguru", specifier = ">=0.7.3,<0.8" },
     { name = "luigi", specifier = ">=3.6.0,<3.7" },
     { name = "memory-profiler", specifier = ">=0.61.0,<0.62" },
     { name = "more-itertools", specifier = ">=10.7.0,<10.8" },
@@ -1326,7 +1319,6 @@ dev = [
     { name = "vegafusion-python-embed", specifier = ">=1.6.9,<1.7" },
     { name = "vl-convert-python", specifier = ">=1.8.0,<1.9" },
     { name = "whenever", specifier = ">=0.8.5,<0.9" },
-    { name = "win32-setctime", specifier = ">=1.2.0,<1.3" },
 ]
 
 [[package]]
@@ -2046,19 +2038,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/17/47/72cb04a58a35ec495f96984dddb48232b551aafb95bde614605b754fe6f7/lockfile-0.12.2.tar.gz", hash = "sha256:6aed02de03cba24efabcd600b30540140634fc06cfa603822d508d5361e9f799", size = 20874, upload-time = "2015-11-25T18:29:58.279Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c8/22/9460e311f340cb62d26a38c419b1381b8593b0bb6b5d1f056938b086d362/lockfile-0.12.2-py2.py3-none-any.whl", hash = "sha256:6c3cb24f344923d30b2785d5ad75182c8ea7ac1b6171b08657258ec7429d50fa", size = 13564, upload-time = "2015-11-25T18:29:51.462Z" },
-]
-
-[[package]]
-name = "loguru"
-version = "0.7.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-    { name = "win32-setctime", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/3a/05/a1dae3dffd1116099471c643b8924f5aa6524411dc6c63fdae648c4f1aca/loguru-0.7.3.tar.gz", hash = "sha256:19480589e77d47b8d85b2c827ad95d49bf31b0dcde16593892eb51dd18706eb6", size = 63559, upload-time = "2024-12-06T11:20:56.608Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl", hash = "sha256:31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c", size = 61595, upload-time = "2024-12-06T11:20:54.538Z" },
 ]
 
 [[package]]
@@ -4372,15 +4351,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/c9/73/935c542a6ec07699773c231871f4fd1a727a2fba995599275bbe5ad0b500/whenever-0.8.5-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:4920995d03e26e225d2a733d9f58e3ed3cce7a33994b0bf2f6d94c9f85059dd4", size = 605528, upload-time = "2025-06-09T07:38:37.778Z" },
     { url = "https://files.pythonhosted.org/packages/82/15/bf5332b353239af8120db4934fa6e0b1a4f5772a56185070d85f9523c462/whenever-0.8.5-cp313-cp313-win32.whl", hash = "sha256:f67d1054de92486baf8d48a28c0e2ff5fc78ab2e772b054f69520953727862f5", size = 348552, upload-time = "2025-06-09T07:38:55.524Z" },
     { url = "https://files.pythonhosted.org/packages/a9/34/e539f26dff602085c001f15264ca508e3df3cd9a7fd50d0a51c3f9759976/whenever-0.8.5-cp313-cp313-win_amd64.whl", hash = "sha256:f7b7f1814fd3d216c8ff5d62076a46f21b38d03af71a59887efa3fc3e8d1c5bb", size = 343086, upload-time = "2025-06-09T07:39:01.864Z" },
-]
-
-[[package]]
-name = "win32-setctime"
-version = "1.2.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b3/8f/705086c9d734d3b663af0e9bb3d4de6578d08f46b1b101c2442fd9aecaa2/win32_setctime-1.2.0.tar.gz", hash = "sha256:ae1fdf948f5640aae05c511ade119313fb6a30d7eabe25fef9764dca5873c4c0", size = 4867, upload-time = "2024-12-07T15:28:28.314Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e1/07/c6fe3ad3e685340704d314d765b7912993bcb8dc198f0e7a89382d37974b/win32_setctime-1.2.0-py3-none-any.whl", hash = "sha256:95d644c4e708aba81dc3704a116d8cbc974d70b3bdb8be1d150e36be6e9d1390", size = 4083, upload-time = "2024-12-07T15:28:26.465Z" },
 ]
 
 [[package]]

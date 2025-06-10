@@ -1,19 +1,16 @@
 from __future__ import annotations
 
 from io import StringIO
-from logging import DEBUG, NOTSET, FileHandler, Logger, StreamHandler, getLogger
+from logging import Formatter, Logger, StreamHandler, getLogger
 from pathlib import Path
 from re import search
 from time import sleep
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from hypothesis import given
 from hypothesis.strategies import booleans, integers, none, sampled_from
 from pytest import LogCaptureFixture, mark, param, raises
-from whenever import ZonedDateTime
 
-from tests.test_traceback_funcs.one import func_one
-from tests.test_traceback_funcs.untraced import func_untraced
 from utilities.datetime import NOW_UTC, SECOND, serialize_compact
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -27,19 +24,16 @@ from utilities.logging import (
     FilterForKeyError,
     GetLoggingLevelNumberError,
     SizeAndTimeRotatingFileHandler,
-    StandaloneFileHandler,
-    _AdvancedLogRecord,
     _compute_rollover_actions,
+    _FieldStyleKeys,
     _RotatingLogFile,
     add_filters,
     basic_config,
     filter_for_key,
-    get_default_logging_path,
+    get_formatter,
     get_logger,
     get_logging_level_number,
     setup_logging,
-    temp_handler,
-    temp_logger,
 )
 from utilities.pytest import skipif_windows
 from utilities.text import unique_str
@@ -48,9 +42,8 @@ from utilities.typing import get_args
 
 if TYPE_CHECKING:
     import datetime as dt
-    from re import Pattern
-
-    from utilities.types import LoggerOrName
+    from collections.abc import Mapping
+    from logging import _FilterType
 
 
 class TestAddFilters:
@@ -74,12 +67,25 @@ class TestAddFilters:
 class TestBasicConfig:
     @mark.parametrize("log", [param(True), param(False)])
     @mark.parametrize("whenever", [param(True), param(False)])
+    @mark.parametrize(
+        "filters",
+        [
+            param(lambda _: True),  # pyright: ignore[reportUnknownLambdaType]
+            param(None),
+        ],
+    )
     @mark.parametrize("plain", [param(True), param(False)])
     def test_main(
-        self, *, caplog: LogCaptureFixture, log: bool, whenever: bool, plain: bool
+        self,
+        *,
+        caplog: LogCaptureFixture,
+        log: bool,
+        whenever: bool,
+        filters: _FilterType | None,
+        plain: bool,
     ) -> None:
         logger = unique_str() if log else None
-        basic_config(obj=logger, whenever=whenever, plain=plain)
+        basic_config(obj=logger, whenever=whenever, filters=filters, plain=plain)
         logger_use = getLogger()
         logger_use.warning("message")
         assert "message" in caplog.messages
@@ -225,9 +231,21 @@ class TestFilterForKey:
             _ = filter_for_key(key)
 
 
-class TestGetDefaultLoggingPath:
-    def test_main(self) -> None:
-        assert isinstance(get_default_logging_path(), Path)
+class TestGetFormatter:
+    @mark.parametrize("whenever", [param(True), param(False)])
+    @mark.parametrize("plain", [param(True), param(False)])
+    @mark.parametrize("color_field_styles", [param({}), param(None)])
+    def test_main(
+        self,
+        *,
+        whenever: bool,
+        plain: bool,
+        color_field_styles: Mapping[str, _FieldStyleKeys] | None,
+    ) -> None:
+        formatter = get_formatter(
+            whenever=whenever, plain=plain, color_field_styles=color_field_styles
+        )
+        assert isinstance(formatter, Formatter)
 
 
 class TestGetLogger:
@@ -381,100 +399,22 @@ class TestRotatingLogFile:
 
 class TestSetupLogging:
     @skipif_windows
-    def test_decorated(
-        self, *, tmp_path: Path, traceback_func_one: Pattern[str]
-    ) -> None:
+    def test_main(self, *, tmp_path: Path) -> None:
         name = unique_str()
         setup_logging(logger=name, files_dir=tmp_path)
         logger = getLogger(name)
         assert len(logger.handlers) == 7
-        self.assert_files(tmp_path, "init")
-        try:
-            _ = func_one(1, 2, 3, 4, c=5, d=6, e=7)
-        except AssertionError:
-            logger.exception("message")
-        self.assert_files(tmp_path, ("post", traceback_func_one))
-
-    @skipif_windows
-    def test_undecorated(
-        self, *, tmp_path: Path, traceback_func_untraced: Pattern[str]
-    ) -> None:
-        name = unique_str()
-        setup_logging(logger=name, files_dir=tmp_path)
-        logger = getLogger(name)
-        assert len(logger.handlers) == 7
-        self.assert_files(tmp_path, "init")
-        try:
-            _ = func_untraced(1, 2, 3, 4, c=5, d=6, e=7)
-        except AssertionError:
-            logger.exception("message")
-        self.assert_files(tmp_path, ("post", traceback_func_untraced))
-
-    @skipif_windows
-    def test_regular_percent_formatting(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture
-    ) -> None:
-        name = unique_str()
-        setup_logging(logger=name, files_dir=tmp_path)
-        logger = getLogger(name)
-        logger.info("int: %d, float: %.2f", 1, 12.3456)
-        record = one(caplog.records)
-        assert isinstance(record, _AdvancedLogRecord)
-        expected = "int: 1, float: 12.35"
-        assert record.message == expected
-
-    @skipif_windows
-    def test_no_console(self, *, tmp_path: Path) -> None:
-        name = unique_str()
-        setup_logging(logger=name, console_level=None, files_dir=tmp_path)
-        logger = getLogger(name)
-        assert len(logger.handlers) == 5
-
-    @skipif_windows
-    def test_zoned_datetime(self, *, tmp_path: Path, caplog: LogCaptureFixture) -> None:
-        name = unique_str()
-        setup_logging(logger=name, files_dir=tmp_path)
-        logger = getLogger(name)
-        logger.info("")
-        record = one(caplog.records)
-        assert isinstance(record, _AdvancedLogRecord)
-        assert isinstance(record._zoned_datetime, ZonedDateTime)
-        assert isinstance(record._zoned_datetime_str, str)
-
-    @skipif_windows
-    def test_extra(self, *, tmp_path: Path) -> None:
-        name = unique_str()
-
-        def extra(logger: LoggerOrName | None, /) -> None:
-            get_logger(logger=logger).addHandler(
-                FileHandler(tmp_path.joinpath("extra.log"))
-            )
-
-        setup_logging(logger=name, files_dir=tmp_path, extra=extra)
-        logger = getLogger(name)
-        logger.info("")
-        files = list(tmp_path.iterdir())
-        names = {f.name for f in files}
-        assert len(names) == 4
-
-    @classmethod
-    def assert_files(
-        cls, path: Path, check: Literal["init"] | tuple[Literal["post"], Pattern[str]]
-    ) -> None:
-        files = list(path.iterdir())
-        names = {f.name for f in files}
-        match check:
-            case "init":
-                assert names == {"debug.txt", "info.txt", "plain"}
-            case "post", pattern:
-                assert names == {"debug.txt", "info.txt", "errors", "plain"}
-                errors = path.joinpath("errors")
-                assert errors.is_dir()
-                files = list(errors.iterdir())
-                assert len(files) == 1
-                with one(files).open() as fh:
-                    contents = fh.read()
-                assert pattern.search(contents)
+        logger.warning("message")
+        files = {p.name for p in tmp_path.iterdir() if p.is_file()}
+        expected = {
+            "debug.txt",
+            "info.txt",
+            "error.txt",
+            f"{name}-debug.txt",
+            f"{name}-info.txt",
+            f"{name}-error.txt",
+        }
+        assert files == expected
 
 
 class TestSizeAndTimeRotatingFileHandler:
@@ -638,54 +578,3 @@ class TestSizeAndTimeRotatingFileHandler:
         record = one(caplog.records)
         path.unlink()
         assert not handler._should_rollover(record)
-
-
-class TestStandaloneFileHandler:
-    @skipif_windows
-    def test_main(self, *, tmp_path: Path) -> None:
-        logger = getLogger(unique_str())
-        logger.addHandler(StandaloneFileHandler(level=DEBUG, path=tmp_path))
-        assert len(list(tmp_path.iterdir())) == 0
-        logger.warning("message")
-        files = list(tmp_path.iterdir())
-        assert len(files) == 1
-        with one(files).open() as fh:
-            contents = fh.read()
-        assert contents == "message"
-
-
-class TestTempHandler:
-    def test_main(self) -> None:
-        logger = getLogger(unique_str())
-        logger.addHandler(h1 := StreamHandler())
-        logger.addHandler(h2 := StreamHandler())
-        assert len(logger.handlers) == 2
-        handler = StreamHandler()
-        with temp_handler(handler, logger=logger):
-            assert len(logger.handlers) == 3
-        assert len(logger.handlers) == 2
-        assert logger.handlers[0] is h1
-        assert logger.handlers[1] is h2
-
-
-class TestTempLogger:
-    def test_disabled(self) -> None:
-        logger = getLogger(unique_str())
-        assert not logger.disabled
-        with temp_logger(logger, disabled=True):
-            assert logger.disabled
-        assert not logger.disabled
-
-    def test_level(self) -> None:
-        logger = getLogger(unique_str())
-        assert logger.level == NOTSET
-        with temp_logger(logger, level="DEBUG"):
-            assert logger.level == DEBUG
-        assert logger.level == NOTSET
-
-    def test_propagate(self) -> None:
-        logger = getLogger(unique_str())
-        assert logger.propagate
-        with temp_logger(logger, propagate=False):
-            assert not logger.propagate
-        assert logger.propagate
