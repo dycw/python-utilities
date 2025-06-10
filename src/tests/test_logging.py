@@ -83,7 +83,7 @@ class TestBasicConfig:
     ) -> None:
         name = unique_str()
         basic_config(obj=name, whenever=whenever, filters=filters, plain=plain)
-        if not whenever:
+        if not whenever:  # else pollute global logs
             getLogger(name).warning("message")
             record = one(r for r in caplog.records if r.name == name)
             assert record.message == "message"
