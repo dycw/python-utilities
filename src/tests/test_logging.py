@@ -35,7 +35,6 @@ from utilities.logging import (
     get_logging_level_number,
     setup_logging,
 )
-from utilities.pytest import skipif_windows
 from utilities.text import unique_str
 from utilities.types import LogLevel
 from utilities.typing import get_args
@@ -84,15 +83,16 @@ class TestBasicConfig:
         filters: _FilterType | None,
         plain: bool,
     ) -> None:
-        logger = unique_str() if log else None
-        basic_config(obj=logger, whenever=whenever, filters=filters, plain=plain)
+        name = unique_str() if log else None
+        basic_config(obj=name, whenever=whenever, filters=filters, plain=plain)
         logger_use = getLogger()
         logger_use.warning("message")
-        assert "message" in caplog.messages
+        if log:
+            record = one(r for r in caplog.records if r.name == name)
+            assert record.message == "message"
 
 
 class TestComputeRolloverActions:
-    @skipif_windows
     def test_main(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("log.txt").touch()
 
@@ -117,7 +117,6 @@ class TestComputeRolloverActions:
                 p for p in files if search(r"^log\.1\__[\dT]+__[\dT]+\.txt$", p.name)
             )
 
-    @skipif_windows
     def test_multiple_backups(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("log.txt").touch()
 
@@ -177,7 +176,6 @@ class TestComputeRolloverActions:
                 p for p in files if search(r"^log\.3\__[\dT]+__[\dT]+\.txt$", p.name)
             )
 
-    @skipif_windows
     def test_deleting_old_files(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("log.txt").touch()
 
@@ -398,7 +396,6 @@ class TestRotatingLogFile:
 
 
 class TestSetupLogging:
-    @skipif_windows
     def test_main(self, *, tmp_path: Path) -> None:
         name = unique_str()
         setup_logging(logger=name, files_dir=tmp_path)
@@ -418,7 +415,6 @@ class TestSetupLogging:
 
 
 class TestSizeAndTimeRotatingFileHandler:
-    @skipif_windows
     def test_handlers(self, *, tmp_path: Path) -> None:
         logger = getLogger(unique_str())
         filename = tmp_path.joinpath("log")
@@ -428,14 +424,12 @@ class TestSizeAndTimeRotatingFileHandler:
             content = fh.read()
         assert content == "message\n"
 
-    @skipif_windows
     def test_create_parents(self, *, tmp_path: Path) -> None:
         logger = getLogger(unique_str())
         filename = tmp_path.joinpath("foo", "bar", "bar", "log")
         logger.addHandler(SizeAndTimeRotatingFileHandler(filename=filename))
         assert filename.exists()
 
-    @skipif_windows
     def test_size(self, *, tmp_path: Path) -> None:
         logger = getLogger(unique_str())
         logger.addHandler(
@@ -494,7 +488,6 @@ class TestSizeAndTimeRotatingFileHandler:
                     )
 
     @mark.flaky
-    @skipif_windows
     def test_time(self, *, tmp_path: Path) -> None:
         logger = getLogger(unique_str())
         logger.addHandler(
@@ -566,16 +559,15 @@ class TestSizeAndTimeRotatingFileHandler:
                 )
 
     @mark.parametrize("max_bytes", [param(0), param(1)])
-    @skipif_windows
     def test_should_rollover_file_not_found(
         self, *, tmp_path: Path, max_bytes: int, caplog: LogCaptureFixture
     ) -> None:
-        logger = getLogger(unique_str())
+        logger = getLogger(name := unique_str())
         path = tmp_path.joinpath("log")
         logger.addHandler(
             handler := SizeAndTimeRotatingFileHandler(filename=path, maxBytes=max_bytes)
         )
         logger.warning("message")
-        record = one(caplog.records)
+        record = one(r for r in caplog.records if r.name == name)
         path.unlink()
         assert not handler._should_rollover(record)
