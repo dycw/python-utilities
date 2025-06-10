@@ -24,7 +24,6 @@ from logging import (
 from logging.handlers import BaseRotatingHandler, TimedRotatingFileHandler
 from pathlib import Path
 from re import Pattern
-from sys import stdout
 from time import time
 from typing import (
     TYPE_CHECKING,
@@ -550,6 +549,17 @@ class GetLoggingLevelNumberError(Exception):
 ##
 
 
+def _setup_logging() -> None:
+    setLogRecordFactory(WheneverLogRecord)
+    DATABASE_LOGGER.handlers.clear()
+    basic_config(obj=DATABASE_LOGGER, whenever=True)
+    levels: list[LogLevel] = ["DEBUG", "INFO"]
+    for level in levels:
+        handler = SizeAndTimeRotatingFileHandler(_LOGS.joinpath(f"{level.lower()}.txt"))
+        DATABASE_LOGGER.addHandler(handler)
+        basic_config(obj=handler, level=level, whenever=True, plain=True)
+
+
 def setup_logging(
     *,
     logger: LoggerOrName | None = None,
@@ -607,49 +617,17 @@ def setup_logging(
     try:  # skipif-ci-and-windows
         from coloredlogs import DEFAULT_FIELD_STYLES, ColoredFormatter
     except ModuleNotFoundError:  # pragma: no cover
-        console_formatter = Formatter(fmt=console_fmt, style="{")
+        Formatter(fmt=console_fmt, style="{")
         files_formatter = Formatter(fmt=files_fmt, style="{")
     else:  # skipif-ci-and-windows
         field_styles = DEFAULT_FIELD_STYLES | {
             "_zoned_datetime_str": DEFAULT_FIELD_STYLES["asctime"]
         }
-        console_formatter = ColoredFormatter(
-            fmt=console_fmt, style="{", field_styles=field_styles
-        )
+        ColoredFormatter(fmt=console_fmt, style="{", field_styles=field_styles)
         files_formatter = ColoredFormatter(
             fmt=files_fmt, style="{", field_styles=field_styles
         )
     plain_formatter = Formatter(fmt=files_fmt, style="{")  # skipif-ci-and-windows
-
-    # console
-    if console_level is not None:  # skipif-ci-and-windows
-        console_low_or_no_exc_handler = StreamHandler(stream=stdout)
-        add_filters(console_low_or_no_exc_handler, _console_low_or_no_exc_filter)
-        add_filters(console_low_or_no_exc_handler, *console_filters)
-        add_filters(console_low_or_no_exc_handler, *filters)
-        console_low_or_no_exc_handler.setFormatter(console_formatter)
-        console_low_or_no_exc_handler.setLevel(console_level)
-        logger_use.addHandler(console_low_or_no_exc_handler)
-
-        console_high_and_exc_handler = StreamHandler(stream=stdout)
-        add_filters(console_high_and_exc_handler, *console_filters)
-        add_filters(console_high_and_exc_handler, *filters)
-        _ = RichTracebackFormatter.create_and_set(
-            console_high_and_exc_handler,
-            version=formatter_version,
-            max_width=formatter_max_width,
-            indent_size=formatter_indent_size,
-            max_length=formatter_max_length,
-            max_string=formatter_max_string,
-            max_depth=formatter_max_depth,
-            expand_all=formatter_expand_all,
-            detail=True,
-            post=_ansi_wrap_red,
-        )
-        console_high_and_exc_handler.setLevel(
-            max(get_logging_level_number(console_level), ERROR)
-        )
-        logger_use.addHandler(console_high_and_exc_handler)
 
     # debug & info
     directory = get_path(path=files_dir)  # skipif-ci-and-windows
