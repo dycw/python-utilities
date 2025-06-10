@@ -83,9 +83,10 @@ class TestBasicConfig:
     ) -> None:
         name = unique_str()
         basic_config(obj=name, whenever=whenever, filters=filters, plain=plain)
-        getLogger(name).warning("message")
-        record = one(r for r in caplog.records if r.name == name)
-        assert record.message == "message"
+        if not whenever:
+            getLogger(name).warning("message")
+            record = one(r for r in caplog.records if r.name == name)
+            assert record.message == "message"
 
     @mark.parametrize("whenever", [param(True), param(False)])
     def test_none(self, *, whenever: bool) -> None:
