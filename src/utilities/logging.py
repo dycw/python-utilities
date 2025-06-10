@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 from functools import cached_property
 from itertools import product
 from logging import (
-    DEBUG,
     ERROR,
     NOTSET,
     FileHandler,
@@ -30,7 +29,9 @@ from typing import (
     Any,
     ClassVar,
     Literal,
+    NotRequired,
     Self,
+    TypedDict,
     assert_never,
     cast,
     override,
@@ -39,7 +40,6 @@ from typing import (
 from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
     SECOND,
-    maybe_sub_pct_y,
     parse_datetime_compact,
     round_datetime,
     serialize_compact,
@@ -56,10 +56,9 @@ from utilities.reprlib import (
     RICH_MAX_WIDTH,
 )
 from utilities.sentinel import Sentinel, sentinel
-from utilities.traceback import RichTracebackFormatter
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator
+    from collections.abc import Callable, Iterable, Iterator, Mapping
     from logging import _FilterType
     from zoneinfo import ZoneInfo
 
@@ -77,6 +76,9 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     ZonedDateTime = None
 
+
+_DEFAULT_FORMAT = "{asctime} | {name}:{funcName}:{lineno} | {levelname:8} | {message}"
+_DEFAULT_DATEFMT = "%Y-%m-%d %H:%M:%S"
 
 ##
 
@@ -419,49 +421,57 @@ def add_filters(handler: Handler, /, *filters: _FilterType) -> None:
 def basic_config(
     *,
     obj: LoggerOrName | Handler | None = None,
-    format_: str = "{asctime} | {name} | {levelname:8} | {message}",
     whenever: bool = False,
+    format_: str = _DEFAULT_FORMAT,
+    datefmt: str = _DEFAULT_DATEFMT,
     level: LogLevel = "INFO",
+    filters: MaybeIterable[_FilterType] | None = None,
     plain: bool = False,
+    color_field_styles: Mapping[str, _FieldStyleKeys] | None = None,
 ) -> None:
     """Do the basic config."""
-    if whenever:
-        format_ = format_.replace("{asctime}", "{zoned_datetime}")
-    datefmt = maybe_sub_pct_y("%Y-%m-%d %H:%M:%S")
     match obj:
         case None:
+            if whenever:
+                from utilities.whenever import WheneverLogRecord
+
+                setLogRecordFactory(WheneverLogRecord)
             basicConfig(format=format_, datefmt=datefmt, style="{", level=level)
         case Logger() as logger:
             logger.setLevel(level)
             logger.addHandler(handler := StreamHandler())
             basic_config(
                 obj=handler,
-                format_=format_,
                 whenever=whenever,
+                format_=format_,
+                datefmt=datefmt,
                 level=level,
+                filters=filters,
                 plain=plain,
+                color_field_styles=color_field_styles,
             )
         case str() as name:
             basic_config(
                 obj=get_logger(logger=name),
-                format_=format_,
                 whenever=whenever,
+                format_=format_,
+                datefmt=datefmt,
                 level=level,
+                filters=filters,
                 plain=plain,
+                color_field_styles=color_field_styles,
             )
         case Handler() as handler:
             handler.setLevel(level)
-            if plain:
-                formatter = Formatter(fmt=format_, datefmt=datefmt, style="{")
-            else:
-                try:
-                    from coloredlogs import ColoredFormatter
-                except ModuleNotFoundError:  # pragma: no cover
-                    formatter = Formatter(fmt=format_, datefmt=datefmt, style="{")
-                else:
-                    formatter = ColoredFormatter(
-                        fmt=format_, datefmt=datefmt, style="{"
-                    )
+            if filters is not None:
+                add_filters(handler, *always_iterable(filters))
+            formatter = get_formatter(
+                whenever=whenever,
+                format_=format_,
+                datefmt=datefmt,
+                plain=plain,
+                color_field_styles=color_field_styles,
+            )
             handler.setFormatter(formatter)
         case _ as never:
             assert_never(never)
@@ -508,7 +518,58 @@ class FilterForKeyError(Exception):
 
 def get_default_logging_path() -> Path:
     """Get the logging default path."""
-    return get_root().joinpath(".logs")
+    return get_root().joinpath("logs")
+
+
+##
+
+
+type _FieldStyleKeys = Literal[
+    "asctime", "hostname", "levelname", "name", "programname", "username"
+]
+
+
+class _FieldStyleDict(TypedDict):
+    color: str
+    bold: NotRequired[bool]
+
+
+def get_formatter(
+    *,
+    whenever: bool = False,
+    format_: str = _DEFAULT_FORMAT,
+    datefmt: str = _DEFAULT_DATEFMT,
+    plain: bool = False,
+    color_field_styles: Mapping[str, _FieldStyleKeys] | None = None,
+) -> Formatter:
+    """Get the formatter; colored if available."""
+    if whenever:
+        from utilities.whenever import WheneverLogRecord
+
+        setLogRecordFactory(WheneverLogRecord)
+        format_ = format_.replace("{asctime}", "{zoned_datetime}")
+    if plain:
+        return _get_plain_formatter(format_=format_, datefmt=datefmt)
+    try:
+        from coloredlogs import DEFAULT_FIELD_STYLES, ColoredFormatter
+    except ModuleNotFoundError:  # pragma: no cover
+        return _get_plain_formatter(format_=format_, datefmt=datefmt)
+    default = cast("dict[_FieldStyleKeys, _FieldStyleDict]", DEFAULT_FIELD_STYLES)
+    field_styles = {cast("str", k): v for k, v in default.items()}
+    if whenever:
+        field_styles["zoned_datetime"] = default["asctime"]
+    if color_field_styles is not None:
+        field_styles.update({k: default[v] for k, v in color_field_styles.items()})
+    return ColoredFormatter(
+        fmt=format_, datefmt=datefmt, style="{", field_styles=field_styles
+    )
+
+
+def _get_plain_formatter(
+    *, format_: str = _DEFAULT_FORMAT, datefmt: str = _DEFAULT_DATEFMT
+) -> Formatter:
+    """Get the plain formatter."""
+    return Formatter(fmt=format_, datefmt=datefmt, style="{")
 
 
 ##
@@ -563,16 +624,18 @@ def _setup_logging() -> None:
 def setup_logging(
     *,
     logger: LoggerOrName | None = None,
-    console_level: LogLevel | None = "INFO",
-    console_filters: Iterable[_FilterType] | None = None,
-    console_fmt: str = "❯ {_zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
+    whenever: bool = False,
+    format_: str = _DEFAULT_FORMAT,
+    datefmt: str = _DEFAULT_DATEFMT,
+    console_level: LogLevel | None = None,
+    console_prefix: str = "❯",  # noqa: RUF001
+    console_filters: MaybeIterable[_FilterType] | None = None,
     files_dir: MaybeCallablePathLike | None = get_default_logging_path,
     files_when: _When = _WHEN,
     files_interval: int = 1,
     files_backup_count: int = _BACKUP_COUNT,
     files_max_bytes: int = _MAX_BYTES,
     files_filters: Iterable[_FilterType] | None = None,
-    files_fmt: str = "{_zoned_datetime_str} | {name}:{funcName}:{lineno} | {levelname:8} | {message}",
     filters: MaybeIterable[_FilterType] | None = None,
     formatter_version: MaybeCallableVersionLike | None = None,
     formatter_max_width: int = RICH_MAX_WIDTH,
@@ -584,50 +647,15 @@ def setup_logging(
     extra: Callable[[LoggerOrName | None], None] | None = None,
 ) -> None:
     """Set up logger."""
-    # log record factory
-    from utilities.tzlocal import get_local_time_zone  # skipif-ci-and-windows
-
-    class LogRecordNanoLocal(  # skipif-ci-and-windows
-        _AdvancedLogRecord, time_zone=get_local_time_zone()
-    ): ...
-
-    setLogRecordFactory(LogRecordNanoLocal)  # skipif-ci-and-windows
-
-    console_fmt, files_fmt = [  # skipif-ci-and-windows
-        f.replace("{_zoned_datetime_str}", LogRecordNanoLocal.get_zoned_datetime_fmt())
-        for f in [console_fmt, files_fmt]
-    ]
-
-    # logger
-    logger_use = get_logger(logger=logger)  # skipif-ci-and-windows
-    logger_use.setLevel(DEBUG)  # skipif-ci-and-windows
-
-    # filters
-    console_filters = (  # skipif-ci-and-windows
-        [] if console_filters is None else list(console_filters)
-    )
-    files_filters = (  # skipif-ci-and-windows
-        [] if files_filters is None else list(files_filters)
-    )
-    filters = (  # skipif-ci-and-windows
-        [] if filters is None else list(always_iterable(filters))
-    )
-
-    # formatters
-    try:  # skipif-ci-and-windows
-        from coloredlogs import DEFAULT_FIELD_STYLES, ColoredFormatter
-    except ModuleNotFoundError:  # pragma: no cover
-        Formatter(fmt=console_fmt, style="{")
-        files_formatter = Formatter(fmt=files_fmt, style="{")
-    else:  # skipif-ci-and-windows
-        field_styles = DEFAULT_FIELD_STYLES | {
-            "_zoned_datetime_str": DEFAULT_FIELD_STYLES["asctime"]
-        }
-        ColoredFormatter(fmt=console_fmt, style="{", field_styles=field_styles)
-        files_formatter = ColoredFormatter(
-            fmt=files_fmt, style="{", field_styles=field_styles
+    if console_level is not None:
+        basic_config(
+            obj=logger,
+            whenever=whenever,
+            format_=f"{console_prefix} {format_}",
+            datefmt=datefmt,
+            level=console_level,
+            filters=console_filters,
         )
-    plain_formatter = Formatter(fmt=files_fmt, style="{")  # skipif-ci-and-windows
 
     # debug & info
     directory = get_path(path=files_dir)  # skipif-ci-and-windows
