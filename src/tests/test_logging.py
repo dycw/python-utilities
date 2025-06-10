@@ -1,8 +1,16 @@
 from __future__ import annotations
 
 from asyncio import sleep
+from contextlib import contextmanager
 from io import StringIO
-from logging import Formatter, Logger, StreamHandler, getLogger
+from logging import (
+    Formatter,
+    Logger,
+    LogRecord,
+    StreamHandler,
+    getLogger,
+    setLogRecordFactory,
+)
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any, cast
@@ -41,8 +49,16 @@ from utilities.typing import get_args
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import Mapping
+    from collections.abc import Iterator, Mapping
     from logging import _FilterType
+
+
+@contextmanager
+def _temp_log_factory() -> Iterator[None]:
+    try:
+        yield
+    finally:
+        setLogRecordFactory(LogRecord)
 
 
 class TestAddFilters:
@@ -82,15 +98,16 @@ class TestBasicConfig:
         plain: bool,
     ) -> None:
         name = unique_str()
-        basic_config(obj=name, whenever=whenever, filters=filters, plain=plain)
-        if not whenever:  # else pollute global logs
+        with _temp_log_factory():
+            basic_config(obj=name, whenever=whenever, filters=filters, plain=plain)
             getLogger(name).warning("message")
             record = one(r for r in caplog.records if r.name == name)
             assert record.message == "message"
 
     @mark.parametrize("whenever", [param(True), param(False)])
     def test_none(self, *, whenever: bool) -> None:
-        basic_config(whenever=whenever)
+        with _temp_log_factory():
+            basic_config(whenever=whenever)
 
 
 class TestComputeRolloverActions:
@@ -241,10 +258,11 @@ class TestGetFormatter:
         plain: bool,
         color_field_styles: Mapping[str, _FieldStyleKeys] | None,
     ) -> None:
-        formatter = get_formatter(
-            whenever=whenever, plain=plain, color_field_styles=color_field_styles
-        )
-        assert isinstance(formatter, Formatter)
+        with _temp_log_factory():
+            formatter = get_formatter(
+                whenever=whenever, plain=plain, color_field_styles=color_field_styles
+            )
+            assert isinstance(formatter, Formatter)
 
 
 class TestGetLogger:

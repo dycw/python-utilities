@@ -90,10 +90,6 @@ def basic_config(
     """Do the basic config."""
     match obj:
         case None:
-            if whenever:
-                from utilities.whenever import WheneverLogRecord
-
-                setLogRecordFactory(WheneverLogRecord)
             basicConfig(format=format_, datefmt=datefmt, style="{", level=level)
         case Logger() as logger:
             logger.setLevel(level)
