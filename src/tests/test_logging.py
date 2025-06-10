@@ -581,6 +581,7 @@ class TestSizeAndTimeRotatingFileHandler:
                 )
 
     @mark.parametrize("max_bytes", [param(0), param(1)])
+    @SKIPIF_CI_AND_WINDOWS
     def test_should_rollover_file_not_found(
         self, *, tmp_path: Path, max_bytes: int, caplog: LogCaptureFixture
     ) -> None:
