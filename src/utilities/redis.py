@@ -53,7 +53,7 @@ if TYPE_CHECKING:
     from redis.typing import EncodableT, ResponseT
 
     from utilities.iterables import MaybeIterable
-    from utilities.types import Duration, TypeLike
+    from utilities.types import Duration, MaybeType, TypeLike
 
 
 _K = TypeVar("_K")
@@ -90,7 +90,7 @@ class RedisHashMapKey(Generic[_K, _V]):
     value_serializer: Callable[[_V], bytes] | None = None
     value_deserializer: Callable[[bytes], _V] | None = None
     timeout: Duration | None = None
-    error: type[Exception] = TimeoutError
+    error: MaybeType[BaseException] = TimeoutError
     ttl: Duration | None = None
 
     async def delete(self, redis: Redis, key: _K, /) -> int:
@@ -402,7 +402,7 @@ class RedisKey(Generic[_T]):
     serializer: Callable[[_T], bytes] | None = None
     deserializer: Callable[[bytes], _T] | None = None
     timeout: Duration | None = None
-    error: type[Exception] = TimeoutError
+    error: MaybeType[BaseException] = TimeoutError
     ttl: Duration | None = None
 
     async def delete(self, redis: Redis, /) -> int:

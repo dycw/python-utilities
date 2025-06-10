@@ -82,7 +82,13 @@ from utilities.iterables import (
 )
 from utilities.reprlib import get_repr
 from utilities.text import snake_case
-from utilities.types import Duration, MaybeIterable, StrMapping, TupleOrStrMapping
+from utilities.types import (
+    Duration,
+    MaybeIterable,
+    MaybeType,
+    StrMapping,
+    TupleOrStrMapping,
+)
 
 _T = TypeVar("_T")
 type _EngineOrConnectionOrAsync = Engine | Connection | AsyncEngine | AsyncConnection
@@ -830,7 +836,7 @@ async def yield_connection(
     /,
     *,
     timeout: Duration | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
 ) -> AsyncIterator[AsyncConnection]:
     """Yield an async connection."""
     async with timeout_dur(duration=timeout, error=error), engine.begin() as conn:

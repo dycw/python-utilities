@@ -55,7 +55,12 @@ from utilities.errors import repr_error
 from utilities.functions import ensure_int, ensure_not_none
 from utilities.random import SYSTEM_RANDOM
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import MaybeCallableEvent, THashable, TSupportsRichComparison
+from utilities.types import (
+    MaybeCallableEvent,
+    MaybeType,
+    THashable,
+    TSupportsRichComparison,
+)
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -239,7 +244,7 @@ class EnhancedTaskGroup(TaskGroup):
 
     _semaphore: Semaphore | None
     _timeout: Duration | None
-    _error: type[Exception]
+    _error: MaybeType[BaseException]
     _stack: AsyncExitStack
     _timeout_cm: _AsyncGeneratorContextManager[None] | None
 
@@ -249,7 +254,7 @@ class EnhancedTaskGroup(TaskGroup):
         *,
         max_tasks: int | None = None,
         timeout: Duration | None = None,
-        error: type[Exception] = TimeoutError,
+        error: MaybeType[BaseException] = TimeoutError,
     ) -> None:
         super().__init__()
         self._semaphore = None if max_tasks is None else Semaphore(max_tasks)
@@ -1051,7 +1056,7 @@ async def _stream_one(
 
 @asynccontextmanager
 async def timeout_dur(
-    *, duration: Duration | None = None, error: type[Exception] = TimeoutError
+    *, duration: Duration | None = None, error: MaybeType[BaseException] = TimeoutError
 ) -> AsyncIterator[None]:
     """Timeout context manager which accepts durations."""
     delay = None if duration is None else datetime_duration_to_float(duration)
