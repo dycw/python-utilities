@@ -474,7 +474,11 @@ class TestHashPrimaryKeyValues:
 class TestInsertItems:
     @given(id_=integers(0, 10))
     @mark.parametrize("case", [param("tuple"), param("dict")])
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_pair_of_obj_and_table(
         self, *, case: Literal["tuple", "dict"], id_: int, test_engine: AsyncEngine
     ) -> None:
@@ -496,7 +500,11 @@ class TestInsertItems:
             param("list-of-pair-of-tuples"),
         ],
     )
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_pair_of_objs_and_table_or_list_of_pairs_of_objs_and_table(
         self,
         *,
@@ -1058,11 +1066,13 @@ class TestSelectableToString:
         )
         sel = select(table).where(table.c.value >= 1)
         result = selectable_to_string(sel, test_engine)
-        expected = strip_and_dedent("""
-            SELECT example.id_, example.value
-            FROM example
-            WHERE example.value >= 1
-        """)
+        expected = strip_and_dedent(
+            """
+                SELECT example.id_, example.value *
+                FROM example *
+                WHERE example.value >= 1
+            """.replace("*", "")
+        )
         assert result == expected
 
 
