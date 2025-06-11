@@ -460,6 +460,7 @@ filterwarnings = [
   "ignore:unclosed <StreamWriter .*>:ResourceWarning",  # redis
   "ignore:unclosed <socket.*socket .*>:ResourceWarning",  # redis
   "ignore:unclosed Connection <redis.*asyncio.*connection.*Connection.*>:ResourceWarning",  # redis
+  "ignore:unclosed connection <asyncpg.*connection.*Connection.*>:ResourceWarning",  # asyncpg
   "ignore:unclosed event loop <_UnixSelectorEventLoop .*>:ResourceWarning",  # redis
   "ignore:unclosed file <_io.*TextIOWrapper .*>:ResourceWarning",  # logging
   "ignore:unclosed transport <_SelectorSocketTransport .*>:ResourceWarning",  # redis
