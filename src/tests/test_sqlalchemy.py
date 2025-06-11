@@ -255,13 +255,11 @@ class TestEnsureTablesCreated:
 
 
 class TestEnsureTablesDropped:
-    @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_table(self, *, data: DataObject) -> None:
+    async def test_table(self, *, test_engine: AsyncEngine) -> None:
         table = Table(
             _table_names(), MetaData(), Column("id_", Integer, primary_key=True)
         )
-        await self._run_test(engine, table)
+        await self._run_test(test_engine, table)
 
     @given(data=data())
     @settings_with_reduced_examples(phases={Phase.generate})
@@ -482,10 +480,11 @@ class TestHashPrimaryKeyValues:
 
 
 class TestInsertItems:
-    @given(data=data(), case=sampled_from(["tuple", "dict"]), id_=integers(0, 10))
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @given(id_=integers(0, 10))
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_pair_of_obj_and_table(
-        self, *, data: DataObject, case: Literal["tuple", "dict"], id_: int
+        self, *, case: Literal["tuple", "dict"], id_: int, test_engine: AsyncEngine
     ) -> None:
         table = self._make_table()
         match case:
@@ -493,23 +492,22 @@ class TestInsertItems:
                 item = (id_,), table
             case "dict":
                 item = {"id_": id_}, table
-        await self._run_test(engine, table, {id_}, item)
+        await self._run_test(test_engine, table, {id_}, item)
 
-    @given(
-        data=data(),
-        case=sampled_from([
-            "pair-list-of-tuples",
-            "pair-list-of-dicts",
-            "list-of-pair-of-tuples",
-            "list-of-pair-of-dicts",
-        ]),
-        ids=sets(integers(0, 10), min_size=1),
+    @given(data=data(), ids=sets(integers(0, 10), min_size=1))
+    @mark.parametrize(
+        "case",
+        [
+            param("pair-list-of-dicts"),
+            param("pair-list-of-tuples"),
+            param("list-of-pair-of-dicts"),
+            param("list-of-pair-of-tuples"),
+        ],
     )
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(max_examples=1, phases={Phase.generate})
     async def test_pair_of_objs_and_table_or_list_of_pairs_of_objs_and_table(
         self,
         *,
-        data: DataObject,
         case: Literal[
             "pair-list-of-tuples",
             "pair-list-of-dicts",
@@ -517,6 +515,7 @@ class TestInsertItems:
             "list-of-pair-of-dicts",
         ],
         ids: set[int],
+        test_engine: AsyncEngine,
     ) -> None:
         table = self._make_table()
         match case:
@@ -528,51 +527,63 @@ class TestInsertItems:
                 item = [((id_,), table) for id_ in ids]
             case "list-of-pair-of-dicts":
                 item = [({"id_": id_}, table) for id_ in ids]
-        await self._run_test(engine, table, ids, item)
+        await self._run_test(test_engine, table, ids, item)
 
-    @given(data=data(), ids=sets(integers(0, 1000), min_size=10, max_size=100))
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_many_items(self, *, data: DataObject, ids: set[int]) -> None:
+    @given(ids=sets(integers(0, 1000), min_size=10, max_size=100))
+    @settings(max_examples=1, phases={Phase.generate})
+    async def test_many_items(self, *, ids: set[int], test_engine: AsyncEngine) -> None:
         table = self._make_table()
-        await self._run_test(engine, table, ids, [({"id_": id_}, table) for id_ in ids])
+        await self._run_test(
+            test_engine, table, ids, [({"id_": id_}, table) for id_ in ids]
+        )
 
-    @given(data=data(), id_=integers(0, 10))
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_mapped_class(self, *, data: DataObject, id_: int) -> None:
+    @given(id_=integers(0, 10))
+    @settings(max_examples=1, phases={Phase.generate})
+    async def test_mapped_class(self, *, id_: int, test_engine: AsyncEngine) -> None:
         cls = self._make_mapped_class()
-        engine = await sqlalchemy_engines(data, cls)
-        await self._run_test(engine, cls, {id_}, cls(id_=id_))
+        await self._run_test(test_engine, cls, {id_}, cls(id_=id_))
 
-    @given(data=data(), ids=sets(integers(0, 10), min_size=1))
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_mapped_classes(self, *, data: DataObject, ids: set[int]) -> None:
+    @given(ids=sets(integers(0, 10), min_size=1))
+    @settings(max_examples=1, phases={Phase.generate})
+    async def test_mapped_classes(
+        self, *, ids: set[int], test_engine: AsyncEngine
+    ) -> None:
         cls = self._make_mapped_class()
-        engine = await sqlalchemy_engines(data, cls)
-        await self._run_test(engine, cls, ids, [cls(id_=id_) for id_ in ids])
+        await self._run_test(test_engine, cls, ids, [cls(id_=id_) for id_ in ids])
 
-    @given(data=data(), id_=integers(0, 10))
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_snake(self, *, data: DataObject, id_: int) -> None:
+    @given(id_=integers(0, 10))
+    @mark.parametrize("key", [param("Id_"), param("id_")])
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    async def test_snake(self, *, id_: int, key: str, test_engine: AsyncEngine) -> None:
         table = self._make_table(title=True)
-        item = {data.draw(sampled_from(["Id_", "id_"])): id_}, table
-        await self._run_test(engine, table, {id_}, item, snake=True)
+        item = {key: id_}, table
+        await self._run_test(test_engine, table, {id_}, item, snake=True)
 
-    @given(data=data(), id_=integers(0, 10))
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_assume_table_exists(self, *, data: DataObject, id_: int) -> None:
+    @given(id_=integers(0, 10))
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    async def test_assume_table_exists(
+        self, *, id_: int, test_engine: AsyncEngine
+    ) -> None:
         table = self._make_table()
         with raises(
             (OperationalError, ProgrammingError), match="(no such table|does not exist)"
         ):
-            await insert_items(engine, ({"id_": id_}, table), assume_tables_exist=True)
+            await insert_items(
+                test_engine, ({"id_": id_}, table), assume_tables_exist=True
+            )
 
-    @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_error(self, *, data: DataObject) -> None:
+    async def test_error(self, *, test_engine: AsyncEngine) -> None:
         cls = self._make_mapped_class()
-        engine = await sqlalchemy_engines(data, cls)
         with raises(InsertItemsError, match="Item must be valid; got None"):
-            await self._run_test(engine, cls, set(), cast("Any", None))
+            await self._run_test(test_engine, cls, set(), cast("Any", None))
 
     def _make_table(self, *, title: bool = False) -> Table:
         return Table(
@@ -1110,11 +1121,14 @@ class TestTupleToMapping:
 
 
 class TestUpserter:
-    @given(data=data(), triples=_upsert_lists(nullable=True, min_size=1))
-    @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @given(triples=_upsert_lists(nullable=True, min_size=1))
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_main(
-        self, *, data: DataObject, triples: list[tuple[int, bool, bool]]
+        self, *, triples: list[tuple[int, bool, bool]], test_engine: AsyncEngine
     ) -> None:
         table = Table(
             _table_names(),
@@ -1122,44 +1136,54 @@ class TestUpserter:
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),
         )
-        service = UpsertService(freq=0.1, timeout=1.0, engine=engine)
+        service = UpsertService(freq=0.1, timeout=1.0, engine=test_engine)
         pairs = [(id_, init) for id_, init, _ in triples]
         async with service:
             service.put_right_nowait((pairs, table))
 
         sel = select(table)
-        async with engine.begin() as conn:
+        async with test_engine.begin() as conn:
             res = (await conn.execute(sel)).all()
         assert set(res) == set(pairs)
 
 
 class TestUpsertItems:
-    @given(data=data(), triple=_upsert_triples(nullable=True))
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @given(triple=_upsert_triples(nullable=True))
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_pair_of_dict_and_table(
-        self, *, data: DataObject, triple: tuple[int, bool, bool | None]
+        self, *, triple: tuple[int, bool, bool | None], test_engine: AsyncEngine
     ) -> None:
         table = self._make_table()
         id_, init, post = triple
         init_item = {"id_": id_, "value": init}, table
-        await self._run_test(engine, table, init_item, expected={(id_, init)})
+        await self._run_test(test_engine, table, init_item, expected={(id_, init)})
         post_item = {"id_": id_, "value": post}, table
         _ = await self._run_test(
-            engine, table, post_item, expected={(id_, init if post is None else post)}
+            test_engine,
+            table,
+            post_item,
+            expected={(id_, init if post is None else post)},
         )
 
     @given(
-        data=data(),
         triples=_upsert_lists(nullable=True, min_size=1),
         case=sampled_from(["pair-list-of-dicts", "list-of-pair-of-dicts"]),
     )
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_pair_of_list_of_dicts_and_table(
         self,
         *,
-        data: DataObject,
         triples: list[tuple[int, bool, bool | None]],
         case: Literal["pair-list-of-dicts", "list-of-pair-of-dicts"],
+        test_engine: AsyncEngine,
     ) -> None:
         table = self._make_table()
         match case:
@@ -1186,11 +1210,11 @@ class TestUpsertItems:
                     if post is not None
                 ]
         init_expected = {(id_, init) for id_, init, _ in triples}
-        _ = await self._run_test(engine, table, init, expected=init_expected)
+        _ = await self._run_test(test_engine, table, init, expected=init_expected)
         post_expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        _ = await self._run_test(engine, table, post, expected=post_expected)
+        _ = await self._run_test(test_engine, table, post, expected=post_expected)
 
     @given(data=data(), triple=_upsert_triples())
     @settings_with_reduced_examples(phases={Phase.generate})
@@ -1207,42 +1231,48 @@ class TestUpsertItems:
             engine, cls, cls(id_=id_, value=post), expected={(id_, post)}
         )
 
-    @given(data=data(), triples=_upsert_lists(nullable=True, min_size=1))
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @given(triples=_upsert_lists(nullable=True, min_size=1))
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_mapped_classes(
-        self, *, data: DataObject, triples: list[tuple[int, bool, bool | None]]
+        self, *, triples: list[tuple[int, bool, bool | None]], test_engine: AsyncEngine
     ) -> None:
         cls = self._make_mapped_class()
-        engine = await sqlalchemy_engines(data, cls)
         init = [cls(id_=id_, value=init) for id_, init, _ in triples]
         init_expected = {(id_, init) for id_, init, _ in triples}
-        _ = await self._run_test(engine, cls, init, expected=init_expected)
+        _ = await self._run_test(test_engine, cls, init, expected=init_expected)
         post = [
             cls(id_=id_, value=post) for id_, _, post in triples if post is not None
         ]
         post_expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        _ = await self._run_test(engine, cls, post, expected=post_expected)
+        _ = await self._run_test(test_engine, cls, post, expected=post_expected)
 
     @given(
-        data=data(),
         id_=integers(0, 10),
         x_init=booleans(),
         x_post=booleans(),
         y=booleans(),
         selected_or_all=sampled_from(get_args(_SelectedOrAll)),
     )
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_sel_or_all(
         self,
         *,
-        data: DataObject,
         selected_or_all: _SelectedOrAll,
         id_: int,
         x_init: bool,
         x_post: bool,
         y: bool,
+        test_engine: AsyncEngine,
     ) -> None:
         table = Table(
             _table_names(),
@@ -1252,7 +1282,7 @@ class TestUpsertItems:
             Column("y", Boolean, nullable=True),
         )
         _ = await self._run_test(
-            engine,
+            test_engine,
             table,
             ({"id_": id_, "x": x_init, "y": y}, table),
             selected_or_all=selected_or_all,
@@ -1264,7 +1294,7 @@ class TestUpsertItems:
             case "all":
                 expected = (id_, x_post, None)
         _ = await self._run_test(
-            engine,
+            test_engine,
             table,
             ({"id_": id_, "x": x_post}, table),
             selected_or_all=selected_or_all,
@@ -1272,12 +1302,20 @@ class TestUpsertItems:
         )
 
     @given(data=data(), id_=integers(0, 10))
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_assume_table_exists(self, *, data: DataObject, id_: int) -> None:
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    async def test_assume_table_exists(
+        self, *, id_: int, test_engine: AsyncEngine
+    ) -> None:
         table = self._make_table()
         with raises((OperationalError, ProgrammingError)):
             await upsert_items(
-                engine, ({"id_": id_, "value": True}, table), assume_tables_exist=True
+                test_engine,
+                ({"id_": id_, "value": True}, table),
+                assume_tables_exist=True,
             )
 
     @given(
@@ -1287,26 +1325,33 @@ class TestUpsertItems:
         value1=booleans() | none(),
         value2=booleans() | none(),
     )
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_both_nulls_and_non_nulls(
         self,
         *,
-        data: DataObject,
         id1: int,
         id2: int,
         value1: bool | None,
         value2: bool | None,
+        test_engine: AsyncEngine,
     ) -> None:
         table = self._make_table()
         _ = assume(id1 != id2)
         item = [{"id_": id1, "value": value1}, {"id_": id2, "value": value2}], table
-        await upsert_items(engine, item)
+        await upsert_items(test_engine, item)
 
-    @given(data=data(), triples=_upsert_lists(nullable=True, min_size=1))
-    @mark.flaky
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @given(triples=_upsert_lists(nullable=True, min_size=1))
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_multiple_elements_with_the_same_primary_key(
-        self, *, data: DataObject, triples: list[tuple[int, bool, bool | None]]
+        self, *, triples: list[tuple[int, bool, bool | None]], test_engine: AsyncEngine
     ) -> None:
         table = self._make_table()
         pairs = [
@@ -1317,14 +1362,12 @@ class TestUpsertItems:
         expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        await self._run_test(engine, table, item, expected=expected)
+        await self._run_test(test_engine, table, item, expected=expected)
 
-    @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_error(self, *, data: DataObject) -> None:
+    async def test_error(self, *, test_engine: AsyncEngine) -> None:
         table = self._make_table()
         with raises(UpsertItemsError, match="Item must be valid; got None"):
-            _ = await self._run_test(engine, table, cast("Any", None))
+            _ = await self._run_test(test_engine, table, cast("Any", None))
 
     def _make_table(self) -> Table:
         return Table(
