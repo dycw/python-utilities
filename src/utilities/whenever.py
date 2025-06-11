@@ -44,6 +44,7 @@ if TYPE_CHECKING:
         DurationLike,
         TimeDeltaLike,
         TimeLike,
+        TimeZoneLike,
     )
 
 
@@ -261,6 +262,40 @@ class EnsureZonedDateTimeError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to ensure zoned datetime; got {self.datetime!r}"
+
+
+##
+
+
+def from_timestamp(i: float, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDateTime:
+    """Get a zoned datetime from a timestamp."""
+    return ZonedDateTime.from_timestamp(i, tz=get_time_zone_name(time_zone))
+
+
+def from_timestamp_millis(i: int, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDateTime:
+    """Get a zoned datetime from a timestamp (in milliseconds)."""
+    return ZonedDateTime.from_timestamp_millis(i, tz=get_time_zone_name(time_zone))
+
+
+def from_timestamp_nanos(i: int, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDateTime:
+    """Get a zoned datetime from a timestamp (in nanoseconds)."""
+    return ZonedDateTime.from_timestamp_nanos(i, tz=get_time_zone_name(time_zone))
+
+
+##
+
+
+def get_now(*, time_zone: TimeZoneLike = UTC) -> ZonedDateTime:
+    """Get the current zoned datetime."""
+    return ZonedDateTime.now(get_time_zone_name(time_zone))
+
+
+NOW_UTC = get_now(time_zone=UTC)
+
+
+def get_now_local() -> ZonedDateTime:
+    """Get the current local time."""
+    return get_now(time_zone="local")
 
 
 ##
@@ -681,6 +716,12 @@ __all__ = [
     "ensure_time",
     "ensure_timedelta",
     "ensure_zoned_datetime",
+    "from_timestamp",
+    "from_timestamp_millis",
+    "from_timestamp_nanos",
+    "get_now",
+    "get_now",
+    "get_now_local",
     "parse_date",
     "parse_datetime",
     "parse_duration",
