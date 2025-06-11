@@ -28,12 +28,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_co
 from tests.test_asyncio_classes.loopers import _BACKOFF, _FREQ, assert_looper_stats
 from utilities.asyncio import Looper
 from utilities.datetime import get_now, serialize_compact
-from utilities.hypothesis import (
-    int32s,
-    pairs,
-    settings_with_reduced_examples,
-    sqlalchemy_engines,
-)
+from utilities.hypothesis import int32s, pairs, settings_with_reduced_examples
 from utilities.iterables import one
 from utilities.modules import is_installed
 from utilities.sqlalchemy import (
@@ -813,17 +808,19 @@ class TestMapMappingToTable:
 
 class TestMigrateData:
     @given(
-        data=data(),
         values=lists(
             tuples(integers(0, 10), booleans() | none()),
             min_size=1,
             unique_by=lambda x: x[0],
-        ),
+        )
     )
-    @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_main(
-        self, *, data: DataObject, values: list[tuple[int, bool]]
+        self, *, values: list[tuple[int, bool]], test_engine: AsyncEngine
     ) -> None:
         engine1 = await sqlalchemy_engines(data)
         table1 = self._make_table()

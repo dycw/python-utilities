@@ -53,7 +53,6 @@ async def test_engine(*, request: Request, tmp_path: Path) -> Any:
         case "sqlite":
             db_path = tmp_path / "db.sqlite"
             return create_async_engine("sqlite+aiosqlite", database=str(db_path))
-
         case "postgresql":
             engine = create_async_engine(
                 "postgresql+asyncpg", host="localhost", port=5432, database="testing"
@@ -70,7 +69,6 @@ async def test_engine(*, request: Request, tmp_path: Path) -> Any:
                             )
                         await sleep(0.01)
             return engine
-
         case _:
             msg = f"Unsupported dialect: {dialect}"
             raise NotImplementedError(msg)
