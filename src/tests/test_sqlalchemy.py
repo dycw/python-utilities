@@ -13,7 +13,6 @@ from hypothesis.strategies import (
     integers,
     lists,
     none,
-    sampled_from,
     sets,
     tuples,
 )
@@ -82,7 +81,7 @@ from utilities.sqlalchemy import (
     yield_primary_key_columns,
 )
 from utilities.text import strip_and_dedent
-from utilities.typing import get_args
+from utilities.typing import get_args, get_literal_elements
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -365,7 +364,7 @@ class TestGetDialect:
 
 
 class TestGetDialectMaxParams:
-    @given(dialect=sampled_from(get_args(Dialect)))
+    @mark.parametrize("dialect", get_args(Dialect))
     def test_max_params(self, *, dialect: Dialect) -> None:
         max_params = _get_dialect_max_params(dialect)
         assert isinstance(max_params, int)
@@ -863,7 +862,13 @@ class TestMigrateData:
 
 
 class TestNormalizeInsertItem:
-    @given(case=sampled_from(["tuple", "dict"]), id_=integers(0, 10))
+    @given(id_=integers(0, 10))
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     def test_pair_of_tuple_or_str_mapping_and_table(
         self, *, case: Literal["tuple", "dict"], id_: int
     ) -> None:
@@ -877,7 +882,13 @@ class TestNormalizeInsertItem:
         expected = _NormalizedItem(mapping={"id_": id_}, table=table)
         assert result == expected
 
-    @given(case=sampled_from(["tuple", "dict"]), ids=sets(integers(0, 10)))
+    @given(ids=sets(integers(0, 10)))
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     def test_pair_of_list_of_tuples_or_str_mappings_and_table(
         self, *, case: Literal["tuple", "dict"], ids: set[int]
     ) -> None:
@@ -891,7 +902,13 @@ class TestNormalizeInsertItem:
         expected = [_NormalizedItem(mapping={"id_": id_}, table=table) for id_ in ids]
         assert result == expected
 
-    @given(case=sampled_from(["tuple", "dict"]), ids=sets(integers()))
+    @given(ids=sets(integers()))
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     def test_list_of_pairs_of_objs_and_table(
         self, *, case: Literal["tuple", "dict"], ids: set[int]
     ) -> None:
@@ -921,7 +938,13 @@ class TestNormalizeInsertItem:
         ]
         assert result == expected
 
-    @given(case=sampled_from(["tuple", "dict"]), id_=integers(0, 10))
+    @given(id_=integers(0, 10))
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     def test_snake(self, *, case: Literal["tuple", "dict"], id_: int) -> None:
         table = Table("example", MetaData(), Column("Id_", Integer, primary_key=True))
         match case:
@@ -1166,9 +1189,9 @@ class TestUpsertItems:
             expected={(id_, init if post is None else post)},
         )
 
-    @given(
-        triples=_upsert_lists(nullable=True, min_size=1),
-        case=sampled_from(["pair-list-of-dicts", "list-of-pair-of-dicts"]),
+    @given(triples=_upsert_lists(nullable=True, min_size=1))
+    @mark.parametrize(
+        "case", [param("pair-list-of-dicts"), param("list-of-pair-of-dicts")]
     )
     @settings(
         max_examples=1,
@@ -1252,13 +1275,8 @@ class TestUpsertItems:
         }
         _ = await self._run_test(test_engine, cls, post, expected=post_expected)
 
-    @given(
-        id_=integers(0, 10),
-        x_init=booleans(),
-        x_post=booleans(),
-        y=booleans(),
-        selected_or_all=sampled_from(get_args(_SelectedOrAll)),
-    )
+    @given(id_=integers(0, 10), x_init=booleans(), x_post=booleans(), y=booleans())
+    @mark.parametrize("selected_or_all", get_literal_elements(_SelectedOrAll))
     @settings(
         max_examples=1,
         phases={Phase.generate},
