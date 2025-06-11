@@ -2,14 +2,9 @@ from __future__ import annotations
 
 import datetime as dt
 import re
-from contextlib import contextmanager
 from dataclasses import dataclass, field
 from functools import cached_property
-from itertools import product
 from logging import (
-    DEBUG,
-    ERROR,
-    NOTSET,
     FileHandler,
     Formatter,
     Handler,
@@ -24,14 +19,14 @@ from logging import (
 from logging.handlers import BaseRotatingHandler, TimedRotatingFileHandler
 from pathlib import Path
 from re import Pattern
-from sys import stdout
 from time import time
 from typing import (
     TYPE_CHECKING,
     Any,
-    ClassVar,
     Literal,
+    NotRequired,
     Self,
+    TypedDict,
     assert_never,
     cast,
     override,
@@ -40,29 +35,18 @@ from typing import (
 from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
     SECOND,
-    maybe_sub_pct_y,
     parse_datetime_compact,
     round_datetime,
     serialize_compact,
 )
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import OneEmptyError, always_iterable, one
-from utilities.pathlib import ensure_suffix, get_path, get_root
-from utilities.reprlib import (
-    RICH_EXPAND_ALL,
-    RICH_INDENT_SIZE,
-    RICH_MAX_DEPTH,
-    RICH_MAX_LENGTH,
-    RICH_MAX_STRING,
-    RICH_MAX_WIDTH,
-)
+from utilities.pathlib import ensure_suffix, get_path
 from utilities.sentinel import Sentinel, sentinel
-from utilities.traceback import RichTracebackFormatter
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator
+    from collections.abc import Callable, Iterable, Mapping
     from logging import _FilterType
-    from zoneinfo import ZoneInfo
 
     from utilities.types import (
         LoggerOrName,
@@ -71,12 +55,256 @@ if TYPE_CHECKING:
         MaybeIterable,
         PathLike,
     )
-    from utilities.version import MaybeCallableVersionLike
 
-try:
-    from whenever import ZonedDateTime
-except ModuleNotFoundError:  # pragma: no cover
-    ZonedDateTime = None
+
+_DEFAULT_FORMAT = "{asctime} | {name}:{funcName}:{lineno} | {levelname:8} | {message}"
+_DEFAULT_DATEFMT = "%Y-%m-%d %H:%M:%S"
+_DEFAULT_BACKUP_COUNT: int = 100
+_DEFAULT_MAX_BYTES: int = 10 * 1024**2
+_DEFAULT_WHEN: _When = "D"
+
+
+##
+
+
+def add_filters(handler: Handler, /, *filters: _FilterType) -> None:
+    """Add a set of filters to a handler."""
+    for filter_i in filters:
+        handler.addFilter(filter_i)
+
+
+##
+
+
+def basic_config(
+    *,
+    obj: LoggerOrName | Handler | None = None,
+    whenever: bool = False,
+    format_: str = _DEFAULT_FORMAT,
+    datefmt: str = _DEFAULT_DATEFMT,
+    level: LogLevel = "INFO",
+    filters: MaybeIterable[_FilterType] | None = None,
+    plain: bool = False,
+    color_field_styles: Mapping[str, _FieldStyleKeys] | None = None,
+) -> None:
+    """Do the basic config."""
+    match obj:
+        case None:
+            basicConfig(format=format_, datefmt=datefmt, style="{", level=level)
+        case Logger() as logger:
+            logger.setLevel(level)
+            logger.addHandler(handler := StreamHandler())
+            basic_config(
+                obj=handler,
+                whenever=whenever,
+                format_=format_,
+                datefmt=datefmt,
+                level=level,
+                filters=filters,
+                plain=plain,
+                color_field_styles=color_field_styles,
+            )
+        case str() as name:
+            basic_config(
+                obj=get_logger(logger=name),
+                whenever=whenever,
+                format_=format_,
+                datefmt=datefmt,
+                level=level,
+                filters=filters,
+                plain=plain,
+                color_field_styles=color_field_styles,
+            )
+        case Handler() as handler:
+            handler.setLevel(level)
+            if filters is not None:
+                add_filters(handler, *always_iterable(filters))
+            formatter = get_formatter(
+                whenever=whenever,
+                format_=format_,
+                datefmt=datefmt,
+                plain=plain,
+                color_field_styles=color_field_styles,
+            )
+            handler.setFormatter(formatter)
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
+def filter_for_key(
+    key: str, /, *, default: bool = False
+) -> Callable[[LogRecord], bool]:
+    """Make a filter for a given attribute."""
+    if (key in _FILTER_FOR_KEY_BLACKLIST) or key.startswith("__"):
+        raise FilterForKeyError(key=key)
+
+    def filter_(record: LogRecord, /) -> bool:
+        try:
+            value = getattr(record, key)
+        except AttributeError:
+            return default
+        return bool(value)
+
+    return filter_
+
+
+# fmt: off
+_FILTER_FOR_KEY_BLACKLIST = {
+    "args", "created", "exc_info", "exc_text", "filename", "funcName", "getMessage", "levelname", "levelno", "lineno", "module", "msecs", "msg", "name", "pathname", "process", "processName", "relativeCreated", "stack_info", "taskName", "thread", "threadName"
+}
+# fmt: on
+
+
+@dataclass(kw_only=True, slots=True)
+class FilterForKeyError(Exception):
+    key: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid key: {self.key!r}"
+
+
+##
+
+
+type _FieldStyleKeys = Literal[
+    "asctime", "hostname", "levelname", "name", "programname", "username"
+]
+
+
+class _FieldStyleDict(TypedDict):
+    color: str
+    bold: NotRequired[bool]
+
+
+def get_formatter(
+    *,
+    whenever: bool = False,
+    format_: str = _DEFAULT_FORMAT,
+    datefmt: str = _DEFAULT_DATEFMT,
+    plain: bool = False,
+    color_field_styles: Mapping[str, _FieldStyleKeys] | None = None,
+) -> Formatter:
+    """Get the formatter; colored if available."""
+    if whenever:
+        from utilities.whenever import WheneverLogRecord
+
+        setLogRecordFactory(WheneverLogRecord)
+        format_ = format_.replace("{asctime}", "{zoned_datetime}")
+    if plain:
+        return _get_plain_formatter(format_=format_, datefmt=datefmt)
+    try:
+        from coloredlogs import DEFAULT_FIELD_STYLES, ColoredFormatter
+    except ModuleNotFoundError:  # pragma: no cover
+        return _get_plain_formatter(format_=format_, datefmt=datefmt)
+    default = cast("dict[_FieldStyleKeys, _FieldStyleDict]", DEFAULT_FIELD_STYLES)
+    field_styles = {cast("str", k): v for k, v in default.items()}
+    if whenever:
+        field_styles["zoned_datetime"] = default["asctime"]
+    if color_field_styles is not None:
+        field_styles.update({k: default[v] for k, v in color_field_styles.items()})
+    return ColoredFormatter(
+        fmt=format_, datefmt=datefmt, style="{", field_styles=field_styles
+    )
+
+
+def _get_plain_formatter(
+    *, format_: str = _DEFAULT_FORMAT, datefmt: str = _DEFAULT_DATEFMT
+) -> Formatter:
+    """Get the plain formatter."""
+    return Formatter(fmt=format_, datefmt=datefmt, style="{")
+
+
+##
+
+
+def get_logger(*, logger: LoggerOrName | None = None) -> Logger:
+    """Get a logger."""
+    match logger:
+        case Logger():
+            return logger
+        case str() | None:
+            return getLogger(logger)
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
+def get_logging_level_number(level: LogLevel, /) -> int:
+    """Get the logging level number."""
+    mapping = getLevelNamesMapping()
+    try:
+        return mapping[level]
+    except KeyError:
+        raise GetLoggingLevelNumberError(level=level) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class GetLoggingLevelNumberError(Exception):
+    level: LogLevel
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid logging level: {self.level!r}"
+
+
+##
+
+
+def setup_logging(
+    *,
+    logger: LoggerOrName | None = None,
+    whenever: bool = False,
+    format_: str = _DEFAULT_FORMAT,
+    datefmt: str = _DEFAULT_DATEFMT,
+    console_level: LogLevel = "INFO",
+    console_prefix: str = "❯",  # noqa: RUF001
+    console_filters: MaybeIterable[_FilterType] | None = None,
+    files_dir: MaybeCallablePathLike | None = None,
+    files_max_bytes: int = _DEFAULT_MAX_BYTES,
+    files_when: _When = _DEFAULT_WHEN,
+    files_interval: int = 1,
+    files_backup_count: int = _DEFAULT_BACKUP_COUNT,
+    files_filters: Iterable[_FilterType] | None = None,
+) -> None:
+    """Set up logger."""
+    basic_config(
+        obj=logger,
+        whenever=whenever,
+        format_=f"{console_prefix} {format_}",
+        datefmt=datefmt,
+        level=console_level,
+        filters=console_filters,
+    )
+    logger_use = get_logger(logger=logger)
+    name = logger_use.name
+    dir_ = get_path(path=files_dir)
+    levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]
+    for level in levels:
+        lower = level.lower()
+        for stem in [lower, f"{name}-{lower}"]:
+            handler = SizeAndTimeRotatingFileHandler(
+                dir_.joinpath(stem).with_suffix(".txt"),
+                maxBytes=files_max_bytes,
+                when=files_when,
+                interval=files_interval,
+                backupCount=files_backup_count,
+            )
+            logger_use.addHandler(handler)
+            basic_config(
+                obj=handler,
+                whenever=whenever,
+                format_=format_,
+                datefmt=datefmt,
+                level=level,
+                filters=files_filters,
+                plain=True,
+            )
 
 
 ##
@@ -85,9 +313,6 @@ except ModuleNotFoundError:  # pragma: no cover
 type _When = Literal[
     "S", "M", "H", "D", "midnight", "W0", "W1", "W2", "W3", "W4", "W5", "W6"
 ]
-_BACKUP_COUNT: int = 100
-_MAX_BYTES: int = 10 * 1024**2
-_WHEN: _When = "D"
 
 
 class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
@@ -103,10 +328,10 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         encoding: str | None = None,
         delay: bool = False,
         errors: Literal["strict", "ignore", "replace"] | None = None,
-        maxBytes: int = _MAX_BYTES,
-        when: _When = _WHEN,
+        maxBytes: int = _DEFAULT_MAX_BYTES,
+        when: _When = _DEFAULT_WHEN,
         interval: int = 1,
-        backupCount: int = _BACKUP_COUNT,
+        backupCount: int = _DEFAULT_BACKUP_COUNT,
         utc: bool = False,
         atTime: dt.time | None = None,
     ) -> None:
@@ -134,9 +359,11 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
 
     @override
     def emit(self, record: LogRecord) -> None:
-        try:  # skipif-ci-and-windows
+        try:
             if (self._backup_count is not None) and self._should_rollover(record):
-                self._do_rollover(backup_count=self._backup_count)
+                self._do_rollover(  # skipif-ci-and-windows
+                    backup_count=self._backup_count
+                )
             FileHandler.emit(self, record)
         except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
@@ -199,20 +426,20 @@ def _compute_rollover_actions(
     patterns: _RolloverPatterns | None = None,
     backup_count: int = 1,
 ) -> _RolloverActions:
-    from utilities.tzlocal import get_now_local  # skipif-ci-and-windows
+    from utilities.tzlocal import get_now_local
 
-    patterns = (  # skipif-ci-and-windows
+    patterns = (
         _compute_rollover_patterns(stem, suffix) if patterns is None else patterns
     )
-    files = {  # skipif-ci-and-windows
+    files = {
         file
         for path in directory.iterdir()
         if (file := _RotatingLogFile.from_path(path, stem, suffix, patterns=patterns))
         is not None
     }
-    deletions: set[_Deletion] = set()  # skipif-ci-and-windows
-    rotations: set[_Rotation] = set()  # skipif-ci-and-windows
-    for file in files:  # skipif-ci-and-windows
+    deletions: set[_Deletion] = set()
+    rotations: set[_Rotation] = set()
+    for file in files:
         match file.index, file.start, file.end:
             case int() as index, _, _ if index >= backup_count:
                 deletions.add(_Deletion(file=file))
@@ -234,9 +461,7 @@ def _compute_rollover_actions(
                 rotations.add(_Rotation(file=file, index=index + 1))
             case _:  # pragma: no cover
                 raise NotImplementedError
-    return _RolloverActions(  # skipif-ci-and-windows
-        deletions=deletions, rotations=rotations
-    )
+    return _RolloverActions(deletions=deletions, rotations=rotations)
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -245,13 +470,11 @@ class _RolloverActions:
     rotations: set[_Rotation] = field(default_factory=set)
 
     def do(self) -> None:
-        from utilities.atomicwrites import move_many  # skipif-ci-and-windows
+        from utilities.atomicwrites import move_many
 
-        for deletion in self.deletions:  # skipif-ci-and-windows
+        for deletion in self.deletions:
             deletion.delete()
-        move_many(  # skipif-ci-and-windows
-            *((r.file.path, r.destination) for r in self.rotations)
-        )
+        move_many(*((r.file.path, r.destination) for r in self.rotations))
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -281,7 +504,7 @@ class _RotatingLogFile:
     ) -> Self | None:
         if (not path.stem.startswith(stem)) or path.suffix != suffix:
             return None
-        if patterns is None:  # skipif-ci-and-windows
+        if patterns is None:
             patterns = _compute_rollover_patterns(stem, suffix)
         try:
             (index,) = patterns.pattern1.findall(path.name)
@@ -343,9 +566,7 @@ class _RotatingLogFile:
         start: dt.datetime | None | Sentinel = sentinel,
         end: dt.datetime | None | Sentinel = sentinel,
     ) -> Self:
-        return replace_non_sentinel(  # skipif-ci-and-windows
-            self, index=index, start=start, end=end
-        )
+        return replace_non_sentinel(self, index=index, start=start, end=end)
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -353,7 +574,7 @@ class _Deletion:
     file: _RotatingLogFile
 
     def delete(self) -> None:
-        self.file.path.unlink(missing_ok=True)  # skipif-ci-and-windows
+        self.file.path.unlink(missing_ok=True)
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -364,467 +585,24 @@ class _Rotation:
     end: dt.datetime | Sentinel = sentinel
 
     def __post_init__(self) -> None:
-        if isinstance(self.start, dt.datetime):  # skipif-ci-and-windows
+        if isinstance(self.start, dt.datetime):
             self.start = round_datetime(self.start, SECOND)
-        if isinstance(self.end, dt.datetime):  # skipif-ci-and-windows
+        if isinstance(self.end, dt.datetime):
             self.end = round_datetime(self.end, SECOND)
 
     @cached_property
     def destination(self) -> Path:
-        return self.file.replace(  # skipif-ci-and-windows
-            index=self.index, start=self.start, end=self.end
-        ).path
-
-
-##
-
-
-class StandaloneFileHandler(Handler):
-    """Handler for emitting tracebacks to individual files."""
-
-    @override
-    def __init__(
-        self, *, level: int = NOTSET, path: MaybeCallablePathLike | None = None
-    ) -> None:
-        super().__init__(level=level)
-        self._path = get_path(path=path)
-
-    @override
-    def emit(self, record: LogRecord) -> None:
-        from utilities.atomicwrites import writer
-        from utilities.tzlocal import get_now_local
-
-        try:
-            path = self._path.joinpath(serialize_compact(get_now_local())).with_suffix(
-                ".txt"
-            )
-            formatted = self.format(record)
-            with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
-                _ = fh.write(formatted)
-        except Exception:  # noqa: BLE001  # pragma: no cover
-            self.handleError(record)
-
-
-##
-
-
-def add_filters(handler: Handler, /, *filters: _FilterType) -> None:
-    """Add a set of filters to a handler."""
-    for filter_i in filters:
-        handler.addFilter(filter_i)
-
-
-##
-
-
-def basic_config(
-    *,
-    obj: LoggerOrName | Handler | None = None,
-    format_: str = "{asctime} | {name} | {levelname:8} | {message}",
-    whenever: bool = False,
-    level: LogLevel = "INFO",
-    plain: bool = False,
-) -> None:
-    """Do the basic config."""
-    if whenever:
-        format_ = format_.replace("{asctime}", "{zoned_datetime}")
-    datefmt = maybe_sub_pct_y("%Y-%m-%d %H:%M:%S")
-    match obj:
-        case None:
-            basicConfig(format=format_, datefmt=datefmt, style="{", level=level)
-        case Logger() as logger:
-            logger.setLevel(level)
-            logger.addHandler(handler := StreamHandler())
-            basic_config(
-                obj=handler,
-                format_=format_,
-                whenever=whenever,
-                level=level,
-                plain=plain,
-            )
-        case str() as name:
-            basic_config(
-                obj=get_logger(logger=name),
-                format_=format_,
-                whenever=whenever,
-                level=level,
-                plain=plain,
-            )
-        case Handler() as handler:
-            handler.setLevel(level)
-            if plain:
-                formatter = Formatter(fmt=format_, datefmt=datefmt, style="{")
-            else:
-                try:
-                    from coloredlogs import ColoredFormatter
-                except ModuleNotFoundError:  # pragma: no cover
-                    formatter = Formatter(fmt=format_, datefmt=datefmt, style="{")
-                else:
-                    formatter = ColoredFormatter(
-                        fmt=format_, datefmt=datefmt, style="{"
-                    )
-            handler.setFormatter(formatter)
-        case _ as never:
-            assert_never(never)
-
-
-##
-
-
-def filter_for_key(
-    key: str, /, *, default: bool = False
-) -> Callable[[LogRecord], bool]:
-    """Make a filter for a given attribute."""
-    if (key in _FILTER_FOR_KEY_BLACKLIST) or key.startswith("__"):
-        raise FilterForKeyError(key=key)
-
-    def filter_(record: LogRecord, /) -> bool:
-        try:
-            value = getattr(record, key)
-        except AttributeError:
-            return default
-        return bool(value)
-
-    return filter_
-
-
-# fmt: off
-_FILTER_FOR_KEY_BLACKLIST = {
-    "args", "created", "exc_info", "exc_text", "filename", "funcName", "getMessage", "levelname", "levelno", "lineno", "module", "msecs", "msg", "name", "pathname", "process", "processName", "relativeCreated", "stack_info", "taskName", "thread", "threadName"
-}
-# fmt: on
-
-
-@dataclass(kw_only=True, slots=True)
-class FilterForKeyError(Exception):
-    key: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid key: {self.key!r}"
-
-
-##
-
-
-def get_default_logging_path() -> Path:
-    """Get the logging default path."""
-    return get_root().joinpath(".logs")
-
-
-##
-
-
-def get_logger(*, logger: LoggerOrName | None = None) -> Logger:
-    """Get a logger."""
-    match logger:
-        case Logger():
-            return logger
-        case str() | None:
-            return getLogger(logger)
-        case _ as never:
-            assert_never(never)
-
-
-##
-
-
-def get_logging_level_number(level: LogLevel, /) -> int:
-    """Get the logging level number."""
-    mapping = getLevelNamesMapping()
-    try:
-        return mapping[level]
-    except KeyError:
-        raise GetLoggingLevelNumberError(level=level) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class GetLoggingLevelNumberError(Exception):
-    level: LogLevel
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid logging level: {self.level!r}"
-
-
-##
-
-
-def setup_logging(
-    *,
-    logger: LoggerOrName | None = None,
-    console_level: LogLevel | None = "INFO",
-    console_filters: Iterable[_FilterType] | None = None,
-    console_fmt: str = "❯ {_zoned_datetime_str} | {name}:{funcName}:{lineno} | {message}",  # noqa: RUF001
-    files_dir: MaybeCallablePathLike | None = get_default_logging_path,
-    files_when: _When = _WHEN,
-    files_interval: int = 1,
-    files_backup_count: int = _BACKUP_COUNT,
-    files_max_bytes: int = _MAX_BYTES,
-    files_filters: Iterable[_FilterType] | None = None,
-    files_fmt: str = "{_zoned_datetime_str} | {name}:{funcName}:{lineno} | {levelname:8} | {message}",
-    filters: MaybeIterable[_FilterType] | None = None,
-    formatter_version: MaybeCallableVersionLike | None = None,
-    formatter_max_width: int = RICH_MAX_WIDTH,
-    formatter_indent_size: int = RICH_INDENT_SIZE,
-    formatter_max_length: int | None = RICH_MAX_LENGTH,
-    formatter_max_string: int | None = RICH_MAX_STRING,
-    formatter_max_depth: int | None = RICH_MAX_DEPTH,
-    formatter_expand_all: bool = RICH_EXPAND_ALL,
-    extra: Callable[[LoggerOrName | None], None] | None = None,
-) -> None:
-    """Set up logger."""
-    # log record factory
-    from utilities.tzlocal import get_local_time_zone  # skipif-ci-and-windows
-
-    class LogRecordNanoLocal(  # skipif-ci-and-windows
-        _AdvancedLogRecord, time_zone=get_local_time_zone()
-    ): ...
-
-    setLogRecordFactory(LogRecordNanoLocal)  # skipif-ci-and-windows
-
-    console_fmt, files_fmt = [  # skipif-ci-and-windows
-        f.replace("{_zoned_datetime_str}", LogRecordNanoLocal.get_zoned_datetime_fmt())
-        for f in [console_fmt, files_fmt]
-    ]
-
-    # logger
-    logger_use = get_logger(logger=logger)  # skipif-ci-and-windows
-    logger_use.setLevel(DEBUG)  # skipif-ci-and-windows
-
-    # filters
-    console_filters = (  # skipif-ci-and-windows
-        [] if console_filters is None else list(console_filters)
-    )
-    files_filters = (  # skipif-ci-and-windows
-        [] if files_filters is None else list(files_filters)
-    )
-    filters = (  # skipif-ci-and-windows
-        [] if filters is None else list(always_iterable(filters))
-    )
-
-    # formatters
-    try:  # skipif-ci-and-windows
-        from coloredlogs import DEFAULT_FIELD_STYLES, ColoredFormatter
-    except ModuleNotFoundError:  # pragma: no cover
-        console_formatter = Formatter(fmt=console_fmt, style="{")
-        files_formatter = Formatter(fmt=files_fmt, style="{")
-    else:  # skipif-ci-and-windows
-        field_styles = DEFAULT_FIELD_STYLES | {
-            "_zoned_datetime_str": DEFAULT_FIELD_STYLES["asctime"]
-        }
-        console_formatter = ColoredFormatter(
-            fmt=console_fmt, style="{", field_styles=field_styles
-        )
-        files_formatter = ColoredFormatter(
-            fmt=files_fmt, style="{", field_styles=field_styles
-        )
-    plain_formatter = Formatter(fmt=files_fmt, style="{")  # skipif-ci-and-windows
-
-    # console
-    if console_level is not None:  # skipif-ci-and-windows
-        console_low_or_no_exc_handler = StreamHandler(stream=stdout)
-        add_filters(console_low_or_no_exc_handler, _console_low_or_no_exc_filter)
-        add_filters(console_low_or_no_exc_handler, *console_filters)
-        add_filters(console_low_or_no_exc_handler, *filters)
-        console_low_or_no_exc_handler.setFormatter(console_formatter)
-        console_low_or_no_exc_handler.setLevel(console_level)
-        logger_use.addHandler(console_low_or_no_exc_handler)
-
-        console_high_and_exc_handler = StreamHandler(stream=stdout)
-        add_filters(console_high_and_exc_handler, *console_filters)
-        add_filters(console_high_and_exc_handler, *filters)
-        _ = RichTracebackFormatter.create_and_set(
-            console_high_and_exc_handler,
-            version=formatter_version,
-            max_width=formatter_max_width,
-            indent_size=formatter_indent_size,
-            max_length=formatter_max_length,
-            max_string=formatter_max_string,
-            max_depth=formatter_max_depth,
-            expand_all=formatter_expand_all,
-            detail=True,
-            post=_ansi_wrap_red,
-        )
-        console_high_and_exc_handler.setLevel(
-            max(get_logging_level_number(console_level), ERROR)
-        )
-        logger_use.addHandler(console_high_and_exc_handler)
-
-    # debug & info
-    directory = get_path(path=files_dir)  # skipif-ci-and-windows
-    levels: list[LogLevel] = ["DEBUG", "INFO"]  # skipif-ci-and-windows
-    for level, (subpath, files_or_plain_formatter) in product(  # skipif-ci-and-windows
-        levels, [(Path(), files_formatter), (Path("plain"), plain_formatter)]
-    ):
-        path = ensure_suffix(directory.joinpath(subpath, level.lower()), ".txt")
-        path.parent.mkdir(parents=True, exist_ok=True)
-        file_handler = SizeAndTimeRotatingFileHandler(
-            filename=path,
-            when=files_when,
-            interval=files_interval,
-            backupCount=files_backup_count,
-            maxBytes=files_max_bytes,
-        )
-        add_filters(file_handler, *files_filters)
-        add_filters(file_handler, *filters)
-        file_handler.setFormatter(files_or_plain_formatter)
-        file_handler.setLevel(level)
-        logger_use.addHandler(file_handler)
-
-    # errors
-    standalone_file_handler = StandaloneFileHandler(  # skipif-ci-and-windows
-        level=ERROR, path=directory.joinpath("errors")
-    )
-    add_filters(standalone_file_handler, _standalone_file_filter)
-    standalone_file_handler.setFormatter(
-        RichTracebackFormatter(
-            version=formatter_version,
-            max_width=formatter_max_width,
-            indent_size=formatter_indent_size,
-            max_length=formatter_max_length,
-            max_string=formatter_max_string,
-            max_depth=formatter_max_depth,
-            expand_all=formatter_expand_all,
-            detail=True,
-        )
-    )
-    logger_use.addHandler(standalone_file_handler)  # skipif-ci-and-windows
-
-    # extra
-    if extra is not None:  # skipif-ci-and-windows
-        extra(logger_use)
-
-
-def _console_low_or_no_exc_filter(record: LogRecord, /) -> bool:
-    return (record.levelno < ERROR) or (
-        (record.levelno >= ERROR) and (record.exc_info is None)
-    )
-
-
-def _standalone_file_filter(record: LogRecord, /) -> bool:
-    return record.exc_info is not None
-
-
-##
-
-
-@contextmanager
-def temp_handler(
-    handler: Handler, /, *, logger: LoggerOrName | None = None
-) -> Iterator[None]:
-    """Context manager with temporary handler set."""
-    logger_use = get_logger(logger=logger)
-    logger_use.addHandler(handler)
-    try:
-        yield
-    finally:
-        _ = logger_use.removeHandler(handler)
-
-
-##
-
-
-@contextmanager
-def temp_logger(
-    logger: LoggerOrName,
-    /,
-    *,
-    disabled: bool | None = None,
-    level: LogLevel | None = None,
-    propagate: bool | None = None,
-) -> Iterator[Logger]:
-    """Context manager with temporary logger settings."""
-    logger_use = get_logger(logger=logger)
-    init_disabled = logger_use.disabled
-    init_level = logger_use.level
-    init_propagate = logger_use.propagate
-    if disabled is not None:
-        logger_use.disabled = disabled
-    if level is not None:
-        logger_use.setLevel(level)
-    if propagate is not None:
-        logger_use.propagate = propagate
-    try:
-        yield logger_use
-    finally:
-        if disabled is not None:
-            logger_use.disabled = init_disabled
-        if level is not None:
-            logger_use.setLevel(init_level)
-        if propagate is not None:
-            logger_use.propagate = init_propagate
-
-
-##
-
-
-class _AdvancedLogRecord(LogRecord):
-    """Advanced log record."""
-
-    time_zone: ClassVar[str] = NotImplemented
-
-    @override
-    def __init__(
-        self,
-        name: str,
-        level: int,
-        pathname: str,
-        lineno: int,
-        msg: object,
-        args: Any,
-        exc_info: Any,
-        func: str | None = None,
-        sinfo: str | None = None,
-    ) -> None:
-        self._zoned_datetime = self.get_now()  # skipif-ci-and-windows
-        self._zoned_datetime_str = (  # skipif-ci-and-windows
-            self._zoned_datetime.format_common_iso()
-        )
-        super().__init__(  # skipif-ci-and-windows
-            name, level, pathname, lineno, msg, args, exc_info, func, sinfo
-        )
-
-    @override
-    def __init_subclass__(cls, *, time_zone: ZoneInfo, **kwargs: Any) -> None:
-        cls.time_zone = time_zone.key  # skipif-ci-and-windows
-        super().__init_subclass__(**kwargs)  # skipif-ci-and-windows
-
-    @classmethod
-    def get_now(cls) -> Any:
-        """Get the current zoned datetime."""
-        return cast("Any", ZonedDateTime).now(cls.time_zone)  # skipif-ci-and-windows
-
-    @classmethod
-    def get_zoned_datetime_fmt(cls) -> str:
-        """Get the zoned datetime format string."""
-        length = len(cls.get_now().format_common_iso())  # skipif-ci-and-windows
-        return f"{{_zoned_datetime_str:{length}}}"  # skipif-ci-and-windows
-
-
-##
-
-
-def _ansi_wrap_red(text: str, /) -> str:
-    try:
-        from humanfriendly.terminal import ansi_wrap
-    except ModuleNotFoundError:  # pragma: no cover
-        return text
-    return ansi_wrap(text, color="red")
+        return self.file.replace(index=self.index, start=self.start, end=self.end).path
 
 
 __all__ = [
     "FilterForKeyError",
     "GetLoggingLevelNumberError",
     "SizeAndTimeRotatingFileHandler",
-    "StandaloneFileHandler",
     "add_filters",
     "basic_config",
     "filter_for_key",
-    "get_default_logging_path",
     "get_logger",
     "get_logging_level_number",
     "setup_logging",
-    "temp_handler",
-    "temp_logger",
 ]

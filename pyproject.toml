@@ -29,7 +29,6 @@ dev = [
   "img2pdf >= 0.6.0, < 0.7",
   "inflect >= 7.5.0, < 7.6",
   "lightweight-charts >= 2.1, < 2.2",
-  "loguru >= 0.7.3, < 0.8",
   "luigi >= 3.6.0, < 3.7",
   "memory-profiler >= 0.61.0, < 0.62",
   "more-itertools >= 10.7.0, < 10.8",
@@ -83,7 +82,6 @@ dev = [
   "pytest-timeout >= 2.4.0, < 2.5",
   "pytest-xdist >= 3.7.0, < 3.8",
   # CI
-  "win32_setctime >= 1.2.0, < 1.3",  # https://github.com/Delgan/loguru/issues/147
   "aiolimiter>=1.2.1",
 ]
 
@@ -96,7 +94,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.129.15"
+version = "0.130.0"
 
 [project.optional-dependencies]
 logging = [
@@ -213,7 +211,6 @@ zzz-test-logging = [
   "tzlocal >= 5.3.1, < 5.4",
   "whenever >= 0.8.5, < 0.9",
 ]
-zzz-test-loguru = ["loguru >= 0.7.3, < 0.8"]
 zzz-test-luigi = [
   "luigi >= 3.6.0, < 3.7",
   "whenever >= 0.8.5, < 0.9",
@@ -344,7 +341,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.129.15"
+current_version = "0.130.0"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -464,6 +461,7 @@ filterwarnings = [
   "ignore:unclosed <socket.*socket .*>:ResourceWarning",  # redis
   "ignore:unclosed Connection <redis.*asyncio.*connection.*Connection.*>:ResourceWarning",  # redis
   "ignore:unclosed event loop <_UnixSelectorEventLoop .*>:ResourceWarning",  # redis
+  "ignore:unclosed file <_io.*TextIOWrapper .*>:ResourceWarning",  # logging
   "ignore:unclosed transport <_SelectorSocketTransport .*>:ResourceWarning",  # redis
 ]
 minversion = "8.0"

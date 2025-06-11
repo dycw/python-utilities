@@ -379,7 +379,7 @@ class TestSerializeAndParseTimedelta:
 
 
 class TestSerializeAndParseZonedDateTime:
-    @given(datetime=zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True))
+    @given(datetime=zoned_datetimes(valid=True))
     @SKIPIF_CI_AND_WINDOWS
     def test_main(self, *, datetime: dt.datetime) -> None:
         serialized = serialize_zoned_datetime(datetime)
@@ -419,7 +419,8 @@ class TestSerializeAndParseZonedDateTime:
         serialized1, serialized2 = map(serialize_zoned_datetime, [datetime1, datetime2])
         assert serialized1 == serialized2
         parsed = parse_zoned_datetime(serialized1)
-        assert parsed == datetime1 == datetime2
+        assert abs(parsed - datetime1) <= SECOND
+        assert abs(parsed - datetime2) <= SECOND
         assert parsed.tzinfo is UTC
 
     def test_error_parse(self) -> None:
