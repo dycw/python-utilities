@@ -72,6 +72,7 @@ class TestYieldAccess:
             async with yield_test_redis() as redis, yield_access(redis, key, num=0):
                 ...
 
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_error_unable_to_acquire_lock(self) -> None:
         key = unique_str()
 
