@@ -1300,7 +1300,6 @@ class TestUpsertItems:
             )
 
     @given(
-        data=data(),
         id1=int32s(),
         id2=int32s(),
         value1=booleans() | none(),
