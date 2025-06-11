@@ -77,7 +77,6 @@ class TestYieldAccess:
             async with yield_test_redis() as redis, yield_access(redis, key, num=0):
                 ...
 
-    @mark.only
     async def test_error_unable_to_acquire_lock(self) -> None:
         key = unique_str()
 
@@ -94,7 +93,7 @@ class TestYieldAccess:
         error = one(exc_info.value.exceptions)
         assert isinstance(error, _YieldAccessUnableToAcquireLockError)
         assert search(
-            r"Unable to access any 1 of 1 locks for '\w+' after 0\.1", str(error)
+            r"Unable to acquire any 1 of 1 locks for '\w+' after 0\.1", str(error)
         )
 
 
