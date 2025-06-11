@@ -5,11 +5,11 @@ repos:
     hooks:
       - id: ruff-check
         args: [--fix]
+      - id: ruff-format
   - repo: https://github.com/dycw/pre-commit-hooks
     rev: 0.11.0
     hooks:
       - id: run-bump-my-version
-      - id: run-ruff-format
   - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
     rev: v2.14.0
     hooks:
