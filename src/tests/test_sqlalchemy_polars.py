@@ -418,10 +418,8 @@ class TestSelectToDataFrame:
         result = await select_to_dataframe(sel, test_engine)
         assert_frame_equal(result, df)
 
-    @given(
-        values=lists(booleans() | none(), min_size=1, max_size=100),
-        sr_name=sampled_from(["Value", "value"]),
-    )
+    @given(values=lists(booleans() | none(), min_size=1, max_size=100))
+    @mark.parametrize("sr_name", [param("Value"), param("value")])
     @settings(
         max_examples=1,
         phases={Phase.generate},
