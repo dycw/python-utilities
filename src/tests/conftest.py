@@ -5,7 +5,7 @@ from asyncio import sleep
 from contextlib import suppress
 from os import environ
 from re import MULTILINE, Pattern
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pytest import fixture, mark, param
 from sqlalchemy import text
@@ -18,6 +18,8 @@ from utilities.text import strip_and_dedent
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
+
+    from _pytest.fixtures import SubRequest
 
 
 FLAKY = mark.flaky(reruns=5, reruns_delay=1)
@@ -45,7 +47,7 @@ else:
 
 
 @fixture(params=[param("sqlite"), param("postgresql", marks=SKIPIF_CI_AND_NOT_LINUX)])
-async def test_engine(*, request: Request, tmp_path: Path) -> Any:
+async def test_engine(*, request: SubRequest, tmp_path: Path) -> Any:
     from utilities.sqlalchemy import create_async_engine
 
     dialect = request.param
