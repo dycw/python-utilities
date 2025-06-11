@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from itertools import chain
-from time import time_ns
 from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
 from uuid import uuid4
 
-from hypothesis import Phase, assume, given, settings
+from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -28,12 +27,12 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_co
 
 from tests.test_asyncio_classes.loopers import _BACKOFF, _FREQ, assert_looper_stats
 from utilities.asyncio import Looper
+from utilities.datetime import get_now, serialize_compact
 from utilities.hypothesis import (
     int32s,
     pairs,
     settings_with_reduced_examples,
     sqlalchemy_engines,
-    temp_paths,
 )
 from utilities.iterables import one
 from utilities.modules import is_installed
@@ -101,9 +100,9 @@ if TYPE_CHECKING:
 
 def _table_names() -> str:
     """Generate at unique string."""
-    now = time_ns()
+    now = get_now()
     key = str(uuid4()).replace("-", "")
-    return f"{now}_{key}"
+    return f"{serialize_compact(now)}_{key}"
 
 
 @overload
@@ -135,42 +134,37 @@ def _upsert_lists(
 
 
 class TestCheckEngine:
-    @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_main(self, *, data: DataObject) -> None:
-        engine = await sqlalchemy_engines(data)
-        await check_engine(engine)
+    async def test_main(self, *, test_engine: AsyncEngine) -> None:
+        await check_engine(test_engine)
 
-    @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_num_tables_pass(self, *, data: DataObject) -> None:
+    async def test_num_tables_pass(self, *, test_engine: AsyncEngine) -> None:
         table = Table(
             _table_names(), MetaData(), Column("id", Integer, primary_key=True)
         )
-        engine = await sqlalchemy_engines(data, table)
-        await ensure_tables_created(engine, table)
-        match _get_dialect(engine):
+        await ensure_tables_created(test_engine, table)
+        match _get_dialect(test_engine):
             case "sqlite":
                 expected = 1
             case "postgresql":
                 expected = (int(1e6), 1.0)
             case _ as dialect:
                 raise NotImplementedError(dialect)
-        await check_engine(engine, num_tables=expected)
+        await check_engine(test_engine, num_tables=expected)
 
-    @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_num_tables_error(self, *, data: DataObject) -> None:
-        engine = await sqlalchemy_engines(data)
+    async def test_num_tables_error(self, *, test_engine: AsyncEngine) -> None:
         with raises(CheckEngineError, match=r".* must have 100000 table\(s\); got .*"):
-            await check_engine(engine, num_tables=100000)
+            await check_engine(test_engine, num_tables=100000)
 
 
 class TestColumnwiseMinMax:
-    @given(data=data(), values=sets(pairs(integers(0, 10) | none()), min_size=1))
-    @settings(max_examples=1, phases={Phase.generate})
+    @given(values=sets(pairs(integers(0, 10) | none()), min_size=1))
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_main(
-        self, *, data: DataObject, values: set[tuple[int | None, int | None]]
+        self, *, test_engine: AsyncEngine, values: set[tuple[int | None, int | None]]
     ) -> None:
         table = Table(
             _table_names(),
@@ -179,15 +173,14 @@ class TestColumnwiseMinMax:
             Column("x", Integer),
             Column("y", Integer),
         )
-        engine = await sqlalchemy_engines(data, table)
-        await insert_items(engine, ([{"x": x, "y": y} for x, y in values], table))
+        await insert_items(test_engine, ([{"x": x, "y": y} for x, y in values], table))
         sel = select(
             table.c["x"],
             table.c["y"],
             columnwise_min(table.c["x"], table.c["y"]).label("min_xy"),
             columnwise_max(table.c["x"], table.c["y"]).label("max_xy"),
         )
-        async with engine.begin() as conn:
+        async with test_engine.begin() as conn:
             res = (await conn.execute(sel)).all()
         assert len(res) == len(values)
         for x, y, min_xy, max_xy in res:
@@ -204,49 +197,39 @@ class TestColumnwiseMinMax:
                 assert min_xy == min(x, y)
                 assert max_xy == max(x, y)
 
-    @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_label(self, *, data: DataObject) -> None:
+    async def test_label(self, *, test_engine: AsyncEngine) -> None:
         table = Table(
             _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True, autoincrement=True),
             Column("x", Integer),
         )
-        engine = await sqlalchemy_engines(data, table)
-        await ensure_tables_created(engine, table)
+        await ensure_tables_created(test_engine, table)
         sel = select(columnwise_min(table.c.x, table.c.x))
-        async with engine.begin() as conn:
+        async with test_engine.begin() as conn:
             _ = (await conn.execute(sel)).all()
 
 
 class TestCreateAsyncEngine:
-    @given(temp_path=temp_paths())
-    @settings_with_reduced_examples(phases={Phase.generate})
-    def test_async(self, *, temp_path: Path) -> None:
-        engine = create_async_engine("sqlite+aiosqlite", database=temp_path.name)
+    def test_async(self, *, tmp_path: Path) -> None:
+        engine = create_async_engine("sqlite+aiosqlite", database=tmp_path.name)
         assert isinstance(engine, AsyncEngine)
 
-    @given(temp_path=temp_paths())
-    @settings_with_reduced_examples(phases={Phase.generate})
-    def test_query(self, *, temp_path: Path) -> None:
+    def test_query(self, *, tmp_path: Path) -> None:
         engine = create_async_engine(
             "sqlite+aiosqlite",
-            database=temp_path.name,
+            database=tmp_path.name,
             query={"arg1": "value1", "arg2": ["value2"]},
         )
         assert isinstance(engine, AsyncEngine)
 
 
 class TestEnsureTablesCreated:
-    @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_table(self, *, data: DataObject) -> None:
+    async def test_table(self, *, test_engine: AsyncEngine) -> None:
         table = Table(
             _table_names(), MetaData(), Column("id_", Integer, primary_key=True)
         )
-        engine = await sqlalchemy_engines(data, table)
-        await self._run_test(engine, table)
+        await self._run_test(test_engine, table)
 
     @given(data=data())
     @settings_with_reduced_examples(phases={Phase.generate})
@@ -278,7 +261,6 @@ class TestEnsureTablesDropped:
         table = Table(
             _table_names(), MetaData(), Column("id_", Integer, primary_key=True)
         )
-        engine = await sqlalchemy_engines(data, table)
         await self._run_test(engine, table)
 
     @given(data=data())
@@ -506,7 +488,6 @@ class TestInsertItems:
         self, *, data: DataObject, case: Literal["tuple", "dict"], id_: int
     ) -> None:
         table = self._make_table()
-        engine = await sqlalchemy_engines(data, table)
         match case:
             case "tuple":
                 item = (id_,), table
@@ -538,7 +519,6 @@ class TestInsertItems:
         ids: set[int],
     ) -> None:
         table = self._make_table()
-        engine = await sqlalchemy_engines(data, table)
         match case:
             case "pair-list-of-tuples":
                 item = [((id_,)) for id_ in ids], table
@@ -554,7 +534,6 @@ class TestInsertItems:
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_many_items(self, *, data: DataObject, ids: set[int]) -> None:
         table = self._make_table()
-        engine = await sqlalchemy_engines(data, table)
         await self._run_test(engine, table, ids, [({"id_": id_}, table) for id_ in ids])
 
     @given(data=data(), id_=integers(0, 10))
@@ -575,7 +554,6 @@ class TestInsertItems:
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_snake(self, *, data: DataObject, id_: int) -> None:
         table = self._make_table(title=True)
-        engine = await sqlalchemy_engines(data, table)
         item = {data.draw(sampled_from(["Id_", "id_"])): id_}, table
         await self._run_test(engine, table, {id_}, item, snake=True)
 
@@ -583,7 +561,6 @@ class TestInsertItems:
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_assume_table_exists(self, *, data: DataObject, id_: int) -> None:
         table = self._make_table()
-        engine = await sqlalchemy_engines(data, table)
         with raises(
             (OperationalError, ProgrammingError), match="(no such table|does not exist)"
         ):
@@ -1145,7 +1122,6 @@ class TestUpserter:
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),
         )
-        engine = await sqlalchemy_engines(data, table)
         service = UpsertService(freq=0.1, timeout=1.0, engine=engine)
         pairs = [(id_, init) for id_, init, _ in triples]
         async with service:
@@ -1164,7 +1140,6 @@ class TestUpsertItems:
         self, *, data: DataObject, triple: tuple[int, bool, bool | None]
     ) -> None:
         table = self._make_table()
-        engine = await sqlalchemy_engines(data, table)
         id_, init, post = triple
         init_item = {"id_": id_, "value": init}, table
         await self._run_test(engine, table, init_item, expected={(id_, init)})
@@ -1187,7 +1162,6 @@ class TestUpsertItems:
         case: Literal["pair-list-of-dicts", "list-of-pair-of-dicts"],
     ) -> None:
         table = self._make_table()
-        engine = await sqlalchemy_engines(data, table)
         match case:
             case "pair-list-of-dicts":
                 init = (
@@ -1277,7 +1251,6 @@ class TestUpsertItems:
             Column("x", Boolean, nullable=False),
             Column("y", Boolean, nullable=True),
         )
-        engine = await sqlalchemy_engines(data, table)
         _ = await self._run_test(
             engine,
             table,
@@ -1302,7 +1275,6 @@ class TestUpsertItems:
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_assume_table_exists(self, *, data: DataObject, id_: int) -> None:
         table = self._make_table()
-        engine = await sqlalchemy_engines(data, table)
         with raises((OperationalError, ProgrammingError)):
             await upsert_items(
                 engine, ({"id_": id_, "value": True}, table), assume_tables_exist=True
@@ -1326,7 +1298,6 @@ class TestUpsertItems:
         value2: bool | None,
     ) -> None:
         table = self._make_table()
-        engine = await sqlalchemy_engines(data, table)
         _ = assume(id1 != id2)
         item = [{"id_": id1, "value": value1}, {"id_": id2, "value": value2}], table
         await upsert_items(engine, item)
@@ -1338,7 +1309,6 @@ class TestUpsertItems:
         self, *, data: DataObject, triples: list[tuple[int, bool, bool | None]]
     ) -> None:
         table = self._make_table()
-        engine = await sqlalchemy_engines(data, table)
         pairs = [
             ({"id_": id_, "value": init}, {"id_": id_, "value": post})
             for id_, init, post in triples
@@ -1353,7 +1323,6 @@ class TestUpsertItems:
     @settings_with_reduced_examples(phases={Phase.generate})
     async def test_error(self, *, data: DataObject) -> None:
         table = self._make_table()
-        engine = await sqlalchemy_engines(data, table)
         with raises(UpsertItemsError, match="Item must be valid; got None"):
             _ = await self._run_test(engine, table, cast("Any", None))
 
