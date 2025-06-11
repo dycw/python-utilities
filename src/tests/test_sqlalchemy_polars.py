@@ -138,7 +138,8 @@ _CASES_INSERT: list[
 
 
 class TestInsertDataFrame:
-    @given(data=data(), case=sampled_from(_CASES_INSERT))
+    @given(data=data())
+    @mark.parametrize(("strategy", "pl_dtype", "col_type", "check"), _CASES_INSERT)
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -148,12 +149,12 @@ class TestInsertDataFrame:
         self,
         *,
         data: DataObject,
-        case: tuple[
-            SearchStrategy[Any], PolarsDataType, Any, Callable[[Any, Any], bool]
-        ],
+        strategy: SearchStrategy[Any],
+        pl_dtype: PolarsDataType,
+        col_type: Any,
+        check: Callable[[Any, Any], bool],
         test_engine: AsyncEngine,
     ) -> None:
-        strategy, pl_dtype, col_type, check = case
         values = data.draw(lists(strategy, max_size=100))
         df = DataFrame({"value": values}, schema={"value": pl_dtype})
         table = self._make_table(col_type)
@@ -390,12 +391,13 @@ class TestInsertDataFrameMapDFSchemaToTable:
 
 
 class TestSelectToDataFrame:
-    @given(
-        data=data(),
-        case=sampled_from([
+    @given(data=data())
+    @mark.parametrize(
+        ("strategy", "pl_dtype", "col_type"),
+        [
             (strategy, pl_dtype, col_type)
             for (strategy, pl_dtype, col_type, _) in _CASES_SELECT
-        ]),
+        ],
     )
     @settings(
         max_examples=1,
@@ -406,10 +408,11 @@ class TestSelectToDataFrame:
         self,
         *,
         data: DataObject,
-        case: tuple[SearchStrategy[Any], PolarsDataType, Any],
+        strategy: SearchStrategy[Any],
+        pl_dtype: PolarsDataType,
+        col_type: Any,
         test_engine: AsyncEngine,
     ) -> None:
-        strategy, pl_dtype, col_type = case
         values = data.draw(lists(strategy, max_size=100))
         df = DataFrame({"value": values}, schema={"value": pl_dtype})
         table = self._make_table(col_type)
