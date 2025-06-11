@@ -78,7 +78,7 @@ class TestYieldAccess:
 
         async def coroutine(redis: Redis, key: str, /) -> None:
             async with yield_access(
-                redis, key, num=1, timeout_acquire=0.1, sleep_release=0.5
+                redis, key, num=1, timeout_acquire=0.1, sleep_post_release=0.5
             ):
                 await sleep(0.1)
 

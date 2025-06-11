@@ -81,7 +81,7 @@ async def yield_access(
     lock: AIORedlock | None = None  # skipif-ci-and-not-linux
     try:  # skipif-ci-and-not-linux
         lock = await _get_first_available_lock(
-            locks, timeout_acquire=timeout_acquire, sleep_wait=sleep_wait
+            key, locks, num=num, timeout_acquire=timeout_acquire, sleep_wait=sleep_wait
         )
         yield
     finally:  # skipif-ci-and-not-linux
@@ -92,14 +92,21 @@ async def yield_access(
 
 
 async def _get_first_available_lock(
+    key: str,
     locks: Iterable[AIORedlock],
     /,
     *,
+    num: int = 1,
     timeout_acquire: Duration | None = None,
     sleep_wait: Duration | None = None,
 ) -> AIORedlock:
     locks = list(locks)  # skipif-ci-and-not-linux
-    async with timeout_dur(duration=timeout_acquire):  # skipif-ci-and-not-linux
+    error = _YieldAccessUnableToAcquireLockError(  # skipif-ci-and-not-linux
+        key=key, num=num, timeout=timeout_acquire
+    )
+    async with timeout_dur(  # skipif-ci-and-not-linux
+        duration=timeout_acquire, error=error
+    ):
         while True:
             if (result := await _get_first_available_lock_if_any(locks)) is not None:
                 return result
