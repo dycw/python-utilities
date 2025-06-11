@@ -59,7 +59,7 @@ async def yield_access(
     timeout_acquire: Duration | None = None,
     timeout_release: Duration = 10 * SECOND,
     sleep_wait: Duration = MILLISECOND,
-    sleep_post_release: Duration | None = None,
+    sleep_post: Duration | None = None,
 ) -> AsyncIterator[None]:
     """Acquire access to a locked resource, amongst 1 of multiple connections."""
     if num <= 0:
@@ -85,7 +85,7 @@ async def yield_access(
         )
         yield
     finally:  # skipif-ci-and-not-linux
-        await sleep_dur(duration=sleep_post_release)
+        await sleep_dur(duration=sleep_post)
         if lock is not None:
             with suppress(ReleaseUnlockedLock):
                 await lock.release()
