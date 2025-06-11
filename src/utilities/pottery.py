@@ -66,7 +66,7 @@ async def yield_access(
         raise _YieldAccessNumLocksError(key=key, num=num)
     masters = {redis} if isinstance(redis, Redis) else set(always_iterable(redis))
     auto_release_time = datetime_duration_to_float(timeout_use)
-    locks = [
+    locks = [  # skipif-ci-and-not-linux
         AIORedlock(
             key=f"{key}_{i}_of_{num}",
             masters=masters,
@@ -148,7 +148,7 @@ class _YieldAccessUnableToAcquireLockError(YieldAccessError):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to acquire any 1 of {self.num} locks for {self.key!r} after {self.timeout}"
+        return f"Unable to acquire any 1 of {self.num} locks for {self.key!r} after {self.timeout}"  # skipif-ci-and-not-linux
 
 
 __all__ = ["YieldAccessError", "yield_access", "yield_locked_resource"]
