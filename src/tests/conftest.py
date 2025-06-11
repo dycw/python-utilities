@@ -46,7 +46,7 @@ else:
 # fixtures - sqlalchemy
 
 
-@fixture(params=[param("sqlite"), param("postgresql", marks=SKIPIF_CI_AND_NOT_LINUX)])
+@fixture(params=[param("sqlite"), param("postgresql", marks=SKIPIF_CI)])
 async def test_engine(*, request: SubRequest, tmp_path: Path) -> Any:
     from utilities.sqlalchemy import create_async_engine
 
