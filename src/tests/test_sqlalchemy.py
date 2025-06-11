@@ -7,10 +7,8 @@ from uuid import uuid4
 
 from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.strategies import (
-    DataObject,
     SearchStrategy,
     booleans,
-    data,
     floats,
     integers,
     lists,
@@ -490,7 +488,7 @@ class TestInsertItems:
                 item = {"id_": id_}, table
         await self._run_test(test_engine, table, {id_}, item)
 
-    @given(data=data(), ids=sets(integers(0, 10), min_size=1))
+    @given(ids=sets(integers(0, 10), min_size=1))
     @mark.parametrize(
         "case",
         [
@@ -530,7 +528,11 @@ class TestInsertItems:
         await self._run_test(test_engine, table, ids, item)
 
     @given(ids=sets(integers(0, 1000), min_size=10, max_size=100))
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_many_items(self, *, ids: set[int], test_engine: AsyncEngine) -> None:
         table = self._make_table()
         await self._run_test(
@@ -538,13 +540,21 @@ class TestInsertItems:
         )
 
     @given(id_=integers(0, 10))
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_mapped_class(self, *, id_: int, test_engine: AsyncEngine) -> None:
         cls = self._make_mapped_class()
         await self._run_test(test_engine, cls, {id_}, cls(id_=id_))
 
     @given(ids=sets(integers(0, 10), min_size=1))
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_mapped_classes(
         self, *, ids: set[int], test_engine: AsyncEngine
     ) -> None:
@@ -751,12 +761,11 @@ class TestMapMappingToTable:
         result = _map_mapping_to_table(mapping, table)
         assert result == mapping
 
-    @given(data=data(), id_=integers(0, 10), value=booleans())
-    def test_snake(self, *, data: DataObject, id_: int, value: bool) -> None:
-        mapping = {
-            data.draw(sampled_from(["Id_", "id_"])): id_,
-            data.draw(sampled_from(["Value", "value"])): value,
-        }
+    @given(id_=integers(0, 10), value=booleans())
+    @mark.parametrize("key1", [param("Id_"), param("id_")])
+    @mark.parametrize("key2", [param("Value"), param("value")])
+    def test_snake(self, *, key1: str, id_: int, key2: str, value: bool) -> None:
+        mapping = {key1: id_, key2: value}
         table = Table(
             "example",
             MetaData(),
@@ -1292,7 +1301,7 @@ class TestUpsertItems:
             expected={expected},
         )
 
-    @given(data=data(), id_=integers(0, 10))
+    @given(id_=integers(0, 10))
     @settings(
         max_examples=1,
         phases={Phase.generate},
