@@ -63,7 +63,7 @@ async def yield_access(
 ) -> AsyncIterator[None]:
     """Acquire access to a locked resource, amongst 1 of multiple connections."""
     if num <= 0:
-        raise _YieldAccessNumError(key=key, num=num)
+        raise _YieldAccessNumLocksError(key=key, num=num)
     masters = (  # skipif-ci-and-not-linux
         {redis} if isinstance(redis, Redis) else set(always_iterable(redis))
     )
@@ -102,12 +102,14 @@ async def _yield_first_available_lock(
     sleep_wait: Duration = MILLISECOND,
     sleep_release: Duration | None = None,
 ) -> AsyncIterator[AIORedlock]:
+    lock: AIORedlock | None = None
     try:
         yield (lock := await _get_first_available_lock(locks, sleep=sleep_wait))
     finally:
         await sleep_dur(duration=sleep_release)
-        with suppress(ReleaseUnlockedLock):
-            await lock.release()
+        if lock is not None:
+            with suppress(ReleaseUnlockedLock):
+                await lock.release()
 
 
 async def _get_first_available_lock(
@@ -136,7 +138,7 @@ class YieldAccessError(Exception):
 
 
 @dataclass(kw_only=True, slots=True)
-class _YieldAccessNumError(YieldAccessError):
+class _YieldAccessNumLocksError(YieldAccessError):
     @override
     def __str__(self) -> str:
         return f"Number of locks for {self.key!r} must be positive; got {self.num}"
@@ -148,7 +150,7 @@ class _YieldAccessUnableToAcquireLockError(YieldAccessError):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to acquire access any one of {self.num} locks for {self.key!r} after {self.timeout}"
+        return f"Unable to acquire any 1 of {self.num} locks for {self.key!r} after {self.timeout}"
 
 
-__all__ = ["yield_access", "yield_locked_resource"]
+__all__ = ["YieldAccessError", "yield_access", "yield_locked_resource"]
