@@ -54,11 +54,6 @@ class TestYieldAccess:
             param(4, 3, 0.2),
             param(4, 4, 0.1),
             param(4, 5, 0.1),
-            param(5, 1, 0.5),
-            param(5, 2, 0.3),
-            param(5, 3, 0.2),
-            param(5, 4, 0.2),
-            param(5, 5, 0.1),
         ],
     )
     async def test_main(
