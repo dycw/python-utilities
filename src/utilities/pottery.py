@@ -25,7 +25,7 @@ async def yield_locked_resource(
     *,
     duration: Duration = 10 * SECOND,
     sleep: Duration = MILLISECOND,
-) -> AsyncIterator[None]:
+) -> AsyncIterator[AIORedlock]:
     """Yield a locked resource."""
     masters = (  # skipif-ci-and-not-linux
         {redis} if isinstance(redis, Redis) else set(always_iterable(redis))
@@ -41,7 +41,7 @@ async def yield_locked_resource(
     while not await lock.acquire():  # pragma: no cover
         _ = await asyncio.sleep(sleep_use)
     try:  # skipif-ci-and-not-linux
-        yield
+        yield lock
     finally:  # skipif-ci-and-not-linux
         with suppress(ReleaseUnlockedLock):
             await lock.release()
