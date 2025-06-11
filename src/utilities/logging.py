@@ -361,7 +361,9 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
     def emit(self, record: LogRecord) -> None:
         try:
             if (self._backup_count is not None) and self._should_rollover(record):
-                self._do_rollover(backup_count=self._backup_count)
+                self._do_rollover(  # skipif-ci-and-windows
+                    backup_count=self._backup_count
+                )
             FileHandler.emit(self, record)
         except Exception:  # noqa: BLE001  # pragma: no cover
             self.handleError(record)
@@ -371,21 +373,23 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
             self.stream.close()
             self.stream = None
 
-        actions = _compute_rollover_actions(
+        actions = _compute_rollover_actions(  # skipif-ci-and-windows
             self._directory,
             self._stem,
             self._suffix,
             patterns=self._patterns,
             backup_count=backup_count,
         )
-        actions.do()
+        actions.do()  # skipif-ci-and-windows
 
         if not self.delay:  # pragma: no cover
             self.stream = self._open()
-        self._time_handler.rolloverAt = self._time_handler.computeRollover(int(time()))
+        self._time_handler.rolloverAt = (  # skipif-ci-and-windows
+            self._time_handler.computeRollover(int(time()))
+        )
 
     def _should_rollover(self, record: LogRecord, /) -> bool:
-        if self._max_bytes is not None:
+        if self._max_bytes is not None:  # skipif-ci-and-windows
             try:
                 size = self._filename.stat().st_size
             except FileNotFoundError:
@@ -393,7 +397,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
             else:
                 if size >= self._max_bytes:
                     return True
-        return bool(self._time_handler.shouldRollover(record))
+        return bool(self._time_handler.shouldRollover(record))  # skipif-ci-and-windows
 
 
 def _compute_rollover_patterns(stem: str, suffix: str, /) -> _RolloverPatterns:
