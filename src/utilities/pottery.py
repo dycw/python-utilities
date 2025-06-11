@@ -57,9 +57,9 @@ async def yield_access(
     *,
     num: int = 1,
     timeout_acquire: Duration | None = None,
-    timeout_use: Duration = 10 * SECOND,
+    timeout_release: Duration = 10 * SECOND,
     sleep_wait: Duration = MILLISECOND,
-    sleep_release: Duration | None = None,
+    sleep_post_release: Duration | None = None,
 ) -> AsyncIterator[None]:
     """Acquire access to a locked resource, amongst 1 of multiple connections."""
     if num <= 0:
@@ -68,7 +68,7 @@ async def yield_access(
         {redis} if isinstance(redis, Redis) else set(always_iterable(redis))
     )
     auto_release_time = datetime_duration_to_float(  # skipif-ci-and-not-linux
-        timeout_use
+        timeout_release
     )
     locks = [  # skipif-ci-and-not-linux
         AIORedlock(
@@ -78,50 +78,32 @@ async def yield_access(
         )
         for i in range(1, num + 1)
     ]
-    if timeout_acquire is None:  # skipif-ci-and-not-linux
-        async with _yield_first_available_lock(
-            locks, sleep_wait=sleep_wait, sleep_release=sleep_release
-        ):
-            yield
-    else:  # skipif-ci-and-not-linux
-        error = _YieldAccessUnableToAcquireLockError(
-            key=key, num=num, timeout=timeout_acquire
-        )
-        async with (
-            timeout_dur(duration=timeout_acquire, error=error),
-            _yield_first_available_lock(
-                locks, sleep_wait=sleep_wait, sleep_release=sleep_release
-            ),
-        ):
-            yield
-
-
-@asynccontextmanager
-async def _yield_first_available_lock(
-    locks: Iterable[AIORedlock],
-    /,
-    *,
-    sleep_wait: Duration = MILLISECOND,
-    sleep_release: Duration | None = None,
-) -> AsyncIterator[AIORedlock]:
     lock: AIORedlock | None = None  # skipif-ci-and-not-linux
     try:  # skipif-ci-and-not-linux
-        yield (lock := await _get_first_available_lock(locks, sleep=sleep_wait))
+        lock = await _get_first_available_lock(
+            locks, timeout_acquire=timeout_acquire, sleep_wait=sleep_wait
+        )
+        yield
     finally:  # skipif-ci-and-not-linux
-        await sleep_dur(duration=sleep_release)
+        await sleep_dur(duration=sleep_post_release)
         if lock is not None:
             with suppress(ReleaseUnlockedLock):
                 await lock.release()
 
 
 async def _get_first_available_lock(
-    locks: Iterable[AIORedlock], /, *, sleep: Duration | None = None
+    locks: Iterable[AIORedlock],
+    /,
+    *,
+    timeout_acquire: Duration | None = None,
+    sleep_wait: Duration | None = None,
 ) -> AIORedlock:
     locks = list(locks)  # skipif-ci-and-not-linux
-    while True:  # skipif-ci-and-not-linux
-        if (result := await _get_first_available_lock_if_any(locks)) is not None:
-            return result
-        await sleep_dur(duration=sleep)
+    async with timeout_dur(duration=timeout_acquire):  # skipif-ci-and-not-linux
+        while True:
+            if (result := await _get_first_available_lock_if_any(locks)) is not None:
+                return result
+            await sleep_dur(duration=sleep_wait)
 
 
 async def _get_first_available_lock_if_any(
