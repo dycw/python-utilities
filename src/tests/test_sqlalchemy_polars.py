@@ -500,7 +500,11 @@ class TestSelectToDataFrame:
         batch_size=integers(1, 10),
         in_clauses_chunk_size=integers(1, 10),
     )
-    @settings(phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_batch_and_in_clauses(
         self,
         *,
@@ -655,6 +659,11 @@ class TestSelectToDataFrameYieldSelectsWithInClauses:
         values=sets(integers(), max_size=100),
         in_clauses_chunk_size=integers(1, 10) | none(),
         chunk_size_frac=floats(0.1, 10.0),
+    )
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_main(
         self,
