@@ -231,9 +231,7 @@ class TestEnsureTablesCreated:
         )
         await self._run_test(test_engine, table)
 
-    @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_mapped_class(self, *, data: DataObject) -> None:
+    async def test_mapped_class(self, *, test_engine: AsyncEngine) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
@@ -241,8 +239,7 @@ class TestEnsureTablesCreated:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        engine = await sqlalchemy_engines(data, Example)
-        await self._run_test(engine, Example)
+        await self._run_test(test_engine, Example)
 
     async def _run_test(
         self, engine: AsyncEngine, table_or_orm: TableOrORMInstOrClass, /
@@ -261,9 +258,7 @@ class TestEnsureTablesDropped:
         )
         await self._run_test(test_engine, table)
 
-    @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_mapped_class(self, *, data: DataObject) -> None:
+    async def test_mapped_class(self, *, test_engine: AsyncEngine) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
@@ -271,8 +266,7 @@ class TestEnsureTablesDropped:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        engine = await sqlalchemy_engines(data, Example)
-        await self._run_test(engine, Example)
+        await self._run_test(test_engine, Example)
 
     async def _run_test(
         self, engine: AsyncEngine, table_or_orm: TableOrORMInstOrClass, /
@@ -286,14 +280,17 @@ class TestEnsureTablesDropped:
 
 
 class TestGetChunkSize:
-    @given(data=data(), chunk_size_frac=floats(0.0, 1.0), scaling=floats(0.1, 10.0))
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @given(chunk_size_frac=floats(0.0, 1.0), scaling=floats(0.1, 10.0))
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_main(
-        self, *, data: DataObject, chunk_size_frac: float, scaling: float
+        self, *, chunk_size_frac: float, scaling: float, test_engine: AsyncEngine
     ) -> None:
-        engine = await sqlalchemy_engines(data)
         result = get_chunk_size(
-            engine, chunk_size_frac=chunk_size_frac, scaling=scaling
+            test_engine, chunk_size_frac=chunk_size_frac, scaling=scaling
         )
         assert result >= 1
 
