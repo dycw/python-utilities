@@ -2,17 +2,19 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager, suppress
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, override
 
 from pottery import AIORedlock
 from pottery.exceptions import ReleaseUnlockedLock
 from redis.asyncio import Redis
 
+from utilities.asyncio import sleep_dur, timeout_dur
 from utilities.datetime import MILLISECOND, SECOND, datetime_duration_to_float
 from utilities.iterables import always_iterable
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncIterator, Iterable
 
     from utilities.types import Duration, MaybeIterable
 
@@ -47,4 +49,106 @@ async def yield_locked_resource(
             await lock.release()
 
 
-__all__ = ["yield_locked_resource"]
+@asynccontextmanager
+async def yield_access(
+    redis: MaybeIterable[Redis],
+    key: str,
+    /,
+    *,
+    num: int = 1,
+    timeout_acquire: Duration | None = None,
+    timeout_use: Duration = 10 * SECOND,
+    sleep_wait: Duration = MILLISECOND,
+    sleep_release: Duration | None = None,
+) -> AsyncIterator[None]:
+    """Acquire access to a locked resource, amongst 1 of multiple connections."""
+    if num <= 0:
+        raise _YieldAccessNumError(key=key, num=num)
+    masters = (  # skipif-ci-and-not-linux
+        {redis} if isinstance(redis, Redis) else set(always_iterable(redis))
+    )
+    auto_release_time = datetime_duration_to_float(timeout_use)
+    locks = [
+        AIORedlock(
+            key=f"{key}_{i}_of_{num}",
+            masters=masters,
+            auto_release_time=auto_release_time,
+        )
+        for i in range(1, num + 1)
+    ]
+    if timeout_acquire is None:
+        async with _yield_first_available_lock(
+            locks, sleep_wait=sleep_wait, sleep_release=sleep_release
+        ):
+            yield
+    else:
+        error = _YieldAccessUnableToAcquireLockError(
+            key=key, num=num, timeout=timeout_acquire
+        )
+        async with (
+            timeout_dur(duration=timeout_acquire, error=error),
+            _yield_first_available_lock(
+                locks, sleep_wait=sleep_wait, sleep_release=sleep_release
+            ),
+        ):
+            yield
+
+
+@asynccontextmanager
+async def _yield_first_available_lock(
+    locks: Iterable[AIORedlock],
+    /,
+    *,
+    sleep_wait: Duration = MILLISECOND,
+    sleep_release: Duration | None = None,
+) -> AsyncIterator[AIORedlock]:
+    try:
+        yield (lock := await _get_first_available_lock(locks, sleep=sleep_wait))
+    finally:
+        await sleep_dur(duration=sleep_release)
+        with suppress(ReleaseUnlockedLock):
+            await lock.release()
+
+
+async def _get_first_available_lock(
+    locks: Iterable[AIORedlock], /, *, sleep: Duration | None = None
+) -> AIORedlock:
+    locks = list(locks)
+    while True:
+        if (result := await _get_first_available_lock_if_any(locks)) is not None:
+            return result
+        await sleep_dur(duration=sleep)
+
+
+async def _get_first_available_lock_if_any(
+    locks: Iterable[AIORedlock], /
+) -> AIORedlock | None:
+    for lock in locks:
+        if await lock.acquire(blocking=False):
+            return lock
+    return None
+
+
+@dataclass(kw_only=True, slots=True)
+class YieldAccessError(Exception):
+    key: str
+    num: int
+
+
+@dataclass(kw_only=True, slots=True)
+class _YieldAccessNumError(YieldAccessError):
+    @override
+    def __str__(self) -> str:
+        return f"Number of locks for {self.key!r} must be positive; got {self.num}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _YieldAccessUnableToAcquireLockError(YieldAccessError):
+    timeout: Duration | None
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to acquire access any one of {self.num} locks for {self.key!r} after {self.timeout}"
+
+
+__all__ = ["yield_access", "yield_locked_resource"]
