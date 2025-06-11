@@ -28,7 +28,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_co
 from tests.test_asyncio_classes.loopers import _BACKOFF, _FREQ, assert_looper_stats
 from utilities.asyncio import Looper
 from utilities.datetime import get_now, serialize_compact
-from utilities.hypothesis import int32s, pairs, settings_with_reduced_examples
+from utilities.hypothesis import int32s, pairs
 from utilities.iterables import one
 from utilities.modules import is_installed
 from utilities.sqlalchemy import (
@@ -822,19 +822,17 @@ class TestMigrateData:
     async def test_main(
         self, *, values: list[tuple[int, bool]], test_engine: AsyncEngine
     ) -> None:
-        engine1 = await sqlalchemy_engines(data)
         table1 = self._make_table()
         await insert_items(
-            engine1, [({"id_": id_, "value": v}, table1) for id_, v in values]
+            test_engine, [({"id_": id_, "value": v}, table1) for id_, v in values]
         )
-        async with engine1.begin() as conn:
+        async with test_engine.begin() as conn:
             result1 = (await conn.execute(select(table1))).all()
         assert len(result1) == len(values)
 
-        engine2 = await sqlalchemy_engines(data)
         table2 = self._make_table()
-        await migrate_data(table1, engine1, engine2, table_or_orm_to=table2)
-        async with engine2.begin() as conn:
+        await migrate_data(table1, test_engine, test_engine, table_or_orm_to=table2)
+        async with test_engine.begin() as conn:
             result2 = (await conn.execute(select(table2))).all()
         assert len(result2) == len(values)
 
@@ -983,35 +981,32 @@ class TestORMInstToDict:
 
 
 class TestPrepareInsertOrUpsertItems:
-    @given(
-        data=data(),
-        normalize_item=sampled_from([_normalize_insert_item, _normalize_upsert_item]),
+    @mark.parametrize(
+        "normalize_item", [param(_normalize_insert_item), param(_normalize_upsert_item)]
     )
-    @settings_with_reduced_examples(phases={Phase.generate})
     async def test_error(
-        self, *, data: DataObject, normalize_item: Callable[[Any], Iterator[Any]]
+        self,
+        *,
+        normalize_item: Callable[[Any], Iterator[Any]],
+        test_engine: AsyncEngine,
     ) -> None:
-        engine = await sqlalchemy_engines(data)
         with raises(
             _PrepareInsertOrUpsertItemsError, match="Item must be valid; got None"
         ):
             _ = _prepare_insert_or_upsert_items(
-                normalize_item, engine, cast("Any", None), cast("Any", None)
+                normalize_item, test_engine, cast("Any", None), cast("Any", None)
             )
 
 
 class TestPrepareInsertOrUpsertItemsMergeItems:
-    @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_main(self, *, data: DataObject) -> None:
-        engine = await sqlalchemy_engines(data)
+    async def test_main(self, *, test_engine: AsyncEngine) -> None:
         table = Table(
             _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),
         )
-        await ensure_tables_created(engine, table)
+        await ensure_tables_created(test_engine, table)
         items = [
             {"id_": 1, "value": True},
             {"id_": 1, "value": False},
@@ -1021,49 +1016,40 @@ class TestPrepareInsertOrUpsertItemsMergeItems:
         result = _prepare_insert_or_upsert_items_merge_items(table, items)
         expected = [{"id_": 1, "value": False}, {"id_": 2, "value": True}]
         assert result == expected
-        async with engine.begin() as conn:
+        async with test_engine.begin() as conn:
             _ = await conn.execute(table.insert().values(expected))
 
-    @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_just_value(self, *, data: DataObject) -> None:
-        engine = await sqlalchemy_engines(data)
+    async def test_just_value(self, *, test_engine: AsyncEngine) -> None:
         table = Table(
             _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Integer),
         )
-        await ensure_tables_created(engine, table)
+        await ensure_tables_created(test_engine, table)
         items = [{"value": 1}, {"value": 2}]
         result = _prepare_insert_or_upsert_items_merge_items(table, items)
         assert result == items
-        async with engine.begin() as conn:
+        async with test_engine.begin() as conn:
             _ = await conn.execute(table.insert().values(items))
 
-    @given(data=data())
-    @settings_with_reduced_examples(phases={Phase.generate})
-    async def test_autoincrement(self, *, data: DataObject) -> None:
-        engine = await sqlalchemy_engines(data)
+    async def test_autoincrement(self, *, test_engine: AsyncEngine) -> None:
         table = Table(
             _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True, autoincrement=True),
             Column("value", Integer),
         )
-        await ensure_tables_created(engine, table)
+        await ensure_tables_created(test_engine, table)
         items = [{"value": 1}, {"value": 2}]
         result = _prepare_insert_or_upsert_items_merge_items(table, items)
         assert result == items
-        async with engine.begin() as conn:
+        async with test_engine.begin() as conn:
             _ = await conn.execute(table.insert().values(items))
 
 
 class TestSelectableToString:
-    @given(data=data())
-    @settings_with_reduced_examples()
-    async def test_main(self, *, data: DataObject) -> None:
-        engine = await sqlalchemy_engines(data)
+    async def test_main(self, *, test_engine: AsyncEngine) -> None:
         table = Table(
             "example",
             MetaData(),
@@ -1071,14 +1057,12 @@ class TestSelectableToString:
             Column("value", Boolean, nullable=True),
         )
         sel = select(table).where(table.c.value >= 1)
-        result = selectable_to_string(sel, engine)
-        expected = strip_and_dedent(
-            """
-                SELECT example.id_, example.value --
-                FROM example --
-                WHERE example.value >= 1
-            """.replace("--\n", "\n")
-        )
+        result = selectable_to_string(sel, test_engine)
+        expected = strip_and_dedent("""
+            SELECT example.id_, example.value
+            FROM example
+            WHERE example.value >= 1
+        """)
         assert result == expected
 
 
@@ -1210,19 +1194,22 @@ class TestUpsertItems:
         }
         _ = await self._run_test(test_engine, table, post, expected=post_expected)
 
-    @given(data=data(), triple=_upsert_triples())
-    @settings_with_reduced_examples(phases={Phase.generate})
+    @given(triple=_upsert_triples())
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     async def test_mapped_class(
-        self, *, data: DataObject, triple: tuple[int, bool, bool]
+        self, *, triple: tuple[int, bool, bool], test_engine: AsyncEngine
     ) -> None:
         cls = self._make_mapped_class()
-        engine = await sqlalchemy_engines(data, cls)
         id_, init, post = triple
         _ = await self._run_test(
-            engine, cls, cls(id_=id_, value=init), expected={(id_, init)}
+            test_engine, cls, cls(id_=id_, value=init), expected={(id_, init)}
         )
         _ = await self._run_test(
-            engine, cls, cls(id_=id_, value=post), expected={(id_, post)}
+            test_engine, cls, cls(id_=id_, value=post), expected={(id_, post)}
         )
 
     @given(triples=_upsert_lists(nullable=True, min_size=1))
@@ -1400,17 +1387,13 @@ class TestUpsertItems:
 
 
 class TestUpsertServiceMixin:
-    @given(data=data())
-    @settings(max_examples=1, phases={Phase.generate})
-    async def test_main(self, *, data: DataObject) -> None:
-        engine = await sqlalchemy_engines(data)
-
+    async def test_main(self, *, test_engine: AsyncEngine) -> None:
         @dataclass(kw_only=True)
         class Example(UpsertServiceMixin, Looper[Any]):
             freq: Duration = field(default=_FREQ, repr=False)
             backoff: Duration = field(default=_BACKOFF, repr=False)
             _debug: bool = field(default=True, repr=False)
-            upsert_service_database: AsyncEngine = engine
+            upsert_service_database: AsyncEngine = test_engine
             upsert_service_freq: Duration = field(default=_FREQ, repr=False)
             upsert_service_backoff: Duration = field(default=_BACKOFF, repr=False)
 
