@@ -64,8 +64,12 @@ async def yield_access(
     """Acquire access to a locked resource, amongst 1 of multiple connections."""
     if num <= 0:
         raise _YieldAccessNumLocksError(key=key, num=num)
-    masters = {redis} if isinstance(redis, Redis) else set(always_iterable(redis))
-    auto_release_time = datetime_duration_to_float(timeout_use)
+    masters = (  # skipif-ci-and-not-linux
+        {redis} if isinstance(redis, Redis) else set(always_iterable(redis))
+    )
+    auto_release_time = datetime_duration_to_float(  # skipif-ci-and-not-linux
+        timeout_use
+    )
     locks = [  # skipif-ci-and-not-linux
         AIORedlock(
             key=f"{key}_{i}_of_{num}",
