@@ -94,7 +94,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.130.0"
+version = "0.130.1"
 
 [project.optional-dependencies]
 logging = [
@@ -341,7 +341,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.130.0"
+current_version = "0.130.1"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -476,6 +476,7 @@ unsafe-fixes = true
 
 [tool.ruff.format]
 preview = true
+skip-magic-trailing-comma = true
 
 [tool.ruff.lint]
 explicit-preview-rules = true
@@ -543,3 +544,4 @@ ban-relative-imports = "all"
 
 [tool.ruff.lint.isort]
 required-imports = ["from __future__ import annotations"]
+split-on-trailing-comma = false
