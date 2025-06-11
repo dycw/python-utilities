@@ -155,7 +155,7 @@ class TestInsertDataFrame:
         check: Callable[[Any, Any], bool],
         test_engine: AsyncEngine,
     ) -> None:
-        values = data.draw(lists(strategy, max_size=100))
+        values = data.draw(lists(strategy, min_size=1))
         df = DataFrame({"value": values}, schema={"value": pl_dtype})
         table = self._make_table(col_type)
         await insert_dataframe(df, table, test_engine)
@@ -192,7 +192,7 @@ class TestInsertDataFrame:
             results = (await conn.execute(sel)).scalars().all()
         assert results == []
 
-    @given(values=_upsert_lists())
+    @given(values=_upsert_lists(min_size=1))
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -413,7 +413,7 @@ class TestSelectToDataFrame:
         col_type: Any,
         test_engine: AsyncEngine,
     ) -> None:
-        values = data.draw(lists(strategy, max_size=100))
+        values = data.draw(lists(strategy, min_size=1))
         df = DataFrame({"value": values}, schema={"value": pl_dtype})
         table = self._make_table(col_type)
         await insert_dataframe(df, table, test_engine)
@@ -421,7 +421,7 @@ class TestSelectToDataFrame:
         result = await select_to_dataframe(sel, test_engine)
         assert_frame_equal(result, df)
 
-    @given(values=lists(booleans() | none(), min_size=1, max_size=100))
+    @given(values=lists(booleans() | none(), min_size=1))
     @mark.parametrize("sr_name", [param("Value"), param("value")])
     @settings(
         max_examples=1,
@@ -440,7 +440,7 @@ class TestSelectToDataFrame:
         assert_frame_equal(result, expected)
 
     @given(
-        values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
+        values=lists(integers(0, 100), min_size=1, unique=True),
         batch_size=integers(1, 10),
     )
     @settings(
@@ -458,7 +458,7 @@ class TestSelectToDataFrame:
 
     @given(
         data=data(),
-        values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
+        values=lists(integers(0, 100), min_size=1, unique=True),
         in_clauses_chunk_size=integers(1, 10),
     )
     @settings(
@@ -476,7 +476,7 @@ class TestSelectToDataFrame:
     ) -> None:
         df, table, sel = await self._prepare_feature_test(values)
         await insert_dataframe(df, table, test_engine)
-        in_values = data.draw(sets(sampled_from(values)))
+        in_values = data.draw(sets(sampled_from(values), min_size=1))
         df = await select_to_dataframe(
             sel,
             test_engine,
@@ -497,7 +497,7 @@ class TestSelectToDataFrame:
 
     @given(
         data=data(),
-        values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
+        values=lists(integers(0, 100), min_size=1, unique=True),
         batch_size=integers(1, 10),
         in_clauses_chunk_size=integers(1, 10),
     )
@@ -517,7 +517,7 @@ class TestSelectToDataFrame:
     ) -> None:
         df, table, sel = await self._prepare_feature_test(values)
         await insert_dataframe(df, table, test_engine)
-        in_values = data.draw(sets(sampled_from(values)))
+        in_values = data.draw(sets(sampled_from(values), min_size=1))
         async_dfs = await select_to_dataframe(
             sel,
             test_engine,
@@ -657,7 +657,7 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
 
 class TestSelectToDataFrameYieldSelectsWithInClauses:
     @given(
-        values=sets(integers(), max_size=100),
+        values=sets(integers(), min_size=1),
         in_clauses_chunk_size=integers(1, 10) | none(),
         chunk_size_frac=floats(0.1, 10.0),
     )
