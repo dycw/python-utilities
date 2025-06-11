@@ -94,7 +94,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.131.0"
+version = "0.131.1"
 
 [project.optional-dependencies]
 logging = [
@@ -341,7 +341,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.131.0"
+current_version = "0.131.1"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -460,6 +460,7 @@ filterwarnings = [
   "ignore:unclosed <StreamWriter .*>:ResourceWarning",  # redis
   "ignore:unclosed <socket.*socket .*>:ResourceWarning",  # redis
   "ignore:unclosed Connection <redis.*asyncio.*connection.*Connection.*>:ResourceWarning",  # redis
+  "ignore:unclosed connection <asyncpg.*connection.*Connection.*>:ResourceWarning",  # asyncpg
   "ignore:unclosed event loop <_UnixSelectorEventLoop .*>:ResourceWarning",  # redis
   "ignore:unclosed file <_io.*TextIOWrapper .*>:ResourceWarning",  # logging
   "ignore:unclosed transport <_SelectorSocketTransport .*>:ResourceWarning",  # redis

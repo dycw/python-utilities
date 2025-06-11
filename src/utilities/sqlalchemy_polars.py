@@ -25,7 +25,6 @@ from polars import (
 )
 from sqlalchemy import Column, Select, select
 from sqlalchemy.exc import DuplicateColumnError
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from utilities.asyncio import timeout_dur
 from utilities.functions import identity
@@ -61,6 +60,7 @@ if TYPE_CHECKING:
     )
 
     from polars._typing import PolarsDataType, SchemaDict
+    from sqlalchemy.ext.asyncio import AsyncEngine
     from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
     from tenacity.retry import RetryBaseT
@@ -307,22 +307,6 @@ async def select_to_dataframe(
     **kwargs: Any,
 ) -> DataFrame | Iterable[DataFrame] | AsyncIterable[DataFrame]:
     """Read a table from a database into a DataFrame."""
-    if not issubclass(AsyncEngine, type(engine)):
-        # for handling testing
-        engine = create_async_engine(engine.url)
-        return await select_to_dataframe(
-            sel,
-            engine,
-            snake=snake,
-            time_zone=time_zone,
-            batch_size=batch_size,
-            in_clauses=in_clauses,
-            in_clauses_chunk_size=in_clauses_chunk_size,
-            chunk_size_frac=chunk_size_frac,
-            timeout=timeout,
-            error=error,
-            **kwargs,
-        )
     if snake:
         sel = _select_to_dataframe_apply_snake(sel)
     schema = _select_to_dataframe_map_select_to_df_schema(sel, time_zone=time_zone)

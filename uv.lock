@@ -472,20 +472,20 @@ wheels = [
 
 [[package]]
 name = "clarabel"
-version = "0.11.0"
+version = "0.11.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cffi" },
     { name = "numpy" },
     { name = "scipy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/13/f4/77cd8679ab6787fb19f69f79a9a3b1676710a0903d2ca95bbdb7f40f10ef/clarabel-0.11.0.tar.gz", hash = "sha256:7a8ee6fe74eb7e7ba457b664e312e6953dec4bd1651d4725f5b5bcff5ef4dbc1", size = 253810, upload-time = "2025-05-23T17:59:30.434Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/81/e2/47f692161779dbd98876015de934943effb667a014e6f79a6d746b3e4c2a/clarabel-0.11.1.tar.gz", hash = "sha256:e7c41c47f0e59aeab99aefff9e58af4a8753ee5269bbeecbd5526fc6f41b9598", size = 253949, upload-time = "2025-06-11T16:49:05.864Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3f/e4/2e4d2db51fd106f54f0cd3e2d374732b63ca3c7c0c7c4587f56588237e18/clarabel-0.11.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:e7cdc7ff5bebf04999fb990b740b7a9ec6e266382af406c8aa75aa3031ed219a", size = 1041064, upload-time = "2025-05-23T17:59:21.051Z" },
-    { url = "https://files.pythonhosted.org/packages/35/17/3ac27e01ccf250c6f9df296f9787788db259b05bd715bc090b3e8661b2d2/clarabel-0.11.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:85bb474ba3c590fac47985d3dd19519ea247b77b62f1e1afb93c728799a594a2", size = 961333, upload-time = "2025-05-23T17:59:22.743Z" },
-    { url = "https://files.pythonhosted.org/packages/e8/8d/1a933b8db929e2ce1f33bb9534c3fb0d1c83908d23d89d129a07a3f13536/clarabel-0.11.0-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:763cb448ba337e593bab1d442b671c854b85981ae551e6a64209fc864985098a", size = 1078244, upload-time = "2025-05-23T17:59:24.516Z" },
-    { url = "https://files.pythonhosted.org/packages/9c/e8/361054c5d77185e780d126c4ef1520d7438863bb5b30c2f1fe6355b53a47/clarabel-0.11.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a08bb648b2cddce8ff80acb065da54aa80a76cf90ae1f2176f15a640f042cc2c", size = 1164905, upload-time = "2025-05-23T17:59:26.655Z" },
-    { url = "https://files.pythonhosted.org/packages/19/89/d4caad4f3851e317e423359d31d9862b08321fd61db6281edb80455ca562/clarabel-0.11.0-cp39-abi3-win_amd64.whl", hash = "sha256:6b804f99741719531b7a8ce7e44c8162b4cac7782334ea48dad0c48d6904f7d7", size = 892575, upload-time = "2025-05-23T17:59:28.389Z" },
+    { url = "https://files.pythonhosted.org/packages/34/f7/f82698b6d00a40a80c67e9a32b2628886aadfaf7f7b32daa12a463e44571/clarabel-0.11.1-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:c39160e4222040f051f2a0598691c4f9126b4d17f5b9e7678f76c71d611e12d8", size = 1039511, upload-time = "2025-06-11T16:48:58.525Z" },
+    { url = "https://files.pythonhosted.org/packages/b0/8f/13650cfe25762b51175c677330e6471d5d2c5851a6fbd6df77f0681bb34e/clarabel-0.11.1-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:8963687ee250d27310d139eea5a6816f9c3ae31f33691b56579ca4f0f0b64b63", size = 935135, upload-time = "2025-06-11T16:48:59.901Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/9e/7af10d2b540b39f1a05d1ebba604fce933cc9bc0e65e88ec3b7a84976425/clarabel-0.11.1-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e4837b9d0db01e98239f04b1e3526a6cf568529d3c19a8b3f591befdc467f9bb", size = 1079226, upload-time = "2025-06-11T16:49:00.987Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/a9/c76edf781ca3283186ff4b54a9a4fb51367fd04313a68e2b09f062407439/clarabel-0.11.1-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c8c41aaa6f3f8c0f3bd9d86c3e568dcaee079562c075bd2ec9fb3a80287380ef", size = 1164345, upload-time = "2025-06-11T16:49:02.675Z" },
+    { url = "https://files.pythonhosted.org/packages/41/e6/4eee3062088c221e5a18b054e51c69f616e0bb0dc1b0a1a5e0fe90dfa18e/clarabel-0.11.1-cp39-abi3-win_amd64.whl", hash = "sha256:557d5148a4377ae1980b65d00605ae870a8f34f95f0f6a41e04aa6d3edf67148", size = 887310, upload-time = "2025-06-11T16:49:04.277Z" },
 ]
 
 [[package]]
@@ -754,7 +754,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.131.0"
+version = "0.131.1"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },

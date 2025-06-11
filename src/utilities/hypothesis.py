@@ -96,10 +96,8 @@ if TYPE_CHECKING:
 
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
-    from sqlalchemy.ext.asyncio import AsyncEngine
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
-    from utilities.sqlalchemy import Dialect, TableOrORMInstOrClass
     from utilities.types import Duration, Number, RoundMode
 
 
@@ -1117,51 +1115,6 @@ def slices(
 ##
 
 
-_STRATEGY_DIALECTS: list[Dialect] = ["sqlite", "postgresql"]
-_SQLALCHEMY_ENGINE_DIALECTS = sampled_from(_STRATEGY_DIALECTS)
-
-
-async def sqlalchemy_engines(
-    data: DataObject,
-    /,
-    *tables_or_orms: TableOrORMInstOrClass,
-    dialect: MaybeSearchStrategy[Dialect] = _SQLALCHEMY_ENGINE_DIALECTS,
-) -> AsyncEngine:
-    """Strategy for generating sqlalchemy engines."""
-    from utilities.sqlalchemy import create_async_engine
-
-    dialect_: Dialect = draw2(data, dialect)
-    if "CI" in environ:  # pragma: no cover
-        _ = assume(dialect_ == "sqlite")
-    match dialect_:
-        case "sqlite":
-            temp_path = data.draw(temp_paths())
-            path = Path(temp_path, "db.sqlite")
-            engine = create_async_engine("sqlite+aiosqlite", database=str(path))
-
-            class EngineWithPath(type(engine)): ...
-
-            engine_with_path = EngineWithPath(engine.sync_engine)
-            cast(
-                "Any", engine_with_path
-            ).temp_path = temp_path  # keep `temp_path` alive
-            return engine_with_path
-        case "postgresql":  # skipif-ci-and-not-linux
-            from utilities.sqlalchemy import ensure_tables_dropped
-
-            engine = create_async_engine(
-                "postgresql+asyncpg", host="localhost", port=5432, database="testing"
-            )
-            with assume_does_not_raise(ConnectionRefusedError):
-                await ensure_tables_dropped(engine, *tables_or_orms)
-            return engine
-        case _:  # pragma: no cover
-            raise NotImplementedError(dialect)
-
-
-##
-
-
 @composite
 def str_arrays(
     draw: DrawFn,
@@ -1512,7 +1465,6 @@ __all__ = [
     "sets_fixed_length",
     "setup_hypothesis_profiles",
     "slices",
-    "sqlalchemy_engines",
     "str_arrays",
     "temp_dirs",
     "temp_paths",

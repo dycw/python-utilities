@@ -23,14 +23,11 @@ from hypothesis.strategies import (
     sets,
     timedeltas,
     timezones,
-    uuids,
 )
 from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
 from pytest import mark, raises
-from sqlalchemy import Column, Integer, MetaData, Table, insert, select
-from sqlalchemy.ext.asyncio import AsyncEngine
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
@@ -45,7 +42,6 @@ from utilities.datetime import (
 )
 from utilities.functions import ensure_int
 from utilities.hypothesis import (
-    _SQLALCHEMY_ENGINE_DIALECTS,
     MaybeSearchStrategy,
     PlainDateTimesError,
     Shape,
@@ -83,7 +79,6 @@ from utilities.hypothesis import (
     settings_with_reduced_examples,
     setup_hypothesis_profiles,
     slices,
-    sqlalchemy_engines,
     str_arrays,
     temp_dirs,
     temp_paths,
@@ -119,7 +114,6 @@ from utilities.math import (
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sentinel import Sentinel
-from utilities.sqlalchemy import Dialect, _get_dialect
 from utilities.version import Version
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
@@ -134,7 +128,6 @@ from utilities.whenever import (
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from collections.abc import Set as AbstractSet
-    from uuid import UUID
     from zoneinfo import ZoneInfo
 
     from utilities.datetime import Month
@@ -915,38 +908,6 @@ class TestSlices:
             InvalidArgument, match=r"Slice length \d+ exceeds iterable length \d+"
         ):
             _ = data.draw(slices(iter_len, slice_len=iter_len + 1))
-
-
-class TestSQLAlchemyEngines:
-    @given(
-        data=data(),
-        name=uuids(),
-        dialect=_SQLALCHEMY_ENGINE_DIALECTS,
-        ids=sets(integers(0, 10), min_size=1),
-    )
-    @settings(phases={Phase.generate})
-    async def test_main(
-        self, *, data: DataObject, name: UUID, dialect: Dialect, ids: set[int]
-    ) -> None:
-        table = Table(
-            f"test_{name}", MetaData(), Column("id_", Integer, primary_key=True)
-        )
-        engine = await sqlalchemy_engines(data, table, dialect=dialect)
-        assert isinstance(engine, AsyncEngine)
-        assert _get_dialect(engine) == dialect
-        if dialect == "sqlite":
-            database = engine.url.database
-            assert database is not None
-            assert not Path(database).exists()
-        async with engine.begin() as conn:
-            await conn.run_sync(table.metadata.create_all)
-        ins = insert(table).values([(id_,) for id_ in ids])
-        async with engine.begin() as conn:
-            _ = await conn.execute(ins)
-        sel = select(table.c["id_"])
-        async with engine.begin() as conn:
-            results = (await conn.execute(sel)).scalars().all()
-        assert set(results) == ids
 
 
 class TestStrArrays:
