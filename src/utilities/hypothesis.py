@@ -88,7 +88,7 @@ from utilities.platform import IS_WINDOWS
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.version import Version
-from utilities.zoneinfo import UTC
+from utilities.zoneinfo import UTC, ensure_time_zone
 
 if TYPE_CHECKING:
     from collections.abc import Collection, Hashable, Iterable, Iterator, Sequence
@@ -96,9 +96,10 @@ if TYPE_CHECKING:
 
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
+    from whenever import PlainDateTime, ZonedDateTime
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
-    from utilities.types import Duration, Number, RoundMode
+    from utilities.types import Duration, Number, RoundMode, TimeZoneLike
 
 
 _T = TypeVar("_T")
@@ -966,6 +967,39 @@ class PlainDateTimesError(Exception):
 
 
 @composite
+def plain_datetimes_whenever(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[PlainDateTime | None] = None,
+    max_value: MaybeSearchStrategy[PlainDateTime | None] = None,
+) -> dt.datetime:
+    """Strategy for generating plain datetimes."""
+    from whenever import PlainDateTime
+
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    match min_value_:
+        case None:
+            min_value_ = DATETIME_MIN_NAIVE
+        case PlainDateTime():
+            min_value_ = min_value_.py_datetime()
+        case _ as never:
+            assert_never(never)
+    match max_value_:
+        case None:
+            max_value_ = DATETIME_MAX_NAIVE
+        case PlainDateTime():
+            max_value_ = max_value_.py_datetime()
+        case _ as never:
+            assert_never(never)
+    py_datetime = draw(datetimes(min_value=min_value_, max_value=max_value_))
+    return PlainDateTime.from_py_datetime(py_datetime)
+
+
+##
+
+
+@composite
 def random_states(
     draw: DrawFn, /, *, seed: MaybeSearchStrategy[int | None] = None
 ) -> RandomState:
@@ -1427,6 +1461,59 @@ class ZonedDateTimesError(Exception):
         return "Rounding requires a timedelta; got None"
 
 
+##
+
+
+@composite
+def zoned_datetimes_whenever(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[PlainDateTime | ZonedDateTime | None] = None,
+    max_value: MaybeSearchStrategy[PlainDateTime | ZonedDateTime | None] = None,
+    time_zone: MaybeSearchStrategy[TimeZoneLike] = UTC,
+) -> ZonedDateTime:
+    """Strategy for generating zoned datetimes."""
+    from whenever import PlainDateTime, ZonedDateTime
+
+    from utilities.whenever import (
+        CheckValidZonedDateTimeError,
+        check_valid_zoned_datetime,
+    )
+
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    time_zone_ = ensure_time_zone(draw2(draw, time_zone))
+    match min_value_:
+        case None:
+            min_value = DATETIME_MIN_NAIVE
+        case PlainDateTime():
+            min_value_ = min_value_.py_datetime()
+        case ZonedDateTime():
+            min_value_ = min_value_.to_tz(time_zone_.key).to_plain().py_datetime()
+        case _ as never:
+            assert_never(never)
+    match max_value_:
+        case None:
+            max_value = DATETIME_MAX_NAIVE
+        case PlainDateTime():
+            max_value_ = max_value_.py_datetime()
+        case ZonedDateTime():
+            max_value_ = max_value_.to_tz(time_zone_.key).to_plain().py_datetime()
+        case _ as never:
+            assert_never(never)
+    py_datetime = draw(
+        plain_datetimes_whenever(min_value=min_value_, max_value=max_value_)
+    )
+    return ZonedDateTime.from_py_datetime(py_datetime)
+    _ = assume(min_value_ <= datetime <= max_value_)
+    if valid:
+        with assume_does_not_raise(  # skipif-ci-and-windows
+            CheckValidZonedDateTimeError
+        ):
+            check_valid_zoned_datetime(datetime)
+    return datetime
+
+
 __all__ = [
     "Draw2Error",
     "MaybeSearchStrategy",
@@ -1460,6 +1547,7 @@ __all__ = [
     "paths",
     "plain_datetimes",
     "plain_datetimes",
+    "plain_datetimes_whenever",
     "random_states",
     "sentinels",
     "sets_fixed_length",
@@ -1480,4 +1568,5 @@ __all__ = [
     "uint64s",
     "versions",
     "zoned_datetimes",
+    "zoned_datetimes_whenever",
 ]

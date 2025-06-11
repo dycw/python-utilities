@@ -6,7 +6,7 @@ from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any, cast
 
-from hypothesis import HealthCheck, Phase, assume, given, settings
+from hypothesis import HealthCheck, Phase, assume, given, reproduce_failure, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.strategies import (
@@ -28,6 +28,7 @@ from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
 from pytest import mark, raises
+from whenever import PlainDateTime, ZonedDateTime
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
@@ -73,6 +74,7 @@ from utilities.hypothesis import (
     pairs,
     paths,
     plain_datetimes,
+    plain_datetimes_whenever,
     random_states,
     sentinels,
     sets_fixed_length,
@@ -94,6 +96,7 @@ from utilities.hypothesis import (
     uint64s,
     versions,
     zoned_datetimes,
+    zoned_datetimes_whenever,
 )
 from utilities.math import (
     MAX_FLOAT32,
@@ -840,6 +843,23 @@ class TestPlainDateTimes:
             _ = data.draw(plain_datetimes(round_="standard"))
 
 
+class TestPlainDateTimesWhenever:
+    @given(data=data(), time_zone=timezones())
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_main(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+        min_value = data.draw(plain_datetimes_whenever() | none())
+        max_value = data.draw(plain_datetimes_whenever() | none())
+        with assume_does_not_raise(InvalidArgument):
+            datetime = data.draw(
+                plain_datetimes_whenever(min_value=min_value, max_value=max_value)
+            )
+        assert isinstance(datetime, PlainDateTime)
+        if min_value is not None:
+            assert datetime >= min_value
+        if max_value is not None:
+            assert datetime <= max_value
+
+
 class TestRandomStates:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
@@ -1198,3 +1218,24 @@ class TestZonedDateTimes:
             ZonedDateTimesError, match="Rounding requires a timedelta; got None"
         ):
             _ = data.draw(zoned_datetimes(round_="standard"))
+
+
+class TestZonedDateTimesWhenever:
+    @given(data=data(), time_zone=timezones())
+    @reproduce_failure("6.135.6", b"AEEAQQA=")
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_main(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+        min_value = data.draw(zoned_datetimes_whenever() | none())
+        max_value = data.draw(zoned_datetimes_whenever() | none())
+        with assume_does_not_raise(InvalidArgument):
+            datetime = data.draw(
+                zoned_datetimes_whenever(
+                    min_value=min_value, max_value=max_value, time_zone=time_zone
+                )
+            )
+        assert isinstance(datetime, ZonedDateTime)
+        assert datetime.tz == time_zone.key
+        if min_value is not None:
+            assert datetime >= min_value
+        if max_value is not None:
+            assert datetime <= max_value
