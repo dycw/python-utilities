@@ -2,27 +2,78 @@ from __future__ import annotations
 
 from asyncio import TaskGroup, sleep
 
+from pytest import mark, param
+
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_redis import yield_test_redis
-from utilities.pottery import yield_locked_resource
+from utilities.pottery import yield_access, yield_locked_resource
 from utilities.text import unique_str
 from utilities.timer import Timer
 
 
-async def _coroutine(key: str) -> None:
-    async with yield_test_redis() as redis, yield_locked_resource(redis, key):
-        await sleep(0.1)
+async def _func_access(num_tasks: int, key: str, /, *, num_locks: int = 1) -> None:
+    async def coroutine() -> None:
+        async with yield_test_redis() as redis, yield_access(redis, key, num=num_locks):
+            await sleep(0.1)
 
-
-async def _asyncio_runner(num_tasks: int, key: str) -> None:
     async with TaskGroup() as tg:
-        _ = [tg.create_task(_coroutine(key)) for _ in range(num_tasks)]
+        _ = [tg.create_task(coroutine()) for _ in range(num_tasks)]
+
+
+class TestYieldAccess:
+    @SKIPIF_CI_AND_NOT_LINUX
+    @mark.parametrize(
+        ("num_tasks", "num_locks", "min_time"),
+        [
+            param(1, 1, 0.1),
+            param(1, 2, 0.1),
+            param(1, 3, 0.1),
+            param(2, 1, 0.2),
+            param(2, 2, 0.1),
+            param(2, 3, 0.1),
+            param(2, 4, 0.1),
+            param(2, 5, 0.1),
+            param(3, 1, 0.3),
+            param(3, 2, 0.2),
+            param(3, 3, 0.1),
+            param(3, 4, 0.1),
+            param(3, 5, 0.1),
+            param(4, 1, 0.4),
+            param(4, 2, 0.2),
+            param(4, 3, 0.2),
+            param(4, 4, 0.1),
+            param(4, 5, 0.1),
+            param(5, 1, 0.5),
+            param(5, 2, 0.3),
+            param(5, 3, 0.2),
+            param(5, 4, 0.2),
+            param(5, 5, 0.1),
+        ],
+    )
+    async def test_main(
+        self, *, num_tasks: int, num_locks: int, min_time: float
+    ) -> None:
+        with Timer() as timer:
+            await _func_access(num_tasks, unique_str(), num_locks=num_locks)
+        assert min_time <= float(timer) <= 3 * min_time
+
+
+##
+
+
+async def _func_locked_resource(num_tasks: int, key: str) -> None:
+    async def coroutine() -> None:
+        async with yield_test_redis() as redis, yield_locked_resource(redis, key):
+            await sleep(0.1)
+
+    async with TaskGroup() as tg:
+        _ = [tg.create_task(coroutine()) for _ in range(num_tasks)]
 
 
 class TestYieldLockedResource:
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_single_process(self) -> None:
+    async def test_main(self) -> None:
         with Timer() as timer:
-            await _asyncio_runner(3, unique_str())
+            await _func_locked_resource(3, unique_str())
         min_time = 0.3
         assert min_time <= float(timer) <= 3 * min_time
