@@ -70,8 +70,8 @@ DATE_TIME_DELTA_MAX = DateTimeDelta(
 )
 DATE_DELTA_MIN = DATE_TIME_DELTA_MIN.date_part()
 DATE_DELTA_MAX = DATE_TIME_DELTA_MAX.date_part()
-TIME_DELTA_MIN = DATE_TIME_DELTA_MIN.time_part()
-TIME_DELTA_MAX = DATE_TIME_DELTA_MAX.time_part()
+TIME_DELTA_MIN = TimeDelta(hours=-87831216)
+TIME_DELTA_MAX = TimeDelta(hours=87831216)
 
 
 DATE_TIME_DELTA_PARSABLE_MIN = DateTimeDelta(days=-999999, seconds=-316192377600)
@@ -282,20 +282,75 @@ def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
 
 def to_nanos(delta: DateTimeDelta, /) -> int:
     """Compute the number of nanoseconds in a date-time delta."""
-    months, days, secs, nanos = delta.in_months_days_secs_nanos()
+    months, days, _, _ = delta.in_months_days_secs_nanos()
     if months != 0:
         raise ToNanosError(months=months)
-    total_secs = 24 * 60 * 60 * days + secs
-    return int(1e9) * total_secs + nanos
+    return 24 * 60 * 60 * int(1e9) * days + delta.time_part().in_nanoseconds()
 
 
 @dataclass(kw_only=True, slots=True)
-class ToNanosError:
+class ToNanosError(Exception):
     months: int
 
     @override
     def __str__(self) -> str:
         return f"Date-time delta must have no months; got {self.months}"
+
+
+##
+
+
+def to_time_delta(nanos: int, /) -> TimeDelta:
+    """Construct a time delta."""
+    sign_use = sign(nanos)
+    micros, nanos = divmod(nanos, int(1e3))
+    millis, micros = divmod(micros, int(1e3))
+    secs, millis = divmod(millis, int(1e3))
+    mins, secs = divmod(secs, 60)
+    hours, mins = divmod(mins, 60)
+    match sign_use:
+        case 1:
+            if nanos < 0:
+                nanos += int(1e3)
+                micros -= 1
+            if micros < 0:
+                micros += int(1e3)
+                millis -= 1
+            if millis < 0:
+                millis += int(1e3)
+                secs -= 1
+            if secs < 0:
+                secs += 60
+                mins -= 1
+            if mins < 0:
+                mins += 60
+                hours -= 1
+        case -1:
+            if nanos > 0:
+                nanos -= int(1e3)
+                micros += 1
+            if micros > 0:
+                micros -= int(1e3)
+                millis += 1
+            if millis > 0:
+                millis -= int(1e3)
+                secs += 1
+            if secs > 0:
+                secs -= 60
+                mins += 1
+            if mins > 0:
+                mins -= 60
+                hours += 1
+        case 0:
+            ...
+    return TimeDelta(
+        hours=hours,
+        minutes=mins,
+        seconds=secs,
+        microseconds=micros,
+        milliseconds=millis,
+        nanoseconds=nanos,
+    )
 
 
 ##
