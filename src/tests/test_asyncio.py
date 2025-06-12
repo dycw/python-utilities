@@ -177,14 +177,14 @@ class TestEnhancedTaskGroup:
             async with EnhancedTaskGroup() as tg:
                 for _ in range(10):
                     _ = tg.create_task(sleep(0.01))
-        assert timer <= 0.05
+        assert timer.timedelta.in_seconds() <= 0.05
 
     async def test_max_tasks_enabled(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup(max_tasks=2) as tg:
                 for _ in range(10):
                     _ = tg.create_task(sleep(0.01))
-        assert timer >= 0.05
+        assert timer.timedelta.in_seconds() >= 0.05
 
     async def test_timeout_pass(self) -> None:
         async with EnhancedTaskGroup(timeout=0.2) as tg:
