@@ -7,6 +7,7 @@ from enum import Enum
 from logging import Logger
 from pathlib import Path
 from random import Random
+from re import Pattern
 from types import TracebackType
 from typing import (
     Any,
@@ -249,6 +250,10 @@ type PathLike = MaybeStr[Path]
 type Seed = int | float | str | bytes | bytearray | Random
 
 
+# re
+type PatternLike = MaybeStr[Pattern[str]]
+
+
 # traceback
 type ExcInfo = tuple[type[BaseException], BaseException, TracebackType]
 type OptExcInfo = ExcInfo | tuple[None, None, None]
@@ -294,6 +299,7 @@ __all__ = [
     "Parallelism",
     "ParseObjectExtra",
     "PathLike",
+    "PatternLike",
     "RoundMode",
     "Seed",
     "SerializeObjectExtra",

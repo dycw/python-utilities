@@ -2,37 +2,59 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import override
+from re import Pattern
+from typing import TYPE_CHECKING, assert_never, override
 
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 
+if TYPE_CHECKING:
+    from utilities.types import PatternLike
 
-def extract_group(pattern: str, text: str, /, *, flags: int = 0) -> str:
+
+def ensure_pattern(pattern: PatternLike, /, *, flags: int = 0) -> Pattern[str]:
+    """Ensure a pattern is returned."""
+    match pattern:
+        case Pattern():
+            return pattern
+        case str():
+            return re.compile(pattern, flags=flags)
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
+def extract_group(pattern: PatternLike, text: str, /, *, flags: int = 0) -> str:
     """Extract a group.
 
     The regex must have 1 capture group, and this must match exactly once.
     """
-    compiled = re.compile(pattern, flags=flags)
-    match compiled.groups:
+    pattern_use = ensure_pattern(pattern, flags=flags)
+    match pattern_use.groups:
         case 0:
-            raise _ExtractGroupNoCaptureGroupsError(pattern=pattern, text=text)
+            raise _ExtractGroupNoCaptureGroupsError(pattern=pattern_use, text=text)
         case 1:
-            matches: list[str] = compiled.findall(text)
+            matches: list[str] = pattern_use.findall(text)
             try:
                 return one(matches)
             except OneEmptyError:
-                raise _ExtractGroupNoMatchesError(pattern=pattern, text=text) from None
+                raise _ExtractGroupNoMatchesError(
+                    pattern=pattern_use, text=text
+                ) from None
             except OneNonUniqueError:
                 raise _ExtractGroupMultipleMatchesError(
-                    pattern=pattern, text=text, matches=matches
+                    pattern=pattern_use, text=text, matches=matches
                 ) from None
         case _:
-            raise _ExtractGroupMultipleCaptureGroupsError(pattern=pattern, text=text)
+            raise _ExtractGroupMultipleCaptureGroupsError(
+                pattern=pattern_use, text=text
+            )
 
 
 @dataclass(kw_only=True, slots=True)
 class ExtractGroupError(Exception):
-    pattern: str
+    pattern: Pattern[str]
     text: str
 
 
@@ -68,32 +90,35 @@ class _ExtractGroupNoMatchesError(ExtractGroupError):
         return f"Pattern {self.pattern} must match against {self.text}"
 
 
-def extract_groups(pattern: str, text: str, /, *, flags: int = 0) -> list[str]:
+##
+
+
+def extract_groups(pattern: PatternLike, text: str, /, *, flags: int = 0) -> list[str]:
     """Extract multiple groups.
 
     The regex may have any number of capture groups, and they must collectively
     match exactly once.
     """
-    compiled = re.compile(pattern, flags=flags)
-    if (n_groups := compiled.groups) == 0:
-        raise _ExtractGroupsNoCaptureGroupsError(pattern=pattern, text=text)
-    matches: list[str] = compiled.findall(text)
+    pattern_use = ensure_pattern(pattern, flags=flags)
+    if (n_groups := pattern_use.groups) == 0:
+        raise _ExtractGroupsNoCaptureGroupsError(pattern=pattern_use, text=text)
+    matches: list[str] = pattern_use.findall(text)
     match len(matches), n_groups:
         case 0, _:
-            raise _ExtractGroupsNoMatchesError(pattern=pattern, text=text)
+            raise _ExtractGroupsNoMatchesError(pattern=pattern_use, text=text)
         case 1, 1:
             return matches
         case 1, _:
             return list(one(matches))
         case _:
             raise _ExtractGroupsMultipleMatchesError(
-                pattern=pattern, text=text, matches=matches
+                pattern=pattern_use, text=text, matches=matches
             )
 
 
 @dataclass(kw_only=True, slots=True)
 class ExtractGroupsError(Exception):
-    pattern: str
+    pattern: Pattern[str]
     text: str
 
 
@@ -108,7 +133,7 @@ class _ExtractGroupsMultipleMatchesError(ExtractGroupsError):
 
 @dataclass(kw_only=True, slots=True)
 class _ExtractGroupsNoCaptureGroupsError(ExtractGroupsError):
-    pattern: str
+    pattern: Pattern[str]
     text: str
 
     @override
@@ -123,4 +148,10 @@ class _ExtractGroupsNoMatchesError(ExtractGroupsError):
         return f"Pattern {self.pattern} must match against {self.text}"
 
 
-__all__ = ["ExtractGroupError", "ExtractGroupsError", "extract_group", "extract_groups"]
+__all__ = [
+    "ExtractGroupError",
+    "ExtractGroupsError",
+    "ensure_pattern",
+    "extract_group",
+    "extract_groups",
+]
