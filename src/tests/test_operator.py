@@ -103,7 +103,7 @@ def base_objects(
         | timedeltas_2w()
         | uuids()
         | versions()
-        | zoned_datetimes(is_valid=True)
+        | zoned_datetimes(valid=True)
     )
     if dataclass_custom_equality:
         base |= builds(DataClassFutureCustomEquality)
