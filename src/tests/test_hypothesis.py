@@ -6,7 +6,7 @@ from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any, cast
 
-from hypothesis import HealthCheck, Phase, assume, given, reproduce_failure, settings
+from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.strategies import (
@@ -844,9 +844,8 @@ class TestPlainDateTimes:
 
 
 class TestPlainDateTimesWhenever:
-    @given(data=data(), time_zone=timezones())
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_main(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
         min_value = data.draw(plain_datetimes_whenever() | none())
         max_value = data.draw(plain_datetimes_whenever() | none())
         with assume_does_not_raise(InvalidArgument):
@@ -1222,7 +1221,6 @@ class TestZonedDateTimes:
 
 class TestZonedDateTimesWhenever:
     @given(data=data(), time_zone=timezones())
-    @reproduce_failure("6.135.6", b"AEEAQQA=")
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
         min_value = data.draw(zoned_datetimes_whenever() | none())

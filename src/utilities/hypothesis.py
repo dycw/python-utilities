@@ -1485,27 +1485,24 @@ def zoned_datetimes_whenever(
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     time_zone_ = ensure_time_zone(draw2(draw, time_zone))
     match min_value_:
-        case None:
+        case None | PlainDateTime():
             ...
-        case PlainDateTime():
-            min_value_ = min_value_.py_datetime()
         case ZonedDateTime():
-            min_value_ = min_value_.to_tz(time_zone_.key).to_plain().py_datetime()
+            min_value_ = min_value_.to_tz(time_zone_.key).to_plain()
         case _ as never:
             assert_never(never)
     match max_value_:
-        case None:
+        case None | PlainDateTime():
             ...
-        case PlainDateTime():
-            max_value_ = max_value_.py_datetime()
         case ZonedDateTime():
-            max_value_ = max_value_.to_tz(time_zone_.key).to_plain().py_datetime()
+            max_value_ = max_value_.to_tz(time_zone_.key).to_plain()
         case _ as never:
             assert_never(never)
-    py_datetime = draw(
+    plain_datetime = draw(
         plain_datetimes_whenever(min_value=min_value_, max_value=max_value_)
     )
-    return ZonedDateTime.from_py_datetime(py_datetime).to_tz(time_zone_.key)
+    with assume_does_not_raise(ValueError):
+        return plain_datetime.assume_tz(time_zone_.key, disambiguate="raise")
 
 
 __all__ = [
