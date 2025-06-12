@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Generic, Self, TypedDict, TypeVar, override
+from typing import TYPE_CHECKING, Generic, Self, TypedDict, TypeVar, override
 from zoneinfo import ZoneInfo
 
-from whenever import Date, DateDelta, DateTimeDelta, TimeDelta, ZonedDateTime
+from whenever import Date, DateDelta, TimeDelta, ZonedDateTime
 
 from utilities.dataclasses import replace_non_sentinel
 from utilities.functions import get_class_name
 from utilities.sentinel import Sentinel, sentinel
+from utilities.zoneinfo import get_time_zone_name
+
+if TYPE_CHECKING:
+    from utilities.types import TimeZoneLike
 
 _TPeriod = TypeVar("_TPeriod", Date, ZonedDateTime)
 
@@ -18,7 +22,7 @@ class _PeriodAsDict(TypedDict, Generic[_TPeriod]):
     end: _TPeriod
 
 
-@dataclass(repr=False, order=True, unsafe_hash=True, kw_only=True)
+@dataclass(repr=False, order=True, unsafe_hash=True, kw_only=False)
 class DatePeriod:
     """A period of dates."""
 
@@ -47,8 +51,8 @@ class DatePeriod:
         return self.replace(start=self.start - other, end=self.end - other)
 
     @property
-    def duration(self) -> DateDelta:
-        """The duration of the period."""
+    def delta(self) -> DateDelta:
+        """The delta of the period."""
         return self.end - self.start
 
     def replace(
@@ -62,7 +66,7 @@ class DatePeriod:
         return _PeriodAsDict(start=self.start, end=self.end)
 
 
-@dataclass(repr=False, order=True, unsafe_hash=True, kw_only=True)
+@dataclass(repr=False, order=True, unsafe_hash=True, kw_only=False)
 class ZonedDateTimePeriod:
     """A period of time."""
 
@@ -77,7 +81,7 @@ class ZonedDateTimePeriod:
                 start=ZoneInfo(self.start.tz), end=ZoneInfo(self.end.tz)
             )
 
-    def __add__(self, other: DateTimeDelta, /) -> Any:
+    def __add__(self, other: TimeDelta, /) -> Self:
         """Offset the period."""
         return self.replace(start=self.start + other, end=self.end + other)
 
@@ -90,12 +94,12 @@ class ZonedDateTimePeriod:
         cls = get_class_name(self)
         return f"{cls}({self.start.to_plain()}, {self.end})"
 
-    def __sub__(self, other: Any, /) -> Any:
+    def __sub__(self, other: TimeDelta, /) -> Self:
         """Offset the period."""
         return self.replace(start=self.start + other, end=self.end + other)
 
     @property
-    def duration(self) -> TimeDelta:
+    def delta(self) -> TimeDelta:
         """The duration of the period."""
         return self.end - self.start
 
@@ -116,6 +120,11 @@ class ZonedDateTimePeriod:
     def to_dict(self) -> _PeriodAsDict[ZonedDateTime]:
         """Convert the period to a dictionary."""
         return _PeriodAsDict(start=self.start, end=self.end)
+
+    def to_tz(self, time_zone: TimeZoneLike, /) -> Self:
+        """Convert the time zone."""
+        tz = get_time_zone_name(time_zone)
+        return self.replace(start=self.start.to_tz(tz), end=self.end.to_tz(tz))
 
 
 @dataclass(kw_only=True, slots=True)
