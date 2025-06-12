@@ -336,7 +336,7 @@ class ToNanosError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Date-time delta must have no months; got {self.months}"
+        return f"Date-time delta must not contain months; got {self.months}"
 
 
 ##
