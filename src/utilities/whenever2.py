@@ -18,7 +18,7 @@ from whenever import (
 
 from utilities.datetime import maybe_sub_pct_y
 from utilities.sentinel import Sentinel, sentinel
-from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
+from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
@@ -111,7 +111,7 @@ NOW_UTC = get_now(time_zone=UTC)
 
 def get_now_local() -> ZonedDateTime:
     """Get the current local time."""
-    return get_now(time_zone="local")
+    return get_now(time_zone=LOCAL_TIME_ZONE)
 
 
 NOW_LOCAL = get_now_local()
@@ -130,7 +130,7 @@ TODAY_UTC = get_today(time_zone=UTC)
 
 def get_today_local() -> Date:
     """Get the current, timezone-aware local date."""
-    return get_today(time_zone="local")
+    return get_today(time_zone=LOCAL_TIME_ZONE)
 
 
 TODAY_LOCAL = get_today_local()
@@ -266,6 +266,7 @@ __all__ = [
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
     "WheneverLogRecord",
+    "format_compact",
     "format_compact",
     "from_timestamp",
     "from_timestamp_millis",

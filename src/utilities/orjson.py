@@ -760,7 +760,7 @@ class OrjsonFormatter(Formatter):
             path_name=Path(record.pathname),
             line_num=record.lineno,
             message=record.getMessage(),
-            datetime=from_timestamp(record.created, time_zone="local"),
+            datetime=from_timestamp(record.created, time_zone=LOCAL_TIME_ZONE),
             func_name=record.funcName,
             extra=extra if len(extra) >= 1 else None,
         )

@@ -81,6 +81,7 @@ from utilities.polars import check_polars_dataframe, zoned_datetime
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args
+from utilities.tzlocal import LOCAL_TIME_ZONE
 from utilities.whenever2 import MINUTE, SECOND, get_now
 
 if TYPE_CHECKING:
@@ -169,7 +170,7 @@ class TestGetLogRecords:
                 "level": UInt64,
                 "path_name": String,
                 "line_num": UInt64,
-                "datetime": zoned_datetime(time_zone="local"),
+                "datetime": zoned_datetime(time_zone=LOCAL_TIME_ZONE),
                 "func_name": String,
                 "stack_info": String,
                 "extra": Object,

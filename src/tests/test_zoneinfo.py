@@ -10,7 +10,7 @@ from pytest import raises
 
 from utilities.hypothesis import zoned_datetimes
 from utilities.tzdata import HongKong, Tokyo
-from utilities.tzlocal import get_local_time_zone
+from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import (
     UTC,
     _EnsureTimeZoneInvalidTZInfoError,
@@ -45,8 +45,7 @@ class TestEnsureTimeZone:
 
     def test_local(self) -> None:
         result = ensure_time_zone("local")
-        expected = get_local_time_zone()
-        assert result is expected
+        assert result is LOCAL_TIME_ZONE
 
     @given(data=data(), time_zone=timezones())
     def test_zoned_datetime(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
@@ -78,8 +77,7 @@ class TestGetTimeZoneName:
 
     def test_local(self) -> None:
         result = get_time_zone_name("local")
-        expected = get_local_time_zone().key
-        assert result is expected
+        assert result == LOCAL_TIME_ZONE_NAME
 
 
 class TestTimeZones:
