@@ -46,6 +46,7 @@ from utilities.whenever2 import (
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
     WheneverLogRecord,
+    format_compact,
     from_timestamp,
     from_timestamp_millis,
     from_timestamp_nanos,
@@ -54,7 +55,6 @@ from utilities.whenever2 import (
     get_today,
     get_today_local,
     to_date,
-    to_local_plain_sec,
     to_zoned_date_time,
 )
 from utilities.zoneinfo import UTC
@@ -62,6 +62,17 @@ from utilities.zoneinfo import UTC
 if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
     from utilities.types import MaybeCallableDate, MaybeCallableZonedDateTime
+
+
+class TestFormatCompact:
+    @given(datetime=zoned_datetimes_whenever())
+    def test_main(self, *, datetime: ZonedDateTime) -> None:
+        result = format_compact(datetime)
+        assert isinstance(result, str)
+        parsed = PlainDateTime.parse_common_iso(result)
+        assert parsed.nanosecond == 0
+        expected = datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
+        assert parsed == expected
 
 
 class TestFromTimeStamp:
@@ -327,14 +338,6 @@ class TestGetDateTime:
     @given(date_time=zoned_datetimes_whenever())
     def test_callable(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time=lambda: date_time) == date_time
-
-
-class TestToLocalPlainSec:
-    @given(datetime=zoned_datetimes_whenever())
-    def test_main(self, *, datetime: ZonedDateTime) -> None:
-        result = to_local_plain_sec(datetime)
-        assert isinstance(result, PlainDateTime)
-        assert result.nanosecond == 0
 
 
 class TestWheneverLogRecord:

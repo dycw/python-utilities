@@ -27,7 +27,7 @@ from utilities.reprlib import (
     yield_mapping_repr,
 )
 from utilities.version import get_version
-from utilities.whenever2 import get_now, to_local_plain_sec, to_zoned_date_time
+from utilities.whenever2 import format_compact, get_now, to_zoned_date_time
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
@@ -90,8 +90,8 @@ def _yield_header_lines(
     """Yield the header lines."""
     now = get_now()
     start_use = to_zoned_date_time(date_time=start)
-    yield f"Date/time | {to_local_plain_sec(now)}"
-    start_str = "" if start_use is None else to_local_plain_sec(start_use)
+    yield f"Date/time | {format_compact(now)}"
+    start_str = "" if start_use is None else format_compact(start_use)
     yield f"Started   | {start_str}"
     delta = None if start_use is None else (now - start_use)
     delta_str = "" if delta is None else delta.format_common_iso()
@@ -247,7 +247,7 @@ def _make_except_hook_inner(
     if path is not None:
         path = (
             get_path(path=path)
-            .joinpath(to_local_plain_sec(get_now()).format_common_iso())
+            .joinpath(format_compact(get_now()).format_common_iso())
             .with_suffix(".txt")
         )
         full = format_exception_stack(

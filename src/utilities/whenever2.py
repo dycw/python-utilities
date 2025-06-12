@@ -69,6 +69,14 @@ HOUR = TimeDelta(hours=1)
 DAY = DateDelta(days=1)
 WEEK = DateDelta(weeks=1)
 
+##
+
+
+def format_compact(datetime: ZonedDateTime, /) -> str:
+    """Convert a zoned datetime to the local time zone, then format."""
+    py_datetime = datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain().py_datetime()
+    return f"{py_datetime:%Y%m%dT%H%M%S}"
+
 
 ##
 
@@ -175,14 +183,6 @@ def to_zoned_date_time(
 ##
 
 
-def to_local_plain_sec(datetime: ZonedDateTime, /) -> PlainDateTime:
-    """Convert a zoned datetime to the local, plain datetime."""
-    return datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
-
-
-##
-
-
 class WheneverLogRecord(LogRecord):
     """Log record powered by `whenever`."""
 
@@ -264,6 +264,7 @@ __all__ = [
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
     "WheneverLogRecord",
+    "format_compact",
     "from_timestamp",
     "from_timestamp_millis",
     "from_timestamp_nanos",
@@ -272,6 +273,5 @@ __all__ = [
     "get_today",
     "get_today_local",
     "to_date",
-    "to_local_plain_sec",
     "to_zoned_date_time",
 ]
