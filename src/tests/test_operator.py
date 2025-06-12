@@ -27,6 +27,7 @@ from hypothesis.strategies import (
 )
 from polars import DataFrame, Int64
 from pytest import raises
+from whenever import DateTimeDelta
 
 import utilities.math
 import utilities.operator
@@ -57,6 +58,7 @@ from utilities.hypothesis import (
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.operator import IsEqualError
 from utilities.polars import are_frames_equal
+from utilities.whenever2 import get_now
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -103,7 +105,11 @@ def base_objects(
         | timedeltas_2w()
         | uuids()
         | versions()
-        | zoned_datetimes(valid=True)
+        | zoned_datetimes(
+            min_value=get_now(),
+            max_value=get_now() + DateTimeDelta(years=1),
+            valid=True,
+        )
     )
     if dataclass_custom_equality:
         base |= builds(DataClassFutureCustomEquality)
