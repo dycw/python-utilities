@@ -20,7 +20,7 @@ from hypothesis.strategies import (
     timezones,
 )
 from pytest import raises
-from whenever import DateTimeDelta, ZonedDateTime
+from whenever import DateTimeDelta
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
@@ -40,11 +40,10 @@ from utilities.hypothesis import (
     timedeltas_2w,
     zoned_datetimes,
 )
-from utilities.tzdata import HongKong, Tokyo
+from utilities.tzdata import HongKong
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
-    NOW_UTC,
     EnsureDateError,
     EnsureDateTimeError,
     EnsureDurationError,
@@ -76,8 +75,6 @@ from utilities.whenever import (
     ensure_time,
     ensure_timedelta,
     ensure_zoned_datetime,
-    get_now,
-    get_now_local,
     parse_date,
     parse_datetime,
     parse_duration,
@@ -123,27 +120,6 @@ class TestCheckValidZonedDateTime:
             ),
         ):
             check_valid_zoned_datetime(datetime)
-
-
-class TestGetNow:
-    @given(time_zone=timezones())
-    def test_function(self, *, time_zone: ZoneInfo) -> None:
-        now = get_now(time_zone=time_zone)
-        assert isinstance(now, ZonedDateTime)
-        assert now.tz == time_zone.key
-
-    def test_constant(self) -> None:
-        assert isinstance(NOW_UTC, ZonedDateTime)
-        assert NOW_UTC.tz == "UTC"
-
-
-class TestGetNowLocal:
-    def test_function(self) -> None:
-        now = get_now_local()
-        assert isinstance(now, ZonedDateTime)
-        ETC = ZoneInfo("Etc/UTC")  # noqa: N806
-        time_zones = {ETC, HongKong, Tokyo, UTC}
-        assert any(now.tz == time_zone.key for time_zone in time_zones)
 
 
 class TestSerializeAndParseDate:
