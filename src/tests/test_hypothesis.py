@@ -25,7 +25,15 @@ from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
 from pytest import mark, raises
-from whenever import Date, DateDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 from utilities.functions import ensure_int
 from utilities.hypothesis import (
@@ -36,6 +44,7 @@ from utilities.hypothesis import (
     assume_does_not_raise,
     bool_arrays,
     date_deltas,
+    date_time_deltas,
     dates,
     draw2,
     float32s,
@@ -95,7 +104,7 @@ from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sentinel import Sentinel
 from utilities.version import Version
-from utilities.whenever import to_days
+from utilities.whenever import to_days, to_nanos
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -166,6 +175,27 @@ class TestDateDeltas:
             assert days <= to_days(max_value)
         if parsable:
             assert DateDelta.parse_common_iso(delta.format_common_iso()) == delta
+
+
+class TestDateTimeDeltas:
+    @given(data=data(), parsable=booleans())
+    def test_main(self, *, data: DataObject, parsable: bool) -> None:
+        min_value = data.draw(date_time_deltas() | none())
+        max_value = data.draw(date_time_deltas() | none())
+        with assume_does_not_raise(InvalidArgument):
+            delta = data.draw(
+                date_time_deltas(
+                    min_value=min_value, max_value=max_value, parsable=parsable
+                )
+            )
+        assert isinstance(delta, DateTimeDelta)
+        nanos = to_nanos(delta)
+        if min_value is not None:
+            assert nanos >= to_nanos(min_value)
+        if max_value is not None:
+            assert nanos <= to_nanos(max_value)
+        if parsable:
+            assert DateTimeDelta.parse_common_iso(delta.format_common_iso()) == delta
 
 
 class TestDates:
