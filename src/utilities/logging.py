@@ -45,11 +45,11 @@ from utilities.re import (
 )
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
-from utilities.whenever2 import (
+from utilities.whenever import (
     WheneverLogRecord,
-    format_compact,
     get_now,
     get_now_local,
+    to_local_plain_sec,
 )
 
 if TYPE_CHECKING:
@@ -401,8 +401,8 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
 def _compute_rollover_patterns(stem: str, suffix: str, /) -> _RolloverPatterns:
     return _RolloverPatterns(
         pattern1=re.compile(rf"^{stem}\.(\d+){suffix}$"),
-        pattern2=re.compile(rf"^{stem}\.(\d+)__([\dT]+?){suffix}$"),
-        pattern3=re.compile(rf"^{stem}\.(\d+)__([\dT]+?)__([\dT]+?){suffix}$"),
+        pattern2=re.compile(rf"^{stem}\.(\d+)__([\w\-:]+?){suffix}$"),
+        pattern3=re.compile(rf"^{stem}\.(\d+)__([\w\-:]+?)__([\w\-:]+?){suffix}$"),
     )
 
 
@@ -538,9 +538,11 @@ class _RotatingLogFile:
             case int() as index, None, None:
                 tail = str(index)
             case int() as index, None, ZonedDateTime() as end:
-                tail = f"{index}__{format_compact(end)}"
+                tail = f"{index}__{to_local_plain_sec(end)}"
             case int() as index, ZonedDateTime() as start, ZonedDateTime() as end:
-                tail = f"{index}__{format_compact(start)}__{format_compact(end)}"
+                tail = (
+                    f"{index}__{to_local_plain_sec(start)}__{to_local_plain_sec(end)}"
+                )
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(
                     case=[f"{self.index=}", f"{self.start=}", f"{self.end=}"]
