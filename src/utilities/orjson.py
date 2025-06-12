@@ -14,6 +14,7 @@ from pathlib import Path
 from re import Pattern, search
 from typing import TYPE_CHECKING, Any, Literal, Self, assert_never, overload, override
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from orjson import (
     OPT_PASSTHROUGH_DATACLASS,
@@ -35,15 +36,8 @@ from utilities.iterables import (
 )
 from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.types import (
-    Dataclass,
-    DateOrDateTime,
-    LogLevel,
-    MaybeIterable,
-    PathLike,
-    StrMapping,
-)
-from utilities.tzlocal import get_local_time_zone
+from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping
+from utilities.tzlocal import LOCAL_TIME_ZONE
 from utilities.uuid import UUID_PATTERN
 from utilities.version import Version, parse_version
 from utilities.whenever import (
@@ -57,11 +51,13 @@ from utilities.whenever import (
     serialize_time,
     serialize_timedelta,
 )
-from utilities.zoneinfo import ensure_time_zone
+from utilities.whenever2 import from_timestamp
 
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from logging import _FormatStyle
+
+    from whenever import Date, ZonedDateTime
 
     from utilities.types import Parallelism
 
@@ -753,9 +749,7 @@ class OrjsonFormatter(Formatter):
             path_name=Path(record.pathname),
             line_num=record.lineno,
             message=record.getMessage(),
-            datetime=dt.datetime.fromtimestamp(
-                record.created, tz=get_local_time_zone()
-            ),
+            datetime=from_timestamp(record.created, time_zone="local"),
             func_name=record.funcName,
             extra=extra if len(extra) >= 1 else None,
         )
@@ -859,9 +853,9 @@ class GetLogRecordsOutput:
             for r in self.records
         ]
         if len(records) >= 1:
-            time_zone = one_unique(ensure_time_zone(r.datetime) for r in records)
+            time_zone = one_unique(ZoneInfo(r.datetime.tz) for r in records)
         else:
-            time_zone = get_local_time_zone()
+            time_zone = LOCAL_TIME_ZONE
         return DataFrame(
             data=[dataclass_to_dict(r, recursive=False) for r in records],
             schema={
@@ -891,9 +885,12 @@ class GetLogRecordsOutput:
         level: LogLevel | None = None,
         min_level: LogLevel | None = None,
         max_level: LogLevel | None = None,
-        date_or_datetime: DateOrDateTime | None = None,
-        min_date_or_datetime: DateOrDateTime | None = None,
-        max_date_or_datetime: DateOrDateTime | None = None,
+        date: Date | None = None,
+        min_date: Date | None = None,
+        max_date: Date | None = None,
+        datetime: ZonedDateTime | None = None,
+        min_datetime: ZonedDateTime | None = None,
+        max_datetime: ZonedDateTime | None = None,
         func_name: bool | str | None = None,
         extra: bool | MaybeIterable[str] | None = None,
         log_file: bool | PathLike | None = None,
@@ -932,30 +929,18 @@ class GetLogRecordsOutput:
             records = [
                 r for r in records if r.level <= get_logging_level_number(max_level)
             ]
-        if date_or_datetime is not None:
-            match date_or_datetime:
-                case dt.datetime() as datetime:
-                    records = [r for r in records if r.datetime == datetime]
-                case dt.date() as date:
-                    records = [r for r in records if r.date == date]
-                case _ as never:
-                    assert_never(never)
-        if min_date_or_datetime is not None:
-            match min_date_or_datetime:
-                case dt.datetime() as min_datetime:
-                    records = [r for r in records if r.datetime >= min_datetime]
-                case dt.date() as min_date:
-                    records = [r for r in records if r.date >= min_date]
-                case _ as never:
-                    assert_never(never)
-        if max_date_or_datetime is not None:
-            match max_date_or_datetime:
-                case dt.datetime() as max_datetime:
-                    records = [r for r in records if r.datetime <= max_datetime]
-                case dt.date() as max_date:
-                    records = [r for r in records if r.date <= max_date]
-                case _ as never:
-                    assert_never(never)
+        if date is not None:
+            records = [r for r in records if r.datetime.date() == date]
+        if min_date is not None:
+            records = [r for r in records if r.datetime.date() >= min_date]
+        if max_date is not None:
+            records = [r for r in records if r.datetime.date() <= max_date]
+        if datetime is not None:
+            records = [r for r in records if r.datetime == datetime]
+        if min_datetime is not None:
+            records = [r for r in records if r.datetime >= min_datetime]
+        if max_datetime is not None:
+            records = [r for r in records if r.datetime <= max_datetime]
         if func_name is not None:
             match func_name:
                 case bool() as has_func_name:
@@ -1058,7 +1043,7 @@ class OrjsonLogRecord:
     level: int
     path_name: Path
     line_num: int
-    datetime: dt.datetime
+    datetime: ZonedDateTime
     func_name: str | None = None
     stack_info: str | None = None
     extra: StrMapping | None = None
@@ -1066,7 +1051,7 @@ class OrjsonLogRecord:
     log_file_line_num: int | None = None
 
     @cached_property
-    def date(self) -> dt.date:
+    def date(self) -> Date:
         return self.datetime.date()
 
 
