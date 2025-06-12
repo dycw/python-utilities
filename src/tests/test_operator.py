@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from dataclasses import dataclass
 from enum import Enum, auto
 from functools import partial
@@ -12,8 +11,6 @@ from hypothesis.strategies import (
     SearchStrategy,
     booleans,
     builds,
-    dates,
-    datetimes,
     dictionaries,
     floats,
     integers,
@@ -22,7 +19,6 @@ from hypothesis.strategies import (
     none,
     recursive,
     sampled_from,
-    times,
     timezones,
     tuples,
     uuids,
@@ -48,12 +44,13 @@ from tests.test_typing_funcs.with_future import (
 )
 from utilities.hypothesis import (
     assume_does_not_raise,
+    dates_whenever,
     int64s,
     pairs,
     paths,
+    plain_datetimes_whenever,
     text_ascii,
     text_printable,
-    timedeltas_2w,
     versions,
     zoned_datetimes,
 )
@@ -96,11 +93,11 @@ def base_objects(
             allow_nan=floats_allow_nan,
             allow_infinity=floats_allow_infinity,
         )
-        | dates()
-        | datetimes()
+        | dates_whenever()
         | int64s()
         | none()
         | paths()
+        | plain_datetimes_whenever()
         | text_printable().filter(lambda x: not x.startswith("["))
         | times()
         | timedeltas_2w()

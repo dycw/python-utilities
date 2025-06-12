@@ -1652,6 +1652,7 @@ __all__ = [
     "text_digits",
     "text_printable",
     "timedeltas_2w",
+    "times_whenever",
     "triples",
     "uint32s",
     "uint64s",

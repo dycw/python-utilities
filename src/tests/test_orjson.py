@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from collections.abc import Iterable
 from io import StringIO
 from logging import DEBUG, WARNING, FileHandler, StreamHandler, getLogger
@@ -8,7 +7,7 @@ from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import assume, given
+from hypothesis import Phase, assume, given, reproduce_failure, settings
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -23,7 +22,7 @@ from hypothesis.strategies import (
 )
 from orjson import JSONDecodeError
 from polars import Object, String, UInt64
-from pytest import approx, raises
+from pytest import approx, mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from tests.test_operator import (
@@ -51,6 +50,7 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureTypeLiteral,
     DataClassFutureTypeLiteralNullable,
 )
+from utilities.contextvars import set_global_breakpoint
 from utilities.datetime import MINUTE, SECOND, get_now
 from utilities.functions import is_sequence_of
 from utilities.hypothesis import (
@@ -434,6 +434,7 @@ class TestOrjsonFormatter:
 # serialize/deserialize
 
 
+@mark.only
 class TestSerializeAndDeserialize:
     @given(
         obj=make_objects(
@@ -447,6 +448,7 @@ class TestSerializeAndDeserialize:
             dataclass_none=True,
             dataclass_type_literal=True,
             dataclass_type_literal_nullable=True,
+            date=True,
             enum=True,
             exception_class=True,
             exception_instance=True,

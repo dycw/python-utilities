@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextlib import suppress
@@ -22,6 +21,7 @@ from orjson import (
     dumps,
     loads,
 )
+from whenever import Date, DateTimeDelta, PlainDateTime, Time, ZonedDateTime
 
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import dataclass_to_dict
@@ -46,17 +46,6 @@ from utilities.types import (
 from utilities.tzlocal import get_local_time_zone
 from utilities.uuid import UUID_PATTERN
 from utilities.version import Version, parse_version
-from utilities.whenever import (
-    parse_date,
-    parse_plain_datetime,
-    parse_time,
-    parse_timedelta,
-    parse_zoned_datetime,
-    serialize_date,
-    serialize_datetime,
-    serialize_time,
-    serialize_timedelta,
-)
 from utilities.zoneinfo import ensure_time_zone
 
 if TYPE_CHECKING:
@@ -162,14 +151,6 @@ def _pre_process(
         # singletons
         case None:
             return f"[{_Prefixes.none.value}]"
-        case dt.datetime() as datetime:
-            return f"[{_Prefixes.datetime.value}]{serialize_datetime(datetime)}"
-        case dt.date() as date:  # after datetime
-            return f"[{_Prefixes.date.value}]{serialize_date(date)}"
-        case dt.time() as time:
-            return f"[{_Prefixes.time.value}]{serialize_time(time)}"
-        case dt.timedelta() as timedelta:
-            return f"[{_Prefixes.timedelta.value}]{serialize_timedelta(timedelta)}"
         case Exception() as error_:
             return {
                 f"[{_Prefixes.exception_instance.value}|{type(error_).__qualname__}]": pre(
@@ -339,7 +320,7 @@ def deserialize(
 
 
 _NONE_PATTERN = re.compile(r"^\[" + _Prefixes.none.value + r"\]$")
-_LOCAL_DATETIME_PATTERN = re.compile(
+_PLAIN_DATETIME_PATTERN = re.compile(
     r"^\["
     + _Prefixes.datetime.value
     + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?)$"
@@ -420,11 +401,11 @@ def _object_hook(
             if match := _NONE_PATTERN.search(text):
                 return None
             if match := _DATE_PATTERN.search(text):
-                return parse_date(match.group(1))
+                return Date.parse_common_iso(match.group(1))
             if match := _FLOAT_PATTERN.search(text):
                 return float(match.group(1))
-            if match := _LOCAL_DATETIME_PATTERN.search(text):
-                return parse_plain_datetime(match.group(1))
+            if match := _PLAIN_DATETIME_PATTERN.search(text):
+                return PlainDateTime.parse_common_iso(match.group(1))
             if match := _PATH_PATTERN.search(text):
                 return Path(match.group(1))
             if match := _TIME_PATTERN.search(text):
