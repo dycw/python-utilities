@@ -193,10 +193,19 @@ class TestDateDeltas:
                 date_deltas_whenever(min_value=min_value, max_value=max_value)
             )
         assert isinstance(delta, DateDelta)
+        years, months, days = delta.in_years_months_days()
+        assert years == 0
+        assert months == 0
         if min_value is not None:
-            assert delta >= min_value
+            min_years, min_months, min_days = min_value.in_years_months_days()
+            assert min_years == 0
+            assert min_months == 0
+            assert days >= min_days
         if max_value is not None:
-            assert delta <= max_value
+            max_years, max_months, max_days = max_value.in_years_months_days()
+            assert max_years == 0
+            assert max_months == 0
+            assert days <= max_days
 
 
 class TestDateDurations:

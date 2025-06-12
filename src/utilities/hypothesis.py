@@ -186,7 +186,13 @@ def date_deltas_whenever(
             ...
         case _ as never:
             assert_never(never)
-    days = draw(integers(min_value=min_value_.days, max_value=max_value_))
+    min_years, min_months, min_days = min_value_.in_years_months_days()
+    assert min_years == 0
+    assert min_months == 0
+    max_years, max_months, max_days = max_value_.in_years_months_days()
+    assert max_years == 0
+    assert max_months == 0
+    days = draw(integers(min_value=min_days, max_value=max_days))
     return DateDelta(days=days)
 
 
