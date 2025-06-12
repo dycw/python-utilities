@@ -9,7 +9,7 @@ from pytest import mark, param, raises
 from whenever import Date, DateDelta, DateTimeDelta, TimeDelta, ZonedDateTime
 
 from tests.conftest import IS_CI
-from utilities.hypothesis import zoned_datetimes
+from utilities.hypothesis import zoned_datetimes_whenever
 from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import LOCAL_TIME_ZONE
 from utilities.whenever2 import (
@@ -46,21 +46,21 @@ from utilities.zoneinfo import UTC
 
 
 class TestFromTimeStamp:
-    @given(datetime=zoned_datetimes(time_zone=UTC if IS_CI else timezones()))
+    @given(datetime=zoned_datetimes_whenever(time_zone=UTC if IS_CI else timezones()))
     def test_main(self, *, datetime: ZonedDateTime) -> None:
         datetime = datetime.round("second")
         timestamp = datetime.to_tz(UTC.key).timestamp()
         result = from_timestamp(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
-    @given(datetime=zoned_datetimes(time_zone=UTC if IS_CI else timezones()))
+    @given(datetime=zoned_datetimes_whenever(time_zone=UTC if IS_CI else timezones()))
     def test_millis(self, *, datetime: ZonedDateTime) -> None:
         datetime = datetime.round("millisecond")
         timestamp = datetime.to_tz(UTC.key).timestamp_millis()
         result = from_timestamp_millis(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
-    @given(datetime=zoned_datetimes(time_zone=UTC if IS_CI else timezones()))
+    @given(datetime=zoned_datetimes_whenever(time_zone=UTC if IS_CI else timezones()))
     def test_nanos(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.to_tz(UTC.key).timestamp_nanos()
         result = from_timestamp_nanos(timestamp, time_zone=ZoneInfo(datetime.tz))
