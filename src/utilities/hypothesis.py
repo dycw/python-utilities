@@ -977,19 +977,19 @@ def plain_datetimes_whenever(
     """Strategy for generating plain datetimes."""
     from whenever import PlainDateTime
 
-    from utilities.whenever2 import PLAIN_DATETIME_MAX, PLAIN_DATETIME_MIN
+    from utilities.whenever2 import PLAIN_DATE_TIME_MAX, PLAIN_DATE_TIME_MIN
 
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     match min_value_:
         case None:
-            min_value_ = PLAIN_DATETIME_MIN
+            min_value_ = PLAIN_DATE_TIME_MIN
         case PlainDateTime():
             ...
         case _ as never:
             assert_never(never)
     match max_value_:
         case None:
-            max_value_ = PLAIN_DATETIME_MAX
+            max_value_ = PLAIN_DATE_TIME_MAX
         case PlainDateTime():
             ...
         case _ as never:

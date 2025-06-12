@@ -3,20 +3,29 @@ from __future__ import annotations
 from logging import DEBUG
 from zoneinfo import ZoneInfo
 
-from hypothesis import given
-from hypothesis.strategies import timezones
-from pytest import raises
-from whenever import DateDelta, ZonedDateTime
+from hypothesis import Phase, given, reproduce_failure, settings
+from hypothesis.strategies import integers, timezones
+from pytest import mark, param, raises
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    ZonedDateTime,
+    milliseconds,
+    nanoseconds,
+)
 
+from utilities.contextvars import set_global_breakpoint
 from utilities.tzdata import HongKong, Tokyo
 from utilities.whenever2 import (
     DATE_MAX,
     DATE_MIN,
+    DATE_TIME_DELTA_MIN,
     NOW_UTC,
-    PLAIN_DATETIME_MAX,
-    PLAIN_DATETIME_MIN,
-    ZONED_DATETIME_MAX,
-    ZONED_DATETIME_MIN,
+    PLAIN_DATE_TIME_MAX,
+    PLAIN_DATE_TIME_MIN,
+    ZONED_DATE_TIME_MAX,
+    ZONED_DATE_TIME_MIN,
     WheneverLogRecord,
     get_now,
     get_now_local,
@@ -54,23 +63,44 @@ class TestMinMax:
         with raises(ValueError, match="Resulting date out of range"):
             _ = DATE_MAX + DateDelta(days=1)
 
-    def test_plain_datetime_min(self) -> None:
+    @mark.only
+    # @given(n=integers(0, 100000))
+    @mark.parametrize(
+        "delta",
+        [
+            param(DateTimeDelta(days=1)),
+            param(DateTimeDelta(seconds=1)),
+            param(DateTimeDelta(milliseconds=1)),
+            param(DateTimeDelta(microseconds=1)),
+            param(DateTimeDelta(nanoseconds=1)),
+        ],
+    )
+    def test_date_time_delta_min(self, *, delta: DateTimeDelta) -> None:
+        with raises(ValueError, match="Addition result out of bounds"):
+            _ = DATE_TIME_DELTA_MIN - delta
+
+    # def test_zoned_date_time_max(self) -> None:
+    #     _ = ZONED_date_time_MAX.add(nanoseconds=999)
+    #     with raises(ValueError, match="Resulting date_time is out of range"):
+    #         _ = ZONED_date_time_MAX.add(microseconds=1)
+
+    def test_plain_date_time_min(self) -> None:
         with raises(ValueError, match=r"Result of subtract\(\) out of range"):
-            _ = PLAIN_DATETIME_MIN.subtract(nanoseconds=1, ignore_dst=True)
+            _ = PLAIN_DATE_TIME_MIN.subtract(nanoseconds=1, ignore_dst=True)
 
-    def test_plain_datetime_max(self) -> None:
-        _ = PLAIN_DATETIME_MAX.add(nanoseconds=999, ignore_dst=True)
+    def test_plain_date_time_max(self) -> None:
+        _ = PLAIN_DATE_TIME_MAX.add(nanoseconds=999, ignore_dst=True)
         with raises(ValueError, match=r"Result of add\(\) out of range"):
-            _ = PLAIN_DATETIME_MAX.add(microseconds=1, ignore_dst=True)
+            _ = PLAIN_DATE_TIME_MAX.add(microseconds=1, ignore_dst=True)
 
-    def test_zoned_datetime_min(self) -> None:
-        with raises(ValueError, match="Resulting datetime is out of range"):
-            _ = ZONED_DATETIME_MIN.subtract(nanoseconds=1)
+    def test_zoned_date_time_min(self) -> None:
+        with raises(ValueError, match="Instant is out of range"):
+            _ = ZONED_DATE_TIME_MIN.subtract(nanoseconds=1)
 
-    def test_zoned_datetime_max(self) -> None:
-        _ = ZONED_DATETIME_MAX.add(nanoseconds=999)
-        with raises(ValueError, match="Resulting datetime is out of range"):
-            _ = ZONED_DATETIME_MAX.add(microseconds=1)
+    def test_zoned_date_time_max(self) -> None:
+        _ = ZONED_DATE_TIME_MAX.add(nanoseconds=999)
+        with raises(ValueError, match="Instant is out of range"):
+            _ = ZONED_DATE_TIME_MAX.add(microseconds=1)
 
 
 class TestWheneverLogRecord:

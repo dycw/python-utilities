@@ -5,7 +5,7 @@ from functools import cache
 from logging import LogRecord
 from typing import TYPE_CHECKING, Any, override
 
-from whenever import Date, PlainDateTime, ZonedDateTime
+from whenever import Date, DateTimeDelta, PlainDateTime, ZonedDateTime
 
 from utilities.zoneinfo import UTC, get_time_zone_name
 
@@ -17,10 +17,13 @@ if TYPE_CHECKING:
 
 DATE_MIN = Date.from_py_date(dt.date.min)
 DATE_MAX = Date.from_py_date(dt.date.max)
-PLAIN_DATETIME_MIN = PlainDateTime.from_py_datetime(dt.datetime.min)  # noqa: DTZ901
-PLAIN_DATETIME_MAX = PlainDateTime.from_py_datetime(dt.datetime.max)  # noqa: DTZ901
-ZONED_DATETIME_MIN = PLAIN_DATETIME_MIN.assume_utc()
-ZONED_DATETIME_MAX = PLAIN_DATETIME_MAX.assume_utc()
+PLAIN_DATE_TIME_MIN = PlainDateTime.from_py_datetime(dt.datetime.min)  # noqa: DTZ901
+PLAIN_DATE_TIME_MAX = PlainDateTime.from_py_datetime(dt.datetime.max)  # noqa: DTZ901
+ZONED_DATE_TIME_MIN = PLAIN_DATE_TIME_MIN.assume_tz(UTC.key)
+ZONED_DATE_TIME_MAX = PLAIN_DATE_TIME_MAX.assume_tz(UTC.key)
+DATE_TIME_DELTA_MIN = DateTimeDelta(days=-3652059, seconds=-316192377600)
+# MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3652060, microseconds=-1)
+# MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
 
 
 ##
@@ -113,10 +116,10 @@ class WheneverLogRecord(LogRecord):
 __all__ = [
     "DATE_MAX",
     "DATE_MIN",
-    "PLAIN_DATETIME_MAX",
-    "PLAIN_DATETIME_MIN",
-    "ZONED_DATETIME_MAX",
-    "ZONED_DATETIME_MIN",
+    "PLAIN_DATE_TIME_MAX",
+    "PLAIN_DATE_TIME_MIN",
+    "ZONED_DATE_TIME_MAX",
+    "ZONED_DATE_TIME_MIN",
     "WheneverLogRecord",
     "from_timestamp",
     "from_timestamp_millis",
