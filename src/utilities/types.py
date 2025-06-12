@@ -98,17 +98,16 @@ TDataclass = TypeVar("TDataclass", bound=Dataclass)
 
 
 # datetime
-type DateLike = MaybeStr[dt.date]
-type DateTimeLike = MaybeStr[dt.datetime]
 type DateOrDateTime = dt.date | dt.datetime
+type DateTimeLike = MaybeStr[dt.datetime]
 type Duration = Number | dt.timedelta
 type DurationLike = MaybeStr[Duration]
 type DurationOrEveryDuration = Duration | tuple[Literal["every"], Duration]
 type MaybeCallablePyDate = MaybeCallable[dt.date]
 type MaybeCallablePyDateTime = MaybeCallable[dt.datetime]
-type TimeLike = MaybeStr[dt.time]
-type TimeDeltaLike = MaybeStr[dt.timedelta]
-type WeekDay = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+type PyDateLike = MaybeStr[dt.date]
+type PyTimeDeltaLike = MaybeStr[dt.timedelta]
+type PyTimeLike = MaybeStr[dt.time]
 
 
 # enum
@@ -143,7 +142,7 @@ type LoggerOrName = MaybeStr[Logger]
 
 # math
 type Number = int | float
-type RoundMode = Literal[
+type MathRoundMode = Literal[
     "standard",
     "floor",
     "ceil",
@@ -302,7 +301,6 @@ __all__ = [
     "Dataclass",
     "DateDeltaLike",
     "DateLike",
-    "DateLike",
     "DateOrDateTime",
     "DateTimeDeltaLike",
     "DateTimeLike",
@@ -316,6 +314,7 @@ __all__ = [
     "IterableHashable",
     "LogLevel",
     "LoggerOrName",
+    "MathRoundMode",
     "MaybeAwaitable",
     "MaybeCallable",
     "MaybeCallableDate",
@@ -337,7 +336,9 @@ __all__ = [
     "PathLike",
     "PatternLike",
     "PlainDateTimeLike",
-    "RoundMode",
+    "PyDateLike",
+    "PyTimeDeltaLike",
+    "PyTimeLike",
     "Seed",
     "SerializeObjectExtra",
     "Sign",

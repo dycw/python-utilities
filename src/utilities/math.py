@@ -8,9 +8,10 @@ from re import Match, search
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.errors import ImpossibleCaseError
+from utilities.re import ExtractGroupsError, extract_groups
 
 if TYPE_CHECKING:
-    from utilities.types import Number, RoundMode, Sign
+    from utilities.types import MathRoundMode, Number, Sign
 
 
 MIN_FLOAT32, MAX_FLOAT32 = -3.4028234663852886e38, 3.4028234663852886e38
@@ -708,7 +709,7 @@ def round_(
     x: float,
     /,
     *,
-    mode: RoundMode = "standard",
+    mode: MathRoundMode = "standard",
     rel_tol: float | None = None,
     abs_tol: float | None = None,
 ) -> int:
@@ -748,7 +749,7 @@ def round_(
 
 def _round_tie_standard(
     x: float,
-    mode: RoundMode,
+    mode: MathRoundMode,
     /,
     *,
     rel_tol: float | None = None,
@@ -757,9 +758,9 @@ def _round_tie_standard(
     """Round a float to an integer using the standard method."""
     frac, _ = modf(x)
     if _is_close(abs(frac), 0.5, rel_tol=rel_tol, abs_tol=abs_tol):
-        mode_use: RoundMode = mode
+        mode_use: MathRoundMode = mode
     else:
-        mode_use: RoundMode = "standard"
+        mode_use: MathRoundMode = "standard"
     return round_(x, mode=mode_use)
 
 
@@ -775,9 +776,9 @@ def round_float_imprecisions(
 ) -> float:
     """Round a float, removing binary representation imprecisions."""
     try:
-        ((head, tail),) = _ROUND_FLOAT_IMPRECISIONS_PATTERN.findall(str(x))
-    except ValueError:
-        ((head, tail),) = _ROUND_FLOAT_IMPRECISIONS_PATTERN.findall(f"{x:.20f}")
+        head, tail = extract_groups(_ROUND_FLOAT_IMPRECISIONS_PATTERN, str(x))
+    except ExtractGroupsError:
+        head, tail = extract_groups(_ROUND_FLOAT_IMPRECISIONS_PATTERN, f"{x:.20f}")
     half = ceil(decimals / 2)
     pattern0 = search(rf"^([0-9]+?)(0{{{half},}})([0-9]+?)$", tail)
     pattern9 = search(rf"^(0*)([0-9]+?)(9{{{half},}})([0-9]+?)$", tail)
@@ -823,7 +824,7 @@ def round_to_float(
     y: float,
     /,
     *,
-    mode: RoundMode = "standard",
+    mode: MathRoundMode = "standard",
     rel_tol: float | None = None,
     abs_tol: float | None = None,
 ) -> float:

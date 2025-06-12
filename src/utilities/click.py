@@ -23,13 +23,13 @@ from utilities.functions import EnsureStrError, ensure_str, get_class_name
 from utilities.iterables import is_iterable_not_str
 from utilities.text import split_str
 from utilities.types import (
-    DateLike,
     DateTimeLike,
     EnumLike,
     MaybeStr,
+    PyDateLike,
+    PyTimeDeltaLike,
+    PyTimeLike,
     TEnum,
-    TimeDeltaLike,
-    TimeLike,
 )
 
 if TYPE_CHECKING:
@@ -76,7 +76,7 @@ class Date(ParamType):
 
     @override
     def convert(
-        self, value: DateLike, param: Parameter | None, ctx: Context | None
+        self, value: PyDateLike, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Date` type."""
         from utilities.whenever import EnsureDateError, ensure_date
@@ -197,7 +197,7 @@ class Time(ParamType):
 
     @override
     def convert(
-        self, value: TimeLike, param: Parameter | None, ctx: Context | None
+        self, value: PyTimeLike, param: Parameter | None, ctx: Context | None
     ) -> dt.time:
         """Convert a value into the `Time` type."""
         from utilities.whenever import EnsureTimeError, ensure_time
@@ -219,7 +219,7 @@ class Timedelta(ParamType):
 
     @override
     def convert(
-        self, value: TimeDeltaLike, param: Parameter | None, ctx: Context | None
+        self, value: PyTimeDeltaLike, param: Parameter | None, ctx: Context | None
     ) -> dt.timedelta:
         """Convert a value into the `Timedelta` type."""
         from utilities.whenever import EnsureTimedeltaError, ensure_timedelta
