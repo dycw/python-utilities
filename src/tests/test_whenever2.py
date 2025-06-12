@@ -43,6 +43,7 @@ from utilities.whenever2 import (
     TODAY_UTC,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
+    ToDaysError,
     ToNanosError,
     WheneverLogRecord,
     format_compact,
@@ -55,6 +56,7 @@ from utilities.whenever2 import (
     get_today_local,
     to_date,
     to_date_time_delta,
+    to_days,
     to_nanos,
     to_time_delta,
     to_zoned_date_time,
@@ -274,6 +276,24 @@ class TestToDateTimeDeltaAndNanos:
             ToNanosError, match="Date-time delta must not contain months; got 1"
         ):
             _ = to_nanos(delta)
+
+
+class TestToDays:
+    @given(days=integers())
+    def test_main(self, *, days: int) -> None:
+        with (
+            assume_does_not_raise(ValueError, match="days out of range"),
+            assume_does_not_raise(
+                OverflowError, match="Python int too large to convert to C long"
+            ),
+        ):
+            delta = DateDelta(days=days)
+        assert to_days(delta) == days
+
+    def test_error(self) -> None:
+        delta = DateDelta(months=1)
+        with raises(ToDaysError, match="Date delta must not contain months; got 1"):
+            _ = to_days(delta)
 
 
 class TestToZonedDateTime:

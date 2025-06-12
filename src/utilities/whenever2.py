@@ -213,12 +213,12 @@ def to_days(delta: DateDelta, /) -> int:
 
 
 @dataclass(kw_only=True, slots=True)
-class ToDaysError:
+class ToDaysError(Exception):
     months: int
 
     @override
     def __str__(self) -> str:
-        return f"Date delta must have no months; got {self.months}"
+        return f"Date delta must not contain months; got {self.months}"
 
 
 ##

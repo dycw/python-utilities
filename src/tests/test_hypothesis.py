@@ -136,7 +136,7 @@ from utilities.whenever import (
     serialize_duration,
     serialize_timedelta,
 )
-from utilities.whenever2 import to_nanos
+from utilities.whenever2 import to_days, to_nanos
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -203,16 +203,11 @@ class TestDateDeltasWhenever:
                 )
             )
         assert isinstance(delta, DateDelta)
-        months, days = delta.in_months_days()
-        assert months == 0
+        days = to_days(delta)
         if min_value is not None:
-            min_months, min_days = min_value.in_months_days()
-            assert min_months == 0
-            assert days >= min_days
+            assert days >= to_days(min_value)
         if max_value is not None:
-            max_months, max_days = max_value.in_months_days()
-            assert max_months == 0
-            assert days <= max_days
+            assert days <= to_days(max_value)
         if parsable:
             assert DateDelta.parse_common_iso(delta.format_common_iso()) == delta
 
