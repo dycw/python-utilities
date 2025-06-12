@@ -94,7 +94,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.131.1"
+version = "0.131.2"
 
 [project.optional-dependencies]
 logging = [
@@ -341,7 +341,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.131.1"
+current_version = "0.131.2"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -354,6 +354,7 @@ search = "__version__ = \"{current_version}\""
 [tool.coverage.coverage_conditional_plugin.rules]
 skipif-ci = '"CI" in os_environ'
 skipif-ci-and-not-linux = '("CI" in os_environ) and (sys_platform != "linux")'
+skipif-ci-and-not-windows = '("CI" in os_environ) and (sys_platform != "windows")'
 skipif-ci-and-windows = '("CI" in os_environ) and (sys_platform != "windows")'
 skipif-linux = 'sys_platform == "linux"'
 skipif-mac = 'sys_platform == "darwin"'

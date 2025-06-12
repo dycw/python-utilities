@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 from datetime import timezone
-from logging import DEBUG
 from re import escape
 from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
@@ -21,7 +20,7 @@ from hypothesis.strategies import (
     timezones,
 )
 from pytest import raises
-from whenever import DateTimeDelta, ZonedDateTime
+from whenever import DateTimeDelta
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
@@ -61,7 +60,6 @@ from utilities.whenever import (
     SerializePlainDateTimeError,
     SerializeTimeDeltaError,
     SerializeZonedDateTimeError,
-    WheneverLogRecord,
     _CheckValidZonedDateTimeUnequalError,
     _EnsureTimedeltaNanosecondError,
     _EnsureTimedeltaParseError,
@@ -495,20 +493,3 @@ class TestToDateTimeDelta:
             _ToDateTimeDeltaError, match="Unable to create DateTimeDelta; got .*"
         ):
             _ = _to_datetime_delta(timedelta)
-
-
-class TestWheneverLogRecord:
-    def test_init(self) -> None:
-        _ = WheneverLogRecord("name", DEBUG, "pathname", 0, None, None, None)
-
-    def test_get_length(self) -> None:
-        assert isinstance(WheneverLogRecord._get_length(), int)
-
-    def test_get_now(self) -> None:
-        assert isinstance(WheneverLogRecord._get_now(), ZonedDateTime)
-
-    def test_get_time_zone(self) -> None:
-        assert isinstance(WheneverLogRecord._get_time_zone(), ZoneInfo)
-
-    def test_get_time_zone_key(self) -> None:
-        assert isinstance(WheneverLogRecord._get_time_zone_key(), str)

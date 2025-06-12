@@ -190,7 +190,7 @@ def get_formatter(
 ) -> Formatter:
     """Get the formatter; colored if available."""
     if whenever:
-        from utilities.whenever import WheneverLogRecord
+        from utilities.whenever2 import WheneverLogRecord
 
         setLogRecordFactory(WheneverLogRecord)
         format_ = format_.replace("{asctime}", "{zoned_datetime}")

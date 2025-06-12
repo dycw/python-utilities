@@ -28,6 +28,7 @@ from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
 from pytest import mark, raises
+from whenever import Date, DateDelta, PlainDateTime, ZonedDateTime
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
@@ -50,8 +51,10 @@ from utilities.hypothesis import (
     _Draw2InputResolvedToSentinelError,
     assume_does_not_raise,
     bool_arrays,
+    date_deltas_whenever,
     date_durations,
     dates_two_digit_year,
+    dates_whenever,
     datetime_durations,
     draw2,
     float32s,
@@ -73,6 +76,7 @@ from utilities.hypothesis import (
     pairs,
     paths,
     plain_datetimes,
+    plain_datetimes_whenever,
     random_states,
     sentinels,
     sets_fixed_length,
@@ -94,6 +98,7 @@ from utilities.hypothesis import (
     uint64s,
     versions,
     zoned_datetimes,
+    zoned_datetimes_whenever,
 )
 from utilities.math import (
     MAX_FLOAT32,
@@ -178,6 +183,31 @@ class TestBoolArrays:
         assert array.shape == shape
 
 
+class TestDateDeltas:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value = data.draw(date_deltas_whenever() | none())
+        max_value = data.draw(date_deltas_whenever() | none())
+        with assume_does_not_raise(InvalidArgument):
+            delta = data.draw(
+                date_deltas_whenever(min_value=min_value, max_value=max_value)
+            )
+        assert isinstance(delta, DateDelta)
+        years, months, days = delta.in_years_months_days()
+        assert years == 0
+        assert months == 0
+        if min_value is not None:
+            min_years, min_months, min_days = min_value.in_years_months_days()
+            assert min_years == 0
+            assert min_months == 0
+            assert days >= min_days
+        if max_value is not None:
+            max_years, max_months, max_days = max_value.in_years_months_days()
+            assert max_years == 0
+            assert max_months == 0
+            assert days <= max_days
+
+
 class TestDateDurations:
     @given(
         data=data(),
@@ -255,6 +285,20 @@ class TestDatesTwoDigitYear:
         year = f"{date:%y}"
         parsed = parse_two_digit_year(year)
         assert date.year == parsed
+
+
+class TestDatesWhenever:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value = data.draw(dates_whenever() | none())
+        max_value = data.draw(dates_whenever() | none())
+        with assume_does_not_raise(InvalidArgument):
+            date = data.draw(dates_whenever(min_value=min_value, max_value=max_value))
+        assert isinstance(date, Date)
+        if min_value is not None:
+            assert date >= min_value
+        if max_value is not None:
+            assert date <= max_value
 
 
 class TestDateTimeDurations:
@@ -840,6 +884,22 @@ class TestPlainDateTimes:
             _ = data.draw(plain_datetimes(round_="standard"))
 
 
+class TestPlainDateTimesWhenever:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value = data.draw(plain_datetimes_whenever() | none())
+        max_value = data.draw(plain_datetimes_whenever() | none())
+        with assume_does_not_raise(InvalidArgument):
+            datetime = data.draw(
+                plain_datetimes_whenever(min_value=min_value, max_value=max_value)
+            )
+        assert isinstance(datetime, PlainDateTime)
+        if min_value is not None:
+            assert datetime >= min_value
+        if max_value is not None:
+            assert datetime <= max_value
+
+
 class TestRandomStates:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
@@ -1198,3 +1258,23 @@ class TestZonedDateTimes:
             ZonedDateTimesError, match="Rounding requires a timedelta; got None"
         ):
             _ = data.draw(zoned_datetimes(round_="standard"))
+
+
+class TestZonedDateTimesWhenever:
+    @given(data=data(), time_zone=timezones())
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_main(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+        min_value = data.draw(zoned_datetimes_whenever() | none())
+        max_value = data.draw(zoned_datetimes_whenever() | none())
+        with assume_does_not_raise(InvalidArgument):
+            datetime = data.draw(
+                zoned_datetimes_whenever(
+                    min_value=min_value, max_value=max_value, time_zone=time_zone
+                )
+            )
+        assert isinstance(datetime, ZonedDateTime)
+        assert datetime.tz == time_zone.key
+        if min_value is not None:
+            assert datetime >= min_value
+        if max_value is not None:
+            assert datetime <= max_value
