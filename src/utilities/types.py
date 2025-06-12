@@ -105,9 +105,9 @@ type DurationLike = MaybeStr[Duration]
 type DurationOrEveryDuration = Duration | tuple[Literal["every"], Duration]
 type MaybeCallablePyDate = MaybeCallable[dt.date]
 type MaybeCallablePyDateTime = MaybeCallable[dt.datetime]
-type TimeLike = MaybeStr[dt.time]
-type TimeDeltaLike = MaybeStr[dt.timedelta]
-type WeekDay = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+type PyDateLike = MaybeStr[dt.date]
+type PyTimeDeltaLike = MaybeStr[dt.timedelta]
+type PyTimeLike = MaybeStr[dt.time]
 
 
 # enum
@@ -301,7 +301,6 @@ __all__ = [
     "Dataclass",
     "DateDeltaLike",
     "DateLike",
-    "DateLike",
     "DateOrDateTime",
     "DateTimeDeltaLike",
     "DateTimeLike",
@@ -337,7 +336,9 @@ __all__ = [
     "PathLike",
     "PatternLike",
     "PlainDateTimeLike",
-    "RoundMode",
+    "PyDateLike",
+    "PyTimeDeltaLike",
+    "PyTimeLike",
     "Seed",
     "SerializeObjectExtra",
     "Sign",
