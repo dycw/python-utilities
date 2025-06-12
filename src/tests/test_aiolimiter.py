@@ -6,6 +6,7 @@ from typing import ClassVar
 from utilities.aiolimiter import get_async_limiter
 from utilities.text import unique_str
 from utilities.timer import Timer
+from utilities.whenever2 import SECOND
 
 
 class TestGetAsyncLimiter:
@@ -22,7 +23,7 @@ class TestGetAsyncLimiter:
             for _ in range(2):
                 async with get_async_limiter(name, rate=0.5):
                     await increment()
-        assert timer >= 0.48
+        assert timer >= 0.48 * SECOND
 
     shared: ClassVar[str] = unique_str()
 
