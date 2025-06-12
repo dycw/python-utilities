@@ -14,7 +14,6 @@ from traceback import TracebackException
 from typing import TYPE_CHECKING, override
 
 from utilities.atomicwrites import writer
-from utilities.datetime import get_datetime, serialize_compact
 from utilities.errors import repr_error
 from utilities.iterables import OneEmptyError, one
 from utilities.pathlib import get_path
@@ -27,15 +26,8 @@ from utilities.reprlib import (
     RICH_MAX_WIDTH,
     yield_mapping_repr,
 )
-from utilities.tzlocal import get_local_time_zone
 from utilities.version import get_version
-from utilities.whenever import serialize_duration, serialize_zoned_datetime
-from utilities.whenever2 import (
-    get_now,
-    get_now_local,
-    to_local_plain_sec,
-    to_zoned_date_time,
-)
+from utilities.whenever2 import get_now, to_local_plain_sec, to_zoned_date_time
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
@@ -200,7 +192,7 @@ def _trim_path(path: PathLike, pattern: str, /) -> Path | None:
 
 def make_except_hook(
     *,
-    start: MaybeCallableDateTime | None = _START,
+    start: MaybeCallableZonedDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
     max_width: int = RICH_MAX_WIDTH,
@@ -255,7 +247,7 @@ def _make_except_hook_inner(
     if path is not None:
         path = (
             get_path(path=path)
-            .joinpath(to_local_plain_sec(get_now()))
+            .joinpath(to_local_plain_sec(get_now()).format_common_iso())
             .with_suffix(".txt")
         )
         full = format_exception_stack(
