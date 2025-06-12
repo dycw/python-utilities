@@ -18,8 +18,7 @@ from whenever import (
 
 from utilities.datetime import maybe_sub_pct_y
 from utilities.sentinel import Sentinel, sentinel
-from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
-from utilities.tzlocal import LOCAL_TIME_ZONE
+from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:

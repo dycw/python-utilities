@@ -10,7 +10,7 @@ from pytest import raises
 
 from utilities.hypothesis import zoned_datetimes
 from utilities.tzdata import HongKong, Tokyo
-from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME, get_local_time_zone
+from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import (
     UTC,
     _EnsureTimeZoneInvalidTZInfoError,

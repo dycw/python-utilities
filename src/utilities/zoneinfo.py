@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, assert_never, cast, override
 from zoneinfo import ZoneInfo
 
-from utilities.tzlocal import LOCAL_TIME_ZONE, get_local_time_zone
+from utilities.tzlocal import LOCAL_TIME_ZONE
 
 if TYPE_CHECKING:
     from utilities.types import TimeZone, TimeZoneLike
