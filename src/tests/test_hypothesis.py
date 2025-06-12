@@ -28,7 +28,7 @@ from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
 from pytest import mark, raises
-from whenever import Date, DateDelta, PlainDateTime, ZonedDateTime
+from whenever import Date, DateDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
@@ -92,7 +92,9 @@ from utilities.hypothesis import (
     text_clean,
     text_digits,
     text_printable,
+    time_deltas_whenever,
     timedeltas_2w,
+    times_whenever,
     triples,
     uint32s,
     uint64s,
@@ -1151,6 +1153,38 @@ class TestTimeDeltas2W:
         ser = serialize_timedelta(timedelta)
         _ = parse_timedelta(ser)
         assert min_value <= timedelta <= max_value
+
+
+class TestTimeDeltas:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value = data.draw(time_deltas_whenever() | none())
+        max_value = data.draw(time_deltas_whenever() | none())
+        with assume_does_not_raise(InvalidArgument):
+            delta = data.draw(
+                time_deltas_whenever(min_value=min_value, max_value=max_value)
+            )
+        assert isinstance(delta, TimeDelta)
+        assert TimeDelta.parse_common_iso(delta.format_common_iso()) == delta
+        if min_value is not None:
+            assert delta >= min_value
+        if max_value is not None:
+            assert delta <= max_value
+
+
+class TestTimes:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value = data.draw(times_whenever() | none())
+        max_value = data.draw(times_whenever() | none())
+        with assume_does_not_raise(InvalidArgument):
+            time = data.draw(times_whenever(min_value=min_value, max_value=max_value))
+        assert isinstance(time, Time)
+        assert Time.parse_common_iso(time.format_common_iso()) == time
+        if min_value is not None:
+            assert time >= min_value
+        if max_value is not None:
+            assert time <= max_value
 
 
 class TestTriples:

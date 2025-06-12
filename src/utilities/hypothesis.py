@@ -24,6 +24,7 @@ from typing import (
     override,
 )
 
+import hypothesis.strategies
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import (
@@ -47,7 +48,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from whenever import Date, DateDelta
+from whenever import Date, DateDelta, PlainDateTime, Time, TimeDelta
 
 from utilities.datetime import (
     DATETIME_MAX_NAIVE,
@@ -89,6 +90,20 @@ from utilities.platform import IS_WINDOWS
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.version import Version
+from utilities.whenever2 import (
+    DATE_DELTA_MAX,
+    DATE_DELTA_MIN,
+    DATE_DELTA_PARSABLE_MAX,
+    DATE_DELTA_PARSABLE_MIN,
+    DATE_MAX,
+    DATE_MIN,
+    PLAIN_DATE_TIME_MAX,
+    PLAIN_DATE_TIME_MIN,
+    TIME_DELTA_MAX,
+    TIME_DELTA_MIN,
+    TIME_MAX,
+    TIME_MIN,
+)
 from utilities.zoneinfo import UTC, ensure_time_zone
 
 if TYPE_CHECKING:
@@ -97,7 +112,7 @@ if TYPE_CHECKING:
 
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
-    from whenever import PlainDateTime, ZonedDateTime
+    from whenever import ZonedDateTime
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.types import Duration, Number, RoundMode, TimeZoneLike
@@ -170,13 +185,6 @@ def date_deltas_whenever(
     parsable: MaybeSearchStrategy[bool] = False,
 ) -> DateDelta:
     """Strategy for generating date deltas."""
-    from utilities.whenever2 import (
-        DATE_DELTA_MAX,
-        DATE_DELTA_MIN,
-        DATE_DELTA_PARSABLE_MAX,
-        DATE_DELTA_PARSABLE_MIN,
-    )
-
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     match min_value_:
         case None:
@@ -307,8 +315,6 @@ def dates_whenever(
     max_value: MaybeSearchStrategy[Date | None] = None,
 ) -> Date:
     """Strategy for generating dates."""
-    from utilities.whenever2 import DATE_MAX, DATE_MIN
-
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     match min_value_:
         case None:
@@ -1069,10 +1075,6 @@ def plain_datetimes_whenever(
     max_value: MaybeSearchStrategy[PlainDateTime | None] = None,
 ) -> PlainDateTime:
     """Strategy for generating plain datetimes."""
-    from whenever import PlainDateTime
-
-    from utilities.whenever2 import PLAIN_DATE_TIME_MAX, PLAIN_DATE_TIME_MIN
-
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     match min_value_:
         case None:
@@ -1406,6 +1408,41 @@ def text_printable(
 
 
 @composite
+def time_deltas_whenever(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[TimeDelta | None] = None,
+    max_value: MaybeSearchStrategy[TimeDelta | None] = None,
+) -> TimeDelta:
+    """Strategy for generating time deltas."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    match min_value_:
+        case None:
+            min_value_ = TIME_DELTA_MIN
+        case TimeDelta():
+            ...
+        case _ as never:
+            assert_never(never)
+    match max_value_:
+        case None:
+            max_value_ = TIME_DELTA_MAX
+        case TimeDelta():
+            ...
+        case _ as never:
+            assert_never(never)
+    py_time = draw(
+        hypothesis.strategies.timedeltas(
+            min_value=min_value_.py_timedelta(), max_value=max_value_.py_timedelta()
+        )
+    )
+    return TimeDelta.from_py_timedelta(py_time)
+
+
+##
+
+
+@composite
 def timedeltas_2w(
     draw: DrawFn,
     /,
@@ -1426,6 +1463,41 @@ def timedeltas_2w(
             max_value=min(max_value_, MAX_SERIALIZABLE_TIMEDELTA),
         )
     )
+
+
+##
+
+
+@composite
+def times_whenever(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[Time | None] = None,
+    max_value: MaybeSearchStrategy[Time | None] = None,
+) -> Time:
+    """Strategy for generating times."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    match min_value_:
+        case None:
+            min_value_ = TIME_MIN
+        case Time():
+            ...
+        case _ as never:
+            assert_never(never)
+    match max_value_:
+        case None:
+            max_value_ = TIME_MAX
+        case Time():
+            ...
+        case _ as never:
+            assert_never(never)
+    py_time = draw(
+        hypothesis.strategies.times(
+            min_value=min_value_.py_time(), max_value=max_value_.py_time()
+        )
+    )
+    return Time.from_py_time(py_time)
 
 
 ##
@@ -1651,7 +1723,9 @@ __all__ = [
     "text_clean",
     "text_digits",
     "text_printable",
+    "time_deltas_whenever",
     "timedeltas_2w",
+    "times_whenever",
     "triples",
     "uint32s",
     "uint64s",
