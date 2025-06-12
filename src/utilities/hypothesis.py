@@ -47,6 +47,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
+from whenever import Date
 
 from utilities.datetime import (
     DATETIME_MAX_NAIVE,
@@ -216,6 +217,41 @@ def _is_between_timedelta(
     timedelta: dt.timedelta, /, *, min_: dt.timedelta, max_: dt.timedelta
 ) -> bool:
     return min_ <= timedelta <= max_
+
+
+##
+
+
+@composite
+def dates_whenever(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[Date | None] = None,
+    max_value: MaybeSearchStrategy[Date | None] = None,
+) -> dt.date:
+    """Strategy for generating dates with valid 2 digit years."""
+    from utilities.whenever2 import DATE_MAX, DATE_MIN
+
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    match min_value_:
+        case None:
+            min_value_ = DATE_MIN
+        case Date():
+            ...
+        case _ as never:
+            assert_never(never)
+    match max_value_:
+        case None:
+            max_value_ = DATE_MAX
+        case Date():
+            ...
+        case _ as never:
+            assert_never(never)
+    py_date = draw(
+        dates(min_value=min_value_.py_date(), max_value=max_value_.py_date())
+    )
+    return Date.from_py_date(py_date)
 
 
 ##
@@ -973,7 +1009,7 @@ def plain_datetimes_whenever(
     *,
     min_value: MaybeSearchStrategy[PlainDateTime | None] = None,
     max_value: MaybeSearchStrategy[PlainDateTime | None] = None,
-) -> dt.datetime:
+) -> PlainDateTime:
     """Strategy for generating plain datetimes."""
     from whenever import PlainDateTime
 
@@ -1517,6 +1553,7 @@ __all__ = [
     "bool_arrays",
     "date_durations",
     "dates_two_digit_year",
+    "dates_whenever",
     "datetime_durations",
     "draw2",
     "float32s",
