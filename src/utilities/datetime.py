@@ -31,9 +31,9 @@ if TYPE_CHECKING:
     from utilities.types import (
         DateOrDateTime,
         Duration,
+        MathRoundMode,
         MaybeCallablePyDate,
         MaybeCallablePyDateTime,
-        RoundMode,
         TimeZoneLike,
     )
 
