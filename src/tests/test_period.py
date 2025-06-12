@@ -12,7 +12,7 @@ from utilities.hypothesis import (
     date_deltas_whenever,
     dates_whenever,
     pairs,
-    plain_datetimes,
+    plain_datetimes_whenever,
     time_deltas_whenever,
     zoned_datetimes_whenever,
 )
@@ -23,6 +23,7 @@ from utilities.period import (
     _PeriodInvalidError,
     _PeriodTimeZoneError,
 )
+from utilities.whenever2 import DAY
 from utilities.zoneinfo import get_time_zone_name
 
 if TYPE_CHECKING:
@@ -248,7 +249,7 @@ class TestZonedDateTimePeriod:
             _ = ZonedDateTimePeriod(end, start)
 
     @given(
-        datetimes=pairs(plain_datetimes(), sorted=True),
+        datetimes=pairs(plain_datetimes_whenever(), sorted=True),
         time_zones=pairs(timezones(), unique=True),
     )
     def test_error_period_time_zone(
@@ -259,8 +260,8 @@ class TestZonedDateTimePeriod:
     ) -> None:
         plain_start, plain_end = datetimes
         time_zone1, time_zone2 = time_zones
-        start = plain_start.assume_tz(time_zone1.key)
-        end = plain_end.assume_tz(time_zone2.key)
+        start = (plain_start - DAY).assume_tz(time_zone1.key)
+        end = (plain_end + DAY).assume_tz(time_zone2.key)
         with raises(
             _PeriodTimeZoneError,
             match="Period must contain exactly one time zone; got .* and .*",
