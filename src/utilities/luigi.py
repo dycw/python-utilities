@@ -2,121 +2,91 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    TypeVar,
+    assert_never,
+    cast,
+    overload,
+    override,
+)
 
 import luigi
 from luigi import Parameter, PathParameter, Target, Task
 from luigi import build as _build
-
-from utilities.datetime import EPOCH_UTC
+from luigi.parameter import ParameterVisibility, _no_value
+from whenever import ZonedDateTime
 
 if TYPE_CHECKING:
-    import datetime as dt
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
 
     from luigi.execution_summary import LuigiRunResult
 
-    from utilities.types import LogLevel, MaybeStr, PathLike
+    from utilities.types import DateTimeRoundUnit, LogLevel, PathLike, ZonedDateTimeLike
+
+
+_T = TypeVar("_T")
 
 
 # parameters
 
 
-class DateHourParameter(luigi.DateHourParameter):
-    """A parameter which takes the value of an hourly `dt.datetime`."""
+class ZonedDateTimeParameter(Parameter):
+    """A parameter which takes the value of a zoned datetime."""
 
-    def __init__(self, interval: int = 1, **kwargs: Any) -> None:
-        super().__init__(interval, EPOCH_UTC, **kwargs)
-
-    @override
-    def normalize(self, dt: MaybeStr[dt.datetime]) -> dt.datetime:
-        from utilities.whenever import ensure_zoned_datetime
-
-        return ensure_zoned_datetime(dt)
+    _unit: DateTimeRoundUnit
+    _increment: int
 
     @override
-    def parse(self, s: str) -> dt.datetime:
-        from utilities.whenever import parse_zoned_datetime
-
-        return parse_zoned_datetime(s)
-
-    @override
-    def serialize(self, dt: dt.datetime) -> str:
-        from utilities.whenever import serialize_zoned_datetime
-
-        return serialize_zoned_datetime(dt)
-
-
-class DateMinuteParameter(luigi.DateMinuteParameter):
-    """A parameter which takes the value of a minutely `dt.datetime`."""
-
-    def __init__(self, interval: int = 1, **kwargs: Any) -> None:
-        super().__init__(interval=interval, start=EPOCH_UTC, **kwargs)
-
-    @override
-    def normalize(self, dt: MaybeStr[dt.datetime]) -> dt.datetime:
-        from utilities.whenever import ensure_zoned_datetime
-
-        return ensure_zoned_datetime(dt)
-
-    @override
-    def parse(self, s: str) -> dt.datetime:
-        from utilities.whenever import parse_zoned_datetime
-
-        return parse_zoned_datetime(s)
-
-    @override
-    def serialize(self, dt: dt.datetime) -> str:
-        from utilities.whenever import serialize_zoned_datetime
-
-        return serialize_zoned_datetime(dt)
-
-
-class DateSecondParameter(luigi.DateSecondParameter):
-    """A parameter which takes the value of a secondly `dt.datetime`."""
-
-    def __init__(self, interval: int = 1, **kwargs: Any) -> None:
-        super().__init__(interval, EPOCH_UTC, **kwargs)
+    def __init__(
+        self,
+        default: Any = _no_value,
+        is_global: bool = False,
+        significant: bool = True,
+        description: str | None = None,
+        config_path: None = None,
+        positional: bool = True,
+        always_in_help: bool = False,
+        batch_method: Callable[[Iterable[_T]], _T] | None = None,
+        visibility: ParameterVisibility = ParameterVisibility.PUBLIC,
+        *,
+        unit: DateTimeRoundUnit = "second",
+        increment: int = 1,
+    ) -> None:
+        super().__init__(
+            default,
+            is_global,
+            significant,
+            description,
+            config_path,
+            positional,
+            always_in_help,
+            batch_method,
+            visibility,
+        )
+        self._unit = unit
+        self._increment = increment
 
     @override
-    def normalize(self, dt: MaybeStr[dt.datetime]) -> dt.datetime:
-        from utilities.whenever import ensure_zoned_datetime
-
-        return ensure_zoned_datetime(dt)
-
-    @override
-    def parse(self, s: str) -> dt.datetime:
-        from utilities.whenever import parse_zoned_datetime
-
-        return parse_zoned_datetime(s)
-
-    @override
-    def serialize(self, dt: dt.datetime) -> str:
-        from utilities.whenever import serialize_zoned_datetime
-
-        return serialize_zoned_datetime(dt)
-
-
-class TimeParameter(Parameter):
-    """A parameter which takes the value of a `dt.time`."""
+    def normalize(self, x: ZonedDateTimeLike) -> ZonedDateTime:
+        match x:
+            case ZonedDateTime() as date_time:
+                ...
+            case str() as text:
+                date_time = ZonedDateTime.parse_common_iso(text)
+            case _ as never:
+                assert_never(never)
+        return date_time.round(self._unit, increment=self._increment, mode="floor")
 
     @override
-    def normalize(self, x: MaybeStr[dt.time]) -> dt.time:
-        from utilities.whenever import ensure_time
-
-        return ensure_time(x)
+    def parse(self, x: str) -> ZonedDateTime:
+        return ZonedDateTime.parse_common_iso(x)
 
     @override
-    def parse(self, x: str) -> dt.time:
-        from utilities.whenever import parse_time
-
-        return parse_time(x)
-
-    @override
-    def serialize(self, x: dt.time) -> str:
-        from utilities.whenever import serialize_time
-
-        return serialize_time(x)
+    def serialize(self, x: ZonedDateTime) -> str:
+        return x.format_common_iso()
 
 
 # targets
@@ -217,12 +187,9 @@ def build(
 
 
 __all__ = [
-    "DateHourParameter",
-    "DateMinuteParameter",
-    "DateSecondParameter",
     "ExternalFile",
     "ExternalTask",
     "PathTarget",
-    "TimeParameter",
+    "ZonedDateTimeParameter",
     "build",
 ]
