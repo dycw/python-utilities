@@ -28,7 +28,14 @@ from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import DateOrDateTime, Duration, MathRoundMode, TimeZoneLike
+    from utilities.types import (
+        DateOrDateTime,
+        Duration,
+        MaybeCallablePyDate,
+        MaybeCallablePyDateTime,
+        RoundMode,
+        TimeZoneLike,
+    )
 
 
 _DAYS_PER_YEAR = 365.25
