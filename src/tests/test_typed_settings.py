@@ -1,4 +1,3 @@
-import datetime as dt
 from collections.abc import Callable
 from dataclasses import dataclass
 from operator import eq
@@ -6,25 +5,20 @@ from pathlib import Path
 from typing import TypeVar
 
 from hypothesis import given
-from hypothesis.strategies import (
-    DataObject,
-    SearchStrategy,
-    data,
-    dates,
-    datetimes,
-    times,
-    tuples,
-)
+from hypothesis.strategies import DataObject, SearchStrategy, data, tuples
 from pytest import mark, param
+from typed_settings import FileLoader, TomlFormat, load_settings
+from whenever import Date, DateDelta, PlainDateTime, ZonedDateTime
 
-from utilities.hypothesis import temp_paths, text_ascii, timedeltas_2w
-from utilities.typed_settings import load_settings
-from utilities.whenever import (
-    serialize_date,
-    serialize_local_datetime,
-    serialize_time,
-    serialize_timedelta,
+from utilities.hypothesis import (
+    date_deltas_whenever,
+    dates_whenever,
+    plain_datetimes_whenever,
+    temp_paths,
+    text_ascii,
+    zoned_datetimes_whenever,
 )
+from utilities.typed_settings import ExtendedTSConverter
 
 app_names = text_ascii(min_size=1).map(str.lower)
 
@@ -37,10 +31,18 @@ class TestExtendedTSConverter:
     @mark.parametrize(
         ("test_cls", "strategy", "serialize"),
         [
-            param(dt.date, dates(), serialize_date),
-            param(dt.datetime, datetimes(), serialize_local_datetime),
-            param(dt.time, times(), serialize_time),
-            param(dt.timedelta, timedeltas_2w(), serialize_timedelta),
+            param(Date, dates_whenever(), Date.format_common_iso),
+            param(DateDelta, date_deltas_whenever(), DateDelta.format_common_iso),
+            param(
+                PlainDateTime,
+                plain_datetimes_whenever(),
+                PlainDateTime.format_common_iso,
+            ),
+            param(
+                ZonedDateTime,
+                zoned_datetimes_whenever(),
+                ZonedDateTime.format_common_iso,
+            ),
         ],
     )
     def test_main(
@@ -71,11 +73,17 @@ class TestExtendedTSConverter:
         class Settings:
             value: test_cls = default
 
-        settings_default = load_settings(Settings)
+        settings_default = load_settings(
+            Settings, loaders=[], converter=ExtendedTSConverter()
+        )
         assert settings_default.value == default
         _ = hash(settings_default)
         file = Path(root, "file.toml")
         with file.open(mode="w") as fh:
             _ = fh.write(f'[{appname}]\nvalue = "{serialize(value)}"')
-        settings_loaded = load_settings(Settings, appname=appname, config_files=[file])
+        settings_loaded = load_settings(
+            Settings,
+            loaders=[FileLoader(formats={"*.toml": TomlFormat(appname)}, files=[file])],
+            converter=ExtendedTSConverter(),
+        )
         assert equal(settings_loaded.value, value)
