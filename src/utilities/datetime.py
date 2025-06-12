@@ -32,8 +32,8 @@ if TYPE_CHECKING:
         DateOrDateTime,
         Duration,
         MathRoundMode,
-        MaybeCallablePyDate,
-        MaybeCallablePyDateTime,
+        MaybeCallablePyPyDate,
+        MaybeCallablePyPyDateTime,
         TimeZoneLike,
     )
 
