@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING, Any, TypeVar, override
 import cachetools
 from cachetools.func import ttl_cache
 
-from utilities.datetime import datetime_duration_to_float
-
 if TYPE_CHECKING:
-    from utilities.types import Duration, TCallable
+    from whenever import TimeDelta
+
+    from utilities.types import TCallable
 
 _K = TypeVar("_K")
 _T = TypeVar("_T")
@@ -25,15 +25,13 @@ class TTLCache(cachetools.TTLCache[_K, _V]):
         self,
         *,
         max_size: int | None = None,
-        max_duration: Duration | None = None,
+        max_duration: TimeDelta | None = None,
         timer: Callable[[], float] = monotonic,
         get_size_of: Callable[[Any], int] | None = None,
     ) -> None:
         super().__init__(
             maxsize=inf if max_size is None else max_size,
-            ttl=inf
-            if max_duration is None
-            else datetime_duration_to_float(max_duration),
+            ttl=inf if max_duration is None else max_duration.in_seconds(),
             timer=timer,
             getsizeof=get_size_of,
         )
@@ -54,7 +52,7 @@ class TTLSet(MutableSet[_T]):
         /,
         *,
         max_size: int | None = None,
-        max_duration: Duration | None = None,
+        max_duration: TimeDelta | None = None,
         timer: Callable[[], float] = monotonic,
         get_size_of: Callable[[Any], int] | None = None,
     ) -> None:
@@ -103,14 +101,14 @@ class TTLSet(MutableSet[_T]):
 def cache(
     *,
     max_size: int | None = None,
-    max_duration: Duration | None = None,
+    max_duration: TimeDelta | None = None,
     timer: Callable[[], float] = monotonic,
     typed_: bool = False,
 ) -> Callable[[TCallable], TCallable]:
     """Decorate a function with `max_size` and/or `ttl` settings."""
     return ttl_cache(
         maxsize=inf if max_size is None else max_size,
-        ttl=inf if max_duration is None else datetime_duration_to_float(max_duration),
+        ttl=inf if max_duration is None else max_duration.in_seconds(),
         timer=timer,
         typed=typed_,
     )

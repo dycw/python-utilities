@@ -1,20 +1,30 @@
 from __future__ import annotations
 
-from time import sleep
+from typing import TYPE_CHECKING
 
 from hypothesis import example, given
-from hypothesis.strategies import floats, integers, none
+from hypothesis.strategies import integers, none
 
+from utilities.asyncio import sleep_delta
 from utilities.cachetools import TTLSet, cache
+from utilities.hypothesis import time_deltas
+from utilities.whenever import SECOND
+
+if TYPE_CHECKING:
+    from whenever import TimeDelta
 
 
 class TestCache:
     @example(max_size=None, max_duration=None)
-    @example(max_size=None, max_duration=1.0)
+    @example(max_size=None, max_duration=SECOND)
     @example(max_size=1, max_duration=None)
-    @example(max_size=1, max_duration=1.0)
-    @given(max_size=integers(1, 10) | none(), max_duration=floats(0.1, 10.0) | none())
-    def test_main(self, *, max_size: int, max_duration: float) -> None:
+    @example(max_size=1, max_duration=SECOND)
+    @given(
+        max_size=integers(1, 10) | none(),
+        max_duration=time_deltas(min_value=0.1 * SECOND, max_value=10.0 * SECOND)
+        | none(),
+    )
+    def test_main(self, *, max_size: int, max_duration: TimeDelta) -> None:
         counter = 0
 
         @cache(max_size=max_size, max_duration=max_duration)
@@ -48,10 +58,11 @@ class TestTTLSet:
         set_ = TTLSet(range(3))
         assert len(set_) == 3
 
-    def test_max_duration(self) -> None:
-        set_ = TTLSet(range(3), max_duration=0.1)
+    async def test_max_duration(self) -> None:
+        delta = 0.1 * SECOND
+        set_ = TTLSet(range(3), max_duration=delta)
         assert set_ == {0, 1, 2}
-        sleep(0.2)
+        await sleep_delta(2 * delta)
         assert set_ == set()
 
     def test_max_size(self) -> None:
