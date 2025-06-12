@@ -7,7 +7,6 @@ from zoneinfo import ZoneInfo
 from whenever import Date, DateDelta, DateTimeDelta, TimeDelta, ZonedDateTime
 
 from utilities.dataclasses import replace_non_sentinel
-from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
 from utilities.sentinel import Sentinel, sentinel
 
@@ -89,17 +88,7 @@ class ZonedDateTimePeriod:
     @override
     def __repr__(self) -> str:
         cls = get_class_name(self)
-        match self.start, self.end:
-            case Date() as start, Date() as end:
-                return f"{cls}({start}, {end})"
-            case ZonedDateTime() as start, ZonedDateTime() as end:
-                if start.tz == end.tz:
-                    return f"{cls}({start.to_plain()}, {end.to_plain()}, {start.tz})"
-                return f"{cls}({start}, {end})"
-            case _:
-                raise ImpossibleCaseError(  # pragma: no cover
-                    case=[f"{self.start=}", f"{self.end=}"]
-                )
+        return f"{cls}({self.start.to_plain()}, {self.end})"
 
     def __sub__(self, other: Any, /) -> Any:
         """Offset the period."""
@@ -130,20 +119,21 @@ class ZonedDateTimePeriod:
 
 
 @dataclass(kw_only=True, slots=True)
-class PeriodError(Generic[_TPeriod], Exception):
-    start: _TPeriod
-    end: _TPeriod
+class PeriodError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
-class _PeriodInvalidError(PeriodError[_TPeriod]):
+class _PeriodInvalidError(PeriodError, Generic[_TPeriod]):
+    start: _TPeriod
+    end: _TPeriod
+
     @override
     def __str__(self) -> str:
         return f"Invalid period; got {self.start} > {self.end}"
 
 
 @dataclass(kw_only=True, slots=True)
-class _PeriodTimeZoneError(PeriodError[_TPeriod]):
+class _PeriodTimeZoneError(PeriodError):
     start: ZoneInfo
     end: ZoneInfo
 
