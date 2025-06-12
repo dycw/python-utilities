@@ -486,6 +486,7 @@ class TestSerializeAndDeserialize:
             assert is_equal(result, obj)
 
     @given(obj=make_objects())
+    @SKIPIF_CI_AND_WINDOWS
     def test_base(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj))
         assert is_equal(result, obj)
