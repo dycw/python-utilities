@@ -243,7 +243,7 @@ class _EnsureTimedeltaNanosecondError(EnsureTimedeltaError):
 def ensure_zoned_datetime(datetime: DateTimeLike, /) -> dt.datetime:
     """Ensure the object is a zoned datetime."""
     if isinstance(datetime, dt.datetime):
-        return datetime
+        return datetime  # pragma: no cover
     try:
         return parse_zoned_datetime(datetime)
     except ParseZonedDateTimeError as error:
