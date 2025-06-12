@@ -6,7 +6,7 @@ from typing import ClassVar
 from utilities.aiolimiter import get_async_limiter
 from utilities.text import unique_str
 from utilities.timer import Timer
-from utilities.whenever2 import SECOND
+from utilities.whenever import SECOND
 
 
 class TestGetAsyncLimiter:

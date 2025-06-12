@@ -9,7 +9,7 @@ from uvicorn import Config, Server
 
 from utilities.asyncio import Looper
 from utilities.datetime import SECOND, datetime_duration_to_float
-from utilities.whenever2 import get_now_local
+from utilities.whenever import get_now_local
 
 if TYPE_CHECKING:
     from types import TracebackType

@@ -8,7 +8,20 @@ from zoneinfo import ZoneInfo
 from hypothesis import given
 from hypothesis.strategies import integers, just, none, timezones
 from pytest import raises
-from utilities.whenever2 import (
+from whenever import Date, DateDelta, DateTimeDelta, PlainDateTime, ZonedDateTime
+
+from tests.conftest import IS_CI
+from utilities.dataclasses import replace_non_sentinel
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    dates,
+    sentinels,
+    zoned_datetimes,
+)
+from utilities.sentinel import Sentinel, sentinel
+from utilities.tzdata import HongKong, Tokyo
+from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
+from utilities.whenever import (
     DATE_DELTA_MAX,
     DATE_DELTA_MIN,
     DATE_DELTA_PARSABLE_MAX,
@@ -48,19 +61,6 @@ from utilities.whenever2 import (
     to_time_delta,
     to_zoned_date_time,
 )
-from whenever import Date, DateDelta, DateTimeDelta, PlainDateTime, ZonedDateTime
-
-from tests.conftest import IS_CI
-from utilities.dataclasses import replace_non_sentinel
-from utilities.hypothesis import (
-    assume_does_not_raise,
-    dates,
-    sentinels,
-    zoned_datetimes,
-)
-from utilities.sentinel import Sentinel, sentinel
-from utilities.tzdata import HongKong, Tokyo
-from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:

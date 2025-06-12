@@ -25,7 +25,6 @@ from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
 from pytest import mark, raises
-from utilities.whenever2 import to_days
 from whenever import Date, DateDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
 from utilities.functions import ensure_int
@@ -96,6 +95,7 @@ from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sentinel import Sentinel
 from utilities.version import Version
+from utilities.whenever import to_days
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -874,36 +874,6 @@ class TestTimes:
         max_value = data.draw(times() | none())
         with assume_does_not_raise(InvalidArgument):
             time = data.draw(times(min_value=min_value, max_value=max_value))
-        assert isinstance(time, Time)
-        assert Time.parse_common_iso(time.format_common_iso()) == time
-        if min_value is not None:
-            assert time >= min_value
-        if max_value is not None:
-            assert time <= max_value
-
-
-class TestTimeDeltas:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        min_value = data.draw(time_deltas() | none())
-        max_value = data.draw(time_deltas() | none())
-        with assume_does_not_raise(InvalidArgument):
-            delta = data.draw(time_deltas(min_value=min_value, max_value=max_value))
-        assert isinstance(delta, TimeDelta)
-        assert TimeDelta.parse_common_iso(delta.format_common_iso()) == delta
-        if min_value is not None:
-            assert delta >= min_value
-        if max_value is not None:
-            assert delta <= max_value
-
-
-class TestTimes:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        min_value = data.draw(times_whenever() | none())
-        max_value = data.draw(times_whenever() | none())
-        with assume_does_not_raise(InvalidArgument):
-            time = data.draw(times_whenever(min_value=min_value, max_value=max_value))
         assert isinstance(time, Time)
         assert Time.parse_common_iso(time.format_common_iso()) == time
         if min_value is not None:
