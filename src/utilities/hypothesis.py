@@ -1488,14 +1488,16 @@ def zoned_datetimes_whenever(
         case None | PlainDateTime():
             ...
         case ZonedDateTime():
-            min_value_ = min_value_.to_tz(time_zone_.key).to_plain()
+            with assume_does_not_raise(ValueError):
+                min_value_ = min_value_.to_tz(time_zone_.key).to_plain()
         case _ as never:
             assert_never(never)
     match max_value_:
         case None | PlainDateTime():
             ...
         case ZonedDateTime():
-            max_value_ = max_value_.to_tz(time_zone_.key).to_plain()
+            with assume_does_not_raise(ValueError):
+                max_value_ = max_value_.to_tz(time_zone_.key).to_plain()
         case _ as never:
             assert_never(never)
     plain_datetime = draw(
