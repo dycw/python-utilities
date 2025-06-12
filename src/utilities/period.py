@@ -1,19 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from itertools import permutations
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    Self,
-    TypedDict,
-    TypeVar,
-    assert_never,
-    cast,
-    overload,
-    override,
-)
+from typing import Any, Generic, Self, TypedDict, TypeVar, override
 from zoneinfo import ZoneInfo
 
 from whenever import Date, DateDelta, DateTimeDelta, TimeDelta, ZonedDateTime
@@ -21,18 +9,7 @@ from whenever import Date, DateDelta, DateTimeDelta, TimeDelta, ZonedDateTime
 from utilities.dataclasses import replace_non_sentinel
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
-from utilities.iterables import OneUniqueNonUniqueError, one_unique
 from utilities.sentinel import Sentinel, sentinel
-from utilities.typing import is_instance_gen
-from utilities.whenever2 import get_today
-from utilities.zoneinfo import ensure_time_zone
-
-if TYPE_CHECKING:
-    import datetime as dt
-
-    from utilities.iterables import MaybeIterable
-    from utilities.types import DateOrDateTime, TimeZoneLike
-
 
 _TPeriod = TypeVar("_TPeriod", Date, ZonedDateTime)
 
@@ -167,12 +144,12 @@ class _PeriodInvalidError(PeriodError[_TPeriod]):
 
 @dataclass(kw_only=True, slots=True)
 class _PeriodTimeZoneError(PeriodError[_TPeriod]):
-    first: ZoneInfo
-    second: ZoneInfo
+    start: ZoneInfo
+    end: ZoneInfo
 
     @override
     def __str__(self) -> str:
-        return f"Period must contain exactly one time zone; got {self.first} and {self.second}"
+        return f"Period must contain exactly one time zone; got {self.start} and {self.end}"
 
 
 __all__ = ["DatePeriod", "PeriodError", "ZonedDateTimePeriod"]
