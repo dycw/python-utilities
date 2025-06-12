@@ -30,14 +30,23 @@ from utilities.reprlib import (
 from utilities.tzlocal import get_local_time_zone
 from utilities.version import get_version
 from utilities.whenever import serialize_duration, serialize_zoned_datetime
-from utilities.whenever2 import get_now, get_now_local, to_local_plain_sec
+from utilities.whenever2 import (
+    get_now,
+    get_now_local,
+    to_local_plain_sec,
+    to_zoned_date_time,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
     from traceback import FrameSummary
     from types import TracebackType
 
-    from utilities.types import MaybeCallablePyPathLike, MaybeCallablePyDateTime, PathLike
+    from utilities.types import (
+        MaybeCallablePathLike,
+        MaybeCallableZonedDateTime,
+        PathLike,
+    )
     from utilities.version import MaybeCallableVersionLike
 
 
@@ -88,12 +97,9 @@ def _yield_header_lines(
 ) -> Iterator[str]:
     """Yield the header lines."""
     now = get_now()
-    start_use = get_datetime(datetime=start)
-    start_use = (
-        None if start_use is None else start_use.astimezone(get_local_time_zone())
-    )
+    start_use = to_zoned_date_time(date_time=start)
     yield f"Date/time | {to_local_plain_sec(now)}"
-    start_str = "" if start_use is None else serialize_zoned_datetime(start_use)
+    start_str = "" if start_use is None else to_local_plain_sec(start_use)
     yield f"Started   | {start_str}"
     delta = None if start_use is None else (now - start_use)
     delta_str = "" if delta is None else delta.format_common_iso()
@@ -194,7 +200,7 @@ def _trim_path(path: PathLike, pattern: str, /) -> Path | None:
 
 def make_except_hook(
     *,
-    start: MaybeCallableZonedDateTime | None = _START,
+    start: MaybeCallableDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
     max_width: int = RICH_MAX_WIDTH,
@@ -248,7 +254,9 @@ def _make_except_hook_inner(
     _ = sys.stderr.write(f"{slim}\n")  # don't 'from sys import stderr'
     if path is not None:
         path = (
-            get_path(path=path).joinpath(format_compact(get_now())).with_suffix(".txt")
+            get_path(path=path)
+            .joinpath(to_local_plain_sec(get_now()))
+            .with_suffix(".txt")
         )
         full = format_exception_stack(
             exc_val,
