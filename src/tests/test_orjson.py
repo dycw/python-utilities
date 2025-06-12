@@ -81,7 +81,7 @@ from utilities.polars import check_polars_dataframe, zoned_datetime
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args
-from utilities.whenever2 import MINUTE, SECOND, get_now
+from utilities.whenever2 import get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
