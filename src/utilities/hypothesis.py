@@ -91,7 +91,6 @@ from utilities.math import (
     MIN_UINT32,
     MIN_UINT64,
     is_zero,
-    sign,
 )
 from utilities.os import get_env_var
 from utilities.pathlib import temp_cwd
