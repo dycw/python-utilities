@@ -25,6 +25,7 @@ class ExtendedTSConverter(TSConverter):
         cases: list[tuple[type[Any], Callable[..., Any]]] = []
         try:
             from whenever import (
+                Date,
                 DateDelta,
                 DateTimeDelta,
                 PlainDateTime,
@@ -36,6 +37,7 @@ class ExtendedTSConverter(TSConverter):
             pass
         else:
             cases.extend([
+                (Date, Date.parse_common_iso),
                 (DateDelta, DateDelta.parse_common_iso),
                 (DateTimeDelta, DateTimeDelta.parse_common_iso),
                 (PlainDateTime, PlainDateTime.parse_common_iso),
