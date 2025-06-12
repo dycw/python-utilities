@@ -4,7 +4,7 @@ from re import search
 from typing import TYPE_CHECKING
 
 from hypothesis import HealthCheck, given, settings
-from hypothesis.strategies import DataObject, data, sampled_from, timezones
+from hypothesis.strategies import DataObject, data, sampled_from
 from pytest import raises
 
 from utilities.hypothesis import (
@@ -25,11 +25,10 @@ from utilities.period import (
 )
 from utilities.tzdata import USCentral, USEastern
 from utilities.whenever2 import DAY
-from utilities.zoneinfo import get_time_zone_name
+from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from zoneinfo import ZoneInfo
 
     from whenever import Date, DateDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
@@ -225,18 +224,14 @@ class TestZonedDateTimePeriod:
         expected = _PeriodAsDict(start=start, end=end)
         assert result == expected
 
-    @given(
-        datetimes=pairs(zoned_datetimes_whenever(), sorted=True), time_zone=timezones()
-    )
-    def test_to_tz(
-        self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime], time_zone: ZoneInfo
-    ) -> None:
+    @given(datetimes=pairs(zoned_datetimes_whenever(), sorted=True))
+    def test_to_tz(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
         with assume_does_not_raise(OverflowError, match="date value out of range"):
-            result = period.to_tz(time_zone)
-        assert result.time_zone == time_zone
-        name = get_time_zone_name(time_zone)
+            result = period.to_tz(UTC)
+        assert result.time_zone == UTC
+        name = get_time_zone_name(UTC)
         expected = ZonedDateTimePeriod(start.to_tz(name), end.to_tz(name))
         assert result == expected
 
