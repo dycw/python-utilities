@@ -48,7 +48,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from whenever import Date, DateDelta, PlainDateTime, Time, TimeDelta
+from whenever import Date, DateDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
 from utilities.datetime import (
     DATETIME_MAX_NAIVE,
@@ -112,10 +112,9 @@ if TYPE_CHECKING:
 
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
-    from whenever import ZonedDateTime
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
-    from utilities.types import Duration, Number, RoundMode, TimeZoneLike
+    from utilities.types import Duration, MathRoundMode, Number, TimeZoneLike
 
 
 _T = TypeVar("_T")
@@ -725,7 +724,7 @@ def min_and_max_datetimes(
     min_value: MaybeSearchStrategy[dt.datetime | None] = None,
     max_value: MaybeSearchStrategy[dt.datetime | None] = None,
     time_zone: MaybeSearchStrategy[ZoneInfo | timezone] = UTC,
-    round_: RoundMode | None = None,
+    round_: MathRoundMode | None = None,
     timedelta: dt.timedelta | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
@@ -804,7 +803,7 @@ def min_and_maybe_max_datetimes(
     min_value: MaybeSearchStrategy[dt.datetime | None] = None,
     max_value: MaybeSearchStrategy[dt.datetime | None | Sentinel] = sentinel,
     time_zone: MaybeSearchStrategy[ZoneInfo | timezone] = UTC,
-    round_: RoundMode | None = None,
+    round_: MathRoundMode | None = None,
     timedelta: dt.timedelta | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
@@ -1036,7 +1035,7 @@ def plain_datetimes(
     *,
     min_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MIN_NAIVE,
     max_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MAX_NAIVE,
-    round_: RoundMode | None = None,
+    round_: MathRoundMode | None = None,
     timedelta: dt.timedelta | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
@@ -1056,7 +1055,7 @@ def plain_datetimes(
 
 @dataclass(kw_only=True, slots=True)
 class PlainDateTimesError(Exception):
-    round_: RoundMode
+    round_: MathRoundMode
 
     @override
     def __str__(self) -> str:
@@ -1577,7 +1576,7 @@ def zoned_datetimes(
     min_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MIN_UTC + DAY,
     max_value: MaybeSearchStrategy[dt.datetime] = DATETIME_MAX_UTC - DAY,
     time_zone: MaybeSearchStrategy[ZoneInfo | timezone] = UTC,
-    round_: RoundMode | None = None,
+    round_: MathRoundMode | None = None,
     timedelta: dt.timedelta | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
@@ -1626,7 +1625,7 @@ def zoned_datetimes(
 
 @dataclass(kw_only=True, slots=True)
 class ZonedDateTimesError(Exception):
-    round_: RoundMode
+    round_: MathRoundMode
 
     @override
     def __str__(self) -> str:
@@ -1646,8 +1645,6 @@ def zoned_datetimes_whenever(
     time_zone: MaybeSearchStrategy[TimeZoneLike] = UTC,
 ) -> ZonedDateTime:
     """Strategy for generating zoned datetimes."""
-    from whenever import PlainDateTime, ZonedDateTime
-
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     time_zone_ = ensure_time_zone(draw2(draw, time_zone))
     match min_value_:

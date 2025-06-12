@@ -34,12 +34,12 @@ from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
     from utilities.types import (
-        DateLike,
         DateTimeLike,
         Duration,
         DurationLike,
-        TimeDeltaLike,
-        TimeLike,
+        PyDateLike,
+        PyTimeDeltaLike,
+        PyTimeLike,
     )
 
 
@@ -91,7 +91,7 @@ class _CheckValidZonedDateTimeUnequalError(CheckValidZonedDateTimeError):
 ##
 
 
-def ensure_date(date: DateLike, /) -> dt.date:
+def ensure_date(date: PyDateLike, /) -> dt.date:
     """Ensure the object is a date."""
     if isinstance(date, dt.date):
         check_date_not_datetime(date)
@@ -180,7 +180,7 @@ class EnsurePlainDateTimeError(Exception):
 ##
 
 
-def ensure_time(time: TimeLike, /) -> dt.time:
+def ensure_time(time: PyTimeLike, /) -> dt.time:
     """Ensure the object is a time."""
     if isinstance(time, dt.time):
         return time
@@ -202,7 +202,7 @@ class EnsureTimeError(Exception):
 ##
 
 
-def ensure_timedelta(timedelta: TimeDeltaLike, /) -> dt.timedelta:
+def ensure_timedelta(timedelta: PyTimeDeltaLike, /) -> dt.timedelta:
     """Ensure the object is a timedelta."""
     if isinstance(timedelta, dt.timedelta):
         return timedelta

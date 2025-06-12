@@ -102,7 +102,7 @@ from utilities.math import (
 )
 
 if TYPE_CHECKING:
-    from utilities.types import Number, RoundMode
+    from utilities.types import MathRoundMode, Number
 
 
 class TestCheckInteger:
@@ -1068,7 +1068,7 @@ class TestRound:
         ])
     )
     @settings(max_examples=1000)
-    def test_main(self, *, case: tuple[RoundMode, float, int]) -> None:
+    def test_main(self, *, case: tuple[MathRoundMode, float, int]) -> None:
         mode, x, expected = case
         result = round_(x, mode=mode)
         assert isinstance(result, int)

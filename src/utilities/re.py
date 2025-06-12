@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from re import Pattern
 from typing import TYPE_CHECKING, assert_never, override
 
-from utilities.iterables import OneEmptyError, OneNonUniqueError, one
-
 if TYPE_CHECKING:
     from utilities.types import PatternLike
 
@@ -36,16 +34,17 @@ def extract_group(pattern: PatternLike, text: str, /, *, flags: int = 0) -> str:
             raise _ExtractGroupNoCaptureGroupsError(pattern=pattern_use, text=text)
         case 1:
             matches: list[str] = pattern_use.findall(text)
-            try:
-                return one(matches)
-            except OneEmptyError:
-                raise _ExtractGroupNoMatchesError(
-                    pattern=pattern_use, text=text
-                ) from None
-            except OneNonUniqueError:
-                raise _ExtractGroupMultipleMatchesError(
-                    pattern=pattern_use, text=text, matches=matches
-                ) from None
+            match len(matches):
+                case 0:
+                    raise _ExtractGroupNoMatchesError(
+                        pattern=pattern_use, text=text
+                    ) from None
+                case 1:
+                    return matches[0]
+                case _:
+                    raise _ExtractGroupMultipleMatchesError(
+                        pattern=pattern_use, text=text, matches=matches
+                    ) from None
         case _:
             raise _ExtractGroupMultipleCaptureGroupsError(
                 pattern=pattern_use, text=text
@@ -109,7 +108,7 @@ def extract_groups(pattern: PatternLike, text: str, /, *, flags: int = 0) -> lis
         case 1, 1:
             return matches
         case 1, _:
-            return list(one(matches))
+            return list(matches[0])
         case _:
             raise _ExtractGroupsMultipleMatchesError(
                 pattern=pattern_use, text=text, matches=matches

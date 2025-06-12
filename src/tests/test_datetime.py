@@ -157,8 +157,8 @@ if TYPE_CHECKING:
     from utilities.types import (
         DateOrDateTime,
         Duration,
-        MaybeCallableDate,
-        MaybeCallableDateTime,
+        MaybeCallablePyDate,
+        MaybeCallablePyDateTime,
         Number,
     )
 
@@ -689,7 +689,9 @@ class TestGetDate:
         class Example:
             date: dt.date = field(default_factory=get_today)
 
-            def replace(self, *, date: MaybeCallableDate | Sentinel = sentinel) -> Self:
+            def replace(
+                self, *, date: MaybeCallablePyDate | Sentinel = sentinel
+            ) -> Self:
                 return replace_non_sentinel(self, date=get_date(date=date))
 
         obj = Example(date=date1)
@@ -721,7 +723,7 @@ class TestGetDateTime:
             datetime: dt.datetime = field(default_factory=get_now)
 
             def replace(
-                self, *, datetime: MaybeCallableDateTime | Sentinel = sentinel
+                self, *, datetime: MaybeCallablePyDateTime | Sentinel = sentinel
             ) -> Self:
                 return replace_non_sentinel(
                     self, datetime=get_datetime(datetime=datetime)

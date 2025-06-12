@@ -20,6 +20,16 @@ from typing import (
 )
 from zoneinfo import ZoneInfo
 
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
+
 _T_co = TypeVar("_T_co", covariant=True)
 _T_contra = TypeVar("_T_contra", contravariant=True)
 
@@ -88,17 +98,16 @@ TDataclass = TypeVar("TDataclass", bound=Dataclass)
 
 
 # datetime
-type DateLike = MaybeStr[dt.date]
-type DateTimeLike = MaybeStr[dt.datetime]
 type DateOrDateTime = dt.date | dt.datetime
+type DateTimeLike = MaybeStr[dt.datetime]
 type Duration = Number | dt.timedelta
 type DurationLike = MaybeStr[Duration]
 type DurationOrEveryDuration = Duration | tuple[Literal["every"], Duration]
-type MaybeCallableDate = MaybeCallable[dt.date]
-type MaybeCallableDateTime = MaybeCallable[dt.datetime]
-type TimeLike = MaybeStr[dt.time]
-type TimeDeltaLike = MaybeStr[dt.timedelta]
-type WeekDay = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+type MaybeCallablePyDate = MaybeCallable[dt.date]
+type MaybeCallablePyDateTime = MaybeCallable[dt.datetime]
+type PyDateLike = MaybeStr[dt.date]
+type PyTimeDeltaLike = MaybeStr[dt.timedelta]
+type PyTimeLike = MaybeStr[dt.time]
 
 
 # enum
@@ -133,7 +142,7 @@ type LoggerOrName = MaybeStr[Logger]
 
 # math
 type Number = int | float
-type RoundMode = Literal[
+type MathRoundMode = Literal[
     "standard",
     "floor",
     "ceil",
@@ -259,6 +268,25 @@ type ExcInfo = tuple[type[BaseException], BaseException, TracebackType]
 type OptExcInfo = ExcInfo | tuple[None, None, None]
 
 
+# whenever
+type DateDeltaLike = MaybeStr[DateDelta]
+type DateLike = MaybeStr[Date]
+type DateTimeDeltaLike = MaybeStr[DateTimeDelta]
+type MaybeCallableDate = MaybeCallable[Date]
+type MaybeCallableZonedDateTime = MaybeCallable[ZonedDateTime]
+type PlainDateTimeLike = MaybeStr[PlainDateTime]
+type TimeDeltaLike = MaybeStr[TimeDelta]
+type TimeLike = MaybeStr[Time]
+type ZonedDateTimeLike = MaybeStr[ZonedDateTime]
+type DateTimeRoundUnit = Literal[
+    "day", "hour", "minute", "second", "millisecond", "microsecond", "nanosecond"
+]
+type DateTimeRoundMode = Literal[
+    "ceil", "floor", "half_ceil", "half_floor", "half_even"
+]
+type WeekDay = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+
+
 # zoneinfo
 # fmt: off
 type TimeZone = Literal[
@@ -271,9 +299,13 @@ type TimeZoneLike = ZoneInfo | Literal["local"] | TimeZone | dt.tzinfo | dt.date
 __all__ = [
     "Coroutine1",
     "Dataclass",
+    "DateDeltaLike",
     "DateLike",
     "DateOrDateTime",
+    "DateTimeDeltaLike",
     "DateTimeLike",
+    "DateTimeRoundMode",
+    "DateTimeRoundUnit",
     "Duration",
     "DurationLike",
     "DurationOrEveryDuration",
@@ -282,12 +314,15 @@ __all__ = [
     "IterableHashable",
     "LogLevel",
     "LoggerOrName",
+    "MathRoundMode",
     "MaybeAwaitable",
     "MaybeCallable",
     "MaybeCallableDate",
-    "MaybeCallableDateTime",
     "MaybeCallableEvent",
     "MaybeCallablePathLike",
+    "MaybeCallablePyDate",
+    "MaybeCallablePyDateTime",
+    "MaybeCallableZonedDateTime",
     "MaybeCoroutine1",
     "MaybeIterable",
     "MaybeIterableHashable",
@@ -300,7 +335,10 @@ __all__ = [
     "ParseObjectExtra",
     "PathLike",
     "PatternLike",
-    "RoundMode",
+    "PlainDateTimeLike",
+    "PyDateLike",
+    "PyTimeDeltaLike",
+    "PyTimeLike",
     "Seed",
     "SerializeObjectExtra",
     "Sign",
@@ -343,4 +381,5 @@ __all__ = [
     "TupleOrStrMapping",
     "TypeLike",
     "WeekDay",
+    "ZonedDateTimeLike",
 ]

@@ -31,9 +31,9 @@ if TYPE_CHECKING:
     from utilities.types import (
         DateOrDateTime,
         Duration,
-        MaybeCallableDate,
-        MaybeCallableDateTime,
-        RoundMode,
+        MathRoundMode,
+        MaybeCallablePyDate,
+        MaybeCallablePyDateTime,
         TimeZoneLike,
     )
 
@@ -476,19 +476,19 @@ def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
 
 
 @overload
-def get_date(*, date: MaybeCallableDate) -> dt.date: ...
+def get_date(*, date: MaybeCallablePyDate) -> dt.date: ...
 @overload
 def get_date(*, date: None) -> None: ...
 @overload
 def get_date(*, date: Sentinel) -> Sentinel: ...
 @overload
-def get_date(*, date: MaybeCallableDate | Sentinel) -> dt.date | Sentinel: ...
+def get_date(*, date: MaybeCallablePyDate | Sentinel) -> dt.date | Sentinel: ...
 @overload
 def get_date(
-    *, date: MaybeCallableDate | None | Sentinel = sentinel
+    *, date: MaybeCallablePyDate | None | Sentinel = sentinel
 ) -> dt.date | None | Sentinel: ...
 def get_date(
-    *, date: MaybeCallableDate | None | Sentinel = sentinel
+    *, date: MaybeCallablePyDate | None | Sentinel = sentinel
 ) -> dt.date | None | Sentinel:
     """Get the date."""
     match date:
@@ -504,13 +504,13 @@ def get_date(
 
 
 @overload
-def get_datetime(*, datetime: MaybeCallableDateTime) -> dt.datetime: ...
+def get_datetime(*, datetime: MaybeCallablePyDateTime) -> dt.datetime: ...
 @overload
 def get_datetime(*, datetime: None) -> None: ...
 @overload
 def get_datetime(*, datetime: Sentinel) -> Sentinel: ...
 def get_datetime(
-    *, datetime: MaybeCallableDateTime | None | Sentinel = sentinel
+    *, datetime: MaybeCallablePyDateTime | None | Sentinel = sentinel
 ) -> dt.datetime | None | Sentinel:
     """Get the datetime."""
     match datetime:
@@ -755,7 +755,7 @@ def mean_datetime(
     /,
     *,
     weights: Iterable[SupportsFloat] | None = None,
-    mode: RoundMode = "standard",
+    mode: MathRoundMode = "standard",
     rel_tol: float | None = None,
     abs_tol: float | None = None,
 ) -> dt.datetime:
@@ -790,7 +790,7 @@ def mean_timedelta(
     /,
     *,
     weights: Iterable[SupportsFloat] | None = None,
-    mode: RoundMode = "standard",
+    mode: MathRoundMode = "standard",
     rel_tol: float | None = None,
     abs_tol: float | None = None,
 ) -> dt.timedelta:
@@ -1022,7 +1022,7 @@ def round_datetime(
     duration: Duration,
     /,
     *,
-    mode: RoundMode = "standard",
+    mode: MathRoundMode = "standard",
     rel_tol: float | None = None,
     abs_tol: float | None = None,
 ) -> dt.datetime:

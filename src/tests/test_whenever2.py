@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from logging import DEBUG
+from typing import TYPE_CHECKING, Self
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import just, timezones
+from hypothesis.strategies import just, none, timezones
 from pytest import mark, param, raises
 from whenever import Date, DateDelta, DateTimeDelta, TimeDelta, ZonedDateTime
 
 from tests.conftest import IS_CI
-from utilities.hypothesis import zoned_datetimes_whenever
+from utilities.dataclasses import replace_non_sentinel
+from utilities.hypothesis import dates_whenever, sentinels, zoned_datetimes_whenever
+from utilities.sentinel import Sentinel, sentinel
 from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import LOCAL_TIME_ZONE
 from utilities.whenever2 import (
@@ -27,6 +31,7 @@ from utilities.whenever2 import (
     NOW_UTC,
     PLAIN_DATE_TIME_MAX,
     PLAIN_DATE_TIME_MIN,
+    SECOND,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
     TODAY_LOCAL,
@@ -41,8 +46,14 @@ from utilities.whenever2 import (
     get_now_local,
     get_today,
     get_today_local,
+    to_date,
+    to_zoned_date_time,
 )
 from utilities.zoneinfo import UTC
+
+if TYPE_CHECKING:
+    from utilities.sentinel import Sentinel
+    from utilities.types import MaybeCallableDate, MaybeCallableZonedDateTime
 
 
 class TestFromTimeStamp:
@@ -244,6 +255,70 @@ class TestMinMax:
         _ = ZONED_DATE_TIME_MAX.add(nanoseconds=999)
         with raises(ValueError, match="Instant is out of range"):
             _ = ZONED_DATE_TIME_MAX.add(microseconds=1)
+
+
+class TestToDate:
+    @given(date=dates_whenever())
+    def test_date(self, *, date: Date) -> None:
+        assert to_date(date=date) == date
+
+    @given(date=none() | sentinels())
+    def test_none_or_sentinel(self, *, date: None | Sentinel) -> None:
+        assert to_date(date=date) is date
+
+    @given(date1=dates_whenever(), date2=dates_whenever())
+    def test_replace_non_sentinel(self, *, date1: Date, date2: Date) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            date: Date = field(default_factory=get_today)
+
+            def replace(self, *, date: MaybeCallableDate | Sentinel = sentinel) -> Self:
+                return replace_non_sentinel(self, date=to_date(date=date))
+
+        obj = Example(date=date1)
+        assert obj.date == date1
+        assert obj.replace().date == date1
+        assert obj.replace(date=date2).date == date2
+        assert obj.replace(date=get_today).date == get_today()
+
+    @given(date=dates_whenever())
+    def test_callable(self, *, date: Date) -> None:
+        assert to_date(date=lambda: date) == date
+
+
+class TestGetDateTime:
+    @given(date_time=zoned_datetimes_whenever())
+    def test_date_time(self, *, date_time: ZonedDateTime) -> None:
+        assert to_zoned_date_time(date_time=date_time) == date_time
+
+    @given(date_time=none() | sentinels())
+    def test_none_or_sentinel(self, *, date_time: None | Sentinel) -> None:
+        assert to_zoned_date_time(date_time=date_time) is date_time
+
+    @given(date_time1=zoned_datetimes_whenever(), date_time2=zoned_datetimes_whenever())
+    def test_replace_non_sentinel(
+        self, *, date_time1: ZonedDateTime, date_time2: ZonedDateTime
+    ) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            date_time: ZonedDateTime = field(default_factory=get_now)
+
+            def replace(
+                self, *, date_time: MaybeCallableZonedDateTime | Sentinel = sentinel
+            ) -> Self:
+                return replace_non_sentinel(
+                    self, date_time=to_zoned_date_time(date_time=date_time)
+                )
+
+        obj = Example(date_time=date_time1)
+        assert obj.date_time == date_time1
+        assert obj.replace().date_time == date_time1
+        assert obj.replace(date_time=date_time2).date_time == date_time2
+        assert abs(obj.replace(date_time=get_now).date_time - get_now()) <= SECOND
+
+    @given(date_time=zoned_datetimes_whenever())
+    def test_callable(self, *, date_time: ZonedDateTime) -> None:
+        assert to_zoned_date_time(date_time=lambda: date_time) == date_time
 
 
 class TestWheneverLogRecord:

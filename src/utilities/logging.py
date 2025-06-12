@@ -34,12 +34,7 @@ from typing import (
 
 from utilities.atomicwrites import move_many
 from utilities.dataclasses import replace_non_sentinel
-from utilities.datetime import (
-    SECOND,
-    parse_datetime_compact,
-    round_datetime,
-    serialize_compact,
-)
+from utilities.datetime import parse_datetime_compact, serialize_compact
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.pathlib import ensure_suffix, get_path
@@ -484,12 +479,6 @@ class _RotatingLogFile:
     start: dt.datetime | None = None
     end: dt.datetime | None = None
 
-    def __post_init__(self) -> None:
-        if self.start is not None:
-            self.start = round_datetime(self.start, SECOND)
-        if self.end is not None:
-            self.end = round_datetime(self.end, SECOND)
-
     @classmethod
     def from_path(
         cls,
@@ -581,12 +570,6 @@ class _Rotation:
     index: int = 0
     start: dt.datetime | None | Sentinel = sentinel
     end: dt.datetime | Sentinel = sentinel
-
-    def __post_init__(self) -> None:
-        if isinstance(self.start, dt.datetime):
-            self.start = round_datetime(self.start, SECOND)
-        if isinstance(self.end, dt.datetime):
-            self.end = round_datetime(self.end, SECOND)
 
     @cached_property
     def destination(self) -> Path:
