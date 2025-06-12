@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from traceback import FrameSummary
     from types import TracebackType
 
-    from utilities.types import MaybeCallableDateTime, MaybeCallablePathLike, PathLike
+    from utilities.types import MaybeCallablePathLike, MaybeCallablePyDateTime, PathLike
     from utilities.version import MaybeCallableVersionLike
 
 
@@ -51,7 +51,7 @@ def format_exception_stack(
     /,
     *,
     header: bool = False,
-    start: MaybeCallableDateTime | None = _START,
+    start: MaybeCallablePyDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
     capture_locals: bool = False,
     max_width: int = RICH_MAX_WIDTH,
@@ -82,7 +82,7 @@ def format_exception_stack(
 
 def _yield_header_lines(
     *,
-    start: MaybeCallableDateTime | None = _START,
+    start: MaybeCallablePyDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
 ) -> Iterator[str]:
     """Yield the header lines."""
@@ -193,7 +193,7 @@ def _trim_path(path: PathLike, pattern: str, /) -> Path | None:
 
 def make_except_hook(
     *,
-    start: MaybeCallableDateTime | None = _START,
+    start: MaybeCallablePyDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
     max_width: int = RICH_MAX_WIDTH,
@@ -228,7 +228,7 @@ def _make_except_hook_inner(
     traceback: TracebackType | None,
     /,
     *,
-    start: MaybeCallableDateTime | None = _START,
+    start: MaybeCallablePyDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
     max_width: int = RICH_MAX_WIDTH,

@@ -20,6 +20,8 @@ from typing import (
 )
 from zoneinfo import ZoneInfo
 
+from whenever import Date, ZonedDateTime
+
 _T_co = TypeVar("_T_co", covariant=True)
 _T_contra = TypeVar("_T_contra", contravariant=True)
 
@@ -94,8 +96,8 @@ type DateOrDateTime = dt.date | dt.datetime
 type Duration = Number | dt.timedelta
 type DurationLike = MaybeStr[Duration]
 type DurationOrEveryDuration = Duration | tuple[Literal["every"], Duration]
-type MaybeCallableDate = MaybeCallable[dt.date]
-type MaybeCallableDateTime = MaybeCallable[dt.datetime]
+type MaybeCallablePyDate = MaybeCallable[dt.date]
+type MaybeCallablePyDateTime = MaybeCallable[dt.datetime]
 type TimeLike = MaybeStr[dt.time]
 type TimeDeltaLike = MaybeStr[dt.timedelta]
 type WeekDay = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
@@ -259,6 +261,11 @@ type ExcInfo = tuple[type[BaseException], BaseException, TracebackType]
 type OptExcInfo = ExcInfo | tuple[None, None, None]
 
 
+# whenever
+type MaybeCallableDate = MaybeCallable[Date]
+type MaybeCallableZonedDateTime = MaybeCallable[ZonedDateTime]
+
+
 # zoneinfo
 # fmt: off
 type TimeZone = Literal[
@@ -285,9 +292,11 @@ __all__ = [
     "MaybeAwaitable",
     "MaybeCallable",
     "MaybeCallableDate",
-    "MaybeCallableDateTime",
     "MaybeCallableEvent",
     "MaybeCallablePathLike",
+    "MaybeCallablePyDate",
+    "MaybeCallablePyDateTime",
+    "MaybeCallableZonedDateTime",
     "MaybeCoroutine1",
     "MaybeIterable",
     "MaybeIterableHashable",
