@@ -209,19 +209,19 @@ class TestMinMax:
 
     def test_date_time_delta_parsable_min(self) -> None:
         def func(delta: DateTimeDelta, /) -> None:
-            _ = DateDelta.parse_common_iso(delta.format_common_iso())
+            _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
 
         _ = func(DATE_TIME_DELTA_PARSABLE_MIN)
-        with raises(ValueError, match="Invalid format: '.*'"):
+        with raises(ValueError, match="Addition result out of bounds"):
             _ = func(DATE_TIME_DELTA_PARSABLE_MIN - DateTimeDelta(nanoseconds=1))
 
     def test_date_time_delta_parsable_max(self) -> None:
         def func(delta: DateTimeDelta, /) -> None:
-            _ = DateDelta.parse_common_iso(delta.format_common_iso())
+            _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
 
         _ = func(DATE_TIME_DELTA_PARSABLE_MAX)
-        with raises(ValueError, match="Invalid format: '.*'"):
-            _ = func(DATE_TIME_DELTA_PARSABLE_MAX + DateTimeDelta(nanoseconds=1))
+        with raises(ValueError, match="Invalid format or out of range: '.*'"):
+            _ = func(DATE_TIME_DELTA_PARSABLE_MAX + TimeDelta(nanoseconds=1))
 
     def test_plain_date_time_min(self) -> None:
         with raises(ValueError, match=r"Result of subtract\(\) out of range"):
