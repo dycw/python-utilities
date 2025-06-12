@@ -401,8 +401,8 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
 def _compute_rollover_patterns(stem: str, suffix: str, /) -> _RolloverPatterns:
     return _RolloverPatterns(
         pattern1=re.compile(rf"^{stem}\.(\d+){suffix}$"),
-        pattern2=re.compile(rf"^{stem}\.(\d+)__([\w\-:]+?){suffix}$"),
-        pattern3=re.compile(rf"^{stem}\.(\d+)__([\w\-:]+?)__([\w\-:]+?){suffix}$"),
+        pattern2=re.compile(rf"^{stem}\.(\d+)__([\dT]+?){suffix}$"),
+        pattern3=re.compile(rf"^{stem}\.(\d+)__([\dT]+?)__([\dT]+?){suffix}$"),
     )
 
 
