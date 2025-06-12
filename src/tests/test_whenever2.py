@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 from hypothesis import given
 from hypothesis.strategies import timezones
 from pytest import mark, param, raises
-from whenever import DateDelta, DateTimeDelta, ZonedDateTime
+from whenever import DateDelta, DateTimeDelta, TimeDelta, ZonedDateTime
 
 from utilities.tzdata import HongKong, Tokyo
 from utilities.whenever2 import (
@@ -19,6 +19,8 @@ from utilities.whenever2 import (
     NOW_UTC,
     PLAIN_DATE_TIME_MAX,
     PLAIN_DATE_TIME_MIN,
+    TIME_DELTA_MAX,
+    TIME_DELTA_MIN,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
     WheneverLogRecord,
@@ -108,6 +110,38 @@ class TestMinMax:
         _ = PLAIN_DATE_TIME_MAX.add(nanoseconds=999, ignore_dst=True)
         with raises(ValueError, match=r"Result of add\(\) out of range"):
             _ = PLAIN_DATE_TIME_MAX.add(microseconds=1, ignore_dst=True)
+
+    @mark.parametrize(
+        "delta",
+        [
+            param(TimeDelta(seconds=1)),
+            param(TimeDelta(milliseconds=1)),
+            param(TimeDelta(microseconds=1)),
+            param(TimeDelta(nanoseconds=1)),
+        ],
+    )
+    def test_time_delta_min(self, *, delta: TimeDelta) -> None:
+        with raises(ValueError, match="Addition result out of range"):
+            _ = TIME_DELTA_MIN - delta
+
+    @mark.parametrize(
+        ("delta", "is_ok"),
+        [
+            param(TimeDelta(seconds=1), False),
+            param(TimeDelta(milliseconds=999), True),
+            param(TimeDelta(milliseconds=1000), False),
+            param(TimeDelta(microseconds=999_999), True),
+            param(TimeDelta(microseconds=1_000_000), False),
+            param(TimeDelta(nanoseconds=999_999_999), True),
+            param(TimeDelta(nanoseconds=1_000_000_000), False),
+        ],
+    )
+    def test_time_delta_max(self, *, delta: TimeDelta, is_ok: bool) -> None:
+        if is_ok:
+            _ = TIME_DELTA_MAX + delta
+        else:
+            with raises(ValueError, match="Addition result out of range"):
+                _ = TIME_DELTA_MAX + delta
 
     def test_zoned_date_time_min(self) -> None:
         with raises(ValueError, match="Instant is out of range"):
