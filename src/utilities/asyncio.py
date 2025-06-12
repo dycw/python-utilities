@@ -43,6 +43,7 @@ from typing import (
 )
 
 from typing_extensions import deprecated
+from whenever import TimeDelta
 
 from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
@@ -961,11 +962,14 @@ def put_items_nowait(items: Iterable[_T], queue: Queue[_T], /) -> None:
 ##
 
 
-async def sleep_dur(*, duration: Duration | None = None) -> None:
+async def sleep_dur(*, duration: Duration | TimeDelta | None = None) -> None:
     """Sleep which accepts durations."""
     if duration is None:
         return
-    await sleep(datetime_duration_to_float(duration))
+    if isinstance(duration, TimeDelta):
+        await sleep(duration.in_seconds())
+    else:
+        await sleep(datetime_duration_to_float(duration))
 
 
 ##

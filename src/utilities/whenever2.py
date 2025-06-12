@@ -53,7 +53,7 @@ DATE_DELTA_PARSABLE_MAX = DateDelta(days=999999)
 ## common constants
 
 
-ZERO_TIME = Time()
+ZERO_TIME = TimeDelta()
 MICROSECOND = TimeDelta(microseconds=1)
 MILLISECOND = TimeDelta(milliseconds=1)
 SECOND = TimeDelta(seconds=1)

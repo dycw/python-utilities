@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-import datetime as dt
 from operator import add, eq, ge, gt, le, lt, mul, ne, sub, truediv
 from re import search
 from time import sleep
 from typing import TYPE_CHECKING, Any
 
 from pytest import mark, param, raises
+from whenever import TimeDelta
 
-from utilities.datetime import SECOND, ZERO_TIME
+from utilities.asyncio import sleep_dur
 from utilities.timer import Timer
+from utilities.whenever2 import SECOND, ZERO_TIME
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -17,32 +18,27 @@ if TYPE_CHECKING:
 
 class TestTimer:
     @mark.parametrize(
-        ("op", "other", "cls"),
+        ("op", "other"),
         [
-            param(add, 0, dt.timedelta),
-            param(add, 0.0, dt.timedelta),
-            param(add, ZERO_TIME, dt.timedelta),
-            param(sub, 0, dt.timedelta),
-            param(sub, 0.0, dt.timedelta),
-            param(sub, ZERO_TIME, dt.timedelta),
-            param(mul, 1, dt.timedelta),
-            param(mul, 1.0, dt.timedelta),
-            param(truediv, 1, dt.timedelta),
-            param(truediv, 1.0, dt.timedelta),
-            param(truediv, SECOND, float),
+            param(add, ZERO_TIME),
+            param(sub, ZERO_TIME),
+            param(mul, 1),
+            param(mul, 1.0),
+            param(truediv, 1),
+            param(truediv, 1.0),
         ],
         ids=str,
     )
     def test_arithmetic_against_numbers_or_timedeltas(
-        self, *, op: Callable[[Any, Any], Any], other: Any, cls: type[Any]
+        self, *, op: Callable[[Any, Any], Any], other: Any
     ) -> None:
         with Timer() as timer:
             pass
-        assert isinstance(op(timer, other), cls)
+        assert isinstance(op(timer, other), TimeDelta)
 
     @mark.parametrize(
         ("op", "cls"),
-        [param(add, dt.timedelta), param(sub, dt.timedelta), param(truediv, float)],
+        [param(add, TimeDelta), param(sub, TimeDelta), param(truediv, float)],
         ids=str,
     )
     def test_arithmetic_against_another_timer(
@@ -83,15 +79,12 @@ class TestTimer:
         ],
         ids=str,
     )
-    @mark.parametrize(
-        "dur", [param(1), param(1.0), param(dt.timedelta(seconds=1))], ids=str
-    )
     def test_comparison(
-        self, *, op: Callable[[Any, Any], bool], dur: Any, expected: bool
+        self, *, op: Callable[[Any, Any], bool], expected: bool
     ) -> None:
         with Timer() as timer:
             pass
-        assert op(timer, dur) is expected
+        assert op(timer, SECOND) is expected
 
     @mark.parametrize(
         "op",
@@ -120,28 +113,27 @@ class TestTimer:
         with raises(TypeError):
             _ = op(timer, "")
 
-    def test_context_manager(self) -> None:
-        duration = 0.01
+    async def test_context_manager(self) -> None:
+        delta = 0.01 * SECOND
         with Timer() as timer:
-            assert isinstance(timer, Timer)
-            sleep(2 * duration)
-        assert timer >= duration
+            await sleep_dur(duration=2 * delta)
+        assert timer >= delta
 
     @mark.parametrize("func", [param(repr), param(str)], ids=str)
     def test_repr_and_str(self, *, func: Callable[[Timer], str]) -> None:
         with Timer() as timer:
             sleep(0.01)
         as_str = func(timer)
-        assert search(r"^\d+:\d{2}:\d{2}\.\d{6}$", as_str)
+        assert search(r"^PT0\.\d+S$", as_str)
 
-    def test_running(self) -> None:
-        duration = 0.01
+    async def test_running(self) -> None:
+        delta = 0.01 * SECOND
         timer = Timer()
-        sleep(2 * duration)
-        assert timer >= duration
-        sleep(2 * duration)
-        assert timer >= 2 * duration
+        await sleep_dur(duration=2 * delta)
+        assert timer >= delta
+        await sleep_dur(duration=2 * delta)
+        assert timer >= 2 * delta
 
     def test_timedelta(self) -> None:
         timer = Timer()
-        assert isinstance(timer.timedelta, dt.timedelta)
+        assert isinstance(timer.timedelta, TimeDelta)
