@@ -23,6 +23,7 @@ from orjson import (
     dumps,
     loads,
 )
+from whenever import ZonedDateTime
 
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import dataclass_to_dict
@@ -57,7 +58,7 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from logging import _FormatStyle
 
-    from whenever import Date, ZonedDateTime
+    from whenever import Date
 
     from utilities.types import Parallelism
 
@@ -88,6 +89,7 @@ class _Prefixes(Enum):
     unserializable = "un"
     uuid = "uu"
     version = "v"
+    zoned_datetime = "zd"
 
 
 type _DataclassHook = Callable[[type[Dataclass], StrMapping], StrMapping]
@@ -190,6 +192,8 @@ def _pre_process(
             return f"[{_Prefixes.exception_class.value}|{error_cls.__qualname__}]"
         case Version() as version:
             return f"[{_Prefixes.version.value}]{version!s}"
+        case ZonedDateTime() as datetime:
+            return f"[{_Prefixes.zoned_datetime.value}]{datetime}"
         # contains
         case Dataclass() as dataclass:
             asdict = dataclass_to_dict(
@@ -346,6 +350,11 @@ _ZONED_DATETIME_PATTERN = re.compile(
     + _Prefixes.datetime.value
     + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?[\+\-]\d{2}:\d{2}(?::\d{2})?\[(?!(?:dt\.)).+?\])$"
 )
+_ZONED_DATETIME_PATTERN2 = re.compile(
+    r"^\["
+    + _Prefixes.zoned_datetime.value
+    + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?[\+\-]\d{2}:\d{2}(?::\d{2})?\[(?!(?:dt\.)).+?\])$"
+)
 
 
 def _make_unit_pattern(prefix: _Prefixes, /) -> Pattern[str]:
@@ -433,6 +442,8 @@ def _object_hook(
                 return parse_version(match.group(1))
             if match := _ZONED_DATETIME_PATTERN.search(text):
                 return parse_zoned_datetime(match.group(1))
+            if match := _ZONED_DATETIME_PATTERN2.search(text):
+                return ZonedDateTime.parse_common_iso(match.group(1))
             if (
                 exc_class := _object_hook_exception_class(
                     text, data=data, objects=objects, redirects=redirects
@@ -857,7 +868,12 @@ class GetLogRecordsOutput:
         else:
             time_zone = LOCAL_TIME_ZONE
         return DataFrame(
-            data=[dataclass_to_dict(r, recursive=False) for r in records],
+            data=[
+                dataclass_to_dict(
+                    replace(r, datetime=r.datetime.py_datetime()), recursive=False
+                )
+                for r in records
+            ],
             schema={
                 "index": UInt64,
                 "name": String,
