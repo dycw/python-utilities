@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import datetime as dt
 from operator import add, eq, ge, gt, le, lt, mul, ne, sub, truediv
-from timeit import default_timer
-from typing import TYPE_CHECKING, Any, Self, overload, override
+from typing import TYPE_CHECKING, Any, Self, override
+
+from utilities.whenever2 import get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from utilities.types import Number
+    from whenever import TimeDelta, ZonedDateTime
 
 
 class Timer:
@@ -16,116 +16,82 @@ class Timer:
 
     def __init__(self) -> None:
         super().__init__()
-        self._start = default_timer()
-        self._end: float | None = None
+        self._start: ZonedDateTime = get_now_local()
+        self._end: ZonedDateTime | None = None
 
     # arithmetic
 
-    def __add__(self, other: Any) -> dt.timedelta:
-        if isinstance(other, int | float):
-            return dt.timedelta(seconds=self._apply_op(add, other))
-        if isinstance(other, dt.timedelta | Timer):
-            return self._apply_op(add, other)
-        return NotImplemented
+    def __add__(self, other: Any) -> TimeDelta:
+        return self._apply_op(add, other)
 
     def __float__(self) -> float:
-        end_use = default_timer() if (end := self._end) is None else end
-        return end_use - self._start
+        return self.timedelta.in_seconds()
 
-    def __sub__(self, other: Any) -> dt.timedelta:
-        if isinstance(other, int | float):
-            return dt.timedelta(seconds=self._apply_op(sub, other))
-        if isinstance(other, dt.timedelta | Timer):
-            return self._apply_op(sub, other)
-        return NotImplemented
+    def __sub__(self, other: Any) -> TimeDelta:
+        return self._apply_op(sub, other)
 
-    def __mul__(self, other: Any) -> dt.timedelta:
-        if isinstance(other, int | float):
-            return dt.timedelta(seconds=self._apply_op(mul, other))
-        return NotImplemented
+    def __mul__(self, other: Any) -> TimeDelta:
+        return self._apply_op(mul, other)
 
-    @overload
-    def __truediv__(self, other: Number) -> dt.timedelta: ...
-    @overload
-    def __truediv__(self, other: dt.timedelta | Timer) -> float: ...
-    def __truediv__(self, other: Any) -> dt.timedelta | float:
-        if isinstance(other, int | float):
-            return dt.timedelta(seconds=self._apply_op(truediv, other))
-        if isinstance(other, dt.timedelta | Timer):
-            return self._apply_op(truediv, other)
-        return NotImplemented
+    def __truediv__(self, other: Any) -> TimeDelta:
+        return self._apply_op(truediv, other)
 
     # context manager
 
     def __enter__(self) -> Self:
-        self._start = default_timer()
+        self._start = get_now_local()
         return self
 
     def __exit__(self, *_: object) -> bool:
-        self._end = default_timer()
+        self._end = get_now_local()
         return False
 
     # repr
 
     @override
     def __repr__(self) -> str:
-        return str(self.timedelta)
+        return self.timedelta.format_common_iso()
 
     @override
     def __str__(self) -> str:
-        return str(self.timedelta)
+        return self.timedelta.format_common_iso()
 
     # comparison
 
     @override
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, int | float | dt.timedelta | Timer):
-            return self._apply_op(eq, other)
-        return False
+        return self._apply_op(eq, other)
 
     def __ge__(self, other: Any) -> bool:
-        if isinstance(other, int | float | dt.timedelta | Timer):
-            return self._apply_op(ge, other)
-        return NotImplemented
+        return self._apply_op(ge, other)
 
     def __gt__(self, other: Any) -> bool:
-        if isinstance(other, int | float | dt.timedelta | Timer):
-            return self._apply_op(gt, other)
-        return NotImplemented
+        return self._apply_op(gt, other)
 
     def __le__(self, other: Any) -> bool:
-        if isinstance(other, int | float | dt.timedelta | Timer):
-            return self._apply_op(le, other)
-        return NotImplemented
+        return self._apply_op(le, other)
 
     def __lt__(self, other: Any) -> bool:
-        if isinstance(other, int | float | dt.timedelta | Timer):
-            return self._apply_op(lt, other)
-        return NotImplemented
+        return self._apply_op(lt, other)
 
     @override
     def __ne__(self, other: object) -> bool:
-        if isinstance(other, int | float | dt.timedelta | Timer):
-            return self._apply_op(ne, other)
-        return True
+        return self._apply_op(ne, other)
 
     # properties
 
     @property
-    def timedelta(self) -> dt.timedelta:
+    def timedelta(self) -> TimeDelta:
         """The elapsed time, as a `timedelta` object."""
-        return dt.timedelta(seconds=float(self))
+        end_use = get_now_local() if (end := self._end) is None else end
+        return end_use - self._start
 
     # private
 
     def _apply_op(self, op: Callable[[Any, Any], Any], other: Any, /) -> Any:
-        if isinstance(other, int | float):
-            return op(float(self), other)
         if isinstance(other, Timer):
             return op(self.timedelta, other.timedelta)
-        if isinstance(other, dt.timedelta):
-            return op(self.timedelta, other)
-        return NotImplemented  # pragma: no cover
+        return op(self.timedelta, other)
 
 
 __all__ = ["Timer"]
