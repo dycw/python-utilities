@@ -7,7 +7,7 @@ from hypothesis import given
 from hypothesis.strategies import booleans
 from luigi import BoolParameter, Task
 
-from utilities.hypothesis import namespace_mixins, temp_paths, zoned_datetimes_whenever
+from utilities.hypothesis import namespace_mixins, temp_paths, zoned_datetimes
 from utilities.luigi import (
     ExternalFile,
     ExternalTask,
@@ -30,7 +30,7 @@ class TestBuild:
 
 
 class TestDateTimeParameter:
-    @given(datetime=zoned_datetimes_whenever())
+    @given(datetime=zoned_datetimes())
     @mark.parametrize("type_", [param("datetime"), param("str")])
     def test_main(
         self, *, datetime: ZonedDateTime, type_: Literal["datetime", "str"]

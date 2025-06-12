@@ -204,70 +204,7 @@ def date_deltas(
 
 
 @composite
-<<<<<<< HEAD
-def date_durations(
-    draw: DrawFn,
-    /,
-    *,
-    min_int: MaybeSearchStrategy[int | None] = None,
-    max_int: MaybeSearchStrategy[int | None] = None,
-    min_timedelta: MaybeSearchStrategy[dt.timedelta | None] = None,
-    max_timedelta: MaybeSearchStrategy[dt.timedelta | None] = None,
-    two_way: bool = False,
-) -> Duration:
-    """Strategy for generating datetime durations."""
-    min_int_, max_int_ = [draw2(draw, v) for v in [min_int, max_int]]
-    min_timedelta_, max_timedelta_ = [
-        draw2(draw, v) for v in [min_timedelta, max_timedelta]
-    ]
-    min_parts: Sequence[dt.timedelta | None] = [dt.timedelta.min, min_timedelta_]
-    if min_int_ is not None:
-        with assume_does_not_raise(OverflowError):
-            min_parts.append(date_duration_to_timedelta(min_int_))
-    if two_way:
-        from utilities.whenever import MIN_SERIALIZABLE_TIMEDELTA
-
-        min_parts.append(MIN_SERIALIZABLE_TIMEDELTA)
-    min_timedelta_use = max_nullable(min_parts)
-    max_parts: Sequence[dt.timedelta | None] = [dt.timedelta.max, max_timedelta_]
-    if max_int_ is not None:
-        with assume_does_not_raise(OverflowError):
-            max_parts.append(date_duration_to_timedelta(max_int_))
-    if two_way:
-        from utilities.whenever import MAX_SERIALIZABLE_TIMEDELTA
-
-        max_parts.append(MAX_SERIALIZABLE_TIMEDELTA)
-    max_timedelta_use = min_nullable(max_parts)
-    _ = assume(min_timedelta_use <= max_timedelta_use)
-    st_timedeltas = (
-        timedeltas(min_value=min_timedelta_use, max_value=max_timedelta_use)
-        .map(_round_timedelta)
-        .filter(
-            partial(
-                _is_between_timedelta, min_=min_timedelta_use, max_=max_timedelta_use
-            )
-        )
-    )
-    st_integers = st_timedeltas.map(date_duration_to_int)
-    st_floats = st_integers.map(float)
-    return draw(st_integers | st_floats | st_timedeltas)
-
-
-def _round_timedelta(timedelta: dt.timedelta, /) -> dt.timedelta:
-    return dt.timedelta(days=timedelta.days)
-
-
-def _is_between_timedelta(
-    timedelta: dt.timedelta, /, *, min_: dt.timedelta, max_: dt.timedelta
-) -> bool:
-    return min_ <= timedelta <= max_
-
-
-##
-
-
-@composite
-def date_time_deltas_whenever(
+def date_time_deltas(
     draw: DrawFn,
     /,
     *,
@@ -303,110 +240,7 @@ def date_time_deltas_whenever(
 
 
 @composite
-def dates_two_digit_year(
-    draw: DrawFn,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[dt.date] = MIN_DATE_TWO_DIGIT_YEAR,
-    max_value: MaybeSearchStrategy[dt.date] = MAX_DATE_TWO_DIGIT_YEAR,
-) -> dt.date:
-    """Strategy for generating dates with valid 2 digit years."""
-    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
-    min_value_ = max(min_value_, MIN_DATE_TWO_DIGIT_YEAR)
-    max_value_ = min(max_value_, MAX_DATE_TWO_DIGIT_YEAR)
-    return draw(dates(min_value=min_value_, max_value=max_value_))
-
-
-##
-
-
-@composite
-def dates_whenever(
-||||||| parent of 3ee6a157 (Commited by derekwan@DW-Mac at 2025-06-13 08:39:42 (Fri))
-def date_durations(
-    draw: DrawFn,
-    /,
-    *,
-    min_int: MaybeSearchStrategy[int | None] = None,
-    max_int: MaybeSearchStrategy[int | None] = None,
-    min_timedelta: MaybeSearchStrategy[dt.timedelta | None] = None,
-    max_timedelta: MaybeSearchStrategy[dt.timedelta | None] = None,
-    two_way: bool = False,
-) -> Duration:
-    """Strategy for generating datetime durations."""
-    min_int_, max_int_ = [draw2(draw, v) for v in [min_int, max_int]]
-    min_timedelta_, max_timedelta_ = [
-        draw2(draw, v) for v in [min_timedelta, max_timedelta]
-    ]
-    min_parts: Sequence[dt.timedelta | None] = [dt.timedelta.min, min_timedelta_]
-    if min_int_ is not None:
-        with assume_does_not_raise(OverflowError):
-            min_parts.append(date_duration_to_timedelta(min_int_))
-    if two_way:
-        from utilities.whenever import MIN_SERIALIZABLE_TIMEDELTA
-
-        min_parts.append(MIN_SERIALIZABLE_TIMEDELTA)
-    min_timedelta_use = max_nullable(min_parts)
-    max_parts: Sequence[dt.timedelta | None] = [dt.timedelta.max, max_timedelta_]
-    if max_int_ is not None:
-        with assume_does_not_raise(OverflowError):
-            max_parts.append(date_duration_to_timedelta(max_int_))
-    if two_way:
-        from utilities.whenever import MAX_SERIALIZABLE_TIMEDELTA
-
-        max_parts.append(MAX_SERIALIZABLE_TIMEDELTA)
-    max_timedelta_use = min_nullable(max_parts)
-    _ = assume(min_timedelta_use <= max_timedelta_use)
-    st_timedeltas = (
-        timedeltas(min_value=min_timedelta_use, max_value=max_timedelta_use)
-        .map(_round_timedelta)
-        .filter(
-            partial(
-                _is_between_timedelta, min_=min_timedelta_use, max_=max_timedelta_use
-            )
-        )
-    )
-    st_integers = st_timedeltas.map(date_duration_to_int)
-    st_floats = st_integers.map(float)
-    return draw(st_integers | st_floats | st_timedeltas)
-
-
-def _round_timedelta(timedelta: dt.timedelta, /) -> dt.timedelta:
-    return dt.timedelta(days=timedelta.days)
-
-
-def _is_between_timedelta(
-    timedelta: dt.timedelta, /, *, min_: dt.timedelta, max_: dt.timedelta
-) -> bool:
-    return min_ <= timedelta <= max_
-
-
-##
-
-
-@composite
-def dates_two_digit_year(
-    draw: DrawFn,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[dt.date] = MIN_DATE_TWO_DIGIT_YEAR,
-    max_value: MaybeSearchStrategy[dt.date] = MAX_DATE_TWO_DIGIT_YEAR,
-) -> dt.date:
-    """Strategy for generating dates with valid 2 digit years."""
-    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
-    min_value_ = max(min_value_, MIN_DATE_TWO_DIGIT_YEAR)
-    max_value_ = min(max_value_, MAX_DATE_TWO_DIGIT_YEAR)
-    return draw(dates(min_value=min_value_, max_value=max_value_))
-
-
-##
-
-
-@composite
-def dates_whenever(
-=======
 def dates(
->>>>>>> 3ee6a157 (Commited by derekwan@DW-Mac at 2025-06-13 08:39:42 (Fri))
     draw: DrawFn,
     /,
     *,
@@ -1444,23 +1278,9 @@ __all__ = [
     "Shape",
     "assume_does_not_raise",
     "bool_arrays",
-<<<<<<< HEAD
-    "date_deltas_whenever",
-    "date_durations",
-    "date_time_deltas_whenever",
-    "dates_two_digit_year",
-    "dates_whenever",
-    "datetime_durations",
-||||||| parent of 3ee6a157 (Commited by derekwan@DW-Mac at 2025-06-13 08:39:42 (Fri))
-    "date_deltas_whenever",
-    "date_durations",
-    "dates_two_digit_year",
-    "dates_whenever",
-    "datetime_durations",
-=======
     "date_deltas",
+    "date_time_deltas",
     "dates",
->>>>>>> 3ee6a157 (Commited by derekwan@DW-Mac at 2025-06-13 08:39:42 (Fri))
     "draw2",
     "float32s",
     "float64s",
@@ -1472,7 +1292,6 @@ __all__ = [
     "int64s",
     "int_arrays",
     "lists_fixed_length",
-    "min_and_maybe_max_sizes",
     "min_and_maybe_max_sizes",
     "namespace_mixins",
     "numbers",

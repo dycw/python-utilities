@@ -1,25 +1,14 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from logging import DEBUG
+from typing import TYPE_CHECKING, Self
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import just, timezones
-from pytest import mark, param, raises
-from whenever import (
-    Date,
-    DateDelta,
-    DateTimeDelta,
-    PlainDateTime,
-    TimeDelta,
-    ZonedDateTime,
-)
-
-from tests.conftest import IS_CI
-from utilities.hypothesis import zoned_datetimes
-from utilities.tzdata import HongKong, Tokyo
-from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
-from utilities.whenever import (
+from hypothesis.strategies import integers, just, none, timezones
+from pytest import raises
+from utilities.whenever2 import (
     DATE_DELTA_MAX,
     DATE_DELTA_MIN,
     DATE_DELTA_PARSABLE_MAX,
@@ -34,12 +23,15 @@ from utilities.whenever import (
     NOW_UTC,
     PLAIN_DATE_TIME_MAX,
     PLAIN_DATE_TIME_MIN,
+    SECOND,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
     TODAY_LOCAL,
     TODAY_UTC,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
+    ToDaysError,
+    ToNanosError,
     WheneverLogRecord,
     format_compact,
     from_timestamp,
@@ -49,8 +41,42 @@ from utilities.whenever import (
     get_now_local,
     get_today,
     get_today_local,
+    to_date,
+    to_date_time_delta,
+    to_days,
+    to_nanos,
+    to_time_delta,
+    to_zoned_date_time,
 )
+from whenever import Date, DateDelta, DateTimeDelta, PlainDateTime, ZonedDateTime
+
+from tests.conftest import IS_CI
+from utilities.dataclasses import replace_non_sentinel
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    dates,
+    sentinels,
+    zoned_datetimes,
+)
+from utilities.sentinel import Sentinel, sentinel
+from utilities.tzdata import HongKong, Tokyo
+from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC
+
+if TYPE_CHECKING:
+    from utilities.sentinel import Sentinel
+    from utilities.types import MaybeCallableDate, MaybeCallableZonedDateTime
+
+
+class TestFormatCompact:
+    @given(datetime=zoned_datetimes())
+    def test_main(self, *, datetime: ZonedDateTime) -> None:
+        result = format_compact(datetime)
+        assert isinstance(result, str)
+        parsed = PlainDateTime.parse_common_iso(result)
+        assert parsed.nanosecond == 0
+        expected = datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
+        assert parsed == expected
 
 
 class TestFromTimeStamp:
@@ -77,40 +103,44 @@ class TestFromTimeStamp:
 
 class TestGetNow:
     @given(time_zone=just(UTC) if IS_CI else timezones())
-    def test_generic_function(self, *, time_zone: ZoneInfo) -> None:
+    def test_function(self, *, time_zone: ZoneInfo) -> None:
         now = get_now(time_zone=time_zone)
         assert isinstance(now, ZonedDateTime)
         assert now.tz == time_zone.key
 
-    def test_generic_constant(self) -> None:
+    def test_constant(self) -> None:
         assert isinstance(NOW_UTC, ZonedDateTime)
         assert NOW_UTC.tz == "UTC"
 
-    def test_local_function(self) -> None:
+
+class TestGetNowLocal:
+    def test_function(self) -> None:
         now = get_now_local()
         assert isinstance(now, ZonedDateTime)
         ETC = ZoneInfo("Etc/UTC")  # noqa: N806
         time_zones = {ETC, HongKong, Tokyo, UTC}
         assert any(now.tz == time_zone.key for time_zone in time_zones)
 
-    def test_local_constant(self) -> None:
+    def test_constant(self) -> None:
         assert isinstance(NOW_LOCAL, ZonedDateTime)
         assert NOW_LOCAL.tz == LOCAL_TIME_ZONE_NAME
 
 
 class TestGetToday:
-    def test_generic_function(self) -> None:
+    def test_function(self) -> None:
         today = get_today()
         assert isinstance(today, Date)
 
-    def test_generic_constant(self) -> None:
+    def test_constant(self) -> None:
         assert isinstance(TODAY_UTC, Date)
 
-    def test_local_function(self) -> None:
+
+class TestGetTodayLocal:
+    def test_function(self) -> None:
         today = get_today_local()
         assert isinstance(today, Date)
 
-    def test_local_constant(self) -> None:
+    def test_constant(self) -> None:
         assert isinstance(TODAY_LOCAL, Date)
 
 
@@ -132,142 +162,36 @@ class TestMinMax:
             _ = DATE_DELTA_MAX + DateDelta(days=1)
 
     def test_date_delta_parsable_min(self) -> None:
-        def func(delta: DateDelta, /) -> None:
-            _ = DateDelta.parse_common_iso(delta.format_common_iso())
-
-        _ = func(DATE_DELTA_PARSABLE_MIN)
+        self._format_parse_date_delta(DATE_DELTA_PARSABLE_MIN)
         with raises(ValueError, match="Invalid format: '.*'"):
-            _ = func(DATE_DELTA_PARSABLE_MIN - DateDelta(days=1))
+            self._format_parse_date_delta(DATE_DELTA_PARSABLE_MIN - DateDelta(days=1))
 
     def test_date_delta_parsable_max(self) -> None:
-        def func(delta: DateDelta, /) -> None:
-            _ = DateDelta.parse_common_iso(delta.format_common_iso())
-
-        _ = func(DATE_DELTA_PARSABLE_MAX)
+        self._format_parse_date_delta(DATE_DELTA_PARSABLE_MAX)
         with raises(ValueError, match="Invalid format: '.*'"):
-            _ = func(DATE_DELTA_PARSABLE_MAX + DateDelta(days=1))
+            self._format_parse_date_delta(DATE_DELTA_PARSABLE_MAX + DateDelta(days=1))
 
-    def test_error_parse(self) -> None:
-        with raises(
-            _ParseTimedeltaParseError, match="Unable to parse timedelta; got 'invalid'"
-        ):
-            _ = parse_timedelta("invalid")
+    def test_date_time_delta_min(self) -> None:
+        nanos = to_nanos(DATE_TIME_DELTA_MIN)
+        with raises(ValueError, match="Out of range"):
+            _ = to_date_time_delta(nanos - 1)
 
-    def test_error_parse_nano_seconds(self) -> None:
-        with raises(
-            _ParseTimedeltaNanosecondError,
-            match="Unable to parse timedelta; got 333 nanoseconds",
-        ):
-            _ = parse_timedelta("PT0.111222333S")
-
-    @given(timedelta=sampled_from([_TIMEDELTA_MICROSECONDS, _TIMEDELTA_OVERFLOW]))
-    def test_error_serialize(self, *, timedelta: dt.timedelta) -> None:
-        with raises(
-            SerializeTimeDeltaError, match="Unable to serialize timedelta; got .*"
-        ):
-            _ = serialize_timedelta(timedelta)
-
-
-class TestSerializeAndParseZonedDateTime:
-    @given(datetime=zoned_datetimes(valid=True))
-    @SKIPIF_CI_AND_WINDOWS
-    def test_main(self, *, datetime: dt.datetime) -> None:
-        serialized = serialize_zoned_datetime(datetime)
-        result = parse_zoned_datetime(serialized)
-        assert result == datetime
-
-    @given(
-        datetime=zoned_datetimes(
-            time_zone=just(dt.UTC), round_="standard", timedelta=SECOND, valid=True
-        )
-    )
-    @SKIPIF_CI_AND_WINDOWS
-    def test_compact_no_microseconds(self, *, datetime: dt.datetime) -> None:
-        assert datetime.microsecond == 0
-        part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
-        assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
-        part2 = get_time_zone_name(datetime.tzinfo)
-        serialized = f"{part1}[{part2}]"
-        result = parse_zoned_datetime(serialized)
-        assert result == datetime
-
-    @given(datetime=zoned_datetimes(time_zone=just(dt.UTC), valid=True))
-    @SKIPIF_CI_AND_WINDOWS
-    def test_compact_with_microseconds(self, *, datetime: dt.datetime) -> None:
-        _ = assume(datetime.microsecond != 0)
-        part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S.%f"))
-        assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
-        part2 = get_time_zone_name(datetime.tzinfo)
-        serialized = f"{part1}[{part2}]"
-        result = parse_zoned_datetime(serialized)
-        assert result == datetime
-
-    @given(datetime=plain_datetimes())
-    @SKIPIF_CI_AND_WINDOWS
-    def test_utc(self, *, datetime: dt.datetime) -> None:
-        datetime1, datetime2 = [datetime.astimezone(tz) for tz in [UTC, dt.UTC]]
-        serialized1, serialized2 = map(serialize_zoned_datetime, [datetime1, datetime2])
-        assert serialized1 == serialized2
-        parsed = parse_zoned_datetime(serialized1)
-        assert abs(parsed - datetime1) <= SECOND
-        assert abs(parsed - datetime2) <= SECOND
-        assert parsed.tzinfo is UTC
-
-    def test_error_parse(self) -> None:
-        with raises(
-            ParseZonedDateTimeError,
-            match="Unable to parse zoned datetime; got 'invalid'",
-        ):
-            _ = parse_zoned_datetime("invalid")
-    @mark.parametrize(
-        "delta",
-        [
-            param(DateTimeDelta(days=1)),
-            param(DateTimeDelta(seconds=1)),
-            param(DateTimeDelta(milliseconds=1)),
-            param(DateTimeDelta(microseconds=1)),
-            param(DateTimeDelta(nanoseconds=1)),
-        ],
-    )
-    def test_date_time_delta_min(self, *, delta: DateTimeDelta) -> None:
-        with raises(ValueError, match="Addition result out of bounds"):
-            _ = DATE_TIME_DELTA_MIN - delta
-
-    @mark.parametrize(
-        ("delta", "is_ok"),
-        [
-            param(DateTimeDelta(days=1), False),
-            param(DateTimeDelta(seconds=1), False),
-            param(DateTimeDelta(milliseconds=999), True),
-            param(DateTimeDelta(milliseconds=1000), False),
-            param(DateTimeDelta(microseconds=999_999), True),
-            param(DateTimeDelta(microseconds=1_000_000), False),
-            param(DateTimeDelta(nanoseconds=999_999_999), True),
-            param(DateTimeDelta(nanoseconds=1_000_000_000), False),
-        ],
-    )
-    def test_date_time_delta_max(self, *, delta: DateTimeDelta, is_ok: bool) -> None:
-        if is_ok:
-            _ = DATE_TIME_DELTA_MAX + delta
-        else:
-            with raises(ValueError, match="Addition result out of bounds"):
-                _ = DATE_TIME_DELTA_MAX + delta
+    def test_date_time_delta_max(self) -> None:
+        nanos = to_nanos(DATE_TIME_DELTA_MAX)
+        with raises(ValueError, match="Out of range"):
+            _ = to_date_time_delta(nanos + 1)
 
     def test_date_time_delta_parsable_min(self) -> None:
-        def func(delta: DateTimeDelta, /) -> None:
-            _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
-
-        _ = func(DATE_TIME_DELTA_PARSABLE_MIN)
-        with raises(ValueError, match="Addition result out of bounds"):
-            _ = func(DATE_TIME_DELTA_PARSABLE_MIN - DateTimeDelta(nanoseconds=1))
+        self._format_parse_date_time_delta(DATE_TIME_DELTA_PARSABLE_MIN)
+        nanos = to_nanos(DATE_TIME_DELTA_PARSABLE_MIN)
+        with raises(ValueError, match="Invalid format or out of range: '.*'"):
+            self._format_parse_date_time_delta(to_date_time_delta(nanos - 1))
 
     def test_date_time_delta_parsable_max(self) -> None:
-        def func(delta: DateTimeDelta, /) -> None:
-            _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
-
-        _ = func(DATE_TIME_DELTA_PARSABLE_MAX)
+        self._format_parse_date_time_delta(DATE_TIME_DELTA_PARSABLE_MAX)
+        nanos = to_nanos(DATE_TIME_DELTA_PARSABLE_MAX)
         with raises(ValueError, match="Invalid format or out of range: '.*'"):
-            _ = func(DATE_TIME_DELTA_PARSABLE_MAX + TimeDelta(nanoseconds=1))
+            _ = self._format_parse_date_time_delta(to_date_time_delta(nanos + 1))
 
     def test_plain_date_time_min(self) -> None:
         with raises(ValueError, match=r"Result of subtract\(\) out of range"):
@@ -278,39 +202,15 @@ class TestSerializeAndParseZonedDateTime:
         with raises(ValueError, match=r"Result of add\(\) out of range"):
             _ = PLAIN_DATE_TIME_MAX.add(microseconds=1, ignore_dst=True)
 
-    @mark.parametrize(
-        "delta",
-        [
-            param(TimeDelta(seconds=1)),
-            param(TimeDelta(milliseconds=1)),
-            param(TimeDelta(microseconds=1)),
-            param(TimeDelta(nanoseconds=1)),
-        ],
-    )
-    def test_time_delta_min(self, *, delta: TimeDelta) -> None:
-        _ = TimeDelta.parse_common_iso(TIME_DELTA_MIN.format_common_iso())
-        with raises(ValueError, match="Addition result out of range"):
-            _ = TIME_DELTA_MIN - delta
+    def test_time_delta_min(self) -> None:
+        nanos = TIME_DELTA_MIN.in_nanoseconds()
+        with raises(ValueError, match="TimeDelta out of range"):
+            _ = to_time_delta(nanos - 1)
 
-    @mark.parametrize(
-        ("delta", "is_ok"),
-        [
-            param(TimeDelta(seconds=1), False),
-            param(TimeDelta(milliseconds=999), True),
-            param(TimeDelta(milliseconds=1000), False),
-            param(TimeDelta(microseconds=999_999), True),
-            param(TimeDelta(microseconds=1_000_000), False),
-            param(TimeDelta(nanoseconds=999_999_999), True),
-            param(TimeDelta(nanoseconds=1_000_000_000), False),
-        ],
-    )
-    def test_time_delta_max(self, *, delta: TimeDelta, is_ok: bool) -> None:
-        if is_ok:
-            _ = TIME_DELTA_MAX + delta
-            _ = TimeDelta.parse_common_iso(delta.format_common_iso())
-        else:
-            with raises(ValueError, match="Addition result out of range"):
-                _ = TIME_DELTA_MAX + delta
+    def test_time_delta_max(self) -> None:
+        nanos = TIME_DELTA_MAX.in_nanoseconds()
+        with raises(ValueError, match="TimeDelta out of range"):
+            _ = to_time_delta(nanos + 1)
 
     def test_zoned_date_time_min(self) -> None:
         with raises(ValueError, match="Instant is out of range"):
@@ -321,13 +221,114 @@ class TestSerializeAndParseZonedDateTime:
         with raises(ValueError, match="Instant is out of range"):
             _ = ZONED_DATE_TIME_MAX.add(microseconds=1)
 
+    def _format_parse_date_delta(self, delta: DateDelta, /) -> None:
+        _ = DateDelta.parse_common_iso(delta.format_common_iso())
 
-class TestToLocalPlainSec:
-    @given(datetime=zoned_datetimes())
-    def test_main(self, *, datetime: ZonedDateTime) -> None:
-        result = format_compact(datetime)
-        assert isinstance(result, PlainDateTime)
-        assert result.nanosecond == 0
+    def _format_parse_date_time_delta(self, delta: DateTimeDelta, /) -> None:
+        _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
+
+
+class TestToDate:
+    @given(date=dates())
+    def test_date(self, *, date: Date) -> None:
+        assert to_date(date=date) == date
+
+    @given(date=none() | sentinels())
+    def test_none_or_sentinel(self, *, date: None | Sentinel) -> None:
+        assert to_date(date=date) is date
+
+    @given(date1=dates(), date2=dates())
+    def test_replace_non_sentinel(self, *, date1: Date, date2: Date) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            date: Date = field(default_factory=get_today)
+
+            def replace(self, *, date: MaybeCallableDate | Sentinel = sentinel) -> Self:
+                return replace_non_sentinel(self, date=to_date(date=date))
+
+        obj = Example(date=date1)
+        assert obj.date == date1
+        assert obj.replace().date == date1
+        assert obj.replace(date=date2).date == date2
+        assert obj.replace(date=get_today).date == get_today()
+
+    @given(date=dates())
+    def test_callable(self, *, date: Date) -> None:
+        assert to_date(date=lambda: date) == date
+
+
+class TestToDateTimeDeltaAndNanos:
+    @given(nanos=integers())
+    def test_main(self, *, nanos: int) -> None:
+        with (
+            assume_does_not_raise(ValueError, match="Out of range"),
+            assume_does_not_raise(ValueError, match="total days out of range"),
+            assume_does_not_raise(
+                OverflowError, match="Python int too large to convert to C long"
+            ),
+        ):
+            delta = to_date_time_delta(nanos)
+        assert to_nanos(delta) == nanos
+
+    def test_error(self) -> None:
+        delta = DateTimeDelta(months=1)
+        with raises(
+            ToNanosError, match="Date-time delta must not contain months; got 1"
+        ):
+            _ = to_nanos(delta)
+
+
+class TestToDays:
+    @given(days=integers())
+    def test_main(self, *, days: int) -> None:
+        with (
+            assume_does_not_raise(ValueError, match="days out of range"),
+            assume_does_not_raise(
+                OverflowError, match="Python int too large to convert to C long"
+            ),
+        ):
+            delta = DateDelta(days=days)
+        assert to_days(delta) == days
+
+    def test_error(self) -> None:
+        delta = DateDelta(months=1)
+        with raises(ToDaysError, match="Date delta must not contain months; got 1"):
+            _ = to_days(delta)
+
+
+class TestToZonedDateTime:
+    @given(date_time=zoned_datetimes())
+    def test_date_time(self, *, date_time: ZonedDateTime) -> None:
+        assert to_zoned_date_time(date_time=date_time) == date_time
+
+    @given(date_time=none() | sentinels())
+    def test_none_or_sentinel(self, *, date_time: None | Sentinel) -> None:
+        assert to_zoned_date_time(date_time=date_time) is date_time
+
+    @given(date_time1=zoned_datetimes(), date_time2=zoned_datetimes())
+    def test_replace_non_sentinel(
+        self, *, date_time1: ZonedDateTime, date_time2: ZonedDateTime
+    ) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            date_time: ZonedDateTime = field(default_factory=get_now)
+
+            def replace(
+                self, *, date_time: MaybeCallableZonedDateTime | Sentinel = sentinel
+            ) -> Self:
+                return replace_non_sentinel(
+                    self, date_time=to_zoned_date_time(date_time=date_time)
+                )
+
+        obj = Example(date_time=date_time1)
+        assert obj.date_time == date_time1
+        assert obj.replace().date_time == date_time1
+        assert obj.replace(date_time=date_time2).date_time == date_time2
+        assert abs(obj.replace(date_time=get_now).date_time - get_now()) <= SECOND
+
+    @given(date_time=zoned_datetimes())
+    def test_callable(self, *, date_time: ZonedDateTime) -> None:
+        assert to_zoned_date_time(date_time=lambda: date_time) == date_time
 
 
 class TestWheneverLogRecord:

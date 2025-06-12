@@ -25,19 +25,9 @@ from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
 from pytest import mark, raises
+from utilities.whenever2 import to_days
 from whenever import Date, DateDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
-from tests.conftest import SKIPIF_CI_AND_WINDOWS
-from utilities.datetime import (
-    MAX_DATE_TWO_DIGIT_YEAR,
-    MIN_DATE_TWO_DIGIT_YEAR,
-    MINUTE,
-    date_duration_to_timedelta,
-    datetime_duration_to_float,
-    datetime_duration_to_timedelta,
-    is_integral_timedelta,
-    parse_two_digit_year,
-)
 from utilities.functions import ensure_int
 from utilities.hypothesis import (
     MaybeSearchStrategy,
@@ -106,7 +96,6 @@ from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sentinel import Sentinel
 from utilities.version import Version
-from utilities.whenever2 import to_days, to_nanos
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -896,12 +885,10 @@ class TestTimes:
 class TestTimeDeltas:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_value = data.draw(time_deltas_whenever() | none())
-        max_value = data.draw(time_deltas_whenever() | none())
+        min_value = data.draw(time_deltas() | none())
+        max_value = data.draw(time_deltas() | none())
         with assume_does_not_raise(InvalidArgument):
-            delta = data.draw(
-                time_deltas_whenever(min_value=min_value, max_value=max_value)
-            )
+            delta = data.draw(time_deltas(min_value=min_value, max_value=max_value))
         assert isinstance(delta, TimeDelta)
         assert TimeDelta.parse_common_iso(delta.format_common_iso()) == delta
         if min_value is not None:

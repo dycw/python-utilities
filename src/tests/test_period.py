@@ -7,7 +7,15 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import DataObject, data, sampled_from
 from pytest import raises
 
-from utilities.hypothesis import assume_does_not_raise, pairs
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    date_deltas,
+    dates,
+    pairs,
+    plain_datetimes,
+    time_deltas,
+    zoned_datetimes,
+)
 from utilities.period import (
     DatePeriod,
     ZonedDateTimePeriod,
@@ -16,7 +24,8 @@ from utilities.period import (
     _PeriodTimeZoneError,
 )
 from utilities.tzdata import USCentral, USEastern
-from utilities.whenever2 import DAY
+from utilities.whenever import DAY
+from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -25,7 +34,7 @@ if TYPE_CHECKING:
 
 
 class TestDatePeriod:
-    @given(dates=pairs(dates_whenever(), sorted=True), delta=date_deltas_whenever())
+    @given(dates=pairs(dates(), sorted=True), delta=date_deltas())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_add(self, *, dates: tuple[Date, Date], delta: DateDelta) -> None:
         start, end = dates
@@ -35,7 +44,7 @@ class TestDatePeriod:
         expected = DatePeriod(start + delta, end + delta)
         assert result == expected
 
-    @given(date=dates_whenever(), dates=pairs(dates_whenever(), sorted=True))
+    @given(date=dates(), dates=pairs(dates(), sorted=True))
     def test_contains(self, *, date: Date, dates: tuple[Date, Date]) -> None:
         start, end = dates
         period = DatePeriod(start, end)
@@ -43,29 +52,26 @@ class TestDatePeriod:
         expected = start <= date <= end
         assert result is expected
 
-    @given(dates=pairs(dates_whenever(), sorted=True))
+    @given(dates=pairs(dates(), sorted=True))
     def test_delta(self, *, dates: tuple[Date, Date]) -> None:
         start, end = dates
         period = DatePeriod(start, end)
         assert period.delta == (end - start)
 
-    @given(dates=pairs(dates_whenever(), sorted=True))
+    @given(dates=pairs(dates(), sorted=True))
     def test_hashable(self, *, dates: tuple[Date, Date]) -> None:
         start, end = dates
         period = DatePeriod(start, end)
         _ = hash(period)
 
-    @given(dates=pairs(dates_whenever(), sorted=True), func=sampled_from([repr, str]))
+    @given(dates=pairs(dates(), sorted=True), func=sampled_from([repr, str]))
     def test_repr(self, *, dates: tuple[Date, Date], func: Callable[..., str]) -> None:
         start, end = dates
         period = DatePeriod(start, end)
         result = func(period)
         assert search(r"^DatePeriod\(\d{4}-\d{2}-\d{2}, \d{4}-\d{2}-\d{2}\)$", result)
 
-    @given(
-        dates1=pairs(dates_whenever(), sorted=True),
-        dates2=pairs(dates_whenever(), sorted=True),
-    )
+    @given(dates1=pairs(dates(), sorted=True), dates2=pairs(dates(), sorted=True))
     def test_sortable(
         self, *, dates1: tuple[Date, Date], dates2: tuple[Date, Date]
     ) -> None:
@@ -75,7 +81,7 @@ class TestDatePeriod:
         period2 = DatePeriod(start2, end2)
         _ = sorted([period1, period2])
 
-    @given(dates=pairs(dates_whenever(), sorted=True), delta=date_deltas_whenever())
+    @given(dates=pairs(dates(), sorted=True), delta=date_deltas())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_sub(self, *, dates: tuple[Date, Date], delta: DateDelta) -> None:
         start, end = dates
@@ -85,7 +91,7 @@ class TestDatePeriod:
         expected = DatePeriod(start - delta, end - delta)
         assert result == expected
 
-    @given(dates=pairs(dates_whenever(), sorted=True))
+    @given(dates=pairs(dates(), sorted=True))
     def test_to_dict(self, *, dates: tuple[Date, Date]) -> None:
         start, end = dates
         period = DatePeriod(start, end)
@@ -93,7 +99,7 @@ class TestDatePeriod:
         expected = _PeriodAsDict(start=start, end=end)
         assert result == expected
 
-    @given(dates=pairs(dates_whenever(), unique=True, sorted=True))
+    @given(dates=pairs(dates(), unique=True, sorted=True))
     def test_error_period_invalid(self, *, dates: tuple[Date, Date]) -> None:
         start, end = dates
         with raises(_PeriodInvalidError, match="Invalid period; got .* > .*"):
@@ -101,10 +107,7 @@ class TestDatePeriod:
 
 
 class TestZonedDateTimePeriod:
-    @given(
-        datetimes=pairs(zoned_datetimes_whenever(), sorted=True),
-        delta=time_deltas_whenever(),
-    )
+    @given(datetimes=pairs(zoned_datetimes(), sorted=True), delta=time_deltas())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_add(
         self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime], delta: TimeDelta
@@ -116,10 +119,7 @@ class TestZonedDateTimePeriod:
         expected = ZonedDateTimePeriod(start + delta, end + delta)
         assert result == expected
 
-    @given(
-        datetime=zoned_datetimes_whenever(),
-        datetimes=pairs(zoned_datetimes_whenever(), sorted=True),
-    )
+    @given(datetime=zoned_datetimes(), datetimes=pairs(zoned_datetimes(), sorted=True))
     def test_contains(
         self, *, datetime: ZonedDateTime, datetimes: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
@@ -129,10 +129,7 @@ class TestZonedDateTimePeriod:
         expected = start <= datetime <= end
         assert result is expected
 
-    @given(
-        datetime=zoned_datetimes_whenever(),
-        datetimes=pairs(zoned_datetimes_whenever(), sorted=True),
-    )
+    @given(datetime=zoned_datetimes(), datetimes=pairs(zoned_datetimes(), sorted=True))
     def test_contain_datetime(
         self, *, datetime: ZonedDateTime, datetimes: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
@@ -142,13 +139,13 @@ class TestZonedDateTimePeriod:
         expected = start <= datetime <= end
         assert result is expected
 
-    @given(datetimes=pairs(zoned_datetimes_whenever(), sorted=True))
+    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
     def test_delta(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
         assert period.delta == (end - start)
 
-    @given(datetimes=pairs(zoned_datetimes_whenever(), sorted=True))
+    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
     def test_hashable(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
@@ -156,7 +153,7 @@ class TestZonedDateTimePeriod:
 
     @given(
         data=data(),
-        datetimes=pairs(zoned_datetimes_whenever(), sorted=True),
+        datetimes=pairs(zoned_datetimes(), sorted=True),
         func=sampled_from([repr, str]),
     )
     def test_repr(
@@ -167,7 +164,7 @@ class TestZonedDateTimePeriod:
         func: Callable[..., str],
     ) -> None:
         start, end = datetimes
-        datetimes = data.draw(pairs(zoned_datetimes_whenever(), sorted=True))
+        datetimes = data.draw(pairs(zoned_datetimes(), sorted=True))
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
         result = func(period)
@@ -177,8 +174,8 @@ class TestZonedDateTimePeriod:
         )
 
     @given(
-        dates1=pairs(zoned_datetimes_whenever(), sorted=True),
-        dates2=pairs(zoned_datetimes_whenever(), sorted=True),
+        dates1=pairs(zoned_datetimes(), sorted=True),
+        dates2=pairs(zoned_datetimes(), sorted=True),
     )
     def test_sortable(
         self,
@@ -192,10 +189,7 @@ class TestZonedDateTimePeriod:
         period2 = ZonedDateTimePeriod(start2, end2)
         _ = sorted([period1, period2])
 
-    @given(
-        datetimes=pairs(zoned_datetimes_whenever(), sorted=True),
-        delta=time_deltas_whenever(),
-    )
+    @given(datetimes=pairs(zoned_datetimes(), sorted=True), delta=time_deltas())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_sub(
         self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime], delta: TimeDelta
@@ -207,7 +201,7 @@ class TestZonedDateTimePeriod:
         expected = ZonedDateTimePeriod(start - delta, end - delta)
         assert result == expected
 
-    @given(datetimes=pairs(zoned_datetimes_whenever(), sorted=True))
+    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
     def test_to_dict(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
@@ -215,7 +209,7 @@ class TestZonedDateTimePeriod:
         expected = _PeriodAsDict(start=start, end=end)
         assert result == expected
 
-    @given(datetimes=pairs(zoned_datetimes_whenever(), sorted=True))
+    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
     def test_to_tz(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
@@ -226,7 +220,7 @@ class TestZonedDateTimePeriod:
         expected = ZonedDateTimePeriod(start.to_tz(name), end.to_tz(name))
         assert result == expected
 
-    @given(datetimes=pairs(zoned_datetimes_whenever(), unique=True, sorted=True))
+    @given(datetimes=pairs(zoned_datetimes(), unique=True, sorted=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_error_period_invalid(
         self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]
@@ -235,7 +229,7 @@ class TestZonedDateTimePeriod:
         with raises(_PeriodInvalidError, match="Invalid period; got .* > .*"):
             _ = ZonedDateTimePeriod(end, start)
 
-    @given(datetimes=pairs(plain_datetimes_whenever(), sorted=True))
+    @given(datetimes=pairs(plain_datetimes(), sorted=True))
     def test_error_period_time_zone(
         self, *, datetimes: tuple[PlainDateTime, PlainDateTime]
     ) -> None:
