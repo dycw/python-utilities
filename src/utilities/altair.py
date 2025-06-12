@@ -23,6 +23,7 @@ from altair import (
 )
 from altair.utils.schemapi import Undefined
 
+from utilities.atomicwrites import writer
 from utilities.functions import ensure_bytes, ensure_number
 from utilities.iterables import always_iterable
 from utilities.tempfile import TemporaryDirectory
@@ -265,8 +266,6 @@ def save_chart(
     chart: _ChartLike, path: PathLike, /, *, overwrite: bool = False
 ) -> None:
     """Atomically save a chart to disk."""
-    from utilities.atomicwrites import writer
-
     with writer(path, overwrite=overwrite) as temp:
         chart.save(str(temp), format="png")
 
@@ -279,8 +278,6 @@ def save_charts_as_pdf(
 ) -> None:
     """Atomically save a chart/set of charts to disk."""
     from img2pdf import convert
-
-    from utilities.atomicwrites import writer
 
     with TemporaryDirectory() as temp_dir:
         temp_paths = [temp_dir.joinpath(f"{i}.png") for i in range(len(charts))]

@@ -47,7 +47,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from whenever import Date, DateDelta
+from whenever import Date, DateDelta, PlainDateTime
 
 from utilities.datetime import (
     DATETIME_MAX_NAIVE,
@@ -97,7 +97,7 @@ if TYPE_CHECKING:
 
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
-    from whenever import PlainDateTime, ZonedDateTime
+    from whenever import ZonedDateTime
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.types import Duration, Number, RoundMode, TimeZoneLike
@@ -1050,8 +1050,6 @@ def plain_datetimes_whenever(
     max_value: MaybeSearchStrategy[PlainDateTime | None] = None,
 ) -> PlainDateTime:
     """Strategy for generating plain datetimes."""
-    from whenever import PlainDateTime
-
     from utilities.whenever2 import PLAIN_DATE_TIME_MAX, PLAIN_DATE_TIME_MIN
 
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]

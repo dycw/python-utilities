@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import (
+    LOCAL_TIME_ZONE,
     NOW_LOCAL,
     TODAY_LOCAL,
     get_local_time_zone,
@@ -15,9 +16,12 @@ from utilities.zoneinfo import UTC
 
 
 class TestGetLocalTimeZone:
-    def test_main(self) -> None:
+    def test_function(self) -> None:
         time_zone = get_local_time_zone()
         assert isinstance(time_zone, ZoneInfo)
+
+    def test_constant(self) -> None:
+        assert isinstance(LOCAL_TIME_ZONE, ZoneInfo)
 
 
 class TestGetNowLocal:

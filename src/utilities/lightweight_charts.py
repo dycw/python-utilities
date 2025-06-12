@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, override
 
+from utilities.atomicwrites import writer  # pragma: no cover
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 from utilities.reprlib import get_repr
 
@@ -23,8 +24,6 @@ if TYPE_CHECKING:
 
 def save_chart(chart: Chart, path: PathLike, /, *, overwrite: bool = False) -> None:
     """Atomically save a chart to disk."""
-    from utilities.atomicwrites import writer  # pragma: no cover
-
     chart.show(block=False)  # pragma: no cover
     with (  # pragma: no cover
         writer(path, overwrite=overwrite) as temp,

@@ -9,6 +9,8 @@ from uvicorn import Config, Server
 
 from utilities.asyncio import Looper
 from utilities.datetime import SECOND, datetime_duration_to_float
+from utilities.tzlocal import get_now_local  # skipif-ci
+from utilities.whenever import serialize_zoned_datetime  # skipif-ci
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -29,9 +31,6 @@ class _PingerReceiverApp(FastAPI):
 
         @self.get("/ping")  # skipif-ci
         def ping() -> str:
-            from utilities.tzlocal import get_now_local  # skipif-ci
-            from utilities.whenever import serialize_zoned_datetime  # skipif-ci
-
             now = serialize_zoned_datetime(get_now_local())  # skipif-ci
             return f"pong @ {now}"  # skipif-ci
 
