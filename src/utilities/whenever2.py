@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable
+from dataclasses import dataclass
 from functools import cache
 from logging import LogRecord
 from typing import TYPE_CHECKING, Any, assert_never, overload, override
@@ -17,6 +18,7 @@ from whenever import (
 )
 
 from utilities.datetime import maybe_sub_pct_y
+from utilities.math import sign
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC, get_time_zone_name
@@ -163,6 +165,102 @@ def to_date(
             assert_never(never)
 
 
+##
+
+
+def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
+    """Construct a date-time delta."""
+    sign_use = sign(nanos)
+    micros, nanos = divmod(nanos, int(1e3))
+    millis, micros = divmod(micros, int(1e3))
+    secs, millis = divmod(millis, int(1e3))
+    mins, secs = divmod(secs, 60)
+    hours, mins = divmod(mins, 60)
+    days, hours = divmod(hours, 24)
+    weeks, days = divmod(days, 7)
+    match sign_use:
+        case 1:
+            if nanos < 0:
+                nanos += int(1e3)
+                micros -= 1
+            if micros < 0:
+                micros += int(1e3)
+                millis -= 1
+            if millis < 0:
+                millis += int(1e3)
+                secs -= 1
+            if secs < 0:
+                secs += 60
+                mins -= 1
+            if mins < 0:
+                mins += 60
+                hours -= 1
+            if hours < 0:
+                hours += 24
+                days -= 1
+            if days < 0:
+                days += 7
+                weeks -= 1
+        case -1:
+            if nanos > 0:
+                nanos -= int(1e3)
+                micros += 1
+            if micros > 0:
+                micros -= int(1e3)
+                millis += 1
+            if millis > 0:
+                millis -= int(1e3)
+                secs += 1
+            if secs > 0:
+                secs -= 60
+                mins += 1
+            if mins > 0:
+                mins -= 60
+                hours += 1
+            if hours > 0:
+                hours -= 24
+                days += 1
+            if days > 0:
+                days -= 7
+                weeks += 1
+        case 0:
+            ...
+    return DateTimeDelta(
+        weeks=weeks,
+        days=days,
+        hours=hours,
+        minutes=mins,
+        seconds=secs,
+        microseconds=micros,
+        milliseconds=millis,
+        nanoseconds=nanos,
+    )
+
+
+##
+
+
+def to_nanos(delta: DateTimeDelta, /) -> int:
+    """Compute the number of nano seconds in a date-time delta."""
+    months, days, secs, nanos = delta.in_months_days_secs_nanos()
+    if months != 0:
+        raise ToNanosError(months=months)
+    total_secs = 24 * 60 * 60 * days + secs
+    return int(1e9) * total_secs + nanos
+
+
+@dataclass(kw_only=True, slots=True)
+class ToNanosError:
+    months: int
+
+    @override
+    def __str__(self) -> str:
+        return f"DateTimeDelta must have no months; got {self.months}"
+
+
+##
+
+
 @overload
 def to_zoned_date_time(*, date_time: MaybeCallableZonedDateTime) -> ZonedDateTime: ...
 @overload
@@ -265,6 +363,7 @@ __all__ = [
     "ZERO_TIME",
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
+    "ToNanosError",
     "WheneverLogRecord",
     "format_compact",
     "format_compact",
@@ -276,5 +375,7 @@ __all__ = [
     "get_today",
     "get_today_local",
     "to_date",
+    "to_date_time_delta",
+    "to_nanos",
     "to_zoned_date_time",
 ]

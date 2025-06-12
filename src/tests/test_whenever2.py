@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Self
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import just, none, timezones
+from hypothesis.strategies import integers, just, none, timezones
 from pytest import mark, param, raises
 from whenever import (
     Date,
@@ -19,7 +19,12 @@ from whenever import (
 
 from tests.conftest import IS_CI
 from utilities.dataclasses import replace_non_sentinel
-from utilities.hypothesis import dates_whenever, sentinels, zoned_datetimes_whenever
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    dates_whenever,
+    sentinels,
+    zoned_datetimes_whenever,
+)
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
@@ -55,6 +60,8 @@ from utilities.whenever2 import (
     get_today,
     get_today_local,
     to_date,
+    to_date_time_delta,
+    to_nanos,
     to_zoned_date_time,
 )
 from utilities.zoneinfo import UTC
@@ -305,7 +312,21 @@ class TestToDate:
         assert to_date(date=lambda: date) == date
 
 
-class TestGetDateTime:
+class TestToDateTimeDeltaAndNanos:
+    @given(nanos=integers())
+    def test_main(self, *, nanos: int) -> None:
+        with (
+            assume_does_not_raise(ValueError, match="Out of range"),
+            assume_does_not_raise(ValueError, match="total days out of range"),
+            assume_does_not_raise(
+                OverflowError, match="Python int too large to convert to C long"
+            ),
+        ):
+            delta = to_date_time_delta(nanos)
+        assert to_nanos(delta) == nanos
+
+
+class TestToZonedDateTime:
     @given(date_time=zoned_datetimes_whenever())
     def test_date_time(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time=date_time) == date_time

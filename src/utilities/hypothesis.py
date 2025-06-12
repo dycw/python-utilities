@@ -91,6 +91,7 @@ from utilities.math import (
     MIN_UINT32,
     MIN_UINT64,
     is_zero,
+    sign,
 )
 from utilities.os import get_env_var
 from utilities.pathlib import temp_cwd
@@ -115,6 +116,7 @@ from utilities.whenever2 import (
     TIME_DELTA_MIN,
     TIME_MAX,
     TIME_MIN,
+    to_nanos,
 )
 from utilities.zoneinfo import UTC, ensure_time_zone
 
@@ -320,35 +322,76 @@ def date_time_deltas_whenever(
             ...
         case _ as never:
             assert_never(never)
-    min_months, min_days, min_secs, min_nanos = min_value_.in_months_days_secs_nanos()
-    assert min_months == 0
-    max_months, max_days, max_secs, max_nanos = max_value_.in_months_days_secs_nanos()
-    assert max_months == 0
+    min_nanos, max_nanos = map(to_nanos, [min_value_, max_value_])
     if draw2(draw, parsable):
-        (
-            parsable_min_months,
-            parsable_min_days,
-            parsable_min_secs,
-            parsable_min_nanos,
-        ) = DATE_TIME_DELTA_PARSABLE_MIN.in_months_days_secs_nanos()
-        assert parsable_min_months == 0
-        min_days = max(min_days, parsable_min_days)
-        min_secs = max(min_secs, parsable_min_secs)
-        min_nanos = max(min_nanos, parsable_min_nanos)
-        (
-            parsable_max_months,
-            parsable_max_days,
-            parsable_max_secs,
-            parsable_max_nanos,
-        ) = DATE_TIME_DELTA_PARSABLE_MAX.in_months_days_secs_nanos()
-        assert parsable_max_months == 0
-        max_days = min(max_days, parsable_max_days)
-        max_secs = min(max_secs, parsable_max_secs)
-        max_nanos = min(max_nanos, parsable_max_nanos)
-    days = draw(integers(min_value=min_days, max_value=max_days))
-    secs = draw(integers(min_value=min_secs, max_value=max_secs))
+        min_nanos = max(min_nanos, to_nanos(DATE_TIME_DELTA_PARSABLE_MIN))
+        max_nanos = min(max_nanos, to_nanos(DATE_TIME_DELTA_PARSABLE_MAX))
     nanos = draw(integers(min_value=min_nanos, max_value=max_nanos))
-    return DateTimeDelta(days=days, seconds=secs, nanoseconds=nanos)
+    sign_use = sign(nanos)
+    micros, nanos = divmod(nanos, int(1e3))
+    millis, micros = divmod(micros, int(1e3))
+    secs, millis = divmod(millis, int(1e3))
+    mins, secs = divmod(secs, 60)
+    hours, mins = divmod(mins, 60)
+    days, mins = divmod(hours, 24)
+    weeks, days = divmod(days, 7)
+    match sign_use:
+        case 1:
+            while nanos < 0:
+                nanos += int(1e3)
+                micros -= 1
+            while micros < 0:
+                micros += int(1e3)
+                millis -= 1
+            while millis < 0:
+                millis += int(1e3)
+                secs -= 1
+            while secs < 0:
+                secs += 60
+                mins -= 1
+            while mins < 0:
+                mins += 60
+                hours -= 1
+            while hours < 0:
+                hours += 60
+                days -= 1
+            while days < 0:
+                days += 60
+                weeks -= 1
+        case -1:
+            while nanos > 0:
+                nanos -= int(1e3)
+                micros += 1
+            while micros > 0:
+                micros -= int(1e3)
+                millis += 1
+            while millis > 0:
+                millis -= int(1e3)
+                secs += 1
+            while secs > 0:
+                secs -= 60
+                mins += 1
+            while mins > 0:
+                mins -= 60
+                hours += 1
+            while hours > 0:
+                hours -= 60
+                days += 1
+            while days > 0:
+                days -= 60
+                weeks += 1
+        case 0:
+            ...
+    return DateTimeDelta(
+        weeks=weeks,
+        days=days,
+        hours=hours,
+        minutes=mins,
+        seconds=secs,
+        microseconds=micros,
+        milliseconds=millis,
+        nanoseconds=nanos,
+    )
 
 
 ##
