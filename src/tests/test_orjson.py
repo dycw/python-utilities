@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from collections.abc import Iterable
 from io import StringIO
 from logging import DEBUG, WARNING, FileHandler, StreamHandler, getLogger
@@ -12,7 +11,6 @@ from hypothesis import assume, given
 from hypothesis.strategies import (
     booleans,
     builds,
-    dates,
     dictionaries,
     integers,
     lists,
@@ -54,12 +52,13 @@ from tests.test_typing_funcs.with_future import (
 from utilities.functions import is_sequence_of
 from utilities.hypothesis import (
     assume_does_not_raise,
+    dates_whenever,
     int64s,
     paths,
     temp_paths,
     text_ascii,
     text_printable,
-    zoned_datetimes,
+    zoned_datetimes_whenever,
 )
 from utilities.iterables import always_iterable, one
 from utilities.logging import get_logging_level_number
@@ -80,12 +79,14 @@ from utilities.orjson import (
 )
 from utilities.polars import check_polars_dataframe, zoned_datetime
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import DateOrDateTime, LogLevel, MaybeIterable, PathLike
+from utilities.types import LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args
 from utilities.whenever2 import MINUTE, SECOND, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from whenever import Date, ZonedDateTime
 
     from utilities.types import Dataclass, StrMapping
 
@@ -194,9 +195,12 @@ class TestGetLogRecords:
         level=sampled_from(get_args(LogLevel)) | none(),
         min_level=sampled_from(get_args(LogLevel)) | none(),
         max_level=sampled_from(get_args(LogLevel)) | none(),
-        date_or_datetime=dates() | zoned_datetimes() | none(),
-        min_date_or_datetime=dates() | zoned_datetimes() | none(),
-        max_date_or_datetime=dates() | zoned_datetimes() | none(),
+        date=dates_whenever() | none(),
+        min_date=dates_whenever() | none(),
+        max_date=dates_whenever() | none(),
+        datetime=zoned_datetimes_whenever() | none(),
+        min_datetime=zoned_datetimes_whenever() | none(),
+        max_datetime=zoned_datetimes_whenever() | none(),
         func_name=booleans() | text_ascii() | none(),
         extra=booleans() | text_ascii() | sets(text_ascii()) | none(),
         log_file=booleans() | paths() | text_ascii() | none(),
@@ -217,9 +221,12 @@ class TestGetLogRecords:
         level: LogLevel | None,
         min_level: LogLevel | None,
         max_level: LogLevel | None,
-        date_or_datetime: DateOrDateTime | None,
-        min_date_or_datetime: DateOrDateTime | None,
-        max_date_or_datetime: DateOrDateTime | None,
+        date: Date | None,
+        min_date: Date | None,
+        max_date: Date | None,
+        datetime: ZonedDateTime | None,
+        min_datetime: ZonedDateTime | None,
+        max_datetime: ZonedDateTime | None,
         func_name: bool | str | None,
         extra: bool | MaybeIterable[str] | None,
         log_file: bool | PathLike | None,
@@ -244,9 +251,12 @@ class TestGetLogRecords:
             level=level,
             min_level=min_level,
             max_level=max_level,
-            date_or_datetime=date_or_datetime,
-            min_date_or_datetime=min_date_or_datetime,
-            max_date_or_datetime=max_date_or_datetime,
+            date=date,
+            min_date=min_date,
+            max_date=max_date,
+            datetime=datetime,
+            min_datetime=min_datetime,
+            max_datetime=max_datetime,
             func_name=func_name,
             extra=extra,
             log_file=log_file,
@@ -271,24 +281,18 @@ class TestGetLogRecords:
             assert all(r.level >= get_logging_level_number(min_level) for r in records)
         if max_level is not None:
             assert all(r.level <= get_logging_level_number(max_level) for r in records)
-        if date_or_datetime is not None:
-            match date_or_datetime:
-                case dt.datetime() as datetime:
-                    assert all(r.datetime == datetime for r in records)
-                case dt.date() as date:
-                    assert all(r.date == date for r in records)
-        if min_date_or_datetime is not None:
-            match min_date_or_datetime:
-                case dt.datetime() as min_datetime:
-                    assert all(r.datetime >= min_datetime for r in records)
-                case dt.date() as min_date:
-                    assert all(r.date >= min_date for r in records)
-        if max_date_or_datetime is not None:
-            match max_date_or_datetime:
-                case dt.datetime() as max_datetime:
-                    assert all(r.datetime <= max_datetime for r in records)
-                case dt.date() as max_date:
-                    assert all(r.date <= max_date for r in records)
+        if date is not None:
+            assert all(r.datetime.date() == date for r in records)
+        if min_date is not None:
+            assert all(r.datetime.date() >= min_date for r in records)
+        if max_date is not None:
+            assert all(r.datetime.date() <= max_date for r in records)
+        if datetime is not None:
+            assert all(r.datetime == datetime for r in records)
+        if min_datetime is not None:
+            assert all(r.datetime >= min_datetime for r in records)
+        if max_datetime is not None:
+            assert all(r.datetime <= max_datetime for r in records)
         if func_name is not None:
             match func_name:
                 case bool() as has_func_name:
