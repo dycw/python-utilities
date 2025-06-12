@@ -6,6 +6,7 @@ from operator import attrgetter
 from re import search
 from typing import TYPE_CHECKING, Any, TypeVar
 
+import whenever
 from click import ParamType, argument, command, echo, option
 from click.testing import CliRunner
 from hypothesis import given
@@ -14,70 +15,47 @@ from hypothesis.strategies import (
     SearchStrategy,
     booleans,
     data,
-    dates,
-    datetimes,
-    floats,
     frozensets,
-    integers,
-    just,
     lists,
     sampled_from,
-    times,
-    uuids,
 )
 from pytest import mark, param
 
-import utilities.click
-import utilities.datetime
-import utilities.types
 from utilities.click import (
     CONTEXT_SETTINGS_HELP_OPTION_NAMES,
     Date,
+    DateDelta,
+    DateTimeDelta,
     DirPath,
     Enum,
     ExistingDirPath,
     ExistingFilePath,
     FilePath,
-    FrozenSetBools,
     FrozenSetChoices,
-    FrozenSetDates,
     FrozenSetEnums,
-    FrozenSetFloats,
-    FrozenSetInts,
-    FrozenSetMonths,
     FrozenSetStrs,
-    FrozenSetUUIDs,
-    ListBools,
-    ListDates,
     ListEnums,
-    ListFloats,
-    ListInts,
-    ListMonths,
     ListStrs,
-    ListUUIDs,
+    Month,
     PlainDateTime,
     Time,
-    Timedelta,
+    TimeDelta,
     ZonedDateTime,
 )
-from utilities.datetime import ZERO_TIME, serialize_month
+from utilities.datetime import serialize_month
 from utilities.hypothesis import (
-    datetime_durations,
+    date_deltas_whenever,
+    date_time_deltas_whenever,
+    dates_whenever,
     months,
     pairs,
+    plain_datetimes_whenever,
     text_ascii,
-    timedeltas_2w,
+    time_deltas_whenever,
+    times_whenever,
+    zoned_datetimes_whenever,
 )
 from utilities.text import join_strs, strip_and_dedent
-from utilities.whenever import (
-    serialize_date,
-    serialize_duration,
-    serialize_plain_datetime,
-    serialize_time,
-    serialize_timedelta,
-    serialize_zoned_datetime,
-)
-from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -205,7 +183,9 @@ class TestParameters:
     @mark.parametrize(
         ("param", "exp_repr", "strategy", "serialize", "failable"),
         [
-            param(Date(), "DATE", dates(), serialize_date, True),
+            param(
+                Date(), "DATE", dates_whenever(), whenever.Date.format_common_iso, True
+            ),
             param(
                 Enum(_ExampleEnum),
                 "ENUM[_ExampleEnum]",
@@ -214,24 +194,17 @@ class TestParameters:
                 True,
             ),
             param(
-                utilities.click.Duration(),
-                "DURATION",
-                datetime_durations(min_number=0, min_timedelta=ZERO_TIME, two_way=True),
-                serialize_duration,
+                DateDelta(),
+                "DATE DELTA",
+                date_deltas_whenever(parsable=True),
+                whenever.DateDelta.format_common_iso,
                 True,
             ),
             param(
-                FrozenSetBools(),
-                "FROZENSET[BOOL]",
-                frozensets(booleans()),
-                _lift_serializer(str, sort=True),
-                True,
-            ),
-            param(
-                FrozenSetDates(),
-                "FROZENSET[DATE]",
-                frozensets(dates()),
-                _lift_serializer(serialize_date, sort=True),
+                DateTimeDelta(),
+                "DATE-TIME DELTA",
+                date_time_deltas_whenever(parsable=True),
+                whenever.DateTimeDelta.format_common_iso,
                 True,
             ),
             param(
@@ -249,53 +222,11 @@ class TestParameters:
                 True,
             ),
             param(
-                FrozenSetFloats(),
-                "FROZENSET[FLOAT]",
-                frozensets(floats(0, 10)),
-                _lift_serializer(str, sort=True),
-                True,
-            ),
-            param(
-                FrozenSetInts(),
-                "FROZENSET[INT]",
-                frozensets(integers(0, 10)),
-                _lift_serializer(str, sort=True),
-                True,
-            ),
-            param(
-                FrozenSetMonths(),
-                "FROZENSET[MONTH]",
-                frozensets(months()),
-                _lift_serializer(serialize_month, sort=True),
-                True,
-            ),
-            param(
                 FrozenSetStrs(),
                 "FROZENSET[STRING]",
                 frozensets(text_ascii()),
                 _lift_serializer(str, sort=True),
                 False,
-            ),
-            param(
-                FrozenSetUUIDs(),
-                "FROZENSET[UUID]",
-                frozensets(uuids()),
-                _lift_serializer(str, sort=True),
-                True,
-            ),
-            param(
-                ListBools(),
-                "LIST[BOOL]",
-                lists(booleans()),
-                _lift_serializer(str),
-                True,
-            ),
-            param(
-                ListDates(),
-                "LIST[DATE]",
-                lists(dates()),
-                _lift_serializer(serialize_date),
-                True,
             ),
             param(
                 ListEnums(_ExampleEnum),
@@ -304,58 +235,29 @@ class TestParameters:
                 _lift_serializer(attrgetter("name")),
                 True,
             ),
-            param(
-                ListFloats(),
-                "LIST[FLOAT]",
-                lists(floats(0, 10)),
-                _lift_serializer(str),
-                True,
-            ),
-            param(
-                ListInts(),
-                "LIST[INT]",
-                lists(integers(0, 10)),
-                _lift_serializer(str),
-                True,
-            ),
-            param(
-                ListMonths(),
-                "LIST[MONTH]",
-                lists(months()),
-                _lift_serializer(serialize_month),
-                True,
-            ),
-            param(
-                ListStrs(),
-                "LIST[STRING]",
-                lists(text_ascii()),
-                _lift_serializer(str),
-                False,
-            ),
-            param(
-                ListUUIDs(), "LIST[UUID]", lists(uuids()), _lift_serializer(str), True
-            ),
-            param(utilities.click.Month(), "MONTH", months(), serialize_month, True),
+            param(Month(), "MONTH", months(), serialize_month, True),
             param(
                 PlainDateTime(),
-                "PLAIN DATETIME",
-                datetimes(),
-                serialize_plain_datetime,
+                "PLAIN DATE-TIME",
+                plain_datetimes_whenever(),
+                whenever.PlainDateTime.format_common_iso,
                 True,
             ),
-            param(Time(), "TIME", times(), serialize_time, True),
             param(
-                Timedelta(),
-                "TIMEDELTA",
-                timedeltas_2w(min_value=ZERO_TIME),
-                serialize_timedelta,
+                Time(), "TIME", times_whenever(), whenever.Time.format_common_iso, True
+            ),
+            param(
+                TimeDelta(),
+                "TIME-DELTA",
+                time_deltas_whenever(),
+                whenever.TimeDelta.format_common_iso,
                 True,
             ),
             param(
                 ZonedDateTime(),
-                "ZONED DATETIME",
-                datetimes(timezones=just(UTC)),
-                serialize_zoned_datetime,
+                "ZONED DATE-TIME",
+                zoned_datetimes_whenever(),
+                whenever.ZonedDateTime.format_common_iso,
                 True,
             ),
         ],

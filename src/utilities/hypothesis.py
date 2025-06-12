@@ -48,7 +48,15 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from whenever import Date, DateDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 from utilities.datetime import (
     DATETIME_MAX_NAIVE,
@@ -97,12 +105,19 @@ from utilities.whenever2 import (
     DATE_DELTA_PARSABLE_MIN,
     DATE_MAX,
     DATE_MIN,
+    DATE_TIME_DELTA_MAX,
+    DATE_TIME_DELTA_MIN,
+    DATE_TIME_DELTA_PARSABLE_MAX,
+    DATE_TIME_DELTA_PARSABLE_MIN,
     PLAIN_DATE_TIME_MAX,
     PLAIN_DATE_TIME_MIN,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
     TIME_MAX,
     TIME_MIN,
+    to_date_time_delta,
+    to_days,
+    to_nanos,
 )
 from utilities.zoneinfo import UTC, ensure_time_zone
 
@@ -199,25 +214,11 @@ def date_deltas_whenever(
             ...
         case _ as never:
             assert_never(never)
-    min_years, min_months, min_days = min_value_.in_years_months_days()
-    assert min_years == 0
-    assert min_months == 0
-    max_years, max_months, max_days = max_value_.in_years_months_days()
-    assert max_years == 0
-    assert max_months == 0
+    min_days = to_days(min_value_)
+    max_days = to_days(max_value_)
     if draw2(draw, parsable):
-        parsable_min_years, parsable_min_months, parsable_min_days = (
-            DATE_DELTA_PARSABLE_MIN.in_years_months_days()
-        )
-        assert parsable_min_years == 0
-        assert parsable_min_months == 0
-        min_days = max(min_days, parsable_min_days)
-        parsable_max_years, parsable_max_months, parsable_max_days = (
-            DATE_DELTA_PARSABLE_MAX.in_years_months_days()
-        )
-        assert parsable_max_years == 0
-        assert parsable_max_months == 0
-        max_days = min(max_days, parsable_max_days)
+        min_days = max(min_days, to_days(DATE_DELTA_PARSABLE_MIN))
+        max_days = min(max_days, to_days(DATE_DELTA_PARSABLE_MAX))
     days = draw(integers(min_value=min_days, max_value=max_days))
     return DateDelta(days=days)
 
@@ -282,6 +283,42 @@ def _is_between_timedelta(
     timedelta: dt.timedelta, /, *, min_: dt.timedelta, max_: dt.timedelta
 ) -> bool:
     return min_ <= timedelta <= max_
+
+
+##
+
+
+@composite
+def date_time_deltas_whenever(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[DateTimeDelta | None] = None,
+    max_value: MaybeSearchStrategy[DateTimeDelta | None] = None,
+    parsable: MaybeSearchStrategy[bool] = False,
+) -> DateTimeDelta:
+    """Strategy for generating date deltas."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    match min_value_:
+        case None:
+            min_value_ = DATE_TIME_DELTA_MIN
+        case DateTimeDelta():
+            ...
+        case _ as never:
+            assert_never(never)
+    match max_value_:
+        case None:
+            max_value_ = DATE_TIME_DELTA_MAX
+        case DateTimeDelta():
+            ...
+        case _ as never:
+            assert_never(never)
+    min_nanos, max_nanos = map(to_nanos, [min_value_, max_value_])
+    if draw2(draw, parsable):
+        min_nanos = max(min_nanos, to_nanos(DATE_TIME_DELTA_PARSABLE_MIN))
+        max_nanos = min(max_nanos, to_nanos(DATE_TIME_DELTA_PARSABLE_MAX))
+    nanos = draw(integers(min_value=min_nanos, max_value=max_nanos))
+    return to_date_time_delta(nanos)
 
 
 ##
@@ -1468,6 +1505,7 @@ __all__ = [
     "bool_arrays",
     "date_deltas_whenever",
     "date_durations",
+    "date_time_deltas_whenever",
     "dates_two_digit_year",
     "dates_whenever",
     "datetime_durations",

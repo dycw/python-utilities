@@ -1,39 +1,37 @@
 from __future__ import annotations
 
-import datetime as dt
 import pathlib
-from typing import TYPE_CHECKING, Generic, TypedDict, TypeVar, override
-from uuid import UUID
+from typing import TYPE_CHECKING, Generic, TypedDict, TypeVar, assert_never, override
 
 import click
+import whenever
 from click import Choice, Context, Parameter, ParamType
-from click.types import (
-    BoolParamType,
-    FloatParamType,
-    IntParamType,
-    StringParamType,
-    UUIDParameterType,
-)
+from click.types import StringParamType
 
-import utilities.datetime
-import utilities.types
-from utilities.datetime import EnsureMonthError, MonthLike, ensure_month
+from utilities.datetime import EnsureMonthError, ensure_month
 from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import EnsureStrError, ensure_str, get_class_name
 from utilities.iterables import is_iterable_not_str
 from utilities.text import split_str
 from utilities.types import (
-    DateTimeLike,
+    DateDeltaLike,
+    DateLike,
+    DateTimeDeltaLike,
     EnumLike,
     MaybeStr,
-    PyDateLike,
-    PyTimeDeltaLike,
-    PyTimeLike,
+    PlainDateTimeLike,
     TEnum,
+    TimeDeltaLike,
+    TimeLike,
+    ZonedDateTimeLike,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
+
+    import utilities.datetime
+    from utilities.datetime import MonthLike
+
 
 _T = TypeVar("_T")
 _TParam = TypeVar("_TParam", bound=ParamType)
@@ -76,21 +74,25 @@ class Date(ParamType):
 
     @override
     def convert(
-        self, value: PyDateLike, param: Parameter | None, ctx: Context | None
-    ) -> dt.date:
+        self, value: DateLike, param: Parameter | None, ctx: Context | None
+    ) -> whenever.Date:
         """Convert a value into the `Date` type."""
-        from utilities.whenever import EnsureDateError, ensure_date
+        match value:
+            case whenever.Date():
+                return value
+            case str():
+                try:
+                    return whenever.Date.parse_common_iso(value)
+                except ValueError as error:
+                    self.fail(str(error), param, ctx)
+            case _ as never:
+                assert_never(never)
 
-        try:
-            return ensure_date(value)
-        except EnsureDateError as error:
-            self.fail(str(error), param, ctx)
 
+class DateDelta(ParamType):
+    """A date-delta-valued parameter."""
 
-class Duration(ParamType):
-    """A duration-valued parameter."""
-
-    name = "duration"
+    name = "date delta"
 
     @override
     def __repr__(self) -> str:
@@ -98,18 +100,45 @@ class Duration(ParamType):
 
     @override
     def convert(
-        self,
-        value: MaybeStr[utilities.types.Duration],
-        param: Parameter | None,
-        ctx: Context | None,
-    ) -> utilities.types.Duration:
-        """Convert a value into the `Duration` type."""
-        from utilities.whenever import EnsureDurationError, ensure_duration
+        self, value: DateDeltaLike, param: Parameter | None, ctx: Context | None
+    ) -> whenever.DateDelta:
+        """Convert a value into the `DateDelta` type."""
+        match value:
+            case whenever.DateDelta():
+                return value
+            case str():
+                try:
+                    return whenever.DateDelta.parse_common_iso(value)
+                except ValueError as error:
+                    self.fail(str(error), param, ctx)
+            case _ as never:
+                assert_never(never)
 
-        try:
-            return ensure_duration(value)
-        except EnsureDurationError as error:
-            self.fail(str(error), param, ctx)
+
+class DateTimeDelta(ParamType):
+    """A date-delta-valued parameter."""
+
+    name = "date-time delta"
+
+    @override
+    def __repr__(self) -> str:
+        return self.name.upper()
+
+    @override
+    def convert(
+        self, value: DateTimeDeltaLike, param: Parameter | None, ctx: Context | None
+    ) -> whenever.DateTimeDelta:
+        """Convert a value into the `DateTimeDelta` type."""
+        match value:
+            case whenever.DateTimeDelta():
+                return value
+            case str():
+                try:
+                    return whenever.DateTimeDelta.parse_common_iso(value)
+                except ValueError as error:
+                    self.fail(str(error), param, ctx)
+            case _ as never:
+                assert_never(never)
 
 
 class Enum(ParamType, Generic[TEnum]):
@@ -167,7 +196,7 @@ class Month(ParamType):
 class PlainDateTime(ParamType):
     """A local-datetime-valued parameter."""
 
-    name = "plain datetime"
+    name = "plain date-time"
 
     @override
     def __repr__(self) -> str:
@@ -175,15 +204,19 @@ class PlainDateTime(ParamType):
 
     @override
     def convert(
-        self, value: DateTimeLike, param: Parameter | None, ctx: Context | None
-    ) -> dt.date:
-        """Convert a value into the `LocalDateTime` type."""
-        from utilities.whenever import EnsurePlainDateTimeError, ensure_plain_datetime
-
-        try:
-            return ensure_plain_datetime(value)
-        except EnsurePlainDateTimeError as error:
-            self.fail(str(error), param, ctx)
+        self, value: PlainDateTimeLike, param: Parameter | None, ctx: Context | None
+    ) -> whenever.PlainDateTime:
+        """Convert a value into the `PlainDateTime` type."""
+        match value:
+            case whenever.PlainDateTime():
+                return value
+            case str():
+                try:
+                    return whenever.PlainDateTime.parse_common_iso(value)
+                except ValueError as error:
+                    self.fail(str(error), param, ctx)
+            case _ as never:
+                assert_never(never)
 
 
 class Time(ParamType):
@@ -197,21 +230,25 @@ class Time(ParamType):
 
     @override
     def convert(
-        self, value: PyTimeLike, param: Parameter | None, ctx: Context | None
-    ) -> dt.time:
+        self, value: TimeLike, param: Parameter | None, ctx: Context | None
+    ) -> whenever.Time:
         """Convert a value into the `Time` type."""
-        from utilities.whenever import EnsureTimeError, ensure_time
+        match value:
+            case whenever.Time():
+                return value
+            case str():
+                try:
+                    return whenever.Time.parse_common_iso(value)
+                except ValueError as error:
+                    self.fail(str(error), param, ctx)
+            case _ as never:
+                assert_never(never)
 
-        try:
-            return ensure_time(value)
-        except EnsureTimeError as error:
-            return self.fail(str(error), param=param, ctx=ctx)
 
-
-class Timedelta(ParamType):
+class TimeDelta(ParamType):
     """A timedelta-valued parameter."""
 
-    name = "timedelta"
+    name = "time-delta"
 
     @override
     def __repr__(self) -> str:
@@ -219,21 +256,25 @@ class Timedelta(ParamType):
 
     @override
     def convert(
-        self, value: PyTimeDeltaLike, param: Parameter | None, ctx: Context | None
-    ) -> dt.timedelta:
-        """Convert a value into the `Timedelta` type."""
-        from utilities.whenever import EnsureTimedeltaError, ensure_timedelta
-
-        try:
-            return ensure_timedelta(value)
-        except EnsureTimedeltaError as error:
-            self.fail(str(error), param, ctx)
+        self, value: TimeDeltaLike, param: Parameter | None, ctx: Context | None
+    ) -> whenever.TimeDelta:
+        """Convert a value into the `TimeDelta` type."""
+        match value:
+            case whenever.TimeDelta():
+                return value
+            case str():
+                try:
+                    return whenever.TimeDelta.parse_common_iso(value)
+                except ValueError as error:
+                    self.fail(str(error), param, ctx)
+            case _ as never:
+                assert_never(never)
 
 
 class ZonedDateTime(ParamType):
     """A zoned-datetime-valued parameter."""
 
-    name = "zoned datetime"
+    name = "zoned date-time"
 
     @override
     def __repr__(self) -> str:
@@ -241,15 +282,19 @@ class ZonedDateTime(ParamType):
 
     @override
     def convert(
-        self, value: DateTimeLike, param: Parameter | None, ctx: Context | None
-    ) -> dt.date:
-        """Convert a value into the `DateTime` type."""
-        from utilities.whenever import EnsureZonedDateTimeError, ensure_zoned_datetime
-
-        try:
-            return ensure_zoned_datetime(value)
-        except EnsureZonedDateTimeError as error:
-            self.fail(str(error), param, ctx)
+        self, value: ZonedDateTimeLike, param: Parameter | None, ctx: Context | None
+    ) -> whenever.ZonedDateTime:
+        """Convert a value into the `ZonedDateTime` type."""
+        match value:
+            case whenever.ZonedDateTime():
+                return value
+            case str():
+                try:
+                    return whenever.ZonedDateTime.parse_common_iso(value)
+                except ValueError as error:
+                    self.fail(str(error), param, ctx)
+            case _ as never:
+                assert_never(never)
 
 
 # parameters - frozenset
@@ -297,20 +342,6 @@ class FrozenSetParameter(ParamType, Generic[_TParam, _T]):
         return _make_metavar(param, desc)
 
 
-class FrozenSetBools(FrozenSetParameter[BoolParamType, str]):
-    """A frozenset-of-bools-valued parameter."""
-
-    def __init__(self, *, separator: str = ",") -> None:
-        super().__init__(BoolParamType(), separator=separator)
-
-
-class FrozenSetDates(FrozenSetParameter[Date, dt.date]):
-    """A frozenset-of-dates-valued parameter."""
-
-    def __init__(self, *, separator: str = ",") -> None:
-        super().__init__(Date(), separator=separator)
-
-
 class FrozenSetChoices(FrozenSetParameter[Choice, str]):
     """A frozenset-of-choices-valued parameter."""
 
@@ -341,39 +372,11 @@ class FrozenSetEnums(FrozenSetParameter[Enum[TEnum], TEnum]):
         super().__init__(Enum(enum, case_sensitive=case_sensitive), separator=separator)
 
 
-class FrozenSetFloats(FrozenSetParameter[FloatParamType, float]):
-    """A frozenset-of-floats-valued parameter."""
-
-    def __init__(self, *, separator: str = ",") -> None:
-        super().__init__(FloatParamType(), separator=separator)
-
-
-class FrozenSetInts(FrozenSetParameter[IntParamType, int]):
-    """A frozenset-of-ints-valued parameter."""
-
-    def __init__(self, *, separator: str = ",") -> None:
-        super().__init__(IntParamType(), separator=separator)
-
-
-class FrozenSetMonths(FrozenSetParameter[Month, utilities.datetime.Month]):
-    """A frozenset-of-months-valued parameter."""
-
-    def __init__(self, *, separator: str = ",") -> None:
-        super().__init__(Month(), separator=separator)
-
-
 class FrozenSetStrs(FrozenSetParameter[StringParamType, str]):
     """A frozenset-of-strs-valued parameter."""
 
     def __init__(self, *, separator: str = ",") -> None:
         super().__init__(StringParamType(), separator=separator)
-
-
-class FrozenSetUUIDs(FrozenSetParameter[UUIDParameterType, UUID]):
-    """A frozenset-of-UUIDs-valued parameter."""
-
-    def __init__(self, *, separator: str = ",") -> None:
-        super().__init__(UUIDParameterType(), separator=separator)
 
 
 # parameters - list
@@ -421,20 +424,6 @@ class ListParameter(ParamType, Generic[_TParam, _T]):
         return _make_metavar(param, desc)
 
 
-class ListBools(ListParameter[BoolParamType, str]):
-    """A list-of-bools-valued parameter."""
-
-    def __init__(self, *, separator: str = ",") -> None:
-        super().__init__(BoolParamType(), separator=separator)
-
-
-class ListDates(ListParameter[Date, dt.date]):
-    """A list-of-dates-valued parameter."""
-
-    def __init__(self, *, separator: str = ",") -> None:
-        super().__init__(Date(), separator=separator)
-
-
 class ListEnums(ListParameter[Enum[TEnum], TEnum]):
     """A list-of-enums-valued parameter."""
 
@@ -449,39 +438,11 @@ class ListEnums(ListParameter[Enum[TEnum], TEnum]):
         super().__init__(Enum(enum, case_sensitive=case_sensitive), separator=separator)
 
 
-class ListFloats(ListParameter[FloatParamType, float]):
-    """A list-of-floats-valued parameter."""
-
-    def __init__(self, *, separator: str = ",") -> None:
-        super().__init__(FloatParamType(), separator=separator)
-
-
-class ListInts(ListParameter[IntParamType, int]):
-    """A list-of-ints-valued parameter."""
-
-    def __init__(self, *, separator: str = ",") -> None:
-        super().__init__(IntParamType(), separator=separator)
-
-
-class ListMonths(ListParameter[Month, utilities.datetime.Month]):
-    """A list-of-months-valued parameter."""
-
-    def __init__(self, *, separator: str = ",") -> None:
-        super().__init__(Month(), separator=separator)
-
-
 class ListStrs(ListParameter[StringParamType, str]):
     """A list-of-strs-valued parameter."""
 
     def __init__(self, *, separator: str = ",") -> None:
         super().__init__(StringParamType(), separator=separator)
-
-
-class ListUUIDs(ListParameter[UUIDParameterType, UUID]):
-    """A list-of-UUIDs-valued parameter."""
-
-    def __init__(self, *, separator: str = ",") -> None:
-        super().__init__(UUIDParameterType(), separator=separator)
 
 
 # private
@@ -495,34 +456,22 @@ def _make_metavar(param: Parameter, desc: str, /) -> str:
 __all__ = [
     "CONTEXT_SETTINGS_HELP_OPTION_NAMES",
     "Date",
+    "DateDelta",
+    "DateTimeDelta",
     "DirPath",
-    "Duration",
     "Enum",
     "ExistingDirPath",
     "ExistingFilePath",
     "FilePath",
-    "FrozenSetBools",
     "FrozenSetChoices",
-    "FrozenSetDates",
     "FrozenSetEnums",
-    "FrozenSetFloats",
-    "FrozenSetInts",
-    "FrozenSetMonths",
     "FrozenSetParameter",
     "FrozenSetStrs",
-    "FrozenSetUUIDs",
-    "ListBools",
-    "ListDates",
     "ListEnums",
-    "ListFloats",
-    "ListInts",
-    "ListMonths",
     "ListParameter",
     "ListStrs",
-    "ListUUIDs",
-    "Month",
     "PlainDateTime",
     "Time",
-    "Timedelta",
+    "TimeDelta",
     "ZonedDateTime",
 ]

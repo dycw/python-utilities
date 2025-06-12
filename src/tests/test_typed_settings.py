@@ -8,10 +8,19 @@ from hypothesis import given
 from hypothesis.strategies import DataObject, SearchStrategy, data, tuples
 from pytest import mark, param
 from typed_settings import FileLoader, TomlFormat, load_settings
-from whenever import Date, DateDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 from utilities.hypothesis import (
     date_deltas_whenever,
+    date_time_deltas_whenever,
     dates_whenever,
     plain_datetimes_whenever,
     temp_paths,
@@ -38,6 +47,11 @@ class TestExtendedTSConverter:
                 DateDelta,
                 date_deltas_whenever(parsable=True),
                 DateDelta.format_common_iso,
+            ),
+            param(
+                DateTimeDelta,
+                date_time_deltas_whenever(parsable=True),
+                DateTimeDelta.format_common_iso,
             ),
             param(
                 PlainDateTime,

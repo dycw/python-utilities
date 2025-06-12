@@ -28,7 +28,15 @@ from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
 from pytest import mark, raises
-from whenever import Date, DateDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
@@ -52,6 +60,7 @@ from utilities.hypothesis import (
     bool_arrays,
     date_deltas_whenever,
     date_durations,
+    date_time_deltas_whenever,
     dates_two_digit_year,
     dates_whenever,
     datetime_durations,
@@ -127,6 +136,7 @@ from utilities.whenever import (
     serialize_duration,
     serialize_timedelta,
 )
+from utilities.whenever2 import to_days, to_nanos
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -193,19 +203,11 @@ class TestDateDeltasWhenever:
                 )
             )
         assert isinstance(delta, DateDelta)
-        years, months, days = delta.in_years_months_days()
-        assert years == 0
-        assert months == 0
+        days = to_days(delta)
         if min_value is not None:
-            min_years, min_months, min_days = min_value.in_years_months_days()
-            assert min_years == 0
-            assert min_months == 0
-            assert days >= min_days
+            assert days >= to_days(min_value)
         if max_value is not None:
-            max_years, max_months, max_days = max_value.in_years_months_days()
-            assert max_years == 0
-            assert max_months == 0
-            assert days <= max_days
+            assert days <= to_days(max_value)
         if parsable:
             assert DateDelta.parse_common_iso(delta.format_common_iso()) == delta
 
@@ -272,6 +274,27 @@ class TestDateDurations:
         duration = data.draw(date_durations(two_way=True))
         ser = serialize_duration(duration)
         _ = parse_duration(ser)
+
+
+class TestDateTimeDeltasWhenever:
+    @given(data=data(), parsable=booleans())
+    def test_main(self, *, data: DataObject, parsable: bool) -> None:
+        min_value = data.draw(date_time_deltas_whenever() | none())
+        max_value = data.draw(date_time_deltas_whenever() | none())
+        with assume_does_not_raise(InvalidArgument):
+            delta = data.draw(
+                date_time_deltas_whenever(
+                    min_value=min_value, max_value=max_value, parsable=parsable
+                )
+            )
+        assert isinstance(delta, DateTimeDelta)
+        nanos = to_nanos(delta)
+        if min_value is not None:
+            assert nanos >= to_nanos(min_value)
+        if max_value is not None:
+            assert nanos <= to_nanos(max_value)
+        if parsable:
+            assert DateTimeDelta.parse_common_iso(delta.format_common_iso()) == delta
 
 
 class TestDatesTwoDigitYear:
