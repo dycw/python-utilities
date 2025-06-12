@@ -22,8 +22,7 @@ PLAIN_DATE_TIME_MAX = PlainDateTime.from_py_datetime(dt.datetime.max)  # noqa: D
 ZONED_DATE_TIME_MIN = PLAIN_DATE_TIME_MIN.assume_tz(UTC.key)
 ZONED_DATE_TIME_MAX = PLAIN_DATE_TIME_MAX.assume_tz(UTC.key)
 DATE_TIME_DELTA_MIN = DateTimeDelta(days=-3652059, seconds=-316192377600)
-# MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3652060, microseconds=-1)
-# MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
+DATE_TIME_DELTA_MAX = DateTimeDelta(days=3652059, seconds=316192377600)
 
 
 ##
@@ -116,6 +115,8 @@ class WheneverLogRecord(LogRecord):
 __all__ = [
     "DATE_MAX",
     "DATE_MIN",
+    "DATE_TIME_DELTA_MAX",
+    "DATE_TIME_DELTA_MIN",
     "PLAIN_DATE_TIME_MAX",
     "PLAIN_DATE_TIME_MIN",
     "ZONED_DATE_TIME_MAX",

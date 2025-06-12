@@ -3,23 +3,16 @@ from __future__ import annotations
 from logging import DEBUG
 from zoneinfo import ZoneInfo
 
-from hypothesis import Phase, given, reproduce_failure, settings
-from hypothesis.strategies import integers, timezones
+from hypothesis import given
+from hypothesis.strategies import timezones
 from pytest import mark, param, raises
-from whenever import (
-    Date,
-    DateDelta,
-    DateTimeDelta,
-    ZonedDateTime,
-    milliseconds,
-    nanoseconds,
-)
+from whenever import DateDelta, DateTimeDelta, ZonedDateTime
 
-from utilities.contextvars import set_global_breakpoint
 from utilities.tzdata import HongKong, Tokyo
 from utilities.whenever2 import (
     DATE_MAX,
     DATE_MIN,
+    DATE_TIME_DELTA_MAX,
     DATE_TIME_DELTA_MIN,
     NOW_UTC,
     PLAIN_DATE_TIME_MAX,
@@ -64,7 +57,6 @@ class TestMinMax:
             _ = DATE_MAX + DateDelta(days=1)
 
     @mark.only
-    # @given(n=integers(0, 100000))
     @mark.parametrize(
         "delta",
         [
@@ -79,10 +71,26 @@ class TestMinMax:
         with raises(ValueError, match="Addition result out of bounds"):
             _ = DATE_TIME_DELTA_MIN - delta
 
-    # def test_zoned_date_time_max(self) -> None:
-    #     _ = ZONED_date_time_MAX.add(nanoseconds=999)
-    #     with raises(ValueError, match="Resulting date_time is out of range"):
-    #         _ = ZONED_date_time_MAX.add(microseconds=1)
+    @mark.only
+    @mark.parametrize(
+        ("delta", "is_ok"),
+        [
+            param(DateTimeDelta(days=1), False),
+            param(DateTimeDelta(seconds=1), False),
+            param(DateTimeDelta(milliseconds=999), True),
+            param(DateTimeDelta(milliseconds=1000), False),
+            param(DateTimeDelta(microseconds=999_999), True),
+            param(DateTimeDelta(microseconds=1_000_000), False),
+            param(DateTimeDelta(nanoseconds=999_999_999), True),
+            param(DateTimeDelta(nanoseconds=1_000_000_000), False),
+        ],
+    )
+    def test_date_time_delta_max(self, *, delta: DateTimeDelta, is_ok: bool) -> None:
+        if is_ok:
+            _ = DATE_TIME_DELTA_MAX + delta
+        else:
+            with raises(ValueError, match="Addition result out of bounds"):
+                _ = DATE_TIME_DELTA_MAX + delta
 
     def test_plain_date_time_min(self) -> None:
         with raises(ValueError, match=r"Result of subtract\(\) out of range"):
