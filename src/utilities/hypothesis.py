@@ -199,6 +199,9 @@ def date_deltas_whenever(
             ...
         case _ as never:
             assert_never(never)
+    parsable_ = draw2(draw, parsable)
+    if parsable_:
+        zz
     min_years, min_months, min_days = min_value_.in_years_months_days()
     assert min_years == 0
     assert min_months == 0
