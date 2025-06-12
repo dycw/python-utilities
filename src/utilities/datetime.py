@@ -21,7 +21,7 @@ from utilities.iterables import OneEmptyError, one
 from utilities.math import SafeRoundError, round_, safe_round
 from utilities.platform import SYSTEM
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import MaybeStr
+from utilities.types import MaybeCallablePyDate, MaybeCallablePyDateTime, MaybeStr
 from utilities.typing import is_instance_gen
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
