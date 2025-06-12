@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from dataclasses import dataclass
 from enum import Enum, auto
 from functools import partial
@@ -23,16 +22,15 @@ from hypothesis.strategies import (
     recursive,
     sampled_from,
     times,
-    timezones,
     tuples,
     uuids,
 )
 from polars import DataFrame, Int64
 from pytest import raises
+from whenever import DateTimeDelta
 
 import utilities.math
 import utilities.operator
-from tests.conftest import IS_CI_AND_WINDOWS
 from tests.test_typing_funcs.with_future import (
     DataClassFutureCustomEquality,
     DataClassFutureDefaultInInitChild,
@@ -60,6 +58,7 @@ from utilities.hypothesis import (
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.operator import IsEqualError
 from utilities.polars import are_frames_equal
+from utilities.whenever2 import get_now
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -106,11 +105,12 @@ def base_objects(
         | timedeltas_2w()
         | uuids()
         | versions()
+        | zoned_datetimes(
+            min_value=get_now().py_datetime(),
+            max_value=(get_now() + DateTimeDelta(years=1)).py_datetime(),
+            valid=True,
+        )
     )
-    if IS_CI_AND_WINDOWS:
-        base |= zoned_datetimes()
-    else:
-        base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
     if dataclass_custom_equality:
         base |= builds(DataClassFutureCustomEquality)
     if dataclass_default_in_init_child:
@@ -348,8 +348,8 @@ class TestIsEqual:
         assert utilities.operator.is_equal(first, second, abs_tol=1e-8)
 
     @given(
-        x=dates() | datetimes() | zoned_datetimes(time_zone=timezones()),
-        y=dates() | datetimes() | zoned_datetimes(time_zone=timezones()),
+        x=dates() | datetimes() | zoned_datetimes(),
+        y=dates() | datetimes() | zoned_datetimes(),
     )
     def test_dates_or_datetimes(self, *, x: DateOrDateTime, y: DateOrDateTime) -> None:
         result = utilities.operator.is_equal(x, y)
