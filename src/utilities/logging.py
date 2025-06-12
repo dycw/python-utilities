@@ -34,7 +34,6 @@ from whenever import PlainDateTime, ZonedDateTime
 
 from utilities.atomicwrites import move_many
 from utilities.dataclasses import replace_non_sentinel
-from utilities.datetime import parse_datetime_compact, serialize_compact
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.pathlib import ensure_suffix, get_path

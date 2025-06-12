@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, override
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 
-from utilities.whenever2 import get_now, get_now_local, to_local_plain_sec
+from utilities.whenever2 import get_now, to_local_plain_sec
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

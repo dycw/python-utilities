@@ -30,14 +30,23 @@ from utilities.reprlib import (
 from utilities.tzlocal import get_local_time_zone
 from utilities.version import get_version
 from utilities.whenever import serialize_duration, serialize_zoned_datetime
-from utilities.whenever2 import get_now, get_now_local, to_local_plain_sec
+from utilities.whenever2 import (
+    get_now,
+    get_now_local,
+    to_local_plain_sec,
+    to_zoned_date_time,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
     from traceback import FrameSummary
     from types import TracebackType
 
-    from utilities.types import MaybeCallablePyPathLike, MaybeCallablePyDateTime, PathLike
+    from utilities.types import (
+        MaybeCallablePathLike,
+        MaybeCallableZonedDateTime,
+        PathLike,
+    )
     from utilities.version import MaybeCallableVersionLike
 
 
@@ -52,7 +61,7 @@ def format_exception_stack(
     /,
     *,
     header: bool = False,
-    start: MaybeCallablePyDateTime | None = _START,
+    start: MaybeCallableZonedDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
     capture_locals: bool = False,
     max_width: int = RICH_MAX_WIDTH,
@@ -83,21 +92,18 @@ def format_exception_stack(
 
 def _yield_header_lines(
     *,
-    start: MaybeCallablePyDateTime | None = _START,
+    start: MaybeCallableZonedDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
 ) -> Iterator[str]:
     """Yield the header lines."""
     now = get_now()
-    start_use = get_datetime(datetime=start)
-    start_use = (
-        None if start_use is None else start_use.astimezone(get_local_time_zone())
-    )
+    start_use = to_zoned_date_time(date_time=start)
     yield f"Date/time | {to_local_plain_sec(now)}"
-    start_str = "" if start_use is None else serialize_zoned_datetime(start_use)
+    start_str = "" if start_use is None else to_local_plain_sec(start_use)
     yield f"Started   | {start_str}"
-    duration = None if start_use is None else (now - start_use)
-    duration_str = "" if duration is None else serialize_duration(duration)
-    yield f"Duration  | {duration_str}"
+    delta = None if start_use is None else (now - start_use)
+    delta_str = "" if delta is None else delta.format_common_iso()
+    yield f"Duration  | {delta_str}"
     yield f"User      | {getuser()}"
     yield f"Host      | {gethostname()}"
     version_use = "" if version is None else get_version(version=version)
@@ -194,7 +200,7 @@ def _trim_path(path: PathLike, pattern: str, /) -> Path | None:
 
 def make_except_hook(
     *,
-    start: MaybeCallablePyDateTime | None = _START,
+    start: MaybeCallableDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
     max_width: int = RICH_MAX_WIDTH,
@@ -229,7 +235,7 @@ def _make_except_hook_inner(
     traceback: TracebackType | None,
     /,
     *,
-    start: MaybeCallablePyDateTime | None = _START,
+    start: MaybeCallableZonedDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
     max_width: int = RICH_MAX_WIDTH,
@@ -249,7 +255,7 @@ def _make_except_hook_inner(
     if path is not None:
         path = (
             get_path(path=path)
-            .joinpath(serialize_compact(get_now_local()))
+            .joinpath(to_local_plain_sec(get_now()))
             .with_suffix(".txt")
         )
         full = format_exception_stack(
