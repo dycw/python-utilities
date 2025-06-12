@@ -17,6 +17,7 @@ from whenever import (
 )
 
 from utilities.sentinel import Sentinel, sentinel
+from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
@@ -174,6 +175,14 @@ def to_zoned_date_time(
 ##
 
 
+def to_local_plain_sec(datetime: ZonedDateTime, /) -> PlainDateTime:
+    """Convert a zoned datetime to the local, plain datetime."""
+    return datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
+
+
+##
+
+
 class WheneverLogRecord(LogRecord):
     """Log record powered by `whenever`."""
 
@@ -264,4 +273,5 @@ __all__ = [
     "get_today_local",
     "to_date",
     "to_zoned_date_time",
+    "to_local_plain_sec",
 ]

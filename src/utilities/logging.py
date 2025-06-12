@@ -46,7 +46,7 @@ from utilities.re import (
 )
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
-from utilities.whenever import (
+from utilities.whenever2 import (
     WheneverLogRecord,
     get_now,
     get_now_local,
