@@ -260,8 +260,9 @@ class TestZonedDateTimePeriod:
     ) -> None:
         plain_start, plain_end = datetimes
         time_zone1, time_zone2 = time_zones
-        start = (plain_start - DAY).assume_tz(time_zone1.key)
-        end = (plain_end + DAY).assume_tz(time_zone2.key)
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            start = (plain_start - DAY).assume_tz(time_zone1.key)
+            end = (plain_end + DAY).assume_tz(time_zone2.key)
         with raises(
             _PeriodTimeZoneError,
             match="Period must contain exactly one time zone; got .* and .*",
