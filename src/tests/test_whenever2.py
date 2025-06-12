@@ -10,6 +10,8 @@ from whenever import DateDelta, DateTimeDelta, ZonedDateTime
 
 from utilities.tzdata import HongKong, Tokyo
 from utilities.whenever2 import (
+    DATE_DELTA_MAX,
+    DATE_DELTA_MIN,
     DATE_MAX,
     DATE_MIN,
     DATE_TIME_DELTA_MAX,
@@ -56,7 +58,14 @@ class TestMinMax:
         with raises(ValueError, match="Resulting date out of range"):
             _ = DATE_MAX + DateDelta(days=1)
 
-    @mark.only
+    def test_date_delta_min(self) -> None:
+        with raises(ValueError, match="Addition result out of bounds"):
+            _ = DATE_DELTA_MIN - DateDelta(days=1)
+
+    def test_date_delta_max(self) -> None:
+        with raises(ValueError, match="Addition result out of bounds"):
+            _ = DATE_DELTA_MAX + DateDelta(days=1)
+
     @mark.parametrize(
         "delta",
         [
@@ -71,7 +80,6 @@ class TestMinMax:
         with raises(ValueError, match="Addition result out of bounds"):
             _ = DATE_TIME_DELTA_MIN - delta
 
-    @mark.only
     @mark.parametrize(
         ("delta", "is_ok"),
         [

@@ -23,6 +23,8 @@ ZONED_DATE_TIME_MIN = PLAIN_DATE_TIME_MIN.assume_tz(UTC.key)
 ZONED_DATE_TIME_MAX = PLAIN_DATE_TIME_MAX.assume_tz(UTC.key)
 DATE_TIME_DELTA_MIN = DateTimeDelta(days=-3652059, seconds=-316192377600)
 DATE_TIME_DELTA_MAX = DateTimeDelta(days=3652059, seconds=316192377600)
+DATE_DELTA_MIN = DATE_TIME_DELTA_MIN.date_part()
+DATE_DELTA_MAX = DATE_TIME_DELTA_MAX.date_part()
 
 
 ##
@@ -113,6 +115,8 @@ class WheneverLogRecord(LogRecord):
 
 
 __all__ = [
+    "DATE_DELTA_MAX",
+    "DATE_DELTA_MIN",
     "DATE_MAX",
     "DATE_MIN",
     "DATE_TIME_DELTA_MAX",
