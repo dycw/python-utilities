@@ -136,6 +136,7 @@ from utilities.whenever import (
     serialize_duration,
     serialize_timedelta,
 )
+from utilities.whenever2 import to_nanos
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -292,25 +293,11 @@ class TestDateTimeDeltasWhenever:
                 )
             )
         assert isinstance(delta, DateTimeDelta)
-        months, days, secs, nanos = delta.in_months_days_secs_nanos()
-        assert months == 0
-        sec_factor = 1e9
-        day_factor = 24 * 60 * 60 * sec_factor
-        total = day_factor * days + sec_factor * secs + nanos
+        nanos = to_nanos(delta)
         if min_value is not None:
-            min_months, min_days, min_secs, min_nanos = (
-                min_value.in_months_days_secs_nanos()
-            )
-            assert min_months == 0
-            min_total = day_factor * min_days + sec_factor * min_secs + min_nanos
-            assert total >= min_total
+            assert nanos >= to_nanos(min_value)
         if max_value is not None:
-            max_months, max_days, max_secs, max_nanos = (
-                max_value.in_months_days_secs_nanos()
-            )
-            assert max_months == 0
-            max_total = day_factor * max_days + sec_factor * max_secs + max_nanos
-            assert total <= max_total
+            assert nanos <= to_nanos(max_value)
         if parsable:
             assert DateTimeDelta.parse_common_iso(delta.format_common_iso()) == delta
 

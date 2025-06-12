@@ -5,9 +5,9 @@ from logging import DEBUG
 from typing import TYPE_CHECKING, Self
 from zoneinfo import ZoneInfo
 
-from hypothesis import given
+from hypothesis import Phase, assume, given, reproduce_failure, settings
 from hypothesis.strategies import integers, just, none, timezones
-from pytest import raises
+from pytest import mark, param, raises
 from whenever import (
     Date,
     DateDelta,
@@ -18,6 +18,7 @@ from whenever import (
 )
 
 from tests.conftest import IS_CI
+from utilities.contextvars import set_global_breakpoint
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -167,20 +168,14 @@ class TestMinMax:
             _ = DATE_DELTA_MAX + DateDelta(days=1)
 
     def test_date_delta_parsable_min(self) -> None:
-        def func(delta: DateDelta, /) -> None:
-            _ = DateDelta.parse_common_iso(delta.format_common_iso())
-
-        _ = func(DATE_DELTA_PARSABLE_MIN)
+        self._format_parse_date_delta(DATE_DELTA_PARSABLE_MIN)
         with raises(ValueError, match="Invalid format: '.*'"):
-            _ = func(DATE_DELTA_PARSABLE_MIN - DateDelta(days=1))
+            self._format_parse_date_delta(DATE_DELTA_PARSABLE_MIN - DateDelta(days=1))
 
     def test_date_delta_parsable_max(self) -> None:
-        def func(delta: DateDelta, /) -> None:
-            _ = DateDelta.parse_common_iso(delta.format_common_iso())
-
-        _ = func(DATE_DELTA_PARSABLE_MAX)
+        self._format_parse_date_delta(DATE_DELTA_PARSABLE_MAX)
         with raises(ValueError, match="Invalid format: '.*'"):
-            _ = func(DATE_DELTA_PARSABLE_MAX + DateDelta(days=1))
+            self._format_parse_date_delta(DATE_DELTA_PARSABLE_MAX + DateDelta(days=1))
 
     def test_date_time_delta_min(self) -> None:
         nanos = to_nanos(DATE_TIME_DELTA_MIN)
@@ -193,20 +188,16 @@ class TestMinMax:
             _ = to_date_time_delta(nanos + 1)
 
     def test_date_time_delta_parsable_min(self) -> None:
-        def func(delta: DateTimeDelta, /) -> None:
-            _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
-
-        _ = func(DATE_TIME_DELTA_PARSABLE_MIN)
-        with raises(ValueError, match="Addition result out of bounds"):
-            _ = func(DATE_TIME_DELTA_PARSABLE_MIN - DateTimeDelta(nanoseconds=1))
+        self._format_parse_date_time_delta(DATE_TIME_DELTA_PARSABLE_MIN)
+        nanos = to_nanos(DATE_TIME_DELTA_PARSABLE_MIN)
+        with raises(ValueError, match="Invalid format or out of range: '.*'"):
+            self._format_parse_date_time_delta(to_date_time_delta(nanos - 1))
 
     def test_date_time_delta_parsable_max(self) -> None:
-        def func(delta: DateTimeDelta, /) -> None:
-            _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
-
-        _ = func(DATE_TIME_DELTA_PARSABLE_MAX)
+        self._format_parse_date_time_delta(DATE_TIME_DELTA_PARSABLE_MAX)
+        nanos = to_nanos(DATE_TIME_DELTA_PARSABLE_MAX)
         with raises(ValueError, match="Invalid format or out of range: '.*'"):
-            _ = func(DATE_TIME_DELTA_PARSABLE_MAX + TimeDelta(nanoseconds=1))
+            _ = self._format_parse_date_time_delta(to_date_time_delta(nanos + 1))
 
     def test_plain_date_time_min(self) -> None:
         with raises(ValueError, match=r"Result of subtract\(\) out of range"):
@@ -235,6 +226,12 @@ class TestMinMax:
         _ = ZONED_DATE_TIME_MAX.add(nanoseconds=999)
         with raises(ValueError, match="Instant is out of range"):
             _ = ZONED_DATE_TIME_MAX.add(microseconds=1)
+
+    def _format_parse_date_delta(self, delta: DateDelta, /) -> None:
+        _ = DateDelta.parse_common_iso(delta.format_common_iso())
+
+    def _format_parse_date_time_delta(self, delta: DateTimeDelta, /) -> None:
+        _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
 
 
 class TestToDate:

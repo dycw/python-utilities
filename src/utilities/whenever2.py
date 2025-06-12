@@ -15,6 +15,8 @@ from whenever import (
     Time,
     TimeDelta,
     ZonedDateTime,
+    microseconds,
+    milliseconds,
 )
 
 from utilities.datetime import maybe_sub_pct_y
@@ -74,8 +76,24 @@ TIME_DELTA_MIN = TimeDelta(hours=-87831216)
 TIME_DELTA_MAX = TimeDelta(hours=87831216)
 
 
-DATE_TIME_DELTA_PARSABLE_MIN = DateTimeDelta(days=-999999, seconds=-316192377600)
-DATE_TIME_DELTA_PARSABLE_MAX = DateTimeDelta(days=999999, seconds=316192377600)
+DATE_TIME_DELTA_PARSABLE_MIN = DateTimeDelta(
+    days=-142857,
+    hours=-23,
+    minutes=-59,
+    seconds=-59,
+    milliseconds=-999,
+    microseconds=-999,
+    nanoseconds=-999,
+)
+DATE_TIME_DELTA_PARSABLE_MAX = DateTimeDelta(
+    weeks=142857,
+    hours=23,
+    minutes=59,
+    seconds=59,
+    milliseconds=999,
+    microseconds=999,
+    nanoseconds=999,
+)
 DATE_DELTA_PARSABLE_MIN = DateDelta(days=-999999)
 DATE_DELTA_PARSABLE_MAX = DateDelta(days=999999)
 
