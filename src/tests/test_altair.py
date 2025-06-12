@@ -29,11 +29,11 @@ from utilities.altair import (
     save_charts_as_pdf,
     vconcat_charts,
 )
-from utilities.datetime import get_now
 from utilities.functions import ensure_class
 from utilities.hypothesis import text_ascii, zoned_datetimes
 from utilities.polars import DatetimeUTC, zoned_datetime
 from utilities.tzdata import HongKong, Tokyo
+from utilities.whenever2 import get_now
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -132,7 +132,7 @@ class TestPlotIntradayDataFrame:
 
     def test_non_finite(self) -> None:
         data = DataFrame(
-            data=[(get_now(), inf)],
+            data=[(get_now().py_datetime(), inf)],
             schema={"datetime": DatetimeUTC, "value": Float64},
             orient="row",
         )
