@@ -106,8 +106,8 @@ def base_objects(
         | uuids()
         | versions()
         | zoned_datetimes(
-            min_value=get_now(),
-            max_value=get_now() + DateTimeDelta(years=1),
+            min_value=get_now().py_datetime(),
+            max_value=(get_now() + DateTimeDelta(years=1)).py_datetime(),
             valid=True,
         )
     )
