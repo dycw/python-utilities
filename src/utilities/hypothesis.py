@@ -184,13 +184,6 @@ def date_deltas_whenever(
     parsable: MaybeSearchStrategy[bool] = False,
 ) -> DateDelta:
     """Strategy for generating date deltas."""
-    from utilities.whenever2 import (
-        DATE_DELTA_MAX,
-        DATE_DELTA_MIN,
-        DATE_DELTA_PARSABLE_MAX,
-        DATE_DELTA_PARSABLE_MIN,
-    )
-
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     match min_value_:
         case None:
@@ -1574,7 +1567,6 @@ __all__ = [
     "numbers",
     "pairs",
     "paths",
-    "plain_datetimes",
     "plain_datetimes",
     "plain_datetimes_whenever",
     "random_states",
