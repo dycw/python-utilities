@@ -1,28 +1,25 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast, override
+from typing import TYPE_CHECKING, Any, Literal, cast, override
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, booleans, data, sampled_from, times
-from luigi import BoolParameter, Parameter, Task
+from hypothesis.strategies import booleans
+from luigi import BoolParameter, Task
+from pytest import mark, param
 
-from utilities.hypothesis import namespace_mixins, temp_paths, zoned_datetimes
+from utilities.hypothesis import namespace_mixins, temp_paths, zoned_datetimes_whenever
 from utilities.luigi import (
-    DateHourParameter,
-    DateMinuteParameter,
-    DateSecondParameter,
     ExternalFile,
     ExternalTask,
     PathTarget,
-    TimeParameter,
+    ZonedDateTimeParameter,
     _ExternalTaskDummyTarget,
     build,
 )
-from utilities.whenever import serialize_time, serialize_zoned_datetime
 
 if TYPE_CHECKING:
-    import datetime as dt
+    from whenever import ZonedDateTime
 
 
 class TestBuild:
@@ -34,20 +31,17 @@ class TestBuild:
 
 
 class TestDateTimeParameter:
-    @given(
-        data=data(),
-        param_cls=sampled_from([
-            DateHourParameter,
-            DateMinuteParameter,
-            DateSecondParameter,
-        ]),
-        datetime=zoned_datetimes(),
-    )
+    @given(datetime=zoned_datetimes_whenever())
+    @mark.parametrize("type_", [param("datetime"), param("str")])
     def test_main(
-        self, *, data: DataObject, param_cls: type[Parameter], datetime: dt.datetime
+        self, *, datetime: ZonedDateTime, type_: Literal["datetime", "str"]
     ) -> None:
-        param = param_cls()
-        input_ = data.draw(sampled_from([datetime, serialize_zoned_datetime(datetime)]))
+        param = ZonedDateTimeParameter()
+        match type_:
+            case "datetime":
+                input_ = datetime
+            case "str":
+                input_ = datetime.format_common_iso()
         norm = param.normalize(input_)
         assert param.parse(param.serialize(norm)) == norm
 
@@ -90,12 +84,3 @@ class TestPathTarget:
         assert not target.exists()
         path.touch()
         assert target.exists()
-
-
-class TestTimeParameter:
-    @given(data=data(), time=times())
-    def test_main(self, *, data: DataObject, time: dt.time) -> None:
-        param = TimeParameter()
-        input_ = data.draw(sampled_from([time, serialize_time(time)]))
-        norm = param.normalize(input_)
-        assert param.parse(param.serialize(norm)) == time
