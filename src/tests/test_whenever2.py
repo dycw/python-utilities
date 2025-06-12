@@ -8,6 +8,7 @@ from hypothesis.strategies import timezones
 from pytest import mark, param, raises
 from whenever import DateDelta, DateTimeDelta, TimeDelta, ZonedDateTime
 
+from utilities.hypothesis import zoned_datetimes_whenever
 from utilities.tzdata import HongKong, Tokyo
 from utilities.whenever2 import (
     DATE_DELTA_MAX,
@@ -24,10 +25,35 @@ from utilities.whenever2 import (
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
     WheneverLogRecord,
+    from_timestamp,
+    from_timestamp_millis,
+    from_timestamp_nanos,
     get_now,
     get_now_local,
 )
 from utilities.zoneinfo import UTC
+
+
+class TestFromTimeStamp:
+    @given(datetime=zoned_datetimes_whenever(time_zone=timezones()))
+    def test_main(self, *, datetime: ZonedDateTime) -> None:
+        datetime = datetime.round("second")
+        timestamp = datetime.to_tz(UTC.key).timestamp()
+        result = from_timestamp(timestamp, time_zone=ZoneInfo(datetime.tz))
+        assert result == datetime
+
+    @given(datetime=zoned_datetimes_whenever(time_zone=timezones()))
+    def test_millis(self, *, datetime: ZonedDateTime) -> None:
+        datetime = datetime.round("millisecond")
+        timestamp = datetime.to_tz(UTC.key).timestamp_millis()
+        result = from_timestamp_millis(timestamp, time_zone=ZoneInfo(datetime.tz))
+        assert result == datetime
+
+    @given(datetime=zoned_datetimes_whenever(time_zone=timezones()))
+    def test_nanos(self, *, datetime: ZonedDateTime) -> None:
+        timestamp = datetime.to_tz(UTC.key).timestamp_nanos()
+        result = from_timestamp_nanos(timestamp, time_zone=ZoneInfo(datetime.tz))
+        assert result == datetime
 
 
 class TestGetNow:
