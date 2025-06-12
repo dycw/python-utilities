@@ -7,10 +7,11 @@ from typing import TYPE_CHECKING, Any, override
 
 from whenever import Date, DateTimeDelta, PlainDateTime, ZonedDateTime
 
-from utilities.tzlocal import LOCAL_TIME_ZONE
 from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
+    from zoneinfo import ZoneInfo
+
     from utilities.types import TimeZoneLike
 
 
@@ -26,6 +27,11 @@ DATE_DELTA_MIN = DATE_TIME_DELTA_MIN.date_part()
 DATE_DELTA_MAX = DATE_TIME_DELTA_MAX.date_part()
 TIME_DELTA_MIN = DATE_TIME_DELTA_MIN.time_part()
 TIME_DELTA_MAX = DATE_TIME_DELTA_MAX.time_part()
+
+DATE_TIME_DELTA_PARSABLE_MIN = DateTimeDelta(days=-999999)
+DATE_TIME_DELTA_PARSABLE_MAX = DateTimeDelta(days=999999)
+DATE_DELTA_PARSABLE_MIN = DATE_TIME_DELTA_PARSABLE_MIN.date_part()
+DATE_DELTA_PARSABLE_MAX = DATE_TIME_DELTA_PARSABLE_MAX.date_part()
 
 
 ##
@@ -88,7 +94,24 @@ class WheneverLogRecord(LogRecord):
         )
         length = self._get_length()
         plain = format(get_now_local().to_plain().format_common_iso(), f"{length}s")
-        self.zoned_datetime = f"{plain}[{LOCAL_TIME_ZONE.key}]"
+        time_zone = self._get_time_zone_key()
+        self.zoned_datetime = f"{plain}[{time_zone}]"
+
+    @classmethod
+    @cache
+    def _get_time_zone(cls) -> ZoneInfo:
+        """Get the local timezone."""
+        try:
+            from utilities.tzlocal import get_local_time_zone
+        except ModuleNotFoundError:  # pragma: no cover
+            return UTC
+        return get_local_time_zone()
+
+    @classmethod
+    @cache
+    def _get_time_zone_key(cls) -> str:
+        """Get the local timezone as a string."""
+        return cls._get_time_zone().key
 
     @classmethod
     @cache
@@ -101,10 +124,14 @@ class WheneverLogRecord(LogRecord):
 __all__ = [
     "DATE_DELTA_MAX",
     "DATE_DELTA_MIN",
+    "DATE_DELTA_PARSABLE_MAX",
+    "DATE_DELTA_PARSABLE_MIN",
     "DATE_MAX",
     "DATE_MIN",
     "DATE_TIME_DELTA_MAX",
     "DATE_TIME_DELTA_MIN",
+    "DATE_TIME_DELTA_PARSABLE_MAX",
+    "DATE_TIME_DELTA_PARSABLE_MIN",
     "PLAIN_DATE_TIME_MAX",
     "PLAIN_DATE_TIME_MIN",
     "TIME_DELTA_MAX",

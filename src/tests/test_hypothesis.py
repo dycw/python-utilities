@@ -183,14 +183,16 @@ class TestBoolArrays:
         assert array.shape == shape
 
 
-class TestDateDeltas:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
+class TestDateDeltasWhenever:
+    @given(data=data(), parsable=booleans())
+    def test_main(self, *, data: DataObject, parsable: bool) -> None:
         min_value = data.draw(date_deltas_whenever() | none())
         max_value = data.draw(date_deltas_whenever() | none())
         with assume_does_not_raise(InvalidArgument):
             delta = data.draw(
-                date_deltas_whenever(min_value=min_value, max_value=max_value)
+                date_deltas_whenever(
+                    min_value=min_value, max_value=max_value, parsable=parsable
+                )
             )
         assert isinstance(delta, DateDelta)
         years, months, days = delta.in_years_months_days()
@@ -206,6 +208,8 @@ class TestDateDeltas:
             assert max_years == 0
             assert max_months == 0
             assert days <= max_days
+        if parsable:
+            assert DateDelta.parse_common_iso(delta.format_common_iso()) == delta
 
 
 class TestDateDurations:
@@ -295,6 +299,7 @@ class TestDatesWhenever:
         with assume_does_not_raise(InvalidArgument):
             date = data.draw(dates_whenever(min_value=min_value, max_value=max_value))
         assert isinstance(date, Date)
+        assert Date.parse_common_iso(date.format_common_iso()) == date
         if min_value is not None:
             assert date >= min_value
         if max_value is not None:
@@ -894,6 +899,7 @@ class TestPlainDateTimesWhenever:
                 plain_datetimes_whenever(min_value=min_value, max_value=max_value)
             )
         assert isinstance(datetime, PlainDateTime)
+        assert PlainDateTime.parse_common_iso(datetime.format_common_iso()) == datetime
         if min_value is not None:
             assert datetime >= min_value
         if max_value is not None:
@@ -1273,6 +1279,7 @@ class TestZonedDateTimesWhenever:
                 )
             )
         assert isinstance(datetime, ZonedDateTime)
+        assert ZonedDateTime.parse_common_iso(datetime.format_common_iso()) == datetime
         assert datetime.tz == time_zone.key
         if min_value is not None:
             assert datetime >= min_value
