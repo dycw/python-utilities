@@ -37,7 +37,6 @@ from whenever import (
 
 from utilities.functions import ensure_int
 from utilities.hypothesis import (
-    MaybeSearchStrategy,
     Shape,
     _Draw2DefaultGeneratedSentinelError,
     _Draw2InputResolvedToSentinelError,
@@ -57,7 +56,6 @@ from utilities.hypothesis import (
     int64s,
     int_arrays,
     lists_fixed_length,
-    min_and_maybe_max_sizes,
     namespace_mixins,
     numbers,
     pairs,
@@ -552,33 +550,6 @@ class TestListsFixedLength:
             assert len(set(result)) == len(result)
         if sorted_:
             assert sorted(result) == result
-
-
-class TestMinAndMaybeMaxSizes:
-    @given(
-        data=data(),
-        min_value=integers(min_value=0) | none() | just(integers(min_value=0) | none()),
-        max_value=integers(min_value=0)
-        | none()
-        | sentinels()
-        | just(integers(min_value=0) | none() | sentinels()),
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        min_value: MaybeSearchStrategy[int | None],
-        max_value: MaybeSearchStrategy[int | None | Sentinel],
-    ) -> None:
-        min_size, max_size = data.draw(
-            min_and_maybe_max_sizes(min_value=min_value, max_value=max_value)
-        )
-        assert min_size >= 0
-        assert (max_size is None) or (min_size <= max_size)
-        if isinstance(min_value, int):
-            assert min_size == min_value
-        if isinstance(max_value, int) or (max_value is None):
-            assert max_size == max_value
 
 
 class TestNamespaceMixins:
