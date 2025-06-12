@@ -86,9 +86,9 @@ class TestBasicConfig:
         name = unique_str()
         with set_log_factory:
             basic_config(obj=name, filters=filters, plain=plain)
-            getLogger(name).warning("message")
-            record = one(r for r in caplog.records if r.name == name)
-            assert record.message == "message"
+        getLogger(name).warning("message")
+        record = one(r for r in caplog.records if r.name == name)
+        assert record.message == "message"
 
     def test_none(self, *, set_log_factory: AbstractContextManager[None]) -> None:
         with set_log_factory:
@@ -246,7 +246,7 @@ class TestGetFormatter:
             formatter = get_formatter(
                 plain=plain, color_field_styles=color_field_styles
             )
-            assert isinstance(formatter, Formatter)
+        assert isinstance(formatter, Formatter)
 
 
 class TestGetLogger:
@@ -412,8 +412,7 @@ class TestSizeAndTimeRotatingFileHandler:
         filename = tmp_path.joinpath("log")
         logger.addHandler(SizeAndTimeRotatingFileHandler(filename=filename))
         logger.warning("message")
-        with filename.open() as fh:
-            content = fh.read()
+        content = filename.read_text()
         assert content == "message\n"
 
     def test_create_parents(self, *, tmp_path: Path) -> None:
