@@ -207,9 +207,9 @@ class TestZonedDateTimePeriod:
     )
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_sub(
-        self, *, dates: tuple[ZonedDateTime, ZonedDateTime], delta: TimeDelta
+        self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime], delta: TimeDelta
     ) -> None:
-        start, end = dates
+        start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
         with assume_does_not_raise(ValueError, match="Instant is out of range"):
             result = period - delta
