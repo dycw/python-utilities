@@ -928,7 +928,9 @@ class TestYieldFields:
         assert get_args(args[0]) == ("true", "false")
 
     def test_class_orjson_log_record(self) -> None:
-        result = list(yield_fields(OrjsonLogRecord, globalns=globals()))
+        result = list(
+            yield_fields(OrjsonLogRecord, globalns=globals(), warn_name_errors=True)
+        )
         exp_head = [
             _YieldFieldsClass(name="name", type_=str, kw_only=True),
             _YieldFieldsClass(name="message", type_=str, kw_only=True),
