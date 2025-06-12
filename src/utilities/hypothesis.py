@@ -977,22 +977,28 @@ def plain_datetimes_whenever(
     """Strategy for generating plain datetimes."""
     from whenever import PlainDateTime
 
+    from utilities.whenever2 import PLAIN_DATETIME_MAX, PLAIN_DATETIME_MIN
+
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     match min_value_:
         case None:
-            min_value_ = DATETIME_MIN_NAIVE
+            min_value_ = PLAIN_DATETIME_MIN
         case PlainDateTime():
-            min_value_ = min_value_.py_datetime()
+            ...
         case _ as never:
             assert_never(never)
     match max_value_:
         case None:
-            max_value_ = DATETIME_MAX_NAIVE
+            max_value_ = PLAIN_DATETIME_MAX
         case PlainDateTime():
-            max_value_ = max_value_.py_datetime()
+            ...
         case _ as never:
             assert_never(never)
-    py_datetime = draw(datetimes(min_value=min_value_, max_value=max_value_))
+    py_datetime = draw(
+        datetimes(
+            min_value=min_value_.py_datetime(), max_value=max_value_.py_datetime()
+        )
+    )
     return PlainDateTime.from_py_datetime(py_datetime)
 
 
@@ -1476,16 +1482,11 @@ def zoned_datetimes_whenever(
     """Strategy for generating zoned datetimes."""
     from whenever import PlainDateTime, ZonedDateTime
 
-    from utilities.whenever import (
-        CheckValidZonedDateTimeError,
-        check_valid_zoned_datetime,
-    )
-
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     time_zone_ = ensure_time_zone(draw2(draw, time_zone))
     match min_value_:
         case None:
-            min_value = DATETIME_MIN_NAIVE
+            ...
         case PlainDateTime():
             min_value_ = min_value_.py_datetime()
         case ZonedDateTime():
@@ -1494,7 +1495,7 @@ def zoned_datetimes_whenever(
             assert_never(never)
     match max_value_:
         case None:
-            max_value = DATETIME_MAX_NAIVE
+            ...
         case PlainDateTime():
             max_value_ = max_value_.py_datetime()
         case ZonedDateTime():
@@ -1504,14 +1505,7 @@ def zoned_datetimes_whenever(
     py_datetime = draw(
         plain_datetimes_whenever(min_value=min_value_, max_value=max_value_)
     )
-    return ZonedDateTime.from_py_datetime(py_datetime)
-    _ = assume(min_value_ <= datetime <= max_value_)
-    if valid:
-        with assume_does_not_raise(  # skipif-ci-and-windows
-            CheckValidZonedDateTimeError
-        ):
-            check_valid_zoned_datetime(datetime)
-    return datetime
+    return ZonedDateTime.from_py_datetime(py_datetime).to_tz(time_zone_.key)
 
 
 __all__ = [
