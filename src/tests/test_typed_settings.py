@@ -32,7 +32,11 @@ class TestExtendedTSConverter:
         ("test_cls", "strategy", "serialize"),
         [
             param(Date, dates_whenever(), Date.format_common_iso),
-            param(DateDelta, date_deltas_whenever(), DateDelta.format_common_iso),
+            param(
+                DateDelta,
+                date_deltas_whenever(parsable=True),
+                DateDelta.format_common_iso,
+            ),
             param(
                 PlainDateTime,
                 plain_datetimes_whenever(),
