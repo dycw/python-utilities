@@ -48,7 +48,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from whenever import Date, DateDelta, PlainDateTime, Time, TimeDelta
+from whenever import Date, DateDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
 from utilities.datetime import (
     DATETIME_MAX_NAIVE,
@@ -112,7 +112,6 @@ if TYPE_CHECKING:
 
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
-    from whenever import ZonedDateTime
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.types import Duration, MathRoundMode, Number, TimeZoneLike
@@ -1646,8 +1645,6 @@ def zoned_datetimes_whenever(
     time_zone: MaybeSearchStrategy[TimeZoneLike] = UTC,
 ) -> ZonedDateTime:
     """Strategy for generating zoned datetimes."""
-    from whenever import PlainDateTime, ZonedDateTime
-
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     time_zone_ = ensure_time_zone(draw2(draw, time_zone))
     match min_value_:
