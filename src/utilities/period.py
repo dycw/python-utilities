@@ -96,7 +96,7 @@ class ZonedDateTimePeriod:
 
     def __sub__(self, other: TimeDelta, /) -> Self:
         """Offset the period."""
-        return self.replace(start=self.start + other, end=self.end + other)
+        return self.replace(start=self.start - other, end=self.end - other)
 
     @property
     def delta(self) -> TimeDelta:

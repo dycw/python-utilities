@@ -158,8 +158,8 @@ class TestZonedDateTimePeriod:
         assert period.delta == (end - start)
 
     @given(datetimes=pairs(zoned_datetimes_whenever(), sorted=True))
-    def test_hashable(self, *, dates: tuple[ZonedDateTime, ZonedDateTime]) -> None:
-        start, end = dates
+    def test_hashable(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
+        start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
         _ = hash(period)
 
