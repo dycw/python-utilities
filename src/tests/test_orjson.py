@@ -434,7 +434,6 @@ class TestOrjsonFormatter:
 # serialize/deserialize
 
 
-@SKIPIF_CI_AND_WINDOWS
 class TestSerializeAndDeserialize:
     @given(
         obj=make_objects(

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from dataclasses import dataclass
 from enum import Enum, auto
 from functools import partial
@@ -23,7 +22,6 @@ from hypothesis.strategies import (
     recursive,
     sampled_from,
     times,
-    timezones,
     tuples,
     uuids,
 )
@@ -32,7 +30,6 @@ from pytest import raises
 
 import utilities.math
 import utilities.operator
-from tests.conftest import IS_CI_AND_WINDOWS
 from tests.test_typing_funcs.with_future import (
     DataClassFutureCustomEquality,
     DataClassFutureDefaultInInitChild,
@@ -106,11 +103,8 @@ def base_objects(
         | timedeltas_2w()
         | uuids()
         | versions()
+        | zoned_datetimes(is_valid=True)
     )
-    if IS_CI_AND_WINDOWS:
-        base |= zoned_datetimes()
-    else:
-        base |= zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
     if dataclass_custom_equality:
         base |= builds(DataClassFutureCustomEquality)
     if dataclass_default_in_init_child:
@@ -348,8 +342,8 @@ class TestIsEqual:
         assert utilities.operator.is_equal(first, second, abs_tol=1e-8)
 
     @given(
-        x=dates() | datetimes() | zoned_datetimes(time_zone=timezones()),
-        y=dates() | datetimes() | zoned_datetimes(time_zone=timezones()),
+        x=dates() | datetimes() | zoned_datetimes(),
+        y=dates() | datetimes() | zoned_datetimes(),
     )
     def test_dates_or_datetimes(self, *, x: DateOrDateTime, y: DateOrDateTime) -> None:
         result = utilities.operator.is_equal(x, y)
