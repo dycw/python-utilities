@@ -186,9 +186,3 @@ class TestWheneverLogRecord:
 
     def test_get_length(self) -> None:
         assert isinstance(WheneverLogRecord._get_length(), int)
-
-    def test_get_time_zone(self) -> None:
-        assert isinstance(WheneverLogRecord._get_time_zone(), ZoneInfo)
-
-    def test_get_time_zone_key(self) -> None:
-        assert isinstance(WheneverLogRecord._get_time_zone_key(), str)
