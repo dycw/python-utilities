@@ -1,16 +1,8 @@
 from __future__ import annotations
 
 from asyncio import sleep
-from contextlib import contextmanager
 from io import StringIO
-from logging import (
-    Formatter,
-    Logger,
-    LogRecord,
-    StreamHandler,
-    getLogger,
-    setLogRecordFactory,
-)
+from logging import Formatter, Logger, StreamHandler, getLogger
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any, cast
@@ -49,18 +41,11 @@ from utilities.typing import get_args
 from utilities.whenever2 import get_now, to_local_plain_sec
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping
+    from collections.abc import Mapping
+    from contextlib import AbstractContextManager
     from logging import _FilterType
 
     from whenever import ZonedDateTime
-
-
-@contextmanager
-def _temp_log_factory() -> Iterator[None]:
-    try:
-        yield
-    finally:
-        setLogRecordFactory(LogRecord)
 
 
 class TestAddFilters:
@@ -91,14 +76,23 @@ class TestBasicConfig:
     )
     @mark.parametrize("plain", [param(True), param(False)])
     def test_main(
-        self, *, caplog: LogCaptureFixture, filters: _FilterType | None, plain: bool
+        self,
+        *,
+        caplog: LogCaptureFixture,
+        filters: _FilterType | None,
+        plain: bool,
+        set_log_factory: AbstractContextManager[None],
     ) -> None:
         name = unique_str()
-        with _temp_log_factory():
+        with set_log_factory:
             basic_config(obj=name, filters=filters, plain=plain)
             getLogger(name).warning("message")
             record = one(r for r in caplog.records if r.name == name)
             assert record.message == "message"
+
+    def test_none(self, *, set_log_factory: AbstractContextManager[None]) -> None:
+        with set_log_factory:
+            basic_config()
 
 
 class TestComputeRolloverActions:
@@ -250,9 +244,13 @@ class TestGetFormatter:
     @mark.parametrize("plain", [param(True), param(False)])
     @mark.parametrize("color_field_styles", [param({}), param(None)])
     def test_main(
-        self, *, plain: bool, color_field_styles: Mapping[str, _FieldStyleKeys] | None
+        self,
+        *,
+        plain: bool,
+        color_field_styles: Mapping[str, _FieldStyleKeys] | None,
+        set_log_factory: AbstractContextManager[None],
     ) -> None:
-        with _temp_log_factory():
+        with set_log_factory:
             formatter = get_formatter(
                 plain=plain, color_field_styles=color_field_styles
             )

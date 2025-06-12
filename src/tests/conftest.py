@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import re
 from asyncio import sleep
-from contextlib import suppress
+from contextlib import AbstractContextManager, contextmanager, suppress
+from logging import LogRecord, setLogRecordFactory
 from os import environ
 from re import MULTILINE, Pattern
 from typing import TYPE_CHECKING, Any
@@ -16,7 +17,7 @@ from utilities.re import ExtractGroupError, extract_group
 from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
     from pathlib import Path
 
     from _pytest.fixtures import SubRequest
@@ -41,6 +42,21 @@ except ModuleNotFoundError:
     pass
 else:
     setup_hypothesis_profiles()
+
+
+# fixture - logging
+
+
+@fixture
+def set_log_factory() -> AbstractContextManager[None]:
+    @contextmanager
+    def cm() -> Iterator[None]:
+        try:
+            yield
+        finally:
+            setLogRecordFactory(LogRecord)
+
+    return cm()
 
 
 # fixtures - sqlalchemy

@@ -946,11 +946,11 @@ class GetLogRecordsOutput:
                 r for r in records if r.level <= get_logging_level_number(max_level)
             ]
         if date is not None:
-            records = [r for r in records if r.datetime.date() == date]
+            records = [r for r in records if r.date == date]
         if min_date is not None:
-            records = [r for r in records if r.datetime.date() >= min_date]
+            records = [r for r in records if r.date >= min_date]
         if max_date is not None:
-            records = [r for r in records if r.datetime.date() <= max_date]
+            records = [r for r in records if r.date <= max_date]
         if datetime is not None:
             records = [r for r in records if r.datetime == datetime]
         if min_datetime is not None:
