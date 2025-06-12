@@ -203,11 +203,16 @@ class TestDateDeltasWhenever:
                 )
             )
         assert isinstance(delta, DateDelta)
-        days = to_days(delta)
+        months, days = delta.in_months_days()
+        assert months == 0
         if min_value is not None:
-            assert days >= to_days(min_value)
+            min_months, min_days = min_value.in_months_days()
+            assert min_months == 0
+            assert days >= min_days
         if max_value is not None:
-            assert days <= to_days(max_value)
+            max_months, max_days = max_value.in_months_days()
+            assert max_months == 0
+            assert days <= max_days
         if parsable:
             assert DateDelta.parse_common_iso(delta.format_common_iso()) == delta
 
@@ -288,11 +293,18 @@ class TestDateTimeDeltasWhenever:
                 )
             )
         assert isinstance(delta, DateTimeDelta)
-        nanos = to_nanos(delta)
+        months, days, _, _ = delta.in_months_days_secs_nanos()
+        assert months == 0
         if min_value is not None:
-            assert nanos >= to_nanos(min_value)
+            min_months, min_days = min_value.date_part().in_months_days()
+            assert min_months == 0
+            assert days >= min_days
+            assert delta.time_part() >= min_value.time_part()
         if max_value is not None:
-            assert nanos <= to_nanos(max_value)
+            max_months, max_days = max_value.date_part().in_months_days()
+            assert max_months == 0
+            assert days <= max_days
+            assert delta.time_part() >= max_value.time_part()
         if parsable:
             assert DateTimeDelta.parse_common_iso(delta.format_common_iso()) == delta
 

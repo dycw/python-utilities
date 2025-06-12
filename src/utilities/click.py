@@ -92,7 +92,7 @@ class Date(ParamType):
 class DateDelta(ParamType):
     """A date-delta-valued parameter."""
 
-    name = "date delta"
+    name = "date-delta"
 
     @override
     def __repr__(self) -> str:
@@ -118,7 +118,7 @@ class DateDelta(ParamType):
 class DateTimeDelta(ParamType):
     """A date-delta-valued parameter."""
 
-    name = "date-time delta"
+    name = "date-time-delta"
 
     @override
     def __repr__(self) -> str:

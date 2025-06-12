@@ -214,11 +214,21 @@ def date_deltas_whenever(
             ...
         case _ as never:
             assert_never(never)
-    min_days = to_days(min_value_)
-    max_days = to_days(max_value_)
+    min_months, min_days = min_value_.in_months_days()
+    assert min_months == 0
+    max_months, max_days = max_value_.in_months_days()
+    assert max_months == 0
     if draw2(draw, parsable):
-        min_days = max(min_days, to_days(DATE_DELTA_PARSABLE_MIN))
-        max_days = min(max_days, to_days(DATE_DELTA_PARSABLE_MAX))
+        parsable_min_months, parsable_min_days = (
+            DATE_DELTA_PARSABLE_MIN.in_months_days()
+        )
+        assert parsable_min_months == 0
+        min_days = max(min_days, parsable_min_days)
+        parsable_max_months, parsable_max_days = (
+            DATE_DELTA_PARSABLE_MAX.in_months_days()
+        )
+        assert parsable_max_months == 0
+        max_days = min(max_days, parsable_max_days)
     days = draw(integers(min_value=min_days, max_value=max_days))
     return DateDelta(days=days)
 
@@ -313,12 +323,35 @@ def date_time_deltas_whenever(
             ...
         case _ as never:
             assert_never(never)
-    min_nanos, max_nanos = map(to_nanos, [min_value_, max_value_])
+    min_months, min_days, min_secs, min_nanos = min_value_.in_months_days_secs_nanos()
+    assert min_months == 0
+    max_months, max_days, max_secs, max_nanos = max_value_.in_months_days_secs_nanos()
+    assert max_months == 0
     if draw2(draw, parsable):
-        min_nanos = max(min_nanos, to_nanos(DATE_TIME_DELTA_PARSABLE_MIN))
-        max_nanos = min(max_nanos, to_nanos(DATE_TIME_DELTA_PARSABLE_MAX))
+        (
+            parsable_min_months,
+            parsable_min_days,
+            parsable_min_secs,
+            parsable_min_nanos,
+        ) = DATE_TIME_DELTA_PARSABLE_MIN.in_months_days_secs_nanos()
+        assert parsable_min_months == 0
+        min_days = max(min_days, parsable_min_days)
+        min_secs = max(min_secs, parsable_min_secs)
+        min_nanos = max(min_nanos, parsable_min_nanos)
+        (
+            parsable_max_months,
+            parsable_max_days,
+            parsable_max_secs,
+            parsable_max_nanos,
+        ) = DATE_TIME_DELTA_PARSABLE_MAX.in_months_days_secs_nanos()
+        assert parsable_max_months == 0
+        max_days = min(max_days, parsable_max_days)
+        max_secs = min(max_secs, parsable_max_secs)
+        max_nanos = min(max_nanos, parsable_max_nanos)
+    days = draw(integers(min_value=min_days, max_value=max_days))
+    secs = draw(integers(min_value=min_secs, max_value=max_secs))
     nanos = draw(integers(min_value=min_nanos, max_value=max_nanos))
-    return to_date_time_delta(nanos)
+    return DateTimeDelta(days=days, seconds=secs, nanoseconds=nanos)
 
 
 ##
