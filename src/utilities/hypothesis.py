@@ -116,6 +116,7 @@ from utilities.whenever2 import (
     TIME_MAX,
     TIME_MIN,
     to_date_time_delta,
+    to_days,
     to_nanos,
 )
 from utilities.zoneinfo import UTC, ensure_time_zone
@@ -213,21 +214,11 @@ def date_deltas_whenever(
             ...
         case _ as never:
             assert_never(never)
-    min_months, min_days = min_value_.in_months_days()
-    assert min_months == 0
-    max_months, max_days = max_value_.in_months_days()
-    assert max_months == 0
+    min_days = to_days(min_value_)
+    max_days = to_days(max_value_)
     if draw2(draw, parsable):
-        parsable_min_months, parsable_min_days = (
-            DATE_DELTA_PARSABLE_MIN.in_months_days()
-        )
-        assert parsable_min_months == 0
-        min_days = max(min_days, parsable_min_days)
-        parsable_max_months, parsable_max_days = (
-            DATE_DELTA_PARSABLE_MAX.in_months_days()
-        )
-        assert parsable_max_months == 0
-        max_days = min(max_days, parsable_max_days)
+        min_days = max(min_days, to_days(DATE_DELTA_PARSABLE_MIN))
+        max_days = min(max_days, to_days(DATE_DELTA_PARSABLE_MAX))
     days = draw(integers(min_value=min_days, max_value=max_days))
     return DateDelta(days=days)
 
