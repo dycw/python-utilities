@@ -167,9 +167,15 @@ def date_deltas_whenever(
     *,
     min_value: MaybeSearchStrategy[DateDelta | None] = None,
     max_value: MaybeSearchStrategy[DateDelta | None] = None,
+    parsable: MaybeSearchStrategy[bool] = False,
 ) -> DateDelta:
     """Strategy for generating date deltas."""
-    from utilities.whenever2 import DATE_DELTA_MAX, DATE_DELTA_MIN
+    from utilities.whenever2 import (
+        DATE_DELTA_MAX,
+        DATE_DELTA_MIN,
+        DATE_DELTA_PARSABLE_MAX,
+        DATE_DELTA_PARSABLE_MIN,
+    )
 
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     match min_value_:
@@ -192,6 +198,19 @@ def date_deltas_whenever(
     max_years, max_months, max_days = max_value_.in_years_months_days()
     assert max_years == 0
     assert max_months == 0
+    if draw2(draw, parsable):
+        parsable_min_years, parsable_min_months, parsable_min_days = (
+            DATE_DELTA_PARSABLE_MIN.in_years_months_days()
+        )
+        assert parsable_min_years == 0
+        assert parsable_min_months == 0
+        min_days = max(min_days, parsable_min_days)
+        parsable_max_years, parsable_max_months, parsable_max_days = (
+            DATE_DELTA_PARSABLE_MAX.in_years_months_days()
+        )
+        assert parsable_max_years == 0
+        assert parsable_max_months == 0
+        max_days = min(max_days, parsable_max_days)
     days = draw(integers(min_value=min_days, max_value=max_days))
     return DateDelta(days=days)
 
