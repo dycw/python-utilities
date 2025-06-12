@@ -226,31 +226,11 @@ class ToDaysError(Exception):
 
 def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
     """Construct a date-time delta."""
-    sign_use = sign(nanos)
-    micros, nanos = divmod(nanos, int(1e3))
-    millis, micros = divmod(micros, int(1e3))
-    secs, millis = divmod(millis, int(1e3))
-    mins, secs = divmod(secs, 60)
-    hours, mins = divmod(mins, 60)
-    days, hours = divmod(hours, 24)
+    components = _to_time_delta_components(nanos)
+    days, hours = divmod(components.hours, 24)
     weeks, days = divmod(days, 7)
-    match sign_use:
+    match sign(nanos):  # pragma: no cover
         case 1:
-            if nanos < 0:
-                nanos += int(1e3)
-                micros -= 1
-            if micros < 0:
-                micros += int(1e3)
-                millis -= 1
-            if millis < 0:
-                millis += int(1e3)
-                secs -= 1
-            if secs < 0:
-                secs += 60
-                mins -= 1
-            if mins < 0:
-                mins += 60
-                hours -= 1
             if hours < 0:
                 hours += 24
                 days -= 1
@@ -258,21 +238,6 @@ def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
                 days += 7
                 weeks -= 1
         case -1:
-            if nanos > 0:
-                nanos -= int(1e3)
-                micros += 1
-            if micros > 0:
-                micros -= int(1e3)
-                millis += 1
-            if millis > 0:
-                millis -= int(1e3)
-                secs += 1
-            if secs > 0:
-                secs -= 60
-                mins += 1
-            if mins > 0:
-                mins -= 60
-                hours += 1
             if hours > 0:
                 hours -= 24
                 days += 1
@@ -285,11 +250,11 @@ def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
         weeks=weeks,
         days=days,
         hours=hours,
-        minutes=mins,
-        seconds=secs,
-        microseconds=micros,
-        milliseconds=millis,
-        nanoseconds=nanos,
+        minutes=components.minutes,
+        seconds=components.seconds,
+        microseconds=components.microseconds,
+        milliseconds=components.milliseconds,
+        nanoseconds=components.nanoseconds,
     )
 
 
@@ -318,13 +283,35 @@ class ToNanosError(Exception):
 
 def to_time_delta(nanos: int, /) -> TimeDelta:
     """Construct a time delta."""
+    components = _to_time_delta_components(nanos)
+    return TimeDelta(
+        hours=components.hours,
+        minutes=components.minutes,
+        seconds=components.seconds,
+        microseconds=components.microseconds,
+        milliseconds=components.milliseconds,
+        nanoseconds=components.nanoseconds,
+    )
+
+
+@dataclass(kw_only=True, slots=True)
+class _TimeDeltaComponents:
+    hours: int
+    minutes: int
+    seconds: int
+    microseconds: int
+    milliseconds: int
+    nanoseconds: int
+
+
+def _to_time_delta_components(nanos: int, /) -> _TimeDeltaComponents:
     sign_use = sign(nanos)
     micros, nanos = divmod(nanos, int(1e3))
     millis, micros = divmod(micros, int(1e3))
     secs, millis = divmod(millis, int(1e3))
     mins, secs = divmod(secs, 60)
     hours, mins = divmod(mins, 60)
-    match sign_use:
+    match sign_use:  # pragma: no cover
         case 1:
             if nanos < 0:
                 nanos += int(1e3)
@@ -359,7 +346,7 @@ def to_time_delta(nanos: int, /) -> TimeDelta:
                 hours += 1
         case 0:
             ...
-    return TimeDelta(
+    return _TimeDeltaComponents(
         hours=hours,
         minutes=mins,
         seconds=secs,
