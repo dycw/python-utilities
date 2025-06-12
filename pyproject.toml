@@ -63,12 +63,10 @@ dev = [
   "tenacity >= 8.5.0, < 9.0",  # limited by luigi
   "tomlkit >= 0.13.2, < 0.14",
   "tzdata >= 2025.2, < 2025.3",
-  "tzlocal >= 5.3.1, < 5.4",
   "uvicorn >= 0.34.1, < 0.35",
   "vegafusion >= 2.0.2, < 2.1",
   "vegafusion-python-embed >= 1.6.9, < 1.7",
   "vl-convert-python >= 1.8.0, < 1.9",
-  "whenever >= 0.8.5, < 0.9",
   # test
   "coverage-conditional-plugin >= 0.9.0, < 0.10",
   "dycw-pytest-only >= 2.1.1, < 2.2",
@@ -90,18 +88,18 @@ dev = [
 authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
 dependencies = [
   "typing-extensions >= 4.14.0, < 4.15",
+  "whenever >= 0.8.5, < 0.9",
+  "tzlocal >= 5.3.1, < 5.4",
 ]
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.131.2"
+version = "0.131.3"
 
 [project.optional-dependencies]
 logging = [
   "atomicwrites >= 1.4.1, < 1.5",
   "coloredlogs >= 15.0.1, < 15.1",
-  "tzlocal >= 5.3.1, < 5.4",
-  "whenever >= 0.8.5, < 0.9",
 ]
 test = [
   "dycw-pytest-only >= 2.1.1, < 2.2",
@@ -127,7 +125,6 @@ zzz-test-altair = [
   "img2pdf >= 0.6.0, < 0.7",
   "polars-lts-cpu >= 1.30.0, < 1.31",
   "vl-convert-python >= 1.8.0, < 1.9",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-asyncio = []
 zzz-test-atomicwrites = ["atomicwrites >= 1.4.1, < 1.5"]
@@ -138,7 +135,6 @@ zzz-test-cachetools = ["cachetools >= 5.5.2, < 5.6"]
 zzz-test-click = [
   "click >= 8.2.1, < 8.3",
   "sqlalchemy >= 2.0.41, < 2.1",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-contextlib = []
 zzz-test-contextvars = []
@@ -147,11 +143,8 @@ zzz-test-cvxpy = ["cvxpy >= 1.6.5, < 1.7"]
 zzz-test-dataclasses = [
   "orjson >= 3.10.15, < 3.11",
   "polars-lts-cpu >= 1.30.0, < 1.31",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-datetime = [
-  "tzlocal >= 5.3.1, < 5.4",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-enum = []
 zzz-test-errors = []
@@ -163,7 +156,6 @@ zzz-test-fastapi = [
 ]
 zzz-test-fpdf2 = [
   "fpdf2 >= 2.8.3, < 2.9",
-  "tzlocal >= 5.3.1, < 5.4",
 ]
 zzz-test-functions = []
 zzz-test-functools = []
@@ -172,12 +164,10 @@ zzz-test-git = []
 zzz-test-hashlib = [
   "polars-lts-cpu >= 1.30.0, < 1.31",
   "orjson >= 3.10.15, < 3.11",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-http = [
   "atomicwrites >= 1.4.1, < 1.5",
   "orjson >= 3.10.18, < 3.11",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-hypothesis = [
   "aiosqlite >= 0.21.0, < 0.22",
@@ -190,13 +180,10 @@ zzz-test-hypothesis = [
   "redis >= 6.2.0, < 6.3",
   "sqlalchemy >= 2.0.41, < 2.1",
   "tenacity >= 8.5.0, < 9.0",  # limited by luigi
-  "tzlocal >= 5.3.1, < 5.4",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-ipython = ["ipython >= 9.0.1, < 9.1"]
 zzz-test-iterables = [
   "polars-lts-cpu >= 1.30.0, < 1.31",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-jupyter = [
   "jupyterlab >= 4.2.0, < 4.3",
@@ -208,12 +195,9 @@ zzz-test-logging = [
   "coloredlogs >= 15.0.1, < 15.1",
   "rich >= 14.0.0, < 14.1",
   "tomlkit >= 0.13.2, < 0.14",
-  "tzlocal >= 5.3.1, < 5.4",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-luigi = [
   "luigi >= 3.6.0, < 3.7",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-math = ["numpy >= 2.3.0, < 2.4"]
 zzz-test-memory-profiler = ["memory-profiler >= 0.61.0, < 0.62"]
@@ -222,15 +206,12 @@ zzz-test-more-itertools = ["more-itertools >= 10.7.0, < 10.8"]
 zzz-test-numpy = ["numpy >= 2.3.0, < 2.4"]
 zzz-test-operator = [
   "polars-lts-cpu >= 1.30.0, < 1.31",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-optuna = ["optuna >= 4.3.0, < 4.4"]
 zzz-test-orjson = [
   "orjson >= 3.10.15, < 3.11",
   "polars-lts-cpu >= 1.30.0, < 1.31",
   "rich >= 14.0.0, < 14.1",
-  "tzlocal >= 5.3.1, < 5.4",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-os = []
 zzz-test-pathlib = []
@@ -238,7 +219,6 @@ zzz-test-pickle = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-platform = []
 zzz-test-polars = [
   "polars-lts-cpu >= 1.30.0, < 1.31",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-pqdm = ["pqdm >= 0.2.0, < 0.3"]
 zzz-test-pydantic = [
@@ -248,18 +228,15 @@ zzz-test-pydantic = [
 zzz-test-pyinstrument = [
   "atomicwrites >= 1.4.1, < 1.5",
   "pyinstrument >= 5.0.2, < 5.1",
-  "tzlocal >= 5.3.1, < 5.4",
 ]
 zzz-test-pyrsistent = ["pyrsistent >= 0.20.0, < 0.21"]
 zzz-test-pytest = [
   "atomicwrites >= 1.4.1, < 1.5",
   "orjson >= 3.10.18, < 3.11",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-pytest-regressions = ["pytest-regressions >= 2.8.0, < 2.9"]
 zzz-test-python-dotenv = [
   "python-dotenv >= 1.1.0, < 1.2",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-random = []
 zzz-test-re = []
@@ -269,8 +246,6 @@ zzz-test-redis = [
   "redis >= 6.2.0, < 6.3",
   "rich >= 14.0.0, < 14.1",
   "tenacity >= 8.5.0, < 9.0",  # limited by luigi
-  "tzlocal >= 5.3.1, < 5.4",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-rich = ["rich >= 14.0.0, < 14.1"]
 zzz-test-scipy = ["scipy >= 1.15.3, < 1.16"]
@@ -297,15 +272,12 @@ zzz-test-sqlalchemy-polars = [
   "polars-lts-cpu >= 1.30.0, < 1.31",
   "sqlalchemy >= 2.0.41, < 2.1",
   "tenacity >= 8.5.0, < 9.0",  # limited by luigi
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-streamlit = ["streamlit >= 1.45.0, < 1.46"]
 zzz-test-sys = [
   "atomicwrites >= 1.4.1, < 1.5",
   "rich >= 14.0.0, < 14.1",
   "tomlkit >= 0.13.2, < 0.14",
-  "tzlocal >= 5.3.1, < 5.4",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-tempfile = []
 zzz-test-tenacity = [
@@ -317,23 +289,19 @@ zzz-test-timer = []
 zzz-test-traceback = [
   "rich >= 14.0.0, < 14.1",
   "tomlkit >= 0.13.2, < 0.14",
-  "tzlocal >= 5.3.1, < 5.4",
-  "whenever >= 0.8.5, < 0.9",
 ]
 zzz-test-types = []
 zzz-test-typing = [
   "polars-lts-cpu >= 1.30.0, < 1.31",
-  "whenever >= 0.8.5, < 0.9",
 ]
-zzz-test-tzlocal = ["tzlocal >= 5.3.1, < 5.4"]
+zzz-test-tzlocal = []
 zzz-test-uuid = []
 zzz-test-version = ["tomlkit >= 0.13.2, < 0.14"]
 zzz-test-warnings = []
-zzz-test-whenever = ["whenever >= 0.8.5, < 0.9"]
+zzz-test-whenever = []
 zzz-test-zipfile = []
 zzz-test-zoneinfo = [
   "tzdata >= 2025.2, < 2025.3",
-  "whenever >= 0.8.5, < 0.9",
 ]
 
 [project.scripts]
@@ -341,7 +309,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.131.2"
+current_version = "0.131.3"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
