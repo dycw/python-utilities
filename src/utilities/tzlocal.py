@@ -20,9 +20,12 @@ def get_local_time_zone() -> ZoneInfo:
     return time_zone
 
 
+LOCAL_TIME_ZONE = get_local_time_zone()
+
+
 def get_now_local() -> dt.datetime:
     """Get the current local time."""
-    return dt.datetime.now(tz=get_local_time_zone())
+    return dt.datetime.now(tz=LOCAL_TIME_ZONE)
 
 
 NOW_LOCAL = get_now_local()
@@ -37,6 +40,8 @@ TODAY_LOCAL = get_today_local()
 
 
 __all__ = [
+    "LOCAL_TIME_ZONE",
+    "LOCAL_TIME_ZONE",
     "NOW_LOCAL",
     "TODAY_LOCAL",
     "get_local_time_zone",

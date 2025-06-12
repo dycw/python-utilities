@@ -43,6 +43,7 @@ from utilities.errors import ImpossibleCaseError
 from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.pathlib import ensure_suffix, get_path
 from utilities.sentinel import Sentinel, sentinel
+from utilities.tzlocal import get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
@@ -426,8 +427,6 @@ def _compute_rollover_actions(
     patterns: _RolloverPatterns | None = None,
     backup_count: int = 1,
 ) -> _RolloverActions:
-    from utilities.tzlocal import get_now_local
-
     patterns = (
         _compute_rollover_patterns(stem, suffix) if patterns is None else patterns
     )

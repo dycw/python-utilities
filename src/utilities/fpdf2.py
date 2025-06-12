@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, override
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 
+from utilities.tzlocal import get_now_local
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
@@ -43,8 +45,6 @@ def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
 
         @override
         def footer(self) -> None:
-            from utilities.tzlocal import get_now_local
-
             self.set_y(-15)
             self.set_font(family="Helvetica", style="I", size=8)
             page_no, now = self.page_no(), get_now_local()

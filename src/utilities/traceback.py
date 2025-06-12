@@ -26,8 +26,9 @@ from utilities.reprlib import (
     RICH_MAX_WIDTH,
     yield_mapping_repr,
 )
+from utilities.tzlocal import get_local_time_zone, get_now_local
 from utilities.version import get_version
-from utilities.whenever import serialize_duration
+from utilities.whenever import serialize_duration, serialize_zoned_datetime
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
@@ -84,9 +85,6 @@ def _yield_header_lines(
     version: MaybeCallableVersionLike | None = None,
 ) -> Iterator[str]:
     """Yield the header lines."""
-    from utilities.tzlocal import get_local_time_zone, get_now_local
-    from utilities.whenever import serialize_zoned_datetime
-
     now = get_now_local()
     start_use = get_datetime(datetime=start)
     start_use = (
@@ -248,7 +246,6 @@ def _make_except_hook_inner(
     _ = sys.stderr.write(f"{slim}\n")  # don't 'from sys import stderr'
     if path is not None:
         from utilities.atomicwrites import writer
-        from utilities.tzlocal import get_now_local
 
         path = (
             get_path(path=path)

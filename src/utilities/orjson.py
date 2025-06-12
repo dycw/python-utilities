@@ -742,8 +742,6 @@ class OrjsonFormatter(Formatter):
 
     @override
     def format(self, record: LogRecord) -> str:
-        from utilities.tzlocal import get_local_time_zone
-
         extra = {
             k: v
             for k, v in record.__dict__.items()
