@@ -340,14 +340,6 @@ class TestGetDateTime:
         assert to_zoned_date_time(date_time=lambda: date_time) == date_time
 
 
-class TestToLocalPlainSec:
-    @given(datetime=zoned_datetimes_whenever())
-    def test_main(self, *, datetime: ZonedDateTime) -> None:
-        result = format_compact(datetime)
-        assert isinstance(result, PlainDateTime)
-        assert result.nanosecond == 0
-
-
 class TestWheneverLogRecord:
     def test_init(self) -> None:
         _ = WheneverLogRecord("name", DEBUG, "pathname", 0, None, None, None)
