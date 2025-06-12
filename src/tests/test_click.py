@@ -25,6 +25,7 @@ from utilities.click import (
     CONTEXT_SETTINGS_HELP_OPTION_NAMES,
     Date,
     DateDelta,
+    DateTimeDelta,
     DirPath,
     Enum,
     ExistingDirPath,
@@ -44,6 +45,7 @@ from utilities.click import (
 from utilities.datetime import serialize_month
 from utilities.hypothesis import (
     date_deltas_whenever,
+    date_time_deltas_whenever,
     dates_whenever,
     months,
     pairs,
@@ -193,9 +195,16 @@ class TestParameters:
             ),
             param(
                 DateDelta(),
-                "DATE-DELTA",
+                "DATE DELTA",
                 date_deltas_whenever(parsable=True),
                 whenever.DateDelta.format_common_iso,
+                True,
+            ),
+            param(
+                DateTimeDelta(),
+                "DATE-TIME DELTA",
+                date_time_deltas_whenever(parsable=True),
+                whenever.DateTimeDelta.format_common_iso,
                 True,
             ),
             param(
