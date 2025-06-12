@@ -58,7 +58,7 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from logging import _FormatStyle
 
-    from whenever import Date, ZonedDateTime
+    from whenever import Date
 
     from utilities.types import Parallelism
 
