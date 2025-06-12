@@ -282,11 +282,11 @@ class TestGetLogRecords:
         if max_level is not None:
             assert all(r.level <= get_logging_level_number(max_level) for r in records)
         if date is not None:
-            assert all(r.date == date for r in records)
+            assert all(r.datetime.date() == date for r in records)
         if min_date is not None:
-            assert all(r.date >= min_date for r in records)
+            assert all(r.datetime.date() >= min_date for r in records)
         if max_date is not None:
-            assert all(r.date <= max_date for r in records)
+            assert all(r.datetime.date() <= max_date for r in records)
         if datetime is not None:
             assert all(r.datetime == datetime for r in records)
         if min_datetime is not None:
