@@ -16,6 +16,7 @@ from whenever import (
     ZonedDateTime,
 )
 
+from utilities.datetime import maybe_sub_pct_y
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC, get_time_zone_name
@@ -69,13 +70,14 @@ HOUR = TimeDelta(hours=1)
 DAY = DateDelta(days=1)
 WEEK = DateDelta(weeks=1)
 
+
 ##
 
 
 def format_compact(datetime: ZonedDateTime, /) -> str:
     """Convert a zoned datetime to the local time zone, then format."""
     py_datetime = datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain().py_datetime()
-    return f"{py_datetime:%Y%m%dT%H%M%S}"
+    return py_datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
 
 
 ##
