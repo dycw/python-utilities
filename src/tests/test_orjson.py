@@ -51,7 +51,6 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureTypeLiteral,
     DataClassFutureTypeLiteralNullable,
 )
-from utilities.datetime import MINUTE, SECOND, get_now
 from utilities.functions import is_sequence_of
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -83,7 +82,7 @@ from utilities.polars import check_polars_dataframe, zoned_datetime
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import DateOrDateTime, LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args
-from utilities.whenever2 import get_now_local
+from utilities.whenever2 import MINUTE, SECOND, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -425,7 +424,7 @@ class TestOrjsonFormatter:
         assert record.message == "message"
         assert record.level == WARNING
         assert record.path_name == Path(__file__)
-        assert abs(record.datetime - get_now_local()) <= SECOND
+        assert abs(record.datetime - get_now()) <= SECOND
         assert record.func_name == TestOrjsonFormatter.test_main.__name__
         assert record.stack_info is None
         assert record.extra == {"a": 1, "b": 2}
