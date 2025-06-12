@@ -8,8 +8,6 @@ from zoneinfo import ZoneInfo
 
 from hypothesis import assume, example, given
 from hypothesis.strategies import (
-    DataObject,
-    data,
     dates,
     datetimes,
     integers,
@@ -37,19 +35,12 @@ from utilities.hypothesis import (
     assume_does_not_raise,
     datetime_durations,
     plain_datetimes,
-    timedeltas_2w,
     zoned_datetimes,
 )
 from utilities.tzdata import HongKong
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
-    EnsureDateError,
-    EnsureDateTimeError,
-    EnsureDurationError,
-    EnsurePlainDateTimeError,
-    EnsureTimeError,
-    EnsureZonedDateTimeError,
     ParseDateError,
     ParseDateTimeError,
     ParseDurationError,
@@ -61,20 +52,11 @@ from utilities.whenever import (
     SerializeTimeDeltaError,
     SerializeZonedDateTimeError,
     _CheckValidZonedDateTimeUnequalError,
-    _EnsureTimedeltaNanosecondError,
-    _EnsureTimedeltaParseError,
     _ParseTimedeltaNanosecondError,
     _ParseTimedeltaParseError,
     _to_datetime_delta,
     _ToDateTimeDeltaError,
     check_valid_zoned_datetime,
-    ensure_date,
-    ensure_datetime,
-    ensure_duration,
-    ensure_plain_datetime,
-    ensure_time,
-    ensure_timedelta,
-    ensure_zoned_datetime,
     parse_date,
     parse_datetime,
     parse_duration,
@@ -147,16 +129,6 @@ class TestSerializeAndParseDate:
         with raises(ParseDateError, match="Unable to parse date; got 'invalid'"):
             _ = parse_date("invalid")
 
-    @given(data=data(), date=dates())
-    def test_ensure(self, *, data: DataObject, date: dt.date) -> None:
-        str_or_value = data.draw(sampled_from([date, serialize_date(date)]))
-        result = ensure_date(str_or_value)
-        assert result == date
-
-    def test_error_ensure(self) -> None:
-        with raises(EnsureDateError, match="Unable to ensure date; got 'invalid'"):
-            _ = ensure_date("invalid")
-
 
 class TestSerializeAndParseDateTime:
     @given(
@@ -174,23 +146,6 @@ class TestSerializeAndParseDateTime:
             ParseDateTimeError, match="Unable to parse datetime; got 'invalid'"
         ):
             _ = parse_datetime("invalid")
-
-    @given(
-        data=data(),
-        datetime=plain_datetimes()
-        | zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True),
-    )
-    @SKIPIF_CI_AND_WINDOWS
-    def test_ensure(self, *, data: DataObject, datetime: dt.datetime) -> None:
-        str_or_value = data.draw(sampled_from([datetime, serialize_datetime(datetime)]))
-        result = ensure_datetime(str_or_value)
-        assert result == datetime
-
-    def test_error_ensure(self) -> None:
-        with raises(
-            EnsureDateTimeError, match="Unable to ensure datetime; got 'invalid'"
-        ):
-            _ = ensure_datetime("invalid")
 
 
 class TestSerializeAndParseDuration:
@@ -214,18 +169,6 @@ class TestSerializeAndParseDuration:
             SerializeDurationError, match="Unable to serialize duration; got .*"
         ):
             _ = serialize_duration(duration)
-
-    @given(data=data(), duration=datetime_durations(two_way=True))
-    def test_ensure(self, *, data: DataObject, duration: Duration) -> None:
-        str_or_value = data.draw(sampled_from([duration, serialize_duration(duration)]))
-        result = ensure_duration(str_or_value)
-        assert result == duration
-
-    def test_error_ensure(self) -> None:
-        with raises(
-            EnsureDurationError, match="Unable to ensure duration; got 'invalid'"
-        ):
-            _ = ensure_duration("invalid")
 
 
 class TestSerializeAndParsePlainDateTime:
@@ -264,21 +207,6 @@ class TestSerializeAndParsePlainDateTime:
         ):
             _ = serialize_plain_datetime(datetime)
 
-    @given(data=data(), datetime=datetimes())
-    def test_ensure(self, *, data: DataObject, datetime: dt.datetime) -> None:
-        str_or_value = data.draw(
-            sampled_from([datetime, serialize_plain_datetime(datetime)])
-        )
-        result = ensure_plain_datetime(str_or_value)
-        assert result == datetime
-
-    def test_error_ensure(self) -> None:
-        with raises(
-            EnsurePlainDateTimeError,
-            match="Unable to ensure plain datetime; got 'invalid'",
-        ):
-            _ = ensure_plain_datetime("invalid")
-
 
 class TestSerializeAndParseTime:
     @given(time=times())
@@ -290,16 +218,6 @@ class TestSerializeAndParseTime:
     def test_error_parse(self) -> None:
         with raises(ParseTimeError, match="Unable to parse time; got 'invalid'"):
             _ = parse_time("invalid")
-
-    @given(data=data(), time=times())
-    def test_ensure(self, *, data: DataObject, time: dt.time) -> None:
-        str_or_value = data.draw(sampled_from([time, serialize_time(time)]))
-        result = ensure_time(str_or_value)
-        assert result == time
-
-    def test_error_ensure(self) -> None:
-        with raises(EnsureTimeError, match="Unable to ensure time; got 'invalid'"):
-            _ = ensure_time("invalid")
 
 
 class TestSerializeAndParseTimedelta:
@@ -352,28 +270,6 @@ class TestSerializeAndParseTimedelta:
             SerializeTimeDeltaError, match="Unable to serialize timedelta; got .*"
         ):
             _ = serialize_timedelta(timedelta)
-
-    @given(data=data(), timedelta=timedeltas_2w())
-    def test_ensure(self, *, data: DataObject, timedelta: dt.timedelta) -> None:
-        str_or_value = data.draw(
-            sampled_from([timedelta, serialize_timedelta(timedelta)])
-        )
-        result = ensure_timedelta(str_or_value)
-        assert result == timedelta
-
-    def test_error_ensure(self) -> None:
-        with raises(
-            _EnsureTimedeltaParseError,
-            match="Unable to ensure timedelta; got 'invalid'",
-        ):
-            _ = ensure_timedelta("invalid")
-
-    def test_error_ensure_nano_seconds(self) -> None:
-        with raises(
-            _EnsureTimedeltaNanosecondError,
-            match="Unable to ensure timedelta; got 333 nanoseconds",
-        ):
-            _ = ensure_timedelta("PT0.111222333S")
 
 
 class TestSerializeAndParseZonedDateTime:
@@ -435,25 +331,6 @@ class TestSerializeAndParseZonedDateTime:
             match="Unable to serialize zoned datetime; got 2000-01-01 00:00:00",
         ):
             _ = serialize_zoned_datetime(datetime)
-
-    @given(
-        data=data(),
-        datetime=zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True),
-    )
-    @SKIPIF_CI_AND_WINDOWS
-    def test_ensure(self, *, data: DataObject, datetime: dt.datetime) -> None:
-        str_or_value = data.draw(
-            sampled_from([datetime, serialize_zoned_datetime(datetime)])
-        )
-        result = ensure_zoned_datetime(str_or_value)
-        assert result == datetime
-
-    def test_error_ensure(self) -> None:
-        with raises(
-            EnsureZonedDateTimeError,
-            match="Unable to ensure zoned datetime; got 'invalid'",
-        ):
-            _ = ensure_zoned_datetime("invalid")
 
 
 class TestToDateTimeDelta:
