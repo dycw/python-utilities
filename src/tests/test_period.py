@@ -23,19 +23,18 @@ from pytest import raises
 from utilities.datetime import ZERO_TIME
 from utilities.hypothesis import assume_does_not_raise, pairs, zoned_datetimes
 from utilities.period import (
-    Period,
-    _DateOrDateTime,
+    ZonedDateTimePeriod,
     _PeriodAsTimeZoneInapplicableError,
-    _PeriodDateAndDateTimeMixedError,
+    _PeriodContainsError,
+    _PeriodDateAndZonedDateTimeMixedError,
     _PeriodDateContainsDateTimeError,
-    _PeriodDateTimeContainsDateError,
     _PeriodInvalidError,
     _PeriodMaxDurationError,
     _PeriodMinDurationError,
     _PeriodNaiveDateTimeError,
     _PeriodReqDurationError,
+    _PeriodTimeZoneError,
     _PeriodTimeZoneInapplicableError,
-    _PeriodTimeZoneNonUniqueError,
     _TPeriod,
 )
 from utilities.whenever import SerializeZonedDateTimeError
@@ -53,11 +52,11 @@ class TestPeriod:
         self, *, dates: tuple[dt.date, dt.date], duration: dt.timedelta
     ) -> None:
         start, end = dates
-        period = Period(start, end)
+        period = ZonedDateTimePeriod(start, end)
         with assume_does_not_raise(OverflowError, match="date value out of range"):
             result = period + duration
             adj_start, adj_end = [d + duration for d in dates]
-        expected = Period(adj_start, adj_end)
+        expected = ZonedDateTimePeriod(adj_start, adj_end)
         assert result == expected
 
     @given(
@@ -74,11 +73,11 @@ class TestPeriod:
     ) -> None:
         with assume_does_not_raise(OverflowError, match="date value out of range"):
             start, end = [d.astimezone(time_zone1) for d in datetimes]
-        period = Period(start, end)
+        period = ZonedDateTimePeriod(start, end)
         with assume_does_not_raise(OverflowError, match="date value out of range"):
-            result = period.astimezone(time_zone2)
+            result = period.to_tz(time_zone2)
             adj_start, adj_end = [d.astimezone(time_zone2) for d in datetimes]
-        expected = Period(adj_start, adj_end)
+        expected = ZonedDateTimePeriod(adj_start, adj_end)
         assert result == expected
 
     @given(date=dates(), dates=pairs(dates(), sorted=True))
@@ -86,7 +85,7 @@ class TestPeriod:
         self, *, date: dt.date, dates: tuple[dt.date, dt.date]
     ) -> None:
         start, end = dates
-        period = Period(start, end)
+        period = ZonedDateTimePeriod(start, end)
         result = date in period
         expected = start <= date <= end
         assert result is expected
@@ -99,7 +98,7 @@ class TestPeriod:
         self, *, datetime: dt.datetime, datetimes: tuple[dt.datetime, dt.datetime]
     ) -> None:
         start, end = datetimes
-        period = Period(start, end)
+        period = ZonedDateTimePeriod(start, end)
         result = datetime in period
         expected = start <= datetime <= end
         assert result is expected
@@ -107,23 +106,23 @@ class TestPeriod:
     @given(dates=pairs(dates(), sorted=True))
     def test_dates(self, *, dates: tuple[dt.date, dt.date]) -> None:
         start, end = dates
-        _ = Period(start, end)
+        _ = ZonedDateTimePeriod(start, end)
 
     @given(datetimes=pairs(zoned_datetimes(time_zone=timezones()), sorted=True))
     def test_datetimes(self, *, datetimes: tuple[dt.datetime, dt.datetime]) -> None:
         start, end = datetimes
-        _ = Period(start, end)
+        _ = ZonedDateTimePeriod(start, end)
 
     @given(dates=pairs(dates(), sorted=True))
     def test_duration(self, *, dates: tuple[dt.date, dt.date]) -> None:
         start, end = dates
-        period = Period(start, end)
+        period = ZonedDateTimePeriod(start, end)
         assert period.duration == (end - start)
 
     @given(dates=pairs(dates(), sorted=True))
     def test_hashable(self, *, dates: tuple[dt.date, dt.date]) -> None:
         start, end = dates
-        period = Period(start, end)
+        period = ZonedDateTimePeriod(start, end)
         _ = hash(period)
 
     @given(
@@ -131,7 +130,7 @@ class TestPeriod:
     )
     def test_kind(self, *, case: tuple[dt.date, _DateOrDateTime]) -> None:
         date_or_datetime, kind = case
-        period = Period(date_or_datetime, date_or_datetime)
+        period = ZonedDateTimePeriod(date_or_datetime, date_or_datetime)
         assert period.kind == kind
 
     @given(dates=pairs(dates(), sorted=True), func=sampled_from([repr, str]))
@@ -139,7 +138,7 @@ class TestPeriod:
         self, *, dates: tuple[dt.date, dt.date], func: Callable[..., str]
     ) -> None:
         start, end = dates
-        period = Period(start, end)
+        period = ZonedDateTimePeriod(start, end)
         result = func(period)
         assert search(r"^Period\(\d{4}-\d{2}-\d{2}, \d{4}-\d{2}-\d{2}\)$", result)
 
@@ -149,7 +148,7 @@ class TestPeriod:
     ) -> None:
         datetimes = data.draw(pairs(zoned_datetimes(time_zone=time_zone), sorted=True))
         start, end = datetimes
-        period = Period(start, end)
+        period = ZonedDateTimePeriod(start, end)
         with assume_does_not_raise(SerializeZonedDateTimeError):
             result = func(period)
         assert search(
@@ -172,7 +171,9 @@ class TestPeriod:
         start, end = datetimes
         time_zone1, time_zone2 = time_zones
         with assume_does_not_raise(OverflowError, match="date value out of range"):
-            period = Period(start.astimezone(time_zone1), end.astimezone(time_zone2))
+            period = ZonedDateTimePeriod(
+                start.astimezone(time_zone1), end.astimezone(time_zone2)
+            )
         with assume_does_not_raise(SerializeZonedDateTimeError):
             result = func(period)
         assert search(
@@ -187,7 +188,7 @@ class TestPeriod:
         start, end = dates
 
         @dataclass
-        class SubPeriod(Period[_TPeriod]):
+        class SubPeriod(ZonedDateTimePeriod[_TPeriod]):
             extra: bool
 
         period = SubPeriod(start, end, extra)
@@ -203,8 +204,8 @@ class TestPeriod:
     ) -> None:
         start1, end1 = dates1
         start2, end2 = dates2
-        period1 = Period(start1, end1)
-        period2 = Period(start2, end2)
+        period1 = ZonedDateTimePeriod(start1, end1)
+        period2 = ZonedDateTimePeriod(start2, end2)
         _ = sorted([period1, period2])
 
     @given(dates=pairs(dates(), sorted=True), duration=timedeltas())
@@ -215,22 +216,22 @@ class TestPeriod:
         start, end = dates
         with assume_does_not_raise(OverflowError):
             adj_start, adj_end = start - duration, end - duration
-        period = Period(start, end)
+        period = ZonedDateTimePeriod(start, end)
         result = period - duration
-        expected = Period(adj_start, adj_end)
+        expected = ZonedDateTimePeriod(adj_start, adj_end)
         assert result == expected
 
     @given(data=data(), time_zone=timezones())
     def test_time_zone(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
         datetimes = data.draw(pairs(zoned_datetimes(time_zone=time_zone), sorted=True))
         start, end = datetimes
-        period = Period(start, end)
+        period = ZonedDateTimePeriod(start, end)
         assert period.time_zone is time_zone
 
     @given(dates=pairs(dates(), sorted=True))
     def test_to_dict(self, *, dates: tuple[dt.date, dt.date]) -> None:
         start, end = dates
-        period = Period(start, end)
+        period = ZonedDateTimePeriod(start, end)
         result = period.to_dict()
         expected = {"start": start, "end": end}
         assert result == expected
@@ -240,12 +241,12 @@ class TestPeriod:
         self, *, dates: tuple[dt.date, dt.date], time_zone: ZoneInfo
     ) -> None:
         start, end = dates
-        period = Period(start, end)
+        period = ZonedDateTimePeriod(start, end)
         with raises(
             _PeriodAsTimeZoneInapplicableError,
             match="Period of dates does not have a timezone attribute",
         ):
-            _ = period.astimezone(time_zone)
+            _ = period.to_tz(time_zone)
 
     @given(data=data(), date=dates(), datetime=zoned_datetimes(time_zone=timezones()))
     def test_error_date_and_datetime_mix(
@@ -253,10 +254,10 @@ class TestPeriod:
     ) -> None:
         start, end = data.draw(permutations([date, datetime]))
         with raises(
-            _PeriodDateAndDateTimeMixedError,
+            _PeriodDateAndZonedDateTimeMixedError,
             match=r"Invalid period; got date and datetime mix \(.*, .*\)",
         ):
-            _ = Period(start, end)
+            _ = ZonedDateTimePeriod(start, end)
 
     @given(datetimes=pairs(datetimes() | zoned_datetimes(time_zone=timezones())))
     def test_error_naive_datetime(
@@ -268,13 +269,13 @@ class TestPeriod:
             _PeriodNaiveDateTimeError,
             match=r"Invalid period; got naive datetime\(s\) \(.*, .*\)",
         ):
-            _ = Period(start, end)
+            _ = ZonedDateTimePeriod(start, end)
 
     @given(dates=pairs(dates(), unique=True, sorted=True))
     def test_error_invalid_dates(self, *, dates: tuple[dt.date, dt.date]) -> None:
         start, end = dates
         with raises(_PeriodInvalidError, match="Invalid period; got .* > .*"):
-            _ = Period(end, start)
+            _ = ZonedDateTimePeriod(end, start)
 
     @given(datetimes=pairs(zoned_datetimes(), unique=True, sorted=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
@@ -283,7 +284,7 @@ class TestPeriod:
     ) -> None:
         start, end = datetimes
         with raises(_PeriodInvalidError, match="Invalid period; got .* > .*"):
-            _ = Period(end, start)
+            _ = ZonedDateTimePeriod(end, start)
 
     @given(dates=pairs(dates(), sorted=True), duration=timedeltas(min_value=ZERO_TIME))
     def test_error_req_duration(
@@ -294,7 +295,7 @@ class TestPeriod:
         with raises(
             _PeriodReqDurationError, match="Period must have duration .*; got .*"
         ):
-            _ = Period(start, end, req_duration=duration)
+            _ = ZonedDateTimePeriod(start, end, req_duration=duration)
 
     @given(
         dates=pairs(dates(), sorted=True), min_duration=timedeltas(min_value=ZERO_TIME)
@@ -308,7 +309,7 @@ class TestPeriod:
         with raises(
             _PeriodMinDurationError, match="Period must have min duration .*; got .*"
         ):
-            _ = Period(start, end, min_duration=min_duration)
+            _ = ZonedDateTimePeriod(start, end, min_duration=min_duration)
 
     @given(
         dates=pairs(dates(), sorted=True), max_duration=timedeltas(max_value=ZERO_TIME)
@@ -322,7 +323,7 @@ class TestPeriod:
             _PeriodMaxDurationError,
             match="Period must have duration at most .*; got .*",
         ):
-            _ = Period(start, end, max_duration=max_duration)
+            _ = ZonedDateTimePeriod(start, end, max_duration=max_duration)
 
     @given(
         datetime=zoned_datetimes(time_zone=timezones()),
@@ -332,7 +333,7 @@ class TestPeriod:
         self, *, datetime: dt.datetime, dates: tuple[dt.date, dt.date]
     ) -> None:
         start, end = dates
-        period = Period(start, end)
+        period = ZonedDateTimePeriod(start, end)
         with raises(
             _PeriodDateContainsDateTimeError,
             match="Period of dates cannot contain datetimes",
@@ -347,10 +348,9 @@ class TestPeriod:
         self, *, date: dt.datetime, datetimes: tuple[dt.date, dt.date]
     ) -> None:
         start, end = datetimes
-        period = Period(start, end)
+        period = ZonedDateTimePeriod(start, end)
         with raises(
-            _PeriodDateTimeContainsDateError,
-            match="Period of datetimes cannot contain dates",
+            _PeriodContainsError, match="Period of datetimes cannot contain dates"
         ):
             _ = date in period
 
@@ -359,7 +359,7 @@ class TestPeriod:
         self, *, dates: tuple[dt.date, dt.date]
     ) -> None:
         start, end = dates
-        period = Period(start, end)
+        period = ZonedDateTimePeriod(start, end)
         with raises(
             _PeriodTimeZoneInapplicableError,
             match="Period of dates does not have a timezone attribute",
@@ -379,9 +379,11 @@ class TestPeriod:
         start, end = datetimes
         time_zone1, time_zone2 = time_zones
         with assume_does_not_raise(OverflowError, match="date value out of range"):
-            period = Period(start.astimezone(time_zone1), end.astimezone(time_zone2))
+            period = ZonedDateTimePeriod(
+                start.astimezone(time_zone1), end.astimezone(time_zone2)
+            )
         with raises(
-            _PeriodTimeZoneNonUniqueError,
+            _PeriodTimeZoneError,
             match="Period must contain exactly one time zone; got .* and .*",
         ):
             _ = period.time_zone
