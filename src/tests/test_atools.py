@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from utilities.asyncio import sleep_delta
+from utilities.asyncio import sleep_dur
 from utilities.atools import call_memoized
-from utilities.whenever import SECOND
+from utilities.whenever2 import SECOND
 
 
 class TestCallMemoized:
@@ -30,7 +30,7 @@ class TestCallMemoized:
         for _ in range(2):
             assert (await call_memoized(increment, delta)) == 1
             assert counter == 1
-        await sleep_delta(2 * delta)
+        await sleep_dur(duration=2 * delta)
         for _ in range(2):
             assert (await call_memoized(increment, delta)) == 2
             assert counter == 2
