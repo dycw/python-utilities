@@ -56,6 +56,7 @@ from utilities.whenever2 import (
     get_today_local,
     to_date,
     to_zoned_date_time,
+    to_local_plain_sec,
 )
 from utilities.zoneinfo import UTC
 
@@ -338,6 +339,14 @@ class TestGetDateTime:
     @given(date_time=zoned_datetimes_whenever())
     def test_callable(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time=lambda: date_time) == date_time
+
+
+class TestToLocalPlainSec:
+    @given(datetime=zoned_datetimes_whenever())
+    def test_main(self, *, datetime: ZonedDateTime) -> None:
+        result = to_local_plain_sec(datetime)
+        assert isinstance(result, PlainDateTime)
+        assert result.nanosecond == 0
 
 
 class TestWheneverLogRecord:
