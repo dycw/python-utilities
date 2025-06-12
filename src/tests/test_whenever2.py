@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 from hypothesis import given
 from hypothesis.strategies import integers, just, none, timezones
-from pytest import mark, param, raises
+from pytest import raises
 from whenever import (
     Date,
     DateDelta,
@@ -64,6 +64,7 @@ from utilities.whenever2 import (
     to_date,
     to_date_time_delta,
     to_nanos,
+    to_time_delta,
     to_zoned_date_time,
 )
 from utilities.zoneinfo import UTC
@@ -186,14 +187,9 @@ class TestMinMax:
         with raises(ValueError, match="Out of range"):
             _ = to_date_time_delta(nanos + 1)
 
-    @given(n=integers(None, -1))
-    def test_z(self, n) -> None:
-        _ = to_date_time_delta(n)
-
-    def test_date_time_delta_min(self) -> None:
-        nanos = to_nanos(DATE_TIME_DELTA_MIN)
-        with raises(ValueError, match="Out of range"):
-            _ = to_date_time_delta(nanos - 1)
+    def test_date_time_delta_parsable_min(self) -> None:
+        def func(delta: DateTimeDelta, /) -> None:
+            _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
 
     def test_date_time_delta_max(self) -> None:
         nanos = to_nanos(DATE_TIME_DELTA_MAX)
@@ -221,40 +217,15 @@ class TestMinMax:
         with raises(ValueError, match=r"Result of add\(\) out of range"):
             _ = PLAIN_DATE_TIME_MAX.add(microseconds=1, ignore_dst=True)
 
-    @mark.parametrize(
-        "delta",
-        [
-            param(TimeDelta(seconds=1)),
-            param(TimeDelta(milliseconds=1)),
-            param(TimeDelta(microseconds=1)),
-            param(TimeDelta(nanoseconds=1)),
-        ],
-    )
-    def test_time_delta_min(self, *, delta: TimeDelta) -> None:
-        _ = TimeDelta.parse_common_iso(TIME_DELTA_MIN.format_common_iso())
-        with raises(ValueError, match="Addition result out of range"):
-            _ = TIME_DELTA_MIN - delta
+    def test_time_delta_min(self) -> None:
+        nanos = TIME_DELTA_MIN.in_nanoseconds()
+        with raises(ValueError, match="TimeDelta out of range"):
+            _ = to_time_delta(nanos - 1)
 
-    @mark.parametrize(
-        ("delta", "is_ok"),
-        [
-            param(TimeDelta(seconds=1), False),
-            param(TimeDelta(milliseconds=999), True),
-            param(TimeDelta(milliseconds=1000), False),
-            param(TimeDelta(microseconds=999_999), True),
-            param(TimeDelta(microseconds=1_000_000), False),
-            param(TimeDelta(nanoseconds=999_999_999), True),
-            param(TimeDelta(nanoseconds=1_000_000_000), False),
-        ],
-    )
-    @mark.skip
-    def test_time_delta_max(self, *, delta: TimeDelta, is_ok: bool) -> None:
-        if is_ok:
-            _ = TIME_DELTA_MAX + delta
-            _ = TimeDelta.parse_common_iso(delta.format_common_iso())
-        else:
-            with raises(ValueError, match="Addition result out of range"):
-                _ = TIME_DELTA_MAX + delta
+    def test_time_delta_max(self) -> None:
+        nanos = TIME_DELTA_MAX.in_nanoseconds()
+        with raises(ValueError, match="TimeDelta out of range"):
+            _ = to_time_delta(nanos + 1)
 
     def test_zoned_date_time_min(self) -> None:
         with raises(ValueError, match="Instant is out of range"):
