@@ -4,10 +4,11 @@ from logging import DEBUG
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import timezones
+from hypothesis.strategies import just, timezones
 from pytest import mark, param, raises
 from whenever import DateDelta, DateTimeDelta, TimeDelta, ZonedDateTime
 
+from tests.conftest import IS_CI
 from utilities.hypothesis import zoned_datetimes_whenever
 from utilities.tzdata import HongKong, Tokyo
 from utilities.whenever2 import (
@@ -35,21 +36,21 @@ from utilities.zoneinfo import UTC
 
 
 class TestFromTimeStamp:
-    @given(datetime=zoned_datetimes_whenever(time_zone=timezones()))
+    @given(datetime=zoned_datetimes_whenever(time_zone=UTC if IS_CI else timezones()))
     def test_main(self, *, datetime: ZonedDateTime) -> None:
         datetime = datetime.round("second")
         timestamp = datetime.to_tz(UTC.key).timestamp()
         result = from_timestamp(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
-    @given(datetime=zoned_datetimes_whenever(time_zone=timezones()))
+    @given(datetime=zoned_datetimes_whenever(time_zone=UTC if IS_CI else timezones()))
     def test_millis(self, *, datetime: ZonedDateTime) -> None:
         datetime = datetime.round("millisecond")
         timestamp = datetime.to_tz(UTC.key).timestamp_millis()
         result = from_timestamp_millis(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
-    @given(datetime=zoned_datetimes_whenever(time_zone=timezones()))
+    @given(datetime=zoned_datetimes_whenever(time_zone=UTC if IS_CI else timezones()))
     def test_nanos(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.to_tz(UTC.key).timestamp_nanos()
         result = from_timestamp_nanos(timestamp, time_zone=ZoneInfo(datetime.tz))
@@ -57,7 +58,7 @@ class TestFromTimeStamp:
 
 
 class TestGetNow:
-    @given(time_zone=timezones())
+    @given(time_zone=just(UTC) if IS_CI else timezones())
     def test_function(self, *, time_zone: ZoneInfo) -> None:
         now = get_now(time_zone=time_zone)
         assert isinstance(now, ZonedDateTime)
