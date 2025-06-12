@@ -92,7 +92,7 @@ class ZonedDateTimePeriod:
     @override
     def __repr__(self) -> str:
         cls = get_class_name(self)
-        return f"{cls}({self.start.to_plain()}, {self.end})"
+        return f"{cls}({self.start.to_plain()}, {self.end.to_plain()}[{self.time_zone.key}])"
 
     def __sub__(self, other: TimeDelta, /) -> Self:
         """Offset the period."""
