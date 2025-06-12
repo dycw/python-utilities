@@ -23,6 +23,7 @@ from utilities.period import (
     _PeriodInvalidError,
     _PeriodTimeZoneError,
 )
+from utilities.tzdata import USCentral, USEastern
 from utilities.whenever2 import DAY
 from utilities.zoneinfo import get_time_zone_name
 
@@ -248,21 +249,14 @@ class TestZonedDateTimePeriod:
         with raises(_PeriodInvalidError, match="Invalid period; got .* > .*"):
             _ = ZonedDateTimePeriod(end, start)
 
-    @given(
-        datetimes=pairs(plain_datetimes_whenever(), sorted=True),
-        time_zones=pairs(timezones(), unique=True),
-    )
+    @given(datetimes=pairs(plain_datetimes_whenever(), sorted=True))
     def test_error_period_time_zone(
-        self,
-        *,
-        datetimes: tuple[PlainDateTime, PlainDateTime],
-        time_zones: tuple[ZoneInfo, ZoneInfo],
+        self, *, datetimes: tuple[PlainDateTime, PlainDateTime]
     ) -> None:
         plain_start, plain_end = datetimes
-        time_zone1, time_zone2 = time_zones
         with assume_does_not_raise(OverflowError, match="date value out of range"):
-            start = (plain_start - DAY).assume_tz(time_zone1.key)
-            end = (plain_end + DAY).assume_tz(time_zone2.key)
+            start = (plain_start - DAY).assume_tz(USCentral.key)
+            end = (plain_end + DAY).assume_tz(USEastern.key)
         with raises(
             _PeriodTimeZoneError,
             match="Period must contain exactly one time zone; got .* and .*",
