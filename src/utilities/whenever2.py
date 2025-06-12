@@ -185,14 +185,6 @@ def to_zoned_date_time(
 ##
 
 
-def to_local_plain_sec(datetime: ZonedDateTime, /) -> PlainDateTime:
-    """Convert a zoned datetime to the local, plain datetime."""
-    return datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
-
-
-##
-
-
 class WheneverLogRecord(LogRecord):
     """Log record powered by `whenever`."""
 
@@ -275,6 +267,7 @@ __all__ = [
     "ZONED_DATE_TIME_MIN",
     "WheneverLogRecord",
     "format_compact",
+    "format_compact",
     "from_timestamp",
     "from_timestamp_millis",
     "from_timestamp_nanos",
@@ -283,6 +276,5 @@ __all__ = [
     "get_today",
     "get_today_local",
     "to_date",
-    "to_local_plain_sec",
     "to_zoned_date_time",
 ]
