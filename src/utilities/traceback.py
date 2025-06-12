@@ -13,6 +13,7 @@ from socket import gethostname
 from traceback import TracebackException
 from typing import TYPE_CHECKING, override
 
+from utilities.atomicwrites import writer
 from utilities.datetime import get_datetime, get_now, serialize_compact
 from utilities.errors import repr_error
 from utilities.iterables import OneEmptyError, one
@@ -245,8 +246,6 @@ def _make_except_hook_inner(
     slim = format_exception_stack(exc_val, header=True, start=start, version=version)
     _ = sys.stderr.write(f"{slim}\n")  # don't 'from sys import stderr'
     if path is not None:
-        from utilities.atomicwrites import writer
-
         path = (
             get_path(path=path)
             .joinpath(serialize_compact(get_now_local()))

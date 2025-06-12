@@ -757,6 +757,7 @@ name = "dycw-utilities"
 version = "0.131.3"
 source = { editable = "." }
 dependencies = [
+    { name = "atomicwrites" },
     { name = "typing-extensions" },
     { name = "tzlocal" },
     { name = "whenever" },
@@ -764,7 +765,6 @@ dependencies = [
 
 [package.optional-dependencies]
 logging = [
-    { name = "atomicwrites" },
     { name = "coloredlogs" },
 ]
 test = [
@@ -787,13 +787,9 @@ zzz-test-aiolimiter = [
 ]
 zzz-test-altair = [
     { name = "altair" },
-    { name = "atomicwrites" },
     { name = "img2pdf" },
     { name = "polars-lts-cpu" },
     { name = "vl-convert-python" },
-]
-zzz-test-atomicwrites = [
-    { name = "atomicwrites" },
 ]
 zzz-test-atools = [
     { name = "atools" },
@@ -831,7 +827,6 @@ zzz-test-hashlib = [
     { name = "polars-lts-cpu" },
 ]
 zzz-test-http = [
-    { name = "atomicwrites" },
     { name = "orjson" },
 ]
 zzz-test-hypothesis = [
@@ -858,7 +853,6 @@ zzz-test-jupyter = [
     { name = "polars-lts-cpu" },
 ]
 zzz-test-logging = [
-    { name = "atomicwrites" },
     { name = "coloredlogs" },
     { name = "rich" },
     { name = "tomlkit" },
@@ -889,9 +883,6 @@ zzz-test-orjson = [
     { name = "polars-lts-cpu" },
     { name = "rich" },
 ]
-zzz-test-pickle = [
-    { name = "atomicwrites" },
-]
 zzz-test-polars = [
     { name = "polars-lts-cpu" },
 ]
@@ -899,18 +890,15 @@ zzz-test-pqdm = [
     { name = "pqdm" },
 ]
 zzz-test-pydantic = [
-    { name = "atomicwrites" },
     { name = "pydantic" },
 ]
 zzz-test-pyinstrument = [
-    { name = "atomicwrites" },
     { name = "pyinstrument" },
 ]
 zzz-test-pyrsistent = [
     { name = "pyrsistent" },
 ]
 zzz-test-pytest = [
-    { name = "atomicwrites" },
     { name = "orjson" },
 ]
 zzz-test-pytest-regressions = [
@@ -957,7 +945,6 @@ zzz-test-streamlit = [
     { name = "streamlit" },
 ]
 zzz-test-sys = [
-    { name = "atomicwrites" },
     { name = "rich" },
     { name = "tomlkit" },
 ]
@@ -985,7 +972,6 @@ dev = [
     { name = "aiosqlite" },
     { name = "altair" },
     { name = "asyncpg" },
-    { name = "atomicwrites" },
     { name = "atools" },
     { name = "cachetools" },
     { name = "click" },
@@ -1063,16 +1049,7 @@ requires-dist = [
     { name = "asyncpg", marker = "extra == 'zzz-test-hypothesis'", specifier = ">=0.30.0,<0.31" },
     { name = "asyncpg", marker = "extra == 'zzz-test-sqlalchemy'", specifier = ">=0.30.0,<0.31" },
     { name = "asyncpg", marker = "extra == 'zzz-test-sqlalchemy-polars'", specifier = ">=0.30.0,<0.31" },
-    { name = "atomicwrites", marker = "extra == 'logging'", specifier = ">=1.4.1,<1.5" },
-    { name = "atomicwrites", marker = "extra == 'zzz-test-altair'", specifier = ">=1.4.1,<1.5" },
-    { name = "atomicwrites", marker = "extra == 'zzz-test-atomicwrites'", specifier = ">=1.4.1,<1.5" },
-    { name = "atomicwrites", marker = "extra == 'zzz-test-http'", specifier = ">=1.4.1,<1.5" },
-    { name = "atomicwrites", marker = "extra == 'zzz-test-logging'", specifier = ">=1.4.1,<1.5" },
-    { name = "atomicwrites", marker = "extra == 'zzz-test-pickle'", specifier = ">=1.4.1,<1.5" },
-    { name = "atomicwrites", marker = "extra == 'zzz-test-pydantic'", specifier = ">=1.4.1,<1.5" },
-    { name = "atomicwrites", marker = "extra == 'zzz-test-pyinstrument'", specifier = ">=1.4.1,<1.5" },
-    { name = "atomicwrites", marker = "extra == 'zzz-test-pytest'", specifier = ">=1.4.1,<1.5" },
-    { name = "atomicwrites", marker = "extra == 'zzz-test-sys'", specifier = ">=1.4.1,<1.5" },
+    { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
     { name = "atools", marker = "extra == 'zzz-test-atools'", specifier = ">=0.14.2,<0.15" },
     { name = "cachetools", marker = "extra == 'zzz-test-cachetools'", specifier = ">=5.5.2,<5.6" },
     { name = "click", marker = "extra == 'zzz-test-click'", specifier = ">=8.2.1,<8.3" },
@@ -1180,7 +1157,6 @@ dev = [
     { name = "aiosqlite", specifier = ">=0.21.0,<0.22" },
     { name = "altair", specifier = ">=5.5.0,<5.6" },
     { name = "asyncpg", specifier = ">=0.30.0,<0.31" },
-    { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
     { name = "atools", specifier = ">=0.14.2,<0.15" },
     { name = "cachetools", specifier = ">=5.5.2,<5.6" },
     { name = "click", specifier = ">=8.2.1,<8.3" },

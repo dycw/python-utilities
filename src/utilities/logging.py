@@ -32,6 +32,7 @@ from typing import (
     override,
 )
 
+from utilities.atomicwrites import move_many
 from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
     SECOND,
@@ -469,8 +470,6 @@ class _RolloverActions:
     rotations: set[_Rotation] = field(default_factory=set)
 
     def do(self) -> None:
-        from utilities.atomicwrites import move_many
-
         for deletion in self.deletions:
             deletion.delete()
         move_many(*((r.file.path, r.destination) for r in self.rotations))

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, ParamSpec, assert_never, cast, override
 
 from pytest import fixture
 
+from utilities.atomicwrites import writer
 from utilities.datetime import datetime_duration_to_float, get_now
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
@@ -248,8 +249,6 @@ def _throttle_md5_hash(text: str, /) -> str:
 
 
 def _throttle_write(path: Path, now: float, /) -> None:
-    from utilities.atomicwrites import writer
-
     with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
         _ = fh.write(str(now))
 

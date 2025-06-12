@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from pyinstrument.profiler import Profiler
 
+from utilities.atomicwrites import writer
 from utilities.datetime import serialize_compact
 from utilities.pathlib import get_path
 from utilities.tzlocal import get_now_local
@@ -19,8 +20,6 @@ if TYPE_CHECKING:
 @contextmanager
 def profile(*, path: MaybeCallablePathLike | None = Path.cwd) -> Iterator[None]:
     """Profile the contents of a block."""
-    from utilities.atomicwrites import writer
-
     with Profiler() as profiler:
         yield
     filename = get_path(path=path).joinpath(

@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, TypeVar, override
 
 from pydantic import BaseModel
 
+from utilities.atomicwrites import writer
+
 if TYPE_CHECKING:
     from utilities.types import PathLike
 
@@ -52,8 +54,6 @@ class _LoadModelIsADirectoryError(LoadModelError):
 
 
 def save_model(model: BaseModel, path: PathLike, /, *, overwrite: bool = False) -> None:
-    from utilities.atomicwrites import writer
-
     with writer(path, overwrite=overwrite) as temp, temp.open(mode="w") as fh:
         _ = fh.write(model.model_dump_json())
 

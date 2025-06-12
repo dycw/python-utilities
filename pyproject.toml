@@ -13,7 +13,6 @@ dev = [
   "aiosqlite >= 0.21.0, < 0.22",
   "altair >= 5.5.0, < 5.6",
   "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
-  "atomicwrites >= 1.4.1, < 1.5",
   "atools >= 0.14.2, < 0.15",
   "cachetools >= 5.5.2, < 5.6",
   "click >= 8.2.1, < 8.3",
@@ -87,9 +86,10 @@ dev = [
 [project]
 authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
 dependencies = [
+  "atomicwrites >= 1.4.1, < 1.5",
   "typing-extensions >= 4.14.0, < 4.15",
-  "whenever >= 0.8.5, < 0.9",
   "tzlocal >= 5.3.1, < 5.4",
+  "whenever >= 0.8.5, < 0.9",
 ]
 name = "dycw-utilities"
 readme = "README.md"
@@ -98,7 +98,6 @@ version = "0.131.3"
 
 [project.optional-dependencies]
 logging = [
-  "atomicwrites >= 1.4.1, < 1.5",
   "coloredlogs >= 15.0.1, < 15.1",
 ]
 test = [
@@ -121,13 +120,12 @@ zzz-test-aiolimiter = [
 ]
 zzz-test-altair = [
   "altair >= 5.5.0, < 5.6",
-  "atomicwrites >= 1.4.1, < 1.5",
   "img2pdf >= 0.6.0, < 0.7",
   "polars-lts-cpu >= 1.30.0, < 1.31",
   "vl-convert-python >= 1.8.0, < 1.9",
 ]
 zzz-test-asyncio = []
-zzz-test-atomicwrites = ["atomicwrites >= 1.4.1, < 1.5"]
+zzz-test-atomicwrites = []
 zzz-test-atools = [
   "atools >= 0.14.2, < 0.15",
 ]
@@ -166,7 +164,6 @@ zzz-test-hashlib = [
   "orjson >= 3.10.15, < 3.11",
 ]
 zzz-test-http = [
-  "atomicwrites >= 1.4.1, < 1.5",
   "orjson >= 3.10.18, < 3.11",
 ]
 zzz-test-hypothesis = [
@@ -191,7 +188,6 @@ zzz-test-jupyter = [
   "polars-lts-cpu >= 1.30.0, < 1.31",
 ]
 zzz-test-logging = [
-  "atomicwrites >= 1.4.1, < 1.5",
   "coloredlogs >= 15.0.1, < 15.1",
   "rich >= 14.0.0, < 14.1",
   "tomlkit >= 0.13.2, < 0.14",
@@ -215,23 +211,20 @@ zzz-test-orjson = [
 ]
 zzz-test-os = []
 zzz-test-pathlib = []
-zzz-test-pickle = ["atomicwrites >= 1.4.1, < 1.5"]
+zzz-test-pickle = []
 zzz-test-platform = []
 zzz-test-polars = [
   "polars-lts-cpu >= 1.30.0, < 1.31",
 ]
 zzz-test-pqdm = ["pqdm >= 0.2.0, < 0.3"]
 zzz-test-pydantic = [
-  "atomicwrites >= 1.4.1, < 1.5",
   "pydantic >= 2.11.4, < 2.12",
 ]
 zzz-test-pyinstrument = [
-  "atomicwrites >= 1.4.1, < 1.5",
   "pyinstrument >= 5.0.2, < 5.1",
 ]
 zzz-test-pyrsistent = ["pyrsistent >= 0.20.0, < 0.21"]
 zzz-test-pytest = [
-  "atomicwrites >= 1.4.1, < 1.5",
   "orjson >= 3.10.18, < 3.11",
 ]
 zzz-test-pytest-regressions = ["pytest-regressions >= 2.8.0, < 2.9"]
@@ -275,7 +268,6 @@ zzz-test-sqlalchemy-polars = [
 ]
 zzz-test-streamlit = ["streamlit >= 1.45.0, < 1.46"]
 zzz-test-sys = [
-  "atomicwrites >= 1.4.1, < 1.5",
   "rich >= 14.0.0, < 14.1",
   "tomlkit >= 0.13.2, < 0.14",
 ]
