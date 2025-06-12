@@ -20,15 +20,7 @@ from typing import (
 )
 from zoneinfo import ZoneInfo
 
-from whenever import (
-    Date,
-    DateDelta,
-    DateTimeDelta,
-    PlainDateTime,
-    Time,
-    TimeDelta,
-    ZonedDateTime,
-)
+from whenever import Date, ZonedDateTime
 
 _T_co = TypeVar("_T_co", covariant=True)
 _T_contra = TypeVar("_T_contra", contravariant=True)
@@ -105,9 +97,9 @@ type DurationLike = MaybeStr[Duration]
 type DurationOrEveryDuration = Duration | tuple[Literal["every"], Duration]
 type MaybeCallablePyDate = MaybeCallable[dt.date]
 type MaybeCallablePyDateTime = MaybeCallable[dt.datetime]
-type PyDateLike = MaybeStr[dt.date]
-type PyTimeDeltaLike = MaybeStr[dt.timedelta]
-type PyTimeLike = MaybeStr[dt.time]
+type TimeLike = MaybeStr[dt.time]
+type TimeDeltaLike = MaybeStr[dt.timedelta]
+type WeekDay = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 
 # enum
@@ -269,22 +261,8 @@ type OptExcInfo = ExcInfo | tuple[None, None, None]
 
 
 # whenever
-type DateDeltaLike = MaybeStr[DateDelta]
-type DateLike = MaybeStr[Date]
-type DateTimeDeltaLike = MaybeStr[DateTimeDelta]
 type MaybeCallableDate = MaybeCallable[Date]
 type MaybeCallableZonedDateTime = MaybeCallable[ZonedDateTime]
-type PlainDateTimeLike = MaybeStr[PlainDateTime]
-type TimeDeltaLike = MaybeStr[TimeDelta]
-type TimeLike = MaybeStr[Time]
-type ZonedDateTimeLike = MaybeStr[ZonedDateTime]
-type DateTimeRoundUnit = Literal[
-    "day", "hour", "minute", "second", "millisecond", "microsecond", "nanosecond"
-]
-type DateTimeRoundMode = Literal[
-    "ceil", "floor", "half_ceil", "half_floor", "half_even"
-]
-type WeekDay = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 
 # zoneinfo
