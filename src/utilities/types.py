@@ -30,6 +30,8 @@ from whenever import (
     ZonedDateTime,
 )
 
+from whenever import Date, ZonedDateTime
+
 _T_co = TypeVar("_T_co", covariant=True)
 _T_contra = TypeVar("_T_contra", contravariant=True)
 

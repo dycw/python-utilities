@@ -14,7 +14,7 @@ from traceback import TracebackException
 from typing import TYPE_CHECKING, override
 
 from utilities.atomicwrites import writer
-from utilities.datetime import get_datetime, get_now, serialize_compact
+from utilities.datetime import get_datetime, serialize_compact
 from utilities.errors import repr_error
 from utilities.iterables import OneEmptyError, one
 from utilities.pathlib import get_path
@@ -27,16 +27,17 @@ from utilities.reprlib import (
     RICH_MAX_WIDTH,
     yield_mapping_repr,
 )
-from utilities.tzlocal import get_local_time_zone, get_now_local
+from utilities.tzlocal import get_local_time_zone
 from utilities.version import get_version
 from utilities.whenever import serialize_duration, serialize_zoned_datetime
+from utilities.whenever2 import get_now, get_now_local, to_local_plain_sec
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
     from traceback import FrameSummary
     from types import TracebackType
 
-    from utilities.types import MaybeCallablePathLike, MaybeCallablePyDateTime, PathLike
+    from utilities.types import MaybeCallablePyPathLike, MaybeCallablePyDateTime, PathLike
     from utilities.version import MaybeCallableVersionLike
 
 
@@ -86,12 +87,12 @@ def _yield_header_lines(
     version: MaybeCallableVersionLike | None = None,
 ) -> Iterator[str]:
     """Yield the header lines."""
-    now = get_now_local()
+    now = get_now()
     start_use = get_datetime(datetime=start)
     start_use = (
         None if start_use is None else start_use.astimezone(get_local_time_zone())
     )
-    yield f"Date/time | {serialize_zoned_datetime(now)}"
+    yield f"Date/time | {to_local_plain_sec(now)}"
     start_str = "" if start_use is None else serialize_zoned_datetime(start_use)
     yield f"Started   | {start_str}"
     duration = None if start_use is None else (now - start_use)
