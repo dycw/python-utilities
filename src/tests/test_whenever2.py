@@ -7,8 +7,15 @@ from zoneinfo import ZoneInfo
 
 from hypothesis import given
 from hypothesis.strategies import integers, just, none, timezones
-from pytest import raises
-from whenever import Date, DateDelta, DateTimeDelta, PlainDateTime, ZonedDateTime
+from pytest import mark, param, raises
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 from tests.conftest import IS_CI
 from utilities.dataclasses import replace_non_sentinel
@@ -56,9 +63,7 @@ from utilities.whenever2 import (
     get_today_local,
     to_date,
     to_date_time_delta,
-    to_days,
     to_nanos,
-    to_time_delta,
     to_zoned_date_time,
 )
 from utilities.zoneinfo import UTC
@@ -269,31 +274,6 @@ class TestToDateTimeDeltaAndNanos:
         ):
             delta = to_date_time_delta(nanos)
         assert to_nanos(delta) == nanos
-
-    def test_error(self) -> None:
-        delta = DateTimeDelta(months=1)
-        with raises(
-            ToNanosError, match="Date-time delta must not contain months; got 1"
-        ):
-            _ = to_nanos(delta)
-
-
-class TestToDays:
-    @given(days=integers())
-    def test_main(self, *, days: int) -> None:
-        with (
-            assume_does_not_raise(ValueError, match="days out of range"),
-            assume_does_not_raise(
-                OverflowError, match="Python int too large to convert to C long"
-            ),
-        ):
-            delta = DateDelta(days=days)
-        assert to_days(delta) == days
-
-    def test_error(self) -> None:
-        delta = DateDelta(months=1)
-        with raises(ToDaysError, match="Date delta must not contain months; got 1"):
-            _ = to_days(delta)
 
 
 class TestToZonedDateTime:

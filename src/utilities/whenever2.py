@@ -204,114 +204,17 @@ def to_date(
 ##
 
 
-def to_days(delta: DateDelta, /) -> int:
-    """Compute the number of days in a date delta."""
-    months, days = delta.in_months_days()
-    if months != 0:
-        raise ToDaysError(months=months)
-    return days
-
-
-@dataclass(kw_only=True, slots=True)
-class ToDaysError(Exception):
-    months: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Date delta must not contain months; got {self.months}"
-
-
-##
-
-
 def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
     """Construct a date-time delta."""
-    components = _to_time_delta_components(nanos)
-    days, hours = divmod(components.hours, 24)
-    weeks, days = divmod(days, 7)
-    match sign(nanos):  # pragma: no cover
-        case 1:
-            if hours < 0:
-                hours += 24
-                days -= 1
-            if days < 0:
-                days += 7
-                weeks -= 1
-        case -1:
-            if hours > 0:
-                hours -= 24
-                days += 1
-            if days > 0:
-                days -= 7
-                weeks += 1
-        case 0:
-            ...
-    return DateTimeDelta(
-        weeks=weeks,
-        days=days,
-        hours=hours,
-        minutes=components.minutes,
-        seconds=components.seconds,
-        microseconds=components.microseconds,
-        milliseconds=components.milliseconds,
-        nanoseconds=components.nanoseconds,
-    )
-
-
-##
-
-
-def to_nanos(delta: DateTimeDelta, /) -> int:
-    """Compute the number of nanoseconds in a date-time delta."""
-    months, days, _, _ = delta.in_months_days_secs_nanos()
-    if months != 0:
-        raise ToNanosError(months=months)
-    return 24 * 60 * 60 * int(1e9) * days + delta.time_part().in_nanoseconds()
-
-
-@dataclass(kw_only=True, slots=True)
-class ToNanosError(Exception):
-    months: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Date-time delta must not contain months; got {self.months}"
-
-
-##
-
-
-def to_time_delta(nanos: int, /) -> TimeDelta:
-    """Construct a time delta."""
-    components = _to_time_delta_components(nanos)
-    return TimeDelta(
-        hours=components.hours,
-        minutes=components.minutes,
-        seconds=components.seconds,
-        microseconds=components.microseconds,
-        milliseconds=components.milliseconds,
-        nanoseconds=components.nanoseconds,
-    )
-
-
-@dataclass(kw_only=True, slots=True)
-class _TimeDeltaComponents:
-    hours: int
-    minutes: int
-    seconds: int
-    microseconds: int
-    milliseconds: int
-    nanoseconds: int
-
-
-def _to_time_delta_components(nanos: int, /) -> _TimeDeltaComponents:
     sign_use = sign(nanos)
     micros, nanos = divmod(nanos, int(1e3))
     millis, micros = divmod(micros, int(1e3))
     secs, millis = divmod(millis, int(1e3))
     mins, secs = divmod(secs, 60)
     hours, mins = divmod(mins, 60)
-    match sign_use:  # pragma: no cover
+    days, hours = divmod(hours, 24)
+    weeks, days = divmod(days, 7)
+    match sign_use:
         case 1:
             if nanos < 0:
                 nanos += int(1e3)
@@ -328,6 +231,12 @@ def _to_time_delta_components(nanos: int, /) -> _TimeDeltaComponents:
             if mins < 0:
                 mins += 60
                 hours -= 1
+            if hours < 0:
+                hours += 24
+                days -= 1
+            if days < 0:
+                days += 7
+                weeks -= 1
         case -1:
             if nanos > 0:
                 nanos -= int(1e3)
@@ -344,9 +253,17 @@ def _to_time_delta_components(nanos: int, /) -> _TimeDeltaComponents:
             if mins > 0:
                 mins -= 60
                 hours += 1
+            if hours > 0:
+                hours -= 24
+                days += 1
+            if days > 0:
+                days -= 7
+                weeks += 1
         case 0:
             ...
-    return _TimeDeltaComponents(
+    return DateTimeDelta(
+        weeks=weeks,
+        days=days,
         hours=hours,
         minutes=mins,
         seconds=secs,
@@ -354,6 +271,27 @@ def _to_time_delta_components(nanos: int, /) -> _TimeDeltaComponents:
         milliseconds=millis,
         nanoseconds=nanos,
     )
+
+
+##
+
+
+def to_nanos(delta: DateTimeDelta, /) -> int:
+    """Compute the number of nano seconds in a date-time delta."""
+    months, days, secs, nanos = delta.in_months_days_secs_nanos()
+    if months != 0:
+        raise ToNanosError(months=months)
+    total_secs = 24 * 60 * 60 * days + secs
+    return int(1e9) * total_secs + nanos
+
+
+@dataclass(kw_only=True, slots=True)
+class ToNanosError:
+    months: int
+
+    @override
+    def __str__(self) -> str:
+        return f"DateTimeDelta must have no months; got {self.months}"
 
 
 ##
@@ -461,7 +399,6 @@ __all__ = [
     "ZERO_TIME",
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
-    "ToDaysError",
     "ToNanosError",
     "WheneverLogRecord",
     "format_compact",
@@ -475,7 +412,6 @@ __all__ = [
     "get_today_local",
     "to_date",
     "to_date_time_delta",
-    "to_days",
     "to_nanos",
     "to_zoned_date_time",
 ]
