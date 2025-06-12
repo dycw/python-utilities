@@ -20,7 +20,6 @@ from hypothesis.strategies import booleans, integers, none, sampled_from
 from pytest import LogCaptureFixture, mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
-from utilities.datetime import NOW_UTC, SECOND, serialize_compact
 from utilities.hypothesis import (
     assume_does_not_raise,
     pairs,
@@ -47,11 +46,13 @@ from utilities.logging import (
 from utilities.text import unique_str
 from utilities.types import LogLevel
 from utilities.typing import get_args
+from utilities.whenever import get_now, to_local_plain_sec
 
 if TYPE_CHECKING:
-    import datetime as dt
     from collections.abc import Iterator, Mapping
     from logging import _FilterType
+
+    from whenever import ZonedDateTime
 
 
 @contextmanager
@@ -81,7 +82,6 @@ class TestAddFilters:
 
 
 class TestBasicConfig:
-    @mark.parametrize("whenever", [param(True), param(False)])
     @mark.parametrize(
         "filters",
         [
@@ -91,24 +91,14 @@ class TestBasicConfig:
     )
     @mark.parametrize("plain", [param(True), param(False)])
     def test_main(
-        self,
-        *,
-        caplog: LogCaptureFixture,
-        whenever: bool,
-        filters: _FilterType | None,
-        plain: bool,
+        self, *, caplog: LogCaptureFixture, filters: _FilterType | None, plain: bool
     ) -> None:
         name = unique_str()
         with _temp_log_factory():
-            basic_config(obj=name, whenever=whenever, filters=filters, plain=plain)
+            basic_config(obj=name, filters=filters, plain=plain)
             getLogger(name).warning("message")
             record = one(r for r in caplog.records if r.name == name)
             assert record.message == "message"
-
-    @mark.parametrize("whenever", [param(True), param(False)])
-    def test_none(self, *, whenever: bool) -> None:
-        with _temp_log_factory():
-            basic_config(whenever=whenever)
 
 
 class TestComputeRolloverActions:
@@ -121,7 +111,7 @@ class TestComputeRolloverActions:
         actions.do()
         files = list(tmp_path.iterdir())
         assert len(files) == 1
-        assert any(p for p in files if search(r"^log\.1\__[\dT]+\.txt$", p.name))
+        assert any(p for p in files if search(r"^log\.1\__[\w\-:]+\.txt$", p.name))
 
         for _ in range(2):
             await sleep(1)
@@ -133,7 +123,9 @@ class TestComputeRolloverActions:
             files = list(tmp_path.iterdir())
             assert len(files) == 1
             assert any(
-                p for p in files if search(r"^log\.1\__[\dT]+__[\dT]+\.txt$", p.name)
+                p
+                for p in files
+                if search(r"^log\.1\__[\w\-:]+__[\w\-:]+\.txt$", p.name)
             )
 
     async def test_multiple_backups(self, *, tmp_path: Path) -> None:
@@ -145,7 +137,7 @@ class TestComputeRolloverActions:
         actions.do()
         files = list(tmp_path.iterdir())
         assert len(files) == 1
-        assert any(p for p in files if search(r"^log\.1\__[\dT]+\.txt$", p.name))
+        assert any(p for p in files if search(r"^log\.1\__[\w\-:]+\.txt$", p.name))
 
         await sleep(1)
         tmp_path.joinpath("log.txt").touch()
@@ -156,9 +148,9 @@ class TestComputeRolloverActions:
         files = list(tmp_path.iterdir())
         assert len(files) == 2
         assert any(
-            p for p in files if search(r"^log\.1\__[\dT]+__[\dT]+\.txt$", p.name)
+            p for p in files if search(r"^log\.1\__[\w\-:]+__[\w\-:]+\.txt$", p.name)
         )
-        assert any(p for p in files if search(r"^log\.2\__[\dT]+\.txt$", p.name))
+        assert any(p for p in files if search(r"^log\.2\__[\w\-:]+\.txt$", p.name))
 
         await sleep(1)
         tmp_path.joinpath("log.txt").touch()
@@ -169,12 +161,12 @@ class TestComputeRolloverActions:
         files = list(tmp_path.iterdir())
         assert len(files) == 3
         assert any(
-            p for p in files if search(r"^log\.1\__[\dT]+__[\dT]+\.txt$", p.name)
+            p for p in files if search(r"^log\.1\__[\w\-:]+__[\w\-:]+\.txt$", p.name)
         )
         assert any(
-            p for p in files if search(r"^log\.2\__[\dT]+__[\dT]+\.txt$", p.name)
+            p for p in files if search(r"^log\.2\__[\w\-:]+__[\w\-:]+\.txt$", p.name)
         )
-        assert all(p for p in files if search(r"^log\.3\__[\dT]+\.txt$", p.name))
+        assert all(p for p in files if search(r"^log\.3\__[\w\-:]+\.txt$", p.name))
 
         for _ in range(2):
             await sleep(1)
@@ -186,13 +178,19 @@ class TestComputeRolloverActions:
             files = list(tmp_path.iterdir())
             assert len(files) == 3
             assert any(
-                p for p in files if search(r"^log\.1\__[\dT]+__[\dT]+\.txt$", p.name)
+                p
+                for p in files
+                if search(r"^log\.1\__[\w\-:]+__[\w\-:]+\.txt$", p.name)
             )
             assert any(
-                p for p in files if search(r"^log\.2\__[\dT]+__[\dT]+\.txt$", p.name)
+                p
+                for p in files
+                if search(r"^log\.2\__[\w\-:]+__[\w\-:]+\.txt$", p.name)
             )
             assert all(
-                p for p in files if search(r"^log\.3\__[\dT]+__[\dT]+\.txt$", p.name)
+                p
+                for p in files
+                if search(r"^log\.3\__[\w\-:]+__[\w\-:]+\.txt$", p.name)
             )
 
     async def test_deleting_old_files(self, *, tmp_path: Path) -> None:
@@ -204,11 +202,11 @@ class TestComputeRolloverActions:
         actions.do()
         files = list(tmp_path.iterdir())
         assert len(files) == 1
-        assert any(p for p in files if search(r"^log\.1\__[\dT]+\.txt$", p.name))
+        assert any(p for p in files if search(r"^log\.1\__[\w\-:]+\.txt$", p.name))
 
         await sleep(1)
         tmp_path.joinpath("log.txt").touch()
-        now = serialize_compact(NOW_UTC)
+        now = to_local_plain_sec(get_now())
         tmp_path.joinpath(f"log.99__{now}__{now}.txt").touch()
         actions = _compute_rollover_actions(tmp_path, "log", ".txt")
         assert len(actions.deletions) == 2
@@ -217,7 +215,7 @@ class TestComputeRolloverActions:
         files = list(tmp_path.iterdir())
         assert len(files) == 1
         assert any(
-            p for p in files if search(r"^log\.1\__[\dT]+__[\dT]+\.txt$", p.name)
+            p for p in files if search(r"^log\.1\__[\w\-:]+__[\w\-:]+\.txt$", p.name)
         )
 
 
@@ -249,19 +247,14 @@ class TestFilterForKey:
 
 
 class TestGetFormatter:
-    @mark.parametrize("whenever", [param(True), param(False)])
     @mark.parametrize("plain", [param(True), param(False)])
     @mark.parametrize("color_field_styles", [param({}), param(None)])
     def test_main(
-        self,
-        *,
-        whenever: bool,
-        plain: bool,
-        color_field_styles: Mapping[str, _FieldStyleKeys] | None,
+        self, *, plain: bool, color_field_styles: Mapping[str, _FieldStyleKeys] | None
     ) -> None:
         with _temp_log_factory():
             formatter = get_formatter(
-                whenever=whenever, plain=plain, color_field_styles=color_field_styles
+                plain=plain, color_field_styles=color_field_styles
             )
             assert isinstance(formatter, Formatter)
 
@@ -332,42 +325,34 @@ class TestRotatingLogFile:
         assert result.start is None
         assert result.end is None
 
-    @given(
-        index=integers(min_value=1),
-        end=zoned_datetimes(round_="standard", timedelta=SECOND),
-    )
+    @given(index=integers(min_value=1), end=zoned_datetimes())
     def test_from_path_with_index_and_end(
-        self, *, index: int, end: dt.datetime
+        self, *, index: int, end: ZonedDateTime
     ) -> None:
-        path = Path(f"log.{index}__{serialize_compact(end)}.txt")
+        path = Path(f"log.{index}__{to_local_plain_sec(end)}.txt")
         result = _RotatingLogFile.from_path(path, "log", ".txt")
         assert result is not None
         assert result.stem == "log"
         assert result.suffix == ".txt"
         assert result.index == index
         assert result.start is None
-        assert result.end == end
+        assert result.end == end.round()
 
-    @given(
-        index=integers(min_value=1),
-        datetimes=pairs(
-            zoned_datetimes(round_="standard", timedelta=SECOND), sorted=True
-        ),
-    )
+    @given(index=integers(min_value=1), datetimes=pairs(zoned_datetimes(), sorted=True))
     def test_from_path_with_index_start_and_end(
-        self, *, index: int, datetimes: tuple[dt.datetime, dt.datetime]
+        self, *, index: int, datetimes: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
         start, end = datetimes
         path = Path(
-            f"log.{index}__{serialize_compact(start)}__{serialize_compact(end)}.txt"
+            f"log.{index}__{to_local_plain_sec(start)}__{to_local_plain_sec(end)}.txt"
         )
         result = _RotatingLogFile.from_path(path, "log", ".txt")
         assert result is not None
         assert result.stem == "log"
         assert result.suffix == ".txt"
         assert result.index == index
-        assert result.start == start
-        assert result.end == end
+        assert result.start == start.round()
+        assert result.end == end.round()
 
     def test_from_path_none(self) -> None:
         path = Path("invalid.txt")
@@ -383,35 +368,29 @@ class TestRotatingLogFile:
         file = _RotatingLogFile(directory=root, stem="log", suffix=".txt", index=index)
         assert file.path == root.joinpath(f"log.{index}.txt")
 
-    @given(
-        root=temp_paths(),
-        index=integers(min_value=1),
-        end=zoned_datetimes(round_="standard", timedelta=SECOND),
-    )
+    @given(root=temp_paths(), index=integers(min_value=1), end=zoned_datetimes())
     def test_path_with_index_and_end(
-        self, *, root: Path, index: int, end: dt.datetime
+        self, *, root: Path, index: int, end: ZonedDateTime
     ) -> None:
         file = _RotatingLogFile(
             directory=root, stem="log", suffix=".txt", index=index, end=end
         )
-        assert file.path == root.joinpath(f"log.{index}__{serialize_compact(end)}.txt")
+        assert file.path == root.joinpath(f"log.{index}__{to_local_plain_sec(end)}.txt")
 
     @given(
         root=temp_paths(),
         index=integers(min_value=1),
-        datetimes=pairs(
-            zoned_datetimes(round_="standard", timedelta=SECOND), sorted=True
-        ),
+        datetimes=pairs(zoned_datetimes(), sorted=True),
     )
     def test_path_with_index_start_and_end(
-        self, *, root: Path, index: int, datetimes: tuple[dt.datetime, dt.datetime]
+        self, *, root: Path, index: int, datetimes: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
         start, end = datetimes
         file = _RotatingLogFile(
             directory=root, stem="log", suffix=".txt", index=index, start=start, end=end
         )
         assert file.path == root.joinpath(
-            f"log.{index}__{serialize_compact(start)}__{serialize_compact(end)}.txt"
+            f"log.{index}__{to_local_plain_sec(start)}__{to_local_plain_sec(end)}.txt"
         )
 
 
@@ -466,46 +445,46 @@ class TestSizeAndTimeRotatingFileHandler:
                 assert any(p for p in files if search(r"^log\.txt$", p.name))
                 if cycle == 2:
                     assert any(
-                        p for p in files if search(r"^log\.1__[\dT]+\.txt$", p.name)
+                        p for p in files if search(r"^log\.1__[\w\-:]+\.txt$", p.name)
                     )
                 elif cycle == 3:
                     assert any(
                         p
                         for p in files
-                        if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
+                        if search(r"^log\.1__[\w\-:]+__[\w\-:]+\.txt$", p.name)
                     )
                     assert any(
-                        p for p in files if search(r"^log\.2__[\dT]+\.txt$", p.name)
+                        p for p in files if search(r"^log\.2__[\w\-:]+\.txt$", p.name)
                     )
                 elif cycle == 4:
                     assert any(
                         p
                         for p in files
-                        if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
+                        if search(r"^log\.1__[\w\-:]+__[\w\-:]+\.txt$", p.name)
                     )
                     assert any(
                         p
                         for p in files
-                        if search(r"^log\.2__[\dT]+__[\dT]+\.txt$", p.name)
+                        if search(r"^log\.2__[\w\-:]+__[\w\-:]+\.txt$", p.name)
                     )
                     assert any(
-                        p for p in files if search(r"^log\.3__[\dT]+\.txt$", p.name)
+                        p for p in files if search(r"^log\.3__[\w\-:]+\.txt$", p.name)
                     )
                 elif cycle >= 5:
                     assert any(
                         p
                         for p in files
-                        if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
+                        if search(r"^log\.1__[\w\-:]+__[\w\-:]+\.txt$", p.name)
                     )
                     assert any(
                         p
                         for p in files
-                        if search(r"^log\.2__[\dT]+__[\dT]+\.txt$", p.name)
+                        if search(r"^log\.2__[\w\-:]+__[\w\-:]+\.txt$", p.name)
                     )
                     assert any(
                         p
                         for p in files
-                        if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
+                        if search(r"^log\.3__[\w\-:]+__[\w\-:]+\.txt$", p.name)
                     )
                 await sleep(0.1)
 
@@ -536,7 +515,7 @@ class TestSizeAndTimeRotatingFileHandler:
             files = list(tmp_path.iterdir())
             assert len(files) == 2
             assert any(p for p in files if search(r"^log\.txt$", p.name))
-            assert any(p for p in files if search(r"^log\.1__[\dT]+\.txt$", p.name))
+            assert any(p for p in files if search(r"^log\.1__[\w\-:]+\.txt$", p.name))
 
         await sleep(1.1)
         for i in range(4, 6):
@@ -545,9 +524,9 @@ class TestSizeAndTimeRotatingFileHandler:
             assert len(files) == 3
             assert any(p for p in files if search(r"^log\.txt$", p.name))
             assert any(
-                p for p in files if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
+                p for p in files if search(r"^log\.1__[\w\-:]+__[\w\-:]+\.txt$", p.name)
             )
-            assert any(p for p in files if search(r"^log\.2__[\dT]+\.txt$", p.name))
+            assert any(p for p in files if search(r"^log\.2__[\w\-:]+\.txt$", p.name))
 
         await sleep(1.1)
         for i in range(6, 8):
@@ -556,12 +535,12 @@ class TestSizeAndTimeRotatingFileHandler:
             assert len(files) == 4
             assert any(p for p in files if search(r"^log\.txt$", p.name))
             assert any(
-                p for p in files if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
+                p for p in files if search(r"^log\.1__[\w\-:]+__[\w\-:]+\.txt$", p.name)
             )
             assert any(
-                p for p in files if search(r"^log\.2__[\dT]+__[\dT]+\.txt$", p.name)
+                p for p in files if search(r"^log\.2__[\w\-:]+__[\w\-:]+\.txt$", p.name)
             )
-            assert any(p for p in files if search(r"^log\.3__[\dT]+\.txt$", p.name))
+            assert any(p for p in files if search(r"^log\.3__[\w\-:]+\.txt$", p.name))
 
         for _ in range(2):
             await sleep(1.1)
@@ -571,13 +550,19 @@ class TestSizeAndTimeRotatingFileHandler:
                 assert len(files) == 4
                 assert any(p for p in files if search(r"^log\.txt$", p.name))
                 assert any(
-                    p for p in files if search(r"^log\.1__[\dT]+__[\dT]+\.txt$", p.name)
+                    p
+                    for p in files
+                    if search(r"^log\.1__[\w\-:]+__[\w\-:]+\.txt$", p.name)
                 )
                 assert any(
-                    p for p in files if search(r"^log\.2__[\dT]+__[\dT]+\.txt$", p.name)
+                    p
+                    for p in files
+                    if search(r"^log\.2__[\w\-:]+__[\w\-:]+\.txt$", p.name)
                 )
                 assert any(
-                    p for p in files if search(r"^log\.3__[\dT]+__[\dT]+\.txt$", p.name)
+                    p
+                    for p in files
+                    if search(r"^log\.3__[\w\-:]+__[\w\-:]+\.txt$", p.name)
                 )
 
     @mark.parametrize("max_bytes", [param(0), param(1)])
