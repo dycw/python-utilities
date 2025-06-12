@@ -20,6 +20,7 @@ from hypothesis.strategies import (
     sampled_from,
 )
 from pytest import LogCaptureFixture, approx, mark, param, raises
+from whenever import TimeDelta
 
 from tests.conftest import IS_CI
 from tests.test_asyncio_classes.loopers import (
@@ -610,7 +611,7 @@ class TestLooper:
         looper = Example()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta >= self._restart_min_elapsed
+        assert timer.timedelta >= TimeDelta.from_py_timedelta(self._restart_min_elapsed)
         pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) whilst restarting \(initialize\); sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
@@ -627,7 +628,7 @@ class TestLooper:
         looper = Example()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta >= self._restart_min_elapsed
+        assert timer.timedelta >= TimeDelta.from_py_timedelta(self._restart_min_elapsed)
         pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) whilst restarting \(tear down\); sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
@@ -650,7 +651,7 @@ class TestLooper:
         looper = Example()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta >= self._restart_min_elapsed
+        assert timer.timedelta >= TimeDelta.from_py_timedelta(self._restart_min_elapsed)
         pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) \(tear down\) and then {get_class_name(CountingLooperError)}\(\) \(initialization\) whilst restarting; sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
@@ -658,7 +659,7 @@ class TestLooper:
         looper = CountingLooper()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta <= self._restart_max_elapsed
+        assert timer.timedelta <= TimeDelta.from_py_timedelta(self._restart_min_elapsed)
         pattern = r": finished restarting$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
