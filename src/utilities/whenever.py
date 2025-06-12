@@ -84,6 +84,177 @@ class _CheckValidZonedDateTimeUnequalError(CheckValidZonedDateTimeError):
 ##
 
 
+def ensure_date(date: PyDateLike, /) -> dt.date:
+    """Ensure the object is a date."""
+    if isinstance(date, dt.date):
+        check_date_not_datetime(date)
+        return date
+    try:
+        return parse_date(date)
+    except ParseDateError as error:
+        raise EnsureDateError(date=error.date) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class EnsureDateError(Exception):
+    date: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure date; got {self.date!r}"
+
+
+##
+
+
+def ensure_datetime(datetime: DateTimeLike, /) -> dt.datetime:
+    """Ensure the object is a datetime."""
+    if isinstance(datetime, dt.datetime):
+        return datetime  # skipif-ci-and-windows
+    try:
+        return parse_datetime(datetime)
+    except ParseDateTimeError as error:
+        raise EnsureDateTimeError(datetime=error.datetime) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class EnsureDateTimeError(Exception):
+    datetime: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure datetime; got {self.datetime!r}"
+
+
+##
+
+
+def ensure_duration(duration: DurationLike, /) -> Duration:
+    """Ensure the object is a Duration."""
+    if isinstance(duration, int | float | dt.timedelta):
+        return duration
+    try:
+        return parse_duration(duration)
+    except ParseDurationError as error:
+        raise EnsureDurationError(duration=error.duration) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class EnsureDurationError(Exception):
+    duration: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure duration; got {self.duration!r}"
+
+
+##
+
+
+def ensure_plain_datetime(datetime: DateTimeLike, /) -> dt.datetime:
+    """Ensure the object is a plain datetime."""
+    if isinstance(datetime, dt.datetime):
+        return datetime
+    try:
+        return parse_plain_datetime(datetime)
+    except ParsePlainDateTimeError as error:
+        raise EnsurePlainDateTimeError(datetime=error.datetime) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class EnsurePlainDateTimeError(Exception):
+    datetime: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure plain datetime; got {self.datetime!r}"
+
+
+##
+
+
+def ensure_time(time: PyTimeLike, /) -> dt.time:
+    """Ensure the object is a time."""
+    if isinstance(time, dt.time):
+        return time
+    try:
+        return parse_time(time)
+    except ParseTimeError as error:
+        raise EnsureTimeError(time=error.time) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class EnsureTimeError(Exception):
+    time: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure time; got {self.time!r}"
+
+
+##
+
+
+def ensure_timedelta(timedelta: PyTimeDeltaLike, /) -> dt.timedelta:
+    """Ensure the object is a timedelta."""
+    if isinstance(timedelta, dt.timedelta):
+        return timedelta
+    try:
+        return parse_timedelta(timedelta)
+    except _ParseTimedeltaParseError as error:
+        raise _EnsureTimedeltaParseError(timedelta=error.timedelta) from None
+    except _ParseTimedeltaNanosecondError as error:
+        raise _EnsureTimedeltaNanosecondError(
+            timedelta=error.timedelta, nanoseconds=error.nanoseconds
+        ) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class EnsureTimedeltaError(Exception):
+    timedelta: str
+
+
+@dataclass(kw_only=True, slots=True)
+class _EnsureTimedeltaParseError(EnsureTimedeltaError):
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure timedelta; got {self.timedelta!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _EnsureTimedeltaNanosecondError(EnsureTimedeltaError):
+    nanoseconds: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure timedelta; got {self.nanoseconds} nanoseconds"
+
+
+##
+
+
+def ensure_zoned_datetime(datetime: DateTimeLike, /) -> dt.datetime:
+    """Ensure the object is a zoned datetime."""
+    if isinstance(datetime, dt.datetime):
+        return datetime  # pragma: no cover
+    try:
+        return parse_zoned_datetime(datetime)
+    except ParseZonedDateTimeError as error:
+        raise EnsureZonedDateTimeError(datetime=error.datetime) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class EnsureZonedDateTimeError(Exception):
+    datetime: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure zoned datetime; got {self.datetime!r}"
+
+
+##
+
+
 _PARSE_DATE_YYMMDD_REGEX = re.compile(r"^(\d{2})(\d{2})(\d{2})$")
 
 
