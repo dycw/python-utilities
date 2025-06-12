@@ -53,7 +53,7 @@ def _make_converter(
     cls: type[_T], parser: Callable[[str], _T], /
 ) -> Callable[[Any, type[Any]], Any]:
     def hook(value: _T | str, _: type[_T] = cls, /) -> Any:
-        if not isinstance(value, (cls, str)):
+        if not isinstance(value, (cls, str)):  # pragma: no cover
             msg = f"Invalid type {type(value).__name__!r}; expected '{cls.__name__}' or 'str'"
             raise TypeError(msg)
         if isinstance(value, str):
