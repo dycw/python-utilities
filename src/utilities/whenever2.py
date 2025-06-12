@@ -70,6 +70,32 @@ DATE_TIME_DELTA_MAX = DateTimeDelta(
 )
 DATE_DELTA_MIN = DATE_TIME_DELTA_MIN.date_part()
 DATE_DELTA_MAX = DATE_TIME_DELTA_MAX.date_part()
+TIME_DELTA_MIN = DATE_TIME_DELTA_MIN.time_part()
+TIME_DELTA_MAX = DATE_TIME_DELTA_MAX.time_part()
+
+
+DATE_TIME_DELTA_MIN = DateTimeDelta(
+    weeks=-521722,
+    days=-5,
+    hours=-23,
+    minutes=-59,
+    seconds=-59,
+    milliseconds=-999,
+    microseconds=-999,
+    nanoseconds=-999,
+)
+DATE_TIME_DELTA_MAX = DateTimeDelta(
+    weeks=521722,
+    days=5,
+    hours=23,
+    minutes=59,
+    seconds=59,
+    milliseconds=999,
+    microseconds=999,
+    nanoseconds=999,
+)
+DATE_DELTA_MIN = DATE_TIME_DELTA_MIN.date_part()
+DATE_DELTA_MAX = DATE_TIME_DELTA_MAX.date_part()
 TIME_DELTA_MIN = TimeDelta(hours=-87831216)
 TIME_DELTA_MAX = TimeDelta(hours=87831216)
 
@@ -204,6 +230,26 @@ def to_date(
 ##
 
 
+def to_days(delta: DateDelta, /) -> int:
+    """Compute the number of days in a date delta."""
+    months, days = delta.in_months_days()
+    if months != 0:
+        raise ToDaysError(months=months)
+    return days
+
+
+@dataclass(kw_only=True, slots=True)
+class ToDaysError:
+    months: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Date delta must have no months; got {self.months}"
+
+
+##
+
+
 def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
     """Construct a date-time delta."""
     sign_use = sign(nanos)
@@ -277,7 +323,7 @@ def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
 
 
 def to_nanos(delta: DateTimeDelta, /) -> int:
-    """Compute the number of nano seconds in a date-time delta."""
+    """Compute the number of nanoseconds in a date-time delta."""
     months, days, secs, nanos = delta.in_months_days_secs_nanos()
     if months != 0:
         raise ToNanosError(months=months)
@@ -291,7 +337,7 @@ class ToNanosError:
 
     @override
     def __str__(self) -> str:
-        return f"DateTimeDelta must have no months; got {self.months}"
+        return f"Date-time delta must have no months; got {self.months}"
 
 
 ##
@@ -399,6 +445,7 @@ __all__ = [
     "ZERO_TIME",
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
+    "ToDaysError",
     "ToNanosError",
     "WheneverLogRecord",
     "format_compact",
@@ -412,6 +459,7 @@ __all__ = [
     "get_today_local",
     "to_date",
     "to_date_time_delta",
+    "to_days",
     "to_nanos",
     "to_zoned_date_time",
 ]
