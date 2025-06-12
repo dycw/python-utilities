@@ -36,6 +36,7 @@ from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_path
 from utilities.hypothesis import (
     datetime_durations,
+    int64s,
     numbers,
     paths,
     plain_datetimes,
@@ -78,10 +79,10 @@ class TestSerializeAndParseObject:
         result = parse_object(dt.datetime, serialized)
         assert result == datetime
 
-    @given(mapping=dictionaries(dates(), zoned_datetimes()))
-    def test_dict(self, *, mapping: dict[dt.date, dt.datetime]) -> None:
+    @given(mapping=dictionaries(dates(), int64s()))
+    def test_dict(self, *, mapping: dict[dt.date, int]) -> None:
         serialized = serialize_object(mapping)
-        result = parse_object(dict[dt.date, dt.datetime], serialized)
+        result = parse_object(dict[dt.date, int], serialized)
         assert result == mapping
 
     @given(duration=datetime_durations(two_way=True))
