@@ -50,6 +50,7 @@ from utilities.whenever2 import (
     TODAY_UTC,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
+    ToNanosError,
     WheneverLogRecord,
     format_compact,
     from_timestamp,
@@ -277,6 +278,13 @@ class TestToDateTimeDeltaAndNanos:
         ):
             delta = to_date_time_delta(nanos)
         assert to_nanos(delta) == nanos
+
+    def test_error(self) -> None:
+        delta = DateTimeDelta(months=1)
+        with raises(
+            ToNanosError, match="Date-time delta must not contain months; got 1"
+        ):
+            _ = to_nanos(delta)
 
 
 class TestToZonedDateTime:
