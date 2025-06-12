@@ -717,85 +717,6 @@ def lists_fixed_length(
 
 
 @composite
-def min_and_max_datetimes(
-    draw: DrawFn,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[dt.datetime | None] = None,
-    max_value: MaybeSearchStrategy[dt.datetime | None] = None,
-    time_zone: MaybeSearchStrategy[ZoneInfo | timezone] = UTC,
-    round_: MathRoundMode | None = None,
-    timedelta: dt.timedelta | None = None,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
-    valid: bool = False,
-) -> tuple[dt.datetime, dt.datetime]:
-    """Strategy for generating min/max datetimes."""
-    match min_value, max_value:
-        case None, None:
-            return draw(
-                pairs(
-                    zoned_datetimes(
-                        time_zone=time_zone,
-                        round_=round_,
-                        timedelta=timedelta,
-                        rel_tol=rel_tol,
-                        abs_tol=abs_tol,
-                        valid=valid,
-                    ),
-                    sorted=True,
-                )
-            )
-        case None, dt.datetime():
-            min_value_ = draw(
-                zoned_datetimes(
-                    max_value=max_value,
-                    time_zone=time_zone,
-                    round_=round_,
-                    timedelta=timedelta,
-                    rel_tol=rel_tol,
-                    abs_tol=abs_tol,
-                    valid=valid,
-                )
-            )
-            return min_value_, max_value
-        case dt.datetime(), None:
-            max_value_ = draw(
-                zoned_datetimes(
-                    min_value=min_value,
-                    time_zone=time_zone,
-                    round_=round_,
-                    timedelta=timedelta,
-                    rel_tol=rel_tol,
-                    abs_tol=abs_tol,
-                    valid=valid,
-                )
-            )
-            return min_value, max_value_
-        case dt.datetime(), dt.datetime():
-            _ = assume(min_value <= max_value)
-            return min_value, max_value
-        case _, _:
-            strategy = zoned_datetimes(
-                time_zone=time_zone,
-                round_=round_,
-                timedelta=timedelta,
-                rel_tol=rel_tol,
-                abs_tol=abs_tol,
-                valid=valid,
-            )
-            min_value_ = draw2(draw, min_value, strategy)
-            max_value_ = draw2(draw, max_value, strategy)
-            _ = assume(min_value_ <= max_value_)
-            return min_value_, max_value_
-        case _ as never:
-            assert_never(never)
-
-
-##
-
-
-@composite
 def months(
     draw: DrawFn,
     /,
@@ -1561,7 +1482,6 @@ __all__ = [
     "int64s",
     "int_arrays",
     "lists_fixed_length",
-    "min_and_max_datetimes",
     "months",
     "namespace_mixins",
     "numbers",

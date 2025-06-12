@@ -43,7 +43,6 @@ from utilities.datetime import (
 )
 from utilities.functions import ensure_int
 from utilities.hypothesis import (
-    MaybeSearchStrategy,
     PlainDateTimesError,
     Shape,
     ZonedDateTimesError,
@@ -67,7 +66,6 @@ from utilities.hypothesis import (
     int64s,
     int_arrays,
     lists_fixed_length,
-    min_and_max_datetimes,
     months,
     namespace_mixins,
     numbers,
@@ -702,29 +700,6 @@ class TestListsFixedLength:
             assert len(set(result)) == len(result)
         if sorted_:
             assert sorted(result) == result
-
-
-class TestMinAndMaxDateTimes:
-    @given(
-        data=data(),
-        min_value=zoned_datetimes() | none() | just(zoned_datetimes() | none()),
-        max_value=zoned_datetimes() | none() | just(zoned_datetimes() | none()),
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        min_value: MaybeSearchStrategy[dt.datetime | None],
-        max_value: MaybeSearchStrategy[dt.datetime | None],
-    ) -> None:
-        min_datetime, max_datetime = data.draw(
-            min_and_max_datetimes(min_value=min_value, max_value=max_value)
-        )
-        assert min_datetime <= max_datetime
-        if isinstance(min_value, dt.datetime):
-            assert min_datetime == min_value
-        if isinstance(max_value, dt.datetime):
-            assert max_datetime == max_value
 
 
 class TestMonths:
