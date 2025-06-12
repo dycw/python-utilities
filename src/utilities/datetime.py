@@ -31,9 +31,9 @@ if TYPE_CHECKING:
     from utilities.types import (
         DateOrDateTime,
         Duration,
+        MathRoundMode,
         MaybeCallablePyDate,
         MaybeCallablePyDateTime,
-        RoundMode,
         TimeZoneLike,
     )
 
@@ -755,7 +755,7 @@ def mean_datetime(
     /,
     *,
     weights: Iterable[SupportsFloat] | None = None,
-    mode: RoundMode = "standard",
+    mode: MathRoundMode = "standard",
     rel_tol: float | None = None,
     abs_tol: float | None = None,
 ) -> dt.datetime:
@@ -790,7 +790,7 @@ def mean_timedelta(
     /,
     *,
     weights: Iterable[SupportsFloat] | None = None,
-    mode: RoundMode = "standard",
+    mode: MathRoundMode = "standard",
     rel_tol: float | None = None,
     abs_tol: float | None = None,
 ) -> dt.timedelta:
@@ -1022,7 +1022,7 @@ def round_datetime(
     duration: Duration,
     /,
     *,
-    mode: RoundMode = "standard",
+    mode: MathRoundMode = "standard",
     rel_tol: float | None = None,
     abs_tol: float | None = None,
 ) -> dt.datetime:

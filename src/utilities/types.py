@@ -20,7 +20,15 @@ from typing import (
 )
 from zoneinfo import ZoneInfo
 
-from whenever import Date, ZonedDateTime
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 _T_co = TypeVar("_T_co", covariant=True)
 _T_contra = TypeVar("_T_contra", contravariant=True)
@@ -262,8 +270,22 @@ type OptExcInfo = ExcInfo | tuple[None, None, None]
 
 
 # whenever
+type DateDeltaLike = MaybeStr[DateDelta]
+type DateLike = MaybeStr[Date]
+type DateTimeDeltaLike = MaybeStr[DateTimeDelta]
 type MaybeCallableDate = MaybeCallable[Date]
 type MaybeCallableZonedDateTime = MaybeCallable[ZonedDateTime]
+type PlainDateTimeLike = MaybeStr[PlainDateTime]
+type TimeDeltaLike = MaybeStr[TimeDelta]
+type TimeLike = MaybeStr[Time]
+type ZonedDateTimeLike = MaybeStr[ZonedDateTime]
+type DateTimeRoundUnit = Literal[
+    "day", "hour", "minute", "second", "millisecond", "microsecond", "nanosecond"
+]
+type DateTimeRoundMode = Literal[
+    "ceil", "floor", "half_ceil", "half_floor", "half_even"
+]
+type WeekDay = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 
 # zoneinfo
@@ -278,9 +300,14 @@ type TimeZoneLike = ZoneInfo | Literal["local"] | TimeZone | dt.tzinfo | dt.date
 __all__ = [
     "Coroutine1",
     "Dataclass",
+    "DateDeltaLike",
+    "DateLike",
     "DateLike",
     "DateOrDateTime",
+    "DateTimeDeltaLike",
     "DateTimeLike",
+    "DateTimeRoundMode",
+    "DateTimeRoundUnit",
     "Duration",
     "DurationLike",
     "DurationOrEveryDuration",
@@ -292,10 +319,12 @@ __all__ = [
     "MaybeAwaitable",
     "MaybeCallable",
     "MaybeCallableDate",
+    "MaybeCallableDate",
     "MaybeCallableEvent",
     "MaybeCallablePathLike",
     "MaybeCallablePyDate",
     "MaybeCallablePyDateTime",
+    "MaybeCallableZonedDateTime",
     "MaybeCallableZonedDateTime",
     "MaybeCoroutine1",
     "MaybeIterable",
@@ -309,6 +338,7 @@ __all__ = [
     "ParseObjectExtra",
     "PathLike",
     "PatternLike",
+    "PlainDateTimeLike",
     "RoundMode",
     "Seed",
     "SerializeObjectExtra",
@@ -352,4 +382,5 @@ __all__ = [
     "TupleOrStrMapping",
     "TypeLike",
     "WeekDay",
+    "ZonedDateTimeLike",
 ]
