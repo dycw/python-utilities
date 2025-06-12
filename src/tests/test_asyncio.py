@@ -20,7 +20,6 @@ from hypothesis.strategies import (
     sampled_from,
 )
 from pytest import LogCaptureFixture, approx, mark, param, raises
-from whenever import TimeDelta
 
 from tests.conftest import IS_CI
 from tests.test_asyncio_classes.loopers import (
@@ -611,7 +610,7 @@ class TestLooper:
         looper = Example()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta >= TimeDelta.from_py_timedelta(self._restart_min_elapsed)
+        assert timer.timedelta.py_timedelta() >= self._restart_min_elapsed
         pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) whilst restarting \(initialize\); sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
@@ -628,7 +627,7 @@ class TestLooper:
         looper = Example()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta >= TimeDelta.from_py_timedelta(self._restart_min_elapsed)
+        assert timer.timedelta.py_timedelta() >= self._restart_min_elapsed
         pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) whilst restarting \(tear down\); sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
@@ -651,7 +650,7 @@ class TestLooper:
         looper = Example()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta >= TimeDelta.from_py_timedelta(self._restart_min_elapsed)
+        assert timer.timedelta.py_timedelta() >= self._restart_min_elapsed
         pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) \(tear down\) and then {get_class_name(CountingLooperError)}\(\) \(initialization\) whilst restarting; sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
@@ -659,7 +658,7 @@ class TestLooper:
         looper = CountingLooper()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta <= TimeDelta.from_py_timedelta(self._restart_min_elapsed)
+        assert timer.timedelta.py_timedelta() <= self._restart_max_elapsed
         pattern = r": finished restarting$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
@@ -912,12 +911,14 @@ class TestSleepDur:
     async def test_main(self, *, duration: Duration) -> None:
         with Timer() as timer:
             await sleep_dur(duration=duration)
-        assert timer <= datetime_duration_to_timedelta(2 * duration)
+        assert timer.timedelta.py_timedelta() <= datetime_duration_to_timedelta(
+            2 * duration
+        )
 
     async def test_none(self) -> None:
         with Timer() as timer:
             await sleep_dur()
-        assert timer <= 0.01
+        assert timer.timedelta.in_seconds() <= 0.01
 
 
 class TestSleepMaxDur:
@@ -926,12 +927,14 @@ class TestSleepMaxDur:
     async def test_main(self, *, duration: Duration) -> None:
         with Timer() as timer:
             await sleep_max_dur(duration=duration)
-        assert timer <= datetime_duration_to_timedelta(2 * duration)
+        assert timer.timedelta.py_timedelta() <= datetime_duration_to_timedelta(
+            2 * duration
+        )
 
     async def test_none(self) -> None:
         with Timer() as timer:
             await sleep_max_dur()
-        assert timer <= 0.01
+        assert timer.timedelta.in_seconds() <= 0.01
 
 
 class TestSleepUntil:
