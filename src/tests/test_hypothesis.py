@@ -28,7 +28,7 @@ from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
 from pytest import mark, raises
-from whenever import Date, PlainDateTime, ZonedDateTime
+from whenever import Date, DateDelta, PlainDateTime, ZonedDateTime
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
@@ -51,6 +51,7 @@ from utilities.hypothesis import (
     _Draw2InputResolvedToSentinelError,
     assume_does_not_raise,
     bool_arrays,
+    date_deltas_whenever,
     date_durations,
     dates_two_digit_year,
     dates_whenever,
@@ -182,6 +183,22 @@ class TestBoolArrays:
         assert array.shape == shape
 
 
+class TestDateDeltas:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value = data.draw(date_deltas_whenever() | none())
+        max_value = data.draw(date_deltas_whenever() | none())
+        with assume_does_not_raise(InvalidArgument):
+            delta = data.draw(
+                date_deltas_whenever(min_value=min_value, max_value=max_value)
+            )
+        assert isinstance(delta, DateDelta)
+        if min_value is not None:
+            assert delta >= min_value
+        if max_value is not None:
+            assert delta <= max_value
+
+
 class TestDateDurations:
     @given(
         data=data(),
@@ -267,14 +284,12 @@ class TestDatesWhenever:
         min_value = data.draw(dates_whenever() | none())
         max_value = data.draw(dates_whenever() | none())
         with assume_does_not_raise(InvalidArgument):
-            datetime = data.draw(
-                dates_whenever(min_value=min_value, max_value=max_value)
-            )
-        assert isinstance(datetime, Date)
+            date = data.draw(dates_whenever(min_value=min_value, max_value=max_value))
+        assert isinstance(date, Date)
         if min_value is not None:
-            assert datetime >= min_value
+            assert date >= min_value
         if max_value is not None:
-            assert datetime <= max_value
+            assert date <= max_value
 
 
 class TestDateTimeDurations:

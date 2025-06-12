@@ -47,7 +47,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from whenever import Date
+from whenever import Date, DateDelta
 
 from utilities.datetime import (
     DATETIME_MAX_NAIVE,
@@ -161,6 +161,39 @@ def bool_arrays(
 
 
 @composite
+def date_deltas_whenever(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[DateDelta | None] = None,
+    max_value: MaybeSearchStrategy[DateDelta | None] = None,
+) -> DateDelta:
+    """Strategy for generating date deltas."""
+    from utilities.whenever2 import DATE_DELTA_MAX, DATE_DELTA_MIN
+
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    match min_value_:
+        case None:
+            min_value_ = DATE_DELTA_MIN
+        case DateDelta():
+            ...
+        case _ as never:
+            assert_never(never)
+    match max_value_:
+        case None:
+            max_value_ = DATE_DELTA_MAX
+        case DateDelta():
+            ...
+        case _ as never:
+            assert_never(never)
+    days = draw(integers(min_value=min_value_.days, max_value=max_value_))
+    return DateDelta(days=days)
+
+
+##
+
+
+@composite
 def date_durations(
     draw: DrawFn,
     /,
@@ -223,14 +256,32 @@ def _is_between_timedelta(
 
 
 @composite
+def dates_two_digit_year(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[dt.date] = MIN_DATE_TWO_DIGIT_YEAR,
+    max_value: MaybeSearchStrategy[dt.date] = MAX_DATE_TWO_DIGIT_YEAR,
+) -> dt.date:
+    """Strategy for generating dates with valid 2 digit years."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    min_value_ = max(min_value_, MIN_DATE_TWO_DIGIT_YEAR)
+    max_value_ = min(max_value_, MAX_DATE_TWO_DIGIT_YEAR)
+    return draw(dates(min_value=min_value_, max_value=max_value_))
+
+
+##
+
+
+@composite
 def dates_whenever(
     draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[Date | None] = None,
     max_value: MaybeSearchStrategy[Date | None] = None,
-) -> dt.date:
-    """Strategy for generating dates with valid 2 digit years."""
+) -> Date:
+    """Strategy for generating dates."""
     from utilities.whenever2 import DATE_MAX, DATE_MIN
 
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
@@ -252,24 +303,6 @@ def dates_whenever(
         dates(min_value=min_value_.py_date(), max_value=max_value_.py_date())
     )
     return Date.from_py_date(py_date)
-
-
-##
-
-
-@composite
-def dates_two_digit_year(
-    draw: DrawFn,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[dt.date] = MIN_DATE_TWO_DIGIT_YEAR,
-    max_value: MaybeSearchStrategy[dt.date] = MAX_DATE_TWO_DIGIT_YEAR,
-) -> dt.date:
-    """Strategy for generating dates with valid 2 digit years."""
-    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
-    min_value_ = max(min_value_, MIN_DATE_TWO_DIGIT_YEAR)
-    max_value_ = min(max_value_, MAX_DATE_TWO_DIGIT_YEAR)
-    return draw(dates(min_value=min_value_, max_value=max_value_))
 
 
 ##
@@ -1551,6 +1584,7 @@ __all__ = [
     "ZonedDateTimesError",
     "assume_does_not_raise",
     "bool_arrays",
+    "date_deltas_whenever",
     "date_durations",
     "dates_two_digit_year",
     "dates_whenever",
