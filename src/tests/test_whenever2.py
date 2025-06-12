@@ -31,6 +31,7 @@ from utilities.whenever2 import (
     DATE_MAX,
     DATE_MIN,
     DATE_TIME_DELTA_MAX,
+    DATE_TIME_DELTA_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
     DATE_TIME_DELTA_PARSABLE_MIN,
     NOW_UTC,
@@ -170,6 +171,20 @@ class TestMinMax:
         _ = func(DATE_DELTA_PARSABLE_MAX)
         with raises(ValueError, match="Invalid format: '.*'"):
             _ = func(DATE_DELTA_PARSABLE_MAX + DateDelta(days=1))
+
+    @mark.parametrize(
+        "delta",
+        [
+            param(DateTimeDelta(days=1)),
+            param(DateTimeDelta(seconds=1)),
+            param(DateTimeDelta(milliseconds=1)),
+            param(DateTimeDelta(microseconds=1)),
+            param(DateTimeDelta(nanoseconds=1)),
+        ],
+    )
+    def test_date_time_delta_min(self, *, delta: DateTimeDelta) -> None:
+        with raises(ValueError, match="Addition result out of bounds"):
+            _ = DATE_TIME_DELTA_MIN - delta
 
     @mark.parametrize(
         ("delta", "is_ok"),
