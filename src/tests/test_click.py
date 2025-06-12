@@ -7,6 +7,7 @@ from re import search
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import whenever
+import whenever
 from click import ParamType, argument, command, echo, option
 from click.testing import CliRunner
 from hypothesis import given

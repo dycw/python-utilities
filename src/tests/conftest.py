@@ -11,11 +11,12 @@ from typing import TYPE_CHECKING, Any
 from hypothesis import HealthCheck
 from pytest import fixture, mark, param
 from sqlalchemy import text
+from whenever import ZonedDateTime
 
-from utilities.datetime import MINUTE, get_now, parse_datetime_compact
 from utilities.platform import IS_NOT_LINUX, IS_WINDOWS
 from utilities.re import ExtractGroupError, extract_group
 from utilities.text import strip_and_dedent
+from utilities.whenever import MINUTE, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
@@ -95,12 +96,11 @@ async def test_engine(*, request: SubRequest, tmp_path: Path) -> Any:
 
 def _is_to_drop(table: str, /) -> bool:
     try:
-        datetime_str = extract_group(r"^(\d{8}T\d{6})_", table)
+        datetime_str = extract_group(r"^([\dT]+)_", table)
     except ExtractGroupError:
         return True
-    datetime = parse_datetime_compact(datetime_str)
-    now = get_now()
-    return (now - datetime) >= MINUTE
+    datetime = ZonedDateTime.parse_common_iso(datetime_str)
+    return (get_now() - datetime) >= MINUTE
 
 
 # fixtures - traceback

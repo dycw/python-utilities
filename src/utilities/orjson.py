@@ -31,6 +31,15 @@ from whenever import (
     TimeDelta,
     ZonedDateTime,
 )
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import dataclass_to_dict
@@ -45,9 +54,8 @@ from utilities.iterables import (
 from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping
-from utilities.tzlocal import LOCAL_TIME_ZONE
+from utilities.uuid import UUID_PATTERN
 from utilities.version import Version, parse_version
-from utilities.whenever2 import from_timestamp
 
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
@@ -63,24 +71,28 @@ if TYPE_CHECKING:
 class _Prefixes(Enum):
     dataclass = "dc"
     date = "d"
-    date_delta = "dd"
-    date_time_delta = "D"
+    date_delta = "dΔ"
+    date_time_delta = "dtΔ"
     enum = "e"
     exception_class = "Ex"
     exception_instance = "ex"
-    float_ = "fl"
+    float_ = "f"
     frozenset_ = "fr"
     list_ = "l"
-    none = "none"
+    nan = "nan"
+    none = "∅"
     path = "p"
-    plain_date_time = "pd"
+    plain_datetime = "dt"
+    pos_inf = "+∞"
+    neg_inf = "-∞"
     set_ = "s"
-    time = "ti"
-    time_delta = "td"
+    time_delta = "tΔ"
+    time = "tm"
     tuple_ = "tu"
     unserializable = "un"
     uuid = "uu"
     version = "v"
+    zoned_date_time = "zd"
     zoned_date_time = "zd"
 
 
@@ -152,18 +164,6 @@ def _pre_process(
         # singletons
         case None:
             return f"[{_Prefixes.none.value}]"
-        case Date() as date:
-            return f"[{_Prefixes.date.value}]{date}"
-        case DateDelta() as date:
-            return f"[{_Prefixes.date_delta.value}]{date}"
-        case DateTimeDelta() as date:
-            return f"[{_Prefixes.date_time_delta.value}]{date}"
-        case Exception() as error_:
-            return {
-                f"[{_Prefixes.exception_instance.value}|{type(error_).__qualname__}]": pre(
-                    error_.args
-                )
-            }
         case float() as float_:
             if isinf(float_) or isnan(float_):
                 return f"[{_Prefixes.float_.value}]{float_}"
@@ -172,10 +172,6 @@ def _pre_process(
             if MIN_INT64 <= int_ <= MAX_INT64:
                 return int_
             raise _SerializeIntegerError(obj=int_)
-        case Path() as path:
-            return f"[{_Prefixes.path.value}]{path!s}"
-        case PlainDateTime() as datetime:
-            return f"[{_Prefixes.plain_date_time.value}]{datetime}"
         case str() as str_:
             return str_
         case Time() as time:
@@ -184,11 +180,32 @@ def _pre_process(
             return f"[{_Prefixes.time_delta.value}]{time_delta}"
         case type() as error_cls if issubclass(error_cls, Exception):
             return f"[{_Prefixes.exception_class.value}|{error_cls.__qualname__}]"
+        case Date() as date:
+            return f"[{_Prefixes.date.value}]{date}"
+        case DateDelta() as date_delta:
+            return f"[{_Prefixes.date_delta.value}]{date_delta}"
+        case DateTimeDelta() as date_time_delta:
+            return f"[{_Prefixes.date_time_delta.value}]{date_time_delta}"
+        case Exception() as error_:
+            return {
+                f"[{_Prefixes.exception_instance.value}|{type(error_).__qualname__}]": pre(
+                    error_.args
+                )
+            }
+        case Path() as path:
+            return f"[{_Prefixes.path.value}]{path!s}"
+        case PlainDateTime() as datetime:
+            return f"[{_Prefixes.plain_datetime.value}]{datetime}"
+        case Time() as time:
+            return f"[{_Prefixes.time.value}]{time}"
+        case TimeDelta() as time_delta:
+            return f"[{_Prefixes.time_delta.value}]{time_delta}"
         case UUID() as uuid:
             return f"[{_Prefixes.uuid.value}]{uuid}"
         case Version() as version:
-            return f"[{_Prefixes.version.value}]{version!s}"
+            return f"[{_Prefixes.version.value}]{version}"
         case ZonedDateTime() as datetime:
+            return f"[{_Prefixes.zoned_date_time.value}]{datetime}"
             return f"[{_Prefixes.zoned_date_time.value}]{datetime}"
         # contains
         case Dataclass() as dataclass:
@@ -334,6 +351,29 @@ def deserialize(
     )
 
 
+_NONE_PATTERN = re.compile(r"^\[" + _Prefixes.none.value + r"\]$")
+_LOCAL_DATETIME_PATTERN = re.compile(
+    r"^\["
+    + _Prefixes.plain_datetime.value
+    + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?)$"
+)
+_UUID_PATTERN = re.compile(r"^\[" + _Prefixes.uuid.value + r"\](" + UUID_PATTERN + ")$")
+_ZONED_DATETIME_PATTERN = re.compile(
+    r"^\["
+    + _Prefixes.plain_datetime.value
+    + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?[\+\-]\d{2}:\d{2}(?::\d{2})?\[(?!(?:dt\.)).+?\])$"
+)
+_ZONED_DATETIME_PATTERN2 = re.compile(
+    r"^\["
+    + _Prefixes.zoned_datetime.value
+    + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?[\+\-]\d{2}:\d{2}(?::\d{2})?\[(?!(?:dt\.)).+?\])$"
+)
+
+
+def _make_unit_pattern(prefix: _Prefixes, /) -> Pattern[str]:
+    return re.compile(r"^\[" + prefix.value + r"\](.+)$")
+
+
 (
     _DATE_PATTERN,
     _DATE_DELTA_PATTERN,
@@ -359,7 +399,6 @@ def deserialize(
         _Prefixes.plain_date_time,
         _Prefixes.time,
         _Prefixes.time_delta,
-        _Prefixes.uuid,
         _Prefixes.version,
         _Prefixes.zoned_date_time,
     ]

@@ -18,6 +18,16 @@ from whenever import (
     ZonedDateTime,
 )
 
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
+
 from utilities.enum import ParseEnumError, parse_enum
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one, one_str
 from utilities.math import ParseNumberError, parse_number
@@ -35,6 +45,7 @@ from utilities.text import (
     split_key_value_pairs,
     split_str,
 )
+from utilities.types import Number, ParseObjectExtra, SerializeObjectExtra
 from utilities.types import Number, ParseObjectExtra, SerializeObjectExtra
 from utilities.typing import (
     get_args,
@@ -184,6 +195,20 @@ def _parse_object_type(
     if issubclass(cls, float):
         try:
             return float(text)
+        except ValueError:
+            raise _ParseObjectParseError(type_=cls, text=text) from None
+    if is_subclass_gen(
+        cls,
+        Date
+        | DateDelta
+        | DateTimeDelta
+        | PlainDateTime
+        | Time
+        | TimeDelta
+        | ZonedDateTime,
+    ):
+        try:
+            return cls.parse_common_iso(text)
         except ValueError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
     if issubclass(cls, Enum):
@@ -446,9 +471,15 @@ def serialize_object(
         obj, bool | int | float | str | Path | Sentinel | Version
     ):
         return str(obj)
-    if isinstance(
+    if is_instance_gen(
         obj,
-        (Date, DateDelta, DateTimeDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime),
+        Date
+        | DateDelta
+        | DateTimeDelta
+        | PlainDateTime
+        | Time
+        | TimeDelta
+        | ZonedDateTime,
     ):
         return obj.format_common_iso()
     if isinstance(obj, Enum):

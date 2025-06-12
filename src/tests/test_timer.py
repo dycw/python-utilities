@@ -7,12 +7,14 @@ from typing import TYPE_CHECKING, Any
 from pytest import mark, param, raises
 from whenever import TimeDelta
 
-from utilities.asyncio import sleep_td
+from utilities.asyncio import sleep_delta
 from utilities.timer import Timer
-from utilities.whenever2 import SECOND, ZERO_TIME
+from utilities.whenever import SECOND, ZERO_TIME
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from utilities.types import Number
 
 
 class TestTimer:
@@ -28,7 +30,7 @@ class TestTimer:
         ],
     )
     def test_arithmetic_against_numbers_or_timedeltas(
-        self, *, op: Callable[[Any, Any], Any], other: Any
+        self, *, op: Callable[[Any, Any], Any], other: Number | TimeDelta
     ) -> None:
         with Timer() as timer:
             pass
@@ -42,10 +44,10 @@ class TestTimer:
         self, *, op: Callable[[Any, Any], Any], cls: type[Any]
     ) -> None:
         with Timer() as timer1, Timer() as timer2:
-            await sleep_td(0.01 * SECOND)
+            await sleep_delta(0.01 * SECOND)
         assert isinstance(op(timer1, timer2), cls)
 
-    @mark.parametrize(("op"), [param(add), param(sub), param(mul), param(truediv)])
+    @mark.parametrize("op", [param(add), param(sub), param(mul), param(truediv)])
     def test_arithmetic_error(self, *, op: Callable[[Any, Any], Any]) -> None:
         with Timer() as timer:
             pass
@@ -98,11 +100,11 @@ class TestTimer:
     async def test_context_manager(self) -> None:
         delta = 0.1 * SECOND
         with Timer() as timer:
-            await sleep_td(2 * delta)
+            await sleep_delta(2 * delta)
         assert timer >= delta
 
     @mark.parametrize("func", [param(repr), param(str)])
-    async def test_repr_and_str(self, *, func: Callable[[Timer], str]) -> None:
+    def test_repr_and_str(self, *, func: Callable[[Timer], str]) -> None:
         with Timer() as timer:
             await sleep_td(0.01 * SECOND)
         as_str = func(timer)
@@ -111,9 +113,9 @@ class TestTimer:
     async def test_running(self) -> None:
         delta = 0.1 * SECOND
         timer = Timer()
-        await sleep_td(2 * delta)
+        await sleep_delta(2 * delta)
         assert timer >= delta
-        await sleep_td(2 * delta)
+        await sleep_delta(2 * delta)
         assert timer >= 2 * delta
 
     def test_timedelta(self) -> None:

@@ -4,31 +4,271 @@ from dataclasses import dataclass
 from math import nan
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import example, given
-from hypothesis.strategies import dictionaries, floats, integers, lists
+from hypothesis import example, given, settings
+from hypothesis.strategies import (
+    SearchStrategy,
+    booleans,
+    builds,
+    dictionaries,
+    floats,
+    integers,
+    just,
+    lists,
+    none,
+    recursive,
+    sampled_from,
+    times,
+    tuples,
+    uuids,
+)
 from polars import DataFrame, Int64
-from pytest import mark, param, raises
+from pytest import raises
 
 import utilities.math
 import utilities.operator
-from tests.test_objects.objects import CustomError, TruthEnum, objects
-from tests.test_typing_funcs.with_future import DataClassFutureCustomEquality
+from tests.conftest import IS_CI
+from tests.test_typing_funcs.with_future import (
+    DataClassFutureCustomEquality,
+    DataClassFutureDefaultInInitChild,
+    DataClassFutureInt,
+    DataClassFutureIntDefault,
+    DataClassFutureLiteral,
+    DataClassFutureLiteralNullable,
+    DataClassFutureNestedInnerFirstOuter,
+    DataClassFutureNestedOuterFirstOuter,
+    DataClassFutureNone,
+    DataClassFutureTypeLiteral,
+    DataClassFutureTypeLiteralNullable,
+)
 from utilities.hypothesis import (
     assume_does_not_raise,
-    date_deltas_whenever,
+    date_deltas,
+    dates,
+    int64s,
     pairs,
+    paths,
+    plain_datetimes,
     text_ascii,
+    text_printable,
+    versions,
+    zoned_datetimes,
 )
 from utilities.operator import IsEqualError
 from utilities.polars import are_frames_equal
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from whenever import DateDelta
-
     from utilities.types import Number
     from utilities.typing import StrMapping
+
+
+def base_objects(
+    *,
+    dataclass_custom_equality: bool = False,
+    dataclass_default_in_init_child: bool = False,
+    dataclass_int: bool = False,
+    dataclass_int_default: bool = False,
+    dataclass_literal: bool = False,
+    dataclass_literal_nullable: bool = False,
+    dataclass_nested: bool = False,
+    dataclass_none: bool = False,
+    dataclass_type_literal: bool = False,
+    dataclass_type_literal_nullable: bool = False,
+    enum: bool = False,
+    exception_class: bool = False,
+    exception_instance: bool = False,
+    floats_min_value: Number | None = None,
+    floats_max_value: Number | None = None,
+    floats_allow_nan: bool | None = None,
+    floats_allow_infinity: bool | None = None,
+) -> SearchStrategy[Any]:
+    base = (
+        booleans()
+        | floats(
+            min_value=floats_min_value,
+            max_value=floats_max_value,
+            allow_nan=floats_allow_nan,
+            allow_infinity=floats_allow_infinity,
+        )
+        | dates()
+        | int64s()
+        | none()
+        | paths()
+        | plain_datetimes()
+        | text_printable().filter(lambda x: not x.startswith("["))
+        | date_deltas(parsable=True)
+        | times()
+        | uuids()
+        | versions()
+        | zoned_datetimes(time_zone=just(UTC) if IS_CI else timezones())
+    )
+    if dataclass_custom_equality:
+        base |= builds(DataClassFutureCustomEquality)
+    if dataclass_default_in_init_child:
+        base |= builds(DataClassFutureDefaultInInitChild)
+    if dataclass_int:
+        base |= builds(DataClassFutureInt).filter(lambda obj: _is_int64(obj.int_))
+    if dataclass_int_default:
+        base |= builds(DataClassFutureIntDefault).filter(
+            lambda obj: _is_int64(obj.int_)
+        )
+    if dataclass_literal:
+        base |= builds(DataClassFutureLiteral, truth=sampled_from(["true", "false"]))
+    if dataclass_literal_nullable:
+        base |= builds(
+            DataClassFutureLiteralNullable,
+            truth=sampled_from(["true", "false"]) | none(),
+        )
+    if dataclass_nested:
+        base |= builds(DataClassFutureNestedInnerFirstOuter).filter(
+            lambda outer: _is_int64(outer.inner.int_)
+        ) | builds(DataClassFutureNestedOuterFirstOuter).filter(
+            lambda outer: _is_int64(outer.inner.int_)
+        )
+    if dataclass_none:
+        base |= builds(DataClassFutureNone)
+    if dataclass_type_literal:
+        base |= builds(
+            DataClassFutureTypeLiteral, truth=sampled_from(["true", "false"])
+        )
+    if dataclass_type_literal_nullable:
+        base |= builds(
+            DataClassFutureTypeLiteralNullable,
+            truth=sampled_from(["true", "false"]) | none(),
+        )
+    if enum:
+        base |= sampled_from(TruthEnum)
+    if exception_class:
+        base |= just(CustomError)
+    if exception_instance:
+        base |= builds(CustomError, int64s())
+    return base
+
+
+def make_objects(
+    *,
+    dataclass_custom_equality: bool = False,
+    dataclass_default_in_init_child: bool = False,
+    dataclass_int: bool = False,
+    dataclass_int_default: bool = False,
+    dataclass_literal: bool = False,
+    dataclass_literal_nullable: bool = False,
+    dataclass_nested: bool = False,
+    dataclass_none: bool = False,
+    dataclass_type_literal: bool = False,
+    dataclass_type_literal_nullable: bool = False,
+    enum: bool = False,
+    exception_class: bool = False,
+    exception_instance: bool = False,
+    floats_min_value: Number | None = None,
+    floats_max_value: Number | None = None,
+    floats_allow_nan: bool | None = None,
+    floats_allow_infinity: bool | None = None,
+    extra_base: SearchStrategy[Any] | None = None,
+    sub_frozenset: bool = False,
+    sub_list: bool = False,
+    sub_set: bool = False,
+    sub_tuple: bool = False,
+) -> SearchStrategy[Any]:
+    base = base_objects(
+        dataclass_custom_equality=dataclass_custom_equality,
+        dataclass_default_in_init_child=dataclass_default_in_init_child,
+        dataclass_int=dataclass_int,
+        dataclass_int_default=dataclass_int_default,
+        dataclass_literal=dataclass_literal,
+        dataclass_literal_nullable=dataclass_literal_nullable,
+        dataclass_nested=dataclass_nested,
+        dataclass_none=dataclass_none,
+        dataclass_type_literal=dataclass_type_literal,
+        dataclass_type_literal_nullable=dataclass_type_literal_nullable,
+        enum=enum,
+        exception_class=exception_class,
+        exception_instance=exception_instance,
+        floats_min_value=floats_min_value,
+        floats_max_value=floats_max_value,
+        floats_allow_nan=floats_allow_nan,
+        floats_allow_infinity=floats_allow_infinity,
+    )
+    if extra_base is not None:
+        base |= extra_base
+    return recursive(
+        base,
+        partial(
+            _extend,
+            sub_frozenset=sub_frozenset,
+            sub_list=sub_list,
+            sub_set=sub_set,
+            sub_tuple=sub_tuple,
+        ),
+    )
+
+
+def _extend(
+    strategy: SearchStrategy[Any],
+    /,
+    *,
+    sub_frozenset: bool = False,
+    sub_list: bool = False,
+    sub_set: bool = False,
+    sub_tuple: bool = False,
+) -> SearchStrategy[Any]:
+    lsts = lists(strategy)
+    sets = lsts.map(_into_set)
+    frozensets = lists(strategy).map(_into_set).map(frozenset)
+    extension = (
+        dictionaries(text_ascii(), strategy)
+        | frozensets
+        | lsts
+        | sets
+        | tuples(strategy)
+    )
+    if sub_frozenset:
+        extension |= frozensets.map(SubFrozenSet)
+    if sub_list:
+        extension |= lists(strategy).map(SubList)
+    if sub_set:
+        extension |= sets.map(SubSet)
+    if sub_tuple:
+        extension |= tuples(strategy).map(SubTuple)
+    return extension
+
+
+def _is_int64(n: int, /) -> bool:
+    return MIN_INT64 <= n <= MAX_INT64
+
+
+def _into_set(elements: list[Any], /) -> set[Any]:
+    with assume_does_not_raise(TypeError, match="unhashable type"):
+        return set(elements)
+
+
+class CustomError(Exception): ...
+
+
+class SubFrozenSet(frozenset):
+    pass
+
+
+class SubList(list):
+    pass
+
+
+class SubSet(set):
+    pass
+
+
+class SubTuple(tuple):  # noqa: SLOT001
+    pass
+
+
+class TruthEnum(Enum):
+    true = auto()
+    false = auto()
+
+
+# tests
 
 
 class TestIsEqual:

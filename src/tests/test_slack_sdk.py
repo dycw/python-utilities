@@ -33,7 +33,7 @@ class TestSendToSlack:
             await send_to_slack("url", "message")
 
     @mark.skipif(get_env_var("SLACK", nullable=True) is None, reason="'SLACK' not set")
-    @throttle(duration=5 * dt.timedelta(minutes=5))
+    @throttle(delta=5 * MINUTE)
     async def test_real(self) -> None:
         url = get_env_var("SLACK")
         await send_to_slack(
@@ -66,7 +66,7 @@ class TestSlackHandlerService:
         assert messages == ["message"]
 
     @mark.skipif(get_env_var("SLACK", nullable=True) is None, reason="'SLACK' not set")
-    @throttle(duration=5 * dt.timedelta(minutes=5))
+    @throttle(delta=5 * MINUTE)
     async def test_real(self, *, tmp_path: Path) -> None:
         url = get_env_var("SLACK")
         logger = getLogger(str(tmp_path))

@@ -1,255 +1,151 @@
 from __future__ import annotations
 
-import datetime as dt
-from datetime import timezone
-from re import escape
-from typing import TYPE_CHECKING
+from logging import DEBUG
 from zoneinfo import ZoneInfo
 
-from hypothesis import assume, example, given
-from hypothesis.strategies import (
-    dates,
-    datetimes,
-    integers,
-    just,
-    sampled_from,
-    timedeltas,
-    times,
-    timezones,
+from hypothesis import given
+from hypothesis.strategies import just, timezones
+from pytest import mark, param, raises
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    TimeDelta,
+    ZonedDateTime,
 )
-from pytest import raises
-from whenever import DateTimeDelta
 
-from tests.conftest import SKIPIF_CI_AND_WINDOWS
-from utilities.datetime import (
-    _MICROSECONDS_PER_DAY,
-    _MICROSECONDS_PER_SECOND,
-    DAY,
-    MICROSECOND,
-    SECOND,
-    maybe_sub_pct_y,
-    parse_two_digit_year,
-    serialize_compact,
-)
-from utilities.hypothesis import (
-    assume_does_not_raise,
-    datetime_durations,
-    plain_datetimes,
-    zoned_datetimes,
-)
-from utilities.tzdata import HongKong
+from tests.conftest import IS_CI
+from utilities.hypothesis import zoned_datetimes
+from utilities.tzdata import HongKong, Tokyo
+from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.whenever import (
-    MAX_SERIALIZABLE_TIMEDELTA,
-    MIN_SERIALIZABLE_TIMEDELTA,
-    ParseDateError,
-    ParseDateTimeError,
-    ParseDurationError,
-    ParsePlainDateTimeError,
-    ParseTimeError,
-    ParseZonedDateTimeError,
-    SerializeDurationError,
-    SerializePlainDateTimeError,
-    SerializeTimeDeltaError,
-    SerializeZonedDateTimeError,
-    _CheckValidZonedDateTimeUnequalError,
-    _ParseTimedeltaNanosecondError,
-    _ParseTimedeltaParseError,
-    _to_datetime_delta,
-    _ToDateTimeDeltaError,
-    check_valid_zoned_datetime,
-    parse_date,
-    parse_datetime,
-    parse_duration,
-    parse_plain_datetime,
-    parse_time,
-    parse_timedelta,
-    parse_zoned_datetime,
-    serialize_date,
-    serialize_datetime,
-    serialize_duration,
-    serialize_plain_datetime,
-    serialize_time,
-    serialize_timedelta,
-    serialize_zoned_datetime,
+    DATE_DELTA_MAX,
+    DATE_DELTA_MIN,
+    DATE_DELTA_PARSABLE_MAX,
+    DATE_DELTA_PARSABLE_MIN,
+    DATE_MAX,
+    DATE_MIN,
+    DATE_TIME_DELTA_MAX,
+    DATE_TIME_DELTA_MIN,
+    DATE_TIME_DELTA_PARSABLE_MAX,
+    DATE_TIME_DELTA_PARSABLE_MIN,
+    NOW_LOCAL,
+    NOW_UTC,
+    PLAIN_DATE_TIME_MAX,
+    PLAIN_DATE_TIME_MIN,
+    TIME_DELTA_MAX,
+    TIME_DELTA_MIN,
+    TODAY_LOCAL,
+    TODAY_UTC,
+    ZONED_DATE_TIME_MAX,
+    ZONED_DATE_TIME_MIN,
+    WheneverLogRecord,
+    format_compact,
+    from_timestamp,
+    from_timestamp_millis,
+    from_timestamp_nanos,
+    get_now,
+    get_now_local,
+    get_today,
+    get_today_local,
 )
-from utilities.zoneinfo import UTC, get_time_zone_name
-
-if TYPE_CHECKING:
-    from utilities.types import Duration
+from utilities.zoneinfo import UTC
 
 
-_TIMEDELTA_MICROSECONDS = int(1e18) * MICROSECOND
-_TIMEDELTA_OVERFLOW = dt.timedelta(days=106751991, seconds=14454, microseconds=775808)
-
-
-@SKIPIF_CI_AND_WINDOWS
-class TestCheckValidZonedDateTime:
-    @given(
-        datetime=sampled_from([
-            dt.datetime(1951, 4, 1, 3, tzinfo=HongKong),
-            dt.datetime(1951, 4, 1, 5, tzinfo=HongKong),
-        ])
-    )
-    def test_main(self, *, datetime: dt.datetime) -> None:
-        check_valid_zoned_datetime(datetime)
-
-    def test_error(self) -> None:
-        datetime = dt.datetime(1951, 4, 1, 4, tzinfo=HongKong)
-        with raises(
-            _CheckValidZonedDateTimeUnequalError,
-            match=escape(
-                "Zoned datetime must be valid; got 1951-04-01 04:00:00+08:00 != 1951-04-01 05:00:00+09:00"
-            ),
-        ):
-            check_valid_zoned_datetime(datetime)
-
-
-class TestSerializeAndParseDate:
-    @given(date=dates())
-    def test_main(self, *, date: dt.date) -> None:
-        serialized = serialize_date(date)
-        result = parse_date(serialized)
-        assert result == date
-
-    @given(year=integers(0, 99), date=dates())
-    def test_yymmdd(self, *, year: int, date: dt.date) -> None:
-        with assume_does_not_raise(ValueError):
-            date_use = date.replace(parse_two_digit_year(year))
-        serialized = date_use.strftime("%y%m%d")
-        result = parse_date(serialized)
-        assert result == date_use
-
-    @given(date=dates())
-    def test_yyyymmdd(self, *, date: dt.date) -> None:
-        serialized = serialize_compact(date)
-        result = parse_date(serialized)
-        assert result == date
-
-    def test_error_parse(self) -> None:
-        with raises(ParseDateError, match="Unable to parse date; got 'invalid'"):
-            _ = parse_date("invalid")
-
-
-class TestSerializeAndParseDateTime:
-    @given(
-        datetime=plain_datetimes()
-        | zoned_datetimes(time_zone=timezones() | just(dt.UTC), valid=True)
-    )
-    @SKIPIF_CI_AND_WINDOWS
-    def test_main(self, *, datetime: dt.datetime) -> None:
-        serialized = serialize_datetime(datetime)
-        result = parse_datetime(serialized)
+class TestFromTimeStamp:
+    @given(datetime=zoned_datetimes(time_zone=UTC if IS_CI else timezones()))
+    def test_main(self, *, datetime: ZonedDateTime) -> None:
+        datetime = datetime.round("second")
+        timestamp = datetime.to_tz(UTC.key).timestamp()
+        result = from_timestamp(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
-    def test_error_parse(self) -> None:
-        with raises(
-            ParseDateTimeError, match="Unable to parse datetime; got 'invalid'"
-        ):
-            _ = parse_datetime("invalid")
-
-
-class TestSerializeAndParseDuration:
-    @given(duration=datetime_durations())
-    def test_main(self, *, duration: Duration) -> None:
-        with assume_does_not_raise(SerializeDurationError):
-            serialized = serialize_duration(duration)
-        with assume_does_not_raise(ParseDurationError):
-            result = parse_duration(serialized)
-        assert result == duration
-
-    def test_error_parse(self) -> None:
-        with raises(
-            ParseDurationError, match="Unable to parse duration; got 'invalid'"
-        ):
-            _ = parse_duration("invalid")
-
-    @given(duration=sampled_from([_TIMEDELTA_MICROSECONDS, _TIMEDELTA_OVERFLOW]))
-    def test_error_serialize(self, *, duration: Duration) -> None:
-        with raises(
-            SerializeDurationError, match="Unable to serialize duration; got .*"
-        ):
-            _ = serialize_duration(duration)
-
-
-class TestSerializeAndParsePlainDateTime:
-    @given(datetime=datetimes())
-    def test_main(self, *, datetime: dt.datetime) -> None:
-        serialized = serialize_plain_datetime(datetime)
-        result = parse_plain_datetime(serialized)
+    @given(datetime=zoned_datetimes(time_zone=UTC if IS_CI else timezones()))
+    def test_millis(self, *, datetime: ZonedDateTime) -> None:
+        datetime = datetime.round("millisecond")
+        timestamp = datetime.to_tz(UTC.key).timestamp_millis()
+        result = from_timestamp_millis(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
-    @given(datetime=plain_datetimes(round_="standard", timedelta=SECOND))
-    def test_compact_no_microseconds(self, *, datetime: dt.datetime) -> None:
-        assert datetime.microsecond == 0
-        serialized = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
-        result = parse_plain_datetime(serialized)
+    @given(datetime=zoned_datetimes(time_zone=UTC if IS_CI else timezones()))
+    def test_nanos(self, *, datetime: ZonedDateTime) -> None:
+        timestamp = datetime.to_tz(UTC.key).timestamp_nanos()
+        result = from_timestamp_nanos(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
-    @given(datetime=datetimes())
-    def test_compact_with_microseconds(self, *, datetime: dt.datetime) -> None:
-        _ = assume(datetime.microsecond != 0)
-        serialized = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S.%f"))
-        result = parse_plain_datetime(serialized)
-        assert result == datetime
 
-    def test_error_parse(self) -> None:
-        with raises(
-            ParsePlainDateTimeError,
-            match="Unable to parse plain datetime; got 'invalid'",
-        ):
-            _ = parse_plain_datetime("invalid")
+class TestGetNow:
+    @given(time_zone=just(UTC) if IS_CI else timezones())
+    def test_generic_function(self, *, time_zone: ZoneInfo) -> None:
+        now = get_now(time_zone=time_zone)
+        assert isinstance(now, ZonedDateTime)
+        assert now.tz == time_zone.key
 
-    def test_error_serialize(self) -> None:
-        datetime = dt.datetime(2000, 1, 1, tzinfo=UTC)
-        with raises(
-            SerializePlainDateTimeError,
-            match="Unable to serialize plain datetime; got .*",
-        ):
-            _ = serialize_plain_datetime(datetime)
+    def test_generic_constant(self) -> None:
+        assert isinstance(NOW_UTC, ZonedDateTime)
+        assert NOW_UTC.tz == "UTC"
 
+    def test_local_function(self) -> None:
+        now = get_now_local()
+        assert isinstance(now, ZonedDateTime)
+        ETC = ZoneInfo("Etc/UTC")  # noqa: N806
+        time_zones = {ETC, HongKong, Tokyo, UTC}
+        assert any(now.tz == time_zone.key for time_zone in time_zones)
 
-class TestSerializeAndParseTime:
-    @given(time=times())
-    def test_main(self, *, time: dt.time) -> None:
-        serialized = serialize_time(time)
-        result = parse_time(serialized)
-        assert result == time
-
-    def test_error_parse(self) -> None:
-        with raises(ParseTimeError, match="Unable to parse time; got 'invalid'"):
-            _ = parse_time("invalid")
+    def test_local_constant(self) -> None:
+        assert isinstance(NOW_LOCAL, ZonedDateTime)
+        assert NOW_LOCAL.tz == LOCAL_TIME_ZONE_NAME
 
 
-class TestSerializeAndParseTimedelta:
-    @given(
-        timedelta=timedeltas(
-            min_value=MIN_SERIALIZABLE_TIMEDELTA, max_value=MAX_SERIALIZABLE_TIMEDELTA
-        )
-    )
-    @example(timedelta=int(1e6) * DAY)
-    @example(timedelta=MICROSECOND)
-    @example(timedelta=-DAY)
-    @example(timedelta=-DAY + MICROSECOND)
-    def test_main(self, *, timedelta: dt.timedelta) -> None:
-        serialized = serialize_timedelta(timedelta)
-        result = parse_timedelta(serialized)
-        assert result == timedelta
+class TestGetToday:
+    def test_generic_function(self) -> None:
+        today = get_today()
+        assert isinstance(today, Date)
 
-    @given(timedelta=timedeltas(min_value=MICROSECOND))
-    def test_min_serializable(self, *, timedelta: dt.timedelta) -> None:
-        _ = serialize_timedelta(MIN_SERIALIZABLE_TIMEDELTA)
-        with assume_does_not_raise(OverflowError):
-            offset = MIN_SERIALIZABLE_TIMEDELTA - timedelta
-        with raises(SerializeTimeDeltaError):
-            _ = serialize_timedelta(offset)
+    def test_generic_constant(self) -> None:
+        assert isinstance(TODAY_UTC, Date)
 
-    @given(timedelta=timedeltas(min_value=MICROSECOND))
-    def test_max_serializable(self, *, timedelta: dt.timedelta) -> None:
-        _ = serialize_timedelta(MAX_SERIALIZABLE_TIMEDELTA)
-        with assume_does_not_raise(OverflowError):
-            offset = MAX_SERIALIZABLE_TIMEDELTA + timedelta
-        with raises(SerializeTimeDeltaError):
-            _ = serialize_timedelta(offset)
+    def test_local_function(self) -> None:
+        today = get_today_local()
+        assert isinstance(today, Date)
+
+    def test_local_constant(self) -> None:
+        assert isinstance(TODAY_LOCAL, Date)
+
+
+class TestMinMax:
+    def test_date_min(self) -> None:
+        with raises(ValueError, match="Resulting date out of range"):
+            _ = DATE_MIN - DateDelta(days=1)
+
+    def test_date_max(self) -> None:
+        with raises(ValueError, match="Resulting date out of range"):
+            _ = DATE_MAX + DateDelta(days=1)
+
+    def test_date_delta_min(self) -> None:
+        with raises(ValueError, match="Addition result out of bounds"):
+            _ = DATE_DELTA_MIN - DateDelta(days=1)
+
+    def test_date_delta_max(self) -> None:
+        with raises(ValueError, match="Addition result out of bounds"):
+            _ = DATE_DELTA_MAX + DateDelta(days=1)
+
+    def test_date_delta_parsable_min(self) -> None:
+        def func(delta: DateDelta, /) -> None:
+            _ = DateDelta.parse_common_iso(delta.format_common_iso())
+
+        _ = func(DATE_DELTA_PARSABLE_MIN)
+        with raises(ValueError, match="Invalid format: '.*'"):
+            _ = func(DATE_DELTA_PARSABLE_MIN - DateDelta(days=1))
+
+    def test_date_delta_parsable_max(self) -> None:
+        def func(delta: DateDelta, /) -> None:
+            _ = DateDelta.parse_common_iso(delta.format_common_iso())
+
+        _ = func(DATE_DELTA_PARSABLE_MAX)
+        with raises(ValueError, match="Invalid format: '.*'"):
+            _ = func(DATE_DELTA_PARSABLE_MAX + DateDelta(days=1))
 
     def test_error_parse(self) -> None:
         with raises(
@@ -323,50 +219,126 @@ class TestSerializeAndParseZonedDateTime:
             match="Unable to parse zoned datetime; got 'invalid'",
         ):
             _ = parse_zoned_datetime("invalid")
+    @mark.parametrize(
+        "delta",
+        [
+            param(DateTimeDelta(days=1)),
+            param(DateTimeDelta(seconds=1)),
+            param(DateTimeDelta(milliseconds=1)),
+            param(DateTimeDelta(microseconds=1)),
+            param(DateTimeDelta(nanoseconds=1)),
+        ],
+    )
+    def test_date_time_delta_min(self, *, delta: DateTimeDelta) -> None:
+        with raises(ValueError, match="Addition result out of bounds"):
+            _ = DATE_TIME_DELTA_MIN - delta
 
-    def test_error_serialize(self) -> None:
-        datetime = dt.datetime(2000, 1, 1).astimezone(None)
-        with raises(
-            SerializeZonedDateTimeError,
-            match="Unable to serialize zoned datetime; got 2000-01-01 00:00:00",
-        ):
-            _ = serialize_zoned_datetime(datetime)
+    @mark.parametrize(
+        ("delta", "is_ok"),
+        [
+            param(DateTimeDelta(days=1), False),
+            param(DateTimeDelta(seconds=1), False),
+            param(DateTimeDelta(milliseconds=999), True),
+            param(DateTimeDelta(milliseconds=1000), False),
+            param(DateTimeDelta(microseconds=999_999), True),
+            param(DateTimeDelta(microseconds=1_000_000), False),
+            param(DateTimeDelta(nanoseconds=999_999_999), True),
+            param(DateTimeDelta(nanoseconds=1_000_000_000), False),
+        ],
+    )
+    def test_date_time_delta_max(self, *, delta: DateTimeDelta, is_ok: bool) -> None:
+        if is_ok:
+            _ = DATE_TIME_DELTA_MAX + delta
+        else:
+            with raises(ValueError, match="Addition result out of bounds"):
+                _ = DATE_TIME_DELTA_MAX + delta
+
+    def test_date_time_delta_parsable_min(self) -> None:
+        def func(delta: DateTimeDelta, /) -> None:
+            _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
+
+        _ = func(DATE_TIME_DELTA_PARSABLE_MIN)
+        with raises(ValueError, match="Addition result out of bounds"):
+            _ = func(DATE_TIME_DELTA_PARSABLE_MIN - DateTimeDelta(nanoseconds=1))
+
+    def test_date_time_delta_parsable_max(self) -> None:
+        def func(delta: DateTimeDelta, /) -> None:
+            _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
+
+        _ = func(DATE_TIME_DELTA_PARSABLE_MAX)
+        with raises(ValueError, match="Invalid format or out of range: '.*'"):
+            _ = func(DATE_TIME_DELTA_PARSABLE_MAX + TimeDelta(nanoseconds=1))
+
+    def test_plain_date_time_min(self) -> None:
+        with raises(ValueError, match=r"Result of subtract\(\) out of range"):
+            _ = PLAIN_DATE_TIME_MIN.subtract(nanoseconds=1, ignore_dst=True)
+
+    def test_plain_date_time_max(self) -> None:
+        _ = PLAIN_DATE_TIME_MAX.add(nanoseconds=999, ignore_dst=True)
+        with raises(ValueError, match=r"Result of add\(\) out of range"):
+            _ = PLAIN_DATE_TIME_MAX.add(microseconds=1, ignore_dst=True)
+
+    @mark.parametrize(
+        "delta",
+        [
+            param(TimeDelta(seconds=1)),
+            param(TimeDelta(milliseconds=1)),
+            param(TimeDelta(microseconds=1)),
+            param(TimeDelta(nanoseconds=1)),
+        ],
+    )
+    def test_time_delta_min(self, *, delta: TimeDelta) -> None:
+        _ = TimeDelta.parse_common_iso(TIME_DELTA_MIN.format_common_iso())
+        with raises(ValueError, match="Addition result out of range"):
+            _ = TIME_DELTA_MIN - delta
+
+    @mark.parametrize(
+        ("delta", "is_ok"),
+        [
+            param(TimeDelta(seconds=1), False),
+            param(TimeDelta(milliseconds=999), True),
+            param(TimeDelta(milliseconds=1000), False),
+            param(TimeDelta(microseconds=999_999), True),
+            param(TimeDelta(microseconds=1_000_000), False),
+            param(TimeDelta(nanoseconds=999_999_999), True),
+            param(TimeDelta(nanoseconds=1_000_000_000), False),
+        ],
+    )
+    def test_time_delta_max(self, *, delta: TimeDelta, is_ok: bool) -> None:
+        if is_ok:
+            _ = TIME_DELTA_MAX + delta
+            _ = TimeDelta.parse_common_iso(delta.format_common_iso())
+        else:
+            with raises(ValueError, match="Addition result out of range"):
+                _ = TIME_DELTA_MAX + delta
+
+    def test_zoned_date_time_min(self) -> None:
+        with raises(ValueError, match="Instant is out of range"):
+            _ = ZONED_DATE_TIME_MIN.subtract(nanoseconds=1)
+
+    def test_zoned_date_time_max(self) -> None:
+        _ = ZONED_DATE_TIME_MAX.add(nanoseconds=999)
+        with raises(ValueError, match="Instant is out of range"):
+            _ = ZONED_DATE_TIME_MAX.add(microseconds=1)
 
 
-class TestToDateTimeDelta:
-    @given(days=integers(), microseconds=integers())
-    def test_main(self, *, days: int, microseconds: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            timedelta = dt.timedelta(days=days, microseconds=microseconds)
-        init_total_micro = _MICROSECONDS_PER_DAY * days + microseconds
-        with assume_does_not_raise(_ToDateTimeDeltaError):
-            result = _to_datetime_delta(timedelta)
-        comp_month, comp_day, comp_sec, comp_nano = result.in_months_days_secs_nanos()
-        assert comp_month == 0
-        comp_micro, remainder = divmod(comp_nano, 1000)
-        assert remainder == 0
-        result_total_micro = (
-            _MICROSECONDS_PER_DAY * comp_day
-            + _MICROSECONDS_PER_SECOND * comp_sec
-            + comp_micro
-        )
-        assert init_total_micro == result_total_micro
+class TestToLocalPlainSec:
+    @given(datetime=zoned_datetimes())
+    def test_main(self, *, datetime: ZonedDateTime) -> None:
+        result = format_compact(datetime)
+        assert isinstance(result, PlainDateTime)
+        assert result.nanosecond == 0
 
-    def test_mixed_sign(self) -> None:
-        timedelta = dt.timedelta(days=-1, seconds=1)
-        result = _to_datetime_delta(timedelta)
-        expected = DateTimeDelta(seconds=timedelta.total_seconds())
-        assert result == expected
 
-    def test_close_to_overflow(self) -> None:
-        timedelta = dt.timedelta(days=104250, microseconds=1)
-        result = _to_datetime_delta(timedelta)
-        expected = DateTimeDelta(days=104250, microseconds=1)
-        assert result == expected
+class TestWheneverLogRecord:
+    def test_init(self) -> None:
+        _ = WheneverLogRecord("name", DEBUG, "pathname", 0, None, None, None)
 
-    @given(timedelta=sampled_from([_TIMEDELTA_MICROSECONDS, _TIMEDELTA_OVERFLOW]))
-    def test_error(self, *, timedelta: dt.timedelta) -> None:
-        with raises(
-            _ToDateTimeDeltaError, match="Unable to create DateTimeDelta; got .*"
-        ):
-            _ = _to_datetime_delta(timedelta)
+    def test_get_length(self) -> None:
+        assert isinstance(WheneverLogRecord._get_length(), int)
+
+    def test_get_time_zone(self) -> None:
+        assert isinstance(WheneverLogRecord._get_time_zone(), ZoneInfo)
+
+    def test_get_time_zone_key(self) -> None:
+        assert isinstance(WheneverLogRecord._get_time_zone_key(), str)

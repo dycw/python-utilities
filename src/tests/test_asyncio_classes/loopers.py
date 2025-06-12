@@ -8,7 +8,7 @@ from pytest import approx
 from tests.conftest import IS_CI
 from utilities.asyncio import Looper
 from utilities.contextlib import suppress_super_object_attribute_error
-from utilities.whenever2 import SECOND
+from utilities.whenever import MILLISECOND
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -16,8 +16,8 @@ if TYPE_CHECKING:
     from whenever import TimeDelta
 
 
-_FREQ: TimeDelta = 0.01 * SECOND
-_BACKOFF: TimeDelta = 0.1 * SECOND
+_FREQ: TimeDelta = 10 * MILLISECOND
+_BACKOFF: TimeDelta = 100 * MILLISECOND
 _REL: float = 2.0 if IS_CI else 0.25
 
 

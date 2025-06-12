@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import pathlib
 from typing import TYPE_CHECKING, Generic, TypedDict, TypeVar, assert_never, override
+from typing import TYPE_CHECKING, Generic, TypedDict, TypeVar, assert_never, override
 
 import click
+import whenever
 import whenever
 from click import Choice, Context, Parameter, ParamType
 from click.types import StringParamType
 
-from utilities.datetime import EnsureMonthError, ensure_month
 from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import EnsureStrError, ensure_str, get_class_name
 from utilities.iterables import is_iterable_not_str
@@ -17,10 +18,17 @@ from utilities.types import (
     DateDeltaLike,
     DateLike,
     DateTimeDeltaLike,
+    DateDeltaLike,
+    DateLike,
+    DateTimeDeltaLike,
     EnumLike,
     MaybeStr,
     PlainDateTimeLike,
+    PlainDateTimeLike,
     TEnum,
+    TimeDeltaLike,
+    TimeLike,
+    ZonedDateTimeLike,
     TimeDeltaLike,
     TimeLike,
     ZonedDateTimeLike,
@@ -28,9 +36,6 @@ from utilities.types import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
-
-    import utilities.datetime
-    from utilities.datetime import MonthLike
 
 
 _T = TypeVar("_T")
@@ -76,6 +81,8 @@ class Date(ParamType):
     def convert(
         self, value: DateLike, param: Parameter | None, ctx: Context | None
     ) -> whenever.Date:
+        self, value: DateLike, param: Parameter | None, ctx: Context | None
+    ) -> whenever.Date:
         """Convert a value into the `Date` type."""
         match value:
             case whenever.Date():
@@ -111,14 +118,14 @@ class DateDelta(ParamType):
                     return whenever.DateDelta.parse_common_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
-            case _ as never:
-                assert_never(never)
 
 
 class DateTimeDelta(ParamType):
     """A date-delta-valued parameter."""
+class DateTimeDelta(ParamType):
+    """A date-delta-valued parameter."""
 
-    name = "date-time delta"
+    name = "date delta"
 
     @override
     def __repr__(self) -> str:
@@ -137,8 +144,6 @@ class DateTimeDelta(ParamType):
                     return whenever.DateTimeDelta.parse_common_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
-            case _ as never:
-                assert_never(never)
 
 
 class Enum(ParamType, Generic[TEnum]):
@@ -171,26 +176,6 @@ class Enum(ParamType, Generic[TEnum]):
         _ = ctx
         desc = ",".join(e.name for e in self._enum)
         return _make_metavar(param, desc)
-
-
-class Month(ParamType):
-    """A month-valued parameter."""
-
-    name = "month"
-
-    @override
-    def __repr__(self) -> str:
-        return self.name.upper()
-
-    @override
-    def convert(
-        self, value: MonthLike, param: Parameter | None, ctx: Context | None
-    ) -> utilities.datetime.Month:
-        """Convert a value into the `Month` type."""
-        try:
-            return ensure_month(value)
-        except EnsureMonthError as error:
-            self.fail(str(error), param, ctx)
 
 
 class PlainDateTime(ParamType):
@@ -248,7 +233,7 @@ class Time(ParamType):
 class TimeDelta(ParamType):
     """A timedelta-valued parameter."""
 
-    name = "time-delta"
+    name = "time delta"
 
     @override
     def __repr__(self) -> str:
@@ -457,7 +442,6 @@ __all__ = [
     "CONTEXT_SETTINGS_HELP_OPTION_NAMES",
     "Date",
     "DateDelta",
-    "DateTimeDelta",
     "DirPath",
     "Enum",
     "ExistingDirPath",

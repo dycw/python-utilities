@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Any, Self, override
 
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
-from utilities.asyncio import Looper, timeout_td
+from utilities.asyncio import Looper, timeout_delta
+from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float
 from utilities.functools import cache
 from utilities.sentinel import Sentinel, sentinel
 from utilities.whenever2 import MINUTE, SECOND
@@ -81,7 +82,7 @@ class SlackHandlerService(Handler, Looper[str]):
         if self.empty():
             return
         text = "\n".join(self.get_all_nowait())
-        async with timeout_td(self.send_timeout):
+        async with timeout_delta(duration=self.send_timeout):
             await self.sender(self.url, text)
 
     @override
@@ -119,7 +120,7 @@ async def send_to_slack(
 ) -> None:
     """Send a message via Slack."""
     client = _get_client(url, timeout=timeout)
-    async with timeout_td(timeout):
+    async with timeout_delta(duration=timeout):
         response = await client.send(text=text)
     if response.status_code != HTTPStatus.OK:  # pragma: no cover
         raise SendToSlackError(text=text, response=response)

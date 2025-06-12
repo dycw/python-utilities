@@ -23,7 +23,7 @@ from typing import (
 
 from redis.asyncio import Redis
 
-from utilities.asyncio import EnhancedQueue, Looper, sleep_td, timeout_td
+from utilities.asyncio import EnhancedQueue, Looper, timeout_delta
 from utilities.contextlib import suppress_super_object_attribute_error
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, identity
@@ -93,8 +93,8 @@ class RedisHashMapKey(Generic[_K, _V]):
         ser = _serialize(  # skipif-ci-and-not-linux
             key, serializer=self.key_serializer
         ).decode()
-        async with timeout_td(  # skipif-ci-and-not-linux
-            self.timeout, error=self.error
+        async with timeout_delta(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
         ):
             return await cast("Awaitable[int]", redis.hdel(self.name, ser))
         raise ImpossibleCaseError(case=[f"{redis=}", f"{key=}"])  # pragma: no cover
@@ -104,8 +104,8 @@ class RedisHashMapKey(Generic[_K, _V]):
         ser = _serialize(  # skipif-ci-and-not-linux
             key, serializer=self.key_serializer
         ).decode()
-        async with timeout_td(  # skipif-ci-and-not-linux
-            self.timeout, error=self.error
+        async with timeout_delta(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
         ):
             return await cast("Awaitable[bool]", redis.hexists(self.name, ser))
 
@@ -118,8 +118,8 @@ class RedisHashMapKey(Generic[_K, _V]):
 
     async def get_all(self, redis: Redis, /) -> Mapping[_K, _V]:
         """Get a value from a hashmap in `redis`."""
-        async with timeout_td(  # skipif-ci-and-not-linux
-            self.timeout, error=self.error
+        async with timeout_delta(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
         ):
             result = await cast(  # skipif-ci-and-not-linux
                 "Awaitable[Mapping[bytes, bytes]]", redis.hgetall(self.name)
@@ -141,8 +141,8 @@ class RedisHashMapKey(Generic[_K, _V]):
         ser = [  # skipif-ci-and-not-linux
             _serialize(key, serializer=self.key_serializer) for key in keys
         ]
-        async with timeout_td(  # skipif-ci-and-not-linux
-            self.timeout, error=self.error
+        async with timeout_delta(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
         ):
             result = await cast(  # skipif-ci-and-not-linux
                 "Awaitable[Sequence[bytes | None]]", redis.hmget(self.name, ser)
@@ -156,8 +156,8 @@ class RedisHashMapKey(Generic[_K, _V]):
 
     async def keys(self, redis: Redis, /) -> Sequence[_K]:
         """Get the keys of a hashmap in `redis`."""
-        async with timeout_td(  # skipif-ci-and-not-linux
-            self.timeout, error=self.error
+        async with timeout_delta(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
         ):
             result = await cast("Awaitable[Sequence[bytes]]", redis.hkeys(self.name))
         return [  # skipif-ci-and-not-linux
@@ -166,8 +166,8 @@ class RedisHashMapKey(Generic[_K, _V]):
 
     async def length(self, redis: Redis, /) -> int:
         """Get the length of a hashmap in `redis`."""
-        async with timeout_td(  # skipif-ci-and-not-linux
-            self.timeout, error=self.error
+        async with timeout_delta(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
         ):
             return await cast("Awaitable[int]", redis.hlen(self.name))
 
@@ -185,8 +185,8 @@ class RedisHashMapKey(Generic[_K, _V]):
             )
             for key, value in mapping.items()
         }
-        async with timeout_td(  # skipif-ci-and-not-linux
-            self.timeout, error=self.error
+        async with timeout_delta(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
         ):
             result = await cast(
                 "Awaitable[int]", redis.hset(self.name, mapping=cast("Any", ser))
@@ -197,8 +197,8 @@ class RedisHashMapKey(Generic[_K, _V]):
 
     async def values(self, redis: Redis, /) -> Sequence[_V]:
         """Get the values of a hashmap in `redis`."""
-        async with timeout_td(  # skipif-ci-and-not-linux
-            self.timeout, error=self.error
+        async with timeout_delta(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
         ):
             result = await cast("Awaitable[Sequence[bytes]]", redis.hvals(self.name))
         return [  # skipif-ci-and-not-linux
@@ -402,15 +402,15 @@ class RedisKey(Generic[_T]):
 
     async def delete(self, redis: Redis, /) -> int:
         """Delete the key from `redis`."""
-        async with timeout_td(  # skipif-ci-and-not-linux
-            self.timeout, error=self.error
+        async with timeout_delta(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
         ):
             return ensure_int(await redis.delete(self.name))
 
     async def exists(self, redis: Redis, /) -> bool:
         """Check if the key exists in `redis`."""
-        async with timeout_td(  # skipif-ci-and-not-linux
-            self.timeout, error=self.error
+        async with timeout_delta(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
         ):
             result = cast("Literal[0, 1]", await redis.exists(self.name))
         match result:  # skipif-ci-and-not-linux
@@ -421,8 +421,8 @@ class RedisKey(Generic[_T]):
 
     async def get(self, redis: Redis, /) -> _T:
         """Get a value from `redis`."""
-        async with timeout_td(  # skipif-ci-and-not-linux
-            self.timeout, error=self.error
+        async with timeout_delta(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
         ):
             result = cast("bytes | None", await redis.get(self.name))
         if result is None:  # skipif-ci-and-not-linux
@@ -437,8 +437,8 @@ class RedisKey(Generic[_T]):
         ttl = (  # skipif-ci-and-not-linux
             None if self.ttl is None else round(self.ttl.in_milliseconds())
         )
-        async with timeout_td(  # skipif-ci-and-not-linux
-            self.timeout, error=self.error
+        async with timeout_delta(  # skipif-ci-and-not-linux
+            duration=self.timeout, error=self.error
         ):
             result = await redis.set(  # skipif-ci-and-not-linux
                 self.name, ser, px=ttl
@@ -593,7 +593,7 @@ async def publish(
             data_use = serializer(data)
         case _ as never:
             assert_never(never)
-    async with timeout_td(timeout):  # skipif-ci-and-not-linux
+    async with timeout_delta(duration=timeout):  # skipif-ci-and-not-linux
         return await redis.publish(channel, data_use)  # skipif-ci-and-not-linux
 
 

@@ -34,6 +34,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
+    Literal,
     Self,
     TextIO,
     TypeVar,
@@ -56,7 +57,7 @@ from utilities.types import (
     THashable,
     TSupportsRichComparison,
 )
-from utilities.whenever2 import SECOND, get_now
+from utilities.whenever import SECOND, get_now
 
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
@@ -300,7 +301,7 @@ class EnhancedTaskGroup(TaskGroup):
             return await coroutine
 
     async def _wrap_with_timeout(self, coroutine: _CoroutineLike[_T], /) -> _T:
-        async with timeout_td(self._timeout, error=self._error):
+        async with timeout_delta(self._timeout, error=self._error):
             return await coroutine
 
 
@@ -438,7 +439,7 @@ class Looper(Generic[_T]):
 
     async def _apply_back_off(self) -> None:
         """Apply a back off period."""
-        await sleep_td(self.backoff)
+        await sleep_delta(self.backoff)
         self._is_pending_back_off.clear()
 
     async def core(self) -> None:
@@ -660,7 +661,7 @@ class Looper(Generic[_T]):
     async def run_looper(self) -> None:
         """Run the looper."""
         try:
-            async with timeout_td(self.timeout):
+            async with timeout_delta(self.timeout):
                 while True:
                     if self._is_stopped.is_set():
                         _ = self._debug and self._logger.debug("%s: stopped", self)
@@ -695,7 +696,7 @@ class Looper(Generic[_T]):
                         else:
                             async with self._lock:
                                 self._core_successes += 1
-                            await sleep_td(self.freq)
+                            await sleep_delta(self.freq)
         except RuntimeError as error:  # pragma: no cover
             if error.args[0] == "generator didn't stop after athrow()":
                 return
@@ -708,7 +709,7 @@ class Looper(Generic[_T]):
         while not self.empty():
             await self.core()
             if not self.empty():
-                await sleep_td(self.freq)
+                await sleep_delta(self.freq)
 
     @property
     def stats(self) -> _LooperStats:
@@ -952,29 +953,7 @@ def put_items_nowait(items: Iterable[_T], queue: Queue[_T], /) -> None:
 ##
 
 
-async def sleep_max(
-    sleep: TimeDelta | None = None, /, *, random: Random = SYSTEM_RANDOM
-) -> None:
-    """Sleep which accepts deltas."""
-    if sleep is None:
-        return
-    await asyncio.sleep(random.uniform(0.0, sleep.in_seconds()))
-
-
-##
-
-
-async def sleep_rounded(
-    *, unit: DateTimeRoundUnit = "second", increment: int = 1
-) -> None:
-    """Sleep until a rounded time."""
-    await sleep_until(get_now().round(unit, increment=increment, mode="ceil"))
-
-
-##
-
-
-async def sleep_td(delta: TimeDelta | None = None, /) -> None:
+async def sleep_delta(delta: TimeDelta | None = None, /) -> None:
     """Sleep which accepts deltas."""
     if delta is None:
         return
@@ -984,9 +963,36 @@ async def sleep_td(delta: TimeDelta | None = None, /) -> None:
 ##
 
 
+async def sleep_max_delta(
+    delta: TimeDelta | None = None, /, *, random: Random = SYSTEM_RANDOM
+) -> None:
+    """Sleep which accepts max durations."""
+    if delta is None:
+        return
+    await sleep(random.uniform(0.0, delta.in_seconds()))
+
+
+##
+
+
 async def sleep_until(datetime: ZonedDateTime, /) -> None:
     """Sleep until a given time."""
-    await sleep_td(datetime - get_now())
+    await sleep_delta(datetime - get_now())
+
+
+##
+
+
+async def sleep_until_rounded(
+    *,
+    unit: Literal[
+        "day", "hour", "minute", "second", "millisecond", "microsecond", "nanosecond"
+    ] = "second",
+    increment: int = 1,
+) -> None:
+    """Sleep until a rounded time."""
+    datetime = get_now().round(unit, increment=increment, mode="ceil")
+    await sleep_until(datetime)
 
 
 ##
@@ -1043,14 +1049,11 @@ async def _stream_one(
 
 
 @asynccontextmanager
-async def timeout_td(
-    timeout: TimeDelta | None = None,
-    /,
-    *,
-    error: MaybeType[BaseException] = TimeoutError,
+async def timeout_delta(
+    delta: TimeDelta | None = None, /, *, error: MaybeType[BaseException] = TimeoutError
 ) -> AsyncIterator[None]:
     """Timeout context manager which accepts deltas."""
-    timeout_use = None if timeout is None else timeout.in_seconds()
+    delay = None if delta is None else delta.in_seconds()
     try:
         async with asyncio.timeout(timeout_use):
             yield
@@ -1071,10 +1074,9 @@ __all__ = [
     "get_items_nowait",
     "put_items",
     "put_items_nowait",
-    "sleep_max",
-    "sleep_rounded",
-    "sleep_td",
+    "sleep_delta",
+    "sleep_max_delta",
     "sleep_until",
     "stream_command",
-    "timeout_td",
+    "timeout_delta",
 ]

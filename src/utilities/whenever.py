@@ -1,444 +1,223 @@
 from __future__ import annotations
 
 import datetime as dt
-import re
-from contextlib import suppress
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, override
+from functools import cache
+from logging import LogRecord
+from typing import TYPE_CHECKING, Any, override
 
 from whenever import (
     Date,
+    DateDelta,
     DateTimeDelta,
     PlainDateTime,
     Time,
-    TimeZoneNotFoundError,
+    TimeDelta,
     ZonedDateTime,
 )
 
-from utilities.datetime import (
-    _MICROSECONDS_PER_DAY,
-    _MICROSECONDS_PER_SECOND,
-    ZERO_TIME,
-    check_date_not_datetime,
-    datetime_duration_to_microseconds,
-    parse_two_digit_year,
-)
-from utilities.math import ParseNumberError, parse_number
-from utilities.re import (
-    ExtractGroupError,
-    ExtractGroupsError,
-    extract_group,
-    extract_groups,
-)
-from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
+from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
+from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
-    from utilities.types import Duration
+    from zoneinfo import ZoneInfo
+
+    from utilities.types import TimeZoneLike
 
 
-MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3652060, microseconds=-1)
-MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
+## bounds
+
+
+DATE_MIN = Date.from_py_date(dt.date.min)
+DATE_MAX = Date.from_py_date(dt.date.max)
+TIME_MIN = Time.from_py_time(dt.time.min)
+TIME_MAX = Time.from_py_time(dt.time.max)
+
+
+PLAIN_DATE_TIME_MIN = PlainDateTime.from_py_datetime(dt.datetime.min)  # noqa: DTZ901
+PLAIN_DATE_TIME_MAX = PlainDateTime.from_py_datetime(dt.datetime.max)  # noqa: DTZ901
+ZONED_DATE_TIME_MIN = PLAIN_DATE_TIME_MIN.assume_tz(UTC.key)
+ZONED_DATE_TIME_MAX = PLAIN_DATE_TIME_MAX.assume_tz(UTC.key)
+DATE_TIME_DELTA_MIN = DateTimeDelta(days=-3652059, seconds=-316192377600)
+DATE_TIME_DELTA_MAX = DateTimeDelta(days=3652059, seconds=316192377600)
+DATE_DELTA_MIN = DATE_TIME_DELTA_MIN.date_part()
+DATE_DELTA_MAX = DATE_TIME_DELTA_MAX.date_part()
+TIME_DELTA_MIN = DATE_TIME_DELTA_MIN.time_part()
+TIME_DELTA_MAX = DATE_TIME_DELTA_MAX.time_part()
+
+
+DATE_TIME_DELTA_PARSABLE_MIN = DateTimeDelta(days=-999999, seconds=-316192377600)
+DATE_TIME_DELTA_PARSABLE_MAX = DateTimeDelta(days=999999, seconds=316192377600)
+DATE_DELTA_PARSABLE_MIN = DateDelta(days=-999999)
+DATE_DELTA_PARSABLE_MAX = DateDelta(days=999999)
+
+
+## common constants
+
+
+ZERO_TIME = TimeDelta()
+MICROSECOND = TimeDelta(microseconds=1)
+MILLISECOND = TimeDelta(milliseconds=1)
+SECOND = TimeDelta(seconds=1)
+MINUTE = TimeDelta(minutes=1)
+HOUR = TimeDelta(hours=1)
+DAY = DateDelta(days=1)
+WEEK = DateDelta(weeks=1)
 
 
 ##
 
 
-def check_valid_zoned_datetime(datetime: dt.datetime, /) -> None:
-    """Check if a zoned datetime is valid."""
-    time_zone = ensure_time_zone(datetime)  # skipif-ci-and-windows
-    datetime2 = datetime.replace(tzinfo=time_zone)  # skipif-ci-and-windows
-    try:  # skipif-ci-and-windows
-        result = (
-            ZonedDateTime.from_py_datetime(datetime2)
-            .to_tz(get_time_zone_name(UTC))
-            .to_tz(get_time_zone_name(time_zone))
-            .py_datetime()
+def from_timestamp(i: float, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDateTime:
+    """Get a zoned datetime from a timestamp."""
+    return ZonedDateTime.from_timestamp(i, tz=get_time_zone_name(time_zone))
+
+
+def from_timestamp_millis(i: int, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDateTime:
+    """Get a zoned datetime from a timestamp (in milliseconds)."""
+    return ZonedDateTime.from_timestamp_millis(i, tz=get_time_zone_name(time_zone))
+
+
+def from_timestamp_nanos(i: int, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDateTime:
+    """Get a zoned datetime from a timestamp (in nanoseconds)."""
+    return ZonedDateTime.from_timestamp_nanos(i, tz=get_time_zone_name(time_zone))
+
+
+##
+
+
+def get_now(*, time_zone: TimeZoneLike = UTC) -> ZonedDateTime:
+    """Get the current zoned datetime."""
+    return ZonedDateTime.now(get_time_zone_name(time_zone))
+
+
+NOW_UTC = get_now(time_zone=UTC)
+
+
+def get_now_local() -> ZonedDateTime:
+    """Get the current local time."""
+    return get_now(time_zone="local")
+
+
+NOW_LOCAL = get_now_local()
+
+
+##
+
+
+def get_today(*, time_zone: TimeZoneLike = UTC) -> Date:
+    """Get the current, timezone-aware local date."""
+    return get_now(time_zone=time_zone).date()
+
+
+TODAY_UTC = get_today(time_zone=UTC)
+
+
+def get_today_local() -> Date:
+    """Get the current, timezone-aware local date."""
+    return get_today(time_zone="local")
+
+
+TODAY_LOCAL = get_today_local()
+
+
+##
+
+
+def format_compact(datetime: ZonedDateTime, /) -> PlainDateTime:
+    """Convert a zoned datetime to the local, plain datetime."""
+    return datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
+
+
+##
+
+
+class WheneverLogRecord(LogRecord):
+    """Log record powered by `whenever`."""
+
+    zoned_datetime: str
+
+    @override
+    def __init__(
+        self,
+        name: str,
+        level: int,
+        pathname: str,
+        lineno: int,
+        msg: object,
+        args: Any,
+        exc_info: Any,
+        func: str | None = None,
+        sinfo: str | None = None,
+    ) -> None:
+        super().__init__(
+            name, level, pathname, lineno, msg, args, exc_info, func, sinfo
         )
-    except TimeZoneNotFoundError:  # pragma: no cover
-        raise _CheckValidZonedDateTimeInvalidTimeZoneError(datetime=datetime) from None
-    if result != datetime2:  # skipif-ci-and-windows
-        raise _CheckValidZonedDateTimeUnequalError(datetime=datetime, result=result)
+        length = self._get_length()
+        plain = format(get_now_local().to_plain().format_common_iso(), f"{length}s")
+        time_zone = self._get_time_zone_key()
+        self.zoned_datetime = f"{plain}[{time_zone}]"
 
-
-@dataclass(kw_only=True, slots=True)
-class CheckValidZonedDateTimeError(Exception):
-    datetime: dt.datetime
-
-
-@dataclass(kw_only=True, slots=True)
-class _CheckValidZonedDateTimeInvalidTimeZoneError(CheckValidZonedDateTimeError):
-    @override
-    def __str__(self) -> str:
-        return f"Invalid timezone; got {self.datetime.tzinfo}"  # pragma: no cover
-
-
-@dataclass(kw_only=True, slots=True)
-class _CheckValidZonedDateTimeUnequalError(CheckValidZonedDateTimeError):
-    result: dt.datetime
-
-    @override
-    def __str__(self) -> str:
-        return f"Zoned datetime must be valid; got {self.datetime} != {self.result}"  # skipif-ci-and-windows
-
-
-##
-
-
-_PARSE_DATE_YYMMDD_REGEX = re.compile(r"^(\d{2})(\d{2})(\d{2})$")
-
-
-def parse_date(date: str, /) -> dt.date:
-    """Parse a string into a date."""
-    try:
-        w_date = Date.parse_common_iso(date)
-    except ValueError:
+    @classmethod
+    @cache
+    def _get_time_zone(cls) -> ZoneInfo:
+        """Get the local timezone."""
         try:
-            ((year2, month, day),) = _PARSE_DATE_YYMMDD_REGEX.findall(date)
-        except ValueError:
-            raise ParseDateError(date=date) from None
-        year = parse_two_digit_year(year2)
-        return dt.date(year=int(year), month=int(month), day=int(day))
-    return w_date.py_date()
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseDateError(Exception):
-    date: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse date; got {self.date!r}"
-
-
-##
-
-
-def parse_datetime(datetime: str, /) -> dt.datetime:
-    """Parse a string into a datetime."""
-    with suppress(ParsePlainDateTimeError):
-        return parse_plain_datetime(datetime)
-    with suppress(ParseZonedDateTimeError):
-        return parse_zoned_datetime(datetime)
-    raise ParseDateTimeError(datetime=datetime) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseDateTimeError(Exception):
-    datetime: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse datetime; got {self.datetime!r}"
-
-
-##
-
-
-def parse_duration(duration: str, /) -> Duration:
-    """Parse a string into a Duration."""
-    with suppress(ParseNumberError):
-        return parse_number(duration)
-    try:
-        return parse_timedelta(duration)
-    except ParseTimedeltaError:
-        raise ParseDurationError(duration=duration) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseDurationError(Exception):
-    duration: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse duration; got {self.duration!r}"
-
-
-##
-
-
-def parse_plain_datetime(datetime: str, /) -> dt.datetime:
-    """Parse a string into a plain datetime."""
-    try:
-        ldt = PlainDateTime.parse_common_iso(datetime)
-    except ValueError:
-        raise ParsePlainDateTimeError(datetime=datetime) from None
-    return ldt.py_datetime()
-
-
-@dataclass(kw_only=True, slots=True)
-class ParsePlainDateTimeError(Exception):
-    datetime: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse plain datetime; got {self.datetime!r}"
-
-
-##
-
-
-def parse_time(time: str, /) -> dt.time:
-    """Parse a string into a time."""
-    try:
-        w_time = Time.parse_common_iso(time)
-    except ValueError:
-        raise ParseTimeError(time=time) from None
-    return w_time.py_time()
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseTimeError(Exception):
-    time: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse time; got {self.time!r}"
-
-
-##
-
-
-def parse_timedelta(timedelta: str, /) -> dt.timedelta:
-    """Parse a string into a timedelta."""
-    with suppress(ExtractGroupError):
-        rest = extract_group(r"^-([\w\.]+)$", timedelta)
-        return -parse_timedelta(rest)
-    try:
-        days_str, time_str = extract_groups(r"^P(?:(\d+)D)?(?:T([\w\.]*))?$", timedelta)
-    except ExtractGroupsError:
-        raise _ParseTimedeltaParseError(timedelta=timedelta) from None
-    days = ZERO_TIME if days_str == "" else dt.timedelta(days=int(days_str))
-    if time_str == "":
-        time = ZERO_TIME
-    else:
-        time_part = DateTimeDelta.parse_common_iso(f"PT{time_str}").time_part()
-        _, nanoseconds = divmod(time_part.in_nanoseconds(), 1000)
-        if nanoseconds != 0:
-            raise _ParseTimedeltaNanosecondError(
-                timedelta=timedelta, nanoseconds=nanoseconds
-            )
-        time = dt.timedelta(microseconds=int(time_part.in_microseconds()))
-    return days + time
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseTimedeltaError(Exception):
-    timedelta: str
-
-
-@dataclass(kw_only=True, slots=True)
-class _ParseTimedeltaParseError(ParseTimedeltaError):
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse timedelta; got {self.timedelta!r}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ParseTimedeltaNanosecondError(ParseTimedeltaError):
-    nanoseconds: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse timedelta; got {self.nanoseconds} nanoseconds"
-
-
-##
-
-
-def parse_zoned_datetime(datetime: str, /) -> dt.datetime:
-    """Parse a string into a zoned datetime."""
-    try:
-        zdt = ZonedDateTime.parse_common_iso(datetime)
-    except ValueError:
-        raise ParseZonedDateTimeError(datetime=datetime) from None
-    return zdt.py_datetime()
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseZonedDateTimeError(Exception):
-    datetime: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse zoned datetime; got {self.datetime!r}"
-
-
-##
-
-
-def serialize_date(date: dt.date, /) -> str:
-    """Serialize a date."""
-    check_date_not_datetime(date)
-    return Date.from_py_date(date).format_common_iso()
-
-
-##
-
-
-def serialize_datetime(datetime: dt.datetime, /) -> str:
-    """Serialize a datetime."""
-    try:
-        return serialize_plain_datetime(datetime)
-    except SerializePlainDateTimeError:
-        return serialize_zoned_datetime(datetime)
-
-
-##
-
-
-def serialize_duration(duration: Duration, /) -> str:
-    """Serialize a duration."""
-    if isinstance(duration, int | float):
-        return str(duration)
-    try:
-        return serialize_timedelta(duration)
-    except SerializeTimeDeltaError as error:
-        raise SerializeDurationError(duration=error.timedelta) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class SerializeDurationError(Exception):
-    duration: Duration
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to serialize duration; got {self.duration}"
-
-
-##
-
-
-def serialize_plain_datetime(datetime: dt.datetime, /) -> str:
-    """Serialize a plain datetime."""
-    try:
-        pdt = PlainDateTime.from_py_datetime(datetime)
-    except ValueError:
-        raise SerializePlainDateTimeError(datetime=datetime) from None
-    return pdt.format_common_iso()
-
-
-@dataclass(kw_only=True, slots=True)
-class SerializePlainDateTimeError(Exception):
-    datetime: dt.datetime
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to serialize plain datetime; got {self.datetime}"
-
-
-##
-
-
-def serialize_time(time: dt.time, /) -> str:
-    """Serialize a time."""
-    return Time.from_py_time(time).format_common_iso()
-
-
-##
-
-
-def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
-    """Serialize a timedelta."""
-    try:
-        dtd = _to_datetime_delta(timedelta)
-    except _ToDateTimeDeltaError as error:
-        raise SerializeTimeDeltaError(timedelta=error.timedelta) from None
-    return dtd.format_common_iso()
-
-
-@dataclass(kw_only=True, slots=True)
-class SerializeTimeDeltaError(Exception):
-    timedelta: dt.timedelta
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to serialize timedelta; got {self.timedelta}"
-
-
-##
-
-
-def serialize_zoned_datetime(datetime: dt.datetime, /) -> str:
-    """Serialize a zoned datetime."""
-    if datetime.tzinfo is dt.UTC:
-        return serialize_zoned_datetime(  # skipif-ci-and-windows
-            datetime.replace(tzinfo=UTC)
-        )
-    try:
-        zdt = ZonedDateTime.from_py_datetime(datetime)
-    except ValueError:
-        raise SerializeZonedDateTimeError(datetime=datetime) from None
-    return zdt.format_common_iso()
-
-
-@dataclass(kw_only=True, slots=True)
-class SerializeZonedDateTimeError(Exception):
-    datetime: dt.datetime
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to serialize zoned datetime; got {self.datetime}"
-
-
-##
-
-
-def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
-    """Serialize a timedelta."""
-    total_microseconds = datetime_duration_to_microseconds(timedelta)
-    if total_microseconds == 0:
-        return DateTimeDelta()
-    if total_microseconds >= 1:
-        days, remainder = divmod(total_microseconds, _MICROSECONDS_PER_DAY)
-        seconds, microseconds = divmod(remainder, _MICROSECONDS_PER_SECOND)
-        try:
-            dtd = DateTimeDelta(days=days, seconds=seconds, microseconds=microseconds)
-        except (OverflowError, ValueError):
-            raise _ToDateTimeDeltaError(timedelta=timedelta) from None
-        months, days, seconds, nanoseconds = dtd.in_months_days_secs_nanos()
-        return DateTimeDelta(
-            months=months, days=days, seconds=seconds, nanoseconds=nanoseconds
-        )
-    return -_to_datetime_delta(-timedelta)
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToDateTimeDeltaError(Exception):
-    timedelta: dt.timedelta
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to create DateTimeDelta; got {self.timedelta}"
+            from utilities.tzlocal import get_local_time_zone
+        except ModuleNotFoundError:  # pragma: no cover
+            return UTC
+        return get_local_time_zone()
+
+    @classmethod
+    @cache
+    def _get_time_zone_key(cls) -> str:
+        """Get the local timezone as a string."""
+        return cls._get_time_zone().key
+
+    @classmethod
+    @cache
+    def _get_length(cls) -> int:
+        """Get maximum length of a formatted string."""
+        now = get_now_local().replace(nanosecond=1000).to_plain()
+        return len(now.format_common_iso())
 
 
 __all__ = [
-    "MAX_SERIALIZABLE_TIMEDELTA",
-    "MIN_SERIALIZABLE_TIMEDELTA",
-    "CheckValidZonedDateTimeError",
-    "ParseDateError",
-    "ParseDateTimeError",
-    "ParseDurationError",
-    "ParsePlainDateTimeError",
-    "ParseTimeError",
-    "ParseTimedeltaError",
-    "ParseZonedDateTimeError",
-    "SerializeDurationError",
-    "SerializePlainDateTimeError",
-    "SerializeTimeDeltaError",
-    "SerializeZonedDateTimeError",
-    "check_valid_zoned_datetime",
-    "parse_date",
-    "parse_datetime",
-    "parse_duration",
-    "parse_plain_datetime",
-    "parse_time",
-    "parse_timedelta",
-    "parse_zoned_datetime",
-    "serialize_date",
-    "serialize_datetime",
-    "serialize_duration",
-    "serialize_plain_datetime",
-    "serialize_time",
-    "serialize_timedelta",
-    "serialize_zoned_datetime",
+    "DATE_DELTA_MAX",
+    "DATE_DELTA_MIN",
+    "DATE_DELTA_PARSABLE_MAX",
+    "DATE_DELTA_PARSABLE_MIN",
+    "DATE_MAX",
+    "DATE_MIN",
+    "DATE_TIME_DELTA_MAX",
+    "DATE_TIME_DELTA_MIN",
+    "DATE_TIME_DELTA_PARSABLE_MAX",
+    "DATE_TIME_DELTA_PARSABLE_MIN",
+    "DAY",
+    "HOUR",
+    "MICROSECOND",
+    "MILLISECOND",
+    "MINUTE",
+    "NOW_LOCAL",
+    "PLAIN_DATE_TIME_MAX",
+    "PLAIN_DATE_TIME_MIN",
+    "SECOND",
+    "TIME_DELTA_MAX",
+    "TIME_DELTA_MIN",
+    "TIME_MAX",
+    "TIME_MIN",
+    "TODAY_LOCAL",
+    "TODAY_UTC",
+    "WEEK",
+    "ZERO_TIME",
+    "ZONED_DATE_TIME_MAX",
+    "ZONED_DATE_TIME_MIN",
+    "WheneverLogRecord",
+    "format_compact",
+    "from_timestamp",
+    "from_timestamp_millis",
+    "from_timestamp_nanos",
+    "get_now",
+    "get_now_local",
+    "get_today",
+    "get_today_local",
 ]

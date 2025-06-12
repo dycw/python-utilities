@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import Event, Queue, run
+from asyncio import Event, Queue, run, sleep
 from collections import deque
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -49,12 +49,11 @@ from utilities.asyncio import (
     get_items_nowait,
     put_items,
     put_items_nowait,
-    sleep_max,
-    sleep_rounded,
-    sleep_td,
+    sleep_delta,
+    sleep_max_delta,
     sleep_until,
     stream_command,
-    timeout_td,
+    timeout_delta,
 )
 from utilities.dataclasses import replace_non_sentinel
 from utilities.functions import get_class_name
@@ -63,7 +62,7 @@ from utilities.iterables import one, unique_everseen
 from utilities.pytest import skipif_windows
 from utilities.sentinel import Sentinel, sentinel
 from utilities.timer import Timer
-from utilities.whenever2 import SECOND, get_now
+from utilities.whenever import MILLISECOND, SECOND, get_now
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -160,43 +159,46 @@ class TestEnhancedTaskGroup:
                 flag = False
 
         assert not flag
-        async with EnhancedTaskGroup(timeout=2 * self.delta) as tg:
+        async with EnhancedTaskGroup(timeout=0.1 * SECOND) as tg:
             _ = tg.create_task_context(yield_true())
-            await sleep_td(self.delta)
+            await sleep_delta(0.05 * SECOND)
             assert flag
         assert not flag
 
     async def test_create_task_context_looper(self) -> None:
-        looper = CountingLooper().replace(timeout=10 * self.delta)
+        looper = CountingLooper().replace(timeout=SECOND)
         assert looper._core_attempts == 0
-        async with EnhancedTaskGroup(timeout=2 * self.delta) as tg:
+        async with EnhancedTaskGroup(timeout=0.1 * SECOND) as tg:
             assert looper._core_attempts == 0
             _ = tg.create_task_context(looper)
             await sleep_td(self.delta)
         assert looper._core_attempts >= 1
 
     async def test_max_tasks_disabled(self) -> None:
+        delta = 0.1 * SECOND
         with Timer() as timer:
             async with EnhancedTaskGroup() as tg:
                 for _ in range(10):
-                    _ = tg.create_task(sleep_td(self.delta))
-        assert timer <= 2 * self.delta
+                    _ = tg.create_task(sleep_delta(delta))
+        assert timer <= 5 * delta
 
     async def test_max_tasks_enabled(self) -> None:
+        delta = 0.1 * SECOND
         with Timer() as timer:
             async with EnhancedTaskGroup(max_tasks=2) as tg:
                 for _ in range(10):
-                    _ = tg.create_task(sleep_td(self.delta))
-        assert timer >= self.delta
+                    _ = tg.create_task(sleep_delta(delta))
+        assert timer >= 5 * delta
 
     async def test_timeout_pass(self) -> None:
-        async with EnhancedTaskGroup(timeout=2 * self.delta) as tg:
-            _ = tg.create_task(sleep_td(self.delta))
+        delta = 0.1 * SECOND
+        async with EnhancedTaskGroup(timeout=2 * delta) as tg:
+            _ = tg.create_task(sleep_delta(delta))
 
     async def test_timeout_fail(self) -> None:
         with raises(ExceptionGroup) as exc_info:
-            async with EnhancedTaskGroup(timeout=self.delta) as tg:
-                _ = tg.create_task(sleep_td(2 * self.delta))
+            async with EnhancedTaskGroup(timeout=0.05 * SECOND) as tg:
+                _ = tg.create_task(sleep_delta(0.1 * SECOND))
         assert len(exc_info.value.exceptions) == 1
         error = one(exc_info.value.exceptions)
         assert isinstance(error, TimeoutError)
@@ -205,8 +207,10 @@ class TestEnhancedTaskGroup:
         class CustomError(Exception): ...
 
         with raises(ExceptionGroup) as exc_info:
-            async with EnhancedTaskGroup(timeout=self.delta, error=CustomError) as tg:
-                _ = tg.create_task(sleep_td(2 * self.delta))
+            async with EnhancedTaskGroup(
+                timeout=0.05 * SECOND, error=CustomError
+            ) as tg:
+                _ = tg.create_task(sleep_delta(0.1 * SECOND))
         assert len(exc_info.value.exceptions) == 1
         error = one(exc_info.value.exceptions)
         assert isinstance(error, CustomError)
@@ -278,7 +282,7 @@ class TestLooper:
     async def test_auto_start(self) -> None:
         looper = CountingLooper(auto_start=True)
         with raises(TimeoutError):
-            async with timeout_td(SECOND), looper:
+            async with timeout_delta(SECOND), looper:
                 ...
         self._assert_stats_full(looper)
 
@@ -313,7 +317,7 @@ class TestLooper:
         looper = QueueLooper(freq=0.05 * SECOND, empty_upon_exit=True)
         looper.put_right_nowait(0)
         assert not looper.empty()
-        async with timeout_td(SECOND), looper:
+        async with timeout_delta(SECOND), looper:
             ...
         self._assert_stats_no_runs(looper, entries=1, stops=1)
         assert looper.empty()
@@ -321,7 +325,7 @@ class TestLooper:
     async def test_explicit_start(self) -> None:
         looper = CountingLooper()
         with raises(TimeoutError):
-            async with timeout_td(SECOND), looper:
+            async with timeout_delta(SECOND), looper:
                 await looper
         self._assert_stats_full(looper, stops=1)
 
@@ -376,7 +380,7 @@ class TestLooper:
         )
         if counter_auto_start:
             with raises(TimeoutError):
-                async with timeout_td(SECOND), looper:
+                async with timeout_delta(SECOND), looper:
                     ...
             self._assert_stats_half(looper._counter)
         else:
@@ -410,14 +414,14 @@ class TestLooper:
         match counter1_auto_start, counter2_auto_start:
             case _, True:
                 with raises(TimeoutError):
-                    async with timeout_td(SECOND), looper:
+                    async with timeout_delta(SECOND), looper:
                         ...
                 assert_looper_full(looper)
                 self._assert_stats_no_runs(looper._counter1)
                 self._assert_stats_third(looper._counter2)
             case True, False:
                 with raises(TimeoutError):
-                    async with timeout_td(SECOND), looper:
+                    async with timeout_delta(SECOND), looper:
                         ...
                 assert_looper_full(looper)
                 self._assert_stats_half(looper._counter1)
@@ -449,8 +453,8 @@ class TestLooper:
         self._assert_stats_half(looper2._counter)
 
     def test_replace(self) -> None:
-        looper = CountingLooper().replace(freq=10 * SECOND)
-        assert looper.freq == 10 * SECOND
+        looper = CountingLooper().replace(freq=10.0 * SECOND)
+        assert looper.freq == 10.0 * SECOND
 
     async def test_request_back_off(self) -> None:
         class Example(CountingLooper):
@@ -665,7 +669,7 @@ class TestLooper:
     async def test_run_until_empty(self, *, n: int) -> None:
         looper = QueueLooper(freq=0.05 * SECOND)
         looper.put_right_nowait(*range(n))
-        async with timeout_td(SECOND), looper:
+        async with timeout_delta(SECOND), looper:
             await looper.run_until_empty()
         assert looper.empty()
 
@@ -676,7 +680,7 @@ class TestLooper:
         )
         if inner_auto_start:
             with raises(TimeoutError):
-                async with timeout_td(SECOND), looper:
+                async with timeout_delta(SECOND), looper:
                     ...
             self._assert_stats_full(looper)
             self._assert_stats_half(looper.inner)
@@ -700,14 +704,14 @@ class TestLooper:
         match inner1_auto_start, inner2_auto_start:
             case True, _:
                 with raises(TimeoutError):
-                    async with timeout_td(SECOND), looper:
+                    async with timeout_delta(SECOND), looper:
                         ...
                 self._assert_stats_full(looper)
                 self._assert_stats_half(looper.inner1)
                 self._assert_stats_no_runs(looper.inner2)
             case False, True:
                 with raises(TimeoutError):
-                    async with timeout_td(SECOND), looper:
+                    async with timeout_delta(SECOND), looper:
                         ...
                 self._assert_stats_full(looper)
                 self._assert_stats_half(looper.inner1)
@@ -739,7 +743,7 @@ class TestLooper:
                 self._assert_stats_quarter(looper.middle.inner, stops=1)
             case _, _:
                 with raises(TimeoutError):
-                    async with timeout_td(SECOND), looper:
+                    async with timeout_delta(SECOND), looper:
                         ...
                 self._assert_stats_full(looper)
                 self._assert_stats_half(looper.middle)
@@ -780,7 +784,7 @@ class TestLooper:
         with Timer() as timer:
             async with looper:
                 await looper
-        assert float(timer) == approx(1.0, rel=_REL)
+        assert timer.timedelta.in_seconds() == approx(1.0, rel=_REL)
         self._assert_stats_full(looper, stops=1)
 
     def test_with_auto_start(self) -> None:
@@ -904,32 +908,30 @@ class TestUniqueQueue:
         assert queue._set == set()
 
 
+class TestSleepDelta:
+    async def test_main(self) -> None:
+        delta = 0.1 * SECOND
+        with Timer() as timer:
+            await sleep_delta(delta)
+        assert timer <= 2 * delta
+
+    async def test_none(self) -> None:
+        with Timer() as timer:
+            await sleep_delta()
+        assert timer <= SECOND
+
+
 class TestSleepMaxDur:
-    delta: ClassVar[TimeDelta] = 0.05 * SECOND
-
     async def test_main(self) -> None:
+        delta = 0.1 * SECOND
         with Timer() as timer:
-            await sleep_max(self.delta)
-        assert timer <= 2 * self.delta
+            await sleep_max_delta(delta)
+        assert timer <= 2 * delta
 
     async def test_none(self) -> None:
         with Timer() as timer:
-            await sleep_max()
-        assert timer <= self.delta
-
-
-class TestSleepTD:
-    delta: ClassVar[TimeDelta] = 0.05 * SECOND
-
-    async def test_main(self) -> None:
-        with Timer() as timer:
-            await sleep_td(self.delta)
-        assert timer <= 2 * self.delta
-
-    async def test_none(self) -> None:
-        with Timer() as timer:
-            await sleep_td()
-        assert timer <= self.delta
+            await sleep_max_delta()
+        assert timer <= SECOND
 
 
 class TestSleepUntil:
@@ -939,7 +941,7 @@ class TestSleepUntil:
 
 class TestSleepUntilRounded:
     async def test_main(self) -> None:
-        await sleep_rounded(unit="millisecond", increment=10)
+        await sleep_until_rounded(unit="second")
 
 
 class TestStreamCommand:
@@ -966,24 +968,24 @@ class TestStreamCommand:
         )
 
 
-class TestTimeoutTD:
-    delta: ClassVar[TimeDelta] = 0.05 * SECOND
+class TestTimeoutDelta:
+    delta: ClassVar[TimeDelta] = 0.1 * SECOND
 
     async def test_pass(self) -> None:
-        async with timeout_td(2 * self.delta):
-            await sleep_td(self.delta)
+        async with timeout_delta(2 * self.delta):
+            await sleep_delta(self.delta)
 
     async def test_fail(self) -> None:
         with raises(TimeoutError):
-            async with timeout_td(self.delta):
-                await sleep_td(2 * self.delta)
+            async with timeout_delta(self.delta / 2):
+                await sleep_delta(self.delta)
 
     async def test_custom_error(self) -> None:
         class CustomError(Exception): ...
 
         with raises(CustomError):
-            async with timeout_td(self.delta, error=CustomError):
-                await sleep_td(2 * self.delta)
+            async with timeout_delta(self.delta / 2, error=CustomError):
+                await sleep_delta(self.delta)
 
 
 if __name__ == "__main__":
