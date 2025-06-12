@@ -6,11 +6,12 @@ from zoneinfo import ZoneInfo
 from hypothesis import given
 from hypothesis.strategies import just, timezones
 from pytest import mark, param, raises
-from whenever import DateDelta, DateTimeDelta, TimeDelta, ZonedDateTime
+from whenever import Date, DateDelta, DateTimeDelta, TimeDelta, ZonedDateTime
 
 from tests.conftest import IS_CI
-from utilities.hypothesis import zoned_datetimes_whenever
+from utilities.hypothesis import zoned_datetimes
 from utilities.tzdata import HongKong, Tokyo
+from utilities.tzlocal import LOCAL_TIME_ZONE
 from utilities.whenever2 import (
     DATE_DELTA_MAX,
     DATE_DELTA_MIN,
@@ -22,11 +23,14 @@ from utilities.whenever2 import (
     DATE_TIME_DELTA_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
     DATE_TIME_DELTA_PARSABLE_MIN,
+    NOW_LOCAL,
     NOW_UTC,
     PLAIN_DATE_TIME_MAX,
     PLAIN_DATE_TIME_MIN,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
+    TODAY_LOCAL,
+    TODAY_UTC,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
     WheneverLogRecord,
@@ -35,26 +39,28 @@ from utilities.whenever2 import (
     from_timestamp_nanos,
     get_now,
     get_now_local,
+    get_today,
+    get_today_local,
 )
 from utilities.zoneinfo import UTC
 
 
 class TestFromTimeStamp:
-    @given(datetime=zoned_datetimes_whenever(time_zone=UTC if IS_CI else timezones()))
+    @given(datetime=zoned_datetimes(time_zone=UTC if IS_CI else timezones()))
     def test_main(self, *, datetime: ZonedDateTime) -> None:
         datetime = datetime.round("second")
         timestamp = datetime.to_tz(UTC.key).timestamp()
         result = from_timestamp(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
-    @given(datetime=zoned_datetimes_whenever(time_zone=UTC if IS_CI else timezones()))
+    @given(datetime=zoned_datetimes(time_zone=UTC if IS_CI else timezones()))
     def test_millis(self, *, datetime: ZonedDateTime) -> None:
         datetime = datetime.round("millisecond")
         timestamp = datetime.to_tz(UTC.key).timestamp_millis()
         result = from_timestamp_millis(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
-    @given(datetime=zoned_datetimes_whenever(time_zone=UTC if IS_CI else timezones()))
+    @given(datetime=zoned_datetimes(time_zone=UTC if IS_CI else timezones()))
     def test_nanos(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.to_tz(UTC.key).timestamp_nanos()
         result = from_timestamp_nanos(timestamp, time_zone=ZoneInfo(datetime.tz))
@@ -80,6 +86,28 @@ class TestGetNowLocal:
         ETC = ZoneInfo("Etc/UTC")  # noqa: N806
         time_zones = {ETC, HongKong, Tokyo, UTC}
         assert any(now.tz == time_zone.key for time_zone in time_zones)
+
+    def test_constant(self) -> None:
+        assert isinstance(NOW_LOCAL, ZonedDateTime)
+        assert NOW_LOCAL.tz == LOCAL_TIME_ZONE.key
+
+
+class TestGetToday:
+    def test_function(self) -> None:
+        today = get_today()
+        assert isinstance(today, Date)
+
+    def test_constant(self) -> None:
+        assert isinstance(TODAY_UTC, Date)
+
+
+class TestGetTodayLocal:
+    def test_function(self) -> None:
+        today = get_today_local()
+        assert isinstance(today, Date)
+
+    def test_constant(self) -> None:
+        assert isinstance(TODAY_LOCAL, Date)
 
 
 class TestMinMax:
@@ -151,19 +179,19 @@ class TestMinMax:
 
     def test_date_time_delta_parsable_min(self) -> None:
         def func(delta: DateTimeDelta, /) -> None:
-            _ = DateDelta.parse_common_iso(delta.format_common_iso())
+            _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
 
         _ = func(DATE_TIME_DELTA_PARSABLE_MIN)
-        with raises(ValueError, match="Invalid format: '.*'"):
+        with raises(ValueError, match="Addition result out of bounds"):
             _ = func(DATE_TIME_DELTA_PARSABLE_MIN - DateTimeDelta(nanoseconds=1))
 
     def test_date_time_delta_parsable_max(self) -> None:
         def func(delta: DateTimeDelta, /) -> None:
-            _ = DateDelta.parse_common_iso(delta.format_common_iso())
+            _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
 
         _ = func(DATE_TIME_DELTA_PARSABLE_MAX)
-        with raises(ValueError, match="Invalid format: '.*'"):
-            _ = func(DATE_TIME_DELTA_PARSABLE_MAX + DateTimeDelta(nanoseconds=1))
+        with raises(ValueError, match="Invalid format or out of range: '.*'"):
+            _ = func(DATE_TIME_DELTA_PARSABLE_MAX + TimeDelta(nanoseconds=1))
 
     def test_plain_date_time_min(self) -> None:
         with raises(ValueError, match=r"Result of subtract\(\) out of range"):
@@ -184,6 +212,7 @@ class TestMinMax:
         ],
     )
     def test_time_delta_min(self, *, delta: TimeDelta) -> None:
+        _ = TimeDelta.parse_common_iso(TIME_DELTA_MIN.format_common_iso())
         with raises(ValueError, match="Addition result out of range"):
             _ = TIME_DELTA_MIN - delta
 
@@ -202,6 +231,7 @@ class TestMinMax:
     def test_time_delta_max(self, *, delta: TimeDelta, is_ok: bool) -> None:
         if is_ok:
             _ = TIME_DELTA_MAX + delta
+            _ = TimeDelta.parse_common_iso(delta.format_common_iso())
         else:
             with raises(ValueError, match="Addition result out of range"):
                 _ = TIME_DELTA_MAX + delta

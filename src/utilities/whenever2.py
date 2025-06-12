@@ -5,7 +5,15 @@ from functools import cache
 from logging import LogRecord
 from typing import TYPE_CHECKING, Any, override
 
-from whenever import Date, DateTimeDelta, PlainDateTime, ZonedDateTime
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 from utilities.zoneinfo import UTC, get_time_zone_name
 
@@ -15,8 +23,15 @@ if TYPE_CHECKING:
     from utilities.types import TimeZoneLike
 
 
+## bounds
+
+
 DATE_MIN = Date.from_py_date(dt.date.min)
 DATE_MAX = Date.from_py_date(dt.date.max)
+TIME_MIN = Time.from_py_time(dt.time.min)
+TIME_MAX = Time.from_py_time(dt.time.max)
+
+
 PLAIN_DATE_TIME_MIN = PlainDateTime.from_py_datetime(dt.datetime.min)  # noqa: DTZ901
 PLAIN_DATE_TIME_MAX = PlainDateTime.from_py_datetime(dt.datetime.max)  # noqa: DTZ901
 ZONED_DATE_TIME_MIN = PLAIN_DATE_TIME_MIN.assume_tz(UTC.key)
@@ -28,10 +43,24 @@ DATE_DELTA_MAX = DATE_TIME_DELTA_MAX.date_part()
 TIME_DELTA_MIN = DATE_TIME_DELTA_MIN.time_part()
 TIME_DELTA_MAX = DATE_TIME_DELTA_MAX.time_part()
 
-DATE_TIME_DELTA_PARSABLE_MIN = DateTimeDelta(days=-999999)
-DATE_TIME_DELTA_PARSABLE_MAX = DateTimeDelta(days=999999)
-DATE_DELTA_PARSABLE_MIN = DATE_TIME_DELTA_PARSABLE_MIN.date_part()
-DATE_DELTA_PARSABLE_MAX = DATE_TIME_DELTA_PARSABLE_MAX.date_part()
+
+DATE_TIME_DELTA_PARSABLE_MIN = DateTimeDelta(days=-999999, seconds=-316192377600)
+DATE_TIME_DELTA_PARSABLE_MAX = DateTimeDelta(days=999999, seconds=316192377600)
+DATE_DELTA_PARSABLE_MIN = DateDelta(days=-999999)
+DATE_DELTA_PARSABLE_MAX = DateDelta(days=999999)
+
+
+## common constants
+
+
+ZERO_TIME = Time()
+MICROSECOND = TimeDelta(microseconds=1)
+MILLISECOND = TimeDelta(milliseconds=1)
+SECOND = TimeDelta(seconds=1)
+MINUTE = TimeDelta(minutes=1)
+HOUR = TimeDelta(hours=1)
+DAY = DateDelta(days=1)
+WEEK = DateDelta(weeks=1)
 
 
 ##
@@ -66,6 +95,28 @@ NOW_UTC = get_now(time_zone=UTC)
 def get_now_local() -> ZonedDateTime:
     """Get the current local time."""
     return get_now(time_zone="local")
+
+
+NOW_LOCAL = get_now_local()
+
+
+##
+
+
+def get_today(*, time_zone: TimeZoneLike = UTC) -> Date:
+    """Get the current, timezone-aware local date."""
+    return get_now(time_zone=time_zone).date()
+
+
+TODAY_UTC = get_today(time_zone=UTC)
+
+
+def get_today_local() -> Date:
+    """Get the current, timezone-aware local date."""
+    return get_today(time_zone="local")
+
+
+TODAY_LOCAL = get_today_local()
 
 
 ##
@@ -132,10 +183,23 @@ __all__ = [
     "DATE_TIME_DELTA_MIN",
     "DATE_TIME_DELTA_PARSABLE_MAX",
     "DATE_TIME_DELTA_PARSABLE_MIN",
+    "DAY",
+    "HOUR",
+    "MICROSECOND",
+    "MILLISECOND",
+    "MINUTE",
+    "NOW_LOCAL",
     "PLAIN_DATE_TIME_MAX",
     "PLAIN_DATE_TIME_MIN",
+    "SECOND",
     "TIME_DELTA_MAX",
     "TIME_DELTA_MIN",
+    "TIME_MAX",
+    "TIME_MIN",
+    "TODAY_LOCAL",
+    "TODAY_UTC",
+    "WEEK",
+    "ZERO_TIME",
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
     "WheneverLogRecord",
@@ -143,6 +207,7 @@ __all__ = [
     "from_timestamp_millis",
     "from_timestamp_nanos",
     "get_now",
-    "get_now",
     "get_now_local",
+    "get_today",
+    "get_today_local",
 ]
