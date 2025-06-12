@@ -116,6 +116,7 @@ from utilities.whenever2 import (
     TIME_DELTA_MIN,
     TIME_MAX,
     TIME_MIN,
+    to_date_time_delta,
     to_nanos,
 )
 from utilities.zoneinfo import UTC, ensure_time_zone
@@ -327,71 +328,7 @@ def date_time_deltas_whenever(
         min_nanos = max(min_nanos, to_nanos(DATE_TIME_DELTA_PARSABLE_MIN))
         max_nanos = min(max_nanos, to_nanos(DATE_TIME_DELTA_PARSABLE_MAX))
     nanos = draw(integers(min_value=min_nanos, max_value=max_nanos))
-    sign_use = sign(nanos)
-    micros, nanos = divmod(nanos, int(1e3))
-    millis, micros = divmod(micros, int(1e3))
-    secs, millis = divmod(millis, int(1e3))
-    mins, secs = divmod(secs, 60)
-    hours, mins = divmod(mins, 60)
-    days, mins = divmod(hours, 24)
-    weeks, days = divmod(days, 7)
-    match sign_use:
-        case 1:
-            while nanos < 0:
-                nanos += int(1e3)
-                micros -= 1
-            while micros < 0:
-                micros += int(1e3)
-                millis -= 1
-            while millis < 0:
-                millis += int(1e3)
-                secs -= 1
-            while secs < 0:
-                secs += 60
-                mins -= 1
-            while mins < 0:
-                mins += 60
-                hours -= 1
-            while hours < 0:
-                hours += 60
-                days -= 1
-            while days < 0:
-                days += 60
-                weeks -= 1
-        case -1:
-            while nanos > 0:
-                nanos -= int(1e3)
-                micros += 1
-            while micros > 0:
-                micros -= int(1e3)
-                millis += 1
-            while millis > 0:
-                millis -= int(1e3)
-                secs += 1
-            while secs > 0:
-                secs -= 60
-                mins += 1
-            while mins > 0:
-                mins -= 60
-                hours += 1
-            while hours > 0:
-                hours -= 60
-                days += 1
-            while days > 0:
-                days -= 60
-                weeks += 1
-        case 0:
-            ...
-    return DateTimeDelta(
-        weeks=weeks,
-        days=days,
-        hours=hours,
-        minutes=mins,
-        seconds=secs,
-        microseconds=micros,
-        milliseconds=millis,
-        nanoseconds=nanos,
-    )
+    return to_date_time_delta(nanos)
 
 
 ##
