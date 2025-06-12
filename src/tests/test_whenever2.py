@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Self
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import dates, just, none, timezones
+from hypothesis.strategies import just, none, timezones
 from pytest import mark, param, raises
 from whenever import Date, DateDelta, DateTimeDelta, TimeDelta, ZonedDateTime
 
@@ -281,7 +281,7 @@ class TestToDate:
         assert obj.replace(date=date2).date == date2
         assert obj.replace(date=get_today).date == get_today()
 
-    @given(date=dates())
+    @given(date=dates_whenever())
     def test_callable(self, *, date: Date) -> None:
         assert to_date(date=lambda: date) == date
 
