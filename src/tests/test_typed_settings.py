@@ -79,7 +79,7 @@ class TestExtendedTSConverter:
     ) -> None:
         @dataclass(frozen=True, kw_only=True, slots=True)
         class Settings:
-            value: test_cls = default
+            value: test_cls = default  # pyright: ignore[reportInvalidTypeForm]
 
         settings_default = load_settings(
             Settings, loaders=[], converter=ExtendedTSConverter()
