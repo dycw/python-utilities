@@ -5,10 +5,22 @@ from zoneinfo import ZoneInfo
 
 from hypothesis import given
 from hypothesis.strategies import timezones
-from whenever import ZonedDateTime
+from pytest import raises
+from whenever import DateDelta, ZonedDateTime
 
 from utilities.tzdata import HongKong, Tokyo
-from utilities.whenever2 import NOW_UTC, WheneverLogRecord, get_now, get_now_local
+from utilities.whenever2 import (
+    DATE_MAX,
+    DATE_MIN,
+    NOW_UTC,
+    PLAIN_DATETIME_MAX,
+    PLAIN_DATETIME_MIN,
+    ZONED_DATETIME_MAX,
+    ZONED_DATETIME_MIN,
+    WheneverLogRecord,
+    get_now,
+    get_now_local,
+)
 from utilities.zoneinfo import UTC
 
 
@@ -31,6 +43,34 @@ class TestGetNowLocal:
         ETC = ZoneInfo("Etc/UTC")  # noqa: N806
         time_zones = {ETC, HongKong, Tokyo, UTC}
         assert any(now.tz == time_zone.key for time_zone in time_zones)
+
+
+class TestMinMax:
+    def test_date_min(self) -> None:
+        with raises(ValueError, match="Resulting date out of range"):
+            _ = DATE_MIN - DateDelta(days=1)
+
+    def test_date_max(self) -> None:
+        with raises(ValueError, match="Resulting date out of range"):
+            _ = DATE_MAX + DateDelta(days=1)
+
+    def test_plain_datetime_min(self) -> None:
+        with raises(ValueError, match=r"Result of subtract\(\) out of range"):
+            _ = PLAIN_DATETIME_MIN.subtract(nanoseconds=1, ignore_dst=True)
+
+    def test_plain_datetime_max(self) -> None:
+        _ = PLAIN_DATETIME_MAX.add(nanoseconds=999, ignore_dst=True)
+        with raises(ValueError, match=r"Result of add\(\) out of range"):
+            _ = PLAIN_DATETIME_MAX.add(microseconds=1, ignore_dst=True)
+
+    def test_zoned_datetime_min(self) -> None:
+        with raises(ValueError, match="Resulting datetime is out of range"):
+            _ = ZONED_DATETIME_MIN.subtract(nanoseconds=1)
+
+    def test_zoned_datetime_max(self) -> None:
+        _ = ZONED_DATETIME_MAX.add(nanoseconds=999)
+        with raises(ValueError, match="Resulting datetime is out of range"):
+            _ = ZONED_DATETIME_MAX.add(microseconds=1)
 
 
 class TestWheneverLogRecord:
