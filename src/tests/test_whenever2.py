@@ -22,7 +22,7 @@ from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import dates_whenever, sentinels, zoned_datetimes_whenever
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzdata import HongKong, Tokyo
-from utilities.tzlocal import LOCAL_TIME_ZONE
+from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.whenever2 import (
     DATE_DELTA_MAX,
     DATE_DELTA_MIN,
@@ -108,7 +108,7 @@ class TestGetNowLocal:
 
     def test_constant(self) -> None:
         assert isinstance(NOW_LOCAL, ZonedDateTime)
-        assert NOW_LOCAL.tz == LOCAL_TIME_ZONE.key
+        assert NOW_LOCAL.tz == LOCAL_TIME_ZONE_NAME
 
 
 class TestGetToday:
