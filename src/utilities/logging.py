@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 import re
 from dataclasses import dataclass, field
 from functools import cached_property
@@ -19,7 +18,6 @@ from logging import (
 from logging.handlers import BaseRotatingHandler, TimedRotatingFileHandler
 from pathlib import Path
 from re import Pattern
-from time import time
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -32,17 +30,31 @@ from typing import (
     override,
 )
 
+from whenever import PlainDateTime, ZonedDateTime
+
 from utilities.atomicwrites import move_many
 from utilities.dataclasses import replace_non_sentinel
-from utilities.datetime import parse_datetime_compact, serialize_compact
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.pathlib import ensure_suffix, get_path
+from utilities.re import (
+    ExtractGroupError,
+    ExtractGroupsError,
+    extract_group,
+    extract_groups,
+)
 from utilities.sentinel import Sentinel, sentinel
-from utilities.tzlocal import get_now_local
+from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
+from utilities.whenever2 import (
+    WheneverLogRecord,
+    format_compact,
+    get_now,
+    get_now_local,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
+    from datetime import time
     from logging import _FilterType
 
     from utilities.types import (
@@ -54,7 +66,9 @@ if TYPE_CHECKING:
     )
 
 
-_DEFAULT_FORMAT = "{asctime} | {name}:{funcName}:{lineno} | {levelname:8} | {message}"
+_DEFAULT_FORMAT = (
+    "{zoned_datetime} | {name}:{funcName}:{lineno} | {levelname:8} | {message}"
+)
 _DEFAULT_DATEFMT = "%Y-%m-%d %H:%M:%S"
 _DEFAULT_BACKUP_COUNT: int = 100
 _DEFAULT_MAX_BYTES: int = 10 * 1024**2
@@ -76,7 +90,6 @@ def add_filters(handler: Handler, /, *filters: _FilterType) -> None:
 def basic_config(
     *,
     obj: LoggerOrName | Handler | None = None,
-    whenever: bool = False,
     format_: str = _DEFAULT_FORMAT,
     datefmt: str = _DEFAULT_DATEFMT,
     level: LogLevel = "INFO",
@@ -93,7 +106,6 @@ def basic_config(
             logger.addHandler(handler := StreamHandler())
             basic_config(
                 obj=handler,
-                whenever=whenever,
                 format_=format_,
                 datefmt=datefmt,
                 level=level,
@@ -104,7 +116,6 @@ def basic_config(
         case str() as name:
             basic_config(
                 obj=get_logger(logger=name),
-                whenever=whenever,
                 format_=format_,
                 datefmt=datefmt,
                 level=level,
@@ -117,7 +128,6 @@ def basic_config(
             if filters is not None:
                 add_filters(handler, *always_iterable(filters))
             formatter = get_formatter(
-                whenever=whenever,
                 format_=format_,
                 datefmt=datefmt,
                 plain=plain,
@@ -179,18 +189,13 @@ class _FieldStyleDict(TypedDict):
 
 def get_formatter(
     *,
-    whenever: bool = False,
     format_: str = _DEFAULT_FORMAT,
     datefmt: str = _DEFAULT_DATEFMT,
     plain: bool = False,
     color_field_styles: Mapping[str, _FieldStyleKeys] | None = None,
 ) -> Formatter:
     """Get the formatter; colored if available."""
-    if whenever:
-        from utilities.whenever2 import WheneverLogRecord
-
-        setLogRecordFactory(WheneverLogRecord)
-        format_ = format_.replace("{asctime}", "{zoned_datetime}")
+    setLogRecordFactory(WheneverLogRecord)
     if plain:
         return _get_plain_formatter(format_=format_, datefmt=datefmt)
     try:
@@ -199,8 +204,7 @@ def get_formatter(
         return _get_plain_formatter(format_=format_, datefmt=datefmt)
     default = cast("dict[_FieldStyleKeys, _FieldStyleDict]", DEFAULT_FIELD_STYLES)
     field_styles = {cast("str", k): v for k, v in default.items()}
-    if whenever:
-        field_styles["zoned_datetime"] = default["asctime"]
+    field_styles["zoned_datetime"] = default["asctime"]
     if color_field_styles is not None:
         field_styles.update({k: default[v] for k, v in color_field_styles.items()})
     return ColoredFormatter(
@@ -256,7 +260,6 @@ class GetLoggingLevelNumberError(Exception):
 def setup_logging(
     *,
     logger: LoggerOrName | None = None,
-    whenever: bool = False,
     format_: str = _DEFAULT_FORMAT,
     datefmt: str = _DEFAULT_DATEFMT,
     console_level: LogLevel = "INFO",
@@ -272,7 +275,6 @@ def setup_logging(
     """Set up logger."""
     basic_config(
         obj=logger,
-        whenever=whenever,
         format_=f"{console_prefix} {format_}",
         datefmt=datefmt,
         level=console_level,
@@ -295,7 +297,6 @@ def setup_logging(
             logger_use.addHandler(handler)
             basic_config(
                 obj=handler,
-                whenever=whenever,
                 format_=format_,
                 datefmt=datefmt,
                 level=level,
@@ -330,7 +331,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         interval: int = 1,
         backupCount: int = _DEFAULT_BACKUP_COUNT,
         utc: bool = False,
-        atTime: dt.time | None = None,
+        atTime: time | None = None,
     ) -> None:
         path = Path(filename)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -382,7 +383,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         if not self.delay:  # pragma: no cover
             self.stream = self._open()
         self._time_handler.rolloverAt = (  # skipif-ci-and-windows
-            self._time_handler.computeRollover(int(time()))
+            self._time_handler.computeRollover(get_now().timestamp())
         )
 
     def _should_rollover(self, record: LogRecord, /) -> bool:
@@ -400,10 +401,8 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
 def _compute_rollover_patterns(stem: str, suffix: str, /) -> _RolloverPatterns:
     return _RolloverPatterns(
         pattern1=re.compile(rf"^{stem}\.(\d+){suffix}$"),
-        pattern2=re.compile(rf"^{stem}\.(\d+)__(\d{{8}}T\d{{6}}){suffix}$"),
-        pattern3=re.compile(
-            rf"^{stem}\.(\d+)__(\d{{8}}T\d{{6}})__(\d{{8}}T\d{{6}}){suffix}$"
-        ),
+        pattern2=re.compile(rf"^{stem}\.(\d+)__([\dT]+?){suffix}$"),
+        pattern3=re.compile(rf"^{stem}\.(\d+)__([\dT]+?)__([\dT]+?){suffix}$"),
     )
 
 
@@ -452,7 +451,7 @@ def _compute_rollover_actions(
                 rotations.add(
                     _Rotation(file=file, index=curr + 1, start=start, end=end)
                 )
-            case int() as index, dt.datetime(), dt.datetime():
+            case int() as index, ZonedDateTime(), ZonedDateTime():
                 rotations.add(_Rotation(file=file, index=index + 1))
             case _:  # pragma: no cover
                 raise NotImplementedError
@@ -476,8 +475,8 @@ class _RotatingLogFile:
     stem: str
     suffix: str
     index: int | None = None
-    start: dt.datetime | None = None
-    end: dt.datetime | None = None
+    start: ZonedDateTime | None = None
+    end: ZonedDateTime | None = None
 
     @classmethod
     def from_path(
@@ -494,38 +493,41 @@ class _RotatingLogFile:
         if patterns is None:
             patterns = _compute_rollover_patterns(stem, suffix)
         try:
-            (index,) = patterns.pattern1.findall(path.name)
-        except ValueError:
+            index, start, end = extract_groups(patterns.pattern3, path.name)
+        except ExtractGroupsError:
+            pass
+        else:
+            return cls(
+                directory=path.parent,
+                stem=stem,
+                suffix=suffix,
+                index=int(index),
+                start=PlainDateTime.parse_common_iso(start).assume_tz(
+                    LOCAL_TIME_ZONE_NAME
+                ),
+                end=PlainDateTime.parse_common_iso(end).assume_tz(LOCAL_TIME_ZONE_NAME),
+            )
+        try:
+            index, end = extract_groups(patterns.pattern2, path.name)
+        except ExtractGroupsError:
+            pass
+        else:
+            return cls(
+                directory=path.parent,
+                stem=stem,
+                suffix=suffix,
+                index=int(index),
+                end=PlainDateTime.parse_common_iso(end).assume_tz(LOCAL_TIME_ZONE_NAME),
+            )
+        try:
+            index = extract_group(patterns.pattern1, path.name)
+        except ExtractGroupError:
             pass
         else:
             return cls(
                 directory=path.parent, stem=stem, suffix=suffix, index=int(index)
             )
-        try:
-            ((index, end),) = patterns.pattern2.findall(path.name)
-        except ValueError:
-            pass
-        else:
-            return cls(
-                directory=path.parent,
-                stem=stem,
-                suffix=suffix,
-                index=int(index),
-                end=parse_datetime_compact(end),
-            )
-        try:
-            ((index, start, end),) = patterns.pattern3.findall(path.name)
-        except ValueError:
-            return cls(directory=path.parent, stem=stem, suffix=suffix)
-        else:
-            return cls(
-                directory=path.parent,
-                stem=stem,
-                suffix=suffix,
-                index=int(index),
-                start=parse_datetime_compact(start),
-                end=parse_datetime_compact(end),
-            )
+        return cls(directory=path.parent, stem=stem, suffix=suffix)
 
     @cached_property
     def path(self) -> Path:
@@ -535,10 +537,10 @@ class _RotatingLogFile:
                 tail = None
             case int() as index, None, None:
                 tail = str(index)
-            case int() as index, None, dt.datetime() as end:
-                tail = f"{index}__{serialize_compact(end)}"
-            case int() as index, dt.datetime() as start, dt.datetime() as end:
-                tail = f"{index}__{serialize_compact(start)}__{serialize_compact(end)}"
+            case int() as index, None, ZonedDateTime() as end:
+                tail = f"{index}__{format_compact(end)}"
+            case int() as index, ZonedDateTime() as start, ZonedDateTime() as end:
+                tail = f"{index}__{format_compact(start)}__{format_compact(end)}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(
                     case=[f"{self.index=}", f"{self.start=}", f"{self.end=}"]
@@ -550,8 +552,8 @@ class _RotatingLogFile:
         self,
         *,
         index: int | None | Sentinel = sentinel,
-        start: dt.datetime | None | Sentinel = sentinel,
-        end: dt.datetime | None | Sentinel = sentinel,
+        start: ZonedDateTime | None | Sentinel = sentinel,
+        end: ZonedDateTime | None | Sentinel = sentinel,
     ) -> Self:
         return replace_non_sentinel(self, index=index, start=start, end=end)
 
@@ -568,8 +570,8 @@ class _Deletion:
 class _Rotation:
     file: _RotatingLogFile
     index: int = 0
-    start: dt.datetime | None | Sentinel = sentinel
-    end: dt.datetime | Sentinel = sentinel
+    start: ZonedDateTime | None | Sentinel = sentinel
+    end: ZonedDateTime | Sentinel = sentinel
 
     @cached_property
     def destination(self) -> Path:

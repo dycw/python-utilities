@@ -8,14 +8,21 @@ from zoneinfo import ZoneInfo
 from hypothesis import given
 from hypothesis.strategies import just, none, timezones
 from pytest import mark, param, raises
-from whenever import Date, DateDelta, DateTimeDelta, TimeDelta, ZonedDateTime
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 from tests.conftest import IS_CI
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import dates_whenever, sentinels, zoned_datetimes_whenever
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzdata import HongKong, Tokyo
-from utilities.tzlocal import LOCAL_TIME_ZONE
+from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.whenever2 import (
     DATE_DELTA_MAX,
     DATE_DELTA_MIN,
@@ -39,6 +46,7 @@ from utilities.whenever2 import (
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
     WheneverLogRecord,
+    format_compact,
     from_timestamp,
     from_timestamp_millis,
     from_timestamp_nanos,
@@ -54,6 +62,17 @@ from utilities.zoneinfo import UTC
 if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
     from utilities.types import MaybeCallableDate, MaybeCallableZonedDateTime
+
+
+class TestFormatCompact:
+    @given(datetime=zoned_datetimes_whenever())
+    def test_main(self, *, datetime: ZonedDateTime) -> None:
+        result = format_compact(datetime)
+        assert isinstance(result, str)
+        parsed = PlainDateTime.parse_common_iso(result)
+        assert parsed.nanosecond == 0
+        expected = datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
+        assert parsed == expected
 
 
 class TestFromTimeStamp:
@@ -100,7 +119,7 @@ class TestGetNowLocal:
 
     def test_constant(self) -> None:
         assert isinstance(NOW_LOCAL, ZonedDateTime)
-        assert NOW_LOCAL.tz == LOCAL_TIME_ZONE.key
+        assert NOW_LOCAL.tz == LOCAL_TIME_ZONE_NAME
 
 
 class TestGetToday:

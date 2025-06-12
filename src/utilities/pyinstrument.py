@@ -7,9 +7,8 @@ from typing import TYPE_CHECKING
 from pyinstrument.profiler import Profiler
 
 from utilities.atomicwrites import writer
-from utilities.datetime import serialize_compact
 from utilities.pathlib import get_path
-from utilities.tzlocal import get_now_local
+from utilities.whenever2 import format_compact, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -23,7 +22,7 @@ def profile(*, path: MaybeCallablePathLike | None = Path.cwd) -> Iterator[None]:
     with Profiler() as profiler:
         yield
     filename = get_path(path=path).joinpath(
-        f"profile__{serialize_compact(get_now_local())}.html"
+        f"profile__{format_compact(get_now())}.html"
     )
     with writer(filename) as temp, temp.open(mode="w") as fh:
         _ = fh.write(profiler.output_html())

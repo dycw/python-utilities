@@ -14,7 +14,6 @@ from traceback import TracebackException
 from typing import TYPE_CHECKING, override
 
 from utilities.atomicwrites import writer
-from utilities.datetime import get_datetime, get_now, serialize_compact
 from utilities.errors import repr_error
 from utilities.iterables import OneEmptyError, one
 from utilities.pathlib import get_path
@@ -27,16 +26,19 @@ from utilities.reprlib import (
     RICH_MAX_WIDTH,
     yield_mapping_repr,
 )
-from utilities.tzlocal import get_local_time_zone, get_now_local
 from utilities.version import get_version
-from utilities.whenever import serialize_duration, serialize_zoned_datetime
+from utilities.whenever2 import format_compact, get_now, to_zoned_date_time
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
     from traceback import FrameSummary
     from types import TracebackType
 
-    from utilities.types import MaybeCallablePathLike, MaybeCallablePyDateTime, PathLike
+    from utilities.types import (
+        MaybeCallablePathLike,
+        MaybeCallableZonedDateTime,
+        PathLike,
+    )
     from utilities.version import MaybeCallableVersionLike
 
 
@@ -51,7 +53,7 @@ def format_exception_stack(
     /,
     *,
     header: bool = False,
-    start: MaybeCallablePyDateTime | None = _START,
+    start: MaybeCallableZonedDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
     capture_locals: bool = False,
     max_width: int = RICH_MAX_WIDTH,
@@ -82,21 +84,18 @@ def format_exception_stack(
 
 def _yield_header_lines(
     *,
-    start: MaybeCallablePyDateTime | None = _START,
+    start: MaybeCallableZonedDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
 ) -> Iterator[str]:
     """Yield the header lines."""
-    now = get_now_local()
-    start_use = get_datetime(datetime=start)
-    start_use = (
-        None if start_use is None else start_use.astimezone(get_local_time_zone())
-    )
-    yield f"Date/time | {serialize_zoned_datetime(now)}"
-    start_str = "" if start_use is None else serialize_zoned_datetime(start_use)
+    now = get_now()
+    start_use = to_zoned_date_time(date_time=start)
+    yield f"Date/time | {format_compact(now)}"
+    start_str = "" if start_use is None else format_compact(start_use)
     yield f"Started   | {start_str}"
-    duration = None if start_use is None else (now - start_use)
-    duration_str = "" if duration is None else serialize_duration(duration)
-    yield f"Duration  | {duration_str}"
+    delta = None if start_use is None else (now - start_use)
+    delta_str = "" if delta is None else delta.format_common_iso()
+    yield f"Duration  | {delta_str}"
     yield f"User      | {getuser()}"
     yield f"Host      | {gethostname()}"
     version_use = "" if version is None else get_version(version=version)
@@ -193,7 +192,7 @@ def _trim_path(path: PathLike, pattern: str, /) -> Path | None:
 
 def make_except_hook(
     *,
-    start: MaybeCallablePyDateTime | None = _START,
+    start: MaybeCallableZonedDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
     max_width: int = RICH_MAX_WIDTH,
@@ -228,7 +227,7 @@ def _make_except_hook_inner(
     traceback: TracebackType | None,
     /,
     *,
-    start: MaybeCallablePyDateTime | None = _START,
+    start: MaybeCallableZonedDateTime | None = _START,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
     max_width: int = RICH_MAX_WIDTH,
@@ -247,9 +246,7 @@ def _make_except_hook_inner(
     _ = sys.stderr.write(f"{slim}\n")  # don't 'from sys import stderr'
     if path is not None:
         path = (
-            get_path(path=path)
-            .joinpath(serialize_compact(get_now_local()))
-            .with_suffix(".txt")
+            get_path(path=path).joinpath(format_compact(get_now())).with_suffix(".txt")
         )
         full = format_exception_stack(
             exc_val,

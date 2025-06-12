@@ -25,6 +25,16 @@ from typing import get_type_hints as _get_type_hints
 from uuid import UUID
 from warnings import warn
 
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
+
 from utilities.iterables import unique_everseen
 from utilities.sentinel import Sentinel
 from utilities.types import StrMapping
@@ -133,7 +143,21 @@ def get_type_hints(
 ) -> dict[str, Any]:
     """Get the type hints of an object."""
     result: dict[str, Any] = obj.__annotations__
-    _ = {Literal, Path, Sentinel, StrMapping, UUID, dt}
+    _ = {
+        Date,
+        DateDelta,
+        DateTimeDelta,
+        Literal,
+        Path,
+        PlainDateTime,
+        Sentinel,
+        StrMapping,
+        Time,
+        TimeDelta,
+        UUID,
+        ZonedDateTime,
+        dt,
+    }
     globalns_use = globals() | ({} if globalns is None else dict(globalns))
     localns_use = {} if localns is None else dict(localns)
     try:

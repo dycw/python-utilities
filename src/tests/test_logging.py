@@ -1,16 +1,8 @@
 from __future__ import annotations
 
 from asyncio import sleep
-from contextlib import contextmanager
 from io import StringIO
-from logging import (
-    Formatter,
-    Logger,
-    LogRecord,
-    StreamHandler,
-    getLogger,
-    setLogRecordFactory,
-)
+from logging import Formatter, Logger, StreamHandler, getLogger
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any, cast
@@ -20,13 +12,12 @@ from hypothesis.strategies import booleans, integers, none, sampled_from
 from pytest import LogCaptureFixture, mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
-from utilities.datetime import NOW_UTC, SECOND, serialize_compact
 from utilities.hypothesis import (
     assume_does_not_raise,
     pairs,
     temp_paths,
     text_ascii,
-    zoned_datetimes,
+    zoned_datetimes_whenever,
 )
 from utilities.iterables import one
 from utilities.logging import (
@@ -47,19 +38,14 @@ from utilities.logging import (
 from utilities.text import unique_str
 from utilities.types import LogLevel
 from utilities.typing import get_args
+from utilities.whenever2 import format_compact, get_now
 
 if TYPE_CHECKING:
-    import datetime as dt
-    from collections.abc import Iterator, Mapping
+    from collections.abc import Mapping
+    from contextlib import AbstractContextManager
     from logging import _FilterType
 
-
-@contextmanager
-def _temp_log_factory() -> Iterator[None]:
-    try:
-        yield
-    finally:
-        setLogRecordFactory(LogRecord)
+    from whenever import ZonedDateTime
 
 
 class TestAddFilters:
@@ -81,7 +67,6 @@ class TestAddFilters:
 
 
 class TestBasicConfig:
-    @mark.parametrize("whenever", [param(True), param(False)])
     @mark.parametrize(
         "filters",
         [
@@ -94,21 +79,20 @@ class TestBasicConfig:
         self,
         *,
         caplog: LogCaptureFixture,
-        whenever: bool,
         filters: _FilterType | None,
         plain: bool,
+        set_log_factory: AbstractContextManager[None],
     ) -> None:
         name = unique_str()
-        with _temp_log_factory():
-            basic_config(obj=name, whenever=whenever, filters=filters, plain=plain)
-            getLogger(name).warning("message")
-            record = one(r for r in caplog.records if r.name == name)
-            assert record.message == "message"
+        with set_log_factory:
+            basic_config(obj=name, filters=filters, plain=plain)
+        getLogger(name).warning("message")
+        record = one(r for r in caplog.records if r.name == name)
+        assert record.message == "message"
 
-    @mark.parametrize("whenever", [param(True), param(False)])
-    def test_none(self, *, whenever: bool) -> None:
-        with _temp_log_factory():
-            basic_config(whenever=whenever)
+    def test_none(self, *, set_log_factory: AbstractContextManager[None]) -> None:
+        with set_log_factory:
+            basic_config()
 
 
 class TestComputeRolloverActions:
@@ -208,7 +192,7 @@ class TestComputeRolloverActions:
 
         await sleep(1)
         tmp_path.joinpath("log.txt").touch()
-        now = serialize_compact(NOW_UTC)
+        now = format_compact(get_now())
         tmp_path.joinpath(f"log.99__{now}__{now}.txt").touch()
         actions = _compute_rollover_actions(tmp_path, "log", ".txt")
         assert len(actions.deletions) == 2
@@ -249,21 +233,20 @@ class TestFilterForKey:
 
 
 class TestGetFormatter:
-    @mark.parametrize("whenever", [param(True), param(False)])
     @mark.parametrize("plain", [param(True), param(False)])
     @mark.parametrize("color_field_styles", [param({}), param(None)])
     def test_main(
         self,
         *,
-        whenever: bool,
         plain: bool,
         color_field_styles: Mapping[str, _FieldStyleKeys] | None,
+        set_log_factory: AbstractContextManager[None],
     ) -> None:
-        with _temp_log_factory():
+        with set_log_factory:
             formatter = get_formatter(
-                whenever=whenever, plain=plain, color_field_styles=color_field_styles
+                plain=plain, color_field_styles=color_field_styles
             )
-            assert isinstance(formatter, Formatter)
+        assert isinstance(formatter, Formatter)
 
 
 class TestGetLogger:
@@ -332,42 +315,35 @@ class TestRotatingLogFile:
         assert result.start is None
         assert result.end is None
 
-    @given(
-        index=integers(min_value=1),
-        end=zoned_datetimes(round_="standard", timedelta=SECOND),
-    )
+    @given(index=integers(min_value=1), end=zoned_datetimes_whenever())
     def test_from_path_with_index_and_end(
-        self, *, index: int, end: dt.datetime
+        self, *, index: int, end: ZonedDateTime
     ) -> None:
-        path = Path(f"log.{index}__{serialize_compact(end)}.txt")
+        path = Path(f"log.{index}__{format_compact(end)}.txt")
         result = _RotatingLogFile.from_path(path, "log", ".txt")
         assert result is not None
         assert result.stem == "log"
         assert result.suffix == ".txt"
         assert result.index == index
         assert result.start is None
-        assert result.end == end
+        assert result.end == end.round()
 
     @given(
         index=integers(min_value=1),
-        datetimes=pairs(
-            zoned_datetimes(round_="standard", timedelta=SECOND), sorted=True
-        ),
+        datetimes=pairs(zoned_datetimes_whenever(), sorted=True),
     )
     def test_from_path_with_index_start_and_end(
-        self, *, index: int, datetimes: tuple[dt.datetime, dt.datetime]
+        self, *, index: int, datetimes: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
         start, end = datetimes
-        path = Path(
-            f"log.{index}__{serialize_compact(start)}__{serialize_compact(end)}.txt"
-        )
+        path = Path(f"log.{index}__{format_compact(start)}__{format_compact(end)}.txt")
         result = _RotatingLogFile.from_path(path, "log", ".txt")
         assert result is not None
         assert result.stem == "log"
         assert result.suffix == ".txt"
         assert result.index == index
-        assert result.start == start
-        assert result.end == end
+        assert result.start == start.round()
+        assert result.end == end.round()
 
     def test_from_path_none(self) -> None:
         path = Path("invalid.txt")
@@ -384,34 +360,30 @@ class TestRotatingLogFile:
         assert file.path == root.joinpath(f"log.{index}.txt")
 
     @given(
-        root=temp_paths(),
-        index=integers(min_value=1),
-        end=zoned_datetimes(round_="standard", timedelta=SECOND),
+        root=temp_paths(), index=integers(min_value=1), end=zoned_datetimes_whenever()
     )
     def test_path_with_index_and_end(
-        self, *, root: Path, index: int, end: dt.datetime
+        self, *, root: Path, index: int, end: ZonedDateTime
     ) -> None:
         file = _RotatingLogFile(
             directory=root, stem="log", suffix=".txt", index=index, end=end
         )
-        assert file.path == root.joinpath(f"log.{index}__{serialize_compact(end)}.txt")
+        assert file.path == root.joinpath(f"log.{index}__{format_compact(end)}.txt")
 
     @given(
         root=temp_paths(),
         index=integers(min_value=1),
-        datetimes=pairs(
-            zoned_datetimes(round_="standard", timedelta=SECOND), sorted=True
-        ),
+        datetimes=pairs(zoned_datetimes_whenever(), sorted=True),
     )
     def test_path_with_index_start_and_end(
-        self, *, root: Path, index: int, datetimes: tuple[dt.datetime, dt.datetime]
+        self, *, root: Path, index: int, datetimes: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
         start, end = datetimes
         file = _RotatingLogFile(
             directory=root, stem="log", suffix=".txt", index=index, start=start, end=end
         )
         assert file.path == root.joinpath(
-            f"log.{index}__{serialize_compact(start)}__{serialize_compact(end)}.txt"
+            f"log.{index}__{format_compact(start)}__{format_compact(end)}.txt"
         )
 
 
@@ -440,8 +412,7 @@ class TestSizeAndTimeRotatingFileHandler:
         filename = tmp_path.joinpath("log")
         logger.addHandler(SizeAndTimeRotatingFileHandler(filename=filename))
         logger.warning("message")
-        with filename.open() as fh:
-            content = fh.read()
+        content = filename.read_text()
         assert content == "message\n"
 
     def test_create_parents(self, *, tmp_path: Path) -> None:
