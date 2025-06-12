@@ -996,7 +996,7 @@ def _pairs_map(elements: list[_T], /) -> tuple[_T, _T]:
 
 def paths() -> SearchStrategy[Path]:
     """Strategy for generating `Path`s."""
-    reserved = {"NUL"}
+    reserved = {"AUX", "NUL"}
     strategy = text_ascii(min_size=1, max_size=10).filter(lambda x: x not in reserved)
     return lists(strategy, max_size=10).map(lambda parts: Path(*parts))
 
