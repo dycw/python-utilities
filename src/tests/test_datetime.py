@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Self
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
-    booleans,
     data,
     dates,
     datetimes,
@@ -105,7 +104,6 @@ from utilities.datetime import (
     microseconds_since_epoch,
     microseconds_since_epoch_to_datetime,
     microseconds_to_timedelta,
-    milliseconds_to_timedelta,
     parse_date_compact,
     parse_datetime_compact,
     parse_month,
@@ -422,28 +420,6 @@ class TestDateTimeDurationToMicrosecondsOrMilliseconds:
         result = datetime_duration_to_microseconds(timedelta)
         assert result == microseconds
 
-    @given(timedelta=timedeltas(), strict=booleans())
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_timedelta_to_milliseconds_exact(
-        self, *, timedelta: dt.timedelta, strict: bool
-    ) -> None:
-        _, remainder = divmod(timedelta.microseconds, _MICROSECONDS_PER_MILLISECOND)
-        _ = assume(remainder == 0)
-        milliseconds = datetime_duration_to_milliseconds(timedelta, strict=strict)
-        assert isinstance(milliseconds, int)
-        result = milliseconds_to_timedelta(milliseconds)
-        assert result == timedelta
-
-    @given(timedelta=timedeltas())
-    def test_timedelta_to_milliseconds_inexact(
-        self, *, timedelta: dt.timedelta
-    ) -> None:
-        _, remainder = divmod(timedelta.microseconds, _MICROSECONDS_PER_MILLISECOND)
-        _ = assume(remainder != 0)
-        milliseconds = datetime_duration_to_milliseconds(timedelta)
-        result = milliseconds_to_timedelta(round(milliseconds))
-        assert abs(result - timedelta) <= SECOND
-
     @given(timedelta=timedeltas())
     def test_timedelta_to_milliseconds_error(self, *, timedelta: dt.timedelta) -> None:
         _, microseconds = divmod(timedelta.microseconds, _MICROSECONDS_PER_MILLISECOND)
@@ -453,13 +429,6 @@ class TestDateTimeDurationToMicrosecondsOrMilliseconds:
             match=r"Unable to convert .* to milliseconds; got .* microsecond\(s\)",
         ):
             _ = datetime_duration_to_milliseconds(timedelta, strict=True)
-
-    @given(milliseconds=int32s())
-    def test_milliseconds_to_timedelta(self, *, milliseconds: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            timedelta = milliseconds_to_timedelta(milliseconds)
-        result = datetime_duration_to_milliseconds(timedelta)
-        assert result == milliseconds
 
 
 class TestDateTimeDurationToTimeDelta:
