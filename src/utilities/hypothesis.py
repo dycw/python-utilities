@@ -95,6 +95,7 @@ from utilities.whenever2 import (
     DATE_TIME_DELTA_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
     DATE_TIME_DELTA_PARSABLE_MIN,
+    DAY,
     PLAIN_DATE_TIME_MAX,
     PLAIN_DATE_TIME_MIN,
     TIME_DELTA_MAX,
@@ -1235,11 +1236,13 @@ def zoned_datetimes_whenever(
                 max_value_ = max_value_.to_tz(time_zone_.key).to_plain()
         case _ as never:
             assert_never(never)
-    plain_datetime = draw(
-        plain_datetimes_whenever(min_value=min_value_, max_value=max_value_)
-    )
-    with assume_does_not_raise(ValueError):
-        return plain_datetime.assume_tz(time_zone_.key, disambiguate="raise")
+    plain = draw(plain_datetimes_whenever(min_value=min_value_, max_value=max_value_))
+    with assume_does_not_raise(ValueError, match="Resulting datetime is out of range"):
+        zoned = plain.assume_tz(time_zone_.key, disambiguate="raise")
+    with assume_does_not_raise(OverflowError, match="date value out of range"):
+        if not ((DATE_MIN + DAY) <= zoned.date() <= (DATE_MAX - DAY)):
+            _ = zoned.py_datetime()
+    return zoned
 
 
 __all__ = [

@@ -2080,7 +2080,7 @@ class TestReifyExprs:
 
 class TestReplaceTimeZone:
     def test_datetime(self) -> None:
-        now_utc = get_now()
+        now_utc = get_now().py_datetime()
         series = Series(values=[now_utc], dtype=DatetimeUTC)
         result = replace_time_zone(series, time_zone=None)
         expected = Series(values=[now_utc.replace(tzinfo=None)], dtype=Datetime)

@@ -979,9 +979,19 @@ class TestZonedDateTimesWhenever:
                 )
             )
         assert isinstance(datetime, ZonedDateTime)
+        _ = datetime.py_datetime()
         assert ZonedDateTime.parse_common_iso(datetime.format_common_iso()) == datetime
         assert datetime.tz == time_zone.key
         if min_value is not None:
             assert datetime >= min_value
         if max_value is not None:
             assert datetime <= max_value
+
+    @given(data=data(), time_zone=timezones())
+    def test_examples(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+        datetime = data.draw(
+            zoned_datetimes_whenever(
+                max_value=ZonedDateTime(1, 1, 2, tz=time_zone.key), time_zone=time_zone
+            )
+        )
+        _ = datetime.py_datetime()
