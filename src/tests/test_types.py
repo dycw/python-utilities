@@ -10,7 +10,7 @@ from pytest import mark, param
 
 from utilities.platform import SYSTEM
 from utilities.types import Number, PathLike, TDataclass, TimeZone
-from utilities.typing import get_args
+from utilities.typing import get_literal_elements
 
 
 class TestDataClassProtocol:
@@ -45,7 +45,7 @@ class TestPathLike:
 
 class TestTimeZone:
     def test_main(self) -> None:
-        result = set(get_args(TimeZone))
+        result = set(get_literal_elements(TimeZone))
         expected = available_timezones()
         match SYSTEM:
             case "windows" | "mac":
