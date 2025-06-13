@@ -66,8 +66,11 @@ class TestIsEqual:
     def test_exception_class(self) -> None:
         assert utilities.operator.is_equal(CustomError, CustomError)
 
-    @given(x=lists(integers()), y=lists(integers()))
-    def test_exception_instance(self, *, x: Sequence[int], y: Sequence[int]) -> None:
+    @given(ints=pairs(lists(integers())))
+    def test_exception_instance(
+        self, *, ints: tuple[Sequence[int], Sequence[int]]
+    ) -> None:
+        x, y = ints
         result = utilities.operator.is_equal(CustomError(*x), CustomError(*y))
         expected = x == y
         assert result is expected
