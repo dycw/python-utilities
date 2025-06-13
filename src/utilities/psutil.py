@@ -11,13 +11,14 @@ from psutil import swap_memory, virtual_memory
 
 from utilities.asyncio import Looper
 from utilities.contextlib import suppress_super_object_attribute_error
-from utilities.datetime import SECOND, get_now
+from utilities.whenever2 import SECOND, get_now
 
 if TYPE_CHECKING:
-    import datetime as dt
     from logging import Logger
 
-    from utilities.types import Duration, PathLike
+    from whenever import TimeDelta, ZonedDateTime
+
+    from utilities.types import PathLike
 
 
 @dataclass(kw_only=True)
@@ -25,8 +26,8 @@ class MemoryMonitorService(Looper[None]):
     """Service to monitor memory usage."""
 
     # base
-    freq: Duration = field(default=10 * SECOND, repr=False)
-    backoff: Duration = field(default=10 * SECOND, repr=False)
+    freq: TimeDelta = field(default=10 * SECOND, repr=False)
+    backoff: TimeDelta = field(default=10 * SECOND, repr=False)
     # self
     console: str | None = field(default=None, repr=False)
     path: PathLike = "memory.txt"
@@ -68,7 +69,7 @@ class MemoryMonitorService(Looper[None]):
 class MemoryUsage:
     """A memory usage."""
 
-    datetime: dt.datetime = field(default_factory=get_now)
+    datetime: ZonedDateTime = field(default_factory=get_now)
     virtual_used: int = field(repr=False)
     virtual_used_mb: int = field(init=False)
     virtual_total: int = field(repr=False)
