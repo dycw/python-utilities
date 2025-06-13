@@ -310,7 +310,7 @@ class TestLooper:
         assert not looper.empty()
 
     async def test_empty_upon_exit(self) -> None:
-        looper = QueueLooper(freq=0.05, empty_upon_exit=True)
+        looper = QueueLooper(freq=0.05 * SECOND, empty_upon_exit=True)
         looper.put_right_nowait(0)
         assert not looper.empty()
         async with timeout_td(SECOND), looper:
@@ -449,8 +449,8 @@ class TestLooper:
         self._assert_stats_half(looper2._counter)
 
     def test_replace(self) -> None:
-        looper = CountingLooper().replace(freq=10.0)
-        assert looper.freq == 10.0
+        looper = CountingLooper().replace(freq=10 * SECOND)
+        assert looper.freq == 10 * SECOND
 
     async def test_request_back_off(self) -> None:
         class Example(CountingLooper):
@@ -609,7 +609,7 @@ class TestLooper:
         looper = Example()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta.py_timedelta() >= self._restart_min_elapsed
+        assert timer >= self._restart_min_elapsed
         pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) whilst restarting \(initialize\); sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
@@ -626,7 +626,7 @@ class TestLooper:
         looper = Example()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta.py_timedelta() >= self._restart_min_elapsed
+        assert timer >= self._restart_min_elapsed
         pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) whilst restarting \(tear down\); sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
@@ -649,7 +649,7 @@ class TestLooper:
         looper = Example()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta.py_timedelta() >= self._restart_min_elapsed
+        assert timer >= self._restart_min_elapsed
         pattern = rf": encountered {get_class_name(CountingLooperError)}\(\) \(tear down\) and then {get_class_name(CountingLooperError)}\(\) \(initialization\) whilst restarting; sleeping for .*\.\.\.$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
@@ -657,13 +657,13 @@ class TestLooper:
         looper = CountingLooper()
         with Timer() as timer:
             await looper.restart()
-        assert timer.timedelta.py_timedelta() <= self._restart_max_elapsed
+        assert timer <= self._restart_max_elapsed
         pattern = r": finished restarting$"
         _ = one(m for m in caplog.messages if search(pattern, m))
 
     @mark.parametrize("n", [param(0), param(1), param(2)])
     async def test_run_until_empty(self, *, n: int) -> None:
-        looper = QueueLooper(freq=0.05)
+        looper = QueueLooper(freq=0.05 * SECOND)
         looper.put_right_nowait(*range(n))
         async with timeout_td(SECOND), looper:
             await looper.run_until_empty()
