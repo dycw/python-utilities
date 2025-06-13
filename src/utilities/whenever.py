@@ -388,13 +388,27 @@ class Month:
     @classmethod
     def parse_common_iso(cls, text: str, /) -> Self:
         try:
-            year, month = extract_groups(r"^(\d{1,4})[\- ]?(\d{1,2})$", text)
+            year, month = extract_groups(r"^(\d{2,4})[\-\. ]?(\d{2})$", text)
         except ExtractGroupsError:
             raise _MonthParseCommonISOError(text=text) from None
-        return cls(year=int(year), month=int(month))
+        return cls(year=cls._parse_year(year), month=int(month))
 
     def to_date(self, /, *, day: int = 1) -> Date:
         return Date(self.year, self.month, day)
+
+    @classmethod
+    def _parse_year(cls, year: str, /) -> int:
+        match len(year):
+            case 4:
+                return int(year)
+            case 2:
+                min_year = DATE_TWO_DIGIT_YEAR_MIN.year
+                max_year = DATE_TWO_DIGIT_YEAR_MAX.year
+                years = range(min_year, max_year + 1)
+                (result,) = (y for y in years if y % 100 == int(year))
+                return result
+            case _:
+                raise _MonthParseCommonISOError(text=year) from None
 
 
 @dataclass(kw_only=True, slots=True)

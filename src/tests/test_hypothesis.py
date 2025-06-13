@@ -5,7 +5,7 @@ from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any, cast
 
-from hypothesis import HealthCheck, Phase, assume, given, settings
+from hypothesis import Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.strategies import (
@@ -36,11 +36,6 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.datetime import (
-    MAX_DATE_TWO_DIGIT_YEAR,
-    MIN_DATE_TWO_DIGIT_YEAR,
-    parse_two_digit_year,
-)
 from utilities.functions import ensure_int
 from utilities.hypothesis import (
     Shape,
@@ -51,7 +46,6 @@ from utilities.hypothesis import (
     date_deltas,
     date_time_deltas,
     dates,
-    dates_two_digit_year,
     draw2,
     float32s,
     float64s,
@@ -110,14 +104,19 @@ from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sentinel import Sentinel
 from utilities.version import Version
-from utilities.whenever import to_days, to_nanos
+from utilities.whenever import (
+    DATE_TWO_DIGIT_YEAR_MAX,
+    DATE_TWO_DIGIT_YEAR_MIN,
+    Month,
+    to_days,
+    to_nanos,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from collections.abc import Set as AbstractSet
     from zoneinfo import ZoneInfo
 
-    from utilities.datetime import Month
     from utilities.tempfile import TemporaryDirectory
     from utilities.types import Number
 
@@ -165,7 +164,7 @@ class TestBoolArrays:
         assert array.shape == shape
 
 
-class TestDateDeltasWhenever:
+class TestDateDeltas:
     @given(data=data(), parsable=booleans())
     def test_main(self, *, data: DataObject, parsable: bool) -> None:
         min_value = data.draw(date_deltas() | none())
@@ -184,7 +183,7 @@ class TestDateDeltasWhenever:
             assert DateDelta.parse_common_iso(delta.format_common_iso()) == delta
 
 
-class TestDateTimeDeltasWhenever:
+class TestDateTimeDeltas:
     @given(data=data(), parsable=booleans())
     def test_main(self, *, data: DataObject, parsable: bool) -> None:
         min_value = data.draw(date_time_deltas() | none())
@@ -205,34 +204,23 @@ class TestDateTimeDeltasWhenever:
             assert DateTimeDelta.parse_common_iso(delta.format_common_iso()) == delta
 
 
-class TestDatesTwoDigitYear:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        min_value, max_value = data.draw(pairs(dates_two_digit_year(), sorted=True))
-        date = data.draw(dates_two_digit_year(min_value=min_value, max_value=max_value))
-        assert (
-            max(min_value, MIN_DATE_TWO_DIGIT_YEAR)
-            <= date
-            <= min(max_value, MAX_DATE_TWO_DIGIT_YEAR)
-        )
-        year = f"{date:%y}"
-        parsed = parse_two_digit_year(year)
-        assert date.year == parsed
-
-
-class TestDatesWhenever:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
+class TestDates:
+    @given(data=data(), two_digit=booleans())
+    def test_main(self, *, data: DataObject, two_digit: bool) -> None:
         min_value = data.draw(dates() | none())
         max_value = data.draw(dates() | none())
         with assume_does_not_raise(InvalidArgument):
-            date = data.draw(dates(min_value=min_value, max_value=max_value))
+            date = data.draw(
+                dates(min_value=min_value, max_value=max_value, two_digit=two_digit)
+            )
         assert isinstance(date, Date)
         assert Date.parse_common_iso(date.format_common_iso()) == date
         if min_value is not None:
             assert date >= min_value
         if max_value is not None:
             assert date <= max_value
+        if two_digit:
+            assert DATE_TWO_DIGIT_YEAR_MIN <= date <= DATE_TWO_DIGIT_YEAR_MAX
 
 
 class TestDraw2:
@@ -577,18 +565,23 @@ class TestListsFixedLength:
 
 
 class TestMonths:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        _ = data.draw(months())
-
-    @given(data=data(), min_value=months(), max_value=months())
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_min_and_max_value(
-        self, *, data: DataObject, min_value: Month, max_value: Month
-    ) -> None:
-        _ = assume(min_value <= max_value)
-        month = data.draw(months(min_value=min_value, max_value=max_value))
-        assert min_value <= month <= max_value
+    @given(data=data(), two_digit=booleans())
+    def test_main(self, *, data: DataObject, two_digit: bool) -> None:
+        min_value = data.draw(months() | none())
+        max_value = data.draw(months() | none())
+        with assume_does_not_raise(InvalidArgument):
+            month = data.draw(
+                months(min_value=min_value, max_value=max_value, two_digit=two_digit)
+            )
+        assert isinstance(month, Month)
+        assert Month.parse_common_iso(month.format_common_iso()) == month
+        if min_value is not None:
+            assert month >= min_value
+        if max_value is not None:
+            assert month <= max_value
+        if two_digit:
+            assert month.to_date() >= DATE_TWO_DIGIT_YEAR_MIN
+            assert month.to_date() <= DATE_TWO_DIGIT_YEAR_MAX
 
 
 class TestNamespaceMixins:
@@ -649,7 +642,7 @@ class TestPaths:
         validate_filepath(str(path))
 
 
-class TestPlainDateTimesWhenever:
+class TestPlainDateTimes:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
         min_value = data.draw(plain_datetimes() | none())
@@ -963,9 +956,8 @@ class TestVersions:
             assert version.suffix is None
 
 
-class TestZonedDateTimesWhenever:
+class TestZonedDateTimes:
     @given(data=data(), time_zone=timezones())
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
         min_value = data.draw(zoned_datetimes() | none())
         max_value = data.draw(zoned_datetimes() | none())

@@ -413,10 +413,20 @@ class TestMonth:
     def test_hashable(self, *, month: Month) -> None:
         _ = hash(month)
 
-    @mark.parametrize("text", [param("2000-01"), param("2000 01"), param("200001")])
-    def test_parse_common_iso(self, *, text: str) -> None:
+    @mark.parametrize(
+        ("text", "expected"),
+        [
+            param("2000-01", Month(2000, 1)),
+            param("2000.01", Month(2000, 1)),
+            param("2000 01", Month(2000, 1)),
+            param("200001", Month(2000, 1)),
+            param("20-01", Month(2020, 1)),
+            param("20.01", Month(2020, 1)),
+        ],
+    )
+    def test_parse_common_iso(self, *, text: str, expected: Month) -> None:
         result = Month.parse_common_iso(text)
-        assert result == Month(2000, 1)
+        assert result == expected
 
     @mark.parametrize("func", [param(repr), param(str)])
     def test_repr(self, *, func: Callable[..., str]) -> None:
@@ -450,11 +460,12 @@ class TestMonth:
         with raises(_MonthInvalidError, match=r"Invalid year and month: \d+, \d+"):
             _ = Month(2000, 13)
 
-    def test_error_parse_common_iso(self) -> None:
+    @mark.parametrize("text", [param("invalid"), param("202-01")])
+    def test_error_parse_common_iso(self, *, text: str) -> None:
         with raises(
-            _MonthParseCommonISOError, match=r"Unable to parse month; got 'invalid'"
+            _MonthParseCommonISOError, match=r"Unable to parse month; got '.*'"
         ):
-            _ = Month.parse_common_iso("invalid")
+            _ = Month.parse_common_iso(text)
 
 
 class TestToDate:

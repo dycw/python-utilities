@@ -56,7 +56,6 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.datetime import MAX_DATE_TWO_DIGIT_YEAR, MIN_DATE_TWO_DIGIT_YEAR
 from utilities.functions import ensure_int, ensure_str
 from utilities.math import (
     MAX_FLOAT32,
@@ -90,6 +89,8 @@ from utilities.whenever import (
     DATE_TIME_DELTA_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
     DATE_TIME_DELTA_PARSABLE_MIN,
+    DATE_TWO_DIGIT_YEAR_MAX,
+    DATE_TWO_DIGIT_YEAR_MIN,
     DAY,
     MONTH_MAX,
     MONTH_MIN,
@@ -254,6 +255,7 @@ def dates(
     *,
     min_value: MaybeSearchStrategy[Date | None] = None,
     max_value: MaybeSearchStrategy[Date | None] = None,
+    two_digit: MaybeSearchStrategy[bool] = False,
 ) -> Date:
     """Strategy for generating dates."""
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
@@ -271,30 +273,12 @@ def dates(
             ...
         case _ as never:
             assert_never(never)
-    py_date = draw(
-        hypothesis.strategies.dates(
-            min_value=min_value_.py_date(), max_value=max_value_.py_date()
-        )
-    )
+    if draw2(draw, two_digit):
+        min_value_ = max(min_value_, DATE_TWO_DIGIT_YEAR_MIN)
+        max_value_ = min(max_value_, DATE_TWO_DIGIT_YEAR_MAX)
+    min_date, max_date = [d.py_date() for d in [min_value_, max_value_]]
+    py_date = draw(hypothesis.strategies.dates(min_value=min_date, max_value=max_date))
     return Date.from_py_date(py_date)
-
-
-##
-
-
-@composite
-def dates_two_digit_year(
-    draw: DrawFn,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[Date] = MIN_DATE_TWO_DIGIT_YEAR,
-    max_value: MaybeSearchStrategy[Date] = MAX_DATE_TWO_DIGIT_YEAR,
-) -> dt.date:
-    """Strategy for generating dates with valid 2 digit years."""
-    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
-    min_value_ = max(min_value_, MIN_DATE_TWO_DIGIT_YEAR)
-    max_value_ = min(max_value_, MAX_DATE_TWO_DIGIT_YEAR)
-    return draw(dates(min_value=min_value_, max_value=max_value_))
 
 
 ##
@@ -636,13 +620,28 @@ def months(
     draw: DrawFn,
     /,
     *,
-    min_value: MaybeSearchStrategy[Month] = MONTH_MIN,
-    max_value: MaybeSearchStrategy[Month] = MONTH_MAX,
+    min_value: MaybeSearchStrategy[Month | None] = None,
+    max_value: MaybeSearchStrategy[Month | None] = None,
+    two_digit: MaybeSearchStrategy[bool] = False,
 ) -> Month:
     """Strategy for generating months."""
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    match min_value_:
+        case None:
+            min_value_ = MONTH_MIN
+        case Month():
+            ...
+        case _ as never:
+            assert_never(never)
+    match max_value_:
+        case None:
+            max_value_ = MONTH_MAX
+        case Month():
+            ...
+        case _ as never:
+            assert_never(never)
     min_date, max_date = [m.to_date() for m in [min_value_, max_value_]]
-    date = draw(dates(min_value=min_date, max_value=max_date))
+    date = draw(dates(min_value=min_date, max_value=max_date, two_digit=two_digit))
     return Month.from_date(date)
 
 
@@ -1260,7 +1259,6 @@ __all__ = [
     "date_deltas",
     "date_time_deltas",
     "dates",
-    "dates_two_digit_year",
     "draw2",
     "float32s",
     "float64s",
