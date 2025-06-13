@@ -21,6 +21,8 @@ from hypothesis.strategies import (
 )
 from pytest import mark, param
 
+import utilities
+import utilities.whenever
 from utilities.click import (
     CONTEXT_SETTINGS_HELP_OPTION_NAMES,
     Date,
@@ -42,7 +44,6 @@ from utilities.click import (
     TimeDelta,
     ZonedDateTime,
 )
-from utilities.datetime import serialize_month
 from utilities.hypothesis import (
     date_deltas,
     date_time_deltas,
@@ -233,7 +234,13 @@ class TestParameters:
                 _lift_serializer(attrgetter("name")),
                 True,
             ),
-            param(Month(), "MONTH", months(), serialize_month, True),
+            param(
+                Month(),
+                "MONTH",
+                months(),
+                utilities.whenever.Month.format_common_iso,
+                True,
+            ),
             param(
                 PlainDateTime(),
                 "PLAIN DATE-TIME",
