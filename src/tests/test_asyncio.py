@@ -780,7 +780,7 @@ class TestLooper:
         with Timer() as timer:
             async with looper:
                 await looper
-        assert float(timer) == approx(SECOND, rel=_REL)
+        assert float(timer) == approx(1.0, rel=_REL)
         self._assert_stats_full(looper, stops=1)
 
     def test_with_auto_start(self) -> None:
