@@ -183,12 +183,9 @@ def get_union_type_classes(obj: Any, /) -> tuple[type[Any], ...]:
         raise _GetUnionTypeClassesUnionTypeError(obj=obj)
     types_: Sequence[type[Any]] = []
     for arg in get_args(obj):
-        if isinstance(arg, type):
-            types_.append(arg)
-        elif is_union_type(arg):
-            types_.extend(get_union_type_classes(arg))
-        else:
+        if not isinstance(arg, type):
             raise _GetUnionTypeClassesInternalTypeError(obj=obj, inner=arg)
+        types_.append(arg)
     return tuple(types_)
 
 

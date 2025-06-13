@@ -25,7 +25,7 @@ from hypothesis.strategies import (
     sets,
     tuples,
 )
-from pytest import raises
+from pytest import mark, param, raises
 
 from tests.test_typing_funcs.no_future import (
     DataClassNoFutureNestedInnerFirstInner,
@@ -415,14 +415,14 @@ class TestGetTypeHints:
 
 
 class TestGetUnionTypeClasses:
-    @given(
-        case=sampled_from([
-            (Number, (int, float)),
-            (Seed, (int, float, str, bytes, bytearray, Random)),
-        ])
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(Number, (int, float)),
+            param(Seed, (int, float, str, bytes, bytearray, Random)),
+        ],
     )
-    def test_main(self, *, case: tuple[Any, tuple[type[Any], ...]]) -> None:
-        obj, expected = case
+    def test_main(self, *, obj: Any, expected: type[Any]) -> None:
         result = get_union_type_classes(obj)
         assert result == expected
 
