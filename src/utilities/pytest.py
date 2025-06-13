@@ -8,9 +8,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ParamSpec, assert_never, cast, override
 
 from pytest import fixture
+from whenever import ZonedDateTime
 
 from utilities.atomicwrites import writer
-from utilities.datetime import datetime_duration_to_float, get_now
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
 from utilities.pathlib import ensure_suffix
@@ -23,17 +23,15 @@ from utilities.platform import (
     IS_WINDOWS,
 )
 from utilities.random import get_state
+from utilities.whenever2 import SECOND, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
     from random import Random
 
-    from utilities.types import (
-        Coroutine1,
-        Duration,
-        PathLike,
-        TCallableMaybeCoroutine1None,
-    )
+    from whenever import TimeDelta
+
+    from utilities.types import Coroutine1, PathLike, TCallableMaybeCoroutine1None
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config
@@ -169,7 +167,7 @@ def random_state(*, seed: int) -> Random:
 
 
 def throttle(
-    *, root: PathLike | None = None, duration: Duration = 1.0, on_try: bool = False
+    *, root: PathLike | None = None, duration: TimeDelta = SECOND, on_try: bool = False
 ) -> Callable[[TCallableMaybeCoroutine1None], TCallableMaybeCoroutine1None]:
     """Throttle a test. On success by default, on try otherwise."""
     root_use = Path(".pytest_cache", "throttle") if root is None else Path(root)
@@ -183,7 +181,7 @@ def _throttle_inner(
     /,
     *,
     root: Path,
-    duration: Duration = 1.0,
+    duration: TimeDelta = SECOND,
     on_try: bool = False,
 ) -> TCallableMaybeCoroutine1None:
     """Throttle a test function/method."""
@@ -223,22 +221,18 @@ def _throttle_inner(
 
 
 def _throttle_path_and_now(
-    root: Path, /, *, duration: Duration = 1.0
-) -> tuple[Path, float]:
+    root: Path, /, *, duration: TimeDelta = SECOND
+) -> tuple[Path, ZonedDateTime]:
     test = environ["PYTEST_CURRENT_TEST"]
     path = Path(root, _throttle_md5_hash(test))
     if path.exists():
         with path.open(mode="r") as fh:
             contents = fh.read()
-        prev = float(contents)
+        prev = ZonedDateTime.parse_common_iso(contents)
     else:
         prev = None
-    now = get_now().timestamp()
-    if (
-        (skip is not None)
-        and (prev is not None)
-        and ((now - prev) < datetime_duration_to_float(duration))
-    ):
+    now = get_now()
+    if (skip is not None) and (prev is not None) and ((now - prev) < duration):
         _ = skip(reason=f"{test} throttled")
     return path, now
 
@@ -248,9 +242,9 @@ def _throttle_md5_hash(text: str, /) -> str:
     return md5_hash(text)
 
 
-def _throttle_write(path: Path, now: float, /) -> None:
-    with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
-        _ = fh.write(str(now))
+def _throttle_write(path: Path, now: ZonedDateTime, /) -> None:
+    with writer(path, overwrite=True) as temp:
+        _ = temp.write_text(now.format_common_iso())
 
 
 __all__ = [
