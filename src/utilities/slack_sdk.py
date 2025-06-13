@@ -7,21 +7,21 @@ from typing import TYPE_CHECKING, Any, Self, override
 
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
-from utilities.asyncio import Looper, timeout_dur
-from utilities.datetime import MINUTE, SECOND, datetime_duration_to_float
+from utilities.asyncio import Looper, timeout_td
 from utilities.functools import cache
-from utilities.math import safe_round
 from utilities.sentinel import Sentinel, sentinel
+from utilities.whenever2 import MINUTE, SECOND
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from slack_sdk.webhook import WebhookResponse
+    from whenever import TimeDelta
 
-    from utilities.types import Coroutine1, Duration
+    from utilities.types import Coroutine1
 
 
-_TIMEOUT: Duration = MINUTE
+_TIMEOUT: TimeDelta = MINUTE
 
 
 ##
@@ -42,14 +42,14 @@ class SlackHandlerService(Handler, Looper[str]):
         url: str,
         auto_start: bool = False,
         empty_upon_exit: bool = True,
-        freq: Duration = SECOND,
-        backoff: Duration = SECOND,
+        freq: TimeDelta = SECOND,
+        backoff: TimeDelta = SECOND,
         logger: str | None = None,
-        timeout: Duration | None = None,
+        timeout: TimeDelta | None = None,
         _debug: bool = False,
         level: int = NOTSET,
         sender: Callable[[str, str], Coroutine1[None]] = _send_adapter,
-        send_timeout: Duration = SECOND,
+        send_timeout: TimeDelta = SECOND,
     ) -> None:
         Looper.__init__(  # Looper first
             self,
@@ -81,7 +81,7 @@ class SlackHandlerService(Handler, Looper[str]):
         if self.empty():
             return
         text = "\n".join(self.get_all_nowait())
-        async with timeout_dur(duration=self.send_timeout):
+        async with timeout_td(self.send_timeout):
             await self.sender(self.url, text)
 
     @override
@@ -90,10 +90,10 @@ class SlackHandlerService(Handler, Looper[str]):
         *,
         auto_start: bool | Sentinel = sentinel,
         empty_upon_exit: bool | Sentinel = sentinel,
-        freq: Duration | Sentinel = sentinel,
-        backoff: Duration | Sentinel = sentinel,
+        freq: TimeDelta | Sentinel = sentinel,
+        backoff: TimeDelta | Sentinel = sentinel,
         logger: str | None | Sentinel = sentinel,
-        timeout: Duration | None | Sentinel = sentinel,
+        timeout: TimeDelta | None | Sentinel = sentinel,
         _debug: bool | Sentinel = sentinel,
         **kwargs: Any,
     ) -> Self:
@@ -115,11 +115,11 @@ class SlackHandlerService(Handler, Looper[str]):
 
 
 async def send_to_slack(
-    url: str, text: str, /, *, timeout: Duration = _TIMEOUT
+    url: str, text: str, /, *, timeout: TimeDelta = _TIMEOUT
 ) -> None:
     """Send a message via Slack."""
     client = _get_client(url, timeout=timeout)
-    async with timeout_dur(duration=timeout):
+    async with timeout_td(timeout):
         response = await client.send(text=text)
     if response.status_code != HTTPStatus.OK:  # pragma: no cover
         raise SendToSlackError(text=text, response=response)
@@ -138,10 +138,9 @@ class SendToSlackError(Exception):
 
 
 @cache
-def _get_client(url: str, /, *, timeout: Duration = _TIMEOUT) -> AsyncWebhookClient:
+def _get_client(url: str, /, *, timeout: TimeDelta = _TIMEOUT) -> AsyncWebhookClient:
     """Get the Slack client."""
-    timeout_use = safe_round(datetime_duration_to_float(timeout))
-    return AsyncWebhookClient(url, timeout=timeout_use)
+    return AsyncWebhookClient(url, timeout=round(timeout.in_seconds()))
 
 
 __all__ = ["SendToSlackError", "SlackHandlerService", "send_to_slack"]

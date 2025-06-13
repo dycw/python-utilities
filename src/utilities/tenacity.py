@@ -18,7 +18,7 @@ from tenacity import wait_exponential_jitter as _wait_exponential_jitter
 from tenacity._utils import MAX_WAIT
 from tenacity.asyncio import _portable_async_sleep
 
-from utilities.asyncio import timeout_dur
+from utilities.asyncio import timeout_td
 from utilities.contextlib import NoOpContextManager
 from utilities.datetime import datetime_duration_to_float
 
@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from tenacity.retry import RetryBaseT
     from tenacity.stop import StopBaseT
     from tenacity.wait import WaitBaseT
+    from whenever import TimeDelta
 
     from utilities.types import Duration, MaybeAwaitable
 
@@ -110,7 +111,7 @@ async def yield_timeout_attempts(
     reraise: bool | None = None,
     retry_error_cls: type[RetryError] | None = None,
     retry_error_callback: Callable[[RetryCallState], MaybeAwaitable[Any]] | None = None,
-    timeout: Duration | None = None,
+    timeout_delay: TimeDelta | None = None,
 ) -> AsyncIterator[MaybeAttemptContextManager]:
     """Yield the attempts, with timeout."""
     async for attempt in yield_attempts(
@@ -131,7 +132,7 @@ async def yield_timeout_attempts(
             attempt: MaybeAttemptManager, /
         ) -> AsyncIterator[MaybeAttemptManager]:
             with attempt:
-                async with timeout_dur(duration=timeout):
+                async with timeout_td(timeout_delay):
                     yield attempt
 
         yield new(attempt)

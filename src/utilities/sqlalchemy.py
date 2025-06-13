@@ -57,7 +57,7 @@ from sqlalchemy.orm import (
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
-from utilities.asyncio import Looper, timeout_dur
+from utilities.asyncio import Looper
 from utilities.contextlib import suppress_super_object_attribute_error
 from utilities.datetime import SECOND
 from utilities.functions import (
@@ -839,7 +839,7 @@ async def yield_connection(
     error: MaybeType[BaseException] = TimeoutError,
 ) -> AsyncIterator[AsyncConnection]:
     """Yield an async connection."""
-    async with timeout_dur(duration=timeout, error=error), engine.begin() as conn:
+    async with timeout(duration=timeout, error=error), engine.begin() as conn:
         yield conn
 
 

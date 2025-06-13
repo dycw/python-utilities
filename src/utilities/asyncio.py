@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from asyncio import (
     Event,
     Lock,
@@ -14,7 +15,6 @@ from asyncio import (
     create_subprocess_shell,
     create_task,
     sleep,
-    timeout,
 )
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import (
@@ -43,28 +43,22 @@ from typing import (
 )
 
 from typing_extensions import deprecated
-from whenever import TimeDelta
 
 from utilities.dataclasses import replace_non_sentinel
-from utilities.datetime import (
-    SECOND,
-    datetime_duration_to_float,
-    get_now,
-    round_datetime,
-)
 from utilities.errors import repr_error
 from utilities.functions import ensure_int, ensure_not_none
 from utilities.random import SYSTEM_RANDOM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import (
+    DateTimeRoundUnit,
     MaybeCallableEvent,
     MaybeType,
     THashable,
     TSupportsRichComparison,
 )
+from utilities.whenever2 import SECOND, get_now
 
 if TYPE_CHECKING:
-    import datetime as dt
     from asyncio import _CoroutineLike
     from asyncio.subprocess import Process
     from collections import deque
@@ -73,7 +67,7 @@ if TYPE_CHECKING:
     from random import Random
     from types import TracebackType
 
-    from utilities.types import Duration
+    from whenever import TimeDelta, ZonedDateTime
 
 
 _T = TypeVar("_T")
@@ -244,7 +238,7 @@ class EnhancedTaskGroup(TaskGroup):
     """Task group with enhanced features."""
 
     _semaphore: Semaphore | None
-    _timeout: Duration | None
+    _timeout: TimeDelta | None
     _error: MaybeType[BaseException]
     _stack: AsyncExitStack
     _timeout_cm: _AsyncGeneratorContextManager[None] | None
@@ -254,7 +248,7 @@ class EnhancedTaskGroup(TaskGroup):
         self,
         *,
         max_tasks: int | None = None,
-        timeout: Duration | None = None,
+        timeout: TimeDelta | None = None,
         error: MaybeType[BaseException] = TimeoutError,
     ) -> None:
         super().__init__()
@@ -306,7 +300,7 @@ class EnhancedTaskGroup(TaskGroup):
             return await coroutine
 
     async def _wrap_with_timeout(self, coroutine: _CoroutineLike[_T], /) -> _T:
-        async with timeout_dur(duration=self._timeout, error=self._error):
+        async with timeout_td(self._timeout, error=self._error):
             return await coroutine
 
 
@@ -331,15 +325,13 @@ class Looper(Generic[_T]):
     """A looper of a core coroutine, handling errors."""
 
     auto_start: bool = field(default=False, repr=False)
-    freq: Duration = field(default=SECOND, repr=False)
-    backoff: Duration = field(default=10 * SECOND, repr=False)
+    freq: TimeDelta = field(default=SECOND, repr=False)
+    backoff: TimeDelta = field(default=10 * SECOND, repr=False)
     empty_upon_exit: bool = field(default=False, repr=False)
     logger: str | None = field(default=None, repr=False)
-    timeout: Duration | None = field(default=None, repr=False)
+    timeout: TimeDelta | None = field(default=None, repr=False)
     # settings
-    _backoff: float = field(init=False, repr=False)
     _debug: bool = field(default=False, repr=False)
-    _freq: float = field(init=False, repr=False)
     # counts
     _entries: int = field(default=0, init=False, repr=False)
     _core_attempts: int = field(default=0, init=False, repr=False)
@@ -379,8 +371,6 @@ class Looper(Generic[_T]):
     _task: Task[None] | None = field(default=None, init=False, repr=False, hash=False)
 
     def __post_init__(self) -> None:
-        self._backoff = datetime_duration_to_float(self.backoff)
-        self._freq = datetime_duration_to_float(self.freq)
         self._logger = getLogger(name=self.logger)
         self._logger.setLevel(DEBUG)
 
@@ -448,7 +438,7 @@ class Looper(Generic[_T]):
 
     async def _apply_back_off(self) -> None:
         """Apply a back off period."""
-        await sleep(self._backoff)
+        await sleep_td(self.backoff)
         self._is_pending_back_off.clear()
 
     async def core(self) -> None:
@@ -541,10 +531,10 @@ class Looper(Generic[_T]):
         *,
         auto_start: bool | Sentinel = sentinel,
         empty_upon_exit: bool | Sentinel = sentinel,
-        freq: Duration | Sentinel = sentinel,
-        backoff: Duration | Sentinel = sentinel,
+        freq: TimeDelta | Sentinel = sentinel,
+        backoff: TimeDelta | Sentinel = sentinel,
         logger: str | None | Sentinel = sentinel,
-        timeout: Duration | None | Sentinel = sentinel,
+        timeout: TimeDelta | None | Sentinel = sentinel,
         _debug: bool | Sentinel = sentinel,
         **kwargs: Any,
     ) -> Self:
@@ -670,7 +660,7 @@ class Looper(Generic[_T]):
     async def run_looper(self) -> None:
         """Run the looper."""
         try:
-            async with timeout_dur(duration=self.timeout):
+            async with timeout_td(self.timeout):
                 while True:
                     if self._is_stopped.is_set():
                         _ = self._debug and self._logger.debug("%s: stopped", self)
@@ -705,7 +695,7 @@ class Looper(Generic[_T]):
                         else:
                             async with self._lock:
                                 self._core_successes += 1
-                            await sleep(self._freq)
+                            await sleep_td(self.freq)
         except RuntimeError as error:  # pragma: no cover
             if error.args[0] == "generator didn't stop after athrow()":
                 return
@@ -718,7 +708,7 @@ class Looper(Generic[_T]):
         while not self.empty():
             await self.core()
             if not self.empty():
-                await sleep(self._freq)
+                await sleep_td(self.freq)
 
     @property
     def stats(self) -> _LooperStats:
@@ -962,47 +952,41 @@ def put_items_nowait(items: Iterable[_T], queue: Queue[_T], /) -> None:
 ##
 
 
-async def sleep_dur(*, duration: Duration | TimeDelta | None = None) -> None:
-    """Sleep which accepts durations."""
-    if duration is None:
-        return
-    if isinstance(duration, TimeDelta):
-        await sleep(duration.in_seconds())
-    else:
-        await sleep(datetime_duration_to_float(duration))
-
-
-##
-
-
-async def sleep_max_dur(
-    *, duration: Duration | None = None, random: Random = SYSTEM_RANDOM
+async def sleep_max(
+    delay: TimeDelta | None = None, /, *, random: Random = SYSTEM_RANDOM
 ) -> None:
     """Sleep which accepts max durations."""
-    if duration is None:
+    if delay is None:
         return
-    await sleep(random.uniform(0.0, datetime_duration_to_float(duration)))
+    await sleep(random.uniform(0.0, delay.in_seconds()))
 
 
 ##
 
 
-async def sleep_until(datetime: dt.datetime, /) -> None:
-    """Sleep until a given time."""
-    await sleep_dur(duration=datetime - get_now())
-
-
-##
-
-
-async def sleep_until_rounded(
-    duration: Duration, /, *, rel_tol: float | None = None, abs_tol: float | None = None
+async def sleep_rounded(
+    *, unit: DateTimeRoundUnit = "second", increment: int = 1
 ) -> None:
     """Sleep until a rounded time; accepts durations."""
-    datetime = round_datetime(
-        get_now(), duration, mode="ceil", rel_tol=rel_tol, abs_tol=abs_tol
-    )
-    await sleep_until(datetime)
+    await sleep_until(get_now().round(unit, increment=increment, mode="ceil"))
+
+
+##
+
+
+async def sleep_td(delay: TimeDelta | None = None, /) -> None:
+    """Sleep which accepts durations."""
+    if delay is None:
+        return
+    await sleep(delay.in_seconds())
+
+
+##
+
+
+async def sleep_until(datetime: ZonedDateTime, /) -> None:
+    """Sleep until a given time."""
+    await sleep_td(datetime - get_now())
 
 
 ##
@@ -1059,13 +1043,13 @@ async def _stream_one(
 
 
 @asynccontextmanager
-async def timeout_dur(
-    *, duration: Duration | None = None, error: MaybeType[BaseException] = TimeoutError
+async def timeout_td(
+    delay: TimeDelta | None = None, /, *, error: MaybeType[BaseException] = TimeoutError
 ) -> AsyncIterator[None]:
     """Timeout context manager which accepts durations."""
-    delay = None if duration is None else datetime_duration_to_float(duration)
+    delay_use = None if delay is None else delay.in_seconds()
     try:
-        async with timeout(delay):
+        async with asyncio.timeout(delay_use):
             yield
     except TimeoutError:
         raise error from None
@@ -1084,10 +1068,10 @@ __all__ = [
     "get_items_nowait",
     "put_items",
     "put_items_nowait",
-    "sleep_dur",
-    "sleep_max_dur",
+    "sleep_max",
+    "sleep_rounded",
+    "sleep_td",
     "sleep_until",
-    "sleep_until_rounded",
     "stream_command",
-    "timeout_dur",
+    "timeout_td",
 ]

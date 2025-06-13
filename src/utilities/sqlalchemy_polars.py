@@ -26,7 +26,6 @@ from polars import (
 from sqlalchemy import Column, Select, select
 from sqlalchemy.exc import DuplicateColumnError
 
-from utilities.asyncio import timeout_dur
 from utilities.functions import identity
 from utilities.iterables import (
     CheckDuplicatesError,
@@ -311,7 +310,7 @@ async def select_to_dataframe(
         sel = _select_to_dataframe_apply_snake(sel)
     schema = _select_to_dataframe_map_select_to_df_schema(sel, time_zone=time_zone)
     if in_clauses is None:
-        async with timeout_dur(duration=timeout, error=error):
+        async with timeout(duration=timeout, error=error):
             return read_database(
                 sel,
                 cast("Any", engine),
@@ -328,7 +327,7 @@ async def select_to_dataframe(
         chunk_size_frac=chunk_size_frac,
     )
     if batch_size is None:
-        async with timeout_dur(duration=timeout, error=error):
+        async with timeout(duration=timeout, error=error):
             dfs = [
                 await select_to_dataframe(
                     sel,
@@ -349,7 +348,7 @@ async def select_to_dataframe(
             return DataFrame(schema=schema)
 
     async def yield_dfs() -> AsyncIterator[DataFrame]:
-        async with timeout_dur(duration=timeout, error=error):
+        async with timeout(duration=timeout, error=error):
             for sel_i in sels:
                 for df in await select_to_dataframe(
                     sel_i,
