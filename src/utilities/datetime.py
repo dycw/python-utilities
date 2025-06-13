@@ -23,7 +23,7 @@ from utilities.platform import SYSTEM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import MaybeCallablePyDate, MaybeCallablePyDateTime, MaybeStr
 from utilities.typing import is_instance_gen
-from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
+from utilities.zoneinfo import UTC, ensure_time_zone
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -363,25 +363,6 @@ class EnsureMonthError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to ensure month; got {self.month!r}"
-
-
-##
-
-
-def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
-    """Format a plain datetime locally & in UTC."""
-    time_zone = ensure_time_zone(datetime)
-    if time_zone is UTC:
-        return datetime.strftime("%Y-%m-%d %H:%M:%S (%a, UTC)")
-    as_utc = datetime.astimezone(UTC)
-    local = get_time_zone_name(time_zone)
-    if datetime.year != as_utc.year:
-        return f"{datetime:%Y-%m-%d %H:%M:%S (%a}, {local}, {as_utc:%Y-%m-%d %H:%M:%S} UTC)"
-    if (datetime.month != as_utc.month) or (datetime.day != as_utc.day):
-        return (
-            f"{datetime:%Y-%m-%d %H:%M:%S (%a}, {local}, {as_utc:%m-%d %H:%M:%S} UTC)"
-        )
-    return f"{datetime:%Y-%m-%d %H:%M:%S (%a}, {local}, {as_utc:%H:%M:%S} UTC)"
 
 
 ##
@@ -1273,7 +1254,6 @@ __all__ = [
     "datetime_duration_to_timedelta",
     "datetime_utc",
     "ensure_month",
-    "format_datetime_local_and_utc",
     "get_date",
     "get_datetime",
     "get_half_years",

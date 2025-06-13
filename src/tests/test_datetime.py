@@ -87,7 +87,6 @@ from utilities.datetime import (
     datetime_duration_to_timedelta,
     datetime_utc,
     ensure_month,
-    format_datetime_local_and_utc,
     get_date,
     get_datetime,
     get_half_years,
@@ -138,7 +137,6 @@ from utilities.hypothesis import (
 )
 from utilities.math import MAX_INT32, MIN_INT32, is_integral, round_to_float
 from utilities.sentinel import Sentinel, sentinel
-from utilities.tzdata import HongKong
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -520,37 +518,6 @@ class TestEpoch:
     def test_datetime(self, *, epoch: dt.datetime, time_zone: ZoneInfo | None) -> None:
         assert isinstance(EPOCH_UTC, dt.datetime)
         assert epoch.tzinfo is time_zone
-
-
-class TestFormatDateTimeLocalAndUTC:
-    @mark.parametrize(
-        ("datetime", "expected"),
-        [
-            param(
-                dt.datetime(2000, 1, 1, 2, 3, 4, tzinfo=UTC),
-                "2000-01-01 02:03:04 (Sat, UTC)",
-            ),
-            param(
-                dt.datetime(2000, 1, 1, 2, 3, 4, tzinfo=HongKong),
-                "2000-01-01 02:03:04 (Sat, Asia/Hong_Kong, 1999-12-31 18:03:04 UTC)",
-            ),
-            param(
-                dt.datetime(2000, 2, 1, 2, 3, 4, tzinfo=HongKong),
-                "2000-02-01 02:03:04 (Tue, Asia/Hong_Kong, 01-31 18:03:04 UTC)",
-            ),
-            param(
-                dt.datetime(2000, 2, 2, 2, 3, 4, tzinfo=HongKong),
-                "2000-02-02 02:03:04 (Wed, Asia/Hong_Kong, 02-01 18:03:04 UTC)",
-            ),
-            param(
-                dt.datetime(2000, 2, 2, 14, 3, 4, tzinfo=HongKong),
-                "2000-02-02 14:03:04 (Wed, Asia/Hong_Kong, 06:03:04 UTC)",
-            ),
-        ],
-    )
-    def test_main(self, *, datetime: dt.datetime, expected: str) -> None:
-        result = format_datetime_local_and_utc(datetime)
-        assert result == expected
 
 
 class TestGetDate:
