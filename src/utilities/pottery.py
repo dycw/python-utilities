@@ -8,14 +8,16 @@ from pottery import AIORedlock
 from pottery.exceptions import ReleaseUnlockedLock
 from redis.asyncio import Redis
 
-from utilities.asyncio import sleep_dur, timeout_dur
-from utilities.datetime import MILLISECOND, SECOND, datetime_duration_to_float
+from utilities.asyncio import sleep_td, timeout_td
 from utilities.iterables import always_iterable
+from utilities.whenever2 import MILLISECOND, SECOND
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterable
 
-    from utilities.types import Duration, MaybeIterable
+    from whenever import TimeDelta
+
+    from utilities.types import MaybeIterable
 
 
 @asynccontextmanager
@@ -25,10 +27,10 @@ async def yield_access(
     /,
     *,
     num: int = 1,
-    timeout_acquire: Duration | None = None,
-    timeout_release: Duration = 10 * SECOND,
-    sleep: Duration = MILLISECOND,
-    throttle: Duration | None = None,
+    timeout_acquire: TimeDelta | None = None,
+    timeout_release: TimeDelta = 10 * SECOND,
+    sleep: TimeDelta = MILLISECOND,
+    throttle: TimeDelta | None = None,
 ) -> AsyncIterator[None]:
     """Acquire access to a locked resource, amongst 1 of multiple connections."""
     if num <= 0:
@@ -36,14 +38,11 @@ async def yield_access(
     masters = (  # skipif-ci-and-not-linux
         {redis} if isinstance(redis, Redis) else set(always_iterable(redis))
     )
-    auto_release_time = datetime_duration_to_float(  # skipif-ci-and-not-linux
-        timeout_release
-    )
     locks = [  # skipif-ci-and-not-linux
         AIORedlock(
             key=f"{key}_{i}_of_{num}",
             masters=masters,
-            auto_release_time=auto_release_time,
+            auto_release_time=timeout_release.in_seconds(),
         )
         for i in range(1, num + 1)
     ]
@@ -54,7 +53,7 @@ async def yield_access(
         )
         yield
     finally:  # skipif-ci-and-not-linux
-        await sleep_dur(duration=throttle)
+        await sleep_td(throttle)
         if lock is not None:
             with suppress(ReleaseUnlockedLock):
                 await lock.release()
@@ -66,20 +65,18 @@ async def _get_first_available_lock(
     /,
     *,
     num: int = 1,
-    timeout: Duration | None = None,
-    sleep: Duration | None = None,
+    timeout: TimeDelta | None = None,
+    sleep: TimeDelta | None = None,
 ) -> AIORedlock:
     locks = list(locks)  # skipif-ci-and-not-linux
     error = _YieldAccessUnableToAcquireLockError(  # skipif-ci-and-not-linux
         key=key, num=num, timeout=timeout
     )
-    async with timeout_dur(  # skipif-ci-and-not-linux
-        duration=timeout, error=error
-    ):
+    async with timeout_td(timeout, error=error):  # skipif-ci-and-not-linux
         while True:
             if (result := await _get_first_available_lock_if_any(locks)) is not None:
                 return result
-            await sleep_dur(duration=sleep)
+            await sleep_td(sleep)
 
 
 async def _get_first_available_lock_if_any(
@@ -106,7 +103,7 @@ class _YieldAccessNumLocksError(YieldAccessError):
 
 @dataclass(kw_only=True, slots=True)
 class _YieldAccessUnableToAcquireLockError(YieldAccessError):
-    timeout: Duration | None
+    timeout: TimeDelta | None
 
     @override
     def __str__(self) -> str:

@@ -8,15 +8,16 @@ from pytest import approx
 from tests.conftest import IS_CI
 from utilities.asyncio import Looper
 from utilities.contextlib import suppress_super_object_attribute_error
-from utilities.datetime import MILLISECOND
+from utilities.whenever2 import SECOND
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import Duration
+    from whenever import TimeDelta
 
-_FREQ: Duration = 10 * MILLISECOND
-_BACKOFF: Duration = 100 * MILLISECOND
+
+_FREQ: TimeDelta = 0.01 * SECOND
+_BACKOFF: TimeDelta = 0.1 * SECOND
 _REL: float = 2.0 if IS_CI else 0.25
 
 
@@ -102,8 +103,8 @@ def assert_looper_full(
 
 @dataclass(kw_only=True)
 class CountingLooper(Looper[Any]):
-    freq: Duration = field(default=_FREQ, repr=False)
-    backoff: Duration = field(default=_BACKOFF, repr=False)
+    freq: TimeDelta = field(default=_FREQ, repr=False)
+    backoff: TimeDelta = field(default=_BACKOFF, repr=False)
     _debug: bool = field(default=True, repr=False)
     count: int = 0
     max_count: int = 10
@@ -212,8 +213,8 @@ class Outer2CountingLooper(CountingLooper):
 
 @dataclass(kw_only=True)
 class CounterMixin:
-    freq: Duration = field(default=_FREQ, repr=False)
-    backoff: Duration = field(default=_BACKOFF, repr=False)
+    freq: TimeDelta = field(default=_FREQ, repr=False)
+    backoff: TimeDelta = field(default=_BACKOFF, repr=False)
     _debug: bool = field(default=True, repr=False)
     count: int = 0
     max_count: int = 10
@@ -245,8 +246,8 @@ class LooperWithCounterMixin(CounterMixin, Looper): ...
 
 @dataclass(kw_only=True)
 class CounterMixin1:
-    freq: Duration = field(default=_FREQ, repr=False)
-    backoff: Duration = field(default=_BACKOFF, repr=False)
+    freq: TimeDelta = field(default=_FREQ, repr=False)
+    backoff: TimeDelta = field(default=_BACKOFF, repr=False)
     _debug: bool = field(default=True, repr=False)
     count: int = 0
     max_count: int = 10
@@ -271,8 +272,8 @@ class CounterMixin1:
 
 @dataclass(kw_only=True)
 class CounterMixin2:
-    freq: Duration = field(default=_FREQ, repr=False)
-    backoff: Duration = field(default=_BACKOFF, repr=False)
+    freq: TimeDelta = field(default=_FREQ, repr=False)
+    backoff: TimeDelta = field(default=_BACKOFF, repr=False)
     _debug: bool = field(default=True, repr=False)
     count: int = 0
     max_count: int = 10

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from utilities.asyncio import sleep_dur
+from utilities.asyncio import sleep_td
 from utilities.atools import call_memoized
 from utilities.whenever2 import SECOND
 
@@ -20,7 +20,7 @@ class TestCallMemoized:
 
     async def test_refresh(self) -> None:
         counter = 0
-        delta = 0.05 * SECOND
+        delta = 0.1 * SECOND
 
         async def increment() -> int:
             nonlocal counter
@@ -30,7 +30,7 @@ class TestCallMemoized:
         for _ in range(2):
             assert (await call_memoized(increment, delta)) == 1
             assert counter == 1
-        await sleep_dur(duration=2 * delta)
+        await sleep_td(2 * delta)
         for _ in range(2):
             assert (await call_memoized(increment, delta)) == 2
             assert counter == 2

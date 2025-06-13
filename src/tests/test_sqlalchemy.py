@@ -24,7 +24,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_co
 
 from tests.test_asyncio_classes.loopers import _BACKOFF, _FREQ, assert_looper_stats
 from utilities.asyncio import Looper
-from utilities.datetime import get_now, serialize_compact
 from utilities.hypothesis import int32s, pairs
 from utilities.iterables import one
 from utilities.modules import is_installed
@@ -82,19 +81,22 @@ from utilities.sqlalchemy import (
 )
 from utilities.text import strip_and_dedent
 from utilities.typing import get_args, get_literal_elements
+from utilities.whenever2 import SECOND, format_compact, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from pathlib import Path
 
-    from utilities.types import Duration, StrMapping
+    from whenever import TimeDelta
+
+    from utilities.types import StrMapping
 
 
 def _table_names() -> str:
     """Generate at unique string."""
     now = get_now()
     key = str(uuid4()).replace("-", "")
-    return f"{serialize_compact(now)}_{key}"
+    return f"{format_compact(now)}_{key}"
 
 
 @overload
@@ -1156,7 +1158,7 @@ class TestUpserter:
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),
         )
-        service = UpsertService(freq=0.1, timeout=1.0, engine=test_engine)
+        service = UpsertService(freq=0.1 * SECOND, timeout=SECOND, engine=test_engine)
         pairs = [(id_, init) for id_, init, _ in triples]
         async with service:
             service.put_right_nowait((pairs, table))
@@ -1426,14 +1428,14 @@ class TestUpsertServiceMixin:
     async def test_main(self, *, test_engine: AsyncEngine) -> None:
         @dataclass(kw_only=True)
         class Example(UpsertServiceMixin, Looper[Any]):
-            freq: Duration = field(default=_FREQ, repr=False)
-            backoff: Duration = field(default=_BACKOFF, repr=False)
+            freq: TimeDelta = field(default=_FREQ, repr=False)
+            backoff: TimeDelta = field(default=_BACKOFF, repr=False)
             _debug: bool = field(default=True, repr=False)
             upsert_service_database: AsyncEngine = test_engine
-            upsert_service_freq: Duration = field(default=_FREQ, repr=False)
-            upsert_service_backoff: Duration = field(default=_BACKOFF, repr=False)
+            upsert_service_freq: TimeDelta = field(default=_FREQ, repr=False)
+            upsert_service_backoff: TimeDelta = field(default=_BACKOFF, repr=False)
 
-        service = Example(auto_start=True, timeout=1.0)
+        service = Example(auto_start=True, timeout=SECOND)
         async with service:
             ...
         assert_looper_stats(

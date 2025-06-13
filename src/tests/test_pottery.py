@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import TaskGroup, sleep
+from asyncio import TaskGroup
 from re import search
 from typing import TYPE_CHECKING
 
@@ -8,6 +8,7 @@ from pytest import mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_redis import yield_test_redis
+from utilities.asyncio import sleep_td
 from utilities.iterables import one
 from utilities.pottery import (
     _YieldAccessNumLocksError,
@@ -16,15 +17,20 @@ from utilities.pottery import (
 )
 from utilities.text import unique_str
 from utilities.timer import Timer
+from utilities.whenever2 import SECOND
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis
+    from whenever import TimeDelta
+
+
+_DELTA: TimeDelta = 0.1 * SECOND
 
 
 async def _func_access(num_tasks: int, key: str, /, *, num_locks: int = 1) -> None:
     async def coroutine() -> None:
         async with yield_test_redis() as redis, yield_access(redis, key, num=num_locks):
-            await sleep(0.1)
+            await sleep_td(_DELTA)
 
     async with TaskGroup() as tg:
         _ = [tg.create_task(coroutine()) for _ in range(num_tasks)]
@@ -33,34 +39,34 @@ async def _func_access(num_tasks: int, key: str, /, *, num_locks: int = 1) -> No
 class TestYieldAccess:
     @SKIPIF_CI_AND_NOT_LINUX
     @mark.parametrize(
-        ("num_tasks", "num_locks", "min_time"),
+        ("num_tasks", "num_locks", "min_multiple"),
         [
-            param(1, 1, 0.1),
-            param(1, 2, 0.1),
-            param(1, 3, 0.1),
-            param(2, 1, 0.2),
-            param(2, 2, 0.1),
-            param(2, 3, 0.1),
-            param(2, 4, 0.1),
-            param(2, 5, 0.1),
-            param(3, 1, 0.3),
-            param(3, 2, 0.2),
-            param(3, 3, 0.1),
-            param(3, 4, 0.1),
-            param(3, 5, 0.1),
-            param(4, 1, 0.4),
-            param(4, 2, 0.2),
-            param(4, 3, 0.2),
-            param(4, 4, 0.1),
-            param(4, 5, 0.1),
+            param(1, 1, 1),
+            param(1, 2, 1),
+            param(1, 3, 1),
+            param(2, 1, 2),
+            param(2, 2, 1),
+            param(2, 3, 1),
+            param(2, 4, 1),
+            param(2, 5, 1),
+            param(3, 1, 3),
+            param(3, 2, 2),
+            param(3, 3, 1),
+            param(3, 4, 1),
+            param(3, 5, 1),
+            param(4, 1, 4),
+            param(4, 2, 2),
+            param(4, 3, 2),
+            param(4, 4, 1),
+            param(4, 5, 1),
         ],
     )
     async def test_main(
-        self, *, num_tasks: int, num_locks: int, min_time: float
+        self, *, num_tasks: int, num_locks: int, min_multiple: int
     ) -> None:
         with Timer() as timer:
             await _func_access(num_tasks, unique_str(), num_locks=num_locks)
-        assert min_time <= float(timer) <= 3 * min_time
+        assert (min_multiple * _DELTA) <= timer <= (3 * min_multiple * _DELTA)
 
     async def test_error_num_locks(self) -> None:
         key = unique_str()
@@ -74,12 +80,13 @@ class TestYieldAccess:
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_error_unable_to_acquire_lock(self) -> None:
         key = unique_str()
+        delta = 0.1 * SECOND
 
         async def coroutine(redis: Redis, key: str, /) -> None:
             async with yield_access(
-                redis, key, num=1, timeout_acquire=0.1, throttle=0.5
+                redis, key, num=1, timeout_acquire=delta, throttle=5 * delta
             ):
-                await sleep(0.1)
+                await sleep_td(delta)
 
         with raises(ExceptionGroup) as exc_info:  # noqa: PT012
             async with yield_test_redis() as redis, TaskGroup() as tg:
@@ -88,5 +95,5 @@ class TestYieldAccess:
         error = one(exc_info.value.exceptions)
         assert isinstance(error, _YieldAccessUnableToAcquireLockError)
         assert search(
-            r"Unable to acquire any 1 of 1 locks for '\w+' after 0\.1", str(error)
+            r"Unable to acquire any 1 of 1 locks for '\w+' after .*", str(error)
         )

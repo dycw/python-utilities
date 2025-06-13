@@ -18,7 +18,16 @@ from itertools import chain
 from math import floor
 from operator import ge, le
 from re import search
-from typing import Any, Literal, TypeGuard, TypeVar, assert_never, cast, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    TypeGuard,
+    TypeVar,
+    assert_never,
+    cast,
+    override,
+)
 
 from sqlalchemy import (
     URL,
@@ -57,9 +66,8 @@ from sqlalchemy.orm import (
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
-from utilities.asyncio import Looper, timeout_dur
+from utilities.asyncio import Looper, timeout_td
 from utilities.contextlib import suppress_super_object_attribute_error
-from utilities.datetime import SECOND
 from utilities.functions import (
     ensure_str,
     get_class_name,
@@ -82,13 +90,11 @@ from utilities.iterables import (
 )
 from utilities.reprlib import get_repr
 from utilities.text import snake_case
-from utilities.types import (
-    Duration,
-    MaybeIterable,
-    MaybeType,
-    StrMapping,
-    TupleOrStrMapping,
-)
+from utilities.types import MaybeIterable, MaybeType, StrMapping, TupleOrStrMapping
+from utilities.whenever2 import SECOND
+
+if TYPE_CHECKING:
+    from whenever import TimeDelta
 
 _T = TypeVar("_T")
 type _EngineOrConnectionOrAsync = Engine | Connection | AsyncEngine | AsyncConnection
@@ -105,7 +111,7 @@ async def check_engine(
     engine: AsyncEngine,
     /,
     *,
-    timeout: Duration | None = None,
+    timeout: TimeDelta | None = None,
     error: type[Exception] = TimeoutError,
     num_tables: int | tuple[int, float] | None = None,
 ) -> None:
@@ -229,7 +235,7 @@ async def ensure_tables_created(
     engine: AsyncEngine,
     /,
     *tables_or_orms: TableOrORMInstOrClass,
-    timeout: Duration | None = None,
+    timeout: TimeDelta | None = None,
     error: type[Exception] = TimeoutError,
 ) -> None:
     """Ensure a table/set of tables is/are created."""
@@ -258,7 +264,7 @@ async def ensure_tables_created(
 async def ensure_tables_dropped(
     engine: AsyncEngine,
     *tables_or_orms: TableOrORMInstOrClass,
-    timeout: Duration | None = None,
+    timeout: TimeDelta | None = None,
     error: type[Exception] = TimeoutError,
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
@@ -384,9 +390,9 @@ async def insert_items(
     snake: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
-    timeout_create: Duration | None = None,
+    timeout_create: TimeDelta | None = None,
     error_create: type[Exception] = TimeoutError,
-    timeout_insert: Duration | None = None,
+    timeout_insert: TimeDelta | None = None,
     error_insert: type[Exception] = TimeoutError,
 ) -> None:
     """Insert a set of items into a database.
@@ -485,9 +491,9 @@ async def migrate_data(
     table_or_orm_to: TableOrORMInstOrClass | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
-    timeout_create: Duration | None = None,
+    timeout_create: TimeDelta | None = None,
     error_create: type[Exception] = TimeoutError,
-    timeout_insert: Duration | None = None,
+    timeout_insert: TimeDelta | None = None,
     error_insert: type[Exception] = TimeoutError,
 ) -> None:
     """Migrate the contents of a table from one database to another."""
@@ -615,8 +621,8 @@ class UpsertService(Looper[_InsertItem]):
     """Service to upsert items to a database."""
 
     # base
-    freq: Duration = field(default=SECOND, repr=False)
-    backoff: Duration = field(default=SECOND, repr=False)
+    freq: TimeDelta = field(default=SECOND, repr=False)
+    backoff: TimeDelta = field(default=SECOND, repr=False)
     empty_upon_exit: bool = field(default=True, repr=False)
     # self
     engine: AsyncEngine
@@ -624,9 +630,9 @@ class UpsertService(Looper[_InsertItem]):
     selected_or_all: _SelectedOrAll = "selected"
     chunk_size_frac: float = CHUNK_SIZE_FRAC
     assume_tables_exist: bool = False
-    timeout_create: Duration | None = None
+    timeout_create: TimeDelta | None = None
     error_create: type[Exception] = TimeoutError
-    timeout_insert: Duration | None = None
+    timeout_insert: TimeDelta | None = None
     error_insert: type[Exception] = TimeoutError
 
     @override
@@ -651,11 +657,11 @@ class UpsertServiceMixin:
     """Mix-in for the upsert service."""
 
     # base - looper
-    upsert_service_freq: Duration = field(default=SECOND, repr=False)
-    upsert_service_backoff: Duration = field(default=SECOND, repr=False)
+    upsert_service_freq: TimeDelta = field(default=SECOND, repr=False)
+    upsert_service_backoff: TimeDelta = field(default=SECOND, repr=False)
     upsert_service_empty_upon_exit: bool = field(default=False, repr=False)
     upsert_service_logger: str | None = field(default=None, repr=False)
-    upsert_service_timeout: Duration | None = field(default=None, repr=False)
+    upsert_service_timeout: TimeDelta | None = field(default=None, repr=False)
     upsert_service_debug: bool = field(default=False, repr=False)
     # base - upsert service
     upsert_service_database: AsyncEngine
@@ -663,9 +669,9 @@ class UpsertServiceMixin:
     upsert_service_selected_or_all: _SelectedOrAll = "selected"
     upsert_service_chunk_size_frac: float = CHUNK_SIZE_FRAC
     upsert_service_assume_tables_exist: bool = False
-    upsert_service_timeout_create: Duration | None = None
+    upsert_service_timeout_create: TimeDelta | None = None
     upsert_service_error_create: type[Exception] = TimeoutError
-    upsert_service_timeout_insert: Duration | None = None
+    upsert_service_timeout_insert: TimeDelta | None = None
     upsert_service_error_insert: type[Exception] = TimeoutError
     # self
     _upsert_service: UpsertService = field(init=False, repr=False)
@@ -713,9 +719,9 @@ async def upsert_items(
     selected_or_all: _SelectedOrAll = "selected",
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
-    timeout_create: Duration | None = None,
+    timeout_create: TimeDelta | None = None,
     error_create: type[Exception] = TimeoutError,
-    timeout_insert: Duration | None = None,
+    timeout_insert: TimeDelta | None = None,
     error_insert: type[Exception] = TimeoutError,
 ) -> None:
     """Upsert a set of items into a database.
@@ -835,11 +841,11 @@ async def yield_connection(
     engine: AsyncEngine,
     /,
     *,
-    timeout: Duration | None = None,
+    timeout: TimeDelta | None = None,
     error: MaybeType[BaseException] = TimeoutError,
 ) -> AsyncIterator[AsyncConnection]:
     """Yield an async connection."""
-    async with timeout_dur(duration=timeout, error=error), engine.begin() as conn:
+    async with timeout_td(timeout, error=error), engine.begin() as conn:
         yield conn
 
 

@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 from pytest import approx, mark, param
 
-from utilities.datetime import MILLISECOND, SECOND
 from utilities.psutil import MemoryMonitorService, MemoryUsage
+from utilities.whenever2 import SECOND
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -36,8 +36,8 @@ class TestMemoryMonitorService:
     async def test_main(self, *, console: bool, tmp_path: Path) -> None:
         path = tmp_path.joinpath("memory.txt")
         service = MemoryMonitorService(
-            freq=100 * MILLISECOND,
-            backoff=100 * MILLISECOND,
+            freq=0.1 * SECOND,
+            backoff=0.1 * SECOND,
             timeout=SECOND,
             path=path,
             console=str(tmp_path) if console else None,

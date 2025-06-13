@@ -9,20 +9,20 @@ from utilities.redis import PublishServiceMixin, SubscribeServiceMixin
 from utilities.text import unique_str
 
 if TYPE_CHECKING:
-    from utilities.types import Duration
+    from whenever import TimeDelta
 
 
 @dataclass(kw_only=True)
 class LooperWithPublishAndSubscribeMixins(
     PublishServiceMixin[Any], SubscribeServiceMixin[Any], Looper[Any]
 ):
-    freq: Duration = field(default=_FREQ, repr=False)
-    backoff: Duration = field(default=_BACKOFF, repr=False)
+    freq: TimeDelta = field(default=_FREQ, repr=False)
+    backoff: TimeDelta = field(default=_BACKOFF, repr=False)
     _debug: bool = field(default=True, repr=False)
-    publish_service_freq: Duration = field(default=_FREQ, repr=False)
-    publish_service_backoff: Duration = field(default=_BACKOFF, repr=False)
+    publish_service_freq: TimeDelta = field(default=_FREQ, repr=False)
+    publish_service_backoff: TimeDelta = field(default=_BACKOFF, repr=False)
     publish_service_debug: bool = field(default=True, repr=False)
-    subscribe_service_freq: Duration = field(default=_FREQ, repr=False)
-    subscribe_service_backoff: Duration = field(default=_BACKOFF, repr=False)
+    subscribe_service_freq: TimeDelta = field(default=_FREQ, repr=False)
+    subscribe_service_backoff: TimeDelta = field(default=_BACKOFF, repr=False)
     subscribe_service_debug: bool = field(default=True, repr=False)
     subscribe_service_channel: str = field(default_factory=unique_str)

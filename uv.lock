@@ -604,7 +604,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.131.16"
+version = "0.131.17"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -697,7 +697,6 @@ dev = [
     { name = "sqlalchemy" },
     { name = "statsmodels" },
     { name = "streamlit" },
-    { name = "tenacity" },
     { name = "tomlkit" },
     { name = "typed-settings" },
     { name = "tzdata" },
@@ -795,7 +794,6 @@ dev = [
     { name = "sqlalchemy", specifier = ">=2.0.41,<2.1" },
     { name = "statsmodels", specifier = ">=0.14.4,<0.15" },
     { name = "streamlit", specifier = ">=1.45.0,<1.46" },
-    { name = "tenacity", specifier = ">=8.5.0,<9.0" },
     { name = "tomlkit", specifier = ">=0.13.2,<0.14" },
     { name = "typed-settings", specifier = ">=24.6.0,<24.7" },
     { name = "tzdata", specifier = ">=2025.2,<2025.3" },
