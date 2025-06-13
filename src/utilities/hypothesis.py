@@ -252,24 +252,6 @@ def date_time_deltas(
 
 
 @composite
-def dates_two_digit_year(
-    draw: DrawFn,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[dt.date] = MIN_DATE_TWO_DIGIT_YEAR,
-    max_value: MaybeSearchStrategy[dt.date] = MAX_DATE_TWO_DIGIT_YEAR,
-) -> dt.date:
-    """Strategy for generating dates with valid 2 digit years."""
-    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
-    min_value_ = max(min_value_, MIN_DATE_TWO_DIGIT_YEAR)
-    max_value_ = min(max_value_, MAX_DATE_TWO_DIGIT_YEAR)
-    return draw(dates(min_value=min_value_, max_value=max_value_))
-
-
-##
-
-
-@composite
 def dates(
     draw: DrawFn,
     /,
@@ -299,6 +281,24 @@ def dates(
         )
     )
     return Date.from_py_date(py_date)
+
+
+##
+
+
+@composite
+def dates_two_digit_year(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[dt.date] = MIN_DATE_TWO_DIGIT_YEAR,
+    max_value: MaybeSearchStrategy[dt.date] = MAX_DATE_TWO_DIGIT_YEAR,
+) -> dt.date:
+    """Strategy for generating dates with valid 2 digit years."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    min_value_ = max(min_value_, MIN_DATE_TWO_DIGIT_YEAR)
+    max_value_ = min(max_value_, MAX_DATE_TWO_DIGIT_YEAR)
+    return draw(dates(min_value=min_value_, max_value=max_value_))
 
 
 ##
