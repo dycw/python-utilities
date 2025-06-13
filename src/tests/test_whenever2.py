@@ -85,7 +85,7 @@ from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
-    from utilities.types import MaybeCallableDate, MaybeCallableZonedDateTime, TimeZone
+    from utilities.types import MaybeCallableDate, MaybeCallableZonedDateTime
 
 
 class TestDatetimeUTC:
@@ -144,7 +144,7 @@ class TestFromTimeStamp:
 
 class TestGetNow:
     @given(time_zone=timezones())
-    def test_function(self, *, time_zone: TimeZone) -> None:
+    def test_function(self, *, time_zone: ZoneInfo) -> None:
         now = get_now(time_zone=time_zone)
         assert isinstance(now, ZonedDateTime)
         assert now.tz == time_zone.key
