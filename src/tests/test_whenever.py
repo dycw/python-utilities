@@ -21,7 +21,7 @@ from whenever import (
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import (
     assume_does_not_raise,
-    date_deltas_whenever,
+    date_deltas,
     dates_whenever,
     pairs,
     sentinels,
@@ -300,8 +300,8 @@ class TestMinMaxDate:
     @given(
         min_date=dates_whenever(max_value=TODAY_LOCAL) | none(),
         max_date=dates_whenever(max_value=TODAY_LOCAL) | none(),
-        min_age=date_deltas_whenever(min_value=ZERO_DAYS) | none(),
-        max_age=date_deltas_whenever(min_value=ZERO_DAYS) | none(),
+        min_age=date_deltas(min_value=ZERO_DAYS) | none(),
+        max_age=date_deltas(min_value=ZERO_DAYS) | none(),
     )
     def test_main(
         self,

@@ -13,12 +13,7 @@ import utilities.math
 import utilities.operator
 from tests.test_objects.objects import CustomError, TruthEnum, objects
 from tests.test_typing_funcs.with_future import DataClassFutureCustomEquality
-from utilities.hypothesis import (
-    assume_does_not_raise,
-    date_deltas_whenever,
-    pairs,
-    text_ascii,
-)
+from utilities.hypothesis import assume_does_not_raise, date_deltas, pairs, text_ascii
 from utilities.operator import IsEqualError
 from utilities.polars import are_frames_equal
 
@@ -52,7 +47,7 @@ class TestIsEqual:
         assert x != y
         assert utilities.operator.is_equal(x, y)
 
-    @given(deltas=pairs(date_deltas_whenever()))
+    @given(deltas=pairs(date_deltas()))
     def test_date_deltas(self, *, deltas: tuple[DateDelta, DateDelta]) -> None:
         x, y = deltas
         result = utilities.operator.is_equal(x, y)
@@ -91,7 +86,7 @@ class TestIsEqual:
         result = utilities.operator.is_equal(x, y)
         assert isinstance(result, bool)
 
-    @given(x=date_deltas_whenever(), y=date_deltas_whenever())
+    @given(x=date_deltas(), y=date_deltas())
     def test_sets_of_date_deltas(self, *, x: float, y: float) -> None:
         assert utilities.operator.is_equal({x, y}, {y, x})
 

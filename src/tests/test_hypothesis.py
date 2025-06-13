@@ -48,7 +48,7 @@ from utilities.hypothesis import (
     _Draw2InputResolvedToSentinelError,
     assume_does_not_raise,
     bool_arrays,
-    date_deltas_whenever,
+    date_deltas,
     date_time_deltas_whenever,
     dates_two_digit_year,
     dates_whenever,
@@ -168,13 +168,11 @@ class TestBoolArrays:
 class TestDateDeltasWhenever:
     @given(data=data(), parsable=booleans())
     def test_main(self, *, data: DataObject, parsable: bool) -> None:
-        min_value = data.draw(date_deltas_whenever() | none())
-        max_value = data.draw(date_deltas_whenever() | none())
+        min_value = data.draw(date_deltas() | none())
+        max_value = data.draw(date_deltas() | none())
         with assume_does_not_raise(InvalidArgument):
             delta = data.draw(
-                date_deltas_whenever(
-                    min_value=min_value, max_value=max_value, parsable=parsable
-                )
+                date_deltas(min_value=min_value, max_value=max_value, parsable=parsable)
             )
         assert isinstance(delta, DateDelta)
         days = to_days(delta)

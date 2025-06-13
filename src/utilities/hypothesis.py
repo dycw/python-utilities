@@ -180,7 +180,7 @@ def bool_arrays(
 
 
 @composite
-def date_deltas_whenever(
+def date_deltas(
     draw: DrawFn,
     /,
     *,
@@ -1259,7 +1259,7 @@ __all__ = [
     "Shape",
     "assume_does_not_raise",
     "bool_arrays",
-    "date_deltas_whenever",
+    "date_deltas",
     "date_time_deltas_whenever",
     "dates_two_digit_year",
     "dates_whenever",

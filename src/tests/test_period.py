@@ -9,7 +9,7 @@ from pytest import raises
 
 from utilities.hypothesis import (
     assume_does_not_raise,
-    date_deltas_whenever,
+    date_deltas,
     dates_whenever,
     pairs,
     plain_datetimes_whenever,
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 
 class TestDatePeriod:
-    @given(dates=pairs(dates_whenever(), sorted=True), delta=date_deltas_whenever())
+    @given(dates=pairs(dates_whenever(), sorted=True), delta=date_deltas())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_add(self, *, dates: tuple[Date, Date], delta: DateDelta) -> None:
         start, end = dates
@@ -84,7 +84,7 @@ class TestDatePeriod:
         period2 = DatePeriod(start2, end2)
         _ = sorted([period1, period2])
 
-    @given(dates=pairs(dates_whenever(), sorted=True), delta=date_deltas_whenever())
+    @given(dates=pairs(dates_whenever(), sorted=True), delta=date_deltas())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_sub(self, *, dates: tuple[Date, Date], delta: DateDelta) -> None:
         start, end = dates

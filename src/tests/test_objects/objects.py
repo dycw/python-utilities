@@ -35,7 +35,7 @@ from tests.test_typing_funcs.with_future import (
 )
 from utilities.hypothesis import (
     assume_does_not_raise,
-    date_deltas_whenever,
+    date_deltas,
     date_time_deltas_whenever,
     dates_whenever,
     int64s,
@@ -134,7 +134,7 @@ def objects(
     if extra_base is not None:
         base |= extra_base
     if not sortable:
-        base |= date_deltas_whenever(parsable=parsable) | date_time_deltas_whenever(
+        base |= date_deltas(parsable=parsable) | date_time_deltas_whenever(
             parsable=parsable
         )
     extend = partial(
