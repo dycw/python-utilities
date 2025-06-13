@@ -1,28 +1,17 @@
 from __future__ import annotations
 
 import datetime as dt
-from re import search
 
-from hypothesis import assume, given
+from hypothesis import given
 from hypothesis.strategies import DataObject, data, integers, sampled_from
 from pytest import raises
 
 from utilities.datetime import (
     _ParseTwoDigitYearInvalidIntegerError,
     _ParseTwoDigitYearInvalidStringError,
-    maybe_sub_pct_y,
     parse_two_digit_year,
 )
-from utilities.hypothesis import text_clean
 from utilities.zoneinfo import UTC
-
-
-class TestMaybeSubPctY:
-    @given(text=text_clean())
-    def test_main(self, *, text: str) -> None:
-        result = maybe_sub_pct_y(text)
-        _ = assume(not search("%Y", result))
-        assert not search("%Y", result)
 
 
 class TestParseTwoDigitYear:
