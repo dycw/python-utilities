@@ -77,11 +77,9 @@ from utilities.datetime import (
     add_duration,
     add_weekdays,
     are_equal_datetimes,
-    are_equal_months,
     check_date_not_datetime,
     date_duration_to_int,
     date_duration_to_timedelta,
-    date_to_datetime,
     date_to_month,
     datetime_duration_to_float,
     datetime_duration_to_microseconds,
@@ -298,27 +296,6 @@ class TestAreEqualDateTimes:
             _ = are_equal_datetimes(left, right)
 
 
-class TestAreEqualMonths:
-    @given(x=dates(), y=dates())
-    def test_dates(self, *, x: dt.date, y: dt.date) -> None:
-        result = are_equal_months(x, y)
-        expected = (x.year == y.year) and (x.month == y.month)
-        assert result is expected
-
-    @given(x=months(), y=months())
-    def test_months(self, *, x: Month, y: Month) -> None:
-        result = are_equal_months(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(data=data(), x=dates(), y=months())
-    def test_date_vs_month(self, *, data: DataObject, x: dt.date, y: Month) -> None:
-        left, right = data.draw(permutations([x, y]))
-        result = are_equal_months(left, right)
-        expected = (x.year == y.year) and (x.month == y.month)
-        assert result is expected
-
-
 class TestCheckDateNotDateTime:
     @given(date=dates())
     def test_main(self, *, date: dt.date) -> None:
@@ -510,13 +487,6 @@ class TestDateTimeDurationToTimeDelta:
     def test_timedelta(self, *, duration: dt.timedelta) -> None:
         result = datetime_duration_to_timedelta(duration)
         assert result == duration
-
-
-class TestDateToDateTime:
-    @given(date=dates())
-    def test_main(self, *, date: dt.date) -> None:
-        result = date_to_datetime(date).date()
-        assert result == date
 
 
 class TestDateToMonth:

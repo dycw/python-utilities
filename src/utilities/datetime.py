@@ -142,16 +142,6 @@ class AreEqualDateTimesError(Exception):
 ##
 
 
-def are_equal_months(x: DateOrMonth, y: DateOrMonth, /) -> bool:
-    """Check if x == y as months."""
-    x_month = Month.from_date(x) if isinstance(x, dt.date) else x
-    y_month = Month.from_date(y) if isinstance(y, dt.date) else y
-    return x_month == y_month
-
-
-##
-
-
 def check_date_not_datetime(date: dt.date, /) -> None:
     """Check if a date is not a datetime."""
     if not is_instance_gen(date, dt.date):
@@ -165,19 +155,6 @@ class CheckDateNotDateTimeError(Exception):
     @override
     def __str__(self) -> str:
         return f"Date must not be a datetime; got {self.date}"
-
-
-##
-
-
-def date_to_datetime(
-    date: dt.date, /, *, time: dt.time | None = None, time_zone: TimeZoneLike = UTC
-) -> dt.datetime:
-    """Expand a date into a datetime."""
-    check_date_not_datetime(date)
-    time_use = dt.time(0) if time is None else time
-    time_zone_use = ensure_time_zone(time_zone)
-    return dt.datetime.combine(date, time_use, tzinfo=time_zone_use)
 
 
 ##
@@ -1300,11 +1277,9 @@ __all__ = [
     "add_duration",
     "add_weekdays",
     "are_equal_datetimes",
-    "are_equal_months",
     "check_date_not_datetime",
     "date_duration_to_int",
     "date_duration_to_timedelta",
-    "date_to_datetime",
     "date_to_month",
     "datetime_duration_to_float",
     "datetime_duration_to_microseconds",
