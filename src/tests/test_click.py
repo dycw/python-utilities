@@ -45,7 +45,7 @@ from utilities.click import (
 from utilities.datetime import serialize_month
 from utilities.hypothesis import (
     date_deltas,
-    date_time_deltas_whenever,
+    date_time_deltas,
     dates_whenever,
     months,
     pairs,
@@ -203,7 +203,7 @@ class TestParameters:
             param(
                 DateTimeDelta(),
                 "DATE-TIME DELTA",
-                date_time_deltas_whenever(parsable=True),
+                date_time_deltas(parsable=True),
                 whenever.DateTimeDelta.format_common_iso,
                 True,
             ),

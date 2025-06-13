@@ -49,7 +49,7 @@ from utilities.hypothesis import (
     assume_does_not_raise,
     bool_arrays,
     date_deltas,
-    date_time_deltas_whenever,
+    date_time_deltas,
     dates_two_digit_year,
     dates_whenever,
     draw2,
@@ -187,11 +187,11 @@ class TestDateDeltasWhenever:
 class TestDateTimeDeltasWhenever:
     @given(data=data(), parsable=booleans())
     def test_main(self, *, data: DataObject, parsable: bool) -> None:
-        min_value = data.draw(date_time_deltas_whenever() | none())
-        max_value = data.draw(date_time_deltas_whenever() | none())
+        min_value = data.draw(date_time_deltas() | none())
+        max_value = data.draw(date_time_deltas() | none())
         with assume_does_not_raise(InvalidArgument):
             delta = data.draw(
-                date_time_deltas_whenever(
+                date_time_deltas(
                     min_value=min_value, max_value=max_value, parsable=parsable
                 )
             )

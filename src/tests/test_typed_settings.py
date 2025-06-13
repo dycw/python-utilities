@@ -20,7 +20,7 @@ from whenever import (
 
 from utilities.hypothesis import (
     date_deltas,
-    date_time_deltas_whenever,
+    date_time_deltas,
     dates_whenever,
     plain_datetimes_whenever,
     temp_paths,
@@ -46,7 +46,7 @@ class TestExtendedTSConverter:
             param(DateDelta, date_deltas(parsable=True), DateDelta.format_common_iso),
             param(
                 DateTimeDelta,
-                date_time_deltas_whenever(parsable=True),
+                date_time_deltas(parsable=True),
                 DateTimeDelta.format_common_iso,
             ),
             param(
