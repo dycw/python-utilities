@@ -52,10 +52,7 @@ from utilities.datetime import (
     MeanTimeDeltaError,
     Month,
     MonthError,
-    ParseDateCompactError,
-    ParseDateTimeCompactError,
     ParseMonthError,
-    SerializeCompactError,
     SubDurationError,
     YieldDaysError,
     YieldWeekdaysError,
@@ -100,14 +97,11 @@ from utilities.datetime import (
     microseconds_since_epoch,
     microseconds_since_epoch_to_datetime,
     microseconds_to_timedelta,
-    parse_date_compact,
-    parse_datetime_compact,
     parse_month,
     parse_two_digit_year,
     round_datetime,
     round_to_next_weekday,
     round_to_prev_weekday,
-    serialize_compact,
     serialize_month,
     sub_duration,
     timedelta_since_epoch,
@@ -909,35 +903,6 @@ class TestRoundToWeekday:
         with assume_does_not_raise(OverflowError):
             result = func(date)
         assert operator(result, date)
-
-
-class TestSerializeAndParseCompact:
-    @given(date=dates())
-    def test_dates(self, *, date: dt.date) -> None:
-        result = parse_date_compact(serialize_compact(date))
-        assert result == date
-
-    @given(datetime=zoned_datetimes(round_="standard", timedelta=SECOND))
-    def test_datetimes(self, *, datetime: dt.datetime) -> None:
-        result = parse_datetime_compact(serialize_compact(datetime))
-        assert result == datetime
-
-    @given(datetime=datetimes())
-    def test_error_serialize(self, *, datetime: dt.datetime) -> None:
-        with raises(
-            SerializeCompactError, match="Unable to serialize plain datetime .*"
-        ):
-            _ = serialize_compact(datetime)
-
-    def test_error_parse_date(self) -> None:
-        with raises(ParseDateCompactError, match="Unable to parse '.*' into a date"):
-            _ = parse_date_compact("invalid")
-
-    def test_error_parse_datetime(self) -> None:
-        with raises(
-            ParseDateTimeCompactError, match="Unable to parse '.*' into a datetime"
-        ):
-            _ = parse_datetime_compact("invalid")
 
 
 class TestSubDuration:

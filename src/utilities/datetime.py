@@ -879,70 +879,6 @@ def _round_to_weekday(
 ##
 
 
-def serialize_compact(date_or_datetime: DateOrDateTime, /) -> str:
-    """Serialize a date/datetime using a compact format."""
-    match date_or_datetime:
-        case dt.datetime() as datetime:
-            if datetime.tzinfo is None:
-                raise SerializeCompactError(datetime=datetime)
-            format_ = "%Y%m%dT%H%M%S"
-        case dt.date():
-            format_ = "%Y%m%d"
-        case _ as never:
-            assert_never(never)
-    return date_or_datetime.strftime(maybe_sub_pct_y(format_))
-
-
-@dataclass(kw_only=True, slots=True)
-class SerializeCompactError(Exception):
-    datetime: dt.datetime
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to serialize plain datetime {self.datetime}"
-
-
-def parse_date_compact(text: str, /) -> dt.date:
-    """Parse a compact string into a date."""
-    try:
-        datetime = dt.datetime.strptime(text, "%Y%m%d").replace(tzinfo=UTC)
-    except ValueError:
-        raise ParseDateCompactError(text=text) from None
-    return datetime.date()
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseDateCompactError(Exception):
-    text: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse {self.text!r} into a date"
-
-
-def parse_datetime_compact(
-    text: str, /, *, time_zone: TimeZoneLike = UTC
-) -> dt.datetime:
-    """Parse a compact string into a datetime."""
-    time_zone = ensure_time_zone(time_zone)
-    try:
-        return dt.datetime.strptime(text, "%Y%m%dT%H%M%S").replace(tzinfo=time_zone)
-    except ValueError:
-        raise ParseDateTimeCompactError(text=text) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseDateTimeCompactError(Exception):
-    text: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse {self.text!r} into a datetime"
-
-
-##
-
-
 def serialize_month(month: Month, /) -> str:
     """Serialize a month."""
     return f"{month.year:04}-{month.month:02}"
@@ -1141,10 +1077,7 @@ __all__ = [
     "Month",
     "MonthError",
     "MonthLike",
-    "ParseDateCompactError",
-    "ParseDateTimeCompactError",
     "ParseMonthError",
-    "SerializeCompactError",
     "SubDurationError",
     "TimedeltaToMillisecondsError",
     "YieldDaysError",
@@ -1179,14 +1112,11 @@ __all__ = [
     "microseconds_since_epoch",
     "microseconds_since_epoch_to_datetime",
     "microseconds_to_timedelta",
-    "parse_date_compact",
-    "parse_datetime_compact",
     "parse_month",
     "parse_two_digit_year",
     "round_datetime",
     "round_to_next_weekday",
     "round_to_prev_weekday",
-    "serialize_compact",
     "serialize_month",
     "sub_duration",
     "timedelta_since_epoch",
