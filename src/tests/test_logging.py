@@ -80,9 +80,9 @@ class TestBasicConfig:
         name = unique_str()
         with set_log_factory:
             basic_config(obj=name, filters=filters, plain=plain)
-            getLogger(name).warning("message")
-            record = one(r for r in caplog.records if r.name == name)
-            assert record.message == "message"
+        getLogger(name).warning("message")
+        record = one(r for r in caplog.records if r.name == name)
+        assert record.message == "message"
 
     def test_none(self, *, set_log_factory: AbstractContextManager[None]) -> None:
         with set_log_factory:
