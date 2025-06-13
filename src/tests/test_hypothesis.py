@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from itertools import pairwise
 from pathlib import Path
 from re import search
@@ -15,13 +14,11 @@ from hypothesis.strategies import (
     booleans,
     composite,
     data,
-    datetimes,
     floats,
     integers,
     just,
     none,
     sets,
-    timedeltas,
     timezones,
 )
 from luigi import Task
@@ -38,32 +35,22 @@ from whenever import (
     ZonedDateTime,
 )
 
-from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
     MAX_DATE_TWO_DIGIT_YEAR,
     MIN_DATE_TWO_DIGIT_YEAR,
-    MINUTE,
-    date_duration_to_timedelta,
-    datetime_duration_to_float,
-    datetime_duration_to_timedelta,
-    is_integral_timedelta,
     parse_two_digit_year,
 )
 from utilities.functions import ensure_int
 from utilities.hypothesis import (
-    PlainDateTimesError,
     Shape,
-    ZonedDateTimesError,
     _Draw2DefaultGeneratedSentinelError,
     _Draw2InputResolvedToSentinelError,
     assume_does_not_raise,
     bool_arrays,
     date_deltas_whenever,
-    date_durations,
     date_time_deltas_whenever,
     dates_two_digit_year,
     dates_whenever,
-    datetime_durations,
     draw2,
     float32s,
     float64s,
@@ -80,7 +67,6 @@ from utilities.hypothesis import (
     numbers,
     pairs,
     paths,
-    plain_datetimes,
     plain_datetimes_whenever,
     random_states,
     sentinels,
@@ -98,13 +84,11 @@ from utilities.hypothesis import (
     text_digits,
     text_printable,
     time_deltas_whenever,
-    timedeltas_2w,
     times_whenever,
     triples,
     uint32s,
     uint64s,
     versions,
-    zoned_datetimes,
     zoned_datetimes_whenever,
 )
 from utilities.math import (
@@ -120,22 +104,11 @@ from utilities.math import (
     MIN_INT64,
     MIN_UINT32,
     MIN_UINT64,
-    is_at_least,
-    is_at_most,
 )
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sentinel import Sentinel
 from utilities.version import Version
-from utilities.whenever import (
-    MAX_SERIALIZABLE_TIMEDELTA,
-    MIN_SERIALIZABLE_TIMEDELTA,
-    check_valid_zoned_datetime,
-    parse_duration,
-    parse_timedelta,
-    serialize_duration,
-    serialize_timedelta,
-)
 from utilities.whenever2 import to_days, to_nanos
 
 if TYPE_CHECKING:
@@ -212,70 +185,6 @@ class TestDateDeltasWhenever:
             assert DateDelta.parse_common_iso(delta.format_common_iso()) == delta
 
 
-class TestDateDurations:
-    @given(
-        data=data(),
-        min_int=integers() | none(),
-        max_int=integers() | none(),
-        min_timedelta=timedeltas() | none(),
-        max_timedelta=timedeltas() | none(),
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        min_int: int | None,
-        max_int: int | None,
-        min_timedelta: dt.timedelta | None,
-        max_timedelta: dt.timedelta | None,
-    ) -> None:
-        duration = data.draw(
-            date_durations(
-                min_int=min_int,
-                max_int=max_int,
-                min_timedelta=min_timedelta,
-                max_timedelta=max_timedelta,
-            )
-        )
-        assert isinstance(duration, int | float | dt.timedelta)
-        match duration:
-            case int():
-                if min_int is not None:
-                    assert duration >= min_int
-                if max_int is not None:
-                    assert duration <= max_int
-                if min_timedelta is not None:
-                    assert date_duration_to_timedelta(duration) >= min_timedelta
-                if max_timedelta is not None:
-                    assert date_duration_to_timedelta(duration) <= max_timedelta
-            case float():
-                assert duration == round(duration)
-                if min_int is not None:
-                    assert duration >= min_int
-                if max_int is not None:
-                    assert duration <= max_int
-                if min_timedelta is not None:
-                    assert date_duration_to_timedelta(duration) >= min_timedelta
-                if max_timedelta is not None:
-                    assert date_duration_to_timedelta(duration) <= max_timedelta
-            case dt.timedelta():
-                assert is_integral_timedelta(duration)
-                if min_int is not None:
-                    assert duration >= date_duration_to_timedelta(min_int)
-                if max_int is not None:
-                    assert duration <= date_duration_to_timedelta(max_int)
-                if min_timedelta is not None:
-                    assert duration >= min_timedelta
-                if max_timedelta is not None:
-                    assert duration <= max_timedelta
-
-    @given(data=data())
-    def test_two_way(self, *, data: DataObject) -> None:
-        duration = data.draw(date_durations(two_way=True))
-        ser = serialize_duration(duration)
-        _ = parse_duration(ser)
-
-
 class TestDateTimeDeltasWhenever:
     @given(data=data(), parsable=booleans())
     def test_main(self, *, data: DataObject, parsable: bool) -> None:
@@ -325,63 +234,6 @@ class TestDatesWhenever:
             assert date >= min_value
         if max_value is not None:
             assert date <= max_value
-
-
-class TestDateTimeDurations:
-    @given(
-        data=data(),
-        min_number=numbers() | none(),
-        max_number=numbers() | none(),
-        min_timedelta=timedeltas() | none(),
-        max_timedelta=timedeltas() | none(),
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        min_number: Number | None,
-        max_number: Number | None,
-        min_timedelta: dt.timedelta | None,
-        max_timedelta: dt.timedelta | None,
-    ) -> None:
-        duration = data.draw(
-            datetime_durations(
-                min_number=min_number,
-                max_number=max_number,
-                min_timedelta=min_timedelta,
-                max_timedelta=max_timedelta,
-            )
-        )
-        assert isinstance(duration, int | float | dt.timedelta)
-        match duration:
-            case int() | float():
-                if min_number is not None:
-                    assert is_at_least(duration, min_number, abs_tol=1e-6)
-                if max_number is not None:
-                    assert is_at_most(duration, max_number, abs_tol=1e-6)
-                if min_timedelta is not None:
-                    assert is_at_least(
-                        duration, datetime_duration_to_float(min_timedelta)
-                    )
-                if max_timedelta is not None:
-                    assert is_at_most(
-                        duration, datetime_duration_to_float(max_timedelta)
-                    )
-            case dt.timedelta():
-                if min_number is not None:
-                    assert duration >= datetime_duration_to_timedelta(min_number)
-                if max_number is not None:
-                    assert duration <= datetime_duration_to_timedelta(max_number)
-                if min_timedelta is not None:
-                    assert duration >= min_timedelta
-                if max_timedelta is not None:
-                    assert duration <= max_timedelta
-
-    @given(data=data())
-    def test_two_way(self, *, data: DataObject) -> None:
-        duration = data.draw(datetime_durations(two_way=True))
-        ser = serialize_duration(duration)
-        _ = parse_duration(ser)
 
 
 class TestDraw2:
@@ -798,42 +650,6 @@ class TestPaths:
         validate_filepath(str(path))
 
 
-class TestPlainDateTimes:
-    @given(data=data(), min_value=datetimes(), max_value=datetimes())
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_main(
-        self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            datetime = data.draw(
-                plain_datetimes(min_value=min_value, max_value=max_value)
-            )
-        assert datetime.tzinfo is None
-        assert min_value <= datetime <= max_value
-
-    @given(data=data())
-    def test_rounding(self, *, data: DataObject) -> None:
-        min_value, max_value = data.draw(pairs(plain_datetimes(), sorted=True))
-        datetime = data.draw(
-            plain_datetimes(
-                min_value=min_value,
-                max_value=max_value,
-                round_="standard",
-                timedelta=MINUTE,
-            )
-        )
-        assert isinstance(datetime, dt.datetime)
-        assert datetime.second == datetime.microsecond == 0
-        assert min_value <= datetime <= max_value
-
-    @given(data=data())
-    def test_error_rounding(self, *, data: DataObject) -> None:
-        with raises(
-            PlainDateTimesError, match="Rounding requires a timedelta; got None"
-        ):
-            _ = data.draw(plain_datetimes(round_="standard"))
-
-
 class TestPlainDateTimesWhenever:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
@@ -1077,27 +893,6 @@ class TestTextPrintable:
             assert len(text) <= max_size
 
 
-class TestTimeDeltas2W:
-    @given(
-        data=data(),
-        min_value=timedeltas(
-            min_value=MIN_SERIALIZABLE_TIMEDELTA, max_value=MAX_SERIALIZABLE_TIMEDELTA
-        ),
-        max_value=timedeltas(
-            min_value=MIN_SERIALIZABLE_TIMEDELTA, max_value=MAX_SERIALIZABLE_TIMEDELTA
-        ),
-    )
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_main(
-        self, *, data: DataObject, min_value: dt.timedelta, max_value: dt.timedelta
-    ) -> None:
-        _ = assume(min_value <= max_value)
-        timedelta = data.draw(timedeltas_2w(min_value=min_value, max_value=max_value))
-        ser = serialize_timedelta(timedelta)
-        _ = parse_timedelta(ser)
-        assert min_value <= timedelta <= max_value
-
-
 class TestTimeDeltas:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
@@ -1169,78 +964,6 @@ class TestVersions:
             assert version.suffix is not None
         else:
             assert version.suffix is None
-
-
-class TestZonedDateTimes:
-    @given(
-        data=data(),
-        min_value=datetimes(timezones=timezones() | just(dt.UTC) | none()),
-        max_value=datetimes(timezones=timezones() | just(dt.UTC) | none()),
-        time_zone=timezones() | just(dt.UTC),
-        time_zone_extra=timezones() | just(dt.UTC),
-    )
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        min_value: dt.datetime,
-        max_value: dt.datetime,
-        time_zone: ZoneInfo,
-        time_zone_extra: ZoneInfo,
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            datetime = data.draw(
-                zoned_datetimes(
-                    min_value=min_value, max_value=max_value, time_zone=time_zone
-                )
-            )
-        assert datetime.tzinfo is time_zone
-        if min_value.tzinfo is None:
-            min_value_ = min_value.replace(tzinfo=time_zone)
-        else:
-            min_value_ = min_value.astimezone(time_zone)
-        if max_value.tzinfo is None:
-            max_value_ = max_value.replace(tzinfo=time_zone)
-        else:
-            max_value_ = max_value.astimezone(time_zone)
-        assert min_value_ <= datetime <= max_value_
-        _ = datetime.astimezone(time_zone_extra)
-
-    @given(data=data())
-    def test_rounding(self, *, data: DataObject) -> None:
-        min_value, max_value = data.draw(pairs(zoned_datetimes(), sorted=True))
-        datetime = data.draw(
-            zoned_datetimes(
-                min_value=min_value,
-                max_value=max_value,
-                round_="standard",
-                timedelta=MINUTE,
-            )
-        )
-        assert isinstance(datetime, dt.datetime)
-        assert datetime.second == datetime.microsecond == 0
-        assert min_value <= datetime <= max_value
-
-    @given(
-        data=data(),
-        min_value=zoned_datetimes(valid=True),
-        max_value=zoned_datetimes(valid=True),
-    )
-    @SKIPIF_CI_AND_WINDOWS
-    def test_valid(
-        self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
-    ) -> None:
-        _ = assume(min_value <= max_value)
-        datetime = data.draw(zoned_datetimes(valid=True))
-        check_valid_zoned_datetime(datetime)
-
-    @given(data=data())
-    def test_error_rounding(self, *, data: DataObject) -> None:
-        with raises(
-            ZonedDateTimesError, match="Rounding requires a timedelta; got None"
-        ):
-            _ = data.draw(zoned_datetimes(round_="standard"))
 
 
 class TestZonedDateTimesWhenever:

@@ -100,7 +100,7 @@ DATE_DELTA_PARSABLE_MAX = DateDelta(days=999999)
 ## common constants
 
 
-ZERO_DATE = DateDelta()
+ZERO_DAYS = DateDelta()
 ZERO_TIME = TimeDelta()
 MICROSECOND = TimeDelta(microseconds=1)
 MILLISECOND = TimeDelta(milliseconds=1)
@@ -223,7 +223,7 @@ def min_max_date(
     min_parts: list[Date] = []
     if min_date is not None:
         if min_date > today:
-            raise _GetMinMaxDateMinDateError(min_date=min_date, today=today)
+            raise _MinMaxDateMinDateError(min_date=min_date, today=today)
         min_parts.append(min_date)
     if max_age is not None:
         min_parts.append(today - max_age)
@@ -231,7 +231,7 @@ def min_max_date(
     max_parts: list[Date] = []
     if max_date is not None:
         if max_date > today:
-            raise _GetMinMaxDateMaxDateError(max_date=max_date, today=today)
+            raise _MinMaxDateMaxDateError(max_date=max_date, today=today)
         max_parts.append(max_date)
     if min_age is not None:
         max_parts.append(today - min_age)
@@ -241,16 +241,16 @@ def min_max_date(
         and (max_date_use is not None)
         and (min_date_use > max_date_use)
     ):
-        raise _GetMinMaxDatePeriodError(min_date=min_date_use, max_date=max_date_use)
+        raise _MinMaxDatePeriodError(min_date=min_date_use, max_date=max_date_use)
     return min_date_use, max_date_use
 
 
 @dataclass(kw_only=True, slots=True)
-class GetMinMaxDateError(Exception): ...
+class MinMaxDateError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
-class _GetMinMaxDateMinDateError(GetMinMaxDateError):
+class _MinMaxDateMinDateError(MinMaxDateError):
     min_date: Date
     today: Date
 
@@ -260,7 +260,7 @@ class _GetMinMaxDateMinDateError(GetMinMaxDateError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _GetMinMaxDateMaxDateError(GetMinMaxDateError):
+class _MinMaxDateMaxDateError(MinMaxDateError):
     max_date: Date
     today: Date
 
@@ -270,7 +270,7 @@ class _GetMinMaxDateMaxDateError(GetMinMaxDateError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _GetMinMaxDatePeriodError(GetMinMaxDateError):
+class _MinMaxDatePeriodError(MinMaxDateError):
     min_date: Date
     max_date: Date
 
@@ -568,12 +568,12 @@ __all__ = [
     "TODAY_UTC",
     "WEEK",
     "YEAR",
-    "ZERO_DATE",
+    "ZERO_DAYS",
     "ZERO_TIME",
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
-    "GetMinMaxDateError",
     "MeanDateTimeError",
+    "MinMaxDateError",
     "ToDaysError",
     "ToNanosError",
     "WheneverLogRecord",

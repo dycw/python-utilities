@@ -21,7 +21,9 @@ from tests.conftest import IS_CI
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import (
     assume_does_not_raise,
+    date_deltas_whenever,
     dates_whenever,
+    pairs,
     sentinels,
     zoned_datetimes_whenever,
 )
@@ -39,6 +41,7 @@ from utilities.whenever2 import (
     DATE_TIME_DELTA_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
     DATE_TIME_DELTA_PARSABLE_MIN,
+    DAY,
     MICROSECOND,
     MINUTE,
     NOW_LOCAL,
@@ -50,12 +53,17 @@ from utilities.whenever2 import (
     TIME_DELTA_MIN,
     TODAY_LOCAL,
     TODAY_UTC,
+    ZERO_DAYS,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
     MeanDateTimeError,
+    MinMaxDateError,
     ToDaysError,
     ToNanosError,
     WheneverLogRecord,
+    _MinMaxDateMaxDateError,
+    _MinMaxDateMinDateError,
+    _MinMaxDatePeriodError,
     format_compact,
     from_timestamp,
     from_timestamp_millis,
@@ -65,6 +73,7 @@ from utilities.whenever2 import (
     get_today,
     get_today_local,
     mean_datetime,
+    min_max_date,
     to_date,
     to_date_time_delta,
     to_days,
@@ -262,6 +271,63 @@ class TestMinMax:
 
     def _format_parse_date_time_delta(self, delta: DateTimeDelta, /) -> None:
         _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
+
+
+class TestMinMaxDate:
+    @given(
+        min_date=dates_whenever(max_value=TODAY_LOCAL) | none(),
+        max_date=dates_whenever(max_value=TODAY_LOCAL) | none(),
+        min_age=date_deltas_whenever(min_value=ZERO_DAYS) | none(),
+        max_age=date_deltas_whenever(min_value=ZERO_DAYS) | none(),
+    )
+    def test_main(
+        self,
+        *,
+        min_date: Date | None,
+        max_date: Date | None,
+        min_age: DateDelta | None,
+        max_age: DateDelta | None,
+    ) -> None:
+        with assume_does_not_raise(MinMaxDateError):
+            min_date_use, max_date_use = min_max_date(
+                min_date=min_date, max_date=max_date, min_age=min_age, max_age=max_age
+            )
+        if (min_date is None) and (max_age is None):
+            assert min_date_use is None
+        else:
+            assert min_date_use is not None
+        if (max_date is None) and (min_age is None):
+            assert max_date_use is None
+        else:
+            assert max_date_use is not None
+        if min_date_use is not None:
+            assert min_date_use <= get_today()
+        if max_date_use is not None:
+            assert max_date_use <= get_today()
+        if (min_date_use is not None) and (max_date_use is not None):
+            assert min_date_use <= max_date_use
+
+    @given(date=dates_whenever(min_value=TODAY_UTC + DAY))
+    def test_error_min_date(self, *, date: Date) -> None:
+        with raises(
+            _MinMaxDateMinDateError, match="Min date must be at most today; got .* > .*"
+        ):
+            _ = min_max_date(min_date=date)
+
+    @given(date=dates_whenever(min_value=TODAY_UTC + DAY))
+    def test_error_max_date(self, *, date: Date) -> None:
+        with raises(
+            _MinMaxDateMaxDateError, match="Max date must be at most today; got .* > .*"
+        ):
+            _ = min_max_date(max_date=date)
+
+    @given(dates=pairs(dates_whenever(max_value=TODAY_UTC), unique=True, sorted=True))
+    def test_error_period(self, *, dates: tuple[Date, Date]) -> None:
+        with raises(
+            _MinMaxDatePeriodError,
+            match="Min date must be at most max date; got .* > .*",
+        ):
+            _ = min_max_date(min_date=dates[1], max_date=dates[0])
 
 
 class TestToDate:
