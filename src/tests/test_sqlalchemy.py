@@ -1435,7 +1435,7 @@ class TestUpsertServiceMixin:
             upsert_service_freq: TimeDelta = field(default=_FREQ, repr=False)
             upsert_service_backoff: TimeDelta = field(default=_BACKOFF, repr=False)
 
-        service = Example(auto_start=True, timeout=1.0)
+        service = Example(auto_start=True, timeout=SECOND)
         async with service:
             ...
         assert_looper_stats(
