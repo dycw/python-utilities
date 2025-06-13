@@ -269,32 +269,6 @@ def datetime_duration_to_microseconds(duration: Duration, /) -> int:
     )
 
 
-@overload
-def datetime_duration_to_milliseconds(
-    duration: Duration, /, *, strict: Literal[True]
-) -> int: ...
-@overload
-def datetime_duration_to_milliseconds(
-    duration: Duration, /, *, strict: bool = False
-) -> float: ...
-def datetime_duration_to_milliseconds(
-    duration: Duration, /, *, strict: bool = False
-) -> int | float:
-    """Compute the number of milliseconds in a datetime duration."""
-    timedelta = datetime_duration_to_timedelta(duration)
-    microseconds = datetime_duration_to_microseconds(timedelta)
-    milliseconds, remainder = divmod(microseconds, _MICROSECONDS_PER_MILLISECOND)
-    match remainder, strict:
-        case 0, _:
-            return milliseconds
-        case _, True:
-            raise TimedeltaToMillisecondsError(duration=duration, remainder=remainder)
-        case _, False:
-            return milliseconds + remainder / _MICROSECONDS_PER_MILLISECOND
-        case _ as never:
-            assert_never(never)
-
-
 @dataclass(kw_only=True, slots=True)
 class TimedeltaToMillisecondsError(Exception):
     duration: Duration
@@ -1184,7 +1158,6 @@ __all__ = [
     "date_to_month",
     "datetime_duration_to_float",
     "datetime_duration_to_microseconds",
-    "datetime_duration_to_milliseconds",
     "datetime_duration_to_timedelta",
     "datetime_utc",
     "ensure_month",
