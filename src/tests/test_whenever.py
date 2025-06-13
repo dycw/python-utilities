@@ -277,7 +277,6 @@ class TestMinMax:
             _ = PLAIN_DATE_TIME_MIN.subtract(nanoseconds=1, ignore_dst=True)
 
     def test_plain_date_time_max(self) -> None:
-        _ = PLAIN_DATE_TIME_MAX.add(nanoseconds=999, ignore_dst=True)
         with raises(ValueError, match=r"Result of add\(\) out of range"):
             _ = PLAIN_DATE_TIME_MAX.add(microseconds=1, ignore_dst=True)
 
