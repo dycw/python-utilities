@@ -24,14 +24,14 @@ from polars import Object, String, UInt64
 from pytest import approx, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
-from tests.test_operator import (
+from tests.test_objects.objects import (
     CustomError,
     SubFrozenSet,
     SubList,
     SubSet,
     SubTuple,
     TruthEnum,
-    make_objects,
+    objects,
 )
 from tests.test_typing_funcs.with_future import (
     DataClassFutureCustomEquality,
@@ -440,7 +440,7 @@ class TestOrjsonFormatter:
 
 class TestSerializeAndDeserialize:
     @given(
-        obj=make_objects(
+        obj=objects(
             dataclass_custom_equality=True,
             dataclass_default_in_init_child=False,
             dataclass_int=True,
@@ -482,17 +482,17 @@ class TestSerializeAndDeserialize:
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
-    @given(obj=make_objects())
+    @given(obj=objects())
     def test_base(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj))
         assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass_custom_equality=True))
+    @given(obj=objects(dataclass_custom_equality=True))
     def test_dataclass_custom_equality(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassFutureCustomEquality})
         assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass_default_in_init_child=True))
+    @given(obj=objects(dataclass_default_in_init_child=True))
     def test_dataclass_default_in_init_child_hook_in_serialize(
         self, *, obj: Any
     ) -> None:
@@ -507,7 +507,7 @@ class TestSerializeAndDeserialize:
         )
         assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass_default_in_init_child=True))
+    @given(obj=objects(dataclass_default_in_init_child=True))
     def test_dataclass_default_in_init_child_hook_in_deserialize(
         self, *, obj: Any
     ) -> None:
@@ -523,28 +523,28 @@ class TestSerializeAndDeserialize:
         )
         assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass_int=True))
+    @given(obj=objects(dataclass_int=True))
     def test_dataclass_int(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassFutureInt})
         assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass_int_default=True))
+    @given(obj=objects(dataclass_int_default=True))
     def test_dataclass_int_default(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassFutureIntDefault})
         assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass_literal=True))
+    @given(obj=objects(dataclass_literal=True))
     def test_dataclass_literal(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassFutureLiteral})
         assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass_literal_nullable=True))
+    @given(obj=objects(dataclass_literal_nullable=True))
     def test_dataclass_literal_nullable(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassFutureLiteralNullable})
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass_nested=True))
+    @given(obj=objects(dataclass_nested=True))
     def test_dataclass_nested(self, *, obj: Any) -> None:
         ser = serialize(obj, globalns=globals())
         result = deserialize(
@@ -558,18 +558,18 @@ class TestSerializeAndDeserialize:
         )
         assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass_none=True))
+    @given(obj=objects(dataclass_none=True))
     def test_dataclass_none(self, *, obj: Any) -> None:
         ser = serialize(obj, globalns=globals())
         result = deserialize(ser, objects={DataClassFutureNone})
         assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass_type_literal=True))
+    @given(obj=objects(dataclass_type_literal=True))
     def test_dataclass_type_literal(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassFutureTypeLiteral})
         assert is_equal(result, obj)
 
-    @given(obj=make_objects(dataclass_type_literal_nullable=True))
+    @given(obj=objects(dataclass_type_literal_nullable=True))
     def test_dataclass_type_literal_nullable(self, *, obj: Any) -> None:
         result = deserialize(
             serialize(obj), objects={DataClassFutureTypeLiteralNullable}
@@ -611,19 +611,19 @@ class TestSerializeAndDeserialize:
         )
         assert result == obj
 
-    @given(obj=make_objects(enum=True))
+    @given(obj=objects(enum=True))
     def test_enum(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={TruthEnum})
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
-    @given(obj=make_objects(exception_class=True))
+    @given(obj=objects(exception_class=True))
     def test_exception_class(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={CustomError})
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
-    @given(obj=make_objects(exception_instance=True))
+    @given(obj=objects(exception_instance=True))
     def test_exception_instance(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={CustomError})
         with assume_does_not_raise(IsEqualError):
@@ -633,22 +633,22 @@ class TestSerializeAndDeserialize:
         result = deserialize(serialize(None))
         assert result is None
 
-    @given(obj=make_objects(sub_frozenset=True))
+    @given(obj=objects(sub_frozenset=True))
     def test_sub_frozenset(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubFrozenSet})
         assert is_equal(result, obj)
 
-    @given(obj=make_objects(sub_list=True))
+    @given(obj=objects(sub_list=True))
     def test_sub_list(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubList})
         assert is_equal(result, obj)
 
-    @given(obj=make_objects(sub_set=True))
+    @given(obj=objects(sub_set=True))
     def test_sub_set(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubSet})
         assert is_equal(result, obj)
 
-    @given(obj=make_objects(sub_tuple=True))
+    @given(obj=objects(sub_tuple=True))
     def test_sub_tuple(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={SubTuple})
         assert is_equal(result, obj)
