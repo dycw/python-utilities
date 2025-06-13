@@ -5,6 +5,7 @@ from re import search
 
 from tests.conftest import SKIPIF_CI
 from utilities.fastapi import PingReceiver
+from utilities.whenever2 import SECOND
 
 
 class TestPingReceiver:
@@ -13,7 +14,7 @@ class TestPingReceiver:
         port = 5465
         assert await PingReceiver.ping(port) is False
         await sleep(0.1)
-        async with PingReceiver(auto_start=True, timeout=1.0, port=port):
+        async with PingReceiver(auto_start=True, timeout=SECOND, port=port):
             await sleep(0.1)
             result = await PingReceiver.ping(port)
             assert isinstance(result, str)

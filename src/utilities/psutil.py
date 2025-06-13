@@ -47,7 +47,7 @@ class MemoryMonitorService(Looper[None]):
         await super().core()
         memory = MemoryUsage.new()
         mapping = {
-            "datetime": memory.datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "datetime": memory.datetime.format_common_iso(),
             "virtual used (mb)": memory.virtual_used_mb,
             "virtual total (mb)": memory.virtual_total_mb,
             "virtual (%)": memory.virtual_pct,
