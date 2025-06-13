@@ -56,7 +56,7 @@ from tests.test_typing_funcs.with_future import (
 )
 from utilities.hypothesis import text_ascii
 from utilities.sentinel import Sentinel
-from utilities.types import Duration, LogLevel, Number, Parallelism, Seed
+from utilities.types import LogLevel, Number, Parallelism, Seed
 from utilities.typing import (
     IsInstanceGenError,
     IsSubclassGenError,
@@ -154,7 +154,6 @@ class TestGetTypeClasses:
         case=sampled_from([
             (int, (int,)),
             ((int, float), (int, float)),
-            (Duration, (int, float, dt.timedelta)),
             (Number, (int, float)),
             (Seed, (int, float, str, bytes, bytearray, Random)),
             ((int, Number), (int, int, float)),
@@ -418,7 +417,6 @@ class TestGetTypeHints:
 class TestGetUnionTypeClasses:
     @given(
         case=sampled_from([
-            (Duration, (int, float, dt.timedelta)),
             (Number, (int, float)),
             (Seed, (int, float, str, bytes, bytearray, Random)),
         ])
