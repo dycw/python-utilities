@@ -72,6 +72,8 @@ from utilities.datetime import (
     date_duration_to_int,
     date_duration_to_timedelta,
     date_to_month,
+    datetime_duration_to_float,
+    datetime_duration_to_timedelta,
     round_datetime,
 )
 from utilities.functions import ensure_int, ensure_str, max_nullable, min_nullable
@@ -317,6 +319,53 @@ def date_time_deltas_whenever(
         max_nanos = min(max_nanos, to_nanos(DATE_TIME_DELTA_PARSABLE_MAX))
     nanos = draw(integers(min_value=min_nanos, max_value=max_nanos))
     return to_date_time_delta(nanos)
+
+
+##
+
+
+@composite
+def datetime_durations(
+    draw: DrawFn,
+    /,
+    *,
+    min_number: MaybeSearchStrategy[Number | None] = None,
+    max_number: MaybeSearchStrategy[Number | None] = None,
+    min_timedelta: MaybeSearchStrategy[dt.timedelta | None] = None,
+    max_timedelta: MaybeSearchStrategy[dt.timedelta | None] = None,
+    two_way: bool = False,
+) -> Duration:
+    """Strategy for generating datetime durations."""
+    min_number_, max_number_ = [draw2(draw, v) for v in [min_number, max_number]]
+    min_timedelta_, max_timedelta_ = [
+        draw2(draw, v) for v in [min_timedelta, max_timedelta]
+    ]
+    min_parts = [min_timedelta_, dt.timedelta.min]
+    if min_number_ is not None:
+        with assume_does_not_raise(OverflowError):
+            min_parts.append(datetime_duration_to_timedelta(min_number_))
+    if two_way:
+        from utilities.whenever import MIN_SERIALIZABLE_TIMEDELTA
+
+        min_parts.append(MIN_SERIALIZABLE_TIMEDELTA)
+    min_timedelta_use = max_nullable(min_parts)
+    max_parts = [max_timedelta_, dt.timedelta.max]
+    if max_number_ is not None:
+        with assume_does_not_raise(OverflowError):
+            max_parts.append(datetime_duration_to_timedelta(max_number_))
+    if two_way:
+        from utilities.whenever import MAX_SERIALIZABLE_TIMEDELTA
+
+        max_parts.append(MAX_SERIALIZABLE_TIMEDELTA)
+    max_timedelta_use = min_nullable(max_parts)
+    _ = assume(min_timedelta_use <= max_timedelta_use)
+    min_float_use, max_float_use = map(
+        datetime_duration_to_float, [min_timedelta_use, max_timedelta_use]
+    )
+    _ = assume(min_float_use <= max_float_use)
+    st_numbers = numbers(min_value=min_float_use, max_value=max_float_use)
+    st_timedeltas = timedeltas(min_value=min_timedelta_use, max_value=max_timedelta_use)
+    return draw(st_numbers | st_timedeltas)
 
 
 ##
@@ -1459,6 +1508,7 @@ __all__ = [
     "date_time_deltas_whenever",
     "dates_two_digit_year",
     "dates_whenever",
+    "datetime_durations",
     "draw2",
     "float32s",
     "float64s",
