@@ -143,10 +143,11 @@ class TestFromTimeStamp:
 
 
 class TestGetNow:
-    def test_function(self, *, time_zone_name: TimeZone) -> None:
-        now = get_now(time_zone=time_zone_name)
+    @given(time_zone=timezones())
+    def test_function(self, *, time_zone: TimeZone) -> None:
+        now = get_now(time_zone=time_zone)
         assert isinstance(now, ZonedDateTime)
-        assert now.tz == time_zone_name
+        assert now.tz == time_zone.key
 
     def test_constant(self) -> None:
         assert isinstance(NOW_UTC, ZonedDateTime)
