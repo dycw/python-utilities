@@ -116,6 +116,35 @@ YEAR = DateDelta(years=1)
 ##
 
 
+def datetime_utc(
+    year: int,
+    month: int,
+    day: int,
+    /,
+    hour: int = 0,
+    minute: int = 0,
+    second: int = 0,
+    millisecond: int = 0,
+    microsecond: int = 0,
+    nanosecond: int = 0,
+) -> ZonedDateTime:
+    """Create a UTC-zoned datetime."""
+    nanos = int(1e6) * millisecond + int(1e3) * microsecond + nanosecond
+    return ZonedDateTime(
+        year,
+        month,
+        day,
+        hour=hour,
+        minute=minute,
+        second=second,
+        nanosecond=nanos,
+        tz=UTC.key,
+    )
+
+
+##
+
+
 def format_compact(datetime: ZonedDateTime, /) -> str:
     """Convert a zoned datetime to the local time zone, then format."""
     py_datetime = datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain().py_datetime()
@@ -577,6 +606,7 @@ __all__ = [
     "ToDaysError",
     "ToNanosError",
     "WheneverLogRecord",
+    "datetime_utc",
     "format_compact",
     "from_timestamp",
     "from_timestamp_millis",

@@ -19,29 +19,6 @@ def date_to_month(date: dt.date, /) -> Month:
 ##
 
 
-def datetime_utc(
-    year: int,
-    month: int,
-    day: int,
-    /,
-    hour: int = 0,
-    minute: int = 0,
-    second: int = 0,
-    microsecond: int = 0,
-) -> dt.datetime:
-    """Create a UTC-zoned datetime."""
-    return dt.datetime(
-        year,
-        month,
-        day,
-        hour=hour,
-        minute=minute,
-        second=second,
-        microsecond=microsecond,
-        tzinfo=UTC,
-    )
-
-
 ##
 
 
@@ -243,7 +220,6 @@ __all__ = [
     "MonthLike",
     "ParseMonthError",
     "date_to_month",
-    "datetime_utc",
     "ensure_month",
     "parse_two_digit_year",
 ]

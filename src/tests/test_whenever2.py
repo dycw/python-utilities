@@ -64,6 +64,7 @@ from utilities.whenever2 import (
     _MinMaxDateMaxDateError,
     _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
+    datetime_utc,
     format_compact,
     from_timestamp,
     from_timestamp_millis,
@@ -86,6 +87,21 @@ from utilities.zoneinfo import UTC
 if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
     from utilities.types import MaybeCallableDate, MaybeCallableZonedDateTime
+
+
+class TestDatetimeUTC:
+    @given(datetime=zoned_datetimes_whenever())
+    def test_main(self, *, datetime: ZonedDateTime) -> None:
+        result = datetime_utc(
+            datetime.year,
+            datetime.month,
+            datetime.day,
+            hour=datetime.hour,
+            minute=datetime.minute,
+            second=datetime.second,
+            nanosecond=datetime.nanosecond,
+        )
+        assert result == datetime
 
 
 class TestFormatCompact:

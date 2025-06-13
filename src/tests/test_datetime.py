@@ -16,14 +16,13 @@ from utilities.datetime import (
     _ParseTwoDigitYearInvalidIntegerError,
     _ParseTwoDigitYearInvalidStringError,
     date_to_month,
-    datetime_utc,
     ensure_month,
     maybe_sub_pct_y,
     parse_month,
     parse_two_digit_year,
     serialize_month,
 )
-from utilities.hypothesis import months, text_clean, zoned_datetimes
+from utilities.hypothesis import months, text_clean
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -35,21 +34,6 @@ class TestDateToMonth:
     def test_main(self, *, date: dt.date) -> None:
         result = date_to_month(date).to_date(day=date.day)
         assert result == date
-
-
-class TestDatetimeUTC:
-    @given(datetime=zoned_datetimes())
-    def test_main(self, *, datetime: dt.datetime) -> None:
-        result = datetime_utc(
-            datetime.year,
-            datetime.month,
-            datetime.day,
-            hour=datetime.hour,
-            minute=datetime.minute,
-            second=datetime.second,
-            microsecond=datetime.microsecond,
-        )
-        assert result == datetime
 
 
 class TestMaybeSubPctY:
