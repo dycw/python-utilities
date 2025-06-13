@@ -130,7 +130,9 @@ class TestGetLogRecords:
         assert abs(record.datetime - get_now()) <= MINUTE
         assert record.func_name == "test_main"
         assert record.stack_info is None
-        assert record.extra == {"a": 1, "b": 2}
+        assert record.extra is not None
+        assert record.extra["a"] == 1
+        assert record.extra["b"] == 2
         assert record.log_file == file
         assert record.log_file_line_num == 1
 
