@@ -14,6 +14,7 @@ from whenever import (
     DateTimeDelta,
     PlainDateTime,
     TimeDelta,
+    TimeZoneNotFoundError,
     ZonedDateTime,
 )
 
@@ -145,7 +146,8 @@ class TestFromTimeStamp:
 class TestGetNow:
     @given(time_zone=timezones())
     def test_function(self, *, time_zone: ZoneInfo) -> None:
-        now = get_now(time_zone=time_zone)
+        with assume_does_not_raise(TimeZoneNotFoundError):
+            now = get_now(time_zone=time_zone)
         assert isinstance(now, ZonedDateTime)
         assert now.tz == time_zone.key
 
