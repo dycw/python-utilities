@@ -30,7 +30,7 @@ from utilities.altair import (
     vconcat_charts,
 )
 from utilities.functions import ensure_class
-from utilities.hypothesis import text_ascii, zoned_datetimes
+from utilities.hypothesis import text_ascii, zoned_datetimes_whenever
 from utilities.polars import DatetimeUTC, zoned_datetime
 from utilities.tzdata import HongKong, Tokyo
 from utilities.whenever2 import get_now
@@ -114,7 +114,9 @@ class TestPlotDataFrames:
                 values = data.draw(lists(tuples(dates(), floats(-10, 10))))
                 dtype = Date()
             case "datetime":
-                values = data.draw(lists(tuples(zoned_datetimes(), floats(-10, 10))))
+                values = data.draw(
+                    lists(tuples(zoned_datetimes_whenever(), floats(-10, 10)))
+                )
                 dtype = DatetimeUTC
         df = DataFrame(
             data=values, schema={"index": dtype, "value": Float64}, orient="row"
