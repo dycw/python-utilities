@@ -8,6 +8,7 @@ from pytest import mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_redis import yield_test_redis
+from utilities.asyncio import sleep_td
 from utilities.iterables import one
 from utilities.pottery import (
     _YieldAccessNumLocksError,
@@ -16,6 +17,7 @@ from utilities.pottery import (
 )
 from utilities.text import unique_str
 from utilities.timer import Timer
+from utilities.whenever2 import SECOND
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis
@@ -74,12 +76,13 @@ class TestYieldAccess:
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_error_unable_to_acquire_lock(self) -> None:
         key = unique_str()
+        delta = 0.01 * SECOND
 
         async def coroutine(redis: Redis, key: str, /) -> None:
             async with yield_access(
-                redis, key, num=1, timeout_acquire=0.1, throttle=0.5
+                redis, key, num=1, timeout_acquire=delta, throttle=5 * delta
             ):
-                await sleep(0.1)
+                await sleep_td(delta)
 
         with raises(ExceptionGroup) as exc_info:  # noqa: PT012
             async with yield_test_redis() as redis, TaskGroup() as tg:
@@ -88,5 +91,5 @@ class TestYieldAccess:
         error = one(exc_info.value.exceptions)
         assert isinstance(error, _YieldAccessUnableToAcquireLockError)
         assert search(
-            r"Unable to acquire any 1 of 1 locks for '\w+' after 0\.1", str(error)
+            r"Unable to acquire any 1 of 1 locks for '\w+' after PT0\.01", str(error)
         )
