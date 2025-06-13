@@ -276,7 +276,7 @@ class TimedeltaToMillisecondsError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to convert {self.duration} to milliseconds; got {self.remainder} microsecond(s)"
+        return f"Unable to convert {self.duration} to milliseconds; got {self.remainder} microsecond(s)"  # pragma: no cover
 
 
 def datetime_duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
