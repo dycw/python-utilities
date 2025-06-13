@@ -2,28 +2,10 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass
-from re import search, sub
+from re import search
 from typing import assert_never, override
 
 from utilities.iterables import OneEmptyError, one
-from utilities.platform import SYSTEM
-
-
-def maybe_sub_pct_y(text: str, /) -> str:
-    """Substitute the `%Y' token with '%4Y' if necessary."""
-    match SYSTEM:
-        case "windows":  # skipif-not-windows
-            return text
-        case "mac":  # skipif-not-macos
-            return text
-        case "linux":  # skipif-not-linux
-            return sub("%Y", "%4Y", text)
-        case _ as never:
-            assert_never(never)
-
-
-##
-
 
 _TWO_DIGIT_YEAR_MIN = 1969
 _TWO_DIGIT_YEAR_MAX = _TWO_DIGIT_YEAR_MIN + 99
