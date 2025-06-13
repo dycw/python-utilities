@@ -30,7 +30,7 @@ _DELTA: TimeDelta = 0.1 * SECOND
 async def _func_access(num_tasks: int, key: str, /, *, num_locks: int = 1) -> None:
     async def coroutine() -> None:
         async with yield_test_redis() as redis, yield_access(redis, key, num=num_locks):
-            await sleep_td(_DELTA)
+            await sleep_td(0.01 * SECOND)
 
     async with TaskGroup() as tg:
         _ = [tg.create_task(coroutine()) for _ in range(num_tasks)]
