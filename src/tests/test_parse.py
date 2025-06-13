@@ -68,18 +68,21 @@ from utilities.version import Version
 
 class TestSerializeAndParseObject:
     @given(bool_=booleans())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_bool(self, *, bool_: bool) -> None:
         serialized = serialize_object(bool_)
         result = parse_object(bool, serialized)
         assert result is bool_
 
     @given(date=dates_whenever())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_date(self, *, date: Date) -> None:
         serialized = serialize_object(date)
         result = parse_object(Date, serialized)
         assert result == date
 
     @given(mapping=dictionaries(int64s(), int64s()))
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_dict(self, *, mapping: dict[int, int]) -> None:
         serialized = serialize_object(mapping)
         result = parse_object(dict[int, int], serialized)
@@ -92,30 +95,35 @@ class TestSerializeAndParseObject:
         assert result is truth
 
     @given(float_=floats())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_float(self, *, float_: float) -> None:
         serialized = serialize_object(float_)
         result = parse_object(float, serialized)
         assert is_equal(result, float_)
 
     @given(ints=frozensets(int64s()))
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_frozenset(self, *, ints: frozenset[int]) -> None:
         serialized = serialize_object(ints)
         result = parse_object(frozenset[int], serialized)
         assert result == ints
 
     @given(int_=integers())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_int(self, *, int_: int) -> None:
         serialized = serialize_object(int_)
         result = parse_object(int, serialized)
         assert result == int_
 
     @given(ints=lists(int64s()))
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_list(self, *, ints: list[int]) -> None:
         serialized = serialize_object(ints)
         result = parse_object(list[int], serialized)
         assert result == ints
 
     @given(bool_=booleans())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_literal_extra(self, *, bool_: bool) -> None:
         text = serialize_object(bool_)
         result = parse_object(bool, text, extra={Literal["lit"]: parse_bool})
@@ -137,6 +145,7 @@ class TestSerializeAndParseObject:
         assert result is None
 
     @given(number=numbers())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_number(self, *, number: Number) -> None:
         serialized = serialize_object(number)
         result = parse_object(Number, serialized)
@@ -158,6 +167,7 @@ class TestSerializeAndParseObject:
         assert result == result.expanduser()
 
     @given(datetime=plain_datetimes_whenever())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_plain_datetime(self, *, datetime: PlainDateTime) -> None:
         serialized = serialize_object(datetime)
         result = parse_object(PlainDateTime, serialized)
@@ -181,6 +191,7 @@ class TestSerializeAndParseObject:
         assert result is None
 
     @given(int_=integers())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_nullable_int_int(self, *, int_: int) -> None:
         serialized = serialize_object(int_)
         result = parse_object(int | None, serialized)
@@ -192,6 +203,7 @@ class TestSerializeAndParseObject:
         assert result is sentinel
 
     @given(ints=sets(int64s()))
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_set(self, *, ints: set[int]) -> None:
         serialized = serialize_object(ints)
         result = parse_object(set[int], serialized)
@@ -204,6 +216,7 @@ class TestSerializeAndParseObject:
         assert result == serialized
 
     @given(time=times_whenever())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_time(self, *, time: Time) -> None:
         serialized = serialize_object(time)
         result = parse_object(Time, serialized)
@@ -217,12 +230,14 @@ class TestSerializeAndParseObject:
         assert result == time_delta
 
     @given(x=integers(), y=integers())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_tuple(self, *, x: int, y: int) -> None:
         serialized = serialize_object((x, y))
         result = parse_object(tuple[int, int], serialized)
         assert result == (x, y)
 
     @given(int_=integers())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_type_extra(self, *, int_: int) -> None:
         serialized = serialize_object(int_)
         result = parse_object(
@@ -239,6 +254,7 @@ class TestSerializeAndParseObject:
         assert result == truth
 
     @given(int_=integers())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_type_union_with_extra(self, *, int_: int) -> None:
         def parser(text: str, /) -> DataClassFutureIntEvenOrOddTypeUnion:
             int_ = int(text)
@@ -266,6 +282,7 @@ class TestSerializeAndParseObject:
         assert result == expected
 
     @given(int_=integers())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_union_with_extra(self, *, int_: int) -> None:
         def parser(text: str, /) -> DataClassFutureIntEvenOrOddUnion:
             int_ = int(text)
@@ -293,12 +310,14 @@ class TestSerializeAndParseObject:
         assert result == expected
 
     @given(version=versions())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_version(self, *, version: Version) -> None:
         serialized = serialize_object(version)
         result = parse_object(Version, serialized)
         assert result == version
 
     @given(datetime=zoned_datetimes_whenever())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_zoned_datetime(self, *, datetime: ZonedDateTime) -> None:
         serialized = serialize_object(datetime)
         result = parse_object(ZonedDateTime, serialized)
