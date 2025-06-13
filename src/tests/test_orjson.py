@@ -445,8 +445,7 @@ class TestOrjsonFormatter:
 class TestSerializeAndDeserialize:
     @given(obj=objects(all_=True, parsable=True))
     def test_all(self, *, obj: Any) -> None:
-        with assume_does_not_raise(_SerializeIntegerError):
-            ser = serialize(obj, globalns=globals())
+        ser = serialize(obj, globalns=globals())
         result = deserialize(
             ser,
             objects={
