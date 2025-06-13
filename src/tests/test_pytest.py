@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from pytest import mark, param, raises
 
+from utilities.iterables import one
 from utilities.pytest import (
     NodeIdToPathError,
     is_pytest,
@@ -79,7 +80,7 @@ class TestPytestOptions:
             from pytest import mark
 
             @mark.unknown
-            def test_main():
+            def test_main() -> None:
                 assert True
             """
         )
@@ -100,7 +101,7 @@ class TestPytestOptions:
             )
         _ = testdir.makepyfile(
             """
-            def test_main():
+            def test_main() -> None:
                 assert True
             """
         )
@@ -141,7 +142,7 @@ class TestPytestOptions:
             from pytest import mark
 
             @mark.slow
-            def test_main():
+            def test_main() -> None:
                 assert True
             """
         )
@@ -210,20 +211,20 @@ class TestPytestOptions:
             """
             from pytest import mark
 
-            def test_none():
+            def test_none() -> None:
                 assert True
 
             @mark.slow
-            def test_slow():
+            def test_slow() -> None:
                 assert True
 
             @mark.fast
-            def test_fast():
+            def test_fast() -> None:
                 assert True
 
             @mark.slow
             @mark.fast
-            def test_both():
+            def test_both() -> None:
                 assert True
             """
         )
@@ -240,15 +241,14 @@ class TestRandomState:
 class TestThrottle:
     @mark.parametrize("on_try", [param(True), param(False)])
     def test_basic(self, *, testdir: Testdir, tmp_path: Path, on_try: bool) -> None:
-        root_str = str(tmp_path)
         _ = testdir.makepyfile(
             f"""
             from whenever import TimeDelta
 
             from utilities.pytest import throttle
 
-            @throttle(root={root_str!r}, duration=TimeDelta(seconds=0.1), on_try={on_try})
-            def test_main():
+            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds=0.1), on_try={on_try})
+            def test_main() -> None:
                 assert True
             """
         )
@@ -272,8 +272,8 @@ class TestThrottle:
                 from utilities.pytest import throttle
 
                 @mark.asyncio
-                @throttle(root={str(tmp_path)!r}, duration=TimeDelta(seconds=0.1), on_try={on_try})
-                async def test_main():
+                @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds=0.1), on_try={on_try})
+                async def test_main() -> None:
                     assert True
                 """
             )
@@ -286,7 +286,7 @@ class TestThrottle:
 
                 from utilities.pytest import throttle
 
-                @throttle(root={str(tmp_path)!r}, duration=TimeDelta(seconds=0.1), on_try={on_try})
+                @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds=0.1), on_try={on_try})
                 @mark.asyncio
                 async def test_main() -> None:
                     assert True
@@ -316,7 +316,7 @@ class TestThrottle:
 
             from utilities.pytest import throttle
 
-            @throttle(root={str(tmp_path)!r}, duration=TimeDelta(seconds=0.1))
+            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds=0.1))
             def test_main(*, is_pass: bool) -> None:
                 assert is_pass
             """
@@ -347,8 +347,8 @@ class TestThrottle:
 
             from utilities.pytest import throttle
 
-            @throttle(root={root_str!r}, duration=TimeDelta(seconds=0.1), on_try=True)
-            def test_main(is_pass):
+            @throttle(root={root_str!r}, delta=TimeDelta(seconds=0.1), on_try=True)
+            def test_main(*, is_pass: bool) -> None:
                 assert is_pass
             """
         )
@@ -361,7 +361,6 @@ class TestThrottle:
             sleep(delay)
 
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
-        root_str = str(tmp_path)
         _ = testdir.makepyfile(
             f"""
             from pytest import mark
@@ -370,9 +369,9 @@ class TestThrottle:
 
             from utilities.pytest import throttle
 
-            @mark.parametrize('arg', [10 * printable])
-            @throttle(root={root_str!r}, duration=TimeDelta(seconds=0.1))
-            def test_main(*, arg: str):
+            @mark.parametrize("arg", [10 * printable])
+            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds=0.1))
+            def test_main(*, arg: str) -> None:
                 assert True
             """
         )
@@ -390,3 +389,22 @@ class TestThrottle:
             assert fix
 
         assert signature(func) == signature(other)
+
+    def test_error_decoding_timestamp(
+        self, *, testdir: Testdir, tmp_path: Path
+    ) -> None:
+        _ = testdir.makepyfile(
+            f"""
+            from whenever import TimeDelta
+
+            from utilities.pytest import throttle
+
+            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds=0.1))
+            def test_main() -> None:
+                assert True
+            """
+        )
+        testdir.runpytest().assert_outcomes(passed=1)
+        path = one(tmp_path.iterdir())
+        _ = path.write_text("invalid")
+        testdir.runpytest().assert_outcomes(passed=1)

@@ -168,12 +168,10 @@ def random_state(*, seed: int) -> Random:
 
 
 def throttle(
-    *, root: PathLike | None = None, duration: TimeDelta = SECOND, on_try: bool = False
+    *, root: PathLike | None = None, delta: TimeDelta = SECOND, on_try: bool = False
 ) -> Callable[[TCallableMaybeCoroutine1None], TCallableMaybeCoroutine1None]:
     """Throttle a test. On success by default, on try otherwise."""
-    return cast(
-        "Any", partial(_throttle_inner, root=root, duration=duration, on_try=on_try)
-    )
+    return cast("Any", partial(_throttle_inner, root=root, delta=delta, on_try=on_try))
 
 
 def _throttle_inner(
@@ -181,7 +179,7 @@ def _throttle_inner(
     /,
     *,
     root: PathLike | None = None,
-    duration: TimeDelta = SECOND,
+    delta: TimeDelta = SECOND,
     on_try: bool = False,
 ) -> TCallableMaybeCoroutine1None:
     """Throttle a test function/method."""
@@ -190,7 +188,7 @@ def _throttle_inner(
 
             @wraps(func)
             def throttle_sync_on_pass(*args: _P.args, **kwargs: _P.kwargs) -> None:
-                _skipif_recent(root=root, duration=duration)
+                _skipif_recent(root=root, delta=delta)
                 cast("Callable[..., None]", func)(*args, **kwargs)
                 _write(root=root)
 
@@ -200,7 +198,7 @@ def _throttle_inner(
 
             @wraps(func)
             def throttle_sync_on_try(*args: _P.args, **kwargs: _P.kwargs) -> None:
-                _skipif_recent(root=root, duration=duration)
+                _skipif_recent(root=root, delta=delta)
                 _write(root=root)
                 cast("Callable[..., None]", func)(*args, **kwargs)
 
@@ -212,7 +210,7 @@ def _throttle_inner(
             async def throttle_async_on_pass(
                 *args: _P.args, **kwargs: _P.kwargs
             ) -> None:
-                _skipif_recent(root=root, duration=duration)
+                _skipif_recent(root=root, delta=delta)
                 await cast("Callable[..., Coroutine1[None]]", func)(*args, **kwargs)
                 _write(root=root)
 
@@ -224,7 +222,7 @@ def _throttle_inner(
             async def throttle_async_on_try(
                 *args: _P.args, **kwargs: _P.kwargs
             ) -> None:
-                _skipif_recent(root=root, duration=duration)
+                _skipif_recent(root=root, delta=delta)
                 _write(root=root)
                 await cast("Callable[..., Coroutine1[None]]", func)(*args, **kwargs)
 
@@ -234,11 +232,9 @@ def _throttle_inner(
             assert_never(never)
 
 
-def _skipif_recent(
-    *, root: PathLike | None = None, duration: TimeDelta = SECOND
-) -> None:
+def _skipif_recent(*, root: PathLike | None = None, delta: TimeDelta = SECOND) -> None:
     if skip is None:
-        return
+        return  # pragma: no cover
     path = _get_path(root=root)
     try:
         contents = path.read_text()
@@ -248,7 +244,7 @@ def _skipif_recent(
         last = ZonedDateTime.parse_common_iso(contents)
     except ValueError:
         return
-    if (age := (get_now_local() - last)) < duration:
+    if (age := (get_now_local() - last)) < delta:
         _ = skip(reason=f"{_get_name()} throttled (age {age})")
 
 

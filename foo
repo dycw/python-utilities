@@ -1,0 +1,12 @@
+
+
+
+
+
+        for delay in [0.2, 0.0]:
+            testdir.runpytest().assert_outcomes(failed=1)
+            testdir.runpytest().assert_outcomes(skipped=1)
+            sleep(0.2)
+            testdir.runpytest("--pass").assert_outcomes(passed=1)
+            testdir.runpytest().assert_outcomes(skipped=1)
+            sleep(delay)
