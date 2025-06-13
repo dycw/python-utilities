@@ -46,7 +46,6 @@ from utilities.datetime import (
     ZERO_TIME,
     AddDurationError,
     AddWeekdaysError,
-    AreEqualDatesOrDateTimesError,
     AreEqualDateTimesError,
     CheckDateNotDateTimeError,
     EnsureMonthError,
@@ -77,7 +76,6 @@ from utilities.datetime import (
     _ParseTwoDigitYearInvalidStringError,
     add_duration,
     add_weekdays,
-    are_equal_dates_or_datetimes,
     are_equal_datetimes,
     are_equal_months,
     check_date_not_datetime,
@@ -249,31 +247,6 @@ class TestAddWeekdays:
         n1, n2 = ns
         expected = n1 <= n2
         assert result is expected
-
-
-class TestAreEqualDateOrDateTimes:
-    @given(x=dates(), y=dates())
-    def test_dates(self, *, x: dt.date, y: dt.date) -> None:
-        result = are_equal_dates_or_datetimes(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(x=datetimes(), y=datetimes())
-    def test_datetimes(self, *, x: dt.datetime, y: dt.datetime) -> None:
-        result = are_equal_dates_or_datetimes(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(data=data(), x=dates(), y=datetimes())
-    def test_date_vs_datetime(
-        self, *, data: DataObject, x: dt.date, y: dt.datetime
-    ) -> None:
-        left, right = data.draw(permutations([x, y]))
-        with raises(
-            AreEqualDatesOrDateTimesError,
-            match=r"Cannot compare date and datetime \(.*, .*\)",
-        ):
-            _ = are_equal_dates_or_datetimes(left, right)
 
 
 class TestAreEqualDateTimes:

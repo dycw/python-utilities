@@ -114,30 +114,6 @@ class AddWeekdaysError(Exception): ...
 ##
 
 
-def are_equal_dates_or_datetimes(
-    x: DateOrDateTime, y: DateOrDateTime, /, *, strict: bool = False
-) -> bool:
-    """Check if x == y for dates/datetimes."""
-    if is_instance_gen(x, dt.date) and is_instance_gen(y, dt.date):
-        return x == y
-    if is_instance_gen(x, dt.datetime) and is_instance_gen(y, dt.datetime):
-        return are_equal_datetimes(x, y, strict=strict)
-    raise AreEqualDatesOrDateTimesError(x=x, y=y)
-
-
-@dataclass(kw_only=True, slots=True)
-class AreEqualDatesOrDateTimesError(Exception):
-    x: DateOrDateTime
-    y: DateOrDateTime
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot compare date and datetime ({self.x}, {self.y})"
-
-
-##
-
-
 def are_equal_datetimes(
     x: dt.datetime, y: dt.datetime, /, *, strict: bool = False
 ) -> bool:
@@ -1303,7 +1279,6 @@ __all__ = [
     "AddDurationError",
     "AddWeekdaysError",
     "AreEqualDateTimesError",
-    "AreEqualDatesOrDateTimesError",
     "CheckDateNotDateTimeError",
     "DateOrMonth",
     "EnsureMonthError",
@@ -1324,7 +1299,6 @@ __all__ = [
     "YieldWeekdaysError",
     "add_duration",
     "add_weekdays",
-    "are_equal_dates_or_datetimes",
     "are_equal_datetimes",
     "are_equal_months",
     "check_date_not_datetime",
