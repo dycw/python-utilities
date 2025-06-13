@@ -2,11 +2,19 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import cache
 from logging import LogRecord
 from statistics import fmean
-from typing import TYPE_CHECKING, Any, SupportsFloat, assert_never, overload, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Self,
+    SupportsFloat,
+    assert_never,
+    overload,
+    override,
+)
 
 from whenever import (
     Date,
@@ -19,8 +27,9 @@ from whenever import (
 )
 
 from utilities.math import sign
-from utilities.platform import get_strftime
+from utilities.re import ExtractGroupsError, extract_groups
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import MaybeStr
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC, get_time_zone_name
 
@@ -313,6 +322,110 @@ class _MinMaxDatePeriodError(MinMaxDateError):
 ##
 
 
+@dataclass(order=True, unsafe_hash=True, slots=True)
+class Month:
+    """Represents a month in time."""
+
+    year: int
+    month: int
+
+    def __post_init__(self) -> None:
+        try:
+            _ = Date(self.year, self.month, 1)
+        except ValueError:
+            raise _MonthInvalidError(year=self.year, month=self.month) from None
+
+    @override
+    def __repr__(self) -> str:
+        return self.format_common_iso()
+
+    @override
+    def __str__(self) -> str:
+        return repr(self)
+
+    def __add__(self, other: Any, /) -> Self:
+        if not isinstance(other, int):  # pragma: no cover
+            return NotImplemented
+        years, month = divmod(self.month + other - 1, 12)
+        month += 1
+        year = self.year + years
+        return replace(self, year=year, month=month)
+
+    @overload
+    def __sub__(self, other: Self, /) -> int: ...
+    @overload
+    def __sub__(self, other: int, /) -> Self: ...
+    def __sub__(self, other: Self | int, /) -> Self | int:
+        if isinstance(other, int):  # pragma: no cover
+            return self + (-other)
+        if isinstance(other, type(self)):
+            self_as_int = 12 * self.year + self.month
+            other_as_int = 12 * other.year + other.month
+            return self_as_int - other_as_int
+        return NotImplemented  # pragma: no cover
+
+    @classmethod
+    def ensure_month(cls, obj: MonthLike, /) -> Month:
+        """Ensure the object is a month."""
+        match obj:
+            case Month() as month:
+                return month
+            case str() as text:
+                return cls.parse_common_iso(text)
+            case _ as never:
+                assert_never(never)
+
+    def format_common_iso(self) -> str:
+        return f"{self.year:04}-{self.month:02}"
+
+    @classmethod
+    def from_date(cls, date: dt.date, /) -> Self:
+        return cls(year=date.year, month=date.month)
+
+    @classmethod
+    def parse_common_iso(cls, text: str, /) -> Self:
+        try:
+            year, month = extract_groups(r"^(\d{1,4})[\- ](\d{1,2})$", text)
+        except ExtractGroupsError:
+            raise _MonthParseCommonISOError(text=text) from None
+        return cls(year=int(year), month=int(month))
+
+    def to_date(self, /, *, day: int = 1) -> dt.date:
+        return dt.date(self.year, self.month, day)
+
+
+@dataclass(kw_only=True, slots=True)
+class MonthError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _MonthInvalidError(MonthError):
+    year: int
+    month: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid year and month: {self.year}, {self.month}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _MonthParseCommonISOError(MonthError):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse month; got {self.text!r}"
+
+
+type DateOrMonth = Date | Month
+type MonthLike = MaybeStr[Month]
+MONTH_MIN = Month.from_date(DATE_MIN)
+MONTH_MAX = Month.from_date(DATE_MAX)
+
+
+##
+
+
 @overload
 def to_date(*, date: MaybeCallableDate) -> Date: ...
 @overload
@@ -585,6 +698,8 @@ __all__ = [
     "MILLISECOND",
     "MINUTE",
     "MONTH",
+    "MONTH_MAX",
+    "MONTH_MIN",
     "NOW_LOCAL",
     "PLAIN_DATE_TIME_MAX",
     "PLAIN_DATE_TIME_MIN",
@@ -601,8 +716,12 @@ __all__ = [
     "ZERO_TIME",
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
+    "DateOrMonth",
     "MeanDateTimeError",
     "MinMaxDateError",
+    "Month",
+    "MonthError",
+    "MonthLike",
     "ToDaysError",
     "ToNanosError",
     "WheneverLogRecord",
