@@ -24,7 +24,7 @@ from utilities.platform import (
     IS_WINDOWS,
 )
 from utilities.random import get_state
-from utilities.whenever2 import SECOND, get_now
+from utilities.whenever2 import SECOND, get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
@@ -248,7 +248,7 @@ def _skipif_recent(
         last = ZonedDateTime.parse_common_iso(contents)
     except ValueError:
         return
-    if (age := get_now() - last) < duration:
+    if (age := (get_now_local() - last)) < duration:
         _ = skip(reason=f"{_get_name()} throttled (age {age})")
 
 
@@ -272,7 +272,7 @@ def _get_name() -> str:
 def _write(*, root: PathLike | None = None) -> None:
     path = _get_path(root=root)
     with writer(path, overwrite=True) as temp:
-        _ = temp.write_text(get_now().format_common_iso())
+        _ = temp.write_text(get_now_local().format_common_iso())
 
 
 __all__ = [
