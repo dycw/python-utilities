@@ -32,6 +32,7 @@ from whenever import (
     PlainDateTime,
     Time,
     TimeDelta,
+    TimeZoneNotFoundError,
     ZonedDateTime,
 )
 
@@ -989,9 +990,9 @@ class TestZonedDateTimesWhenever:
 
     @given(data=data(), time_zone=timezones())
     def test_examples(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+        with assume_does_not_raise(TimeZoneNotFoundError):
+            max_value = ZonedDateTime(1, 1, 2, tz=time_zone.key)
         datetime = data.draw(
-            zoned_datetimes_whenever(
-                max_value=ZonedDateTime(1, 1, 2, tz=time_zone.key), time_zone=time_zone
-            )
+            zoned_datetimes_whenever(max_value=max_value, time_zone=time_zone)
         )
         _ = datetime.py_datetime()
