@@ -97,7 +97,6 @@ from utilities.datetime import (
     is_integral_timedelta,
     is_weekday,
     is_zero_time,
-    is_zoned_datetime,
     maybe_sub_pct_y,
     mean_datetime,
     mean_timedelta,
@@ -700,20 +699,6 @@ class TestIsZeroTime:
     def test_main(self, *, case: tuple[dt.timedelta, bool]) -> None:
         timedelta, expected = case
         result = is_zero_time(timedelta)
-        assert result is expected
-
-
-class TestIsZonedDateTime:
-    @mark.parametrize(
-        ("obj", "expected"),
-        [
-            param(None, False),
-            param(dt.datetime(2000, 1, 1, tzinfo=UTC).replace(tzinfo=None), False),
-            param(dt.datetime(2000, 1, 1, tzinfo=UTC), True),
-        ],
-    )
-    def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = is_zoned_datetime(obj)
         assert result is expected
 
 

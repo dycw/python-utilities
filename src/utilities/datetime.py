@@ -11,7 +11,6 @@ from typing import (
     Literal,
     Self,
     SupportsFloat,
-    TypeGuard,
     assert_never,
     overload,
     override,
@@ -611,14 +610,6 @@ def is_zero_time(duration: Duration, /) -> bool:
 ##
 
 
-def is_zoned_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
-    """Check if an object is a zoned datetime."""
-    return isinstance(obj, dt.datetime) and (obj.tzinfo is not None)
-
-
-##
-
-
 def maybe_sub_pct_y(text: str, /) -> str:
     """Substitute the `%Y' token with '%4Y' if necessary."""
     match SYSTEM:
@@ -1209,7 +1200,6 @@ __all__ = [
     "is_integral_timedelta",
     "is_weekday",
     "is_zero_time",
-    "is_zoned_datetime",
     "maybe_sub_pct_y",
     "mean_datetime",
     "mean_timedelta",
