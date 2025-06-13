@@ -653,6 +653,7 @@ class TestSerializeObject:
         assert serialized == expected
 
     @given(int_=integers())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_type_union_with_extra(self, *, int_: int) -> None:
         match int_ % 2:
             case 0:
@@ -706,6 +707,7 @@ class TestSerializeObject:
             _ = serialize_object(Final, extra={})
 
     @given(bool_=booleans())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_error_extra_non_unique(self, *, bool_: bool) -> None:
         with raises(
             _SerializeObjectExtraNonUniqueError,
