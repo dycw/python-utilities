@@ -74,11 +74,10 @@ def objects(
     sub_tuple: bool = False,
     all_: bool = False,
     parsable: bool = False,
+    sortable: bool = False,
 ) -> SearchStrategy[Any]:
     base = (
         booleans()
-        | date_deltas_whenever(parsable=parsable)
-        | date_time_deltas_whenever(parsable=parsable)
         | dates_whenever()
         | floats(allow_nan=floats_allow_nan)
         | (int64s() if parsable else integers())
@@ -134,6 +133,10 @@ def objects(
         base |= builds(CustomError, int64s())
     if extra_base is not None:
         base |= extra_base
+    if not sortable:
+        base |= date_deltas_whenever(parsable=parsable) | date_time_deltas_whenever(
+            parsable=parsable
+        )
     extend = partial(
         _extend,
         sub_frozenset=sub_frozenset,
