@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import TaskGroup, sleep
+from asyncio import TaskGroup
 from re import search
 from typing import TYPE_CHECKING
 
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 async def _func_access(num_tasks: int, key: str, /, *, num_locks: int = 1) -> None:
     async def coroutine() -> None:
         async with yield_test_redis() as redis, yield_access(redis, key, num=num_locks):
-            await sleep(0.1)
+            await sleep_td(0.01 * SECOND)
 
     async with TaskGroup() as tg:
         _ = [tg.create_task(coroutine()) for _ in range(num_tasks)]
