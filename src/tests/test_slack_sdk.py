@@ -54,7 +54,11 @@ class TestSlackHandlerService:
         logger = getLogger(str(tmp_path))
         logger.addHandler(
             handler := SlackHandlerService(
-                auto_start=auto_start, url="url", freq=self.freq, sender=sender
+                auto_start=auto_start,
+                url="url",
+                freq=self.freq,
+                timeout=SECOND,
+                sender=sender,
             )
         )
         async with handler:
