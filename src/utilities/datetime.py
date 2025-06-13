@@ -1112,8 +1112,6 @@ __all__ = [
     "microseconds_since_epoch",
     "microseconds_since_epoch_to_datetime",
     "microseconds_to_timedelta",
-    "parse_date_compact",
-    "parse_datetime_compact",
     "parse_month",
     "parse_two_digit_year",
     "round_datetime",
