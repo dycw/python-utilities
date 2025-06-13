@@ -11,11 +11,12 @@ from typing import TYPE_CHECKING, Any
 from hypothesis import HealthCheck
 from pytest import fixture, mark, param
 from sqlalchemy import text
+from whenever import PlainDateTime
 
-from utilities.datetime import MINUTE, get_now, parse_datetime_compact
 from utilities.platform import IS_NOT_LINUX, IS_WINDOWS
 from utilities.re import ExtractGroupError, extract_group
 from utilities.text import strip_and_dedent
+from utilities.whenever2 import MINUTE, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
@@ -98,7 +99,7 @@ def _is_to_drop(table: str, /) -> bool:
         datetime_str = extract_group(r"^(\d{8}T\d{6})_", table)
     except ExtractGroupError:
         return True
-    datetime = parse_datetime_compact(datetime_str)
+    datetime = PlainDateTime.parse_common_iso(datetime_str)
     now = get_now()
     return (now - datetime) >= MINUTE
 
