@@ -31,15 +31,6 @@ from whenever import (
     TimeDelta,
     ZonedDateTime,
 )
-from whenever import (
-    Date,
-    DateDelta,
-    DateTimeDelta,
-    PlainDateTime,
-    Time,
-    TimeDelta,
-    ZonedDateTime,
-)
 
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import dataclass_to_dict
@@ -56,6 +47,7 @@ from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping
 from utilities.uuid import UUID_PATTERN
 from utilities.version import Version, parse_version
+from utilities.whenever import from_timestamp
 
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
@@ -89,10 +81,9 @@ class _Prefixes(Enum):
     time_delta = "tΔ"
     time = "tm"
     tuple_ = "tu"
-    unserializable = "un"
+    unserializable = "✕"
     uuid = "uu"
     version = "v"
-    zoned_date_time = "zd"
     zoned_date_time = "zd"
 
 
