@@ -365,7 +365,7 @@ class Month:
         return NotImplemented  # pragma: no cover
 
     @classmethod
-    def ensure_month(cls, obj: MonthLike, /) -> Month:
+    def ensure(cls, obj: MonthLike, /) -> Month:
         """Ensure the object is a month."""
         match obj:
             case Month() as month:

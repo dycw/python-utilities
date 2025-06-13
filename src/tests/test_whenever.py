@@ -6,7 +6,14 @@ from typing import TYPE_CHECKING, ClassVar, Self
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import integers, none, timezones
+from hypothesis.strategies import (
+    DataObject,
+    data,
+    integers,
+    none,
+    sampled_from,
+    timezones,
+)
 from pytest import mark, param, raises
 from whenever import (
     Date,
@@ -60,13 +67,14 @@ from utilities.whenever import (
     MeanDateTimeError,
     MinMaxDateError,
     Month,
-    MonthError,
     ToDaysError,
     ToNanosError,
     WheneverLogRecord,
     _MinMaxDateMaxDateError,
     _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
+    _MonthInvalidError,
+    _MonthParseCommonISOError,
     datetime_utc,
     format_compact,
     from_timestamp,
@@ -376,6 +384,17 @@ class TestMonth:
         result = month + n
         assert result == expected
 
+    @given(month=months())
+    def test_common_iso(self, *, month: Month) -> None:
+        result = Month.parse_common_iso(month.format_common_iso())
+        assert result == month
+
+    @given(data=data(), month=months())
+    def test_ensure(self, *, data: DataObject, month: Month) -> None:
+        str_or_value = data.draw(sampled_from([month, month.format_common_iso()]))
+        result = Month.ensure(str_or_value)
+        assert result == month
+
     @mark.parametrize(
         ("x", "y", "expected"),
         [
@@ -424,9 +443,15 @@ class TestMonth:
         result = month.to_date(day=date.day)
         assert result == date
 
-    def test_error(self) -> None:
-        with raises(MonthError, match=r"Invalid year and month: \d+, \d+"):
+    def test_error_invalid(self) -> None:
+        with raises(_MonthInvalidError, match=r"Invalid year and month: \d+, \d+"):
             _ = Month(2000, 13)
+
+    def test_error_parse_common_iso(self) -> None:
+        with raises(
+            _MonthParseCommonISOError, match=r"Unable to parse month; got 'invalid'"
+        ):
+            _ = Month.parse_common_iso("invalid")
 
 
 class TestToDate:

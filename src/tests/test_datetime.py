@@ -3,31 +3,18 @@ from __future__ import annotations
 import datetime as dt
 from re import search
 
-from hypothesis import given
-from hypothesis.strategies import DataObject, data, dates, integers, sampled_from
+from hypothesis import assume, given
+from hypothesis.strategies import DataObject, data, integers, sampled_from
 from pytest import raises
 
 from utilities.datetime import (
-    EnsureMonthError,
-    Month,
-    ParseMonthError,
     _ParseTwoDigitYearInvalidIntegerError,
     _ParseTwoDigitYearInvalidStringError,
-    date_to_month,
-    ensure_month,
-    parse_month,
+    maybe_sub_pct_y,
     parse_two_digit_year,
-    serialize_month,
 )
-from utilities.hypothesis import months
+from utilities.hypothesis import text_clean
 from utilities.zoneinfo import UTC
-
-
-class TestDateToMonth:
-    @given(date=dates())
-    def test_main(self, *, date: dt.date) -> None:
-        result = date_to_month(date).to_date(day=date.day)
-        assert result == date
 
 
 class TestMaybeSubPctY:
@@ -36,28 +23,6 @@ class TestMaybeSubPctY:
         result = maybe_sub_pct_y(text)
         _ = assume(not search("%Y", result))
         assert not search("%Y", result)
-
-
-class TestSerializeAndParseMonth:
-    @given(month=months())
-    def test_main(self, *, month: Month) -> None:
-        serialized = serialize_month(month)
-        result = parse_month(serialized)
-        assert result == month
-
-    def test_error_parse(self) -> None:
-        with raises(ParseMonthError, match="Unable to parse month; got 'invalid'"):
-            _ = parse_month("invalid")
-
-    @given(data=data(), month=months())
-    def test_ensure(self, *, data: DataObject, month: Month) -> None:
-        str_or_value = data.draw(sampled_from([month, serialize_month(month)]))
-        result = ensure_month(str_or_value)
-        assert result == month
-
-    def test_error_ensure(self) -> None:
-        with raises(EnsureMonthError, match="Unable to ensure month; got 'invalid'"):
-            _ = ensure_month("invalid")
 
 
 class TestParseTwoDigitYear:
