@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import asdict, dataclass, is_dataclass
 from functools import _lru_cache_wrapper, cached_property, partial, reduce, wraps
@@ -28,6 +27,7 @@ from typing import (
 )
 
 from typing_extensions import ParamSpec
+from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
 from utilities.reprlib import get_repr, get_repr_and_class
 from utilities.sentinel import Sentinel, sentinel
@@ -210,13 +210,13 @@ class EnsureClassError(Exception):
 
 
 @overload
-def ensure_date(obj: Any, /, *, nullable: bool) -> dt.date | None: ...
+def ensure_date(obj: Any, /, *, nullable: bool) -> Date | None: ...
 @overload
-def ensure_date(obj: Any, /, *, nullable: Literal[False] = False) -> dt.date: ...
-def ensure_date(obj: Any, /, *, nullable: bool = False) -> dt.date | None:
+def ensure_date(obj: Any, /, *, nullable: Literal[False] = False) -> Date: ...
+def ensure_date(obj: Any, /, *, nullable: bool = False) -> Date | None:
     """Ensure an object is a date."""
     try:
-        return ensure_class(obj, dt.date, nullable=nullable)
+        return ensure_class(obj, Date, nullable=nullable)
     except EnsureClassError as error:
         raise EnsureDateError(obj=error.obj, nullable=nullable) from None
 
@@ -229,33 +229,6 @@ class EnsureDateError(Exception):
     @override
     def __str__(self) -> str:
         return _make_error_msg(self.obj, "a date", nullable=self.nullable)
-
-
-##
-
-
-@overload
-def ensure_datetime(obj: Any, /, *, nullable: bool) -> dt.datetime | None: ...
-@overload
-def ensure_datetime(
-    obj: Any, /, *, nullable: Literal[False] = False
-) -> dt.datetime: ...
-def ensure_datetime(obj: Any, /, *, nullable: bool = False) -> dt.datetime | None:
-    """Ensure an object is a datetime."""
-    try:
-        return ensure_class(obj, dt.datetime, nullable=nullable)
-    except EnsureClassError as error:
-        raise EnsureDateTimeError(obj=error.obj, nullable=nullable) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class EnsureDateTimeError(Exception):
-    obj: Any
-    nullable: bool
-
-    @override
-    def __str__(self) -> str:
-        return _make_error_msg(self.obj, "a datetime", nullable=self.nullable)
 
 
 ##
@@ -432,6 +405,35 @@ class EnsurePathError(Exception):
 ##
 
 
+@overload
+def ensure_plain_date_time(obj: Any, /, *, nullable: bool) -> PlainDateTime | None: ...
+@overload
+def ensure_plain_date_time(
+    obj: Any, /, *, nullable: Literal[False] = False
+) -> PlainDateTime: ...
+def ensure_plain_date_time(
+    obj: Any, /, *, nullable: bool = False
+) -> PlainDateTime | None:
+    """Ensure an object is a plain date-time."""
+    try:
+        return ensure_class(obj, PlainDateTime, nullable=nullable)
+    except EnsureClassError as error:
+        raise EnsurePlainDateTimeError(obj=error.obj, nullable=nullable) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class EnsurePlainDateTimeError(Exception):
+    obj: Any
+    nullable: bool
+
+    @override
+    def __str__(self) -> str:
+        return _make_error_msg(self.obj, "a plain date-time", nullable=self.nullable)
+
+
+##
+
+
 def ensure_sized(obj: Any, /) -> Sized:
     """Ensure an object is sized."""
     if is_sized(obj):
@@ -496,13 +498,13 @@ class EnsureStrError(Exception):
 
 
 @overload
-def ensure_time(obj: Any, /, *, nullable: bool) -> dt.time | None: ...
+def ensure_time(obj: Any, /, *, nullable: bool) -> Time | None: ...
 @overload
-def ensure_time(obj: Any, /, *, nullable: Literal[False] = False) -> dt.time: ...
-def ensure_time(obj: Any, /, *, nullable: bool = False) -> dt.time | None:
+def ensure_time(obj: Any, /, *, nullable: Literal[False] = False) -> Time: ...
+def ensure_time(obj: Any, /, *, nullable: bool = False) -> Time | None:
     """Ensure an object is a time."""
     try:
-        return ensure_class(obj, dt.time, nullable=nullable)
+        return ensure_class(obj, Time, nullable=nullable)
     except EnsureClassError as error:
         raise EnsureTimeError(obj=error.obj, nullable=nullable) from None
 
@@ -521,15 +523,15 @@ class EnsureTimeError(Exception):
 
 
 @overload
-def ensure_timedelta(obj: Any, /, *, nullable: bool) -> dt.timedelta | None: ...
+def ensure_time_delta(obj: Any, /, *, nullable: bool) -> TimeDelta | None: ...
 @overload
-def ensure_timedelta(
+def ensure_time_delta(
     obj: Any, /, *, nullable: Literal[False] = False
-) -> dt.timedelta: ...
-def ensure_timedelta(obj: Any, /, *, nullable: bool = False) -> dt.timedelta | None:
+) -> TimeDelta: ...
+def ensure_time_delta(obj: Any, /, *, nullable: bool = False) -> TimeDelta | None:
     """Ensure an object is a timedelta."""
     try:
-        return ensure_class(obj, dt.timedelta, nullable=nullable)
+        return ensure_class(obj, TimeDelta, nullable=nullable)
     except EnsureClassError as error:
         raise EnsureTimeDeltaError(obj=error.obj, nullable=nullable) from None
 
@@ -541,7 +543,36 @@ class EnsureTimeDeltaError(Exception):
 
     @override
     def __str__(self) -> str:
-        return _make_error_msg(self.obj, "a timedelta", nullable=self.nullable)
+        return _make_error_msg(self.obj, "a time-delta", nullable=self.nullable)
+
+
+##
+
+
+@overload
+def ensure_zoned_date_time(obj: Any, /, *, nullable: bool) -> ZonedDateTime | None: ...
+@overload
+def ensure_zoned_date_time(
+    obj: Any, /, *, nullable: Literal[False] = False
+) -> ZonedDateTime: ...
+def ensure_zoned_date_time(
+    obj: Any, /, *, nullable: bool = False
+) -> ZonedDateTime | None:
+    """Ensure an object is a zoned date-time."""
+    try:
+        return ensure_class(obj, ZonedDateTime, nullable=nullable)
+    except EnsureClassError as error:
+        raise EnsureZonedDateTimeError(obj=error.obj, nullable=nullable) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class EnsureZonedDateTimeError(Exception):
+    obj: Any
+    nullable: bool
+
+    @override
+    def __str__(self) -> str:
+        return _make_error_msg(self.obj, "a zoned date-time", nullable=self.nullable)
 
 
 ##
@@ -988,7 +1019,6 @@ __all__ = [
     "EnsureBytesError",
     "EnsureClassError",
     "EnsureDateError",
-    "EnsureDateTimeError",
     "EnsureFloatError",
     "EnsureHashableError",
     "EnsureIntError",
@@ -996,11 +1026,13 @@ __all__ = [
     "EnsureNotNoneError",
     "EnsureNumberError",
     "EnsurePathError",
+    "EnsurePlainDateTimeError",
     "EnsureSizedError",
     "EnsureSizedNotStrError",
     "EnsureStrError",
     "EnsureTimeDeltaError",
     "EnsureTimeError",
+    "EnsureZonedDateTimeError",
     "MaxNullableError",
     "MinNullableError",
     "apply_decorators",
@@ -1008,7 +1040,6 @@ __all__ = [
     "ensure_bytes",
     "ensure_class",
     "ensure_date",
-    "ensure_datetime",
     "ensure_float",
     "ensure_hashable",
     "ensure_int",
@@ -1016,11 +1047,13 @@ __all__ = [
     "ensure_not_none",
     "ensure_number",
     "ensure_path",
+    "ensure_plain_date_time",
     "ensure_sized",
     "ensure_sized_not_str",
     "ensure_str",
     "ensure_time",
-    "ensure_timedelta",
+    "ensure_time_delta",
+    "ensure_zoned_date_time",
     "first",
     "get_class",
     "get_class_name",

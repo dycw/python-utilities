@@ -2,15 +2,12 @@ from __future__ import annotations
 
 import datetime as dt
 from math import inf
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 import polars as pl
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
-    DataObject,
     booleans,
-    data,
-    dates,
     floats,
     integers,
     just,
@@ -19,7 +16,7 @@ from hypothesis.strategies import (
     sampled_from,
     tuples,
 )
-from polars import DataFrame, Date, Float64, datetime_range, int_range
+from polars import DataFrame, Float64, datetime_range, int_range
 from pytest import fixture
 
 from utilities.altair import (
@@ -30,7 +27,7 @@ from utilities.altair import (
     vconcat_charts,
 )
 from utilities.functions import ensure_class
-from utilities.hypothesis import text_ascii, zoned_datetimes
+from utilities.hypothesis import dates_whenever, text_ascii, zoned_datetimes_whenever
 from utilities.polars import DatetimeUTC, zoned_datetime
 from utilities.tzdata import HongKong, Tokyo
 from utilities.whenever2 import get_now
@@ -39,6 +36,9 @@ from utilities.zoneinfo import UTC
 if TYPE_CHECKING:
     from pathlib import Path
     from zoneinfo import ZoneInfo
+
+    import whenever
+    from whenever import ZonedDateTime
 
 
 @fixture
@@ -105,19 +105,25 @@ class TestPlotDataFrames:
         expected = dt.datetime(2000, 1, 1, 12, tzinfo=time_zone).replace(tzinfo=None)
         assert datetime == expected
 
-    @given(data=data(), case=sampled_from(["date", "datetime"]))
-    def test_tooltip_format(
-        self, *, data: DataObject, case: Literal["date", "datetime"]
+    @given(data=lists(tuples(dates_whenever(), floats(-10, 10))))
+    def test_tooltip_format_date(
+        self, *, data: list[tuple[whenever.Date, float]]
     ) -> None:
-        match case:
-            case "date":
-                values = data.draw(lists(tuples(dates(), floats(-10, 10))))
-                dtype = Date()
-            case "datetime":
-                values = data.draw(lists(tuples(zoned_datetimes(), floats(-10, 10))))
-                dtype = DatetimeUTC
         df = DataFrame(
-            data=values, schema={"index": dtype, "value": Float64}, orient="row"
+            data=[(d.py_date(), v) for d, v in data],
+            schema={"index": pl.Date, "value": Float64},
+            orient="row",
+        )
+        _ = plot_dataframes(df, x="index", y="value")
+
+    @given(data=lists(tuples(zoned_datetimes_whenever(), floats(-10, 10))))
+    def test_tooltip_format_date_time(
+        self, *, data: list[tuple[ZonedDateTime, float]]
+    ) -> None:
+        df = DataFrame(
+            data=[(d.py_datetime(), v) for d, v in data],
+            schema={"index": DatetimeUTC, "value": Float64},
+            orient="row",
         )
         _ = plot_dataframes(df, x="index", y="value")
 

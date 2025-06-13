@@ -4,10 +4,11 @@ from inspect import signature
 from pathlib import Path
 from random import Random
 from time import sleep
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from pytest import mark, param, raises
 
+from utilities.iterables import one
 from utilities.pytest import (
     NodeIdToPathError,
     is_pytest,
@@ -36,35 +37,35 @@ class TestNodeIdToPath:
         [
             param(
                 "src/tests/module/test_funcs.py::TestClass::test_main",
-                Path("src.tests.module.test_funcs", "TestClass__test_main.csv"),
-            ),
-            param(
-                "src/tests/module/test_funcs.py::TestClass::test_main.csv",
-                Path("src.tests.module.test_funcs", "TestClass__test_main.csv"),
+                Path("src.tests.module.test_funcs", "TestClass__test_main"),
             ),
             param(
                 "src/tests/module/test_funcs.py::TestClass::test_main[param1, param2]",
                 Path(
                     "src.tests.module.test_funcs",
-                    "TestClass__test_main[param1, param2].csv",
+                    "TestClass__test_main[param1, param2]",
                 ),
             ),
             param(
                 "src/tests/module/test_funcs.py::TestClass::test_main[EUR.USD]",
-                Path(
-                    "src.tests.module.test_funcs", "TestClass__test_main[EUR.USD].csv"
-                ),
+                Path("src.tests.module.test_funcs", "TestClass__test_main[EUR.USD]"),
             ),
         ],
     )
     def test_main(self, *, node_id: str, expected: Path) -> None:
-        result = node_id_to_path(node_id, suffix=".csv")
+        result = node_id_to_path(node_id)
         assert result == expected
 
     def test_head(self) -> None:
         node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
-        result = node_id_to_path(node_id, head=Path("src/tests"), suffix=".csv")
-        expected = Path("module.test_funcs", "TestClass__test_main.csv")
+        result = node_id_to_path(node_id, head=Path("src/tests"))
+        expected = Path("module.test_funcs", "TestClass__test_main")
+        assert result == expected
+
+    def test_suffix(self) -> None:
+        node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
+        result = node_id_to_path(node_id, head=Path("src/tests"), suffix=".sv")
+        expected = Path("module.test_funcs", "TestClass__test_main.sv")
         assert result == expected
 
     def test_error_file_suffix(self) -> None:
@@ -79,7 +80,7 @@ class TestPytestOptions:
             from pytest import mark
 
             @mark.unknown
-            def test_main():
+            def test_main() -> None:
                 assert True
             """
         )
@@ -100,7 +101,7 @@ class TestPytestOptions:
             )
         _ = testdir.makepyfile(
             """
-            def test_main():
+            def test_main() -> None:
                 assert True
             """
         )
@@ -141,7 +142,7 @@ class TestPytestOptions:
             from pytest import mark
 
             @mark.slow
-            def test_main():
+            def test_main() -> None:
                 assert True
             """
         )
@@ -210,20 +211,20 @@ class TestPytestOptions:
             """
             from pytest import mark
 
-            def test_none():
+            def test_none() -> None:
                 assert True
 
             @mark.slow
-            def test_slow():
+            def test_slow() -> None:
                 assert True
 
             @mark.fast
-            def test_fast():
+            def test_fast() -> None:
                 assert True
 
             @mark.slow
             @mark.fast
-            def test_both():
+            def test_both() -> None:
                 assert True
             """
         )
@@ -238,67 +239,66 @@ class TestRandomState:
 
 
 class TestThrottle:
-    @mark.parametrize("as_float", [param(True), param(False)])
-    @mark.parametrize("on_try", [param(True), param(False)])
+    delta: ClassVar[float] = 0.5
+
     @mark.flaky
-    def test_basic(
-        self, *, testdir: Testdir, tmp_path: Path, as_float: bool, on_try: bool
-    ) -> None:
-        root_str = str(tmp_path)
-        duration = "1.0" if as_float else "dt.timedelta(seconds=1.0)"
-        contents = f"""
-            import datetime as dt
+    @mark.parametrize("on_try", [param(True), param(False)])
+    def test_basic(self, *, testdir: Testdir, tmp_path: Path, on_try: bool) -> None:
+        _ = testdir.makepyfile(
+            f"""
+            from whenever import TimeDelta
 
             from utilities.pytest import throttle
 
-            @throttle(root={root_str!r}, duration={duration}, on_try={on_try})
-            def test_main():
+            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}), on_try={on_try})
+            def test_main() -> None:
                 assert True
             """
-        _ = testdir.makepyfile(contents)
-        testdir.runpytest().assert_outcomes(passed=1)
-        testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(1.0)
-        testdir.runpytest().assert_outcomes(passed=1)
-
-    @mark.parametrize("asyncio_first", [param(True), param(False)])
-    @mark.parametrize("as_float", [param(True), param(False)])
-    @mark.parametrize("on_try", [param(True), param(False)])
-    @mark.flaky
-    def test_async(
-        self,
-        *,
-        testdir: Testdir,
-        tmp_path: Path,
-        asyncio_first: bool,
-        as_float: bool,
-        on_try: bool,
-    ) -> None:
-        root_str = str(tmp_path)
-        duration = "1.0" if as_float else "dt.timedelta(seconds=1.0)"
-        asyncio_str = "@mark.asyncio"
-        throttle_str = (
-            f"@throttle(root={root_str!r}, duration={duration}, on_try={on_try})"
         )
-        if asyncio_first:
-            decorators = f"{asyncio_str}\n{throttle_str}"
-        else:
-            decorators = f"{throttle_str}\n{asyncio_str}"
-        contents = f"""
-import datetime as dt
-
-from pytest import mark
-
-from utilities.pytest import throttle
-
-{decorators}
-async def test_main():
-    assert True
-        """
-        _ = testdir.makepyfile(contents)
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(1.0)
+        sleep(self.delta)
+        testdir.runpytest().assert_outcomes(passed=1)
+
+    @mark.flaky
+    @mark.parametrize("asyncio_first", [param(True), param(False)])
+    @mark.parametrize("on_try", [param(True), param(False)])
+    def test_async(
+        self, *, testdir: Testdir, tmp_path: Path, asyncio_first: bool, on_try: bool
+    ) -> None:
+        if asyncio_first:
+            _ = testdir.makepyfile(
+                f"""
+                from whenever import TimeDelta
+
+                from pytest import mark
+
+                from utilities.pytest import throttle
+
+                @mark.asyncio
+                @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}), on_try={on_try})
+                async def test_main() -> None:
+                    assert True
+                """
+            )
+        else:
+            _ = testdir.makepyfile(
+                f"""
+                from whenever import TimeDelta
+
+                from pytest import mark
+
+                from utilities.pytest import throttle
+
+                @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}), on_try={on_try})
+                @mark.asyncio
+                async def test_main() -> None:
+                    assert True
+                """
+            )
+        testdir.runpytest().assert_outcomes(passed=1)
+        testdir.runpytest().assert_outcomes(skipped=1)
+        sleep(self.delta)
         testdir.runpytest().assert_outcomes(passed=1)
 
     @mark.flaky
@@ -311,27 +311,26 @@ async def test_main():
                 parser.addoption("--pass", action="store_true")
 
             @fixture
-            def is_pass(request):
+            def is_pass(request) -> bool:
                 return request.config.getoption("--pass")
             """
         )
-        root_str = str(tmp_path)
-        contents = f"""
+        _ = testdir.makepyfile(
+            f"""
+            from whenever import TimeDelta
+
             from utilities.pytest import throttle
 
-            @throttle(root={root_str!r}, duration=1.0)
-            def test_main(is_pass):
+            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}))
+            def test_main(*, is_pass: bool) -> None:
                 assert is_pass
             """
-        _ = testdir.makepyfile(contents)
-        for i in range(2):
-            for _ in range(2):
-                testdir.runpytest().assert_outcomes(failed=1)
+        )
+        for delta_use in [self.delta, 0.0]:
+            testdir.runpytest().assert_outcomes(failed=1)
             testdir.runpytest("--pass").assert_outcomes(passed=1)
-            for _ in range(2):
-                testdir.runpytest("--pass").assert_outcomes(skipped=1)
-            if i == 0:
-                sleep(1.0)
+            testdir.runpytest("--pass").assert_outcomes(skipped=1)
+            sleep(delta_use)
 
     @mark.flaky
     def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
@@ -348,43 +347,44 @@ async def test_main():
             """
         )
         root_str = str(tmp_path)
-        contents = f"""
+        _ = testdir.makepyfile(
+            f"""
+            from whenever import TimeDelta
+
             from utilities.pytest import throttle
 
-            @throttle(root={root_str!r}, duration=1.0, on_try=True)
-            def test_main(is_pass):
+            @throttle(root={root_str!r}, delta=TimeDelta(seconds={self.delta}), on_try=True)
+            def test_main(*, is_pass: bool) -> None:
                 assert is_pass
             """
-        _ = testdir.makepyfile(contents)
-        for i in range(2):
+        )
+        for delta_use in [self.delta, 0.0]:
             testdir.runpytest().assert_outcomes(failed=1)
-            for _ in range(2):
-                testdir.runpytest().assert_outcomes(skipped=1)
-            sleep(1.0)
+            testdir.runpytest().assert_outcomes(skipped=1)
+            sleep(self.delta)
             testdir.runpytest("--pass").assert_outcomes(passed=1)
-            for _ in range(2):
-                testdir.runpytest().assert_outcomes(skipped=1)
-            if i == 0:
-                sleep(1.0)
+            testdir.runpytest().assert_outcomes(skipped=1)
+            sleep(delta_use)
 
     @mark.flaky
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
-        root_str = str(tmp_path)
-        contents = f"""
+        _ = testdir.makepyfile(
+            f"""
             from pytest import mark
-
             from string import printable
+            from whenever import TimeDelta
+
             from utilities.pytest import throttle
 
-            @mark.parametrize('arg', [10 * printable])
-            @throttle(root={root_str!r}, duration=1.0)
-            def test_main(*, arg: str):
+            @mark.parametrize("arg", [10 * printable])
+            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}))
+            def test_main(*, arg: str) -> None:
                 assert True
             """
-        _ = testdir.makepyfile(contents)
+        )
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(1.0)
+        sleep(self.delta)
         testdir.runpytest().assert_outcomes(passed=1)
 
     def test_signature(self) -> None:
@@ -396,3 +396,23 @@ async def test_main():
             assert fix
 
         assert signature(func) == signature(other)
+
+    @mark.flaky
+    def test_error_decoding_timestamp(
+        self, *, testdir: Testdir, tmp_path: Path
+    ) -> None:
+        _ = testdir.makepyfile(
+            f"""
+            from whenever import TimeDelta
+
+            from utilities.pytest import throttle
+
+            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}))
+            def test_main() -> None:
+                assert True
+            """
+        )
+        testdir.runpytest().assert_outcomes(passed=1)
+        path = one(tmp_path.iterdir())
+        _ = path.write_text("invalid")
+        testdir.runpytest().assert_outcomes(passed=1)

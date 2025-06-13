@@ -55,15 +55,15 @@ from polars._typing import IntoExprColumn, SchemaDict
 from polars.exceptions import ComputeError
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import raises
+from whenever import TimeZoneNotFoundError
 
 import utilities.polars
-from utilities.datetime import get_now, get_today
 from utilities.hypothesis import (
     assume_does_not_raise,
     int64s,
     pairs,
     text_ascii,
-    zoned_datetimes,
+    zoned_datetimes_whenever,
 )
 from utilities.math import number_of_decimals
 from utilities.numpy import DEFAULT_RNG
@@ -168,6 +168,7 @@ from utilities.polars import (
 from utilities.random import get_state
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
+from utilities.whenever2 import get_now, get_today
 from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
@@ -301,7 +302,11 @@ class TestAppendDataClass:
         height = 0 if (row.a is None) and (row.b is None) else 1
         check_polars_dataframe(result, height=height, schema_list=df.schema)
 
-    @given(data=fixed_dictionaries({"datetime": zoned_datetimes()}))
+    @given(
+        data=fixed_dictionaries({
+            "datetime": zoned_datetimes_whenever().map(lambda d: d.py_datetime())
+        })
+    )
     def test_zoned_datetime(self, *, data: StrMapping) -> None:
         df = DataFrame(schema={"datetime": DatetimeUTC})
 
@@ -805,10 +810,10 @@ class TestConcatSeries:
 
 class TestConvertTimeZone:
     def test_datetime(self) -> None:
-        now_utc = get_now()
-        series = Series(values=[now_utc], dtype=DatetimeUTC)
+        now = get_now().py_datetime()
+        series = Series(values=[now], dtype=DatetimeUTC)
         result = convert_time_zone(series, time_zone=HongKong)
-        expected = Series(values=[now_utc.astimezone(HongKong)], dtype=DatetimeHongKong)
+        expected = Series(values=[now.astimezone(HongKong)], dtype=DatetimeHongKong)
         assert_series_equal(result, expected)
 
     def test_non_datetime(self) -> None:
@@ -978,7 +983,15 @@ class TestDataClassToDataFrame:
             x: dt.datetime
 
         objs = data.draw(
-            lists(builds(Example, x=zoned_datetimes(time_zone=time_zone)), min_size=1)
+            lists(
+                builds(
+                    Example,
+                    x=zoned_datetimes_whenever(time_zone=time_zone).map(
+                        lambda d: d.py_datetime()
+                    ),
+                ),
+                min_size=1,
+            )
         )
         with assume_does_not_raise(
             ComputeError,  # unable to parse time zone
@@ -1014,7 +1027,7 @@ class TestDataClassToDataFrame:
 
 class TestDataClassToSchema:
     def test_basic(self) -> None:
-        today = get_today()
+        today = get_today().py_date()
 
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -1046,7 +1059,7 @@ class TestDataClassToSchema:
         assert result == expected
 
     def test_date_or_datetime_as_date(self) -> None:
-        today = get_today()
+        today = get_today().py_date()
 
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -1058,7 +1071,7 @@ class TestDataClassToSchema:
         assert result == expected
 
     def test_date_or_datetime_as_local_datetime(self) -> None:
-        now = get_now().replace(tzinfo=None)
+        now = get_now().to_plain().py_datetime()
 
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -1071,7 +1084,8 @@ class TestDataClassToSchema:
 
     @given(time_zone=timezones())
     def test_date_or_datetime_as_zoned_datetime(self, *, time_zone: ZoneInfo) -> None:
-        now = get_now(time_zone=time_zone)
+        with assume_does_not_raise(TimeZoneNotFoundError):
+            now = get_now(time_zone=time_zone).py_datetime()
 
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -1107,7 +1121,7 @@ class TestDataClassToSchema:
         assert result == expected
 
     def test_local_datetime(self) -> None:
-        now = get_now().replace(tzinfo=None)
+        now = get_now().to_plain().py_datetime()
 
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -1202,7 +1216,8 @@ class TestDataClassToSchema:
 
     @given(time_zone=timezones())
     def test_zoned_datetime(self, *, time_zone: ZoneInfo) -> None:
-        now = get_now(time_zone=time_zone)
+        with assume_does_not_raise(TimeZoneNotFoundError):
+            now = get_now(time_zone=time_zone).py_datetime()
 
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -1215,8 +1230,9 @@ class TestDataClassToSchema:
 
     @given(start=timezones(), end=timezones())
     def test_zoned_datetime_nested(self, *, start: ZoneInfo, end: ZoneInfo) -> None:
-        now_start = get_now(time_zone=start)
-        now_end = get_now(time_zone=end)
+        with assume_does_not_raise(TimeZoneNotFoundError):
+            now_start = get_now(time_zone=start).py_datetime()
+            now_end = get_now(time_zone=end).py_datetime()
 
         @dataclass(kw_only=True, slots=True)
         class Inner:
@@ -2068,7 +2084,7 @@ class TestReifyExprs:
 
 class TestReplaceTimeZone:
     def test_datetime(self) -> None:
-        now_utc = get_now()
+        now_utc = get_now().py_datetime()
         series = Series(values=[now_utc], dtype=DatetimeUTC)
         result = replace_time_zone(series, time_zone=None)
         expected = Series(values=[now_utc.replace(tzinfo=None)], dtype=Datetime)

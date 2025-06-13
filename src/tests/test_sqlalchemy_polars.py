@@ -86,8 +86,7 @@ from sqlalchemy import (
 from sqlalchemy.exc import DuplicateColumnError, OperationalError, ProgrammingError
 
 from tests.test_sqlalchemy import _table_names, _upsert_lists
-from utilities.datetime import are_equal_datetimes
-from utilities.hypothesis import text_ascii, zoned_datetimes
+from utilities.hypothesis import text_ascii, zoned_datetimes_whenever
 from utilities.math import is_equal
 from utilities.polars import DatetimeUTC, check_polars_dataframe
 from utilities.sqlalchemy import ensure_tables_created
@@ -123,10 +122,10 @@ _CASES_SELECT: list[
     (dates() | none(), pl.Date, sqlalchemy.Date, eq),
     (datetimes() | none(), Datetime, DateTime, eq),
     (
-        zoned_datetimes() | none(),
+        zoned_datetimes_whenever().map(lambda d: d.py_datetime()) | none(),
         DatetimeUTC,
         DateTime(timezone=True),
-        are_equal_datetimes,
+        eq,
     ),
     (floats(allow_nan=False) | none(), Float64, Float, is_equal),
     (integers(-10, 10) | none(), Int64, Integer, eq),

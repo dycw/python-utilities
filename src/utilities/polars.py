@@ -1005,6 +1005,7 @@ def dataclass_to_dataframe(
     *,
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
 ) -> DataFrame:
     """Convert a dataclass/es into a DataFrame."""
     objs = list(always_iterable(objs))
@@ -1018,12 +1019,14 @@ def dataclass_to_dataframe(
         ) from None
     data = list(map(asdict, objs))
     first, *_ = objs
-    schema = dataclass_to_schema(first, globalns=globalns, localns=localns)
+    schema = dataclass_to_schema(
+        first, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
+    )
     df = DataFrame(data, schema=schema, orient="row")
-    return map_over_columns(_dataclass_to_dataframe_uuid, df)
+    return map_over_columns(_dataclass_to_dataframe_cast, df)
 
 
-def _dataclass_to_dataframe_uuid(series: Series, /) -> Series:
+def _dataclass_to_dataframe_cast(series: Series, /) -> Series:
     if series.dtype == Object:
         is_path = series.map_elements(make_isinstance(Path), return_dtype=Boolean).all()
         is_uuid = series.map_elements(make_isinstance(UUID), return_dtype=Boolean).all()

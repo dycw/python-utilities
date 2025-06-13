@@ -8,10 +8,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ParamSpec, assert_never, cast, override
 
 from pytest import fixture
+from whenever import ZonedDateTime
 
 from utilities.atomicwrites import writer
-from utilities.datetime import datetime_duration_to_float, get_now
 from utilities.functools import cache
+from utilities.git import get_repo_root
 from utilities.hashlib import md5_hash
 from utilities.pathlib import ensure_suffix
 from utilities.platform import (
@@ -23,17 +24,15 @@ from utilities.platform import (
     IS_WINDOWS,
 )
 from utilities.random import get_state
+from utilities.whenever2 import SECOND, get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
     from random import Random
 
-    from utilities.types import (
-        Coroutine1,
-        Duration,
-        PathLike,
-        TCallableMaybeCoroutine1None,
-    )
+    from whenever import TimeDelta
+
+    from utilities.types import Coroutine1, PathLike, TCallableMaybeCoroutine1None
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config
@@ -169,88 +168,109 @@ def random_state(*, seed: int) -> Random:
 
 
 def throttle(
-    *, root: PathLike | None = None, duration: Duration = 1.0, on_try: bool = False
+    *, root: PathLike | None = None, delta: TimeDelta = SECOND, on_try: bool = False
 ) -> Callable[[TCallableMaybeCoroutine1None], TCallableMaybeCoroutine1None]:
     """Throttle a test. On success by default, on try otherwise."""
-    root_use = Path(".pytest_cache", "throttle") if root is None else Path(root)
-    return cast(
-        "Any", partial(_throttle_inner, root=root_use, duration=duration, on_try=on_try)
-    )
+    return cast("Any", partial(_throttle_inner, root=root, delta=delta, on_try=on_try))
 
 
 def _throttle_inner(
     func: TCallableMaybeCoroutine1None,
     /,
     *,
-    root: Path,
-    duration: Duration = 1.0,
+    root: PathLike | None = None,
+    delta: TimeDelta = SECOND,
     on_try: bool = False,
 ) -> TCallableMaybeCoroutine1None:
     """Throttle a test function/method."""
-    match bool(iscoroutinefunction(func)):
-        case False:
-            func_typed = cast("Callable[..., None]", func)
+    match bool(iscoroutinefunction(func)), on_try:
+        case False, False:
 
             @wraps(func)
-            def throttle_sync(*args: _P.args, **kwargs: _P.kwargs) -> None:
-                """Call the throttled sync test function/method."""
-                path, now = _throttle_path_and_now(root, duration=duration)
-                if on_try:
-                    _throttle_write(path, now)
-                    return func_typed(*args, **kwargs)
-                func_typed(*args, **kwargs)
-                _throttle_write(path, now)
-                return None
+            def throttle_sync_on_pass(*args: _P.args, **kwargs: _P.kwargs) -> None:
+                _skipif_recent(root=root, delta=delta)
+                cast("Callable[..., None]", func)(*args, **kwargs)
+                _write(root=root)
 
-            return cast("TCallableMaybeCoroutine1None", throttle_sync)
-        case True:
-            func_typed = cast("Callable[..., Coroutine1[None]]", func)
+            return cast("Any", throttle_sync_on_pass)
+
+        case False, True:
 
             @wraps(func)
-            async def throttle_async(*args: _P.args, **kwargs: _P.kwargs) -> None:
-                """Call the throttled async test function/method."""
-                path, now = _throttle_path_and_now(root, duration=duration)
-                if on_try:
-                    _throttle_write(path, now)
-                    return await func_typed(*args, **kwargs)
-                await func_typed(*args, **kwargs)
-                _throttle_write(path, now)
-                return None
+            def throttle_sync_on_try(*args: _P.args, **kwargs: _P.kwargs) -> None:
+                _skipif_recent(root=root, delta=delta)
+                _write(root=root)
+                cast("Callable[..., None]", func)(*args, **kwargs)
 
-            return cast("TCallableMaybeCoroutine1None", throttle_async)
+            return cast("Any", throttle_sync_on_try)
+
+        case True, False:
+
+            @wraps(func)
+            async def throttle_async_on_pass(
+                *args: _P.args, **kwargs: _P.kwargs
+            ) -> None:
+                _skipif_recent(root=root, delta=delta)
+                await cast("Callable[..., Coroutine1[None]]", func)(*args, **kwargs)
+                _write(root=root)
+
+            return cast("Any", throttle_async_on_pass)
+
+        case True, True:
+
+            @wraps(func)
+            async def throttle_async_on_try(
+                *args: _P.args, **kwargs: _P.kwargs
+            ) -> None:
+                _skipif_recent(root=root, delta=delta)
+                _write(root=root)
+                await cast("Callable[..., Coroutine1[None]]", func)(*args, **kwargs)
+
+            return cast("Any", throttle_async_on_try)
+
         case _ as never:
             assert_never(never)
 
 
-def _throttle_path_and_now(
-    root: Path, /, *, duration: Duration = 1.0
-) -> tuple[Path, float]:
-    test = environ["PYTEST_CURRENT_TEST"]
-    path = Path(root, _throttle_md5_hash(test))
-    if path.exists():
-        with path.open(mode="r") as fh:
-            contents = fh.read()
-        prev = float(contents)
+def _skipif_recent(*, root: PathLike | None = None, delta: TimeDelta = SECOND) -> None:
+    if skip is None:
+        return  # pragma: no cover
+    path = _get_path(root=root)
+    try:
+        contents = path.read_text()
+    except FileNotFoundError:
+        return
+    try:
+        last = ZonedDateTime.parse_common_iso(contents)
+    except ValueError:
+        return
+    if (age := (get_now_local() - last)) < delta:
+        _ = skip(reason=f"{_get_name()} throttled (age {age})")
+
+
+def _get_path(*, root: PathLike | None = None) -> Path:
+    if root is None:
+        root_use = get_repo_root().joinpath(  # pragma: no cover
+            ".pytest_cache", "throttle"
+        )
     else:
-        prev = None
-    now = get_now().timestamp()
-    if (
-        (skip is not None)
-        and (prev is not None)
-        and ((now - prev) < datetime_duration_to_float(duration))
-    ):
-        _ = skip(reason=f"{test} throttled")
-    return path, now
+        root_use = root
+    return Path(root_use, _md5_hash_cached(_get_name()))
 
 
 @cache
-def _throttle_md5_hash(text: str, /) -> str:
+def _md5_hash_cached(text: str, /) -> str:
     return md5_hash(text)
 
 
-def _throttle_write(path: Path, now: float, /) -> None:
-    with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
-        _ = fh.write(str(now))
+def _get_name() -> str:
+    return environ["PYTEST_CURRENT_TEST"]
+
+
+def _write(*, root: PathLike | None = None) -> None:
+    path = _get_path(root=root)
+    with writer(path, overwrite=True) as temp:
+        _ = temp.write_text(get_now_local().format_common_iso())
 
 
 __all__ = [

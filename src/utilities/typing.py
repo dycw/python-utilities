@@ -11,7 +11,6 @@ from typing import (
     Literal,
     NamedTuple,
     Optional,  # pyright: ignore[reportDeprecated]
-    Self,
     TypeAliasType,
     TypeGuard,
     TypeVar,
@@ -45,14 +44,6 @@ _T2 = TypeVar("_T2")
 _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
-
-
-##
-
-
-def contains_self(obj: Any, /) -> bool:
-    """Check if an annotation contains `Self`."""
-    return (obj is Self) or any(map(contains_self, get_args(obj)))
 
 
 ##
@@ -183,12 +174,9 @@ def get_union_type_classes(obj: Any, /) -> tuple[type[Any], ...]:
         raise _GetUnionTypeClassesUnionTypeError(obj=obj)
     types_: Sequence[type[Any]] = []
     for arg in get_args(obj):
-        if isinstance(arg, type):
-            types_.append(arg)
-        elif is_union_type(arg):
-            types_.extend(get_union_type_classes(arg))
-        else:
+        if not isinstance(arg, type):
             raise _GetUnionTypeClassesInternalTypeError(obj=obj, inner=arg)
+        types_.append(arg)
     return tuple(types_)
 
 
@@ -495,7 +483,6 @@ __all__ = [
     "GetUnionTypeClassesError",
     "IsInstanceGenError",
     "IsSubclassGenError",
-    "contains_self",
     "get_literal_elements",
     "get_type_classes",
     "get_type_hints",

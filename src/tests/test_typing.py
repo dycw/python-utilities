@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from random import Random
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, Self
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 from uuid import UUID
 
 from hypothesis import given
@@ -25,7 +25,7 @@ from hypothesis.strategies import (
     sets,
     tuples,
 )
-from pytest import raises
+from pytest import mark, param, raises
 
 from tests.test_typing_funcs.no_future import (
     DataClassNoFutureNestedInnerFirstInner,
@@ -56,7 +56,7 @@ from tests.test_typing_funcs.with_future import (
 )
 from utilities.hypothesis import text_ascii
 from utilities.sentinel import Sentinel
-from utilities.types import Duration, LogLevel, Number, Parallelism, Seed
+from utilities.types import LogLevel, Number, Parallelism, Seed
 from utilities.typing import (
     IsInstanceGenError,
     IsSubclassGenError,
@@ -64,7 +64,6 @@ from utilities.typing import (
     _GetTypeClassesTypeError,
     _GetUnionTypeClassesInternalTypeError,
     _GetUnionTypeClassesUnionTypeError,
-    contains_self,
     get_args,
     get_literal_elements,
     get_type_classes,
@@ -90,38 +89,34 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-class TestContainsSelf:
-    @given(obj=sampled_from([Self, Self | None]))
-    def test_main(self, *, obj: Any) -> None:
-        assert contains_self(obj)
-
-
 class TestGetArgs:
-    @given(
-        case=sampled_from([
-            (dict[int, int], (int, int)),
-            (frozenset[int], (int,)),
-            (int | None, (int, NoneType)),
-            (int | str, (int, str)),
-            (list[int], (int,)),
-            (Literal["a", "b", "c"], ("a", "b", "c")),
-            (Mapping[int, int], (int, int)),
-            (Sequence[int], (int,)),
-            (set[int], (int,)),
-            (LogLevel, ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")),
-            (Parallelism, ("processes", "threads")),
-        ])
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(dict[int, int], (int, int)),
+            param(frozenset[int], (int,)),
+            param(int | None, (int, NoneType)),
+            param(int | str, (int, str)),
+            param(list[int], (int,)),
+            param(Literal["a", "b", "c"], ("a", "b", "c")),
+            param(Mapping[int, int], (int, int)),
+            param(Sequence[int], (int,)),
+            param(set[int], (int,)),
+            param(LogLevel, ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")),
+            param(Parallelism, ("processes", "threads")),
+        ],
     )
-    def test_main(self, *, case: tuple[Any, tuple[Any, ...]]) -> None:
-        obj, expected = case
+    def test_main(self, *, obj: Any, expected: tuple[Any, ...]) -> None:
         result = get_args(obj)
         assert result == expected
 
-    @given(case=sampled_from([(int | None, (int,)), (int | str | None, (int, str))]))
+    @mark.parametrize(
+        ("obj", "expected"),
+        [param(int | None, (int,)), param(int | str | None, (int, str))],
+    )
     def test_optional_drop_none(
-        self, *, case: tuple[Any, tuple[type[Any], ...]]
+        self, *, obj: Any, expected: tuple[type[Any], ...]
     ) -> None:
-        obj, expected = case
         result = get_args(obj, optional_drop_none=True)
         assert result == expected
 
@@ -150,19 +145,18 @@ class TestGetLiteralElements:
 
 
 class TestGetTypeClasses:
-    @given(
-        case=sampled_from([
-            (int, (int,)),
-            ((int, float), (int, float)),
-            (Duration, (int, float, dt.timedelta)),
-            (Number, (int, float)),
-            (Seed, (int, float, str, bytes, bytearray, Random)),
-            ((int, Number), (int, int, float)),
-            ((int, (Number,)), (int, int, float)),
-        ])
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(int, (int,)),
+            param((int, float), (int, float)),
+            param(Number, (int, float)),
+            param(Seed, (int, float, str, bytes, bytearray, Random)),
+            param((int, Number), (int, int, float)),
+            param((int, (Number,)), (int, int, float)),
+        ],
     )
-    def test_main(self, *, case: tuple[Any, tuple[type[Any], ...]]) -> None:
-        obj, expected = case
+    def test_main(self, *, obj: Any, expected: tuple[type[Any], ...]) -> None:
         result = get_type_classes(obj)
         assert result == expected
 
@@ -416,15 +410,14 @@ class TestGetTypeHints:
 
 
 class TestGetUnionTypeClasses:
-    @given(
-        case=sampled_from([
-            (Duration, (int, float, dt.timedelta)),
-            (Number, (int, float)),
-            (Seed, (int, float, str, bytes, bytearray, Random)),
-        ])
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(Number, (int, float)),
+            param(Seed, (int, float, str, bytes, bytearray, Random)),
+        ],
     )
-    def test_main(self, *, case: tuple[Any, tuple[type[Any], ...]]) -> None:
-        obj, expected = case
+    def test_main(self, *, obj: Any, expected: type[Any]) -> None:
         result = get_union_type_classes(obj)
         assert result == expected
 
@@ -444,150 +437,166 @@ class TestGetUnionTypeClasses:
 
 
 class TestIsAnnotationOfType:
-    @given(
-        case=sampled_from([
-            (is_dict_type, Mapping[int, int], False),
-            (is_dict_type, Sequence[int], False),
-            (is_dict_type, dict[int, int], True),
-            (is_dict_type, frozenset[int], False),
-            (is_dict_type, list[int], False),
-            (is_dict_type, set[int], False),
-            (is_dict_type, tuple[int, int], False),
-            (is_frozenset_type, Mapping[int, int], False),
-            (is_frozenset_type, Sequence[int], False),
-            (is_frozenset_type, dict[int, int], False),
-            (is_frozenset_type, frozenset[int], True),
-            (is_frozenset_type, list[int], False),
-            (is_frozenset_type, set[int], False),
-            (is_frozenset_type, tuple[int, int], False),
-            (is_list_type, Mapping[int, int], False),
-            (is_list_type, Sequence[int], False),
-            (is_list_type, dict[int, int], False),
-            (is_list_type, frozenset[int], False),
-            (is_list_type, list[int], True),
-            (is_list_type, set[int], False),
-            (is_list_type, tuple[int, int], False),
-            (is_literal_type, Literal["a", "b", "c"], True),
-            (is_literal_type, list[int], False),
-            (is_mapping_type, Mapping[int, int], True),
-            (is_mapping_type, Sequence[int], False),
-            (is_mapping_type, dict[int, int], False),
-            (is_mapping_type, frozenset[int], False),
-            (is_mapping_type, list[int], False),
-            (is_mapping_type, set[int], False),
-            (is_mapping_type, tuple[int, int], False),
-            (is_optional_type, Literal["a", "b", "c"] | None, True),
-            (is_optional_type, Literal["a", "b", "c"], False),
-            (is_optional_type, int | None, True),
-            (is_optional_type, int | str, False),
-            (is_optional_type, list[int] | None, True),
-            (is_optional_type, list[int], False),
-            (is_sequence_type, Mapping[int, int], False),
-            (is_sequence_type, Sequence[int], True),
-            (is_sequence_type, dict[int, int], False),
-            (is_sequence_type, frozenset[int], False),
-            (is_sequence_type, list[int], False),
-            (is_sequence_type, set[int], False),
-            (is_sequence_type, tuple[int, int], False),
-            (is_set_type, Mapping[int, int], False),
-            (is_set_type, Sequence[int], False),
-            (is_set_type, dict[int, int], False),
-            (is_set_type, frozenset[int], False),
-            (is_set_type, list[int], False),
-            (is_set_type, set[int], True),
-            (is_set_type, tuple[int, int], False),
-            (is_tuple_type, Mapping[int, int], False),
-            (is_tuple_type, Sequence[int], False),
-            (is_tuple_type, dict[int, int], False),
-            (is_tuple_type, frozenset[int], False),
-            (is_tuple_type, list[int], False),
-            (is_tuple_type, set[int], False),
-            (is_tuple_type, tuple[int, int], True),
-            (is_union_type, int | str, True),
-            (is_union_type, list[int], False),
-        ])
+    @mark.parametrize(
+        ("func", "obj", "expected"),
+        [
+            param(is_dict_type, Mapping[int, int], False),
+            param(is_dict_type, Sequence[int], False),
+            param(is_dict_type, dict[int, int], True),
+            param(is_dict_type, frozenset[int], False),
+            param(is_dict_type, list[int], False),
+            param(is_dict_type, set[int], False),
+            param(is_dict_type, tuple[int, int], False),
+            param(is_frozenset_type, Mapping[int, int], False),
+            param(is_frozenset_type, Sequence[int], False),
+            param(is_frozenset_type, dict[int, int], False),
+            param(is_frozenset_type, frozenset[int], True),
+            param(is_frozenset_type, list[int], False),
+            param(is_frozenset_type, set[int], False),
+            param(is_frozenset_type, tuple[int, int], False),
+            param(is_list_type, Mapping[int, int], False),
+            param(is_list_type, Sequence[int], False),
+            param(is_list_type, dict[int, int], False),
+            param(is_list_type, frozenset[int], False),
+            param(is_list_type, list[int], True),
+            param(is_list_type, set[int], False),
+            param(is_list_type, tuple[int, int], False),
+            param(is_literal_type, Literal["a", "b", "c"], True),
+            param(is_literal_type, list[int], False),
+            param(is_mapping_type, Mapping[int, int], True),
+            param(is_mapping_type, Sequence[int], False),
+            param(is_mapping_type, dict[int, int], False),
+            param(is_mapping_type, frozenset[int], False),
+            param(is_mapping_type, list[int], False),
+            param(is_mapping_type, set[int], False),
+            param(is_mapping_type, tuple[int, int], False),
+            param(is_optional_type, Literal["a", "b", "c"] | None, True),
+            param(is_optional_type, Literal["a", "b", "c"], False),
+            param(is_optional_type, int | None, True),
+            param(is_optional_type, int | str, False),
+            param(is_optional_type, list[int] | None, True),
+            param(is_optional_type, list[int], False),
+            param(is_sequence_type, Mapping[int, int], False),
+            param(is_sequence_type, Sequence[int], True),
+            param(is_sequence_type, dict[int, int], False),
+            param(is_sequence_type, frozenset[int], False),
+            param(is_sequence_type, list[int], False),
+            param(is_sequence_type, set[int], False),
+            param(is_sequence_type, tuple[int, int], False),
+            param(is_set_type, Mapping[int, int], False),
+            param(is_set_type, Sequence[int], False),
+            param(is_set_type, dict[int, int], False),
+            param(is_set_type, frozenset[int], False),
+            param(is_set_type, list[int], False),
+            param(is_set_type, set[int], True),
+            param(is_set_type, tuple[int, int], False),
+            param(is_tuple_type, Mapping[int, int], False),
+            param(is_tuple_type, Sequence[int], False),
+            param(is_tuple_type, dict[int, int], False),
+            param(is_tuple_type, frozenset[int], False),
+            param(is_tuple_type, list[int], False),
+            param(is_tuple_type, set[int], False),
+            param(is_tuple_type, tuple[int, int], True),
+            param(is_union_type, int | str, True),
+            param(is_union_type, list[int], False),
+        ],
     )
-    def test_main(self, *, case: tuple[Callable[[Any], bool], Any, bool]) -> None:
-        func, obj, expected = case
+    def test_main(
+        self, *, func: Callable[[Any], bool], obj: Any, expected: bool
+    ) -> None:
         assert func(obj) is expected
 
 
 class TestIsInstanceGen:
-    @given(
-        data=data(),
-        case=sampled_from([
+    @given(data=data())
+    @mark.parametrize(
+        ("strategy", "type_", "min_size", "expected"),
+        [
             # types - bool/int
-            (booleans(), bool, None, True),
-            (booleans(), int, None, False),
-            (integers(), bool, None, False),
-            (integers(), int, None, True),
-            (booleans(), (bool, int), None, True),
-            (integers(), (bool, int), None, True),
+            param(booleans(), bool, None, True),
+            param(booleans(), int, 2, False),
+            param(integers(), bool, None, False),
+            param(integers(), int, None, True),
+            param(booleans(), (bool, int), None, True),
+            param(integers(), (bool, int), None, True),
             # types - datetime/date
-            (dates(), dt.date, None, True),
-            (dates(), dt.datetime, None, False),
-            (datetimes(), dt.date, None, False),
-            (datetimes(), dt.datetime, None, True),
+            param(dates(), dt.date, None, True),
+            param(dates(), dt.datetime, None, False),
+            param(datetimes(), dt.date, None, False),
+            param(datetimes(), dt.datetime, None, True),
             # parent union
-            (booleans(), Number, None, False),
-            (integers(), Number, None, True),
-            (floats(), Number, None, True),
+            param(booleans(), Number, 2, False),
+            param(integers(), Number, None, True),
+            param(floats(), Number, None, True),
             # child tuple/union - skip
             # literals
-            (sampled_from([1, 2]), Literal[1, 2, 3], 2, True),
-            (sampled_from([1, 2, 3]), Literal[1, 2, 3], 3, True),
-            (sampled_from([1, 2, 3]), Literal[1, 2], 3, False),
-            (sampled_from([1, 2, 3]), int, 3, True),
-            (sampled_from([1, 2, 3]), bool, 3, False),
-            (sampled_from(["1", "2", "3"]), str, 3, True),
-            (sampled_from(["1", "2", "3"]), bool, 3, False),
-            (sampled_from([1, "2", 3]), int | str, 3, True),
-            (sampled_from([1, "2", 3]), int, 3, False),
-            (sampled_from([1, "2", 3]), str, 3, False),
-            (booleans(), Literal[1, 2, 3], None, False),
-            (text_ascii(), Literal["a", "b", "c"], 4, False),
+            param(sampled_from([1, 2]), Literal[1, 2, 3], 2, True),
+            param(sampled_from([1, 2, 3]), Literal[1, 2, 3], 3, True),
+            param(sampled_from([1, 2, 3]), Literal[1, 2], 3, False),
+            param(sampled_from([1, 2, 3]), int, 3, True),
+            param(sampled_from([1, 2, 3]), bool, 3, False),
+            param(sampled_from(["1", "2", "3"]), str, 3, True),
+            param(sampled_from(["1", "2", "3"]), bool, 3, False),
+            param(sampled_from([1, "2", 3]), int | str, 3, True),
+            param(sampled_from([1, "2", 3]), int, 3, False),
+            param(sampled_from([1, "2", 3]), str, 3, False),
+            param(booleans(), Literal[1, 2, 3], 2, False),
+            param(text_ascii(), Literal["a", "b", "c"], 4, False),
             # tuple types
-            (tuples(booleans()), tuple[bool], None, True),
-            (tuples(booleans()), tuple[int], None, False),
-            (tuples(integers()), tuple[bool], None, False),
-            (tuples(integers()), tuple[int], None, True),
-            (tuples(booleans()), tuple[Number], None, False),
-            (tuples(integers()), tuple[Number], None, True),
-            (tuples(floats()), tuple[Number], None, True),
-            (tuples(booleans()), bool, None, False),
-            (tuples(just("a"), booleans()), tuple[Literal["a"], bool], None, True),
-            (tuples(just("a"), booleans()), tuple[Literal["a"], int], None, False),
-            (tuples(just("a"), integers()), tuple[Literal["a"], bool], None, False),
-            (tuples(just("a"), integers()), tuple[Literal["a"], int], None, True),
-            (tuples(just("a"), booleans()), tuple[Literal["a", "b"], bool], None, True),
-            (tuples(just("a"), booleans()), tuple[Literal["a", "b"], int], None, False),
-            (
+            param(tuples(booleans()), tuple[bool], None, True),
+            param(tuples(booleans()), tuple[int], 2, False),
+            param(tuples(integers()), tuple[bool], None, False),
+            param(tuples(integers()), tuple[int], None, True),
+            param(tuples(booleans()), tuple[Number], 2, False),
+            param(tuples(integers()), tuple[Number], None, True),
+            param(tuples(floats()), tuple[Number], None, True),
+            param(tuples(booleans()), bool, 2, False),
+            param(tuples(just("a"), booleans()), tuple[Literal["a"], bool], None, True),
+            param(tuples(just("a"), booleans()), tuple[Literal["a"], int], 2, False),
+            param(
+                tuples(just("a"), integers()), tuple[Literal["a"], bool], None, False
+            ),
+            param(tuples(just("a"), integers()), tuple[Literal["a"], int], None, True),
+            param(
+                tuples(just("a"), booleans()),
+                tuple[Literal["a", "b"], bool],
+                None,
+                True,
+            ),
+            param(
+                tuples(just("a"), booleans()), tuple[Literal["a", "b"], int], 2, False
+            ),
+            param(
                 tuples(just("a"), integers()),
                 tuple[Literal["a", "b"], bool],
                 None,
                 False,
             ),
-            (tuples(just("a"), integers()), tuple[Literal["a", "b"], int], None, True),
-            (booleans(), tuple[bool], 2, False),
-            (booleans() | none(), tuple[bool], 3, False),
-            (text_ascii(), tuple[bool], None, False),
-            (text_ascii() | none(), tuple[bool], None, False),
-        ]),
+            param(
+                tuples(just("a"), integers()), tuple[Literal["a", "b"], int], None, True
+            ),
+            param(booleans(), tuple[bool], 2, False),
+            param(booleans() | none(), tuple[bool], 3, False),
+            param(text_ascii(), tuple[bool], None, False),
+            param(text_ascii() | none(), tuple[bool], None, False),
+        ],
     )
     def test_main(
         self,
         *,
         data: DataObject,
-        case: tuple[SearchStrategy[Any], Any, int | None, bool],
+        strategy: SearchStrategy[Any],
+        type_: Any,
+        min_size: int | None,
+        expected: bool,
     ) -> None:
-        strategy, type_, min_size, expected = case
         match expected:
             case True:
                 value = data.draw(strategy)
                 assert is_instance_gen(value, type_)
             case False:
                 values = data.draw(
-                    sets(strategy, min_size=100 if min_size is None else min_size)
+                    sets(strategy, min_size=10 if min_size is None else min_size)
                 )
                 assert not all(is_instance_gen(v, type_) for v in values)
 
@@ -630,77 +639,77 @@ class TestIsNamedTuple:
 
 
 class TestIsSubclassGen:
-    @given(
-        case=sampled_from([
+    @mark.parametrize(
+        ("child", "parent", "expected"),
+        [
             # types - bool/int
-            (bool, bool, True),
-            (bool, int, False),
-            (int, bool, False),
-            (int, int, True),
-            (bool, (bool, int), True),
-            (int, (bool, int), True),
+            param(bool, bool, True),
+            param(bool, int, False),
+            param(int, bool, False),
+            param(int, int, True),
+            param(bool, (bool, int), True),
+            param(int, (bool, int), True),
             # types - datetime/date
-            (dt.date, dt.date, True),
-            (dt.date, dt.datetime, False),
-            (dt.datetime, dt.date, False),
-            (dt.datetime, dt.datetime, True),
+            param(dt.date, dt.date, True),
+            param(dt.date, dt.datetime, False),
+            param(dt.datetime, dt.date, False),
+            param(dt.datetime, dt.datetime, True),
             # parent union
-            (bool, Number, False),
-            (int, Number, True),
-            (float, Number, True),
+            param(bool, Number, False),
+            param(int, Number, True),
+            param(float, Number, True),
             # child tuple
-            ((bool,), bool, True),
-            ((bool,), int, False),
-            ((int,), bool, False),
-            ((int,), int, True),
-            ((bool, int), int, False),
-            ((bool, int), (bool, int), True),
-            ((bool, int), (bool, int, float), True),
+            param((bool,), bool, True),
+            param((bool,), int, False),
+            param((int,), bool, False),
+            param((int,), int, True),
+            param((bool, int), int, False),
+            param((bool, int), (bool, int), True),
+            param((bool, int), (bool, int, float), True),
             # child union
-            (bool, bool | None, True),
-            (bool | None, bool, False),
-            (bool | None, bool | None, True),
-            (Number, int, False),
-            (Number, float, False),
-            (Number, Number, True),
+            param(bool, bool | None, True),
+            param(bool | None, bool, False),
+            param(bool | None, bool | None, True),
+            param(Number, int, False),
+            param(Number, float, False),
+            param(Number, Number, True),
             # literals
-            (Literal[1, 2], Literal[1, 2, 3], True),
-            (Literal[1, 2, 3], Literal[1, 2, 3], True),
-            (Literal[1, 2, 3], Literal[1, 2], False),
-            (Literal[1, 2, 3], int, True),
-            (Literal[1, 2, 3], bool, False),
-            (Literal["1", "2", "3"], str, True),
-            (Literal["1", "2", "3"], bool, False),
-            (Literal[1, "2", 3], int | str, True),
-            (Literal[1, "2", 3], int, False),
-            (Literal[1, "2", 3], str, False),
-            (bool, Literal[1, 2, 3], False),
-            (str, Literal["a", "b", "c"], False),
+            param(Literal[1, 2], Literal[1, 2, 3], True),
+            param(Literal[1, 2, 3], Literal[1, 2, 3], True),
+            param(Literal[1, 2, 3], Literal[1, 2], False),
+            param(Literal[1, 2, 3], int, True),
+            param(Literal[1, 2, 3], bool, False),
+            param(Literal["1", "2", "3"], str, True),
+            param(Literal["1", "2", "3"], bool, False),
+            param(Literal[1, "2", 3], int | str, True),
+            param(Literal[1, "2", 3], int, False),
+            param(Literal[1, "2", 3], str, False),
+            param(bool, Literal[1, 2, 3], False),
+            param(str, Literal["a", "b", "c"], False),
             # tuple types
-            (tuple[bool], tuple[bool], True),
-            (tuple[bool], tuple[int], False),
-            (tuple[int], tuple[bool], False),
-            (tuple[int], tuple[int], True),
-            (tuple[bool], tuple[Number], False),
-            (tuple[int], tuple[Number], True),
-            (tuple[float], tuple[Number], True),
-            (tuple[bool], bool, False),
-            (tuple[Literal["a"], bool], tuple[Literal["a"], bool], True),
-            (tuple[Literal["a"], bool], tuple[Literal["a"], int], False),
-            (tuple[Literal["a"], int], tuple[Literal["a"], bool], False),
-            (tuple[Literal["a"], int], tuple[Literal["a"], int], True),
-            (tuple[Literal["a"], bool], tuple[Literal["a", "b"], bool], True),
-            (tuple[Literal["a"], bool], tuple[Literal["a", "b"], int], False),
-            (tuple[Literal["a"], int], tuple[Literal["a", "b"], bool], False),
-            (tuple[Literal["a"], int], tuple[Literal["a", "b"], int], True),
-            (bool, tuple[bool], False),
-            (bool | None, tuple[bool], False),
-            (str, tuple[Literal["a", "b", "c"]], False),
-            (str | None, tuple[Literal["a", "b", "c"]], False),
-        ])
+            param(tuple[bool], tuple[bool], True),
+            param(tuple[bool], tuple[int], False),
+            param(tuple[int], tuple[bool], False),
+            param(tuple[int], tuple[int], True),
+            param(tuple[bool], tuple[Number], False),
+            param(tuple[int], tuple[Number], True),
+            param(tuple[float], tuple[Number], True),
+            param(tuple[bool], bool, False),
+            param(tuple[Literal["a"], bool], tuple[Literal["a"], bool], True),
+            param(tuple[Literal["a"], bool], tuple[Literal["a"], int], False),
+            param(tuple[Literal["a"], int], tuple[Literal["a"], bool], False),
+            param(tuple[Literal["a"], int], tuple[Literal["a"], int], True),
+            param(tuple[Literal["a"], bool], tuple[Literal["a", "b"], bool], True),
+            param(tuple[Literal["a"], bool], tuple[Literal["a", "b"], int], False),
+            param(tuple[Literal["a"], int], tuple[Literal["a", "b"], bool], False),
+            param(tuple[Literal["a"], int], tuple[Literal["a", "b"], int], True),
+            param(bool, tuple[bool], False),
+            param(bool | None, tuple[bool], False),
+            param(str, tuple[Literal["a", "b", "c"]], False),
+            param(str | None, tuple[Literal["a", "b", "c"]], False),
+        ],
     )
-    def test_main(self, *, case: tuple[type[Any], Any, bool]) -> None:
-        child, parent, expected = case
+    def test_main(self, *, child: type[Any], parent: Any, expected: bool) -> None:
         assert is_subclass_gen(child, parent) is expected
 
     def test_custom_int(self) -> None:

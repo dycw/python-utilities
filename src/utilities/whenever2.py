@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from functools import cache
 from logging import LogRecord
-from typing import TYPE_CHECKING, Any, assert_never, overload, override
+from statistics import fmean
+from typing import TYPE_CHECKING, Any, SupportsFloat, assert_never, overload, override
 
 from whenever import (
     Date,
@@ -99,6 +100,7 @@ DATE_DELTA_PARSABLE_MAX = DateDelta(days=999999)
 ## common constants
 
 
+ZERO_DAYS = DateDelta()
 ZERO_TIME = TimeDelta()
 MICROSECOND = TimeDelta(microseconds=1)
 MILLISECOND = TimeDelta(milliseconds=1)
@@ -107,6 +109,37 @@ MINUTE = TimeDelta(minutes=1)
 HOUR = TimeDelta(hours=1)
 DAY = DateDelta(days=1)
 WEEK = DateDelta(weeks=1)
+MONTH = DateDelta(months=1)
+YEAR = DateDelta(years=1)
+
+
+##
+
+
+def datetime_utc(
+    year: int,
+    month: int,
+    day: int,
+    /,
+    hour: int = 0,
+    minute: int = 0,
+    second: int = 0,
+    millisecond: int = 0,
+    microsecond: int = 0,
+    nanosecond: int = 0,
+) -> ZonedDateTime:
+    """Create a UTC-zoned datetime."""
+    nanos = int(1e6) * millisecond + int(1e3) * microsecond + nanosecond
+    return ZonedDateTime(
+        year,
+        month,
+        day,
+        hour=hour,
+        minute=minute,
+        second=second,
+        nanosecond=nanos,
+        tz=UTC.key,
+    )
 
 
 ##
@@ -172,6 +205,110 @@ def get_today_local() -> Date:
 
 
 TODAY_LOCAL = get_today_local()
+
+
+##
+
+
+def mean_datetime(
+    datetimes: Iterable[ZonedDateTime],
+    /,
+    *,
+    weights: Iterable[SupportsFloat] | None = None,
+) -> ZonedDateTime:
+    """Compute the mean of a set of datetimes."""
+    datetimes = list(datetimes)
+    match len(datetimes):
+        case 0:
+            raise MeanDateTimeError from None
+        case 1:
+            return datetimes[0]
+        case _:
+            timestamps = [d.timestamp_nanos() for d in datetimes]
+            timestamp = round(fmean(timestamps, weights=weights))
+            return ZonedDateTime.from_timestamp_nanos(timestamp, tz=datetimes[0].tz)
+
+
+@dataclass(kw_only=True, slots=True)
+class MeanDateTimeError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "Mean requires at least 1 datetime"
+
+
+##
+
+
+def min_max_date(
+    *,
+    min_date: Date | None = None,
+    max_date: Date | None = None,
+    min_age: DateDelta | None = None,
+    max_age: DateDelta | None = None,
+    time_zone: TimeZoneLike = UTC,
+) -> tuple[Date | None, Date | None]:
+    """Ucompute the min/max date given a combination of dates/ages."""
+    today = get_today(time_zone=time_zone)
+    min_parts: list[Date] = []
+    if min_date is not None:
+        if min_date > today:
+            raise _MinMaxDateMinDateError(min_date=min_date, today=today)
+        min_parts.append(min_date)
+    if max_age is not None:
+        min_parts.append(today - max_age)
+    min_date_use = max(min_parts, default=None)
+    max_parts: list[Date] = []
+    if max_date is not None:
+        if max_date > today:
+            raise _MinMaxDateMaxDateError(max_date=max_date, today=today)
+        max_parts.append(max_date)
+    if min_age is not None:
+        max_parts.append(today - min_age)
+    max_date_use = min(max_parts, default=None)
+    if (
+        (min_date_use is not None)
+        and (max_date_use is not None)
+        and (min_date_use > max_date_use)
+    ):
+        raise _MinMaxDatePeriodError(min_date=min_date_use, max_date=max_date_use)
+    return min_date_use, max_date_use
+
+
+@dataclass(kw_only=True, slots=True)
+class MinMaxDateError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _MinMaxDateMinDateError(MinMaxDateError):
+    min_date: Date
+    today: Date
+
+    @override
+    def __str__(self) -> str:
+        return f"Min date must be at most today; got {self.min_date} > {self.today}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _MinMaxDateMaxDateError(MinMaxDateError):
+    max_date: Date
+    today: Date
+
+    @override
+    def __str__(self) -> str:
+        return f"Max date must be at most today; got {self.max_date} > {self.today}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _MinMaxDatePeriodError(MinMaxDateError):
+    min_date: Date
+    max_date: Date
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Min date must be at most max date; got {self.min_date} > {self.max_date}"
+        )
+
 
 ##
 
@@ -447,6 +584,7 @@ __all__ = [
     "MICROSECOND",
     "MILLISECOND",
     "MINUTE",
+    "MONTH",
     "NOW_LOCAL",
     "PLAIN_DATE_TIME_MAX",
     "PLAIN_DATE_TIME_MIN",
@@ -458,13 +596,17 @@ __all__ = [
     "TODAY_LOCAL",
     "TODAY_UTC",
     "WEEK",
+    "YEAR",
+    "ZERO_DAYS",
     "ZERO_TIME",
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
+    "MeanDateTimeError",
+    "MinMaxDateError",
     "ToDaysError",
     "ToNanosError",
     "WheneverLogRecord",
-    "format_compact",
+    "datetime_utc",
     "format_compact",
     "from_timestamp",
     "from_timestamp_millis",
@@ -473,6 +615,8 @@ __all__ = [
     "get_now_local",
     "get_today",
     "get_today_local",
+    "mean_datetime",
+    "min_max_date",
     "to_date",
     "to_date_time_delta",
     "to_days",

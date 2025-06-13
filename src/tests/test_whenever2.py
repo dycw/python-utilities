@@ -2,19 +2,28 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from logging import DEBUG
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, ClassVar, Self
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import integers, just, none, timezones
+from hypothesis.strategies import integers, none, timezones
 from pytest import raises
-from whenever import Date, DateDelta, DateTimeDelta, PlainDateTime, ZonedDateTime
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    TimeDelta,
+    TimeZoneNotFoundError,
+    ZonedDateTime,
+)
 
-from tests.conftest import IS_CI
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import (
     assume_does_not_raise,
+    date_deltas_whenever,
     dates_whenever,
+    pairs,
     sentinels,
     zoned_datetimes_whenever,
 )
@@ -32,6 +41,9 @@ from utilities.whenever2 import (
     DATE_TIME_DELTA_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
     DATE_TIME_DELTA_PARSABLE_MIN,
+    DAY,
+    MICROSECOND,
+    MINUTE,
     NOW_LOCAL,
     NOW_UTC,
     PLAIN_DATE_TIME_MAX,
@@ -41,11 +53,18 @@ from utilities.whenever2 import (
     TIME_DELTA_MIN,
     TODAY_LOCAL,
     TODAY_UTC,
+    ZERO_DAYS,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
+    MeanDateTimeError,
+    MinMaxDateError,
     ToDaysError,
     ToNanosError,
     WheneverLogRecord,
+    _MinMaxDateMaxDateError,
+    _MinMaxDateMinDateError,
+    _MinMaxDatePeriodError,
+    datetime_utc,
     format_compact,
     from_timestamp,
     from_timestamp_millis,
@@ -54,6 +73,8 @@ from utilities.whenever2 import (
     get_now_local,
     get_today,
     get_today_local,
+    mean_datetime,
+    min_max_date,
     to_date,
     to_date_time_delta,
     to_days,
@@ -68,6 +89,21 @@ if TYPE_CHECKING:
     from utilities.types import MaybeCallableDate, MaybeCallableZonedDateTime
 
 
+class TestDatetimeUTC:
+    @given(datetime=zoned_datetimes_whenever())
+    def test_main(self, *, datetime: ZonedDateTime) -> None:
+        result = datetime_utc(
+            datetime.year,
+            datetime.month,
+            datetime.day,
+            hour=datetime.hour,
+            minute=datetime.minute,
+            second=datetime.second,
+            nanosecond=datetime.nanosecond,
+        )
+        assert result == datetime
+
+
 class TestFormatCompact:
     @given(datetime=zoned_datetimes_whenever())
     def test_main(self, *, datetime: ZonedDateTime) -> None:
@@ -80,31 +116,38 @@ class TestFormatCompact:
 
 
 class TestFromTimeStamp:
-    @given(datetime=zoned_datetimes_whenever(time_zone=UTC if IS_CI else timezones()))
+    @given(
+        datetime=zoned_datetimes_whenever(time_zone=timezones()).map(
+            lambda d: d.round("second")
+        )
+    )
     def test_main(self, *, datetime: ZonedDateTime) -> None:
-        datetime = datetime.round("second")
-        timestamp = datetime.to_tz(UTC.key).timestamp()
+        timestamp = datetime.timestamp()
         result = from_timestamp(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
-    @given(datetime=zoned_datetimes_whenever(time_zone=UTC if IS_CI else timezones()))
+    @given(
+        datetime=zoned_datetimes_whenever(time_zone=timezones()).map(
+            lambda d: d.round("millisecond")
+        )
+    )
     def test_millis(self, *, datetime: ZonedDateTime) -> None:
-        datetime = datetime.round("millisecond")
-        timestamp = datetime.to_tz(UTC.key).timestamp_millis()
+        timestamp = datetime.timestamp_millis()
         result = from_timestamp_millis(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
-    @given(datetime=zoned_datetimes_whenever(time_zone=UTC if IS_CI else timezones()))
+    @given(datetime=zoned_datetimes_whenever(time_zone=timezones()))
     def test_nanos(self, *, datetime: ZonedDateTime) -> None:
-        timestamp = datetime.to_tz(UTC.key).timestamp_nanos()
+        timestamp = datetime.timestamp_nanos()
         result = from_timestamp_nanos(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
 
 class TestGetNow:
-    @given(time_zone=just(UTC) if IS_CI else timezones())
+    @given(time_zone=timezones())
     def test_function(self, *, time_zone: ZoneInfo) -> None:
-        now = get_now(time_zone=time_zone)
+        with assume_does_not_raise(TimeZoneNotFoundError):
+            now = get_now(time_zone=time_zone)
         assert isinstance(now, ZonedDateTime)
         assert now.tz == time_zone.key
 
@@ -142,6 +185,31 @@ class TestGetTodayLocal:
 
     def test_constant(self) -> None:
         assert isinstance(TODAY_LOCAL, Date)
+
+
+class TestMeanDateTime:
+    threshold: ClassVar[TimeDelta] = 100 * MICROSECOND
+
+    @given(datetime=zoned_datetimes_whenever())
+    def test_one(self, *, datetime: ZonedDateTime) -> None:
+        result = mean_datetime([datetime])
+        assert result == datetime
+
+    @given(datetime=zoned_datetimes_whenever())
+    def test_many(self, *, datetime: ZonedDateTime) -> None:
+        result = mean_datetime([datetime, datetime + MINUTE])
+        expected = datetime + 30 * SECOND
+        assert abs(result - expected) <= self.threshold
+
+    @given(datetime=zoned_datetimes_whenever())
+    def test_weights(self, *, datetime: ZonedDateTime) -> None:
+        result = mean_datetime([datetime, datetime + MINUTE], weights=[1, 3])
+        expected = datetime + 45 * SECOND
+        assert abs(result - expected) <= self.threshold
+
+    def test_error(self) -> None:
+        with raises(MeanDateTimeError, match="Mean requires at least 1 datetime"):
+            _ = mean_datetime([])
 
 
 class TestMinMax:
@@ -226,6 +294,66 @@ class TestMinMax:
 
     def _format_parse_date_time_delta(self, delta: DateTimeDelta, /) -> None:
         _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
+
+
+class TestMinMaxDate:
+    @given(
+        min_date=dates_whenever(max_value=TODAY_LOCAL) | none(),
+        max_date=dates_whenever(max_value=TODAY_LOCAL) | none(),
+        min_age=date_deltas_whenever(min_value=ZERO_DAYS) | none(),
+        max_age=date_deltas_whenever(min_value=ZERO_DAYS) | none(),
+    )
+    def test_main(
+        self,
+        *,
+        min_date: Date | None,
+        max_date: Date | None,
+        min_age: DateDelta | None,
+        max_age: DateDelta | None,
+    ) -> None:
+        with (
+            assume_does_not_raise(MinMaxDateError),
+            assume_does_not_raise(ValueError, match="Resulting date out of range"),
+        ):
+            min_date_use, max_date_use = min_max_date(
+                min_date=min_date, max_date=max_date, min_age=min_age, max_age=max_age
+            )
+        if (min_date is None) and (max_age is None):
+            assert min_date_use is None
+        else:
+            assert min_date_use is not None
+        if (max_date is None) and (min_age is None):
+            assert max_date_use is None
+        else:
+            assert max_date_use is not None
+        if min_date_use is not None:
+            assert min_date_use <= get_today()
+        if max_date_use is not None:
+            assert max_date_use <= get_today()
+        if (min_date_use is not None) and (max_date_use is not None):
+            assert min_date_use <= max_date_use
+
+    @given(date=dates_whenever(min_value=TODAY_UTC + DAY))
+    def test_error_min_date(self, *, date: Date) -> None:
+        with raises(
+            _MinMaxDateMinDateError, match="Min date must be at most today; got .* > .*"
+        ):
+            _ = min_max_date(min_date=date)
+
+    @given(date=dates_whenever(min_value=TODAY_UTC + DAY))
+    def test_error_max_date(self, *, date: Date) -> None:
+        with raises(
+            _MinMaxDateMaxDateError, match="Max date must be at most today; got .* > .*"
+        ):
+            _ = min_max_date(max_date=date)
+
+    @given(dates=pairs(dates_whenever(max_value=TODAY_UTC), unique=True, sorted=True))
+    def test_error_period(self, *, dates: tuple[Date, Date]) -> None:
+        with raises(
+            _MinMaxDatePeriodError,
+            match="Min date must be at most max date; got .* > .*",
+        ):
+            _ = min_max_date(min_date=dates[1], max_date=dates[0])
 
 
 class TestToDate:

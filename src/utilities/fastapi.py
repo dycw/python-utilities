@@ -8,17 +8,16 @@ from fastapi import FastAPI
 from uvicorn import Config, Server
 
 from utilities.asyncio import Looper
-from utilities.datetime import SECOND, datetime_duration_to_float
-from utilities.whenever2 import get_now_local
+from utilities.whenever2 import SECOND, get_now_local
 
 if TYPE_CHECKING:
     from types import TracebackType
 
-    from utilities.types import Duration
+    from whenever import TimeDelta
 
 
 _LOCALHOST: str = "localhost"
-_TIMEOUT: Duration = SECOND
+_TIMEOUT: TimeDelta = SECOND
 
 
 class _PingerReceiverApp(FastAPI):
@@ -71,16 +70,15 @@ class PingReceiver(Looper[None]):
 
     @classmethod
     async def ping(
-        cls, port: int, /, *, host: str = _LOCALHOST, timeout: Duration = _TIMEOUT
+        cls, port: int, /, *, host: str = _LOCALHOST, timeout: TimeDelta = _TIMEOUT
     ) -> str | Literal[False]:
         """Ping the receiver."""
         from httpx import AsyncClient, ConnectError  # skipif-ci
 
         url = f"http://{host}:{port}/ping"  # skipif-ci
-        timeout_use = datetime_duration_to_float(timeout)  # skipif-ci
         try:  # skipif-ci
             async with AsyncClient() as client:
-                response = await client.get(url, timeout=timeout_use)
+                response = await client.get(url, timeout=timeout.in_seconds())
         except ConnectError:  # skipif-ci
             return False
         return response.text if response.status_code == 200 else False  # skipif-ci
