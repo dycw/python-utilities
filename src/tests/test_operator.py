@@ -82,10 +82,9 @@ class TestIsEqual:
         assert not utilities.operator.is_equal(x, y)
         assert utilities.operator.is_equal(x, y, abs_tol=1e-8)
 
-    @given(
-        x=dictionaries(text_ascii(), objects()), y=dictionaries(text_ascii(), objects())
-    )
-    def test_mappings(self, *, x: StrMapping, y: StrMapping) -> None:
+    @given(mappings=pairs(dictionaries(text_ascii(), objects())))
+    def test_mappings(self, *, mappings: tuple[StrMapping, StrMapping]) -> None:
+        x, y = mappings
         result = utilities.operator.is_equal(x, y)
         assert isinstance(result, bool)
 
