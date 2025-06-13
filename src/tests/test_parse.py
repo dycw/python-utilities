@@ -5,7 +5,7 @@ from pathlib import Path
 from types import NoneType
 from typing import Final, Literal
 
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
     booleans,
     dictionaries,
@@ -143,12 +143,14 @@ class TestSerializeAndParseObject:
         assert result == number
 
     @given(path=paths())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_path(self, *, path: Path) -> None:
         serialized = serialize_object(path)
         result = parse_object(Path, serialized)
         assert result == path
 
     @given(path=paths())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_path_expanded(self, *, path: Path) -> None:
         path_use = Path("~", path)
         serialized = serialize_object(path_use)
@@ -167,6 +169,7 @@ class TestSerializeAndParseObject:
         assert result is None
 
     @given(number=numbers())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_nullable_number_number(self, *, number: Number) -> None:
         serialized = serialize_object(number)
         result = parse_object(Number | None, serialized)
@@ -195,6 +198,7 @@ class TestSerializeAndParseObject:
         assert result == ints
 
     @given(serialized=text_ascii())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_to_serialized(self, *, serialized: str) -> None:
         result = parse_object(str, serialized)
         assert result == serialized
@@ -206,6 +210,7 @@ class TestSerializeAndParseObject:
         assert result == time
 
     @given(time_delta=time_deltas_whenever())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_time_delta(self, *, time_delta: TimeDelta) -> None:
         serialized = serialize_object(time_delta)
         result = parse_object(TimeDelta, serialized)
@@ -635,7 +640,7 @@ class TestSerializeObject:
         assert serialized == expected
 
     @given(int_=integers())
-    @settings(max_examples=1)
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_type_with_extra(self, *, int_: int) -> None:
         obj = DataClassFutureInt(int_=int_)
 
